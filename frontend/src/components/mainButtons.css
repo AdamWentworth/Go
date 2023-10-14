@@ -1,0 +1,38 @@
+/* Style for the container holding the buttons */
+.mainButtonsContainer {
+    display: flex;
+    justify-content: space-between; /* evenly distribute space between the buttons */
+    align-items: center; /* center align on the Y axis */
+    padding: 2rem 11%; /* Add vertical padding and slightly reduce horizontal padding */
+    gap: 1rem;   /* Spacing between buttons */
+    height: calc(100% - 4rem); /* Adjust height, deducting the top padding */
+    margin-top: 20rem; /* Pushing the buttons lower */
+}
+
+/* Base style for individual buttons */
+.mainButton {
+    font-size: 5rem;  /* Increase font size */
+    padding: 2.5rem 5rem;  /* Adjust padding for larger buttons */
+    text-align: center;
+    color: white;
+    border: none; /* Remove any default borders */
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.mainButton:hover {
+    filter: saturate(150%); /* Increase saturation by 150% */
+}
+
+.collect-btn {
+    background-color: #ae4c4c;
+}
+
+.pvp-btn {
+    background-color: #4cae4f;
+}
+
+.raid-btn {
+    background-color: #4c7aae;
+}

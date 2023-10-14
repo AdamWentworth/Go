@@ -1,0 +1,20 @@
+/* Collect.css */
+.pokemon-container {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr); /* 5 columns */
+    gap: 20px; /* Spacing between cards */
+}
+
+.pokemon-card {
+    text-align: center;
+    border: 1px solid #ddd; /* Add a border around each card */
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.pokemon-card img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Add any additional styling as needed for Pokémon cards */

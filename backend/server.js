@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const logger = require('./middlewares/logger');
+const pokemonRoutes = require('./routes/pokemonRoutes');
 
 const app = express();
 
@@ -12,10 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 // Custom Middleware
 app.use(logger);
 
-// Example route
-app.get('/', (req, res) => {
-    res.send('Hello, World!');
-});
+app.use(pokemonRoutes);
 
 // Starting the Server
 app.listen(3000, () => {

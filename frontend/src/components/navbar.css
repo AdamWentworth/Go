@@ -1,0 +1,40 @@
+.navbar {
+    display: flex;
+    align-items: center;
+    background-color: #202020;
+    padding: 20px 20px;
+    justify-content: center;  /* This will center the entire content */
+}
+
+.navbar h1 {
+    color: white;
+}
+
+.title-container {
+    position: absolute;   /* This will take the title out of the normal flow */
+    left: 50%;   /* Center the title container */
+    transform: translateX(-50%); /* Adjust for true centering */
+}
+
+.navbar-buttons {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;  /* This pushes the buttons to the right */
+    margin-right: 20px;  /* Provide some spacing from the right edge */
+}
+
+.navbar-buttons button {
+    background-color: #007BFF;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 12px;
+}
+
+.navbar-buttons button:hover {
+    background-color: #0056b3;
+}
