@@ -40,4 +40,60 @@
     height: auto;
 }
 
-/* Add any additional styling as needed for Pokémon cards */
+.shiny-button {
+    background-color: #ccc; /* Non-shiny color */
+    border: none;
+    outline: none;
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    border-radius: 15px; /* Adjust as per requirement */
+    transition: background-color 0.3s ease; /* Optional: for a smooth color transition */
+}
+
+.shiny-button img {
+    width: 30px;
+    height: 30px;
+    margin-right: 8px;
+}
+
+.shiny-button.active, .generation-buttons button.active {
+    /* Your CSS for active state e.g. a different background color */
+    background-color: gold;
+}
+
+
+/* Removing focus border/outline for accessibility might not be recommended. 
+   If you decide to remove it, ensure there are other clear focus states for accessibility. */
+.shiny-button:focus {
+    outline: none;
+}
+
+/* You can also style the button on hover for better user interaction */
+.shiny-button:hover {
+    background-color: #b5b5b5; /* Slightly darker non-shiny color */
+}
+
+.shiny-button.active:hover {
+    background-color: #ffcc00; /* Slightly darker shiny color */
+}
+
+.generation-buttons {
+    margin-top: 10px;
+}
+
+.generation-buttons button {
+    padding: 5px 10px;
+    margin-right: 5px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #ccc;
+    transition: background-color 0.3s ease;
+}
+
+.generation-buttons button.active,
+.generation-buttons button:hover {
+    background-color: #ddd;
+}

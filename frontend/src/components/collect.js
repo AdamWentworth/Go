@@ -3,34 +3,64 @@ import axios from 'axios';
 import './collect.css';
 
 function Collect() {
-    const [pokemons, setPokemons] = useState([]);
+    const [allPokemons, setAllPokemons] = useState([]);
+    const [displayedPokemons, setDisplayedPokemons] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isShiny, setIsShiny] = useState(false);
+    const [selectedGeneration, setSelectedGeneration] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
 
-    // Define fetchPokemons outside of useEffect
-    const fetchPokemons = (name) => {
-        setLoading(true);
-        axios.get('http://localhost:3000/api/pokemons', { params: { name } })
+    const generations = [
+        "Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola", "Galar", "Hisui", "Paldea"
+    ];
+
+    useEffect(() => {
+        axios.get('http://localhost:3000/api/pokemons')
             .then(response => {
-                setPokemons(response.data);
+                console.log("API Response: ", response.data);
+                setAllPokemons(response.data);
+                setDisplayedPokemons(response.data);
                 setLoading(false);
             })
             .catch(error => {
                 console.error("Error fetching the Pokémon data: ", error);
                 setLoading(false);
             });
+    }, []);
+
+    const [showCostume, setShowCostume] = useState(false); // 1. Add new state for costume toggle
+    
+    useEffect(() => {
+        const filteredPokemons = allPokemons.reduce((acc, pokemon) => {
+            const matchesGeneration = selectedGeneration ? pokemon.generation === selectedGeneration : true;
+            const matchesShiny = isShiny ? pokemon.shiny_available === 1 : true;
+            const matchesSearch = pokemon.name.toLowerCase().includes(searchTerm.toLowerCase());
+            const basicMatches = matchesGeneration && matchesShiny && matchesSearch;
+    
+            // If showCostume is active, create entries for all costumes
+            if (showCostume && basicMatches) {
+                pokemon.costumes.forEach(costume => {
+                    acc.push({ ...pokemon, currentImage: isShiny ? costume.shiny_image : costume.image });
+                });
+            } 
+            // Otherwise, add the Pokemon itself (without costumes)
+            else if (basicMatches) {
+                acc.push({ ...pokemon, currentImage: isShiny ? pokemon.shiny_image : pokemon.image });
+            }
+    
+            return acc;
+        }, []);
+    
+        setDisplayedPokemons(filteredPokemons);
+    }, [selectedGeneration, isShiny, allPokemons, searchTerm, showCostume]);
+    
+    
+    const toggleShiny = () => {
+        setIsShiny(prevState => !prevState);
     };
 
-    useEffect(() => {
-        // Fetch Pokémons on mount without search term
-        fetchPokemons();
-    }, []); // Empty dependency array means this useEffect runs once on mount
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            // Fetch Pokémons on 'Enter' key press
-            fetchPokemons(searchTerm);
-        }
+    const toggleCostume = () => { // 2. Toggle function for costume state
+        setShowCostume(prevState => !prevState);
     };
 
     return (
@@ -39,26 +69,43 @@ function Collect() {
                 <h1>Collect Page</h1>
                 <input 
                     type="text" 
-                    placeholder="Search..." 
+                    placeholder="Search..."
                     value={searchTerm} 
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyDown={handleKeyDown}
                 />
+                <button onClick={toggleShiny} className={`shiny-button ${isShiny ? 'active' : ''}`}>
+                    <img src="/images/shiny_icon.png" alt="Toggle Shiny" />
+                    {isShiny ? "Show Regular" : "Show Shiny"}
+                </button>
+                <div className="generation-buttons">
+                    {generations.map((gen, index) => (
+                        <button 
+                            key={gen}
+                            onClick={() => setSelectedGeneration(index + 1)} 
+                            className={selectedGeneration === index + 1 ? 'active' : ''}
+                        >
+                            {gen}
+                        </button>
+                    ))}
+                </div>
+                <button onClick={toggleCostume} className={`costume-button ${showCostume ? 'active' : ''}`}> 
+                    {/* New costume button */}
+                    {showCostume ? "Hide Costumes" : "Show Costumes"}
+                </button>
             </div>
 
+            <div className="pokemon-container">
             {loading ? (
                 <p>Loading...</p>
             ) : (
-                <div className="pokemon-container">
-                    {pokemons.map(pokemon => (
-                        <div key={pokemon.pokemon_id} className="pokemon-card">
-                            <img src={pokemon.image} alt={pokemon.pokemon_name} />
-                            <h2>{pokemon.name}</h2>
-                            {/* ... any additional Pokémon details you want to display ... */}
-                        </div>
-                    ))}
-                </div>
+                displayedPokemons.map((pokemon, index) => (
+                    <div key={index} className="pokemon-card">  {/* changed key to index since pokemon ID is not unique */}
+                        <img src={pokemon.currentImage} alt={pokemon.name} />
+                        <h2>{pokemon.name}</h2>
+                    </div>
+                ))                    
             )}
+            </div>
         </div>
     );
 }
