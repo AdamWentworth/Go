@@ -9,6 +9,7 @@ function Collect() {
     const [isShiny, setIsShiny] = useState(false);
     const [selectedGeneration, setSelectedGeneration] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const singleFormPokedexNumbers = [649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741]; // Add specific numbers as per your requirement.
 
     const generations = [
         "Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola", "Galar", "Hisui", "Paldea"
@@ -36,6 +37,11 @@ function Collect() {
             const matchesShiny = isShiny ? pokemon.shiny_available === 1 : true;
             const matchesSearch = pokemon.name.toLowerCase().includes(searchTerm.toLowerCase());
             const basicMatches = matchesGeneration && matchesShiny && matchesSearch;
+
+            // If Pokémon is in the list where we want to show only one form and multiple forms already exist, keep only the first one.
+            if (singleFormPokedexNumbers.includes(pokemon.pokedex_number) && acc.some(p => p.pokedex_number === pokemon.pokedex_number)) {
+                return acc;
+            }
     
             // If showCostume is active, create entries for all costumes
             if (showCostume && basicMatches) {
