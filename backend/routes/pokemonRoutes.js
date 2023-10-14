@@ -5,11 +5,21 @@ const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('D:/Visual-Studio-Code/Go/backend/data/pokego.db');
 
 router.get('/api/pokemons', (req, res) => {
+    let query = "SELECT * FROM pokemon WHERE available = 1";
+    const params = [];
     
-    // SQL query to fetch all available Pokémon details and order them by pokedex_number
-    const query = "SELECT * FROM pokemon WHERE available = 1 ORDER BY pokedex_number";
+    // Checking if 'name' query parameter is provided to filter the Pokémon.
+    if (req.query.name) {
+        query += " AND name LIKE ?";
+        params.push(`%${req.query.name}%`);
+    }
 
-    db.all(query, [], (err, rows) => {
+    console.log('Query name:', req.query.name);
+
+    // Ensuring results are always ordered by 'pokedex_number'.
+    query += " ORDER BY pokedex_number ASC"; 
+
+    db.all(query, params, (err, rows) => {
         if (err) {
             res.status(500).json({ error: err.message });
             return;
@@ -22,9 +32,9 @@ router.get('/api/pokemons', (req, res) => {
             }
         });
 
-        // Send the Pokémon details and image paths as the response
         res.json(pokemonsWithImages);
     });
 });
+
 
 module.exports = router;

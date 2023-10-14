@@ -1,8 +1,31 @@
 /* Collect.css */
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #444;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0px 4px 2px -2px gray;
+}
+
+.header h1 {
+    margin: 0;
+}
+
+.header input {
+    padding: 8px;
+    font-size: 16px;
+}
+
 .pokemon-container {
     display: grid;
-    grid-template-columns: repeat(6, 1fr); /* 5 columns */
+    grid-template-columns: repeat(6, 1fr); /* 6 columns */
     gap: 20px; /* Spacing between cards */
+    padding: 20px;
 }
 
 .pokemon-card {
