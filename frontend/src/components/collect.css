@@ -10,10 +10,34 @@
     top: 0;
     z-index: 1000;
     box-shadow: 0px 4px 2px -2px gray;
+    flex-wrap: nowrap;  /* Ensure the two sections don't wrap onto new lines */
+}
+
+.header-section {
+    flex: 1;
+    display: flex;
+    justify-content: center; /* Center the items horizontally */
+    align-items: center;     /* Center the items vertically */
+    padding: 0 15px;         /* Adjust the padding as needed */
+}
+
+.browse-section {
+    justify-content: flex-start; /* Align the items to the start of this section */
+    border-right: 1px solid #ccc; /* This will add a line delimiter */
+}
+
+.collect-section {
+    justify-content: flex-end; /* Align the items to the end of this section */
 }
 
 .header h1 {
     margin: 0;
+    margin-right: 15px; /* Adding some spacing next to the title for aesthetics */
+}
+
+/* Optional: If you want to add some space between items in each section */
+.header-section > *:not(:last-child) {
+    margin-right: 10px;
 }
 
 .header input {
@@ -33,11 +57,16 @@
     border: 1px solid #ddd; /* Add a border around each card */
     padding: 10px;
     border-radius: 8px;
+    background-color: #444;
 }
 
 .pokemon-card img {
     max-width: 100%;
     height: auto;
+}
+
+.pokemon-card h2, p {
+    color: white;
 }
 
 .shiny-button {
@@ -79,21 +108,14 @@
     background-color: #ffcc00; /* Slightly darker shiny color */
 }
 
-.generation-buttons {
-    margin-top: 10px;
+.type-icons img {
+    padding: 5px;
+    margin-top: -15px;
+    margin-bottom: -20px;
+    width: 24px;       /* adjust size as necessary */
+    height: 24px;      /* adjust size as necessary */
 }
 
-.generation-buttons button {
-    padding: 5px 10px;
-    margin-right: 5px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    background-color: #ccc;
-    transition: background-color 0.3s ease;
-}
-
-.generation-buttons button.active,
-.generation-buttons button:hover {
-    background-color: #ddd;
+.pokemon-card p {
+    margin-bottom: 5px;
 }

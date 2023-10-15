@@ -1,7 +1,7 @@
 .navbar {
     display: flex;
     align-items: center;
-    background-color: #202020;
+    background-color: #222;
     padding: 20px 20px;
     justify-content: center;  /* This will center the entire content */
 }

@@ -3,6 +3,7 @@ import axios from 'axios';
 import './collect.css';
 
 function Collect() {
+    // console.log("Collect component rendered");
     const [allPokemons, setAllPokemons] = useState([]);
     const [displayedPokemons, setDisplayedPokemons] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -35,31 +36,36 @@ function Collect() {
         const filteredPokemons = allPokemons.reduce((acc, pokemon) => {
             const matchesGeneration = selectedGeneration ? pokemon.generation === selectedGeneration : true;
             const matchesShiny = isShiny ? pokemon.shiny_available === 1 : true;
-            const matchesSearch = pokemon.name.toLowerCase().includes(searchTerm.toLowerCase());
+            const isGenerationSearch = generations.some(gen => gen.toLowerCase() === searchTerm.toLowerCase());
+            const matchesSearch = !isGenerationSearch && pokemon.name && typeof pokemon.name === 'string' ? pokemon.name.toLowerCase().includes(searchTerm.toLowerCase()) : true;
             const basicMatches = matchesGeneration && matchesShiny && matchesSearch;
-
-            // If Pokémon is in the list where we want to show only one form and multiple forms already exist, keep only the first one.
+    
             if (singleFormPokedexNumbers.includes(pokemon.pokedex_number) && acc.some(p => p.pokedex_number === pokemon.pokedex_number)) {
                 return acc;
             }
-    
-            // If showCostume is active, create entries for all costumes
+        
             if (showCostume && basicMatches) {
                 pokemon.costumes.forEach(costume => {
-                    acc.push({ ...pokemon, currentImage: isShiny ? costume.shiny_image : costume.image });
+                    // Check if the costume's shiny variant is available when shiny toggle is on
+                    if (!isShiny || (isShiny && costume.shiny_available === 1)) {
+                        acc.push({ 
+                            ...pokemon, 
+                            currentImage: isShiny ? costume.shiny_image : costume.image, 
+                            currentCostumeName: costume.name 
+                        });
+                    }
                 });
-            } 
+            }
             // Otherwise, add the Pokemon itself (without costumes)
             else if (basicMatches) {
                 acc.push({ ...pokemon, currentImage: isShiny ? pokemon.shiny_image : pokemon.image });
             }
-    
+        
             return acc;
         }, []);
-    
+        
         setDisplayedPokemons(filteredPokemons);
-    }, [selectedGeneration, isShiny, allPokemons, searchTerm, showCostume]);
-    
+    }, [selectedGeneration, isShiny, allPokemons, searchTerm, showCostume]);    
     
     const toggleShiny = () => {
         setIsShiny(prevState => !prevState);
@@ -69,35 +75,50 @@ function Collect() {
         setShowCostume(prevState => !prevState);
     };
 
+    function formatForm(form) {
+        if (!form) return "";
+    
+        return form
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+    }
+    
     return (
         <div>
             <div className="header">
-                <h1>Collect Page</h1>
-                <input 
-                    type="text" 
-                    placeholder="Search..."
-                    value={searchTerm} 
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <button onClick={toggleShiny} className={`shiny-button ${isShiny ? 'active' : ''}`}>
-                    <img src="/images/shiny_icon.png" alt="Toggle Shiny" />
-                    {isShiny ? "Show Regular" : "Show Shiny"}
-                </button>
-                <div className="generation-buttons">
-                    {generations.map((gen, index) => (
-                        <button 
-                            key={gen}
-                            onClick={() => setSelectedGeneration(index + 1)} 
-                            className={selectedGeneration === index + 1 ? 'active' : ''}
-                        >
-                            {gen}
-                        </button>
-                    ))}
+                <div className="header-section browse-section">
+                    <h1>Browse</h1>
+                    <input 
+                        type="text" 
+                        placeholder="Search..."
+                        value={searchTerm} 
+                        onChange={(e) => {
+                            const term = e.target.value;  // Don't convert to lowercase here
+                            setSearchTerm(term);
+
+                            // Convert to lowercase only when doing the comparison
+                            const matchedGeneration = generations.find(gen => gen.toLowerCase() === term.toLowerCase()); 
+                            
+                            setSelectedGeneration(prevState => {
+                                const newGeneration = matchedGeneration ? generations.indexOf(matchedGeneration) + 1 : null;
+                                return newGeneration;
+                            });
+                        }}
+                    />
+                    <button onClick={toggleShiny} className={`shiny-button ${isShiny ? 'active' : ''}`}>
+                        <img src="/images/shiny_icon.png" alt="Toggle Shiny" />
+                        {isShiny ? "Show Regular" : "Show Shiny"}
+                    </button>
+                    <button onClick={toggleCostume} className={`shiny-button ${showCostume ? 'active' : ''}`}>
+                        <img src="/images/costume_icon.png" alt="Toggle Costume" />
+                        {showCostume ? "Hide Costumes" : "Show Costumes"}
+                    </button>
                 </div>
-                <button onClick={toggleCostume} className={`costume-button ${showCostume ? 'active' : ''}`}> 
-                    {/* New costume button */}
-                    {showCostume ? "Hide Costumes" : "Show Costumes"}
-                </button>
+                <div className="header-section collect-section">
+                    <h1>Collect</h1>
+                    {/* Add any other content related to 'Collect' here */}
+                </div>
             </div>
 
             <div className="pokemon-container">
@@ -105,11 +126,22 @@ function Collect() {
                 <p>Loading...</p>
             ) : (
                 displayedPokemons.map((pokemon, index) => (
-                    <div key={index} className="pokemon-card">  {/* changed key to index since pokemon ID is not unique */}
+                    <div key={index} className="pokemon-card">
                         <img src={pokemon.currentImage} alt={pokemon.name} />
-                        <h2>{pokemon.name}</h2>
+                        <p>#{pokemon.pokedex_number}</p>
+                        <div className="type-icons">
+                            {pokemon.type_1_icon && <img src={pokemon.type_1_icon} alt={pokemon.type1_name} />}
+                            {pokemon.type_2_icon && <img src={pokemon.type_2_icon} alt={pokemon.type2_name} />}
+                        </div>
+                        <h2>
+                            {showCostume && pokemon.currentCostumeName
+                                ? <span className="pokemon-form">{formatForm(pokemon.currentCostumeName)} </span>
+                                : pokemon.form && !singleFormPokedexNumbers.includes(pokemon.pokedex_number) && 
+                                <span className="pokemon-form">{formatForm(pokemon.form)} </span>}
+                            {pokemon.name}
+                        </h2>
                     </div>
-                ))                    
+                ))                                                                          
             )}
             </div>
         </div>

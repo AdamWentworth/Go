@@ -5,7 +5,7 @@ function Navbar() {
     return (
         <div className="navbar">
             <div className="title-container">
-                <h1>Welcome to Pokemon Go Nexus</h1>
+                <h1>Welcome to Pokémon Go Nexus</h1>
             </div>
             <div className="navbar-buttons">
                 <button>Login</button>
