@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './collect.css';
+import PokemonOverlay from './pokemonOverlay'; 
 
 function Collect() {
     // console.log("Collect component rendered");
@@ -11,6 +12,7 @@ function Collect() {
     const [selectedGeneration, setSelectedGeneration] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const singleFormPokedexNumbers = [649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741]; // Add specific numbers as per your requirement.
+    const [selectedPokemon, setSelectedPokemon] = useState(null);
 
     const generations = [
         "Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola", "Galar", "Hisui", "Paldea"
@@ -122,27 +124,30 @@ function Collect() {
             </div>
 
             <div className="pokemon-container">
-            {loading ? (
-                <p>Loading...</p>
-            ) : (
-                displayedPokemons.map((pokemon, index) => (
-                    <div key={index} className="pokemon-card">
-                        <img src={pokemon.currentImage} alt={pokemon.name} />
-                        <p>#{pokemon.pokedex_number}</p>
-                        <div className="type-icons">
-                            {pokemon.type_1_icon && <img src={pokemon.type_1_icon} alt={pokemon.type1_name} />}
-                            {pokemon.type_2_icon && <img src={pokemon.type_2_icon} alt={pokemon.type2_name} />}
-                        </div>
-                        <h2>
-                            {showCostume && pokemon.currentCostumeName
-                                ? <span className="pokemon-form">{formatForm(pokemon.currentCostumeName)} </span>
-                                : pokemon.form && !singleFormPokedexNumbers.includes(pokemon.pokedex_number) && 
-                                <span className="pokemon-form">{formatForm(pokemon.form)} </span>}
-                            {pokemon.name}
-                        </h2>
-                    </div>
-                ))                                                                          
-            )}
+                {loading ? (
+                    <p>Loading...</p>
+                ) : (
+                    <>
+                        {displayedPokemons.map((pokemon, index) => (
+                            <div className="pokemon-card" onClick={() => setSelectedPokemon(pokemon)}>
+                                <img src={pokemon.currentImage} alt={pokemon.name} />
+                                <p>#{pokemon.pokedex_number}</p>
+                                <div className="type-icons">
+                                    {pokemon.type_1_icon && <img src={pokemon.type_1_icon} alt={pokemon.type1_name} />}
+                                    {pokemon.type_2_icon && <img src={pokemon.type_2_icon} alt={pokemon.type2_name} />}
+                                </div>
+                                <h2>
+                                    {showCostume && pokemon.currentCostumeName
+                                        ? <span className="pokemon-form">{formatForm(pokemon.currentCostumeName)} </span>
+                                        : pokemon.form && !singleFormPokedexNumbers.includes(pokemon.pokedex_number) && 
+                                        <span className="pokemon-form">{formatForm(pokemon.form)} </span>}
+                                    {pokemon.name}
+                                </h2>
+                            </div>
+                        ))}
+                        {selectedPokemon && <PokemonOverlay pokemon={selectedPokemon} onClose={() => setSelectedPokemon(null)} />}
+                    </>
+                )}
             </div>
         </div>
     );

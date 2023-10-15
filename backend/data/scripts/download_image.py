@@ -10,7 +10,7 @@ def download_image(url, save_folder):
         response.raise_for_status()  # Raise an exception for HTTP errors
 
         # Create a generic filename
-        filename = "pokemon_999.png"
+        filename = "community_day_icon.png"
         save_path = os.path.join(save_folder, filename)
 
         # Resize and save the image
@@ -22,7 +22,7 @@ def download_image(url, save_folder):
         print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
-    image_url = "https://static.wikia.nocookie.net/pokemongo/images/8/8f/Gimmighoul_roaming.png/revision/latest?cb=20230224193223"
-    save_folder = "D:/Visual-Studio-Code/Go/frontend/public/images/default"
+    image_url = "https://static.wikia.nocookie.net/pokemongo/images/6/66/Community_Day.png/revision/latest/scale-to-width-down/250?cb=20180113204817"
+    save_folder = "D:/Visual-Studio-Code/Go/frontend/public/images"
 
     download_image(image_url, save_folder)
