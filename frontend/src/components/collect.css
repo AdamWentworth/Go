@@ -5,7 +5,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 20px;
-    background-color: #444;
+    background-color: #333;
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -57,7 +57,7 @@
     border: 1px solid #ddd; /* Add a border around each card */
     padding: 10px;
     border-radius: 8px;
-    background-color: #444;
+    background-color: #333;
 }
 
 .pokemon-card img {
