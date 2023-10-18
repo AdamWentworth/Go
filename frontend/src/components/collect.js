@@ -129,7 +129,10 @@ function Collect() {
                 ) : (
                     <>
                         {displayedPokemons.map((pokemon, index) => (
-                            <div className="pokemon-card" onClick={() => setSelectedPokemon(pokemon)}>
+                            <div className="pokemon-card" 
+                                key={`${pokemon.pokemon_id}-${pokemon.currentCostumeName || 'default'}`} 
+                                onClick={() => setSelectedPokemon(pokemon)}
+                            >
                                 <img src={pokemon.currentImage} alt={pokemon.name} />
                                 <p>#{pokemon.pokedex_number}</p>
                                 <div className="type-icons">

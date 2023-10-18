@@ -59,6 +59,7 @@ router.get('/api/pokemons', (req, res) => {
                 const relatedCostumes = costumes.filter(c => c.pokemon_id === pokemon.pokemon_id);
 
                 const formattedCostumes = relatedCostumes.map(c => ({
+                    costume_id: c.costume_id,
                     name: c.costume_name,
                     image: `/images/costumes/pokemon_${c.pokemon_id}_${c.costume_name}_default.png`,
                     shiny_image: `/images/costumes_shiny/pokemon_${c.pokemon_id}_${c.costume_name}_shiny.png`,
