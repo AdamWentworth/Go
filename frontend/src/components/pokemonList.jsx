@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './collect.css';
+import './pokemonList.css';
 import PokemonOverlay from './pokemonOverlay'; 
 
-function Collect() {
+function pokemonList() {
     // console.log("Collect component rendered");
     const [allPokemons, setAllPokemons] = useState([]);
     const [displayedPokemons, setDisplayedPokemons] = useState([]);
@@ -156,4 +156,4 @@ function Collect() {
     );
 }
 
-export default Collect;
+export default pokemonList;

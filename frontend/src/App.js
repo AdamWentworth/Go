@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Navbar from './components/navbar';
 import MainButtons from './components/mainButtons';
-import Collect from './components/collect';
+import PokemonList from './components/pokemonList';
 import './App.css';
 
 function App() {
@@ -13,7 +13,7 @@ function App() {
                 <Router>
                     <Routes>
                         <Route path="/" element={<MainButtons />} />
-                        <Route path="/collect" element={<Collect />} />
+                        <Route path="/pokemon" element={<PokemonList />} />
                     </Routes>
                 </Router>
             </main>

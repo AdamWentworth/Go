@@ -5,7 +5,7 @@ import './mainButtons.css';
 function MainButtons() {
     return (
         <div className="mainButtonsContainer">
-            <Link to="/collect">
+            <Link to="/pokemon">
                 <button className="mainButton collect-btn">Collect</button>
             </Link>
             <button className="mainButton pvp-btn">PVP</button>
