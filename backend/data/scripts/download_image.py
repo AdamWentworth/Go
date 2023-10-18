@@ -1,7 +1,9 @@
 import os
+from io import BytesIO
+
 import requests
 from PIL import Image
-from io import BytesIO
+
 
 def download_image(url, save_folder):
     try:
@@ -10,7 +12,7 @@ def download_image(url, save_folder):
         response.raise_for_status()  # Raise an exception for HTTP errors
 
         # Create a generic filename
-        filename = "shiny_pokemon_22.png"
+        filename = "shiny_pokemon_62.png"
         save_path = os.path.join(save_folder, filename)
 
         # Resize and save the image
@@ -22,7 +24,7 @@ def download_image(url, save_folder):
         print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
-    image_url = "https://static.wikia.nocookie.net/pokemongo/images/f/fa/Fearow_shiny.png/revision/latest?cb=20220516184640"
+    image_url = "https://static.wikia.nocookie.net/pokemongo/images/d/d7/Poliwrath_shiny.png/revision/latest?cb=20220516203307"
     save_folder = "D:/Visual-Studio-Code/Go/frontend/public/images/shiny"
 
     download_image(image_url, save_folder)
