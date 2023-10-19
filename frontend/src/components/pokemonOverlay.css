@@ -6,11 +6,21 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+    z-index: 1000; /* This ensures the dark background is above other content but below the overlay windows */
+}
+
+.background {
+    background-color: rgba(0, 0, 0, 0.7); /* Darken the background */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000; /* Ensure the background covers the entire screen */
+}
+
+.overlay-windows {
+    position: relative; /* Make the children's position relative to this container */
 }
 
 .overlay-content {
@@ -18,8 +28,13 @@
     color: white;
     padding: 20px;
     border-radius: 10px;
-    position: relative;
+    position: absolute;
     display: flex;
+    flex-direction: column; /* Change to a vertical layout */
+    z-index: 1001;
+    top: 50%; /* Centers it vertically */
+    left: 50%; /* Centers it horizontally */
+    transform: translate(-50%, -50%); /* Adjusts for the width and height of the container */
 }
 
 .close-button {
@@ -34,6 +49,7 @@
 .column {
     flex: 1;
     padding: 10px;
+    box-sizing: border-box; /* Ensures padding doesn't increase the size of the column */
 }
 
 .costume-item {
@@ -58,3 +74,34 @@
     height: auto;  /* Maintains aspect ratio */
 }
 
+.top-left {
+    right: 35%;
+}
+
+.top-right {
+    left: 10%;
+}
+
+.bottom-left {
+    right: 75%;
+}
+
+.bottom-right {
+    left: 65%;
+}
+
+.type-section img {
+    padding: 5px;
+    margin-top: -15px;
+    margin-bottom: -20px;
+    width: 24px;       /* adjust size as necessary */
+    height: 24px;      /* adjust size as necessary */
+}
+
+.costume-images img {
+    padding: 5px;
+    margin-top: -15px;
+    margin-bottom: -20px;
+    width: 180px;       /* adjust size as necessary */
+    height: 180px;      /* adjust size as necessary */
+}

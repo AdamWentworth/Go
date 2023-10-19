@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './pokemonOverlay.css';
 
 function formatShinyRarity(rarity) {
@@ -29,69 +29,85 @@ function formatCostumeName(name) {
         .join(' ');
 }
 
-
-function PokemonOverlay({ pokemon, onClose }) {
-
+function WindowOverlay({ title, children, onClose, position }) {
     const handleBackgroundClick = (event) => {
-        // If the background is clicked, close the overlay
         onClose();
     }
 
     const handleContentClick = (event) => {
-        // Prevent the click from propagating to the background
         event.stopPropagation();
     }
-    
 
     return (
-        <div className="pokemon-overlay" onClick={handleBackgroundClick}>
+        <div className={`pokemon-overlay ${position}`} onClick={handleBackgroundClick}>
             <div className="overlay-content" onClick={handleContentClick}>
                 <button onClick={onClose} className="close-button">X</button>
-                
-                <div className="column moves-column">
-                    {/* Placeholder for Moves */}
-                    <strong>Moves:</strong>
-                    <ul>
-                        {/* Example */}
-                        <li>Move 1</li>
-                        <li>Move 2</li>
-                        <li>Move 3</li>
-                        {/* Add the real moves here */}
-                    </ul>
-                </div>
+                {children}
+            </div>
+        </div>
+    );
+}
 
-                <div className="column main-info-column">
-                    <img src={pokemon.currentImage} alt={pokemon.name} />
-                    <p>#{pokemon.pokedex_number}</p>
-                    <h2>{pokemon.name}</h2>
+function PokemonOverlay({ pokemon, onClose }) { // Added the onClose prop
+    return (
+        <div className="pokemon-overlay" onClick={onClose}>
+            <div className="background"></div>
+            <div className="overlay-windows">
+                    <WindowOverlay onClose={onClose} position="bottom-left">
+                        <div className="column moves-column">
+                        {/* Placeholder for Moves */}
+                        <h1>Moves</h1>
+                        <ul>
+                            {/* Example */}
+                            <li>Move 1</li>
+                            <li>Move 2</li>
+                            <li>Move 3</li>
+                            {/* Add the real moves here */}
+                        </ul>
+                    </div>
+                    </WindowOverlay>
 
-                    <div className="type-section"> 
-                        <img src={pokemon.type_1_icon} alt={pokemon.type1_name} />
-                        {pokemon.type2_name && (
-                            <img src={pokemon.type_2_icon} alt={pokemon.type2_name} />
-                        )}
+                    <WindowOverlay onClose={onClose} position="top-left">
+                        <div className="column main-info-column">
+                        <h1>Main Info</h1>
+                        <img src={pokemon.currentImage} alt={pokemon.name} />
+                        <p>#{pokemon.pokedex_number}</p>
+                        <div className="type-section"> 
+                            <img src={pokemon.type_1_icon} alt={pokemon.type1_name} />
+                            {pokemon.type2_name && (
+                                <img src={pokemon.type_2_icon} alt={pokemon.type2_name} />
+                            )}
+                        </div>
+                        <h2>{pokemon.name}</h2>
+
+                        <div>
+                            <strong>Attack:</strong> {pokemon.attack}
+                        </div>
+                        <div>
+                            <strong>Defense:</strong> {pokemon.defense}
+                        </div>
+                        <div>
+                            <strong>Stamina:</strong> {pokemon.stamina}
+                        </div>
                     </div>
 
-                    <div>
-                        <strong>Attack:</strong> {pokemon.attack}
+                    </WindowOverlay>
+                    
+                    <WindowOverlay onClose={onClose} position="top-right">
+                        <div className="column images-column">
+                            <h1>Shiny Info</h1>
+                        <img src={pokemon.shiny_image} alt={`${pokemon.name} Shiny`} />
+                        <div>
+                            <strong>Shiny Rarity:</strong> {formatShinyRarity(pokemon.shiny_rarity)}
+                        </div>
                     </div>
-                    <div>
-                        <strong>Defense:</strong> {pokemon.defense}
-                    </div>
-                    <div>
-                        <strong>Stamina:</strong> {pokemon.stamina}
-                    </div>
-                </div>
 
-                <div className="column images-column">
-                    <img src={pokemon.shiny_image} alt={`${pokemon.name} Shiny`} />
-                    <div>
-                        <strong>Shiny Rarity:</strong> {formatShinyRarity(pokemon.shiny_rarity)}
-                    </div>
-                </div>
+                    </WindowOverlay>
 
                 {pokemon.costumes && pokemon.costumes.length > 0 && (
-                    <div className="column costume-column">
+                    <WindowOverlay onClose={onClose} position="bottom-right">
+                        <div className="column costume-column">
+                        <h1>Costumes</h1>
                     <ul>
                         {pokemon.costumes.map((costume, index) => (
                             <li key={index}>
@@ -105,9 +121,10 @@ function PokemonOverlay({ pokemon, onClose }) {
                             </li>
                         ))}
                     </ul>
-                </div>                
-                )}
-            </div>
+                    </div>  
+                    </WindowOverlay>
+            )}
+        </div>
         </div>
     );
 }

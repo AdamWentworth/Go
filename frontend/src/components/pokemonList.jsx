@@ -148,7 +148,9 @@ function pokemonList() {
                                 </h2>
                             </div>
                         ))}
-                        {selectedPokemon && <PokemonOverlay pokemon={selectedPokemon} onClose={() => setSelectedPokemon(null)} />}
+                        {selectedPokemon && 
+                            <PokemonOverlay pokemon={selectedPokemon} onClose={() => setSelectedPokemon(null)} />
+                        }
                     </>
                 )}
             </div>
