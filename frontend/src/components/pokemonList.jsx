@@ -9,6 +9,7 @@ function pokemonList() {
     const [displayedPokemons, setDisplayedPokemons] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isShiny, setIsShiny] = useState(false);
+    const [showShadow, setShowShadow] = useState(false); 
     const [selectedGeneration, setSelectedGeneration] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const singleFormPokedexNumbers = [649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741]; // Add specific numbers as per your requirement.
@@ -50,9 +51,17 @@ function pokemonList() {
                 pokemon.costumes.forEach(costume => {
                     // Check if the costume's shiny variant is available when shiny toggle is on
                     if (!isShiny || (isShiny && costume.shiny_available === 1)) {
+                        let costumeImageToUse = costume.image;
+                        if (isShiny && showShadow) {
+                            costumeImageToUse = costume.shiny_shadow_image; // Assuming you have a shiny shadow image for costumes
+                        } else if (isShiny) {
+                            costumeImageToUse = costume.shiny_image;
+                        } else if (showShadow) {
+                            costumeImageToUse = costume.shadow_image; // Assuming you have a shadow image for costumes
+                        }
                         acc.push({ 
                             ...pokemon, 
-                            currentImage: isShiny ? costume.shiny_image : costume.image, 
+                            currentImage: costumeImageToUse,
                             currentCostumeName: costume.name 
                         });
                     }
@@ -60,14 +69,22 @@ function pokemonList() {
             }
             // Otherwise, add the Pokemon itself (without costumes)
             else if (basicMatches) {
-                acc.push({ ...pokemon, currentImage: isShiny ? pokemon.shiny_image : pokemon.image });
+                let imageToUse = pokemon.image;
+                if (isShiny && showShadow) {
+                    imageToUse = pokemon.shiny_shadow_image;
+                } else if (isShiny) {
+                    imageToUse = pokemon.shiny_image;
+                } else if (showShadow) {
+                    imageToUse = pokemon.shadow_image;
+                }
+                acc.push({ ...pokemon, currentImage: imageToUse });
             }
         
             return acc;
         }, []);
         
         setDisplayedPokemons(filteredPokemons);
-    }, [selectedGeneration, isShiny, allPokemons, searchTerm, showCostume]);    
+    }, [selectedGeneration, isShiny, allPokemons, searchTerm, showCostume, showShadow]);  
     
     const toggleShiny = () => {
         setIsShiny(prevState => !prevState);
@@ -76,6 +93,10 @@ function pokemonList() {
     const toggleCostume = () => { // 2. Toggle function for costume state
         setShowCostume(prevState => !prevState);
     };
+
+    const toggleShadow = () => {
+        setShowShadow(prevState => !prevState);
+    };    
 
     function formatForm(form) {
         if (!form) return "";
@@ -110,11 +131,12 @@ function pokemonList() {
                     />
                     <button onClick={toggleShiny} className={`shiny-button ${isShiny ? 'active' : ''}`}>
                         <img src="/images/shiny_icon.png" alt="Toggle Shiny" />
-                        {isShiny ? "Show Regular" : "Show Shiny"}
                     </button>
-                    <button onClick={toggleCostume} className={`shiny-button ${showCostume ? 'active' : ''}`}>
+                    <button onClick={toggleCostume} className={`costume-button ${showCostume ? 'active' : ''}`}>
                         <img src="/images/costume_icon.png" alt="Toggle Costume" />
-                        {showCostume ? "Hide Costumes" : "Show Costumes"}
+                    </button>
+                    <button onClick={toggleShadow} className={`shadow-button ${showShadow ? 'active' : ''}`}>
+                        <img src="/images/shadow_icon.png" alt="Toggle Shadow" />
                     </button>
                 </div>
                 <div className="header-section collect-section">
@@ -128,11 +150,25 @@ function pokemonList() {
                     <p>Loading...</p>
                 ) : (
                     <>
-                        {displayedPokemons.map((pokemon, index) => (
-                            <div className="pokemon-card" 
-                                key={`${pokemon.pokemon_id}-${pokemon.currentCostumeName || 'default'}`} 
-                                onClick={() => setSelectedPokemon(pokemon)}
-                            >
+                        {displayedPokemons.map((pokemon, index) => {
+                            if (showShadow && !pokemon.shadow_image) {
+                                return null;
+                            }
+                            // Calculate a unique key for each Pokemon
+                            let pokemonKey;
+                            if ([249, 250].includes(pokemon.pokemon_id)) {
+                                pokemonKey = pokemon.shadow_apex === 1 
+                                    ? `${pokemon.pokemon_id}-apex` 
+                                    : `${pokemon.pokemon_id}-default`;
+                            } else {
+                                pokemonKey = `${pokemon.pokemon_id}-${pokemon.currentCostumeName || 'default'}`;
+                            }
+
+                            return (
+                                <div className="pokemon-card" 
+                                    key={pokemonKey} 
+                                    onClick={() => setSelectedPokemon(pokemon)}
+                                >
                                 <img src={pokemon.currentImage} alt={pokemon.name} />
                                 <p>#{pokemon.pokedex_number}</p>
                                 <div className="type-icons">
@@ -147,7 +183,8 @@ function pokemonList() {
                                     {pokemon.name}
                                 </h2>
                             </div>
-                        ))}
+                            );
+                        })}
                         {selectedPokemon && 
                             <PokemonOverlay pokemon={selectedPokemon} onClose={() => setSelectedPokemon(null)} />
                         }

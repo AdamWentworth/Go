@@ -70,7 +70,7 @@
     color: white;
 }
 
-.shiny-button {
+button {
     background-color: #ccc; /* Non-shiny color */
     border: none;
     outline: none;
@@ -82,10 +82,10 @@
     transition: background-color 0.3s ease; /* Optional: for a smooth color transition */
 }
 
-.shiny-button img {
+
+.header-section img {
     width: 30px;
     height: 30px;
-    margin-right: 8px;
 }
 
 .shiny-button.active, .generation-buttons button.active {
@@ -93,6 +93,15 @@
     background-color: gold;
 }
 
+.costume-button.active, .generation-buttons button.active {
+    /* Your CSS for active state e.g. a different background color */
+    background-color: cyan;
+}
+
+.shadow-button.active, .generation-buttons button.active {
+    /* Your CSS for active state e.g. a different background color */
+    background-color: plum;
+}
 
 /* Removing focus border/outline for accessibility might not be recommended. 
    If you decide to remove it, ensure there are other clear focus states for accessibility. */
@@ -101,12 +110,20 @@
 }
 
 /* You can also style the button on hover for better user interaction */
-.shiny-button:hover {
+.header-section button:hover {
     background-color: #b5b5b5; /* Slightly darker non-shiny color */
 }
 
 .shiny-button.active:hover {
     background-color: #ffcc00; /* Slightly darker shiny color */
+}
+
+.costume-button.active:hover {
+    background-color: rgb(3, 187, 187); /* Slightly darker shiny color */
+}
+
+.shadow-button.active:hover {
+    background-color: rgb(152, 0, 152) /* Slightly darker shiny color */
 }
 
 .type-icons img {
