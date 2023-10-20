@@ -26,7 +26,7 @@
 .overlay-content {
     background-color: #333;
     color: white;
-    padding: 20px;
+    padding: 10px;
     border-radius: 10px;
     position: absolute;
     display: flex;
@@ -74,19 +74,19 @@
     height: auto;  /* Maintains aspect ratio */
 }
 
-.top-left {
+.main {
     right: 35%;
 }
 
-.top-right {
+.shiny {
     left: 10%;
 }
 
-.bottom-left {
+.moves {
     right: 75%;
 }
 
-.bottom-right {
+.costumes {
     left: 65%;
 }
 

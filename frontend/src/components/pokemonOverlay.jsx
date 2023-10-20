@@ -53,7 +53,7 @@ function PokemonOverlay({ pokemon, onClose }) { // Added the onClose prop
         <div className="pokemon-overlay" onClick={onClose}>
             <div className="background"></div>
             <div className="overlay-windows">
-                    <WindowOverlay onClose={onClose} position="bottom-left">
+                    <WindowOverlay onClose={onClose} position="moves">
                         <div className="column moves-column">
                         {/* Placeholder for Moves */}
                         <h1>Moves</h1>
@@ -67,7 +67,7 @@ function PokemonOverlay({ pokemon, onClose }) { // Added the onClose prop
                     </div>
                     </WindowOverlay>
 
-                    <WindowOverlay onClose={onClose} position="top-left">
+                    <WindowOverlay onClose={onClose} position="main">
                         <div className="column main-info-column">
                         <h1>Main Info</h1>
                         <img src={pokemon.currentImage} alt={pokemon.name} />
@@ -93,7 +93,7 @@ function PokemonOverlay({ pokemon, onClose }) { // Added the onClose prop
 
                     </WindowOverlay>
                     
-                    <WindowOverlay onClose={onClose} position="top-right">
+                    <WindowOverlay onClose={onClose} position="shiny">
                         <div className="column images-column">
                             <h1>Shiny Info</h1>
                         <img src={pokemon.shiny_image} alt={`${pokemon.name} Shiny`} />
@@ -105,7 +105,7 @@ function PokemonOverlay({ pokemon, onClose }) { // Added the onClose prop
                     </WindowOverlay>
 
                 {pokemon.costumes && pokemon.costumes.length > 0 && (
-                    <WindowOverlay onClose={onClose} position="bottom-right">
+                    <WindowOverlay onClose={onClose} position="costumes">
                         <div className="column costume-column">
                         <h1>Costumes</h1>
                     <ul>
