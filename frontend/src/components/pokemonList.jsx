@@ -42,6 +42,7 @@ function pokemonList() {
             const isGenerationSearch = generations.some(gen => gen.toLowerCase() === searchTerm.toLowerCase());
             const matchesSearch = !isGenerationSearch && pokemon.name && typeof pokemon.name === 'string' ? pokemon.name.toLowerCase().includes(searchTerm.toLowerCase()) : true;
             const basicMatches = matchesGeneration && matchesShiny && matchesSearch;
+            const alreadyAddedPokemonIds = new Set([249, 250]);
     
             if (singleFormPokedexNumbers.includes(pokemon.pokedex_number) && acc.some(p => p.pokedex_number === pokemon.pokedex_number)) {
                 return acc;
@@ -67,7 +68,41 @@ function pokemonList() {
                     }
                 });
             }
-            // Otherwise, add the Pokemon itself (without costumes)
+            // If shadow is ON and it's Lugia or Ho-oh with an Apex form
+            if (showShadow && [249, 250].includes(pokemon.pokemon_id) && pokemon.shadow_apex) {
+                acc.push({ 
+                    ...pokemon, 
+                    currentImage: pokemon.shadow_image,
+                    apex: false 
+                });
+                acc.push({ 
+                    ...pokemon, 
+                    currentImage: showShadow ? pokemon.shadow_image.replace(".png", "_apex.png") : pokemon.shadow_image, // adjusted this line
+                    apex: true 
+                });
+            }
+            // If shadow is OFF and it's Lugia or Ho-oh and not added yet
+            else if (!showShadow && [249, 250].includes(pokemon.pokemon_id) && !alreadyAddedPokemonIds.has(pokemon.pokemon_id)) {
+                alreadyAddedPokemonIds.add(pokemon.pokemon_id);
+                acc.push({ 
+                    ...pokemon, 
+                    currentImage: pokemon.image
+                });
+            }                 
+            // Otherwise, just add the pokemon as is, if not added yet
+            else if (basicMatches && !alreadyAddedPokemonIds.has(pokemon.pokemon_id)) {
+                alreadyAddedPokemonIds.add(pokemon.pokemon_id);
+                let imageToUse = pokemon.image;
+                if (isShiny && showShadow) {
+                    imageToUse = pokemon.shiny_shadow_image;
+                } else if (isShiny) {
+                    imageToUse = pokemon.shiny_image;
+                } else if (showShadow) {
+                    imageToUse = pokemon.shadow_image;
+                }
+                acc.push({ ...pokemon, currentImage: imageToUse });
+            }              
+            // Otherwise, just add the pokemon as is
             else if (basicMatches) {
                 let imageToUse = pokemon.image;
                 if (isShiny && showShadow) {
@@ -79,10 +114,10 @@ function pokemonList() {
                 }
                 acc.push({ ...pokemon, currentImage: imageToUse });
             }
-        
+    
             return acc;
         }, []);
-        
+    
         setDisplayedPokemons(filteredPokemons);
     }, [selectedGeneration, isShiny, allPokemons, searchTerm, showCostume, showShadow]);  
     
@@ -150,49 +185,51 @@ function pokemonList() {
                     <p>Loading...</p>
                 ) : (
                     <>
-                        {displayedPokemons.map((pokemon, index) => {
-                            if (showShadow && !pokemon.shadow_image) {
-                                return null;
-                            }
-                            // Calculate a unique key for each Pokemon
-                            let pokemonKey;
-                            if ([249, 250].includes(pokemon.pokemon_id)) {
-                                pokemonKey = pokemon.shadow_apex === 1 
-                                    ? `${pokemon.pokemon_id}-apex` 
-                                    : `${pokemon.pokemon_id}-default`;
-                            } else {
-                                pokemonKey = `${pokemon.pokemon_id}-${pokemon.currentCostumeName || 'default'}`;
-                            }
+                        {
+    displayedPokemons.map((pokemon, index) => {
+        if (showShadow && !pokemon.shadow_image) {
+            return null;
+        }
 
-                            return (
-                                <div className="pokemon-card" 
-                                    key={pokemonKey} 
-                                    onClick={() => setSelectedPokemon(pokemon)}
-                                >
-                                <img src={pokemon.currentImage} alt={pokemon.name} />
-                                <p>#{pokemon.pokedex_number}</p>
-                                <div className="type-icons">
-                                    {pokemon.type_1_icon && <img src={pokemon.type_1_icon} alt={pokemon.type1_name} />}
-                                    {pokemon.type_2_icon && <img src={pokemon.type_2_icon} alt={pokemon.type2_name} />}
-                                </div>
-                                <h2>
-                                    {showCostume && pokemon.currentCostumeName
-                                        ? <span className="pokemon-form">{formatForm(pokemon.currentCostumeName)} </span>
-                                        : pokemon.form && !singleFormPokedexNumbers.includes(pokemon.pokedex_number) && 
-                                        <span className="pokemon-form">{formatForm(pokemon.form)} </span>}
-                                    {pokemon.name}
-                                </h2>
-                            </div>
-                            );
-                        })}
-                        {selectedPokemon && 
-                            <PokemonOverlay pokemon={selectedPokemon} onClose={() => setSelectedPokemon(null)} />
-                        }
-                    </>
-                )}
+        // Calculate a unique key for each Pokemon
+        const apexSuffix = pokemon.shadow_apex === 1 ? `-apex-${index}` : `-default-${index}`;
+        const costumeSuffix = `-${pokemon.currentCostumeName || 'default'}-${index}`;
+
+        let pokemonKey = [249, 250].includes(pokemon.pokemon_id)
+            ? `${pokemon.pokemon_id}${apexSuffix}`
+            : `${pokemon.pokemon_id}${costumeSuffix}`;
+
+        return (
+            <div className="pokemon-card"
+                key={pokemonKey}
+                onClick={() => setSelectedPokemon(pokemon)}
+            >
+                <img src={pokemon.currentImage} alt={pokemon.name} />
+                <p>#{pokemon.pokedex_number}</p>
+                <div className="type-icons">
+                    {pokemon.type_1_icon && <img src={pokemon.type_1_icon} alt={pokemon.type1_name} />}
+                    {pokemon.type_2_icon && <img src={pokemon.type_2_icon} alt={pokemon.type2_name} />}
+                </div>
+                <h2>
+                    {showCostume && pokemon.currentCostumeName
+                        ? <span className="pokemon-form">{formatForm(pokemon.currentCostumeName)} </span>
+                        : pokemon.form && !singleFormPokedexNumbers.includes(pokemon.pokedex_number) &&
+                        <span className="pokemon-form">{formatForm(pokemon.form)} </span>}
+                    {pokemon.name}
+                </h2>
             </div>
-        </div>
-    );
+        );
+    })
 }
+{selectedPokemon &&
+    <PokemonOverlay pokemon={selectedPokemon} onClose={() => setSelectedPokemon(null)} />
+}
+</>
+)}
+</div>
+</div>
+);
+}
+
 
 export default pokemonList;
