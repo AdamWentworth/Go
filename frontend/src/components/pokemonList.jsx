@@ -42,7 +42,7 @@ function pokemonList() {
             const isGenerationSearch = generations.some(gen => gen.toLowerCase() === searchTerm.toLowerCase());
             const matchesSearch = !isGenerationSearch && pokemon.name && typeof pokemon.name === 'string' ? pokemon.name.toLowerCase().includes(searchTerm.toLowerCase()) : true;
             const basicMatches = matchesGeneration && matchesShiny && matchesSearch;
-            const alreadyAddedPokemonIds = new Set([249, 250]);
+            const alreadyAddedPokemonIds = new Set([]);
     
             if (singleFormPokedexNumbers.includes(pokemon.pokedex_number) && acc.some(p => p.pokedex_number === pokemon.pokedex_number)) {
                 return acc;
@@ -68,27 +68,7 @@ function pokemonList() {
                     }
                 });
             }
-            // If shadow is ON and it's Lugia or Ho-oh with an Apex form
-            if (showShadow && [249, 250].includes(pokemon.pokemon_id) && pokemon.shadow_apex) {
-                acc.push({ 
-                    ...pokemon, 
-                    currentImage: pokemon.shadow_image,
-                    apex: false 
-                });
-                acc.push({ 
-                    ...pokemon, 
-                    currentImage: showShadow ? pokemon.shadow_image.replace(".png", "_apex.png") : pokemon.shadow_image, // adjusted this line
-                    apex: true 
-                });
-            }
-            // If shadow is OFF and it's Lugia or Ho-oh and not added yet
-            else if (!showShadow && [249, 250].includes(pokemon.pokemon_id) && !alreadyAddedPokemonIds.has(pokemon.pokemon_id)) {
-                alreadyAddedPokemonIds.add(pokemon.pokemon_id);
-                acc.push({ 
-                    ...pokemon, 
-                    currentImage: pokemon.image
-                });
-            }                 
+                           
             // Otherwise, just add the pokemon as is, if not added yet
             else if (basicMatches && !alreadyAddedPokemonIds.has(pokemon.pokemon_id)) {
                 alreadyAddedPokemonIds.add(pokemon.pokemon_id);
@@ -190,6 +170,11 @@ function pokemonList() {
         if (showShadow && !pokemon.shadow_image) {
             return null;
         }
+        
+        // Hide the card for Pokémon with ID 1301 or 1302 when shadow is off
+        if (!showShadow && [1301, 1302].includes(pokemon.pokemon_id)) {
+            return null;
+        }
 
         // Calculate a unique key for each Pokemon
         const apexSuffix = pokemon.shadow_apex === 1 ? `-apex-${index}` : `-default-${index}`;
@@ -221,6 +206,7 @@ function pokemonList() {
         );
     })
 }
+
 {selectedPokemon &&
     <PokemonOverlay pokemon={selectedPokemon} onClose={() => setSelectedPokemon(null)} />
 }

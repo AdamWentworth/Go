@@ -48,8 +48,7 @@ router.get('/api/pokemons', (req, res) => {
                 costumes: [],
                 type_1_icon: pokemon.type1_name ? `/images/types/${pokemon.type1_name.toLowerCase()}.png` : null,
                 type_2_icon: pokemon.type2_name ? `/images/types/${pokemon.type2_name.toLowerCase()}.png` : null,
-                shadow_shiny_available: pokemon.shadow_shiny_available,
-                shadow_apex: pokemon.shadow_apex
+                shadow_shiny_available: pokemon.shadow_shiny_available
             };
 
             if (pokemon.form) {

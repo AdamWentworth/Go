@@ -70,7 +70,7 @@
     color: white;
 }
 
-button {
+.header-section button {
     background-color: #ccc; /* Non-shiny color */
     border: none;
     outline: none;
