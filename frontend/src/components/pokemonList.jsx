@@ -116,11 +116,17 @@ function pokemonList() {
     function formatForm(form) {
         if (!form) return "";
     
-        return form
+        const words = form
             .split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' ');
-    }
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+    
+        // If there are only 2 words, just return as they are already capitalized
+        if (words.length === 2) {
+            return words.join(' ');
+        }
+    
+        return words.join(' ');
+    }     
     
     return (
         <div>
@@ -168,11 +174,6 @@ function pokemonList() {
                         {
     displayedPokemons.map((pokemon, index) => {
         if (showShadow && !pokemon.shadow_image) {
-            return null;
-        }
-        
-        // Hide the card for Pokémon with ID 1301 or 1302 when shadow is off
-        if (!showShadow && [1301, 1302].includes(pokemon.pokemon_id)) {
             return null;
         }
 
