@@ -15,6 +15,52 @@ function pokemonList() {
     const singleFormPokedexNumbers = [649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741]; // Add specific numbers as per your requirement.
     const [selectedPokemon, setSelectedPokemon] = useState(null);
 
+    function determinePokemonImage(pokemon, isShiny, showShadow, costume) {
+        let image;
+        if (costume) {
+            if (isShiny && showShadow) {
+                image = costume.shiny_shadow_image;
+            } else if (isShiny) {
+                image = costume.shiny_image;
+            } else if (showShadow) {
+                image = costume.shadow_image;
+            } else {
+                image = costume.image;
+            }
+        } else {
+            if (isShiny && showShadow) {
+                image = pokemon.shiny_shadow_image;
+            } else if (isShiny) {
+                image = pokemon.shiny_image;
+            } else if (showShadow) {
+                image = pokemon.shadow_image;
+            } else {
+                image = pokemon.image;
+            }
+        }
+        return image;
+    }
+    
+    function shouldAddPokemon(pokemon, costume) {
+        const matchesGeneration = selectedGeneration ? pokemon.generation === selectedGeneration : true;
+        const matchesShiny = isShiny && showShadow ? pokemon.shiny_available === 1 && pokemon.shadow_shiny_available === 1 : (isShiny ? pokemon.shiny_available === 1 : true);
+        const isGenerationSearch = generations.some(gen => gen.toLowerCase() === searchTerm.toLowerCase());
+        const matchesSearch = !isGenerationSearch && pokemon.name && typeof pokemon.name === 'string' ? pokemon.name.toLowerCase().includes(searchTerm.toLowerCase()) : true;
+        
+        const basicMatches = matchesGeneration && matchesShiny && matchesSearch;
+    
+        if (costume) {
+            return (
+                !isShiny && !showShadow ||
+                (isShiny && !showShadow && costume.shiny_available === 1) ||
+                (!isShiny && showShadow && costume.shadow_available === 1) ||
+                (isShiny && showShadow && costume.shiny_available === 1 && costume.shiny_shadow_available === 1)
+            ) && basicMatches; // Combine the costume conditions with basicMatches
+        } else {
+            return basicMatches;
+        }
+    }
+    
     const generations = [
         "Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola", "Galar", "Hisui", "Paldea"
     ];
@@ -37,70 +83,36 @@ function pokemonList() {
     
     useEffect(() => {
         const filteredPokemons = allPokemons.reduce((acc, pokemon) => {
-            const matchesGeneration = selectedGeneration ? pokemon.generation === selectedGeneration : true;
-            const matchesShiny = isShiny ? pokemon.shiny_available === 1 : true;
-            const isGenerationSearch = generations.some(gen => gen.toLowerCase() === searchTerm.toLowerCase());
-            const matchesSearch = !isGenerationSearch && pokemon.name && typeof pokemon.name === 'string' ? pokemon.name.toLowerCase().includes(searchTerm.toLowerCase()) : true;
-            const basicMatches = matchesGeneration && matchesShiny && matchesSearch;
-            const alreadyAddedPokemonIds = new Set([]);
-    
-            if (singleFormPokedexNumbers.includes(pokemon.pokedex_number) && acc.some(p => p.pokedex_number === pokemon.pokedex_number)) {
-                return acc;
-            }
+            const shadowCostumes = [20, 33, 143, 403];
         
-            if (showCostume && basicMatches) {
-                pokemon.costumes.forEach(costume => {
-                    // Check if the costume's shiny variant is available when shiny toggle is on
-                    if (!isShiny || (isShiny && costume.shiny_available === 1)) {
-                        let costumeImageToUse = costume.image;
-                        if (isShiny && showShadow) {
-                            costumeImageToUse = costume.shiny_shadow_image; // Assuming you have a shiny shadow image for costumes
-                        } else if (isShiny) {
-                            costumeImageToUse = costume.shiny_image;
-                        } else if (showShadow) {
-                            costumeImageToUse = costume.shadow_image; // Assuming you have a shadow image for costumes
+            if (!singleFormPokedexNumbers.includes(pokemon.pokedex_number) || !acc.some(p => p.pokedex_number === pokemon.pokedex_number)) {
+                if (showCostume && pokemon.costumes) {
+                    pokemon.costumes.forEach(costume => {
+                        if (shouldAddPokemon(pokemon, costume)) {
+                            const imageToUse = determinePokemonImage(pokemon, isShiny, showShadow, costume);
+                            acc.push({ 
+                                ...pokemon, 
+                                currentImage: imageToUse,
+                                currentCostumeName: costume.name 
+                            });
                         }
+                    });
+                } else {
+                    if (shouldAddPokemon(pokemon, null)) {
+                        const imageToUse = determinePokemonImage(pokemon, isShiny, showShadow);
                         acc.push({ 
                             ...pokemon, 
-                            currentImage: costumeImageToUse,
-                            currentCostumeName: costume.name 
+                            currentImage: imageToUse
                         });
                     }
-                });
-            }
-                           
-            // Otherwise, just add the pokemon as is, if not added yet
-            else if (basicMatches && !alreadyAddedPokemonIds.has(pokemon.pokemon_id)) {
-                alreadyAddedPokemonIds.add(pokemon.pokemon_id);
-                let imageToUse = pokemon.image;
-                if (isShiny && showShadow) {
-                    imageToUse = pokemon.shiny_shadow_image;
-                } else if (isShiny) {
-                    imageToUse = pokemon.shiny_image;
-                } else if (showShadow) {
-                    imageToUse = pokemon.shadow_image;
                 }
-                acc.push({ ...pokemon, currentImage: imageToUse });
-            }              
-            // Otherwise, just add the pokemon as is
-            else if (basicMatches) {
-                let imageToUse = pokemon.image;
-                if (isShiny && showShadow) {
-                    imageToUse = pokemon.shiny_shadow_image;
-                } else if (isShiny) {
-                    imageToUse = pokemon.shiny_image;
-                } else if (showShadow) {
-                    imageToUse = pokemon.shadow_image;
-                }
-                acc.push({ ...pokemon, currentImage: imageToUse });
-            }
-    
+            }            
             return acc;
         }, []);
     
         setDisplayedPokemons(filteredPokemons);
-    }, [selectedGeneration, isShiny, allPokemons, searchTerm, showCostume, showShadow]);  
-    
+    }, [selectedGeneration, isShiny, allPokemons, searchTerm, showCostume, showShadow]);
+
     const toggleShiny = () => {
         setIsShiny(prevState => !prevState);
     };
@@ -126,8 +138,8 @@ function pokemonList() {
         }
     
         return words.join(' ');
-    }     
-    
+    }
+     
     return (
         <div>
             <div className="header">
@@ -173,7 +185,11 @@ function pokemonList() {
                     <>
                         {
     displayedPokemons.map((pokemon, index) => {
-        if (showShadow && !pokemon.shadow_image) {
+        if (isShiny && showShadow && (!pokemon.shiny_shadow_image || pokemon.shadow_shiny_available !== 1)) {
+            return null;
+        }
+    
+        if (showShadow && !isShiny && !pokemon.shadow_image) {
             return null;
         }
 
