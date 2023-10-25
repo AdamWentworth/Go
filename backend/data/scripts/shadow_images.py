@@ -1,5 +1,7 @@
 import os
+
 from PIL import Image
+
 
 def combine_images(pokemon_image_path, shadow_effect_path, shadow_icon_path, output_path):
     """

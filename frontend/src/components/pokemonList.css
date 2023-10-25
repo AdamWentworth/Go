@@ -48,7 +48,7 @@
 
 .pokemon-container {
     display: grid;
-    grid-template-columns: repeat(6, 1fr); /* 6 columns */
+    grid-template-columns: repeat(9, 1fr); /* 6 columns */
     gap: 20px; /* Spacing between cards */
     padding: 20px;
 }
@@ -56,9 +56,14 @@
 .pokemon-card {
     text-align: center;
     border: 1px solid #ddd; /* Add a border around each card */
+    font-size: 0.55rem;
     padding: 10px;
     border-radius: 8px;
     background-color: #333;
+}
+
+.pokemon-card h2 {
+    margin-top: 17.5px;
 }
 
 .pokemon-card img {
