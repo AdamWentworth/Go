@@ -58,6 +58,7 @@
 }
 
 .costume-images {
+    margin-top: 10px;
     display: flex;
     gap: 10px; /* Adjust the space between images */
     max-width: 50%; /* Reduces the width to half of the container */

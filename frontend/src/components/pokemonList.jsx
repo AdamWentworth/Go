@@ -1,85 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import './pokemonList.css';
 import PokemonOverlay from './pokemonOverlay'; 
+import useSearchFilters from './useSearchFilters'; // Import the search filters hook
+import { getPokemons } from './api';
+import { determinePokemonImage, shouldAddPokemon, formatForm } from './searchHelpers';
 
 function pokemonList() {
     // console.log("Collect component rendered");
     const [allPokemons, setAllPokemons] = useState([]);
     const [displayedPokemons, setDisplayedPokemons] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isShiny, setIsShiny] = useState(false);
-    const [showShadow, setShowShadow] = useState(false); 
-    const [selectedGeneration, setSelectedGeneration] = useState(null);
-    const [searchTerm, setSearchTerm] = useState("");
     const singleFormPokedexNumbers = [649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741]; // Add specific numbers as per your requirement.
     const [selectedPokemon, setSelectedPokemon] = useState(null);
-
-    function determinePokemonImage(pokemon, isShiny, showShadow, costume) {
-        let image;
-        if (costume) {
-            if (isShiny && showShadow) {
-                image = costume.shiny_shadow_image;
-            } else if (isShiny) {
-                image = costume.shiny_image;
-            } else if (showShadow) {
-                image = costume.shadow_image;
-            } else {
-                image = costume.image;
-            }
-        } else {
-            if (isShiny && showShadow) {
-                image = pokemon.shiny_shadow_image;
-            } else if (isShiny) {
-                image = pokemon.shiny_image;
-            } else if (showShadow) {
-                image = pokemon.shadow_image;
-            } else {
-                image = pokemon.image;
-            }
-        }
-        return image;
-    }
-    
-    function shouldAddPokemon(pokemon, costume) {
-        const matchesGeneration = selectedGeneration ? pokemon.generation === selectedGeneration : true;
-        const matchesShiny = isShiny && showShadow ? pokemon.shiny_available === 1 && pokemon.shadow_shiny_available === 1 : (isShiny ? pokemon.shiny_available === 1 : true);
-        const isGenerationSearch = generations.some(gen => gen.toLowerCase() === searchTerm.toLowerCase());
-        const matchesSearch = !isGenerationSearch && pokemon.name && typeof pokemon.name === 'string' ? pokemon.name.toLowerCase().includes(searchTerm.toLowerCase()) : true;
-        
-        const basicMatches = matchesGeneration && matchesShiny && matchesSearch;
-    
-        if (costume) {
-            return (
-                !isShiny && !showShadow ||
-                (isShiny && !showShadow && costume.shiny_available === 1) ||
-                (!isShiny && showShadow && costume.shadow_available === 1) ||
-                (isShiny && showShadow && costume.shiny_available === 1 && costume.shiny_shadow_available === 1)
-            ) && basicMatches; // Combine the costume conditions with basicMatches
-        } else {
-            return basicMatches;
-        }
-    }
-    
-    const generations = [
-        "Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola", "Galar", "Hisui", "Paldea"
-    ];
+    const {
+        isShiny, setIsShiny, showShadow, setShowShadow, 
+        selectedGeneration, setSelectedGeneration, searchTerm, setSearchTerm,
+        showCostume, setShowCostume, generations, pokemonTypes,
+        isTypeSearch, isGenerationSearch
+    } = useSearchFilters();
 
     useEffect(() => {
-        axios.get('http://localhost:3000/api/pokemons')
-            .then(response => {
-                console.log("API Response: ", response.data);
-                setAllPokemons(response.data);
-                setDisplayedPokemons(response.data);
+        getPokemons()
+            .then(data => {
+                console.log("API Response: ", data);
+                setAllPokemons(data);
+                setDisplayedPokemons(data);
                 setLoading(false);
             })
             .catch(error => {
                 console.error("Error fetching the Pokémon data: ", error);
                 setLoading(false);
             });
-    }, []);
-
-    const [showCostume, setShowCostume] = useState(false); // 1. Add new state for costume toggle
+    }, []);    
     
     useEffect(() => {
         const filteredPokemons = allPokemons.reduce((acc, pokemon) => {
@@ -88,7 +40,7 @@ function pokemonList() {
             if (!singleFormPokedexNumbers.includes(pokemon.pokedex_number) || !acc.some(p => p.pokedex_number === pokemon.pokedex_number)) {
                 if (showCostume && pokemon.costumes) {
                     pokemon.costumes.forEach(costume => {
-                        if (shouldAddPokemon(pokemon, costume)) {
+                        if (shouldAddPokemon(pokemon, costume, selectedGeneration, isShiny, pokemonTypes, searchTerm, generations, showShadow)) { 
                             const imageToUse = determinePokemonImage(pokemon, isShiny, showShadow, costume);
                             acc.push({ 
                                 ...pokemon, 
@@ -98,7 +50,7 @@ function pokemonList() {
                         }
                     });
                 } else {
-                    if (shouldAddPokemon(pokemon, null)) {
+                    if (shouldAddPokemon(pokemon, null, selectedGeneration, isShiny, pokemonTypes, searchTerm, generations, showShadow)) { 
                         const imageToUse = determinePokemonImage(pokemon, isShiny, showShadow);
                         acc.push({ 
                             ...pokemon, 
@@ -123,22 +75,7 @@ function pokemonList() {
 
     const toggleShadow = () => {
         setShowShadow(prevState => !prevState);
-    };    
-
-    function formatForm(form) {
-        if (!form) return "";
-    
-        const words = form
-            .split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
-    
-        // If there are only 2 words, just return as they are already capitalized
-        if (words.length === 2) {
-            return words.join(' ');
-        }
-    
-        return words.join(' ');
-    }
+    };   
      
     return (
         <div>
@@ -150,17 +87,21 @@ function pokemonList() {
                         placeholder="Search..."
                         value={searchTerm} 
                         onChange={(e) => {
-                            const term = e.target.value;  // Don't convert to lowercase here
+                            const term = e.target.value;
                             setSearchTerm(term);
-
-                            // Convert to lowercase only when doing the comparison
-                            const matchedGeneration = generations.find(gen => gen.toLowerCase() === term.toLowerCase()); 
                             
-                            setSelectedGeneration(prevState => {
-                                const newGeneration = matchedGeneration ? generations.indexOf(matchedGeneration) + 1 : null;
-                                return newGeneration;
-                            });
-                        }}
+                            const terms = term.split('&').map(t => t.trim());
+                        
+                            if(generations.includes(term.charAt(0).toUpperCase() + term.slice(1).toLowerCase())) {
+                                const matchedGeneration = generations.find(gen => gen.toLowerCase() === term.toLowerCase()); 
+                                setSelectedGeneration(prevState => {
+                                    const newGeneration = matchedGeneration ? generations.indexOf(matchedGeneration) + 1 : null;
+                                    return newGeneration;
+                                });
+                            } else {
+                                setSelectedGeneration(null);
+                            }
+                        }}                        
                     />
                     <button onClick={toggleShiny} className={`shiny-button ${isShiny ? 'active' : ''}`}>
                         <img src="/images/shiny_icon.png" alt="Toggle Shiny" />

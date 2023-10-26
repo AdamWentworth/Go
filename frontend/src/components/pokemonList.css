@@ -57,9 +57,14 @@
     text-align: center;
     font-size: 14px;
     border: 1px solid #ddd; /* Add a border around each card */
+    font-size: 0.55rem;
     padding: 10px;
     border-radius: 8px;
     background-color: #333;
+}
+
+.pokemon-card h2 {
+    margin-top: 17.5px;
 }
 
 .pokemon-card img {
