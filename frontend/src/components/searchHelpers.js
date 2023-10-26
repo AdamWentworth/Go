@@ -58,32 +58,50 @@ function matchesSearchTerm(pokemon, searchTerm, pokemonTypes, generations) {
         "paldea": 10
     };
 
-    const terms = searchTerm.includes('&') 
-        ? searchTerm.split('&').map(term => term.trim().toLowerCase()) 
-        : [searchTerm.toLowerCase()];
+    if (searchTerm.includes(',')) {
+        const terms = searchTerm.split(',').map(term => term.trim().toLowerCase());
 
-    for (const term of terms) {
-        const isTypeSearch = pokemonTypes.includes(term);
-        const isGenerationSearch = generations.includes(term.charAt(0).toUpperCase() + term.slice(1)); // Check if the term is a generation
+        for (const term of terms) {
+            if (checkTermMatches(pokemon, term, pokemonTypes, generationMap)) {
+                return true;
+            }
+        }
+        return false;
+    } else {
+        const terms = searchTerm.includes('&') 
+            ? searchTerm.split('&').map(term => term.trim().toLowerCase()) 
+            : [searchTerm.toLowerCase()];
 
-        if (isGenerationSearch) {
-            if (pokemon.generation !== generationMap[term]) {
-                return false;
-            }
-        } else if (isTypeSearch) {
-            if (!(pokemon.type1_name && pokemon.type1_name.toLowerCase() === term) && 
-                !(pokemon.type2_name && pokemon.type2_name.toLowerCase() === term)) {
-                return false;
-            }
-        } else {
-            if (!pokemon.name || typeof pokemon.name !== 'string' || !pokemon.name.toLowerCase().includes(term)) {
+        for (const term of terms) {
+            if (!checkTermMatches(pokemon, term, pokemonTypes, generationMap)) {
                 return false;
             }
         }
+        return true;
     }
-
-    return true;
 }
+
+function checkTermMatches(pokemon, term, pokemonTypes, generationMap) {
+    const isTypeSearch = pokemonTypes.includes(term);
+    const isGenerationSearch = Object.keys(generationMap).includes(term);
+
+    if (isGenerationSearch) {
+        return pokemon.generation === generationMap[term];
+    } else if (isTypeSearch) {
+        return (
+            (pokemon.type1_name && pokemon.type1_name.toLowerCase() === term) ||
+            (pokemon.type2_name && pokemon.type2_name.toLowerCase() === term)
+        );
+    } else {
+        return (
+            pokemon.name &&
+            typeof pokemon.name === 'string' &&
+            pokemon.name.toLowerCase().includes(term)
+        );
+    }
+}
+
+
 
 
 export function formatForm(form) {
