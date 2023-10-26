@@ -48,13 +48,14 @@
 
 .pokemon-container {
     display: grid;
-    grid-template-columns: repeat(6, 1fr); /* 6 columns */
+    grid-template-columns: repeat(9, 1fr); /* 6 columns */
     gap: 20px; /* Spacing between cards */
     padding: 20px;
 }
 
 .pokemon-card {
     text-align: center;
+    font-size: 14px;
     border: 1px solid #ddd; /* Add a border around each card */
     padding: 10px;
     border-radius: 8px;
