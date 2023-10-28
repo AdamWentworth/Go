@@ -101,9 +101,6 @@ function checkTermMatches(pokemon, term, pokemonTypes, generationMap) {
     }
 }
 
-
-
-
 export function formatForm(form) {
     if (!form) return "";
 

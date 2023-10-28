@@ -67,6 +67,10 @@
     margin-top: 17.5px;
 }
 
+.pokemon-card p {
+    font-size: 12px;
+}
+
 .pokemon-card img {
     max-width: 100%;
     height: auto;
