@@ -10,3 +10,14 @@ export function determinePokemonImage(pokemon, isShiny, showShadow, costume) {
     }
     return baseObject.image;
 }
+
+export function determinePokemonKey(pokemon, isShiny, showShadow) {
+    const apexSuffix = pokemon.shadow_apex === 1 ? `-apex` : `-default`;
+    const costumeSuffix = pokemon.currentCostumeName ? `-${pokemon.currentCostumeName}` : '';
+    const shinySuffix = isShiny ? `-shiny` : '';
+    const shadowSuffix = showShadow ? `-shadow` : '';
+
+    let pokemonKey = `${pokemon.pokemon_id}${shinySuffix}${shadowSuffix}${apexSuffix}${costumeSuffix}`;
+
+    return pokemonKey;
+}

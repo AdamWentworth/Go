@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useContext, memo } from 'react';
+import CacheContext from '../../contexts/cacheContext';
 import { formatForm } from '../../utils/formattingHelpers';
+import { determinePokemonKey } from '../../utils/imageHelpers';
 
 const PokemonCard = ({
     pokemon,
@@ -8,7 +10,7 @@ const PokemonCard = ({
     showShadow,
     singleFormPokedexNumbers
 }) => {
-    // logic related to rendering a single Pokemon card
+    const cache = useContext(CacheContext);  // Import the cache
 
     // Check for image visibility
     if (isShiny && showShadow && (!pokemon.shiny_shadow_image || pokemon.shadow_shiny_available !== 1)) {
@@ -19,20 +21,21 @@ const PokemonCard = ({
         return null;
     }
 
-    // Calculate a unique key for each Pokemon
-    const apexSuffix = pokemon.shadow_apex === 1 ? `-apex` : `-default`;
-    const costumeSuffix = `-${pokemon.currentCostumeName || 'default'}`;
+    let pokemonKey = determinePokemonKey(pokemon, isShiny, showShadow);
 
-    let pokemonKey = [249, 250].includes(pokemon.pokemon_id)
-        ? `${pokemon.pokemon_id}${apexSuffix}`
-        : `${pokemon.pokemon_id}${costumeSuffix}`;
+    // Check if the image is in cache
+    const cachedImage = cache.get(pokemonKey);
+    if (!cachedImage) {
+        // If image is not in cache, save it to cache
+        cache.set(pokemonKey, pokemon.currentImage);
+    }
 
     return (
         <div className="pokemon-card"
             key={pokemonKey}
             onClick={() => setSelectedPokemon(pokemon)}
         >
-            <img src={pokemon.currentImage} alt={pokemon.name} />
+            <img src={cachedImage || pokemon.currentImage} alt={pokemon.name} />
             <p>#{pokemon.pokedex_number}</p>
             <div className="type-icons">
                 {pokemon.type_1_icon && <img src={pokemon.type_1_icon} alt={pokemon.type1_name} />}
@@ -49,4 +52,5 @@ const PokemonCard = ({
     );
 };
 
-export default PokemonCard;
+export default memo(PokemonCard);
+

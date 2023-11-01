@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { shouldAddPokemon } from '../../utils/searchFunctions';
 import { determinePokemonImage } from '../../utils/imageHelpers';
 
 const useFilterPokemons = (allPokemons, filters) => {
-    const [displayedPokemons, setDisplayedPokemons] = useState([]);
     const {
         selectedGeneration,
         isShiny,
@@ -15,7 +14,7 @@ const useFilterPokemons = (allPokemons, filters) => {
         generations
     } = filters;
 
-    useEffect(() => {
+    const displayedPokemons = useMemo(() => {
         const filteredPokemons = allPokemons.reduce((acc, pokemon) => {
             const shadowCostumes = [20, 33, 143, 403];
 
@@ -44,7 +43,7 @@ const useFilterPokemons = (allPokemons, filters) => {
             return acc;
         }, []);
 
-        setDisplayedPokemons(filteredPokemons);
+        return filteredPokemons;
     }, [allPokemons, selectedGeneration, isShiny, searchTerm, showCostume, showShadow, singleFormPokedexNumbers, pokemonTypes, generations]);
 
     return displayedPokemons;

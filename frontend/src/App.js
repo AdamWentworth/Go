@@ -4,9 +4,13 @@ import Navbar from './components/navbar';
 import MainButtons from './components/mainButtons';
 import PokemonList from './components/PokemonList/pokemonList';
 import './App.css';
+import CacheContext from './contexts/cacheContext';
 
 function App() {
+    const cache = new Map();
+
     return (
+        <CacheContext.Provider value={cache}>
         <div className="App">
             <Navbar />
             <main>
@@ -18,6 +22,7 @@ function App() {
                 </Router>
             </main>
         </div>
+        </CacheContext.Provider>
     );
 }
 
