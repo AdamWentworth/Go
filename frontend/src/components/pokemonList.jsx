@@ -17,7 +17,7 @@ function pokemonList() {
         selectedGeneration, setSelectedGeneration, searchTerm, setSearchTerm,
         showCostume, setShowCostume, generations, pokemonTypes,
         isTypeSearch, isGenerationSearch
-    } = useSearchFilters();
+    } = useSearchFilters(allPokemons);
 
     useEffect(() => {
         getPokemons()
@@ -86,22 +86,7 @@ function pokemonList() {
                         type="text" 
                         placeholder="Search..."
                         value={searchTerm} 
-                        onChange={(e) => {
-                            const term = e.target.value;
-                            setSearchTerm(term);
-                            
-                            const terms = term.split('&').map(t => t.trim());
-                        
-                            if(generations.includes(term.charAt(0).toUpperCase() + term.slice(1).toLowerCase())) {
-                                const matchedGeneration = generations.find(gen => gen.toLowerCase() === term.toLowerCase()); 
-                                setSelectedGeneration(prevState => {
-                                    const newGeneration = matchedGeneration ? generations.indexOf(matchedGeneration) + 1 : null;
-                                    return newGeneration;
-                                });
-                            } else {
-                                setSelectedGeneration(null);
-                            }
-                        }}                        
+                        onChange={(e) => setSearchTerm(e.target.value)}                        
                     />
                     <button onClick={toggleShiny} className={`shiny-button ${isShiny ? 'active' : ''}`}>
                         <img src="/images/shiny_icon.png" alt="Toggle Shiny" />
