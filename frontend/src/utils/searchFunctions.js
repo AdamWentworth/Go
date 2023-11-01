@@ -1,15 +1,4 @@
-const generationMap = {
-    "kanto": 1,
-    "johto": 2,
-    "hoenn": 3,
-    "sinnoh": 4,
-    "unova": 5,
-    "kalos": 6,
-    "alola": 7,
-    "galar": 8,
-    "hisui": 9,
-    "paldea": 10
-};
+import { generationMap } from './constants';
 
 export function handleSearchTermChange(allPokemons, term, generations, pokemonTypes, setFilteredPokemonList) {
     const unionTerms = term.split(',').map(t => t.trim());
@@ -84,21 +73,32 @@ function matchesSearchTerm(pokemon, searchTerm, pokemonTypes, generations) {
 
 
 function checkTermMatches(pokemon, term, pokemonTypes, generationMap) {
+    const isNegation = term.startsWith('!');
+
+    if (isNegation) {
+        term = term.slice(1); // remove '!' from the term
+    }
+
     const isTypeSearch = pokemonTypes.includes(term);
     const isGenerationSearch = Object.keys(generationMap).includes(term);
 
+    let result = false;
+
     if (isGenerationSearch) {
-        return pokemon.generation === generationMap[term];
+        result = pokemon.generation === generationMap[term];
     } else if (isTypeSearch) {
-        return (
+        result = (
             (pokemon.type1_name && pokemon.type1_name.toLowerCase() === term) ||
             (pokemon.type2_name && pokemon.type2_name.toLowerCase() === term)
         );
     } else {
-        return (
+        result = (
             pokemon.name &&
             typeof pokemon.name === 'string' &&
             pokemon.name.toLowerCase().includes(term)
         );
     }
+
+    // If the term had a '!', negate the result
+    return isNegation ? !result : result;
 }
