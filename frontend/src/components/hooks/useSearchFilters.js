@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { generations, pokemonTypes, handleSearchTermChange } from './searchHelpers'; // Import the required functions and arrays
+import { generations, pokemonTypes } from '../../utils/constants'; // Import the required functions and arrays
+import { handleSearchTermChange } from '../../utils/searchFunctions';
+
 
 const useSearchFilters = (allPokemons) => {
     const [isShiny, setIsShiny] = useState(false);

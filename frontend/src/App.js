@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Navbar from './components/navbar';
 import MainButtons from './components/mainButtons';
-import PokemonList from './components/pokemonList';
+import PokemonList from './components/PokemonList/pokemonList';
 import './App.css';
 
 function App() {

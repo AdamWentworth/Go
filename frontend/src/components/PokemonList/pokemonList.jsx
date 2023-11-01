@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import './pokemonList.css';
 import PokemonOverlay from './pokemonOverlay'; 
-import useSearchFilters from './useSearchFilters'; // Import the search filters hook
-import { getPokemons } from './api';
-import { determinePokemonImage, shouldAddPokemon, formatForm } from './searchHelpers';
+import useSearchFilters from '../hooks/useSearchFilters'; // Import the search filters hook
+import { getPokemons } from '../../utils/api';
+import { shouldAddPokemon, formatForm } from '../../utils/searchFunctions';
+import SearchUI from './searchUI';
+import PokemonCard from './pokemonCard';
+import { determinePokemonImage } from '../../utils/imageHelpers'
+
 
 function pokemonList() {
     // console.log("Collect component rendered");
@@ -80,24 +84,16 @@ function pokemonList() {
     return (
         <div>
             <div className="header">
-                <div className="header-section browse-section">
-                    <h1>Browse</h1>
-                    <input 
-                        type="text" 
-                        placeholder="Search..."
-                        value={searchTerm} 
-                        onChange={(e) => setSearchTerm(e.target.value)}                        
-                    />
-                    <button onClick={toggleShiny} className={`shiny-button ${isShiny ? 'active' : ''}`}>
-                        <img src="/images/shiny_icon.png" alt="Toggle Shiny" />
-                    </button>
-                    <button onClick={toggleCostume} className={`costume-button ${showCostume ? 'active' : ''}`}>
-                        <img src="/images/costume_icon.png" alt="Toggle Costume" />
-                    </button>
-                    <button onClick={toggleShadow} className={`shadow-button ${showShadow ? 'active' : ''}`}>
-                        <img src="/images/shadow_icon.png" alt="Toggle Shadow" />
-                    </button>
-                </div>
+                <SearchUI
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    isShiny={isShiny}
+                    toggleShiny={toggleShiny}
+                    showCostume={showCostume}
+                    toggleCostume={toggleCostume}
+                    showShadow={showShadow}
+                    toggleShadow={toggleShadow}
+                />
                 <div className="header-section collect-section">
                     <h1>Collect</h1>
                     {/* Add any other content related to 'Collect' here */}
@@ -110,44 +106,16 @@ function pokemonList() {
                 ) : (
                     <>
                         {
-    displayedPokemons.map((pokemon, index) => {
-        if (isShiny && showShadow && (!pokemon.shiny_shadow_image || pokemon.shadow_shiny_available !== 1)) {
-            return null;
-        }
-    
-        if (showShadow && !isShiny && !pokemon.shadow_image) {
-            return null;
-        }
-
-        // Calculate a unique key for each Pokemon
-        const apexSuffix = pokemon.shadow_apex === 1 ? `-apex-${index}` : `-default-${index}`;
-        const costumeSuffix = `-${pokemon.currentCostumeName || 'default'}-${index}`;
-
-        let pokemonKey = [249, 250].includes(pokemon.pokemon_id)
-            ? `${pokemon.pokemon_id}${apexSuffix}`
-            : `${pokemon.pokemon_id}${costumeSuffix}`;
-
-        return (
-            <div className="pokemon-card"
-                key={pokemonKey}
-                onClick={() => setSelectedPokemon(pokemon)}
-            >
-                <img src={pokemon.currentImage} alt={pokemon.name} />
-                <p>#{pokemon.pokedex_number}</p>
-                <div className="type-icons">
-                    {pokemon.type_1_icon && <img src={pokemon.type_1_icon} alt={pokemon.type1_name} />}
-                    {pokemon.type_2_icon && <img src={pokemon.type_2_icon} alt={pokemon.type2_name} />}
-                </div>
-                <h2>
-                    {showCostume && pokemon.currentCostumeName
-                        ? <span className="pokemon-form">{formatForm(pokemon.currentCostumeName)} </span>
-                        : pokemon.form && !singleFormPokedexNumbers.includes(pokemon.pokedex_number) &&
-                        <span className="pokemon-form">{formatForm(pokemon.form)} </span>}
-                    {pokemon.name}
-                </h2>
-            </div>
-        );
-    })
+    displayedPokemons.map((pokemon, index) => (
+        <PokemonCard
+            key={index}
+            pokemon={pokemon}
+            setSelectedPokemon={setSelectedPokemon}
+            isShiny={isShiny}
+            showShadow={showShadow}
+            singleFormPokedexNumbers={singleFormPokedexNumbers}
+        />
+    ))
 }
 
 {selectedPokemon &&
