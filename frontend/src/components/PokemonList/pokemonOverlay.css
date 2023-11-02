@@ -106,3 +106,17 @@
     width: 180px;       /* adjust size as necessary */
     height: 180px;      /* adjust size as necessary */
 }
+
+/* Remove list-style */
+.pokemon-overlay ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  /* Style for the type icons to make them smaller */
+  .type-icon {
+    width: 20px; /* Example size, adjust as needed */
+    height: auto;
+    vertical-align: middle;
+  }
+  

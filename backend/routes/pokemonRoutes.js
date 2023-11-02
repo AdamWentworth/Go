@@ -86,7 +86,12 @@ router.get('/api/pokemons', (req, res) => {
                 };
             });
             
-            const movesQuery = "SELECT * FROM moves";
+            const movesQuery = `
+            SELECT 
+                m.*, 
+                t.name as type_name 
+            FROM moves m 
+            JOIN types t ON m.type_id = t.type_id`;    
 
             db.all(movesQuery, [], (err, allMoves) => {
                 if (err) {
@@ -106,14 +111,17 @@ router.get('/api/pokemons', (req, res) => {
                     const pokemonsWithAllData = pokemonsWithCostumes.map(pokemon => {
                         const relatedPokemonMoves = pokemonMoves.filter(pm => pm.pokemon_id === pokemon.pokemon_id);
                         const moves = relatedPokemonMoves.map(pm => {
-                            // Instead of just fetching the move name, fetch the entire move data.
                             const move = allMoves.find(m => m.move_id === pm.move_id);
-                            return move ? move : null;
-                        }).filter(Boolean);  // Filter out any null values (in case a move wasn't found).
+                            // If move is found, modify it to include the type name instead of the type_id
+                            return move ? {
+                                ...move,
+                                type: move.type_name.toLowerCase() // Using type_name and converting to lowercase
+                            } : null;
+                        }).filter(Boolean); // Filter out any null values (in case a move wasn't found).
                     
                         return {
                             ...pokemon,
-                            moves: moves  // Now this will contain full move data and not just move names
+                            moves: moves // This will now contain move data with type names
                         };
                     });
                     

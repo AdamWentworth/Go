@@ -1,33 +1,6 @@
 import React, { useState } from 'react';
 import './pokemonOverlay.css';
-
-function formatShinyRarity(rarity) {
-    switch(rarity) {
-        case "community_day":
-            return "Community Day ~1/25";
-        case "research_day":
-            return "Research Day ~1/10";
-        case "mega_raid":
-            return "Mega Raid ~1/60";
-        case "permaboosted":
-            return "Permaboosted ~1/64";
-        case "raid_day":
-            return "Raid Day ~1/10";
-        case "egg":
-            return "Egg ~1/10 - 1/64";
-        default:
-            return "Full Odds ~1/500";
-    }
-}
-
-function formatCostumeName(name) {
-    return name
-        .replace(/_/g, ' ')
-        .toLowerCase()
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-}
+import { formatShinyRarity, formatCostumeName } from '../../utils/formattingHelpers';
 
 function WindowOverlay({ title, children, onClose, position }) {
     const handleBackgroundClick = (event) => {
@@ -48,24 +21,42 @@ function WindowOverlay({ title, children, onClose, position }) {
     );
 }
 
-function PokemonOverlay({ pokemon, onClose }) { // Added the onClose prop
-    return (
-        <div className="pokemon-overlay" onClick={onClose}>
-            <div className="background"></div>
-            <div className="overlay-windows">
-                    <WindowOverlay onClose={onClose} position="moves">
-                        <div className="column moves-column">
-                        {/* Placeholder for Moves */}
-                        <h1>Moves</h1>
-                        <ul>
-                            {/* Example */}
-                            <li>Move 1</li>
-                            <li>Move 2</li>
-                            <li>Move 3</li>
-                            {/* Add the real moves here */}
-                        </ul>
-                    </div>
-                    </WindowOverlay>
+function getTypeIconPath(typeName) {
+  // Now using type's name to construct the image path, as per your backend changes
+  return `/images/types/${typeName.toLowerCase()}.png`;
+}
+
+function PokemonOverlay({ pokemon, onClose }) {
+  const fastAttacks = pokemon.moves.filter(move => move.is_fast === 1);
+  const chargedAttacks = pokemon.moves.filter(move => move.is_fast === 0);
+
+  return (
+      <div className="pokemon-overlay" onClick={onClose}>
+          <div className="background"></div>
+          <div className="overlay-windows">
+          <WindowOverlay onClose={onClose} position="moves">
+                  <div className="column moves-column">
+                      <h1>Moves</h1>
+                      <h2>Fast Attacks</h2>
+                      <ul>
+                          {fastAttacks.map((move) => (
+                              <li key={`fast-${move.move_id}`}>
+                                  <img className="type-icon" src={getTypeIconPath(move.type_name)} alt={`${move.type_name} type`} />
+                                  {move.name}
+                              </li>
+                          ))}
+                      </ul>
+                      <h2>Charged Attacks</h2>
+                      <ul>
+                          {chargedAttacks.map((move) => (
+                              <li key={`charged-${move.move_id}`}>
+                                  <img className="type-icon" src={getTypeIconPath(move.type_name)} alt={`${move.type_name} type`} />
+                                  {move.name}
+                              </li>
+                          ))}
+                      </ul>
+                  </div>
+              </WindowOverlay>
 
                     <WindowOverlay onClose={onClose} position="main">
                         <div className="column main-info-column">
