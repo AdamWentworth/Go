@@ -85,8 +85,41 @@ router.get('/api/pokemons', (req, res) => {
                     costumes: formattedCostumes
                 };
             });
+            
+            const movesQuery = "SELECT * FROM moves";
 
-            res.json(pokemonsWithCostumes);
+            db.all(movesQuery, [], (err, allMoves) => {
+                if (err) {
+                    res.status(500).json({ error: err.message });
+                    return;
+                }
+
+                // New query to fetch pokemon_moves.
+                const pokemonMovesQuery = "SELECT * FROM pokemon_moves";
+
+                db.all(pokemonMovesQuery, [], (err, pokemonMoves) => {
+                    if (err) {
+                        res.status(500).json({ error: err.message });
+                        return;
+                    }
+
+                    const pokemonsWithAllData = pokemonsWithCostumes.map(pokemon => {
+                        const relatedPokemonMoves = pokemonMoves.filter(pm => pm.pokemon_id === pokemon.pokemon_id);
+                        const moves = relatedPokemonMoves.map(pm => {
+                            // Instead of just fetching the move name, fetch the entire move data.
+                            const move = allMoves.find(m => m.move_id === pm.move_id);
+                            return move ? move : null;
+                        }).filter(Boolean);  // Filter out any null values (in case a move wasn't found).
+                    
+                        return {
+                            ...pokemon,
+                            moves: moves  // Now this will contain full move data and not just move names
+                        };
+                    });
+                    
+                    res.json(pokemonsWithAllData);                    
+                });
+            });
         });
     });
 });

@@ -14,20 +14,20 @@ const useFetchPokemons = () => {
   useEffect(() => {
     const cacheKey = "allPokemonsData";
     const currentTime = new Date().getTime();
-    const localStorageData = localStorage.getItem(cacheKey);
+    // const localStorageData = localStorage.getItem(cacheKey);
     
-    // Check if data exists in localStorage and hasn't expired
-    if (localStorageData) {
-        const parsedData = JSON.parse(localStorageData);
-        if (parsedData.timestamp && currentTime - parsedData.timestamp < EXPIRY_TIME) {
-            setAllPokemons(parsedData.data);
-            setLoading(false);
-            return; // Early exit from the useEffect since we have our data
-        }
-    }
+    // // Check if data exists in localStorage and hasn't expired
+    // if (localStorageData) {
+    //     const parsedData = JSON.parse(localStorageData);
+    //     if (parsedData.timestamp && currentTime - parsedData.timestamp < EXPIRY_TIME) {
+    //         setAllPokemons(parsedData.data);
+    //         setLoading(false);
+    //         return; // Early exit from the useEffect since we have our data
+    //     }
+    // }
     
-    // If data wasn't in localStorage or was expired, try fetching from the API
-    if (!localStorageData || !cache.has(cacheKey)) {
+    // // If data wasn't in localStorage or was expired, try fetching from the API
+    // if (!localStorageData || !cache.has(cacheKey)) {
         getPokemons()
             .then(data => {
                 setAllPokemons(data);
@@ -43,11 +43,11 @@ const useFetchPokemons = () => {
                 console.error("Error fetching the Pokémon data: ", error);
                 setLoading(false);
             });
-    } else {
-        // If data was in cache (but not localStorage or was expired in localStorage)
-        setAllPokemons(cache.get(cacheKey));
-        setLoading(false);
-    }
+    // } else {
+    //     // If data was in cache (but not localStorage or was expired in localStorage)
+    //     setAllPokemons(cache.get(cacheKey));
+    //     setLoading(false);
+    // }
   }, []);
 
 
