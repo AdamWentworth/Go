@@ -37,17 +37,14 @@
 
 /* Flex container for overlay windows */
 .overlay-windows {
-    display: flex;
+    display: inline-flex; /* changed from 'flex' to 'inline-flex' */
     flex-wrap: wrap;
     justify-content: center; /* Center windows horizontally */
-    align-items: center; /* Center windows vertically */
-    height: 100%;
-    position: fixed; /* Overlay window container should be fixed */
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
+    align-items: start; /* Align to the start, not stretch to the entire height */
+    position: relative; /* Make sure it's positioned relatively within pokemon-overlay */
+    z-index: 10; /* Above the semi-transparent background */
+    /* Remove top, left, right, bottom properties to avoid stretching */
+    padding: 10px; /* Optional: Add some space around the content */
 }
 
 /* Positioning classes related to WindowOverlay */

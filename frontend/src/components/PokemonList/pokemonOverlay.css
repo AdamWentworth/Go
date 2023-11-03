@@ -1,22 +1,20 @@
 /* pokemonOverlay.css */
 
-.pokemon-overlay,
-.background {
+.pokemon-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 1000;
-}
-
-.background {
-    background-color: rgba(0, 0, 0, 0.7);
-    /* z-index: 10; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.7); /* Dimming background */
+    z-index: 1000; /* Ensures overlay is on top */
 }
 
 .overlay-windows {
-    position: relative;
+    z-index: 2; /* Above the pseudo-element */
 }
 
 .column {
@@ -25,37 +23,6 @@
     box-sizing: border-box;
 }
 
-.costume-item {
-    display: flex;
-    align-items: center;
-}
-
-/* Decrease the max-width of the costume-images container to a smaller percentage or a fixed width */
-.costume-images {
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
-    max-width:1000%; /* Adjust this value to your preference */
-    height: auto;
-}
-
-/* Adjust the size of the images inside the costume-images container */
-.costume-images img {
-    width: auto; /* or a specific width, maintaining aspect ratio */
-    height: 180px; /* or any other value that suits your design */
-    /* Remove padding if not needed, or adjust accordingly */
-}
 
 
-.costume-column ul {
-    list-style-type: none;
-    padding-left: 0;
-}
 
-.type-section img {
-    padding: 5px;
-    margin-top: -15px;
-    margin-bottom: -20px;
-    width: 24px;
-    height: 24px;
-}

@@ -1,0 +1,52 @@
+.costume-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: start; /* Align to the start to place the content at the top */
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+    z-index: 1000; /* Ensure it's above other content */
+    padding-top: 50px; /* Add some padding at the top for better positioning */
+  }
+  
+  .costume-column {
+    background-color: #333;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: auto; /* This will make the column only as wide as its content */
+    max-width: 600px; /* Adjust max-width as necessary */
+    max-height: 80vh; /* Adjust height as needed */
+    overflow-y: auto; /* Scroll if content is too long */
+    z-index: 1010; /* Above the overlay background */
+  }
+
+.costume-item {
+    display: flex;
+    align-items: center;
+}
+
+/* Decrease the max-width of the costume-images container to a smaller percentage or a fixed width */
+.costume-images {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    max-width:1000%; /* Adjust this value to your preference */
+    height: auto;
+}
+
+/* Adjust the size of the images inside the costume-images container */
+.costume-images img {
+    width: auto; /* or a specific width, maintaining aspect ratio */
+    height: 180px; /* or any other value that suits your design */
+    /* Remove padding if not needed, or adjust accordingly */
+}
+
+
+.costume-column ul {
+    list-style-type: none;
+    padding-left: 0;
+}

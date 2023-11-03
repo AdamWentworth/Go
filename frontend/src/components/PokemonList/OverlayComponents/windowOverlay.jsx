@@ -1,9 +1,11 @@
+/* windowOverlay.jsx */
+
 import React from 'react';
 import './windowOverlay.css';
 
 function WindowOverlay({ children, onClose, position }) {
+  // Stop the propagation to prevent the click from reaching the pokemon-overlay
   const handleWindowClick = (event) => {
-    // This will stop the click from reaching the background
     event.stopPropagation();
   };
 
