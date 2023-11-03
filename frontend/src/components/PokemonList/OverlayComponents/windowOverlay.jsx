@@ -34,7 +34,6 @@ function WindowOverlay({ children, onClose, position }) {
 
   return (
     <div className={`overlay-content overlay-${position}`} onClick={handleWindowClick} style={{ order: getOrder(position) }}>
-      <button onClick={closeClick} className="close-button">X</button>
       {children}
     </div>
   );

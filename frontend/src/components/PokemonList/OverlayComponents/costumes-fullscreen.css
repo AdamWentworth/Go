@@ -19,7 +19,7 @@ body.fullscreen-active .column.costume-column.fullscreen {
   body.fullscreen-active .column.costume-column.fullscreen ul {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    gap: 10px;
     width: 95%;
     margin: 0 auto;
     padding: 0;
@@ -29,7 +29,7 @@ body.fullscreen-active .column.costume-column.fullscreen {
   body.fullscreen-active .fullscreen-toggle {
     position: fixed;
     top: 10px;
-    left: 10px;
+    right: 10px; /* Changed from left to right */
     z-index: 1001;
     background-color: #333;
     color: white;
@@ -38,11 +38,11 @@ body.fullscreen-active .column.costume-column.fullscreen {
     padding: 5px 10px;
     cursor: pointer;
     margin-left: 0;
-  }
+}
   
   body.fullscreen-active .column.costume-column.fullscreen li img {
-    width: 240px;
-    height: 240px;
+    max-width: 240px !important;
+    max-height: 240px !important;
     object-fit: contain;
     padding: 0px 0px 0px;
   }
@@ -50,3 +50,8 @@ body.fullscreen-active .column.costume-column.fullscreen {
   body.fullscreen-active .costume-column h1 {
     margin-top: 40px !important; /* forces override */
   }
+
+  /* Disable the close button when the costume full-screen overlay is active */
+body.fullscreen-active .universal-close-button {
+  display: none; /* Hides the button entirely */
+}

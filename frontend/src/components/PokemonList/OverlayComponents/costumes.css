@@ -61,7 +61,6 @@
   .costume-column > ul {
     list-style-type: none;
     padding-left: 0;
-    margin: 0 0 100px 0; /* No margin on top, right, and left, 20px margin on the bottom */
 }
 
   .fullscreen-toggle {

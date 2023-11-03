@@ -30,46 +30,59 @@ function PokemonOverlay({ pokemon, onClose }) {
 
   return (
     <div className="pokemon-overlay" onClick={handleOverlayClick}>
-      <div className="overlay-windows">
-        
-        {/* Render moves conditionally based on the total count */}
-        {totalMoves > 15 ? (
-          <>
+      <button onClick={onClose} className="universal-close-button">X</button>
+      {/* Render moves conditionally based on the total count */}
+      {totalMoves > 15 ? (
+        <>
+          <div className="overlay-windows">
             <WindowOverlay onClose={onClose} position="fast-moves">
               <MoveList moves={fastMoves} />
             </WindowOverlay>
+          </div>
+          <div className="overlay-windows">
             <WindowOverlay onClose={onClose} position="charged-moves">
               <MoveList moves={chargedMoves} />
             </WindowOverlay>
-          </>
-        ) : (
+          </div>
+        </>
+      ) : (
+        <div className="overlay-windows">
           <WindowOverlay onClose={onClose} position="moves">
             <MoveList moves={pokemon.moves} />
           </WindowOverlay>
-        )}
+        </div>
+      )}
 
+      <div className="overlay-windows">
         <WindowOverlay onClose={onClose} position="main">
           <MainInfo pokemon={pokemon} />
         </WindowOverlay>
-                
-        {showShinyWindow && (
+      </div>
+
+      {showShinyWindow && (
+        <div className="overlay-windows">
           <WindowOverlay onClose={onClose} position="shiny">
             <ShinyInfo pokemon={pokemon} />
           </WindowOverlay>
-        )}
+        </div>
+      )}
 
-        {showShadowWindow && (
+
+      {showShadowWindow && (
+        <div className="overlay-windows">
           <WindowOverlay onClose={onClose} position="shadow">
             <ShadowInfo pokemon={pokemon} />
           </WindowOverlay>
-        )}
-
-        {showCostumesWindow && (
+        </div>
+      )}
+      
+      {showCostumesWindow && (
+        <div className="overlay-windows">
           <WindowOverlay onClose={onClose} position="costumes">
             <Costumes costumes={pokemon.costumes} />
           </WindowOverlay>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

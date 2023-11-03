@@ -35,16 +35,17 @@
 }
 
 /* Flex container for overlay windows */
+/* Flex container for overlay windows */
 .overlay-windows {
-    display: inline-flex; /* changed from 'flex' to 'inline-flex' */
-    flex-wrap: wrap;
-    justify-content: center; /* Center windows horizontally */
-    align-items: start; /* Align to the start, not stretch to the entire height */
+    display: flex; /* 'inline-flex' is changed back to 'flex' */
+    flex-direction: column; /* Stack children vertically */
+    justify-content: flex-start; /* Align children to the start of the main-axis */
+    align-items: flex-start; /* Align children to the start of the cross-axis */
     position: relative; /* Make sure it's positioned relatively within pokemon-overlay */
     z-index: 10; /* Above the semi-transparent background */
-    /* Remove top, left, right, bottom properties to avoid stretching */
-    padding: 10px; /* Optional: Add some space around the content */
+    margin: 10px; /* Optional: Add some space around the content */
 }
+
 
 /* Positioning classes related to WindowOverlay */
 /* These are now handled by the flex order */

@@ -11,6 +11,6 @@
 
 /* Styles for the images */
 .images-container img {
-    max-width: 180px; /* Set a specific max-width for the images, or use a percentage */
+    max-width: 240px; /* Set a specific max-width for the images, or use a percentage */
     height: auto; /* Maintain aspect ratio */
 }

@@ -26,6 +26,18 @@
     box-sizing: border-box;
 }
 
+.universal-close-button {
+    position: fixed; /* or absolute, depending on your layout */
+    top: 10px; /* Adjust the value as needed */
+    right: 10px; /* Adjust the value as needed */
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: white; /* Or any color that makes the button visible against your background */
+    cursor: pointer;
+    z-index: 100; /* Make sure it's above all overlay content */
+  }
+  
 
 
 
