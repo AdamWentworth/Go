@@ -1,55 +1,28 @@
 /* pokemonOverlay.css */
 
-.pokemon-overlay {
+.pokemon-overlay,
+.background {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 1000; /* This ensures the dark background is above other content but below the overlay windows */
+    z-index: 1000;
 }
 
 .background {
-    background-color: rgba(0, 0, 0, 0.7); /* Darken the background */
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000; /* Ensure the background covers the entire screen */
+    background-color: rgba(0, 0, 0, 0.7);
+    /* z-index: 10; */
 }
 
 .overlay-windows {
-    position: relative; /* Make the children's position relative to this container */
-}
-
-.overlay-content {
-    background-color: #333;
-    color: white;
-    padding: 10px;
-    border-radius: 10px;
-    position: absolute;
-    display: flex;
-    flex-direction: column; /* Change to a vertical layout */
-    z-index: 1001;
-    top: 50%; /* Centers it vertically */
-    left: 50%; /* Centers it horizontally */
-    transform: translate(-50%, -50%); /* Adjusts for the width and height of the container */
-}
-
-.close-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    font-size: 24px;
+    position: relative;
 }
 
 .column {
     flex: 1;
     padding: 10px;
-    box-sizing: border-box; /* Ensures padding doesn't increase the size of the column */
+    box-sizing: border-box;
 }
 
 .costume-item {
@@ -57,66 +30,32 @@
     align-items: center;
 }
 
+/* Decrease the max-width of the costume-images container to a smaller percentage or a fixed width */
 .costume-images {
     margin-top: 10px;
     display: flex;
-    gap: 10px; /* Adjust the space between images */
-    max-width: 50%; /* Reduces the width to half of the container */
-    height: auto;  /* Maintains aspect ratio */
+    gap: 10px;
+    max-width:1000%; /* Adjust this value to your preference */
+    height: auto;
 }
+
+/* Adjust the size of the images inside the costume-images container */
+.costume-images img {
+    width: auto; /* or a specific width, maintaining aspect ratio */
+    height: 180px; /* or any other value that suits your design */
+    /* Remove padding if not needed, or adjust accordingly */
+}
+
 
 .costume-column ul {
-    list-style-type: none; /* This removes the bullets */
-    padding-left: 0; /* This removes any default padding that might indent the list items */
-}
-
-.costume-images img {
-    width: 100%; /* Adjust this value to change the size of the images */
-    height: auto;  /* Maintains aspect ratio */
-}
-
-.main {
-    right: 35%;
-}
-
-.shiny {
-    left: 10%;
-}
-
-.moves {
-    right: 75%;
-}
-
-.costumes {
-    left: 65%;
+    list-style-type: none;
+    padding-left: 0;
 }
 
 .type-section img {
     padding: 5px;
     margin-top: -15px;
     margin-bottom: -20px;
-    width: 24px;       /* adjust size as necessary */
-    height: 24px;      /* adjust size as necessary */
+    width: 24px;
+    height: 24px;
 }
-
-.costume-images img {
-    padding: 5px;
-    margin-top: -15px;
-    margin-bottom: -20px;
-    width: 180px;       /* adjust size as necessary */
-    height: 180px;      /* adjust size as necessary */
-}
-
-/* Remove list-style */
-.pokemon-overlay ul {
-    list-style: none;
-    padding: 0;
-  }
-  
-  /* Style for the type icons to make them smaller */
-  .type-icon {
-    width: 20px; /* Example size, adjust as needed */
-    height: auto;
-    vertical-align: middle;
-  }
-  
