@@ -9,44 +9,50 @@
     align-items: start; /* Align to the start to place the content at the top */
     background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
     z-index: 1000; /* Ensure it's above other content */
-    padding-top: 50px; /* Add some padding at the top for better positioning */
   }
   
   .costume-column {
     background-color: #333;
     color: white;
-    padding: 20px;
     border-radius: 10px;
     width: auto; /* This will make the column only as wide as its content */
     max-width: 600px; /* Adjust max-width as necessary */
-    max-height: 80vh; /* Adjust height as needed */
-    overflow-y: auto; /* Scroll if content is too long */
+    max-height: 80vh;
     z-index: 1010; /* Above the overlay background */
+    padding: 20px; /* Add padding inside the column for better aesthetics */
+    margin-right: -25px;
+    margin-left: -25px;
   }
-
-.costume-item {
+  
+  .costume-item {
     display: flex;
     align-items: center;
-}
-
-/* Decrease the max-width of the costume-images container to a smaller percentage or a fixed width */
-.costume-images {
+    justify-content: center; /* Center items vertically and horizontally */
+  }
+  
+  /* Adjust the container for images to center content if there's no shiny variant */
+  .costume-images {
     margin-top: 10px;
     display: flex;
+    justify-content: center; /* This will center the images */
     gap: 10px;
-    max-width:1000%; /* Adjust this value to your preference */
-    height: auto;
-}
-
-/* Adjust the size of the images inside the costume-images container */
+  }
+  
+  /* Adjust the size of the images to be smaller and fit side by side */
+  /* Adjust the size of the images to be smaller and fit side by side, with a maximum height of 180px */
 .costume-images img {
-    width: auto; /* or a specific width, maintaining aspect ratio */
-    height: 180px; /* or any other value that suits your design */
-    /* Remove padding if not needed, or adjust accordingly */
-}
-
-
-.costume-column ul {
+    max-width: 100%; /* Adjust the width to half of its container */
+    max-height: 180px; /* Set the maximum height for the images */
+    height: auto; /* Maintain aspect ratio */
+    object-fit: contain; /* Ensure the image is contained within the box without being cropped */
+    margin-right: -10px;
+    margin-left: -10px;
+  }
+  
+  
+  .costume-column ul {
     list-style-type: none;
     padding-left: 0;
-}
+    margin: 0; /* Remove default margin */
+  }
+  

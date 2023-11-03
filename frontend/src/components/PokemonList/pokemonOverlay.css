@@ -15,6 +15,9 @@
 
 .overlay-windows {
     z-index: 2; /* Above the pseudo-element */
+    justify-content: center; /* This ensures that the children (windows) are centered */
+    flex-wrap: wrap; /* Allows wrapping if needed */
+    gap: 10px; /* Adjust as needed - adds a gap between window elements */
 }
 
 .column {

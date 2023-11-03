@@ -25,6 +25,8 @@ function WindowOverlay({ children, onClose, position }) {
         return 1;
       case 'costumes':
         return 4;
+      case 'shadow':
+        return 5
       default:
         return 0;
     }

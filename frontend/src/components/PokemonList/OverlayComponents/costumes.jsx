@@ -17,7 +17,7 @@ function Costumes({ costumes }) {
                 <img src={costume.shiny_image} alt={`Shiny Costume - ${formatCostumeName(costume.name)}`} />
               )}
             </div>
-            {formatCostumeName(costume.name)}
+            <strong>{formatCostumeName(costume.name)}</strong> {/* Costume name in bold */}
           </li>
         ))}
       </ul>
