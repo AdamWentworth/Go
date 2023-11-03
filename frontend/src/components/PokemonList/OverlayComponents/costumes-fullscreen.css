@@ -1,0 +1,52 @@
+/* costumes-fullscreen.css */
+
+body.fullscreen-active .column.costume-column.fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(0, 0, 0, 1) !important;
+    z-index: 1000 !important;
+    overflow-y: auto !important;
+    padding-top: 40px !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  body.fullscreen-active .column.costume-column.fullscreen ul {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    width: 95%;
+    margin: 0 auto;
+    padding: 0;
+  }
+  
+  /* This will ensure the button is only styled this way when fullscreen is active */
+  body.fullscreen-active .fullscreen-toggle {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 1001;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin-left: 0;
+  }
+  
+  body.fullscreen-active .column.costume-column.fullscreen li img {
+    width: 240px;
+    height: 240px;
+    object-fit: contain;
+    padding: 0px 0px 0px;
+  }
+  
+  body.fullscreen-active .costume-column h1 {
+    margin-top: 40px !important; /* forces override */
+  }

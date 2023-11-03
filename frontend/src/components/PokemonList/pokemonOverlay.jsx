@@ -17,6 +17,12 @@ function PokemonOverlay({ pokemon, onClose }) {
     }
   };
 
+  const totalMoves = pokemon.moves.length;
+
+  // Split moves into fast and charged for conditional rendering
+  const fastMoves = pokemon.moves.filter(move => move.is_fast === 1);
+  const chargedMoves = pokemon.moves.filter(move => move.is_fast === 0);
+
   // Convert `shiny_available` from integer to boolean for conditional rendering
   const showShinyWindow = pokemon.shiny_available === 1;
   const showCostumesWindow = Array.isArray(pokemon.costumes) && pokemon.costumes.length > 0;
@@ -25,9 +31,22 @@ function PokemonOverlay({ pokemon, onClose }) {
   return (
     <div className="pokemon-overlay" onClick={handleOverlayClick}>
       <div className="overlay-windows">
-        <WindowOverlay onClose={onClose} position="moves">
-          <MoveList moves={pokemon.moves} />
-        </WindowOverlay>
+        
+        {/* Render moves conditionally based on the total count */}
+        {totalMoves > 15 ? (
+          <>
+            <WindowOverlay onClose={onClose} position="fast-moves">
+              <MoveList moves={fastMoves} />
+            </WindowOverlay>
+            <WindowOverlay onClose={onClose} position="charged-moves">
+              <MoveList moves={chargedMoves} />
+            </WindowOverlay>
+          </>
+        ) : (
+          <WindowOverlay onClose={onClose} position="moves">
+            <MoveList moves={pokemon.moves} />
+          </WindowOverlay>
+        )}
 
         <WindowOverlay onClose={onClose} position="main">
           <MainInfo pokemon={pokemon} />

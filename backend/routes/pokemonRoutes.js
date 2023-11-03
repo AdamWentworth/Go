@@ -88,16 +88,18 @@ router.get('/api/pokemons', (req, res) => {
             
             const movesQuery = `
             SELECT 
-                m.*, 
-                t.name as type_name 
-            FROM moves m 
-            JOIN types t ON m.type_id = t.type_id`;    
-
+                m.*,
+                t.name as type_name,
+                pm.legacy
+            FROM moves m
+            JOIN types t ON m.type_id = t.type_id
+            JOIN pokemon_moves pm ON m.move_id = pm.move_id`; // Join with pokemon_moves
+    
             db.all(movesQuery, [], (err, allMoves) => {
                 if (err) {
                     res.status(500).json({ error: err.message });
                     return;
-                }
+                }    
 
                 // New query to fetch pokemon_moves.
                 const pokemonMovesQuery = "SELECT * FROM pokemon_moves";
@@ -112,19 +114,20 @@ router.get('/api/pokemons', (req, res) => {
                         const relatedPokemonMoves = pokemonMoves.filter(pm => pm.pokemon_id === pokemon.pokemon_id);
                         const moves = relatedPokemonMoves.map(pm => {
                             const move = allMoves.find(m => m.move_id === pm.move_id);
-                            // If move is found, modify it to include the type name instead of the type_id
+                            // If move is found, modify it to include the type name and legacy value
                             return move ? {
                                 ...move,
-                                type: move.type_name.toLowerCase() // Using type_name and converting to lowercase
+                                type: move.type_name.toLowerCase(), // Using type_name and converting to lowercase
+                                legacy: pm.legacy === 1 // Assuming legacy is stored as an integer 0 or 1
                             } : null;
                         }).filter(Boolean); // Filter out any null values (in case a move wasn't found).
                     
                         return {
                             ...pokemon,
-                            moves: moves // This will now contain move data with type names
+                            moves: moves // This will now contain move data with type names and legacy flag
                         };
                     });
-                    
+        
                     res.json(pokemonsWithAllData);                    
                 });
             });

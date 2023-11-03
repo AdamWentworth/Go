@@ -1,10 +1,19 @@
-/* moveList.jsx */
-
 import React from 'react';
-import './moveList.css'; // Now correctly pointing to the CSS file specific to MoveList
+import './moveList.css';
 
 function getTypeIconPath(typeName) {
   return `/images/types/${typeName.toLowerCase()}.png`;
+}
+
+function formatMoveName(name, isLegacy) {
+  if (isLegacy) {
+    return (
+      <strong>
+        {name}*
+      </strong>
+    );
+  }
+  return name;
 }
 
 function MoveList({ moves }) {
@@ -15,28 +24,74 @@ function MoveList({ moves }) {
     event.stopPropagation();
   };
 
-
   return (
     <div className="column moves-column" onClick={handleClick}>
       <h1>Moves</h1>
-      <h2>Fast Attacks</h2>
-      <ul>
-        {fastAttacks.map((move) => (
-          <li key={`fast-${move.move_id}`}>
-            <img className="type-icon" src={getTypeIconPath(move.type_name)} alt={`${move.type_name} type`} />
-            {move.name}
-          </li>
-        ))}
-      </ul>
-      <h2>Charged Attacks</h2>
-      <ul>
-        {chargedAttacks.map((move) => (
-          <li key={`charged-${move.move_id}`}>
-            <img className="type-icon" src={getTypeIconPath(move.type_name)} alt={`${move.type_name} type`} />
-            {move.name}
-          </li>
-        ))}
-      </ul>
+
+      {fastAttacks.length > 0 && (
+        <>
+          <h2>Fast Attacks</h2>
+          <table className="moves-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Name</th>
+                <th>PvP</th>
+                <th>Raid</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fastAttacks.map((move) => (
+                <tr key={`fast-${move.move_id}`}>
+                  <td>
+                    <img
+                      className="type-icon"
+                      src={getTypeIconPath(move.type_name)}
+                      alt={`${move.type_name} type`}
+                    />
+                  </td>
+                  <td>{formatMoveName(move.name, move.legacy)}</td>
+                  <td>{move.pvp_power}</td>
+                  <td>{move.raid_power}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {chargedAttacks.length > 0 && (
+        <>
+          <h2>Charged Attacks</h2>
+          <table className="moves-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Name</th>
+                <th>PvP</th>
+                <th>Raid</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chargedAttacks.map((move) => (
+                <tr key={`charged-${move.move_id}`}>
+                  <td>
+                    <img
+                      className="type-icon"
+                      src={getTypeIconPath(move.type_name)}
+                      alt={`${move.type_name} type`}
+                    />
+                  </td>
+                  <td>{formatMoveName(move.name, move.legacy)}</td>
+                  <td>{move.pvp_power}</td>
+                  <td>{move.raid_power}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
     </div>
   );
 }

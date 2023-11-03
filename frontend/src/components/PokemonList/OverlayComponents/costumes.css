@@ -1,3 +1,5 @@
+/*costumes.css*/
+
 .costume-overlay {
     position: fixed;
     top: 0;
@@ -22,6 +24,7 @@
     padding: 20px; /* Add padding inside the column for better aesthetics */
     margin-right: -25px;
     margin-left: -25px;
+    position: relative;
   }
   
   .costume-item {
@@ -53,6 +56,34 @@
   .costume-column ul {
     list-style-type: none;
     padding-left: 0;
-    margin: 0; /* Remove default margin */
   }
   
+  .costume-column > ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin: 0 0 100px 0; /* No margin on top, right, and left, 20px margin on the bottom */
+}
+
+  .fullscreen-toggle {
+    position: relative;
+    background-color: #111;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    z-index: 1002; /* Adjust if necessary to ensure it's above all other content */
+    margin-left: -235px;
+    top: -10px
+}
+
+.costume-column h1 {
+  margin-top: -40px !important; /* forces override */
+}
+
+
+.costume-column::after {
+  content: '';
+  display: block;
+  height: 0.1px; /* The space you want to add at the bottom */
+}
