@@ -35,7 +35,6 @@
 }
 
 /* Flex container for overlay windows */
-/* Flex container for overlay windows */
 .overlay-windows {
     display: flex; /* 'inline-flex' is changed back to 'flex' */
     flex-direction: column; /* Stack children vertically */
@@ -44,23 +43,4 @@
     position: relative; /* Make sure it's positioned relatively within pokemon-overlay */
     z-index: 10; /* Above the semi-transparent background */
     margin: 10px; /* Optional: Add some space around the content */
-}
-
-
-/* Positioning classes related to WindowOverlay */
-/* These are now handled by the flex order */
-.overlay-main {
-    order: 2; /* Adjust the order as needed */
-}
-
-.overlay-shiny {
-    order: 1;
-}
-
-.overlay-moves {
-    order: 3;
-}
-
-.overlay-costumes {
-    order: 4;
 }
