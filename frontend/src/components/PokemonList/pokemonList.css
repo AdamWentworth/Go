@@ -1,4 +1,4 @@
-/* Collect.css */
+/* pokemonList.css */
 
 .header {
     display: flex;
@@ -48,27 +48,34 @@
 
 .pokemon-container {
     display: grid;
-    grid-template-columns: repeat(9, 1fr); /* 6 columns */
-    gap: 20px; /* Spacing between cards */
-    padding: 20px;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 16px; /* Further reduced from 18px */
+    padding: 20px; /* This can remain unless it causes layout issues */
+    box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
+    width: calc(100vw - 40px); /* No change needed */
 }
 
 .pokemon-card {
     text-align: center;
-    font-size: 14px;
-    border: 1px solid #ddd; /* Add a border around each card */
-    font-size: 0.55rem;
-    padding: 10px;
+    border: 1px solid #ddd;
+    padding: 8px; /* Further reduced from 9px */
     border-radius: 8px;
     background-color: #333;
+    color: white;
+    font-size: calc((100vw - (8 * 16px)) / 100); /* Adjust font size calculation */
+    box-sizing: border-box;
 }
 
+/* Adjust heading and paragraph sizes if needed */
 .pokemon-card h2 {
-    margin-top: 17.5px;
+    margin-top: 17.5px; /* May need to adjust if the layout requires */
+    font-size: calc((100vw - (8 * 16px)) / 100 * 1.2);
 }
 
 .pokemon-card p {
-    font-size: 12px;
+    font-size: 12px; /* Further reduced from 10.8px */
 }
 
 .pokemon-card img {
@@ -147,3 +154,22 @@
 .pokemon-card p {
     margin-bottom: 5px;
 }
+
+
+@media (max-width: 768px) {
+    .pokemon-container {
+        gap: 8px; /* Further reduced from 9px */
+        padding: 10px; /* This can remain unless it causes layout issues */
+        width: calc(100vw - 20px); /* No change needed */
+    }
+
+    .pokemon-card {
+        padding: 4px; /* Further reduced from 4.5px */
+        font-size: calc((100vw - (8 * 8px)) / 100);
+    }
+}
+
+
+
+
+

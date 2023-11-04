@@ -8,7 +8,7 @@
     bottom: 0;
     display: flex;
     justify-content: center;
-    align-items: start; /* Align to the start to place the content at the top */
+    align-items: flex-start; /* Align to the start to place the content at the top */
     background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
     z-index: 1000; /* Ensure it's above other content */
   }
