@@ -1,0 +1,38 @@
+.evo-line-checkbox {
+    display: flex;
+    align-items: center;
+    font-size: 16px; /* Adjust the size as needed */
+    color: #ffffff; /* Your text color */
+    cursor: pointer;
+}
+
+.evo-checkbox {
+    /* Hide the default checkbox */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    /* Make the actual input invisible and take no space */
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.evo-line-custom-checkbox {
+    /* Create a custom circular box */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 32px; /* Your desired width */
+    height: 32px; /* Your desired height */
+    border: 2px solid #ffffff; /* Your desired border color */
+    border-radius: 50%;
+    margin-right: 8px; /* Adjust the space between the checkbox and the text */
+}
+
+/* When the checkbox is checked, add a checkmark */
+.evo-checkbox:checked + .evo-line-custom-checkbox::after {
+    content: '✓';
+    color: #ffffff; /* Checkmark color */
+    font-size: 24px;
+}
