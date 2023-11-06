@@ -22,27 +22,41 @@ const getEvolutionsFromDb = (callback) => {
 const buildEvolutionMap = (evolutions) => {
     const evolutionMap = {};
 
-    // First, we establish a map with default evolves_from and evolves_to as null
+    // First pass: Ensure all relevant keys exist in the evolutionMap
     evolutions.forEach(evo => {
         if (!evolutionMap[evo.pokemon_id]) {
-            evolutionMap[evo.pokemon_id] = { evolves_to: null };
+            evolutionMap[evo.pokemon_id] = { evolves_to: [], evolves_from: [] };
         }
         if (evo.evolves_to && !evolutionMap[evo.evolves_to]) {
-            evolutionMap[evo.evolves_to] = { evolves_from: null };
+            evolutionMap[evo.evolves_to] = { evolves_to: [], evolves_from: [] };
         }
     });
 
-    // Then we fill in the actual evolves_to and evolves_from values
+    // Second pass: Assign the evolution data
     evolutions.forEach(evo => {
+        // Add to evolves_to array for the evolving Pokémon
         if (evo.evolves_to) {
-            evolutionMap[evo.pokemon_id].evolves_to = evo.evolves_to;
-            evolutionMap[evo.evolves_to].evolves_from = evo.pokemon_id;
+            evolutionMap[evo.pokemon_id].evolves_to.push(evo.evolves_to);
+        }
+
+        // Add to evolves_from array for the Pokémon it evolves into
+        if (evolutionMap[evo.evolves_to]) {
+            evolutionMap[evo.evolves_to].evolves_from.push(evo.pokemon_id);
+        }
+    });
+
+    // Cleanup: Remove any empty evolves_to or evolves_from arrays
+    Object.keys(evolutionMap).forEach(pokemonId => {
+        if (evolutionMap[pokemonId].evolves_to.length === 0) {
+            delete evolutionMap[pokemonId].evolves_to;
+        }
+        if (evolutionMap[pokemonId].evolves_from.length === 0) {
+            delete evolutionMap[pokemonId].evolves_from;
         }
     });
 
     return evolutionMap;
 };
-
 
 module.exports = {
     getEvolutionsFromDb,

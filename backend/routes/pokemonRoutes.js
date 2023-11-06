@@ -54,12 +54,12 @@ router.get('/api/pokemons', (req, res) => {
                         // Add evolution data to each pokemon
                         const pokemonsWithEvolutions = pokemonsWithAllData.map(pokemon => {
                             const evolutionData = evolutionMap[pokemon.pokemon_id];
-                            // Only spread the evolution data if it exists
+                            // Spread the evolution data if it exists
                             if (evolutionData) {
                                 return {
                                     ...pokemon,
-                                    evolves_from: evolutionData.evolves_from,
-                                    evolves_to: evolutionData.evolves_to,
+                                    evolves_from: evolutionData.evolves_from, // This is now an array
+                                    evolves_to: evolutionData.evolves_to, // This is now an array
                                 };
                             }
                             // Otherwise, just return the pokemon data
