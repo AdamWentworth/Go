@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const sqlite3 = require('sqlite3').verbose();
 const { getPokemonsFromDb } = require('../services/pokemonService');
+const { getEvolutionsFromDb, buildEvolutionMap } = require('../services/evolutionsService'); // Import evolutions service
 const { getImagePathsForPokemon } = require('../utils/imagePaths');
 const { getCostumesForPokemon, formatCostumes } = require('../services/costumeService');
 const { getMovesForPokemon, formatMoves } = require('../services/movesService');
@@ -15,10 +16,8 @@ router.get('/api/pokemons', (req, res) => {
             return;
         }
 
-        // Use the utility function to construct image paths
         const pokemonsWithImages = rows.map(getImagePathsForPokemon);
 
-        // Fetch costumes and format them using the service function
         getCostumesForPokemon(db, (err, costumes) => {
             if (err) {
                 res.status(500).json({ error: err.message });
@@ -32,8 +31,7 @@ router.get('/api/pokemons', (req, res) => {
                     res.status(500).json({ error: err.message });
                     return;
                 }
-            
-                // Now we need to fetch the pokemon_moves
+
                 const pokemonMovesQuery = "SELECT * FROM pokemon_moves";
             
                 db.all(pokemonMovesQuery, [], (err, pokemonMoves) => {
@@ -41,14 +39,40 @@ router.get('/api/pokemons', (req, res) => {
                         res.status(500).json({ error: err.message });
                         return;
                     }
-            
+
                     const pokemonsWithAllData = formatMoves(pokemonsWithCostumes, allMoves, pokemonMoves);
-            
-                    res.json(pokemonsWithAllData);
+
+                    // Get evolutions and add them to the response
+                    getEvolutionsFromDb((err, evolutionMap) => {
+                        if (err) {
+                            res.status(500).json({ error: err.message });
+                            return;
+                        }
+
+                        // No need to call buildEvolutionMap since evolutionMap is already provided by getEvolutionsFromDb
+
+                        // Add evolution data to each pokemon
+                        const pokemonsWithEvolutions = pokemonsWithAllData.map(pokemon => {
+                            const evolutionData = evolutionMap[pokemon.pokemon_id];
+                            // Only spread the evolution data if it exists
+                            if (evolutionData) {
+                                return {
+                                    ...pokemon,
+                                    evolves_from: evolutionData.evolves_from,
+                                    evolves_to: evolutionData.evolves_to,
+                                };
+                            }
+                            // Otherwise, just return the pokemon data
+                            return pokemon;
+                        });
+
+                        res.json(pokemonsWithEvolutions);
+                    });
                 });
             });
         });
     });
 });
+
 
 module.exports = router;
