@@ -1,6 +1,6 @@
 import React, { useContext, memo } from 'react';
 import CacheContext from '../../contexts/cacheContext';
-import { formatForm } from '../../utils/formattingHelpers';
+import { formatForm, formatCostumeName } from '../../utils/formattingHelpers';
 import { determinePokemonKey } from '../../utils/imageHelpers';
 
 const PokemonCard = ({
@@ -42,9 +42,9 @@ const PokemonCard = ({
                 {pokemon.type_2_icon && <img src={pokemon.type_2_icon} alt={pokemon.type2_name} />}
             </div>
             <h2>
-                {showShadow && pokemon.currentCostumeName
-                    ? <span className="pokemon-form">{formatForm(pokemon.currentCostumeName)} </span>
-                    : pokemon.form && !singleFormPokedexNumbers.includes(pokemon.pokedex_number) &&
+                {pokemon.currentCostumeName &&
+                    <span className="pokemon-costume">{formatCostumeName(pokemon.currentCostumeName)} </span>}
+                {pokemon.form && !singleFormPokedexNumbers.includes(pokemon.pokedex_number) &&
                     <span className="pokemon-form">{formatForm(pokemon.form)} </span>}
                 {pokemon.name}
             </h2>

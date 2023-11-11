@@ -13,6 +13,17 @@ export function formatForm(form) {
     return words.join(' ');
 }
 
+export function formatCostume(costume) {
+    if (!costume || !costume.name) return "";
+
+    const words = costume.name
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+
+    return words.join(' ');
+}
+
+
 export function formatShinyRarity(rarity) {
     switch(rarity) {
         case "community_day":

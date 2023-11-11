@@ -1,7 +1,7 @@
 /* shinyInfo.jsx */
 
 import React from 'react';
-import './shinyInfo.css'; // You will create this CSS file in the next step
+import './shinyInfo.css'; 
 import { formatShinyRarity } from '../../../utils/formattingHelpers';
 
 function ShinyInfo({ pokemon }) {

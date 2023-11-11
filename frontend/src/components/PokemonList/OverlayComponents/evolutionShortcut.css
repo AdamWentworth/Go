@@ -14,8 +14,8 @@
 }
 
 .evolution-item img {
-    width: 100px; /* Adjust as needed */
-    height: 100px; /* Adjust as needed, keeping aspect ratio in mind */
+    width: 80px; /* Adjust as needed */
+    height: 80px; /* Adjust as needed, keeping aspect ratio in mind */
     object-fit: cover; /* Optional, for maintaining aspect ratio */
 }
 
@@ -25,4 +25,14 @@
     flex-direction: column; /* Arrange items vertically */
     align-items: center; /* Center items horizontally */
     cursor: pointer; /* Optional: changes cursor on hover */
+}
+
+.evolves-to {
+    max-height: 850px; /* Set your preferred max height */
+    overflow-y: auto; /* Enables vertical scrolling */
+    scrollbar-width: none; /* Hides scrollbar for Firefox */
+}
+
+.evolves-to::-webkit-scrollbar {
+    display: none; /* Hides scrollbar for WebKit browsers like Chrome and Safari */
 }
