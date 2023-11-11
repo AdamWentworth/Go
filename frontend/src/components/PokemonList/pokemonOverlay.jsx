@@ -14,10 +14,10 @@ import useFetchPokemons from '../hooks/useFetchPokemons';
 const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) => {
   const [currentPokemon, setCurrentPokemon] = useState(pokemon);
   const handleOverlayClick = (event) => {
-    if (event.target === event.currentTarget) {
+    if (!event.target.closest('.overlay-windows')) {
       onClose();
     }
-  };
+  };  
 
   const totalMoves = pokemon.moves.length;
 
@@ -41,23 +41,27 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
 
       {/* Evolution Shortcuts split into separate windows */}
       <div className="overlay-row evolution-shortcuts-row">
-        {/* Window for Evolves From */}
-        <WindowOverlay onClose={onClose} position="evolves-from">
-          <EvolutionShortcut
-            evolvesFrom={currentPokemon.evolves_from}
-            allPokemonData={allPokemons}
-            setSelectedPokemon={switchOverlay}
-          />
-        </WindowOverlay>
+        {/* Window for Evolves From - Only render if evolves_from data exists */}
+        {currentPokemon.evolves_from && (
+          <WindowOverlay onClose={onClose} position="evolves-from">
+            <EvolutionShortcut
+              evolvesFrom={currentPokemon.evolves_from}
+              allPokemonData={allPokemons}
+              setSelectedPokemon={switchOverlay}
+            />
+          </WindowOverlay>
+        )}
 
-        {/* Window for Evolves To */}
-        <WindowOverlay onClose={onClose} position="evolves-to">
-          <EvolutionShortcut
-            evolvesTo={currentPokemon.evolves_to}
-            allPokemonData={allPokemons}
-            setSelectedPokemon={switchOverlay}
-          />
-        </WindowOverlay>
+        {/* Window for Evolves To - Only render if evolves_to data exists */}
+        {currentPokemon.evolves_to && (
+          <WindowOverlay onClose={onClose} position="evolves-to">
+            <EvolutionShortcut
+              evolvesTo={currentPokemon.evolves_to}
+              allPokemonData={allPokemons}
+              setSelectedPokemon={switchOverlay}
+            />
+          </WindowOverlay>
+        )}
       </div>
 
       {/* Second Row: Other Overlay Windows */}

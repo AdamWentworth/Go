@@ -1,5 +1,7 @@
 /* windowOverlay.css */
 
+/* windowOverlay.css */
+
 .overlay-content {
     background-color: #333;
     color: white;
@@ -7,10 +9,9 @@
     border-radius: 10px;
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* Keep the ability to scroll */
+    overflow-y: auto;
     margin: 0px;
     flex: 0 1 auto;
-
     /* Hide scrollbar for Chrome, Safari, and Opera */
     &::-webkit-scrollbar {
         display: none;
@@ -30,18 +31,31 @@
     background: none;
     border: none;
     font-size: 24px;
-    color: white; /* Ensure the button is visible on the overlay */
-    cursor: pointer; /* Change cursor to pointer to indicate clickable action */
+    color: white;
+    cursor: pointer;
 }
 
 /* Flex container for overlay windows */
 .overlay-windows {
-    display: flex; /* 'inline-flex' is changed back to 'flex' */
-    flex-direction: column; /* Stack children vertically */
-    justify-content: flex-start; /* Align children to the start of the main-axis */
-    align-items: flex-start; /* Align children to the start of the cross-axis */
-    position: relative; /* Make sure it's positioned relatively within pokemon-overlay */
-    z-index: 10; /* Above the semi-transparent background */
-    margin: 10px; /* Optional: Add some space around the content */
+    /* display: flex; */
+    /* flex-direction: column; */
+    /* justify-content: flex-start; */
+    /* align-items: flex-start; */
+    /* position: relative; */
+    z-index: 10;
+    margin: 10px;
 }
 
+/* Positioning for evolvesFrom */
+.overlay-evolves-from {
+    position: absolute;
+    top: 50px; /* Adjust the top position as needed */
+    left: 50px; /* Adjust the left position as needed */
+}
+
+/* Positioning for evolvesTo */
+.overlay-evolves-to {
+    position: absolute;
+    top: 50px; /* Adjust the top position as needed */
+    right: 50px; /* Adjust the right position as needed */
+}

@@ -11,7 +11,7 @@
     align-items: center;
     background-color: rgba(0, 0, 0, 0.7); /* Dimming background */
     z-index: 1000; /* Ensures overlay is on top */
-    flex-direction: column; /* Organize children in a column */
+    flex-direction: column; 
 }
 
 .overlay-row {

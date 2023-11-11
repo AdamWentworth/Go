@@ -21,7 +21,6 @@ const EvolutionShortcut = ({ evolvesFrom, evolvesTo, allPokemonData, setSelected
     <div className="evolution-shortcut">
       {Array.isArray(evolvesFrom) && evolvesFrom.length > 0 && (
         <div className="evolution-list evolves-from">
-          <h3>Evolved From:</h3>
           {evolvesFrom.map((preEvolutionPokemonId) => (
             <div
               key={preEvolutionPokemonId}
@@ -37,7 +36,6 @@ const EvolutionShortcut = ({ evolvesFrom, evolvesTo, allPokemonData, setSelected
 
       {evolvesTo && evolvesTo.length > 0 && (
         <div className="evolution-list evolves-to">
-          <h3>Possible Evolutions:</h3>
           {evolvesTo.map((evolutionPokemonId) => (
             <div
               key={evolutionPokemonId}
