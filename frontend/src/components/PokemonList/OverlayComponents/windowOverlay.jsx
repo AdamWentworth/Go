@@ -9,11 +9,6 @@ function WindowOverlay({ children, onClose, position }) {
     event.stopPropagation();
   };
 
-  const closeClick = (e) => {
-    e.stopPropagation();
-    onClose();
-  };
-
   // Function to determine the order based on position
   const getOrder = (position) => {
     switch (position) {

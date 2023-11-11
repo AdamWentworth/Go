@@ -1,7 +1,5 @@
 /* windowOverlay.css */
 
-/* windowOverlay.css */
-
 .overlay-content {
     background-color: #333;
     color: white;
@@ -33,17 +31,6 @@
     font-size: 24px;
     color: white;
     cursor: pointer;
-}
-
-/* Flex container for overlay windows */
-.overlay-windows {
-    /* display: flex; */
-    /* flex-direction: column; */
-    /* justify-content: flex-start; */
-    /* align-items: flex-start; */
-    /* position: relative; */
-    z-index: 10;
-    margin: 10px;
 }
 
 /* Positioning for evolvesFrom */

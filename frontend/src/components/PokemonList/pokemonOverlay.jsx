@@ -9,7 +9,6 @@ import ShinyInfo from './OverlayComponents/shinyInfo';
 import Costumes from './OverlayComponents/costumes';
 import ShadowInfo from './OverlayComponents/shadowInfo';
 import EvolutionShortcut from './OverlayComponents/evolutionShortcut';
-import useFetchPokemons from '../hooks/useFetchPokemons';
 
 const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) => {
   const [currentPokemon, setCurrentPokemon] = useState(pokemon);

@@ -17,7 +17,7 @@
 .overlay-row {
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Align items to the start of the flex container */
+    align-items: center;
     flex-wrap: wrap;
     gap: 10px;
     width: 100%; /* Full width of the container */
