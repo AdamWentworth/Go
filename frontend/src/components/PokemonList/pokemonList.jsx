@@ -83,12 +83,13 @@ function pokemonList() {
                         singleFormPokedexNumbers={singleFormPokedexNumbers}
                     />
                 ))}
-
                 {selectedPokemon &&
                     <PokemonOverlay 
-                    pokemon={selectedPokemon} 
-                    onClose={() => setSelectedPokemon(null)} 
-                />
+                        pokemon={selectedPokemon} 
+                        onClose={() => setSelectedPokemon(null)}
+                        setSelectedPokemon={setSelectedPokemon} // Pass it here
+                        allPokemons={allPokemons}
+                    />
                 }
                 </>
                 )}
