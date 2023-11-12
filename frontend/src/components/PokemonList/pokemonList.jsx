@@ -52,16 +52,18 @@ function pokemonList() {
     return (
         <div>
             <div className="header">
-                <SearchUI
-                    searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
-                    isShiny={isShiny}
-                    toggleShiny={toggleShiny}
-                    showCostume={showCostume}
-                    toggleCostume={toggleCostume}
-                    showShadow={showShadow}
-                    toggleShadow={toggleShadow}
-                />
+                <div className="search-ui">
+                    <SearchUI
+                        searchTerm={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        isShiny={isShiny}
+                        toggleShiny={toggleShiny}
+                        showCostume={showCostume}
+                        toggleCostume={toggleCostume}
+                        showShadow={showShadow}
+                        toggleShadow={toggleShadow}
+                    />
+                </div>
                 <div className="header-section collect-section">
                     <h1>Collect</h1>
                     {/* Add any other content related to 'Collect' here */}

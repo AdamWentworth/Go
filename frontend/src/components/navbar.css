@@ -1,9 +1,10 @@
+/* Original Styles */
 .navbar {
     display: flex;
     align-items: center;
     background-color: #111;
     padding: 20px 20px;
-    justify-content: center;  /* This will center the entire content */
+    justify-content: center;
 }
 
 .navbar h1 {
@@ -11,16 +12,16 @@
 }
 
 .title-container {
-    position: absolute;   /* This will take the title out of the normal flow */
-    left: 50%;   /* Center the title container */
-    transform: translateX(-50%); /* Adjust for true centering */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .navbar-buttons {
     display: flex;
     gap: 10px;
-    margin-left: auto;  /* This pushes the buttons to the right */
-    margin-right: 20px;  /* Provide some spacing from the right edge */
+    margin-left: auto;
+    margin-right: 20px;
 }
 
 .navbar-buttons button {
@@ -37,4 +38,71 @@
 
 .navbar-buttons button:hover {
     background-color: #0056b3;
+}
+
+/* Responsive adjustments for medium screens, such as tablets in landscape and small desktops */
+@media (max-width: 1199px) {
+    .navbar {
+        padding: 15px 15px;
+    }
+
+    .navbar h1 {
+        font-size: smaller; /* Smaller font size to save space */
+    }
+
+    .navbar-buttons button {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+}
+
+/* Responsive adjustments for small screens, like tablets in portrait */
+@media (max-width: 991px) {
+    .navbar h1 {
+        font-size: smaller; /* Further reduce font size */
+    }
+
+    .navbar-buttons button {
+        padding: 8px 10px; /* Smaller padding to save space */
+        font-size: 13px; /* Slightly smaller font size */
+    }
+}
+
+/* Responsive adjustments for extra small screens, like mobile devices */
+@media (max-width: 767px) {
+    .navbar {
+        flex-direction: column; /* Stack items for smaller screens */
+        padding: 10px 10px; /* Reduced padding */
+    }
+
+    .navbar h1 {
+        margin: 0; /* Remove margin to reduce space around h1 */
+        font-size: smaller; /* Adjust font size for mobile */
+    }
+
+    .title-container {
+        position: static;
+        transform: none;
+    }
+
+    .navbar-buttons {
+        margin-top: 10px; /* Space between title and buttons */
+        margin-left: 0;
+    }
+
+    .navbar-buttons button {
+        padding: 6px 10px; /* Slightly smaller padding for buttons */
+        font-size: 12px; /* Smaller font size for buttons */
+    }
+}
+
+/* Further adjustments for the smallest devices */
+@media (max-width: 480px) {
+    .navbar-buttons button {
+        padding: 5px 8px; /* Even smaller padding for buttons */
+        font-size: 11px; /* Further reduced font size for buttons */
+    }
+    .App h1 {
+        padding: 0px !important;
+    }
 }

@@ -1,5 +1,5 @@
 /* pokemonList.css */
-
+/* General Header Styles */
 .header {
     display: flex;
     justify-content: space-between;
@@ -11,268 +11,117 @@
     top: 0;
     z-index: 1000;
     box-shadow: 0px 4px 2px -2px gray;
-    flex-wrap: nowrap;  /* Ensure the two sections don't wrap onto new lines */
+    flex-wrap: nowrap; /* Ensure the two sections don't wrap onto new lines */
+}
+
+/* Styles for Header Sections */
+.header > .search-ui, .header > .collect-section {
+    flex: 1;
+    max-width: 50%;
 }
 
 .header-section {
     flex: 1;
     display: flex;
-    justify-content: center; /* Center the items horizontally */
-    align-items: center;     /* Center the items vertically */
-    padding: 0 15px;         /* Adjust the padding as needed */
+    justify-content: center;
+    align-items: center;
+    padding: 0 15px;
 }
 
 .browse-section {
-    justify-content: flex-start; /* Align the items to the start of this section */
-    border-right: 1px solid #ccc; /* This will add a line delimiter */
+    justify-content: flex-start;
+    border-right: 1px solid #ccc;
 }
 
 .collect-section {
-    justify-content: flex-end; /* Align the items to the end of this section */
+    justify-content: flex-end;
+    text-align: right;
 }
 
-.header h1 {
-    margin: 0;
-    margin-right: 15px; /* Adding some spacing next to the title for aesthetics */
-}
-
-/* Optional: If you want to add some space between items in each section */
 .header-section > *:not(:last-child) {
     margin-right: 10px;
 }
 
-.header input {
-    padding: 8px;
-    font-size: 16px;
-}
-
+/* Pokemon Container Styles */
 .pokemon-container {
     display: grid;
     grid-template-columns: repeat(9, 1fr);
-    gap: 16px; /* Further reduced from 18px */
-    padding: 20px; /* This can remain unless it causes layout issues */
+    gap: 16px;
+    padding: 20px;
     box-sizing: border-box;
     margin-left: auto;
     margin-right: auto;
-    width: calc(100vw - 40px); /* No change needed */
+    width: calc(100vw - 40px);
 }
 
-.pokemon-card {
-    text-align: center;
-    border: 1px solid #ddd;
-    padding: 8px; /* Further reduced from 9px */
-    border-radius: 8px;
-    background-color: #333;
-    color: white;
-    font-size: calc((100vw - (8 * 16px)) / 100); /* Adjust font size calculation */
-    box-sizing: border-box;
-}
-
-/* Adjust heading and paragraph sizes if needed */
-.pokemon-card h2 {
-    margin-top: 17.5px; /* May need to adjust if the layout requires */
-    font-size: calc((100vw - (8 * 16px)) / 100 * 1.2);
-}
-
-.pokemon-card p {
-    font-size: 12px; /* Further reduced from 10.8px */
-}
-
-.pokemon-card img {
-    max-width: 100%;
-    height: auto;
-}
-
-.pokemon-card h2, p {
-    color: white;
-}
-
-.header-section button {
-    background-color: #ccc; /* Non-shiny color */
-    border: none;
-    outline: none;
-    padding: 10px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    border-radius: 15px; /* Adjust as per requirement */
-    transition: background-color 0.3s ease; /* Optional: for a smooth color transition */
-}
-
-
-.header-section img {
-    width: 30px;
-    height: 30px;
-}
-
-.shiny-button.active, .generation-buttons button.active {
-    /* Your CSS for active state e.g. a different background color */
-    background-color: gold;
-}
-
-.costume-button.active, .generation-buttons button.active {
-    /* Your CSS for active state e.g. a different background color */
-    background-color: cyan;
-}
-
-.shadow-button.active, .generation-buttons button.active {
-    /* Your CSS for active state e.g. a different background color */
-    background-color: plum;
-}
-
-/* Removing focus border/outline for accessibility might not be recommended. 
-   If you decide to remove it, ensure there are other clear focus states for accessibility. */
-.shiny-button:focus {
-    outline: none;
-}
-
-/* You can also style the button on hover for better user interaction */
-.header-section button:hover {
-    background-color: #b5b5b5; /* Slightly darker non-shiny color */
-}
-
-.shiny-button.active:hover {
-    background-color: #ffcc00; /* Slightly darker shiny color */
-}
-
-.costume-button.active:hover {
-    background-color: rgb(3, 187, 187); /* Slightly darker shiny color */
-}
-
-.shadow-button.active:hover {
-    background-color: rgb(152, 0, 152) /* Slightly darker shiny color */
-}
-
-.type-icons img {
-    padding: 5px;
-    margin-top: -15px;
-    margin-bottom: -20px;
-    width: 24px;       /* adjust size as necessary */
-    height: 24px;      /* adjust size as necessary */
-}
-
-.pokemon-card p {
-    margin-bottom: 5px;
-}
-
-
-@media (max-width: 768px) {
+@media (max-width: 480px) {
     .pokemon-container {
-        gap: 8px; /* Further reduced from 9px */
-        padding: 10px; /* This can remain unless it causes layout issues */
-        width: calc(100vw - 20px); /* No change needed */
-    }
-
-    .pokemon-card {
-        padding: 4px; /* Further reduced from 4.5px */
-        font-size: calc((100vw - (8 * 8px)) / 100);
+        padding: 5px;
     }
 }
 
-/* pokemonList.css */
-
-/* ... existing CSS ... */
-
-/* Adjust the .pokemon-container grid for large screens, such as big desktops */
-@media (min-width: 1200px) {
-    .pokemon-container {
-        grid-template-columns: repeat(9, 1fr); /* Original setting for large screens */
-        /* Other styling as needed */
-    }
-}
-
-/* Adjust the .pokemon-container grid for medium screens, such as tablets in landscape and small desktops */
-@media (max-width: 1199px) and (min-width: 992px) {
-    .pokemon-container {
-        grid-template-columns: repeat(6, 1fr); /* Less columns for smaller screens */
-        /* Other styling as needed */
-    }
-}
-
-/* Adjust the .pokemon-container grid for small screens, like tablets in portrait */
-@media (max-width: 991px) and (min-width: 768px) {
-    .pokemon-container {
-        grid-template-columns: repeat(6, 1fr); /* Even less columns for small screens */
-        /* Other styling as needed */
-    }
-}
-
-/* Adjustments for extra small screens, like mobile devices */
+/* Consolidated Media Queries */
 @media (max-width: 767px) {
     .pokemon-container {
-        grid-template-columns: repeat(3, 1fr); /* 3 columns for small screens */
-        gap: 8px; /* Further reduced from before */
-        padding: 10px; /* Reduced padding */
-    }
-
-    .pokemon-card {
-        padding: 4px; /* Reduced padding */
-        font-size: calc((100vw - (8 * 8px)) / 100); /* Adjust font size dynamically */
+        grid-template-columns: repeat(3, 1fr);
+        /* gap: 8px; */
+        padding: 10px;
+        width: calc(100vw - 20px);
     }
 
     .header {
-        flex-direction: column; /* Stack header items for small screens */
-        padding: 5px; /* Reduced padding */
+        flex-direction: column;
+        padding: 5px;
     }
 
     .header-section {
-        justify-content: space-around; /* Change spacing for small screens */
-        padding: 5px 0; /* Reduced vertical padding */
+        justify-content: space-around;
+        padding: 5px 0;
     }
 
-    .browse-section,
-    .collect-section {
-        border-right: none; /* Remove border that is no longer needed */
+    .browse-section, .collect-section {
+        border-right: none;
     }
 
     .header h1 {
-        margin-right: 5px; /* Reduced spacing */
-        font-size: smaller; /* Smaller font size for the title */
+        margin-right: 5px;
+        font-size: smaller;
     }
 
     .header-section > *:not(:last-child) {
-        margin-right: 5px; /* Reduced spacing */
+        margin-right: 5px;
     }
 
     .header input {
-        padding: 6px; /* Reduced padding */
-        font-size: 14px; /* Smaller font size */
+        padding: 6px;
+        font-size: 14px;
     }
 
-    /* Adjust button sizes and image sizes within the header for mobile */
-    .header-section button,
-    .header-section img {
-        width: 24px; /* Smaller width */
-        height: 24px; /* Smaller height */
-        padding: 5px; /* Reduced padding */
+    .header-section button, .header-section img {
+        width: 24px;
+        height: 24px;
+        padding: 5px;
     }
 
-    /* Adjust the size of type-icons for mobile devices */
     .type-icons img {
         width: 20px;
         height: 20px;
     }
 }
 
-/* Further adjustments for the smallest devices */
-@media (max-width: 480px) {
-    /* Styles for screens smaller than 480px */
+@media (min-width: 768px) and (max-width: 991px) {
     .pokemon-container {
-        grid-template-columns: repeat(3, 1fr); /* Still 3 columns for very small screens */
-        gap: 4px; /* Reduced gap for very small screens */
-        padding: 5px; /* Further reduced padding for very small screens */
+        grid-template-columns: repeat(6, 1fr);
     }
-
-    /* You might want to adjust font sizes and padding even further for these small devices */
-    .pokemon-card {
-        padding: 3px; /* Even smaller padding */
-        font-size: calc((100vw - (6 * 4px)) / 100); /* Adjust font size for tiny screens */
-    }
-
-    /* ... other styles for smallest screens ... */
 }
 
+@media (min-width: 992px) and (max-width: 1199px) {
+    .pokemon-container {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
 
-
-
-
+@media (min-width: 1200px) {
+    /* .pokemon-container {
+    } */
+}

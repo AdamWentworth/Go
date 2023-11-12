@@ -36,3 +36,134 @@
     color: #ffffff; /* Checkmark color */
     font-size: 24px;
 }
+
+.header input {
+    padding: 8px;
+    font-size: 16px;
+}
+
+
+.header-section button {
+    background-color: #ccc; /* Non-shiny color */
+    border: none;
+    outline: none;
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    border-radius: 15px; /* Adjust as per requirement */
+    transition: background-color 0.3s ease; /* Optional: for a smooth color transition */
+}
+
+
+.header-section img {
+    width: 30px;
+    height: 30px;
+}
+
+.shiny-button.active, .generation-buttons button.active {
+    /* Your CSS for active state e.g. a different background color */
+    background-color: gold;
+}
+
+.costume-button.active, .generation-buttons button.active {
+    /* Your CSS for active state e.g. a different background color */
+    background-color: cyan;
+}
+
+.shadow-button.active, .generation-buttons button.active {
+    /* Your CSS for active state e.g. a different background color */
+    background-color: plum;
+}
+
+/* Removing focus border/outline for accessibility might not be recommended. 
+   If you decide to remove it, ensure there are other clear focus states for accessibility. */
+.shiny-button:focus {
+    outline: none;
+}
+
+/* You can also style the button on hover for better user interaction */
+.header-section button:hover {
+    background-color: #b5b5b5; /* Slightly darker non-shiny color */
+}
+
+.shiny-button.active:hover {
+    background-color: #ffcc00; /* Slightly darker shiny color */
+}
+
+.costume-button.active:hover {
+    background-color: rgb(3, 187, 187); /* Slightly darker shiny color */
+}
+
+.shadow-button.active:hover {
+    background-color: rgb(152, 0, 152) /* Slightly darker shiny color */
+}
+
+/* Extra small devices (less than 480px) */
+@media (max-width: 479px) {
+    .header-section h1 {
+        font-size: 12px;
+    }
+
+    .header-section input[type="text"],
+    .header-section button {
+        font-size: 8px;
+        padding: 2px;
+    }
+}
+
+/* Small devices (480px to 767px) */
+@media (min-width: 480px) and (max-width: 767px) {
+    .header-section h1 {
+        font-size: 14px;
+    }
+
+    .header-section input[type="text"],
+    .header-section button {
+        font-size: 10px;
+        padding: 4px;
+    }
+}
+
+/* Medium devices (768px to 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+    .header-section h1 {
+        font-size: 16px;
+    }
+
+    .header-section input[type="text"],
+    .header-section button {
+        font-size: 12px;
+        padding: 6px;
+    }
+}
+
+/* Large devices (992px to 1199px) */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .header-section h1 {
+        font-size: 18px;
+    }
+
+    .header-section input[type="text"],
+    .header-section button {
+        font-size: 14px;
+        padding: 8px;
+    }
+}
+
+/* Extra large devices (1200px and up) */
+@media (min-width: 1200px) {
+    /* Add styles for extra large devices if needed */
+    /* Example: */
+    .header-section h1 {
+        font-size: 20px;
+    }
+
+    .header-section input[type="text"],
+    .header-section button {
+        font-size: 16px;
+        padding: 10px;
+    }
+}
+
+/* Other styles remain unchanged */

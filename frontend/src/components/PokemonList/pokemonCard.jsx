@@ -2,6 +2,7 @@ import React, { useContext, memo } from 'react';
 import CacheContext from '../../contexts/cacheContext';
 import { formatForm, formatCostumeName } from '../../utils/formattingHelpers';
 import { determinePokemonKey } from '../../utils/imageHelpers';
+import './pokemonCard.css'
 
 const PokemonCard = ({
     pokemon,

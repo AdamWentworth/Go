@@ -1,0 +1,111 @@
+.pokemon-card {
+    text-align: center;
+    border: 1px solid #ddd;
+    padding: 8px;
+    border-radius: 8px;
+    background-color: #333;
+    color: white;
+    font-size: calc((100vw - (8 * 16px)) / 100);
+    box-sizing: border-box;
+}
+
+.pokemon-card h2 {
+    margin-top: 17.5px;
+    font-size: calc((100vw - (8 * 16px)) / 100 * 1.2);
+}
+
+.pokemon-card p {
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.pokemon-card img {
+    max-width: 100%;
+    height: auto;
+}
+
+.pokemon-card h2, p {
+    color: white;
+}
+
+.type-icons img {
+    padding: 5px;
+    margin-top: -15px;
+    margin-bottom: -20px;
+    width: 24px;       /* adjust size as necessary */
+    height: 24px;      /* adjust size as necessary */
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+    .pokemon-card {
+        padding: 6px;
+        font-size: calc((100vw - (8 * 12px)) / 100);
+    }
+
+    .pokemon-card h2 {
+        font-size: calc((100vw - (8 * 12px)) / 100 * 1.2);
+    }
+
+    .type-icons img {
+        width: 18px;  /* 75% of original size */
+        height: 18px; /* 75% of original size */
+        padding-left: 2.5px;
+        padding-right: 2.5px;
+    }
+}
+
+/* Small devices (landscape phones, 576px and up) */
+@media (max-width: 767.98px) {
+    .pokemon-card {
+        padding: 5px;
+        font-size: calc((100vw - (8 * 10px)) / 100);
+    }
+    
+    .pokemon-card h2 {
+        margin-top: 15px;
+        font-size: calc((100vw - (8 * 10px)) / 100 * 1.2);
+    }
+
+    .type-icons img {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* Extra small devices (portrait phones, less than 576px) */
+@media (max-width: 575.98px) {
+    .pokemon-card {
+        padding: 4px;
+        font-size: calc((100vw - (8 * 8px)) / 100);
+    }
+
+    .pokemon-card h2 {
+        margin-top: 16px;
+        font-size: calc((100vw - (8 * 8px)) / 100 * 3); /* Increased by 25% */
+    }
+    
+
+    .type-icons img {
+        width: 16px;
+        height: 16px;
+        padding-left: 2.5px;
+        padding-right: 2.5px;
+    }
+}
+
+
+
+/* Extra large devices (4k monitors, 3840px and up) */
+@media (min-width: 2559px) {
+    .pokemon-card p {
+        font-size: 24px; /* Double the size */
+    }
+
+    .type-icons img {
+        width: 32px; /* Double the original size */
+        height: 32px; /* Double the original size */
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+}
