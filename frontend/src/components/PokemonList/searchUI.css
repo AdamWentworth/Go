@@ -1,40 +1,16 @@
-.evo-line-checkbox {
-    display: flex;
+/*searchUi.css*/
+
+.header-section.browse-section {
+    display: flex; /* This ensures elements inside are in a row */
+    flex-direction: row;
     align-items: center;
-    font-size: 16px; /* Adjust the size as needed */
-    color: #ffffff; /* Your text color */
-    cursor: pointer;
+    justify-content: flex-start; /* Aligns items to the start of the section */
 }
 
-.evo-checkbox {
-    /* Hide the default checkbox */
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    /* Make the actual input invisible and take no space */
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.evo-line-custom-checkbox {
-    /* Create a custom circular box */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 32px; /* Your desired width */
-    height: 32px; /* Your desired height */
-    border: 2px solid #ffffff; /* Your desired border color */
-    border-radius: 50%;
-    margin-right: 8px; /* Adjust the space between the checkbox and the text */
-}
-
-/* When the checkbox is checked, add a checkmark */
-.evo-checkbox:checked + .evo-line-custom-checkbox::after {
-    content: '✓';
-    color: #ffffff; /* Checkmark color */
-    font-size: 24px;
+/* Ensure input and buttons are displayed inline */
+.header-section.browse-section input,
+.header-section.browse-section button {
+    margin-right: 10px; /* Add some spacing between elements */
 }
 
 .header input {
@@ -54,7 +30,6 @@
     border-radius: 15px; /* Adjust as per requirement */
     transition: background-color 0.3s ease; /* Optional: for a smooth color transition */
 }
-
 
 .header-section img {
     width: 30px;
@@ -99,71 +74,162 @@
     background-color: rgb(152, 0, 152) /* Slightly darker shiny color */
 }
 
-/* Extra small devices (less than 480px) */
-@media (max-width: 479px) {
-    .header-section h1 {
-        font-size: 12px;
+@media (max-width: 480px) {
+    .header-section.browse-section {
+        justify-content: flex-start; /* Align items to the start */
+        font-size: 8px; /* Adjust font size as necessary */
+        flex-wrap: wrap; /* Allow elements to wrap if needed */
     }
 
-    .header-section input[type="text"],
-    .header-section button {
-        font-size: 8px;
-        padding: 2px;
-    }
-}
-
-/* Small devices (480px to 767px) */
-@media (min-width: 480px) and (max-width: 767px) {
-    .header-section h1 {
-        font-size: 14px;
-    }
-
-    .header-section input[type="text"],
-    .header-section button {
+    /* Adjust the input field size and padding */
+    .header-section.browse-section input {
+        padding: 3px; /* Adjust padding */
+        margin-right: 4px; /* Ensure some space between the input and buttons */
+        flex-grow: 1; /* Allow input to grow and fill available space */
+        flex-basis: 50%; /* Start with half the available space */
+        min-width: 90%;
         font-size: 10px;
-        padding: 4px;
+    }
+
+    /* Adjust the button sizes and spacing */
+    .header-section.browse-section button {
+        margin-top: 2px;
+        padding: 6px; /* Adjust padding */
+        margin-right: 4px; /* Ensure some space between buttons */
+        flex-grow: 0; /* Do not allow buttons to grow */
+        flex-shrink: 0; /* Prevent buttons from shrinking too much */
+    }
+
+    .header-section.browse-section button img {
+        width: 15px; /* Adjust the size of the button images */
+        height: 15px;
     }
 }
 
-/* Medium devices (768px to 991px) */
-@media (min-width: 768px) and (max-width: 991px) {
-    .header-section h1 {
-        font-size: 16px;
+@media (min-width: 768px) {
+    .header-section.browse-section {
+        justify-content: flex-start; /* Align items to the start */
+        font-size: 10px; /* Slightly increased font size */
+        flex-wrap: nowrap; /* Prevent wrapping */
+        margin-left: -24px;
+    }
+    .header-section.browse-section h1{
+        margin-right: -10px; 
     }
 
-    .header-section input[type="text"],
-    .header-section button {
-        font-size: 12px;
-        padding: 6px;
-    }
-}
-
-/* Large devices (992px to 1199px) */
-@media (min-width: 992px) and (max-width: 1199px) {
-    .header-section h1 {
-        font-size: 18px;
+    /* Adjust the input field size and padding */
+    .header-section.browse-section input {
+        padding: 6px; /* Slightly increased padding */
+        margin-right: 3px; /* Slightly increased space between the input and buttons */
+        flex-grow: 1; /* Allow input to grow and fill available space */
+        flex-basis: auto; /* Adjust basis as needed */
+        max-width: 145px; /* Adjust minimum width for the input field */
+        font-size: 14px; /* Increased font size for readability */
     }
 
-    .header-section input[type="text"],
-    .header-section button {
-        font-size: 14px;
-        padding: 8px;
-    }
-}
-
-/* Extra large devices (1200px and up) */
-@media (min-width: 1200px) {
-    /* Add styles for extra large devices if needed */
-    /* Example: */
-    .header-section h1 {
-        font-size: 20px;
+    /* Adjust the button sizes and spacing */
+    .header-section.browse-section button {
+        margin-top: 2px;
+        padding: 8px; /* Slightly increased padding */
+        margin-right: 0px; /* Slightly increased space between buttons */
     }
 
-    .header-section input[type="text"],
-    .header-section button {
-        font-size: 16px;
-        padding: 10px;
+    .header-section.browse-section button img {
+        width: 20px; /* Adjust the size of the button images */
+        height: 20px;
     }
 }
 
-/* Other styles remain unchanged */
+@media (min-width: 1024px) {
+    .header-section.browse-section {
+        justify-content: flex-start; /* Align items to the start */
+        font-size: 12px; /* Further increased font size */
+        margin-left: -24px; /* Reset margin if not needed */
+    }
+    .header-section.browse-section h1{
+        margin-right: -5px; /* Adjust margin between 'Browse' and the search input */
+    }
+
+    /* Adjust the input field size and padding */
+    .header-section.browse-section input {
+        padding: 8px; /* Further increased padding */
+        margin-right: 6px; /* Adjusted space between the input and buttons */
+        flex-grow: 1; /* Allow input to grow and fill available space */
+        max-width: 200px; /* Adjust maximum width for the input field */
+        font-size: 16px; /* Increased font size for better readability */
+    }
+
+    /* Adjust the button sizes and spacing */
+    .header-section.browse-section button {
+        padding: 10px; /* Further increased padding */
+        margin-right: 6px; /* Adjusted space between buttons */
+    }
+
+    .header-section.browse-section button img {
+        width: 25px; /* Adjust the size of the button images for better visibility */
+        height: 25px;
+    }
+}
+
+@media (min-width: 1440px) {
+    .header-section.browse-section {
+        justify-content: flex-start; /* Align items to the start */
+        font-size: 14px; /* Slightly increased font size */
+        margin-left: 0; /* Reset any negative margin */
+    }
+
+    .header-section.browse-section h1 {
+        margin-right: 10px; /* Increased margin between 'Browse' and the search input */
+    }
+
+    /* Adjust the input field size and padding */
+    .header-section.browse-section input {
+        padding: 10px; /* Slightly increased padding */
+        margin-right: 16px; /* Increased space between the input and buttons */
+        flex-grow: 1; /* Allow input to grow and fill available space */
+        min-width: 285px; /* Increased maximum width for the input field */
+        font-size: 18px; /* Increased font size for better readability */
+    }
+
+    /* Adjust the button sizes and spacing */
+    .header-section.browse-section button {
+        padding: 12px; /* Increased padding */
+        margin-right: 8px; /* Increased space between buttons */
+    }
+
+    .header-section.browse-section button img {
+        width: 30px; /* Increased size of the button images for better visibility */
+        height: 30px;
+    }
+}
+
+@media (min-width: 2560px) {
+    .header-section.browse-section {
+        justify-content: flex-start; /* Keep items aligned to the start */
+        font-size: 16px; /* Increase font size for larger displays */
+    }
+
+    .header-section.browse-section h1 {
+        margin-right: 15px; /* Increase margin between 'Browse' and the search input */
+    }
+
+    /* Adjust the input field size and padding */
+    .header-section.browse-section input {
+        padding: 12px; /* Increase padding for better visibility */
+        margin-right: 10px; /* Increase space between the input and buttons */
+        flex-grow: 1; /* Input can grow to use available space */
+        min-width: 400px; /* Set a maximum width for the input field */
+        font-size: 20px; /* Increase font size for readability */
+    }
+
+    /* Adjust the button sizes and spacing */
+    .header-section.browse-section button {
+        padding: 14px; /* Increase padding for a larger touch target */
+        margin-right: 10px; /* Increase space between buttons */
+    }
+
+    .header-section.browse-section button img {
+        width: 35px; /* Increase the size of the button images */
+        height: 35px;
+    }
+}

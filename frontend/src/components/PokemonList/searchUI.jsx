@@ -1,3 +1,5 @@
+/*searchUI.jsx*/
+
 import React from 'react';
 import './searchUI.css';
 
