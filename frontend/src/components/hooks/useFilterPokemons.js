@@ -20,11 +20,14 @@ const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine) => {
         const filteredPokemons = allPokemons.reduce((acc, pokemon) => {
             const isInEvolutionaryFamily = showEvolutionaryLine && evolutionaryFamily.includes(pokemon.pokemon_id);
 
-            // Existing costume and shiny handling logic should apply regardless of the evolutionary line filter
             if (showCostume && pokemon.costumes) {
                 pokemon.costumes.forEach(costume => {
-                    if ((isInEvolutionaryFamily || shouldAddPokemon(pokemon, costume, selectedGeneration, isShiny, pokemonTypes, searchTerm, generations, showShadow)) 
-                        && (!isShiny || (isShiny && costume.shiny_available))) {
+                    // Check if a shadow variant of the costume exists
+                    const shadowVariantExists = costume.shadow_available !== undefined ? costume.shadow_available : 0;
+
+                    if ((isInEvolutionaryFamily || shouldAddPokemon(pokemon, costume, selectedGeneration, isShiny, pokemonTypes, searchTerm, generations, showShadow))
+                        && (!isShiny || (isShiny && costume.shiny_available))
+                        && (!showShadow || (showShadow && shadowVariantExists))) {
                         const imageToUse = determinePokemonImage(pokemon, isShiny, showShadow, costume);
                         acc.push({
                             ...pokemon,
