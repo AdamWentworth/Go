@@ -15,45 +15,37 @@ const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine) => {
     } = filters;
 
     const displayedPokemons = useMemo(() => {
-        const evolutionaryFamily = showEvolutionaryLine ? getEvolutionaryFamily(filters.searchTerm, allPokemons) : [];
+        const evolutionaryFamily = showEvolutionaryLine ? getEvolutionaryFamily(searchTerm, allPokemons) : [];
 
         const filteredPokemons = allPokemons.reduce((acc, pokemon) => {
-            // When showEvolutionaryLine is true, include all Pokémon in the evolutionary family
-            if (showEvolutionaryLine) {
-                if (evolutionaryFamily.includes(pokemon.pokemon_id)) {
-                    const imageToUse = determinePokemonImage(pokemon, isShiny, showShadow);
-                    acc.push({
-                        ...pokemon,
-                        currentImage: imageToUse
-                    });
-                }
-            } else {
-                // Apply regular filters if showEvolutionaryLine is not active
-                const shouldInclude = shouldAddPokemon(pokemon, null, selectedGeneration, isShiny, pokemonTypes, searchTerm, generations, showShadow);
-                if (shouldInclude) {
-                    const imageToUse = determinePokemonImage(pokemon, isShiny, showShadow);
-                    acc.push({
-                        ...pokemon,
-                        currentImage: imageToUse
-                    });
-                }
+            const isInEvolutionaryFamily = showEvolutionaryLine && evolutionaryFamily.includes(pokemon.pokemon_id);
+
+            // Existing costume and shiny handling logic should apply regardless of the evolutionary line filter
+            if (showCostume && pokemon.costumes) {
+                pokemon.costumes.forEach(costume => {
+                    if ((isInEvolutionaryFamily || shouldAddPokemon(pokemon, costume, selectedGeneration, isShiny, pokemonTypes, searchTerm, generations, showShadow)) 
+                        && (!isShiny || (isShiny && costume.shiny_available))) {
+                        const imageToUse = determinePokemonImage(pokemon, isShiny, showShadow, costume);
+                        acc.push({
+                            ...pokemon,
+                            currentImage: imageToUse,
+                            currentCostumeName: costume.name
+                        });
+                    }
+                });
+            } else if (isInEvolutionaryFamily || shouldAddPokemon(pokemon, null, selectedGeneration, isShiny, pokemonTypes, searchTerm, generations, showShadow)) {
+                const imageToUse = determinePokemonImage(pokemon, isShiny, showShadow);
+                acc.push({
+                    ...pokemon,
+                    currentImage: imageToUse
+                });
             }
+
             return acc;
         }, []);
 
         return filteredPokemons;
-    }, [
-        allPokemons, 
-        selectedGeneration, 
-        isShiny, 
-        searchTerm, 
-        showCostume, 
-        showShadow, 
-        singleFormPokedexNumbers, 
-        pokemonTypes, 
-        generations, 
-        showEvolutionaryLine
-    ]);
+    }, [allPokemons, selectedGeneration, isShiny, searchTerm, showCostume, showShadow, singleFormPokedexNumbers, pokemonTypes, generations, showEvolutionaryLine]);
 
     return displayedPokemons;
 };
