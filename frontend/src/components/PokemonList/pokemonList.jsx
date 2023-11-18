@@ -12,6 +12,8 @@ import useFilterPokemons from '../hooks/useFilterPokemons';
 
 function pokemonList() {
     const [selectedPokemon, setSelectedPokemon] = useState(null);
+
+    const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(false);
     
     const { allPokemons, loading } = useFetchPokemons();
     
@@ -35,7 +37,12 @@ function pokemonList() {
         generations
     };
 
-    const displayedPokemons = useFilterPokemons(allPokemons, filters);
+    const displayedPokemons = useFilterPokemons(allPokemons, filters, showEvolutionaryLine);
+
+    // Function to toggle the evolutionary line checkbox
+    const toggleEvolutionaryLine = () => {
+        setShowEvolutionaryLine(prev => !prev);
+    };    
 
     const toggleShiny = () => {
         setIsShiny(prevState => !prevState);
@@ -53,7 +60,7 @@ function pokemonList() {
         <div>
             <div className="header">
                 <div className="search-ui">
-                    <SearchUI
+                <SearchUI
                         searchTerm={searchTerm}
                         onSearchChange={setSearchTerm}
                         isShiny={isShiny}
@@ -62,6 +69,8 @@ function pokemonList() {
                         toggleCostume={toggleCostume}
                         showShadow={showShadow}
                         toggleShadow={toggleShadow}
+                        showEvolutionaryLine={showEvolutionaryLine} // Pass the state here
+                        toggleEvolutionaryLine={toggleEvolutionaryLine} // Pass the toggle function here
                     />
                 </div>
                 <div className="header-section collect-section">

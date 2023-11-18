@@ -102,3 +102,42 @@ function checkTermMatches(pokemon, term, pokemonTypes, generationMap) {
     // If the term had a '!', negate the result
     return isNegation ? !result : result;
 }
+
+export function getEvolutionaryFamily(searchTerm, allPokemons) {
+    const basePokemons = allPokemons.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    let family = new Set();
+
+    const findAllEvolutions = (pokemonId) => {
+        if (family.has(pokemonId)) {
+            return; // Skip if already processed
+        }
+
+        const pokemon = allPokemons.find(p => p.pokemon_id === pokemonId);
+        if (!pokemon) return;
+
+        // Add current pokemon to the family
+        family.add(pokemon.pokemon_id);
+
+        // Find evolutions
+        if (Array.isArray(pokemon.evolves_to)) {
+            pokemon.evolves_to.forEach(evolutionId => {
+                findAllEvolutions(evolutionId);
+            });
+        }
+
+        // Find pre-evolutions
+        if (Array.isArray(pokemon.evolves_from)) {
+            pokemon.evolves_from.forEach(preEvolutionId => {
+                findAllEvolutions(preEvolutionId);
+            });
+        }
+    };
+
+    basePokemons.forEach(basePokemon => findAllEvolutions(basePokemon.pokemon_id));
+
+    return Array.from(family);
+}
+
+
+
