@@ -21,9 +21,11 @@ function Costumes({ costumes }) {
 
   return (
     <div className={`column costume-column ${isFullScreen ? 'fullscreen' : ''}`}>
-      <button onClick={toggleFullScreen} className="fullscreen-toggle">
-        {isFullScreen ? 'Exit' : 'View All'}
-      </button>
+      <div className="button-container">
+        <button onClick={toggleFullScreen} className="fullscreen-toggle">
+          {isFullScreen ? 'Exit' : 'View All'}
+        </button>
+      </div>
       <h1>Costumes</h1>
       {/* Button to toggle full screen */}
       

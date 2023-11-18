@@ -440,6 +440,73 @@
     .evo-checkbox:checked + .evo-line-custom-checkbox::after {
         font-size: 18px;
     }
+    .search-ui {
+    padding-bottom: 5px;
+}
+}
+@media (min-width: 1920px) {
+    .header-section.browse-section {
+        justify-content: flex-start;
+        font-size: 18px;
+        flex-wrap: wrap;
+    }
+
+    .header-section.browse-section h1 {
+        width: 50%;
+        text-align: left;
+        margin-left: 0;
+        padding: 0;
+    }
+
+    .header-section.browse-section .button-container {
+        display: flex;
+        justify-content: flex-end; /* Align buttons to the right */
+        width: 45%;
+        margin-left: auto; /* Push the container to the right */
+        margin-top: 6px;
+    }
+
+    .header-section.browse-section button {
+        padding: 6px;
+        margin-right: 2px; /* Reduce space between buttons */
+    }
+
+    .header-section.browse-section button:last-child {
+        margin-right: 0;
+    }
+
+    .header-section.browse-section button img {
+        width: 32px;
+        height: 32px;
+    }
+
+    .header-section.browse-section input {
+        padding: 3px;
+        margin-right: 4px;
+        flex-grow: 1;
+        flex-basis: auto;
+        max-width: 75%;
+        font-size: 20px;
+    }
+
+    .evo-line-checkbox {
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        margin-right: 4px;
+        flex-grow: 1;
+        max-width: 10%;
+    }
+
+    .evo-line-custom-checkbox {
+        width: 2em;
+        height: 2em;
+        margin-top: 1px;
+    }
+
+    .evo-checkbox:checked + .evo-line-custom-checkbox::after {
+        font-size: 18px;
+    }
 }
 @media (min-width: 2560px) {
     .header-section.browse-section {

@@ -1,5 +1,7 @@
 /* pokemonList.css */
 
+/* pokemonList.css */
+
 .header {
     display: flex;
     justify-content: space-between;
@@ -7,13 +9,12 @@
     padding: 10px 20px;
     background-color: #333;
     color: white;
-    position: relative; /* Changed to relative for the divider positioning */
+    position: relative;
     top: 0;
     z-index: 1000;
     box-shadow: 0px 4px 2px -2px gray;
 }
 
-/* Divider in the center of the header */
 .header::after {
     content: '';
     position: absolute;
@@ -25,23 +26,21 @@
 }
 
 .search-ui, .collect-section {
-    flex: 1; /* Each section takes half the width */
-    display: flex;
+    flex: 1;
     align-items: center;
-    flex-direction: row; /* Align child elements in a row */
+    flex-direction: row;
 }
 
 .search-ui {
-    justify-content: flex-start; /* Aligns items to the left of the section */
-    padding-right: 10px; /* Add padding to separate from the divider */
+    justify-content: flex-start;
+    padding-right: 10px;
 }
 
 .collect-section {
-    justify-content: flex-end; /* Aligns items to the right of the section */
-    padding-left: 10px; /* Add padding to separate from the divider */
+    justify-content: flex-end;
+    padding-left: 10px;
 }
 
-/* Pokemon Container Styles */
 .pokemon-container {
     display: grid;
     grid-template-columns: repeat(9, 1fr);
@@ -245,6 +244,48 @@
 }
 
 @media (min-width: 1440px) {
+    .pokemon-container {
+        grid-template-columns: repeat(9, 1fr);
+        padding: 10px;
+        width: calc(100vw - 20px); /* Adjust width if necessary */
+    }
+    .header {
+        padding: 0px 30px; /* Slightly increased padding */
+    }
+
+    .search-ui input, 
+    .search-ui button, 
+    .collect-section h1 {
+        font-size: 16px; /* Slightly increased font size */
+    }
+
+    .search-ui input {
+        padding: 8px 12px; /* Slightly increased padding inside input */
+    }
+
+    .search-ui button {
+        padding: 8px 12px; /* Slightly increased button padding */
+    }
+
+    .search-ui button img {
+        width: 30px; /* Slightly increased image/icon size */
+        height: 30px;
+    }
+
+    /* Adjust the collect section for larger screens */
+    .collect-section {
+        padding-left: 8px;
+        justify-content: center; /* Keep the content centered */
+    }
+
+    /* Adjust the header's after pseudo-element to act as a visual divider */
+    .header::after {
+        width: 2px; /* Ensure the divider is visible */
+        left: 50%; /* Ensure the divider stays centered */
+    }
+}
+
+@media (min-width: 1920px) {
     .pokemon-container {
         grid-template-columns: repeat(9, 1fr);
         padding: 10px;
