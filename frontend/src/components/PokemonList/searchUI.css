@@ -3,9 +3,13 @@
 .evo-line-checkbox {
     display: flex;
     align-items: center;
-    font-size: 16px; /* Adjust the size as needed */
-    color: #ffffff; /* Your text color */
+    font-size: 1vw; /* Responsive font size based on viewport width */
+    color: #ffffff;
     cursor: pointer;
+    white-space: nowrap;
+    flex-grow: 1; /* Allow the label to grow */
+    flex-shrink: 1; /* Allow the label to shrink */
+    min-width: 0; /* Enable shrinking below content size */
 }
 
 .evo-checkbox {
@@ -21,21 +25,25 @@
 }
 
 .evo-line-custom-checkbox {
-    /* Create a custom circular box */
+    width: 2em; /* Your desired width */
+    height: 2em; /* Your desired height */
+    border: 2px solid #ffffff; /* Your desired border color */
+    border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 32px; /* Your desired width */
-    height: 32px; /* Your desired height */
-    border: 2px solid #ffffff; /* Your desired border color */
-    border-radius: 50%;
-    margin-right: 8px; /* Adjust the space between the checkbox and the text */
+    margin-top: 1px;
+    position: relative;
+    flex-shrink: 0; /* Prevent it from shrinking */
+    margin-right: 4px;
 }
 
+/* Ensure the checkmark inside the checkbox remains centered */
 .evo-checkbox:checked + .evo-line-custom-checkbox::after {
     content: '✓';
     color: #ffffff; /* Checkmark color */
     font-size: 24px;
+    line-height: 1; /* Center the checkmark vertically */
 }
 
 
@@ -120,155 +128,380 @@
         flex-wrap: wrap; /* Allow elements to wrap if needed */
     }
 
-    /* Adjust the input field size and padding */
-    .header-section.browse-section input {
-        padding: 3px; /* Adjust padding */
-        margin-right: 4px; /* Ensure some space between the input and buttons */
-        flex-grow: 1; /* Allow input to grow and fill available space */
-        flex-basis: 50%; /* Start with half the available space */
-        min-width: 90%;
-        font-size: 10px;
+    .header-section.browse-section h1 {
+        width: 50%; /* Full width to ensure it is on its own row */
+        text-align: left; /* Align the text to the left */
+        margin-bottom: 4px; /* Space below the h1 before the next elements */
+        margin-right: 2px;
     }
 
-    /* Adjust the button sizes and spacing */
+    .header-section.browse-section .button-container {
+        display: flex; /* Use flex layout for the buttons */
+        justify-content: flex-end; /* Align buttons to the right */
+        width: 45%; /* Full width to ensure it is on its own row */
+        margin-right: 5px;
+    }
+
     .header-section.browse-section button {
-        margin-top: 2px;
         padding: 6px; /* Adjust padding */
-        margin-right: 4px; /* Ensure some space between buttons */
-        flex-grow: 0; /* Do not allow buttons to grow */
-        flex-shrink: 0; /* Prevent buttons from shrinking too much */
+        margin: 2px 2px; /* Margin around buttons to ensure spacing */
     }
 
     .header-section.browse-section button img {
-        width: 15px; /* Adjust the size of the button images */
-        height: 15px;
+        width: 12px; /* Adjust the size of the button images */
+        height: 12px;
+    }
+
+    .header-section.browse-section input {
+        padding: 3px;
+        margin-bottom: 4px; /* Space below the input before the next elements */
+        width: 100%; /* Full width to ensure it is on its own row */
+        font-size: 10px;
+        margin-right: 2px;
+    }
+
+    .evo-line-checkbox {
+        font-size: 8px;
+        width: 100%; /* Full width to ensure it is on its own row */
+        margin-bottom: 4px; /* Space below the checkbox before the next elements */
+        display: flex;
+        align-items: center;
+    }
+
+    .evo-line-checkbox input[type="checkbox"] {
+        /* Hide the default checkbox */
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .evo-line-custom-checkbox {
+        /* Set a relative size with padding to maintain a perfect circle */
+        width: 2em; /* Adjust as needed */
+        height: 2em; /* Should be the same value as width for a perfect circle */
+        border: 2px solid #ffffff; /* Your desired border color */
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 1px;
+        position: relative;
+    }
+
+    .evo-checkbox:checked + .evo-line-custom-checkbox::after {
+        font-size: 18px; /* Smaller checkmark */
+    }
+}
+
+@media (min-width: 481px) {
+    .header-section.browse-section {
+        justify-content: flex-start; /* Align items to the start */
+        font-size: 10px; /* Adjust font size as necessary */
+        flex-wrap: wrap; /* Allow elements to wrap if needed */
+    }
+
+    .header-section.browse-section h1 {
+        padding: 0px;
+        width: 50%; /* Full width to ensure it is on its own row */
+        text-align: left; /* Align the text to the left */
+        margin-bottom: 4px; /* Space below the h1 before the next elements */
+    }
+
+    .header-section.browse-section .button-container {
+        display: flex; /* Use flex layout for the buttons */
+        justify-content: flex-end; /* Align buttons to the right */
+        width: 45%; /* Full width to ensure it is on its own row */
+        margin-right: 5px;
+    }
+
+    .header-section.browse-section button {
+        padding: 6px; /* Adjust padding */
+        margin: 2px 2px; /* Margin around buttons to ensure spacing */
+    }
+
+    .header-section.browse-section button img {
+        width: 14px; /* Adjust the size of the button images */
+        height: 14px;
+    }
+
+    .header-section.browse-section input {
+        padding: 3px;
+        margin-bottom: 4px; /* Space below the input before the next elements */
+        width: 50%; /* Full width to ensure it is on its own row */
+        font-size: 10px;
+        margin-right: 2px;
+    }
+
+    .evo-line-checkbox {
+        font-size: 8px;
+        width: 40%; /* Full width to ensure it is on its own row */
+        margin-bottom: 4px; /* Space below the checkbox before the next elements */
+    }
+
+    .evo-line-custom-checkbox {
+        width: 14px; /* Smaller checkbox */
+        height: 14px;
+        margin-top: 1px;
+    }
+
+    .evo-checkbox:checked + .evo-line-custom-checkbox::after {
+        font-size: 16px; /* Smaller checkmark */
     }
 }
 
 @media (min-width: 768px) {
     .header-section.browse-section {
-        justify-content: flex-start; /* Align items to the start */
-        font-size: 10px; /* Slightly increased font size */
-        flex-wrap: nowrap; /* Prevent wrapping */
-        margin-left: -24px;
-    }
-    .header-section.browse-section h1{
-        margin-right: -10px; 
+        justify-content: flex-start;
+        font-size: 12px;
+        flex-wrap: wrap;
     }
 
-    /* Adjust the input field size and padding */
-    .header-section.browse-section input {
-        padding: 6px; /* Slightly increased padding */
-        margin-right: 3px; /* Slightly increased space between the input and buttons */
-        flex-grow: 1; /* Allow input to grow and fill available space */
-        flex-basis: auto; /* Adjust basis as needed */
-        max-width: 145px; /* Adjust minimum width for the input field */
-        font-size: 14px; /* Increased font size for readability */
+    .header-section.browse-section h1 {
+        width: 50%;
+        text-align: left;
+        margin-left: 0;
+        padding: 0;
     }
 
-    /* Adjust the button sizes and spacing */
+    .header-section.browse-section .button-container {
+        display: flex;
+        justify-content: flex-end; /* Align buttons to the right */
+        width: auto; /* Adjust width as needed */
+        margin-left: auto; /* Push the container to the right */
+    }
+
     .header-section.browse-section button {
-        margin-top: 2px;
-        padding: 8px; /* Slightly increased padding */
-        margin-right: 0px; /* Slightly increased space between buttons */
+        padding: 6px;
+        margin-right: 2px; /* Reduce space between buttons */
+    }
+
+    .header-section.browse-section button:last-child {
+        margin-right: 0;
     }
 
     .header-section.browse-section button img {
-        width: 20px; /* Adjust the size of the button images */
+        width: 20px;
         height: 20px;
+    }
+
+    .header-section.browse-section input {
+        padding: 3px;
+        margin-right: 4px;
+        flex-grow: 1;
+        flex-basis: auto;
+        max-width: 50%;
+        font-size: 12px;
+    }
+
+    .evo-line-checkbox {
+        display: flex;
+        align-items: center;
+        font-size: 10px;
+        margin-right: 4px;
+        flex-grow: 1;
+        max-width: 40%;
+    }
+
+    .evo-line-custom-checkbox {
+        width: 2em;
+        height: 2em;
+        margin-top: 1px;
+    }
+
+    .evo-checkbox:checked + .evo-line-custom-checkbox::after {
+        font-size: 18px;
     }
 }
 
 @media (min-width: 1024px) {
     .header-section.browse-section {
-        justify-content: flex-start; /* Align items to the start */
-        font-size: 12px; /* Further increased font size */
-        margin-left: -24px; /* Reset margin if not needed */
-    }
-    .header-section.browse-section h1{
-        margin-right: -5px; /* Adjust margin between 'Browse' and the search input */
+        justify-content: flex-start;
+        font-size: 14px;
+        flex-wrap: wrap;
     }
 
-    /* Adjust the input field size and padding */
-    .header-section.browse-section input {
-        padding: 8px; /* Further increased padding */
-        margin-right: 6px; /* Adjusted space between the input and buttons */
-        flex-grow: 1; /* Allow input to grow and fill available space */
-        max-width: 200px; /* Adjust maximum width for the input field */
-        font-size: 16px; /* Increased font size for better readability */
+    .header-section.browse-section h1 {
+        width: 50%;
+        text-align: left;
+        margin-left: 0;
+        padding: 0;
     }
 
-    /* Adjust the button sizes and spacing */
+    .header-section.browse-section .button-container {
+        display: flex;
+        justify-content: flex-end; /* Align buttons to the right */
+        width: auto; /* Adjust width as needed */
+        margin-left: auto; /* Push the container to the right */
+    }
+
     .header-section.browse-section button {
-        padding: 10px; /* Further increased padding */
-        margin-right: 6px; /* Adjusted space between buttons */
+        padding: 6px;
+        margin-right: 2px; /* Reduce space between buttons */
+    }
+
+    .header-section.browse-section button:last-child {
+        margin-right: 0;
     }
 
     .header-section.browse-section button img {
-        width: 25px; /* Adjust the size of the button images for better visibility */
-        height: 25px;
+        width: 24px;
+        height: 24px;
+    }
+
+    .header-section.browse-section input {
+        padding: 3px;
+        margin-right: 4px;
+        flex-grow: 1;
+        flex-basis: auto;
+        max-width: 60%;
+        font-size: 16px;
+    }
+
+    .evo-line-checkbox {
+        display: flex;
+        align-items: center;
+        font-size: 12px;
+        margin-right: 4px;
+        flex-grow: 1;
+        max-width: 40%;
+    }
+
+    .evo-line-custom-checkbox {
+        width: 2em;
+        height: 2em;
+        margin-top: 1px;
+    }
+
+    .evo-checkbox:checked + .evo-line-custom-checkbox::after {
+        font-size: 18px;
     }
 }
-
 @media (min-width: 1440px) {
     .header-section.browse-section {
-        justify-content: flex-start; /* Align items to the start */
-        font-size: 14px; /* Slightly increased font size */
-        margin-left: 0; /* Reset any negative margin */
+        justify-content: flex-start;
+        font-size: 18px;
+        flex-wrap: wrap;
     }
 
     .header-section.browse-section h1 {
-        margin-right: 10px; /* Increased margin between 'Browse' and the search input */
+        width: 50%;
+        text-align: left;
+        margin-left: 0;
+        padding: 0;
     }
 
-    /* Adjust the input field size and padding */
-    .header-section.browse-section input {
-        padding: 10px; /* Slightly increased padding */
-        margin-right: 16px; /* Increased space between the input and buttons */
-        flex-grow: 1; /* Allow input to grow and fill available space */
-        min-width: 285px; /* Increased maximum width for the input field */
-        font-size: 18px; /* Increased font size for better readability */
+    .header-section.browse-section .button-container {
+        display: flex;
+        justify-content: flex-end; /* Align buttons to the right */
+        width: auto; /* Adjust width as needed */
+        margin-left: auto; /* Push the container to the right */
+        margin-top: 6px;
     }
 
-    /* Adjust the button sizes and spacing */
     .header-section.browse-section button {
-        padding: 12px; /* Increased padding */
-        margin-right: 8px; /* Increased space between buttons */
+        padding: 6px;
+        margin-right: 2px; /* Reduce space between buttons */
+    }
+
+    .header-section.browse-section button:last-child {
+        margin-right: 0;
     }
 
     .header-section.browse-section button img {
-        width: 30px; /* Increased size of the button images for better visibility */
+        width: 30px;
         height: 30px;
     }
-}
 
+    .header-section.browse-section input {
+        padding: 3px;
+        margin-right: 4px;
+        flex-grow: 1;
+        flex-basis: auto;
+        max-width: 70%;
+        font-size: 20px;
+    }
+
+    .evo-line-checkbox {
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        margin-right: 4px;
+        flex-grow: 1;
+        max-width: 30%;
+    }
+
+    .evo-line-custom-checkbox {
+        width: 2em;
+        height: 2em;
+        margin-top: 1px;
+    }
+
+    .evo-checkbox:checked + .evo-line-custom-checkbox::after {
+        font-size: 18px;
+    }
+}
 @media (min-width: 2560px) {
     .header-section.browse-section {
-        justify-content: flex-start; /* Keep items aligned to the start */
-        font-size: 16px; /* Increase font size for larger displays */
+        justify-content: flex-start;
+        font-size: 30px;
+        flex-wrap: wrap;
     }
 
     .header-section.browse-section h1 {
-        margin-right: 15px; /* Increase margin between 'Browse' and the search input */
+        width: 50%;
+        text-align: left;
+        margin-left: 0;
+        padding: 0;
     }
 
-    /* Adjust the input field size and padding */
-    .header-section.browse-section input {
-        padding: 12px; /* Increase padding for better visibility */
-        margin-right: 10px; /* Increase space between the input and buttons */
-        flex-grow: 1; /* Input can grow to use available space */
-        min-width: 400px; /* Set a maximum width for the input field */
-        font-size: 20px; /* Increase font size for readability */
+    .header-section.browse-section .button-container {
+        display: flex;
+        justify-content: flex-end; /* Align buttons to the right */
+        width: auto; /* Adjust width as needed */
+        margin-left: auto; /* Push the container to the right */
+        margin-top: 6px;
     }
 
-    /* Adjust the button sizes and spacing */
     .header-section.browse-section button {
-        padding: 14px; /* Increase padding for a larger touch target */
-        margin-right: 10px; /* Increase space between buttons */
+        padding: 10px;
+        margin-right: 8px; /* Reduce space between buttons */
+    }
+
+    .header-section.browse-section button:last-child {
+        margin-right: 0;
     }
 
     .header-section.browse-section button img {
-        width: 35px; /* Increase the size of the button images */
-        height: 35px;
+        width: 50px;
+        height: 50px;
+    }
+
+    .header-section.browse-section input {
+        padding: 3px;
+        margin-right: 4px;
+        flex-grow: 1;
+        flex-basis: auto;
+        max-width: 70%;
+        font-size: 36px;
+    }
+
+    .evo-line-checkbox {
+        display: flex;
+        align-items: center;
+        font-size: 24px;
+        margin-right: 4px;
+        flex-grow: 1;
+        max-width: 30%;
+    }
+
+    .evo-line-custom-checkbox {
+        width: 2em;
+        height: 2em;
+        margin-top: 1px;
+    }
+
+    .evo-checkbox:checked + .evo-line-custom-checkbox::after {
+        font-size: 18px;
     }
 }

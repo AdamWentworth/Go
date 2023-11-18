@@ -104,6 +104,58 @@
     }
 }
 
+@media (min-width: 481px) {
+    .pokemon-container {
+        grid-template-columns: repeat(6, 1fr);
+        padding: 5px;
+        width: calc(100vw - 3px); /* Adjust width if necessary */
+        gap: 6px;
+    }
+    .type-icons img {
+        width: 20px;
+        height: 20px;
+    }
+    .header {
+        padding: 5px 10px;
+        margin-bottom: 2px;
+    }
+
+    /* Adjustments for search UI in the pokemon list context */
+    .search-ui input,
+    .search-ui button,
+    .collect-section h1 {
+        font-size: 10px;
+    }
+
+    .search-ui input {
+        width: auto; /* allow the input to be flexible */
+        margin-right: 2px;
+        padding: 2px 5px;
+    }
+
+    .search-ui button {
+        margin: 0 2px;
+        padding: 2px;
+    }
+
+    .search-ui button img {
+        width: 15px;
+        height: 15px;
+    }
+
+    /* Ensure the collect section is not pushed off screen */
+    .collect-section {
+        padding-left: 2px;
+        justify-content: center; /* Center the content in the available space */
+    }
+
+    /* Adjust the header's after pseudo-element to act as a visual divider */
+    .header::after {
+        width: 1px; /* Make the divider thinner on smaller screens */
+        left: calc(50% - 1px); /* Ensure the divider stays centered */
+    }
+}
+
 @media (min-width: 768px) {
     .pokemon-container {
         grid-template-columns: repeat(6, 1fr);
