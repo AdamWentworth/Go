@@ -31,6 +31,18 @@ function SearchUI({
             <button onClick={toggleShadow} className={`shadow-button ${showShadow ? 'active' : ''}`}>
                 <img src="/images/shadow_icon.png" alt="Toggle Shadow" />
             </button>
+            {/* Evolutionary Line Checkbox */}
+            {/* <label className="evo-line-checkbox">
+                <input
+                    id="evolutionaryLineCheckbox"
+                    type="checkbox"
+                    className="evo-checkbox"
+                    checked={showEvolutionaryLine}
+                    onChange={toggleEvolutionaryLine}
+                />
+                <span className="evo-line-custom-checkbox" />
+                SHOW EVOLUTIONARY LINE
+            </label> */}
         </div>
     );
 }
