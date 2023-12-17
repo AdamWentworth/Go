@@ -1,5 +1,5 @@
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('D:/Visual-Studio-Code/Go/backend/data/pokego.db');
+const db = new sqlite3.Database('./data/pokego.db');
 
 const getPokemonsFromDb = (callback) => {
     const query = `

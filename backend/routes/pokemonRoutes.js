@@ -7,7 +7,7 @@ const { getImagePathsForPokemon } = require('../utils/imagePaths');
 const { getCostumesForPokemon, formatCostumes } = require('../services/costumeService');
 const { getMovesForPokemon, formatMoves } = require('../services/movesService');
 
-const db = new sqlite3.Database('D:/Visual-Studio-Code/Go/backend/data/pokego.db');
+const db = new sqlite3.Database('./data/pokego.db');
 
 router.get('/api/pokemons', (req, res) => {
     getPokemonsFromDb((err, rows) => {
