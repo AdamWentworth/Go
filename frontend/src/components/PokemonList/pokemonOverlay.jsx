@@ -37,74 +37,71 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
   return (
     <div className="pokemon-overlay" onClick={handleOverlayClick}>
       <button onClick={onClose} className="universal-close-button">X</button>
-
-      {/* Evolution Shortcuts split into separate windows */}
+  
       <div className="overlay-row evolution-shortcuts-row">
-        {/* Window for Evolves From - Only render if evolves_from data exists */}
         {currentPokemon.evolves_from && (
-          <WindowOverlay onClose={onClose} position="evolves-from">
+          <WindowOverlay onClose={onClose} position="evolves-from" className="overlay-evolves-from">
             <EvolutionShortcut
               evolvesFrom={currentPokemon.evolves_from}
               allPokemonData={allPokemons}
               setSelectedPokemon={switchOverlay}
+              className="evolution-shortcut-from"
             />
           </WindowOverlay>
         )}
-
-        {/* Window for Evolves To - Only render if evolves_to data exists */}
+  
         {currentPokemon.evolves_to && (
-          <WindowOverlay onClose={onClose} position="evolves-to">
+          <WindowOverlay onClose={onClose} position="evolves-to" className="overlay-evolves-to">
             <EvolutionShortcut
               evolvesTo={currentPokemon.evolves_to}
               allPokemonData={allPokemons}
               setSelectedPokemon={switchOverlay}
+              className="evolution-shortcut-to"
             />
           </WindowOverlay>
         )}
       </div>
-
-      {/* Second Row: Other Overlay Windows */}
+  
       <div className="overlay-row other-overlays-row">
-        {/* Render moves conditionally */}
         {totalMoves > 15 ? (
           <>
-            <WindowOverlay onClose={onClose} position="fast-moves">
-              <MoveList moves={fastMoves} />
+            <WindowOverlay onClose={onClose} position="fast-moves" className="overlay-fast-moves">
+              <MoveList moves={fastMoves} className="move-list-fast" />
             </WindowOverlay>
-            <WindowOverlay onClose={onClose} position="charged-moves">
-              <MoveList moves={chargedMoves} />
+            <WindowOverlay onClose={onClose} position="charged-moves" className="overlay-charged-moves">
+              <MoveList moves={chargedMoves} className="move-list-charged" />
             </WindowOverlay>
           </>
         ) : (
-          <WindowOverlay onClose={onClose} position="moves">
-            <MoveList moves={pokemon.moves} />
+          <WindowOverlay onClose={onClose} position="moves" className="overlay-all-moves">
+            <MoveList moves={pokemon.moves} className="move-list-all" />
           </WindowOverlay>
         )}
-
-        <WindowOverlay onClose={onClose} position="main">
-          <MainInfo pokemon={pokemon} />
+  
+        <WindowOverlay onClose={onClose} position="main" className="overlay-main-info">
+          <MainInfo pokemon={pokemon} className="main-info" />
         </WindowOverlay>
-
+  
         {showShinyWindow && (
-          <WindowOverlay onClose={onClose} position="shiny">
-            <ShinyInfo pokemon={pokemon} />
+          <WindowOverlay onClose={onClose} position="shiny" className="overlay-shiny-info">
+            <ShinyInfo pokemon={pokemon} className="shiny-info" />
           </WindowOverlay>
         )}
-
+  
         {showShadowWindow && (
-          <WindowOverlay onClose={onClose} position="shadow">
-            <ShadowInfo pokemon={pokemon} />
+          <WindowOverlay onClose={onClose} position="shadow" className="overlay-shadow-info">
+            <ShadowInfo pokemon={pokemon} className="shadow-info" />
           </WindowOverlay>
         )}
         
         {showCostumesWindow && (
-          <WindowOverlay onClose={onClose} position="costumes">
-            <Costumes costumes={pokemon.costumes} />
+          <WindowOverlay onClose={onClose} position="costumes" className="overlay-costumes">
+            <Costumes costumes={pokemon.costumes} className="costumes-info" />
           </WindowOverlay>
         )}
       </div>
-      </div>
-  );
+    </div>
+  );  
 }
 
 export default PokemonOverlay;

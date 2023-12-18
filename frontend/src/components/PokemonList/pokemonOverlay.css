@@ -47,7 +47,88 @@
     cursor: pointer;
     z-index: 100; /* Make sure it's above all overlay content */
   }
-  
 
+@media (max-width: 480px) { /* For mobile devices */
+    .pokemon-overlay {
+      padding: 10px; /* Further reduce padding for very small screens */
+    }
+    .overlay-row {
+      flex-direction: column; /* Stack the rows vertically on smaller screens */
+    }
+    .overlay-content {
+        width: 100%; /* Full width for very small screens */
+        max-height: 250px; /* Further reduce max height */
+    }
+}
 
+@media (min-width: 481px) and (max-width: 767px) { /* For tablets and smaller devices */
+    .pokemon-overlay {
+      padding: 20px; /* Adjust padding for smaller screens */
+    }
+    .overlay-content {
+        width: 90%; /* Adjust width to take more screen space */
+        max-height: 300px; /* Adjust max height for better visibility */
+        margin: 5px; /* Reduce margin */
+    }
 
+    /* Adjust specific window positions if necessary */
+    .overlay-evolves-from {
+        top: 10px;
+        left: 10px;
+    }
+
+    .overlay-evolves-to {
+        top: 10px;
+        right: 10px;
+    }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+    .column {
+        padding: 0px;
+    }
+    .overlay-content {
+        font-size: 12px !important;
+        padding: 0px
+      }
+    .overlay-content h1 {
+        font-size: 16px !important;
+      }
+    .overlay-content h2 {
+        font-size: 14px !important;
+      }
+
+    .overlay-evolves-from {
+        top: 10px !important;
+        left: 40px !important;
+    }
+
+    .overlay-evolves-to {
+        top: 10px !important;
+        right: 40px !important;
+    }
+
+    .moves-column img{
+        width: 18px;
+        height: 18px
+    }
+
+    .overlay-charged-moves {
+        max-height: 560px;
+    }
+    .main-info-column img {
+        max-width: 160px !important; 
+    }
+    .shiny-info-column img {
+        max-width: 160px !important; 
+    }
+    .costume-column img {
+        max-width: 120px !important; 
+    }
+    .fullscreen-toggle {
+        font-size: 12px;
+    }
+    .shadow-info-column img {
+        max-width: 120px !important;
+    }
+}

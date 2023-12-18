@@ -16,8 +16,8 @@
 }
 
 .type-icon {
-  width: 20px;
-  height: auto;
+  width: 24px;
+  height: 24px;
   padding-right: 5px;
   padding-bottom: 5px;
   vertical-align: middle;
@@ -36,9 +36,4 @@ h2 {
 .moves-table td {
   text-align: left;
   padding: 4px;
-}
-
-.type-icon {
-  width: 24px;
-  height: 24px;
 }
