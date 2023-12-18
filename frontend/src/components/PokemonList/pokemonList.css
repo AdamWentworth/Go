@@ -1,7 +1,5 @@
 /* pokemonList.css */
 
-/* pokemonList.css */
-
 .header {
     display: flex;
     justify-content: space-between;
@@ -42,6 +40,7 @@
 }
 
 .pokemon-container {
+    background-color: #111;
     display: grid;
     grid-template-columns: repeat(9, 1fr);
     gap: 16px;

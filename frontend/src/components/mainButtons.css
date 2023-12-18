@@ -36,3 +36,83 @@
 .raid-btn {
     background-color: #4c7aae;
 }
+
+@media (max-width: 480px) {
+    .mainButtonsContainer {
+        flex-direction: column; 
+        height: auto; /* Let height adjust based on content */
+        margin-top: 0px;
+    }
+    .mainButton {
+        font-size: 2rem; /* Adjust font size for smaller screens */
+    }
+    .collect-btn {
+        padding: 2.5rem 3.5rem;  /* Adjust padding for larger buttons */
+    }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+    .mainButtonsContainer {
+        flex-direction: column; 
+        height: auto; /* Let height adjust based on content */
+        margin-top: 0px;
+    }
+    .mainButton {
+        font-size: 3rem; /* Adjust font size for smaller screens */
+    }
+    .collect-btn {
+        padding: 2.5rem 3.5rem;  /* Adjust padding for larger buttons */
+    }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+    .mainButtonsContainer {
+        justify-content: center; /* Center buttons horizontally */
+        align-items: center; /* Center align on the Y axis */
+        flex-direction: row; /* Ensure buttons are in a row */
+        margin-top: 25vh; 
+    }
+    .mainButton {
+        font-size: 3rem;  /* Increase font size */
+        padding: 2.55rem 3rem;
+    }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+    .mainButtonsContainer {
+        justify-content: center; /* Center buttons horizontally */
+        align-items: center; /* Center align on the Y axis */
+        flex-direction: row; /* Ensure buttons are in a row */
+        margin-top: 25vh; 
+    }
+    .mainButton {
+        font-size: 4rem;  /* Increase font size */
+        padding: 3rem 4rem;
+    }
+}
+@media (min-width: 1440px) and (max-width: 1919px) {
+    .mainButtonsContainer {
+        justify-content: center; /* Center buttons horizontally */
+        align-items: center; /* Center align on the Y axis */
+        flex-direction: row; /* Ensure buttons are in a row */
+        margin-top: 25vh; 
+        gap: 4rem;   /* Spacing between buttons */
+    }
+    .mainButton {
+        font-size: 5rem;  /* Increase font size */
+        padding: 3rem 5rem;
+    }
+}
+@media (min-width: 1920px) and (max-width: 2559px) {
+    .mainButtonsContainer {
+        justify-content: center; /* Center buttons horizontally */
+        align-items: center; /* Center align on the Y axis */
+        flex-direction: row; /* Ensure buttons are in a row */
+        margin-top: 25vh; 
+        gap: 5rem;   /* Spacing between buttons */
+    }
+    .mainButton {
+        font-size: 7rem;  /* Increase font size */
+        padding: 3rem 5rem;
+    }
+}
+

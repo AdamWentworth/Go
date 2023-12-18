@@ -4,7 +4,8 @@
     display: flex;
     align-items: center;
     background-color: #111;
-    padding: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
     justify-content: center;
 }
 
@@ -43,13 +44,45 @@
     background-color: #0056b3;
 }
 
-/* Media Queries */
+@media (max-width: 480px) {
+    .navbar {
+        display: flex; /* Ensure navbar uses flexbox */
+        flex-direction: column; /* Stack items vertically */
+        align-items: center; /* Center items horizontally in the container */
+        text-align: center; /* Center text for all child elements */
+        width: 100%; /* Optional: Ensure navbar takes full width */
+    }
 
-/* For max-width: 480px */
-@media (max-width: 767px) {
+    .navbar h1 {
+       font-size: smaller; /* Adjust font size for smaller screens */
+    }
+
+    .title-container {
+        position: static; /* Resets any specific positioning */
+        transform: none; /* Removes any transforms */
+    }
+
+    .navbar-buttons {
+        display: flex; /* Use flexbox for button container */
+        flex-direction: row; /* Align buttons in a row */
+        justify-content: center; /* Center buttons horizontally */
+        width: 100%; /* Optional: Ensure buttons container takes full width */
+        margin-top: 10px; /* Space above the buttons */
+    }
+
+    .navbar-buttons button {
+        padding: 6px 10px; /* Adjust padding for buttons */
+        font-size: 12px; /* Adjust font size for buttons */
+    }
+
+    .App h1 {
+        padding: 0px !important; /* Override padding for h1 in .App */
+    }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
     .navbar {
         flex-direction: column;
-        /* padding: 10px; */
     }
 
     .navbar h1 {
@@ -75,24 +108,32 @@
         padding: 0px !important;
     }
 }
-
-/* For min-width: 767px and above */
-@media (min-width: 768px) {
+@media (min-width: 768px) and (max-width: 1023px){
     .navbar {
-        flex-direction: row;
+        flex-direction: column;
     }
 
     .navbar h1 {
-        font-size: smaller;
-     }
+       font-size: smaller;
+    }
 
     .title-container {
-        flex-grow: 1;
+        position: static;
+        transform: none;
+    }
+
+    .navbar-buttons {
+        margin-top: 10px;
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .navbar-buttons button {
         padding: 6px 10px;
         font-size: 12px;
+    }
+    .App h1 {
+        padding: 0px !important;
     }
 }
 
