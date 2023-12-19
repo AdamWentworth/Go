@@ -2,7 +2,7 @@ import React from 'react';
 import './navbar.css';
 
 function Navbar() {
-    const logoUrl = process.env.PUBLIC_URL + '/images/logo/logo.jpg'; // Construct the URL
+    const logoUrl = process.env.PUBLIC_URL + '/images/logo/logo.png'; // Construct the URL
 
     return (
         <div className="navbar">
