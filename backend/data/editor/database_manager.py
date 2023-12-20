@@ -4,10 +4,16 @@ class DatabaseManager:
     def __init__(self, db_path):
         self.conn = sqlite3.connect(db_path)
 
-    def fetch_all_pokemon(self):
+    def fetch_all_pokemon_sorted(self, sort_by='pokemon_id'):
         cursor = self.conn.cursor()
-        cursor.execute("SELECT pokemon_id, name FROM pokemon ORDER BY pokemon_id")
+        query = f"SELECT pokemon_id, name FROM pokemon ORDER BY {sort_by}"
+        cursor.execute(query)
         return ["{}: {}".format(row[0], row[1]) for row in cursor.fetchall()]
+    
+    def fetch_type_ids(self):
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT type_id, name FROM types")
+        return {name: type_id for type_id, name in cursor.fetchall()}
     
     def build_evolution_map(self):
         cursor = self.conn.cursor()
@@ -88,3 +94,16 @@ class DatabaseManager:
         pokemon_evolutions['evolves_from'] = evolves_from_with_names
 
         return pokemon_data, moves, pokemon_evolutions
+
+    def update_pokemon_data(self, pokemon_id, data):
+        cursor = self.conn.cursor()
+        update_query = """
+        UPDATE pokemon
+        SET name=?, pokedex_number=?, image_url=?, image_url_shiny=?, sprite_url=?,
+        attack=?, defense=?, stamina=?, type_1_id=?, type_2_id=?, 
+        gender_rate=?, rarity=?, form=?, generation=?, available=?,
+        shiny_available=?, shiny_rarity=?, date_available=?, date_shiny_available=?
+        WHERE pokemon_id=?
+        """
+        cursor.execute(update_query, (*data, pokemon_id))
+        self.conn.commit()

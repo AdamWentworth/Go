@@ -1,11 +1,29 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
+from database_manager import DatabaseManager
 
 class PokemonDetailsWindow:
+
+    general_attributes = [
+            'ID', 'Name', 'Pokedex Number', 'Image URL', 'Image URL Shiny', 'Sprite URL',
+            'Attack', 'Defense', 'Stamina', 'Type 1', 'Type 2'
+        ]
+    
+    additional_attributes = [
+            'Gender Rate', 'Rarity', 'Form', 'Generation', 'Available',
+            'Shiny Available', 'Shiny Rarity', 'Date Available', 'Date Shiny Available'
+        ]
+    
     def __init__(self, parent, pokemon_id, details):
         self.window = tk.Toplevel(parent)
         self.window.title(f"Details of Pokémon ID: {pokemon_id}")
         self.window.state('zoomed')
+
+        self.pokemon_id = pokemon_id
+        self.db_manager = DatabaseManager('backend/data/pokego.db')  # Adjust the path as necessary
+
+        self.type_ids = self.db_manager.fetch_type_ids()
 
         # Scrollable container setup
         self.canvas = tk.Canvas(self.window)
@@ -35,28 +53,51 @@ class PokemonDetailsWindow:
         general_frame = tk.LabelFrame(info_container, text="General Info", padx=10, pady=10)
         general_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
 
-        general_attributes = [
-            'ID', 'Name', 'Pokedex Number', 'Image URL', 'Image URL Shiny', 'Sprite URL',
-            'Attack', 'Defense', 'Stamina', 'Type 1', 'Type 2'
-        ]
+        self.entry_widgets = {}  # Store entry widgets for easy access
 
-        for i, attr in enumerate(general_attributes):
+        for i, attr in enumerate(self.general_attributes):
             tk.Label(general_frame, text=f"{attr}:").grid(row=i, column=0, sticky='e')
-            tk.Label(general_frame, text=self.pokemon_data[i]).grid(row=i, column=1, sticky='w')
+            entry = tk.Entry(general_frame)
+            entry_value = self.pokemon_data[i] if self.pokemon_data[i] is not None else ""
+            entry.insert(0, str(entry_value))
+            entry.grid(row=i, column=1, sticky='w')
+            self.entry_widgets[attr] = entry
 
         # Additional info frame on the right
         additional_frame = tk.LabelFrame(info_container, text="Additional Info", padx=10, pady=10)
         additional_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5)
 
-        additional_attributes = [
-            'Gender Rate', 'Rarity', 'Form', 'Generation', 'Available',
-            'Shiny Available', 'Shiny Rarity', 'Date Available', 'Date Shiny Available'
-        ]
-
         offset = 11
-        for i, attr in enumerate(additional_attributes):
+        for i, attr in enumerate(self.additional_attributes):
             tk.Label(additional_frame, text=f"{attr}:").grid(row=i, column=0, sticky='e')
-            tk.Label(additional_frame, text=self.pokemon_data[offset + i]).grid(row=i, column=1, sticky='w')
+            entry = tk.Entry(additional_frame)
+            entry_value = self.pokemon_data[offset + i] if self.pokemon_data[offset + i] is not None else ""
+            entry.insert(0, str(entry_value))
+            entry.grid(row=i, column=1, sticky='w')
+            self.entry_widgets[attr] = entry
+
+    def save_changes(self):
+        updated_data = []
+        for attr in self.general_attributes[1:]:  # Skip 'ID'
+            value = self.entry_widgets[attr].get().strip()
+            if attr in ['Type 1', 'Type 2']:
+                # Convert type name to type ID
+                value = self.type_ids.get(value, None)
+            elif not value:
+                # Convert empty string to None
+                value = None
+            updated_data.append(value)
+
+        updated_data.extend([self.entry_widgets[attr].get().strip() or None for attr in self.additional_attributes])
+
+        # Update the database
+        self.db_manager.update_pokemon_data(self.pokemon_id, updated_data)
+
+        # Show a confirmation message
+        tk.messagebox.showinfo("Update", "Pokemon data updated successfully")
+
+        # Close the window after saving
+        self.window.destroy()
 
     def create_moves_frame(self):
         frame = tk.LabelFrame(self.window, text="Moves", padx=10, pady=10)
@@ -96,3 +137,6 @@ class PokemonDetailsWindow:
         for to_id, to_name in self.evolutions['evolves_to']:
             to_info = f"{to_name} (ID: {to_id})"
             tk.Label(evolutions_frame, text=to_info).pack(anchor='w')
+        
+        save_button = tk.Button(self.scrollable_frame, text="Save Changes", command=self.save_changes)
+        save_button.pack()
