@@ -16,9 +16,14 @@ const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine) => {
 
     const displayedPokemons = useMemo(() => {
         const evolutionaryFamily = showEvolutionaryLine ? getEvolutionaryFamily(searchTerm, allPokemons) : [];
+        const addedSingleFormNumbers = new Set();
 
         const filteredPokemons = allPokemons.reduce((acc, pokemon) => {
             const isInEvolutionaryFamily = showEvolutionaryLine && evolutionaryFamily.includes(pokemon.pokemon_id);
+
+            if (singleFormPokedexNumbers.includes(pokemon.pokedex_number) && addedSingleFormNumbers.has(pokemon.pokedex_number)) {
+                return acc; // Skip this pokemon as its number is already added
+            }
 
             if (showCostume && pokemon.costumes) {
                 pokemon.costumes.forEach(costume => {
@@ -42,6 +47,10 @@ const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine) => {
                     ...pokemon,
                     currentImage: imageToUse
                 });
+            }
+
+            if (singleFormPokedexNumbers.includes(pokemon.pokedex_number)) {
+                addedSingleFormNumbers.add(pokemon.pokedex_number);
             }
 
             return acc;

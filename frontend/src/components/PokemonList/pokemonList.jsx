@@ -17,7 +17,7 @@ function pokemonList() {
     
     const { allPokemons, loading } = useFetchPokemons();
     
-    const singleFormPokedexNumbers = [649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
+    const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
     
     const {
         isShiny, setIsShiny, showShadow, setShowShadow, 
