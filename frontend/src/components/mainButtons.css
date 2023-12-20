@@ -6,7 +6,9 @@
     padding: 2rem 11%; /* Add vertical padding and slightly reduce horizontal padding */
     gap: 1rem;   /* Spacing between buttons */
     height: calc(100% - 4rem); /* Adjust height, deducting the top padding */
-    margin-top: 20rem; /* Pushing the buttons lower */
+    margin-top: 0px; /* Remove any top margin to eliminate the gap */
+    background-color: #333;
+    height: 78vh;
 }
 
 /* Base style for individual buttons */
@@ -69,7 +71,6 @@
         justify-content: center; /* Center buttons horizontally */
         align-items: center; /* Center align on the Y axis */
         flex-direction: row; /* Ensure buttons are in a row */
-        margin-top: 25vh; 
     }
     .mainButton {
         font-size: 3rem;  /* Increase font size */
@@ -82,7 +83,6 @@
         justify-content: center; /* Center buttons horizontally */
         align-items: center; /* Center align on the Y axis */
         flex-direction: row; /* Ensure buttons are in a row */
-        margin-top: 25vh; 
     }
     .mainButton {
         font-size: 4rem;  /* Increase font size */
