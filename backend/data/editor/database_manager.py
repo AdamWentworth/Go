@@ -15,6 +15,16 @@ class DatabaseManager:
         cursor.execute("SELECT type_id, name FROM types")
         return {name: type_id for type_id, name in cursor.fetchall()}
     
+    def fetch_moves(self, is_fast):
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT move_id, name FROM moves WHERE is_fast = ?", (is_fast,))
+        return {name: move_id for move_id, name in cursor.fetchall()}
+    
+    def fetch_pokemon_moves(self, pokemon_id):
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT move_id FROM pokemon_moves WHERE pokemon_id = ?", (pokemon_id,))
+        return [row[0] for row in cursor.fetchall()]
+    
     def build_evolution_map(self):
         cursor = self.conn.cursor()
         cursor.execute("SELECT pokemon_id, evolves_to FROM pokemon_evolutions")
@@ -60,9 +70,9 @@ class DatabaseManager:
                 else:
                     pokemon_data[index] = None  # Or some placeholder if there's no type with the given ID
 
-        # Fetch the moves with the is_fast attribute from the moves table
+        # Fetch move details along with legacy status
         cursor.execute("""
-            SELECT m.name, t.name, m.is_fast FROM moves m
+            SELECT m.name, t.name, m.is_fast, pm.legacy FROM moves m
             INNER JOIN pokemon_moves pm ON m.move_id = pm.move_id
             INNER JOIN types t ON m.type_id = t.type_id
             WHERE pm.pokemon_id = ?
@@ -105,5 +115,45 @@ class DatabaseManager:
         shiny_available=?, shiny_rarity=?, date_available=?, date_shiny_available=?
         WHERE pokemon_id=?
         """
-        cursor.execute(update_query, (*data, pokemon_id))
+        # Ensure that data has 19 items and pokemon_id is the 20th item
+        parameters = tuple(data) + (pokemon_id,)
+        cursor.execute(update_query, parameters)
         self.conn.commit()
+
+    def update_pokemon_moves(self, pokemon_id, move_data):
+        cursor = self.conn.cursor()
+
+        # Fetch current moves to check for existence
+        cursor.execute("SELECT move_id, legacy FROM pokemon_moves WHERE pokemon_id = ?", (pokemon_id,))
+        current_moves = {move_id: legacy for move_id, legacy in cursor.fetchall()}
+
+        # Set to track which moves are processed
+        processed_moves = set()
+
+        for move_id, is_legacy in move_data:
+            # Process each move
+            if move_id in current_moves:
+                # Update existing move
+                if current_moves[move_id] != is_legacy:  # Update only if legacy status has changed
+                    cursor.execute("""
+                        UPDATE pokemon_moves
+                        SET legacy = ?
+                        WHERE pokemon_id = ? AND move_id = ?
+                    """, (is_legacy, pokemon_id, move_id))
+            else:
+                # Insert new move
+                cursor.execute("""
+                    INSERT INTO pokemon_moves (pokemon_id, move_id, legacy)
+                    VALUES (?, ?, ?)
+                """, (pokemon_id, move_id, is_legacy))
+
+            processed_moves.add(move_id)
+
+        # Delete moves that are no longer present
+        for move_id in current_moves:
+            if move_id not in processed_moves:
+                cursor.execute("DELETE FROM pokemon_moves WHERE pokemon_id = ? AND move_id = ?", (pokemon_id, move_id))
+
+        self.conn.commit()
+
+

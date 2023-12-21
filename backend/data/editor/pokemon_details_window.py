@@ -24,6 +24,7 @@ class PokemonDetailsWindow:
         self.db_manager = DatabaseManager('backend/data/pokego.db')  # Adjust the path as necessary
 
         self.type_ids = self.db_manager.fetch_type_ids()
+        self.existing_move_ids = self.db_manager.fetch_pokemon_moves(pokemon_id)
 
         # Scrollable container setup
         self.canvas = tk.Canvas(self.window)
@@ -43,6 +44,8 @@ class PokemonDetailsWindow:
         self.create_info_frames()
         self.create_moves_frame()
         self.create_evolutions_frame()
+
+        self.move_counter = 0
 
     def create_info_frames(self):
         # Info container frame
@@ -77,6 +80,7 @@ class PokemonDetailsWindow:
             self.entry_widgets[attr] = entry
 
     def save_changes(self):
+        # Save general and additional attributes
         updated_data = []
         for attr in self.general_attributes[1:]:  # Skip 'ID'
             value = self.entry_widgets[attr].get().strip()
@@ -90,8 +94,11 @@ class PokemonDetailsWindow:
 
         updated_data.extend([self.entry_widgets[attr].get().strip() or None for attr in self.additional_attributes])
 
-        # Update the database
+        # Update the general and additional data in the database
         self.db_manager.update_pokemon_data(self.pokemon_id, updated_data)
+
+        # Save moves
+        self.save_moves()
 
         # Show a confirmation message
         tk.messagebox.showinfo("Update", "Pokemon data updated successfully")
@@ -112,10 +119,78 @@ class PokemonDetailsWindow:
         tk.Label(fast_moves_frame, text="Fast Moves").pack(anchor='w')
         tk.Label(charged_moves_frame, text="Charged Moves").pack(anchor='w')
 
-        for move_name, move_type, is_fast in self.moves:
-            move_info = f"{move_name} (Type: {move_type})"
+        self.fast_moves = self.db_manager.fetch_moves(1)  # Fetch fast moves
+        self.charged_moves = self.db_manager.fetch_moves(0)  # Fetch charged moves
+
+        self.move_entries = {}  # Use a dictionary to associate moves with their UI elements
+
+        # Process each move with legacy status
+        for move_name, move_type, is_fast, is_legacy in self.moves:
             parent_frame = fast_moves_frame if is_fast else charged_moves_frame
-            tk.Label(parent_frame, text=move_info).pack(anchor='w')
+            move_var, move_dropdown, legacy_var = self.create_move_slot(parent_frame, move_name, is_fast, is_legacy)
+            
+            delete_button = tk.Button(parent_frame, text="Delete", command=lambda mn=move_name: self.delete_move_entry(mn))
+            delete_button.pack()
+            
+            self.move_entries[move_name] = {
+                'move_var': move_var, 
+                'move_dropdown': move_dropdown, 
+                'delete_button': delete_button, 
+                'legacy_var': legacy_var
+            }
+
+            # Add buttons for new move slots
+        tk.Button(fast_moves_frame, text="Add Fast Move", command=lambda: self.add_move_slot(fast_moves_frame, True)).pack()
+        tk.Button(charged_moves_frame, text="Add Charged Move", command=lambda: self.add_move_slot(charged_moves_frame, False)).pack()
+        
+    def delete_move_entry(self, move_name):
+        # Get the move entry components
+        move_var, move_dropdown, delete_button = self.move_entries.pop(move_name, (None, None, None))
+        if move_dropdown and delete_button:
+            move_dropdown.destroy()
+            delete_button.destroy()
+
+    def create_move_slot(self, parent_frame, move_name='', is_fast=True, is_legacy=False):
+        move_var = tk.StringVar()
+        move_var.set(move_name)
+
+        moves = self.fast_moves if is_fast else self.charged_moves
+        move_dropdown = ttk.Combobox(parent_frame, textvariable=move_var, values=list(moves.keys()))
+        move_dropdown.pack()
+
+        legacy_var = tk.BooleanVar(value=is_legacy)
+        legacy_checkbox = tk.Checkbutton(parent_frame, text="Legacy", variable=legacy_var)
+        legacy_checkbox.pack()
+
+        return move_var, move_dropdown, legacy_var
+
+    def add_move_slot(self, parent_frame, is_fast):
+        # Create a new move slot
+        move_var, move_dropdown, legacy_var = self.create_move_slot(parent_frame, is_fast=is_fast)
+
+        # Generate a unique key for the new move entry
+        move_key = f"new_move_{self.move_counter}"
+        self.move_counter += 1
+
+        # Add the new move entry to self.move_entries
+        self.move_entries[move_key] = {
+            'move_var': move_var, 
+            'move_dropdown': move_dropdown, 
+            'legacy_var': legacy_var
+        }
+
+    def save_moves(self):
+        move_data = []
+        for key, move_entry in self.move_entries.items():
+            move_name = move_entry['move_var'].get()
+            if move_name:
+                move_id = self.fast_moves.get(move_name) or self.charged_moves.get(move_name)
+                is_legacy = move_entry['legacy_var'].get()
+                if move_id:
+                    move_data.append((move_id, int(is_legacy)))
+        
+        if move_data:
+            self.db_manager.update_pokemon_moves(self.pokemon_id, move_data)
 
     def create_evolutions_frame(self):
         evolutions_frame = tk.LabelFrame(self.window, text="Evolutions", padx=10, pady=10)
@@ -140,3 +215,5 @@ class PokemonDetailsWindow:
         
         save_button = tk.Button(self.scrollable_frame, text="Save Changes", command=self.save_changes)
         save_button.pack()
+
+    
