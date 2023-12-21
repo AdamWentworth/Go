@@ -159,7 +159,8 @@ class PokemonDetailsWindow:
         
     def delete_move_entry(self, move_name):
         # Get the move entry components
-        move_var, move_dropdown, delete_button = self.move_entries.pop(move_name, (None, None, None))
+        move_var, move_dropdown, delete_button, legacy_var = self.move_entries.pop(move_name, (None, None, None, None))
+
         if move_dropdown and delete_button:
             move_dropdown.destroy()
             delete_button.destroy()
@@ -323,8 +324,4 @@ class PokemonDetailsWindow:
             # The ID is before the colon, so split on colon and take the first part
             return int(dropdown_value.split(":")[0].strip())
         except (IndexError, ValueError):
-            return None
-
-
-
-    
+            return None   
