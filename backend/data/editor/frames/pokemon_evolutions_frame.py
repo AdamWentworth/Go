@@ -1,0 +1,212 @@
+# pokemon_evolutions_frame.py
+import tkinter as tk
+from tkinter import ttk
+
+class PokemonEvolutionsFrame:
+    def __init__(self, parent, db_manager, pokemon_id, evolutions):
+        self.parent = parent
+        self.db_manager = db_manager
+        self.pokemon_id = pokemon_id
+        self.evolutions = evolutions
+        self.pending_evolves_to_additions = []
+        self.pending_evolves_to_removals = []
+        self.evolution_details_frame = None
+
+    def create_evolutions_frame(self):
+        evolution_container = tk.Frame(self.parent)
+        evolution_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        self.create_evolutions_list_frame(evolution_container)
+
+        # Initial call with default selected_id, if exists
+        initial_selected_id = self.evolutions['evolves_to'][0][0] if self.evolutions['evolves_to'] else None
+        self.create_evolution_details_frame(evolution_container, initial_selected_id)
+
+    def create_evolutions_list_frame(self, container):
+        all_pokemon = self.db_manager.fetch_all_pokemon_sorted()  # Define all_pokemon here
+
+        evolutions_frame = tk.LabelFrame(container, text="Evolutions", padx=10, pady=10)
+        evolutions_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
+
+        # Label for 'Evolves From'
+        evolves_from_label_text = tk.StringVar()
+        evolves_from_label = tk.Label(evolutions_frame, textvariable=evolves_from_label_text)
+        evolves_from_label.grid(row=0, column=1, sticky='w')
+
+        if self.evolutions['evolves_from']:
+            current_evolves_from = f"{self.evolutions['evolves_from'][0][1]} (ID: {self.evolutions['evolves_from'][0][0]})"
+            evolves_from_label_text.set("Evolves From: " + current_evolves_from)
+        else:
+            evolves_from_label_text.set("Evolves From: None")
+
+        evolves_to_label = tk.Label(evolutions_frame, text="Evolves To:")
+        evolves_to_label.grid(row=1, column=0, sticky='w')
+
+        self.evolves_to_listbox = tk.Listbox(evolutions_frame)
+        evolves_to_scroll = tk.Scrollbar(evolutions_frame, orient="vertical")
+        self.evolves_to_listbox.config(yscrollcommand=evolves_to_scroll.set)
+        evolves_to_scroll.config(command=self.evolves_to_listbox.yview)
+        self.evolves_to_listbox.grid(row=1, column=1, sticky='we')
+        evolves_to_scroll.grid(row=1, column=1, sticky='ens')
+
+        for to_id, to_name in self.evolutions['evolves_to']:
+            self.evolves_to_listbox.insert(tk.END, f"{to_id}: {to_name}")
+
+        self.evolves_to_listbox.bind("<<ListboxSelect>>", self.on_evolves_to_selection)
+
+        self.new_evolves_to_var = tk.StringVar()
+        new_evolves_to_combobox = ttk.Combobox(evolutions_frame, textvariable=self.new_evolves_to_var, values=all_pokemon)
+        new_evolves_to_combobox.grid(row=2, column=1, sticky='we')
+        
+        add_evolves_to_button = tk.Button(evolutions_frame, text="Add", command=self.add_evolves_to)
+        add_evolves_to_button.grid(row=2, column=2, sticky='w')
+
+        remove_evolves_to_button = tk.Button(evolutions_frame, text="Remove", command=self.remove_selected_evolves_to)
+        remove_evolves_to_button.grid(row=3, column=1, sticky='w')
+
+    def create_evolution_details_frame(self, container, selected_id):
+        if selected_id is None:
+            return 
+        if not self.evolution_details_frame:
+            self.evolution_details_frame = tk.LabelFrame(container, text="Evolution Details", padx=10, pady=10)
+            self.evolution_details_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5)
+
+        # Clear previous contents
+        for widget in self.evolution_details_frame.winfo_children():
+            widget.destroy()
+
+        self.evolution_detail_entries = {}  # Dictionary to store entry widgets
+
+        # Fetch evolution details for the selected evolution
+        evolution_details = self.db_manager.fetch_evolution_details_for_evolves_to(self.pokemon_id, selected_id)
+        for detail in evolution_details:
+            evolution_id, evolves_to, candies_needed, trade_discount, item_id, other = detail
+
+            labels_values = [
+                ("Evolution ID", evolution_id),
+                ("Evolves To", evolves_to),
+                ("Candies Needed", candies_needed),
+                ("Trade Discount", trade_discount),
+                ("Item ID", item_id),
+                ("Other", other)
+            ]
+
+            for label, value in labels_values:
+                row_frame = tk.Frame(self.evolution_details_frame)
+                row_frame.pack(fill='x', expand=True)
+                tk.Label(row_frame, text=f"{label}:").pack(side=tk.LEFT)
+
+                entry = tk.Entry(row_frame)
+                entry.insert(0, str(value) if value is not None else "")
+                entry.pack(side=tk.RIGHT, fill='x', expand=True)
+                self.evolution_detail_entries[label] = entry  # Store reference to entry
+
+        # Add the Save button
+        save_button = tk.Button(self.evolution_details_frame, text="Save Changes", command=self.save_evolution_changes)
+        save_button.pack()
+
+    def save_evolution_changes(self):
+        # Collect updated data from entry widgets
+        updated_data = {}
+        for label, entry in self.evolution_detail_entries.items():
+            updated_data[label] = entry.get()
+
+        # Assuming evolution_id is always present and is the first item in the details
+        evolution_id = updated_data.get("Evolution ID")
+        if evolution_id:
+            try:
+                evolution_id = int(evolution_id)
+                # Call the database manager method to update the details
+                self.db_manager.update_evolution_details(evolution_id, updated_data)
+                # Optionally, show a confirmation message
+                tk.messagebox.showinfo("Success", "Evolution details updated successfully")
+            except ValueError:
+                tk.messagebox.showerror("Error", "Invalid Evolution ID")
+        else:
+            tk.messagebox.showerror("Error", "Evolution ID is missing")
+
+    def on_evolves_to_selection(self, event):
+        if not self.evolves_to_listbox.curselection():
+            return
+
+        selected_index = self.evolves_to_listbox.curselection()[0]
+        evolves_to_id = self.parse_id_from_dropdown(self.evolves_to_listbox.get(selected_index))
+
+        self.update_evolution_details(evolves_to_id)
+
+    def update_evolution_details(self, evolves_to_id):
+        # Initialize self.evolution_details_frame if not already done
+        if not self.evolution_details_frame:
+            self.create_evolution_details_frame(self.parent, None)
+
+        # Clear the previous contents of the frame
+        for widget in self.evolution_details_frame.winfo_children():
+            widget.destroy()
+
+        # Fetch and display the details for the selected evolution
+        evolution_details = self.db_manager.fetch_evolution_details_for_evolves_to(self.pokemon_id, evolves_to_id)
+        for detail in evolution_details:
+            evolution_id, evolves_to, candies_needed, trade_discount, item_id, other = detail
+
+            labels_values = [
+                ("Evolution ID", evolution_id),
+                ("Evolves To", evolves_to),
+                ("Candies Needed", candies_needed),
+                ("Trade Discount", trade_discount),
+                ("Item ID", item_id),
+                ("Other", other)
+            ]
+
+            for label, value in labels_values:
+                row_frame = tk.Frame(self.evolution_details_frame)
+                row_frame.pack(fill='x', expand=True)
+                tk.Label(row_frame, text=f"{label}:").pack(side=tk.LEFT)
+                entry = tk.Entry(row_frame)
+                entry.insert(0, str(value) if value is not None else "")
+                entry.pack(side=tk.RIGHT, fill='x', expand=True)
+                self.evolution_detail_entries[label] = entry
+
+        # Re-add the Save button after updating details
+        save_button = tk.Button(self.evolution_details_frame, text="Save Changes", command=self.save_evolution_changes)
+        save_button.pack()
+
+    def update_evolves_from(self):
+        selected = self.evolves_from_var.get()
+        selected_id = self.parse_id_from_dropdown(selected)
+        if selected_id is not None:
+            # Update evolves_from in the database
+            self.db_manager.update_evolves_from(self.pokemon_id, selected_id)
+
+    def add_evolves_to(self):
+        selected_text = self.new_evolves_to_var.get()
+        selected_id = self.parse_id_from_dropdown(selected_text)
+        if selected_id is not None and selected_id not in self.pending_evolves_to_additions:
+            self.pending_evolves_to_additions.append(selected_id)
+            self.evolves_to_listbox.insert(tk.END, selected_text)
+
+    def remove_selected_evolves_to(self):
+        selected_indices = self.evolves_to_listbox.curselection()
+        if selected_indices:
+            selected_index = selected_indices[0]
+            selected_text = self.evolves_to_listbox.get(selected_index)
+            selected_id = self.parse_id_from_dropdown(selected_text)
+
+            if selected_id is not None:
+                if selected_id in self.pending_evolves_to_additions:
+                    self.pending_evolves_to_additions.remove(selected_id)
+                else:
+                    self.pending_evolves_to_removals.append(selected_id)
+                self.evolves_to_listbox.delete(selected_index)
+
+    def save_evolutions(self):
+        for evolves_to_id in self.pending_evolves_to_additions:
+            self.db_manager.add_evolves_to(self.evolutions['pokemon_id'], evolves_to_id)
+
+        for evolves_to_id in self.pending_evolves_to_removals:
+            self.db_manager.remove_evolves_to(self.evolutions['pokemon_id'], evolves_to_id)
+
+    def parse_id_from_dropdown(self, dropdown_value):
+        try:
+            return int(dropdown_value.split(":")[0].strip())
+        except (IndexError, ValueError):
+            return None
