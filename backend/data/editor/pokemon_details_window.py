@@ -41,6 +41,9 @@ class PokemonDetailsWindow:
         # Assuming details is a tuple of (pokemon_data, moves, evolutions)
         self.pokemon_data, self.moves, self.evolutions = details
 
+        self.pending_evolves_to_additions = []
+        self.pending_evolves_to_removals = []
+
         self.create_info_frames()
         self.create_moves_frame()
         self.create_evolutions_frame()
@@ -99,6 +102,17 @@ class PokemonDetailsWindow:
 
         # Save moves
         self.save_moves()
+
+        # Commit pending evolution changes
+        for evolves_to_id in self.pending_evolves_to_additions:
+            self.db_manager.add_evolves_to(self.pokemon_id, evolves_to_id)
+
+        for evolves_to_id in self.pending_evolves_to_removals:
+            self.db_manager.remove_evolves_to(self.pokemon_id, evolves_to_id)
+
+        # Clear pending changes
+        self.pending_evolves_to_additions.clear()
+        self.pending_evolves_to_removals.clear()
 
         # Show a confirmation message
         tk.messagebox.showinfo("Update", "Pokemon data updated successfully")
@@ -231,7 +245,7 @@ class PokemonDetailsWindow:
 
         # Populate the listbox with current 'evolves to' data
         for to_id, to_name in self.evolutions['evolves_to']:
-            self.evolves_to_listbox.insert(tk.END, f"{to_name} (ID: {to_id})")
+            self.evolves_to_listbox.insert(tk.END, f"{to_id}: {to_name}")
 
         # Entry and button to add a new 'Evolves To'
         self.new_evolves_to_var = tk.StringVar()
@@ -261,35 +275,56 @@ class PokemonDetailsWindow:
         self.db_manager.update_evolves_from(self.pokemon_id, selected_id)
 
     def add_evolves_to(self):
-        # Get the new 'evolves to' Pokemon ID from the entry
-        selected = self.new_evolves_to_var.get()
-        selected_id = self.parse_id_from_dropdown(selected)
-        # Add a new evolves_to link for the current Pokemon
-        # You would need to implement the logic in your database manager
-        self.db_manager.add_evolves_to(self.pokemon_id, selected_id)
-        # Update the UI listbox
-        self.evolves_to_listbox.insert(tk.END, selected)
+        print("Add evolves to clicked")  # Debug print
+        selected_text = self.new_evolves_to_var.get()
+        print(f"Selected Text: {selected_text}")  # Debug print
+        selected_id = self.parse_id_from_dropdown(selected_text)
+        print(f"Selected ID: {selected_id}")  # Debug print
+        if selected_id is not None:
+            # Avoid adding duplicates
+            if selected_id not in self.pending_evolves_to_additions:
+                self.pending_evolves_to_additions.append(selected_id)
+                self.evolves_to_listbox.insert(tk.END, selected_text)
 
     def remove_selected_evolves_to(self):
-        # Get the selected 'evolves to' entry in the listbox
+        print("Remove button clicked")  # Debug print
+
         selected_indices = self.evolves_to_listbox.curselection()
+
         if not selected_indices:
+            print("No selection made")  # Debug print
             return
+
         selected_index = selected_indices[0]
         selected_text = self.evolves_to_listbox.get(selected_index)
+        print(f"Selected Text: {selected_text}")  # Debug print
+
         selected_id = self.parse_id_from_dropdown(selected_text)
-        # Remove the selected evolves_to link
-        # You would need to implement the logic in your database manager
-        self.db_manager.remove_evolves_to(self.pokemon_id, selected_id)
-        # Update the UI listbox
-        self.evolves_to_listbox.delete(selected_index)
+        print(f"Selected ID: {selected_id}")  # Debug print
+
+        if selected_id is not None:
+            if selected_id not in self.pending_evolves_to_additions:
+                self.pending_evolves_to_removals.append(selected_id)
+                print(f"Added to pending removals: {selected_id}")  # Debug print
+            else:
+                # If it's in pending additions, just remove it from there
+                self.pending_evolves_to_additions.remove(selected_id)
+                print(f"Removed from pending additions: {selected_id}")  # Debug print
+
+            # Remove the item from the listbox
+            self.evolves_to_listbox.delete(selected_index)
+            print(f"Removed from listbox: {selected_text}")  # Debug print
+        else:
+            print("Invalid ID or parsing error")  # Debug print
 
     def parse_id_from_dropdown(self, dropdown_value):
         # Extract the ID from the dropdown value
         try:
-            return int(dropdown_value.split(":")[1].strip().strip(')').strip('(ID'))
+            # The ID is before the colon, so split on colon and take the first part
+            return int(dropdown_value.split(":")[0].strip())
         except (IndexError, ValueError):
             return None
+
 
 
     
