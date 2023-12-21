@@ -157,3 +157,23 @@ class DatabaseManager:
         self.conn.commit()
 
 
+    def update_pokemon_evolution(self, pokemon_id, evolves_to_id):
+        cursor = self.conn.cursor()
+        if evolves_to_id is not None:
+            cursor.execute("""
+                REPLACE INTO pokemon_evolutions (pokemon_id, evolves_to)
+                VALUES (?, ?)
+            """, (pokemon_id, evolves_to_id))
+        else:
+            cursor.execute("DELETE FROM pokemon_evolutions WHERE pokemon_id = ?", (pokemon_id,))
+        self.conn.commit()
+
+    def reverse_evolution_link(self, old_evolves_from_id, new_evolves_from_id):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            UPDATE pokemon_evolutions
+            SET evolves_to = ?
+            WHERE evolves_to = ?
+        """, (new_evolves_from_id, old_evolves_from_id))
+        self.conn.commit()
+

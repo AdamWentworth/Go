@@ -196,24 +196,100 @@ class PokemonDetailsWindow:
         evolutions_frame = tk.LabelFrame(self.window, text="Evolutions", padx=10, pady=10)
         evolutions_frame.pack(padx=10, pady=10, fill='x')
 
-        # Display 'evolves from' data
+        # Label for 'Evolves From'
         evolves_from_label = tk.Label(evolutions_frame, text="Evolves From:")
-        evolves_from_label.pack(anchor='w')
-        for from_id, from_name in self.evolutions['evolves_from']:
-            from_info = f"{from_name} (ID: {from_id})"
-            tk.Label(evolutions_frame, text=from_info).pack(anchor='w')
+        evolves_from_label.grid(row=0, column=0, sticky='w')
 
-        # Separator
-        ttk.Separator(evolutions_frame, orient='horizontal').pack(fill='x', pady=5)
+        # Dropdown for 'Evolves From'
+        self.evolves_from_var = tk.StringVar()
+        all_pokemon = self.db_manager.fetch_all_pokemon_sorted()
+        self.evolves_from_dropdown = ttk.Combobox(evolutions_frame, textvariable=self.evolves_from_var, values=all_pokemon)
+        self.evolves_from_dropdown.grid(row=0, column=1, sticky='we')
 
-        # Display 'evolves to' data
+        # Set the current 'evolves from' if available
+        if self.evolutions['evolves_from']:
+            current_evolves_from = f"{self.evolutions['evolves_from'][0][1]} (ID: {self.evolutions['evolves_from'][0][0]})"
+            self.evolves_from_var.set(current_evolves_from)
+        else:
+            self.evolves_from_var.set('')
+
+        # Button to update 'Evolves From'
+        evolves_from_button = tk.Button(evolutions_frame, text="Update", command=self.update_evolves_from)
+        evolves_from_button.grid(row=0, column=2, sticky='w')
+
+        # Label for 'Evolves To'
         evolves_to_label = tk.Label(evolutions_frame, text="Evolves To:")
-        evolves_to_label.pack(anchor='w')
+        evolves_to_label.grid(row=1, column=0, sticky='w')
+
+        # Listbox for 'Evolves To' with a scrollbar
+        self.evolves_to_listbox = tk.Listbox(evolutions_frame)
+        evolves_to_scroll = tk.Scrollbar(evolutions_frame, orient="vertical")
+        self.evolves_to_listbox.config(yscrollcommand=evolves_to_scroll.set)
+        evolves_to_scroll.config(command=self.evolves_to_listbox.yview)
+        self.evolves_to_listbox.grid(row=1, column=1, sticky='we')
+        evolves_to_scroll.grid(row=1, column=1, sticky='ens')
+
+        # Populate the listbox with current 'evolves to' data
         for to_id, to_name in self.evolutions['evolves_to']:
-            to_info = f"{to_name} (ID: {to_id})"
-            tk.Label(evolutions_frame, text=to_info).pack(anchor='w')
+            self.evolves_to_listbox.insert(tk.END, f"{to_name} (ID: {to_id})")
+
+        # Entry and button to add a new 'Evolves To'
+        self.new_evolves_to_var = tk.StringVar()
+        new_evolves_to_combobox = ttk.Combobox(evolutions_frame, textvariable=self.new_evolves_to_var, values=all_pokemon)
+        new_evolves_to_combobox.grid(row=2, column=1, sticky='we')
         
+        add_evolves_to_button = tk.Button(evolutions_frame, text="Add", command=self.add_evolves_to)
+        add_evolves_to_button.grid(row=2, column=2, sticky='w')
+
+        # Button to remove a selected 'Evolves To'
+        remove_evolves_to_button = tk.Button(evolutions_frame, text="Remove", command=self.remove_selected_evolves_to)
+        remove_evolves_to_button.grid(row=3, column=1, sticky='w')
+
+        # Save button
         save_button = tk.Button(self.scrollable_frame, text="Save Changes", command=self.save_changes)
         save_button.pack()
+
+        # Make sure to adjust the grid column configuration for proper scaling
+        evolutions_frame.columnconfigure(1, weight=1)
+
+    def update_evolves_from(self):
+        # Get the selected 'evolves from' Pokemon ID from the dropdown
+        selected = self.evolves_from_var.get()
+        selected_id = self.parse_id_from_dropdown(selected)
+        # Update the evolves_from field for the current Pokemon
+        # You would need to implement the logic in your database manager
+        self.db_manager.update_evolves_from(self.pokemon_id, selected_id)
+
+    def add_evolves_to(self):
+        # Get the new 'evolves to' Pokemon ID from the entry
+        selected = self.new_evolves_to_var.get()
+        selected_id = self.parse_id_from_dropdown(selected)
+        # Add a new evolves_to link for the current Pokemon
+        # You would need to implement the logic in your database manager
+        self.db_manager.add_evolves_to(self.pokemon_id, selected_id)
+        # Update the UI listbox
+        self.evolves_to_listbox.insert(tk.END, selected)
+
+    def remove_selected_evolves_to(self):
+        # Get the selected 'evolves to' entry in the listbox
+        selected_indices = self.evolves_to_listbox.curselection()
+        if not selected_indices:
+            return
+        selected_index = selected_indices[0]
+        selected_text = self.evolves_to_listbox.get(selected_index)
+        selected_id = self.parse_id_from_dropdown(selected_text)
+        # Remove the selected evolves_to link
+        # You would need to implement the logic in your database manager
+        self.db_manager.remove_evolves_to(self.pokemon_id, selected_id)
+        # Update the UI listbox
+        self.evolves_to_listbox.delete(selected_index)
+
+    def parse_id_from_dropdown(self, dropdown_value):
+        # Extract the ID from the dropdown value
+        try:
+            return int(dropdown_value.split(":")[1].strip().strip(')').strip('(ID'))
+        except (IndexError, ValueError):
+            return None
+
 
     
