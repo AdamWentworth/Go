@@ -1,7 +1,4 @@
 const getImagePathsForPokemon = (pokemon) => {
-    const regularImagePath = `/images/default/pokemon_${pokemon.pokemon_id}.png`;
-    const shinyImagePath = `/images/shiny/shiny_pokemon_${pokemon.pokemon_id}.png`;
-
     let shadowImagePath = null;
     let shinyShadowImagePath = null;
 
@@ -16,8 +13,6 @@ const getImagePathsForPokemon = (pokemon) => {
 
     return {
         ...pokemon,
-        image: regularImagePath,
-        shiny_image: shinyImagePath,
         shadow_image: shadowImagePath,
         shiny_shadow_image: shinyShadowImagePath,
         type_1_icon: type1Icon,

@@ -7,7 +7,7 @@ function MainInfo({ pokemon }) {
   return (
     <div className="column main-info-column">
       <h1>Main Info</h1>
-      <img src={pokemon.image} alt={pokemon.name} />
+      <img src={pokemon.image_url} alt={pokemon.name} />
       <p>#{pokemon.pokedex_number}</p>
       <div className="type-section">
         <img src={pokemon.type_1_icon} alt={pokemon.type1_name} />

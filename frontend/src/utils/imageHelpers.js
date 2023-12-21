@@ -4,11 +4,11 @@ export function determinePokemonImage(pokemon, isShiny, showShadow, costume) {
     if (isShiny && showShadow) {
         return baseObject.shiny_shadow_image;
     } else if (isShiny) {
-        return baseObject.shiny_image;
+        return baseObject.image_url_shiny;
     } else if (showShadow) {
         return baseObject.shadow_image;
     }
-    return baseObject.image;
+    return baseObject.image_url;
 }
 
 export function determinePokemonKey(pokemon, isShiny, showShadow) {

@@ -8,7 +8,7 @@ function ShinyInfo({ pokemon }) {
   return (
     <div className="column shiny-info-column">
       <h1>Shiny Info</h1>
-      <img src={pokemon.shiny_image} alt={`${pokemon.name} Shiny`} />
+      <img src={pokemon.image_url_shiny} alt={`${pokemon.name} Shiny`} />
       <div>
         <strong>Shiny Rarity:</strong> {formatShinyRarity(pokemon.shiny_rarity)}
       </div>
