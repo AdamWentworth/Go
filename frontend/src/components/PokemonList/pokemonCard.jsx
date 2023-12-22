@@ -14,11 +14,11 @@ const PokemonCard = ({
     const cache = useContext(CacheContext);  // Import the cache
 
     // Check for image visibility
-    if (isShiny && showShadow && (!pokemon.shiny_shadow_image || pokemon.shadow_shiny_available !== 1)) {
+    if (isShiny && showShadow && (!pokemon.image_url_shiny_shadow || pokemon.shadow_shiny_available !== 1)) {
         return null;
     }
 
-    if (showShadow && !isShiny && !pokemon.shadow_image) {
+    if (showShadow && !isShiny && !pokemon.image_url_shadow) {
         return null;
     }
 

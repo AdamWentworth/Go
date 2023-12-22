@@ -27,7 +27,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
   // Convert `shiny_available` from integer to boolean for conditional rendering
   const showShinyWindow = pokemon.shiny_available === 1;
   const showCostumesWindow = Array.isArray(pokemon.costumes) && pokemon.costumes.length > 0;
-  const showShadowWindow = pokemon.shadow_image != null;
+  const showShadowWindow = pokemon.image_url_shadow != null;
 
   const switchOverlay = (newPokemonData) => {
     setCurrentPokemon(newPokemonData); // Update local state

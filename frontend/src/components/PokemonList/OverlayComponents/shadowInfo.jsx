@@ -13,9 +13,9 @@ function ShadowInfo({ pokemon }) {
   
         {/* New container for images */}
         <div className="images-container">
-          <img src={pokemon.shadow_image} alt={`Shadow ${pokemon.name}`} />
+          <img src={pokemon.image_url_shadow} alt={`Shadow ${pokemon.name}`} />
           {showShinyShadow && (
-            <img src={pokemon.shiny_shadow_image} alt={`Shiny Shadow ${pokemon.name}`} className="shiny-shadow-image" />
+            <img src={pokemon.image_url_shiny_shadow} alt={`Shiny Shadow ${pokemon.name}`} className="shiny-shadow-image" />
           )}
         </div>
   

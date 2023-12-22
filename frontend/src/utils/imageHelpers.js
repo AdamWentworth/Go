@@ -2,11 +2,11 @@ export function determinePokemonImage(pokemon, isShiny, showShadow, costume) {
     let baseObject = costume || pokemon;
 
     if (isShiny && showShadow) {
-        return baseObject.shiny_shadow_image;
+        return baseObject.image_url_shiny_shadow;
     } else if (isShiny) {
         return baseObject.image_url_shiny;
     } else if (showShadow) {
-        return baseObject.shadow_image;
+        return baseObject.image_url_shadow;
     }
     return baseObject.image_url;
 }
