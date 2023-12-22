@@ -2,25 +2,28 @@
 import tkinter as tk
 from tkinter import ttk
 
-class PokemonEvolutionsFrame:
+class PokemonEvolutionsFrame(tk.Frame):
     def __init__(self, parent, db_manager, pokemon_id, evolutions):
-        self.parent = parent
+        super().__init__(parent)  # Initialize the superclass (tk.Frame)
         self.db_manager = db_manager
+        self.parent = parent
         self.pokemon_id = pokemon_id
         self.evolutions = evolutions
         self.pending_evolves_to_additions = []
         self.pending_evolves_to_removals = []
         self.evolution_details_frame = None
 
-    def create_evolutions_frame(self):
-        evolution_container = tk.Frame(self.parent)
-        evolution_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.create_evolutions_frame()
 
-        self.create_evolutions_list_frame(evolution_container)
+    def create_evolutions_frame(self):
+        # Use 'self' instead of a separate container
+        self.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        self.create_evolutions_list_frame(self)
 
         # Initial call with default selected_id, if exists
         initial_selected_id = self.evolutions['evolves_to'][0][0] if self.evolutions['evolves_to'] else None
-        self.create_evolution_details_frame(evolution_container, initial_selected_id)
+        self.create_evolution_details_frame(self, initial_selected_id)
 
     def create_evolutions_list_frame(self, container):
         all_pokemon = self.db_manager.fetch_all_pokemon_sorted()  # Define all_pokemon here
@@ -42,7 +45,7 @@ class PokemonEvolutionsFrame:
         evolves_to_label = tk.Label(evolutions_frame, text="Evolves To:")
         evolves_to_label.grid(row=1, column=0, sticky='w')
 
-        self.evolves_to_listbox = tk.Listbox(evolutions_frame)
+        self.evolves_to_listbox = tk.Listbox(evolutions_frame, height=3)  # Set a fixed height
         evolves_to_scroll = tk.Scrollbar(evolutions_frame, orient="vertical")
         self.evolves_to_listbox.config(yscrollcommand=evolves_to_scroll.set)
         evolves_to_scroll.config(command=self.evolves_to_listbox.yview)
@@ -66,7 +69,7 @@ class PokemonEvolutionsFrame:
 
     def create_evolution_details_frame(self, container, selected_id):
         if selected_id is None:
-            return 
+            return
         if not self.evolution_details_frame:
             self.evolution_details_frame = tk.LabelFrame(container, text="Evolution Details", padx=10, pady=10)
             self.evolution_details_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5)
@@ -91,19 +94,16 @@ class PokemonEvolutionsFrame:
                 ("Other", other)
             ]
 
-            for label, value in labels_values:
-                row_frame = tk.Frame(self.evolution_details_frame)
-                row_frame.pack(fill='x', expand=True)
-                tk.Label(row_frame, text=f"{label}:").pack(side=tk.LEFT)
-
-                entry = tk.Entry(row_frame)
+            for i, (label, value) in enumerate(labels_values):
+                tk.Label(self.evolution_details_frame, text=f"{label}:").grid(row=i, column=0, sticky='e', padx=5, pady=2)
+                entry = tk.Entry(self.evolution_details_frame)
                 entry.insert(0, str(value) if value is not None else "")
-                entry.pack(side=tk.RIGHT, fill='x', expand=True)
-                self.evolution_detail_entries[label] = entry  # Store reference to entry
+                entry.grid(row=i, column=1, sticky='w', padx=5, pady=2)
+                self.evolution_detail_entries[label] = entry
 
         # Add the Save button
         save_button = tk.Button(self.evolution_details_frame, text="Save Changes", command=self.save_evolution_changes)
-        save_button.pack()
+        save_button.grid(row=len(labels_values), column=0, columnspan=2, pady=5)
 
     def save_evolution_changes(self):
         # Collect updated data from entry widgets
@@ -199,11 +199,12 @@ class PokemonEvolutionsFrame:
                 self.evolves_to_listbox.delete(selected_index)
 
     def save_evolutions(self):
+    # Use the self.pokemon_id directly instead of trying to access from evolutions dictionary
         for evolves_to_id in self.pending_evolves_to_additions:
-            self.db_manager.add_evolves_to(self.evolutions['pokemon_id'], evolves_to_id)
+            self.db_manager.add_evolves_to(self.pokemon_id, evolves_to_id)
 
         for evolves_to_id in self.pending_evolves_to_removals:
-            self.db_manager.remove_evolves_to(self.evolutions['pokemon_id'], evolves_to_id)
+            self.db_manager.remove_evolves_to(self.pokemon_id, evolves_to_id)
 
     def parse_id_from_dropdown(self, dropdown_value):
         try:

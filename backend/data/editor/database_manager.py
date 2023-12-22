@@ -220,3 +220,56 @@ class DatabaseManager:
         )
         cursor.execute(update_query, parameters)
         self.conn.commit()
+
+    def fetch_shadow_pokemon_data(self, pokemon_id):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT shiny_available, apex, date_available, date_shiny_available, 
+                   image_url_shadow, image_url_shiny_shadow
+            FROM shadow_pokemon 
+            WHERE pokemon_id = ?
+        """, (pokemon_id,))
+        result = cursor.fetchone()
+
+        if result:
+            return result
+        else:
+            # Return a list of None values, one for each shadow attribute
+            num_shadow_attributes = 6  # Update if the number of attributes changes
+            return [None] * num_shadow_attributes
+
+    def update_shadow_pokemon_data(self, pokemon_id, shadow_data):
+    # First, check if the pokemon_id exists in the shadow_pokemon table
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM shadow_pokemon WHERE pokemon_id = ?", (pokemon_id,))
+        exists = cursor.fetchone()[0] > 0
+
+        # Determine the appropriate SQL statement: insert if new, otherwise update
+        if exists:
+            update_query = """
+            UPDATE shadow_pokemon
+            SET shiny_available = ?, apex = ?, date_available = ?, 
+                date_shiny_available = ?, image_url_shadow = ?, image_url_shiny_shadow = ?
+            WHERE pokemon_id = ?
+            """
+        else:
+            update_query = """
+            INSERT INTO shadow_pokemon (shiny_available, apex, date_available, 
+                date_shiny_available, image_url_shadow, image_url_shiny_shadow, pokemon_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """
+
+        # Prepare parameters, converting empty strings to None
+        parameters = (
+            None if shadow_data.get('Shiny Available') == '' else shadow_data.get('Shiny Available'),
+            None if shadow_data.get('Apex') == '' else shadow_data.get('Apex'),
+            None if shadow_data.get('Date Available') == '' else shadow_data.get('Date Available'),
+            None if shadow_data.get('Date Shiny Available') == '' else shadow_data.get('Date Shiny Available'),
+            None if shadow_data.get('Image URL Shadow') == '' else shadow_data.get('Image URL Shadow'),
+            None if shadow_data.get('Image URL Shiny Shadow') == '' else shadow_data.get('Image URL Shiny Shadow'),
+            pokemon_id
+        )
+
+        cursor.execute(update_query, parameters)
+        self.conn.commit()
+

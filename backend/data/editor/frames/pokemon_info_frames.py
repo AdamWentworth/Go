@@ -55,4 +55,4 @@ class PokemonInfoFrames:
             entry.grid(row=i, column=1, sticky='w')
             self.entry_widgets[attr] = entry
 
-    # You can add other methods related to Pokemon information frames if needed.
+

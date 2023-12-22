@@ -6,6 +6,7 @@ from database_manager import DatabaseManager
 from frames.pokemon_info_frames import PokemonInfoFrames
 from frames.pokemon_moves_frame import PokemonMovesFrame
 from frames.pokemon_evolutions_frame import PokemonEvolutionsFrame
+from frames.pokemon_shadow_frame import PokemonShadowFrame
 
 class PokemonDetailsWindow:
     
@@ -16,6 +17,8 @@ class PokemonDetailsWindow:
 
         self.pokemon_id = pokemon_id
         self.db_manager = DatabaseManager('backend/data/pokego.db')  # Adjust the path as necessary
+
+        self.shadow_pokemon_data = self.db_manager.fetch_shadow_pokemon_data(pokemon_id)
 
         self.type_ids = self.db_manager.fetch_type_ids()
         self.existing_move_ids = self.db_manager.fetch_pokemon_moves(pokemon_id)
@@ -32,31 +35,58 @@ class PokemonDetailsWindow:
 
         self.scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
 
+        # Horizontal scrollbar
+        h_scrollbar = ttk.Scrollbar(self.window, orient="horizontal", command=self.canvas.xview)
+        self.canvas.configure(xscrollcommand=h_scrollbar.set)
+        h_scrollbar.pack(side="bottom", fill="x")
+
+        # Bind scroll events for smooth scrolling
+        self.window.bind("<MouseWheel>", self._on_mousewheel)
+        self.window.bind("<Shift-MouseWheel>", self._on_shift_mousewheel)
+
         # Assuming details is a tuple of (pokemon_data, moves, evolutions)
         self.pokemon_data, self.moves, self.evolutions = details
 
-        # Main container frame for info and moves
+        # Main container frame for all sections
         main_container = tk.Frame(self.scrollable_frame)
         main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
+        # Top container for General Info and Moves Frames
+        top_container = tk.Frame(main_container)
+        top_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
         # Container for General and Additional Info Frames
-        info_container = tk.Frame(main_container)
+        info_container = tk.Frame(top_container)
         info_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         self.info_frames = PokemonInfoFrames(info_container, self.pokemon_data, self.db_manager)
         self.info_frames.create_info_frames()
 
         # Moves Frame
-        self.moves_frame = PokemonMovesFrame(main_container, self.db_manager, self.moves)
+        self.moves_frame = PokemonMovesFrame(top_container, self.db_manager, self.moves)
         self.moves_frame.create_moves_frame()
 
+        # Second container for Evolutions and Shadow Frames
+        second_container = tk.Frame(main_container)
+        second_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
         # Evolutions Frame
-        self.evolutions_frame = PokemonEvolutionsFrame(self.scrollable_frame, self.db_manager, self.pokemon_id, self.evolutions)
-        self.evolutions_frame.create_evolutions_frame()
+        self.evolutions_frame = PokemonEvolutionsFrame(second_container, self.db_manager, self.pokemon_id, self.evolutions)
+        self.evolutions_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Shadow Frame
+        self.shadow_frame = PokemonShadowFrame(second_container, self.pokemon_id, self.shadow_pokemon_data, self.db_manager)
+        self.shadow_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Save Button
         save_button = tk.Button(self.window, text="Save Changes", command=self.save_changes)
         save_button.pack(side="bottom", pady=10)
+
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+    def _on_shift_mousewheel(self, event):
+        self.canvas.xview_scroll(int(-1*(event.delta/120)), "units")
 
     def save_changes(self):
         # Retrieve general and additional attributes from info_frames
@@ -86,6 +116,14 @@ class PokemonDetailsWindow:
 
         # Save evolutions
         self.evolutions_frame.save_evolutions()
+
+        # Add save logic for the shadow frame in the save_changes method
+        shadow_data = self.shadow_frame.save_shadow_info()
+        if shadow_data:
+            self.db_manager.update_shadow_pokemon_data(self.pokemon_id, shadow_data)
+
+        # Save shadow data
+        self.shadow_frame.save_shadow_info()
 
         # Show a confirmation message
         tk.messagebox.showinfo("Update", "Pokemon data updated successfully")
