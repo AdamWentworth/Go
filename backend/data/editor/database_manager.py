@@ -164,6 +164,10 @@ class DatabaseManager:
         """, (pokemon_id, evolves_to_id))
         self.conn.commit()
 
+        # Fetch the last inserted ID (new evolution ID)
+        new_evolution_id = cursor.lastrowid
+        return new_evolution_id
+
     def remove_evolves_to(self, pokemon_id, evolves_to_id):
         cursor = self.conn.cursor()
         cursor.execute("""
