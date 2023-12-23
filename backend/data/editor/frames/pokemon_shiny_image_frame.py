@@ -7,9 +7,10 @@ import requests
 from io import BytesIO
 
 class PokemonShinyImageFrame:
-    def __init__(self, parent, image_url_shiny, pokemon_id):
+    def __init__(self, parent, image_url_shiny, pokemon_id, details_window):
         self.parent = parent
         self.pokemon_id = pokemon_id
+        self.details_window = details_window  # Store the reference to the details window
         self.frame = tk.Frame(parent)
         self.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
@@ -133,7 +134,11 @@ class PokemonShinyImageFrame:
         self.image_label.configure(image=self.photo)
         self.image_label.image = self.photo
 
-        messagebox.showinfo("Success", f"Image updated successfully at {save_path}")
+        # Show success message on top of the details window
+        messagebox.showinfo("Success", f"Image updated successfully at {save_path}", parent=self.details_window.window)
+
+        # Call method on details_window to react to the update
+        self.details_window.react_to_image_update()
 
     def combine_images(self, pokemon_image):
         """

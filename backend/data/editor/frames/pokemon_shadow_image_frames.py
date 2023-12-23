@@ -137,8 +137,9 @@ class BaseShadowImageFrame(tk.Frame):
             return None
 
 class PokemonShadowImageFrame(BaseShadowImageFrame):
-    def __init__(self, parent, image_url_shadow, pokemon_id):
+    def __init__(self, parent, image_url_shadow, pokemon_id, details_window):
         super().__init__(parent)
+        self.details_window = details_window  # Store the reference to the details window
         self.initialize_image_frame(parent, image_url_shadow, pokemon_id, "Shadow", "shadow")
 
     def save_and_update_image(self, image):
@@ -156,9 +157,16 @@ class PokemonShadowImageFrame(BaseShadowImageFrame):
         self.full_image_path = save_path  # Update full_image_path to the new save_path
         self.load_and_display_image()
 
+        # Show success message on top of the details window
+        messagebox.showinfo("Success", f"Image updated successfully at {save_path}", parent=self.details_window.window)
+
+        # Call method on details_window to react to the update
+        self.details_window.react_to_image_update()
+
 class PokemonShinyShadowImageFrame(BaseShadowImageFrame):
-    def __init__(self, parent, image_url_shiny_shadow, pokemon_id):
+    def __init__(self, parent, image_url_shiny_shadow, pokemon_id, details_window):
         super().__init__(parent)
+        self.details_window = details_window  # Store the reference to the details window
         self.initialize_image_frame(parent, image_url_shiny_shadow, pokemon_id, "Shiny Shadow", "shiny_shadow")
     
     def save_and_update_image(self, image):
@@ -176,6 +184,12 @@ class PokemonShinyShadowImageFrame(BaseShadowImageFrame):
 
         self.full_image_path = save_path
         self.load_and_display_image()
+
+        # Show success message on top of the details window
+        messagebox.showinfo("Success", f"Image updated successfully at {save_path}", parent=self.details_window.window)
+
+        # Call method on details_window to react to the update
+        self.details_window.react_to_image_update()
 
 # This ensures both classes use the same shared methods
 PokemonShinyShadowImageFrame.initialize_image_frame = PokemonShadowImageFrame.initialize_image_frame

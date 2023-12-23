@@ -7,11 +7,13 @@ import requests
 from io import BytesIO
 
 class PokemonImageFrame:
-    def __init__(self, parent, image_url, pokemon_id):
+    def __init__(self, parent, image_url, pokemon_id, details_window):
         self.parent = parent
         self.pokemon_id = pokemon_id
         self.frame = tk.Frame(parent)  # This is the main frame
         self.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        self.details_window = details_window
 
         # Create a container frame within the main frame
         self.container_frame = tk.Frame(self.frame, bg="white", bd=2, relief=tk.RIDGE)
@@ -128,6 +130,10 @@ class PokemonImageFrame:
         self.image_label.configure(image=self.photo)
         self.image_label.image = self.photo  # keep a reference
 
-        messagebox.showinfo("Success", f"Image updated successfully at {save_path}")
+       # Show success message on top of the details window
+        messagebox.showinfo("Success", f"Image updated successfully at {save_path}", parent=self.details_window.window)
+
+        # You can call a method on details_window to react to the update if needed
+        self.details_window.react_to_image_update()
 
 

@@ -83,21 +83,21 @@ class PokemonDetailsWindow:
 
         # Image Frame
         image_url = self.pokemon_data[3]  # Assuming the image URL is at this index
-        self.image_frame = PokemonImageFrame(main_container, image_url, pokemon_id)
+        self.image_frame = PokemonImageFrame(main_container, image_url, pokemon_id, self)
 
         # Shiny Image Frame
         shiny_image_url = self.pokemon_data[4]  # Assuming the shiny image URL is at this index (update as necessary)
-        self.shiny_image_frame = PokemonShinyImageFrame(main_container, shiny_image_url, pokemon_id)
+        self.shiny_image_frame = PokemonShinyImageFrame(main_container, shiny_image_url, pokemon_id, self)
 
         shadow_image_url = self.shadow_pokemon_data[4] if len(self.shadow_pokemon_data) > 4 else None
         shiny_shadow_image_url = self.shadow_pokemon_data[5] if len(self.shadow_pokemon_data) > 5 else None
 
         # Shadow Image Frame
-        self.shadow_image_frame = PokemonShadowImageFrame(main_container, shadow_image_url, pokemon_id)
+        self.shadow_image_frame = PokemonShadowImageFrame(main_container, shadow_image_url, pokemon_id, self)
         self.shadow_image_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Shiny Shadow Image Frame
-        self.shiny_shadow_image_frame = PokemonShinyShadowImageFrame(main_container, shiny_shadow_image_url, pokemon_id)
+        self.shiny_shadow_image_frame = PokemonShinyShadowImageFrame(main_container, shiny_shadow_image_url, pokemon_id, self)
         self.shiny_shadow_image_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Save Button
@@ -109,6 +109,12 @@ class PokemonDetailsWindow:
 
     def _on_shift_mousewheel(self, event):
         self.canvas.xview_scroll(int(-1*(event.delta/120)), "units")
+
+    def react_to_image_update(self):
+        # Bring the window to the front
+        self.window.lift()
+        # Optional: You can flash the window or change the title to indicate the update
+        self.window.title("Details Updated - Pokémon ID: {}".format(self.pokemon_id))
 
     def save_changes(self):
         # Retrieve general and additional attributes from info_frames
