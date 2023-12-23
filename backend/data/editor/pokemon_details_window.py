@@ -8,6 +8,7 @@ from frames.pokemon_moves_frame import PokemonMovesFrame
 from frames.pokemon_evolutions_frame import PokemonEvolutionsFrame
 from frames.pokemon_shadow_frame import PokemonShadowFrame
 from frames.pokemon_image_frame import PokemonImageFrame
+from frames.pokemon_shiny_image_frame import PokemonShinyImageFrame
 
 class PokemonDetailsWindow:
     
@@ -79,8 +80,13 @@ class PokemonDetailsWindow:
         self.shadow_frame = PokemonShadowFrame(second_container, self.pokemon_id, self.shadow_pokemon_data, self.db_manager)
         self.shadow_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        # Image Frame
         image_url = self.pokemon_data[3]  # Assuming the image URL is at this index
-        self.image_frame = PokemonImageFrame(main_container, image_url)
+        self.image_frame = PokemonImageFrame(main_container, image_url, pokemon_id)
+
+        # Shiny Image Frame
+        shiny_image_url = self.pokemon_data[4]  # Assuming the shiny image URL is at this index (update as necessary)
+        self.shiny_image_frame = PokemonShinyImageFrame(main_container, shiny_image_url, pokemon_id)
 
         # Save Button
         save_button = tk.Button(self.window, text="Save Changes", command=self.save_changes)

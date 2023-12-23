@@ -1,4 +1,4 @@
-# pokemon_image_frame.py
+# pokemon_shiny_image_frame.py
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 from PIL import Image, ImageTk
@@ -6,11 +6,11 @@ import os
 import requests
 from io import BytesIO
 
-class PokemonImageFrame:
-    def __init__(self, parent, image_url, pokemon_id):
+class PokemonShinyImageFrame:
+    def __init__(self, parent, image_url_shiny, pokemon_id):
         self.parent = parent
         self.pokemon_id = pokemon_id
-        self.frame = tk.Frame(parent)  # This is the main frame
+        self.frame = tk.Frame(parent)
         self.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Create a container frame within the main frame
@@ -18,7 +18,7 @@ class PokemonImageFrame:
         self.container_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # Create a label for the container frame
-        self.frame_label = tk.Label(self.container_frame, text=f"Default Image Pokemon ID: {pokemon_id}", bg="white")
+        self.frame_label = tk.Label(self.container_frame, text=f"Shiny Image Pokémon ID: {pokemon_id}", bg="white")
         self.frame_label.pack(side=tk.TOP, fill=tk.X)
 
         # Initialize image_label attribute within the container frame
@@ -27,29 +27,32 @@ class PokemonImageFrame:
 
         # Get the directory of the currently executing script/file
         script_directory = os.path.dirname(os.path.realpath(__file__))
-
+        
         # Correctly navigate up four directories from the script location to reach the Go folder
         go_directory = os.path.normpath(os.path.join(script_directory, '../../../../'))
 
         # Construct the path to the images directory
         self.relative_path_to_images = os.path.join(go_directory, 'frontend', 'public')
 
-        # Trim leading slash from image_url if present to ensure it's treated as relative
-        image_url = image_url.lstrip("\\/")
+        # Trim leading slash from image_url_shiny if present to ensure it's treated as relative
+        image_url_shiny = image_url_shiny.lstrip("\\/")
 
-        # Combine the base path with the specific image URL
-        self.full_image_path = os.path.join(self.relative_path_to_images, image_url)
+        # Combine the base path with the specific shiny image URL
+        self.full_image_path = os.path.join(self.relative_path_to_images, image_url_shiny)
 
         # Normalize the path to ensure consistent slashes
         self.full_image_path = os.path.normpath(self.full_image_path)
 
-        # Attempt to load and display the image
+        # Determine paths relative to the script
+        self.shiny_icon_path = os.path.normpath(os.path.join(self.relative_path_to_images, 'images', 'shiny_icon.png'))
+
+        # Attempt to load and display the shiny image
         try:
             self.image = Image.open(self.full_image_path)
             self.photo = ImageTk.PhotoImage(self.image)
             self.image_label.configure(image=self.photo)
         except FileNotFoundError:
-            print(f"Image file does not exist: {self.full_image_path}")
+            print(f"Shiny image file does not exist: {self.full_image_path}")
             # Optionally set a default image if the file is not found
             self.photo = ImageTk.PhotoImage(Image.new('RGB', (240, 240), color='grey'))
             self.image_label.configure(image=self.photo)
@@ -106,6 +109,8 @@ class PokemonImageFrame:
                 messagebox.showerror("Error", f"Failed to process the image: {e}")
 
     def save_and_update_image(self, image):
+        # Combine image with the shiny icon before saving
+        combined_image = self.combine_images(image)
         # Check if the image_url already contains the 'images' directory
         if 'images' not in self.full_image_path:
             # If 'images' is not in the path, it's a new image, so add the directory
@@ -120,14 +125,21 @@ class PokemonImageFrame:
         # Make sure the directory exists, create if it doesn't
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
-        # Save the image
-        image.save(save_path)
+        # Save the combined image instead of the original image
+        combined_image.save(save_path, "PNG")
 
         # Update the displayed image
-        self.photo = ImageTk.PhotoImage(image)
+        self.photo = ImageTk.PhotoImage(Image.open(save_path))
         self.image_label.configure(image=self.photo)
-        self.image_label.image = self.photo  # keep a reference
+        self.image_label.image = self.photo
 
         messagebox.showinfo("Success", f"Image updated successfully at {save_path}")
 
-
+    def combine_images(self, pokemon_image):
+        """
+        Combine the downloaded or selected Pokémon image with the shiny icon.
+        """
+        shiny_icon = Image.open(self.shiny_icon_path).convert("RGBA")
+        base_image = pokemon_image.copy()
+        base_image.paste(shiny_icon, (0, 0), shiny_icon)
+        return base_image
