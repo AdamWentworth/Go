@@ -27,7 +27,7 @@
 }
 
 .evolves-to {
-    max-height: 850px; /* Set your preferred max height */
+    max-height: 550px; /* Adjust based on your needs */
     overflow-y: auto; /* Enables vertical scrolling */
     scrollbar-width: none; /* Hides scrollbar for Firefox */
 }

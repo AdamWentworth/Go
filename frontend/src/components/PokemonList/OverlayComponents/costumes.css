@@ -18,13 +18,12 @@
     color: white;
     border-radius: 10px;
     width: auto; /* This will make the column only as wide as its content */
-    max-width: 600px; /* Adjust max-width as necessary */
     max-height: 80vh;
+    max-width: 100%;
     z-index: 1010; /* Above the overlay background */
     padding: 20px; /* Add padding inside the column for better aesthetics */
     padding-top: 50px; /* Increase top padding to make room for the button */
-    margin-right: -25px;
-    margin-left: -25px;
+    margin-left: -15px;
     position: relative;
 }
   
@@ -40,9 +39,9 @@
     display: flex;
     justify-content: center; /* This will center the images */
     gap: 10px;
+    margin-right: -25px;
   }
   
-  /* Adjust the size of the images to be smaller and fit side by side */
   /* Adjust the size of the images to be smaller and fit side by side, with a maximum height of 180px */
 .costume-images img {
     max-width: 100%; /* Adjust the width to half of its container */
@@ -53,13 +52,13 @@
     margin-left: -10px;
   }
   
-  
-  .costume-column ul {
+
+.costume-column ul {
     list-style-type: none;
     padding-left: 0;
   }
   
-  .costume-column > ul {
+.costume-column > ul {
     list-style-type: none;
     padding-left: 0;
 }
