@@ -17,6 +17,7 @@ function Costumes({ costumes }) {
 
   return (
     <div className={`column costume-column ${isFullScreen ? 'fullscreen' : ''}`}>
+      <h1>Costumes</h1>
       <div className="button-container">
         {/* Conditional rendering based on the number of costumes */}
         {costumes.length >= 4 && (
@@ -24,9 +25,7 @@ function Costumes({ costumes }) {
             {isFullScreen ? 'Exit' : 'View All'}
           </button>
         )}
-      </div>
-      <h1>Costumes</h1>
-      
+      </div>      
       <ul>
         {costumes.map((costume, index) => (
           <li key={index}>

@@ -55,3 +55,7 @@ body.fullscreen-active .column.costume-column.fullscreen {
 body.fullscreen-active .universal-close-button {
   display: none; /* Hides the button entirely */
 }
+
+body.fullscreen-active .costume-overlay, .costume-column {
+  overflow-x: visible;
+}
