@@ -39,7 +39,7 @@
     display: flex;
     justify-content: center; /* This will center the images */
     gap: 10px;
-    margin-right: -25px;
+    margin-right: -30px;
   }
   
   /* Adjust the size of the images to be smaller and fit side by side, with a maximum height of 180px */

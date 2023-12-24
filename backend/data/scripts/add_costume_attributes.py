@@ -16,8 +16,8 @@ def add_columns_to_shadow_pokemon_table(db_path):
     # Iterate over the new columns and add them to the table
     for column_name, data_type in new_columns.items():
         try:
-            cursor.execute(f"ALTER TABLE shadow_pokemon ADD COLUMN {column_name} {data_type}")
-            print(f"Added column '{column_name}' to shadow_pokemon table.")
+            cursor.execute(f"ALTER TABLE costume_pokemon ADD COLUMN {column_name} {data_type}")
+            print(f"Added column '{column_name}' to costume_pokemon table.")
         except sqlite3.OperationalError as e:
             # This error typically occurs if the column already exists
             print(f"Error adding column '{column_name}': {e}")

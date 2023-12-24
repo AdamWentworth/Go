@@ -95,6 +95,33 @@ class BaseShadowImageFrame(tk.Frame):
                 print(f"Exception occurred during image download: {e}")
                 messagebox.showerror("Error", f"Failed to download the image: {e}")
 
+class PokemonShadowImageFrame(BaseShadowImageFrame):
+    def __init__(self, parent, image_url_shadow, pokemon_id, details_window):
+        super().__init__(parent)
+        self.details_window = details_window  # Store the reference to the details window
+        self.initialize_image_frame(parent, image_url_shadow, pokemon_id, "Shadow", "shadow")
+
+    def save_and_update_image(self, image):
+        print(f"Saving and updating shadow image: {image}")
+        combined_image = self.combine_images(image)
+        print(f"Combined shadow image: {combined_image}")
+
+        save_path = os.path.join(self.relative_path_to_images, f'shadow_pokemon_{self.pokemon_id}.png')
+        save_path = os.path.normpath(save_path)
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        combined_image.save(save_path, "PNG")
+        print(f"Shadow image saved at: {save_path}")
+
+        # Load and display the combined image
+        self.full_image_path = save_path  # Update full_image_path to the new save_path
+        self.load_and_display_image()
+
+        # Show success message on top of the details window
+        messagebox.showinfo("Success", f"Image updated successfully at {save_path}", parent=self.details_window.window)
+
+        # Call method on details_window to react to the update
+        self.details_window.react_to_image_update()
+
     def combine_images(self, pokemon_image):
         """
         Combine the downloaded or selected Pokémon image with the shadow effect and shadow icon.
@@ -136,33 +163,6 @@ class BaseShadowImageFrame(tk.Frame):
             print(f"Failed to combine images: {e}")
             return None
 
-class PokemonShadowImageFrame(BaseShadowImageFrame):
-    def __init__(self, parent, image_url_shadow, pokemon_id, details_window):
-        super().__init__(parent)
-        self.details_window = details_window  # Store the reference to the details window
-        self.initialize_image_frame(parent, image_url_shadow, pokemon_id, "Shadow", "shadow")
-
-    def save_and_update_image(self, image):
-        print(f"Saving and updating shadow image: {image}")
-        combined_image = self.combine_images(image)
-        print(f"Combined shadow image: {combined_image}")
-
-        save_path = os.path.join(self.relative_path_to_images, f'shadow_pokemon_{self.pokemon_id}.png')
-        save_path = os.path.normpath(save_path)
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        combined_image.save(save_path, "PNG")
-        print(f"Shadow image saved at: {save_path}")
-
-        # Load and display the combined image
-        self.full_image_path = save_path  # Update full_image_path to the new save_path
-        self.load_and_display_image()
-
-        # Show success message on top of the details window
-        messagebox.showinfo("Success", f"Image updated successfully at {save_path}", parent=self.details_window.window)
-
-        # Call method on details_window to react to the update
-        self.details_window.react_to_image_update()
-
 class PokemonShinyShadowImageFrame(BaseShadowImageFrame):
     def __init__(self, parent, image_url_shiny_shadow, pokemon_id, details_window):
         super().__init__(parent)
@@ -190,6 +190,49 @@ class PokemonShinyShadowImageFrame(BaseShadowImageFrame):
 
         # Call method on details_window to react to the update
         self.details_window.react_to_image_update()
+
+    def combine_images(self, pokemon_image):
+        """
+        Combine the downloaded or selected Pokémon image with the shadow effect and shadow icon.
+        """
+        try:
+            # Load shadow effect, shadow icon, and shiny icon images
+            shadow_effect_path = os.path.normpath(os.path.join(self.relative_path_to_images, '..', 'shadow_effect.png'))
+            shadow_icon_path = os.path.normpath(os.path.join(self.relative_path_to_images, '..', 'shadow_icon_middle_ground.png'))
+            shiny_icon_path = os.path.normpath(os.path.join(self.relative_path_to_images, '..', 'shiny_icon.png'))
+
+            base_image = Image.new("RGBA", (240,240), (0,0,0,0))
+            shadow_effect = Image.open(shadow_effect_path).convert("RGBA")
+            shadow_icon = Image.open(shadow_icon_path).convert("RGBA")
+            shiny_icon = Image.open(shiny_icon_path).convert("RGBA")
+
+            # Resize the shadow_effect
+            target_width = 240
+            shadow_effect = shadow_effect.resize((target_width, int((target_width/shadow_effect.width)*shadow_effect.height)))
+
+            # Place shadow effect on the base image with a downward offset
+            se_width, se_height = shadow_effect.size
+            vertical_offset = 20
+            se_position = ((base_image.width - se_width) // 2, (base_image.height - se_height) // 2 + vertical_offset)
+            base_image.paste(shadow_effect, se_position, shadow_effect)
+
+            # Place Pokemon image on top of the shadow effect
+            base_image.paste(pokemon_image, (0, 0), pokemon_image)
+
+            # Place shiny icon at the top left or desired location
+            si_width, si_height = shiny_icon.size
+            shiny_position = (0, 0)  # top left corner
+            base_image.paste(shiny_icon, shiny_position, shiny_icon)
+
+            # Place shadow icon at the bottom left on top of the Pokemon image
+            si_width, si_height = shadow_icon.size
+            si_position = (0, base_image.height - si_height)
+            base_image.paste(shadow_icon, si_position, shadow_icon)
+
+            return base_image
+        except Exception as e:
+            print(f"Failed to combine images: {e}")
+            return None
 
 # This ensures both classes use the same shared methods
 PokemonShinyShadowImageFrame.initialize_image_frame = PokemonShadowImageFrame.initialize_image_frame
