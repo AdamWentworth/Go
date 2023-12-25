@@ -15,17 +15,19 @@ function Costumes({ costumes }) {
     setIsFullScreen(!isFullScreen);
   };
 
+  // Determine the class name based on whether the "View All" button should be displayed
+  const columnClass = `column costume-column ${isFullScreen ? 'fullscreen' : ''} ${costumes.length < 4 ? 'no-view-all' : ''}`;
+
   return (
-    <div className={`column costume-column ${isFullScreen ? 'fullscreen' : ''}`}>
+    <div className={columnClass}>
       <h1>Costumes</h1>
-      <div className="button-container">
-        {/* Conditional rendering based on the number of costumes */}
-        {costumes.length >= 4 && (
+      {costumes.length >= 4 && (
+        <div className="button-container">
           <button onClick={toggleFullScreen} className="fullscreen-toggle">
             {isFullScreen ? 'Exit' : 'View All'}
           </button>
-        )}
-      </div>      
+        </div>
+      )}
       <ul>
         {costumes.map((costume, index) => (
           <li key={index}>

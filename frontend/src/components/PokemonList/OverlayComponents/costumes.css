@@ -55,6 +55,10 @@
     padding-left: 0;
   }
 
+  .costume-column ul.has-view-all li:last-child {
+    padding-bottom: 15px; /* Adds 15px padding to the bottom of the last list item */
+}
+
 .costume-column .button-container {
   display: flex; /* creates a flex container */
   justify-content: center; /* aligns children (the button) to the start */
@@ -68,7 +72,14 @@
   padding: 5px 10px;
   cursor: pointer;
   z-index: 1002;
+  margin-top: -10px;
+  margin-bottom: -5px
 }
+
+.costume-column.no-view-all ul li:first-child {
+  margin-top: -30px;
+}
+
 /* Prevent horizontal overflow */
 .costume-overlay, .costume-column {
   overflow-x: hidden;

@@ -7,6 +7,7 @@
 }
 
 .main-info-column img {
-
-max-width: 240px
+    margin-top: -30px;
+    margin-bottom: -15px;
+    max-width: 240px
 }

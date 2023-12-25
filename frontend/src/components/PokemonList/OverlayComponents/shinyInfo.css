@@ -1,4 +1,5 @@
 .shiny-info-column img {
 
-    max-width: 240px
+    max-width: 240px;
+    margin-top: -15px;
     }
