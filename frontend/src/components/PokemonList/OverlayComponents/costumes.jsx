@@ -30,9 +30,9 @@ function Costumes({ costumes }) {
         {costumes.map((costume, index) => (
           <li key={index}>
             <div className="costume-images">
-              <img src={costume.image} alt={`Costume - ${formatCostumeName(costume.name)}`} />
+              <img src={costume.image_url} alt={`Costume - ${formatCostumeName(costume.name)}`} />
               {costume.shiny_available === 1 && (
-                <img src={costume.shiny_image} alt={`Shiny Costume - ${formatCostumeName(costume.name)}`} />
+                <img src={costume.image_url_shiny} alt={`Shiny Costume - ${formatCostumeName(costume.name)}`} />
               )}
             </div>
             <strong>{formatCostumeName(costume.name)}</strong>
