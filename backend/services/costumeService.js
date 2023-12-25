@@ -17,8 +17,8 @@ function formatCostumes(pokemonsWithImages, costumes) {
         const formattedCostumes = relatedCostumes.map(c => ({
             costume_id: c.costume_id,
             name: c.costume_name,
-            image: `/images/costumes/pokemon_${c.pokemon_id}_${c.costume_name}_default.png`,
-            shiny_image: `/images/costumes_shiny/pokemon_${c.pokemon_id}_${c.costume_name}_shiny.png`,
+            image: c.image_url_costume, // Directly using the URL from the database
+            shiny_image: c.image_url_shiny_costume, // Directly using the URL from the database
             shiny_available: c.shiny_available
         }));
 

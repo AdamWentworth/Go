@@ -51,17 +51,13 @@ class BaseShadowImageFrame(tk.Frame):
         self.btn_download_image.pack(side=tk.BOTTOM)
 
     def load_and_display_image(self):
-        print(f"Loading and displaying image. Path: {self.full_image_path}")
         if not os.path.exists(self.full_image_path):
-            print(f"Image file does not exist: {self.full_image_path}")
             self.photo = ImageTk.PhotoImage(Image.new('RGB', (240, 240), color='grey'))
         else:
             try:
                 self.image = Image.open(self.full_image_path)
                 self.photo = ImageTk.PhotoImage(self.image)
-                print(f"Image loaded for display: {self.photo}")
             except Exception as e:
-                print(f"Failed to load image: {e}")
                 self.photo = ImageTk.PhotoImage(Image.new('RGB', (240, 240), color='grey'))
 
         try:
@@ -75,10 +71,8 @@ class BaseShadowImageFrame(tk.Frame):
         if file_path:
             try:
                 image = Image.open(file_path).resize((240, 240))
-                print(f"Image selected: {image}")  # Confirm that the image is loaded
                 self.save_and_update_image(image)
             except Exception as e:
-                print(f"Exception occurred during image selection from device: {e}")
                 messagebox.showerror("Error", f"Failed to open or process the image: {e}")
 
     def download_image_from_url(self):
@@ -102,15 +96,12 @@ class PokemonShadowImageFrame(BaseShadowImageFrame):
         self.initialize_image_frame(parent, image_url_shadow, pokemon_id, "Shadow", "shadow")
 
     def save_and_update_image(self, image):
-        print(f"Saving and updating shadow image: {image}")
         combined_image = self.combine_images(image)
-        print(f"Combined shadow image: {combined_image}")
 
         save_path = os.path.join(self.relative_path_to_images, f'shadow_pokemon_{self.pokemon_id}.png')
         save_path = os.path.normpath(save_path)
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         combined_image.save(save_path, "PNG")
-        print(f"Shadow image saved at: {save_path}")
 
         # Load and display the combined image
         self.full_image_path = save_path  # Update full_image_path to the new save_path
@@ -135,10 +126,8 @@ class PokemonShadowImageFrame(BaseShadowImageFrame):
             base_image = Image.new("RGBA", (240,240), (0,0,0,0))
             
             shadow_effect = Image.open(shadow_effect_path).convert("RGBA")
-            print(f"Shadow effect loaded: {shadow_effect}")
 
             shadow_icon = Image.open(shadow_icon_path).convert("RGBA")
-            print(f"Shadow icon loaded: {shadow_icon}")
 
             # Resize the shadow_effect
             target_width = 240
@@ -170,17 +159,14 @@ class PokemonShinyShadowImageFrame(BaseShadowImageFrame):
         self.initialize_image_frame(parent, image_url_shiny_shadow, pokemon_id, "Shiny Shadow", "shiny_shadow")
     
     def save_and_update_image(self, image):
-        print(f"Class executing save_and_update_image: {self.__class__.__name__}")
         combined_image = self.combine_images(image)
 
         # Construct the save path with explicit 'shiny_' prefix
         save_path = os.path.join(self.relative_path_to_images, f'shiny_shadow_pokemon_{self.pokemon_id}.png')
-        print(f"Expected save path for shiny shadow image: {save_path}")
 
         save_path = os.path.normpath(save_path)
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         combined_image.save(save_path, "PNG")
-        print(f"Shiny shadow image saved at: {save_path}")
 
         self.full_image_path = save_path
         self.load_and_display_image()

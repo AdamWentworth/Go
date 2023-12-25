@@ -277,3 +277,21 @@ class DatabaseManager:
         cursor.execute(update_query, parameters)
         self.conn.commit()
 
+    def fetch_pokemon_costumes(self, pokemon_id):
+        cursor = self.conn.cursor()
+        query = """
+            SELECT * FROM costume_pokemon WHERE pokemon_id = ?
+        """
+        cursor.execute(query, (pokemon_id,))
+        return cursor.fetchall()
+
+    def update_pokemon_costume(self, costume_id, updated_details):
+        cursor = self.conn.cursor()
+        query = """
+            UPDATE costume_pokemon
+            SET costume_name = ?, shiny_available = ?, date_available = ?, 
+                date_shiny_available = ?, image_url_costume = ?, image_url_shiny_costume = ?
+            WHERE costume_id = ?
+        """
+        cursor.execute(query, (*updated_details, costume_id))
+        self.conn.commit()
