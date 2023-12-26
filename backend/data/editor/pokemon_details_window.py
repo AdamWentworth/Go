@@ -101,9 +101,9 @@ class PokemonDetailsWindow:
         self.shiny_shadow_image_frame = PokemonShinyShadowImageFrame(main_container, shiny_shadow_image_url, pokemon_id, self)
         self.shiny_shadow_image_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # Pokemon Costume Frame
-        self.costume_frame = PokemonCostumeImageFrame(main_container, pokemon_id, self)
-        self.costume_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # # Pokemon Costume Frame
+        # self.costume_frame = PokemonCostumeImageFrame(main_container, pokemon_id, self)
+        # self.costume_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Save Button
         save_button = tk.Button(self.window, text="Save Changes", command=self.save_changes)
