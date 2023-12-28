@@ -43,26 +43,35 @@ class PokemonCostumeImageFrame(tk.Frame):
 
             # Image display placeholders
             image_label = tk.Label(frame)
-            image_label.grid(row=0, column=2, rowspan=len(labels), padx=10, pady=10)
+            image_label.grid(row=0, column=2, rowspan=6, padx=10, pady=10)
 
             shiny_image_label = tk.Label(frame)
-            shiny_image_label.grid(row=0, column=3, rowspan=len(labels), padx=10, pady=10)
+            shiny_image_label.grid(row=0, column=3, rowspan=6, padx=10, pady=10)
             
             # Store frame, labels, and costume_id for later
             self.costume_frames.append((frame, image_label, shiny_image_label, costume[0]))
             
-            # Add buttons for updating images from URL and file system
-            update_image_button = tk.Button(frame, text="Update Image from URL",
-                                            command=lambda c_id=costume[0]: self.update_costume_image_from_url(c_id))
-            update_image_button.grid(row=len(labels)+1, column=0, columnspan=2)
+            # Buttons for regular image update
+            update_reg_image_url_button = tk.Button(frame, text="Download Image",
+                                                    command=lambda c_id=costume[0]: self.update_costume_image_from_url(c_id, is_shiny=False))
+            update_reg_image_url_button.grid(row=6, column=2, sticky="ew")
 
-            upload_image_button = tk.Button(frame, text="Upload Image from File",
-                                            command=lambda c_id=costume[0]: self.upload_costume_image(c_id))
-            upload_image_button.grid(row=len(labels)+1, column=2, columnspan=2)
+            upload_reg_image_file_button = tk.Button(frame, text="Select Image",
+                                                    command=lambda c_id=costume[0]: self.upload_costume_image(c_id, is_shiny=False))
+            upload_reg_image_file_button.grid(row=7, column=2, sticky="ew")
+
+            # Buttons for shiny image update
+            update_shiny_image_url_button = tk.Button(frame, text="Download Image",
+                                                    command=lambda c_id=costume[0]: self.update_costume_image_from_url(c_id, is_shiny=True))
+            update_shiny_image_url_button.grid(row=6, column=3, sticky="ew")
+
+            upload_shiny_image_file_button = tk.Button(frame, text="Select Image",
+                                                    command=lambda c_id=costume[0]: self.upload_costume_image(c_id, is_shiny=True))
+            upload_shiny_image_file_button.grid(row=7, column=3, sticky="ew")
 
         # Load and display images after setting up UI
         self.load_costume_images()
-    
+
     def load_costume_images(self):
         # Load and display images for each costume
         for index, (frame, image_label, shiny_image_label, costume_id) in enumerate(self.costume_frames):
@@ -97,11 +106,12 @@ class PokemonCostumeImageFrame(tk.Frame):
             image = Image.open(full_image_path)
             return ImageTk.PhotoImage(image)
         except FileNotFoundError:
-            messagebox.showerror("Image Error", f"Image file not found: {full_image_path}")
-            return self.get_placeholder_image()
+            # Instead of showing an error, return None or a placeholder image
+            return None  # or return self.get_placeholder_image()
         except Exception as e:
-            messagebox.showerror("Image Error", f"Failed to open image: {e}")
-            return self.get_placeholder_image()
+            # Log the error for debugging purposes
+            print(f"Failed to open image: {e}")
+            return None  # or return self.get_placeholder_image()
 
     def get_placeholder_image(self):
         # This method returns a placeholder image to be used when the image is missing
@@ -115,7 +125,6 @@ class PokemonCostumeImageFrame(tk.Frame):
     def display_costume_images(self):
         # Update the UI with loaded images
         for frame, image_label, shiny_image_label, costume_id in self.costume_frames:
-            # Using the costume_id to fetch the paths directly from the images dictionary
             costume = next((costume for costume in self.costumes if costume[0] == costume_id), None)
             if costume is not None:
                 regular_image_path = costume[6]  # Regular image path
@@ -124,13 +133,18 @@ class PokemonCostumeImageFrame(tk.Frame):
                 image = self.images.get(regular_image_path)
                 shiny_image = self.images.get(shiny_image_path)
 
+                # Set the image if it exists, otherwise leave it empty
                 if image:
                     image_label.configure(image=image)
                     image_label.image = image  # Keep a reference!
+                else:
+                    image_label.image = None  # Clear the image
 
                 if shiny_image:
                     shiny_image_label.configure(image=shiny_image)
                     shiny_image_label.image = shiny_image  # Keep a reference!
+                else:
+                    shiny_image_label.image = None  # Clear the image
 
     def upload_costume_image(self, costume_id):
         # Use the existing upload_image method to get the image from the file system

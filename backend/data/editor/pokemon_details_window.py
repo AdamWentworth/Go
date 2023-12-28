@@ -82,28 +82,34 @@ class PokemonDetailsWindow:
         self.shadow_frame = PokemonShadowFrame(second_container, self.pokemon_id, self.shadow_pokemon_data, self.db_manager)
         self.shadow_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        # Image Frames Container
+        image_frames_container = tk.Frame(main_container)
+        image_frames_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
         # Image Frame
         image_url = self.pokemon_data[3]  # Assuming the image URL is at this index
-        self.image_frame = PokemonImageFrame(main_container, image_url, pokemon_id, self)
+        self.image_frame = PokemonImageFrame(image_frames_container, image_url, pokemon_id, self)
+        self.image_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # Correctly pack the frame attribute
 
         # Shiny Image Frame
         shiny_image_url = self.pokemon_data[4]  # Assuming the shiny image URL is at this index (update as necessary)
-        self.shiny_image_frame = PokemonShinyImageFrame(main_container, shiny_image_url, pokemon_id, self)
+        self.shiny_image_frame = PokemonShinyImageFrame(image_frames_container, shiny_image_url, pokemon_id, self)
+        self.shiny_image_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # Correctly pack the frame attribute
 
         shadow_image_url = self.shadow_pokemon_data[4] if len(self.shadow_pokemon_data) > 4 else None
         shiny_shadow_image_url = self.shadow_pokemon_data[5] if len(self.shadow_pokemon_data) > 5 else None
 
         # Shadow Image Frame
-        self.shadow_image_frame = PokemonShadowImageFrame(main_container, shadow_image_url, pokemon_id, self)
-        self.shadow_image_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.shadow_image_frame = PokemonShadowImageFrame(image_frames_container, shadow_image_url, pokemon_id, self)
+        self.shadow_image_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # Correctly pack the frame attribute
 
         # Shiny Shadow Image Frame
-        self.shiny_shadow_image_frame = PokemonShinyShadowImageFrame(main_container, shiny_shadow_image_url, pokemon_id, self)
-        self.shiny_shadow_image_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.shiny_shadow_image_frame = PokemonShinyShadowImageFrame(image_frames_container, shiny_shadow_image_url, pokemon_id, self)
+        self.shiny_shadow_image_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # Correctly pack the frame attribute
 
-        # Pokemon Costume Frame
+        # Costume Frame - this is the frame in question, pack the object directly
         self.costume_frame = PokemonCostumeImageFrame(main_container, pokemon_id, self)
-        self.costume_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.costume_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)  # pack the object directly
 
         # Save Button
         save_button = tk.Button(self.window, text="Save Changes", command=self.save_changes)
