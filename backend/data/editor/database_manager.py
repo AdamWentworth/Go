@@ -295,3 +295,18 @@ class DatabaseManager:
         """
         cursor.execute(query, (*updated_details, costume_id))
         self.conn.commit()
+
+    def add_costume(self, pokemon_id, costume_details):
+        cursor = self.conn.cursor()
+        # Assuming costume_details is a tuple of all the necessary information excluding the costume_id
+        cursor.execute("""
+            INSERT INTO costume_pokemon (pokemon_id, costume_name, ...)
+            VALUES (?, ?, ...)
+        """, (pokemon_id,) + costume_details)
+        self.conn.commit()
+        return cursor.lastrowid  # Returns the id of the new costume
+
+    def delete_costume(self, costume_id):
+        cursor = self.conn.cursor()
+        cursor.execute("DELETE FROM costume_pokemon WHERE costume_id = ?", (costume_id,))
+        self.conn.commit()

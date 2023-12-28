@@ -69,8 +69,25 @@ class PokemonCostumeImageFrame(tk.Frame):
                                                     command=lambda c_id=costume[0]: self.upload_costume_image(c_id, is_shiny=True))
             upload_shiny_image_file_button.grid(row=7, column=3, sticky="ew")
 
+            # Add delete button for each costume
+            self.add_delete_button(frame, costume[0], row=8, column=1)  # Adjust row and column as needed
+
         # Load and display images after setting up UI
         self.load_costume_images()
+
+        self.add_costume_button()
+
+    def refresh_ui(self):
+        # Clear existing costume frames and repopulate them from the database
+        # This method should clear all the UI components related to costumes and recreate them
+        for frame, _, _, _ in self.costume_frames:
+            frame.destroy()  # Remove the current frames
+
+        # Repopulate the costumes and frames from the database
+        self.costumes = self.db_manager.fetch_pokemon_costumes(self.pokemon_id)
+        self.initialize_ui()  # Recreate the UI components
+        self.load_costume_images()  # Load images for all costumes
+        self.display_costume_images()  # Display the images
 
     def load_costume_images(self):
         # Load and display images for each costume
@@ -186,3 +203,31 @@ class PokemonCostumeImageFrame(tk.Frame):
         self.costumes = self.db_manager.fetch_pokemon_costumes(self.pokemon_id)
         self.load_costume_images()
         self.display_costume_images()
+
+    def add_delete_button(self, frame, costume_id, row, column):
+        delete_button = tk.Button(frame, text="Delete",
+                                command=lambda: self.delete_costume(costume_id))
+        delete_button.grid(row=row, column=column)  # Adjust as needed for your layout
+
+    def delete_costume(self, costume_id):
+        if messagebox.askyesno("Delete", "Are you sure you want to delete this costume?"):
+            self.db_manager.delete_costume(costume_id)
+            self.refresh_ui()  # Refresh UI to reflect the deletion
+    
+    def add_costume_button(self):
+        add_button = tk.Button(self, text="Add Costume",
+                            command=self.add_costume)
+        add_button.pack(side="top")  # Adjust the placement as needed
+    
+    def add_costume(self):
+        # Logic to collect new costume details from the user
+        # This might involve opening a new dialog or window where the user can input details
+        # Once details are collected, they are passed to the add_costume method of db_manager
+        # Example (You'll need to define the actual dialog or method to collect costume details):
+        costume_details = self.collect_costume_details()  # Implement this method or dialog
+        if costume_details:  # Ensure details are collected
+            self.db_manager.add_costume(self.pokemon_id, costume_details)
+            self.refresh_ui()  # Refresh the UI to include the new costume
+
+    
+
