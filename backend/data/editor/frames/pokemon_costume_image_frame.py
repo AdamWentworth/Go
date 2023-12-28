@@ -198,7 +198,7 @@ class PokemonCostumeImageFrame(tk.Frame):
     def delete_costume(self, costume_id):
         if messagebox.askyesno("Delete", "Are you sure you want to delete this costume?"):
             self.db_manager.delete_costume(costume_id)
-            self.refresh_ui()  # Refresh UI to reflect the deletion
+            self.refresh_ui_for_costume()  # Refresh UI to reflect the deletion
     
     def add_costume_button(self):
         add_button = tk.Button(self, text="Add Costume",
@@ -206,14 +206,21 @@ class PokemonCostumeImageFrame(tk.Frame):
         add_button.pack(side="top")  # Adjust the placement as needed
     
     def add_costume(self):
-        # Logic to collect new costume details from the user
-        # This might involve opening a new dialog or window where the user can input details
-        # Once details are collected, they are passed to the add_costume method of db_manager
-        # Example (You'll need to define the actual dialog or method to collect costume details):
-        costume_details = self.collect_costume_details()  # Implement this method or dialog
-        if costume_details:  # Ensure details are collected
-            self.db_manager.add_costume(self.pokemon_id, costume_details)
-            self.refresh_ui()  # Refresh the UI to include the new costume
+        # Retrieve blank details for the new costume
+        blank_costume_details = self.get_blank_costume_details()
+        
+        # Add a new costume to the database and get its ID
+        new_costume_id = self.db_manager.add_costume(self.pokemon_id, blank_costume_details)
+        
+        # Create a new frame for this costume
+        new_costume_frame = self.create_blank_costume_frame(new_costume_id, is_new=True)
+        
+        # Add the new frame to the UI
+        self.costume_frames.append(new_costume_frame)
+        new_costume_frame.pack()
+        
+        # Update display
+        self.display_costume_images()
 
     def save_costume_changes(self, costume_id):
         # Gather the updated details from the entries
@@ -238,3 +245,40 @@ class PokemonCostumeImageFrame(tk.Frame):
         # Confirm the update to the user. Assuming 'self.details_window.window' is the actual Tk window.
         # Adjust 'self.details_window.window' to the actual attribute that holds the Tkinter window reference.
         messagebox.showinfo("Update Successful", f"Costume ID: {costume_id} updated.", parent=self.details_window.window)
+
+    def get_blank_costume_details(self):
+        # Return blank details as per your costume structure in the database
+        # This is an example structure, adjust according to your actual database schema
+        return {
+            'costume_name': '',
+            'shiny_available': '',
+            'date_available': '',
+            'date_shiny_available': '',
+            'image_url_costume': '',
+            'image_url_shiny_costume': ''
+        }
+
+    def create_blank_costume_frame(self, costume_id, is_new=False):
+        frame_text = "New Costume" if is_new else f"Costume ID: {costume_id}"
+        frame = tk.LabelFrame(self, text=frame_text, borderwidth=2, relief=tk.GROOVE)
+        frame.pack(side="top", fill="x", padx=5, pady=5)
+
+        labels = ['Costume Name', 'Shiny Available', 'Date Available', 'Date Shiny Available', 'Image URL', 'Shiny Image URL']
+        for i, label in enumerate(labels):
+            tk.Label(frame, text=label).grid(row=i, column=0, sticky="e")
+            entry = ttk.Entry(frame)
+            entry.grid(row=i, column=1, sticky="ew")
+            self.costume_entries[(costume_id, label)] = entry  # Store the entry with its costume_id and label
+
+        # Image display placeholders for regular and shiny images
+        image_label = tk.Label(frame)
+        image_label.grid(row=0, column=2, rowspan=6, padx=10, pady=10)
+
+        shiny_image_label = tk.Label(frame)
+        shiny_image_label.grid(row=0, column=3, rowspan=6, padx=10, pady=10)
+
+        # Save button for the costume
+        save_button = tk.Button(frame, text="Save Costume", command=lambda: self.save_costume_changes(costume_id))
+        save_button.grid(row=10, column=1, sticky="ew")
+
+        return frame  # Return the frame for potential further use

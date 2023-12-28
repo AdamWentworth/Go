@@ -311,13 +311,16 @@ class DatabaseManager:
 
     def add_costume(self, pokemon_id, costume_details):
         cursor = self.conn.cursor()
-        # Assuming costume_details is a tuple of all the necessary information excluding the costume_id
-        cursor.execute("""
-            INSERT INTO costume_pokemon (pokemon_id, costume_name, ...)
-            VALUES (?, ?, ...)
-        """, (pokemon_id,) + costume_details)
+        query = """
+            INSERT INTO costume_pokemon (pokemon_id, costume_name, shiny_available, date_available, 
+                                        date_shiny_available, image_url_costume, image_url_shiny_costume)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """
+        values = (pokemon_id,) + tuple(costume_details.values())
+        cursor.execute(query, values)
         self.conn.commit()
-        return cursor.lastrowid  # Returns the id of the new costume
+
+        return cursor.lastrowid  # This should now return the auto-incremented ID
 
     def delete_costume(self, costume_id):
         cursor = self.conn.cursor()
