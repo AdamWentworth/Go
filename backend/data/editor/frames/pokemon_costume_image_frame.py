@@ -72,22 +72,29 @@ class PokemonCostumeImageFrame(tk.Frame):
             # Add delete button for each costume
             self.add_delete_button(frame, costume[0], row=8, column=1)  # Adjust row and column as needed
 
+            # Add save button for each costume
+            save_costume_button = tk.Button(frame, text="Save Costume", command=lambda c_id=costume[0]: self.save_costume_changes(c_id))
+            save_costume_button.grid(row=9, column=1, sticky="ew")  # Adjust the row and column accordingly
+
         # Load and display images after setting up UI
         self.load_costume_images()
 
         self.add_costume_button()
 
-    def refresh_ui(self):
-        # Clear existing costume frames and repopulate them from the database
-        # This method should clear all the UI components related to costumes and recreate them
-        for frame, _, _, _ in self.costume_frames:
-            frame.destroy()  # Remove the current frames
+    def refresh_ui_for_costume(self, costume_id):
+        # Find and destroy the old frame for the specific costume
+        for frame, _, _, c_id in self.costume_frames:
+            if c_id == costume_id:
+                frame.destroy()
+                break
 
-        # Repopulate the costumes and frames from the database
-        self.costumes = self.db_manager.fetch_pokemon_costumes(self.pokemon_id)
-        self.initialize_ui()  # Recreate the UI components
-        self.load_costume_images()  # Load images for all costumes
-        self.display_costume_images()  # Display the images
+        # Fetch the updated costume from the database
+        updated_costume = self.db_manager.fetch_pokemon_costumes(self.pokemon_id, costume_id)
+
+        # Rebuild the UI for the updated costume
+        self.initialize_ui_for_costume(updated_costume)  # You'll need to modify initialize_ui to handle single costume
+        self.load_costume_images()  # Reload images for all costumes
+        self.display_costume_images()  # Redisplay images for all costumes
 
     def load_costume_images(self):
         # Load and display images for each costume
@@ -182,37 +189,6 @@ class PokemonCostumeImageFrame(tk.Frame):
             except Exception as e:
                 messagebox.showerror("Upload Error", f"Failed to open or process the image: {e}")
                 return None
-    def update_costume(self, costume_id):
-        # Gather the updated details from the entries
-        updated_details = []
-        labels = ['Costume Name', 'Shiny Available', 'Date Available', 'Date Shiny Available', 'Image URL', 'Shiny Image URL']
-        for label in labels:
-            entry = self.costume_entries.get((costume_id, label))
-            if entry is not None:
-                value = entry.get()
-                # Inside the loop in update_costume method
-                if label == 'Shiny Available':
-                    raw_value = entry.get()
-                    print("Raw entry value for Shiny Available:", raw_value)  # Continue debugging
-                    # Update conversion logic to handle "1" as true and "0" as false
-                    value = 1 if raw_value in ['1', 1, 'true', 'True'] else 0
-                updated_details.append(value)
-            else:
-                print(f"No entry for {label} and costume ID {costume_id}")
-
-        # Debugging: Print or log the details before updating
-        print("Updated details before sending to DB:", updated_details)
-
-        # Update the database with these details
-        self.db_manager.update_pokemon_costume(costume_id, updated_details)
-
-        # Confirm the update to the user
-        messagebox.showinfo("Update Successful", f"Costume ID: {costume_id} updated.")
-
-        # Reload the costume details from the database to refresh the UI
-        self.costumes = self.db_manager.fetch_pokemon_costumes(self.pokemon_id)
-        self.load_costume_images()
-        self.display_costume_images()
 
     def add_delete_button(self, frame, costume_id, row, column):
         delete_button = tk.Button(frame, text="Delete",
@@ -238,3 +214,27 @@ class PokemonCostumeImageFrame(tk.Frame):
         if costume_details:  # Ensure details are collected
             self.db_manager.add_costume(self.pokemon_id, costume_details)
             self.refresh_ui()  # Refresh the UI to include the new costume
+
+    def save_costume_changes(self, costume_id):
+        # Gather the updated details from the entries
+        updated_details = []
+        labels = ['Costume Name', 'Shiny Available', 'Date Available', 'Date Shiny Available', 'Image URL', 'Shiny Image URL']
+        for label in labels:
+            entry = self.costume_entries.get((costume_id, label))
+            if entry is not None:
+                value = entry.get().strip()  # strip to remove leading/trailing whitespace
+                if label == 'Shiny Available':
+                    raw_value = entry.get().strip()  # Get the raw string value and strip whitespace
+                    if raw_value.lower() in ['true', '1']:
+                        value = 1
+                    elif raw_value.lower() in ['false', '0']:
+                        value = 0
+                    else:
+                        value = None  # Or handle unexpected input
+                updated_details.append(value)
+        # Update the database with these details
+        self.db_manager.update_pokemon_costume(costume_id, updated_details)
+
+        # Confirm the update to the user. Assuming 'self.details_window.window' is the actual Tk window.
+        # Adjust 'self.details_window.window' to the actual attribute that holds the Tkinter window reference.
+        messagebox.showinfo("Update Successful", f"Costume ID: {costume_id} updated.", parent=self.details_window.window)
