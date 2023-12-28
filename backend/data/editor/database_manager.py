@@ -293,6 +293,19 @@ class DatabaseManager:
                 date_shiny_available = ?, image_url_costume = ?, image_url_shiny_costume = ?
             WHERE costume_id = ?
         """
+
+        # Convert 'shiny_available' to 1 or 0
+        shiny_index = 1  # Assuming 'shiny_available' is the second item in updated_details
+        if updated_details[shiny_index] in [True, 'True', 'true', 1]:
+            updated_details[shiny_index] = 1
+        elif updated_details[shiny_index] in [False, 'False', 'false', 0]:
+            updated_details[shiny_index] = 0
+        else:
+            updated_details[shiny_index] = None  # Or raise an error if an invalid value is passed
+
+        # Convert empty strings to None
+        updated_details = [None if detail == '' else detail for detail in updated_details]
+
         cursor.execute(query, (*updated_details, costume_id))
         self.conn.commit()
 

@@ -164,6 +164,10 @@ class PokemonDetailsWindow:
         # Save shadow data
         self.shadow_frame.save_shadow_info()
 
+        # Now, loop through costumes and save changes for each
+        for costume in self.costume_frame.costumes:
+            self.costume_frame.update_costume(costume[0])  # Pass only the ID
+
         # Show a confirmation message
         tk.messagebox.showinfo("Update", "Pokemon data updated successfully")
 

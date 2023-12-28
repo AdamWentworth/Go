@@ -185,16 +185,26 @@ class PokemonCostumeImageFrame(tk.Frame):
     def update_costume(self, costume_id):
         # Gather the updated details from the entries
         updated_details = []
-        for label in ['Costume Name', 'Shiny Available', 'Date Available', 'Date Shiny Available', 'Image URL', 'Shiny Image URL']:
-            entry = self.costume_entries[(costume_id, label)]
-            # Convert 'Shiny Available' entry to integer (1 for True, 0 for False)
-            value = entry.get()
-            if label == 'Shiny Available':
-                value = 1 if value.lower() == 'true' else 0
-            updated_details.append(value)
+        labels = ['Costume Name', 'Shiny Available', 'Date Available', 'Date Shiny Available', 'Image URL', 'Shiny Image URL']
+        for label in labels:
+            entry = self.costume_entries.get((costume_id, label))
+            if entry is not None:
+                value = entry.get()
+                # Inside the loop in update_costume method
+                if label == 'Shiny Available':
+                    raw_value = entry.get()
+                    print("Raw entry value for Shiny Available:", raw_value)  # Continue debugging
+                    # Update conversion logic to handle "1" as true and "0" as false
+                    value = 1 if raw_value in ['1', 1, 'true', 'True'] else 0
+                updated_details.append(value)
+            else:
+                print(f"No entry for {label} and costume ID {costume_id}")
 
-        # Update the costume details in the database
-        self.db_manager.update_pokemon_costume(costume_id, tuple(updated_details))
+        # Debugging: Print or log the details before updating
+        print("Updated details before sending to DB:", updated_details)
+
+        # Update the database with these details
+        self.db_manager.update_pokemon_costume(costume_id, updated_details)
 
         # Confirm the update to the user
         messagebox.showinfo("Update Successful", f"Costume ID: {costume_id} updated.")
@@ -228,6 +238,3 @@ class PokemonCostumeImageFrame(tk.Frame):
         if costume_details:  # Ensure details are collected
             self.db_manager.add_costume(self.pokemon_id, costume_details)
             self.refresh_ui()  # Refresh the UI to include the new costume
-
-    
-
