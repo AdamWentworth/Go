@@ -7,6 +7,7 @@ import os
 from io import BytesIO
 
 class PokemonCostumeImageFrame(tk.Frame):
+    LABELS = ['Costume Name', 'Shiny Available', 'Date Available', 'Date Shiny Available', 'Image URL', 'Shiny Image URL']
     def __init__(self, parent, pokemon_id, details_window):
         super().__init__(parent)
         self.parent = parent
@@ -38,8 +39,7 @@ class PokemonCostumeImageFrame(tk.Frame):
         frame = tk.LabelFrame(self, text=frame_text, borderwidth=2, relief=tk.GROOVE)
         frame.pack(side="top", fill="x", padx=5, pady=5)
 
-        labels = ['Costume Name', 'Shiny Available', 'Date Available', 'Date Shiny Available', 'Image URL', 'Shiny Image URL']
-        for i, label in enumerate(labels):
+        for i, label in enumerate(self.LABELS):
             tk.Label(frame, text=label).grid(row=i, column=0, sticky="e")
             entry = ttk.Entry(frame)
             entry.grid(row=i, column=1, sticky="ew")
@@ -60,7 +60,7 @@ class PokemonCostumeImageFrame(tk.Frame):
 
         # Buttons for regular image update placed right beneath the image placeholders
         update_reg_image_url_button = tk.Button(frame, text="Download Image",
-                                                command=lambda c_id=costume_id: self.update_costume_image_from_url(c_id, is_shiny=False))
+                                            command=lambda c_id=costume_id: self.download_image_from_url(c_id, is_shiny=False))
         update_reg_image_url_button.grid(row=6, column=2, sticky="ew")
 
         upload_reg_image_file_button = tk.Button(frame, text="Select Image",
@@ -69,7 +69,7 @@ class PokemonCostumeImageFrame(tk.Frame):
 
         # Buttons for shiny image update placed right beneath the shiny image placeholders
         update_shiny_image_url_button = tk.Button(frame, text="Download Image",
-                                                command=lambda c_id=costume_id: self.update_costume_image_from_url(c_id, is_shiny=True))
+                                            command=lambda c_id=costume_id: self.download_image_from_url(c_id, is_shiny=True))
         update_shiny_image_url_button.grid(row=6, column=3, sticky="ew")
 
         upload_shiny_image_file_button = tk.Button(frame, text="Select Image",
@@ -250,14 +250,13 @@ class PokemonCostumeImageFrame(tk.Frame):
 
     def delete_costume(self, costume_id):
         # Confirm before deleting
-        if messagebox.askyesno("Delete", "Are you sure you want to delete this costume?", parent=self.details_window):
+        if messagebox.askyesno("Delete", "Are you sure you want to delete this costume?", parent=self.details_window.window):
             self.db_manager.delete_costume(costume_id)
 
             # Find and remove the frame for the deleted costume from the UI
             for frame_tuple in self.costume_frames:
-                _, c_id = frame_tuple
+                frame, _, _, c_id = frame_tuple  # Correctly unpack the tuple
                 if c_id == costume_id:
-                    frame, _ = frame_tuple
                     frame.destroy()
                     self.costume_frames.remove(frame_tuple)
                     break
@@ -268,32 +267,51 @@ class PokemonCostumeImageFrame(tk.Frame):
         add_button.pack(side="top")  # Adjust the placement as needed
     
     def add_costume(self):
-        blank_costume_details = self.get_blank_costume_details()
+        blank_costume_details = {
+            'costume_name': '',
+            'shiny_available': None,
+            'date_available': '',
+            'date_shiny_available': '',
+            'image_url_costume': '',
+            'image_url_shiny_costume': ''
+        }
         new_costume_id = self.db_manager.add_costume(self.pokemon_id, blank_costume_details)
-        self.create_costume_frame(['new'] * 8, True)  # 'new' * 8 represents a blank costume tuple for new costume creation
+        self.create_costume_frame([new_costume_id] + [''] * 7, True)  # Adjust the structure to match your schema
+    
+    def update_costume_entries_key(self, old_key, new_key):
+        for label in self.LABELS:
+            if (old_key, label) in self.costume_entries:
+                self.costume_entries[(new_key, label)] = self.costume_entries.pop((old_key, label))
 
     def save_costume_changes(self, costume_id):
         # Gather the updated details from the entries
-        updated_details = []
-        labels = ['Costume Name', 'Shiny Available', 'Date Available', 'Date Shiny Available', 'Image URL', 'Shiny Image URL']
-        for label in labels:
+        updated_details = {}
+        for label in self.LABELS:
             entry = self.costume_entries.get((costume_id, label))
             if entry is not None:
-                value = entry.get().strip()  # strip to remove leading/trailing whitespace
+                value = entry.get().strip()
                 if label == 'Shiny Available':
-                    raw_value = entry.get().strip()  # Get the raw string value and strip whitespace
+                    raw_value = value
                     if raw_value.lower() in ['true', '1']:
                         value = 1
                     elif raw_value.lower() in ['false', '0']:
                         value = 0
                     else:
                         value = None  # Or handle unexpected input
-                updated_details.append(value)
-        # Update the database with these details
-        self.db_manager.update_pokemon_costume(costume_id, updated_details)
+                updated_details[label] = value
 
-        # Confirm the update to the user. Assuming 'self.details_window.window' is the actual Tk window.
-        # Adjust 'self.details_window.window' to the actual attribute that holds the Tkinter window reference.
+        if costume_id == 'new':
+            # Insert new costume in the database and get the new ID
+            new_id = self.db_manager.add_costume(self.pokemon_id, updated_details)
+            self.update_costume_entries_key('new', new_id)
+            costume_id = new_id  # Update the costume_id to the new ID
+        else:
+            # Update the existing costume in the database
+            self.db_manager.update_pokemon_costume(costume_id, list(updated_details.values()))
+
+        # Reload the costumes to reflect the changes
+        self.costumes = self.db_manager.fetch_pokemon_costumes(self.pokemon_id)
+
         messagebox.showinfo("Update Successful", f"Costume ID: {costume_id} updated.", parent=self.details_window.window)
 
     def get_blank_costume_details(self):
@@ -329,7 +347,7 @@ class PokemonCostumeImageFrame(tk.Frame):
 
         # Buttons for regular image update placed right beneath the image placeholders
         update_reg_image_url_button = tk.Button(frame, text="Download Image",
-                                                command=lambda c_id=costume_id: self.update_costume_image_from_url(c_id, is_shiny=False))
+                                            command=lambda c_id=costume_id: self.download_image_from_url(c_id, is_shiny=False))
         update_reg_image_url_button.grid(row=6, column=2, sticky="ew")
 
         upload_reg_image_file_button = tk.Button(frame, text="Select Image",
@@ -338,7 +356,7 @@ class PokemonCostumeImageFrame(tk.Frame):
 
         # Buttons for shiny image update placed right beneath the shiny image placeholders
         update_shiny_image_url_button = tk.Button(frame, text="Download Image",
-                                                command=lambda c_id=costume_id: self.update_costume_image_from_url(c_id, is_shiny=True))
+                                            command=lambda c_id=costume_id: self.download_image_from_url(c_id, is_shiny=True))
         update_shiny_image_url_button.grid(row=6, column=3, sticky="ew")
 
         upload_shiny_image_file_button = tk.Button(frame, text="Select Image",
@@ -357,3 +375,52 @@ class PokemonCostumeImageFrame(tk.Frame):
         self.costume_frames.append((frame, image_label, shiny_image_label, costume_id))
 
         return frame  # Return the frame for potential further use
+
+    def download_image_from_url(self, costume_id, is_shiny):
+        url = simpledialog.askstring("Download Image", "Enter the Image URL:")
+        if url:
+            print(f"Downloading image from URL: {url}")
+            try:
+                response = requests.get(url)
+                response.raise_for_status()  # Check if the request was successful
+                image = Image.open(BytesIO(response.content))
+
+                # Determine which entry to use for saving the image ('Image URL' or 'Shiny Image URL')
+                entry_key = 'Shiny Image URL' if is_shiny else 'Image URL'
+                image_url_entry = self.costume_entries.get((costume_id, entry_key))
+                if image_url_entry is not None:
+                    relative_image_path = image_url_entry.get().strip()
+                    print(f"Relative image path from entry: {relative_image_path}")
+
+                    # Construct the full path for saving the image
+                    script_directory = os.path.dirname(os.path.realpath(__file__))
+                    go_directory = os.path.normpath(os.path.join(script_directory, '../../../../'))
+                    public_directory = os.path.join(go_directory, 'frontend', 'public')
+                    save_path = os.path.join(public_directory, relative_image_path.lstrip("\\/"))
+                    save_path = os.path.normpath(save_path)
+                    print(f"Full path for saving image: {save_path}")
+
+                    # Create directories if they do not exist
+                    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+                    # Save the image to the specified path
+                    image.save(save_path)
+                    print("Image saved successfully.")
+
+                    # Load the saved image and update the UI
+                    photo_image = ImageTk.PhotoImage(image)
+                    for frame_tuple in self.costume_frames:
+                        _, image_label, shiny_image_label, c_id = frame_tuple
+                        if str(c_id) == str(costume_id):
+                            label_to_update = shiny_image_label if is_shiny else image_label
+                            label_to_update.configure(image=photo_image)
+                            label_to_update.image = photo_image  # Keep a reference
+                            break
+
+            except requests.exceptions.RequestException as e:
+                print(f"Failed to download the image: {e}")
+                messagebox.showerror("Error", f"Failed to download the image: {e}")
+            except Exception as e:
+                print(f"Error processing the image: {e}")
+                messagebox.showerror("Error", f"Error processing the image: {e}")
+
