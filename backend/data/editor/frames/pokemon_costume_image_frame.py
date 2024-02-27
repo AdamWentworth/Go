@@ -348,6 +348,10 @@ class PokemonCostumeImageFrame(tk.Frame):
                 response.raise_for_status()  # Check if the request was successful
                 image = Image.open(BytesIO(response.content))
 
+                if is_shiny:
+                    # Assume combine_images_with_shiny_icon method is defined elsewhere in your class
+                    image = self.combine_images_with_shiny_icon(image)
+
                 # Determine which entry to use for saving the image ('Image URL' or 'Shiny Image URL')
                 entry_key = 'Shiny Image URL' if is_shiny else 'Image URL'
                 image_url_entry = self.costume_entries.get((costume_id, entry_key))
@@ -386,4 +390,24 @@ class PokemonCostumeImageFrame(tk.Frame):
             except Exception as e:
                 print(f"Error processing the image: {e}")
                 messagebox.showerror("Error", f"Error processing the image: {e}")
+
+    def combine_images_with_shiny_icon(self, pokemon_image):
+        
+        try:
+            # Assuming you have similar paths defined for shiny_icon.png
+            shiny_icon_path = os.path.normpath(os.path.join(self.relative_path_to_images, 'images', 'shiny_icon.png'))
+            shiny_icon = Image.open(shiny_icon_path).convert("RGBA")
+
+            # Assuming the size of the pokemon_image or you can resize as needed
+            base_image = Image.new("RGBA", pokemon_image.size, (0, 0, 0, 0))
+            base_image.paste(pokemon_image, (0, 0), pokemon_image)
+
+            # Place shiny icon at the top left or desired location
+            shiny_position = (0, 0)  # top left corner
+            base_image.paste(shiny_icon, shiny_position, shiny_icon)
+
+            return base_image
+        except Exception as e:
+            print(f"Failed to combine images with shiny icon: {e}")
+            return None
 
