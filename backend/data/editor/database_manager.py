@@ -312,6 +312,7 @@ class DatabaseManager:
         self.conn.commit()
 
     def add_costume(self, pokemon_id, costume_details):
+        print(f"add_costume in database_manager called for pokemon_id: {pokemon_id}")
         cursor = self.conn.cursor()
         query = """
             INSERT INTO costume_pokemon (pokemon_id, costume_name, shiny_available, date_available, 
@@ -321,8 +322,9 @@ class DatabaseManager:
         values = (pokemon_id,) + tuple(costume_details.values())
         cursor.execute(query, values)
         self.conn.commit()
-
-        return cursor.lastrowid  # This should now return the auto-incremented ID
+        last_id = cursor.lastrowid  # Correct placement to capture the last inserted ID
+        print(f"Costume added with costume_id: {last_id}")  # Corrected debug print
+        return last_id
 
     def delete_costume(self, costume_id):
         cursor = self.conn.cursor()

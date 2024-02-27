@@ -31,7 +31,8 @@ class PokemonCostumeImageFrame(tk.Frame):
         self.costume_frames = []
         for costume in self.costumes:
             self.create_costume_frame(costume, False)  # False indicating it's not a new costume
-        self.add_costume_button()
+        self.add_costume_button()  # Setup add costume button
+        print("initialize_ui and add_costume_button called")  # Debug print
 
     def create_costume_frame(self, costume, is_new):
         costume_id = 'new' if is_new else costume[0]
@@ -231,21 +232,14 @@ class PokemonCostumeImageFrame(tk.Frame):
                     break
     
     def add_costume_button(self):
-        add_button = tk.Button(self, text="Add Costume",
-                            command=self.add_costume)
+        add_button = tk.Button(self, text="Add Costume", command=self.add_costume)
         add_button.pack(side="top")  # Adjust the placement as needed
+        print("add_costume_button setup complete")  # Debug print to confirm setup
     
     def add_costume(self):
-        blank_costume_details = {
-            'costume_name': '',
-            'shiny_available': None,
-            'date_available': '',
-            'date_shiny_available': '',
-            'image_url_costume': '',
-            'image_url_shiny_costume': ''
-        }
-        new_costume_id = self.db_manager.add_costume(self.pokemon_id, blank_costume_details)
-        self.create_costume_frame([new_costume_id] + [''] * 7, True)  # Adjust the structure to match your schema
+        print("add_costume in PokemonCostumeImageFrame called")  # Debug print
+        # No need to create a new costume_id here, just use a placeholder
+        self.create_costume_frame(['new'] + [''] * 7, True)  # Pass 'new' as the temporary costume_id
     
     def update_costume_entries_key(self, old_key, new_key):
         for label in self.LABELS:
