@@ -5,8 +5,9 @@ from PIL import Image, ImageTk
 import requests
 import os
 from io import BytesIO
+from .costume_methods.image_methods import ImageMethods
 
-class PokemonCostumeImageFrame(tk.Frame):
+class PokemonCostumeImageFrame(tk.Frame, ImageMethods):
     LABELS = ['Costume Name', 'Shiny Available', 'Date Available', 'Date Shiny Available', 'Image URL', 'Shiny Image URL']
     def __init__(self, parent, pokemon_id, details_window):
         super().__init__(parent)
