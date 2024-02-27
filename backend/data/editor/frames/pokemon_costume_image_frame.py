@@ -5,9 +5,8 @@ from PIL import Image, ImageTk
 import requests
 import os
 from io import BytesIO
-from .costume_methods.image_methods import ImageMethods
 
-class PokemonCostumeImageFrame(tk.Frame, ImageMethods):
+class PokemonCostumeImageFrame(tk.Frame):
     LABELS = ['Costume Name', 'Shiny Available', 'Date Available', 'Date Shiny Available', 'Image URL', 'Shiny Image URL']
     def __init__(self, parent, pokemon_id, details_window):
         super().__init__(parent)
@@ -131,37 +130,6 @@ class PokemonCostumeImageFrame(tk.Frame, ImageMethods):
                     shiny_image_label.image = shiny_image  # Keep a reference
 
         self.display_costume_images()
-
-    def display_costume_images(self):
-        for _, image_label, shiny_image_label, costume_id in self.costume_frames:
-            # Fetching images from the stored dictionary using the costume_id
-            regular_image_path, shiny_image_path = None, None
-            
-            # Find the costume in self.costumes with the matching costume_id
-            costume = next((c for c in self.costumes if str(c[0]) == str(costume_id)), None)
-            if costume:  # Ensure costume is found and costume_id is not 'new'
-                regular_image_path = costume[6]  # Regular image path (already relative)
-                shiny_image_path = costume[7]  # Shiny image path (already relative)
-
-            # Update regular image if exists
-            if regular_image_path and regular_image_path in self.images:
-                image = self.images[regular_image_path]
-                image_label.configure(image=image)
-                image_label.image = image  # Keep a reference
-            else:
-                # Clear the image or set to default/placeholder
-                image_label.configure(image=self.get_placeholder_image())
-                image_label.image = self.get_placeholder_image()  # Keep a reference to avoid garbage collection
-
-            # Update shiny image if exists
-            if shiny_image_path and shiny_image_path in self.images:
-                shiny_image = self.images[shiny_image_path]
-                shiny_image_label.configure(image=shiny_image)
-                shiny_image_label.image = shiny_image  # Keep a reference
-            else:
-                # Clear the image or set to default/placeholder
-                shiny_image_label.configure(image=self.get_placeholder_image())
-                shiny_image_label.image = self.get_placeholder_image()  # Keep a reference to avoid garbage collection
 
     def open_local_image(self, image_url):
         # Trim leading slash from image_url if present to ensure it's treated as relative
