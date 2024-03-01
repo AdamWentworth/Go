@@ -1,6 +1,6 @@
 //pokemonList.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react'; // Ensure useMemo is imported
 import './pokemonList.css';
 import PokemonOverlay from './pokemonOverlay'; 
 import useSearchFilters from '../hooks/useSearchFilters'; // Import the search filters hook
@@ -16,6 +16,9 @@ function pokemonList() {
     const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(false);
     
     const { allPokemons, loading } = useFetchPokemons();
+
+    // Add this state to your existing states in pokemonList.jsx
+    const [sortMode, setSortMode] = useState(0); // 0 = off, 1 = newest first, 2 = oldest first
     
     const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
     
@@ -39,6 +42,31 @@ function pokemonList() {
 
     const displayedPokemons = useFilterPokemons(allPokemons, filters, showEvolutionaryLine);
 
+    const sortedPokemons = useMemo(() => {
+        if (sortMode === 0) {
+            // No sorting applied
+            return displayedPokemons;
+        } else {
+            // Clone displayedPokemons to avoid directly mutating state
+            const pokemonsToSort = [...displayedPokemons];
+    
+            pokemonsToSort.sort((a, b) => {
+                const dateA = new Date(a.date_available);
+                const dateB = new Date(b.date_available);
+    
+                if (sortMode === 1) {
+                    // Newest first
+                    return dateB - dateA;
+                } else if (sortMode === 2) {
+                    // Oldest first
+                    return dateA - dateB;
+                }
+            });
+    
+            return pokemonsToSort;
+        }
+    }, [displayedPokemons, sortMode]);
+
     // Function to toggle the evolutionary line checkbox
     const toggleEvolutionaryLine = () => {
         setShowEvolutionaryLine(prev => !prev);
@@ -54,24 +82,30 @@ function pokemonList() {
 
     const toggleShadow = () => {
         setShowShadow(prevState => !prevState);
-    };   
+    };  
+    
+    const toggleSortMode = () => {
+        setSortMode((currentMode) => (currentMode + 1) % 3);
+    };    
      
     return (
         <div>
             <div className="header">
                 <div className="search-ui">
                 <SearchUI
-                        searchTerm={searchTerm}
-                        onSearchChange={setSearchTerm}
-                        isShiny={isShiny}
-                        toggleShiny={toggleShiny}
-                        showCostume={showCostume}
-                        toggleCostume={toggleCostume}
-                        showShadow={showShadow}
-                        toggleShadow={toggleShadow}
-                        showEvolutionaryLine={showEvolutionaryLine} // Pass the state here
-                        toggleEvolutionaryLine={toggleEvolutionaryLine} // Pass the toggle function here
-                    />
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    isShiny={isShiny}
+                    toggleShiny={toggleShiny}
+                    showCostume={showCostume}
+                    toggleCostume={toggleCostume}
+                    showShadow={showShadow}
+                    toggleShadow={toggleShadow}
+                    showEvolutionaryLine={showEvolutionaryLine}
+                    toggleEvolutionaryLine={toggleEvolutionaryLine}
+                    sortMode={sortMode} // Pass sortMode to SearchUI
+                    toggleSortMode={toggleSortMode} // Pass toggleSortMode to SearchUI
+                />
                 </div>
                 <div className="header-section collect-section">
                     <h1>Collect</h1>
@@ -84,7 +118,7 @@ function pokemonList() {
                     <p>Loading...</p>
                 ) : (
                     <>
-                {displayedPokemons.map((pokemon, index) => (
+                {sortedPokemons.map((pokemon, index) => (
                     <PokemonCard
                         key={index}
                         pokemon={pokemon}
@@ -108,6 +142,5 @@ function pokemonList() {
         </div>
     );
 }
-
 
 export default pokemonList;
