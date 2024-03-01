@@ -19,7 +19,9 @@ function formatCostumes(pokemonsWithImages, costumes) {
             name: c.costume_name,
             image_url: c.image_url_costume, // Directly using the URL from the database
             image_url_shiny: c.image_url_shiny_costume, // Directly using the URL from the database
-            shiny_available: c.shiny_available
+            shiny_available: c.shiny_available,
+            date_available: c.date_available,
+            date_shiny_available: c.date_shiny_available
         }));
 
         return {
