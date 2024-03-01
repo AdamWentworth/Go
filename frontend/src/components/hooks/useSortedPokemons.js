@@ -7,33 +7,35 @@ const useSortedPokemons = (displayedPokemons, sortMode, { isShiny, showShadow, s
         } else {
             const pokemonsToSort = [...displayedPokemons];
             pokemonsToSort.sort((a, b) => {
-                // Determine which date to use for sorting
                 let dateA, dateB;
-                if (isShiny && showShadow) {
-                    // Use shiny shadow available date if both toggles are active
+
+                // Adjusted logic for handling shiny costumes
+                if (showCostume) {
+                    const costumeA = a.costumes?.find(costume => costume.name === a.currentCostumeName);
+                    const costumeB = b.costumes?.find(costume => costume.name === b.currentCostumeName);
+                    // Use date_shiny_available if both shiny and costume toggles are active, otherwise use date_available
+                    dateA = new Date((isShiny && costumeA?.date_shiny_available) || costumeA?.date_available || a.date_available);
+                    dateB = new Date((isShiny && costumeB?.date_shiny_available) || costumeB?.date_available || b.date_available);
+                } else if (isShiny && showShadow) {
                     dateA = new Date(a.date_shiny_shadow_available || a.date_available);
                     dateB = new Date(b.date_shiny_shadow_available || b.date_available);
                 } else if (isShiny) {
-                    // Use shiny available date if only shiny toggle is active
                     dateA = new Date(a.date_shiny_available || a.date_available);
                     dateB = new Date(b.date_shiny_available || b.date_available);
                 } else if (showShadow) {
-                    // Use shadow available date if only shadow toggle is active
                     dateA = new Date(a.date_shadow_available || a.date_available);
                     dateB = new Date(b.date_shadow_available || b.date_available);
                 } else {
-                    // Default to using the general available date
                     dateA = new Date(a.date_available);
                     dateB = new Date(b.date_available);
                 }
 
-                if (sortMode === 1) {
-                    // Newest first
-                    return dateB - dateA;
-                } else if (sortMode === 2) {
-                    // Oldest first
-                    return dateA - dateB;
+                // Sorting by date with a tiebreaker based on pokemon_id for consistent order
+                const dateComparison = sortMode === 1 ? dateB - dateA : dateA - dateB;
+                if (dateComparison === 0) {
+                    return a.pokemon_id - b.pokemon_id; // Tiebreaker: lower pokemon_id first
                 }
+                return dateComparison;
             });
 
             return pokemonsToSort;
