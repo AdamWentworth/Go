@@ -8,17 +8,14 @@ import SearchUI from './searchUI';
 import PokemonCard from './pokemonCard';
 import useFetchPokemons from '../hooks/useFetchPokemons';
 import useFilterPokemons from '../hooks/useFilterPokemons';
-
+import useSortedPokemons from '../hooks/useSortedPokemons';
 
 function pokemonList() {
     const [selectedPokemon, setSelectedPokemon] = useState(null);
-
     const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(false);
-    
-    const { allPokemons, loading } = useFetchPokemons();
+    const [sortMode, setSortMode] = useState(0); // Ensure this state is declared
 
-    // Add this state to your existing states in pokemonList.jsx
-    const [sortMode, setSortMode] = useState(0); // 0 = off, 1 = newest first, 2 = oldest first
+    const { allPokemons, loading } = useFetchPokemons();
     
     const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
     
@@ -41,31 +38,7 @@ function pokemonList() {
     };
 
     const displayedPokemons = useFilterPokemons(allPokemons, filters, showEvolutionaryLine);
-
-    const sortedPokemons = useMemo(() => {
-        if (sortMode === 0) {
-            // No sorting applied
-            return displayedPokemons;
-        } else {
-            // Clone displayedPokemons to avoid directly mutating state
-            const pokemonsToSort = [...displayedPokemons];
-    
-            pokemonsToSort.sort((a, b) => {
-                const dateA = new Date(a.date_available);
-                const dateB = new Date(b.date_available);
-    
-                if (sortMode === 1) {
-                    // Newest first
-                    return dateB - dateA;
-                } else if (sortMode === 2) {
-                    // Oldest first
-                    return dateA - dateB;
-                }
-            });
-    
-            return pokemonsToSort;
-        }
-    }, [displayedPokemons, sortMode]);
+    const sortedPokemons = useSortedPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume });
 
     // Function to toggle the evolutionary line checkbox
     const toggleEvolutionaryLine = () => {
