@@ -84,3 +84,7 @@
 .costume-overlay, .costume-column {
   overflow-x: hidden;
 }
+
+.costume-column ul li strong {
+  padding-bottom: 20px;
+}

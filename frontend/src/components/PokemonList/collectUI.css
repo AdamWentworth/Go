@@ -1,0 +1,23 @@
+/* collectUI.css */
+.status-filters {
+    display: flex; /* This turns on flexbox for the container */
+    flex-direction: row; /* This ensures the items are laid out in a row; this is actually the default value */
+    justify-content: flex-start; /* This aligns items to the start of the container; you can adjust as needed */
+    flex-wrap: wrap; /* This allows items to wrap onto multiple lines if there's not enough space */
+    margin-bottom: 20px;
+  }
+  
+  .filter-button {
+    margin: 5px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    cursor: pointer; /* Adds a pointer cursor on hover to indicate clickability */
+  }
+  
+  .filter-button.active {
+    border-color: #007bff;
+    background-color: #007bff;
+    color: white;
+  }
+  

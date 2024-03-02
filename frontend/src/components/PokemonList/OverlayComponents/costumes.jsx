@@ -28,7 +28,7 @@ function Costumes({ costumes }) {
           </button>
         </div>
       )}
-      <ul>
+      <ul className={costumes.length >= 4 ? 'has-view-all' : ''}>
         {costumes.map((costume, index) => (
           <li key={index}>
             <div className="costume-images">

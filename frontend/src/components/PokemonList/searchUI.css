@@ -1,5 +1,8 @@
 /*searchUi.css*/
-
+.checkbox-container {
+    display: inline-flex; /* Align checkbox and custom visual inline */
+    align-items: center; /* Center align the elements vertically */
+}
 .evo-line-checkbox {
     display: flex;
     align-items: center;
@@ -10,6 +13,7 @@
     flex-grow: 1; /* Allow the label to grow */
     flex-shrink: 1; /* Allow the label to shrink */
     min-width: 0; /* Enable shrinking below content size */
+    pointer-events: none; /* Prevent the label from being clickable */
 }
 
 .evo-checkbox {
@@ -22,6 +26,8 @@
     opacity: 0;
     width: 0;
     height: 0;
+    position: absolute;
+    z-index: -1; /* Push it behind the visual representation */
 }
 
 .evo-line-custom-checkbox {
@@ -36,6 +42,8 @@
     position: relative;
     flex-shrink: 0; /* Prevent it from shrinking */
     margin-right: 4px;
+    cursor: pointer;
+    pointer-events: all;
 }
 
 /* Ensure the checkmark inside the checkbox remains centered */
