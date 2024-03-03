@@ -68,8 +68,7 @@
     }
 
     .search-ui input, 
-    .search-ui button, 
-    .collect-section h1 {
+    .search-ui button {
         font-size: 10px; /* Reduce font size to decrease element size */
     }
 
@@ -120,8 +119,7 @@
 
     /* Adjustments for search UI in the pokemon list context */
     .search-ui input,
-    .search-ui button,
-    .collect-section h1 {
+    .search-ui button {
         font-size: 10px;
     }
 
@@ -167,8 +165,7 @@
     }
 
     .search-ui input, 
-    .search-ui button, 
-    .collect-section h1 {
+    .search-ui button {
         font-size: 12px; /* Slightly increased font size */
     }
 
@@ -213,8 +210,7 @@
     }
 
     .search-ui input, 
-    .search-ui button, 
-    .collect-section h1 {
+    .search-ui button {
         font-size: 14px; /* Further increased font size */
     }
 
@@ -256,8 +252,7 @@
     }
 
     .search-ui input, 
-    .search-ui button, 
-    .collect-section h1 {
+    .search-ui button {
         font-size: 16px; /* Slightly increased font size */
     }
 
@@ -299,8 +294,7 @@
     }
 
     .search-ui input, 
-    .search-ui button, 
-    .collect-section h1 {
+    .search-ui button {
         font-size: 16px; /* Slightly increased font size */
     }
 
@@ -342,8 +336,7 @@
     }
 
     .search-ui input, 
-    .search-ui button, 
-    .collect-section h1 {
+    .search-ui button {
         font-size: 18px; /* Increase font size for better legibility */
     }
 

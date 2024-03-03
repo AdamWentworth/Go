@@ -84,12 +84,9 @@ function pokemonList() {
                     toggleSortMode={toggleSortMode} // Pass toggleSortMode to SearchUI
                 />
                 </div>
-                <div className="header-section collect-section">
-                <h1>Collect</h1>
                 <CollectUI 
-                    statusFilter={statusFilter} setStatusFilter={setStatusFilter} />
-                </div>
-
+                    statusFilter={statusFilter} setStatusFilter={setStatusFilter} 
+                />
             </div>
 
             <div className="pokemon-container">
