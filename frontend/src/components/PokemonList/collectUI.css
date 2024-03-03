@@ -37,7 +37,7 @@
     flex-wrap: wrap;
     justify-content: flex-start;
     gap: 10px;
-    width: 100%; /* Ensures that the filter buttons span the full width */
+    width: 100%;
   }
   
   .filter-button {
@@ -46,11 +46,50 @@
     border: 1px solid #ccc;
     background-color: #f9f9f9;
     cursor: pointer;
+    color: black;
   }
   
-  .filter-button.active {
-    border-color: #007bff;
-    background-color: #007bff;
-    color: white;
+  /* Original colors */
+  .filter-button.Unowned {
+    background-color: #9E9E9E; /* Grey */
+  }
+  
+  .filter-button.Wanted {
+    background-color: #F44336; /* Red */
+  }
+  
+  .filter-button.Owned {
+    background-color: #2196F3; /* Blue */
+  }
+  
+  .filter-button.Trade {
+    background-color: #4CAF50; /* Green */
+  }
+  
+  /* Hover states */
+  .filter-button.Unowned:hover,
+  .filter-button.Unowned.active {
+    background-color: #757575; /* Darker Grey */
+  }
+  
+  .filter-button.Wanted:hover,
+  .filter-button.Wanted.active {
+    background-color: #D32F2F; /* Darker Red */
+  }
+  
+  .filter-button.Owned:hover,
+  .filter-button.Owned.active {
+    background-color: #1976D2; /* Darker Blue */
+  }
+  
+  .filter-button.Trade:hover,
+  .filter-button.Trade.active {
+    background-color: #388E3C; /* Darker Green */
+  }
+  
+  /* Non-selected state */
+  .filter-button.non-selected {
+    background-color: #E0E0E0; /* Stale Grey */
+    color: black;
   }
   

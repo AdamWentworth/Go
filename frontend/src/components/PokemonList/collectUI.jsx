@@ -1,5 +1,5 @@
 // CollectUI.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import './collectUI.css';
 
 const CollectUI = ({
@@ -8,6 +8,13 @@ const CollectUI = ({
   selectAll, onSelectAll
 }) => {
   const filters = ['Unowned', 'Wanted', 'Owned', 'Trade'];
+  const [selectedFilter, setSelectedFilter] = useState("");
+
+  const handleFilterClick = (filter) => {
+    const newFilter = statusFilter === filter ? "" : filter;
+    setStatusFilter(newFilter);
+    setSelectedFilter(newFilter);
+  };
 
   return (
     <div className="header-section collect-section">
@@ -32,8 +39,8 @@ const CollectUI = ({
         {filters.map((filter) => (
           <button
             key={filter}
-            className={`filter-button ${statusFilter === filter ? 'active' : ''}`}
-            onClick={() => setStatusFilter(statusFilter === filter ? "" : filter)}
+            className={`filter-button ${filter} ${selectedFilter === filter ? 'active' : ''} ${selectedFilter !== "" && selectedFilter !== filter ? 'non-selected' : ''}`}
+            onClick={() => handleFilterClick(filter)}
           >
             {filter}
           </button>
