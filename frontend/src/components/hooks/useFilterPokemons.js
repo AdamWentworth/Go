@@ -58,7 +58,6 @@ const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine) => {
 
         return filteredPokemons;
     }, [allPokemons, selectedGeneration, isShiny, searchTerm, showCostume, showShadow, singleFormPokedexNumbers, pokemonTypes, generations, showEvolutionaryLine]);
-    console.log(displayedPokemons)
     return displayedPokemons;
 };
 

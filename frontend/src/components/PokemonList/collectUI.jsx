@@ -4,11 +4,12 @@ import './collectUI.css';
 
 const CollectUI = ({
   statusFilter, setStatusFilter,
-  fastSelectEnabled, toggleFastSelect,
   selectAll, onSelectAll
 }) => {
-  const filters = ['Unowned', 'Wanted', 'Owned', 'Trade'];
+  const filters = ['Unowned', 'Owned', 'Trade', 'Wanted'];
   const [selectedFilter, setSelectedFilter] = useState("");
+  // Manage fastSelectEnabled state locally
+  const [fastSelectEnabled, setFastSelectEnabled] = useState(false);
 
   const handleFilterClick = (filter) => {
     const newFilter = statusFilter === filter ? "" : filter;
@@ -16,15 +17,17 @@ const CollectUI = ({
     setSelectedFilter(newFilter);
   };
 
+  // Toggle fast select enabled state
+  const handleToggleFastSelect = () => {
+    setFastSelectEnabled(!fastSelectEnabled); // Toggle state
+  };
+
   return (
     <div className="header-section collect-section">
       <div className="collect-header">
         <div className="collect-header-left">
-          <button
-            className={`top-button ${fastSelectEnabled ? 'active' : ''}`}
-            onClick={toggleFastSelect}
-          >
-            Fast Select: {fastSelectEnabled ? 'On' : 'Off'}
+          <button onClick={handleToggleFastSelect} className={`fast-select-button ${fastSelectEnabled ? 'active' : ''}`}>
+              <img src="/images/fast_select.png" alt="Toggle Fast Select" />
           </button>
           <button
             className="top-button"
