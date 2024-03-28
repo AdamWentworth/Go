@@ -32,10 +32,7 @@ const PokemonCard = ({
     }
 
     return (
-        <div className="pokemon-card"
-            key={pokemonKey}
-            onClick={() => setSelectedPokemon(pokemon)}
-        >
+        <div className="pokemon-card" onClick={() => setSelectedPokemon(pokemon)}>
             <img src={cachedImage || pokemon.currentImage} alt={pokemon.name} />
             <p>#{pokemon.pokedex_number}</p>
             <div className="type-icons">

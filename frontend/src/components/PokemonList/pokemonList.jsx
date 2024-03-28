@@ -94,9 +94,9 @@ function pokemonList() {
                     <p>Loading...</p>
                 ) : (
                     <>
-                {sortedPokemons.map((pokemon, index) => (
+                {sortedPokemons.map((pokemon) => (
                     <PokemonCard
-                        key={index}
+                        key={`${pokemon.id}-${pokemon.isShiny ? 'shiny' : 'normal'}-${pokemon.showShadow ? 'shadow' : 'normal'}-${pokemon.costumeName || 'default'}`}
                         pokemon={pokemon}
                         setSelectedPokemon={setSelectedPokemon}
                         isShiny={isShiny}

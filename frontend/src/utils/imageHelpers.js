@@ -1,3 +1,5 @@
+//imageHelpers.js
+
 export function determinePokemonImage(pokemon, isShiny, showShadow, costume) {
     let baseObject = costume || pokemon;
 
