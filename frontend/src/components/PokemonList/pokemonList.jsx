@@ -5,10 +5,12 @@ import './pokemonList.css';
 import PokemonOverlay from './pokemonOverlay'; 
 import useSearchFilters from '../hooks/useSearchFilters'; // Import the search filters hook
 import SearchUI from './searchUI';
+import CollectUI from './collectUI';
 import PokemonCard from './pokemonCard';
 import useFetchPokemons from '../hooks/useFetchPokemons';
 import useFilterPokemons from '../hooks/useFilterPokemons';
 import useSortedPokemons from '../hooks/useSortedPokemons';
+
 
 function pokemonList() {
     const [selectedPokemon, setSelectedPokemon] = useState(null);
@@ -16,6 +18,8 @@ function pokemonList() {
     const [sortMode, setSortMode] = useState(0); // Ensure this state is declared
 
     const { allPokemons, loading } = useFetchPokemons();
+
+    const [statusFilter, setStatusFilter] = useState("");
     
     const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
     
@@ -80,10 +84,9 @@ function pokemonList() {
                     toggleSortMode={toggleSortMode} // Pass toggleSortMode to SearchUI
                 />
                 </div>
-                <div className="header-section collect-section">
-                    <h1>Collect</h1>
-                    {/* Add any other content related to 'Collect' here */}
-                </div>
+                <CollectUI 
+                    statusFilter={statusFilter} setStatusFilter={setStatusFilter} 
+                />
             </div>
 
             <div className="pokemon-container">

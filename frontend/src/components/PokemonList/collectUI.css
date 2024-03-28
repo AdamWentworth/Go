@@ -1,0 +1,125 @@
+/* collectUI.css */
+.header-section.collect-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+.header-section.collect-section button {
+    border: none;
+    outline: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    border-radius: 15px; /* Adjust as per requirement */
+    transition: background-color 0.3s ease; /* Optional: for a smooth color transition */
+}
+
+.collect-header-left button {
+    background-color: #ccc; /* Non-shiny color */
+    margin-right: 5px;
+}
+
+.header-section.collect-section img {
+    width: 40px;
+    height: 40px;
+}
+
+.fast-select-button {
+    padding-left: 2px;
+    padding-right: 2px;
+}  
+  .collect-header {
+    margin-top: -18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-left: 6px;
+  }
+  
+  .collect-header-left {
+    display: flex;
+  }
+  
+  .top-button {
+    margin-right: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #ccc;
+    cursor: pointer;
+  }  
+  
+  .top-button.active {
+    border-color: #007bff;
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .status-filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    margin-top: 5px;
+    margin-left: 6px;
+  }
+  
+  .filter-button {
+    margin-top: -20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #ccc;
+    cursor: pointer;
+    color: black;
+  }
+  
+  /* Original colors */
+  .filter-button.Unowned {
+    background-color: #ccc; /* Grey */
+  }
+  
+  .filter-button.Wanted {
+    background-color: #F44336; /* Red */
+  }
+  
+  .filter-button.Owned {
+    background-color: #2196F3; /* Blue */
+  }
+  
+  .filter-button.Trade {
+    background-color: #4CAF50; /* Green */
+  }
+  
+  /* Hover states */
+  .filter-button.Unowned:hover,
+  .filter-button.Unowned.active {
+    background-color: #858585; /* Darker Grey */
+  }
+  
+  .filter-button.Wanted:hover,
+  .filter-button.Wanted.active {
+    background-color: #be2c2c; /* Darker Red */
+  }
+  
+  .filter-button.Owned:hover,
+  .filter-button.Owned.active {
+    background-color: #176bbe; /* Darker Blue */
+  }
+  
+  .filter-button.Trade:hover,
+  .filter-button.Trade.active {
+    background-color: #327e36; /* Darker Green */
+  }
+  
+  /* Non-selected state */
+  .filter-button.non-selected {
+    background-color: #ccc; /* Stale Grey */
+    color: black;
+  }
+  
+  .fast-select-button.active {
+    background-color: #fff01c; /* Neon yellow */
+}

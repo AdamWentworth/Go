@@ -1,5 +1,8 @@
 /*searchUi.css*/
-
+.checkbox-container {
+    display: inline-flex; /* Align checkbox and custom visual inline */
+    align-items: center; /* Center align the elements vertically */
+}
 .evo-line-checkbox {
     display: flex;
     align-items: center;
@@ -10,6 +13,7 @@
     flex-grow: 1; /* Allow the label to grow */
     flex-shrink: 1; /* Allow the label to shrink */
     min-width: 0; /* Enable shrinking below content size */
+    pointer-events: none; /* Prevent the label from being clickable */
 }
 
 .evo-checkbox {
@@ -22,6 +26,8 @@
     opacity: 0;
     width: 0;
     height: 0;
+    position: absolute;
+    z-index: -1; /* Push it behind the visual representation */
 }
 
 .evo-line-custom-checkbox {
@@ -36,6 +42,8 @@
     position: relative;
     flex-shrink: 0; /* Prevent it from shrinking */
     margin-right: 4px;
+    cursor: pointer;
+    pointer-events: all;
 }
 
 /* Ensure the checkmark inside the checkbox remains centered */
@@ -65,8 +73,7 @@
     font-size: 16px;
 }
 
-
-.header-section button {
+.header-section.browse-section button {
     background-color: #ccc; /* Non-shiny color */
     border: none;
     outline: none;
@@ -78,24 +85,31 @@
     transition: background-color 0.3s ease; /* Optional: for a smooth color transition */
 }
 
-.header-section img {
+/* Increase specificity for active button styles */
+.header-section.browse-section .shiny-button.active,
+.header-section.browse-section .shiny-button.active:hover, /* For hover state as well */
+.header-section.browse-section .costume-button.active,
+.header-section.browse-section .costume-button.active:hover, /* For hover state as well */
+.header-section.browse-section .shadow-button.active,
+.header-section.browse-section .shadow-button.active:hover /* For hover state as well */ {
+    transition: background-color 0.3s ease; /* Ensure smooth color transition for all states */
+}
+
+.header-section.browse-section img {
     width: 30px;
     height: 30px;
 }
 
-.shiny-button.active, .generation-buttons button.active {
-    /* Your CSS for active state e.g. a different background color */
+.header-section.browse-section .shiny-button.active {
     background-color: gold;
 }
 
-.costume-button.active, .generation-buttons button.active {
-    /* Your CSS for active state e.g. a different background color */
+.header-section.browse-section .costume-button.active {
     background-color: cyan;
 }
 
-.shadow-button.active, .generation-buttons button.active {
-    /* Your CSS for active state e.g. a different background color */
-    background-color: plum;
+.header-section.browse-section .shadow-button.active {
+    background-color: rgb(182, 92, 182);
 }
 
 /* Removing focus border/outline for accessibility might not be recommended. 
@@ -104,21 +118,30 @@
     outline: none;
 }
 
-/* You can also style the button on hover for better user interaction */
-.header-section button:hover {
-    background-color: #b5b5b5; /* Slightly darker non-shiny color */
-}
-
-.shiny-button.active:hover {
+/* Specific hover colors for active buttons */
+.header-section.browse-section .shiny-button:hover {
     background-color: #ffcc00; /* Slightly darker shiny color */
 }
 
-.costume-button.active:hover {
-    background-color: rgb(3, 187, 187); /* Slightly darker shiny color */
+.header-section.browse-section .costume-button:hover {
+    background-color: rgb(58, 216, 216); /* Slightly darker shiny color */
 }
 
-.shadow-button.active:hover {
-    background-color: rgb(152, 0, 152) /* Slightly darker shiny color */
+.header-section.browse-section .shadow-button:hover {
+    background-color: rgb(152, 0, 152); /* Slightly darker shiny color */
+}
+
+/* Specific hover colors for active buttons */
+.header-section.browse-section .shiny-button.active:hover {
+    background-color: #ffcc00; /* Slightly darker shiny color */
+}
+
+.header-section.browse-section .costume-button.active:hover {
+    background-color: rgb(58, 216, 216); /* Slightly darker shiny color */
+}
+
+.header-section.browse-section .shadow-button.active:hover {
+    background-color: rgb(152, 0, 152); /* Slightly darker shiny color */
 }
 
 @media (max-width: 480px) {

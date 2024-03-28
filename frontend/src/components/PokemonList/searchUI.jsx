@@ -22,7 +22,7 @@ function SearchUI({
             <h1>Browse</h1>
             <div className="button-container"> {/* New container for buttons */}
                 <button onClick={toggleSortMode} className={`sort-button ${sortMode !== 0 ? 'active' : ''}`}>
-                    Sort: {sortMode === 0 ? 'Off' : sortMode === 1 ? 'Newest First' : 'Oldest First'}
+                    Sort: {sortMode === 0 ? 'Off' : sortMode === 1 ? 'New' : 'Old'}
                 </button>
                 <button onClick={toggleShiny} className={`shiny-button ${isShiny ? 'active' : ''}`}>
                     <img src="/images/shiny_icon.png" alt="Toggle Shiny" />
@@ -41,14 +41,16 @@ function SearchUI({
                 onChange={(e) => onSearchChange(e.target.value)}
             />
             <label className="evo-line-checkbox">
-                <input
-                    id="evolutionaryLineCheckbox"
-                    type="checkbox"
-                    className="evo-checkbox"
-                    checked={showEvolutionaryLine}
-                    onChange={toggleEvolutionaryLine}
-                />
-                <span className="evo-line-custom-checkbox" />
+                <div className="checkbox-container">
+                    <input
+                        id="evolutionaryLineCheckbox"
+                        type="checkbox"
+                        className="evo-checkbox"
+                        checked={showEvolutionaryLine}
+                        onChange={toggleEvolutionaryLine}
+                    />
+                    <span className="evo-line-custom-checkbox"></span>
+                </div>
                 SHOW EVOLUTIONARY LINE
             </label>
         </div>

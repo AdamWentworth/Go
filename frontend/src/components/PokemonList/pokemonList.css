@@ -10,7 +10,7 @@
     position: sticky;
     top: 0;
     z-index: 1000;
-    box-shadow: 0px 4px 2px -2px gray;
+    box-shadow: 0px 4px 2px -2px rgb(168, 168, 168);
 }
 
 .header::after {
@@ -20,7 +20,7 @@
     top: 0;
     bottom: 0;
     width: 2px;
-    background-color: gray;
+    background-color: rgb(168, 168, 168);
 }
 
 .search-ui, .collect-section {
@@ -68,8 +68,7 @@
     }
 
     .search-ui input, 
-    .search-ui button, 
-    .collect-section h1 {
+    .search-ui button {
         font-size: 10px; /* Reduce font size to decrease element size */
     }
 
@@ -120,8 +119,7 @@
 
     /* Adjustments for search UI in the pokemon list context */
     .search-ui input,
-    .search-ui button,
-    .collect-section h1 {
+    .search-ui button {
         font-size: 10px;
     }
 
@@ -163,11 +161,11 @@
     }
     .header {
         padding: 10px 15px; /* Slightly increased padding */
+        margin-bottom: 5px;
     }
 
     .search-ui input, 
-    .search-ui button, 
-    .collect-section h1 {
+    .search-ui button {
         font-size: 12px; /* Slightly increased font size */
     }
 
@@ -208,11 +206,11 @@
     }
     .header {
         padding: 5px 20px; /* Further increased padding */
+        margin-bottom: 5px;
     }
 
     .search-ui input, 
-    .search-ui button, 
-    .collect-section h1 {
+    .search-ui button {
         font-size: 14px; /* Further increased font size */
     }
 
@@ -250,11 +248,11 @@
     }
     .header {
         padding: 0px 30px; /* Slightly increased padding */
+        margin-bottom: 5px;
     }
 
     .search-ui input, 
-    .search-ui button, 
-    .collect-section h1 {
+    .search-ui button {
         font-size: 16px; /* Slightly increased font size */
     }
 
@@ -292,11 +290,11 @@
     }
     .header {
         padding: 0px 30px; /* Slightly increased padding */
+        margin-bottom: 5px;
     }
 
     .search-ui input, 
-    .search-ui button, 
-    .collect-section h1 {
+    .search-ui button {
         font-size: 16px; /* Slightly increased font size */
     }
 
@@ -338,8 +336,7 @@
     }
 
     .search-ui input, 
-    .search-ui button, 
-    .collect-section h1 {
+    .search-ui button {
         font-size: 18px; /* Increase font size for better legibility */
     }
 
