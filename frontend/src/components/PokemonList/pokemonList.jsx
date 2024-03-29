@@ -1,6 +1,6 @@
 //pokemonList.jsx
 
-import React, { useState, useEffect } from 'react'; // Ensure useMemo is imported
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import './pokemonList.css';
 import PokemonOverlay from './pokemonOverlay'; 
 import useSearchFilters from '../hooks/useSearchFilters'; // Import the search filters hook
@@ -11,7 +11,6 @@ import useFetchPokemons from '../hooks/useFetchPokemons';
 import useFilterPokemons from '../hooks/useFilterPokemons';
 import useSortedPokemons from '../hooks/useSortedPokemons';
 import useShowAllPokemons from '../hooks/useShowAllPokemons';
-
 import { determinePokemonKey } from '../../utils/imageHelpers';
 
 
@@ -28,14 +27,13 @@ function pokemonList() {
         console.log('Show All state is now:', showAll);
       }, [showAll]);
 
-    const toggleShowAll = () => {
+    const toggleShowAll = useCallback(() => {
         setShowAll(true);
         setIsShiny(false);
         setShowCostume(false);
         setShowShadow(false);
-      };
-      
-
+    }, []);
+    
     const [statusFilter, setStatusFilter] = useState("");
     
     const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
@@ -47,7 +45,7 @@ function pokemonList() {
         isTypeSearch, isGenerationSearch
     } = useSearchFilters(allPokemons);
     
-    const filters = {
+    const filters = useMemo(() => ({
         selectedGeneration,
         isShiny,
         searchTerm,
@@ -56,38 +54,37 @@ function pokemonList() {
         singleFormPokedexNumbers,
         pokemonTypes,
         generations
-    };
+    }), [selectedGeneration, isShiny, searchTerm, showCostume, showShadow, singleFormPokedexNumbers, pokemonTypes, generations]);
 
     const displayedPokemons = showAll 
         ? useShowAllPokemons(allPokemons) 
         : useFilterPokemons(allPokemons, filters, showEvolutionaryLine);
 
     const sortedPokemons = useSortedPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume });
-    console.log(sortedPokemons)
 
-    // Function to toggle the evolutionary line checkbox
-    const toggleEvolutionaryLine = () => {
+    const toggleEvolutionaryLine = useCallback(() => {
         setShowEvolutionaryLine(prev => !prev);
-    };    
-
-    const toggleShiny = () => {
+    }, []);
+    
+    const toggleShiny = useCallback(() => {
         setIsShiny(prevState => !prevState);
         setShowAll(false);
-      };
-
-    const toggleCostume = () => { // 2. Toggle function for costume state
+    }, []);
+    
+    const toggleCostume = useCallback(() => {
         setShowCostume(prevState => !prevState);
         setShowAll(false);
-    };
-
-    const toggleShadow = () => {
+    }, []);
+    
+    const toggleShadow = useCallback(() => {
         setShowShadow(prevState => !prevState);
         setShowAll(false);
-    };  
+    }, []);
     
-    const toggleSortMode = () => {
+    const toggleSortMode = useCallback(() => {
         setSortMode((currentMode) => (currentMode + 1) % 3);
-    };
+    }, []);
+    
      
     return (
         <div>

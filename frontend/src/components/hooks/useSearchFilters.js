@@ -1,3 +1,5 @@
+//useSearchFilters.js
+
 import { useState, useEffect } from 'react';
 import { generations, pokemonTypes } from '../../utils/constants'; // Import the required functions and arrays
 import { handleSearchTermChange } from '../../utils/searchFunctions';

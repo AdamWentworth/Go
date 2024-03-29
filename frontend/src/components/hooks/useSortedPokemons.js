@@ -1,3 +1,5 @@
+//useSortedPokemons.js
+
 import { useMemo } from 'react';
 
 const useSortedPokemons = (displayedPokemons, sortMode, { isShiny, showShadow, showCostume }) => {
