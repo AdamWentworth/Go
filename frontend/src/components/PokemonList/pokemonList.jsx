@@ -60,7 +60,7 @@ function pokemonList() {
 
     const displayedPokemons = useConditionalPokemons(allPokemons, filters, showEvolutionaryLine, showAll);
 
-    const sortedPokemons = useSortedPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume });
+    const sortedPokemons = useSortedPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll });
 
     const toggleEvolutionaryLine = useCallback(() => {
         setShowEvolutionaryLine(prev => !prev);

@@ -45,7 +45,7 @@ const useShowAllPokemons = (allPokemons) => {
 
     // Flatten the array of all variants for all Pokémon
     const allVariants = allPokemons.flatMap(pokemon => generateVariants(pokemon));
-    // console.log("All Variants:", allVariants); // Log all generated variants
+    console.log("All Variants:", allVariants); // Log all generated variants
     setVariants(allVariants);
   }, [allPokemons]); // This ensures generateVariants runs only when allPokemons changes.
 
