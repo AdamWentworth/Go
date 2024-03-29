@@ -1,6 +1,6 @@
 //pokemonList.jsx
 
-import React, { useState, useMemo } from 'react'; // Ensure useMemo is imported
+import React, { useState, useEffect } from 'react'; // Ensure useMemo is imported
 import './pokemonList.css';
 import PokemonOverlay from './pokemonOverlay'; 
 import useSearchFilters from '../hooks/useSearchFilters'; // Import the search filters hook
@@ -10,6 +10,7 @@ import PokemonCard from './pokemonCard';
 import useFetchPokemons from '../hooks/useFetchPokemons';
 import useFilterPokemons from '../hooks/useFilterPokemons';
 import useSortedPokemons from '../hooks/useSortedPokemons';
+import useShowAllPokemons from '../hooks/useShowAllPokemons';
 
 
 function pokemonList() {
@@ -18,6 +19,20 @@ function pokemonList() {
     const [sortMode, setSortMode] = useState(0); // Ensure this state is declared
 
     const { allPokemons, loading } = useFetchPokemons();
+
+    const [showAll, setShowAll] = useState(false);
+
+    useEffect(() => {
+        console.log('Show All state is now:', showAll);
+      }, [showAll]);
+
+    const toggleShowAll = () => {
+        setShowAll(true);
+        setIsShiny(false);
+        setShowCostume(false);
+        setShowShadow(false);
+      };
+      
 
     const [statusFilter, setStatusFilter] = useState("");
     
@@ -41,7 +56,10 @@ function pokemonList() {
         generations
     };
 
-    const displayedPokemons = useFilterPokemons(allPokemons, filters, showEvolutionaryLine);
+    const displayedPokemons = showAll 
+        ? useShowAllPokemons(allPokemons) 
+        : useFilterPokemons(allPokemons, filters, showEvolutionaryLine);
+
     const sortedPokemons = useSortedPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume });
 
     // Function to toggle the evolutionary line checkbox
@@ -51,14 +69,17 @@ function pokemonList() {
 
     const toggleShiny = () => {
         setIsShiny(prevState => !prevState);
-    };
+        setShowAll(false);
+      };
 
     const toggleCostume = () => { // 2. Toggle function for costume state
         setShowCostume(prevState => !prevState);
+        setShowAll(false);
     };
 
     const toggleShadow = () => {
         setShowShadow(prevState => !prevState);
+        setShowAll(false);
     };  
     
     const toggleSortMode = () => {
@@ -82,6 +103,7 @@ function pokemonList() {
                     toggleEvolutionaryLine={toggleEvolutionaryLine}
                     sortMode={sortMode} // Pass sortMode to SearchUI
                     toggleSortMode={toggleSortMode} // Pass toggleSortMode to SearchUI
+                    toggleShowAll={toggleShowAll}
                 />
                 </div>
                 <CollectUI 

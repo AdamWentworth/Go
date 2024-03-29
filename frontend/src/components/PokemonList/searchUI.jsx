@@ -15,12 +15,16 @@ function SearchUI({
     showEvolutionaryLine, // state to track if the checkbox is checked
     toggleEvolutionaryLine, // function to handle checkbox changes
     sortMode, // Add this
-    toggleSortMode // And this
+    toggleSortMode, // And this
+    toggleShowAll
 }) {
     return (
         <div className="header-section browse-section">
             <h1>Browse</h1>
             <div className="button-container"> {/* New container for buttons */}
+                <button onClick={toggleShowAll} className="show-all-button">
+                    Show All
+                </button>
                 <button onClick={toggleSortMode} className={`sort-button ${sortMode !== 0 ? 'active' : ''}`}>
                     Sort: {sortMode === 0 ? 'Off' : sortMode === 1 ? 'New' : 'Old'}
                 </button>
