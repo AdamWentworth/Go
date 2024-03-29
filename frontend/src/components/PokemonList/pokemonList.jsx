@@ -8,9 +8,8 @@ import SearchUI from './searchUI';
 import CollectUI from './collectUI';
 import PokemonCard from './pokemonCard';
 import useFetchPokemons from '../hooks/useFetchPokemons';
-import useFilterPokemons from '../hooks/useFilterPokemons';
 import useSortedPokemons from '../hooks/useSortedPokemons';
-import useShowAllPokemons from '../hooks/useShowAllPokemons';
+import useConditionalPokemons from '../hooks/useConditionalPokemons';
 import { determinePokemonKey } from '../../utils/imageHelpers';
 
 
@@ -56,9 +55,7 @@ function pokemonList() {
         generations
     }), [selectedGeneration, isShiny, searchTerm, showCostume, showShadow, singleFormPokedexNumbers, pokemonTypes, generations]);
 
-    const displayedPokemons = showAll 
-        ? useShowAllPokemons(allPokemons) 
-        : useFilterPokemons(allPokemons, filters, showEvolutionaryLine);
+    const displayedPokemons = useConditionalPokemons(allPokemons, filters, showEvolutionaryLine, showAll);
 
     const sortedPokemons = useSortedPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume });
 
