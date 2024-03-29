@@ -12,6 +12,8 @@ import useFilterPokemons from '../hooks/useFilterPokemons';
 import useSortedPokemons from '../hooks/useSortedPokemons';
 import useShowAllPokemons from '../hooks/useShowAllPokemons';
 
+import { determinePokemonKey } from '../../utils/imageHelpers';
+
 
 function pokemonList() {
     const [selectedPokemon, setSelectedPokemon] = useState(null);
@@ -61,6 +63,7 @@ function pokemonList() {
         : useFilterPokemons(allPokemons, filters, showEvolutionaryLine);
 
     const sortedPokemons = useSortedPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume });
+    console.log(sortedPokemons)
 
     // Function to toggle the evolutionary line checkbox
     const toggleEvolutionaryLine = () => {
@@ -84,7 +87,7 @@ function pokemonList() {
     
     const toggleSortMode = () => {
         setSortMode((currentMode) => (currentMode + 1) % 3);
-    };    
+    };
      
     return (
         <div>
@@ -116,25 +119,31 @@ function pokemonList() {
                     <p>Loading...</p>
                 ) : (
                     <>
-                {sortedPokemons.map((pokemon) => (
-                    <PokemonCard
-                        key={`${pokemon.id}-${pokemon.isShiny ? 'shiny' : 'normal'}-${pokemon.showShadow ? 'shadow' : 'normal'}-${pokemon.costumeName || 'default'}`}
-                        pokemon={pokemon}
-                        setSelectedPokemon={setSelectedPokemon}
-                        isShiny={isShiny}
-                        showShadow={showShadow}
-                        singleFormPokedexNumbers={singleFormPokedexNumbers}
-                    />
-                ))}
-                {selectedPokemon &&
-                    <PokemonOverlay 
-                        pokemon={selectedPokemon} 
-                        onClose={() => setSelectedPokemon(null)}
-                        setSelectedPokemon={setSelectedPokemon} // Pass it here
-                        allPokemons={allPokemons}
-                    />
-                }
-                </>
+                        {sortedPokemons.map((pokemon) => {
+                            // Generate a unique key for each pokemon here, inside the map function
+                            const pokemonKey = determinePokemonKey(pokemon);
+
+                            return (
+                                <PokemonCard
+                                    key={pokemonKey} // Use the unique key here
+                                    pokemonKey={pokemonKey}
+                                    pokemon={pokemon}
+                                    setSelectedPokemon={setSelectedPokemon}
+                                    isShiny={isShiny}
+                                    showShadow={showShadow}
+                                    singleFormPokedexNumbers={singleFormPokedexNumbers}
+                                />
+                            );
+                        })}
+                        {selectedPokemon && (
+                            <PokemonOverlay 
+                                pokemon={selectedPokemon} 
+                                onClose={() => setSelectedPokemon(null)}
+                                setSelectedPokemon={setSelectedPokemon}
+                                allPokemons={allPokemons}
+                            />
+                        )}
+                    </>
                 )}
             </div>
         </div>

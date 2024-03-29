@@ -1,10 +1,12 @@
+//pokemonCard.jsx
+
 import React, { useContext, memo } from 'react';
 import CacheContext from '../../contexts/cacheContext';
 import { formatForm, formatCostumeName } from '../../utils/formattingHelpers';
-import { determinePokemonKey } from '../../utils/imageHelpers';
 import './pokemonCard.css'
 
 const PokemonCard = ({
+    pokemonKey,
     pokemon,
     setSelectedPokemon,
     isShiny,
@@ -21,8 +23,6 @@ const PokemonCard = ({
     if (showShadow && !isShiny && !pokemon.image_url_shadow) {
         return null;
     }
-
-    let pokemonKey = determinePokemonKey(pokemon, isShiny, showShadow);
 
     // Check if the image is in cache
     const cachedImage = cache.get(pokemonKey);
