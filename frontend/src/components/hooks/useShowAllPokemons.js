@@ -18,11 +18,11 @@ const useShowAllPokemons = (allPokemons) => {
       }
 
       // Shadow variant
-      if (pokemon.shadow_available) {
+      if (pokemon.date_shadow_available) {
         variants.push({ ...pokemon, currentImage: pokemon.image_url_shadow, variantType: 'shadow' });
 
         // Shiny shadow variant
-        if (pokemon.shiny_shadow_available) {
+        if (pokemon.date_shiny_shadow_available) {
           variants.push({ ...pokemon, currentImage: pokemon.image_url_shiny_shadow, variantType: 'shiny_shadow' });
         }
       }
@@ -45,6 +45,7 @@ const useShowAllPokemons = (allPokemons) => {
 
     // Flatten the array of all variants for all Pokémon
     const allVariants = allPokemons.flatMap(pokemon => generateVariants(pokemon));
+    // console.log("All Variants:", allVariants); // Log all generated variants
     setVariants(allVariants);
   }, [allPokemons]); // This ensures generateVariants runs only when allPokemons changes.
 
@@ -52,3 +53,4 @@ const useShowAllPokemons = (allPokemons) => {
 };
 
 export default useShowAllPokemons;
+

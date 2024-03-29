@@ -26,12 +26,15 @@ function pokemonList() {
         console.log('Show All state is now:', showAll);
       }, [showAll]);
 
-    const toggleShowAll = useCallback(() => {
-        setShowAll(true);
-        setIsShiny(false);
-        setShowCostume(false);
-        setShowShadow(false);
-    }, []);
+      const toggleShowAll = useCallback(() => {
+        setShowAll(prevShowAll => !prevShowAll);
+
+        if (!showAll) {
+            setIsShiny(false);
+            setShowCostume(false);
+            setShowShadow(false);
+        }
+    }, [showAll]);
     
     const [statusFilter, setStatusFilter] = useState("");
     
