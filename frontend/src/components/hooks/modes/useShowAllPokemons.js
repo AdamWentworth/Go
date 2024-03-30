@@ -1,8 +1,8 @@
 // useShowAllPokemons.js
 
 import { useState, useEffect } from 'react';
-import { getEvolutionaryFamily } from '../../utils/searchFunctions';
-import { formatCostumeName } from '../../utils/formattingHelpers';
+import { getEvolutionaryFamily } from '../../../utils/searchFunctions';
+import { formatCostumeName } from '../../../utils/formattingHelpers';
 
 const useShowAllPokemons = (allPokemons, filters, showEvolutionaryLine) => {
   const [variants, setVariants] = useState([]);

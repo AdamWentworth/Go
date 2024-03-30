@@ -1,7 +1,7 @@
 // useConditionalPokemons.js
 
-import useShowAllPokemons from './useShowAllPokemons';
-import useFilterPokemons from './useFilterPokemons';
+import useShowAllPokemons from './modes/useShowAllPokemons';
+import useFilterPokemons from './modes/useFilterPokemons';
 
 const useConditionalPokemons = (allPokemons, filters, showEvolutionaryLine, showAll) => {
   const allPokemonsData = useShowAllPokemons(allPokemons, filters, showEvolutionaryLine);
