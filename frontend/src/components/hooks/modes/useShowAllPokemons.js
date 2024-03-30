@@ -1,7 +1,7 @@
 // useShowAllPokemons.js
 
 import { useState, useEffect } from 'react';
-import { getEvolutionaryFamily } from '../../../utils/searchFunctions';
+import { getEvolutionaryFamily, shouldAddPokemon } from '../../../utils/searchFunctions';
 import { formatCostumeName } from '../../../utils/formattingHelpers';
 
 const useShowAllPokemons = (allPokemons, filters, showEvolutionaryLine) => {
@@ -61,25 +61,22 @@ const useShowAllPokemons = (allPokemons, filters, showEvolutionaryLine) => {
     // First, generate variants for all pokemons
     let allVariants = allPokemons.flatMap(pokemon => generateVariants(pokemon));
 
-    // Filter variants by search term
-    if (filters.searchTerm) {
-      allVariants = allVariants.filter(variant =>
-        variant.name.toLowerCase().includes(filters.searchTerm.toLowerCase())
-      );
-    }
-
     // If showing evolutionary line, filter to include family members based on the search term
     if (showEvolutionaryLine && filters.searchTerm) {
       const evolutionaryFamilyIds = getEvolutionaryFamily(filters.searchTerm, allPokemons);
-      // console.log(`Evolutionary family IDs for '${filters.searchTerm}':`, evolutionaryFamilyIds);
 
-      // Important: Filter the original allPokemons first before generating variants
+      // Filter the original allPokemons first before generating variants
       const familyPokemons = allPokemons.filter(pokemon => evolutionaryFamilyIds.includes(pokemon.pokemon_id));
       allVariants = familyPokemons.flatMap(pokemon => generateVariants(pokemon));
+    } else if (filters.searchTerm) { // Apply shouldAddPokemon filter only when not showing evolutionary line
+      allVariants = allVariants.filter(variant =>
+        shouldAddPokemon(variant, null, filters.selectedGeneration, filters.isShiny, filters.pokemonTypes, filters.searchTerm, filters.generations, filters.showShadow)
+      );
     }
 
     setVariants(allVariants);
-  }, [allPokemons, filters.searchTerm, showEvolutionaryLine]);
+
+  }, [allPokemons, filters, showEvolutionaryLine]);
 
   console.log(`Final variants for '${filters.searchTerm}':`, variants);
   return variants;
