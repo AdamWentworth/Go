@@ -22,11 +22,7 @@ function pokemonList() {
 
     const [showAll, setShowAll] = useState(false);
 
-    useEffect(() => {
-        console.log('Show All state is now:', showAll);
-      }, [showAll]);
-
-      const toggleShowAll = useCallback(() => {
+    const toggleShowAll = useCallback(() => {
         setShowAll(prevShowAll => !prevShowAll);
 
         if (!showAll) {

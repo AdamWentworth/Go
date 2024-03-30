@@ -1,8 +1,9 @@
 // useShowAllPokemons.js
 
 import { useState, useEffect } from 'react';
+import { shouldAddPokemon, getEvolutionaryFamily } from '../../utils/searchFunctions';
 
-const useShowAllPokemons = (allPokemons) => {
+const useShowAllPokemons = (allPokemons, filters, showEvolutionaryLine) => {
   const [variants, setVariants] = useState([]);
 
   useEffect(() => {
@@ -43,14 +44,31 @@ const useShowAllPokemons = (allPokemons) => {
       return variants;
     };
 
-    // Flatten the array of all variants for all Pokémon
-    const allVariants = allPokemons.flatMap(pokemon => generateVariants(pokemon));
-    console.log("All Variants:", allVariants); // Log all generated variants
-    setVariants(allVariants);
-  }, [allPokemons]); // This ensures generateVariants runs only when allPokemons changes.
+    // First, generate variants for all pokemons
+    let allVariants = allPokemons.flatMap(pokemon => generateVariants(pokemon));
 
+    // Filter variants by search term
+    if (filters.searchTerm) {
+      allVariants = allVariants.filter(variant =>
+        variant.name.toLowerCase().includes(filters.searchTerm.toLowerCase())
+      );
+    }
+
+    // If showing evolutionary line, filter to include family members based on the search term
+    if (showEvolutionaryLine && filters.searchTerm) {
+      const evolutionaryFamilyIds = getEvolutionaryFamily(filters.searchTerm, allPokemons);
+      // console.log(`Evolutionary family IDs for '${filters.searchTerm}':`, evolutionaryFamilyIds);
+
+      // Important: Filter the original allPokemons first before generating variants
+      const familyPokemons = allPokemons.filter(pokemon => evolutionaryFamilyIds.includes(pokemon.pokemon_id));
+      allVariants = familyPokemons.flatMap(pokemon => generateVariants(pokemon));
+    }
+
+    setVariants(allVariants);
+  }, [allPokemons, filters.searchTerm, showEvolutionaryLine]);
+
+  // console.log(`Final variants for '${filters.searchTerm}':`, variants);
   return variants;
 };
 
 export default useShowAllPokemons;
-

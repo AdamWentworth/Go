@@ -1,3 +1,5 @@
+//searchFunctions.js
+
 import { generationMap } from './constants';
 
 export function handleSearchTermChange(allPokemons, term, generations, pokemonTypes, setFilteredPokemonList) {
