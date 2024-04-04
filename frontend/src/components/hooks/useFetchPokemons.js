@@ -3,7 +3,7 @@
 import { useState, useEffect, useContext } from 'react';
 import CacheContext from '../../contexts/cacheContext';
 import { getPokemons } from '../../utils/api';
-import { determinePokemonImage, determinePokemonKey } from '../../utils/imageHelpers';
+import { determinePokemonKey } from '../../utils/imageHelpers';
 import createPokemonVariants from '../../utils/createPokemonVariants';
 
 const useFetchPokemons = () => {
