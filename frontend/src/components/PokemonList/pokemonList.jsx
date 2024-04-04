@@ -9,7 +9,7 @@ import CollectUI from './collectUI';
 import PokemonCard from './pokemonCard';
 import useFetchPokemons from '../hooks/useFetchPokemons';
 import useSortedPokemons from '../hooks/useSortedPokemons';
-import useFilterPokemons from '../hooks/modes/useFilterPokemons';
+import useFilterPokemons from '../hooks/useFilterPokemons';
 
 function pokemonList() {
     const [selectedPokemon, setSelectedPokemon] = useState(null);
