@@ -1,65 +1,63 @@
-//useFilterPokemons.js
+// useFilterPokemons.js
 
 import { useMemo } from 'react';
-import { shouldAddPokemon, getEvolutionaryFamily } from '../../../utils/searchFunctions';
-import { determinePokemonImage } from '../../../utils/imageHelpers';
+import { getEvolutionaryFamily } from '../../../utils/searchFunctions';
 
-const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine) => {
-    const {
-        selectedGeneration,
-        isShiny,
-        searchTerm,
-        showCostume,
-        showShadow,
-        singleFormPokedexNumbers,
-        pokemonTypes,
-        generations
-    } = filters;
+const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine, showAll) => {
+    const { selectedGeneration, isShiny, searchTerm, showCostume, showShadow } = filters;
 
     const displayedPokemons = useMemo(() => {
-        const evolutionaryFamily = showEvolutionaryLine ? getEvolutionaryFamily(searchTerm, allPokemons) : [];
-        const addedSingleFormNumbers = new Set();
+        return allPokemons.filter(pokemon => {
+            // Check for inclusion in the evolutionary family, if applicable.
+            const isInEvolutionaryFamily = showEvolutionaryLine && getEvolutionaryFamily(searchTerm, allPokemons).includes(pokemon.pokemon_id);
+            if (showEvolutionaryLine && !isInEvolutionaryFamily) return false;
 
-        const filteredPokemons = allPokemons.reduce((acc, pokemon) => {
-            const isInEvolutionaryFamily = showEvolutionaryLine && evolutionaryFamily.includes(pokemon.pokemon_id);
+            // Default filtering logic
+            if (!showAll && !isShiny && !showShadow && !showCostume && pokemon.variantType === 'default') return true;
+            
+            // Extract specific flags from variantType
+            const isVariantShiny = pokemon.variantType.includes('shiny');
+            const isVariantShadow = pokemon.variantType.includes('shadow');
+            const isVariantCostume = pokemon.variantType.includes('costume');
 
-            if (singleFormPokedexNumbers.includes(pokemon.pokedex_number) && addedSingleFormNumbers.has(pokemon.pokedex_number)) {
-                return acc; // Skip this pokemon as its number is already added
+            // Determine if the variant matches active filters
+            if (isShiny && !showShadow && !showCostume) {
+                // Show only non-costume shinies unless showCostume is also true
+                return isVariantShiny && !isVariantCostume && !pokemon.variantType.includes('shiny_shadow');
             }
 
-            if (showCostume && pokemon.costumes) {
-                pokemon.costumes.forEach(costume => {
-                    // Check if a shadow variant of the costume exists
-                    const shadowVariantExists = costume.shadow_available !== undefined ? costume.shadow_available : 0;
-
-                    if ((isInEvolutionaryFamily || shouldAddPokemon(pokemon, costume, selectedGeneration, isShiny, pokemonTypes, searchTerm, generations, showShadow))
-                        && (!isShiny || (isShiny && costume.shiny_available))
-                        && (!showShadow || (showShadow && shadowVariantExists))) {
-                        const imageToUse = determinePokemonImage(pokemon, isShiny, showShadow, costume);
-                        acc.push({
-                            ...pokemon,
-                            currentImage: imageToUse,
-                            currentCostumeName: costume.name
-                        });
-                    }
-                });
-            } else if (isInEvolutionaryFamily || shouldAddPokemon(pokemon, null, selectedGeneration, isShiny, pokemonTypes, searchTerm, generations, showShadow)) {
-                const imageToUse = determinePokemonImage(pokemon, isShiny, showShadow);
-                acc.push({
-                    ...pokemon,
-                    currentImage: imageToUse
-                });
+            if (showShadow && !isShiny) {
+                // Show only shadows, excluding shiny shadows unless isShiny is also true
+                return isVariantShadow && !isVariantShiny;
             }
 
-            if (singleFormPokedexNumbers.includes(pokemon.pokedex_number)) {
-                addedSingleFormNumbers.add(pokemon.pokedex_number);
+            if (isShiny && showShadow) {
+                // Show shiny shadows specifically
+                return pokemon.variantType === 'shiny_shadow';
             }
 
-            return acc;
-        }, []);
+            if (showCostume && !isShiny) {
+                // Show only costumes, excluding shiny variants unless isShiny is also true
+                return isVariantCostume && !pokemon.variantType.includes('_shiny');
+            }
 
-        return filteredPokemons;
-    }, [allPokemons, selectedGeneration, isShiny, searchTerm, showCostume, showShadow, singleFormPokedexNumbers, pokemonTypes, generations, showEvolutionaryLine]);
+            if (isShiny && showCostume) {
+                // Show shiny costumes specifically
+                return isVariantCostume && isVariantShiny;
+            }
+
+            if (showAll) {
+                // Show all variants when showAll is active
+                return true;
+            }
+
+            // Fallback to false for all other cases
+            return false;
+        });
+    }, [allPokemons, showEvolutionaryLine, showAll, isShiny, showShadow, showCostume, searchTerm, selectedGeneration]);
+
+    console.log(`Displayed Pokemons: ${displayedPokemons.length}`);
+
     return displayedPokemons;
 };
 

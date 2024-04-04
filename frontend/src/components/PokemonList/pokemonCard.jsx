@@ -6,14 +6,13 @@ import { formatForm, formatCostumeName } from '../../utils/formattingHelpers';
 import './pokemonCard.css'
 
 const PokemonCard = ({
-    pokemonKey,
     pokemon,
     setSelectedPokemon,
     isShiny,
     showShadow,
     singleFormPokedexNumbers
 }) => {
-    const cache = useContext(CacheContext);  // Import the cache
+    const imageUrl = pokemon.currentImage;
 
     // Check for image visibility
     if (isShiny && showShadow && (!pokemon.image_url_shiny_shadow || pokemon.shadow_shiny_available !== 1)) {
@@ -24,16 +23,9 @@ const PokemonCard = ({
         return null;
     }
 
-    // Check if the image is in cache
-    const cachedImage = cache.get(pokemonKey);
-    if (!cachedImage) {
-        // If image is not in cache, save it to cache
-        cache.set(pokemonKey, pokemon.currentImage);
-    }
-
     return (
         <div className="pokemon-card" onClick={() => setSelectedPokemon(pokemon)}>
-            <img src={cachedImage || pokemon.currentImage} alt={pokemon.name} loading="lazy" />
+            <img src={imageUrl} alt={pokemon.name} loading="lazy" />
             <p>#{pokemon.pokedex_number}</p>
             <div className="type-icons">
                 {pokemon.type_1_icon && (
