@@ -83,6 +83,8 @@ const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine, showAll) 
 
     console.log(`Displayed Pokemons: ${displayedPokemons.length}`);
 
+    console.log('Displayed Pokemons', displayedPokemons)
+
     return displayedPokemons;
 };
 
