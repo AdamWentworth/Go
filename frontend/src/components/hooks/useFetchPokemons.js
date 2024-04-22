@@ -5,65 +5,64 @@ import CacheContext from '../../contexts/cacheContext';
 import { getPokemons } from '../../utils/api';
 import { determinePokemonKey } from '../../utils/imageHelpers';
 import createPokemonVariants from '../../utils/createPokemonVariants';
+import { initializeOrUpdateOwnershipData, ownershipDataCacheKey } from '../../utils/pokemonOwnershipManager';
 
 const useFetchPokemons = () => {
-  const [variants, setVariants] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const cache = useContext(CacheContext);
+    const [variants, setVariants] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const cache = useContext(CacheContext);
 
-  useEffect(() => {
-    const pokemonDataCacheKey = "pokemonData";
-    const variantsCacheKey = "pokemonVariants";
+    useEffect(() => {
+        const pokemonDataCacheKey = "pokemonData";
+        const variantsCacheKey = "pokemonVariants";
 
-    const fetchData = async () => {
-      setLoading(true);
-      // Check if cached data exists and hasn't expired
-      const cachedData = localStorage.getItem(pokemonDataCacheKey);
-      let data;
-      if (cachedData && (Date.now() - JSON.parse(cachedData).timestamp < 24 * 60 * 60 * 1000)) {
-        data = JSON.parse(cachedData).data;  // Use cached data if available and valid
-        console.log('Using cached data for Pokémon.');
-      } else {
-        data = await getPokemons();  // Fetch new data if no cache or cache is old
-        localStorage.setItem(pokemonDataCacheKey, JSON.stringify({ data, timestamp: Date.now() }));
-        console.log('Fetched new data and updated cache for Pokémon.');
-      }
+        const fetchData = async () => {
+            setLoading(true);
+            const cachedData = localStorage.getItem(pokemonDataCacheKey);
+            let data;
+            let isNewData = false;
+            if (cachedData && (Date.now() - JSON.parse(cachedData).timestamp < 24 * 60 * 60 * 1000)) {
+                data = JSON.parse(cachedData).data;
+                console.log('Using cached data for Pokémon.');
+            } else {
+                data = await getPokemons();
+                localStorage.setItem(pokemonDataCacheKey, JSON.stringify({ data, timestamp: Date.now() }));
+                console.log('Fetched new data and updated cache for Pokémon.');
+                isNewData = true;
+            }
 
-      const generatedVariants = createPokemonVariants(data);
-      console.log('Variants:', generatedVariants);
+            const generatedVariants = createPokemonVariants(data);
+            console.log('Variants:', generatedVariants);
 
-      generatedVariants.forEach(variant => {
-        variant.pokemonKey = determinePokemonKey(variant);
-        const imageUrl = variant.currentImage;
-        preloadImage(imageUrl, variant.pokemonKey);
-      });
+            generatedVariants.forEach(variant => {
+                const key = determinePokemonKey(variant);
+                variant.pokemonKey = key;
+                const imageUrl = variant.currentImage;
+                preloadImage(imageUrl, key);
+                initializeOrUpdateOwnershipData(key, isNewData);
+            });
 
-      cache.set(variantsCacheKey, generatedVariants);
-      setVariants(generatedVariants);
-      setLoading(false);
+            console.log("Current Pokémon Ownership Status:", JSON.parse(localStorage.getItem(ownershipDataCacheKey)));
+            cache.set(variantsCacheKey, generatedVariants);
+            setVariants(generatedVariants);
+            setLoading(false);
+        };
+
+        fetchData().catch(error => {
+            console.error("Error fetching the Pokémon data: ", error);
+            setLoading(false);
+        });
+    }, []);
+
+    const preloadImage = (url, key) => {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => {
+            cache.set(key, url);
+        };
     };
 
-    fetchData().catch(error => {
-      console.error("Error fetching the Pokémon data: ", error);
-      setLoading(false);
-    });
-  }, []);
-
-  const preloadImage = (url, key) => {
-    const img = new Image();
-    img.src = url;
-    img.onload = () => {
-      cache.set(key, url); // Caching the image URL under its unique key
-    };
-  };
-
-  return { variants, loading };
+    return { variants, loading };
 };
 
 export default useFetchPokemons;
-
-
-
-
-
-
