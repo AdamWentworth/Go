@@ -7,31 +7,43 @@ import { determinePokemonKey } from '../../utils/imageHelpers';
 import createPokemonVariants from '../../utils/createPokemonVariants';
 
 const useFetchPokemons = () => {
-  const [variants, setVariants] = useState([]); // Changed to store variants directly
+  const [variants, setVariants] = useState([]);
   const [loading, setLoading] = useState(true);
   const cache = useContext(CacheContext);
 
   useEffect(() => {
+    const pokemonDataCacheKey = "pokemonData";
     const variantsCacheKey = "pokemonVariants";
-    
-    getPokemons().then(data => {
+
+    const fetchData = async () => {
+      setLoading(true);
+      // Check if cached data exists and hasn't expired
+      const cachedData = localStorage.getItem(pokemonDataCacheKey);
+      let data;
+      if (cachedData && (Date.now() - JSON.parse(cachedData).timestamp < 24 * 60 * 60 * 1000)) {
+        data = JSON.parse(cachedData).data;  // Use cached data if available and valid
+        console.log('Using cached data for Pokémon.');
+      } else {
+        data = await getPokemons();  // Fetch new data if no cache or cache is old
+        localStorage.setItem(pokemonDataCacheKey, JSON.stringify({ data, timestamp: Date.now() }));
+        console.log('Fetched new data and updated cache for Pokémon.');
+      }
+
       const generatedVariants = createPokemonVariants(data);
-      console.log('Variants:', generatedVariants)
+      console.log('Variants:', generatedVariants);
 
       generatedVariants.forEach(variant => {
-        variant.pokemonKey = determinePokemonKey(variant); // Assign pokemonKey to each variant
+        variant.pokemonKey = determinePokemonKey(variant);
         const imageUrl = variant.currentImage;
         preloadImage(imageUrl, variant.pokemonKey);
       });
 
-      // Cache the generated variants directly
       cache.set(variantsCacheKey, generatedVariants);
-      console.log(`Cached ${generatedVariants.length} variants in CacheContext under key '${variantsCacheKey}'`);
-      // Update state to hold variants instead of allPokemons
       setVariants(generatedVariants);
-
       setLoading(false);
-    }).catch(error => {
+    };
+
+    fetchData().catch(error => {
       console.error("Error fetching the Pokémon data: ", error);
       setLoading(false);
     });
@@ -41,15 +53,15 @@ const useFetchPokemons = () => {
     const img = new Image();
     img.src = url;
     img.onload = () => {
-      cache.set(key, url); // Caching the correct image URL under its unique key
+      cache.set(key, url); // Caching the image URL under its unique key
     };
   };
 
-  // Adjusted to return variants instead of allPokemons
   return { variants, loading };
 };
 
 export default useFetchPokemons;
+
 
 
 
