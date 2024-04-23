@@ -1,7 +1,6 @@
 //pokemonCard.jsx
 
-import React, { useContext, memo } from 'react';
-import CacheContext from '../../contexts/cacheContext';
+import React, { memo } from 'react';
 import { formatForm, formatCostumeName } from '../../utils/formattingHelpers';
 import './pokemonCard.css'
 

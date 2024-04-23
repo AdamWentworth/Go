@@ -40,8 +40,15 @@ const useFetchPokemons = () => {
                 const imageUrl = variant.currentImage;
                 preloadImage(imageUrl, key);
                 initializeOrUpdateOwnershipData(key, isNewData);
+                // Preload type icons if they exist and are not already loaded
+                if (variant.type_1_icon) {
+                    preloadImage(variant.type_1_icon, variant.type_1_icon);
+                }
+                if (variant.type_2_icon) {
+                    preloadImage(variant.type_2_icon, variant.type_2_icon);
+                }
             });
-
+            
             console.log("Current Pokémon Ownership Status:", JSON.parse(localStorage.getItem(ownershipDataCacheKey)));
             cache.set(variantsCacheKey, generatedVariants);
             setVariants(generatedVariants);

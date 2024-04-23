@@ -13,23 +13,33 @@ import useFilterPokemons from '../hooks/useFilterPokemons';
 import { getFilteredPokemonsByOwnership } from '../../utils/pokemonOwnershipManager';
 
 function pokemonList() {
-    const [selectedPokemon, setSelectedPokemon] = useState(null);
-    const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(false);
-    const [sortMode, setSortMode] = useState(0);
-    const [showAll, setShowAll] = useState(false);
 
+    // State for selected pokemon click listener for Overlay
+    const [selectedPokemon, setSelectedPokemon] = useState(null);
+
+    // State for Evolutionary line toggle
+    const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(false);
+
+    // State for Sort Mode
+    const [sortMode, setSortMode] = useState(0);
+
+    // Pokemon who by default will only show 1 of many forms
+    const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
+
+    // Initial pokemon variants collecting from API or local storage
     const { variants, loading } = useFetchPokemons();
 
+    // Ownership
     const [ownershipFilter, setOwnershipFilter] = useState("");
-
     const updateOwnershipFilter = (filterType) => {
         setOwnershipFilter(prev => prev === filterType ? "" : filterType); // Toggle functionality
     };
-
     const filteredVariants = useMemo(() => {
         return ownershipFilter ? getFilteredPokemonsByOwnership(variants, ownershipFilter) : variants;
     }, [variants, ownershipFilter]);
 
+    // Show All
+    const [showAll, setShowAll] = useState(false);
     const toggleShowAll = useCallback(() => {
         setShowAll(prevShowAll => !prevShowAll);
 
@@ -40,8 +50,7 @@ function pokemonList() {
         }
     }, [showAll]);
     
-    const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
-    
+    // Search Filters
     const {
         isShiny, setIsShiny, showShadow, setShowShadow, 
         selectedGeneration, setSelectedGeneration, searchTerm, setSearchTerm,
@@ -60,10 +69,14 @@ function pokemonList() {
         generations
     }), [selectedGeneration, isShiny, searchTerm, showCostume, showShadow, singleFormPokedexNumbers, pokemonTypes, generations]);
 
+    // Filter Pokemon
     const displayedPokemons = useFilterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
 
+    // Sort Pokemon
     const sortedPokemons = useSortedPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll });
 
+
+    // Callbacks
     const toggleEvolutionaryLine = useCallback(() => {
         setShowEvolutionaryLine(prev => !prev);
     }, []);
