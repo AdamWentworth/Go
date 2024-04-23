@@ -128,6 +128,7 @@ function pokemonList() {
                                     isShiny={isShiny}
                                     showShadow={showShadow}
                                     singleFormPokedexNumbers={singleFormPokedexNumbers}
+                                    ownershipFilter={ownershipFilter}
                                 />
                             ))
                         }

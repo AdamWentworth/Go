@@ -7,6 +7,40 @@
     color: white;
     font-size: calc((100vw - (8 * 16px)) / 100);
     box-sizing: border-box;
+    position: relative;
+}
+
+/* Adjust the backlight pseudo-element to create a centered glow */
+.pokemon-card::before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    width: 140%; /* Extend the size to allow a centered glow */
+    height: 140%; /* Extend the size to allow a centered glow */
+    transform: translate(-50%, -50%) scale(0.5); /* Center the element and scale down */
+    border-radius: 50%; /* Circular effect */
+    z-index: 0; /* Behind the image */
+    background: radial-gradient(circle, rgba(255,255,255,0.4) 20%, transparent 70%); /* Create a centered glowing effect */
+    transition: opacity 0.3s ease; /* Smooth transition for opacity */
+    opacity: 0; /* Default to no glow */
+}
+
+/* Add the glow based on class, we change the opacity rather than the box-shadow */
+.pokemon-card.owned::before {
+    background: radial-gradient(circle, rgba(0, 119, 255, 0.4) 10%, transparent 50%);
+    opacity: 1; /* Show the glow */
+}
+
+.pokemon-card.trade::before {
+    background: radial-gradient(circle, rgba(40,167,69,0.4) 10%, transparent 50%);
+    opacity: 1; /* Show the glow */
+}
+
+.pokemon-card.wanted::before {
+    background: radial-gradient(circle, rgba(220,53,69,0.4) 10%, transparent 50%);
+    opacity: 1; /* Show the glow */
 }
 
 .pokemon-card h2 {
@@ -22,6 +56,8 @@
 .pokemon-card img {
     max-width: 100%;
     height: auto;
+    position: relative; /* Ensure the image is above the pseudo-element */
+    z-index: 1;
 }
 
 .pokemon-card h2, p {
