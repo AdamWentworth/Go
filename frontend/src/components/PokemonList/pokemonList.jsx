@@ -10,6 +10,7 @@ import PokemonCard from './pokemonCard';
 import useFetchPokemons from '../hooks/useFetchPokemons';
 import useSortedPokemons from '../hooks/useSortedPokemons';
 import useFilterPokemons from '../hooks/useFilterPokemons';
+import { getFilteredPokemonsByOwnership } from '../../utils/pokemonOwnershipManager';
 
 function pokemonList() {
     const [selectedPokemon, setSelectedPokemon] = useState(null);
@@ -18,6 +19,16 @@ function pokemonList() {
     const [showAll, setShowAll] = useState(false);
 
     const { variants, loading } = useFetchPokemons();
+
+    const [ownershipFilter, setOwnershipFilter] = useState("");
+
+    const updateOwnershipFilter = (filterType) => {
+        setOwnershipFilter(prev => prev === filterType ? "" : filterType); // Toggle functionality
+    };
+
+    const filteredVariants = useMemo(() => {
+        return ownershipFilter ? getFilteredPokemonsByOwnership(variants, ownershipFilter) : variants;
+    }, [variants, ownershipFilter]);
 
     const toggleShowAll = useCallback(() => {
         setShowAll(prevShowAll => !prevShowAll);
@@ -28,8 +39,6 @@ function pokemonList() {
             setShowShadow(false);
         }
     }, [showAll]);
-    
-    const [statusFilter, setStatusFilter] = useState("");
     
     const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
     
@@ -51,7 +60,7 @@ function pokemonList() {
         generations
     }), [selectedGeneration, isShiny, searchTerm, showCostume, showShadow, singleFormPokedexNumbers, pokemonTypes, generations]);
 
-    const displayedPokemons = useFilterPokemons(variants, filters, showEvolutionaryLine, showAll);
+    const displayedPokemons = useFilterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
 
     const sortedPokemons = useSortedPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll });
 
@@ -100,7 +109,8 @@ function pokemonList() {
                 />
                 </div>
                 <CollectUI 
-                    statusFilter={statusFilter} setStatusFilter={setStatusFilter} 
+                    statusFilter={ownershipFilter} 
+                    setStatusFilter={updateOwnershipFilter} 
                 />
             </div>
 

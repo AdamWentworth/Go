@@ -33,5 +33,6 @@ export function getFilteredPokemonsByOwnership(pokemons, filter) {
     if (filter === "" || !["unowned", "owned", "trade", "wanted"].includes(filter.toLowerCase())) {
         return pokemons; // return all if no filter or invalid filter
     }
+    console.log(pokemons.filter(pokemon => ownershipData[pokemon.pokemonKey] && ownershipData[pokemon.pokemonKey][filter.toLowerCase()]))
     return pokemons.filter(pokemon => ownershipData[pokemon.pokemonKey] && ownershipData[pokemon.pokemonKey][filter.toLowerCase()]);
 }
