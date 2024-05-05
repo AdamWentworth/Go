@@ -1,0 +1,15 @@
+unique pokemon languages
+
+Japanese - 8%
+English - 25%
+French - 4%
+German - 4%
+Korean - 3%
+Traditional Chinese - 6%
+Spanish - 10%
+Italian - 2%
+Russian - 3%
+Thai - 3%
+Brazilian Portuguese - 6%
+Turkish - 2%
+Indonesian - 6%
