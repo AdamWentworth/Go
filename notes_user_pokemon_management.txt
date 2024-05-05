@@ -1,0 +1,135 @@
+Notes for changes to Pokemon Go Web App Stack when you get back home
+
+1) Pokemon Data service database, drop these tables
+
+Users
+Collection
+
+2) Create this database for the User Pokemon Management service
+
+users
+user_id: INTEGER
+username: TEXT
+trainer_code: TEXT
+
+
+//Consider adding nullable constraints explicitly where necessary to clarify the database schema and ensure data integrity.
+
+instances
+instance_id: INTEGER PRIMARY KEY,
+user_id: INTEGER - References users
+pokemon_id: INTEGER - references nothing but will always come from data service through frontend
+cp: INTEGER - could be null but could be listed for a user showing off or just showing the rough power level of a pokemon
+attack_iv: INTEGER - could be null but could be listed for a user showing off
+defense_iv: INTEGER - could be null but could be listed for a user showing off
+stamina_iv: INTEGER - could be null but could be listed for a user showing off
+shiny: BOOLEAN - important for frontend to know which image to use and for rarity ofcourse in trades
+costume_id: INTEGER - could be null if it doesn't apply, but if it applies, the costume_id will be passed from data service to frontend to be stored here
+lucky: BOOLEAN - could just be to show off collection, or could be used to designate you would like to receive a pokemon in a lucky trade in specific
+shadow: BOOLEAN - would only be for showing off collection as shadow cannot be traded
+purified: BOOLEAN - could be used for showing off collection but purified might also be desired in a trade
+fast_move_id: TEXT - could be used for showing off or stating which fast move you'd want the pokemon you're received to have
+charged_move1_id: TEXT - could be used for showing off or stating which charged move you'd want the pokemon you're received to have
+charged_move2_id: TEXT - could be used for showing off or stating which charged move you'd want the pokemon you're received to have 
+weight: REAL - could be used for showing off heavy pokemon, light pokemon or offering specific weight in trades
+height: REAL - could be used for showing off tall pokemon, short pokemon or offering specific height in trades
+gender: TEXT - some species have gender differences so while this can often be null or irrelevant when filled it could also be crucial for some collectors
+mirror: BOOLEAN - this one would only be for trade or wanted pokemon signifies that the user wishes to mirror trade to receive or trade away this pokemon 
+friendship_level: INTEGER or TEXT (0-4 or Friends, Good Friends, Great Friends, Ultra Friends, Best Friends) - used to signify the level of the friendship with the pokemon or with the trainer with whom the user wishes to trade with. It takes time to build friendship but it comes with specific benefits some users may only wish to trade when at best friends for example
+);
+
+ownership (
+  id INTEGER Primary key,
+  instance_id INTEGER, Foreign key from instances
+  is_owned BOOLEAN, could be owned
+  is_for_trade BOOLEAN, could also be for trade if owned
+  is_wanted BOOLEAN, could be wanted if both is_owned and is_for_trade are false. I previously thought about how if i have a squirtle, that doesn't mean i may not want another squirtle, but we need to consider each squirtle separately, even if they have the same characteristics, so while I can own a squirtle and be offering that same squirtle for trade, I cannot want that same squirtle, a separate instance needs to be made for another squirtle I may hope to receive in a trade.
+);
+
+
+trade_pairs (
+  id INTEGER Primary key
+  offered_instance_id INTEGER, id for pokemon being offered
+  desired_instance_id INTEGER, id for pokemon desired
+  user_id INTEGER user id for this entry in a users trade pairs (subset of wishlist per pokemon offered)
+);
+
+trades
+trade_id: INTEGER
+instance_id_from_user_1: INTEGER
+instance_id_from_user_2: INTEGER
+user_1_id: INTEGER
+user_2_id: INTEGER
+status: TEXT (pending, completed, cancelled)
+engagement_date: DATETIME
+completion_date: DATETIME
+cancellation_date: DATETIME
+
+
+
+CREATE TABLE users (
+    user_id INTEGER PRIMARY KEY,
+    username TEXT NOT NULL,
+    trainer_code TEXT
+);
+
+
+CREATE TABLE instances (
+    instance_id INTEGER PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id),
+    pokemon_id INTEGER NOT NULL,  -- Assumed to align with data provided by the Pokemon Data Service
+    cp INTEGER,
+    attack_iv INTEGER,
+    defense_iv INTEGER,
+    stamina_iv INTEGER,
+    shiny BOOLEAN,
+    costume_id INTEGER,
+    lucky BOOLEAN,
+    shadow BOOLEAN,
+    purified BOOLEAN,
+    fast_move_id INTEGER,
+    charged_move1_id INTEGER,
+    charged_move2_id INTEGER,
+    weight REAL,
+    height REAL,
+    gender TEXT CHECK (gender IN ('M', 'F') OR gender IS NULL),
+    mirror BOOLEAN,
+    friendship_level INTEGER CHECK (friendship_level IN (0,1,2,3,4,5)),
+    date_caught DATETIME,
+    date_added DATETIME
+);
+
+
+CREATE TABLE ownership (
+    id INTEGER PRIMARY KEY,
+    instance_id INTEGER NOT NULL REFERENCES instances(instance_id),
+    is_owned BOOLEAN NOT NULL,
+    is_for_trade BOOLEAN NOT NULL,
+    is_wanted BOOLEAN NOT NULL,
+    CHECK (is_owned OR NOT is_for_trade),  -- Ensures that for an instance to be for trade, it must be owned.
+    CHECK (NOT is_wanted OR (NOT is_owned AND NOT is_for_trade))  -- Ensures if is_wanted is true, both is_owned and is_for_trade must be false.
+);
+
+
+
+CREATE TABLE trade_pairs (
+    id INTEGER PRIMARY KEY,
+    offered_instance_id INTEGER NOT NULL REFERENCES instances(instance_id),
+    desired_instance_id INTEGER NOT NULL REFERENCES instances(instance_id),
+    user_id INTEGER NOT NULL REFERENCES users(user_id)
+);
+
+
+CREATE TABLE trades (
+    trade_id INTEGER PRIMARY KEY,
+    instance_id_from_user_1 INTEGER NOT NULL REFERENCES instances(instance_id),
+    instance_id_from_user_2 INTEGER NOT NULL REFERENCES instances(instance_id),
+    user_1_id INTEGER NOT NULL REFERENCES users(user_id),
+    user_2_id INTEGER NOT NULL REFERENCES users(user_id),
+    status TEXT CHECK (status IN ('pending', 'completed', 'cancelled')),
+    engagement_date DATETIME,
+    completion_date DATETIME,
+    cancellation_date DATETIME
+);
+
+

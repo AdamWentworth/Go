@@ -1,0 +1,117 @@
+Tech Stack by Service
+
+1) Frontend Service
+
+- Purpose: Provides the user interface of your web app.
+- Technologies:
+    - React: For building a dynamic and responsive frontend.
+    - Nginx: To serve the built React application, handle caching, load balancing, and as a reverse proxy to backend services.
+    - Docker: Optionally, to containerize the Nginx server for easy deployment.
+- Deployment: Can be hosted on services like Vercel, Netlify, or use AWS/Google Cloud with Nginx in a Docker container for more control.
+
+2) Authentication Service
+
+- Purpose: Handles user authentication and session management.
+- Database: MySQL/PostgreSQL for storing user credentials and session data.
+- Technologies:
+    - Node.js/Express: For backend logic.
+    - JWT (JSON Web Tokens): For creating access tokens.
+    - Docker: For containerization.
+- Deployment: AWS ECS/Kubernetes for orchestration if scaled.
+
+3) Pokémon Data Service
+
+- Purpose: Manages all static Pokémon data retrieval.
+- Database: SQLite; consider Redis for caching.
+- Technologies:
+    - Node.js/Express: For a simple REST API.
+    - Docker: For containerization.
+    - Redis: For caching frequently accessed data to improve performance.
+- Deployment: Kubernetes for managing service deployment and scaling.
+
+4) User Pokémon Management Service
+
+- Purpose: Manages users' Pokémon collections and trading lists.
+- Database: MySQL
+- Technologies:
+    - Python/Django: As an alternative to Java for robust API management.
+    - Docker: For containerization.
+- Deployment: Can use AWS ECS or Kubernetes for container orchestration.
+
+5) Geolocation Service
+
+- Purpose: Provides location-based services to find nearby players or events.
+- Technologies:
+    - Node.js/Express: Backend logic.
+    - PostGIS (with PostgreSQL): For geospatial queries.
+    - Google Maps API: For integrating maps and location data.
+    - Docker: For containerization.
+- Deployment: Hosted on AWS/GCP using Kubernetes for scalability especially concerning geospatial querying.
+
+6) Payment Service
+
+- Purpose: Manages subscriptions and payment processing.
+- Database: MySQL/PostgreSQL for tracking payments and subscriptions.
+- Technologies:
+    - Python/Flask: As an alternative to Ruby for handling financial transactions securely.
+    - Stripe API: For payment integration.
+    - OAuth: For secure API calls to payment gateways.
+    - Docker: For containerization.
+- Deployment: AWS ECS or Kubernetes, with sensitive data handled under strict compliance measures (PCI-DSS).
+
+7) API Gateway Service
+
+- Purpose: Acts as a centralized entry point to handle and route API calls to various backend services, improving manageability and security.
+- Technologies:
+    - Kong/Nginx: Used for routing API calls, handling authentication, and managing API rate limiting.
+    - Docker: For containerization to simplify deployment and scaling.
+- Deployment: Can be hosted on AWS or Google Cloud using Kubernetes to ensure scalability and high availability.
+
+8) Event Logging and Monitoring Service
+
+- Purpose: Provides centralized logging and monitoring for all microservices to ensure operational health and facilitate rapid troubleshooting.
+- Technologies:
+    - ELK Stack (Elasticsearch, Logstash, Kibana): For logging and visualizing logs.
+    - Prometheus and Grafana: For monitoring metrics and creating dashboards.
+    - Docker: For containerization.
+- Deployment: Typically deployed using Kubernetes to manage service scaling and reliability effectively.
+
+9) Notification Service
+
+- Purpose: Manages sending notifications to users about events like trades, updates, or alerts.
+- Technologies:
+    - RabbitMQ/Redis: As message brokers to handle message queuing and delivery.
+    - Node.js/Python: For backend services that process notifications.
+    - Docker: For containerization.
+- Deployment: Deployed on cloud platforms like AWS ECS or Kubernetes to handle varying loads and ensure reliable message delivery.
+
+Handling Data Issues with Replicas and Global Deployment
+
+Data Consistency Across Replicas
+
+For ensuring data consistency across multiple replicas (e.g., in the authentication service), you can use several strategies:
+- Database-Level Replication: 
+    - Most modern databases like PostgreSQL and MySQL support various replication mechanisms (e.g., master-slave replication, multi-master replication). 
+    For user authentication, using a single write-master with multiple read replicas can often suffice.
+- CQRS (Command Query Responsibility Segregation) and Event Sourcing: 
+    - Use CQRS to separate read and write operations, which can help in scaling and managing different replicas. 
+    Event Sourcing ensures all changes to the application state are stored as a sequence of events, which can then be applied across replicas to keep them in sync.
+
+Global Deployment and Data Synchronization
+- Global Load Balancing: 
+    - Using a DNS-based global load balancer (e.g., AWS Route 53, Google Cloud Load Balancing) can help direct users to the closest data center based on their geographic location.
+- Data Center Replication: 
+    - To manage data consistency across different regions, consider using:
+        - Global Database Replicas: Services like Amazon Aurora Global Database or Google Cloud Spanner provide cross-region data replication automatically.
+        - Asynchronous/Synchronous Replication: 
+            - Depending on latency requirements, use asynchronous replication for less time-sensitive data or synchronous replication for critical data.
+        - Change Data Capture (CDC): 
+            - Tools like Debezium can be used to capture changes in databases and apply them to other replicas in real-time, helping keep all regional databases synchronized.
+
+Kubernetes and Cross-Region Challenges
+- Federation: 
+    - Kubernetes Federation allows you to manage multiple Kubernetes clusters (possibly in different regions) from a single control plane. 
+    This is useful for deploying applications globally while managing resources centrally.
+- Service Mesh: 
+    - Implementing a service mesh like Istio can help in managing complex service-to-service communications across clusters, 
+    including fault tolerance, service discovery, and security, which are crucial in a global deployment scenario.
