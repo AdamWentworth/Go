@@ -1,3 +1,19 @@
+.mainButtonsContainerNavbar {
+    display: flex;
+    justify-content: space-around; /* Change as needed for layout in navbar */
+    align-items: center;
+    padding: 0.5rem; /* Smaller padding for navbar */
+    gap: 0.5rem; /* Smaller gap for navbar */
+    background-color: transparent; /* Same background, adjust as needed */
+}
+
+/* Adjust the button sizes for navbar context */
+.mainButtonsContainerNavbar .mainButton {
+    font-size: 1.5rem; /* Smaller font size for navbar */
+    padding: 0.5rem 1rem; /* Smaller padding for compact appearance */
+    border-radius: 8px; /* Smaller border radius */
+}
+
 /* Style for the container holding the buttons */
 .mainButtonsContainer {
     display: flex;

@@ -2,9 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './mainButtons.css';
 
-function MainButtons() {
+function MainButtons({ navbar }) { // Added a prop `navbar` to determine the context
+    // Conditional class name based on the navbar prop
+    const containerClass = navbar ? "mainButtonsContainerNavbar" : "mainButtonsContainer";
+
     return (
-        <div className="mainButtonsContainer">
+        <div className={containerClass}>
             <button className="mainButton pvp-btn">PVP</button>
             <Link to="/pokemon">
                 <button className="mainButton collect-btn">Collect</button>

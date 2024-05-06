@@ -1,8 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/navbar';
 import MainButtons from './components/mainButtons';
 import PokemonList from './components/PokemonList/pokemonList';
+import Login from './components/authentication/login';  // Ensure this is the correct path
+import Register from './components/authentication/register';  // Ensure this is the correct path
 import './App.css';
 import CacheContext from './contexts/cacheContext';
 
@@ -11,17 +13,19 @@ function App() {
 
     return (
         <CacheContext.Provider value={cache}>
-        <div className="App">
-            <Navbar />
-            <main>
-                <Router>
+        <Router> {/* Move Router to encompass the entire App component including Navbar */}
+            <div className="App">
+                <Navbar />
+                <main>
                     <Routes>
                         <Route path="/" element={<MainButtons />} />
                         <Route path="/pokemon" element={<PokemonList />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
                     </Routes>
-                </Router>
-            </main>
-        </div>
+                </main>
+            </div>
+        </Router>
         </CacheContext.Provider>
     );
 }
