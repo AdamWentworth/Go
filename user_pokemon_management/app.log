@@ -1,0 +1,3 @@
+2024-05-05 16:38:58,569 - asyncio - DEBUG - Using proactor: IocpProactor
+2024-05-05 16:38:58,633 - connexion.middleware.abstract - DEBUG - Adding /user_pokemon_data/users/{user_id}...
+2024-05-05 16:38:58,633 - connexion.middleware.abstract - ERROR - Failed to add operation for GET /user_pokemon_data/users/{user_id}

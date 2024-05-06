@@ -1,0 +1,2 @@
+{"level":"info","message":"Server is running on http://localhost:3000"}
+{"level":"info","message":"GET /api/pokemons"}

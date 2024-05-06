@@ -1,0 +1,14 @@
+loggers:
+  basicLogger:
+    level: 'debug'
+    handlers: ['console', 'file']
+handlers:
+  console:
+    level: 'info'
+    type: 'console'
+    format: 'simple'
+  file:
+    level: 'debug'
+    type: 'file'
+    filename: 'app.log'
+    format: 'json'
