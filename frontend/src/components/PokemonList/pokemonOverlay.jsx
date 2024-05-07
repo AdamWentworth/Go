@@ -1,7 +1,7 @@
 // pokemonOverlay.jsx
 
 import React, { useState } from 'react';
-import './pokemonOverlay.css';
+import './PokemonOverlay.css';
 import WindowOverlay from './OverlayComponents/windowOverlay';
 import MoveList from './OverlayComponents/moveList';
 import MainInfo from './OverlayComponents/mainInfo';

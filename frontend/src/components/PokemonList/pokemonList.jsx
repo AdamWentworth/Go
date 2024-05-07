@@ -1,12 +1,12 @@
 //pokemonList.jsx
 
 import React, { useState, useMemo, useCallback } from 'react';
-import './pokemonList.css';
-import PokemonOverlay from './pokemonOverlay'; 
+import './PokemonList.css';
+import PokemonOverlay from './PokemonOverlay'; 
 import useSearchFilters from './hooks/useSearchFilters'; // Import the search filters hook
-import SearchUI from './searchUI';
-import CollectUI from './collectUI';
-import PokemonCard from './pokemonCard';
+import SearchUI from './SearchUI';
+import CollectUI from './CollectUI';
+import PokemonCard from './PokemonCard';
 import useFetchPokemons from './hooks/useFetchPokemons';
 import useSortedPokemons from './hooks/useSortedPokemons';
 import useFilterPokemons from './hooks/useFilterPokemons';

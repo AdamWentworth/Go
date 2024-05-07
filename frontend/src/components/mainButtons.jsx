@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import './mainButtons.css';
+import './MainButtons.css';
 
 function MainButtons({ navbar }) { // Added a prop `navbar` to determine the context
     // Conditional class name based on the navbar prop

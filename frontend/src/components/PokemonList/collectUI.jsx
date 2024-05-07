@@ -1,6 +1,6 @@
 // CollectUI.jsx
 import React, { useState } from 'react';
-import './collectUI.css';
+import './CollectUI.css';
 
 const CollectUI = ({
   statusFilter, setStatusFilter,

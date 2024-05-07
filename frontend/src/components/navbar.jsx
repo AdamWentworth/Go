@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import './navbar.css';
-import MainButtons from './mainButtons'; // Make sure to import MainButtons
+import './Navbar.css';
+import MainButtons from './MainButtons'; // Make sure to import MainButtons
 
 function Navbar() {
     const location = useLocation(); // Hook to get the current location

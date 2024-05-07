@@ -2,7 +2,7 @@
 
 import React, { memo } from 'react';
 import { formatForm, formatCostumeName } from './utils/formattingHelpers';
-import './pokemonCard.css'
+import './PokemonCard.css'
 
 const PokemonCard = ({
     pokemon,

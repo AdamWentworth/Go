@@ -1,10 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/navbar';
-import MainButtons from './components/mainButtons';
-import PokemonList from './components/PokemonList/pokemonList';
-import Login from './components/Authentication/login';  // Ensure this is the correct path
-import Register from './components/Authentication/register';  // Ensure this is the correct path
+import Navbar from './components/Navbar';
+import MainButtons from './components/MainButtons';
+import PokemonList from './components/PokemonList/PokemonList';
+import Login from './components/Authentication/Login';  // Ensure this is the correct path
+import Register from './components/Authentication/Register';  // Ensure this is the correct path
 import './App.css';
 import CacheContext from './contexts/cacheContext';
 

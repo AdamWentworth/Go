@@ -1,7 +1,7 @@
 /*searchUI.jsx*/
 
 import React from 'react';
-import './searchUI.css'; // Your CSS file should include the styles for the evolutionary line checkbox
+import './SearchUI.css'; // Your CSS file should include the styles for the evolutionary line checkbox
 
 function SearchUI({
     searchTerm,
