@@ -13,7 +13,7 @@
     width: calc(100% - 40px); /* Adjust width to account for padding and prevent x-overflow */
     max-width: 800px; /* Limit the form width */
     padding: 20px; /* Add padding around the form */
-    background: #f5f5f5; /* Light grey background for the form area */
+    background: #222; /* Light grey background for the form area */
     border-radius: 8px; /* Rounded corners for the form */
     box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Subtle shadow */
     position: relative; /* Adjust position to better control layout */
@@ -80,7 +80,7 @@
 
 .location-info p {
     font-size: 0.9rem; /* Set a readable size */
-    color: #666; /* Soft grey color for less emphasis */
+    color: #ffffff; /* Soft grey color for less emphasis */
     margin-top: 10px; /* Add some space above the text */
     padding: 0 20px; /* Padding to align with the input fields */
 }
@@ -124,4 +124,18 @@
 .social-login-buttons .nintendo-button:hover, 
 .social-login-buttons .discord-button:hover {
     opacity: 0.8; /* More noticeable hover effect */
+}
+
+.multi-line-checkbox {
+    display: flex;
+    align-items: center; /* Aligns checkbox vertically */
+    flex-direction: row; /* Stacks elements vertically */
+  }
+  
+  .multi-line-checkbox input[type="checkbox"] {
+    align-self: center; /* Centers checkbox horizontally */
+  }
+
+  .checkbox-inline label {
+    color: white; /* Set the text color to white */
 }

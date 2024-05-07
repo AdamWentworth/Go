@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import './register.css'; // Ensure the CSS file is correctly imported
-import { GoogleLoginButton, FacebookLoginButton, TwitterLoginButton } from 'react-social-login-buttons'; // Import social buttons
+import './register.css';
+import { GoogleLoginButton, FacebookLoginButton, TwitterLoginButton } from 'react-social-login-buttons';
 
 function Register({ onRegister }) {
   const [username, setUsername] = useState('');
@@ -13,6 +13,7 @@ function Register({ onRegister }) {
   const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
   const [region, setRegion] = useState('');
+  const [allowLocation, setAllowLocation] = useState(false);
 
   const validatePassword = (password) => {
     const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -32,7 +33,7 @@ function Register({ onRegister }) {
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!passwordError && email && username && password) {
-      onRegister(username, pokemonGoName, trainerCode, email, password, country, city, region);
+      onRegister(username, pokemonGoName, trainerCode, email, password, country, city, region, allowLocation);
     }
   };
 
@@ -42,22 +43,25 @@ function Register({ onRegister }) {
         <form onSubmit={handleSubmit}>
           <div className="left-column">
             <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username (must be unique)" required />
-            <div className="checkbox-inline">
+            <div className="checkbox-inline multi-line-checkbox">
               <input type="checkbox" checked={pokemonGoNameDisabled} onChange={(e) => setPokemonGoNameDisabled(e.target.checked)} />
               <label>Username matches my Pokémon GO account name</label>
             </div>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required />
             <input type="password" value={password} onChange={handlePasswordChange} placeholder="Password" required />
             <div className="location-info">
-                <p>Pokémon Go Account and Location details are optional but recommended for enabling location-based features like discovering local opportunities for trades.</p>
+              <p>Pokémon Go Account and Location details are optional but recommended for enabling location-based features like discovering local opportunities for trades.</p>
             </div>
           </div>
           <div className="right-column">
             <input type="text" value={pokemonGoName} onChange={(e) => setPokemonGoName(e.target.value)} placeholder="Pokémon GO name (optional)" disabled={pokemonGoNameDisabled} />
             <input type="text" value={trainerCode} onChange={(e) => setTrainerCode(e.target.value)} placeholder="Trainer Code (optional)" />
-            <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Country (optional)" />
-            <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City (optional)" />
-            <input type="text" value={region} onChange={(e) => setRegion(e.target.value)} placeholder="Region/Neighborhood (optional)" />
+            <div className="checkbox-inline multi-line-checkbox">
+              <input type="checkbox" checked={allowLocation} onChange={(e) => setAllowLocation(e.target.checked)} />
+              <label>Allow us to collect your device's current GPS location data for the greatest app experience</label>
+            </div>
+            <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Country (optional)" disabled={allowLocation} />
+            <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City (optional)" disabled={allowLocation} />
           </div>
           {passwordError && <div style={{ color: 'red' }}>{passwordError}</div>}
           <button type="submit">Register</button>
@@ -66,12 +70,12 @@ function Register({ onRegister }) {
             <FacebookLoginButton onClick={() => console.log("Facebook login")}>Register with Facebook</FacebookLoginButton>
             <TwitterLoginButton onClick={() => console.log("Twitter login")}>Register with Twitter</TwitterLoginButton>
             <button className="nintendo-button" onClick={() => console.log("Nintendo login")}>
-            <img src="images/nintendo_icon.png" alt="Nintendo" />
-            Register with Nintendo
+              <img src="images/nintendo_icon.png" alt="Nintendo" />
+              Register with Nintendo
             </button>
             <button className="discord-button" onClick={() => console.log("Discord login")}>
-            <img src="images/discord_icon.png" alt="Discord" />
-            Register with Discord
+              <img src="images/discord_icon.png" alt="Discord" />
+              Register with Discord
             </button>
           </div>
         </form>
