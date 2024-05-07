@@ -3,13 +3,13 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import './pokemonList.css';
 import PokemonOverlay from './pokemonOverlay'; 
-import useSearchFilters from '../hooks/useSearchFilters'; // Import the search filters hook
+import useSearchFilters from './hooks/useSearchFilters'; // Import the search filters hook
 import SearchUI from './searchUI';
 import CollectUI from './collectUI';
 import PokemonCard from './pokemonCard';
-import useFetchPokemons from '../hooks/useFetchPokemons';
-import useSortedPokemons from '../hooks/useSortedPokemons';
-import useFilterPokemons from '../hooks/useFilterPokemons';
+import useFetchPokemons from './hooks/useFetchPokemons';
+import useSortedPokemons from './hooks/useSortedPokemons';
+import useFilterPokemons from './hooks/useFilterPokemons';
 import { getFilteredPokemonsByOwnership } from './utils/pokemonOwnershipManager';
 
 function pokemonList() {

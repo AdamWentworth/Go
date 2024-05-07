@@ -1,11 +1,11 @@
 // useFetchPokemons.js
 
 import { useState, useEffect, useContext } from 'react';
-import CacheContext from '../../contexts/cacheContext';
-import { getPokemons } from '../../utils/api';
-import { determinePokemonKey } from '../../utils/imageHelpers';
-import createPokemonVariants from '../../utils/createPokemonVariants';
-import { initializeOrUpdateOwnershipData, ownershipDataCacheKey } from '../../utils/pokemonOwnershipManager';
+import CacheContext from '../../../contexts/cacheContext';
+import { getPokemons } from '../utils/api';
+import { determinePokemonKey } from '../utils/imageHelpers';
+import createPokemonVariants from '../utils/createPokemonVariants';
+import { initializeOrUpdateOwnershipData, ownershipDataCacheKey } from '../utils/pokemonOwnershipManager';
 
 const useFetchPokemons = () => {
     const [variants, setVariants] = useState([]);

@@ -1,7 +1,7 @@
 // useFilterPokemons.js
 
 import { useMemo } from 'react';
-import { getEvolutionaryFamily, shouldAddPokemon } from '../../utils/filterHelpers';
+import { getEvolutionaryFamily, shouldAddPokemon } from '../utils/filterHelpers';
 
 const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine, showAll) => {
     const { selectedGeneration, isShiny, searchTerm, showCostume, showShadow, pokemonTypes, generations, singleFormPokedexNumbers } = filters;
