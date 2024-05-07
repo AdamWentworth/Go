@@ -33,7 +33,18 @@ function Register({ onRegister }) {
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!passwordError && email && username && password) {
-      onRegister(username, pokemonGoName, trainerCode, email, password, country, city, region, allowLocation);
+      const registrationData = {
+        username,
+        pokemonGoName: pokemonGoNameDisabled ? username : pokemonGoName,
+        trainerCode,
+        email,
+        password, // Send plain text password securely over HTTPS, hash it server-side
+        country: allowLocation ? null : country,
+        city: allowLocation ? null : city,
+        region,
+        allowLocation
+      };
+      onRegister(registrationData); // Assume onRegister handles the API call
     }
   };
 
@@ -58,7 +69,7 @@ function Register({ onRegister }) {
             <input type="text" value={trainerCode} onChange={(e) => setTrainerCode(e.target.value)} placeholder="Trainer Code (optional)" />
             <div className="checkbox-inline multi-line-checkbox">
               <input type="checkbox" checked={allowLocation} onChange={(e) => setAllowLocation(e.target.checked)} />
-              <label>Allow us to collect your device's current GPS location data for the greatest app experience</label>
+              <label>Enable collection of your device's GPS location data</label>
             </div>
             <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Country (optional)" disabled={allowLocation} />
             <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City (optional)" disabled={allowLocation} />
