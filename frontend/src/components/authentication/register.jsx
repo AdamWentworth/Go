@@ -1,9 +1,11 @@
-import React from 'react';
-import RegisterForm from './RegisterForm'; // Import the modular form component
-import useForm from './hooks/useForm'; // Import the useForm custom hook
-import './register.css';
+// Register.jsx
 
-function Register({ onRegister }) {
+import React from 'react';
+import RegisterForm from './RegisterForm';
+import useForm from './hooks/useForm';
+import './Register.css';
+
+function Register() {
   const { values, errors, handleChange, handleSubmit } = useForm({
     username: '',
     pokemonGoName: '',
@@ -17,15 +19,18 @@ function Register({ onRegister }) {
   }, onSubmit);
 
   function onSubmit(formValues) {
-    // Here you would add the additional logic or data modifications before sending to the API
-    if (!errors) {
-      onRegister(formValues); // Function to call the API
-    }
+    // Create a new object that excludes the pokemonGoNameDisabled field
+    const { pokemonGoNameDisabled, ...submissionValues } = formValues;
+
+    // Use submissionValues instead of formValues for backend submission
+    console.log('Submitting Registration Data:', submissionValues);
+
+    // onRegister(submissionValues); // Uncomment when ready to integrate with the backend
   }
 
   return (
     <RegisterForm
-      {...values}
+      values={values}
       errors={errors}
       onChange={handleChange}
       onSubmit={handleSubmit}

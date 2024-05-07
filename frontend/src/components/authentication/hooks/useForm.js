@@ -1,4 +1,6 @@
-import { useState } from 'react';
+// useForm.js
+
+import { useState, useEffect } from 'react';
 
 const useForm = (initialValues, onSubmit) => {
   const [values, setValues] = useState(initialValues);
@@ -16,21 +18,31 @@ const useForm = (initialValues, onSubmit) => {
     if ('password' in values)
       tempErrors.password = values.password.length > 7 ? "" : "Password must be at least 8 characters long.";
 
+    if ('trainerCode' in values) {
+      tempErrors.trainerCode = (values.trainerCode.length === 12 && /^\d{12}$/.test(values.trainerCode)) || values.trainerCode === "" ? "" : "Trainer code must be exactly 12 digits long.";
+    }
+
     setErrors({
       ...tempErrors
     });
 
-    // Return true if no errors
     return Object.values(tempErrors).every(x => x === "");
   };
 
+  // Update Pokémon GO name to match username when checkbox is checked
+  useEffect(() => {
+    if (values.pokemonGoNameDisabled) {
+      setValues(v => ({ ...v, pokemonGoName: v.username }));
+    }
+  }, [values.username, values.pokemonGoNameDisabled]);
+
   // Handles field value changes
   const handleChange = e => {
-    const { name, value } = e.target;
-    setValues({
-      ...values,
-      [name]: value
-    });
+    const { name, value, type, checked } = e.target;
+    setValues(v => ({
+      ...v,
+      [name]: type === 'checkbox' ? checked : value
+    }));
   };
 
   // Handles form submission

@@ -12,7 +12,7 @@ import useSortedPokemons from './hooks/useSortedPokemons';
 import useFilterPokemons from './hooks/useFilterPokemons';
 import { getFilteredPokemonsByOwnership } from './utils/pokemonOwnershipManager';
 
-function pokemonList() {
+function PokemonList() {
 
     // State for selected pokemon click listener for Overlay
     const [selectedPokemon, setSelectedPokemon] = useState(null);
@@ -160,4 +160,4 @@ function pokemonList() {
     );
 }
 
-export default pokemonList;
+export default PokemonList;
