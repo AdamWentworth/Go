@@ -2,7 +2,7 @@
 
 import React from 'react';
 import './shinyInfo.css'; 
-import { formatShinyRarity } from '../../../utils/formattingHelpers';
+import { formatShinyRarity } from '../utils/formattingHelpers';
 
 function ShinyInfo({ pokemon }) {
   return (

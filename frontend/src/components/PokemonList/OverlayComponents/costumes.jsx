@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './costumes.css';
 import './costumes-fullscreen.css';
-import { formatCostumeName } from '../../../utils/formattingHelpers';
+import { formatCostumeName } from '../utils/formattingHelpers';
 
 function Costumes({ costumes }) {
   const [isFullScreen, setIsFullScreen] = useState(false);

@@ -1,7 +1,7 @@
 //pokemonCard.jsx
 
 import React, { memo } from 'react';
-import { formatForm, formatCostumeName } from '../../utils/formattingHelpers';
+import { formatForm, formatCostumeName } from './utils/formattingHelpers';
 import './pokemonCard.css'
 
 const PokemonCard = ({

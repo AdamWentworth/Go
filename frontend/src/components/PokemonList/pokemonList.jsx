@@ -10,7 +10,7 @@ import PokemonCard from './pokemonCard';
 import useFetchPokemons from '../hooks/useFetchPokemons';
 import useSortedPokemons from '../hooks/useSortedPokemons';
 import useFilterPokemons from '../hooks/useFilterPokemons';
-import { getFilteredPokemonsByOwnership } from '../../utils/pokemonOwnershipManager';
+import { getFilteredPokemonsByOwnership } from './utils/pokemonOwnershipManager';
 
 function pokemonList() {
 

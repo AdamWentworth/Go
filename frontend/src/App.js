@@ -3,8 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/navbar';
 import MainButtons from './components/mainButtons';
 import PokemonList from './components/PokemonList/pokemonList';
-import Login from './components/authentication/login';  // Ensure this is the correct path
-import Register from './components/authentication/register';  // Ensure this is the correct path
+import Login from './components/Authentication/login';  // Ensure this is the correct path
+import Register from './components/Authentication/register';  // Ensure this is the correct path
 import './App.css';
 import CacheContext from './contexts/cacheContext';
 
