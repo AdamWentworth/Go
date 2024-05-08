@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const sqlite3 = require('sqlite3').verbose();
+const logger = require('../middlewares/logger'); // Import the logger
 const { getPokemonsFromDb } = require('../services/pokemonService');
-const { getEvolutionsFromDb, buildEvolutionMap } = require('../services/evolutionsService'); // Import evolutions service
+const { getEvolutionsFromDb, buildEvolutionMap } = require('../services/evolutionsService');
 const { getImagePathsForPokemon } = require('../utils/imagePaths');
 const { getCostumesForPokemon, formatCostumes } = require('../services/costumeService');
 const { getMovesForPokemon, formatMoves } = require('../services/movesService');
@@ -12,6 +13,7 @@ const db = new sqlite3.Database('./data/pokego.db');
 router.get('/api/pokemons', (req, res) => {
     getPokemonsFromDb((err, rows) => {
         if (err) {
+            logger.error(`Error fetching pokemons from DB: ${err.message}`);
             res.status(500).json({ error: err.message });
             return;
         }
@@ -20,6 +22,7 @@ router.get('/api/pokemons', (req, res) => {
 
         getCostumesForPokemon(db, (err, costumes) => {
             if (err) {
+                logger.error(`Error fetching costumes for pokemons: ${err.message}`);
                 res.status(500).json({ error: err.message });
                 return;
             }
@@ -28,6 +31,7 @@ router.get('/api/pokemons', (req, res) => {
             
             getMovesForPokemon(db, (err, allMoves) => {
                 if (err) {
+                    logger.error(`Error fetching moves for pokemons: ${err.message}`);
                     res.status(500).json({ error: err.message });
                     return;
                 }
@@ -36,6 +40,7 @@ router.get('/api/pokemons', (req, res) => {
             
                 db.all(pokemonMovesQuery, [], (err, pokemonMoves) => {
                     if (err) {
+                        logger.error(`Error querying pokemon_moves: ${err.message}`);
                         res.status(500).json({ error: err.message });
                         return;
                     }
@@ -45,34 +50,30 @@ router.get('/api/pokemons', (req, res) => {
                     // Get evolutions and add them to the response
                     getEvolutionsFromDb((err, evolutionMap) => {
                         if (err) {
+                            logger.error(`Error fetching evolution data: ${err.message}`);
                             res.status(500).json({ error: err.message });
                             return;
                         }
 
-                        // No need to call buildEvolutionMap since evolutionMap is already provided by getEvolutionsFromDb
-
-                        // Add evolution data to each pokemon
                         const pokemonsWithEvolutions = pokemonsWithAllData.map(pokemon => {
                             const evolutionData = evolutionMap[pokemon.pokemon_id];
-                            // Spread the evolution data if it exists
                             if (evolutionData) {
                                 return {
                                     ...pokemon,
-                                    evolves_from: evolutionData.evolves_from, // This is now an array
-                                    evolves_to: evolutionData.evolves_to, // This is now an array
+                                    evolves_from: evolutionData.evolves_from,
+                                    evolves_to: evolutionData.evolves_to,
                                 };
                             }
-                            // Otherwise, just return the pokemon data
                             return pokemon;
                         });
 
                         res.json(pokemonsWithEvolutions);
+                        logger.info(`Returned data for /api/pokemons with status ${res.statusCode}`);
                     });
                 });
             });
         });
     });
 });
-
 
 module.exports = router;
