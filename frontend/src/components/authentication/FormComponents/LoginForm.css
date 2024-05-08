@@ -1,0 +1,83 @@
+.login-form {
+    width: calc(100% - 40px);
+    max-width: 500px;
+    padding: 20px;
+    background: #222;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.login-form form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.login-form input[type="text"],
+.login-form input[type="email"],
+.login-form input[type="password"] {
+    width: 100%;
+    padding: 15px;
+    margin: 0px 0;
+    box-sizing: border-box;
+}
+
+.login-form button[type="submit"] {
+    width: 100%;
+    margin: 0;
+    padding: 12px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.login-form button[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+.social-login-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+}
+
+.social-login-buttons button {
+    width: 100%;
+    background-color: #555;
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.login-form .social-login-buttons .discord-button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 6px 10px;
+    color: white;
+    border-radius: 4px;
+    border: 1px;
+    cursor: pointer;
+    width: 98%;
+    height: 10%;
+    font-size: 19px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    gap: 6px;
+}
+
+.social-login-buttons .discord-button img {
+    width: 32px;
+    height: 32px;
+    margin-left: -5px;
+    margin-right: -3px;
+}
+
+.social-login-buttons button:hover {
+    opacity: 0.8;
+}

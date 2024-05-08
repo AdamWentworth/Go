@@ -1,7 +1,8 @@
 // Login.jsx
 
 import React, { useState } from 'react';
-import LoginForm from './LoginForm';
+import LoginForm from './FormComponents/LoginForm';
+import SuccessMessage from './SuccessMessage'; // Ensure this is imported
 import useForm from './hooks/useForm';
 import { loginUser } from './services/authService';
 import './Login.css';
@@ -12,17 +13,15 @@ function Login() {
     password: '',
   }, onSubmit);
   const [feedback, setFeedback] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // State to check login status
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   function onSubmit(formValues) {
     loginUser(formValues)
       .then(response => {
-        console.log('Login Success:', response);
-        setIsLoggedIn(true); // Set logged in status to true
+        setIsLoggedIn(true);
         setFeedback('Successfully Logged in');
       })
       .catch(error => {
-        console.error('Login Failed:', error);
         setFeedback('Login failed: ' + (error.response.data.message || 'Please check your username and password and try again.'));
       });
   }
@@ -30,7 +29,7 @@ function Login() {
   return (
     <div>
       {isLoggedIn ? (
-        <div className="success-message">{feedback}</div>
+        <SuccessMessage mainMessage={feedback} detailMessage="You are now successfully logged in!" />
       ) : (
         <>
           {feedback && <div className="feedback">{feedback}</div>}
@@ -47,6 +46,7 @@ function Login() {
 }
 
 export default Login;
+
 
 
 

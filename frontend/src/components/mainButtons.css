@@ -21,10 +21,9 @@
     align-items: center; /* center align on the Y axis */
     padding: 2rem 11%; /* Add vertical padding and slightly reduce horizontal padding */
     gap: 1rem;   /* Spacing between buttons */
-    height: calc(100% - 4rem); /* Adjust height, deducting the top padding */
+    height: calc(100vh - 138px); /* Adjust height considering navbar; change 50px to your navbar's height */
     margin-top: 0px; /* Remove any top margin to eliminate the gap */
     background-color: #333;
-    height: 78vh;
 }
 
 /* Base style for individual buttons */

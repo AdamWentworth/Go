@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { GoogleLoginButton, FacebookLoginButton, TwitterLoginButton } from 'react-social-login-buttons';
+import './LoginForm.css';
 
 const LoginForm = ({
   values,
