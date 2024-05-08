@@ -9,14 +9,14 @@ import axios from 'axios';
  */
 export const registerUser = async (userData) => {
   try {
-    const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/register`, userData);
+    const response = await axios.post(`${process.env.REACT_APP_AUTH_API_URL}/auth/register`, userData);
     return response.data; // Assuming the API returns the user data on successful registration
   } catch (error) {
-    // Optionally handle errors more specifically here if needed
     console.error('Error registering user:', error.response || error);
     throw error; // Rethrow the error to be handled by the caller
   }
 };
+
 
 /**
  * Any other authentication-related API calls can be added here, such as:

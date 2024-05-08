@@ -4,3 +4,6 @@
 {"level":"info","message":"GET /api/pokemons"}
 2024-05-07 18:18:45 - INFO - Server is running on http://localhost:3000
 2024-05-07 18:19:02 - INFO - GET /api/pokemons
+2024-05-07 18:27:12 - INFO - Server is running on http://localhost:3000
+2024-05-07 18:27:34 - INFO - GET /api/pokemons
+2024-05-07 18:27:34 - INFO - Returned data for /api/pokemons with status 304

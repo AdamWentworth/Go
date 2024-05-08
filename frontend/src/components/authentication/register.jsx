@@ -3,6 +3,7 @@
 import React from 'react';
 import RegisterForm from './RegisterForm';
 import useForm from './hooks/useForm';
+import { registerUser } from './services/authService';
 import './Register.css';
 
 function Register() {
@@ -19,14 +20,21 @@ function Register() {
   }, onSubmit);
 
   function onSubmit(formValues) {
-    // Create a new object that excludes the pokemonGoNameDisabled field
     const { pokemonGoNameDisabled, ...submissionValues } = formValues;
-
-    // Use submissionValues instead of formValues for backend submission
-    console.log('Submitting Registration Data:', submissionValues);
-
-    // onRegister(submissionValues); // Uncomment when ready to integrate with the backend
+  
+    // Use the registerUser function to send data to the backend
+    registerUser(submissionValues)
+      .then(response => {
+        console.log('Registration Success:', response);
+        // Handle success, perhaps redirect or clear form
+      })
+      .catch(error => {
+        console.error('Registration Failed:', error);
+        // Handle errors, show user feedback
+      });
   }
+
+  console.log("API URL: ", process.env.REACT_APP_AUTH_API_URL);
 
   return (
     <RegisterForm

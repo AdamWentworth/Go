@@ -85,11 +85,6 @@
     padding: 0 20px; /* Padding to align with the input fields */
 }
 
-.social-login-buttons .nintendo-button {
-    margin-bottom: 5px;
-}
-
-.social-login-buttons .nintendo-button, 
 .social-login-buttons .discord-button {
     display: flex;
     align-items: center;
@@ -100,25 +95,22 @@
     border: 1px;
     cursor: pointer;
     width: 99%; /* Match the full width of the container for consistency */
-    height: 15%;
+    height: 19%;
     border-radius: 4px;
     font-size: 19px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Added drop shadow */
     gap: 6px; /* Space between icon and text */
 }
 
-.social-login-buttons .nintendo-button {
-    background-color: #E60012; /* Nintendo's brand red color */
-}
-
 .social-login-buttons .discord-button {
     background-color: #7289da; /* Discord's brand grey color */
 }
-
-.social-login-buttons .nintendo-button img, 
+ 
 .social-login-buttons .discord-button img {
-    width: 30px; /* Slightly larger for visibility */
-    height: 30px;
+    width: 38px; /* Slightly larger for visibility */
+    height: 38px;
+    margin-left: -5px;
+    margin-right: -3px;
 }
 
 .social-login-buttons .nintendo-button:hover, 

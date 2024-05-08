@@ -44,10 +44,6 @@ const RegisterForm = ({
             </GoogleLoginButton>
             <FacebookLoginButton onClick={() => console.log("Facebook login")}>Register with Facebook</FacebookLoginButton>
             <TwitterLoginButton onClick={() => console.log("Twitter login")}>Register with Twitter</TwitterLoginButton>
-            <button className="nintendo-button" onClick={() => console.log("Nintendo login")}>
-              <img src="images/nintendo_icon.png" alt="Nintendo" />
-              Register with Nintendo
-            </button>
             <button className="discord-button" onClick={() => console.log("Discord login")}>
               <img src="images/discord_icon.png" alt="Discord" />
               Register with Discord
