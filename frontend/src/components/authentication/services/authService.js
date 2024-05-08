@@ -25,12 +25,14 @@ export const registerUser = async (userData) => {
 export const loginUser = async (loginData) => {
   try {
     const response = await axios.post(`${process.env.REACT_APP_AUTH_API_URL}/auth/login`, loginData);
-    return response.data; // Assuming the API returns user data or token on successful login
+    console.log("Login response:", response.data); // Log to debug
+    return response.data;
   } catch (error) {
     console.error('Error logging in user:', error.response || error);
-    throw error; // Rethrow the error to be handled by the caller
+    throw error;
   }
 };
+
 
 /**
  * Any other authentication-related API calls can be added here, such as:

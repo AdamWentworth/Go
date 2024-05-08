@@ -51,8 +51,6 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     try {
-
-        // Check both the username and email fields for a match
         const user = await User.findOne({
             $or: [
                 { username: req.body.username },
@@ -76,6 +74,9 @@ router.post('/login', async (req, res) => {
         res.status(200).json({
             user_id: user._id.toString(),
             username: user.username,
+            email: user.email,
+            pokemonGoName: user.pokemonGoName, // Ensure these fields exist
+            trainerCode: user.trainerCode,
             token: token,
             message: 'Logged in successfully'
         });

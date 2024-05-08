@@ -1,11 +1,15 @@
+// Navbar.jsx
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Navbar.css';
+import { useAuth } from '../contexts/AuthContext'; // Import useAuth
 import MainButtons from './MainButtons'; // Make sure to import MainButtons
 
 function Navbar() {
-    const location = useLocation(); // Hook to get the current location
+    const location = useLocation();
     const logoUrl = process.env.PUBLIC_URL + '/images/logo/logo.png';
+    const { isLoggedIn } = useAuth(); // Use the auth context
 
     const showMainButtons = location.pathname !== '/';
 
@@ -19,8 +23,14 @@ function Navbar() {
             </div>
             {showMainButtons && <MainButtons navbar={true} />}
             <div className="navbar-buttons">
-                <Link to="/login"><button>Login</button></Link>
-                <Link to="/register"><button>Register</button></Link>
+                {isLoggedIn ? (
+                    <Link to="/account"><button>Account</button></Link>
+                ) : (
+                    <>
+                        <Link to="/login"><button>Login</button></Link>
+                        <Link to="/register"><button>Register</button></Link>
+                    </>
+                )}
                 <button>Language</button>
             </div>
         </div>
@@ -28,3 +38,4 @@ function Navbar() {
 }
 
 export default Navbar;
+

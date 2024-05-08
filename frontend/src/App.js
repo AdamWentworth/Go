@@ -1,33 +1,41 @@
+// App.js
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import MainButtons from './components/MainButtons';
 import PokemonList from './components/PokemonList/PokemonList';
-import Login from './components/Authentication/Login';  // Ensure this is the correct path
-import Register from './components/Authentication/Register';  // Ensure this is the correct path
+import Login from './components/Authentication/Login';
+import Register from './components/Authentication/Register';
+import Account from './components/Authentication/Account'; // Import the Account component
 import './App.css';
-import CacheContext from './contexts/cacheContext';
+import CacheContext from './contexts/CacheContext';
+import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
     const cache = new Map();
 
     return (
         <CacheContext.Provider value={cache}>
-        <Router> {/* Move Router to encompass the entire App component including Navbar */}
-            <div className="App">
-                <Navbar />
-                <main>
-                    <Routes>
-                        <Route path="/" element={<MainButtons />} />
-                        <Route path="/pokemon" element={<PokemonList />} />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                    </Routes>
-                </main>
-            </div>
-        </Router>
+            <AuthProvider>
+                <Router>
+                    <div className="App">
+                        <Navbar />
+                        <main>
+                            <Routes>
+                                <Route path="/" element={<MainButtons />} />
+                                <Route path="/pokemon" element={<PokemonList />} />
+                                <Route path="/login" element={<Login />} />
+                                <Route path="/register" element={<Register />} />
+                                <Route path="/account" element={<Account />} /> {/* Add the route for the Account page */}
+                            </Routes>
+                        </main>
+                    </div>
+                </Router>
+            </AuthProvider>
         </CacheContext.Provider>
     );
 }
 
 export default App;
+

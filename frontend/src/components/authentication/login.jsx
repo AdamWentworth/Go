@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import LoginForm from './FormComponents/LoginForm';
-import SuccessMessage from './SuccessMessage'; // Ensure this is imported
+import SuccessMessage from './SuccessMessage';
 import useForm from './hooks/useForm';
 import { loginUser } from './services/authService';
 import './Login.css';
+import { useAuth } from '../../contexts/AuthContext'; // Import useAuth
 
 function Login() {
   const { values, errors, handleChange, handleSubmit } = useForm({
@@ -13,41 +14,26 @@ function Login() {
     password: '',
   }, onSubmit);
   const [feedback, setFeedback] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { login } = useAuth(); // Get login function from context
 
   function onSubmit(formValues) {
     loginUser(formValues)
-      .then(response => {
-        setIsLoggedIn(true);
+      .then(userData => {
+        login(userData); // Assume loginUser directly returns userData
         setFeedback('Successfully Logged in');
       })
       .catch(error => {
-        setFeedback('Login failed: ' + (error.response.data.message || 'Please check your username and password and try again.'));
+        const errorMessage = error.response?.data?.message || 'Please check your username and password and try again.';
+        setFeedback('Login failed: ' + errorMessage);
       });
-  }
+  }  
 
   return (
     <div>
-      {isLoggedIn ? (
-        <SuccessMessage mainMessage={feedback} detailMessage="You are now successfully logged in!" />
-      ) : (
-        <>
-          {feedback && <div className="feedback">{feedback}</div>}
-          <LoginForm
-            values={values}
-            errors={errors}
-            onChange={handleChange}
-            onSubmit={handleSubmit}
-          />
-        </>
-      )}
+      {feedback && <SuccessMessage mainMessage={feedback} detailMessage="You are now successfully logged in!" />}
+      {!feedback && <LoginForm values={values} errors={errors} onChange={handleChange} onSubmit={handleSubmit} />}
     </div>
   );
 }
 
 export default Login;
-
-
-
-
-
