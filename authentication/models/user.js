@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, maxlength: 255, minlength: 6 },
     password: { type: String, maxlength: 1024, minlength: 6 },
     pokemonGoName: { type: String, default: "" },
-    trainerCode: { type: String, match: [/^\d{12}$/, 'Trainer code must be 12 digits'], default: "" },
+    trainerCode: { type: String, unique: true, match: [/^\d{12}$/, 'Trainer code must be 12 digits'], default: "" },
     country: { type: String, default: "" },
     city: { type: String, default: "" },
     allowLocation: { type: Boolean, default: false },
