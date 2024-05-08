@@ -3,11 +3,11 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    username: { type: String, unique: true, minlength: 6, maxlength: 36 },
-    email: { type: String, required: true, unique: true, maxlength: 255, minlength: 6 },
+    username: { type: String, required: true, unique: true, minlength: 6, maxlength: 36 },
+    email: { type: String, unique: true, maxlength: 255, minlength: 6 },
     password: { type: String, maxlength: 1024, minlength: 6 },
-    pokemonGoName: { type: String, default: "" },
-    trainerCode: { type: String, unique: true, match: [/^\d{12}$/, 'Trainer code must be 12 digits'], default: "" },
+    pokemonGoName: { type: String, unique: true, default: "" },
+    trainerCode: { type: String, match: [/^\d{12}$/, 'Trainer code must be 12 digits'], default: null },
     country: { type: String, default: "" },
     city: { type: String, default: "" },
     allowLocation: { type: Boolean, default: false },
@@ -18,6 +18,27 @@ const userSchema = new mongoose.Schema({
     discordId: { type: String, default: "" }
 });
 
+// Apply a unique index with a correct partial filter expression
+userSchema.index({ trainerCode: 1 }, {
+    unique: true,
+    partialFilterExpression: {
+        trainerCode: { $type: "string" } // Assuming trainerCode should be a non-null string
+    }
+});
+
+
+// Pre-save middleware to handle empty strings for all string fields
+userSchema.pre('save', function(next) {
+    // Iterate over all the fields in the document
+    for (let field in this.schema.paths) {
+        if (this.schema.paths[field].instance === 'String') {
+            // If the field is a String and the value is an empty string, set it to null
+            if (this[field] === '') {
+                this[field] = null;
+            }
+        }
+    }
+    next();
+});
+
 module.exports = mongoose.model('User', userSchema);
-
-

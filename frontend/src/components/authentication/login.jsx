@@ -1,21 +1,53 @@
+// Login.jsx
+
 import React, { useState } from 'react';
+import LoginForm from './LoginForm';
+import useForm from './hooks/useForm';
+import { loginUser } from './services/authService';
+import './Login.css';
 
-function Login({ onLogin }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+function Login() {
+  const { values, errors, handleChange, handleSubmit } = useForm({
+    username: '',
+    password: '',
+  }, onSubmit);
+  const [feedback, setFeedback] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // State to check login status
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    onLogin(username, password);
-  };
+  function onSubmit(formValues) {
+    loginUser(formValues)
+      .then(response => {
+        console.log('Login Success:', response);
+        setIsLoggedIn(true); // Set logged in status to true
+        setFeedback('Successfully Logged in');
+      })
+      .catch(error => {
+        console.error('Login Failed:', error);
+        setFeedback('Login failed: ' + (error.response.data.message || 'Please check your username and password and try again.'));
+      });
+  }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" required />
-      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required />
-      <button type="submit">Login</button>
-    </form>
+    <div>
+      {isLoggedIn ? (
+        <div className="success-message">{feedback}</div>
+      ) : (
+        <>
+          {feedback && <div className="feedback">{feedback}</div>}
+          <LoginForm
+            values={values}
+            errors={errors}
+            onChange={handleChange}
+            onSubmit={handleSubmit}
+          />
+        </>
+      )}
+    </div>
   );
 }
 
 export default Login;
+
+
+
+

@@ -1,0 +1,99 @@
+.login-page {
+    background-color: #333; /* Set the background color for the full page */
+    height: calc(100vh - 80px); /* Adjust height considering navbar; change 50px to your navbar's height */
+    width: 100vw; /* Use exact viewport width */
+    overflow: hidden; /* Hide any overflow */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0; /* Remove any padding that might cause overflow */
+}
+
+.login-form {
+    width: calc(100% - 40px); /* Adjust width to account for padding and prevent x-overflow */
+    max-width: 500px; /* Limit the form width to make it slightly narrower than register form */
+    padding: 20px; /* Add padding around the form */
+    background: #222; /* Light grey background for the form area */
+    border-radius: 8px; /* Rounded corners for the form */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Subtle shadow */
+    position: relative; /* Adjust position to better control layout */
+}
+
+.login-form form {
+    display: flex;
+    flex-direction: column; /* Single column layout */
+    gap: 20px; /* Increase gap for clarity */
+}
+
+.login-form input[type="text"],
+.login-form input[type="email"],
+.login-form input[type="password"] {
+    width: 100%; /* Full width of the column */
+    padding: 15px; /* Padding inside the inputs */
+    margin: 0px 0; /* Margin for top and bottom */
+    box-sizing: border-box; /* Include padding in width calculation */
+}
+
+.login-form button[type="submit"] {
+    width: 100%; /* Full width button for login */
+    margin: 0; /* Adjust margin */
+    padding: 12px 20px; /* Comfortable padding inside the button */
+    background-color: #007BFF; /* Blue background */
+    color: white; /* White text */
+    border: none; /* No border */
+    cursor: pointer; /* Pointer cursor on hover */
+    border-radius: 4px; /* Rounded corners */
+    font-size: 16px; /* Readable font size */
+}
+
+.login-form button[type="submit"]:hover {
+    background-color: #0056b3; /* Darker shade of blue on hover */
+}
+
+.social-login-buttons {
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically */
+    align-items: center; /* Center buttons horizontally */
+    width: 100%; /* Full width to match the login button */
+    gap: 10px; /* Space between buttons */
+}
+
+.social-login-buttons button {
+    width: 100%; /* Full width button to match the login button */
+    background-color: #555; /* Darker background for social buttons */
+    color: white; /* White text for contrast */
+    padding: 10px; /* Padding inside the button */
+    border-radius: 4px; /* Rounded corners */
+}
+
+.login-form .social-login-buttons .discord-button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Align content to the left */
+    padding: 8px 10px; /* Adjust padding to fit content */
+    color: white;
+    border-radius: 4px; /* Rounded corners */
+    border: 1px;
+    cursor: pointer;
+    width: 98%; /* Match the full width of the container for consistency */
+    height: 10%;
+    border-radius: 4px;
+    font-size: 19px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Added drop shadow */
+    gap: 6px; /* Space between icon and text */
+}
+
+.social-login-buttons .discord-button {
+    background-color: #7289da; /* Discord's brand grey color */
+}
+
+.social-login-buttons .discord-button img {
+    width: 32px; /* Slightly larger for visibility */
+    height: 32px;
+    margin-left: -5px;
+    margin-right: -3px;
+}
+
+.social-login-buttons button:hover {
+    opacity: 0.8; /* More noticeable hover effect */
+}
