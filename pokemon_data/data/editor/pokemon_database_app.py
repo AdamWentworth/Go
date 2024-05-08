@@ -8,7 +8,7 @@ class PokemonDatabaseApp:
         self.root = root
         self.root.title("Pokémon Database Editor")
         self.root.state('zoomed') 
-        self.db_manager = DatabaseManager('pokemon_data/data/pokego.db')
+        self.db_manager = DatabaseManager('./data/pokego.db')
         self.create_widgets()
         self.load_pokemon_list()
         self.sort_options = ['pokemon_id', 'name', 'pokedex_number', 'generation', 'date_available', 'date_shiny_available']
