@@ -1,0 +1,165 @@
+openapi: 3.0.0
+info:
+  title: Authentication API
+  version: 1.0.0
+  description: API to handle authentication including local and social logins.
+
+servers:
+  - url: http://localhost:3003/
+    description: Local development server
+
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate a user with username and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Authentication failed
+
+  /auth/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '409':
+          description: Username or email already exists
+
+  /auth/google:
+    get:
+      summary: Redirect to Google for authentication
+      description: Redirects the user to Google for OAuth authentication. No request body required.
+      responses:
+        '302':
+          description: Redirect to Google's OAuth 2.0 login page.
+
+  /auth/google/redirect:
+    get:
+      summary: Google OAuth callback URL
+      description: Handles the callback from Google after authentication. Google returns the user to this endpoint with an authorization code.
+      responses:
+        '200':
+          description: User successfully authenticated and redirected to the profile page.
+        '401':
+          description: Authentication failed.
+
+  /auth/facebook:
+    get:
+      summary: Redirect to Facebook for authentication
+      description: Redirects the user to Facebook for OAuth authentication. No request body required.
+      responses:
+        '302':
+          description: Redirect to Facebook's OAuth login page.
+
+  /auth/facebook/redirect:
+    get:
+      summary: Facebook OAuth callback URL
+      description: Handles the callback from Facebook after authentication. Facebook returns the user to this endpoint with an authorization code.
+      responses:
+        '200':
+          description: User successfully authenticated and redirected to the profile page.
+        '401':
+          description: Authentication failed.
+
+  /auth/twitter:
+    get:
+      summary: Redirect to Twitter for authentication
+      description: Redirects the user to Twitter for OAuth authentication. No request body required.
+      responses:
+        '302':
+          description: Redirect to Twitter's OAuth login page.
+
+  /auth/twitter/redirect:
+    get:
+      summary: Twitter OAuth callback URL
+      description: Handles the callback from Twitter after authentication. Twitter returns the user to this endpoint with an authorization code.
+      responses:
+        '200':
+          description: User successfully authenticated and redirected to the profile page.
+        '401':
+          description: Authentication failed.
+
+  /auth/discord:
+    get:
+      summary: Redirect to Discord for authentication
+      description: Redirects the user to Discord for OAuth authentication. No request body required.
+      responses:
+        '302':
+          description: Redirect to Discord's OAuth login page.
+
+  /auth/discord/redirect:
+    get:
+      summary: Discord OAuth callback URL
+      description: Handles the callback from Discord after authentication. Discord returns the user to this endpoint with an authorization code.
+      responses:
+        '200':
+          description: User successfully authenticated and redirected to the profile page.
+        '401':
+          description: Authentication failed.
+
+components:
+  schemas:
+    LoginResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+        username:
+          type: string
+        token:
+          type: string
+        message:
+          type: string
+
+    RegisterResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            username:
+              type: string
+            email:
+              type: string
+        token:
+          type: string
+        message:
+          type: string

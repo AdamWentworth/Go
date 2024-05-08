@@ -39,7 +39,9 @@ const RegisterForm = ({
           </div>
           <button type="submit">Register</button>
           <div className="social-login-buttons">
-            <GoogleLoginButton onClick={() => console.log("Google login")}>Register with Google</GoogleLoginButton>
+            <GoogleLoginButton onClick={() => window.location.href = 'http://localhost:3003/auth/google'}>
+                Register with Google
+            </GoogleLoginButton>
             <FacebookLoginButton onClick={() => console.log("Facebook login")}>Register with Facebook</FacebookLoginButton>
             <TwitterLoginButton onClick={() => console.log("Twitter login")}>Register with Twitter</TwitterLoginButton>
             <button className="nintendo-button" onClick={() => console.log("Nintendo login")}>
