@@ -1,0 +1,21 @@
+Best Practices and Alternatives
+
+Session Storage:
+Use Case: If you only need to persist data for the duration of the page session, consider using session storage instead. Data stored in session storage is cleared automatically when the page session ends (i.e., when the browser tab is closed).
+Security: Offers similar security to local storage but limits the lifespan of the data.
+
+HTTP-Only Cookies:
+Use Case: For sensitive information like tokens, use HTTP-only cookies. These cookies are not accessible via JavaScript, thus mitigating the risk of XSS attacks.
+Security: Set with the HttpOnly flag, making them accessible only to the server and not to the client-side scripts.
+
+Secure Cookies:
+Use Case: If users need to remain logged in across sessions, consider using secure, HTTP-only cookies.
+Security: Use the Secure flag to ensure cookies are sent over HTTPS only, preventing exposure through network attacks like man-in-the-middle.
+
+Token Expiry and Refresh Tokens:
+Strategy: Implement short-lived access tokens with longer-lived refresh tokens. Refresh tokens can be stored securely on the server, and new access tokens are issued as needed.
+Security: Limits the damage of token theft by reducing the lifespan of access tokens.
+
+Encryption:
+Use Case: If you must store sensitive data in local storage, consider encrypting it.
+Tools: Use libraries like CryptoJS to encrypt data before storing it and decrypt it when retrieved.

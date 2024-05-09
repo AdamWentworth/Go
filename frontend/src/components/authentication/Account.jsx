@@ -3,19 +3,33 @@ import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import AccountForm from './FormComponents/AccountForm'; // Assuming this is the correct path
-import './Account.css'
+import './Account.css';
+import { logoutUser } from './services/authService'; // Only import what's necessary
 
 const Account = () => {
-    const { user, logout, updateUserDetails } = useAuth();
+    const { user, updateUserDetails } = useAuth(); // Using from context
     const navigate = useNavigate();
 
     if (!user) {
         return <div>Loading user details...</div>;
     }
 
-    const handleLogout = () => {
-        logout(); // This now clears the local storage
-        navigate('/login'); // Redirect to login page after logout
+    const handleUpdateUserDetails = async (userId, userData) => {
+        try {
+            const updatedData = await updateUserDetails(userId, userData);
+            console.log("Updated user data:", updatedData);
+        } catch (error) {
+            console.error("Error updating user details:", error);
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logoutUser(); // Directly call the imported function
+            navigate('/login'); // Redirect to login page after logout
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
     };
 
     const handleDeleteAccount = () => {
@@ -26,7 +40,7 @@ const Account = () => {
         <div className="account-page">
             <AccountForm
                 user={user}
-                onUpdateUserDetails={updateUserDetails}
+                onUpdateUserDetails={handleUpdateUserDetails}
                 onLogout={handleLogout}
                 onDeleteAccount={handleDeleteAccount}
             />

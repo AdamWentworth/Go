@@ -11,12 +11,12 @@ const logger = require('../middlewares/logger'); // Ensure logger is imported co
 router.post('/register', async (req, res) => {
     try {
         if (await User.findOne({ username: req.body.username })) {
-            logger.error('Registration failed: Username already exists.');
+            logger.error(`Registration failed: Username already exists with status ${409}`);
             return res.status(409).json({ message: 'Username already exists' });
         }
 
         if (await User.findOne({ email: req.body.email })) {
-            logger.error('Registration failed: Email already exists.');
+            logger.error(`Registration failed: Email already exists with status ${409}`);
             return res.status(409).json({ message: 'Email already exists' });
         }
 
@@ -26,10 +26,8 @@ router.post('/register', async (req, res) => {
             password: hashedPassword
         });
 
-        logger.debug(`Attempting to save user ${req.body.username}`);
-        // Use writeConcern to ensure the write is acknowledged by the majority of replica set members
         const savedUser = await newUser.save({ writeConcern: { w: "majority" } });
-        logger.debug(`User ${savedUser.username} saved successfully, attempting to create token.`);
+        logger.debug(`User ${req.body.username} saved successfully, attempting to create token.`);
 
         const token = jwt.sign({ userId: savedUser._id, username: savedUser.username }, secretKey, { expiresIn: '24h' });
 
@@ -41,10 +39,10 @@ router.post('/register', async (req, res) => {
             token: token,
             message: 'Account created successfully.'
         });
-        logger.info(`User ${savedUser.username} registered successfully.`);
+        logger.info(`User ${savedUser.username} registered successfully with status ${201}`);
         
     } catch (err) {
-        logger.error(`Registration error: ${err.message}`);
+        logger.error(`Registration error: ${err.message} with status ${500}`);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
@@ -59,13 +57,13 @@ router.post('/login', async (req, res) => {
         }).exec();
 
         if (!user) {
-            logger.error('Login failed: User not found.');
+            logger.error(`Login failed: User not found with status ${404}`);
             return res.status(404).json({ message: 'User not found' });
         }
 
         const validPassword = await bcrypt.compare(req.body.password, user.password);
         if (!validPassword) {
-            logger.error('Login failed: Invalid password.');
+            logger.error(`Login failed: Invalid password with status ${401}`);
             return res.status(401).json({ message: 'Invalid password' });
         }
 
@@ -80,11 +78,44 @@ router.post('/login', async (req, res) => {
             token: token,
             message: 'Logged in successfully'
         });
-        logger.info(`User ${user.username} logged in successfully.`);
+        logger.info(`User ${user.username} logged in successfully with status ${200}`);
     } catch (err) {
-        logger.error(`Login error: ${err.message}`);
+        logger.error(`Login error: ${err.message} with status ${500}`);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
+
+// Update user details
+router.put('/update/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        if (updates.password) {
+            updates.password = await bcrypt.hash(updates.password, 10);
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true });
+
+        if (!updatedUser) {
+            logger.error(`Update failed: User not found with status ${404}`);
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        logger.info(`User ${updatedUser.username} updated successfully with status ${200}`);
+        res.status(200).json({
+            message: 'User updated successfully',
+            user: {
+                username: updatedUser.username,
+                email: updatedUser.email,
+                // Add other fields as needed
+            }
+        });
+    } catch (err) {
+        logger.error(`Update error: ${err.message} with status ${500}`);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
 
 module.exports = router;

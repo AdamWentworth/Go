@@ -11,8 +11,8 @@ import { useAuth } from '../../contexts/AuthContext'; // Import useAuth
 function Login() {
   const { values, errors, handleChange, handleSubmit } = useForm({
     username: '',
-    password: '',
-  }, onSubmit);
+    password: ''
+  }, onSubmit, 'login');
   const [feedback, setFeedback] = useState('');
   const { login } = useAuth(); // Get login function from context
 

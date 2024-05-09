@@ -1,36 +1,39 @@
 // AccountForm.jsx
 import React, { useState } from 'react';
 import useForm from '../hooks/useForm';  // Ensure the path to useForm is correct
-import './AccountForm.css'
+import './AccountForm.css';
 
 const AccountForm = ({ user, onUpdateUserDetails, onLogout, onDeleteAccount }) => {
     const [isEditable, setIsEditable] = useState(false); // State to control edit mode
 
-    const initialValues = {
-        username: user.username,
-        email: user.email,
-        password: '',
-        pokemonGoName: user.pokemonGoName || '',
-        trainerCode: user.trainerCode || '',
-        country: user.country || '',
-        city: user.city || '',
-        allowLocation: user.allowLocation || false,
-        pokemonGoNameDisabled: user.pokemonGoName === user.username
-    };
-
+    // Define onSubmit before passing it to useForm
     const onSubmit = values => {
         if (isEditable) {  // Only update if we are in edit mode
-            onUpdateUserDetails(values);
-            console.log("Account details updated:", values);
+            onUpdateUserDetails(user.user_id, values).then(() => {
+                console.log("Account details updated:", values);
+                setIsEditable(false);  // Toggle edit mode off after submission
+            }).catch(error => {
+                console.error("Failed to update account details:", error);
+            });
         }
-        setIsEditable(!isEditable);  // Toggle edit mode off after submission
     };
 
-    const { values, handleChange, handleSubmit } = useForm(initialValues, onSubmit);
+    const { values, handleChange, handleSubmit } = useForm({
+      userId: user.user_id,
+      username: user.username,
+      email: user.email,
+      password: '',
+      pokemonGoName: user.pokemonGoName || '',
+      trainerCode: user.trainerCode || '',
+      country: user.country || '',
+      city: user.city || '',
+      allowLocation: user.allowLocation || false,
+      pokemonGoNameDisabled: user.pokemonGoName === user.username
+    }, onSubmit, 'edit');
 
     const handleEditToggle = (e) => {
-        e.preventDefault();
-        setIsEditable(!isEditable);  // Toggle edit mode
+        e.preventDefault(); // Ensure default action is prevented
+        setIsEditable(!isEditable); // Toggle edit mode
     };
 
     return (
@@ -73,7 +76,13 @@ const AccountForm = ({ user, onUpdateUserDetails, onLogout, onDeleteAccount }) =
                 </div>
             </div>
             <div className="buttons">
-                <button onClick={handleEditToggle} className="edit-btn">{isEditable ? 'Save Changes' : 'Edit Details'}</button>
+                <button
+                    type="button"
+                    onClick={(e) => isEditable ? handleSubmit(e) : handleEditToggle(e)}
+                    className="edit-btn"
+                >
+                    {isEditable ? 'Save Changes' : 'Edit Details'}
+                </button>
                 <button type="button" className="logout-btn" onClick={onLogout}>Logout</button>
                 <button type="button" className="delete-btn" onClick={onDeleteAccount}>Delete Account and Data</button>
             </div>

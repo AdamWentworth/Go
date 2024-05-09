@@ -33,6 +33,29 @@ export const loginUser = async (loginData) => {
   }
 };
 
+/**
+ * Logs out the current user.
+ * @returns {Promise<void>} - A promise that resolves when the logout process is complete.
+ */
+export const logoutUser = async () => {
+  // Clear local storage (client-side session invalidation)
+  localStorage.removeItem('user');
+  localStorage.removeItem('token');
+  return Promise.resolve(); // Resolve the promise immediately as there's no backend call
+};
+
+
+// Update user details
+export const updateUserDetails = async (userId, userData) => {
+  try {
+      const response = await axios.put(`${process.env.REACT_APP_AUTH_API_URL}/auth/update/${userId}`, userData);
+      console.log("Update response:", response.data);
+      return response.data;  // Make sure the backend is sending back the updated user data or a confirmation.
+  } catch (error) {
+      console.error('Error updating user:', error.response || error);
+      throw error;
+  }
+};
 
 /**
  * Any other authentication-related API calls can be added here, such as:
