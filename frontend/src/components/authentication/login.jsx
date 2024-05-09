@@ -18,19 +18,31 @@ function Login() {
 
   function onSubmit(formValues) {
     loginUser(formValues)
-      .then(userData => {
-        login(userData); // Assume loginUser directly returns userData
+      .then(response => {
+        // Assuming the API sends back the user data and token as part of the response data object
+        const { email, username, pokemonGoName, trainerCode, user_id, token } = response;
+        const user = {
+          email,
+          username,
+          pokemonGoName,
+          trainerCode,
+          user_id
+        };
+
+        login(user, token); // Pass user and token to login function
         setFeedback('Successfully Logged in');
       })
       .catch(error => {
         const errorMessage = error.response?.data?.message || 'Please check your username and password and try again.';
         setFeedback('Login failed: ' + errorMessage);
       });
-  }  
+  } 
 
   return (
     <div>
-      {feedback && <SuccessMessage mainMessage={feedback} detailMessage="You are now successfully logged in!" />}
+      {feedback && (
+        <SuccessMessage mainMessage={feedback} detailMessage={feedback.startsWith('Successfully') ? "You are now successfully logged in!" : ""} />
+      )}
       {!feedback && <LoginForm values={values} errors={errors} onChange={handleChange} onSubmit={handleSubmit} />}
     </div>
   );

@@ -1,83 +1,10 @@
 .account-page {
-    background-color: #333; /* Light grey background */
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    padding: 20px;
-    margin: 20px auto;
-    max-width: 800px;
+    background-color: #333;
+    height: calc(100vh - 80px);
+    width: 100vw;
+    overflow: hidden;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
-}
-
-.account-page h1 {
-    color: #444;
-    text-align: center;
-    margin-bottom: 20px;
-    width: 100%;
-}
-
-.user-details {
-    background-color: #ffffff; /* White background for the form */
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    padding: 20px;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    width: 100%;
-}
-
-.user-details div {
-    flex: 1; /* Equal width for both columns */
-    margin: 0 10px;
-}
-
-.user-details label {
-    display: block;
-    margin-bottom: 10px;
-    color: #333;
-    font-weight: 500;
-}
-
-.user-details input,
-.user-details select,
-.user-details checkbox {
-    width: 100%;
-    padding: 8px;
-    margin-top: 2px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-.buttons {
-    margin-top: 20px;
-    width: 100%;
-    display: flex;
-    justify-content: space-around; /* Space buttons evenly */
-}
-
-button {
-    padding: 10px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    flex-grow: 1; /* Buttons take equal space */
-    margin: 0 10px;
-}
-
-.edit-btn {
-    background-color: #28a745; /* Green for edit */
-}
-
-.logout-btn {
-    background-color: #007bff; /* Blue for logout */
-}
-
-.delete-btn {
-    background-color: #dc3545; /* Red for delete */
-}
-
-button:hover {
-    opacity: 0.85; /* Slight dim on hover for interaction feedback */
+    padding: 0;
 }

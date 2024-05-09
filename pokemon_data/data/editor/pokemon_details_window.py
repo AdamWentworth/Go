@@ -20,7 +20,7 @@ class PokemonDetailsWindow:
         self.window.state('zoomed')
 
         self.pokemon_id = pokemon_id
-        self.db_manager = DatabaseManager('backend/data/pokego.db')  # Adjust the path as necessary
+        self.db_manager = DatabaseManager('./data/pokego.db')  # Adjust the path as necessary
 
         self.shadow_pokemon_data = self.db_manager.fetch_shadow_pokemon_data(pokemon_id)
 
