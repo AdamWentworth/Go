@@ -76,6 +76,9 @@ router.post('/login', async (req, res) => {
             pokemonGoName: user.pokemonGoName, // Ensure these fields exist
             trainerCode: user.trainerCode,
             token: token,
+            allowLocation: user.allowLocation,
+            country: user.country,
+            city: user.city,
             message: 'Logged in successfully'
         });
         logger.info(`User ${user.username} logged in successfully with status ${200}`);
@@ -104,12 +107,17 @@ router.put('/update/:id', async (req, res) => {
 
         logger.info(`User ${updatedUser.username} updated successfully with status ${200}`);
         res.status(200).json({
-            message: 'User updated successfully',
             user: {
+                user_id: updatedUser._id.toString(),
                 username: updatedUser.username,
                 email: updatedUser.email,
-                // Add other fields as needed
-            }
+                pokemonGoName: updatedUser.pokemonGoName,
+                trainerCode: updatedUser.trainerCode,
+                allowLocation: updatedUser.allowLocation,
+                country: updatedUser.country,
+                city: updatedUser.city
+            },
+            message: 'Updated account details successfully'
         });
     } catch (err) {
         logger.error(`Update error: ${err.message} with status ${500}`);

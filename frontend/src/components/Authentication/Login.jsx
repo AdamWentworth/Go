@@ -20,13 +20,16 @@ function Login() {
     loginUser(formValues)
       .then(response => {
         // Assuming the API sends back the user data and token as part of the response data object
-        const { email, username, pokemonGoName, trainerCode, user_id, token } = response;
+        const { email, username, pokemonGoName, trainerCode, user_id, token, allowLocation, country, city } = response;
         const user = {
           email,
           username,
           pokemonGoName,
           trainerCode,
-          user_id
+          user_id,
+          allowLocation,
+          country,
+          city,
         };
 
         login(user, token); // Pass user and token to login function

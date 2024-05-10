@@ -36,7 +36,10 @@ function Register() {
                 username: loginResponse.username,
                 pokemonGoName: loginResponse.pokemonGoName,
                 trainerCode: loginResponse.trainerCode,
-                user_id: loginResponse.user_id
+                user_id: loginResponse.user_id,
+                allowLocation: loginResponse.allowLocation,
+                country: loginResponse.country,
+                city: loginResponse.city,
               };
               const { token } = loginResponse;
   
