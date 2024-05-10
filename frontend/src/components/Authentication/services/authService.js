@@ -50,10 +50,13 @@ export const updateUserDetails = async (userId, userData) => {
   try {
       const response = await axios.put(`${process.env.REACT_APP_AUTH_API_URL}/auth/update/${userId}`, userData);
       console.log("Update response:", response.data);
-      return response.data;  // Make sure the backend is sending back the updated user data or a confirmation.
+      return { success: true, data: response.data };  // Make sure the backend is sending back the updated user data or a confirmation.
   } catch (error) {
       console.error('Error updating user:', error.response || error);
-      throw error;
+      throw {
+          status: error.response.status,
+          message: error.response.data.message
+      };
   }
 };
 

@@ -106,15 +106,32 @@ router.put('/update/:id', async (req, res) => {
         const { id } = req.params;
         const updates = { ...req.body };
 
-        // Check for unique username and email before updating
         const existingUserWithUsername = await User.findOne({ username: updates.username, _id: { $ne: id } });
         if (existingUserWithUsername) {
+            logger.error(`Update failed: Username already exists with status ${409}`); // Change `logger.warn` to `logger.error` for consistency
             return res.status(409).json({ message: 'Username already exists' });
         }
 
         const existingUserWithEmail = await User.findOne({ email: updates.email, _id: { $ne: id } });
         if (existingUserWithEmail) {
+            logger.error(`Update failed: Email already exists with status ${409}`);
             return res.status(409).json({ message: 'Email already exists' });
+        }
+
+        if (updates.pokemonGoName) {
+            const existingUserWithPokemonGoName = await User.findOne({ pokemonGoName: updates.pokemonGoName, _id: { $ne: id } });
+            if (existingUserWithPokemonGoName) {
+                logger.error(`Update failed: Pokémon Go name already exists with status ${409}`);
+                return res.status(409).json({ message: 'Pokémon Go name already exists' });
+            }
+        }
+
+        if (updates.trainerCode) {
+            const existingUserWithTrainerCode = await User.findOne({ trainerCode: updates.trainerCode, _id: { $ne: id } });
+            if (existingUserWithTrainerCode) {
+                logger.error(`Update failed: Trainer Code already exists with status ${409}`);
+                return res.status(409).json({ message: 'Trainer Code already exists' });
+            }
         }
 
         // Only hash and update the password if it's provided and not empty
@@ -124,14 +141,14 @@ router.put('/update/:id', async (req, res) => {
             delete updates.password;  // Avoid updating password if it's empty
         }
 
+        logger.info(`Updating user details for User ID: ${id} with data: ${JSON.stringify(updates)}`);
         const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true });
-
         if (!updatedUser) {
-            logger.error(`Update failed: User not found with status ${404}`);
+            logger.error(`Update failed: User not found with ID: ${id}`);
             return res.status(404).json({ message: 'User not found' });
         }
+        logger.info(`User ${updatedUser.username} updated successfully`);
 
-        logger.info(`User ${updatedUser.username} updated successfully with status ${200}`);
         res.status(200).json({
             user_id: updatedUser._id.toString(),
             username: updatedUser.username,
@@ -144,9 +161,9 @@ router.put('/update/:id', async (req, res) => {
             message: 'Updated account details successfully'
         });
     } catch (err) {
-        logger.error(`Update error: ${err.message} with status ${500}`);
+        logger.error(`Unhandled exception on user update for ID: ${id}: ${err}`);
         res.status(500).json({ message: 'Internal Server Error' });
-    }
+    }    
 });
 
 module.exports = router;

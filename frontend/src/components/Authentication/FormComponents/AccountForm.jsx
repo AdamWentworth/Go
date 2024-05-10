@@ -15,14 +15,18 @@ const AccountForm = ({ user, onUpdateUserDetails, onLogout, onDeleteAccount }) =
                 ...values,
                 trainerCode: values.trainerCode.replace(/\s+/g, ''),
             };
-            onUpdateUserDetails(user.user_id, submissionValues).then(() => {
-                toast.success("Account details updated successfully!");
-                setIsEditable(false);
+            onUpdateUserDetails(user.user_id, submissionValues).then(response => {
+                if (response.status === 200) {
+                    toast.success("Account details updated successfully!");
+                    setIsEditable(false);
+                } else {
+                    throw new Error('Failed to update account details');
+                }
             }).catch(error => {
-                toast.error("Failed to update account details: " + error.message);
+                // toast.error("Failed to update account details: " + error.message);
             });
         }
-    };
+    }
 
     const { values, errors, handleChange, handleSubmit } = useForm({
         userId: user.user_id,

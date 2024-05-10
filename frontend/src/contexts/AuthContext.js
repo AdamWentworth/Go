@@ -39,15 +39,23 @@ export const AuthProvider = ({ children }) => {
 
   const updateUserDetails = async (userId, userData) => {
     try {
-      const updatedData = await updateUserService(userId, userData);
-      setUser(updatedData);  // Update the user state with the new data
-      localStorage.setItem('user', JSON.stringify(updatedData)); // Optionally update local storage
-      return updatedData;
+      const response = await updateUserService(userId, userData);
+      const updatedData = response.data;  // Assuming the response structure is { success: true, data: {...} }
+      console.log(updatedData);
+
+      if (response.success) {
+        setUser(updatedData);  // Update the user state with the new data
+        localStorage.setItem('user', JSON.stringify(updatedData)); // Optionally update local storage
+        return { success: true, data: updatedData };
+      } else {
+        console.error('Failed to update user details:', response.message);
+        return { success: false, error: response.message }; // Return an error object with the failure message
+      }
     } catch (error) {
       console.error('Error updating user details:', error);
-      throw error;
+      return { success: false, error: error.message }; // Return an error object
     }
-  };
+  };  
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, user, login, logout, updateUserDetails }}>
