@@ -24,7 +24,7 @@ function App() {
                         <main>
                             <Routes>
                                 <Route path="/" element={<MainButtons />} />
-                                <Route path="/pokemon" element={<PokemonList />} />
+                                <Route path="/collect" element={<PokemonList />} />
                                 <Route path="/login" element={<Login />} />
                                 <Route path="/register" element={<Register />} />
                                 <Route path="/account" element={<Account />} /> {/* Add the route for the Account page */}

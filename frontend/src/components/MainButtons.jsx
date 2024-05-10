@@ -9,7 +9,7 @@ function MainButtons({ navbar }) { // Added a prop `navbar` to determine the con
     return (
         <div className={containerClass}>
             <button className="mainButton pvp-btn">PVP</button>
-            <Link to="/pokemon">
+            <Link to="/collect">
                 <button className="mainButton collect-btn">Collect</button>
             </Link>
             <button className="mainButton raid-btn">Raid</button>
