@@ -35,8 +35,8 @@ const RegisterForm = ({
               <input type="checkbox" name="allowLocation" checked={values.allowLocation} onChange={onChange} />
               <label>Enable collection of your device's GPS location data</label>
             </div>
-            <input type="text" name="country" value={values.country} onChange={onChange} placeholder="Country (optional)" disabled={values.allowLocation} />
-            <input type="text" name="city" value={values.city} onChange={onChange} placeholder="City (optional)" disabled={values.allowLocation} />
+            <input type="text" name="country" value={values.country} onChange={onChange} placeholder="Country (optional)" />
+            <input type="text" name="city" value={values.city} onChange={onChange} placeholder="City (optional)" />
           </div>
           <button type="submit">Register</button>
           <div className="social-login-buttons">

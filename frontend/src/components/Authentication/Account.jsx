@@ -1,13 +1,12 @@
 // Account.jsx
 import React from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext'; // ensure path is correct
 import { useNavigate } from 'react-router-dom';
-import AccountForm from './FormComponents/AccountForm'; // Assuming this is the correct path
+import AccountForm from './FormComponents/AccountForm';
 import './Account.css';
-import { logoutUser } from './services/authService'; // Only import what's necessary
 
 const Account = () => {
-    const { user, updateUserDetails } = useAuth(); // Using from context
+    const { user, updateUserDetails, logout } = useAuth(); // Ensure you destruct `logout` from useAuth
     const navigate = useNavigate();
 
     if (!user) {
@@ -25,7 +24,7 @@ const Account = () => {
 
     const handleLogout = async () => {
         try {
-            await logoutUser(); // Directly call the imported function
+            await logout(); // Correctly call logout from useAuth
             navigate('/login'); // Redirect to login page after logout
         } catch (error) {
             console.error('Logout failed:', error);

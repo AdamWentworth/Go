@@ -29,11 +29,11 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await logoutUser();
-      setIsLoggedIn(false);
-      setUser(null);
+        await logoutUser(); // This should internally handle clearing local storage
+        setIsLoggedIn(false);
+        setUser(null);
     } catch (error) {
-      console.error('Error during logout:', error);
+        console.error('Error during logout:', error);
     }
   };
 

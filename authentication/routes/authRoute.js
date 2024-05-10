@@ -20,6 +20,18 @@ router.post('/register', async (req, res) => {
             return res.status(409).json({ message: 'Email already exists' });
         }
 
+        // Checking for unique Pokémon Go Name
+        if (req.body.pokemonGoName && await User.findOne({ pokemonGoName: req.body.pokemonGoName })) {
+            logger.error(`Registration failed: Pokémon Go name already exists with status ${409}`);
+            return res.status(409).json({ message: 'Pokémon Go name already exists' });
+        }
+
+        // Checking for unique Trainer Code
+        if (req.body.trainerCode && await User.findOne({ trainerCode: req.body.trainerCode })) {
+            logger.error(`Registration failed: Trainer Code already exists with status ${409}`);
+            return res.status(409).json({ message: 'Trainer Code already exists' });
+        }
+
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
         const newUser = new User({
             ...req.body,
@@ -92,10 +104,24 @@ router.post('/login', async (req, res) => {
 router.put('/update/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const updates = req.body;
+        const updates = { ...req.body };
 
-        if (updates.password) {
+        // Check for unique username and email before updating
+        const existingUserWithUsername = await User.findOne({ username: updates.username, _id: { $ne: id } });
+        if (existingUserWithUsername) {
+            return res.status(409).json({ message: 'Username already exists' });
+        }
+
+        const existingUserWithEmail = await User.findOne({ email: updates.email, _id: { $ne: id } });
+        if (existingUserWithEmail) {
+            return res.status(409).json({ message: 'Email already exists' });
+        }
+
+        // Only hash and update the password if it's provided and not empty
+        if (updates.password && updates.password.trim() !== "") {
             updates.password = await bcrypt.hash(updates.password, 10);
+        } else {
+            delete updates.password;  // Avoid updating password if it's empty
         }
 
         const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true });
@@ -107,16 +133,14 @@ router.put('/update/:id', async (req, res) => {
 
         logger.info(`User ${updatedUser.username} updated successfully with status ${200}`);
         res.status(200).json({
-            user: {
-                user_id: updatedUser._id.toString(),
-                username: updatedUser.username,
-                email: updatedUser.email,
-                pokemonGoName: updatedUser.pokemonGoName,
-                trainerCode: updatedUser.trainerCode,
-                allowLocation: updatedUser.allowLocation,
-                country: updatedUser.country,
-                city: updatedUser.city
-            },
+            user_id: updatedUser._id.toString(),
+            username: updatedUser.username,
+            email: updatedUser.email,
+            pokemonGoName: updatedUser.pokemonGoName || '',
+            trainerCode: updatedUser.trainerCode || '',
+            allowLocation: updatedUser.allowLocation || false,
+            country: updatedUser.country || '',
+            city: updatedUser.city || '',
             message: 'Updated account details successfully'
         });
     } catch (err) {
@@ -124,6 +148,5 @@ router.put('/update/:id', async (req, res) => {
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
-
 
 module.exports = router;
