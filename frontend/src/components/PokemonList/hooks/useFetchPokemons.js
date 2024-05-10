@@ -15,21 +15,28 @@ const useFetchPokemons = () => {
     useEffect(() => {
         const pokemonDataCacheKey = "pokemonData";
         const variantsCacheKey = "pokemonVariants";
+        const cacheStorageName = 'pokemonCache'; // Define the cache storage name
 
         const fetchData = async () => {
             setLoading(true);
-            const cacheStorage = await caches.open('pokemonCache'); // Open/Create a cache store
+            const cacheStorage = await caches.open(cacheStorageName); // Open/Create a cache store
             const cachedVariantsResponse = await cacheStorage.match(variantsCacheKey);
             let data;
             let isNewData = false;
 
             if (cachedVariantsResponse) {
-                let cachedVariants = await cachedVariantsResponse.json();
-                // Ensure keys are assigned after loading from cache
-                cachedVariants = cachedVariants.map(variant => {
+                const cachedVariants = await cachedVariantsResponse.json();
+                // Reassign keys and preload images after loading from cache
+                cachedVariants.forEach(variant => {
                     const key = determinePokemonKey(variant);
-                    variant.pokemonKey = key; // Assign key
-                    return variant;
+                    variant.pokemonKey = key; // Reassign key
+                    preloadImage(variant.currentImage, key); // Ensure images are preloaded
+                    if (variant.type_1_icon) {
+                        preloadImage(variant.type_1_icon, variant.type_1_icon);
+                    }
+                    if (variant.type_2_icon) {
+                        preloadImage(variant.type_2_icon, variant.type_2_icon);
+                    }
                 });
                 setVariants(cachedVariants);
                 setLoading(false);
@@ -51,12 +58,10 @@ const useFetchPokemons = () => {
             const generatedVariants = createPokemonVariants(data);
             console.log('Variants:', generatedVariants);
 
-            // Assign keys and manage other properties
             generatedVariants.forEach(variant => {
                 const key = determinePokemonKey(variant);
                 variant.pokemonKey = key; // Ensure key is assigned
-                const imageUrl = variant.currentImage;
-                preloadImage(imageUrl, key);
+                preloadImage(variant.currentImage, key);
                 initializeOrUpdateOwnershipData(key, isNewData);
                 // Preload type icons if they exist and are not already loaded
                 if (variant.type_1_icon) {
@@ -67,6 +72,7 @@ const useFetchPokemons = () => {
                 }
             });
 
+            await cacheStorage.put(variantsCacheKey, new Response(JSON.stringify(generatedVariants)));
             console.log("Current Pokémon Ownership Status:", JSON.parse(localStorage.getItem(ownershipDataCacheKey)));
             cache.set(variantsCacheKey, generatedVariants);
             setVariants(generatedVariants);
