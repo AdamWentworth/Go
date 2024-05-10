@@ -1,6 +1,6 @@
 // AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { logoutUser, updateUserDetails as updateUserService } from '../components/Authentication/services/authService'; // Adjust path as necessary
+import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService } from '../components/Authentication/services/authService';
 
 const AuthContext = createContext();
 
@@ -41,8 +41,6 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await updateUserService(userId, userData);
       const updatedData = response.data;  // Assuming the response structure is { success: true, data: {...} }
-      console.log(updatedData);
-
       if (response.success) {
         setUser(updatedData);  // Update the user state with the new data
         localStorage.setItem('user', JSON.stringify(updatedData)); // Optionally update local storage
@@ -55,11 +53,20 @@ export const AuthProvider = ({ children }) => {
       console.error('Error updating user details:', error);
       return { success: false, error: error.message }; // Return an error object
     }
-  };  
+  };
+
+  const deleteAccount = async (userId) => {
+    try {
+        await deleteAccountService(userId);
+        logout(); // logout the user after deleting the account
+    } catch (error) {
+        throw error;
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, login, logout, updateUserDetails }}>
-      {children}
+    <AuthContext.Provider value={{ user, isLoggedIn, login, logout, updateUserDetails, deleteAccount }}>
+        {children}
     </AuthContext.Provider>
-  );
+);
 };

@@ -1,12 +1,13 @@
 // Login.jsx
-
 import React, { useState } from 'react';
 import LoginForm from './FormComponents/LoginForm';
 import SuccessMessage from './SuccessMessage';
 import useForm from './hooks/useForm';
 import { loginUser } from './services/authService';
 import './Login.css';
-import { useAuth } from '../../contexts/AuthContext'; // Import useAuth
+import { useAuth } from '../../contexts/AuthContext';
+import { toast, ToastContainer } from 'react-toastify'; // Import toast and ToastContainer
+import 'react-toastify/dist/ReactToastify.css'; // Import toastify CSS
 
 function Login() {
   const { values, errors, handleChange, handleSubmit } = useForm({
@@ -14,12 +15,12 @@ function Login() {
     password: ''
   }, onSubmit, 'login');
   const [feedback, setFeedback] = useState('');
+  const [isSuccessful, setIsSuccessful] = useState(false); // State to manage if login was successful
   const { login } = useAuth(); // Get login function from context
 
   function onSubmit(formValues) {
     loginUser(formValues)
       .then(response => {
-        // Assuming the API sends back the user data and token as part of the response data object
         const { email, username, pokemonGoName, trainerCode, user_id, token, allowLocation, country, city } = response;
         const user = {
           email,
@@ -33,22 +34,26 @@ function Login() {
         };
 
         login(user, token); // Pass user and token to login function
+        setIsSuccessful(true);
         setFeedback('Successfully Logged in');
       })
       .catch(error => {
         const errorMessage = error.response?.data?.message || 'Please check your username and password and try again.';
-        setFeedback('Login failed: ' + errorMessage);
+        toast.error('Login failed: ' + errorMessage); // Use toast for error
+        setIsSuccessful(false); // Ensure the success message does not display
       });
-  } 
+  }
 
   return (
     <div>
-      {feedback && (
-        <SuccessMessage mainMessage={feedback} detailMessage={feedback.startsWith('Successfully') ? "You are now successfully logged in!" : ""} />
+      <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      {isSuccessful && (
+        <SuccessMessage mainMessage={feedback} detailMessage="You are now successfully logged in!" />
       )}
-      {!feedback && <LoginForm values={values} errors={errors} onChange={handleChange} onSubmit={handleSubmit} />}
+      {!isSuccessful && <LoginForm values={values} errors={errors} onChange={handleChange} onSubmit={handleSubmit} />}
     </div>
   );
 }
 
 export default Login;
+

@@ -166,4 +166,20 @@ router.put('/update/:id', async (req, res) => {
     }    
 });
 
+router.delete('/delete/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const user = await User.findByIdAndDelete(id);
+        if (!user) {
+            logger.error(`Delete failed: User not found with ID: ${id}`);
+            return res.status(404).json({ message: 'User not found' });
+        }
+        logger.info(`User ${id} deleted successfully`);
+        res.status(200).json({ message: 'User deleted successfully' });
+    } catch (err) {
+        logger.error(`Unhandled exception on user delete for ID: ${id}: ${err}`);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
 module.exports = router;

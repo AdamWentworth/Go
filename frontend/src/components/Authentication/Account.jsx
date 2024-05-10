@@ -7,7 +7,7 @@ import './Account.css';
 import { toast } from 'react-toastify';
 
 const Account = () => {
-    const { user, updateUserDetails, logout } = useAuth(); // Ensure you destruct `logout` from useAuth
+    const { user, updateUserDetails, logout, deleteAccount } = useAuth(); // Ensure you destruct `logout` from useAuth
     const navigate = useNavigate();
     const [feedback, setFeedback] = useState('');
     const [errors, setErrors] = useState({});
@@ -41,8 +41,23 @@ const Account = () => {
         }
     };
 
-    const handleDeleteAccount = () => {
-        console.log("Account deletion not implemented yet.");
+    const handleDeleteAccount = async () => {
+        // Confirm before deleting the account
+        if (window.confirm("Are you sure you want to delete your account and all its data?")) {
+            try {
+                await deleteAccount(user.user_id);
+                logout();
+                navigate('/login', { replace: true });
+                setTimeout(() => {
+                    toast.success('Account deleted successfully');
+                }, 250); // Delay the toast until after the navigation
+            } catch (error) {
+                toast.error('Failed to delete account: ' + error.message);
+            }
+        } else {
+            // If user cancels, you might want to handle it optionally
+            toast.info('Account deletion canceled');
+        }
     };
 
     return (

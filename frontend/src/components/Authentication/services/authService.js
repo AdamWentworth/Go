@@ -60,6 +60,16 @@ export const updateUserDetails = async (userId, userData) => {
   }
 };
 
+export const deleteAccount = async (userId) => {
+  try {
+      const response = await axios.delete(`${process.env.REACT_APP_AUTH_API_URL}/auth/delete/${userId}`);
+      return response.data;
+  } catch (error) {
+      console.error('Error deleting account:', error);
+      throw error;
+  }
+};
+
 /**
  * Any other authentication-related API calls can be added here, such as:
  * - Logout
