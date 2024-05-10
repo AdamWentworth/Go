@@ -9,7 +9,6 @@ import { toast } from 'react-toastify';
 const Account = () => {
     const { user, updateUserDetails, logout, deleteAccount } = useAuth(); // Ensure you destruct `logout` from useAuth
     const navigate = useNavigate();
-    const [feedback, setFeedback] = useState('');
     const [errors, setErrors] = useState({});
 
     if (!user) {
@@ -69,7 +68,6 @@ const Account = () => {
                 onDeleteAccount={handleDeleteAccount}
                 errors={errors}
             />
-            {feedback && <div className="success-message">{feedback}</div>}
         </div>
     );
 };
