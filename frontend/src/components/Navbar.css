@@ -53,11 +53,24 @@
 
 @media (max-width: 480px) {
     .navbar {
-        display: flex; /* Ensure navbar uses flexbox */
+        display: flex; /* Continue using flexbox */
         flex-direction: column; /* Stack items vertically */
         align-items: center; /* Center items horizontally in the container */
+        justify-content: center; /* Center items vertically */
         text-align: center; /* Center text for all child elements */
-        width: 100%; /* Optional: Ensure navbar takes full width */
+        width: 100%; /* Ensure navbar takes full width */
+        padding: 10px 0; /* Adjust padding to ensure spacing is uniform */
+    }
+    .logo-container {
+        align-self: center; /* Center logo specifically */
+        margin: 0px 0; /* Adjust margins to provide space around the logo */
+        width: 100%; /* Full width to ensure no horizontal scrolling */
+        display: flex; /* Use flex to help center the image */
+        justify-content: center; /* Center the image horizontally */
+    }
+
+    .logo-container img {
+        margin: 0 auto; /* Center the image within the logo container */
     }
 
     .navbar h1 {
@@ -92,6 +105,18 @@
         flex-direction: column;
     }
 
+    .logo-container {
+        align-self: center; /* Center logo specifically */
+        margin: 0px 0; /* Adjust margins to provide space around the logo */
+        width: 100%; /* Full width to ensure no horizontal scrolling */
+        display: flex; /* Use flex to help center the image */
+        justify-content: center; /* Center the image horizontally */
+    }
+
+    .logo-container img {
+        margin: 0 auto; /* Center the image within the logo container */
+    }
+
     .navbar h1 {
        font-size: smaller;
     }
@@ -118,6 +143,18 @@
 @media (min-width: 768px) and (max-width: 1023px){
     .navbar {
         flex-direction: column;
+    }
+
+    .logo-container {
+        align-self: center; /* Center logo specifically */
+        margin: 0px 0; /* Adjust margins to provide space around the logo */
+        width: 100%; /* Full width to ensure no horizontal scrolling */
+        display: flex; /* Use flex to help center the image */
+        justify-content: center; /* Center the image horizontally */
+    }
+
+    .logo-container img {
+        margin: 0 auto; /* Center the image within the logo container */
     }
 
     .navbar h1 {

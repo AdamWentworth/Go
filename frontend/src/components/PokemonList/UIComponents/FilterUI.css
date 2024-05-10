@@ -1,0 +1,157 @@
+/*FilterUI.css*/
+
+.header-section.filter-section {
+    flex-grow: 3;  /* Inherit this to maintain layout consistency */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.header-section.filter-section .button-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Creates two columns */
+    gap: 5px; /* Space between buttons */
+    width: 100%; /* Ensure the container takes full width */
+}
+
+.header-section.filter-section button {
+    width: 100%; /* Buttons take full width of their grid cell */
+    justify-content: center; /* Center content inside the button */
+}
+
+.header-section.filter-section button {
+    background-color: #ccc; /* Non-shiny color */
+    border: none;
+    outline: none;
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    border-radius: 15px; /* Adjust as per requirement */
+    transition: background-color 0.3s ease; /* Optional: for a smooth color transition */
+}
+
+.header-section.filter-section img {
+    width: 24px;
+    height: 24px;
+}
+
+.header-section.filter-section .shiny-button.active,
+.header-section.filter-section .shiny-button.active:hover, /* For hover state as well */
+.header-section.filter-section .costume-button.active,
+.header-section.filter-section .costume-button.active:hover, /* For hover state as well */
+.header-section.filter-section .shadow-button.active,
+.header-section.filter-section .shadow-button.active:hover /* For hover state as well */ {
+    transition: background-color 0.3s ease; /* Ensure smooth color transition for all states */
+}
+
+/* Specific hover colors for active buttons */
+.header-section.filter-section .shiny-button.active {
+    background-color: gold;
+}
+
+.header-section.filter-section .costume-button.active {
+    background-color: cyan;
+}
+
+.header-section.filter-section .shadow-button.active {
+    background-color: rgb(182, 92, 182);
+}
+
+.header-section.filter-section .shiny-button:hover {
+    background-color: #ffcc00; /* Slightly darker shiny color */
+}
+
+.header-section.filter-section .costume-button:hover {
+    background-color: rgb(58, 216, 216); /* Slightly darker shiny color */
+}
+
+.header-section.filter-section .shadow-button:hover {
+    background-color: rgb(152, 0, 152); /* Slightly darker shiny color */
+}
+
+/* Specific hover colors for active buttons */
+.header-section.filter-section .shiny-button.active:hover {
+    background-color: #ffcc00; /* Slightly darker shiny color */
+}
+
+.header-section.filter-section .costume-button.active:hover {
+    background-color: rgb(58, 216, 216); /* Slightly darker shiny color */
+}
+
+.header-section.filter-section .shadow-button.active:hover {
+    background-color: rgb(152, 0, 152); /* Slightly darker shiny color */
+}
+
+
+@media (max-width: 480px) {
+    .header-section.filter-section img {
+        width: 20px;
+        height: 20px;
+    }
+    .header-section.filter-section .show-all-button{
+        font-size: 10px;
+    }
+    
+    .header-section.filter-section button {
+        padding: 3px; /* Adjust padding */
+    }
+    .header-section.filter-section {
+        margin-right: 5px;
+        margin-left: 5px;
+    }
+}
+
+@media (min-width: 481px) {
+
+    .header-section.filter-section {
+        flex-grow: 0;  /* Prevent it from taking unnecessary extra space */
+    }    
+    .header-section.filter-section .show-all-button{
+        font-size: 11px;
+    }
+    .header-section.filter-section button {
+        padding: 2px; /* Adjust padding */
+        padding-left: 8px;
+        padding-right: 8px
+    }
+    .header-section.filter-section {
+        margin-right: 0px;
+        margin-left: 10px;
+    }
+    .header-section.filter-section img {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .header-section.filter-section {
+        margin-right: 0px;
+        margin-left: 10px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .header-section.filter-section img {
+        width: 32px;
+        height: 32px;
+    }
+    .header-section.filter-section {
+        margin-right: 0px;
+        margin-left: 10px;
+    }
+
+    .header-section.filter-section button {
+        padding: 8px; /* Adjust padding */
+        padding-left: 14px;
+        padding-right: 14px
+    }
+    .header-section.filter-section .button-container {
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 10px; /* Space between buttons */
+    }
+    .header-section.filter-section .show-all-button{
+        font-size: 14px;
+    }
+}

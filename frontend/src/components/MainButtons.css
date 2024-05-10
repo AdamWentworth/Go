@@ -60,6 +60,12 @@
         height: auto; /* Let height adjust based on content */
         margin-top: 0px;
     }
+    .mainButtonsContainerNavbar .mainButton {
+        font-size: 1rem;  /* Smaller font size for compact appearance */
+        padding: 0.5rem 1rem;  /* Reduce padding to make buttons smaller */
+        border-radius: 5px;
+        margin-bottom: -10px;  /* Optionally adjust border-radius for aesthetic consistency */
+    }
     .mainButton {
         font-size: 2rem; /* Adjust font size for smaller screens */
     }
@@ -74,6 +80,10 @@
         height: auto; /* Let height adjust based on content */
         margin-top: 0px;
     }
+    .mainButtonsContainerNavbar .mainButton {
+        border-radius: 5px;
+        margin-bottom: -10px;  /* Optionally adjust border-radius for aesthetic consistency */
+    }
     .mainButton {
         font-size: 3rem; /* Adjust font size for smaller screens */
     }
@@ -87,6 +97,10 @@
         align-items: center; /* Center align on the Y axis */
         flex-direction: row; /* Ensure buttons are in a row */
     }
+    .mainButtonsContainerNavbar .mainButton {
+        border-radius: 5px;
+        margin-bottom: -10px;  /* Optionally adjust border-radius for aesthetic consistency */
+    }
     .mainButton {
         font-size: 3rem;  /* Increase font size */
         padding: 2.55rem 3rem;
@@ -99,6 +113,13 @@
         align-items: center; /* Center align on the Y axis */
         flex-direction: row; /* Ensure buttons are in a row */
     }
+
+    .mainButtonsContainerNavbar .mainButton {
+        font-size: 1rem;  /* Smaller font size for compact appearance */
+        padding: 0.5rem 1rem;  /* Reduce padding to make buttons smaller */
+        border-radius: 5px;
+    }
+    
     .mainButton {
         font-size: 4rem;  /* Increase font size */
         padding: 3rem 4rem;

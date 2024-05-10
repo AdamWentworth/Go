@@ -2,8 +2,8 @@
 
 .header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between; /* Ensures space distribution between elements */
     padding: 10px 20px;
     background-color: #333;
     color: white;
@@ -13,49 +13,104 @@
     box-shadow: 0px 4px 2px -2px rgb(168, 168, 168);
 }
 
-.header::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background-color: rgb(168, 168, 168);
+/* Dynamically adjust the header when collectUI is shown */
+.header.expand-collect {
+    justify-content: flex-start; /* Align items to the start to make space */
 }
 
-.search-ui, .collect-section {
-    flex: 1;
-    align-items: center;
-    flex-direction: row;
+.header.expand-collect .collect-ui-toggle,
+.header.expand-collect .filter-ui,
+.header.expand-collect .search-ui {
+    flex-shrink: 0; /* Prevent these items from shrinking */
+}
+
+.header.expand-collect .toggle-button {
+    margin-right: auto; /* Pushes all non-critical elements to the right */
+}
+
+.toggle-button, .collect-ui-toggle {
+    background: none;
+    border: 1px solid white;
+    color: white;
+    cursor: pointer;
+    padding: 5px 10px; /* Adjust padding to save space */
+    flex-shrink: 0; /* Prevents the button from shrinking */
 }
 
 .search-ui {
-    justify-content: flex-start;
-    padding-right: 10px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0; /* Allows this section to shrink beyond its content size */
+    margin-right: 10px; /* Ensure some space on the right */
 }
 
-.collect-section {
-    justify-content: flex-end;
-    padding-left: 10px;
+.filter-ui, .collect-ui {
+    position: absolute;
+    top: 100%; /* Position directly below the header */
+    width: 100%;
+    transition: transform 0.3s ease-in-out;
+    will-change: transform; /* Optimizes the animation performance */
+    background-color: #333; /* Match the header background */
+    color: white; /* Match the header text color */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    z-index: 1000;
+    padding: 10px;
+}
+
+/* Slide in from the left */
+.filter-ui {
+    left: 0;
+    transform: translateX(-100%); /* Start hidden to the left */
+}
+
+/* Slide in from the right */
+.collect-ui {
+    right: 0;
+    transform: translateX(100%); /* Start hidden to the right */
+}
+
+/* Modify transform when shown */
+.show-filter .filter-ui {
+    transform: translateX(0); /* Slide in to view */
+}
+
+.show-collect .collect-ui {
+    transform: translateX(0); /* Slide in to view */
+}
+
+.filter-section, .collect-section {
+    flex: 3;  /* each takes up 3/11th of the space */
+}
+
+.search-section {
+    flex: 5;  /* takes up 5/11ths of the space */
 }
 
 .pokemon-container {
     background-color: #111;
     display: grid;
-    grid-template-columns: repeat(9, 1fr);
+    grid-template-columns: repeat(9, 1fr); 
     gap: 16px;
     padding: 20px;
     box-sizing: border-box;
     margin-left: auto;
     margin-right: auto;
-    width: calc(100vw - 40px);
+    width: 100%; /* Adjusts to full width of the viewport */
+}
+
+/* Ensure CollectUI is always visible and positioned correctly */
+.collect-ui {
+    z-index: 1010; /* Higher than other elements */
+    position: absolute; /* Position it over other elements if needed */
+    right: 0; /* Align to the right side */
+    width: 100%; /* Full width to cover all content */
 }
 
 @media (max-width: 480px) {
     .pokemon-container {
         grid-template-columns: repeat(3, 1fr);
         padding: 5px;
-        width: calc(100vw - 5px);
+        width: calc(100vw - 20px);
         gap: 6px;
     }
     .type-icons img {
@@ -67,31 +122,25 @@
         margin-bottom: 2px;
     }
 
-    .search-ui input, 
-    .search-ui button {
+    .search-section input, 
+    .search-section button {
         font-size: 10px; /* Reduce font size to decrease element size */
     }
 
-    .search-ui input {
+    .search-section input {
         width: 50%; /* Reduce input width */
         margin-right: 2px; /* Adjust spacing between input and buttons */
         padding: 2px 5px; /* Reduce padding inside input */
     }
 
-    .search-ui button {
+    .search-section button {
         margin: 0 2px; /* Reduce space between buttons */
         padding: 2px; /* Reduce button padding to decrease size */
     }
 
-    .search-ui button img {
+    .search-section button img {
         width: 15px; /* Reduce image/icon size */
         height: 15px;
-    }
-
-    /* Ensure the collect section is not pushed off screen */
-    .collect-section {
-        padding-left: 2px;
-        justify-content: center; /* Center the content in the available space */
     }
 
     /* Adjust the header's after pseudo-element to act as a visual divider */
@@ -99,22 +148,18 @@
         width: 1px; /* Make the divider thinner on smaller screens */
         left: calc(50% - 1px); /* Ensure the divider stays centered */
     }
+
+    .header.expand-collect .toggle-button:not(.collect-ui-toggle) {
+        display: none; /* Hide non-critical toggle buttons on smaller screens */
+    }
 }
 
 @media (min-width: 481px) and (max-width: 767px){
     .pokemon-container {
         grid-template-columns: repeat(6, 1fr);
         padding: 5px;
-        width: calc(100vw - 3px); /* Adjust width if necessary */
+        width: calc(100vw - 20px); /* Adjust width if necessary */
         gap: 6px;
-    }
-    .type-icons img {
-        width: 20px;
-        height: 20px;
-    }
-    .header {
-        padding: 5px 10px;
-        margin-bottom: 2px;
     }
 
     /* Adjustments for search UI in the pokemon list context */
@@ -150,18 +195,18 @@
         width: 1px; /* Make the divider thinner on smaller screens */
         left: calc(50% - 1px); /* Ensure the divider stays centered */
     }
+    .header.expand-collect .toggle-button:not(.collect-ui-toggle) {
+        display: none; /* Hide non-critical toggle buttons on smaller screens */
+    }
 }
+
 
 @media (min-width: 768px) and (max-width: 1023px) {
     .pokemon-container {
         grid-template-columns: repeat(6, 1fr);
         padding: 10px;
-        width: calc(100vw - 3px); /* Adjust width if necessary */
+        width: calc(100vw - 20px); /* Adjust width if necessary */
         gap: 9px;
-    }
-    .header {
-        padding: 10px 15px; /* Slightly increased padding */
-        margin-bottom: 5px;
     }
 
     .search-ui input, 
@@ -197,16 +242,21 @@
     }
 }
 
-@media (min-width: 1024px) and (max-width: 1439px) {
+
+@media (min-width: 1024px) {
+    .filter-ui, .collect-ui {
+        transform: translateX(0); /* Always show UI elements */
+    }
+
+    /* Hide toggle buttons as they are not needed */
+    .toggle-button, .collect-ui-toggle {
+        display: none;
+    }
     .pokemon-container {
         grid-template-columns: repeat(9, 1fr);
         padding: 10px;
-        width: calc(99vw); /* Adjust width if necessary */
+        width: calc(100vw - 10px); /* Adjust width if necessary */
         gap: 9px;
-    }
-    .header {
-        padding: 5px 20px; /* Further increased padding */
-        margin-bottom: 5px;
     }
 
     .search-ui input, 
@@ -227,141 +277,9 @@
         height: 25px;
     }
 
-    /* Adjust the collect section for laptop size */
-    .collect-section {
-        padding-left: 6px;
-        justify-content: center; /* Keep the content centered */
-    }
-
     /* Adjust the header's after pseudo-element to act as a visual divider */
     .header::after {
         width: 2px; /* Ensure the divider is visible */
         left: 50%; /* Ensure the divider stays centered */
-    }
-}
-
-@media (min-width: 1440px) and (max-width: 1919px) {
-    .pokemon-container {
-        grid-template-columns: repeat(9, 1fr);
-        padding: 10px;
-        width: calc(100vw - 20px); /* Adjust width if necessary */
-    }
-    .header {
-        padding: 0px 30px; /* Slightly increased padding */
-        margin-bottom: 5px;
-    }
-
-    .search-ui input, 
-    .search-ui button {
-        font-size: 16px; /* Slightly increased font size */
-    }
-
-    .search-ui input {
-        padding: 8px 12px; /* Slightly increased padding inside input */
-    }
-
-    .search-ui button {
-        padding: 8px 12px; /* Slightly increased button padding */
-    }
-
-    .search-ui button img {
-        width: 30px; /* Slightly increased image/icon size */
-        height: 30px;
-    }
-
-    /* Adjust the collect section for larger screens */
-    .collect-section {
-        padding-left: 8px;
-        justify-content: center; /* Keep the content centered */
-    }
-
-    /* Adjust the header's after pseudo-element to act as a visual divider */
-    .header::after {
-        width: 2px; /* Ensure the divider is visible */
-        left: 50%; /* Ensure the divider stays centered */
-    }
-}
-
-@media (min-width: 1920px) and (max-width: 2559px){
-    .pokemon-container {
-        grid-template-columns: repeat(9, 1fr);
-        padding: 10px;
-        width: calc(100vw - 20px); /* Adjust width if necessary */
-    }
-    .header {
-        padding: 0px 30px; /* Slightly increased padding */
-        margin-bottom: 5px;
-    }
-
-    .search-ui input, 
-    .search-ui button {
-        font-size: 16px; /* Slightly increased font size */
-    }
-
-    .search-ui input {
-        padding: 8px 12px; /* Slightly increased padding inside input */
-    }
-
-    .search-ui button {
-        padding: 8px 12px; /* Slightly increased button padding */
-    }
-
-    .search-ui button img {
-        width: 30px; /* Slightly increased image/icon size */
-        height: 30px;
-    }
-
-    /* Adjust the collect section for larger screens */
-    .collect-section {
-        padding-left: 8px;
-        justify-content: center; /* Keep the content centered */
-    }
-
-    /* Adjust the header's after pseudo-element to act as a visual divider */
-    .header::after {
-        width: 2px; /* Ensure the divider is visible */
-        left: 50%; /* Ensure the divider stays centered */
-    }
-}
-
-@media (min-width: 2560px) {
-    .pokemon-container {
-        grid-template-columns: repeat(9, 1fr);
-        padding: 10px;
-        width: calc(100vw - 20px); /* Adjust width if necessary */
-        gap: 10px
-    }
-    .header {
-        padding: 10px 40px; /* Increase padding for larger header */
-    }
-
-    .search-ui input, 
-    .search-ui button {
-        font-size: 18px; /* Increase font size for better legibility */
-    }
-
-    .search-ui input {
-        padding: 10px 15px; /* Increase padding inside input */
-    }
-
-    .search-ui button {
-        padding: 10px 15px; /* Increase button padding for larger buttons */
-    }
-
-    .search-ui button img {
-        width: 35px; /* Increase image/icon size for better visibility */
-        height: 35px;
-    }
-
-    /* Adjust the collect section for very large screens */
-    .collect-section {
-        padding-left: 10px;
-        justify-content: center; /* Ensure content is centered */
-    }
-
-    /* Adjust the header's after pseudo-element to act as a visual divider */
-    .header::after {
-        width: 2px; /* Maintain divider thickness */
-        left: 50%; /* Ensure the divider is perfectly centered */
     }
 }

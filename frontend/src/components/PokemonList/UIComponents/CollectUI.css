@@ -1,0 +1,215 @@
+/* collectUI.css */
+.header-section.collect-section {
+  flex-grow: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.collect-section .button-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Creates three columns */
+  grid-template-rows: repeat(2, 1fr); /* Two rows */
+  gap: 5px; /* Space between buttons */
+  align-items: center;
+  justify-items: stretch;
+}
+
+.header-section.collect-section button {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center content within buttons */
+  border-radius: 15px;
+  transition: background-color 0.3s ease;
+  width: 100%; /* Ensure buttons fill the cell */
+  height: 100%; /* Ensure buttons fill the cell */
+}
+
+.top-button {
+  grid-column: 1; /* Place in the first column */
+  grid-row: 1; /* First row */
+}
+
+.fast-select-button {
+  grid-column: 1; /* Place in the first column */
+  grid-row: 2; /* Second row */
+}
+
+.filter-button.Unowned {
+  grid-row: 2; /* Second row */
+  grid-column: 2; /* Second column */
+}
+
+.filter-button.Wanted {
+  grid-column: 3; /* Second column */
+  grid-row: 2; /* Second row */
+}
+
+.filter-button.Owned {
+  grid-row: 1; /* Second row */
+  grid-column: 2; /* Third column */
+}
+
+.filter-button.Trade {
+  grid-column: 3; /* Third column */
+  grid-row: 1; /* Second row */
+}
+
+.header-section.collect-section img {
+    width: 24px;
+    height: 24px;
+}
+  
+/* Remove span for fast-select-button and top-button */
+.fast-select-button, .top-button {
+  background-color: #ccc; /* Default non-active color */
+}
+  
+/* Original colors */
+.filter-button.Unowned {
+  background-color: #ccc; /* Grey */
+}
+
+.filter-button.Wanted {
+  background-color: #F44336; /* Red */
+}
+
+.filter-button.Owned {
+  background-color: #2196F3; /* Blue */
+}
+
+.filter-button.Trade {
+  background-color: #4CAF50; /* Green */
+}
+
+/* Hover states */
+.filter-button.Unowned:hover,
+.filter-button.Unowned.active {
+  background-color: #858585; /* Darker Grey */
+}
+
+.filter-button.Wanted:hover,
+.filter-button.Wanted.active {
+  background-color: #be2c2c; /* Darker Red */
+}
+
+.filter-button.Owned:hover,
+.filter-button.Owned.active {
+  background-color: #176bbe; /* Darker Blue */
+}
+
+.filter-button.Trade:hover,
+.filter-button.Trade.active {
+  background-color: #327e36; /* Darker Green */
+}
+
+/* Non-selected state */
+.filter-button.non-selected {
+  background-color: #ccc; /* Stale Grey */
+  color: black;
+}
+
+.fast-select-button.active {
+  background-color: #fff01c; /* Neon yellow */
+}
+
+@media (max-width: 480px) {
+    .header-section.collect-section .top-button {
+      font-size: 10px; /* Adjust font size as necessary */
+    }
+    .collect-section .filter-button {
+      font-size: 10px; /* Adjust font size as necessary */
+      padding: 3px; /* Adjust padding */
+    }
+    .header-section.collect-section {
+      margin-right: 5px;
+      margin-left: 5px;
+  }
+}
+
+@media (min-width: 481px) {
+  .header-section.collect-section {
+    flex-grow: 0;  /* Prevent it from taking unnecessary extra space */
+  }  
+  .header-section.collect-section .top-button {
+    font-size: 12px; /* Adjust font size as necessary */
+    padding: 2px;
+    padding-left: 8px;
+    padding-right: 8px
+  }
+  .collect-section .filter-button {
+    font-size: 12px; /* Adjust font size as necessary */
+  }
+  .header-section.collect-section {
+    margin-right: 10px;
+    margin-left: 0px;
+  }
+  .header-section.collect-section img {
+    width: 28px;
+    height: 28px;
+}
+}
+@media (min-width: 1024px) {
+  
+.top-button {
+  grid-column: 2; /* Place in the first column */
+  grid-row: 2/6; /* First row */
+}
+
+.fast-select-button {
+  grid-column: 1; /* Place in the first column */
+  grid-row: 2/6; /* Second row */
+}
+
+.filter-button.Unowned {
+  grid-row: 4/8; /* Second row */
+  grid-column: 3; /* Second column */
+}
+
+.filter-button.Wanted {
+  grid-column: 4; /* Second column */
+  grid-row: 4/8; /* Second row */
+}
+
+.filter-button.Owned {
+  grid-row: 1/4; /* Second row */
+  grid-column: 3; /* Third column */
+}
+
+.filter-button.Trade {
+  grid-column: 4; /* Third column */
+  grid-row: 1/4; /* Second row */
+}
+.header-section.collect-section img {
+  width: 40px;
+  height: 40px;
+  padding: 5px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.collect-section .filter-button {
+  font-size: 14px;
+  padding: 10px;
+}
+.collect-section .button-container {
+  column-gap: 10px; /* Sets the horizontal gap between grid items */
+  grid-template-rows: 0;
+  margin-bottom: -5px;
+}
+.header-section.collect-section .top-button {
+ padding: 10px;
+ padding-left: 15px;
+ padding-right: 15px;
+ margin-top: 10px;
+ font-size: 14px;
+}
+.header-section.collect-section .fast-select-button {
+  margin-top: 10px;
+}
+.header-section.collect-section button {
+  height: auto;
+}
+}

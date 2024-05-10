@@ -1,11 +1,13 @@
 //pokemonList.jsx
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import './PokemonList.css';
 import PokemonOverlay from './PokemonOverlay'; 
 import useSearchFilters from './hooks/useSearchFilters'; // Import the search filters hook
-import SearchUI from './SearchUI';
-import CollectUI from './CollectUI';
+import FilterUI from './UIComponents/FilterUI';
+import SearchUI from './UIComponents/SearchUI';
+import CollectUI from './UIComponents/CollectUI';
+import SortOverlay from './SortOverlay';
 import PokemonCard from './PokemonCard';
 import useFetchPokemons from './hooks/useFetchPokemons';
 import useSortedPokemons from './hooks/useSortedPokemons';
@@ -22,6 +24,13 @@ function PokemonList() {
 
     // State for Sort Mode
     const [sortMode, setSortMode] = useState(0);
+
+    // States for showing the Filters and Collect UI features
+    const [showFilterUI, setShowFilterUI] = useState(false);
+    const [showCollectUI, setShowCollectUI] = useState(false);
+
+    // State for noticing window width
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
     // Pokemon who by default will only show 1 of many forms
     const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
@@ -99,32 +108,58 @@ function PokemonList() {
     const toggleSortMode = useCallback(() => {
         setSortMode((currentMode) => (currentMode + 1) % 3);
     }, []);
-    
+
+    // Effect to handle window resizing
+    useEffect(() => {
+        const handleResize = () => {
+            setWindowWidth(window.innerWidth);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+
+    // Automatically set UI visibility based on window width
+    useEffect(() => {
+        const isWide = windowWidth >= 1024;
+        setShowFilterUI(isWide); // Always show filters on wide screens
+        setShowCollectUI(isWide); // Always show collect UI on wide screens
+    }, [windowWidth]);    
      
     return (
         <div>
-            <div className="header">
-                <div className="search-ui">
+            <div className={`header ${showCollectUI ? 'expand-collect' : ''}`}>
+                <button className="toggle-button" onClick={() => setShowFilterUI(prev => !prev)}>
+                    {showFilterUI ? 'Hide' : 'Filters'}
+                </button>
+                {showFilterUI && (
+                    <FilterUI
+                        isShiny={isShiny}
+                        toggleShiny={toggleShiny}
+                        showCostume={showCostume}
+                        toggleCostume={toggleCostume}
+                        showShadow={showShadow}
+                        toggleShadow={toggleShadow}
+                        toggleShowAll={toggleShowAll}
+                    />
+                )}
                 <SearchUI
                     searchTerm={searchTerm}
                     onSearchChange={setSearchTerm}
-                    isShiny={isShiny}
-                    toggleShiny={toggleShiny}
-                    showCostume={showCostume}
-                    toggleCostume={toggleCostume}
-                    showShadow={showShadow}
-                    toggleShadow={toggleShadow}
                     showEvolutionaryLine={showEvolutionaryLine}
                     toggleEvolutionaryLine={toggleEvolutionaryLine}
-                    sortMode={sortMode} // Pass sortMode to SearchUI
-                    toggleSortMode={toggleSortMode} // Pass toggleSortMode to SearchUI
-                    toggleShowAll={toggleShowAll}
                 />
-                </div>
-                <CollectUI 
-                    statusFilter={ownershipFilter} 
-                    setStatusFilter={updateOwnershipFilter} 
-                />
+                {showCollectUI && (
+                    <CollectUI 
+                        statusFilter={ownershipFilter} 
+                        setStatusFilter={updateOwnershipFilter} 
+                    />
+                )}
+                <button className="toggle-button collect-ui-toggle" onClick={() => setShowCollectUI(prev => !prev)}>
+                    {showCollectUI ? 'Hide' : 'Collect'}
+                </button>
             </div>
 
             <div className="pokemon-container">
@@ -156,6 +191,7 @@ function PokemonList() {
                     </>
                 )}
             </div>
+            <SortOverlay sortMode={sortMode} toggleSortMode={toggleSortMode} /> {/* Add this line */}
         </div>
     );
 }
