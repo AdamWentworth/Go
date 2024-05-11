@@ -1,10 +1,27 @@
 // useSortManager.js
 import useRecentPokemons from './sort/useRecentPokemons';
+import useNumberPokemons from './sort/useNumberPokemons';
+import useHPPokemons from './sort/useHPPokemons';
+import useNamePokemons from './sort/useNamePokemons';  // Import the new sorting hook
 
-const useSortManager = (displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll }) => {
-    return useRecentPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll });
+const useSortManager = (displayedPokemons, sortType, sortMode, { isShiny, showShadow, showCostume, showAll }) => {
+    switch (sortType) {
+        case 'releaseDate':
+            return useRecentPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll });
+        case 'number':
+            return useNumberPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll });
+        case 'hp':
+            return useHPPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll });
+        case 'name':
+            return useNamePokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll });
+        default:
+            return displayedPokemons;  // Return unsorted if sortType is unrecognized
+    }
 };
 
 export default useSortManager;
+
+
+
 
 

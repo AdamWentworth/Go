@@ -22,8 +22,9 @@ function PokemonList() {
     // State for Evolutionary line toggle
     const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(false);
 
-    // State for Sort Mode
-    const [sortMode, setSortMode] = useState(0);
+    // State for Sort Type and Mode
+    const [sortType, setSortType] = useState('number');  // Updated to manage different sort types
+    const [sortMode, setSortMode] = useState('ascending');     // Default to 'ascending', removed 'off' mode
 
     // States for showing the Filters and Collect UI features
     const [showFilterUI, setShowFilterUI] = useState(false);
@@ -82,7 +83,7 @@ function PokemonList() {
     const displayedPokemons = useFilterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
 
     // Sort Pokemon
-    const sortedPokemons = useSortManager(displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll });
+    const sortedPokemons = useSortManager(displayedPokemons, sortType, sortMode, { isShiny, showShadow, showCostume, showAll });
 
 
     // Callbacks
@@ -191,7 +192,7 @@ function PokemonList() {
                     </>
                 )}
             </div>
-            <SortOverlay sortMode={sortMode} toggleSortMode={toggleSortMode} /> {/* Add this line */}
+            <SortOverlay sortType={sortType} setSortType={setSortType} sortMode={sortMode} setSortMode={setSortMode} />
         </div>
     );
 }
