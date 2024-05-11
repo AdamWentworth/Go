@@ -6,6 +6,27 @@ const SortOverlay = ({ sortType, setSortType, sortMode, setSortMode }) => {
     const [showSortOptions, setShowSortOptions] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
+    // Function to get image path based on sort type
+    const getImagePath = (type) => {
+        switch (type) {
+            case 'releaseDate': return '/images/sorting/recent.png';
+            case 'favorite': return '/images/sorting/favorite.png';
+            case 'number': return '/images/sorting/number.png';
+            case 'hp': return '/images/sorting/hp.png';
+            case 'name': return '/images/sorting/name.png';
+            case 'combatPower': return '/images/sorting/cp.png';
+            default: return '/images/sorting/recent.png'; // Default image
+        }
+    };
+
+    // Function to adjust the arrow icon based on the sort mode
+    const getArrowStyle = () => {
+        return { 
+            transform: sortMode === 'ascending' ? 'rotate(0deg)' : 'rotate(180deg)',
+            transition: 'transform 0.2s'
+        };
+    };
+
     const handleSortTypeChange = (newSortType) => {
         if (newSortType === 'favorite' || newSortType === 'combatPower') {
             // Handle unimplemented sort types with an error message
@@ -14,34 +35,35 @@ const SortOverlay = ({ sortType, setSortType, sortMode, setSortMode }) => {
             return;
         }
 
+        // Apply sort mode change or sort type and mode change
         if (sortType === newSortType) {
-            // Toggle between ascending and descending if the same type is clicked again
             setSortMode(sortMode === 'ascending' ? 'descending' : 'ascending');
         } else {
             setSortType(newSortType);
-            // Default to descending for HP and Release Date, ascending for others when a new sort type is selected
-            if (newSortType === 'hp' || newSortType === 'releaseDate') {
-                setSortMode('descending');
-            } else {
-                setSortMode('ascending');
-            }
+            setSortMode('ascending'); // Default to ascending when a new sort type is selected
         }
-        setShowSortOptions(false);  // Collapse the options after selection
+
+        // Close the options after a slight delay
+        setTimeout(() => setShowSortOptions(false), 500); // 500ms delay
     };
 
     return (
         <div className="sort-overlay">
             <button onClick={() => setShowSortOptions(!showSortOptions)} className="sort-button">
-                Sort: {sortType.charAt(0).toUpperCase() + sortType.slice(1)} ({sortMode})
+                <img src={getImagePath(sortType)} alt={sortType} className="sort-button-img" />
+                <img src="/images/sorting/arrow.png" alt="Sort Direction" className="sort-arrow-img" style={getArrowStyle()} />
             </button>
             {showSortOptions && (
                 <div className="sort-list">
-                    <button onClick={() => handleSortTypeChange('releaseDate')} className="sort-type-button">Release Date</button>
-                    <button onClick={() => handleSortTypeChange('favorite')} className="sort-type-button">Favorite</button>
-                    <button onClick={() => handleSortTypeChange('number')} className="sort-type-button">Number</button>
-                    <button onClick={() => handleSortTypeChange('hp')} className="sort-type-button">HP</button>
-                    <button onClick={() => handleSortTypeChange('name')} className="sort-type-button">Name</button>
-                    <button onClick={() => handleSortTypeChange('combatPower')} className="sort-type-button">Combat Power</button>
+                    {['releaseDate', 'favorite', 'number', 'hp', 'name', 'combatPower'].map((type) => (
+                        <button key={type} onClick={() => handleSortTypeChange(type)} className="sort-type-button">
+                            {type.charAt(0).toUpperCase() + type.slice(1)} 
+                            <img src={getImagePath(type)} alt={type} />
+                            {sortType === type && (
+                                <img src="/images/sorting/arrow.png" alt="Sort Direction" className="sort-arrow-img" style={getArrowStyle()} />
+                            )}
+                        </button>
+                    ))}
                 </div>
             )}
             {errorMessage && <div className="error-message">{errorMessage}</div>}
@@ -50,6 +72,4 @@ const SortOverlay = ({ sortType, setSortType, sortMode, setSortMode }) => {
 }
 
 export default SortOverlay;
-
-
 

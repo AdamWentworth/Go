@@ -3,7 +3,7 @@
     position: fixed;
     right: 20px;
     bottom: 20px;
-    z-index: 1000; /* Ensure it stays on top */
+    z-index: 1000;
 }
 
 .sort-button, .sort-type-button {
