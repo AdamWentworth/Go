@@ -10,7 +10,7 @@ import CollectUI from './UIComponents/CollectUI';
 import SortOverlay from './SortOverlay';
 import PokemonCard from './PokemonCard';
 import useFetchPokemons from './hooks/useFetchPokemons';
-import useSortedPokemons from './hooks/useSortedPokemons';
+import useSortManager from './hooks/useSortManager';
 import useFilterPokemons from './hooks/useFilterPokemons';
 import { getFilteredPokemonsByOwnership } from './utils/pokemonOwnershipManager';
 
@@ -82,7 +82,7 @@ function PokemonList() {
     const displayedPokemons = useFilterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
 
     // Sort Pokemon
-    const sortedPokemons = useSortedPokemons(displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll });
+    const sortedPokemons = useSortManager(displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll });
 
 
     // Callbacks

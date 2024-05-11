@@ -26,22 +26,25 @@ const useFetchPokemons = () => {
 
             if (cachedVariantsResponse) {
                 const cachedVariants = await cachedVariantsResponse.json();
-                // Reassign keys and preload images after loading from cache
-                cachedVariants.forEach(variant => {
-                    const key = determinePokemonKey(variant);
-                    variant.pokemonKey = key; // Reassign key
-                    preloadImage(variant.currentImage, key); // Ensure images are preloaded
-                    if (variant.type_1_icon) {
-                        preloadImage(variant.type_1_icon, variant.type_1_icon);
-                    }
-                    if (variant.type_2_icon) {
-                        preloadImage(variant.type_2_icon, variant.type_2_icon);
-                    }
-                });
-                setVariants(cachedVariants);
-                setLoading(false);
-                console.log('Using cached variants.');
-                return;
+                // Check timestamp for variants
+                if (Date.now() - cachedVariants.timestamp < 24 * 60 * 60 * 1000) {
+                    // Reassign keys and preload images after loading from cache
+                    cachedVariants.data.forEach(variant => {
+                        const key = determinePokemonKey(variant);
+                        variant.pokemonKey = key; // Reassign key
+                        preloadImage(variant.currentImage, key); // Ensure images are preloaded
+                        if (variant.type_1_icon) {
+                            preloadImage(variant.type_1_icon, variant.type_1_icon);
+                        }
+                        if (variant.type_2_icon) {
+                            preloadImage(variant.type_2_icon, variant.type_2_icon);
+                        }
+                    });
+                    setVariants(cachedVariants.data);
+                    setLoading(false);
+                    console.log('Using cached variants.');
+                    return;
+                }
             }
 
             const cachedData = localStorage.getItem(pokemonDataCacheKey);
@@ -72,7 +75,7 @@ const useFetchPokemons = () => {
                 }
             });
 
-            await cacheStorage.put(variantsCacheKey, new Response(JSON.stringify(generatedVariants)));
+            await cacheStorage.put(variantsCacheKey, new Response(JSON.stringify({data: generatedVariants, timestamp: Date.now()})));
             console.log("Current Pokémon Ownership Status:", JSON.parse(localStorage.getItem(ownershipDataCacheKey)));
             cache.set(variantsCacheKey, generatedVariants);
             setVariants(generatedVariants);
