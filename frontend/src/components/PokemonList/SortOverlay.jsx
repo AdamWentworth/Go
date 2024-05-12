@@ -6,6 +6,15 @@ const SortOverlay = ({ sortType, setSortType, sortMode, setSortMode }) => {
     const [showSortOptions, setShowSortOptions] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
+    const sortTypeDisplayNames = {
+        releaseDate: 'Recent',
+        hp: 'HP',
+        combatPower: 'Combat Power',
+        favorite: 'Favorite',
+        number: 'Number',
+        name: 'Name'
+    };
+
     // Function to get image path based on sort type
     const getImagePath = (type) => {
         switch (type) {
@@ -15,7 +24,7 @@ const SortOverlay = ({ sortType, setSortType, sortMode, setSortMode }) => {
             case 'hp': return '/images/sorting/hp.png';
             case 'name': return '/images/sorting/name.png';
             case 'combatPower': return '/images/sorting/cp.png';
-            default: return '/images/sorting/recent.png'; // Default image
+            default: return '/images/sorting/number.png'; // Default image
         }
     };
 
@@ -30,7 +39,7 @@ const SortOverlay = ({ sortType, setSortType, sortMode, setSortMode }) => {
     const handleSortTypeChange = (newSortType) => {
         if (newSortType === 'favorite' || newSortType === 'combatPower') {
             // Handle unimplemented sort types with an error message
-            setErrorMessage(`Sorting by ${newSortType} is not implemented yet.`);
+            setErrorMessage(`Sorting by ${sortTypeDisplayNames[newSortType]} is not implemented yet.`);
             setTimeout(() => setErrorMessage(''), 3000); // Clear message after 3 seconds
             return;
         }
@@ -50,15 +59,15 @@ const SortOverlay = ({ sortType, setSortType, sortMode, setSortMode }) => {
     return (
         <div className="sort-overlay">
             <button onClick={() => setShowSortOptions(!showSortOptions)} className="sort-button">
-                <img src={getImagePath(sortType)} alt={sortType} className="sort-button-img" />
+                <img src={getImagePath(sortType)} alt={sortTypeDisplayNames[sortType]} className="sort-button-img" />
                 <img src="/images/sorting/arrow.png" alt="Sort Direction" className="sort-arrow-img" style={getArrowStyle()} />
             </button>
             {showSortOptions && (
                 <div className="sort-list">
                     {['releaseDate', 'favorite', 'number', 'hp', 'name', 'combatPower'].map((type) => (
                         <button key={type} onClick={() => handleSortTypeChange(type)} className="sort-type-button">
-                            {type.charAt(0).toUpperCase() + type.slice(1)} 
-                            <img src={getImagePath(type)} alt={type} />
+                            {sortTypeDisplayNames[type]}
+                            <img src={getImagePath(type)} alt={sortTypeDisplayNames[type]} />
                             {sortType === type && (
                                 <img src="/images/sorting/arrow.png" alt="Sort Direction" className="sort-arrow-img" style={getArrowStyle()} />
                             )}
@@ -72,4 +81,5 @@ const SortOverlay = ({ sortType, setSortType, sortMode, setSortMode }) => {
 }
 
 export default SortOverlay;
+
 

@@ -12,6 +12,7 @@
     cursor: pointer;
     display: block; /* Makes each option expand the full width of the list */
     margin-top: 4px; /* Spacing between buttons */
+    background-color: #34807d;
 }
 
 .sort-list {
