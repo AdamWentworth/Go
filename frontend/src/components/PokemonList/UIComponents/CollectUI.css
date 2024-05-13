@@ -28,7 +28,7 @@
   height: 100%; /* Ensure buttons fill the cell */
 }
 
-.top-button {
+.select-all-button {
   grid-column: 1; /* Place in the first column */
   grid-row: 1; /* First row */
 }
@@ -63,8 +63,8 @@
     height: 24px;
 }
   
-/* Remove span for fast-select-button and top-button */
-.fast-select-button, .top-button {
+/* Remove span for fast-select-button and select-all-button */
+.fast-select-button, .select-all-button {
   background-color: #ccc; /* Default non-active color */
 }
   
@@ -117,7 +117,7 @@
 }
 
 @media (max-width: 480px) {
-    .header-section.collect-section .top-button {
+    .header-section.collect-section .select-all-button {
       font-size: 10px; /* Adjust font size as necessary */
     }
     .collect-section .filter-button {
@@ -134,7 +134,7 @@
   .header-section.collect-section {
     flex-grow: 0;  /* Prevent it from taking unnecessary extra space */
   }  
-  .header-section.collect-section .top-button {
+  .header-section.collect-section .select-all-button {
     font-size: 12px; /* Adjust font size as necessary */
     padding: 2px;
     padding-left: 8px;
@@ -154,7 +154,7 @@
 }
 @media (min-width: 1024px) {
   
-.top-button {
+.select-all-button {
   grid-column: 2; /* Place in the first column */
   grid-row: 2/6; /* First row */
 }
@@ -199,7 +199,7 @@
   grid-template-rows: 0;
   margin-bottom: -5px;
 }
-.header-section.collect-section .top-button {
+.header-section.collect-section .select-all-button {
  padding: 10px;
  padding-left: 15px;
  padding-right: 15px;

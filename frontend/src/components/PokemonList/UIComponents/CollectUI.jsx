@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import './CollectUI.css';
 
 const CollectUI = ({
-  statusFilter, setStatusFilter,
+  statusFilter, setStatusFilter, onFastSelectToggle,
   selectAll, onSelectAll
 }) => {
   const filters = ['Owned', 'Trade', 'Unowned', 'Wanted'];
@@ -17,7 +17,9 @@ const CollectUI = ({
   };
 
   const handleToggleFastSelect = () => {
-    setFastSelectEnabled(!fastSelectEnabled);
+    const newFastSelectState = !fastSelectEnabled;
+    setFastSelectEnabled(newFastSelectState);
+    onFastSelectToggle(newFastSelectState); // Notify parent component
   };
 
   return (
@@ -25,12 +27,12 @@ const CollectUI = ({
       <div className="collect-header">
       </div>
       <div className="button-container">
-        <button
-          className="top-button"
-          onClick={onSelectAll}
-        >
-          Select All
-        </button>
+      <button
+        className="select-all-button"
+        onClick={onSelectAll}
+      >
+        Select All
+      </button>
         <button onClick={handleToggleFastSelect} className={`fast-select-button ${fastSelectEnabled ? 'active' : ''}`}>
           <img src="/images/fast_select.png" alt="Toggle Fast Select" />
         </button>

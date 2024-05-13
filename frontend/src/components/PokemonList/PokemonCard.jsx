@@ -6,11 +6,13 @@ import './PokemonCard.css'
 
 const PokemonCard = ({
     pokemon,
-    setSelectedPokemon,
+    onSelect,
     isShiny,
     showShadow,
     singleFormPokedexNumbers,
-    ownershipFilter
+    ownershipFilter,
+    isFastSelectEnabled,
+    isHighlighted
 }) => {
     const imageUrl = pokemon.currentImage;
 
@@ -37,10 +39,17 @@ const PokemonCard = ({
         return null;
     }
 
-    const cardClass = `pokemon-card ${getOwnershipClass()}`;
+    const cardClass = `pokemon-card ${getOwnershipClass()} ${isHighlighted ? 'highlighted' : ''}`;
 
     return (
-        <div className={cardClass} onClick={() => setSelectedPokemon(pokemon)}>
+        <div className={cardClass} onClick={() => {
+            if (isFastSelectEnabled) {
+                // Logic to highlight the card
+                console.log("Card highlighted:", pokemon.name); // Placeholder logic
+            } else {
+                onSelect(); // This will call `setSelectedPokemon(pokemon)`
+            }
+        }}>
             <img src={imageUrl} alt={pokemon.name} loading="lazy" />
             <p>#{pokemon.pokedex_number}</p>
             <div className="type-icons">

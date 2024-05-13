@@ -21,6 +21,23 @@ function PokemonList() {
 
     // State for Evolutionary line toggle
     const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(false);
+    
+    // State for managing Fast Select
+    const [isFastSelectEnabled, setIsFastSelectEnabled] = useState(false);
+
+    const [highlightedCards, setHighlightedCards] = useState(new Set());
+
+    const toggleCardHighlight = useCallback((pokemonId) => {
+        setHighlightedCards(prev => {
+            const newHighlights = new Set(prev);
+            if (newHighlights.has(pokemonId)) {
+                newHighlights.delete(pokemonId);
+            } else {
+                newHighlights.add(pokemonId);
+            }
+            return newHighlights;
+        });
+    }, []);
 
     // State for Sort Type and Mode
     const [sortType, setSortType] = useState('number');  // Updated to manage different sort types
@@ -110,6 +127,20 @@ function PokemonList() {
         setSortMode((currentMode) => (currentMode + 1) % 3);
     }, []);
 
+    // Handler to toggle fast select mode from CollectUI
+    const handleFastSelectToggle = useCallback((enabled) => {
+        setIsFastSelectEnabled(enabled);
+    }, []);
+
+    const selectAllToggle = useCallback(() => {
+        if (highlightedCards.size === sortedPokemons.length) {
+            setHighlightedCards(new Set()); // Clears all highlights if all are currently selected
+        } else {
+            const allPokemonIds = new Set(sortedPokemons.map(pokemon => pokemon.pokemonKey));
+            setHighlightedCards(allPokemonIds); // Selects all IDs
+        }
+    }, [sortedPokemons, highlightedCards]);    
+
     // Effect to handle window resizing
     useEffect(() => {
         const handleResize = () => {
@@ -156,6 +187,8 @@ function PokemonList() {
                     <CollectUI 
                         statusFilter={ownershipFilter} 
                         setStatusFilter={updateOwnershipFilter} 
+                        onFastSelectToggle={handleFastSelectToggle} 
+                        onSelectAll={selectAllToggle}
                     />
                 )}
                 <button className="toggle-button collect-ui-toggle" onClick={() => setShowCollectUI(prev => !prev)}>
@@ -173,7 +206,14 @@ function PokemonList() {
                                 <PokemonCard
                                     key={pokemon.pokemonKey} // Directly use the pre-generated key
                                     pokemon={pokemon}
-                                    setSelectedPokemon={setSelectedPokemon}
+                                    onSelect={() => {
+                                        if (isFastSelectEnabled) {
+                                            toggleCardHighlight(pokemon.pokemonKey);
+                                        } else {
+                                            setSelectedPokemon(pokemon);
+                                        }
+                                    }}
+                                    isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
                                     isShiny={isShiny}
                                     showShadow={showShadow}
                                     singleFormPokedexNumbers={singleFormPokedexNumbers}
