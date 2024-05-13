@@ -84,7 +84,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
   
         {showShinyWindow && (
           <WindowOverlay onClose={onClose} position="shiny" className="overlay-shiny-info">
-            <ShinyInfo pokemon={pokemon} className="shiny-info" />
+            <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} className="shiny-info" />
           </WindowOverlay>
         )}
   
