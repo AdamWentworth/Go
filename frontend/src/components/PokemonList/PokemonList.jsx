@@ -12,7 +12,7 @@ import PokemonCard from './PokemonCard';
 import useFetchPokemons from './hooks/useFetchPokemons';
 import useSortManager from './hooks/useSortManager';
 import useFilterPokemons from './hooks/useFilterPokemons';
-import { getFilteredPokemonsByOwnership } from './utils/pokemonOwnershipManager';
+import { getFilteredPokemonsByOwnership, updatePokemonOwnership } from './utils/pokemonOwnershipManager';
 
 function PokemonList() {
 
@@ -61,9 +61,22 @@ function PokemonList() {
     const updateOwnershipFilter = (filterType) => {
         setOwnershipFilter(prev => prev === filterType ? "" : filterType); // Toggle functionality
     };
+
+    const [ownershipData, setOwnershipData] = useState({});
+
+    useEffect(() => {
+        loadOwnershipData();
+    }, []);
+
+    const loadOwnershipData = useCallback(() => {
+        const data = JSON.parse(localStorage.getItem('pokemonOwnership')) || {};
+        setOwnershipData(data); // Update state to trigger re-render
+        console.log("Ownership data loaded:", data);
+    }, []);    
+
     const filteredVariants = useMemo(() => {
         return ownershipFilter ? getFilteredPokemonsByOwnership(variants, ownershipFilter) : variants;
-    }, [variants, ownershipFilter]);
+    }, [variants, ownershipFilter]);     
 
     // Show All
     const [showAll, setShowAll] = useState(false);
@@ -141,6 +154,23 @@ function PokemonList() {
         }
     }, [sortedPokemons, highlightedCards]);    
 
+    const moveHighlightedToFilter = useCallback((filter) => {
+        highlightedCards.forEach(pokemonId => {
+          updatePokemonOwnership(pokemonId, filter); // Update ownership in local storage
+        });
+        setHighlightedCards(new Set()); // Clear highlights after moving
+        loadOwnershipData(); // Re-load ownership data to reflect changes
+        console.log("Filter moved and ownership data reloaded for filter:", filter);
+      }, [highlightedCards]);  
+
+    const confirmMoveToFilter = useCallback((filter) => {
+        if (window.confirm(`Move selected Pokemon to ${filter}?`)) {
+          moveHighlightedToFilter(filter);
+          // Ensure the UI updates to reflect the newly active filter
+          setOwnershipFilter(filter); // Directly set to the new filter without resetting
+        }
+      }, [moveHighlightedToFilter]);      
+
     // Effect to handle window resizing
     useEffect(() => {
         const handleResize = () => {
@@ -189,6 +219,8 @@ function PokemonList() {
                         setStatusFilter={updateOwnershipFilter} 
                         onFastSelectToggle={handleFastSelectToggle} 
                         onSelectAll={selectAllToggle}
+                        highlightedCards={highlightedCards}
+                        confirmMoveToFilter={confirmMoveToFilter}
                     />
                 )}
                 <button className="toggle-button collect-ui-toggle" onClick={() => setShowCollectUI(prev => !prev)}>

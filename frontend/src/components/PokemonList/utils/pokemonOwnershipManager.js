@@ -36,3 +36,21 @@ export function getFilteredPokemonsByOwnership(pokemons, filter) {
     console.log(pokemons.filter(pokemon => ownershipData[pokemon.pokemonKey] && ownershipData[pokemon.pokemonKey][filter.toLowerCase()]))
     return pokemons.filter(pokemon => ownershipData[pokemon.pokemonKey] && ownershipData[pokemon.pokemonKey][filter.toLowerCase()]);
 }
+
+export function updatePokemonOwnership(pokemonId, newStatus) {
+    let ownershipData = JSON.parse(localStorage.getItem('pokemonOwnership')) || {};
+    if (!ownershipData[pokemonId]) {
+        ownershipData[pokemonId] = { unowned: false, owned: false, trade: false, wanted: false };
+    }
+
+    // Reset all to false then set the new status to true
+    Object.keys(ownershipData[pokemonId]).forEach(key => {
+        ownershipData[pokemonId][key] = false;
+    });
+    ownershipData[pokemonId][newStatus.toLowerCase()] = true; // Ensure the key is always lowercase
+
+    localStorage.setItem('pokemonOwnership', JSON.stringify(ownershipData));
+    console.log(`Updated ${pokemonId} to ${newStatus}`);
+}
+
+  
