@@ -4,7 +4,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import MainButtons from './components/MainButtons';
-import PokemonList from './components/PokemonList/PokemonList';
+import Collect from './components/Collect/Collect';
 import Login from './components/Authentication/Login';
 import Register from './components/Authentication/Register';
 import Account from './components/Authentication/Account'; // Import the Account component
@@ -24,7 +24,7 @@ function App() {
                         <main>
                             <Routes>
                                 <Route path="/" element={<MainButtons />} />
-                                <Route path="/collect" element={<PokemonList />} />
+                                <Route path="/collect" element={<Collect />} />
                                 <Route path="/login" element={<Login />} />
                                 <Route path="/register" element={<Register />} />
                                 <Route path="/account" element={<Account />} /> {/* Add the route for the Account page */}

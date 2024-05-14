@@ -1,12 +1,10 @@
-//pokemonList.jsx
+//Collect.jsx
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import './PokemonList.css';
+import './Collect.css';
 import PokemonOverlay from './PokemonOverlay'; 
 import useSearchFilters from './hooks/useSearchFilters'; // Import the search filters hook
-import FilterUI from './UIComponents/FilterUI';
-import SearchUI from './UIComponents/SearchUI';
-import CollectUI from './UIComponents/CollectUI';
+import HeaderUI from './HeaderUI';
 import SortOverlay from './SortOverlay';
 import PokemonCard from './PokemonCard';
 import useFetchPokemons from './hooks/useFetchPokemons';
@@ -14,7 +12,7 @@ import useSortManager from './hooks/useSortManager';
 import useFilterPokemons from './hooks/useFilterPokemons';
 import { getFilteredPokemonsByOwnership, updatePokemonOwnership } from './utils/pokemonOwnershipManager';
 
-function PokemonList() {
+function Collect() {
 
     // State for selected pokemon click listener for Overlay
     const [selectedPokemon, setSelectedPokemon] = useState(null);
@@ -192,70 +190,55 @@ function PokemonList() {
      
     return (
         <div>
-            <div className={`header ${showCollectUI ? 'expand-collect' : ''}`}>
-                <button className="toggle-button" onClick={() => setShowFilterUI(prev => !prev)}>
-                    {showFilterUI ? 'Hide' : 'Filters'}
-                </button>
-                {showFilterUI && (
-                    <FilterUI
-                        isShiny={isShiny}
-                        toggleShiny={toggleShiny}
-                        showCostume={showCostume}
-                        toggleCostume={toggleCostume}
-                        showShadow={showShadow}
-                        toggleShadow={toggleShadow}
-                        toggleShowAll={toggleShowAll}
-                    />
-                )}
-                <SearchUI
-                    searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
-                    showEvolutionaryLine={showEvolutionaryLine}
-                    toggleEvolutionaryLine={toggleEvolutionaryLine}
-                />
-                {showCollectUI && (
-                    <CollectUI 
-                        statusFilter={ownershipFilter} 
-                        setStatusFilter={updateOwnershipFilter} 
-                        onFastSelectToggle={handleFastSelectToggle} 
-                        onSelectAll={selectAllToggle}
-                        highlightedCards={highlightedCards}
-                        confirmMoveToFilter={confirmMoveToFilter}
-                    />
-                )}
-                <button className="toggle-button collect-ui-toggle" onClick={() => setShowCollectUI(prev => !prev)}>
-                    {showCollectUI ? 'Hide' : 'Collect'}
-                </button>
-            </div>
+            <HeaderUI
+                showFilterUI={showFilterUI}
+                toggleFilterUI={() => setShowFilterUI(prev => !prev)}
+                isShiny={isShiny}
+                toggleShiny={toggleShiny}
+                showCostume={showCostume}
+                toggleCostume={toggleCostume}
+                showShadow={showShadow}
+                toggleShadow={toggleShadow}
+                toggleShowAll={toggleShowAll}
 
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                showEvolutionaryLine={showEvolutionaryLine}
+                toggleEvolutionaryLine={toggleEvolutionaryLine}
+                
+                showCollectUI={showCollectUI}
+                toggleCollectUI={() => setShowCollectUI(prev => !prev)}
+                ownershipFilter={ownershipFilter}
+                updateOwnershipFilter={updateOwnershipFilter}
+                handleFastSelectToggle={handleFastSelectToggle}
+                selectAllToggle={selectAllToggle}
+                highlightedCards={highlightedCards}
+                confirmMoveToFilter={confirmMoveToFilter}
+            />
             <div className="pokemon-container">
-                {loading ? (
-                    <p>Loading...</p>
-                ) : (
+                {loading ? <p>Loading...</p> : (
                     <>
-                        {
-                            sortedPokemons.map((pokemon) => (
-                                <PokemonCard
-                                    key={pokemon.pokemonKey} // Directly use the pre-generated key
-                                    pokemon={pokemon}
-                                    onSelect={() => {
-                                        if (isFastSelectEnabled) {
-                                            toggleCardHighlight(pokemon.pokemonKey);
-                                        } else {
-                                            setSelectedPokemon(pokemon);
-                                        }
-                                    }}
-                                    isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
-                                    isShiny={isShiny}
-                                    showShadow={showShadow}
-                                    singleFormPokedexNumbers={singleFormPokedexNumbers}
-                                    ownershipFilter={ownershipFilter}
-                                />
-                            ))
-                        }
+                        {sortedPokemons.map(pokemon => (
+                            <PokemonCard
+                                key={pokemon.pokemonKey}
+                                pokemon={pokemon}
+                                onSelect={() => {
+                                    if (isFastSelectEnabled) {
+                                        toggleCardHighlight(pokemon.pokemonKey);
+                                    } else {
+                                        setSelectedPokemon(pokemon);
+                                    }
+                                }}
+                                isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
+                                isShiny={isShiny}
+                                showShadow={showShadow}
+                                singleFormPokedexNumbers={singleFormPokedexNumbers}
+                                ownershipFilter={ownershipFilter}
+                            />
+                        ))}
                         {selectedPokemon && (
-                            <PokemonOverlay 
-                                pokemon={selectedPokemon} 
+                            <PokemonOverlay
+                                pokemon={selectedPokemon}
                                 onClose={() => setSelectedPokemon(null)}
                                 setSelectedPokemon={setSelectedPokemon}
                                 allPokemons={variants}
@@ -269,4 +252,4 @@ function PokemonList() {
     );
 }
 
-export default PokemonList;
+export default Collect;

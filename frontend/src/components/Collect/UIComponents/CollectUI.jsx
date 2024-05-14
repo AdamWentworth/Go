@@ -17,7 +17,7 @@ const CollectUI = ({
   
   const handleFilterClick = (filter) => {
     if (highlightedCards.size > 0) {
-      confirmMoveToFilter(filter.toLowerCase()); // Pass filter as lowercase
+      confirmMoveToFilter(filter); // Pass filter as lowercase
     } else {
       const newFilter = statusFilter === filter ? "" : filter;
       setStatusFilter(newFilter); // This should also manage 'selectedFilter' equivalently
