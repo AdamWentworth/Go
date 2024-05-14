@@ -9,13 +9,27 @@ import SortOverlay from './SortOverlay';
 import useFetchPokemons from './hooks/useFetchPokemons';
 import useSortManager from './hooks/useSortManager';
 import useFilterPokemons from './hooks/useFilterPokemons';
-import { loadOwnershipData, updateOwnershipFilter, moveHighlightedToFilter, confirmMoveToFilter, getFilteredPokemonsByOwnership, updatePokemonOwnership } from './utils/pokemonOwnershipManager';
+import { loadOwnershipData, updateOwnershipFilter, 
+    moveHighlightedToFilter, confirmMoveToFilter, 
+    getFilteredPokemonsByOwnership } from './utils/pokemonOwnershipManager';
 
 function Collect() {
 
-    // State for selected pokemon click listener for Overlay
+    //States
     const [selectedPokemon, setSelectedPokemon] = useState(null);
+    const [highlightedCards, setHighlightedCards] = useState(new Set());
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+    const [ownershipFilter, setOwnershipFilter] = useState("");
+    const [ownershipData, setOwnershipData] = useState({});
+    const [showAll, setShowAll] = useState(false);
 
+    // Pokemon who by default will only show 1 of many forms
+    const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
+
+    // Initial pokemon variants collecting from API or local storage
+    const { variants, loading } = useFetchPokemons();
+
+    // UI Controls
     const {
         showFilterUI,
         setShowFilterUI,
@@ -41,8 +55,35 @@ function Collect() {
         sortMode: 'ascending'
     });
 
-    const [highlightedCards, setHighlightedCards] = useState(new Set());
+    // Search Filters
+    const {
+        isShiny, setIsShiny, 
+        showShadow, setShowShadow, 
+        selectedGeneration, setSelectedGeneration, 
+        searchTerm, setSearchTerm,
+        showCostume, setShowCostume, 
+        generations, isGenerationSearch,
+        pokemonTypes, isTypeSearch
+    } = useSearchFilters(variants);
 
+    // Ownership Filter Memo
+    const filteredVariants = useMemo(() => {
+        return ownershipFilter ? getFilteredPokemonsByOwnership(variants, ownershipFilter) : variants;
+    }, [variants, ownershipFilter]);
+
+    // Search Filters Memo
+    const filters = useMemo(() => ({
+        selectedGeneration, isShiny, searchTerm, showCostume, showShadow,
+        singleFormPokedexNumbers, pokemonTypes, generations
+    }), [selectedGeneration, isShiny, searchTerm, showCostume, showShadow, singleFormPokedexNumbers, pokemonTypes, generations]);
+
+    // Filter Pokemon
+    const displayedPokemons = useFilterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
+
+    // Sort Pokemon
+    const sortedPokemons = useSortManager(displayedPokemons, sortType, sortMode, { isShiny, showShadow, showCostume, showAll });
+
+    // Toggle Selecting cards with Highlight
     const toggleCardHighlight = useCallback((pokemonId) => {
         setHighlightedCards(prev => {
             const newHighlights = new Set(prev);
@@ -55,34 +96,12 @@ function Collect() {
         });
     }, []);
 
-    // State for noticing window width
-    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-
-    // Pokemon who by default will only show 1 of many forms
-    const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
-
-    // Initial pokemon variants collecting from API or local storage
-    const { variants, loading } = useFetchPokemons();
-
-    // Ownership
-    const [ownershipFilter, setOwnershipFilter] = useState("");
-
+    // Handle Updating ownership Filter
     const handleUpdateOwnershipFilter = useCallback((filterType) => {
         updateOwnershipFilter(setOwnershipFilter, filterType);
     }, [setOwnershipFilter]);
 
-    const [ownershipData, setOwnershipData] = useState({});
-
-    useEffect(() => {
-        loadOwnershipData(setOwnershipData);
-    }, []);
-
-    const filteredVariants = useMemo(() => {
-        return ownershipFilter ? getFilteredPokemonsByOwnership(variants, ownershipFilter) : variants;
-    }, [variants, ownershipFilter]);     
-
-    // Show All
-    const [showAll, setShowAll] = useState(false);
+    // Toggle Show All State interacting with common Filter States
     const toggleShowAll = useCallback(() => {
         setShowAll(prevShowAll => !prevShowAll);
 
@@ -93,41 +112,19 @@ function Collect() {
         }
     }, [showAll]);
     
-    // Search Filters
-    const {
-        isShiny, setIsShiny, showShadow, setShowShadow, 
-        selectedGeneration, setSelectedGeneration, searchTerm, setSearchTerm,
-        showCostume, setShowCostume, generations, pokemonTypes,
-        isTypeSearch, isGenerationSearch
-    } = useSearchFilters(variants);
-    
-    const filters = useMemo(() => ({
-        selectedGeneration,
-        isShiny,
-        searchTerm,
-        showCostume,
-        showShadow,
-        singleFormPokedexNumbers,
-        pokemonTypes,
-        generations
-    }), [selectedGeneration, isShiny, searchTerm, showCostume, showShadow, singleFormPokedexNumbers, pokemonTypes, generations]);
-
-    // Filter Pokemon
-    const displayedPokemons = useFilterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
-
-    // Sort Pokemon
-    const sortedPokemons = useSortManager(displayedPokemons, sortType, sortMode, { isShiny, showShadow, showCostume, showAll });
-    
+    // Toggle Shiny State
     const toggleShiny = useCallback(() => {
         setIsShiny(prevState => !prevState);
         setShowAll(false);
     }, []);
     
+    // Toggle Costume State
     const toggleCostume = useCallback(() => {
         setShowCostume(prevState => !prevState);
         setShowAll(false);
     }, []);
-    
+
+    // Toggle Shadow State
     const toggleShadow = useCallback(() => {
         setShowShadow(prevState => !prevState);
         setShowAll(false);
@@ -138,6 +135,7 @@ function Collect() {
         setIsFastSelectEnabled(enabled);
     }, []);
 
+    // Toggle Select All from CollectUI
     const selectAllToggle = useCallback(() => {
         if (highlightedCards.size === sortedPokemons.length) {
             setHighlightedCards(new Set()); // Clears all highlights if all are currently selected
@@ -147,13 +145,20 @@ function Collect() {
         }
     }, [sortedPokemons, highlightedCards]);    
 
+    // Handler for updating highlighted pokemon to new Ownership filter
     const handleMoveHighlightedToFilter = useCallback((filter) => {
         moveHighlightedToFilter(highlightedCards, setHighlightedCards, () => loadOwnershipData(setOwnershipData), setOwnershipFilter, filter);
     }, [highlightedCards, setHighlightedCards, setOwnershipData, setOwnershipFilter]); 
 
+    // Handler for confirming the move to new Ownership filter
     const handleConfirmMoveToFilter = useCallback((filter) => {
         confirmMoveToFilter(() => handleMoveHighlightedToFilter(filter), filter);
-    }, [handleMoveHighlightedToFilter]);    
+    }, [handleMoveHighlightedToFilter]);   
+    
+    // Load Ownership Data 
+    useEffect(() => {
+        loadOwnershipData(setOwnershipData);
+    }, []);  
 
     // Effect to handle window resizing
     useEffect(() => {
