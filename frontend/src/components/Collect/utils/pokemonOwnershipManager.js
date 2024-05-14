@@ -1,57 +1,209 @@
 //pokemonOwnershipManager.js
 
-export const ownershipDataCacheKey = "pokemonOwnership";
+import { v4 as uuidv4 } from 'uuid'; // npm install uuid
 
-export function initializeOrUpdateOwnershipData(key, isNewData) {
-    let ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
+export const ownershipDataCacheKey = "pokemonOwnership";
+const cacheStorageName = 'pokemonCache'; // Consistent cache name
+
+export async function initializeOrUpdateOwnershipData(key, isNewData, Variants) {
+    let ownershipData;
     
-    if (!ownershipData.hasOwnProperty(key)) {
-        ownershipData[key] = {
-            unowned: true,
-            owned: false,
-            trade: false,
-            wanted: false
-        };
-        localStorage.setItem(ownershipDataCacheKey, JSON.stringify(ownershipData));
-        if (isNewData) {
-            console.log("New ownership entries created for freshly fetched data.");
+    // First try to load from Cache Storage
+    if ('caches' in window) {
+        try {
+            const cache = await caches.open(cacheStorageName);
+            const cachedResponse = await cache.match(`/${ownershipDataCacheKey}`);
+            if (cachedResponse) {
+                ownershipData = await cachedResponse.json();
+                console.log('Loaded ownership data from Cache Storage.');
+            }
+        } catch (error) {
+            console.error('Failed to load data from Cache Storage:', error);
         }
-    } else if (typeof ownershipData[key] === 'string') {
-        ownershipData[key] = {
-            unowned: true,
-            owned: false,
-            trade: false,
-            wanted: false
+    }
+
+    // Fallback to localStorage if Cache Storage is empty
+    if (!ownershipData) {
+        ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
+        console.log('Loaded ownership data from localStorage.');
+    }
+
+    const getKeyParts = (key) => {
+        const parts = {
+            pokemonId: parseInt(key.split('-')[0]),
+            costumeName: null,
+            isShiny: key.includes("_shiny"),
+            isDefault: key.includes("_default"),
+            isShadow: key.includes("_shadow")
         };
+    
+        let costumeSplit = key.split('-')[1];
+        if (costumeSplit) {
+            // Check for the presence of known suffixes and adjust the split accordingly
+            if (parts.isShiny) {
+                costumeSplit = costumeSplit.split('_shiny')[0];
+            } else if (parts.isDefault) {
+                costumeSplit = costumeSplit.split('_default')[0];
+            } else if (parts.isShadow) {
+                costumeSplit = costumeSplit.split('_shadow')[0];
+            }
+    
+            parts.costumeName = costumeSplit;
+        }
+    
+        return parts;
+    };    
+
+    const { pokemonId, costumeName, isShiny, isDefault, isShadow } = getKeyParts(key);
+
+    const pokemonVariant = Variants.data.find(variant => variant.pokemon_id === pokemonId);
+    let costumeId = null;
+    if (pokemonVariant && pokemonVariant.costumes) {
+        const costume = pokemonVariant.costumes.find(costume => costume.name === costumeName);
+        if (costume) {
+            costumeId = costume.costume_id;
+        }
+    }
+
+    const instanceId = uuidv4(); // Generate a unique instance ID
+    const newData = {
+        pokemon_id: pokemonId,
+        cp: null,
+        attack_iv: null,
+        defense_iv: null,
+        stamina_iv: null,
+        shiny: isShiny,
+        costume_id: costumeId,
+        lucky: false,
+        shadow: isShadow,
+        purified: false,
+        fast_move_id: null,
+        charged_move1_id: null,
+        charged_move2_id: null,
+        weight: null,
+        height: null,
+        gender: null,
+        mirror: false,
+        location_card: null,
+        friendship_level: null,
+        date_caught: null,
+        date_added: new Date().toISOString(),
+        is_unowned: true,
+        is_owned: false,
+        is_for_trade: false,
+        is_wanted: false
+    };
+
+    // Only update or initialize if needed
+    let shouldUpdateStorage = false;
+    if (!ownershipData.hasOwnProperty(key)) {
+        ownershipData[key] = { [instanceId]: newData };
+        shouldUpdateStorage = true;
+    } else if (isNewData) {
+        ownershipData[key][instanceId] = newData;
+        shouldUpdateStorage = true;
+    }
+
+    if (shouldUpdateStorage) {
+        // Save updates to localStorage
         localStorage.setItem(ownershipDataCacheKey, JSON.stringify(ownershipData));
-        console.log("Corrected improperly initialized entries.");
+        console.log('Updated ownership data in localStorage.');
+
+        // Save updates to Cache Storage
+        if ('caches' in window) {
+            try {
+                const cache = await caches.open(cacheStorageName);
+                const response = new Response(JSON.stringify(ownershipData), {
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                await cache.put(`/${ownershipDataCacheKey}`, response);
+                console.log('Data saved to Cache Storage successfully.');
+            } catch (error) {
+                console.error('Failed to save data to Cache Storage:', error);
+            }
+        }
     }
 }
 
 export function getFilteredPokemonsByOwnership(pokemons, filter) {
     const ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
-    if (filter === "" || !["unowned", "owned", "trade", "wanted"].includes(filter.toLowerCase())) {
-        return pokemons; // return all if no filter or invalid filter
-    }
-    console.log(pokemons.filter(pokemon => ownershipData[pokemon.pokemonKey] && ownershipData[pokemon.pokemonKey][filter.toLowerCase()]))
-    return pokemons.filter(pokemon => ownershipData[pokemon.pokemonKey] && ownershipData[pokemon.pokemonKey][filter.toLowerCase()]);
-}
 
-export function updatePokemonOwnership(pokemonId, newStatus) {
-    let ownershipData = JSON.parse(localStorage.getItem('pokemonOwnership')) || {};
-    if (!ownershipData[pokemonId]) {
-        ownershipData[pokemonId] = { unowned: false, owned: false, trade: false, wanted: false };
+    let filterKey = filter.toLowerCase();
+    if (filterKey === "trade") filterKey = "for_trade";  // Adjust the key for the filter name discrepancy
+
+    if (!filter || !["unowned", "owned", "for_trade", "wanted"].includes(filterKey)) {
+        return pokemons; // Return all pokemons if no filter is applied or if the filter is invalid
     }
 
-    // Reset all to false then set the new status to true
-    Object.keys(ownershipData[pokemonId]).forEach(key => {
-        ownershipData[pokemonId][key] = false;
-    });
-    ownershipData[pokemonId][newStatus.toLowerCase()] = true; // Ensure the key is always lowercase
+    // Filter and return pokemons based on the ownership data
+    return pokemons.map(pokemon => {
+        const instances = ownershipData[pokemon.pokemonKey];
+        if (!instances) {
+            return null; // If no instances exist, exclude this pokemon
+        }
 
-    localStorage.setItem('pokemonOwnership', JSON.stringify(ownershipData));
-    console.log(`Updated ${pokemonId} to ${newStatus}`);
+        // Filter instances that match the condition
+        const matchingInstances = Object.values(instances).filter(instance => instance[`is_${filterKey}`]);
+        if (matchingInstances.length > 0) {
+            return { ...pokemon, instances: matchingInstances }; // Attach only matching instances
+        }
+
+        return null;
+    }).filter(pokemon => pokemon !== null); // Remove any null entries
 }
+
+export function updatePokemonOwnership(pokemonKey, newStatus) {
+    const ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
+    const instances = ownershipData[pokemonKey];
+
+    if (instances) {
+        Object.values(instances).forEach(instance => {
+            // Reset all ownership related flags
+            instance.is_unowned = false;
+            instance.is_owned = false;
+            instance.is_for_trade = false;
+            instance.is_wanted = false;
+
+            // Update the specific flag based on the new status
+            switch (newStatus) {
+                case 'Owned':
+                    instance.is_owned = true;
+                    break;
+                case 'Unowned':
+                    instance.is_unowned = true;
+                    break;
+                case 'Trade':
+                    instance.is_for_trade = true;
+                    break;
+                case 'Wanted':
+                    instance.is_wanted = true;
+                    break;
+            }
+        });
+
+        localStorage.setItem(ownershipDataCacheKey, JSON.stringify(ownershipData));
+        console.log(`Updated ownership of ${pokemonKey} to ${newStatus}`);
+
+        // Asynchronously update the cache storage
+        updateCacheStorage(ownershipData);
+    }
+}
+
+async function updateCacheStorage(data) {
+    if ('caches' in window) {
+        try {
+            const cache = await caches.open(cacheStorageName);
+            const response = new Response(JSON.stringify(data), {
+                headers: { 'Content-Type': 'application/json' }
+            });
+            await cache.put(`/${ownershipDataCacheKey}`, response);
+            console.log('Ownership data updated in Cache Storage successfully.');
+        } catch (error) {
+            console.error('Failed to update data in Cache Storage:', error);
+        }
+    }
+}
+
 
 export const loadOwnershipData = (setOwnershipData) => {
     const data = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
@@ -64,8 +216,8 @@ export const updateOwnershipFilter = (setOwnershipFilter, filterType) => {
 };
 
 export const moveHighlightedToFilter = (highlightedCards, setHighlightedCards, loadOwnershipData, setOwnershipFilter, filter) => {
-    highlightedCards.forEach(pokemonId => {
-        updatePokemonOwnership(pokemonId, filter);
+    highlightedCards.forEach(pokemonKey => {
+        updatePokemonOwnership(pokemonKey, filter);
     });
     setHighlightedCards(new Set());
     loadOwnershipData();

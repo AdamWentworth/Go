@@ -33,7 +33,7 @@ const useFetchPokemons = () => {
                         const key = determinePokemonKey(variant);
                         variant.pokemonKey = key; // Reassign key
                         preloadImage(variant.currentImage, key); // Ensure images are preloaded
-                        initializeOrUpdateOwnershipData(key, isNewData);
+                        initializeOrUpdateOwnershipData(key, isNewData, cachedVariants);
                         if (variant.type_1_icon) {
                             preloadImage(variant.type_1_icon, variant.type_1_icon);
                         }

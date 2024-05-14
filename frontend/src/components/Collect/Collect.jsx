@@ -9,7 +9,8 @@ import SortOverlay from './SortOverlay';
 import useFetchPokemons from './hooks/useFetchPokemons';
 import useSortManager from './hooks/useSortManager';
 import useFilterPokemons from './hooks/useFilterPokemons';
-import { loadOwnershipData, updateOwnershipFilter, 
+import { 
+    loadOwnershipData, updateOwnershipFilter, 
     moveHighlightedToFilter, confirmMoveToFilter, 
     getFilteredPokemonsByOwnership } from './utils/pokemonOwnershipManager';
 
@@ -145,20 +146,15 @@ function Collect() {
         }
     }, [sortedPokemons, highlightedCards]);    
 
-    // Handler for updating highlighted pokemon to new Ownership filter
+    // // Handler for updating highlighted pokemon to new Ownership filter
     const handleMoveHighlightedToFilter = useCallback((filter) => {
         moveHighlightedToFilter(highlightedCards, setHighlightedCards, () => loadOwnershipData(setOwnershipData), setOwnershipFilter, filter);
-    }, [highlightedCards, setHighlightedCards, setOwnershipData, setOwnershipFilter]); 
+    }, [highlightedCards, setHighlightedCards, setOwnershipData, setOwnershipFilter]);
 
-    // Handler for confirming the move to new Ownership filter
+    // // Handler for confirming the move to new Ownership filter
     const handleConfirmMoveToFilter = useCallback((filter) => {
         confirmMoveToFilter(() => handleMoveHighlightedToFilter(filter), filter);
-    }, [handleMoveHighlightedToFilter]);   
-    
-    // Load Ownership Data 
-    useEffect(() => {
-        loadOwnershipData(setOwnershipData);
-    }, []);  
+    }, [handleMoveHighlightedToFilter]);
 
     // Effect to handle window resizing
     useEffect(() => {
