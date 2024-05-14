@@ -3,6 +3,7 @@
 import React from 'react';
 import PokemonCard from './PokemonCard';
 import PokemonOverlay from './PokemonOverlay';
+import './PokemonList.css'
 
 function PokemonList({
     sortedPokemons,
@@ -11,6 +12,7 @@ function PokemonList({
     setSelectedPokemon,
     isFastSelectEnabled,
     toggleCardHighlight,
+    highlightedCards,
     isShiny,
     showShadow,
     singleFormPokedexNumbers,
@@ -31,7 +33,7 @@ function PokemonList({
                                     setSelectedPokemon(pokemon);
                                 }
                             }}
-                            isHighlighted={selectedPokemon && selectedPokemon.pokemonKey === pokemon.pokemonKey}
+                            isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
                             isShiny={isShiny}
                             showShadow={showShadow}
                             singleFormPokedexNumbers={singleFormPokedexNumbers}
@@ -43,7 +45,7 @@ function PokemonList({
                             pokemon={selectedPokemon}
                             onClose={() => setSelectedPokemon(null)}
                             setSelectedPokemon={setSelectedPokemon}
-                            allPokemons={sortedPokemons} // Assuming all variants are required here
+                            allPokemons={sortedPokemons}
                         />
                     )}
                 </>

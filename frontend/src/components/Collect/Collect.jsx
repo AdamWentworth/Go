@@ -1,27 +1,45 @@
 //Collect.jsx
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import './Collect.css';
-import PokemonOverlay from './PokemonOverlay'; 
+import { useUIControls } from './hooks/useUIControls'; // Import the new hook
+import PokemonList from './PokemonList';
 import useSearchFilters from './hooks/useSearchFilters'; // Import the search filters hook
 import HeaderUI from './HeaderUI';
 import SortOverlay from './SortOverlay';
-import PokemonCard from './PokemonCard';
 import useFetchPokemons from './hooks/useFetchPokemons';
 import useSortManager from './hooks/useSortManager';
 import useFilterPokemons from './hooks/useFilterPokemons';
-import { getFilteredPokemonsByOwnership, updatePokemonOwnership } from './utils/pokemonOwnershipManager';
+import { loadOwnershipData, updateOwnershipFilter, moveHighlightedToFilter, confirmMoveToFilter, getFilteredPokemonsByOwnership, updatePokemonOwnership } from './utils/pokemonOwnershipManager';
 
 function Collect() {
 
     // State for selected pokemon click listener for Overlay
     const [selectedPokemon, setSelectedPokemon] = useState(null);
 
-    // State for Evolutionary line toggle
-    const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(false);
-    
-    // State for managing Fast Select
-    const [isFastSelectEnabled, setIsFastSelectEnabled] = useState(false);
+    const {
+        showFilterUI,
+        setShowFilterUI,
+        toggleFilterUI,
+        showCollectUI,
+        setShowCollectUI,
+        toggleCollectUI,
+        showEvolutionaryLine,
+        toggleEvolutionaryLine,
+        isFastSelectEnabled,
+        setIsFastSelectEnabled,
+        toggleFastSelect,
+        sortType,
+        setSortType,
+        sortMode,
+        toggleSortMode
+    } = useUIControls({
+        showFilterUI: false,
+        showCollectUI: false,
+        showEvolutionaryLine: false,
+        isFastSelectEnabled: false,
+        sortType: 'number',
+        sortMode: 'ascending'
+    });
 
     const [highlightedCards, setHighlightedCards] = useState(new Set());
 
@@ -37,14 +55,6 @@ function Collect() {
         });
     }, []);
 
-    // State for Sort Type and Mode
-    const [sortType, setSortType] = useState('number');  // Updated to manage different sort types
-    const [sortMode, setSortMode] = useState('ascending');     // Default to 'ascending', removed 'off' mode
-
-    // States for showing the Filters and Collect UI features
-    const [showFilterUI, setShowFilterUI] = useState(false);
-    const [showCollectUI, setShowCollectUI] = useState(false);
-
     // State for noticing window width
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
@@ -56,21 +66,16 @@ function Collect() {
 
     // Ownership
     const [ownershipFilter, setOwnershipFilter] = useState("");
-    const updateOwnershipFilter = (filterType) => {
-        setOwnershipFilter(prev => prev === filterType ? "" : filterType); // Toggle functionality
-    };
+
+    const handleUpdateOwnershipFilter = useCallback((filterType) => {
+        updateOwnershipFilter(setOwnershipFilter, filterType);
+    }, [setOwnershipFilter]);
 
     const [ownershipData, setOwnershipData] = useState({});
 
     useEffect(() => {
-        loadOwnershipData();
+        loadOwnershipData(setOwnershipData);
     }, []);
-
-    const loadOwnershipData = useCallback(() => {
-        const data = JSON.parse(localStorage.getItem('pokemonOwnership')) || {};
-        setOwnershipData(data); // Update state to trigger re-render
-        console.log("Ownership data loaded:", data);
-    }, []);    
 
     const filteredVariants = useMemo(() => {
         return ownershipFilter ? getFilteredPokemonsByOwnership(variants, ownershipFilter) : variants;
@@ -112,12 +117,6 @@ function Collect() {
 
     // Sort Pokemon
     const sortedPokemons = useSortManager(displayedPokemons, sortType, sortMode, { isShiny, showShadow, showCostume, showAll });
-
-
-    // Callbacks
-    const toggleEvolutionaryLine = useCallback(() => {
-        setShowEvolutionaryLine(prev => !prev);
-    }, []);
     
     const toggleShiny = useCallback(() => {
         setIsShiny(prevState => !prevState);
@@ -132,10 +131,6 @@ function Collect() {
     const toggleShadow = useCallback(() => {
         setShowShadow(prevState => !prevState);
         setShowAll(false);
-    }, []);
-    
-    const toggleSortMode = useCallback(() => {
-        setSortMode((currentMode) => (currentMode + 1) % 3);
     }, []);
 
     // Handler to toggle fast select mode from CollectUI
@@ -152,22 +147,13 @@ function Collect() {
         }
     }, [sortedPokemons, highlightedCards]);    
 
-    const moveHighlightedToFilter = useCallback((filter) => {
-        highlightedCards.forEach(pokemonId => {
-          updatePokemonOwnership(pokemonId, filter); // Update ownership in local storage
-        });
-        setHighlightedCards(new Set()); // Clear highlights after moving
-        loadOwnershipData(); // Re-load ownership data to reflect changes
-        console.log("Filter moved and ownership data reloaded for filter:", filter);
-      }, [highlightedCards]);  
+    const handleMoveHighlightedToFilter = useCallback((filter) => {
+        moveHighlightedToFilter(highlightedCards, setHighlightedCards, () => loadOwnershipData(setOwnershipData), setOwnershipFilter, filter);
+    }, [highlightedCards, setHighlightedCards, setOwnershipData, setOwnershipFilter]); 
 
-    const confirmMoveToFilter = useCallback((filter) => {
-        if (window.confirm(`Move selected Pokemon to ${filter}?`)) {
-          moveHighlightedToFilter(filter);
-          // Ensure the UI updates to reflect the newly active filter
-          setOwnershipFilter(filter); // Directly set to the new filter without resetting
-        }
-      }, [moveHighlightedToFilter]);      
+    const handleConfirmMoveToFilter = useCallback((filter) => {
+        confirmMoveToFilter(() => handleMoveHighlightedToFilter(filter), filter);
+    }, [handleMoveHighlightedToFilter]);    
 
     // Effect to handle window resizing
     useEffect(() => {
@@ -209,45 +195,31 @@ function Collect() {
                 showCollectUI={showCollectUI}
                 toggleCollectUI={() => setShowCollectUI(prev => !prev)}
                 ownershipFilter={ownershipFilter}
-                updateOwnershipFilter={updateOwnershipFilter}
+                updateOwnershipFilter={handleUpdateOwnershipFilter}
                 handleFastSelectToggle={handleFastSelectToggle}
                 selectAllToggle={selectAllToggle}
                 highlightedCards={highlightedCards}
-                confirmMoveToFilter={confirmMoveToFilter}
+                confirmMoveToFilter={handleConfirmMoveToFilter}
             />
-            <div className="pokemon-container">
-                {loading ? <p>Loading...</p> : (
-                    <>
-                        {sortedPokemons.map(pokemon => (
-                            <PokemonCard
-                                key={pokemon.pokemonKey}
-                                pokemon={pokemon}
-                                onSelect={() => {
-                                    if (isFastSelectEnabled) {
-                                        toggleCardHighlight(pokemon.pokemonKey);
-                                    } else {
-                                        setSelectedPokemon(pokemon);
-                                    }
-                                }}
-                                isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
-                                isShiny={isShiny}
-                                showShadow={showShadow}
-                                singleFormPokedexNumbers={singleFormPokedexNumbers}
-                                ownershipFilter={ownershipFilter}
-                            />
-                        ))}
-                        {selectedPokemon && (
-                            <PokemonOverlay
-                                pokemon={selectedPokemon}
-                                onClose={() => setSelectedPokemon(null)}
-                                setSelectedPokemon={setSelectedPokemon}
-                                allPokemons={variants}
-                            />
-                        )}
-                    </>
-                )}
-            </div>
-            <SortOverlay sortType={sortType} setSortType={setSortType} sortMode={sortMode} setSortMode={setSortMode} />
+            <PokemonList
+                sortedPokemons={sortedPokemons}
+                loading={loading}
+                selectedPokemon={selectedPokemon}
+                setSelectedPokemon={setSelectedPokemon}
+                isFastSelectEnabled={isFastSelectEnabled}
+                toggleCardHighlight={toggleCardHighlight}
+                highlightedCards={highlightedCards}
+                isShiny={isShiny}
+                showShadow={showShadow}
+                singleFormPokedexNumbers={[201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741]}
+                ownershipFilter={ownershipFilter}
+            />
+            <SortOverlay
+                sortType={sortType}
+                setSortType={setSortType}
+                sortMode={sortMode}
+                setSortMode={toggleSortMode}
+            />
         </div>
     );
 }

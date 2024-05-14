@@ -4,6 +4,7 @@ import React from 'react';
 import FilterUI from './UIComponents/FilterUI';
 import SearchUI from './UIComponents/SearchUI';
 import CollectUI from './UIComponents/CollectUI';
+import './HeaderUI.css'
 
 const HeaderUI = ({
   showFilterUI,
