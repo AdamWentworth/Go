@@ -1,12 +1,40 @@
 //pokemonOwnershipManager.js
 
-import { v4 as uuidv4 } from 'uuid'; // npm install uuid
+import { v4 as uuidv4 } from 'uuid';
 
 export const ownershipDataCacheKey = "pokemonOwnership";
 const cacheStorageName = 'pokemonCache'; // Consistent cache name
 
-export async function initializeOrUpdateOwnershipData(key, isNewData, Variants) {
+const getKeyParts = (key) => {
+    const parts = {
+        pokemonId: parseInt(key.split('-')[0]),
+        costumeName: null,
+        isShiny: key.includes("_shiny"),
+        isDefault: key.includes("_default"),
+        isShadow: key.includes("_shadow")
+    };
+
+    let costumeSplit = key.split('-')[1];
+    if (costumeSplit) {
+        // Check for the presence of known suffixes and adjust the split accordingly
+        if (parts.isShiny) {
+            costumeSplit = costumeSplit.split('_shiny')[0];
+        } else if (parts.isDefault) {
+            costumeSplit = costumeSplit.split('_default')[0];
+        } else if (parts.isShadow) {
+            costumeSplit = costumeSplit.split('_shadow')[0];
+        }
+
+        parts.costumeName = costumeSplit;
+    }
+
+    return parts;
+};    
+
+
+export async function initializeOrUpdateOwnershipData(keys, isNewData, Variants) {
     let ownershipData;
+    let shouldUpdateStorage = false;
     
     // First try to load from Cache Storage
     if ('caches' in window) {
@@ -28,95 +56,69 @@ export async function initializeOrUpdateOwnershipData(key, isNewData, Variants) 
         console.log('Loaded ownership data from localStorage.');
     }
 
-    const getKeyParts = (key) => {
-        const parts = {
-            pokemonId: parseInt(key.split('-')[0]),
-            costumeName: null,
-            isShiny: key.includes("_shiny"),
-            isDefault: key.includes("_default"),
-            isShadow: key.includes("_shadow")
-        };
-    
-        let costumeSplit = key.split('-')[1];
-        if (costumeSplit) {
-            // Check for the presence of known suffixes and adjust the split accordingly
-            if (parts.isShiny) {
-                costumeSplit = costumeSplit.split('_shiny')[0];
-            } else if (parts.isDefault) {
-                costumeSplit = costumeSplit.split('_default')[0];
-            } else if (parts.isShadow) {
-                costumeSplit = costumeSplit.split('_shadow')[0];
+    // Process each key
+    for (const key of keys) {
+        const { pokemonId, costumeName, isShiny, isDefault, isShadow } = getKeyParts(key);
+        const variantsArray = Array.isArray(Variants) ? Variants : Variants.data;
+        const pokemonVariant = variantsArray.find(variant => variant.pokemon_id === pokemonId);
+        let costumeId = null;
+        if (pokemonVariant && pokemonVariant.costumes) {
+            const costume = pokemonVariant.costumes.find(costume => costume.name === costumeName);
+            if (costume) {
+                costumeId = costume.costume_id;
             }
-    
-            parts.costumeName = costumeSplit;
         }
-    
-        return parts;
-    };    
 
-    const { pokemonId, costumeName, isShiny, isDefault, isShadow } = getKeyParts(key);
+        const instanceId = uuidv4(); // Generate a unique instance ID
+        const newData = {
+            pokemon_id: pokemonId,
+            cp: null,
+            attack_iv: null,
+            defense_iv: null,
+            stamina_iv: null,
+            shiny: isShiny,
+            costume_id: costumeId,
+            lucky: false,
+            shadow: isShadow,
+            purified: false,
+            fast_move_id: null,
+            charged_move1_id: null,
+            charged_move2_id: null,
+            weight: null,
+            height: null,
+            gender: null,
+            mirror: false,
+            location_card: null,
+            friendship_level: null,
+            date_caught: null,
+            date_added: new Date().toISOString(),
+            is_unowned: true,
+            is_owned: false,
+            is_for_trade: false,
+            is_wanted: false
+        };
 
-    const pokemonVariant = Variants.data.find(variant => variant.pokemon_id === pokemonId);
-    let costumeId = null;
-    if (pokemonVariant && pokemonVariant.costumes) {
-        const costume = pokemonVariant.costumes.find(costume => costume.name === costumeName);
-        if (costume) {
-            costumeId = costume.costume_id;
+        // Only update or initialize if needed
+        if (!ownershipData.hasOwnProperty(key)) {
+            ownershipData[key] = { [instanceId]: newData };
+            shouldUpdateStorage = true;
+        } else if (isNewData) {
+            ownershipData[key][instanceId] = newData;
+            shouldUpdateStorage = true;
         }
     }
 
-    const instanceId = uuidv4(); // Generate a unique instance ID
-    const newData = {
-        pokemon_id: pokemonId,
-        cp: null,
-        attack_iv: null,
-        defense_iv: null,
-        stamina_iv: null,
-        shiny: isShiny,
-        costume_id: costumeId,
-        lucky: false,
-        shadow: isShadow,
-        purified: false,
-        fast_move_id: null,
-        charged_move1_id: null,
-        charged_move2_id: null,
-        weight: null,
-        height: null,
-        gender: null,
-        mirror: false,
-        location_card: null,
-        friendship_level: null,
-        date_caught: null,
-        date_added: new Date().toISOString(),
-        is_unowned: true,
-        is_owned: false,
-        is_for_trade: false,
-        is_wanted: false
-    };
-
-    // Only update or initialize if needed
-    let shouldUpdateStorage = false;
-    if (!ownershipData.hasOwnProperty(key)) {
-        ownershipData[key] = { [instanceId]: newData };
-        shouldUpdateStorage = true;
-    } else if (isNewData) {
-        ownershipData[key][instanceId] = newData;
-        shouldUpdateStorage = true;
-    }
-
+    // Perform storage updates only once after all keys are processed
     if (shouldUpdateStorage) {
-        // Save updates to localStorage
         localStorage.setItem(ownershipDataCacheKey, JSON.stringify(ownershipData));
         console.log('Updated ownership data in localStorage.');
 
-        // Save updates to Cache Storage
         if ('caches' in window) {
             try {
-                const cache = await caches.open(cacheStorageName);
                 const response = new Response(JSON.stringify(ownershipData), {
                     headers: { 'Content-Type': 'application/json' }
                 });
-                await cache.put(`/${ownershipDataCacheKey}`, response);
+                await caches.open(cacheStorageName).then(cache => cache.put(`/${ownershipDataCacheKey}`, response));
                 console.log('Data saved to Cache Storage successfully.');
             } catch (error) {
                 console.error('Failed to save data to Cache Storage:', error);
@@ -230,5 +232,3 @@ export const confirmMoveToFilter = (moveHighlightedToFilter, filter) => {
         moveHighlightedToFilter(filter);
     }
 };
-
-  

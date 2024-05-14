@@ -28,12 +28,13 @@ const useFetchPokemons = () => {
                 const cachedVariants = await cachedVariantsResponse.json();
                 // Check timestamp for variants
                 if (Date.now() - cachedVariants.timestamp < 24 * 60 * 60 * 1000) {
+                    const keys = [];
                     // Reassign keys and preload images after loading from cache
                     cachedVariants.data.forEach(variant => {
                         const key = determinePokemonKey(variant);
                         variant.pokemonKey = key; // Reassign key
                         preloadImage(variant.currentImage, key); // Ensure images are preloaded
-                        initializeOrUpdateOwnershipData(key, isNewData, cachedVariants);
+                        keys.push(key);
                         if (variant.type_1_icon) {
                             preloadImage(variant.type_1_icon, variant.type_1_icon);
                         }
@@ -41,6 +42,9 @@ const useFetchPokemons = () => {
                             preloadImage(variant.type_2_icon, variant.type_2_icon);
                         }
                     });
+
+                    initializeOrUpdateOwnershipData(keys, isNewData, cachedVariants);
+
                     setVariants(cachedVariants.data);
                     setLoading(false);
                     console.log('Using cached variants.');
@@ -62,11 +66,13 @@ const useFetchPokemons = () => {
             const generatedVariants = createPokemonVariants(data);
             console.log('Variants:', generatedVariants);
 
+            const keys = [];
+
             generatedVariants.forEach(variant => {
                 const key = determinePokemonKey(variant);
                 variant.pokemonKey = key; // Ensure key is assigned
                 preloadImage(variant.currentImage, key);
-                initializeOrUpdateOwnershipData(key, isNewData);
+                keys.push(key);
                 // Preload type icons if they exist and are not already loaded
                 if (variant.type_1_icon) {
                     preloadImage(variant.type_1_icon, variant.type_1_icon);
@@ -75,6 +81,8 @@ const useFetchPokemons = () => {
                     preloadImage(variant.type_2_icon, variant.type_2_icon);
                 }
             });
+
+            initializeOrUpdateOwnershipData(keys, isNewData, generatedVariants);
 
             await cacheStorage.put(variantsCacheKey, new Response(JSON.stringify({data: generatedVariants, timestamp: Date.now()})));
             console.log("Current Pokémon Ownership Status:", JSON.parse(localStorage.getItem(ownershipDataCacheKey)));
