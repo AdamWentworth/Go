@@ -22,7 +22,6 @@ const useFetchPokemons = () => {
             const cacheStorage = await caches.open(cacheStorageName); // Open/Create a cache store
             const cachedVariantsResponse = await cacheStorage.match(variantsCacheKey);
             let data;
-            let isNewData = false;
 
             if (cachedVariantsResponse) {
                 const cachedVariants = await cachedVariantsResponse.json();
@@ -43,7 +42,7 @@ const useFetchPokemons = () => {
                         }
                     });
 
-                    initializeOrUpdateOwnershipData(keys, isNewData, cachedVariants);
+                    initializeOrUpdateOwnershipData(keys, cachedVariants);
 
                     setVariants(cachedVariants.data);
                     setLoading(false);
@@ -60,7 +59,6 @@ const useFetchPokemons = () => {
                 data = await getPokemons();
                 localStorage.setItem(pokemonDataCacheKey, JSON.stringify({ data, timestamp: Date.now() }));
                 console.log('Fetched new data and updated cache for Pokémon.');
-                isNewData = true;
             }
 
             const generatedVariants = createPokemonVariants(data);
@@ -82,7 +80,7 @@ const useFetchPokemons = () => {
                 }
             });
 
-            initializeOrUpdateOwnershipData(keys, isNewData, generatedVariants);
+            initializeOrUpdateOwnershipData(keys, generatedVariants);
 
             await cacheStorage.put(variantsCacheKey, new Response(JSON.stringify({data: generatedVariants, timestamp: Date.now()})));
             console.log("Current Pokémon Ownership Status:", JSON.parse(localStorage.getItem(ownershipDataCacheKey)));

@@ -32,21 +32,11 @@ function Collect() {
 
     // UI Controls
     const {
-        showFilterUI,
-        setShowFilterUI,
-        toggleFilterUI,
-        showCollectUI,
-        setShowCollectUI,
-        toggleCollectUI,
-        showEvolutionaryLine,
-        toggleEvolutionaryLine,
-        isFastSelectEnabled,
-        setIsFastSelectEnabled,
-        toggleFastSelect,
-        sortType,
-        setSortType,
-        sortMode,
-        toggleSortMode
+        showFilterUI, setShowFilterUI, toggleFilterUI, 
+        showCollectUI, setShowCollectUI, toggleCollectUI,
+        showEvolutionaryLine, toggleEvolutionaryLine,
+        isFastSelectEnabled, setIsFastSelectEnabled, toggleFastSelect,
+        sortType, setSortType, sortMode, toggleSortMode
     } = useUIControls({
         showFilterUI: false,
         showCollectUI: false,
@@ -148,7 +138,7 @@ function Collect() {
 
     // // Handler for updating highlighted pokemon to new Ownership filter
     const handleMoveHighlightedToFilter = useCallback((filter) => {
-        moveHighlightedToFilter(highlightedCards, setHighlightedCards, () => loadOwnershipData(setOwnershipData), setOwnershipFilter, filter);
+        moveHighlightedToFilter(highlightedCards, setHighlightedCards, () => loadOwnershipData(setOwnershipData), setOwnershipFilter, filter, variants);
     }, [highlightedCards, setHighlightedCards, setOwnershipData, setOwnershipFilter]);
 
     // // Handler for confirming the move to new Ownership filter
