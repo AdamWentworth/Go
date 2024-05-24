@@ -29,6 +29,12 @@ function Collect() {
 
     // Initial pokemon variants collecting from API or local storage
     const { variants, loading } = useFetchPokemons();
+    console.log(`Loaded variants:`, variants);
+
+    // Load ownership data from storage or cache
+    useEffect(() => {
+        loadOwnershipData(setOwnershipData);
+    }, []);
 
     // UI Controls
     const {
@@ -57,10 +63,14 @@ function Collect() {
         pokemonTypes, isTypeSearch
     } = useSearchFilters(variants);
 
-    // Ownership Filter Memo
+    // Handle filtered and sorted pokemon display
     const filteredVariants = useMemo(() => {
-        return ownershipFilter ? getFilteredPokemonsByOwnership(variants, ownershipFilter) : variants;
-    }, [variants, ownershipFilter]);
+        if (ownershipFilter) {
+            // When a filter is active, derive the filtered variants from ownership data
+            return getFilteredPokemonsByOwnership(variants, ownershipData, ownershipFilter);
+        }
+        return variants; // No filter: use original variants data
+    }, [variants, ownershipData, ownershipFilter]);
 
     // Search Filters Memo
     const filters = useMemo(() => ({

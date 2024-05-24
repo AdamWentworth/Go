@@ -1,208 +1,74 @@
 //pokemonOwnershipManager.js
-
 import { v4 as uuidv4 } from 'uuid';
-
 export const ownershipDataCacheKey = "pokemonOwnership";
 const cacheStorageName = 'pokemonCache'; // Consistent cache name
 
-const getKeyParts = (key) => {
-    const parts = {
-        pokemonId: parseInt(key.split('-')[0]),
-        costumeName: null,
-        isShiny: key.includes("_shiny"),
-        isDefault: key.includes("_default"),
-        isShadow: key.includes("_shadow")
-    };
-
-    let costumeSplit = key.split('-')[1];
-    if (costumeSplit) {
-        // Check for the presence of known suffixes and adjust the split accordingly
-        if (parts.isShiny) {
-            costumeSplit = costumeSplit.split('_shiny')[0];
-        } else if (parts.isDefault) {
-            costumeSplit = costumeSplit.split('_default')[0];
-        } else if (parts.isShadow) {
-            costumeSplit = costumeSplit.split('_shadow')[0];
-        }
-
-        parts.costumeName = costumeSplit;
-    }
-
-    return parts;
-};    
-
-
-export async function initializeOrUpdateOwnershipData(keys, Variants) {
+export async function initializeOrUpdateOwnershipData(keys) {
     let ownershipData;
     let shouldUpdateStorage = false;
-    
-    // First try to load from Cache Storage
+    const lastUpdateTimestamp = localStorage.getItem('lastUpdateTimestamp');
+
+    if (lastUpdateTimestamp && Date.now() - parseInt(lastUpdateTimestamp) < 86400000) {
+        console.log('Skipping update, data is fresh.');
+        return; // Skip update if last update was less than 24 hours ago
+    }
+
+    // Load data from storage
     if ('caches' in window) {
         try {
             const cache = await caches.open(cacheStorageName);
             const cachedResponse = await cache.match(`/${ownershipDataCacheKey}`);
             if (cachedResponse) {
                 ownershipData = await cachedResponse.json();
-                console.log('Loaded ownership data from Cache Storage.');
             }
         } catch (error) {
             console.error('Failed to load data from Cache Storage:', error);
         }
     }
-
-    // Fallback to localStorage if Cache Storage is empty
     if (!ownershipData) {
         ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
-        console.log('Loaded ownership data from localStorage.');
     }
 
-    // Process each key
-    for (const key of keys) {
-        if (!ownershipData[key]) {
-            const { pokemonId, costumeName, isShiny, isDefault, isShadow } = getKeyParts(key);
-            const variantsArray = Array.isArray(Variants) ? Variants : Variants.data;
-            const pokemonVariant = variantsArray.find(variant => variant.pokemon_id === pokemonId);
-            let costumeId = null;
-            if (pokemonVariant && pokemonVariant.costumes) {
-                const costume = pokemonVariant.costumes.find(costume => costume.name === costumeName);
-                if (costume) {
-                    costumeId = costume.costume_id;
-                }
-        }
-
-            const instanceId = uuidv4(); // Generate a unique instance ID
-            const newData = {
-                pokemon_id: pokemonId,
-                cp: null,
-                attack_iv: null,
-                defense_iv: null,
-                stamina_iv: null,
-                shiny: isShiny,
-                costume_id: costumeId,
-                lucky: false,
-                shadow: isShadow,
-                purified: false,
-                fast_move_id: null,
-                charged_move1_id: null,
-                charged_move2_id: null,
-                weight: null,
-                height: null,
-                gender: null,
-                mirror: false,
-                location_card: null,
-                friendship_level: null,
-                date_caught: null,
-                date_added: new Date().toISOString(),
-                is_unowned: true,
-                is_owned: false,
-                is_for_trade: false,
-                is_wanted: false
-            };
-
-            // Initialize data if completely new or key is missing
-            ownershipData[key] = { [instanceId]: newData };
+    let updates = {};
+    keys.forEach(key => {
+        // Check if any existing key starts with the provided key
+        if (!Object.keys(ownershipData).some(existingKey => existingKey.startsWith(key))) {
+            const fullKey = `${key}_${uuidv4()}`; // Append UUID to create a full key
+            ownershipData[fullKey] = createNewDataForVariant(fullKey);
+            updates[fullKey] = ownershipData[fullKey];
             shouldUpdateStorage = true;
         }
-    }
+    });
 
-    // Perform storage updates only once after all keys are processed
+    // Save updates if necessary
     if (shouldUpdateStorage) {
+        console.log('Added new ownership data for keys:', updates);
         localStorage.setItem(ownershipDataCacheKey, JSON.stringify(ownershipData));
+        localStorage.setItem('lastUpdateTimestamp', Date.now().toString());
         console.log('Updated ownership data in localStorage.');
 
         if ('caches' in window) {
-            try {
-                const response = new Response(JSON.stringify(ownershipData), {
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                await caches.open(cacheStorageName).then(cache => cache.put(`/${ownershipDataCacheKey}`, response));
-                console.log('Data saved to Cache Storage successfully.');
-            } catch (error) {
-                console.error('Failed to save data to Cache Storage:', error);
-            }
+            const response = new Response(JSON.stringify(ownershipData), { headers: { 'Content-Type': 'application/json' } });
+            await caches.open(cacheStorageName).then(cache => cache.put(`/${ownershipDataCacheKey}`, response));
+            console.log('Data saved to Cache Storage successfully.');
         }
-    }
-}
-
-export function getFilteredPokemonsByOwnership(pokemons, filter) {
-    const ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
-
-    let filterKey = filter.toLowerCase();
-    if (filterKey === "trade") filterKey = "for_trade";  // Adjust the key for the filter name discrepancy
-
-    if (!filter || !["unowned", "owned", "for_trade", "wanted"].includes(filterKey)) {
-        return pokemons; // Return all pokemons if no filter is applied or if the filter is invalid
-    }
-
-    // Filter and return pokemons based on the ownership data
-    return pokemons.map(pokemon => {
-        const instances = ownershipData[pokemon.pokemonKey];
-        if (!instances) {
-            return null; // If no instances exist, exclude this pokemon
-        }
-
-        // Filter instances that match the condition
-        const matchingInstances = Object.values(instances).filter(instance => instance[`is_${filterKey}`]);
-        if (matchingInstances.length > 0) {
-            return { ...pokemon, instances: matchingInstances }; // Attach only matching instances
-        }
-
-        return null;
-    }).filter(pokemon => pokemon !== null); // Remove any null entries
-}
-
-export function updatePokemonOwnership(pokemonKey, newStatus, isNewInstance = false, Variants) {
-    console.log(`Updating ownership status for ${pokemonKey} to ${newStatus}, new instance flag is ${isNewInstance}`);
-
-    const ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
-    let instances = ownershipData[pokemonKey] || {};
-
-    if (isNewInstance || shouldCreateNewInstance(instances, newStatus)) {
-        const instanceId = uuidv4();
-        instances[instanceId] = createNewInstanceData(pokemonKey, newStatus, Variants);
-        console.log(`Created new instance ${instanceId} for key ${pokemonKey} with status ${newStatus}`);
     } else {
-        Object.values(instances).forEach(instance => {
-            updateInstanceStatus(instance, newStatus);
-        });
-        console.log(`Updated existing instances for key ${pokemonKey} to status ${newStatus}`);
+        console.log('No updates required.');
     }
-
-    ownershipData[pokemonKey] = instances;
-    localStorage.setItem(ownershipDataCacheKey, JSON.stringify(ownershipData));
-    updateCacheStorage(ownershipData);
 }
 
-function shouldCreateNewInstance(instances, newStatus) {
-    console.log(`Checking if a new instance is needed for status ${newStatus}`);
-    return Object.values(instances).some(instance =>
-        instance.is_owned || instance.is_for_trade || instance.is_wanted
-    );
-}
-
-function createNewInstanceData(pokemonKey, newStatus, Variants) {
-    console.log(`Creating new instance data for key ${pokemonKey} with status ${newStatus}`);
-    const { pokemonId, costumeName, isShiny, isDefault, isShadow } = getKeyParts(pokemonKey);
-
-    const variantsArray = Array.isArray(Variants) ? Variants : Variants.data;
-    const pokemonVariant = variantsArray.find(variant => variant.pokemon_id === pokemonId);
-    let costumeId = null;
-    if (pokemonVariant && pokemonVariant.costumes) {
-        const costume = pokemonVariant.costumes.find(costume => costume.name === costumeName);
-        if (costume) {
-            costumeId = costume.costume_id;
-        }
-    }
+function createNewDataForVariant(variant) {
+    // Logic to create new data based on the variant, possibly deconstructing parts of the variant object
     return {
-        pokemon_id: pokemonId,
+        pokemon_id: variant.pokemon_id,
         cp: null,
         attack_iv: null,
         defense_iv: null,
         stamina_iv: null,
-        shiny: isShiny,
-        costume_id: costumeId,
+        shiny: variant.isShiny,
+        costume_id: variant.costume_id,
         lucky: false,
-        shadow: isShadow,
+        shadow: variant.isShadow,
         purified: false,
         fast_move_id: null,
         charged_move1_id: null,
@@ -215,50 +81,93 @@ function createNewInstanceData(pokemonKey, newStatus, Variants) {
         friendship_level: null,
         date_caught: null,
         date_added: new Date().toISOString(),
-        is_unowned: newStatus === 'Unowned',
-        is_owned: newStatus === 'Owned',
-        is_for_trade: newStatus === 'Trade',
-        is_wanted: newStatus === 'Wanted'
+        is_unowned: true,
+        is_owned: false,
+        is_for_trade: false,
+        is_wanted: false
     };
 }
 
-function updateInstanceStatus(instance, newStatus) {
-    console.log(`Updating status for instance to ${newStatus}`);
+export function getFilteredPokemonsByOwnership(variants, ownershipData, filter) {
+    // Adjust the filter if necessary to handle special cases
+    const adjustedFilter = filter === 'trade' ? 'for_trade' : filter;
+    const filterKey = `is_${adjustedFilter.toLowerCase()}`;
+    console.log(`Filtering for status: ${filterKey}`);
 
-    // Reset all flags to ensure only the correct status is set
-    instance.is_unowned = false;
-    instance.is_owned = false;
-    instance.is_for_trade = false;
-    instance.is_wanted = false;
+    // Get all keys that match the filter criteria, including their UUIDs
+    const filteredKeys = Object.entries(ownershipData)
+        .filter(([key, data]) => data[filterKey])
+        .map(([key]) => key);  // Maintain the full key with UUID
 
-    // Determine the correct property name based on the new status
-    const statusKey = getStatusKey(newStatus);
-    instance[statusKey] = true;
+    console.log(`Filtered keys matching filter '${filterKey}':`, filteredKeys);
 
-    // Ensure that if the new status is 'Trade', the 'Owned' status is also set
-    if (newStatus.toLowerCase() === 'trade' && !instance.is_owned) {
-        instance.is_owned = true;
-        console.log(`Set is_owned to true for the instance as it is necessary to own pokemon for trade.`);
-    }
+    // Map the filtered keys to their corresponding variant data
+    const filteredPokemons = filteredKeys.map(key => {
+        const baseKey = key.split('_')[0];  // Extract the base key to find corresponding variant
+        const variant = variants.find(v => v.pokemonKey === baseKey);
+        if (variant) {
+            return {
+                ...variant,
+                pokemonKey: key,  // Use the full key to maintain uniqueness
+                ownershipStatus: ownershipData[key]  // Optional: include ownership data if needed
+            };
+        }
+    }).filter(pokemon => pokemon !== undefined);  // Filter out any undefined results due to missing variants
 
-    console.log(`Set ${statusKey} to true for the instance.`);
+    console.log(`Pokémons after applying filter:`, filteredPokemons);
+    return filteredPokemons;
 }
 
-// Helper function to map the human-readable status to the correct object key
-function getStatusKey(newStatus) {
-    switch(newStatus.toLowerCase()) {
-        case 'owned':
-            return 'is_owned';
-        case 'trade':
-            return 'is_for_trade';
-        case 'wanted':
-            return 'is_wanted';
-        case 'unowned':
-            return 'is_unowned';
-        default:
-            console.error(`Unknown status: ${newStatus}`);
-            return 'is_unowned'; // Default case to avoid undefined behavior
+
+export function updatePokemonOwnership(pokemonKey, newStatus, variants) {
+    console.log(`Attempting to update/create ownership for ${pokemonKey} with status ${newStatus}`);
+    const ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
+
+    // Verify the full scope of variants being handled
+    if (!Array.isArray(variants) || variants.length === 0) {
+        console.error("Invalid or empty variants array provided", variants);
+        return;
     }
+
+    const variantData = variants.find(variant => pokemonKey === variant.pokemonKey);
+    if (!variantData) {
+        console.error("No variant data found for key:", pokemonKey);
+        return;
+    }
+    console.log(`Using variant data for key ${pokemonKey}:`, variantData);
+
+    // Updating or creating new ownership entries
+    let needNewInstance = true;
+    Object.keys(ownershipData).forEach(key => {
+        if (key.startsWith(pokemonKey) && ownershipData[key].is_unowned) {
+            updateInstanceStatus(ownershipData[key], newStatus);
+            needNewInstance = false;
+        }
+    });
+
+    if (needNewInstance) {
+        const newKey = `${pokemonKey}_${uuidv4()}`;
+        ownershipData[newKey] = createNewDataForVariant(variantData);
+        updateInstanceStatus(ownershipData[newKey], newStatus);
+    }
+
+    localStorage.setItem(ownershipDataCacheKey, JSON.stringify(ownershipData));
+    console.log(`Updated ownership data for ${pokemonKey} with status ${newStatus}`);
+}
+
+function updateInstanceStatus(instance, newStatus) {
+    console.log(`Updating status for ${instance.pokemon_id}: Current status is ${JSON.stringify(instance)}`);
+    instance.is_unowned = newStatus === 'Unowned';
+    instance.is_owned = newStatus === 'Owned' || newStatus === 'Trade';
+    instance.is_for_trade = newStatus === 'Trade';
+    instance.is_wanted = newStatus === 'Wanted';
+
+    // Consistency checks
+    if (newStatus === 'Trade' && !instance.is_owned) {
+        instance.is_owned = true; // Must own a Pokémon to trade it
+    }
+
+    console.log(`Updated status for ${instance.pokemon_id} to ${newStatus}`);
 }
 
 async function updateCacheStorage(data) {
@@ -288,7 +197,7 @@ export const updateOwnershipFilter = (setOwnershipFilter, filterType) => {
 
 export const moveHighlightedToFilter = (highlightedCards, setHighlightedCards, loadOwnershipData, setOwnershipFilter, filter, Variants) => {
     highlightedCards.forEach(pokemonKey => {
-        updatePokemonOwnership(pokemonKey, filter, false, Variants);
+        updatePokemonOwnership(pokemonKey, filter, Variants);
     });
     setHighlightedCards(new Set());
     loadOwnershipData();
