@@ -7,29 +7,29 @@ const TwitterStrategy = require('passport-twitter').Strategy;
 const DiscordStrategy = require('passport-discord').Strategy;
 const User = require('../models/user');
 
-passport.use(
-    new GoogleStrategy({
-        // Options for the Google strategy
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: '/auth/google/redirect'
-    }, (accessToken, refreshToken, profile, done) => {
-        // Check if user already exists in our db
-        User.findOne({ googleId: profile.id }).then((currentUser) => {
-            if (currentUser) {
-                done(null, currentUser);
-            } else {
-                new User({
-                    googleId: profile.id,
-                    username: profile.displayName,
-                    email: profile.emails[0].value
-                }).save().then((newUser) => {
-                    done(null, newUser);
-                });
-            }
-        });
-    })
-);
+// passport.use(
+//     new GoogleStrategy({
+//         // Options for the Google strategy
+//         clientID: process.env.GOOGLE_CLIENT_ID,
+//         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+//         callbackURL: '/auth/google/redirect'
+//     }, (accessToken, refreshToken, profile, done) => {
+//         // Check if user already exists in our db
+//         User.findOne({ googleId: profile.id }).then((currentUser) => {
+//             if (currentUser) {
+//                 done(null, currentUser);
+//             } else {
+//                 new User({
+//                     googleId: profile.id,
+//                     username: profile.displayName,
+//                     email: profile.emails[0].value
+//                 }).save().then((newUser) => {
+//                     done(null, newUser);
+//                 });
+//             }
+//         });
+//     })
+// );
 
 
 // passport.use(new FacebookStrategy({

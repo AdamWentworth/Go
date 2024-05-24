@@ -2,41 +2,40 @@ Tech Stack by Service
 
 1) Frontend Service
 
-- Purpose: Provides the user interface of your web app.
+- Purpose: Provides the user interface and interactivity for the web app.
 - Technologies:
     - React: For building a dynamic and responsive frontend.
-    - Nginx: To serve the built React application, handle caching, load balancing, and as a reverse proxy to backend services.
-    - Docker: Optionally, to containerize the Nginx server for easy deployment.
-- Deployment: Can be hosted on services like Vercel, Netlify, or use AWS/Google Cloud with Nginx in a Docker container for more control.
+    - Nginx: (currently not implemented) To serve the built React application, handle caching, load balancing, and as a reverse proxy to backend services.
+    - Docker: For containerization.
+- Deployment: AWS/Google Cloud/Azure in a Kubernetes cluster for more control.
 
 2) Authentication Service
 
 - Purpose: Handles user authentication and session management.
-- Database: MySQL/PostgreSQL for storing user credentials and session data.
+- Database: MongoDB for storing user credentials and session data.
 - Technologies:
     - Node.js/Express: For backend logic.
     - JWT (JSON Web Tokens): For creating access tokens.
     - Docker: For containerization.
-- Deployment: AWS ECS/Kubernetes for orchestration if scaled.
+- Deployment: AWS/Google Cloud/Azure in a Kubernetes cluster for more control.
 
 3) Pokémon Data Service
 
 - Purpose: Manages all static Pokémon data retrieval.
-- Database: SQLite; consider Redis for caching.
+- Database: SQLite; 
 - Technologies:
     - Node.js/Express: For a simple REST API.
     - Docker: For containerization.
-    - Redis: For caching frequently accessed data to improve performance.
-- Deployment: Kubernetes for managing service deployment and scaling.
+- Deployment: AWS/Google Cloud/Azure in a Kubernetes cluster for more control.
 
 4) User Pokémon Management Service
 
 - Purpose: Manages users' Pokémon collections and trading lists.
 - Database: MySQL
 - Technologies:
-    - Python/Django: As an alternative to Java for robust API management.
+    - Python/Django: As an alternative to Node.js for robust API management.
     - Docker: For containerization.
-- Deployment: Can use AWS ECS or Kubernetes for container orchestration.
+- Deployment: AWS/Google Cloud/Azure in a Kubernetes cluster for more control.
 
 5) Geolocation Service
 
