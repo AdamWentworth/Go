@@ -1,3 +1,5 @@
+/* Account.css */
+
 .account-page {
     background-color: #333;
     height: calc(100vh - 80px);
@@ -8,3 +10,26 @@
     align-items: center;
     padding: 0;
 }
+
+@media (min-width: 1024px) and (max-width: 1440px) {
+    .account-page .account-form {
+        max-width: 60%; /* Further reducing width of the form for a more drastic change */
+        margin: auto; /* Ensuring it is centered */
+        padding: 8px; /* Slightly smaller padding */
+        font-size: 0.85em; /* Slightly smaller text */
+    }
+    .account-page .account-form .user-details {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* Keeping the grid layout */
+        gap: 16px; /* Smaller gap */
+    }
+    .account-page .account-form input,
+    .account-page .account-form button {
+        padding: 6px 10px; /* Smaller input fields and buttons */
+        font-size: 0.75em; /* Further reduce font size */
+    }
+    .account-page .account-form label {
+        margin-bottom: 8px; /* Slightly reduced spacing */
+    }
+}
+

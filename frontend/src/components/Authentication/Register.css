@@ -8,3 +8,38 @@
     align-items: center;
     padding: 0;
 }
+
+/* Register.css */
+@media (min-width: 1024px) and (max-width: 1440px) {
+    .register-form {
+        max-width: 60%; /* Reduce the maximum width for more compact form */
+        margin: auto; /* Center the form horizontally */
+        padding: 15px; /* Compact overall padding */
+        font-size: 0.8em; /* Slightly smaller font size for all text */
+    }
+    .register-form .user-details {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* Grid layout for user details */
+        gap: 10px; /* Narrower gaps between grid columns */
+    }
+    .register-form input,
+    .register-form button {
+        padding: 6px; /* Reduced padding in inputs and buttons */
+        height: 30px; /* Decrease height for a more compact appearance */
+    }
+    .register-form label {
+        margin-bottom: 5px; /* Tighter spacing below labels */
+    }
+    .register-form .error {
+        margin-top: 2px; /* Reduce spacing for error messages */
+        font-size: 0.65em; /* Smaller error message text */
+    }
+    .register-form .social-login-buttons button,
+    .register-form .social-login-buttons .discord-button {
+        height: 40px; /* Standardizing social button heights */
+        font-size: 0.8em; /* Smaller font size for social buttons */
+        padding: 6px 12px; /* Reduced padding in social buttons */
+    }
+}
+
+
