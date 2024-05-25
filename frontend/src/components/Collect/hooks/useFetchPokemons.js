@@ -42,7 +42,7 @@ const useFetchPokemons = () => {
                         }
                     });
 
-                    initializeOrUpdateOwnershipData(keys, cachedVariants);
+                    initializeOrUpdateOwnershipData(keys, cachedVariants.data);
 
                     setVariants(cachedVariants.data);
                     setLoading(false);

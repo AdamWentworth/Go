@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const ownershipDataCacheKey = "pokemonOwnership";
 const cacheStorageName = 'pokemonCache'; // Consistent cache name
 
-export async function initializeOrUpdateOwnershipData(keys) {
+export async function initializeOrUpdateOwnershipData(keys, variants) {
     let ownershipData;
     let shouldUpdateStorage = false;
     const lastUpdateTimestamp = localStorage.getItem('lastUpdateTimestamp');
@@ -30,11 +30,12 @@ export async function initializeOrUpdateOwnershipData(keys) {
     }
 
     let updates = {};
-    keys.forEach(key => {
+    variants.forEach((variant, index) => {
+        const key = keys[index]; // Ensure keys and variants are synchronized by index
         // Check if any existing key starts with the provided key
         if (!Object.keys(ownershipData).some(existingKey => existingKey.startsWith(key))) {
             const fullKey = `${key}_${uuidv4()}`; // Append UUID to create a full key
-            ownershipData[fullKey] = createNewDataForVariant(fullKey);
+            ownershipData[fullKey] = createNewDataForVariant(variant); // Use variant here instead of fullKey
             updates[fullKey] = ownershipData[fullKey];
             shouldUpdateStorage = true;
         }
