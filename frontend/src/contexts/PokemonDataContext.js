@@ -19,6 +19,7 @@ export const PokemonDataProvider = ({ children }) => {
 
     useEffect(() => {
         async function fetchData() {
+            console.log("Fetching data from API or cache...");
             const pokemonDataCacheKey = "pokemonData";
             const variantsCacheKey = "pokemonVariants";
             const cacheStorageName = 'pokemonCache';
@@ -29,16 +30,27 @@ export const PokemonDataProvider = ({ children }) => {
 
             if (cachedVariantsResponse) {
                 const cachedVariants = await cachedVariantsResponse.json();
+                console.log("Checking cache freshness...");
                 if (Date.now() - cachedVariants.timestamp < 24 * 60 * 60 * 1000) {
-                    setData(prev => ({ ...prev, variants: cachedVariants.data, loading: false }));
+                    console.log("Using cached variants data");
+                    setData(prev => {
+                        if (JSON.stringify(prev.variants) !== JSON.stringify(cachedVariants.data)) {
+                            return { ...prev, variants: cachedVariants.data, loading: false };
+                        }
+                        return prev;
+                    });
                     return;
+                } else {
+                    console.log("Cached data is stale, refetching...");
                 }
             }
 
             const cachedData = localStorage.getItem(pokemonDataCacheKey);
             if (cachedData && (Date.now() - JSON.parse(cachedData).timestamp < 24 * 60 * 60 * 1000)) {
+                console.log("Using data from local storage");
                 pokemons = JSON.parse(cachedData).data;
             } else {
+                console.log("Fetching new data from API");
                 pokemons = await getPokemons();
                 localStorage.setItem(pokemonDataCacheKey, JSON.stringify({ data: pokemons, timestamp: Date.now() }));
             }
@@ -64,7 +76,10 @@ export const PokemonDataProvider = ({ children }) => {
         });
     }, []);
 
-    const contextValue = useMemo(() => data, [data]);
+    const contextValue = useMemo(() => {
+        console.log("Memoizing context value...");
+        return data;
+    }, [data]);
 
     return (
         <PokemonDataContext.Provider value={contextValue}>
@@ -74,7 +89,7 @@ export const PokemonDataProvider = ({ children }) => {
 };
 
 const preloadImage = (url) => {
+    console.log("Preloading image:", url);
     const img = new Image();
     img.src = url;
 };
-

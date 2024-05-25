@@ -77,7 +77,7 @@ function Collect() {
     // Handle filtered and sorted pokemon display
     const filteredVariants = useMemo(() => {
         if (ownershipFilter) {
-            // When a filter is active, derive the filtered variants from ownership data
+            console.log("Filtering variants based on ownership:", ownershipFilter);
             return getFilteredPokemonsByOwnership(variants, ownershipData, ownershipFilter);
         }
         return variants; // No filter: use original variants data
@@ -180,6 +180,7 @@ function Collect() {
 
     // Automatically set UI visibility based on window width
     useEffect(() => {
+        console.log("Window width changed:", windowWidth);
         const isWide = windowWidth >= 1024;
         setShowFilterUI(isWide); // Always show filters on wide screens
         setShowCollectUI(isWide); // Always show collect UI on wide screens
