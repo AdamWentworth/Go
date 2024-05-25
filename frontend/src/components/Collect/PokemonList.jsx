@@ -3,7 +3,7 @@
 import React from 'react';
 import PokemonCard from './PokemonCard';
 import PokemonOverlay from './PokemonOverlay';
-import './PokemonList.css'
+import './PokemonList.css';
 
 function PokemonList({
     sortedPokemons,
@@ -54,4 +54,4 @@ function PokemonList({
     );
 }
 
-export default PokemonList;
+export default React.memo(PokemonList);

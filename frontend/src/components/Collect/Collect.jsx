@@ -6,7 +6,8 @@ import PokemonList from './PokemonList';
 import useSearchFilters from './hooks/useSearchFilters'; // Import the search filters hook
 import HeaderUI from './HeaderUI';
 import SortOverlay from './SortOverlay';
-import useFetchPokemons from './hooks/useFetchPokemons';
+// import useFetchPokemons from './hooks/useFetchPokemons';
+import { usePokemonData } from '../../contexts/PokemonDataContext'; // Import the context hook
 import useSortManager from './hooks/useSortManager';
 import useFilterPokemons from './hooks/useFilterPokemons';
 import { 
@@ -14,27 +15,37 @@ import {
     moveHighlightedToFilter, confirmMoveToFilter, 
     getFilteredPokemonsByOwnership } from './utils/pokemonOwnershipManager';
 
+const PokemonListMemo = React.memo(PokemonList);
+const HeaderUIMemo = React.memo(HeaderUI);
+const SortOverlayMemo = React.memo(SortOverlay);
+
 function Collect() {
+    console.log('Collect component mounting');
 
     //States
+    const { variants, ownershipData, loading } = usePokemonData();
+
     const [selectedPokemon, setSelectedPokemon] = useState(null);
     const [highlightedCards, setHighlightedCards] = useState(new Set());
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const [ownershipFilter, setOwnershipFilter] = useState("");
-    const [ownershipData, setOwnershipData] = useState({});
+    // const [ownershipData, setOwnershipData] = useState({});
     const [showAll, setShowAll] = useState(false);
 
     // Pokemon who by default will only show 1 of many forms
     const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
 
     // Initial pokemon variants collecting from API or local storage
-    const { variants, loading } = useFetchPokemons();
-    console.log(`Loaded variants:`, variants);
+    // const { variants, loading } = useFetchPokemons();
+    // console.log(`Loaded variants:`, variants);
 
     // Load ownership data from storage or cache
-    useEffect(() => {
-        loadOwnershipData(setOwnershipData);
-    }, []);
+    // useEffect(() => {
+    //     console.log('Component mounted, loading ownership data');
+    //     loadOwnershipData(setOwnershipData);
+
+    //     return () => console.log('Collect component unmounted'); // This will log when the component is unmounted
+    // }, []);
 
     // UI Controls
     const {
@@ -146,10 +157,10 @@ function Collect() {
         }
     }, [sortedPokemons, highlightedCards]);    
 
-    // // Handler for updating highlighted pokemon to new Ownership filter
-    const handleMoveHighlightedToFilter = useCallback((filter) => {
-        moveHighlightedToFilter(highlightedCards, setHighlightedCards, () => loadOwnershipData(setOwnershipData), setOwnershipFilter, filter, variants);
-    }, [highlightedCards, setHighlightedCards, setOwnershipData, setOwnershipFilter]);
+    // Handler for updating highlighted pokemon to new Ownership filter
+    const handleMoveHighlightedToFilter = useCallback(filter => {
+        moveHighlightedToFilter(highlightedCards, setHighlightedCards, filter, variants);
+    }, [highlightedCards, variants]);
 
     // // Handler for confirming the move to new Ownership filter
     const handleConfirmMoveToFilter = useCallback((filter) => {
@@ -161,7 +172,6 @@ function Collect() {
         const handleResize = () => {
             setWindowWidth(window.innerWidth);
         };
-
         window.addEventListener('resize', handleResize);
         return () => {
             window.removeEventListener('resize', handleResize);
@@ -173,11 +183,15 @@ function Collect() {
         const isWide = windowWidth >= 1024;
         setShowFilterUI(isWide); // Always show filters on wide screens
         setShowCollectUI(isWide); // Always show collect UI on wide screens
-    }, [windowWidth]);    
+    }, [windowWidth]);  
+    
+    if (loading) {
+        return <div>Loading...</div>; // Or any other loading indicator
+    }
      
     return (
         <div>
-            <HeaderUI
+            <HeaderUIMemo
                 showFilterUI={showFilterUI}
                 toggleFilterUI={() => setShowFilterUI(prev => !prev)}
                 isShiny={isShiny}
@@ -202,7 +216,7 @@ function Collect() {
                 highlightedCards={highlightedCards}
                 confirmMoveToFilter={handleConfirmMoveToFilter}
             />
-            <PokemonList
+            <PokemonListMemo
                 sortedPokemons={sortedPokemons}
                 loading={loading}
                 selectedPokemon={selectedPokemon}
@@ -215,7 +229,7 @@ function Collect() {
                 singleFormPokedexNumbers={[201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741]}
                 ownershipFilter={ownershipFilter}
             />
-            <SortOverlay
+            <SortOverlayMemo
                 sortType={sortType}
                 setSortType={setSortType}
                 sortMode={sortMode}

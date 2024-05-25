@@ -59,4 +59,5 @@ const HeaderUI = ({
   );
 };
 
-export default HeaderUI;
+export default React.memo(HeaderUI);
+

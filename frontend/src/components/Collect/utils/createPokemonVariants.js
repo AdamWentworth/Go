@@ -1,51 +1,74 @@
 // createPokemonVariants.js
 
 import { formatCostumeName } from './formattingHelpers';
+import { determinePokemonKey } from './imageHelpers'; // Make sure the path is correct
 
 const createPokemonVariants = (pokemons) => {
   const generateVariants = (pokemon) => {
     let variants = [];
 
-    // Default variant
-    variants.push({ ...pokemon, currentImage: pokemon.image_url, variantType: 'default' });
+    // Generate each type of variant
+    const defaultVariant = {
+      ...pokemon,
+      currentImage: pokemon.image_url,
+      variantType: 'default'
+    };
+    defaultVariant.pokemonKey = determinePokemonKey(defaultVariant);
+    variants.push(defaultVariant);
 
-    // Shiny variant
     if (pokemon.shiny_available) {
-      variants.push({ ...pokemon, currentImage: pokemon.image_url_shiny, variantType: 'shiny', name: `Shiny ${pokemon.name}` });
+      const shinyVariant = {
+        ...pokemon,
+        currentImage: pokemon.image_url_shiny,
+        variantType: 'shiny',
+        name: `Shiny ${pokemon.name}`
+      };
+      shinyVariant.pokemonKey = determinePokemonKey(shinyVariant);
+      variants.push(shinyVariant);
     }
 
-    // Shadow variant
     if (pokemon.date_shadow_available) {
-      variants.push({ ...pokemon, currentImage: pokemon.image_url_shadow, variantType: 'shadow', name: `Shadow ${pokemon.name}` });
+      const shadowVariant = {
+        ...pokemon,
+        currentImage: pokemon.image_url_shadow,
+        variantType: 'shadow',
+        name: `Shadow ${pokemon.name}`
+      };
+      shadowVariant.pokemonKey = determinePokemonKey(shadowVariant);
+      variants.push(shadowVariant);
 
-      // Shiny shadow variant
       if (pokemon.date_shiny_shadow_available) {
-        variants.push({ ...pokemon, currentImage: pokemon.image_url_shiny_shadow, variantType: 'shiny_shadow', name: `Shiny Shadow ${pokemon.name}` });
+        const shinyShadowVariant = {
+          ...pokemon,
+          currentImage: pokemon.image_url_shiny_shadow,
+          variantType: 'shiny_shadow',
+          name: `Shiny Shadow ${pokemon.name}`
+        };
+        shinyShadowVariant.pokemonKey = determinePokemonKey(shinyShadowVariant);
+        variants.push(shinyShadowVariant);
       }
     }
 
-    // Costumes (and their shiny variants if available)
     if (pokemon.costumes) {
       pokemon.costumes.forEach(costume => {
-        // Costume variant
-        const formattedCostumeName = formatCostumeName(costume.name);
-        const costumeVariantName = `${formattedCostumeName} ${pokemon.name}`;
-        variants.push({
+        const costumeVariant = {
           ...pokemon,
           currentImage: costume.image_url,
           variantType: `costume_${costume.costume_id}`,
-          name: costumeVariantName
-        });
+          name: `${formatCostumeName(costume.name)} ${pokemon.name}`
+        };
+        costumeVariant.pokemonKey = determinePokemonKey(costumeVariant);
+        variants.push(costumeVariant);
 
-        // Shiny costume variant
         if (costume.shiny_available) {
-          const shinyCostumeVariantName = `Shiny ${formattedCostumeName} ${pokemon.name}`;
-          variants.push({
+          const shinyCostumeVariant = {
             ...pokemon,
             currentImage: costume.image_url_shiny,
             variantType: `costume_${costume.costume_id}_shiny`,
-            name: shinyCostumeVariantName
-          });
+            name: `Shiny ${formatCostumeName(costume.name)} ${pokemon.name}`
+          };
+          shinyCostumeVariant.pokemonKey = determinePokemonKey(shinyCostumeVariant);
+          variants.push(shinyCostumeVariant);
         }
       });
     }
@@ -53,7 +76,8 @@ const createPokemonVariants = (pokemons) => {
     return variants;
   };
 
-  return pokemons.flatMap(pokemon => generateVariants(pokemon));
+  return pokemons.flatMap(generateVariants);
 };
 
 export default createPokemonVariants;
+

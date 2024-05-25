@@ -80,6 +80,5 @@ const SortOverlay = ({ sortType, setSortType, sortMode, setSortMode }) => {
     );
 }
 
-export default SortOverlay;
-
+export default React.memo(SortOverlay);
 

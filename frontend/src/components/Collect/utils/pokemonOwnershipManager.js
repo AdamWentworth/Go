@@ -15,16 +15,21 @@ export async function initializeOrUpdateOwnershipData(keys, variants) {
 
     // Load data from storage
     if ('caches' in window) {
+        console.log('Accessing caches...'); // Log before accessing cache
         try {
             const cache = await caches.open(cacheStorageName);
             const cachedResponse = await cache.match(`/${ownershipDataCacheKey}`);
+            console.log('Cache match attempt made'); // Log after attempting to match cache
             if (cachedResponse) {
+                console.log('Cache found, parsing data...'); // Log before parsing data
                 ownershipData = await cachedResponse.json();
+                console.log('Cache data parsed successfully'); // Log after parsing data
             }
         } catch (error) {
             console.error('Failed to load data from Cache Storage:', error);
         }
     }
+    
     if (!ownershipData) {
         ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
     }
