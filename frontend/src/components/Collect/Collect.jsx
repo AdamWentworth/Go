@@ -10,6 +10,7 @@ import SortOverlay from './SortOverlay';
 import { usePokemonData } from '../../contexts/PokemonDataContext'; // Import the context hook
 import useSortManager from './hooks/useSortManager';
 import useFilterPokemons from './hooks/useFilterPokemons';
+// import { filterPokemons } from './hooks/filterPokemons'; // Adjusted import
 import { 
     loadOwnershipData, updateOwnershipFilter, 
     moveHighlightedToFilter, confirmMoveToFilter, 
@@ -92,6 +93,10 @@ function Collect() {
     // Filter Pokemon
     const displayedPokemons = useFilterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
 
+    // const displayedPokemons = useMemo(() => {
+    //     return filterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
+    // }, [filteredVariants, filters, showEvolutionaryLine, showAll, singleFormPokedexNumbers]);
+    
     // Sort Pokemon
     const sortedPokemons = useSortManager(displayedPokemons, sortType, sortMode, { isShiny, showShadow, showCostume, showAll });
 

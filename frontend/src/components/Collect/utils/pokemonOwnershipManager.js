@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const ownershipDataCacheKey = "pokemonOwnership";
 const cacheStorageName = 'pokemonCache'; // Consistent cache name
 
-export async function initializeOrUpdateOwnershipData(keys, variants) {
+export async function initializeOrUpdateOwnershipData(keys) {
     let ownershipData;
     let shouldUpdateStorage = false;
     const lastUpdateTimestamp = localStorage.getItem('lastUpdateTimestamp');
@@ -15,32 +15,26 @@ export async function initializeOrUpdateOwnershipData(keys, variants) {
 
     // Load data from storage
     if ('caches' in window) {
-        console.log('Accessing caches...'); // Log before accessing cache
         try {
             const cache = await caches.open(cacheStorageName);
             const cachedResponse = await cache.match(`/${ownershipDataCacheKey}`);
-            console.log('Cache match attempt made'); // Log after attempting to match cache
             if (cachedResponse) {
-                console.log('Cache found, parsing data...'); // Log before parsing data
                 ownershipData = await cachedResponse.json();
-                console.log('Cache data parsed successfully'); // Log after parsing data
             }
         } catch (error) {
             console.error('Failed to load data from Cache Storage:', error);
         }
     }
-    
     if (!ownershipData) {
         ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
     }
 
     let updates = {};
-    variants.forEach((variant, index) => {
-        const key = keys[index]; // Ensure keys and variants are synchronized by index
+    keys.forEach(key => {
         // Check if any existing key starts with the provided key
         if (!Object.keys(ownershipData).some(existingKey => existingKey.startsWith(key))) {
             const fullKey = `${key}_${uuidv4()}`; // Append UUID to create a full key
-            ownershipData[fullKey] = createNewDataForVariant(variant); // Use variant here instead of fullKey
+            ownershipData[fullKey] = createNewDataForVariant(fullKey);
             updates[fullKey] = ownershipData[fullKey];
             shouldUpdateStorage = true;
         }
@@ -96,7 +90,7 @@ function createNewDataForVariant(variant) {
 
 export function getFilteredPokemonsByOwnership(variants, ownershipData, filter) {
     // Adjust the filter if necessary to handle special cases
-    const adjustedFilter = filter === 'trade' ? 'for_trade' : filter;
+    const adjustedFilter = filter === 'Trade' ? 'for_trade' : filter;
     const filterKey = `is_${adjustedFilter.toLowerCase()}`;
     console.log(`Filtering for status: ${filterKey}`);
 
