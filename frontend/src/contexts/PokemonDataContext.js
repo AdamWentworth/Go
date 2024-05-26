@@ -1,8 +1,8 @@
 // PokemonDataContext.js
 
-import React, { useContext, createContext, useState, useEffect, useMemo } from 'react';
+import React, { useContext, createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { getPokemons } from '../components/Collect/utils/api';
-import { initializeOrUpdateOwnershipData } from '../components/Collect/utils/pokemonOwnershipManager';
+import { initializeOrUpdateOwnershipData, updatePokemonOwnership } from '../components/Collect/utils/pokemonOwnershipManager';
 import createPokemonVariants from '../components/Collect/utils/createPokemonVariants';
 import { determinePokemonKey } from '../components/Collect/utils/imageHelpers'; 
 
@@ -76,10 +76,20 @@ export const PokemonDataProvider = ({ children }) => {
         });
     }, []);
 
-    const contextValue = useMemo(() => {
-        console.log("Memoizing context value...");
-        return data;
-    }, [data]);
+    const updateOwnership = useCallback((pokemonKey, newStatus) => {
+        // Call updatePokemonOwnership with the context's set function
+        updatePokemonOwnership(pokemonKey, newStatus, data.variants, (newOwnershipData) => {
+            setData(prev => ({
+                ...prev,
+                ownershipData: newOwnershipData
+            }));
+        });
+    }, [data.variants]);
+
+    const contextValue = useMemo(() => ({
+        ...data,
+        updateOwnership
+    }), [data, updateOwnership]);
 
     return (
         <PokemonDataContext.Provider value={contextValue}>
@@ -89,7 +99,6 @@ export const PokemonDataProvider = ({ children }) => {
 };
 
 const preloadImage = (url) => {
-    console.log("Preloading image:", url);
     const img = new Image();
     img.src = url;
 };

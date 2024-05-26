@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const ownershipDataCacheKey = "pokemonOwnership";
 const cacheStorageName = 'pokemonCache'; // Consistent cache name
 
-export async function initializeOrUpdateOwnershipData(keys) {
+export async function initializeOrUpdateOwnershipData(keys, variants) {
     let ownershipData;
     let shouldUpdateStorage = false;
     const lastUpdateTimestamp = localStorage.getItem('lastUpdateTimestamp');
@@ -15,26 +15,32 @@ export async function initializeOrUpdateOwnershipData(keys) {
 
     // Load data from storage
     if ('caches' in window) {
+        console.log('Accessing caches...'); // Log before accessing cache
         try {
             const cache = await caches.open(cacheStorageName);
             const cachedResponse = await cache.match(`/${ownershipDataCacheKey}`);
+            console.log('Cache match attempt made'); // Log after attempting to match cache
             if (cachedResponse) {
+                console.log('Cache found, parsing data...'); // Log before parsing data
                 ownershipData = await cachedResponse.json();
+                console.log('Cache data parsed successfully'); // Log after parsing data
             }
         } catch (error) {
             console.error('Failed to load data from Cache Storage:', error);
         }
     }
+    
     if (!ownershipData) {
         ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
     }
 
     let updates = {};
-    keys.forEach(key => {
+    variants.forEach((variant, index) => {
+        const key = keys[index]; // Ensure keys and variants are synchronized by index
         // Check if any existing key starts with the provided key
         if (!Object.keys(ownershipData).some(existingKey => existingKey.startsWith(key))) {
             const fullKey = `${key}_${uuidv4()}`; // Append UUID to create a full key
-            ownershipData[fullKey] = createNewDataForVariant(fullKey);
+            ownershipData[fullKey] = createNewDataForVariant(variant); // Use variant here instead of fullKey
             updates[fullKey] = ownershipData[fullKey];
             shouldUpdateStorage = true;
         }
@@ -119,24 +125,14 @@ export function getFilteredPokemonsByOwnership(variants, ownershipData, filter) 
 }
 
 
-export function updatePokemonOwnership(pokemonKey, newStatus, variants) {
-    console.log(`Attempting to update/create ownership for ${pokemonKey} with status ${newStatus}`);
+export async function updatePokemonOwnership(pokemonKey, newStatus, variants, setOwnershipData) {
     const ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
-
-    // Verify the full scope of variants being handled
-    if (!Array.isArray(variants) || variants.length === 0) {
-        console.error("Invalid or empty variants array provided", variants);
-        return;
-    }
-
-    const variantData = variants.find(variant => pokemonKey === variant.pokemonKey);
+    const variantData = variants.find(variant => variant.pokemonKey === pokemonKey);
     if (!variantData) {
         console.error("No variant data found for key:", pokemonKey);
         return;
     }
-    console.log(`Using variant data for key ${pokemonKey}:`, variantData);
 
-    // Updating or creating new ownership entries
     let needNewInstance = true;
     Object.keys(ownershipData).forEach(key => {
         if (key.startsWith(pokemonKey) && ownershipData[key].is_unowned) {
@@ -151,8 +147,25 @@ export function updatePokemonOwnership(pokemonKey, newStatus, variants) {
         updateInstanceStatus(ownershipData[newKey], newStatus);
     }
 
+    // Update local storage
     localStorage.setItem(ownershipDataCacheKey, JSON.stringify(ownershipData));
-    console.log(`Updated ownership data for ${pokemonKey} with status ${newStatus}`);
+    
+    // Update cache storage
+    if ('caches' in window) {
+        try {
+            const cache = await caches.open(cacheStorageName);
+            const response = new Response(JSON.stringify(ownershipData), {
+                headers: { 'Content-Type': 'application/json' }
+            });
+            await cache.put(`/${ownershipDataCacheKey}`, response);
+            console.log('Ownership data updated in Cache Storage successfully.');
+        } catch (error) {
+            console.error('Failed to update data in Cache Storage:', error);
+        }
+    }
+
+    // Update context state
+    setOwnershipData(ownershipData);
 }
 
 function updateInstanceStatus(instance, newStatus) {

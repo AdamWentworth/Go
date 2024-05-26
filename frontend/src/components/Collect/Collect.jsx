@@ -24,29 +24,16 @@ function Collect() {
     console.log('Collect component mounting');
 
     //States
-    const { variants, ownershipData, loading } = usePokemonData();
+    const { variants, ownershipData, loading, updateOwnership } = usePokemonData();
 
     const [selectedPokemon, setSelectedPokemon] = useState(null);
     const [highlightedCards, setHighlightedCards] = useState(new Set());
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const [ownershipFilter, setOwnershipFilter] = useState("");
-    // const [ownershipData, setOwnershipData] = useState({});
     const [showAll, setShowAll] = useState(false);
 
     // Pokemon who by default will only show 1 of many forms
     const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
-
-    // Initial pokemon variants collecting from API or local storage
-    // const { variants, loading } = useFetchPokemons();
-    // console.log(`Loaded variants:`, variants);
-
-    // Load ownership data from storage or cache
-    // useEffect(() => {
-    //     console.log('Component mounted, loading ownership data');
-    //     loadOwnershipData(setOwnershipData);
-
-    //     return () => console.log('Collect component unmounted'); // This will log when the component is unmounted
-    // }, []);
 
     // UI Controls
     const {
@@ -115,7 +102,7 @@ function Collect() {
 
     // Handle Updating ownership Filter
     const handleUpdateOwnershipFilter = useCallback((filterType) => {
-        updateOwnershipFilter(setOwnershipFilter, filterType);
+        setOwnershipFilter(prev => prev === filterType ? "" : filterType);
     }, [setOwnershipFilter]);
 
     // Toggle Show All State interacting with common Filter States
@@ -162,10 +149,14 @@ function Collect() {
         }
     }, [sortedPokemons, highlightedCards]);    
 
-    // Handler for updating highlighted pokemon to new Ownership filter
+    // Updating highlighted pokemon to new Ownership filter: now using updateOwnership
     const handleMoveHighlightedToFilter = useCallback(filter => {
-        moveHighlightedToFilter(highlightedCards, setHighlightedCards, filter, variants);
-    }, [highlightedCards, variants]);
+        highlightedCards.forEach(pokemonKey => {
+            updateOwnership(pokemonKey, filter);
+        });
+        setHighlightedCards(new Set());
+        setOwnershipFilter(filter);  // Assuming this sets the current filter state
+    }, [highlightedCards, updateOwnership]);    
 
     // // Handler for confirming the move to new Ownership filter
     const handleConfirmMoveToFilter = useCallback((filter) => {
