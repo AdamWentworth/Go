@@ -1,40 +1,18 @@
 //pokemonOwnershipManager.js
 import { v4 as uuidv4 } from 'uuid';
-export const ownershipDataCacheKey = "pokemonOwnership";
 const cacheStorageName = 'pokemonCache'; // Consistent cache name
+const ownershipDataCacheKey = "pokemonOwnership";
 
-export async function initializeOrUpdateOwnershipData(keys, variants) {
-    let ownershipData;
+export function initializeOrUpdateOwnershipData(keys, variants) {
+    const ownershipDataCacheKey = "ownershipData";
+    let rawOwnershipData = localStorage.getItem(ownershipDataCacheKey);
+
+    let ownershipData = rawOwnershipData ? JSON.parse(rawOwnershipData) : {};
+    console.log("Parsed ownershipData:", ownershipData);  // Verify parsed data
+
     let shouldUpdateStorage = false;
-    const lastUpdateTimestamp = localStorage.getItem('lastUpdateTimestamp');
-
-    if (lastUpdateTimestamp && Date.now() - parseInt(lastUpdateTimestamp) < 86400000) {
-        console.log('Skipping update, data is fresh.');
-        return; // Skip update if last update was less than 24 hours ago
-    }
-
-    // Load data from storage
-    if ('caches' in window) {
-        console.log('Accessing caches...'); // Log before accessing cache
-        try {
-            const cache = await caches.open(cacheStorageName);
-            const cachedResponse = await cache.match(`/${ownershipDataCacheKey}`);
-            console.log('Cache match attempt made'); // Log after attempting to match cache
-            if (cachedResponse) {
-                console.log('Cache found, parsing data...'); // Log before parsing data
-                ownershipData = await cachedResponse.json();
-                console.log('Cache data parsed successfully'); // Log after parsing data
-            }
-        } catch (error) {
-            console.error('Failed to load data from Cache Storage:', error);
-        }
-    }
-    
-    if (!ownershipData) {
-        ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
-    }
-
     let updates = {};
+    
     variants.forEach((variant, index) => {
         const key = keys[index]; // Ensure keys and variants are synchronized by index
         // Check if any existing key starts with the provided key
@@ -49,18 +27,11 @@ export async function initializeOrUpdateOwnershipData(keys, variants) {
     // Save updates if necessary
     if (shouldUpdateStorage) {
         console.log('Added new ownership data for keys:', updates);
-        localStorage.setItem(ownershipDataCacheKey, JSON.stringify(ownershipData));
-        localStorage.setItem('lastUpdateTimestamp', Date.now().toString());
-        console.log('Updated ownership data in localStorage.');
-
-        if ('caches' in window) {
-            const response = new Response(JSON.stringify(ownershipData), { headers: { 'Content-Type': 'application/json' } });
-            await caches.open(cacheStorageName).then(cache => cache.put(`/${ownershipDataCacheKey}`, response));
-            console.log('Data saved to Cache Storage successfully.');
-        }
+        localStorage.setItem(ownershipDataCacheKey, JSON.stringify({ data: ownershipData, timestamp: Date.now() }));
     } else {
         console.log('No updates required.');
     }
+    return ownershipData
 }
 
 const getKeyParts = (key) => {

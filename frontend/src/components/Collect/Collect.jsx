@@ -64,6 +64,7 @@ function Collect() {
 
     // Handle filtered and sorted pokemon display
     const filteredVariants = useMemo(() => {
+        console.log('Ownership Data before filtering:', ownershipData);
         if (ownershipFilter) {
             console.log("Filtering variants based on ownership:", ownershipFilter);
             return getFilteredPokemonsByOwnership(variants, ownershipData, ownershipFilter);
