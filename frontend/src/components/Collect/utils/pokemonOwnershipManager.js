@@ -63,7 +63,40 @@ export async function initializeOrUpdateOwnershipData(keys, variants) {
     }
 }
 
+const getKeyParts = (key) => {
+
+    const parts = {
+        pokemonId: parseInt(key.split('-')[0]),
+        costumeName: null,
+        isShiny: key.includes("_shiny") || key.includes("-shiny"),
+        isDefault: key.includes("_default") || key.includes("-default"),
+        isShadow: key.includes("_shadow") || key.includes("-shadow")
+    };
+
+    let costumeSplit = key.split('-')[1];
+    if (costumeSplit) {
+
+        // Check for the presence of known suffixes and adjust the split accordingly
+        if (parts.isShiny) {
+            costumeSplit = costumeSplit.split('_shiny')[0];
+        } else if (parts.isDefault) {
+            costumeSplit = costumeSplit.split('_default')[0];
+        } else if (parts.isShadow) {
+            costumeSplit = costumeSplit.split('_shadow')[0];
+        }
+        parts.costumeName = costumeSplit;
+
+    }
+
+    return parts;
+};
+
 function createNewDataForVariant(variant) {
+
+    const keyParts = getKeyParts(variant.pokemonKey);
+    const matchedCostume = variant.costumes.find(c => c.name === keyParts.costumeName);
+    const costumeId = matchedCostume ? matchedCostume.costume_id : null;
+
     // Logic to create new data based on the variant, possibly deconstructing parts of the variant object
     return {
         pokemon_id: variant.pokemon_id,
@@ -71,10 +104,10 @@ function createNewDataForVariant(variant) {
         attack_iv: null,
         defense_iv: null,
         stamina_iv: null,
-        shiny: variant.isShiny,
-        costume_id: variant.costume_id,
+        shiny: keyParts.isShiny,
+        costume_id: costumeId,
         lucky: false,
-        shadow: variant.isShadow,
+        shadow: keyParts.isShadow,
         purified: false,
         fast_move_id: null,
         charged_move1_id: null,
