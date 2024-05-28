@@ -4,7 +4,6 @@ const cacheStorageName = 'pokemonCache'; // Consistent cache name
 const ownershipDataCacheKey = "pokemonOwnership";
 
 export function initializeOrUpdateOwnershipData(keys, variants) {
-    const ownershipDataCacheKey = "ownershipData";
     let rawOwnershipData = localStorage.getItem(ownershipDataCacheKey);
 
     let ownershipData = rawOwnershipData ? JSON.parse(rawOwnershipData) : {};
@@ -130,8 +129,10 @@ export function getFilteredPokemonsByOwnership(variants, ownershipData, filter) 
 
 
 export async function updatePokemonOwnership(pokemonKey, newStatus, variants, setOwnershipData) {
-    const ownershipData = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
+    const storedData = JSON.parse(localStorage.getItem(ownershipDataCacheKey))
+    const ownershipData = storedData.data
     const variantData = variants.find(variant => variant.pokemonKey === pokemonKey);
+
     if (!variantData) {
         console.error("No variant data found for key:", pokemonKey);
         return;
@@ -152,13 +153,13 @@ export async function updatePokemonOwnership(pokemonKey, newStatus, variants, se
     }
 
     // Update local storage
-    localStorage.setItem(ownershipDataCacheKey, JSON.stringify(ownershipData));
+    localStorage.setItem(ownershipDataCacheKey, JSON.stringify({ data: ownershipData, timestamp: Date.now() }));
     
     // Update cache storage
     if ('caches' in window) {
         try {
             const cache = await caches.open(cacheStorageName);
-            const response = new Response(JSON.stringify(ownershipData), {
+            const response = new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() }), {
                 headers: { 'Content-Type': 'application/json' }
             });
             await cache.put(`/${ownershipDataCacheKey}`, response);
@@ -187,26 +188,12 @@ function updateInstanceStatus(instance, newStatus) {
     console.log(`Updated status for ${instance.pokemon_id} to ${newStatus}`);
 }
 
-async function updateCacheStorage(data) {
-    if ('caches' in window) {
-        try {
-            const cache = await caches.open(cacheStorageName);
-            const response = new Response(JSON.stringify(data), {
-                headers: { 'Content-Type': 'application/json' }
-            });
-            await cache.put(`/${ownershipDataCacheKey}`, response);
-            // console.log('Ownership data updated in Cache Storage successfully.');
-        } catch (error) {
-            console.error('Failed to update data in Cache Storage:', error);
-        }
-    }
-}
-
 export const loadOwnershipData = (setOwnershipData) => {
-    const data = JSON.parse(localStorage.getItem(ownershipDataCacheKey)) || {};
-    setOwnershipData(data);
-    console.log("Ownership data loaded:", data);
+    const storedData = JSON.parse(localStorage.getItem(ownershipDataCacheKey));
+    setOwnershipData(storedData.data); // Pass only the data part to the state
+    console.log("Ownership data loaded:", storedData.data);
 };
+
 
 export const updateOwnershipFilter = (setOwnershipFilter, filterType) => {
     setOwnershipFilter(prev => prev === filterType ? "" : filterType);
