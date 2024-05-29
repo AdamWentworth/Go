@@ -108,11 +108,20 @@ export function getFilteredPokemonsByOwnership(variants, ownershipData, filter) 
         .filter(([key, data]) => data[filterKey])
         .map(([key]) => key);  // Maintain the full key with UUID
 
-    console.log(`Filtered keys matching filter '${filterKey}':`, filteredKeys);
-
     // Map the filtered keys to their corresponding variant data
     const filteredPokemons = filteredKeys.map(key => {
-        const baseKey = key.split('_')[0];  // Extract the base key to find corresponding variant
+        // Dynamically determine the base key based on the presence of a UUID
+        const keyParts = key.split('_');
+        const possibleUUID = keyParts[keyParts.length - 1];
+        const hasUUID = uuidValidate(possibleUUID);
+        let baseKey;
+
+        if (hasUUID) {
+            keyParts.pop(); // Remove the UUID part for matching in variants
+            baseKey = keyParts.join('_');
+        } else {
+            baseKey = key; // Use the full key if no UUID is present
+        }
         const variant = variants.find(v => v.pokemonKey === baseKey);
         if (variant) {
             return {
@@ -127,7 +136,7 @@ export function getFilteredPokemonsByOwnership(variants, ownershipData, filter) 
     return filteredPokemons;
 }
 
-export async function updatePokemonOwnership(pokemonKey, newStatus, variants, setOwnershipData) {
+export function updatePokemonOwnership(pokemonKey, newStatus, variants, setOwnershipData) {
     const storedData = JSON.parse(localStorage.getItem(ownershipDataCacheKey))
     const ownershipData = storedData.data
 
@@ -166,7 +175,6 @@ export async function updatePokemonOwnership(pokemonKey, newStatus, variants, se
 }
 
 function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, variantData) {
-    console.log('Handling specific instance with UUID:', pokemonKey);
     const instance = ownershipData[pokemonKey];
 
     // If no variant data found, log and exit
@@ -182,7 +190,7 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
             instance.is_unowned = false;
             instance.is_wanted = false;
             break;
-        case 'For Trade':
+        case 'Trade':
             instance.is_owned = true;  // Ensure that a tradeable instance is owned
             instance.is_for_trade = true;
             instance.is_unowned = false;
@@ -233,19 +241,15 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
                 // If there are other instances, confirm deletion
                 if (confirm('Do you want to delete this instance? This action cannot be undone.')) {
                     delete ownershipData[pokemonKey]; // Delete the instance from ownership data
-                    console.log(`Instance ${pokemonKey} deleted upon user confirmation.`);
                 }}
             else {
                 // If it's the only instance, just mark as unowned without deletion
                 instance.is_unowned = true;
                 instance.is_owned = false;
                 instance.is_for_trade = false;
-                console.log(`Instance ${pokemonKey} is the only instance and marked as unowned.`);
             }
             break;
     }
-
-    console.log(`Updated status for ${pokemonKey} to ${newStatus}`);
 }
 
 function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData) {
@@ -316,7 +320,7 @@ function updateInstanceStatus(instance, newStatus, ownershipData, baseKey) {
     console.log(`Updated status for ${instance.pokemon_id} to ${newStatus}`);
 }
 
-async function syncAndSaveUpdates(ownershipData, setOwnershipData) {
+export async function syncAndSaveUpdates(ownershipData, setOwnershipData) {
     // Update local storage synchronously
     localStorage.setItem(ownershipDataCacheKey, JSON.stringify({ data: ownershipData, timestamp: Date.now() }));
 

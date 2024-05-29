@@ -2,7 +2,7 @@
 
 import React, { useContext, createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { getPokemons } from '../components/Collect/utils/api';
-import { initializeOrUpdateOwnershipData, updatePokemonOwnership } from '../components/Collect/utils/pokemonOwnershipManager';
+import { initializeOrUpdateOwnershipData, updatePokemonOwnership, syncAndSaveUpdates } from '../components/Collect/utils/pokemonOwnershipManager';
 import createPokemonVariants from '../components/Collect/utils/createPokemonVariants';
 import { determinePokemonKey } from '../components/Collect/utils/imageHelpers'; 
 
@@ -104,7 +104,6 @@ export const PokemonDataProvider = ({ children }) => {
 
     // Function to update ownership status
     const updateOwnership = useCallback((pokemonKey, newStatus) => {
-        // Update ownership and update the state with new ownership data
         updatePokemonOwnership(pokemonKey, newStatus, data.variants, (newOwnershipData) => {
             setData(prev => ({
                 ...prev,
