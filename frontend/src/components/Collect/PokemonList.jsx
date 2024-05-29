@@ -27,6 +27,7 @@ function PokemonList({
                             key={pokemon.pokemonKey}
                             pokemon={pokemon}
                             onSelect={() => {
+                                console.log(pokemon.pokemonKey)
                                 if (isFastSelectEnabled) {
                                     toggleCardHighlight(pokemon.pokemonKey);
                                 } else {

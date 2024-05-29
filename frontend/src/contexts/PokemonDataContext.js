@@ -87,7 +87,7 @@ export const PokemonDataProvider = ({ children }) => {
 
                 // If no valid cached ownership data, initialize or update from local data
                 ownershipData = initializeOrUpdateOwnershipData(keys, variants);
-                console.log("Updated ownership data:", ownershipData);
+                // console.log("Updated ownership data:", ownershipData);
                 await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
 
             }
