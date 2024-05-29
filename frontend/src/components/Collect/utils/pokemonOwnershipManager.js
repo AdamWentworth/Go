@@ -174,25 +174,28 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
         console.error("No variant data found for key:", pokemonKey);
         return;
     }
-
-    // Reset instance state based on new status
-    instance.is_unowned = false;
-    instance.is_owned = false;
-    instance.is_for_trade = false;
-    instance.is_wanted = false;
     
     switch (newStatus) {
         case 'Owned':
             instance.is_owned = true;
+            instance.is_for_trade = false;  // Ensure it's not for trade when set to owned directly
+            instance.is_unowned = false;
+            instance.is_wanted = false;
             break;
         case 'For Trade':
             instance.is_owned = true;  // Ensure that a tradeable instance is owned
             instance.is_for_trade = true;
+            instance.is_unowned = false;
+            instance.is_wanted = false;
             break;
         case 'Wanted':
             // Create a new instance if transitioning to wanted from owned
             if (instance.is_owned) {
-                const newKey = `${pokemonKey}_${uuidv4()}`;
+
+                let keyParts = pokemonKey.split('_');
+                keyParts.pop(); // Remove the UUID part
+                let basePrefix = keyParts.join('_'); // Rejoin to form the actual prefix
+                const newKey = `${basePrefix}_${uuidv4()}`;
                 const newData = { 
                     ...instance,
                     is_wanted: true,
@@ -203,7 +206,6 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
 
             } else {
                 instance.is_wanted = true;
-
                 // Extract the prefix by joining all parts except the last segment which is presumed to be the UUID
                 const keyParts = pokemonKey.split('_');
                 keyParts.pop(); // Remove the last segment (UUID)
@@ -232,14 +234,12 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
                 if (confirm('Do you want to delete this instance? This action cannot be undone.')) {
                     delete ownershipData[pokemonKey]; // Delete the instance from ownership data
                     console.log(`Instance ${pokemonKey} deleted upon user confirmation.`);
-                } else {
-                    // If user does not confirm deletion, just mark as unowned
-                    instance.is_unowned = true;
-                    console.log(`Instance ${pokemonKey} retained and marked as unowned.`);
-                }
-            } else {
+                }}
+            else {
                 // If it's the only instance, just mark as unowned without deletion
                 instance.is_unowned = true;
+                instance.is_owned = false;
+                instance.is_for_trade = false;
                 console.log(`Instance ${pokemonKey} is the only instance and marked as unowned.`);
             }
             break;
