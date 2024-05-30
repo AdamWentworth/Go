@@ -1,6 +1,6 @@
 import sqlite3
 
-def add_columns_to_shadow_pokemon_table(db_path):
+def add_columns_to_shadow_costume_pokemon_table(db_path):
     # Connect to the SQLite database
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -9,15 +9,15 @@ def add_columns_to_shadow_pokemon_table(db_path):
     new_columns = {
         "date_available": "TEXT",
         "date_shiny_available": "TEXT",
-        "image_url_shadow": "TEXT",
-        "image_url_shiny_shadow": "TEXT"
+        "image_url_shadow_costume": "TEXT",
+        "image_url_shiny_shadow_costume": "TEXT"
     }
 
     # Iterate over the new columns and add them to the table
     for column_name, data_type in new_columns.items():
         try:
-            cursor.execute(f"ALTER TABLE costume_pokemon ADD COLUMN {column_name} {data_type}")
-            print(f"Added column '{column_name}' to costume_pokemon table.")
+            cursor.execute(f"ALTER TABLE shadow_costume_pokemon ADD COLUMN {column_name} {data_type}")
+            print(f"Added column '{column_name}' to shadow_costume_pokemon table.")
         except sqlite3.OperationalError as e:
             # This error typically occurs if the column already exists
             print(f"Error adding column '{column_name}': {e}")
@@ -27,5 +27,6 @@ def add_columns_to_shadow_pokemon_table(db_path):
     conn.close()
 
 # Path to your 'pokego.db' database
-db_path = 'backend/data/pokego.db'
-add_columns_to_shadow_pokemon_table(db_path)
+db_path = './data/pokego.db'
+add_columns_to_shadow_costume_pokemon_table(db_path)
+

@@ -1,3 +1,5 @@
+# pokemon_database_app.py
+
 import tkinter as tk
 from tkinter import ttk
 from database_manager import DatabaseManager

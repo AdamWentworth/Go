@@ -1,3 +1,5 @@
+# pokemon_details_window.py
+
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
@@ -11,6 +13,7 @@ from frames.pokemon_image_frame import PokemonImageFrame
 from frames.pokemon_shiny_image_frame import PokemonShinyImageFrame
 from frames.pokemon_shadow_image_frames import PokemonShadowImageFrame, PokemonShinyShadowImageFrame
 from frames.pokemon_costume_image_frame import PokemonCostumeImageFrame
+from frames.pokemon_shadow_costume_frame import PokemonShadowCostumeFrame
 
 class PokemonDetailsWindow:
     
@@ -106,6 +109,14 @@ class PokemonDetailsWindow:
         # Shiny Shadow Image Frame
         self.shiny_shadow_image_frame = PokemonShinyShadowImageFrame(image_frames_container, shiny_shadow_image_url, pokemon_id, self)
         self.shiny_shadow_image_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # Correctly pack the frame attribute
+
+        # Create a container for Shadow and Costume Frames
+        shadow_costume_container = tk.Frame(main_container)
+        shadow_costume_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        # Integrate the new Shadow Costume Frame
+        self.shadow_costume_frame = PokemonShadowCostumeFrame(shadow_costume_container, self.db_manager, self.pokemon_id)
+        self.shadow_costume_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Costume Frame - this is the frame in question, pack the object directly
         self.costume_frame = PokemonCostumeImageFrame(main_container, pokemon_id, self)

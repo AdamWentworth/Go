@@ -1,3 +1,5 @@
+# main.py
+
 import tkinter as tk
 from pokemon_database_app import PokemonDatabaseApp
 

@@ -330,3 +330,70 @@ class DatabaseManager:
         cursor = self.conn.cursor()
         cursor.execute("DELETE FROM costume_pokemon WHERE costume_id = ?", (costume_id,))
         self.conn.commit()
+
+    def fetch_shadow_costume_data(self, pokemon_id):
+        cursor = self.conn.cursor()
+        query = """
+        SELECT sc.shadow_id, sp.id, cp.costume_id, sc.date_available, sc.date_shiny_available, 
+            sc.image_url_shadow_costume, sc.image_url_shiny_shadow_costume
+        FROM shadow_costume_pokemon sc
+        JOIN shadow_pokemon sp ON sc.shadow_id = sp.id
+        JOIN costume_pokemon cp ON sc.costume_id = cp.costume_id
+        WHERE sp.pokemon_id = ? OR cp.pokemon_id = ?
+        """
+        cursor.execute(query, (pokemon_id, pokemon_id))
+        result = cursor.fetchall()
+        if result:
+            return [{
+                'shadow_id': row[1], 
+                'costume_id': row[2],
+                'date_available': row[3],
+                'date_shiny_available': row[4],
+                'image_url_shadow_costume': row[5],
+                'image_url_shiny_shadow_costume': row[6]
+            } for row in result]
+        else:
+            return None
+        
+    def fetch_shadow_options(self, pokemon_id):
+        cursor = self.conn.cursor()
+        # Select only shadows related to the specific Pokémon
+        cursor.execute("""
+            SELECT id FROM shadow_pokemon
+            WHERE pokemon_id = ?
+        """, (pokemon_id,))
+        return [str(row[0]) for row in cursor.fetchall()]
+
+    def fetch_costume_options(self, pokemon_id):
+        cursor = self.conn.cursor()
+        # Select only costumes related to the specific Pokémon
+        cursor.execute("""
+            SELECT costume_id, costume_name FROM costume_pokemon
+            WHERE pokemon_id = ?
+        """, (pokemon_id,))
+        return ["{}: {}".format(row[0], row[1]) for row in cursor.fetchall()]
+    
+    def save_shadow_costume(self, shadow_id, costume_id, date_available, date_shiny_available, image_url_shadow_costume, image_url_shiny_shadow_costume):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT id FROM shadow_costume_pokemon WHERE shadow_id=? AND costume_id=?
+        """, (shadow_id, costume_id))
+        record = cursor.fetchone()
+
+        if record:
+            # Update existing record
+            cursor.execute("""
+                UPDATE shadow_costume_pokemon
+                SET date_available=?, date_shiny_available=?, image_url_shadow_costume=?, image_url_shiny_shadow_costume=?
+                WHERE id=?
+            """, (date_available, date_shiny_available, image_url_shadow_costume, image_url_shiny_shadow_costume, record[0]))
+        else:
+            # Insert new record
+            cursor.execute("""
+                INSERT INTO shadow_costume_pokemon (shadow_id, costume_id, date_available, date_shiny_available, image_url_shadow_costume, image_url_shiny_shadow_costume)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (shadow_id, costume_id, date_available, date_shiny_available, image_url_shadow_costume, image_url_shiny_shadow_costume))
+
+        self.conn.commit()
+
+
