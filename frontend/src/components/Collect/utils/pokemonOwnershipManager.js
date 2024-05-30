@@ -75,6 +75,7 @@ function createNewDataForVariant(variant) {
     // Logic to create new data based on the variant, possibly deconstructing parts of the variant object
     return {
         pokemon_id: variant.pokemon_id,
+        nickname: null,
         cp: null,
         attack_iv: null,
         defense_iv: null,

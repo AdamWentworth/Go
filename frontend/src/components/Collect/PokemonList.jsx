@@ -1,8 +1,10 @@
 // PokemonList.jsx
 
 import React from 'react';
+import { validate as uuidValidate } from 'uuid';
 import PokemonCard from './PokemonCard';
 import PokemonOverlay from './PokemonOverlay';
+import InstanceOverlay from './InstanceOverlay'; // Import the new overlay
 import './PokemonList.css';
 
 function PokemonList({
@@ -18,6 +20,21 @@ function PokemonList({
     singleFormPokedexNumbers,
     ownershipFilter
 }) {
+
+    const handleSelect = (pokemon) => {
+        console.log(pokemon.pokemonKey);
+        const keyParts = pokemon.pokemonKey.split('_');
+        const possibleUUID = keyParts[keyParts.length - 1];
+        const hasUUID = uuidValidate(possibleUUID);
+    
+        if (isFastSelectEnabled) {
+            toggleCardHighlight(pokemon.pokemonKey);
+        } else {
+            const overlayType = hasUUID ? 'instance' : 'default';
+            setSelectedPokemon({ pokemon, overlayType });
+        }
+    };    
+
     return (
         <div className="pokemon-container">
             {loading ? <p>Loading...</p> : (
@@ -26,14 +43,7 @@ function PokemonList({
                         <PokemonCard
                             key={pokemon.pokemonKey}
                             pokemon={pokemon}
-                            onSelect={() => {
-                                console.log(pokemon.pokemonKey)
-                                if (isFastSelectEnabled) {
-                                    toggleCardHighlight(pokemon.pokemonKey);
-                                } else {
-                                    setSelectedPokemon(pokemon);
-                                }
-                            }}
+                            onSelect={() => handleSelect(pokemon)}
                             isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
                             isShiny={isShiny}
                             showShadow={showShadow}
@@ -41,9 +51,15 @@ function PokemonList({
                             ownershipFilter={ownershipFilter}
                         />
                     ))}
-                    {selectedPokemon && (
+                    {selectedPokemon && (selectedPokemon.overlayType === 'instance' ? 
+                        <InstanceOverlay
+                            pokemon={selectedPokemon.pokemon}
+                            onClose={() => setSelectedPokemon(null)}
+                            setSelectedPokemon={setSelectedPokemon}
+                            allPokemons={sortedPokemons}
+                        /> :
                         <PokemonOverlay
-                            pokemon={selectedPokemon}
+                            pokemon={selectedPokemon.pokemon}
                             onClose={() => setSelectedPokemon(null)}
                             setSelectedPokemon={setSelectedPokemon}
                             allPokemons={sortedPokemons}
