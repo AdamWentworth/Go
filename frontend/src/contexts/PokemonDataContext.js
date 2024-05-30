@@ -9,6 +9,18 @@ import { determinePokemonKey } from '../components/Collect/utils/imageHelpers';
 // Create a React context for sharing Pokemon data across components
 const PokemonDataContext = createContext();
 
+let syncWorker;
+
+if (window.Worker) {
+    syncWorker = new Worker(new URL('../components/Collect/workers/syncWorker.js', import.meta.url));
+    syncWorker.onmessage = function(event) {
+      console.log('Data synced successfully:', event.data);
+    };
+    syncWorker.onerror = function(event) {
+      console.error('Error in worker:', event.message);
+    };
+}
+
 // Custom hook to use the context
 export const usePokemonData = () => useContext(PokemonDataContext);
 
@@ -118,14 +130,17 @@ export const PokemonDataProvider = ({ children }) => {
 
     // Function to update ownership status
     const updateOwnership = useCallback((pokemonKey, newStatus) => {
-        // Using current context data directly instead of reading from local storage
         updatePokemonOwnership(pokemonKey, newStatus, data.variants, data.ownershipData, updatedOwnershipData => {
             setData(prevData => ({
                 ...prevData,
                 ownershipData: updatedOwnershipData
             }));
-            // Optionally sync to storage here or via effect depending on your strategy
-            syncAndSaveUpdates(updatedOwnershipData);
+            if (syncWorker) {
+                syncWorker.postMessage({
+                    action: 'syncData',
+                    data: {data: updatedOwnershipData, timestamp: Date.now()}
+                });
+            }
         });
     }, [data.variants, data.ownershipData]);
 
