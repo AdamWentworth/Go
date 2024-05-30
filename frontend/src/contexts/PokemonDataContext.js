@@ -54,8 +54,23 @@ export const PokemonDataProvider = ({ children }) => {
                 variants = cachedVariants.data;
                 ownershipData = cachedOwnership.data;
                 freshDataAvailable = true;
+            } else if (cachedVariants && !cachedOwnership &&
+                Date.now() - cachedVariants.timestamp < 24 * 60 * 60 * 1000) {
+                console.log("Using cached variants but rebuilding ownership data");
+                variants = cachedVariants.data;
             } else {
                 console.log("Cached data is stale or incomplete, refetching...");
+            }
+
+            if (!freshDataAvailable && variants) {
+                // Prepare keys for ownership data
+                const keys = variants.map(variant => variant.pokemonKey);
+
+                // If no valid cached ownership data, initialize or update from local data
+                ownershipData = initializeOrUpdateOwnershipData(keys, variants);
+                // console.log("Updated ownership data:", ownershipData);
+                await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
+                freshDataAvailable = true;
             }
 
             if (!freshDataAvailable) {
@@ -89,7 +104,6 @@ export const PokemonDataProvider = ({ children }) => {
                 ownershipData = initializeOrUpdateOwnershipData(keys, variants);
                 // console.log("Updated ownership data:", ownershipData);
                 await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
-
             }
 
             // Update state with new data
@@ -105,10 +119,10 @@ export const PokemonDataProvider = ({ children }) => {
     // Function to update ownership status
     const updateOwnership = useCallback((pokemonKey, newStatus) => {
         updatePokemonOwnership(pokemonKey, newStatus, data.variants, (newOwnershipData) => {
-            setData(prev => ({
-                ...prev,
-                ownershipData: newOwnershipData
-            }));
+            setData(prevData => ({
+                ...prevData,
+                ownershipData: { ...prevData.ownershipData, ...newOwnershipData }
+              }));              
         });
     }, [data.variants]);
 

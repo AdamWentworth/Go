@@ -6,8 +6,13 @@ const ownershipDataCacheKey = "pokemonOwnership";
 export function initializeOrUpdateOwnershipData(keys, variants) {
     let rawOwnershipData = localStorage.getItem(ownershipDataCacheKey);
 
-    let ownershipData = rawOwnershipData ? JSON.parse(rawOwnershipData) : {};
-    console.log("Parsed ownershipData:", ownershipData);  // Verify parsed data
+    let storedData = rawOwnershipData ? JSON.parse(rawOwnershipData) : {};
+    console.log("Parsed ownershipData:", storedData);  // Verify parsed data
+
+     // Safeguard to ensure top-level data and timestamp only
+     if (storedData.data && storedData.timestamp) {
+        storedData = storedData.data; // Unwrap if wrapped correctly
+    }
 
     let shouldUpdateStorage = false;
     let updates = {};
@@ -15,10 +20,10 @@ export function initializeOrUpdateOwnershipData(keys, variants) {
     variants.forEach((variant, index) => {
         const key = keys[index]; // Ensure keys and variants are synchronized by index
         // Check if any existing key starts with the provided key
-        if (!Object.keys(ownershipData).some(existingKey => existingKey.startsWith(key))) {
+        if (!Object.keys(storedData).some(existingKey => existingKey.startsWith(key))) {
             const fullKey = `${key}_${uuidv4()}`; // Append UUID to create a full key
-            ownershipData[fullKey] = createNewDataForVariant(variant); // Use variant here instead of fullKey
-            updates[fullKey] = ownershipData[fullKey];
+            storedData[fullKey] = createNewDataForVariant(variant); // Use variant here instead of fullKey
+            updates[fullKey] = storedData[fullKey];
             shouldUpdateStorage = true;
         }
     });
@@ -26,11 +31,11 @@ export function initializeOrUpdateOwnershipData(keys, variants) {
     // Save updates if necessary
     if (shouldUpdateStorage) {
         console.log('Added new ownership data for keys:', updates);
-        localStorage.setItem(ownershipDataCacheKey, JSON.stringify({ data: ownershipData, timestamp: Date.now() }));
+        localStorage.setItem(ownershipDataCacheKey, JSON.stringify({ data: storedData, timestamp: Date.now() }));
     } else {
-        console.log('No updates required.');
+        console.log('No ownership updates required.');
     }
-    return ownershipData
+    return storedData
 }
 
 const getKeyParts = (key) => {
