@@ -118,13 +118,16 @@ export const PokemonDataProvider = ({ children }) => {
 
     // Function to update ownership status
     const updateOwnership = useCallback((pokemonKey, newStatus) => {
-        updatePokemonOwnership(pokemonKey, newStatus, data.variants, (newOwnershipData) => {
+        // Using current context data directly instead of reading from local storage
+        updatePokemonOwnership(pokemonKey, newStatus, data.variants, data.ownershipData, updatedOwnershipData => {
             setData(prevData => ({
                 ...prevData,
-                ownershipData: { ...prevData.ownershipData, ...newOwnershipData }
-              }));              
+                ownershipData: updatedOwnershipData
+            }));
+            // Optionally sync to storage here or via effect depending on your strategy
+            syncAndSaveUpdates(updatedOwnershipData);
         });
-    }, [data.variants]);
+    }, [data.variants, data.ownershipData]);
 
     // Context value includes all state and the update function
     const contextValue = useMemo(() => ({

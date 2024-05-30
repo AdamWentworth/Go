@@ -141,42 +141,32 @@ export function getFilteredPokemonsByOwnership(variants, ownershipData, filter) 
     return filteredPokemons;
 }
 
-export function updatePokemonOwnership(pokemonKey, newStatus, variants, setOwnershipData) {
-    const storedData = JSON.parse(localStorage.getItem(ownershipDataCacheKey))
-    const ownershipData = storedData.data
-
-    // Attempt to identify if the last segment of the key is a UUID
+export function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershipData, setOwnershipData) {
     const keyParts = pokemonKey.split('_');
     const possibleUUID = keyParts[keyParts.length - 1];
     const hasUUID = uuidValidate(possibleUUID);
-
-    // Determine the baseKey based on the presence of a UUID
     let baseKey;
+
     if (hasUUID) {
-        keyParts.pop(); // Remove the UUID part for matching in variants
+        keyParts.pop(); // Remove the UUID part
         baseKey = keyParts.join('_');
     } else {
-        baseKey = pokemonKey; // Use the full key if no UUID is present
+        baseKey = pokemonKey;
     }
 
-    // Find variant data using baseKey, assuming variants are indexed without UUID
     const variantData = variants.find(variant => variant.pokemonKey === baseKey);
-
     if (!variantData) {
         console.error("No variant data found for base key:", baseKey);
         return;
     }
 
     if (hasUUID) {
-        // Handle specific instances with UUID
         handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, variantData);
     } else {
-        // Handle default entries without UUID
         handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData);
     }
 
-    // Save and sync state updates as previously described
-    syncAndSaveUpdates(ownershipData, setOwnershipData);
+    setOwnershipData(ownershipData);  // Update the context directly after modifying the ownership data
 }
 
 function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, variantData) {
@@ -325,24 +315,26 @@ function updateInstanceStatus(instance, newStatus, ownershipData, baseKey) {
     console.log(`Updated status for ${instance.pokemon_id} to ${newStatus}`);
 }
 
-export async function syncAndSaveUpdates(ownershipData, setOwnershipData) {
-    // Update local storage synchronously
-    localStorage.setItem(ownershipDataCacheKey, JSON.stringify({ data: ownershipData, timestamp: Date.now() }));
+export async function syncAndSaveUpdates(ownershipData) {
+    // Directly use the ownershipData received from the context or function calling this method
+    const dataToStore = {
+        data: ownershipData,
+        timestamp: Date.now()
+    };
 
-    // Update cache storage asynchronously
+    // Write to local storage
+    localStorage.setItem(ownershipDataCacheKey, JSON.stringify(dataToStore));
+
+    // Also update the cache storage if available
     if ('caches' in window) {
         try {
             const cache = await caches.open(cacheStorageName);
-            const response = new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() }));
-            await cache.put(`/${ownershipDataCacheKey}`, response);
-            console.log('Ownership data updated in Cache Storage successfully.');
+            const response = new Response(JSON.stringify(dataToStore));
+            await cache.put(ownershipDataCacheKey, response);
         } catch (error) {
             console.error('Failed to update data in Cache Storage:', error);
         }
     }
-
-    // Update context state, if setOwnershipData is asynchronous, handle accordingly
-    setOwnershipData(ownershipData);
 }
 
 export const loadOwnershipData = (setOwnershipData) => {
