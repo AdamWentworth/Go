@@ -70,6 +70,16 @@ const createPokemonVariants = (pokemons) => {
           shinyCostumeVariant.pokemonKey = determinePokemonKey(shinyCostumeVariant);
           variants.push(shinyCostumeVariant);
         }
+        if (costume.shadow_costume) {
+          const shadowCostumeVariant = {
+            ...pokemon,
+            currentImage: costume.shadow_costume.image_url_shadow_costume,
+            variantType: `shadow_costume_${costume.costume_id}`,
+            name: `Shadow ${formatCostumeName(costume.name)} ${pokemon.name}`
+          };
+          shadowCostumeVariant.pokemonKey = determinePokemonKey(shadowCostumeVariant);
+          variants.push(shadowCostumeVariant);
+        }
       });
     }
 
