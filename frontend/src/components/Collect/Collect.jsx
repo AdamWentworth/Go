@@ -6,15 +6,10 @@ import PokemonList from './PokemonList';
 import useSearchFilters from './hooks/useSearchFilters'; // Import the search filters hook
 import HeaderUI from './HeaderUI';
 import SortOverlay from './SortOverlay';
-// import useFetchPokemons from './hooks/useFetchPokemons';
 import { usePokemonData } from '../../contexts/PokemonDataContext'; // Import the context hook
 import useSortManager from './hooks/useSortManager';
 import useFilterPokemons from './hooks/useFilterPokemons';
-// import { filterPokemons } from './hooks/filterPokemons'; // Adjusted import
-import { 
-    loadOwnershipData, updateOwnershipFilter, 
-    moveHighlightedToFilter, confirmMoveToFilter, 
-    getFilteredPokemonsByOwnership } from './utils/pokemonOwnershipManager';
+import { confirmMoveToFilter, getFilteredPokemonsByOwnership } from './utils/pokemonOwnershipManager';
 
 const PokemonListMemo = React.memo(PokemonList);
 const HeaderUIMemo = React.memo(HeaderUI);
@@ -80,10 +75,6 @@ function Collect() {
 
     // Filter Pokemon
     const displayedPokemons = useFilterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
-
-    // const displayedPokemons = useMemo(() => {
-    //     return filterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
-    // }, [filteredVariants, filters, showEvolutionaryLine, showAll, singleFormPokedexNumbers]);
     
     // Sort Pokemon
     const sortedPokemons = useSortManager(displayedPokemons, sortType, sortMode, { isShiny, showShadow, showCostume, showAll });

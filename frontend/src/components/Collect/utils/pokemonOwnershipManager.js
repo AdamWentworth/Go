@@ -166,7 +166,9 @@ export function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershi
         handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData);
     }
 
-    setOwnershipData(ownershipData);  // Update the context directly after modifying the ownership data
+    setTimeout(() => {
+        setOwnershipData(ownershipData);  // This should trigger a re-render
+    }, 0);
 }
 
 function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, variantData) {
@@ -248,7 +250,7 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
 }
 
 function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData) {
-    console.log('Handling default entry:', pokemonKey);
+    // console.log('Handling default entry:', pokemonKey);
 
     let needNewInstance = true;
     Object.keys(ownershipData).forEach(key => {
@@ -268,7 +270,7 @@ function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData) {
 }
 
 function updateInstanceStatus(instance, newStatus, ownershipData, baseKey) {
-    console.log(`Updating status for ${instance.pokemon_id}: Current status is ${JSON.stringify(instance)}`);
+    // console.log(`Updating status for ${instance.pokemon_id}: Current status is ${JSON.stringify(instance)}`);
 
     // Initial setup for statuses based on the newStatus
     instance.is_unowned = newStatus === 'Unowned';
@@ -306,13 +308,23 @@ function updateInstanceStatus(instance, newStatus, ownershipData, baseKey) {
     // Additional handling to ensure the 'Wanted' status doesn't incorrectly set 'is_unowned' to false
     // when no other instances are owned
     if (newStatus === 'Wanted') {
-        let anyOwned = Object.values(ownershipData).some(data => data.is_owned && data.pokemon_id.startsWith(baseKey));
+        let anyOwned = Object.values(ownershipData).some(data => {
+            // Log checking each entry for owned status and base key matching
+            console.log(`Checking ${data.pokemon_id}: is_owned=${data.is_owned}, startsWith=${data.pokemon_id.startsWith(baseKey)}`);
+            return data.is_owned && data.pokemon_id.startsWith(baseKey);
+        });
+
+        // Log the result of the anyOwned check
+        console.log(`Result of anyOwned check for baseKey '${baseKey}': ${anyOwned}`);
+
         if (!anyOwned) {
             instance.is_unowned = true; // Ensure is_unowned stays true if no other owned instances exist
+            // Log setting is_unowned to true
+            console.log(`Setting is_unowned to true for ${instance.pokemon_id} as no owned instances exist with baseKey '${baseKey}'.`);
         }
     }
 
-    console.log(`Updated status for ${instance.pokemon_id} to ${newStatus}`);
+    // console.log(`Updated status for ${instance.pokemon_id} to ${newStatus}`);
 }
 
 export async function syncAndSaveUpdates(ownershipData) {
@@ -323,7 +335,7 @@ export async function syncAndSaveUpdates(ownershipData) {
     };
 
     // Write to local storage
-    localStorage.setItem(ownershipDataCacheKey, JSON.stringify(dataToStore));
+    // localStorage.setItem(ownershipDataCacheKey, JSON.stringify(dataToStore));
 
     // Also update the cache storage if available
     if ('caches' in window) {
@@ -348,14 +360,33 @@ export const updateOwnershipFilter = (setOwnershipFilter, filterType) => {
     setOwnershipFilter(prev => prev === filterType ? "" : filterType);
 };
 
-export const moveHighlightedToFilter = (highlightedCards, setHighlightedCards, loadOwnershipData, setOwnershipFilter, filter, Variants) => {
-    highlightedCards.forEach(pokemonKey => {
-        updatePokemonOwnership(pokemonKey, filter, Variants);
-    });
-    setHighlightedCards(new Set());
-    loadOwnershipData();
-    setOwnershipFilter(filter); // Directly set to the new filter without resetting
-    console.log("Filter moved and ownership data reloaded for filter:", filter);
+// pokemonOwnershipManager.js
+
+export const moveHighlightedToFilter = async (highlightedCards, setHighlightedCards, loadOwnershipData, setOwnershipFilter, filter, Variants, updatePokemonOwnership) => {
+    const batchUpdateSize = 5;  // Define batch size
+    let processed = 0;
+
+    // Function to process a single batch
+    const processBatch = () => {
+        const batch = Array.from(highlightedCards).slice(processed, processed + batchUpdateSize);
+        batch.forEach(pokemonKey => {
+            updatePokemonOwnership(pokemonKey, filter, Variants);
+        });
+        processed += batch.length;
+
+        // Update UI after each batch
+        loadOwnershipData();
+        if (processed < highlightedCards.size) {
+            setTimeout(processBatch, 0); // Schedule next batch
+        } else {
+            // Finalize
+            setHighlightedCards(new Set());
+            setOwnershipFilter(filter);
+            console.log("Filter moved and ownership data reloaded for filter:", filter);
+        }
+    };
+
+    processBatch();  // Start processing
 };
 
 export const confirmMoveToFilter = (moveHighlightedToFilter, filter) => {
