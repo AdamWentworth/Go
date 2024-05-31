@@ -58,6 +58,20 @@ export const PokemonDataProvider = ({ children }) => {
             const cachedVariants = cachedVariantsResponse ? await cachedVariantsResponse.json() : null;
             const cachedOwnership = cachedOwnershipResponse ? await cachedOwnershipResponse.json() : null;
 
+            // Log cached data freshness and details
+            if (cachedVariants && cachedOwnership) {
+                console.log(`Cached Variants Age: ${Date.now() - cachedVariants.timestamp} ms`);
+                console.log(`Cached Ownership Data Age: ${Date.now() - cachedOwnership.timestamp} ms`);
+            }
+
+            if (cachedVariants && !cachedOwnership) {
+                console.log("Variants are cached but Ownership data is missing.");
+            }
+
+            if (!cachedVariants && cachedOwnership) {
+                console.log("Ownership data is cached but Variants are missing.");
+            }
+
             // Check both caches for freshness
             if (cachedVariants && cachedOwnership &&
                 Date.now() - cachedVariants.timestamp < 24 * 60 * 60 * 1000 &&

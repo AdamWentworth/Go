@@ -311,17 +311,17 @@ function updateInstanceStatus(instance, newStatus, ownershipData, baseKey) {
     if (newStatus === 'Wanted') {
         let anyOwned = Object.values(ownershipData).some(data => {
             // Log checking each entry for owned status and base key matching
-            console.log(`Checking ${data.pokemon_id}: is_owned=${data.is_owned}, startsWith=${data.pokemon_id.startsWith(baseKey)}`);
-            return data.is_owned && data.pokemon_id.startsWith(baseKey);
+            // console.log(`Checking ${data.pokemon_id}: is_owned=${data.is_owned}, startsWith=${String(data.pokemon_id).startsWith(baseKey)}`);
+            return data.is_owned && String(data.pokemon_id).startsWith(baseKey); // Convert to string here
         });
 
         // Log the result of the anyOwned check
-        console.log(`Result of anyOwned check for baseKey '${baseKey}': ${anyOwned}`);
+        // console.log(`Result of anyOwned check for baseKey '${baseKey}': ${anyOwned}`);
 
         if (!anyOwned) {
             instance.is_unowned = true; // Ensure is_unowned stays true if no other owned instances exist
             // Log setting is_unowned to true
-            console.log(`Setting is_unowned to true for ${instance.pokemon_id} as no owned instances exist with baseKey '${baseKey}'.`);
+            // console.log(`Setting is_unowned to true for ${instance.pokemon_id} as no owned instances exist with baseKey '${baseKey}'.`);
         }
     }
 
