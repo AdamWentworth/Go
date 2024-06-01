@@ -34,6 +34,15 @@ export function determinePokemonKey(pokemon) {
         } else if (pokemon.currentImage === costume.image_url_shiny) {
             suffix = `-${costume.name}_shiny`;
         }
+
+        // Additional checks for shadow costume images
+        if (costume.shadow_costume) {
+            if (pokemon.currentImage === costume.shadow_costume.image_url_shadow_costume) {
+                suffix = `-shadow_${costume.name}_default`;
+            } else if (pokemon.currentImage === costume.shadow_costume.image_url_shiny_shadow_costume && costume.shadow_costume.image_url_shiny_shadow_costume) {
+                suffix = `-shadow_${costume.name}_shiny`;
+            }
+        }
     });
 
     // Construct the final pokemonKey with the determined suffix

@@ -1,26 +1,40 @@
-import React, { useState } from 'react';
-import './InstanceOverlay.css'; // Ensure this CSS provides similar styling as PokemonOverlay.css
-import WindowOverlay from './OverlayComponents/windowOverlay';
+// InstanceOverlay.jsx
+import React from 'react';
+import './InstanceOverlay.css';
+import OwnedInstance from './InstanceComponents/OwnedInstance';
 
-const InstanceOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) => {
-  const [currentPokemon, setCurrentPokemon] = useState(pokemon);
-
+const InstanceOverlay = ({ pokemon, onClose, ownershipFilter }) => {
   const handleOverlayClick = (event) => {
-    if (!event.target.closest('.overlay-windows')) {
+    if (!event.target.closest('.overlay-content')) {
       onClose();
     }
   };
 
-  return (
-    <div className="pokemon-overlay" onClick={handleOverlayClick}>
-      <button onClick={onClose} className="universal-close-button">X</button>
+  const renderContent = () => {
+    switch (ownershipFilter) {
+      case 'Owned':
+        return <OwnedInstance pokemon={pokemon} />;
+      case 'Unowned':
+        return <div>Unowned Instance Component</div>; // Placeholder for UnownedInstance component
+      case 'Trade':
+        return <div>Trade Instance Component</div>; // Placeholder for TradeInstance component
+      case 'Wanted':
+        return <div>Wanted Instance Component</div>; // Placeholder for WantedInstance component
+      default:
+        return null;
+    }
+  };
 
-      <div className="overlay-content">
-        <h1>Instance Details</h1>
-        <p>Here will be the detailed view of the selected Pokemon instance.</p>
+  return (
+    <div className="instance-overlay" onClick={handleOverlayClick}>
+      <div className="pokemon-overlay">
+        <button onClick={onClose} className="universal-close-button">X</button>
+        <div className="overlay-content">
+          {renderContent()}
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default InstanceOverlay;

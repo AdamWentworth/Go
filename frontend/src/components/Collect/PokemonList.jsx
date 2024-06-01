@@ -61,6 +61,7 @@ function PokemonList({
                             onClose={() => setSelectedPokemon(null)}
                             setSelectedPokemon={setSelectedPokemon}
                             allPokemons={sortedPokemons}
+                            ownershipFilter={ownershipFilter}
                         /> :
                         <PokemonOverlay
                             pokemon={selectedPokemon.overlayType ? selectedPokemon.pokemon : selectedPokemon}

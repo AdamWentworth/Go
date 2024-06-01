@@ -1,7 +1,7 @@
 //pokemonCard.jsx
 
 import React, { memo } from 'react';
-import { formatForm, formatCostumeName } from './utils/formattingHelpers';
+import { formatPokemonName, formatCostumeName } from './utils/formattingHelpers';
 import './PokemonCard.css'
 
 const PokemonCard = ({
@@ -65,9 +65,11 @@ const PokemonCard = ({
                     <span className="pokemon-costume">{formatCostumeName(pokemon.currentCostumeName)} </span>
                 )}
                 {pokemon.form && !singleFormPokedexNumbers.includes(pokemon.pokedex_number) && (
-                    <span className="pokemon-form">{formatForm(pokemon.form)} </span>
+                    <span className="pokemon-form">
+                        {formatPokemonName(pokemon.name, pokemon.form)}
+                    </span>
                 )}
-                {pokemon.name}
+                {!pokemon.form && pokemon.name}
             </h2>
         </div>
     );    

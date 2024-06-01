@@ -1,4 +1,4 @@
-// pokemonOverlay.jsx
+// PokemonOverlay.jsx
 
 import React, { useState } from 'react';
 import './PokemonOverlay.css';

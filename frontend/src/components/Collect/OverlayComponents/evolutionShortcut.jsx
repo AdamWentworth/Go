@@ -4,10 +4,15 @@ import React from 'react';
 import './evolutionShortcut.css';
 
 const EvolutionShortcut = ({ evolvesFrom, evolvesTo, allPokemonData, setSelectedPokemon }) => {
+  
+  // Function to extract the base name by slicing off everything before the last space
+  const getBaseName = (name) => {
+    return name.substring(name.lastIndexOf(' ') + 1);
+  };
 
   function getPokemonNameById(id) {
     const pokemon = allPokemonData.find(p => p.pokemon_id === id);
-    return pokemon ? pokemon.name : 'Unknown Pokemon';
+    return pokemon ? getBaseName(pokemon.name) : 'Unknown Pokemon'; // Apply getBaseName here
   }
 
   const onEvolutionClick = (pokemonId) => {
@@ -27,7 +32,7 @@ const EvolutionShortcut = ({ evolvesFrom, evolvesTo, allPokemonData, setSelected
               className="evolution-item"
               onClick={() => onEvolutionClick(preEvolutionPokemonId)}
             >
-              <img src={`/images/default/pokemon_${preEvolutionPokemonId}.png`} alt="Pre-evolution" />
+              <img src={`/images/default/pokemon_${preEvolutionPokemonId}.png`} alt={getPokemonNameById(preEvolutionPokemonId)} />
               <span>{getPokemonNameById(preEvolutionPokemonId)}</span>
             </div>
           ))}
@@ -42,7 +47,7 @@ const EvolutionShortcut = ({ evolvesFrom, evolvesTo, allPokemonData, setSelected
               className="evolution-item"
               onClick={() => onEvolutionClick(evolutionPokemonId)}
             >
-              <img src={`/images/default/pokemon_${evolutionPokemonId}.png`} alt="Evolution" />
+              <img src={`/images/default/pokemon_${evolutionPokemonId}.png`} alt={getPokemonNameById(evolutionPokemonId)} />
               <span>{getPokemonNameById(evolutionPokemonId)}</span>
             </div>
           ))}
@@ -51,6 +56,5 @@ const EvolutionShortcut = ({ evolvesFrom, evolvesTo, allPokemonData, setSelected
     </div>
   );
 };
-
 
 export default EvolutionShortcut;

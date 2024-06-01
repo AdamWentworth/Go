@@ -1,3 +1,22 @@
+export function formatPokemonName(name, form) {
+    if (!form) return name;
+
+    const formattedForm = formatForm(form); // Ensure form is formatted (e.g., "Alolan")
+    const nameParts = name.split(' ');
+    const specialModifiers = ['Shiny', 'Shadow'];
+
+    // Find the position after the last special modifier (Shiny, Shadow)
+    let insertPosition = nameParts.findIndex(part => !specialModifiers.includes(part));
+    if (insertPosition === -1 || nameParts.length === 1) {
+        // If no special modifiers are found or only one part exists, prepend the form
+        insertPosition = 0;
+    }
+
+    // Insert the formatted form in the determined position
+    nameParts.splice(insertPosition, 0, formattedForm);
+    return nameParts.join(' ');
+}
+
 export function formatForm(form) {
     if (!form) return "";
 
