@@ -1,10 +1,25 @@
-import React from 'react';
-import './FilterUI.css'; // Ensure you have appropriate styles defined here
+// FilterUI.jsx
+
+import React, { useEffect } from 'react';
+import './FilterUI.css';
+
+// Utility function to preload images
+const preloadImage = (url) => {
+    const img = new Image();
+    img.src = url;
+};
 
 function FilterUI({
     isShiny, toggleShiny, showCostume, toggleCostume, showShadow, toggleShadow,
     toggleShowAll
 }) {
+    useEffect(() => {
+        // Preload icons
+        preloadImage("/images/shiny_icon.png");
+        preloadImage("/images/costume_icon.png");
+        preloadImage("/images/shadow_icon.png");
+    }, []);
+
     return (
         <div className="header-section filter-section">
             <div className="button-container">
@@ -24,3 +39,4 @@ function FilterUI({
 }
 
 export default FilterUI;
+

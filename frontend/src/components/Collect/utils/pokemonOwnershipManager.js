@@ -237,9 +237,8 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
         
             if (!isOnlyInstance) {
                 // If there are other instances, confirm deletion
-                if (confirm('Do you want to delete this instance? This action cannot be undone.')) {
-                    delete ownershipData[pokemonKey]; // Delete the instance from ownership data
-                }}
+                delete ownershipData[pokemonKey]; // Delete the instance from ownership data
+            }
             else {
                 // If it's the only instance, just mark as unowned without deletion
                 instance.is_unowned = true;
@@ -328,28 +327,6 @@ function updateInstanceStatus(instance, newStatus, ownershipData, baseKey) {
     // console.log(`Updated status for ${instance.pokemon_id} to ${newStatus}`);
 }
 
-export async function syncAndSaveUpdates(ownershipData) {
-    // Directly use the ownershipData received from the context or function calling this method
-    const dataToStore = {
-        data: ownershipData,
-        timestamp: Date.now()
-    };
-
-    // Write to local storage
-    // localStorage.setItem(ownershipDataCacheKey, JSON.stringify(dataToStore));
-
-    // Also update the cache storage if available
-    if ('caches' in window) {
-        try {
-            const cache = await caches.open(cacheStorageName);
-            const response = new Response(JSON.stringify(dataToStore));
-            await cache.put(ownershipDataCacheKey, response);
-        } catch (error) {
-            console.error('Failed to update data in Cache Storage:', error);
-        }
-    }
-}
-
 export const loadOwnershipData = (setOwnershipData) => {
     const storedData = JSON.parse(localStorage.getItem(ownershipDataCacheKey));
     setOwnershipData(storedData.data); // Pass only the data part to the state
@@ -360,8 +337,6 @@ export const loadOwnershipData = (setOwnershipData) => {
 export const updateOwnershipFilter = (setOwnershipFilter, filterType) => {
     setOwnershipFilter(prev => prev === filterType ? "" : filterType);
 };
-
-// pokemonOwnershipManager.js
 
 export const moveHighlightedToFilter = async (highlightedCards, setHighlightedCards, loadOwnershipData, setOwnershipFilter, filter, Variants, updatePokemonOwnership) => {
     const batchUpdateSize = 5;  // Define batch size

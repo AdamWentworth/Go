@@ -2,7 +2,7 @@
 
 import React, { useContext, createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { getPokemons } from '../components/Collect/utils/api';
-import { initializeOrUpdateOwnershipData, updatePokemonOwnership, syncAndSaveUpdates } from '../components/Collect/utils/pokemonOwnershipManager';
+import { initializeOrUpdateOwnershipData, updatePokemonOwnership } from '../components/Collect/utils/pokemonOwnershipManager';
 import createPokemonVariants from '../components/Collect/utils/createPokemonVariants';
 import { determinePokemonKey } from '../components/Collect/utils/imageHelpers'; 
 

@@ -2,6 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import './CollectUI.css';
 
+// Utility function to preload images
+const preloadImage = (url) => {
+  const img = new Image();
+  img.src = url;
+};
+
 const CollectUI = ({
   statusFilter, setStatusFilter, onFastSelectToggle,
   onSelectAll, highlightedCards, confirmMoveToFilter
@@ -14,6 +20,13 @@ const CollectUI = ({
     setSelectedFilter(statusFilter); // Ensure this runs correctly
     console.log("Status Filter updated in CollectUI: ", statusFilter);
   }, [statusFilter]);
+
+  useEffect(() => {
+    // Preload fast select icon
+    preloadImage("/images/fast_select.png");
+    // Preload other images if necessary
+    // Add preloads for dynamically determined images if they depend on statusFilter
+  }, []);
   
   const handleFilterClick = (filter) => {
     if (highlightedCards.size > 0) {
