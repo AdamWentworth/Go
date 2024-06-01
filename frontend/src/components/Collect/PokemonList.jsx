@@ -30,10 +30,13 @@ function PokemonList({
         if (isFastSelectEnabled) {
             toggleCardHighlight(pokemon.pokemonKey);
         } else {
-            const overlayType = hasUUID ? 'instance' : 'default';
-            setSelectedPokemon({ pokemon, overlayType });
+            setSelectedPokemon(pokemon); // Directly set the Pokémon as in the stable version
+            if (hasUUID) {
+                // Store additional state for instance overlay if needed
+                setSelectedPokemon({ pokemon: pokemon, overlayType: 'instance' });
+            }
         }
-    };    
+    };        
 
     return (
         <div className="pokemon-container">
@@ -51,7 +54,8 @@ function PokemonList({
                             ownershipFilter={ownershipFilter}
                         />
                     ))}
-                    {selectedPokemon && (selectedPokemon.overlayType === 'instance' ? 
+                    {selectedPokemon && (
+                        selectedPokemon.overlayType === 'instance' ?
                         <InstanceOverlay
                             pokemon={selectedPokemon.pokemon}
                             onClose={() => setSelectedPokemon(null)}
@@ -59,7 +63,7 @@ function PokemonList({
                             allPokemons={sortedPokemons}
                         /> :
                         <PokemonOverlay
-                            pokemon={selectedPokemon.pokemon}
+                            pokemon={selectedPokemon.overlayType ? selectedPokemon.pokemon : selectedPokemon}
                             onClose={() => setSelectedPokemon(null)}
                             setSelectedPokemon={setSelectedPokemon}
                             allPokemons={sortedPokemons}
