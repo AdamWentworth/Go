@@ -1,0 +1,31 @@
+/* EditableSelect.css */
+
+.editable-select {
+    display: flex;
+    align-items: center;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+}
+
+.icon-button img {
+    width: 24px;
+    height: auto;
+}
+
+.editable-content {
+    border: 1px solid #ccc;
+    padding: 2px 4px;
+    outline: none;
+    display: inline-block;
+    width: auto;
+    min-width: 30px;
+    text-align: left;
+    direction: ltr;
+}

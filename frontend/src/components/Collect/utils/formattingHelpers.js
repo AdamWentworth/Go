@@ -71,3 +71,7 @@ export function formatCostumeName(name) {
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
 }
+
+export function getLastWord(fullName) {
+    return fullName.split(" ").pop();
+  }

@@ -1,0 +1,12 @@
+/* CPComponent.css */
+
+.cp-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.cp-container .label {
+    margin-right: 10px;
+}
