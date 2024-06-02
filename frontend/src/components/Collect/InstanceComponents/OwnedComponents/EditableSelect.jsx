@@ -1,46 +1,52 @@
 // EditableSelect.jsx
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './EditableSelect.css';
 
-const EditableSelect = ({ value, editMode, toggleEdit, onChange }) => {
+const EditableSelect = ({ value, editMode, toggleEdit, onChange, inputValidator }) => {
   const editIcon = `/images/edit-icon.png`;
   const saveIcon = `/images/save-icon.png`;
 
   const editableRef = useRef(null);
+  const [currentValue, setCurrentValue] = useState(value || ''); // Initialize with value or empty string
 
   useEffect(() => {
     if (editMode && editableRef.current) {
-      const textNode = editableRef.current.firstChild;
-      const textLength = editableRef.current.innerText.length;
-  
-      const range = document.createRange();
-      const selection = window.getSelection();
-  
-      if (textNode && textNode.nodeType === Node.TEXT_NODE) {
-        // Ensure we don't exceed the text node length
-        const safeLength = Math.min(textLength, textNode.length);
-        range.setStart(textNode, safeLength);
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
-      } else {
-        // If there's no text node or it's not a type we expect, set at the start
-        range.selectNodeContents(editableRef.current);
-        range.collapse(true);  // Collapse to start if no suitable text node
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
+      editableRef.current.innerText = currentValue;
+      setCaretToEnd();  // Ensure caret is at the end after setting text
     }
-  }, [editMode, value]);  
+  }, [editMode, currentValue]);
+
+  useEffect(() => {
+    setCurrentValue(value);  // Sync with external value
+  }, [value]);
 
   const handleInput = (event) => {
     const newValue = event.target.innerText;
-    // Ensure the input is numeric
-    if (/^\d*$/.test(newValue)) {
-      onChange(newValue);
+    if (inputValidator(newValue)) {
+      setCurrentValue(newValue); // Update current value if it's valid
+    } else {
+      event.target.innerText = currentValue; // Revert if input is invalid
+    }
+    setCaretToEnd();  // Keep caret at end after updating text
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();  // Prevent the Enter key from creating a new line
+      toggleEdit();
+      onChange(currentValue);  // Pass the current value back to onChange
     }
   };
+
+  function setCaretToEnd() {
+    const range = document.createRange();
+    const selection = window.getSelection();
+    range.selectNodeContents(editableRef.current);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
 
   return (
     <div className="editable-select">
@@ -49,10 +55,11 @@ const EditableSelect = ({ value, editMode, toggleEdit, onChange }) => {
           contentEditable
           suppressContentEditableWarning={true}
           onInput={handleInput}
+          onKeyDown={handleKeyDown}
           ref={editableRef}
           className="editable-content"
         >
-          {value}
+          {currentValue}
         </span>
       ) : (
         <span>{value}</span>

@@ -19,15 +19,20 @@ const CPComponent = ({ pokemon }) => {
     console.log("Save CP:", cp);
   };
 
+  const validateInput = (input) => /^\d*$/.test(input);  // Only allow digits
+
   return (
     <div className="cp-container">
-      <div className="label">CP:</div>
-      <EditableSelect
-        value={cp}
-        editMode={editMode}
-        toggleEdit={toggleEdit}
-        onChange={setCP}
-      />
+      <div className={`cp-display ${!cp && 'only-label'}`}>
+        <span className="cp-label">CP</span>
+        <EditableSelect
+          value={cp}
+          editMode={editMode}
+          toggleEdit={toggleEdit}
+          onChange={setCP}
+          inputValidator={validateInput}
+        />
+      </div>
     </div>
   );
 };

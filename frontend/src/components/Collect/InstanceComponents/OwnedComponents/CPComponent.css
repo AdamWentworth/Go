@@ -1,12 +1,23 @@
 /* CPComponent.css */
-
 .cp-container {
     display: flex;
-    align-items: center;
     justify-content: center;
-    position: relative;
+    align-items: flex-end; /* Center the main container vertically */
+    width: 100%;
 }
 
-.cp-container .label {
-    margin-right: 10px;
+.cp-display {
+    display: flex;
+    align-items: flex-end; /* Aligns items to the bottom of the container */
+    position: relative;
+    width: fit-content;
+}
+
+.cp-label {
+    font-size: 12px;
+    line-height: normal; /* Ensure that the font size and line height do not push the label down */
+}
+
+.only-label .cp-label {
+    margin-right: 0; /* Remove margin when there is no value */
 }
