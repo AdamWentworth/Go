@@ -2,22 +2,24 @@
 .cp-container {
     display: flex;
     justify-content: center;
-    align-items: flex-end; /* Center the main container vertically */
+    align-items: flex-end;
     width: 100%;
+    position: relative; /* Positioning context for the absolute elements */
 }
 
 .cp-display {
+    width: 100%; /* Use the full width to center the content */
+}
+
+.center-content {
     display: flex;
-    align-items: flex-end; /* Aligns items to the bottom of the container */
-    position: relative;
-    width: fit-content;
+    align-items: flex-end; /* Align items to the bottom */
+    justify-content: center;
 }
 
 .cp-label {
-    font-size: 12px;
-    line-height: normal; /* Ensure that the font size and line height do not push the label down */
-}
-
-.only-label .cp-label {
-    margin-right: 0; /* Remove margin when there is no value */
+    font-size: 10px;
+    line-height: 1; /* Reduce line height to minimize excess space */
+    margin-bottom: 3px; /* Ensure no bottom margin is affecting alignment */
+    margin-top: 8px;
 }

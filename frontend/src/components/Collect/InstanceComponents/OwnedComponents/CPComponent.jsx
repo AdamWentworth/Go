@@ -11,27 +11,25 @@ const CPComponent = ({ pokemon }) => {
   const toggleEdit = () => {
     setEditMode(!editMode);
     if (editMode) {
-      handleSave();
+      console.log("Save CP:", cp); // handleSave function is directly here for simplicity.
     }
-  };
-
-  const handleSave = () => {
-    console.log("Save CP:", cp);
   };
 
   const validateInput = (input) => /^\d*$/.test(input);  // Only allow digits
 
   return (
     <div className="cp-container">
-      <div className={`cp-display ${!cp && 'only-label'}`}>
-        <span className="cp-label">CP</span>
-        <EditableSelect
-          value={cp}
-          editMode={editMode}
-          toggleEdit={toggleEdit}
-          onChange={setCP}
-          inputValidator={validateInput}
-        />
+      <div className="cp-display">
+        <div className="center-content">
+          <span className="cp-label">CP</span>
+          <EditableSelect
+            value={cp}
+            editMode={editMode}
+            toggleEdit={toggleEdit}
+            onChange={setCP}
+            inputValidator={validateInput}
+          />
+        </div>
       </div>
     </div>
   );

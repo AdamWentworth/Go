@@ -1,27 +1,40 @@
 /* EditableSelect.css */
 .editable-select {
-    display: flex;
-    align-items: center;
-    position: relative;
-  }
+  display: flex;
+  align-items: flex-end; /* Align the contents to the bottom */
+  justify-content: space-between; /* Manages spacing between text and the icon */
+}
+
+.icon-button {
+  background: none;
+  border: 2px solid transparent; /* Add a transparent border to maintain consistent size */
+  cursor: pointer;
+  display: flex;
+  align-items: center; /* Centers the icon vertically */
+}
+
+.icon-button img {
+  width: 24px;
+  height: 24px; /* Set a fixed height for consistency */
+}
   
-  .icon-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    position: absolute;
-    right: -40px; /* Move icon to the right outside the editable-select */
-    top: 50%;
-    transform: translateY(-50%);
-  }
-  
-  .icon-button img {
-    width: 24px;
-    height: auto;
-  }
-  
-  .editable-content {
-    border: none;
-    outline: none;
-    text-align: center;
-  }  
+.editable-content {
+  border: none;
+  outline: none;
+  text-align: center;
+} 
+
+.icon-button {
+  position: absolute;
+  right: 50px; /* Positioned to the right inside the container */
+  top: 50%; /* Center vertically */
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.icon-button img {
+  width: 24px;
+  height: 24px;
+}
