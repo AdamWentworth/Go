@@ -1,8 +1,54 @@
 /* GenderComponent.css */
-
 .gender-container {
-    position: relative; /* Ensures positioning context for absolute children */
-    min-height: 40px; /* Minimum height to ensure button visibility */
-    padding-right: 30px; /* Space for the button */
-  }
-  
+  display: flex;
+  align-items: center;
+  margin: 8px 0;
+  justify-content: flex-end; /* Align items to the far right */
+}
+
+.gender-label {
+  margin-right: 8px;
+}
+
+.gender-select {
+  padding: 4px;
+  font-size: 14px;
+}
+
+.gender-display {
+  padding: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  height: 24px; /* Set a fixed height */
+}
+
+.gender-editable-content {
+  outline: none; /* Remove focus outline */
+  background: transparent; /* Ensure no background color */
+  border-bottom: 1px solid transparent; /* Transparent border that can be colored on focus/edit */
+  display: inline-block; /* Ensure the element behaves inline */
+}
+
+.gender-icon-button {
+  margin-left: 5px; /* Space between the editable content and the button */
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.gender-icon-button img {
+  width: 24px;
+  height: 24px;
+  margin: 0px;
+}
+
+.gender-display img {
+    width: 24px;
+    height: 24px;
+}
+
+.gender-text {
+  font-size: 10px;
+}
