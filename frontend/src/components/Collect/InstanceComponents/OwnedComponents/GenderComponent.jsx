@@ -1,5 +1,4 @@
 import React from 'react';
-import EditableSelect from './EditableSelect';
 
 const GenderComponent = ({ gender, editMode, onChange, toggleEdit }) => {
   return (

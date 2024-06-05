@@ -15,6 +15,7 @@
     display: flex;
     align-items: flex-end; /* Align items to the bottom */
     justify-content: center;
+    padding-top: 3px;
 }
 
 .cp-label {
@@ -23,3 +24,25 @@
     margin-bottom: 3px; /* Ensure no bottom margin is affecting alignment */
     margin-top: 8px;
 }
+
+.cp-editable-content {
+    outline: none; /* Remove focus outline */
+    background: transparent; /* Ensure no background color */
+    border-bottom: 1px solid transparent; /* Transparent border that can be colored on focus/edit */
+    display: inline-block; /* Ensure the element behaves inline */
+}
+  
+.cp-icon-button {
+    margin-left: 10px; /* Space between the editable content and the button */
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: absolute; /* Position absolutely within the parent */
+    top: 0; /* Align to the top of the parent */
+}
+  
+.cp-icon-button img {
+    width: 24px;
+    height: 24px;
+}
+  

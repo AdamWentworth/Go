@@ -3,7 +3,7 @@ import React from 'react';
 import './OwnedInstance.css';
 import CPComponent from './OwnedComponents/CPComponent';
 import NameComponent from './OwnedComponents/NameComponent';
-import EditableSelect from './OwnedComponents/EditableSelect';
+
 import MoveSelect from './OwnedComponents/MoveSelectComponent';
 import TypeIcons from './OwnedComponents/TypeIcons';
 
