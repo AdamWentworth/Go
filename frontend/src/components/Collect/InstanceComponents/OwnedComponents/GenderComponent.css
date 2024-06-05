@@ -1,0 +1,8 @@
+/* GenderComponent.css */
+
+.gender-container {
+    position: relative; /* Ensures positioning context for absolute children */
+    min-height: 40px; /* Minimum height to ensure button visibility */
+    padding-right: 30px; /* Space for the button */
+  }
+  

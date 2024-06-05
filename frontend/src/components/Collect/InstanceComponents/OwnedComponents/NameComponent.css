@@ -1,5 +1,5 @@
 /* NameComponent.css */
-.nameComponent__container {
+.name-container {
     display: flex;
     justify-content: center; /* Horizontally center the nickname text */
     align-items: center; /* Vertically align items in the middle */
@@ -7,23 +7,4 @@
     position: relative; /* Positioning context for absolute elements */
     margin-top: 20px;
     height: 48px;
-}
-
-.nameComponent__text {
-    position: relative;
-    text-align: center;
-}
-
-.nameComponent__editable-content {
-    flex: 1; /* Take up the full width of its container minus button width */
-    text-align: center; /* Ensure text is centered */
-    border-bottom: 1px solid grey; /* Show a bottom border to indicate editable area */
-    padding: 10px 0; /* Padding for better visual and click area */
-    min-height: 30px; /* Minimum height for better interaction area */
-    font-size: 18px; /* Larger font size for better readability */
-}
-
-.nameComponent__icon-button {
-    margin-left: 10px; /* Space between text and button */
-    position: static; /* Override any absolute positioning from inherited styles */
 }

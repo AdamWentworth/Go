@@ -31,12 +31,12 @@ const NameComponent = ({ pokemon }) => {
   };
 
   return (
-    <div className="nameComponent__container">
-      <div className="nameComponent__display">
-        <div className="nameComponent__center-content">
-          <span className="nameComponent__label"></span>
+    <div className="name-container">
+      <div className="name-display">
+        <div className="name-center-content">
+          <span className="name-label"></span>
           <EditableSelect
-            className="editableSelect__container"
+            className="name-editable-container"
             editMode={editMode}
             value={nickname}
             onChange={handleChange}

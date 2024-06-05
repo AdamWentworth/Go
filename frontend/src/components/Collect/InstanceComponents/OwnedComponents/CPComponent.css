@@ -1,5 +1,5 @@
 /* CPComponent.css */
-.cpComponent__container {
+.cp-container {
     display: flex;
     justify-content: center;
     align-items: flex-end;
@@ -7,17 +7,17 @@
     position: relative; /* Positioning context for the absolute elements */
 }
 
-.cpComponent__display {
+.cp-display {
     width: 100%; /* Use the full width to center the content */
 }
 
-.cpComponent__center-content {
+.cp-center-content {
     display: flex;
     align-items: flex-end; /* Align items to the bottom */
     justify-content: center;
 }
 
-.cpComponent__label {
+.cp-label {
     font-size: 10px;
     line-height: 1; /* Reduce line height to minimize excess space */
     margin-bottom: 3px; /* Ensure no bottom margin is affecting alignment */
