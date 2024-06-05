@@ -19,10 +19,10 @@
 }
 
 .cp-label {
-    font-size: 10px;
+    font-size: 12px;
     line-height: 1; /* Reduce line height to minimize excess space */
-    margin-bottom: 3px; /* Ensure no bottom margin is affecting alignment */
-    margin-top: 8px;
+    margin-bottom: 5px; /* Ensure no bottom margin is affecting alignment */
+    margin-top: 12px;
 }
 
 .cp-editable-content {
@@ -30,6 +30,7 @@
     background: transparent; /* Ensure no background color */
     border-bottom: 1px solid transparent; /* Transparent border that can be colored on focus/edit */
     display: inline-block; /* Ensure the element behaves inline */
+    font-size: 20px;
 }
   
 .cp-icon-button {
@@ -39,6 +40,7 @@
     cursor: pointer;
     position: absolute; /* Position absolutely within the parent */
     top: 0; /* Align to the top of the parent */
+    margin-top: 5px;
 }
   
 .cp-icon-button img {

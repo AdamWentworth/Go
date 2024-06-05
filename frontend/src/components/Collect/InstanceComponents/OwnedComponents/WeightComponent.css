@@ -1,0 +1,49 @@
+/* WeightComponent.css */
+.weight-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .weight-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .weight-editable-container {
+    display: flex;
+    align-items: center;
+    position: relative; /* Ensure relative positioning for absolute positioning of button */
+  }
+  
+  .weight-editable-content {
+    outline: none; /* Remove focus outline */
+    background: transparent; /* Ensure no background color */
+    border-bottom: 1px solid transparent; /* Transparent border that can be colored on focus/edit */
+    display: inline-block; /* Ensure the element behaves inline */
+    min-width: 30px; /* Ensure there's space for the cursor */
+    text-align: right; /* Align text to the right */
+  }
+  
+  .weight-icon-button {
+    margin-left: 10px; /* Space between the editable content and the button */
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: absolute; /* Absolute positioning relative to the container */
+    right: -35px; /* Adjust position as needed */
+  }
+  
+  .weight-icon-button img {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .weight-label {
+    font-size: 12px;
+    color: grey;
+    margin-top: 2px; /* Space between value and label */
+    text-align: center; /* Center the label text */
+  }
+  
