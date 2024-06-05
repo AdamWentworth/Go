@@ -24,6 +24,9 @@
     display: inline-block; /* Ensure the element behaves inline */
     min-width: 30px; /* Ensure there's space for the cursor */
     text-align: right; /* Align text to the right */
+    height: 24px; 
+    line-height: 24px;
+    margin-top: 1px;
   }
   
   .weight-icon-button {
