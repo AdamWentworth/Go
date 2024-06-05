@@ -8,35 +8,40 @@ const EditableSelect = ({ value, editMode, toggleEdit, onChange, inputValidator 
   const saveIcon = `/images/save-icon.png`;
 
   const editableRef = useRef(null);
-  const [currentValue, setCurrentValue] = useState(value || ''); // Initialize with value or empty string
+  const [currentValue, setCurrentValue] = useState(value || '');
 
   useEffect(() => {
     if (editMode && editableRef.current) {
-      editableRef.current.innerText = currentValue;
-      setCaretToEnd();  // Ensure caret is at the end after setting text
+      editableRef.current.innerText = currentValue || ''; // Ensure null doesn't cause an error
+      setCaretToEnd();
     }
   }, [editMode, currentValue]);
 
   useEffect(() => {
-    setCurrentValue(value);  // Sync with external value
+    setCurrentValue(value || ''); // Ensure value is never null
   }, [value]);
 
   const handleInput = (event) => {
     const newValue = event.target.innerText;
-    if (inputValidator(newValue)) {
-      setCurrentValue(newValue); // Update current value if it's valid
+    if (inputValidator(newValue) || newValue === '') {
+      setCurrentValue(newValue);
     } else {
       event.target.innerText = currentValue; // Revert if input is invalid
     }
-    setCaretToEnd();  // Keep caret at end after updating text
+    setCaretToEnd();
   };
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
-      event.preventDefault();  // Prevent the Enter key from creating a new line
-      toggleEdit();
-      onChange(currentValue);  // Pass the current value back to onChange
+      event.preventDefault();
+      saveChanges();  // Save when Enter is pressed
     }
+  };
+
+  const saveChanges = () => {
+    toggleEdit();  // Toggle editing mode off
+    // Handle cases where currentValue could be empty or null
+    onChange(currentValue && currentValue.trim() ? currentValue : null);
   };
 
   function setCaretToEnd() {
@@ -49,7 +54,7 @@ const EditableSelect = ({ value, editMode, toggleEdit, onChange, inputValidator 
   }
 
   return (
-    <div className="editable-select">
+    <div className="editableSelect__container">
       {editMode ? (
         <span
           contentEditable
@@ -57,14 +62,14 @@ const EditableSelect = ({ value, editMode, toggleEdit, onChange, inputValidator 
           onInput={handleInput}
           onKeyDown={handleKeyDown}
           ref={editableRef}
-          className="editable-content"
+          className="editableSelect__editable-content"
         >
-          {currentValue}
+          {currentValue || ''}
         </span>
       ) : (
-        <span>{value}</span>
+        <span className="editableSelect__editable-content">{value || ''}</span>
       )}
-      <button onClick={toggleEdit} className="icon-button">
+      <button onClick={saveChanges} className="editableSelect__icon-button">
         <img src={editMode ? saveIcon : editIcon} alt={editMode ? "Save" : "Edit"} />
       </button>
     </div>

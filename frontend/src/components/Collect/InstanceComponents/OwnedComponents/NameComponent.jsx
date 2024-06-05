@@ -1,44 +1,50 @@
 // NameComponent.jsx
-
-import React, { useState, useEffect } from 'react';
-import { getLastWord } from '../../utils/formattingHelpers';
+import React, { useState } from 'react';
 import EditableSelect from './EditableSelect';
+import { getLastWord } from '../../utils/formattingHelpers';
+import './NameComponent.css';
 
 const NameComponent = ({ pokemon }) => {
-  const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname || getLastWord(pokemon.name));
+  const initialNickname = () => {
+    return pokemon.ownershipStatus.nickname && pokemon.ownershipStatus.nickname.trim() !== ''
+      ? pokemon.ownershipStatus.nickname
+      : getLastWord(pokemon.name);
+  };
+
+  const [nickname, setNickname] = useState(initialNickname);
   const [editMode, setEditMode] = useState(false);
 
   const toggleEdit = () => {
     setEditMode(!editMode);
     if (!editMode) {
-      // This will trigger when edit mode is turned off and saving needs to happen
-      handleSave();
+      console.log("Save nickname:", nickname);
     }
   };
 
-  const handleChange = (event) => {
-    setNickname(event.target.value);
+  const handleChange = (newNickname) => {
+    setNickname(newNickname);
   };
 
-  const handleSave = () => {
-    console.log("Save nickname:", nickname);
-    // Implement saving logic or pass the nickname up to the parent component if needed
+  // Validator function to ensure nickname is non-empty and up to 12 characters
+  const validateNickname = (input) => {
+    return input.trim() !== '' && input.length <= 12;
   };
-
-  // Prepare dummy options to fulfill the requirement of EditableSelect though they won't be used
-  const dummyOptions = []; 
 
   return (
-    <div className="nickname-container">
-      <EditableSelect
-        label=""
-        field="nickname"
-        options={dummyOptions} // Options aren't used but required by component API
-        editMode={editMode}
-        value={nickname}
-        onChange={handleChange}
-        toggleEdit={toggleEdit}
-      />
+    <div className="nameComponent__container">
+      <div className="nameComponent__display">
+        <div className="nameComponent__center-content">
+          <span className="nameComponent__label"></span>
+          <EditableSelect
+            className="editableSelect__container"
+            editMode={editMode}
+            value={nickname}
+            onChange={handleChange}
+            toggleEdit={toggleEdit}
+            inputValidator={validateNickname}  // Pass the custom validator
+          />
+        </div>
+      </div>
     </div>
   );
 };

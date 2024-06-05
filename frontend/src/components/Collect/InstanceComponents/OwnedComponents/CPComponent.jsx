@@ -1,5 +1,4 @@
 // CPComponent.jsx
-
 import React, { useState } from 'react';
 import EditableSelect from './EditableSelect';
 import './CPComponent.css';
@@ -18,11 +17,12 @@ const CPComponent = ({ pokemon }) => {
   const validateInput = (input) => /^\d*$/.test(input);  // Only allow digits
 
   return (
-    <div className="cp-container">
-      <div className="cp-display">
-        <div className="center-content">
-          <span className="cp-label">CP</span>
+    <div className="cpComponent__container">
+      <div className="cpComponent__display">
+        <div className="cpComponent__center-content">
+          <span className="cpComponent__label">CP</span>
           <EditableSelect
+            className="editableSelect__container"
             value={cp}
             editMode={editMode}
             toggleEdit={toggleEdit}
