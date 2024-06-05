@@ -3,6 +3,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-end; /* Align items to the far right */
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .gender-label {

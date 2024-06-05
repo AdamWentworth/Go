@@ -1,5 +1,5 @@
 // OwnedInstance.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import './OwnedInstance.css';
 import CPComponent from './OwnedComponents/CPComponent';
 import NameComponent from './OwnedComponents/NameComponent';
@@ -9,9 +9,15 @@ import WeightComponent from './OwnedComponents/WeightComponent';
 import TypeComponent from './OwnedComponents/TypeComponent';
 import HeightComponent from './OwnedComponents/HeightComponent';
 
-import MoveSelect from './OwnedComponents/MoveSelectComponent';
+import PvPMovesComponent from './OwnedComponents/PvPMovesComponent';
+import RaidMovesComponent from './OwnedComponents/RaidMovesComponent';
 
 const OwnedInstance = ({ pokemon }) => {
+  const [showPvP, setShowPvP] = useState(false); // Default to "Gym & Raids"
+
+  const toggleMoves = () => {
+    setShowPvP(!showPvP);
+  };
 
   return (
     <div>
@@ -24,10 +30,23 @@ const OwnedInstance = ({ pokemon }) => {
         <TypeComponent pokemon={pokemon} />
         <HeightComponent pokemon={pokemon} />
       </div>
-      {/* <MoveSelect label="Fast Move" field="fastMove" isFast={true} moves={pokemon.moves} selectedMove={stateValues.fastMove} onChange={(value) => setStateValues('fastMove', value)} />
-      <MoveSelect label="Charged Moves" field="chargedMoves" isFast={false} moves={pokemon.moves} selectedMove={stateValues.chargedMoves} onChange={(value, index) => setStateValues('chargedMoves', value, index)} /> */}
+      <div className="moves-toggle">
+        <span className={`toggle-option ${!showPvP ? 'active' : ''}`} onClick={() => setShowPvP(false)}>Gym & Raids</span>
+        <span className={`toggle-option ${showPvP ? 'active' : ''}`} onClick={() => setShowPvP(true)}>Trainer Battles</span>
+      </div>
+      <div className="moves-content">
+        <div className={`moves-container ${showPvP ? 'slide-out' : 'slide-in'}`}>
+          <div className="raid-content">
+            <RaidMovesComponent pokemon={pokemon} />
+          </div>
+          <div className="pvp-content">
+            <PvPMovesComponent pokemon={pokemon} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 export default OwnedInstance;
+

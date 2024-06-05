@@ -1,0 +1,47 @@
+/* RaidMovesComponent.css */
+
+.raid-moves-container {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .move-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  
+  .move-info {
+    display: flex;
+    align-items: center;
+    width: 100%; /* Full width of container */
+  }
+  
+  .type-icon {
+    margin-right: 10px; /* Space between icon and name */
+    margin-top: 5px;
+  }
+  
+  .move-name {
+    /* Adjust the move name to not stretch unnecessarily */
+    white-space: nowrap; /* Ensures the text doesn't wrap */
+  }
+  
+  .move-power {
+    margin-left: auto; /* Pushes the power to the far right */
+    margin-right: 10px; /* Space before the edit icon */
+  }
+  
+  .move-edit-icon {
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    margin-left: 10px;
+  }
+  
+  .edit-icon, .save-icon {
+    width: 24px;
+    height: 24px;
+  }
+  
