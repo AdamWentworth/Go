@@ -9,8 +9,7 @@ import WeightComponent from './OwnedComponents/WeightComponent';
 import TypeComponent from './OwnedComponents/TypeComponent';
 import HeightComponent from './OwnedComponents/HeightComponent';
 
-import PvPMovesComponent from './OwnedComponents/PvPMovesComponent';
-import RaidMovesComponent from './OwnedComponents/RaidMovesComponent';
+import MovesComponent from './OwnedComponents/MovesComponent';
 
 const OwnedInstance = ({ pokemon }) => {
   const [showPvP, setShowPvP] = useState(false); // Default to "Gym & Raids"
@@ -30,19 +29,8 @@ const OwnedInstance = ({ pokemon }) => {
         <TypeComponent pokemon={pokemon} />
         <HeightComponent pokemon={pokemon} />
       </div>
-      <div className="moves-toggle">
-        <span className={`toggle-option ${!showPvP ? 'active' : ''}`} onClick={() => setShowPvP(false)}>Gym & Raids</span>
-        <span className={`toggle-option ${showPvP ? 'active' : ''}`} onClick={() => setShowPvP(true)}>Trainer Battles</span>
-      </div>
       <div className="moves-content">
-        <div className={`moves-container ${showPvP ? 'slide-out' : 'slide-in'}`}>
-          <div className="raid-content">
-            <RaidMovesComponent pokemon={pokemon} />
-          </div>
-          <div className="pvp-content">
-            <PvPMovesComponent pokemon={pokemon} />
-          </div>
-        </div>
+        <MovesComponent pokemon={pokemon} />
       </div>
     </div>
   );

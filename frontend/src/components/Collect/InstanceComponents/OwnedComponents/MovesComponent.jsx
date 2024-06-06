@@ -1,42 +1,50 @@
-// RaidMovesComponent.jsx
+// MovesComponent.jsx
 
-import React, { useState, useEffect } from 'react';
-import './RaidMovesComponent.css';
+import React, { useState } from 'react';
+import './MovesComponent.css';
 
-const RaidMovesComponent = ({ pokemon }) => {
+const MovesComponent = ({ pokemon }) => {
   const allMoves = pokemon.moves;
   const fastMoves = allMoves.filter(move => move.is_fast);
   const chargedMoves = allMoves.filter(move => !move.is_fast);
 
-  const getDefaultMoveId = (moves, currentId) => {
-    return moves && moves.length > 0 ? (moves.find(move => move.move_id === currentId) ? currentId : moves[0].move_id) : null;
-  };
+  const getDefaultMoveId = (moves, currentId) => (
+    moves.length > 0 ? (moves.find(move => move.move_id === currentId) || moves[0]).move_id : null
+  );
 
   const [fastMove, setFastMove] = useState(getDefaultMoveId(fastMoves, pokemon.ownershipStatus.fast_move_id));
   const [chargedMove1, setChargedMove1] = useState(getDefaultMoveId(chargedMoves, pokemon.ownershipStatus.charged_move1_id));
   const [chargedMove2, setChargedMove2] = useState(getDefaultMoveId(chargedMoves, pokemon.ownershipStatus.charged_move2_id));
-  const [editMode, setEditMode] = useState({fast: false, charged1: false, charged2: false});
+  const [editMode, setEditMode] = useState({ fast: false, charged1: false, charged2: false });
 
   const getMoveById = (id) => allMoves.find(move => move.move_id === id);
-
-  const renderMoveOptions = (moves, selectedMove, moveType) => (
-    <select value={selectedMove || ''} onChange={(event) => handleMoveChange(event, moveType)}>
-      <option value="">Select move</option>
-      {moves.map(move => (
-        <option key={move.move_id} value={move.move_id}>{move.name} ({move.type_name})</option>
-      ))}
-    </select>
-  );
 
   const handleMoveChange = (event, moveType) => {
     const selectedMoveId = Number(event.target.value);
     if (moveType === 'fast') setFastMove(selectedMoveId);
     else if (moveType === 'charged1') setChargedMove1(selectedMoveId);
-    else if (moveType === 'charged2') setChargedMove2(selectedMoveId);
+    else setChargedMove2(selectedMoveId);
   };
 
-  const toggleEditMode = (type) => {
-    setEditMode(prev => ({...prev, [type]: !prev[type]}));
+  const toggleEditMode = (type, value) => {
+    setEditMode(prev => ({ ...prev, [type]: value }));
+  };
+
+  const renderMoveOptions = (moves, selectedMove, moveType) => {
+    const move = getMoveById(selectedMove);
+    return (
+      <div className="move-option-container">
+        <img src={`/images/types/${move?.type.toLowerCase()}.png`} alt={move?.type_name} className="type-icon" />
+        <select value={selectedMove} onChange={(event) => handleMoveChange(event, moveType)} className="move-select">
+          {moves.map(move => (
+            <option key={move.move_id} value={move.move_id}>{move.name}</option>
+          ))}
+        </select>
+        <button onClick={() => toggleEditMode(moveType, false)} className="icon-button">
+          <img src="/images/save-icon.png" alt="Save" className="move-edit-icon" />
+        </button>
+      </div>
+    );
   };
 
   const renderMoveInfo = (moveId, moveType) => {
@@ -46,16 +54,15 @@ const RaidMovesComponent = ({ pokemon }) => {
       <div className="move-info">
         <img src={`/images/types/${move.type.toLowerCase()}.png`} alt={move.type_name} className="type-icon" />
         <span className="move-name">{move.name}</span>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-          <span className="move-power">{move.raid_power}</span>
-          <img src={`/images/edit-icon.png`} alt="Edit" className="move-edit-icon" onClick={() => toggleEditMode(moveType)} />
-        </div>
+        <button onClick={() => toggleEditMode(moveType, true)} className="icon-button">
+          <img src="/images/edit-icon.png" alt="Edit" className="move-edit-icon" />
+        </button>
       </div>
     );
-  };  
+  };
 
   return (
-    <div className="raid-moves-container">
+    <div className="moves-container">
       <div className="move-section">
         {editMode.fast ? renderMoveOptions(fastMoves, fastMove, 'fast') : renderMoveInfo(fastMove, 'fast')}
       </div>
@@ -69,4 +76,4 @@ const RaidMovesComponent = ({ pokemon }) => {
   );
 };
 
-export default RaidMovesComponent;
+export default MovesComponent;
