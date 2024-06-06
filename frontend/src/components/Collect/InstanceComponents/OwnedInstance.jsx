@@ -10,14 +10,10 @@ import TypeComponent from './OwnedComponents/TypeComponent';
 import HeightComponent from './OwnedComponents/HeightComponent';
 
 import MovesComponent from './OwnedComponents/MovesComponent';
+import IVComponent from './OwnedComponents/IVComponent';
 
 const OwnedInstance = ({ pokemon }) => {
-  const [showPvP, setShowPvP] = useState(false); // Default to "Gym & Raids"
-
-  const toggleMoves = () => {
-    setShowPvP(!showPvP);
-  };
-
+  console.log(pokemon)
   return (
     <div>
       <CPComponent pokemon={pokemon} />
@@ -32,6 +28,7 @@ const OwnedInstance = ({ pokemon }) => {
       <div className="moves-content">
         <MovesComponent pokemon={pokemon} />
       </div>
+      <IVComponent pokemon={pokemon} />
     </div>
   );
 }

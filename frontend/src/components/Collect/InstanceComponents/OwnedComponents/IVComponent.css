@@ -1,0 +1,100 @@
+/* IVComponent.css */
+.iv-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: -10px;
+    margin-bottom: 10px;
+}
+
+.iv-display {
+    position: relative;
+    margin: 5px;
+    padding: 5px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr; /* Three equally spaced columns */
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.iv-label {
+    text-align: left; /* Align label text to the left */
+    justify-self: start; /* Align the label to the start of the column */
+}
+
+.iv-value {
+    display: flex;
+    justify-content: center; /* Center the value/input */
+    text-align: center;
+    justify-self: center; /* Center the value/input in the column */
+}
+
+.iv-input {
+    width: 50px; /* Restrict the width of input field */
+    text-align: center;
+    background-color: transparent; /* Make the background transparent */
+    color: white; /* Set the text color to white */
+    border: 1px solid white; /* Add a white outline */
+    outline: none; /* Remove the default outline */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-size: 16px;
+    padding: 0;
+}
+
+.iv-input::-webkit-outer-spin-button,
+.iv-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.iv-bar-bg, .iv-bar {
+    position: absolute;
+    height: 15px;
+    bottom: -20px;
+    width: 75%; /* Gauge width */
+    border-radius: 7.5px;
+    left: 12.5%; /* Centering the gauge */
+}
+
+.iv-bar-bg {
+    background-color: #ccc;
+    margin-bottom: 5px;
+}
+
+.iv-bar {
+    background-color: #ef9219;
+    width: 0%;
+    transition: width 0.3s ease-in-out;
+    margin-bottom: 5px;
+}
+
+.iv-bar.full {
+    background-color: #c45856;
+}
+
+.edit-icon {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    justify-self: end; /* Align the icon to the end of the column */
+}
+
+.iv-display::after, .iv-display::before {
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    width: 2px;
+    height: 15px;
+    background-color: white;
+    z-index: 2;
+    margin-bottom: 5px;
+}
+
+.iv-display::after {
+    left: calc(12.5% + 25%);
+}
+
+.iv-display::before {
+    left: calc(12.5% + 50%);
+}
