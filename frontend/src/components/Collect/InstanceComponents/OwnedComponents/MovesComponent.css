@@ -23,6 +23,12 @@
   flex-shrink: 0;
 }
 
+.moves-container .type-icon {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+}
+
 .move-select-container {
   display: flex;
   align-items: center;
@@ -78,3 +84,26 @@
   width: 24px;
   height: 24px;
 }
+
+.add-move-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px; /* Fixed width for consistency */
+  height: 24px; /* Fixed height to match other buttons */
+  margin: 0 auto; /* Center the button within its section */
+  background-color: transparent;
+  color: white;
+  font-size: 24px; /* Larger font size for visibility */
+  border: 2px solid white; /* White border to match the theme */
+  border-radius: 25px; /* Circular button */
+  cursor: pointer;
+  margin-top: 5px;
+}
+
+.move-add-icon {
+  display: inline-block;
+  padding: 0;
+  line-height: 1; /* Adjust line height for vertical alignment */
+}
+

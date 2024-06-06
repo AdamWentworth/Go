@@ -14,29 +14,42 @@ const MovesComponent = ({ pokemon }) => {
 
   const [fastMove, setFastMove] = useState(getDefaultMoveId(fastMoves, pokemon.ownershipStatus.fast_move_id));
   const [chargedMove1, setChargedMove1] = useState(getDefaultMoveId(chargedMoves, pokemon.ownershipStatus.charged_move1_id));
-  const [chargedMove2, setChargedMove2] = useState(getDefaultMoveId(chargedMoves, pokemon.ownershipStatus.charged_move2_id));
+  const [chargedMove2, setChargedMove2] = useState(pokemon.ownershipStatus.charged_move2_id ? getDefaultMoveId(chargedMoves, pokemon.ownershipStatus.charged_move2_id) : null);
   const [editMode, setEditMode] = useState({ fast: false, charged1: false, charged2: false });
 
   const getMoveById = (id) => allMoves.find(move => move.move_id === id);
 
   const handleMoveChange = (event, moveType) => {
     const selectedMoveId = Number(event.target.value);
-    if (moveType === 'fast') setFastMove(selectedMoveId);
-    else if (moveType === 'charged1') setChargedMove1(selectedMoveId);
-    else setChargedMove2(selectedMoveId);
+    if (moveType === 'fast') {
+      setFastMove(selectedMoveId);
+    } else if (moveType === 'charged1') {
+      setChargedMove1(selectedMoveId);
+    } else {
+      setChargedMove2(selectedMoveId);
+    }
   };
 
   const toggleEditMode = (type, value) => {
     setEditMode(prev => ({ ...prev, [type]: value }));
   };
 
+  const addSecondChargedMove = () => {
+    const firstAvailableMove = chargedMoves.find(move => move.move_id !== chargedMove1); // Find the first different move
+    setChargedMove2(firstAvailableMove.move_id);
+    setEditMode(prev => ({ ...prev, charged2: true }));
+  };
+
   const renderMoveOptions = (moves, selectedMove, moveType) => {
+    // Exclude already selected move for charged moves
+    const filteredMoves = moves.filter(move => !(moveType.includes('charged') && ((moveType === 'charged1' && move.move_id === chargedMove2) || (moveType === 'charged2' && move.move_id === chargedMove1))));
+    
     const move = getMoveById(selectedMove);
     return (
       <div className="move-option-container">
         <img src={`/images/types/${move?.type.toLowerCase()}.png`} alt={move?.type_name} className="type-icon" />
         <select value={selectedMove} onChange={(event) => handleMoveChange(event, moveType)} className="move-select">
-          {moves.map(move => (
+          {filteredMoves.map(move => (
             <option key={move.move_id} value={move.move_id}>{move.name}</option>
           ))}
         </select>
@@ -70,10 +83,15 @@ const MovesComponent = ({ pokemon }) => {
         {editMode.charged1 ? renderMoveOptions(chargedMoves, chargedMove1, 'charged1') : renderMoveInfo(chargedMove1, 'charged1')}
       </div>
       <div className="move-section">
-        {editMode.charged2 ? renderMoveOptions(chargedMoves, chargedMove2, 'charged2') : renderMoveInfo(chargedMove2, 'charged2')}
+        {chargedMove2 ? (editMode.charged2 ? renderMoveOptions(chargedMoves, chargedMove2, 'charged2') : renderMoveInfo(chargedMove2, 'charged2')) : (
+          <button onClick={addSecondChargedMove} className="icon-button add-move-button">
+              <span className="move-add-icon">+</span>
+          </button>      
+        )}
       </div>
     </div>
   );
 };
 
 export default MovesComponent;
+
