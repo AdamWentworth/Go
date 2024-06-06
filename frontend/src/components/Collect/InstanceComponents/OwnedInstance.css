@@ -5,14 +5,67 @@
   align-items: center;
 }
 
-.pokemon-image {
-  max-width: 100%;
+.top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
+
+.spacer, .cp-component, .right-stack {
+  flex: 1;  /* Ensures each child potentially takes equal width */
+}
+
+.cp-component {
+  flex: 0 1 auto;  /* This prevents the CPComponent from growing and keeps it at its natural width */
+}
+
+.right-stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center the stack vertically if there's extra space */
+  flex: 1;  /* Allows the right stack to grow if needed */
+}
+
+.pokemon-image-container {
+  position: relative;
+}
+
+.lucky-placeholder {
+  flex: 1; 
+}
+
+.lucky-backdrop {
+  position: absolute;
+  top: 18%;
+  left: 10%;
+  width: 180px;
+  height: auto;
+  z-index: 0; /* Ensure it's slightly behind the main image but above any other content */
+}
+
+.pokemon-image {
+  position: relative;
+  max-width: 100%;
+  z-index: 1; /* Ensure it's above the backdrop */
+}
+
+.gender-lucky-row {
+  display: flex;
+  align-items: center; /* This ensures vertical centering of children */
+  justify-content: space-around; /* Adjust this if needed for horizontal spacing */
+  width: 100%;
+}
+
+.gender-component, .lucky-component {
+  flex: 1; /* Adjust flex settings to manage width and spacing */
+}
+
 
 .stats-container {
   display: flex;
-  justify-content: space-between; /* Distribute space evenly */
-  width: 100%; /* Take full width of the container */
+  justify-content: space-between;
+  width: 100%;
 }
 
 .weight-component, .type-component, .height-component {
