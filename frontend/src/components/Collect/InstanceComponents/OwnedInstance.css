@@ -6,26 +6,23 @@
 }
 
 .top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.spacer, .cp-component, .right-stack {
-  flex: 1;  /* Ensures each child potentially takes equal width */
-}
-
-.cp-component {
-  flex: 0 1 auto;  /* This prevents the CPComponent from growing and keeps it at its natural width */
-}
-
-.right-stack {
-  display: flex;
-  flex-direction: column;
-  justify-content: center; /* Center the stack vertically if there's extra space */
-  flex: 1;  /* Allows the right stack to grow if needed */
-}
+    display: grid;
+    grid-template-columns: 1fr auto 1fr; /* 1fr for the spacer, auto for CPComponent, 1fr for the right stack */
+    align-items: center;
+    width: 100%;
+  }
+  
+  .cp-component {
+    /* Ensures CPComponent is not stretched and takes the space it requires */
+    justify-self: center; /* Centering CPComponent horizontally in its grid area */
+  }
+  
+  .right-stack {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Center the stack vertically if there's extra space */
+    align-items: flex-end; /* Aligns the children (FavoriteComponent and FriendshipComponent) to the right */
+  }
 
 .pokemon-image-container {
   position: relative;
