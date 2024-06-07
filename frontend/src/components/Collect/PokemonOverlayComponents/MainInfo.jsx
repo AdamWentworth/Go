@@ -1,7 +1,7 @@
 /* mainInfo.jsx */
 
 import React from 'react';
-import './mainInfo.css';
+import './MainInfo.css';
 
 function MainInfo({ pokemon }) {
   // Function to extract the base name by slicing off everything before the last space

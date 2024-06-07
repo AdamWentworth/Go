@@ -2,13 +2,13 @@
 
 import React, { useState } from 'react';
 import './PokemonOverlay.css';
-import WindowOverlay from './OverlayComponents/windowOverlay';
-import MoveList from './OverlayComponents/moveList';
-import MainInfo from './OverlayComponents/mainInfo';
-import ShinyInfo from './OverlayComponents/shinyInfo';
-import Costumes from './OverlayComponents/costumes';
-import ShadowInfo from './OverlayComponents/shadowInfo';
-import EvolutionShortcut from './OverlayComponents/evolutionShortcut';
+import WindowOverlay from './WindowOverlay';
+import MoveList from './PokemonOverlayComponents/MoveList';
+import MainInfo from './PokemonOverlayComponents/MainInfo';
+import ShinyInfo from './PokemonOverlayComponents/ShinyInfo';
+import Costumes from './PokemonOverlayComponents/Costumes';
+import ShadowInfo from './PokemonOverlayComponents/ShadowInfo';
+import EvolutionShortcut from './PokemonOverlayComponents/EvolutionShortcut';
 
 const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) => {
   const [currentPokemon, setCurrentPokemon] = useState(pokemon);

@@ -1,6 +1,6 @@
 /* shinyInfo.jsx */
 import React from 'react';
-import './shinyInfo.css';
+import './ShinyInfo.css';
 import { formatShinyRarity, getLastWord } from '../utils/formattingHelpers';
 
 function ShinyInfo({ pokemon, allPokemonData }) {

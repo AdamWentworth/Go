@@ -1,7 +1,7 @@
 // ShadowInfo.jsx
 
 import React from 'react';
-import './shadowInfo.css';
+import './ShadowInfo.css';
 
 function ShadowInfo({ pokemon }) {
     // Function to extract the base name by slicing off everything before the last space

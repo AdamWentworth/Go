@@ -1,7 +1,7 @@
 /* windowOverlay.jsx */
 
 import React from 'react';
-import './windowOverlay.css';
+import './WindowOverlay.css';
 
 function WindowOverlay({ children, onClose, position }) {
   // Stop the propagation to prevent the click from reaching the pokemon-overlay

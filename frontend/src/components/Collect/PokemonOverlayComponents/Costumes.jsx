@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import './costumes.css';
-import './costumes-fullscreen.css';
+import './Costumes.css';
+import './Costumes-Fullscreen.css';
 import { formatCostumeName } from '../utils/formattingHelpers';
 
 function Costumes({ costumes }) {

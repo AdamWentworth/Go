@@ -1,5 +1,5 @@
 import React from 'react';
-import './moveList.css';
+import './MoveList.css';
 
 function getTypeIconPath(typeName) {
   return `/images/types/${typeName.toLowerCase()}.png`;

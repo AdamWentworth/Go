@@ -1,7 +1,7 @@
 // EvolutionShortcut.jsx
 
 import React from 'react';
-import './evolutionShortcut.css';
+import './EvolutionShortcut.css';
 
 const EvolutionShortcut = ({ evolvesFrom, evolvesTo, allPokemonData, setSelectedPokemon }) => {
   
