@@ -1,0 +1,46 @@
+/* DateCaughtComponent.css */
+.date-container {
+  display: flex;
+  flex-direction: column;
+  color: white;  /* Set text color to white for visibility against a darker background */
+  margin-top: 20px;
+}
+
+.date-field span {
+  cursor: pointer;  /* Indicates text can be edited when in edit mode */
+  background-color: transparent; /* Ensures the background is transparent */
+  display: block; /* Ensures the span behaves like a block element with full width */
+}
+
+.date-field span.editable {
+  cursor: text; /* Changes cursor to text in edit mode */
+  border: 1px solid white;
+  margin-bottom: 5px;
+}
+
+.date-field span.text {
+  border: 1px solid transparent; /* No border when not in edit mode */
+  margin-bottom: 5px;
+}
+
+.date-field span:focus {
+  outline: none;  /* Remove the default focus outline */
+}
+
+.date-field label {
+  display: block;  /* Ensures the label is on its own line */
+  margin-bottom: 5px;
+}
+
+.date-container .icon-button {
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.date-container .icon-button img {
+  width: 20px;
+  height: 20px;
+}
+
+/* No suggestions or dropdown list is needed for the date component */

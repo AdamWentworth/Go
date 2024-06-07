@@ -17,7 +17,9 @@ import HeightComponent from './OwnedComponents/HeightComponent';
 
 import MovesComponent from './OwnedComponents/MovesComponent';
 import IVComponent from './OwnedComponents/IVComponent';
-import CaughtComponent from './OwnedComponents/CaughtComponent';
+
+import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
+import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
 
 const OwnedInstance = ({ pokemon }) => {
   console.log("Initial Pokemon Data: ", pokemon);
@@ -60,7 +62,8 @@ const OwnedInstance = ({ pokemon }) => {
         <MovesComponent pokemon={pokemon} />
       </div>
       <IVComponent pokemon={pokemon} />
-      <CaughtComponent pokemon={pokemon} />
+      <LocationCaughtComponent pokemon={pokemon} />
+      <DateCaughtComponent pokemon={pokemon} />
     </div>
   );
 }
