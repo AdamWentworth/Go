@@ -1,7 +1,7 @@
 /* shinyInfo.jsx */
 import React from 'react';
 import './shinyInfo.css';
-import { formatShinyRarity } from '../utils/formattingHelpers';
+import { formatShinyRarity, getLastWord } from '../utils/formattingHelpers';
 
 function ShinyInfo({ pokemon, allPokemonData }) {
   // Helper function to find previous evolution's name and ID if needed
@@ -24,7 +24,7 @@ function ShinyInfo({ pokemon, allPokemonData }) {
         if (pokemon.pokemon_id < previousEvolution.pokemon_id) {
           return defaultShinyRarity;  // Use default rarity otherwise
         } else {
-          return `Evolve ${previousEvolution.name}`; // Suggest evolution if the current Pokémon ID is less
+          return `Evolve ${getLastWord(previousEvolution.name)}`; // Suggest evolution if the current Pokémon ID is less
         }
       }
       return defaultShinyRarity;  // Return the default shiny rarity if there's no previous evolution or other conditions aren't met

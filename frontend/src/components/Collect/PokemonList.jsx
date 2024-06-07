@@ -9,6 +9,7 @@ import './PokemonList.css';
 
 function PokemonList({
     sortedPokemons,
+    allPokemons,
     loading,
     selectedPokemon,
     setSelectedPokemon,
@@ -67,7 +68,7 @@ function PokemonList({
                             pokemon={selectedPokemon.overlayType ? selectedPokemon.pokemon : selectedPokemon}
                             onClose={() => setSelectedPokemon(null)}
                             setSelectedPokemon={setSelectedPokemon}
-                            allPokemons={sortedPokemons}
+                            allPokemons={allPokemons}
                         />
                     )}
                 </>

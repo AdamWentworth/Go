@@ -207,6 +207,7 @@ function Collect() {
             />
             <PokemonListMemo
                 sortedPokemons={sortedPokemons}
+                allPokemons={variants}
                 loading={loading}
                 selectedPokemon={selectedPokemon}
                 setSelectedPokemon={setSelectedPokemon}
