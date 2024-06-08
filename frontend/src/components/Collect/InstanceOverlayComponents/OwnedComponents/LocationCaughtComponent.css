@@ -3,7 +3,7 @@
     display: flex;
     flex-direction: column;
     color: white;
-    margin-top: 20px;
+    margin-top: 10px;
     position: relative;
     width: 100%;
 }
@@ -29,13 +29,11 @@
 .location-field span.editable {
     cursor: text;
     border: 1px solid white;
-    margin-bottom: 5px;
     overflow: hidden; /* Prevents text from spilling outside the span */
 }
 
 .location-field span.text {
     border: 1px solid transparent;
-    margin-bottom: 5px;
 }
 
 .location-field span:focus {
@@ -45,17 +43,6 @@
 .location-field label {
     display: block;
     margin-bottom: 5px;
-}
-
-.location-container .icon-button {
-    border: none;
-    background: none;
-    cursor: pointer;
-}
-
-.location-container .icon-button img {
-    width: 20px;
-    height: 20px;
 }
 
 .location-container .suggestions {

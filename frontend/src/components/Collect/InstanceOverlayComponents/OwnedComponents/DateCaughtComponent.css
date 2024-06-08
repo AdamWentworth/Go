@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   color: white;  /* Set text color to white for visibility against a darker background */
-  margin-top: 20px;
+  margin-top: 5px;
 }
 
 .date-field span {
@@ -20,7 +20,6 @@
 
 .date-field span.text {
   border: 1px solid transparent; /* No border when not in edit mode */
-  margin-bottom: 5px;
 }
 
 .date-field span:focus {
@@ -32,15 +31,3 @@
   margin-bottom: 5px;
 }
 
-.date-container .icon-button {
-  border: none;
-  background: none;
-  cursor: pointer;
-}
-
-.date-container .icon-button img {
-  width: 20px;
-  height: 20px;
-}
-
-/* No suggestions or dropdown list is needed for the date component */
