@@ -2,12 +2,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './HeightComponent.css';
 
-const HeightComponent = ({ pokemon }) => {
-  const editIcon = `/images/edit-icon.png`;
-  const saveIcon = `/images/save-icon.png`;
-
-  const [height, setHeight] = useState(pokemon.height);
-  const [editMode, setEditMode] = useState(false);
+const HeightComponent = ({ pokemon, editMode }) => {
+  const [height, setHeight] = useState(pokemon.height ? String(pokemon.height) : '');
   const editableRef = useRef(null);
 
   // Helper function to move cursor to end
@@ -43,21 +39,14 @@ const HeightComponent = ({ pokemon }) => {
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      saveChanges(); // Trigger save when Enter is pressed
     }
   };
 
-  const saveChanges = () => {
-    setEditMode(false); // Toggle edit mode off after saving
-  };
-
-  const toggleAndSave = () => {
-    if (editMode) {
-      saveChanges();
-    } else {
-      setEditMode(true); // Toggle edit mode on if it's not already
+  useEffect(() => {
+    if (!editMode) {
+      setHeight((prevHeight) => (prevHeight ? prevHeight.trim() : ''));
     }
-  };
+  }, [editMode]);
 
   return (
     <div className="height-container">
@@ -78,9 +67,6 @@ const HeightComponent = ({ pokemon }) => {
             <span className="height-editable-content">{height ? height : ''}</span>
           )}
           <span className="height-suffix">m</span>
-          <button onClick={toggleAndSave} className="height-icon-button">
-            <img src={editMode ? saveIcon : editIcon} alt={editMode ? "Save" : "Edit"} />
-          </button>
         </div>
         <div className="height-label">Height</div>
       </div>
@@ -89,3 +75,4 @@ const HeightComponent = ({ pokemon }) => {
 };
 
 export default HeightComponent;
+

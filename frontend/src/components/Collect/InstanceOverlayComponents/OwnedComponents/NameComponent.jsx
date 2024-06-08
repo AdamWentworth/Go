@@ -3,11 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import './NameComponent.css';
 import { getLastWord } from '../../utils/formattingHelpers';
 
-const NameComponent = ({ pokemon }) => {
-  const editIcon = `/images/edit-icon.png`;
-  const saveIcon = `/images/save-icon.png`;
-
-  // Determine the initial nickname or use the last word of the Pokemon's name.
+const NameComponent = ({ pokemon, editMode }) => {
   const initialNickname = () => {
     return pokemon.ownershipStatus.nickname && pokemon.ownershipStatus.nickname.trim() !== ''
       ? pokemon.ownershipStatus.nickname
@@ -15,10 +11,8 @@ const NameComponent = ({ pokemon }) => {
   };
 
   const [nickname, setNickname] = useState(initialNickname());
-  const [editMode, setEditMode] = useState(false);
   const editableRef = useRef(null);
 
-  // Function to set the caret position to the end of the editable content.
   const setCaretToEnd = () => {
     const range = document.createRange();
     const sel = window.getSelection();
@@ -31,7 +25,6 @@ const NameComponent = ({ pokemon }) => {
     }
   };
 
-  // Effect to manage editable content and focus.
   useEffect(() => {
     if (editMode && editableRef.current) {
       editableRef.current.innerHTML = nickname || '&nbsp;';
@@ -39,11 +32,10 @@ const NameComponent = ({ pokemon }) => {
     }
   }, [editMode, nickname]);
 
-  // Handle input changes and validate them.
   const handleInput = (event) => {
     let newValue = event.target.innerText;
     if (!newValue.trim()) {
-      event.target.innerHTML = '&nbsp;'; // Maintain space when completely empty.
+      event.target.innerHTML = '&nbsp;';
     }
     if (validateNickname(newValue.trim())) {
       setNickname(newValue.trim());
@@ -51,30 +43,12 @@ const NameComponent = ({ pokemon }) => {
     setCaretToEnd();
   };
 
-  // Handle the Enter key to trigger save.
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      toggleAndSave();
     }
   };
 
-  // Toggle editing mode and save logic.
-  const toggleAndSave = () => {
-    if (editMode) {
-      const trimmedNickname = nickname.trim();
-      if (!trimmedNickname) {
-        setNickname(getLastWord(pokemon.name)); // Set to Pokemon's name if empty.
-      } else {
-        setNickname(trimmedNickname);
-      }
-      setEditMode(false);
-    } else {
-      setEditMode(true);
-    }
-  };
-
-  // Validate nickname to ensure it does not exceed 12 characters.
   const validateNickname = (input) => {
     return input.length <= 12;
   };
@@ -97,9 +71,6 @@ const NameComponent = ({ pokemon }) => {
           ) : (
             <span className="name-editable-content">{nickname || getLastWord(pokemon.name)}</span>
           )}
-          <button onClick={toggleAndSave} className="name-icon-button">
-            <img src={editMode ? saveIcon : editIcon} alt="Edit" />
-          </button>
         </div>
       </div>
     </div>

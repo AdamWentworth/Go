@@ -2,12 +2,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './WeightComponent.css';
 
-const WeightComponent = ({ pokemon }) => {
-  const editIcon = `/images/edit-icon.png`;
-  const saveIcon = `/images/save-icon.png`;
-
-  const [weight, setWeight] = useState(pokemon.weight);
-  const [editMode, setEditMode] = useState(false);
+const WeightComponent = ({ pokemon, editMode }) => {
+  const [weight, setWeight] = useState(pokemon.weight ? String(pokemon.weight) : '');
   const editableRef = useRef(null);
 
   // Helper function to move cursor to end
@@ -25,7 +21,7 @@ const WeightComponent = ({ pokemon }) => {
 
   useEffect(() => {
     if (editMode && editableRef.current) {
-      editableRef.current.innerText = weight || ''; // Make sure it's never null
+      editableRef.current.innerText = weight || '';
       setCaretToEnd();
     }
   }, [editMode, weight]);
@@ -35,7 +31,7 @@ const WeightComponent = ({ pokemon }) => {
     if (/^\d*\.?\d*$/.test(newValue)) { // Allow only numbers and decimal point
       setWeight(newValue);
     } else {
-      event.target.innerText = weight; // Revert if invalid
+      event.target.innerText = weight;
     }
     setCaretToEnd();
   };
@@ -43,21 +39,14 @@ const WeightComponent = ({ pokemon }) => {
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      saveChanges(); // Trigger save when Enter is pressed
     }
   };
 
-  const saveChanges = () => {
-    setEditMode(false); // Toggle edit mode off after saving
-  };
-
-  const toggleAndSave = () => {
-    if (editMode) {
-      saveChanges();
-    } else {
-      setEditMode(true); // Toggle edit mode on if it's not already
+  useEffect(() => {
+    if (!editMode) {
+      setWeight((prevWeight) => (prevWeight ? prevWeight.trim() : ''));
     }
-  };
+  }, [editMode]);
 
   return (
     <div className="weight-container">
@@ -75,12 +64,9 @@ const WeightComponent = ({ pokemon }) => {
               {weight}
             </span>
           ) : (
-            <span className="weight-editable-content">{weight ? weight : ''}</span>
+            <span className="weight-editable-content">{weight}</span>
           )}
           <span className="weight-suffix">kg</span>
-          <button onClick={toggleAndSave} className="weight-icon-button">
-            <img src={editMode ? saveIcon : editIcon} alt={editMode ? "Save" : "Edit"} />
-          </button>
         </div>
         <div className="weight-label">Weight</div>
       </div>

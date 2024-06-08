@@ -1,14 +1,17 @@
+// LuckyComponent.jsx
+
 import React from 'react';
 import './LuckyComponent.css'
 
-const LuckyComponent = ({ pokemon, onToggleLucky, isLucky }) => {
-    // Function to toggle the lucky state
+const LuckyComponent = ({ pokemon, onToggleLucky, isLucky, editMode }) => {
     const toggleLucky = () => {
-        onToggleLucky(!isLucky);
+        if (editMode) {
+            onToggleLucky(!isLucky);
+        }
     };
 
     return (
-        <div className="lucky-component" onClick={toggleLucky}>
+        <div className={`lucky-component ${editMode ? 'editable' : ''}`} onClick={toggleLucky}>
             <img 
                 src={process.env.PUBLIC_URL + '/images/lucky-icon.png'} 
                 alt="Lucky Icon" 
@@ -19,3 +22,4 @@ const LuckyComponent = ({ pokemon, onToggleLucky, isLucky }) => {
 }
 
 export default LuckyComponent;
+

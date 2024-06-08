@@ -53,3 +53,11 @@
 .gender-text {
   font-size: 10px;
 }
+
+.gender-container {
+  cursor: default;
+}
+
+.gender-container.editable {
+  cursor: pointer;
+}

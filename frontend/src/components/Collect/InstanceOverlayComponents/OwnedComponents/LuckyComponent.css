@@ -22,3 +22,12 @@
 .lucky-off {
     filter: brightness(50%); /* Makes the image less bright */
 }
+
+.lucky-component {
+    cursor: default;
+  }
+  
+  .lucky-component.editable {
+    cursor: pointer;
+  }
+  

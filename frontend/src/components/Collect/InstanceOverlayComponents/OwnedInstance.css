@@ -37,7 +37,7 @@
 .lucky-backdrop {
   position: absolute;
   top: 18%;
-  left: 10%;
+  left: 22%;
   width: 180px;
   height: auto;
   z-index: 0; /* Ensure it's slightly behind the main image but above any other content */
@@ -70,8 +70,4 @@
 .weight-component, .type-component, .height-component {
   display: flex;
   align-items: center;
-}
-
-.weight-label, .type-label, .height-label {
-  margin-right: 5px;
 }

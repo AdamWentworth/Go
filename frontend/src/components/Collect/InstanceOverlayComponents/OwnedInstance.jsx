@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import './OwnedInstance.css';
 
+import EditSaveComponent from './OwnedComponents/EditSaveComponent';
 import CPComponent from './OwnedComponents/CPComponent';
 import FavoriteComponent from './OwnedComponents/FavoriteComponent';
 import FriendshipComponent from './OwnedComponents/FriendshipComponent';
@@ -24,21 +25,24 @@ import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
 const OwnedInstance = ({ pokemon }) => {
   console.log("Initial Pokemon Data: ", pokemon);
 
-  // State for lucky status
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
+  const [editMode, setEditMode] = useState(false);
 
-  // Handler to update lucky status
   const handleLuckyToggle = (newLuckyStatus) => {
     setIsLucky(newLuckyStatus);
+  };
+
+  const toggleEditMode = () => {
+    setEditMode(!editMode);
   };
 
   return (
     <div>
       <div className="top-row">
-        <div className="spacer"></div> {/* This will take up space to center the CPComponent */}
-        <CPComponent pokemon={pokemon} />
+        <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+        <CPComponent pokemon={pokemon} editMode={editMode} toggleEditMode={toggleEditMode} />
         <div className="right-stack">
-          <FavoriteComponent pokemon={pokemon} />
+          <FavoriteComponent pokemon={pokemon} editMode={editMode} />
           <FriendshipComponent pokemon={pokemon} />
         </div>
       </div>
@@ -46,17 +50,17 @@ const OwnedInstance = ({ pokemon }) => {
         {isLucky && <img src={process.env.PUBLIC_URL + '/images/lucky.png'} alt="Lucky Backdrop" className="lucky-backdrop" />}
         <img src={process.env.PUBLIC_URL + pokemon.currentImage} alt={pokemon.name} className="pokemon-image" />
       </div>
-      <NameComponent pokemon={pokemon} />
+      <NameComponent pokemon={pokemon} editMode={editMode} />
       <div className="gender-lucky-row">
         {pokemon.ownershipStatus.shadow ? <div className="lucky-placeholder"></div> : (
-          <LuckyComponent pokemon={pokemon} onToggleLucky={handleLuckyToggle} isLucky={isLucky} />
+          <LuckyComponent pokemon={pokemon} onToggleLucky={handleLuckyToggle} isLucky={isLucky} editMode={editMode} />
         )}
-        <GenderComponent pokemon={pokemon} />
+        <GenderComponent pokemon={pokemon} editMode={editMode} />
       </div>
       <div className="stats-container">
-        <WeightComponent pokemon={pokemon} />
+        <WeightComponent pokemon={pokemon} editMode={editMode} />
         <TypeComponent pokemon={pokemon} />
-        <HeightComponent pokemon={pokemon} />
+        <HeightComponent pokemon={pokemon} editMode={editMode} />
       </div>
       <div className="moves-content">
         <MovesComponent pokemon={pokemon} />

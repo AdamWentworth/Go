@@ -1,7 +1,7 @@
 // InstanceOverlay.jsx
 import React from 'react';
 import './InstanceOverlay.css';
-import OwnedInstance from './InstanceComponents/OwnedInstance';
+import OwnedInstance from './InstanceOverlayComponents/OwnedInstance';
 
 const InstanceOverlay = ({ pokemon, onClose, ownershipFilter }) => {
   const handleOverlayClick = (event) => {

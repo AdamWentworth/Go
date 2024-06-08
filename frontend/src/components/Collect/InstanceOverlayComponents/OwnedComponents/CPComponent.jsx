@@ -3,15 +3,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './CPComponent.css';
 
-const CPComponent = ({ pokemon }) => {
-  const editIcon = `/images/edit-icon.png`;
-  const saveIcon = `/images/save-icon.png`;
-
-  const [cp, setCP] = useState(pokemon.ownershipStatus.cp);
-  const [editMode, setEditMode] = useState(false);
+const CPComponent = ({ pokemon, editMode, toggleEditMode }) => {
+  const [cp, setCP] = useState(pokemon.ownershipStatus.cp || '');
   const editableRef = useRef(null);
 
-  // Helper function to move cursor to end
   function setCaretToEnd() {
     const range = document.createRange();
     const sel = window.getSelection();
@@ -26,17 +21,17 @@ const CPComponent = ({ pokemon }) => {
 
   useEffect(() => {
     if (editMode && editableRef.current) {
-      editableRef.current.innerText = cp || ''; // Make sure it's never null
+      editableRef.current.innerText = cp || '';
       setCaretToEnd();
     }
   }, [editMode, cp]);
 
   const handleInput = (event) => {
     const newValue = event.target.innerText;
-    if (/^\d{0,4}$/.test(newValue)) { // Only allow up to 4 digits
+    if (/^\d{0,4}$/.test(newValue)) {
       setCP(newValue);
     } else {
-      event.target.innerText = cp; // Revert if invalid
+      event.target.innerText = cp;
     }
     setCaretToEnd();
   };
@@ -44,33 +39,28 @@ const CPComponent = ({ pokemon }) => {
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      saveChanges(); // Trigger save when Enter is pressed
+      toggleEditMode();
     }
   };
 
-  const saveChanges = () => {
-    if (cp) { // Check if cp is not null or empty
+  useEffect(() => {
+    if (!editMode && cp) {
       setCP(cp.trim());
-    } else {
-      setCP(''); // Reset to an empty string if cp is null
     }
-    setEditMode(false); // Correctly toggle edit mode off after saving
-  };
+  }, [editMode]);
 
-  const toggleAndSave = () => {
-    if (editMode) {
-      saveChanges();
-    } else {
-      setEditMode(true); // Correctly toggle edit mode on if it's not already
+  const handleContainerClick = () => {
+    if (editMode && editableRef.current) {
+      editableRef.current.focus();
     }
   };
 
   return (
-    <div className="cp-container">
+    <div className="cp-container" onClick={handleContainerClick}>
       <div className="cp-display">
         <div className="cp-center-content">
           <span className="cp-label">CP</span>
-          <div className="cp-editable-container">
+          <div className={`cp-editable-container ${editMode ? 'editable' : ''}`}>
             {editMode ? (
               <span
                 contentEditable
@@ -85,9 +75,6 @@ const CPComponent = ({ pokemon }) => {
             ) : (
               <span className="cp-editable-content">{cp || ''}</span>
             )}
-            <button onClick={toggleAndSave} className="cp-icon-button">
-              <img src={editMode ? saveIcon : editIcon} alt={editMode ? "Save" : "Edit"} />
-            </button>
           </div>
         </div>
       </div>
@@ -96,3 +83,5 @@ const CPComponent = ({ pokemon }) => {
 };
 
 export default CPComponent;
+
+
