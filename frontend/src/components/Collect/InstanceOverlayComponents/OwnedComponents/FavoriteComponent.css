@@ -8,8 +8,8 @@
 
 .favorite-component {
     cursor: default;
-  }
+ }
   
-  .favorite-component.editable {
+.favorite-component.editable {
     cursor: pointer;
-  }
+}

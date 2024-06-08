@@ -25,9 +25,11 @@
 
 .iv-value {
     display: flex;
-    justify-content: center; /* Center the value/input */
-    text-align: center;
-    justify-self: center; /* Center the value/input in the column */
+    justify-content: flex-end; /* Center the value/input */
+    text-align: right;
+    justify-self: flex-end; /* Center the value/input in the column */
+    margin-right: 5px;
+    font-size: 14px;
 }
 
 .iv-input {

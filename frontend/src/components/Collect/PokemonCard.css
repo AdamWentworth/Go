@@ -15,7 +15,7 @@
     content: '';
     display: block;
     position: absolute;
-    top: 40%;
+    top: 35%;
     left: 50%;
     width: 140%; /* Extend the size to allow a centered glow */
     height: 140%; /* Extend the size to allow a centered glow */

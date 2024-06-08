@@ -48,6 +48,7 @@ const IVComponent = ({ pokemon, editMode }) => {
   const renderIvField = (type) => (
     <div className="iv-display" key={type}>
       <span className="iv-label">{type}:</span>
+      <div></div>
       <span className="iv-value">
         {editMode ? (
           <input
