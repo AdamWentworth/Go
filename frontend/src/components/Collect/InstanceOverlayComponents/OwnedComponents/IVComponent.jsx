@@ -2,8 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './IVComponent.css';
 
-const IVComponent = ({ pokemon }) => {
-  const [editMode, setEditMode] = useState({ Attack: false, Defense: false, HP: false });
+const IVComponent = ({ pokemon, editMode }) => {
   const [ivs, setIvs] = useState({
     Attack: pokemon.ownershipStatus.attack_iv ?? 0,
     Defense: pokemon.ownershipStatus.defense_iv ?? 0,
@@ -16,11 +15,13 @@ const IVComponent = ({ pokemon }) => {
   };
 
   useEffect(() => {
-    Object.keys(editMode).forEach(type => {
-      if (editMode[type] && inputRefs[type].current) {
-        inputRefs[type].current.select();
-      }
-    });
+    if (editMode) {
+      Object.keys(inputRefs).forEach(type => {
+        if (inputRefs[type].current) {
+          inputRefs[type].current.select();
+        }
+      });
+    }
   }, [editMode]);
 
   const handleIvChange = (event, type) => {
@@ -42,14 +43,13 @@ const IVComponent = ({ pokemon }) => {
   const saveValue = (type) => {
     const value = ivs[type] === '' ? 0 : ivs[type];
     setIvs({ ...ivs, [type]: value });
-    setEditMode(prev => ({ ...prev, [type]: false }));
   };
 
   const renderIvField = (type) => (
     <div className="iv-display" key={type}>
       <span className="iv-label">{type}:</span>
       <span className="iv-value">
-        {editMode[type] ? (
+        {editMode ? (
           <input
             type="number"
             ref={inputRefs[type]}
@@ -67,7 +67,6 @@ const IVComponent = ({ pokemon }) => {
       </span>
       <div className="iv-bar-bg"></div>
       <div className={`iv-bar ${ivs[type] === 15 ? 'full' : ''}`} style={{width: `${(ivs[type] / 15) * 75}%`}}></div>
-      <img src={editMode[type] ? "/images/save-icon.png" : "/images/edit-icon.png"} alt="Edit" className="edit-icon" onClick={() => editMode[type] ? saveValue(type) : setEditMode(prev => ({ ...prev, [type]: true }))} />
     </div>
   );
 

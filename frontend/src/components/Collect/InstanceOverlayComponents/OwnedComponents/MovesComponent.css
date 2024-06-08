@@ -48,7 +48,6 @@
   align-items: center;
   justify-content: center;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  width: 100%; /* Ensures the name fills its container */
 }
 
 .move-select {
@@ -106,4 +105,10 @@
   padding: 0;
   line-height: 1; /* Adjust line height for vertical alignment */
 }
+
+.spacer {
+  width: 24px; /* Width of the removed icon button to preserve spacing */
+  height: 24px; /* Height to match the button size */
+}
+
 

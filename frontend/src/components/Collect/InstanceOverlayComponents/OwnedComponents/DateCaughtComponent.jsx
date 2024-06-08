@@ -3,11 +3,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import './DateCaughtComponent.css';
 
-const DateCaughtComponent = ({ pokemon }) => {
-  const editIcon = process.env.PUBLIC_URL + '/images/edit-icon.png';
-  const saveIcon = process.env.PUBLIC_URL + '/images/save-icon.png';
+const DateCaughtComponent = ({ pokemon, editMode }) => {
   const [date, setDate] = useState(pokemon.ownershipStatus.date_caught);
-  const [editMode, setEditMode] = useState(false);
   const dateRef = useRef(null);
 
   useEffect(() => {
@@ -25,7 +22,6 @@ const DateCaughtComponent = ({ pokemon }) => {
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      saveChanges();
     }
   };
 
@@ -37,18 +33,6 @@ const DateCaughtComponent = ({ pokemon }) => {
     sel.removeAllRanges();
     sel.addRange(range);
     target.focus();
-  };
-
-  const saveChanges = () => {
-    setEditMode(false);
-    if (dateRef.current) {
-      dateRef.current.blur();
-    }
-    // Additional logic to save the date can be added here
-  };
-
-  const toggleEdit = () => {
-    setEditMode(!editMode);
   };
 
   return (
@@ -64,9 +48,6 @@ const DateCaughtComponent = ({ pokemon }) => {
           {date}
         </span>
       </div>
-      <button onClick={toggleEdit} className="icon-button">
-        <img src={editMode ? saveIcon : editIcon} alt={editMode ? "Save" : "Edit"} />
-      </button>
     </div>
   );
 };

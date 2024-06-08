@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import './MovesComponent.css';
 
-const MovesComponent = ({ pokemon }) => {
+const MovesComponent = ({ pokemon, editMode }) => {
   const allMoves = pokemon.moves;
   const fastMoves = allMoves.filter(move => move.is_fast);
   const chargedMoves = allMoves.filter(move => !move.is_fast);
@@ -15,7 +15,6 @@ const MovesComponent = ({ pokemon }) => {
   const [fastMove, setFastMove] = useState(getDefaultMoveId(fastMoves, pokemon.ownershipStatus.fast_move_id));
   const [chargedMove1, setChargedMove1] = useState(getDefaultMoveId(chargedMoves, pokemon.ownershipStatus.charged_move1_id));
   const [chargedMove2, setChargedMove2] = useState(pokemon.ownershipStatus.charged_move2_id ? getDefaultMoveId(chargedMoves, pokemon.ownershipStatus.charged_move2_id) : null);
-  const [editMode, setEditMode] = useState({ fast: false, charged1: false, charged2: false });
 
   const getMoveById = (id) => allMoves.find(move => move.move_id === id);
 
@@ -30,14 +29,9 @@ const MovesComponent = ({ pokemon }) => {
     }
   };
 
-  const toggleEditMode = (type, value) => {
-    setEditMode(prev => ({ ...prev, [type]: value }));
-  };
-
   const addSecondChargedMove = () => {
     const firstAvailableMove = chargedMoves.find(move => move.move_id !== chargedMove1); // Find the first different move
     setChargedMove2(firstAvailableMove.move_id);
-    setEditMode(prev => ({ ...prev, charged2: true }));
   };
 
   const renderMoveOptions = (moves, selectedMove, moveType) => {
@@ -53,9 +47,7 @@ const MovesComponent = ({ pokemon }) => {
             <option key={move.move_id} value={move.move_id}>{move.name}</option>
           ))}
         </select>
-        <button onClick={() => toggleEditMode(moveType, false)} className="icon-button">
-          <img src="/images/save-icon.png" alt="Save" className="move-edit-icon" />
-        </button>
+        <div className="spacer"></div>
       </div>
     );
   };
@@ -67,9 +59,7 @@ const MovesComponent = ({ pokemon }) => {
       <div className="move-info">
         <img src={`/images/types/${move.type.toLowerCase()}.png`} alt={move.type_name} className="type-icon" />
         <span className="move-name">{move.name}</span>
-        <button onClick={() => toggleEditMode(moveType, true)} className="icon-button">
-          <img src="/images/edit-icon.png" alt="Edit" className="move-edit-icon" />
-        </button>
+        <div className="spacer"></div>
       </div>
     );
   };
@@ -77,16 +67,20 @@ const MovesComponent = ({ pokemon }) => {
   return (
     <div className="moves-container">
       <div className="move-section">
-        {editMode.fast ? renderMoveOptions(fastMoves, fastMove, 'fast') : renderMoveInfo(fastMove, 'fast')}
+        {editMode ? renderMoveOptions(fastMoves, fastMove, 'fast') : renderMoveInfo(fastMove, 'fast')}
       </div>
       <div className="move-section">
-        {editMode.charged1 ? renderMoveOptions(chargedMoves, chargedMove1, 'charged1') : renderMoveInfo(chargedMove1, 'charged1')}
+        {editMode ? renderMoveOptions(chargedMoves, chargedMove1, 'charged1') : renderMoveInfo(chargedMove1, 'charged1')}
       </div>
       <div className="move-section">
-        {chargedMove2 ? (editMode.charged2 ? renderMoveOptions(chargedMoves, chargedMove2, 'charged2') : renderMoveInfo(chargedMove2, 'charged2')) : (
-          <button onClick={addSecondChargedMove} className="icon-button add-move-button">
+        {chargedMove2 ? (
+          editMode ? renderMoveOptions(chargedMoves, chargedMove2, 'charged2') : renderMoveInfo(chargedMove2, 'charged2')
+        ) : (
+          editMode && (
+            <button onClick={addSecondChargedMove} className="icon-button add-move-button">
               <span className="move-add-icon">+</span>
-          </button>      
+            </button>
+          )
         )}
       </div>
     </div>

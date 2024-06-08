@@ -4,13 +4,9 @@ import React, { useRef, useState, useEffect } from 'react';
 import axios from 'axios';
 import './LocationCaughtComponent.css';
 
-const LocationCaughtComponent = ({ pokemon }) => {
-  const editIcon = process.env.PUBLIC_URL + '/images/edit-icon.png';
-  const saveIcon = process.env.PUBLIC_URL + '/images/save-icon.png';
-
+const LocationCaughtComponent = ({ pokemon, editMode }) => {
   const [location, setLocation] = useState(pokemon.ownershipStatus.location_caught);
   const [suggestions, setSuggestions] = useState([]);
-  const [editMode, setEditMode] = useState(false);
   const locationRef = useRef(null);
 
   useEffect(() => {
@@ -64,12 +60,7 @@ const LocationCaughtComponent = ({ pokemon }) => {
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      setEditMode(false); // Assume you would save changes here
     }
-  };
-
-  const toggleEdit = () => {
-    setEditMode(!editMode);
   };
 
   const setCaretToEnd = (element) => {
@@ -113,9 +104,6 @@ const LocationCaughtComponent = ({ pokemon }) => {
           ))}
         </div>
       )}
-      <button onClick={toggleEdit} className="icon-button">
-        <img src={editMode ? saveIcon : editIcon} alt={editMode ? "Save" : "Edit"} />
-      </button>
     </div>
   );  
 };

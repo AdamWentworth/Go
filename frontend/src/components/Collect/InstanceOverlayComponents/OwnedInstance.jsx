@@ -63,11 +63,11 @@ const OwnedInstance = ({ pokemon }) => {
         <HeightComponent pokemon={pokemon} editMode={editMode} />
       </div>
       <div className="moves-content">
-        <MovesComponent pokemon={pokemon} />
+        <MovesComponent pokemon={pokemon} editMode={editMode} />
       </div>
-      <IVComponent pokemon={pokemon} />
-      <LocationCaughtComponent pokemon={pokemon} />
-      <DateCaughtComponent pokemon={pokemon} />
+      <IVComponent pokemon={pokemon} editMode={editMode} />
+      <LocationCaughtComponent pokemon={pokemon} editMode={editMode} />
+      <DateCaughtComponent pokemon={pokemon} editMode={editMode} />
     </div>
   );
 }
