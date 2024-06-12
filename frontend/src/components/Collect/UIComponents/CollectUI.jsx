@@ -10,7 +10,7 @@ const preloadImage = (url) => {
 
 const CollectUI = ({
   statusFilter, setStatusFilter, onFastSelectToggle,
-  onSelectAll, highlightedCards, confirmMoveToFilter
+  onSelectAll, highlightedCards, confirmMoveToFilter, showAll, toggleShowAll
 }) => {
   const filters = ['Owned', 'Trade', 'Unowned', 'Wanted'];
   const [selectedFilter, setSelectedFilter] = useState("");
@@ -31,12 +31,22 @@ const CollectUI = ({
   
   const handleFilterClick = (filter) => {
     if (highlightedCards.size > 0) {
-      confirmMoveToFilter(filter); // Pass filter as lowercase
+      confirmMoveToFilter(filter.toLowerCase()); // Additional context handling for highlighted cards
     } else {
-      const newFilter = statusFilter === filter ? "" : filter;
-      setStatusFilter(newFilter); // This should also manage 'selectedFilter' equivalently
+      const newFilter = statusFilter === filter ? "" : filter; // Toggle filter on or off
+      setStatusFilter(newFilter); // Update the filter state
+
+      // Update `showAll` state based on the filter toggling
+      if (newFilter === "") {
+        // If no filter is active, set `showAll` to false
+        toggleShowAll(false);
+      } else if (!showAll && statusFilter !== filter) {
+        // If a new filter is being activated and `showAll` is currently false, set it to true
+        toggleShowAll(true);
+      }
+      // Do not change `showAll` if just switching between filters (assumes `showAll` is already true)
     }
-  };
+};
 
   const handleSelectAll = () => {
     const newSelectAllState = !SelectAllEnabled;

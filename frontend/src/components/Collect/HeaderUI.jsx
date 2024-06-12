@@ -51,6 +51,8 @@ const HeaderUI = ({
               onSelectAll={selectAllToggle}
               highlightedCards={highlightedCards}
               confirmMoveToFilter={confirmMoveToFilter}
+              showAll={showAll}
+              toggleShowAll={toggleShowAll}
           />
       )}
       <button className="toggle-button collect-ui-toggle" onClick={toggleCollectUI}>
