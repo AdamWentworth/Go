@@ -11,11 +11,12 @@ const LuckyComponent = ({ pokemon, onToggleLucky, isLucky, editMode }) => {
     };
 
     return (
-        <div className={`lucky-component ${editMode ? 'editable' : ''}`} onClick={toggleLucky}>
+        <div className={`lucky-component ${editMode ? 'editable' : ''}`}>
             <img 
                 src={process.env.PUBLIC_URL + '/images/lucky-icon.png'} 
                 alt="Lucky Icon" 
                 className={isLucky ? 'lucky-on' : 'lucky-off'}
+                onClick={toggleLucky} // Move the onClick handler to the image
             />
         </div>
     );

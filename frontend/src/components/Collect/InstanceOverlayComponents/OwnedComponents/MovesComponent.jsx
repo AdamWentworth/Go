@@ -65,7 +65,7 @@ const MovesComponent = ({ pokemon, editMode }) => {
   };
 
   return (
-    <div className="moves-container">
+    <div className={`moves-container ${editMode ? 'editable' : ''}`}>
       <div className="move-section">
         {editMode ? renderMoveOptions(fastMoves, fastMove, 'fast') : renderMoveInfo(fastMove, 'fast')}
       </div>

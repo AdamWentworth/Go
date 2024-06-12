@@ -1,18 +1,22 @@
 /* LuckyComponent.css */
 
 .lucky-component {
-    cursor: pointer; /* Indicates the component is clickable */
     display: flex; /* Enables flexbox layout */
     align-items: center; /* Centers the image vertically */
     justify-content: flex-start; /* Aligns the image to the left */
-    width: 100%; /* Ensures the div takes full width of its parent, adjust as necessary */
-    height: 100%; /* Ensures the div takes full height of its parent, adjust as necessary */
+    width: 100%; /* Adjust width as necessary */
+    height: 100%; /* Adjust height as necessary */
     margin-left: 10px;
 }
 
 .lucky-component img {
     width: 36px;
     height: auto; /* Keeps image aspect ratio intact */
+    cursor: default; /* Default non-interactive cursor */
+}
+
+.lucky-on, .lucky-off {
+    cursor: pointer; /* Only show pointer when editable */
 }
 
 .lucky-on {
@@ -23,11 +27,7 @@
     filter: brightness(50%); /* Makes the image less bright */
 }
 
-.lucky-component {
-    cursor: default;
-  }
-  
-  .lucky-component.editable {
-    cursor: pointer;
-  }
-  
+/* Add these styles if the component should only react when editable */
+.lucky-component.editable img {
+    cursor: pointer; /* Show pointer cursor to indicate interactivity */
+}

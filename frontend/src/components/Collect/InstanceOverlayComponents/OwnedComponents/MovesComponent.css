@@ -84,25 +84,28 @@
   height: 24px;
 }
 
+/* General styling for the button, not specifically related to cursor */
 .add-move-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px; /* Fixed width for consistency */
-  height: 24px; /* Fixed height to match other buttons */
-  margin: 0 auto; /* Center the button within its section */
+  width: 24px;
+  height: 24px;
+  margin: 0 auto;
   background-color: transparent;
   color: white;
-  font-size: 24px; /* Larger font size for visibility */
-  border: 2px solid white; /* White border to match the theme */
-  border-radius: 25px; /* Circular button */
-  cursor: default; /* Default cursor when not in edit mode */
+  font-size: 24px;
+  border: 2px solid white;
+  border-radius: 50%; /* Adjusted for circular design */
   margin-top: 5px;
+  cursor: default; /* Default non-clickable cursor */
 }
 
+/* Apply pointer cursor only when in editable mode */
 .moves-container.editable .add-move-button {
-  cursor: pointer; /* Only allow pointer cursor in edit mode */
+  cursor: pointer; /* Cursor changes to pointer when editable */
 }
+
 
 .move-add-icon {
   display: inline-block;
