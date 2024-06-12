@@ -13,7 +13,7 @@
     padding: 5px;
     width: 100%;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr; /* Three equally spaced columns */
+    grid-template-columns: 1fr auto; /* Adjusted for label and content */
     align-items: center;
     margin-bottom: 10px;
 }
@@ -23,25 +23,30 @@
     justify-self: start; /* Align the label to the start of the column */
 }
 
-.iv-value {
+.iv-content {
     display: flex;
-    justify-content: flex-end; /* Center the value/input */
-    text-align: right;
-    justify-self: flex-end; /* Center the value/input in the column */
-    margin-right: 5px;
+    justify-content: flex-end; /* Align content to the right */
+    width: 40px; /* Adjust width as needed */
+}
+
+.iv-value, .iv-input {
+    width: 20px;
+    height: 20px;
     font-size: 14px;
+    padding: 0;
+    background-color: transparent;
+    color: white;
+    text-align: center;
+    border-radius: 2px;
+    line-height: normal;
+}
+
+.iv-value {
+    border: 1px solid transparent; /* Invisible border to occupy space */
 }
 
 .iv-input {
-    width: 50px; /* Restrict the width of input field */
-    text-align: center;
-    background-color: transparent; /* Make the background transparent */
-    color: white; /* Set the text color to white */
-    border: 1px solid white; /* Add a white outline */
-    outline: none; /* Remove the default outline */
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-    font-size: 14px;
-    padding: 0;
+    border: 1px solid #a3a3a3; /* Visible border for input */
 }
 
 .iv-input::-webkit-outer-spin-button,
@@ -75,13 +80,6 @@
     background-color: #c45856;
 }
 
-.edit-icon {
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
-    justify-self: end; /* Align the icon to the end of the column */
-}
-
 .iv-display::after, .iv-display::before {
     content: '';
     position: absolute;
@@ -100,3 +98,4 @@
 .iv-display::before {
     left: calc(12.5% + 50%);
 }
+

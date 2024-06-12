@@ -12,14 +12,13 @@ const LocationCaughtComponent = ({ pokemon, editMode }) => {
   useEffect(() => {
     if (editMode && locationRef.current) {
       locationRef.current.textContent = location || '';
-      setCaretToEnd(locationRef.current);  // Ensure caret is at the end after updating text
+      setCaretToEnd(locationRef.current);
     }
   }, [editMode, location]);
 
   const fetchSuggestions = async (userInput) => {
     try {
       const response = await axios.get(`https://photon.komoot.io/api/?q=${encodeURIComponent(userInput)}`);
-      console.log("Fetched suggestions:", response.data.features);
       const formattedSuggestions = response.data.features.slice(0, 4).map(feature => {
         const { name, state, country } = feature.properties;
         let displayName = `${name}`;
@@ -32,7 +31,6 @@ const LocationCaughtComponent = ({ pokemon, editMode }) => {
       });
       setSuggestions(formattedSuggestions);
     } catch (error) {
-      console.error('Error fetching location suggestions:', error);
       setSuggestions([]);
     }
   };
@@ -76,11 +74,11 @@ const LocationCaughtComponent = ({ pokemon, editMode }) => {
     if (editMode && suggestions.length > 0 && locationRef.current) {
       const { bottom, left, width } = locationRef.current.getBoundingClientRect();
       const suggestionsElement = document.querySelector('.suggestions');
-      suggestionsElement.style.top = `${bottom + window.scrollY}px`; // Adjusts for scroll position
+      suggestionsElement.style.top = `${bottom + window.scrollY}px`;
       suggestionsElement.style.left = `${left}px`;
-      suggestionsElement.style.width = `${width}px`; // Optional: to match the width of the input field
+      suggestionsElement.style.width = `${width}px`;
     }
-  }, [suggestions, editMode]); // Depend on suggestions and editMode
+  }, [suggestions, editMode]);
 
   return (
     <div className="location-container">

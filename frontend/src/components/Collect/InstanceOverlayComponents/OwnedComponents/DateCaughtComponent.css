@@ -7,15 +7,24 @@
 }
 
 .date-field span {
-  cursor: pointer;  /* Indicates text can be edited when in edit mode */
-  background-color: transparent; /* Ensures the background is transparent */
-  display: block; /* Ensures the span behaves like a block element with full width */
+  cursor: pointer;
+  background-color: transparent;
+  display: block; /* Changed from inline-block to block to fill the width */
+  width: 100%; /* Ensures the span does not exceed its container */
+  min-height: 20px; /* Set a minimum height */
+  word-wrap: break-word; /* Allows long words to break and wrap to the next line */
+  white-space: normal; /* Ensures text wraps to a new line when necessary */
+  overflow-wrap: break-word; /* Ensure proper word break behavior */
+  border: 1px solid transparent; /* Always have a border but transparent when not editable */
+  padding: 0px; /* Ensure consistent padding */
+  box-sizing: border-box;
+  height: 24px; /* Set a fixed height */
 }
 
 .date-field span.editable {
   cursor: text; /* Changes cursor to text in edit mode */
   border: 1px solid white;
-  margin-bottom: 5px;
+  overflow: hidden;
 }
 
 .date-field span.text {

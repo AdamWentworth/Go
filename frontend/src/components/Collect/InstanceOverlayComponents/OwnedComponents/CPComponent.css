@@ -15,36 +15,29 @@
     display: flex;
     align-items: flex-end; /* Align items to the bottom */
     justify-content: center;
-    padding-top: 3px;
 }
 
 .cp-label {
     font-size: 12px;
     line-height: 1; /* Reduce line height to minimize excess space */
-    margin-bottom: 5px; /* Ensure no bottom margin is affecting alignment */
+    margin-bottom: 3.75px; /* Ensure no bottom margin is affecting alignment */
     margin-top: 12px;
 }
 
 .cp-editable-content {
     outline: none; /* Remove focus outline */
     background: transparent; /* Ensure no background color */
-    border-bottom: 1px solid transparent; /* Transparent border that can be colored on focus/edit */
-    display: inline-block; /* Ensure the element behaves inline */
+    border: 1px solid transparent; /* Keep the border but make it transparent when not editable */
     font-size: 20px;
+    line-height: 20px;
+    box-sizing: border-box; /* Includes padding and border in the element's size calculations */
+    display: inline-block; /* Display as inline-block */
+    min-width: 10px; /* Minimum width to handle smaller numbers or empty space */
 }
-  
-.cp-icon-button {
-    margin-left: 10px; /* Space between the editable content and the button */
-    background: none;
-    border: none;
-    cursor: pointer;
-    position: absolute; /* Position absolutely within the parent */
-    top: 0; /* Align to the top of the parent */
-    margin-top: 5px;
+
+.cp-editable-container.editable .cp-editable-content {
+    border-color: #a3a3a3; /* Apply a visible border color when editable */
+    border-radius: 2px; /* Rounded corners for aesthetic */
 }
-  
-.cp-icon-button img {
-    width: 24px;
-    height: 24px;
-}
-  
+
+

@@ -6,34 +6,55 @@
     margin-top: 10px;
     position: relative;
     width: 100%;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    box-sizing: border-box;
 }
 
 .location-field {
     display: flex;
     flex-direction: column;
     position: relative;
-    width: 100%;
-}
+    width: 240px; /* add a fixed width */
+    max-width: 100%;
+    box-sizing: border-box;
+  }
 
-.location-field span {
+  .location-field span {
     cursor: pointer;
     background-color: transparent;
-    display: inline-block; /* Change to inline-block to allow wrapping */
-    width: 100%; /* Ensures the span does not exceed its container */
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-height: 24px;
+    word-break: normal; /* changed from break-all to normal */
+    white-space: pre-wrap;
+    border: 1px solid transparent;
+    /* padding: 5px; */
     box-sizing: border-box;
-    word-wrap: break-word; /* Allows long words to break and wrap to the next line */
-    white-space: normal; /* Ensures text wraps to a new line when necessary */
-    overflow-wrap: break-word; /* Ensure proper word break behavior */
+    height: auto;
+    overflow: hidden;
+    overflow-x: hidden;
 }
 
 .location-field span.editable {
     cursor: text;
     border: 1px solid white;
-    overflow: hidden; /* Prevents text from spilling outside the span */
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+    word-break: normal; /* changed from break-all to normal */
+    white-space: pre-wrap;
+    display: inline-block;
 }
 
 .location-field span.text {
     border: 1px solid transparent;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .location-field span:focus {
@@ -56,12 +77,14 @@
     overflow-y: auto;
     overflow-x: hidden;
     width: auto;
+    box-sizing: border-box;
 }
 
 .location-container .suggestion-item {
     padding: 8px 10px;
     cursor: pointer;
     border-bottom: 1px solid #ccc;
+    box-sizing: border-box;
 }
 
 .location-container .suggestion-item:hover {

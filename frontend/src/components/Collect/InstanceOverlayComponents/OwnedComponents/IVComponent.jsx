@@ -48,8 +48,7 @@ const IVComponent = ({ pokemon, editMode }) => {
   const renderIvField = (type) => (
     <div className="iv-display" key={type}>
       <span className="iv-label">{type}:</span>
-      <div></div>
-      <span className="iv-value">
+      <div className="iv-content">
         {editMode ? (
           <input
             type="number"
@@ -63,9 +62,9 @@ const IVComponent = ({ pokemon, editMode }) => {
             className="iv-input"
           />
         ) : (
-          ivs[type]
+          <span className="iv-value">{ivs[type]}</span>
         )}
-      </span>
+      </div>
       <div className="iv-bar-bg"></div>
       <div className={`iv-bar ${ivs[type] === 15 ? 'full' : ''}`} style={{width: `${(ivs[type] / 15) * 75}%`}}></div>
     </div>

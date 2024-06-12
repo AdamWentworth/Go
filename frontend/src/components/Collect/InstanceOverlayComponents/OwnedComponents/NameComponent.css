@@ -5,26 +5,21 @@
     align-items: center; /* Vertically align items in the middle */
     width: 100%; /* Use the full container width */
     position: relative; /* Positioning context for absolute elements */
-    padding-top: 3px;
 }
 
 .name-editable-content {
     outline: none; /* Remove focus outline */
     min-width: 50px; /* Minimum width to ensure space for typing */
     background: transparent; /* Ensure no background color */
-    border-bottom: 1px solid transparent; /* Transparent border that can be colored on focus/edit */
+    display: inline-block; /* Ensures the element behaves inline and takes padding correctly */
+    padding: 0px; /* Padding to give some breathing room around the text */
+    border: 1px solid transparent; /* Transparent border that can be colored on focus/edit */
 }
-  
-.name-icon-button {
-    margin-left: 10px; /* Space between the editable content and the button */
-    background: none;
-    border: none;
-    cursor: pointer;
-    position: absolute; /* Position absolutely within the parent */
-    top: 0; /* Align to the top of the parent */
+
+.name-editable-content.editable {
+    border: 1px solid #a3a3a3; /* Solid border around the content to indicate editable mode */
+    border-radius: 2px; /* Optional: Rounds the corners of the border */
+    padding-left: 2px;
+    padding-right: 2px;
 }
-  
-.name-icon-button img {
-    width: 24px;
-    height: 24px;
-}
+

@@ -58,13 +58,13 @@ const NameComponent = ({ pokemon, editMode }) => {
       <div className="name-display">
         <div className="name-center-content">
           {editMode ? (
-            <span
-              contentEditable
+              <span
+              contentEditable={editMode}
               suppressContentEditableWarning={true}
               onInput={handleInput}
               onKeyDown={handleKeyDown}
               ref={editableRef}
-              className="name-editable-content"
+              className={`name-editable-content ${editMode ? 'editable' : ''}`}
             >
               {nickname || '&nbsp;'}
             </span>

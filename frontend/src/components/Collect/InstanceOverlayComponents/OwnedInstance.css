@@ -3,6 +3,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%; /* Ensure the instance takes full width */
+  max-width: 100%; /* Constrain the width */
+  overflow-wrap: break-word; /* Ensure proper word break behavior */
+  word-wrap: break-word; /* Allows long words to break and wrap to the next line */
 }
 
 .top-row {

@@ -51,23 +51,23 @@ const HeightComponent = ({ pokemon, editMode }) => {
   return (
     <div className="height-container">
       <div className="height-display">
-        <div className="height-editable-container">
-          {editMode ? (
-            <span
-              contentEditable
-              suppressContentEditableWarning={true}
-              onInput={handleInput}
-              onKeyDown={handleKeyDown}
-              ref={editableRef}
-              className="height-editable-content"
-            >
-              {height}
-            </span>
-          ) : (
-            <span className="height-editable-content">{height ? height : ''}</span>
-          )}
-          <span className="height-suffix">m</span>
-        </div>
+        <div className={`height-editable-container ${editMode ? 'editable' : ''}`}>
+            {editMode ? (
+                <span
+                    contentEditable
+                    suppressContentEditableWarning={true}
+                    onInput={handleInput}
+                    onKeyDown={handleKeyDown}
+                    ref={editableRef}
+                    className="height-editable-content"
+                >
+                    {height}
+                </span>
+            ) : (
+                <span className="height-editable-content">{height ? height : ''}</span>
+            )}
+            <span className="height-suffix">m</span>
+          </div>
         <div className="height-label">Height</div>
       </div>
     </div>

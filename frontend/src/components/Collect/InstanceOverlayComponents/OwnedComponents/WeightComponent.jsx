@@ -51,23 +51,23 @@ const WeightComponent = ({ pokemon, editMode }) => {
   return (
     <div className="weight-container">
       <div className="weight-display">
-        <div className="weight-editable-container">
-          {editMode ? (
-            <span
-              contentEditable
-              suppressContentEditableWarning={true}
-              onInput={handleInput}
-              onKeyDown={handleKeyDown}
-              ref={editableRef}
-              className="weight-editable-content"
-            >
-              {weight}
-            </span>
-          ) : (
-            <span className="weight-editable-content">{weight}</span>
-          )}
-          <span className="weight-suffix">kg</span>
-        </div>
+        <div className={`weight-editable-container ${editMode ? 'editable' : ''}`}>
+            {editMode ? (
+                <span
+                    contentEditable
+                    suppressContentEditableWarning={true}
+                    onInput={handleInput}
+                    onKeyDown={handleKeyDown}
+                    ref={editableRef}
+                    className="weight-editable-content"
+                >
+                    {weight}
+                </span>
+            ) : (
+                <span className="weight-editable-content">{weight}</span>
+            )}
+            <span className="weight-suffix">kg</span>
+          </div>
         <div className="weight-label">Weight</div>
       </div>
     </div>

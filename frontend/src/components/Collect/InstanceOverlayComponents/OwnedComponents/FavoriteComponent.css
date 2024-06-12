@@ -3,13 +3,10 @@
 .favorite-component img {
     width: 24px;
     height: 24px;
-    cursor: pointer
+    cursor: default; /* Default cursor for image outside edit mode */
 }
 
-.favorite-component {
-    cursor: default;
- }
-  
-.favorite-component.editable {
-    cursor: pointer;
+/* Only change cursor to pointer when the component is in editable mode */
+.favorite-component.editable img {
+    cursor: pointer; /* Pointer cursor for image when component is editable */
 }

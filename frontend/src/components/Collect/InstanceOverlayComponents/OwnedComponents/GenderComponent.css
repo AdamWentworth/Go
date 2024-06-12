@@ -3,46 +3,15 @@
   display: flex;
   align-items: center;
   justify-content: flex-end; /* Align items to the far right */
-  margin-top: 10px;
-  margin-bottom: 10px;
-}
-
-.gender-label {
-  margin-right: 8px;
-}
-
-.gender-select {
-  padding: 4px;
-  font-size: 14px;
 }
 
 .gender-display {
   padding: 4px;
   font-size: 14px;
-  cursor: pointer;
+  cursor: default; /* Default cursor for gender display */
   display: flex;
   align-items: center;
   height: 24px; /* Set a fixed height */
-}
-
-.gender-editable-content {
-  outline: none; /* Remove focus outline */
-  background: transparent; /* Ensure no background color */
-  border-bottom: 1px solid transparent; /* Transparent border that can be colored on focus/edit */
-  display: inline-block; /* Ensure the element behaves inline */
-}
-
-.gender-icon-button {
-  margin-left: 5px; /* Space between the editable content and the button */
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.gender-icon-button img {
-  width: 24px;
-  height: 24px;
-  margin: 0px;
 }
 
 .gender-display img {
@@ -54,10 +23,7 @@
   font-size: 10px;
 }
 
-.gender-container {
-  cursor: default;
+.gender-container.editable .gender-display {
+  cursor: pointer; /* Pointer cursor only when editable */
 }
 
-.gender-container.editable {
-  cursor: pointer;
-}
