@@ -190,6 +190,7 @@ function Collect() {
                 showShadow={showShadow}
                 toggleShadow={toggleShadow}
                 toggleShowAll={toggleShowAll}
+                showAll={showAll}
 
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}

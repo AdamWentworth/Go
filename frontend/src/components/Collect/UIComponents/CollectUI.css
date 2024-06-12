@@ -113,7 +113,19 @@
 }
 
 .fast-select-button.active {
-  background-color: #fff01c; /* Neon yellow */
+  background-color: rgb(255, 246, 123); /* Neon yellow */
+}
+
+.fast-select-button:hover {
+  background-color: rgb(255, 223, 40); /* Neon yellow */
+}
+
+.select-all-button.active {
+  background-color: #47bbb7; /* Active green, or choose your preferred color */
+}
+
+.select-all-button:hover {
+  background-color: #3ea5a2; /* Darker green on hover */
 }
 
 @media (max-width: 480px) {

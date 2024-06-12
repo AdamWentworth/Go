@@ -11,7 +11,7 @@ const HeaderUI = ({
   isShiny, toggleShiny,
   showCostume, toggleCostume,
   showShadow, toggleShadow,
-  toggleShowAll, 
+  toggleShowAll, showAll={showAll}, 
   searchTerm, setSearchTerm, 
   showEvolutionaryLine, toggleEvolutionaryLine,
   showCollectUI, toggleCollectUI,
@@ -34,6 +34,7 @@ const HeaderUI = ({
               showShadow={showShadow}
               toggleShadow={toggleShadow}
               toggleShowAll={toggleShowAll}
+              showAll={showAll}
           />
       )}
       <SearchUI

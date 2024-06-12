@@ -46,6 +46,11 @@
 }
 
 /* Specific hover colors for active buttons */
+
+.header-section.filter-section .show-all-button.active {
+    background-color: #51d4a2; /* Gold for active state */
+}
+
 .header-section.filter-section .shiny-button.active {
     background-color: gold;
 }
@@ -56,6 +61,11 @@
 
 .header-section.filter-section .shadow-button.active {
     background-color: rgb(182, 92, 182);
+}
+
+/* Hover state for the show-all button to match shiny-button */
+.header-section.filter-section .show-all-button:hover {
+    background-color: #42ac83;
 }
 
 .header-section.filter-section .shiny-button:hover {
@@ -71,6 +81,11 @@
 }
 
 /* Specific hover colors for active buttons */
+
+.header-section.filter-section .show-all-button.active:hover {
+    background-color: #42ac83;
+}
+
 .header-section.filter-section .shiny-button.active:hover {
     background-color: #ffcc00; /* Slightly darker shiny color */
 }

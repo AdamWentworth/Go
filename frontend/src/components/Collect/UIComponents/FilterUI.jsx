@@ -11,7 +11,7 @@ const preloadImage = (url) => {
 
 function FilterUI({
     isShiny, toggleShiny, showCostume, toggleCostume, showShadow, toggleShadow,
-    toggleShowAll
+    toggleShowAll, showAll  
 }) {
     useEffect(() => {
         // Preload icons
@@ -23,7 +23,9 @@ function FilterUI({
     return (
         <div className="header-section filter-section">
             <div className="button-container">
-                <button onClick={toggleShowAll} className="show-all-button">Show All</button>
+                <button onClick={toggleShowAll} className={`show-all-button ${showAll ? 'active' : ''}`}>
+                    Show All
+                </button>
                 <button onClick={toggleShiny} className={`shiny-button ${isShiny ? 'active' : ''}`}>
                     <img src="/images/shiny_icon.png" alt="Toggle Shiny" />
                 </button>

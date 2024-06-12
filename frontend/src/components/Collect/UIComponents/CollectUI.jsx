@@ -15,6 +15,7 @@ const CollectUI = ({
   const filters = ['Owned', 'Trade', 'Unowned', 'Wanted'];
   const [selectedFilter, setSelectedFilter] = useState("");
   const [fastSelectEnabled, setFastSelectEnabled] = useState(false);
+  const [SelectAllEnabled, setSelectAllEnabled] = useState(false);
 
   useEffect(() => {
     setSelectedFilter(statusFilter); // Ensure this runs correctly
@@ -37,6 +38,12 @@ const CollectUI = ({
     }
   };
 
+  const handleSelectAll = () => {
+    const newSelectAllState = !SelectAllEnabled;
+    setSelectAllEnabled(newSelectAllState);
+    onSelectAll(newSelectAllState); // Notify parent component
+  };
+
   const handleToggleFastSelect = () => {
     const newFastSelectState = !fastSelectEnabled;
     setFastSelectEnabled(newFastSelectState);
@@ -49,8 +56,8 @@ const CollectUI = ({
       </div>
       <div className="button-container">
       <button
-        className="select-all-button"
-        onClick={onSelectAll}
+        className={`select-all-button ${SelectAllEnabled ? 'active' : ''}`}
+        onClick={handleSelectAll}
       >
         Select All
       </button>
