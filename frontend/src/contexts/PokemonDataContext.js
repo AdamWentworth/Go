@@ -2,9 +2,10 @@
 
 import React, { useContext, createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { getPokemons } from '../components/Collect/utils/api';
-import { initializeOrUpdateOwnershipData, updatePokemonOwnership } from '../components/Collect/utils/pokemonOwnershipManager';
+import { initializeOrUpdateOwnershipData, initializeOrUpdateOwnershipDataAsync, updatePokemonOwnership } from '../components/Collect/utils/pokemonOwnershipManager';
 import createPokemonVariants from '../components/Collect/utils/createPokemonVariants';
-import { determinePokemonKey } from '../components/Collect/utils/imageHelpers'; 
+import { determinePokemonKey, preloadImage } from '../components/Collect/utils/imageHelpers'; 
+import { isDataFresh } from '../components/Collect/utils/cacheHelpers';
 
 // Create a React context for sharing Pokemon data across components
 const PokemonDataContext = createContext();
@@ -72,14 +73,65 @@ export const PokemonDataProvider = ({ children }) => {
                 console.log("Ownership data is cached but Variants are missing.");
             }
 
-            // Check both caches for freshness
+            // Best case scenario - All Data is less than 24hrs old
             if (cachedVariants && cachedOwnership &&
-                Date.now() - cachedVariants.timestamp < 24 * 60 * 60 * 1000 &&
-                Date.now() - cachedOwnership.timestamp < 24 * 60 * 60 * 1000) {
+                isDataFresh(cachedVariants.timestamp) && isDataFresh(cachedOwnership.timestamp)) {
                 console.log("Using cached variants and ownership data");
                 variants = cachedVariants.data;
                 ownershipData = cachedOwnership.data;
                 freshDataAvailable = true;
+
+            // Ownership Data is fresh in the browser but the Pokemon Variants data is possibly outdated.
+            } else if (cachedVariants && cachedOwnership &&
+                !isDataFresh(cachedVariants.timestamp) && isDataFresh(cachedOwnership.timestamp)) {
+                console.log("Cached Variants are too old but Ownership Data is current");
+                let pokemons;
+                const cachedData = localStorage.getItem(pokemonDataCacheKey);
+                if (cachedData && (Date.now() - JSON.parse(cachedData).timestamp < 24 * 60 * 60 * 1000)) {
+                    console.log("Using data from local storage");
+                    pokemons = JSON.parse(cachedData).data;
+                } else {
+                    console.log("Fetching new data from API");
+                    pokemons = await getPokemons();
+                    localStorage.setItem(pokemonDataCacheKey, JSON.stringify({ data: pokemons, timestamp: Date.now() }));
+                }
+            
+                // Process pokemons into variants
+                variants = createPokemonVariants(pokemons);
+                variants.forEach(variant => {
+                    variant.pokemonKey = determinePokemonKey(variant);
+                    preloadImage(variant.currentImage); // Preload main image
+                    if (variant.type_1_icon) preloadImage(variant.type_1_icon); // Preload type 1 icon
+                    if (variant.type_2_icon) preloadImage(variant.type_2_icon); // Preload type 2 icon
+                });
+            
+                // Update cache with new variants
+                await cacheStorage.put(variantsCacheKey, new Response(JSON.stringify({ data: variants, timestamp: Date.now() })));
+
+                // Prepare keys for ownership data
+                const keys = variants.map(variant => variant.pokemonKey);
+
+                // If Variants data has changed, maybe update ownership data too
+                ownershipData = await initializeOrUpdateOwnershipDataAsync(keys, variants);
+                // console.log("Updated ownership data:", ownershipData);
+                await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
+                freshDataAvailable = true;
+
+            // Cached Pokemon Variants are updated, but Ownership Data is older than 24 hours - Gotta check if there are new pokemon to be initialized in Ownership data
+            } else if (cachedVariants && cachedOwnership &&
+                isDataFresh(cachedVariants.timestamp) && !isDataFresh(cachedOwnership.timestamp, 24)) {
+                console.log("Using cached variants but updating ownership data");   
+                variants = cachedVariants.data;
+
+                const keys = variants.map(variant => variant.pokemonKey);
+
+                // If Ownership cache data is outdated, update it with new Variants.
+                ownershipData = await initializeOrUpdateOwnershipDataAsync(keys, variants);
+                console.log("Updated ownership data:", ownershipData);
+                await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
+                freshDataAvailable = true;
+
+            // Cache Pokemon Variants are updated, but Ownership data is missing altogether.
             } else if (cachedVariants && !cachedOwnership &&
                 Date.now() - cachedVariants.timestamp < 24 * 60 * 60 * 1000) {
                 console.log("Using cached variants but rebuilding ownership data");
@@ -88,6 +140,7 @@ export const PokemonDataProvider = ({ children }) => {
                 console.log("Cached data is stale or incomplete, refetching...");
             }
 
+            // Variants are fresh so we may begin initializing fresh ownershipdata in local storage.
             if (!freshDataAvailable && variants) {
                 // Prepare keys for ownership data
                 const keys = variants.map(variant => variant.pokemonKey);
@@ -98,6 +151,8 @@ export const PokemonDataProvider = ({ children }) => {
                 await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
                 freshDataAvailable = true;
             }
+
+            // Everything is out of date. Must first check if localstorage has anything and if not we hit api and build everything.
 
             if (!freshDataAvailable) {
                 let pokemons;
@@ -170,10 +225,4 @@ export const PokemonDataProvider = ({ children }) => {
             {children}
         </PokemonDataContext.Provider>
     );
-};
-
-// Utility function to preload images
-const preloadImage = (url) => {
-    const img = new Image();
-    img.src = url;
 };

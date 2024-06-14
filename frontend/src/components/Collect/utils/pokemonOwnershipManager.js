@@ -38,6 +38,43 @@ export function initializeOrUpdateOwnershipData(keys, variants) {
     return storedData
 }
 
+export async function initializeOrUpdateOwnershipDataAsync(keys, variants) {
+    // Assuming `cacheStorage` has async methods `getItem` and `setItem`
+    let rawOwnershipData = await cacheStorageName.getItem(ownershipDataCacheKey);
+
+    let storedData = rawOwnershipData ? JSON.parse(rawOwnershipData) : {};
+    console.log("Parsed ownershipData:", storedData);  // Verify parsed data
+
+     // Safeguard to ensure top-level data and timestamp only
+     if (storedData.data && storedData.timestamp) {
+        storedData = storedData.data; // Unwrap if wrapped correctly
+    }
+
+    let shouldUpdateStorage = false;
+    let updates = {};
+    
+    variants.forEach((variant, index) => {
+        const key = keys[index]; // Ensure keys and variants are synchronized by index
+        // Check if any existing key starts with the provided key
+        if (!Object.keys(storedData).some(existingKey => existingKey.startsWith(key))) {
+            const fullKey = `${key}_${uuidv4()}`; // Append UUID to create a full key
+            storedData[fullKey] = createNewDataForVariant(variant); // Use variant here instead of fullKey
+            updates[fullKey] = storedData[fullKey];
+            shouldUpdateStorage = true;
+        }
+    });
+
+    // Save updates if necessary
+    if (shouldUpdateStorage) {
+        console.log('Added new ownership data for keys:', updates);
+        await cacheStorageName.setItem(ownershipDataCacheKey, JSON.stringify({ data: storedData, timestamp: Date.now() }));
+    } else {
+        console.log('No ownership updates required.');
+    }
+    return storedData;
+}
+
+
 const getKeyParts = (key) => {
 
     const parts = {
@@ -92,6 +129,7 @@ function createNewDataForVariant(variant) {
         height: null,
         gender: null,
         mirror: false,
+        registered: false,
         favorite: false,
         location_card: null,
         location_caught: null,

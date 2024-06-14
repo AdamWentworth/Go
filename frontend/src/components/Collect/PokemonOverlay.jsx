@@ -36,7 +36,6 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
 
   return (
     <div className="pokemon-overlay" onClick={handleOverlayClick}>
-      <button onClick={onClose} className="universal-close-button">X</button>
   
       <div className="overlay-row evolution-shortcuts-row">
         {currentPokemon.evolves_from && (

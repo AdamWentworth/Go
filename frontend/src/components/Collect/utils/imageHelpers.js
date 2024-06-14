@@ -55,3 +55,9 @@ export function getTypeIconPath(typeName) {
     // Now using type's name to construct the image path, as per your backend changes
     return `/images/types/${typeName.toLowerCase()}.png`;
   }
+
+// Utility function to preload images
+export const preloadImage = (url) => {
+    const img = new Image();
+    img.src = url;
+};

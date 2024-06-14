@@ -36,13 +36,13 @@
 /* Positioning for evolvesFrom */
 .overlay-evolves-from {
     position: absolute;
-    top: 50px; /* Adjust the top position as needed */
-    left: 50px; /* Adjust the left position as needed */
+    top: 10px; /* Adjust the top position as needed */
+    left: 10px; /* Adjust the left position as needed */
 }
 
 /* Positioning for evolvesTo */
 .overlay-evolves-to {
     position: absolute;
-    top: 50px; /* Adjust the top position as needed */
-    right: 50px; /* Adjust the right position as needed */
+    top: 10px; /* Adjust the top position as needed */
+    right: 10px; /* Adjust the right position as needed */
 }
