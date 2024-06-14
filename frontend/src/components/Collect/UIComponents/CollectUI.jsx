@@ -31,7 +31,7 @@ const CollectUI = ({
   
   const handleFilterClick = (filter) => {
     if (highlightedCards.size > 0) {
-      confirmMoveToFilter(filter.toLowerCase()); // Additional context handling for highlighted cards
+      confirmMoveToFilter(filter); // Pass filter as lowercase
     } else {
       const newFilter = statusFilter === filter ? "" : filter; // Toggle filter on or off
       setStatusFilter(newFilter); // Update the filter state
