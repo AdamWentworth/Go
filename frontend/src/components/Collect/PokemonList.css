@@ -12,14 +12,10 @@
 
 @media (max-width: 480px) {
     .pokemon-container {
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         padding: 5px;
         width: calc(100vw - 20px);
         gap: 6px;
-    }
-    .type-icons img {
-        width: 20px;
-        height: 20px;
     }
 }
 

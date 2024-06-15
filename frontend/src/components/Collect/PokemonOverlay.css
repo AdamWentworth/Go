@@ -14,6 +14,10 @@
     flex-direction: column; 
 }
 
+.column-layout {
+    flex-direction: column;
+}
+
 .overlay-row {
     display: flex;
     justify-content: center;
@@ -48,16 +52,51 @@
     z-index: 100; /* Make sure it's above all overlay content */
   }
 
-@media (max-width: 480px) { /* For mobile devices */
+  @media (max-width: 480px) { /* For mobile devices */
     .pokemon-overlay {
-      padding: 10px; /* Further reduce padding for very small screens */
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: flex-start; /* Aligns content to start from the top */
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        flex-direction: column;
+        padding-top: 150px; /* Pushes all content down by 150px */
+        overflow-y: scroll; /* Enables scrolling for the entire overlay */
+        scrollbar-width: none; /* For Firefox */
+        -ms-overflow-style: none; /* For Internet Explorer and Edge */
     }
+
+    .pokemon-overlay::-webkit-scrollbar {
+        display: none; /* For Chrome, Safari, and Opera */
+    }
+
     .overlay-row {
-      flex-direction: column; /* Stack the rows vertically on smaller screens */
+        display: flex;
+        flex-direction: column; /* Stack the rows vertically on smaller screens */
+        width: 100%; /* Full width of the container */
+        gap: 10px; /* Space between windows */
     }
+
+    .overlay-row.other-overlays-row {
+        position: relative;
+        top: 0px; /* Eliminate this if it's still causing issues */
+        width: 88%; /* Adjust width as per your layout */
+        flex-direction: column; /* Stack the elements vertically */
+    }
+
     .overlay-content {
-        width: 100%; /* Full width for very small screens */
-        max-height: 250px; /* Further reduce max height */
+        max-height: none; /* Remove max height to allow full height of content */
+        overflow: visible; /* Make sure the content is visible without its own scroll */
+    }
+
+    .overlay-evolves-from, .overlay-evolves-to {
+        width: 30%;
+        max-height: 100px;
     }
 }
 
