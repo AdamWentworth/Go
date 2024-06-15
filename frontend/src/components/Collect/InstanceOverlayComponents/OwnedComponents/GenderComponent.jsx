@@ -20,15 +20,15 @@ const GenderComponent = ({ pokemon, editMode }) => {
   };
 
   return (
-    <div className={`gender-container ${editMode ? 'editable' : ''}`} onClick={toggleGender}>
-      <label className="gender-label"></label>
+    <div className={`gender-container ${editMode ? 'editable' : ''}`} onClick={toggleGender} role="button" aria-label={`Change gender to ${gender === 'Male' ? 'Female' : gender === 'Female' ? 'Genderless' : 'Male'}`}>
+      <label className="gender-label" aria-hidden="true"></label>
       <div className="gender-display">
         {gender === 'Male' && <img src={maleIcon} alt="Male" className="gender-icon" />}
         {gender === 'Female' && <img src={femaleIcon} alt="Female" className="gender-icon" />}
         {(gender === 'Genderless' || gender == null) && <span className="gender-text">Genderless</span>}
       </div>
     </div>
-  );
+  );G
 };
 
 export default GenderComponent;

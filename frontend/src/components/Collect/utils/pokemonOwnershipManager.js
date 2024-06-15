@@ -80,8 +80,6 @@ export async function initializeOrUpdateOwnershipDataAsync(keys, variants) {
 
         if (shouldUpdateStorage) {
             console.log('Added new ownership data for keys:', updates);
-            // Update the cache with the new data
-            await cache.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: storedData, timestamp: Date.now() })));
         } else {
             console.log('No ownership updates required.');
         }

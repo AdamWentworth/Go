@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { parse, format, isValid } from 'date-fns';
 import DatePicker, { registerLocale } from 'react-datepicker';
-import enUS from 'date-fns/locale/en-US'; // Adjust locale as needed
+import enUS from 'date-fns/locale/en-US';
 import 'react-datepicker/dist/react-datepicker.css';
 import './DateCaughtComponent.css';
 
@@ -51,7 +51,7 @@ const DateCaughtComponent = ({ pokemon, editMode }) => {
   };
 
   const handleKeyDown = (event) => {
-    if (event.key === 'Enter') {
+    if (event.key == 'Enter') {
       event.preventDefault();
       setShowCalendar(false);
     }
@@ -79,12 +79,13 @@ const DateCaughtComponent = ({ pokemon, editMode }) => {
   return (
     <div className="date-container">
       <div className="date-field">
-        <label htmlFor="date">Date Caught:</label>
-        <span contentEditable={editMode}
+        <label id="date-label">Date Caught:</label>
+        <span aria-labelledby="date-label" contentEditable={editMode}
               ref={dateRef}
               onInput={handleDateInput}
               onKeyDown={handleKeyDown}
               onFocus={handleFocus}
+              role="textbox"
               suppressContentEditableWarning={true}
               className={editMode ? 'editable' : 'text'}>
           {date ? format(date, 'yyyy-MM-dd') : ''}
