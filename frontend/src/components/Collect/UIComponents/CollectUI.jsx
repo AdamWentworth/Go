@@ -44,8 +44,8 @@ const CollectUI = ({
         // If a new filter is being activated and `showAll` is currently false, set it to true
         toggleShowAll(true);
       }
-      // Do not change `showAll` if just switching between filters (assumes `showAll` is already true)
     }
+  setSelectAllEnabled(false);
 };
 
   const handleSelectAll = () => {

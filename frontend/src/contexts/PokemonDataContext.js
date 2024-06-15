@@ -119,7 +119,9 @@ export const PokemonDataProvider = ({ children }) => {
 
             // Cached Pokemon Variants are updated, but Ownership Data is older than 24 hours - Gotta check if there are new pokemon to be initialized in Ownership data
             } else if (cachedVariants && cachedOwnership &&
-                isDataFresh(cachedVariants.timestamp) && !isDataFresh(cachedOwnership.timestamp, 24)) {
+                isDataFresh(cachedVariants.timestamp) && !isDataFresh(cachedOwnership.timestamp)) {
+
+                // isDataFresh(cachedVariants.timestamp) && !isDataFresh(cachedOwnership.timestamp, 24)) {
                 console.log("Using cached variants but updating ownership data");   
                 variants = cachedVariants.data;
 
