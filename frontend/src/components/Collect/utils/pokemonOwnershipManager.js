@@ -155,7 +155,8 @@ function createNewDataForVariant(variant) {
         is_unowned: true,
         is_owned: false,
         is_for_trade: false,
-        is_wanted: false
+        is_wanted: false,
+        trade_list: {}
     };
 }
 

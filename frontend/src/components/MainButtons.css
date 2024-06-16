@@ -17,10 +17,10 @@
 /* Style for the container holding the buttons */
 .mainButtonsContainer {
     display: flex;
-    justify-content: space-between; /* evenly distribute space between the buttons */
-    align-items: center; /* center align on the Y axis */
+    justify-content: space-between; /* Evenly distribute space between the buttons */
+    align-items: center; /* Center align on the Y axis */
     padding: 2rem 11%; /* Add vertical padding and slightly reduce horizontal padding */
-    gap: 1rem;   /* Spacing between buttons */
+    gap: 1rem; /* Spacing between buttons */
     height: calc(100vh - 138px); /* Adjust height considering navbar; change 50px to your navbar's height */
     margin-top: 0px; /* Remove any top margin to eliminate the gap */
     background-color: #333;
@@ -36,7 +36,11 @@
     border-radius: 12px;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    text-shadow: 2px 2px 4px rgba(0,0,0,1); /* Example shadow */
+    flex-basis: calc(25% - 1rem); /* Adjust width to be half of the container minus the gap */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
 }
+
 
 .mainButton:hover {
     filter: saturate(150%); /* Increase saturation by 150% */
@@ -52,6 +56,10 @@
 
 .raid-btn {
     background-color: #4c7aae;
+}
+
+.discover-btn {
+    background-color: #ffd80f;
 }
 
 @media (max-width: 480px) {
@@ -133,8 +141,8 @@
         gap: 4rem;   /* Spacing between buttons */
     }
     .mainButton {
-        font-size: 5rem;  /* Increase font size */
-        padding: 3rem 5rem;
+        font-size: 3rem;  /* Increase font size */
+        padding: 2rem 4rem;
     }
 }
 @media (min-width: 1920px) and (max-width: 2559px) {
@@ -142,11 +150,11 @@
         justify-content: center; /* Center buttons horizontally */
         align-items: center; /* Center align on the Y axis */
         flex-direction: row; /* Ensure buttons are in a row */
-        gap: 5rem;   /* Spacing between buttons */
+        gap: 3rem;   /* Spacing between buttons */
     }
     .mainButton {
-        font-size: 7rem;  /* Increase font size */
-        padding: 3rem 5rem;
+        font-size: 5rem;  /* Increase font size */
+        padding: 3rem 4rem;
     }
 }
 

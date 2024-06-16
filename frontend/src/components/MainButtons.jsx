@@ -13,6 +13,7 @@ function MainButtons({ navbar }) { // Added a prop `navbar` to determine the con
                 <button className="mainButton collect-btn">Collect</button>
             </Link>
             <button className="mainButton raid-btn">Raid</button>
+            <button className="mainButton discover-btn">Discover</button>
         </div>
     );
 }

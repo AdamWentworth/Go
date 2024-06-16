@@ -85,7 +85,7 @@
     .overlay-row.other-overlays-row {
         position: relative;
         top: 0px; /* Eliminate this if it's still causing issues */
-        width: 88%; /* Adjust width as per your layout */
+        width: 100%; /* Full width of the container */
         flex-direction: column; /* Stack the elements vertically */
     }
 
