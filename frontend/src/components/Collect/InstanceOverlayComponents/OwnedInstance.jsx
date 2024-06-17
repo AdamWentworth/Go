@@ -31,6 +31,11 @@ const OwnedInstance = ({ pokemon }) => {
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
+  const [cp, setCP] = useState(pokemon.ownershipStatus.cp);
+
+  const handleCPChange = (newCP) => {
+    setCP(newCP);  // Update CP state
+  };
 
   const handleLuckyToggle = (newLuckyStatus) => {
     setIsLucky(newLuckyStatus);
@@ -43,7 +48,7 @@ const OwnedInstance = ({ pokemon }) => {
   const toggleEditMode = () => {
     if (editMode) {
       console.log("Saving changes...");
-      updateDetails(pokemon.pokemonKey, { nickname: nickname, lucky: isLucky });
+      updateDetails(pokemon.pokemonKey, { nickname: nickname, lucky: isLucky, cp: cp });
     }
     setEditMode(!editMode);
   };
@@ -52,7 +57,7 @@ const OwnedInstance = ({ pokemon }) => {
     <div>
       <div className="top-row">
         <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
-        <CPComponent pokemon={pokemon} editMode={editMode} toggleEditMode={toggleEditMode} />
+        <CPComponent pokemon={pokemon} editMode={editMode} toggleEditMode={toggleEditMode} onCPChange={handleCPChange} />
         <div className="right-stack">
           <FavoriteComponent pokemon={pokemon} editMode={editMode} />
           <FriendshipComponent pokemon={pokemon} />

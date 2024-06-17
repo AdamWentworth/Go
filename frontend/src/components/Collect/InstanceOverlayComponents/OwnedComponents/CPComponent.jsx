@@ -1,9 +1,10 @@
 // CPComponent.jsx
 
+// CPComponent.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import './CPComponent.css';
 
-const CPComponent = ({ pokemon, editMode, toggleEditMode }) => {
+const CPComponent = ({ pokemon, editMode, toggleEditMode, onCPChange }) => {
   const [cp, setCP] = useState(pokemon.ownershipStatus.cp || '');
   const editableRef = useRef(null);
 
@@ -15,43 +16,42 @@ const CPComponent = ({ pokemon, editMode, toggleEditMode }) => {
       range.collapse(false);
       sel.removeAllRanges();
       sel.addRange(range);
-      editableRef.current.focus();
     }
   }
 
   useEffect(() => {
     if (editMode && editableRef.current) {
-      editableRef.current.innerText = cp || '';
-      setCaretToEnd();
+      editableRef.current.innerText = cp;
+      setCaretToEnd();  // Ensure cursor is at end when editing starts
     }
   }, [editMode, cp]);
 
   const handleInput = (event) => {
     const newValue = event.target.innerText;
-    if (/^\d{0,4}$/.test(newValue)) {
+    if (/^\d{0,4}$/.test(newValue)) {  // Allow only up to 4 digits (customize as necessary)
       setCP(newValue);
+      onCPChange(newValue);  // Trigger update in parent state
     } else {
-      event.target.innerText = cp;
+      event.target.innerText = cp;  // Reset to last valid value if input is invalid
     }
-    setCaretToEnd();
+    setCaretToEnd();  // Ensure cursor is at end after input
   };
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
-      event.preventDefault();
-      toggleEditMode();
+      event.preventDefault();  // Prevent line break on Enter
+      editableRef.current.blur();  // Blur the editable element to stop editing
+      toggleEditMode();  // Optionally toggle edit mode off if you have a method to manage it
     }
   };
 
-  useEffect(() => {
-    if (!editMode && cp) {
-      setCP(cp.trim());
-    }
-  }, [editMode]);
+  const handleBlur = () => {
+    onCPChange(cp.trim());  // Ensure to trim and update on blur
+  };
 
   const handleContainerClick = () => {
     if (editMode && editableRef.current) {
-      editableRef.current.focus();
+      editableRef.current.focus();  // Focus the editable element when the container is clicked
     }
   };
 
@@ -67,13 +67,14 @@ const CPComponent = ({ pokemon, editMode, toggleEditMode }) => {
                 suppressContentEditableWarning={true}
                 onInput={handleInput}
                 onKeyDown={handleKeyDown}
+                onBlur={handleBlur}  // Handle blur to ensure updates are applied
                 ref={editableRef}
                 className="cp-editable-content"
               >
                 {cp || ''}
               </span>
             ) : (
-              <span className="cp-editable-content">{cp || ''}</span>
+              <span className="cp-editable-content">{cp}</span>
             )}
           </div>
         </div>
@@ -83,5 +84,3 @@ const CPComponent = ({ pokemon, editMode, toggleEditMode }) => {
 };
 
 export default CPComponent;
-
-
