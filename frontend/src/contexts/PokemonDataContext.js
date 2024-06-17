@@ -2,7 +2,7 @@
 
 import React, { useContext, createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { getPokemons } from '../components/Collect/utils/api';
-import { initializeOrUpdateOwnershipData, initializeOrUpdateOwnershipDataAsync, updatePokemonOwnership } from '../components/Collect/utils/pokemonOwnershipManager';
+import { initializeOrUpdateOwnershipData, initializeOrUpdateOwnershipDataAsync, updatePokemonOwnership, updatePokemonDetails } from '../components/Collect/utils/pokemonOwnershipManager';
 import createPokemonVariants from '../components/Collect/utils/createPokemonVariants';
 import { determinePokemonKey, preloadImage } from '../components/Collect/utils/imageHelpers'; 
 import { isDataFresh } from '../components/Collect/utils/cacheHelpers';
@@ -217,11 +217,36 @@ export const PokemonDataProvider = ({ children }) => {
         });
     }, [data.variants, data.ownershipData]);
 
+    // Function to update Instance details
+    const updateDetails = useCallback((pokemonKey, details) => {
+        console.log("Updating details for:", pokemonKey, details);
+        updatePokemonDetails(pokemonKey, details, data.ownershipData);
+    
+        // Assuming the update is successful, we update the context state
+        const newData = {...data.ownershipData};
+        newData[pokemonKey] = {...newData[pokemonKey], ...details};
+    
+        setData(prevData => ({
+            ...prevData,
+            ownershipData: newData
+        }));
+    
+        // Send updated data to syncWorker for asynchronous synchronization
+        if (syncWorker) {
+            console.log("Sending updated data to worker for sync");
+            syncWorker.postMessage({
+                action: 'syncData',
+                data: { data: newData, timestamp: Date.now() }
+            });
+        }
+    }, [data.ownershipData]);
+
     // Context value includes all state and the update function
     const contextValue = useMemo(() => ({
         ...data,
-        updateOwnership
-    }), [data, updateOwnership]);
+        updateOwnership,
+        updateDetails
+    }), [data, updateOwnership, updateDetails]);
 
     // Provider wraps children with the Pokemon data context
     return (
@@ -230,3 +255,6 @@ export const PokemonDataProvider = ({ children }) => {
         </PokemonDataContext.Provider>
     );
 };
+
+// Exporting the Context object itself along with other components
+export { PokemonDataContext };

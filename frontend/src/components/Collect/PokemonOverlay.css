@@ -99,6 +99,17 @@
     .overlay-all-moves {
         margin-bottom: 10px !important;
     }
+    .shadow-info-column img {
+        max-width: 140px !important;
+        padding-top: 5px;
+    }
+    .costume-column img {
+        max-width: 140px !important;
+        padding-top: 5px;
+    }
+    .overlay-charged-moves {
+        margin-bottom: 10px !important;
+    }
 }
 
 @media (min-width: 481px) and (max-width: 767px) { /* For tablets and smaller devices */
@@ -147,6 +158,10 @@
         max-height: 100px;
     }
     .overlay-all-moves {
+        margin-bottom: 10px !important;
+    }
+
+    .overlay-charged-moves {
         margin-bottom: 10px !important;
     }
 }
@@ -244,6 +259,45 @@
     }
     .costume-column img {
         max-width: 120px !important; 
+    }
+    .fullscreen-toggle {
+        font-size: 12px;
+    }
+    .shadow-info-column img {
+        max-width: 120px !important;
+        padding-bottom: 10px !important;
+    }
+}
+
+@media (min-width: 1440px) and (max-width: 1720px) {
+    .overlay-content {
+        font-size: 14px !important;
+        padding: 0px;
+    }
+    .overlay-content h1 {
+        font-size: 18px !important;
+    }
+    .overlay-content h2 {
+        font-size: 16px !important;
+    }
+    .moves-column {
+        padding: 0px !important;
+    }
+    .moves-column img {
+        width: 20px;
+        height: 20px;
+    }
+    .overlay-charged-moves {
+        max-height: 560px;
+    }
+    .main-info-column img {
+        max-width: 180px !important; 
+    }
+    .shiny-info-column img {
+        max-width: 180px !important; 
+    }
+    .costume-column img {
+        max-width: 140px !important; 
     }
     .fullscreen-toggle {
         font-size: 12px;

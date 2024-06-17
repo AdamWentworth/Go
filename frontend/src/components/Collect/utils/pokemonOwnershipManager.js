@@ -461,3 +461,15 @@ export const confirmMoveToFilter = (moveHighlightedToFilter, filter, highlighted
         moveHighlightedToFilter(filter);
     }
 };
+
+// Function to update individual details of a Pokemon instance
+export function updatePokemonDetails(pokemonKey, details, ownershipData) {
+    if (ownershipData && ownershipData[pokemonKey]) {
+        // Apply the new details to the specific entry
+        ownershipData[pokemonKey] = {...ownershipData[pokemonKey], ...details};
+        console.log(`Details updated for ${pokemonKey}:`, ownershipData[pokemonKey]);
+    } else {
+        console.error("No data found for the specified key:", pokemonKey);
+    }
+}
+

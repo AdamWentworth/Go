@@ -3,15 +3,19 @@ import React, { useState, useRef, useEffect } from 'react';
 import './NameComponent.css';
 import { getLastWord } from '../../utils/formattingHelpers';
 
-const NameComponent = ({ pokemon, editMode }) => {
+const NameComponent = ({ pokemon, editMode, onNicknameChange }) => {
   const initialNickname = () => {
     return pokemon.ownershipStatus.nickname && pokemon.ownershipStatus.nickname.trim() !== ''
       ? pokemon.ownershipStatus.nickname
       : getLastWord(pokemon.name);
   };
 
-  const [nickname, setNickname] = useState(initialNickname());
+  const [nickname, setNicknameState] = useState(initialNickname());
   const editableRef = useRef(null);
+
+  useEffect(() => {
+    setNicknameState(initialNickname());
+  }, [pokemon.ownershipStatus.nickname]);
 
   const setCaretToEnd = () => {
     const range = document.createRange();
@@ -27,25 +31,26 @@ const NameComponent = ({ pokemon, editMode }) => {
 
   useEffect(() => {
     if (editMode && editableRef.current) {
-      editableRef.current.innerHTML = nickname || '&nbsp;';
+      editableRef.current.innerText = nickname;
       setCaretToEnd();
     }
   }, [editMode, nickname]);
 
   const handleInput = (event) => {
-    let newValue = event.target.innerText;
-    if (!newValue.trim()) {
-      event.target.innerHTML = '&nbsp;';
+    let newValue = event.target.innerText.trim();
+    if (!newValue) {
+      event.target.innerText = '';
+      setCaretToEnd();
+    } else if (validateNickname(newValue)) {
+      setNicknameState(newValue);
+      onNicknameChange(newValue); // Pass up immediately
     }
-    if (validateNickname(newValue.trim())) {
-      setNickname(newValue.trim());
-    }
-    setCaretToEnd();
   };
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
+      editableRef.current.blur();
     }
   };
 
@@ -58,7 +63,7 @@ const NameComponent = ({ pokemon, editMode }) => {
       <div className="name-display">
         <div className="name-center-content">
           {editMode ? (
-              <span
+            <span
               contentEditable={editMode}
               suppressContentEditableWarning={true}
               onInput={handleInput}
@@ -66,7 +71,7 @@ const NameComponent = ({ pokemon, editMode }) => {
               ref={editableRef}
               className={`name-editable-content ${editMode ? 'editable' : ''}`}
             >
-              {nickname || '&nbsp;'}
+              {nickname || ''}
             </span>
           ) : (
             <span className="name-editable-content">{nickname || getLastWord(pokemon.name)}</span>
