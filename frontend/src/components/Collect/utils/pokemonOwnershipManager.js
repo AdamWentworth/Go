@@ -422,8 +422,42 @@ export const moveHighlightedToFilter = async (highlightedCards, setHighlightedCa
     processBatch();  // Start processing
 };
 
-export const confirmMoveToFilter = (moveHighlightedToFilter, filter) => {
-    if (window.confirm(`Move selected Pokemon to ${filter}?`)) {
+export const confirmMoveToFilter = (moveHighlightedToFilter, filter, highlightedCards, Variants, ownershipData) => {
+    let messageDetails = [];  // Details for dynamic confirmation message
+
+    highlightedCards.forEach(pokemonKey => {
+        const instance = ownershipData[pokemonKey];
+        // First check if the instance exists in the ownership data
+        if (instance) {
+            let currentStatus = instance.is_unowned ? 'Unowned' :
+                                (instance.is_owned ? 'Owned' :
+                                (instance.is_for_trade ? 'For Trade' :
+                                (instance.is_wanted ? 'Wanted' : 'Unknown')));
+
+            // Handle nickname or find variant name
+            let displayName = instance.nickname;  // First try to use the nickname
+            if (!displayName) {
+                // If no nickname, derive the name from the variants
+                let keyParts = pokemonKey.split('_');
+                keyParts.pop(); // Remove the UUID part
+                let basePrefix = keyParts.join('_'); // Rejoin to form the actual prefix
+                const variant = Variants.find(v => v.pokemonKey === basePrefix);
+                displayName = variant ? variant.name : "Unknown Pokémon";  // Use variant name if available
+            }
+
+            let actionDetail = `Move ${displayName} from ${currentStatus} to ${filter}`;
+            if (!messageDetails.includes(actionDetail)) {
+                messageDetails.push(actionDetail);
+            }
+        } else {
+            // Handle the case where the pokemonKey does not have corresponding ownership data
+            let actionDetail = `Move unknown Pokémon from Unknown to ${filter}`;
+            messageDetails.push(actionDetail);
+        }
+    });
+
+    let detailedMessage = `Are you sure you want to make the following changes?\n\n${messageDetails.join('\n')}`;
+    if (window.confirm(detailedMessage)) {
         moveHighlightedToFilter(filter);
     }
 };

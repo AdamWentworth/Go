@@ -152,8 +152,8 @@ function Collect() {
 
     // // Handler for confirming the move to new Ownership filter
     const handleConfirmMoveToFilter = useCallback((filter) => {
-        confirmMoveToFilter(() => handleMoveHighlightedToFilter(filter), filter);
-    }, [handleMoveHighlightedToFilter]);
+        confirmMoveToFilter(() => handleMoveHighlightedToFilter(filter), filter, highlightedCards, variants, ownershipData);
+    }, [handleMoveHighlightedToFilter, highlightedCards, variants, ownershipData]);    
 
     // Effect to handle window resizing
     useEffect(() => {
