@@ -2,8 +2,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './HeightComponent.css';
 
-const HeightComponent = ({ pokemon, editMode }) => {
-  const [height, setHeight] = useState(pokemon.height ? String(pokemon.height) : '');
+const HeightComponent = ({ pokemon, editMode, onHeightChange }) => {
+  const [height, setHeight] = useState(pokemon.ownershipStatus.height ? String(pokemon.ownershipStatus.height) : '');
   const editableRef = useRef(null);
 
   // Helper function to move cursor to end
@@ -30,6 +30,7 @@ const HeightComponent = ({ pokemon, editMode }) => {
     const newValue = event.target.innerText.replace('m', '').trim();
     if (/^\d*\.?\d*$/.test(newValue)) { // Allow only numbers and decimal point
       setHeight(newValue);
+      onHeightChange(newValue);  // Notify parent component of the change
     } else {
       event.target.innerText = height; // Revert if invalid
     }
@@ -52,22 +53,22 @@ const HeightComponent = ({ pokemon, editMode }) => {
     <div className="height-container">
       <div className="height-display">
         <div className={`height-editable-container ${editMode ? 'editable' : ''}`}>
-            {editMode ? (
-                <span
-                    contentEditable
-                    suppressContentEditableWarning={true}
-                    onInput={handleInput}
-                    onKeyDown={handleKeyDown}
-                    ref={editableRef}
-                    className="height-editable-content"
-                >
-                    {height}
-                </span>
-            ) : (
-                <span className="height-editable-content">{height ? height : ''}</span>
-            )}
-            <span className="height-suffix">m</span>
-          </div>
+          {editMode ? (
+            <span
+              contentEditable
+              suppressContentEditableWarning={true}
+              onInput={handleInput}
+              onKeyDown={handleKeyDown}
+              ref={editableRef}
+              className="height-editable-content"
+            >
+              {height}
+            </span>
+          ) : (
+            <span className="height-editable-content">{height ? height : ''}</span>
+          )}
+          <span className="height-suffix">m</span>
+        </div>
         <div className="height-label">Height</div>
       </div>
     </div>
@@ -75,4 +76,3 @@ const HeightComponent = ({ pokemon, editMode }) => {
 };
 
 export default HeightComponent;
-

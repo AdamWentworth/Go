@@ -27,6 +27,8 @@
     padding: 0 2px; /* Padding to maintain internal spacing without affecting overall dimensions */
     margin: 0 -1px; /* Negative margin to compensate for the 1px border, effectively neutralizing its space occupation */
     line-height: 18px; /* Consistent line height to center text vertically */
+    margin-bottom: -5px;
+    margin-right: -4px;
 }
 
 .height-editable-container.editable .height-editable-content {

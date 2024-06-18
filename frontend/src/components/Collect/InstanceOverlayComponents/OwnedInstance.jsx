@@ -32,6 +32,20 @@ const OwnedInstance = ({ pokemon }) => {
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
   const [cp, setCP] = useState(pokemon.ownershipStatus.cp);
+  const [isFavorite, setIsFavorite] = useState(pokemon.ownershipStatus.favorite);
+  const [gender, setGender] = useState(pokemon.ownershipStatus.gender);
+  const [weight, setWeight] = useState(pokemon.ownershipStatus.weight);
+  const [height, setHeight] = useState(pokemon.ownershipStatus.height);
+  const [moves, setMoves] = useState({
+    fastMove: pokemon.ownershipStatus.fast_move_id,
+    chargedMove1: pokemon.ownershipStatus.charged_move1_id,
+    chargedMove2: pokemon.ownershipStatus.charged_move2_id,
+  });
+  const [ivs, setIvs] = useState({
+    Attack: pokemon.ownershipStatus.attack_iv,
+    Defense: pokemon.ownershipStatus.defense_iv,
+    Stamina: pokemon.ownershipStatus.stamina_iv
+  });
 
   const handleCPChange = (newCP) => {
     setCP(newCP);  // Update CP state
@@ -45,10 +59,48 @@ const OwnedInstance = ({ pokemon }) => {
     setNickname(newNickname);  // Update state with new nickname
   };
 
+  const handleFavoriteChange = (newFavoriteStatus) => {
+    setIsFavorite(newFavoriteStatus);  // Update state with new favorite status
+  };
+
+  const handleGenderChange = (newGender) => {
+    setGender(newGender);
+  };
+
+  const handleWeightChange = (newWeight) => {
+    setWeight(newWeight);
+  };
+
+  const handleHeightChange = (newHeight) => {
+    setHeight(newHeight);
+  };
+
+  const handleMovesChange = (newMoves) => {
+    setMoves(newMoves);
+  };
+
+  const handleIvChange = (newIvs) => {
+    setIvs(newIvs);
+  };
+
   const toggleEditMode = () => {
     if (editMode) {
       console.log("Saving changes...");
-      updateDetails(pokemon.pokemonKey, { nickname: nickname, lucky: isLucky, cp: cp });
+      updateDetails(pokemon.pokemonKey, { 
+        nickname: nickname, 
+        lucky: isLucky, 
+        cp: cp, 
+        favorite: isFavorite, 
+        gender: gender, 
+        weight: weight, 
+        height: height,
+        fast_move_id: moves.fastMove,
+        charged_move1_id: moves.chargedMove1,
+        charged_move2_id: moves.chargedMove2,
+        attack_iv: ivs.Attack,
+        defense_iv: ivs.Defense,
+        stamina_iv: ivs.Stamina
+      });
     }
     setEditMode(!editMode);
   };
@@ -59,7 +111,7 @@ const OwnedInstance = ({ pokemon }) => {
         <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
         <CPComponent pokemon={pokemon} editMode={editMode} toggleEditMode={toggleEditMode} onCPChange={handleCPChange} />
         <div className="right-stack">
-          <FavoriteComponent pokemon={pokemon} editMode={editMode} />
+          <FavoriteComponent pokemon={pokemon} editMode={editMode} onFavoriteChange={handleFavoriteChange} />
           <FriendshipComponent pokemon={pokemon} />
         </div>
       </div>
@@ -72,17 +124,17 @@ const OwnedInstance = ({ pokemon }) => {
         {pokemon.ownershipStatus.shadow ? <div className="lucky-placeholder"></div> : (
           <LuckyComponent pokemon={pokemon} onToggleLucky={handleLuckyToggle} isLucky={isLucky} editMode={editMode} />
         )}
-        <GenderComponent pokemon={pokemon} editMode={editMode} />
+        <GenderComponent pokemon={pokemon} editMode={editMode} onGenderChange={handleGenderChange} />
       </div>
       <div className="stats-container">
-        <WeightComponent pokemon={pokemon} editMode={editMode} />
+        <WeightComponent pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
         <TypeComponent pokemon={pokemon} />
-        <HeightComponent pokemon={pokemon} editMode={editMode} />
+        <HeightComponent pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
       </div>
       <div className="moves-content">
-        <MovesComponent pokemon={pokemon} editMode={editMode} />
+        <MovesComponent pokemon={pokemon} editMode={editMode} onMovesChange={handleMovesChange} />
       </div>
-      <IVComponent pokemon={pokemon} editMode={editMode} />
+      <IVComponent pokemon={pokemon} editMode={editMode} onIvChange={handleIvChange} />
       <LocationCaughtComponent pokemon={pokemon} editMode={editMode} />
       <DateCaughtComponent pokemon={pokemon} editMode={editMode} />
     </div>

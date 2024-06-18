@@ -1,9 +1,8 @@
 // MovesComponent.jsx
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './MovesComponent.css';
 
-const MovesComponent = ({ pokemon, editMode }) => {
+const MovesComponent = ({ pokemon, editMode, onMovesChange }) => {
   const allMoves = pokemon.moves;
   const fastMoves = allMoves.filter(move => move.is_fast);
   const chargedMoves = allMoves.filter(move => !move.is_fast);
@@ -22,16 +21,21 @@ const MovesComponent = ({ pokemon, editMode }) => {
     const selectedMoveId = Number(event.target.value);
     if (moveType === 'fast') {
       setFastMove(selectedMoveId);
+      onMovesChange({ fastMove: selectedMoveId, chargedMove1, chargedMove2 });
     } else if (moveType === 'charged1') {
       setChargedMove1(selectedMoveId);
+      onMovesChange({ fastMove, chargedMove1: selectedMoveId, chargedMove2 });
     } else {
       setChargedMove2(selectedMoveId);
+      onMovesChange({ fastMove, chargedMove1, chargedMove2: selectedMoveId });
     }
   };
 
   const addSecondChargedMove = () => {
     const firstAvailableMove = chargedMoves.find(move => move.move_id !== chargedMove1); // Find the first different move
-    setChargedMove2(firstAvailableMove.move_id);
+    const newChargedMove2 = firstAvailableMove.move_id;
+    setChargedMove2(newChargedMove2);
+    onMovesChange({ fastMove, chargedMove1, chargedMove2: newChargedMove2 });
   };
 
   const renderMoveOptions = (moves, selectedMove, moveType) => {

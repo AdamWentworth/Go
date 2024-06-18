@@ -1,23 +1,30 @@
 // GenderComponent.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './GenderComponent.css';
 
-const GenderComponent = ({ pokemon, editMode }) => {
-  const [gender, setGender] = useState(pokemon.gender);
+const GenderComponent = ({ pokemon, editMode, onGenderChange }) => {
+  const [gender, setGender] = useState(pokemon.ownershipStatus.gender);
   const maleIcon = `/images/male-icon.png`;
   const femaleIcon = `/images/female-icon.png`;
 
   const toggleGender = () => {
     if (editMode) {
+      let newGender;
       if (gender === 'Genderless' || gender == null) {
-        setGender('Male');
+        newGender = 'Male';
       } else if (gender === 'Male') {
-        setGender('Female');
+        newGender = 'Female';
       } else if (gender === 'Female') {
-        setGender('Genderless');
+        newGender = 'Genderless';
       }
+      setGender(newGender);
+      onGenderChange(newGender);  // Notify parent component of the change
     }
   };
+
+  useEffect(() => {
+    setGender(pokemon.ownershipStatus.gender);  // Reset state when pokemon changes
+  }, [pokemon]);
 
   return (
     <div className={`gender-container ${editMode ? 'editable' : ''}`} onClick={toggleGender} role="button" aria-label={`Change gender to ${gender === 'Male' ? 'Female' : gender === 'Female' ? 'Genderless' : 'Male'}`}>
@@ -28,7 +35,7 @@ const GenderComponent = ({ pokemon, editMode }) => {
         {(gender === 'Genderless' || gender == null) && <span className="gender-text">Genderless</span>}
       </div>
     </div>
-  );G
+  );
 };
 
 export default GenderComponent;

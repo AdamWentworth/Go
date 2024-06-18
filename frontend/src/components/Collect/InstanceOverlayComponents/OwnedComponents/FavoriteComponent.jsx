@@ -1,8 +1,9 @@
 // FavoriteComponent.jsx
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import './FavoriteComponent.css'
 
-const FavoriteComponent = ({ pokemon, editMode }) => {
+const FavoriteComponent = ({ pokemon, editMode, onFavoriteChange }) => {
   const [isFavorite, setIsFavorite] = useState(pokemon.ownershipStatus.favorite);
 
   const favoriteImage = isFavorite
@@ -11,9 +12,15 @@ const FavoriteComponent = ({ pokemon, editMode }) => {
 
   const toggleFavorite = () => {
     if (editMode) {
-      setIsFavorite(!isFavorite);
+      const newFavoriteStatus = !isFavorite;
+      setIsFavorite(newFavoriteStatus);
+      onFavoriteChange(newFavoriteStatus);  // Notify parent component of the change
     }
   };
+
+  useEffect(() => {
+    setIsFavorite(pokemon.ownershipStatus.favorite);  // Reset state when pokemon changes
+  }, [pokemon]);
 
   return (
     <div className={`favorite-component ${editMode ? 'editable' : ''}`} onClick={toggleFavorite}>
@@ -23,4 +30,5 @@ const FavoriteComponent = ({ pokemon, editMode }) => {
 }
 
 export default FavoriteComponent;
+
 

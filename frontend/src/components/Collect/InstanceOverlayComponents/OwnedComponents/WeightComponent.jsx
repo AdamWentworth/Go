@@ -2,8 +2,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './WeightComponent.css';
 
-const WeightComponent = ({ pokemon, editMode }) => {
-  const [weight, setWeight] = useState(pokemon.weight ? String(pokemon.weight) : '');
+const WeightComponent = ({ pokemon, editMode, onWeightChange }) => {
+  const [weight, setWeight] = useState(pokemon.ownershipStatus.weight ? String(pokemon.ownershipStatus.weight) : '');
   const editableRef = useRef(null);
 
   // Helper function to move cursor to end
@@ -30,6 +30,7 @@ const WeightComponent = ({ pokemon, editMode }) => {
     const newValue = event.target.innerText.replace('kg', '').trim();
     if (/^\d*\.?\d*$/.test(newValue)) { // Allow only numbers and decimal point
       setWeight(newValue);
+      onWeightChange(newValue);  // Notify parent component of the change
     } else {
       event.target.innerText = weight;
     }
@@ -52,22 +53,22 @@ const WeightComponent = ({ pokemon, editMode }) => {
     <div className="weight-container">
       <div className="weight-display">
         <div className={`weight-editable-container ${editMode ? 'editable' : ''}`}>
-            {editMode ? (
-                <span
-                    contentEditable
-                    suppressContentEditableWarning={true}
-                    onInput={handleInput}
-                    onKeyDown={handleKeyDown}
-                    ref={editableRef}
-                    className="weight-editable-content"
-                >
-                    {weight}
-                </span>
-            ) : (
-                <span className="weight-editable-content">{weight}</span>
-            )}
-            <span className="weight-suffix">kg</span>
-          </div>
+          {editMode ? (
+            <span
+              contentEditable
+              suppressContentEditableWarning={true}
+              onInput={handleInput}
+              onKeyDown={handleKeyDown}
+              ref={editableRef}
+              className="weight-editable-content"
+            >
+              {weight}
+            </span>
+          ) : (
+            <span className="weight-editable-content">{weight}</span>
+          )}
+          <span className="weight-suffix">kg</span>
+        </div>
         <div className="weight-label">Weight</div>
       </div>
     </div>

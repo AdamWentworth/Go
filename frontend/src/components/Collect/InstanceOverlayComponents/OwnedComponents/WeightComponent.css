@@ -24,9 +24,11 @@
     display: inline-block; /* Ensure the element behaves inline */
     min-width: 10px; /* Ensure there's space for the cursor */
     text-align: right; /* Align text to the right */
-    padding: 0 2px; /* Padding to maintain internal spacing without affecting overall dimensions */
-    margin: 0 -1px; /* Negative margin to compensate for the 1px border, effectively neutralizing its space occupation */
-    line-height: 18px; /* Consistent line height to center text vertically */
+    padding: 0 2px;
+    margin: 0 -1px;
+    line-height: 18px;
+    margin-bottom: -5px;
+    margin-right: -4px;
 }
 
 .weight-editable-container.editable .weight-editable-content {
