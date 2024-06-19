@@ -1,4 +1,8 @@
 // pokemonStorageManager.js
+
+import { generateUUID, validateUUID } from '../utils/PokemonIDUtils';
+import { createNewDataForVariant } from './pokemonOwnershipManager';
+
 const cacheStorageName = 'pokemonCache'; // Consistent cache name
 const ownershipDataCacheKey = "pokemonOwnership";
 
