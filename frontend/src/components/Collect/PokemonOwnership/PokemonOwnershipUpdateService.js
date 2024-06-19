@@ -43,7 +43,7 @@ function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData, v
 
 function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey, variants) {
     const instance = ownershipData[pokemonKey];
-    console.log(`Updating status for instance ${pokemonKey} to ${newStatus}`);
+    // console.log(`Updating status for instance ${pokemonKey} to ${newStatus}`);
 
     if ((newStatus === 'Trade' && instance.lucky) || instance.shadow) {
         alert(`Cannot move ${baseKey} to Trade as it is ${instance.lucky ? 'lucky' : 'shadow'}.`);

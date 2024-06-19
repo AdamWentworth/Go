@@ -49,3 +49,24 @@
 .friendship-slider {
     width: 100%;
 }
+
+.wanted-list-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+    overflow-y: auto; /* Enables scrolling */
+    max-height: 400px; /* Adjust based on your layout */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.wanted-list-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, and Opera */
+}
+
+.trade-item img {
+    width: 120px; /* Adjusts width */
+    height: auto; /* Maintains aspect ratio */
+    border-radius: 8px; /* Rounds corners */
+}

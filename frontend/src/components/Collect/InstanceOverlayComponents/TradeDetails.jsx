@@ -36,16 +36,19 @@ const TradeDetails = ({ pokemon }) => {
         if (entries.length === 0) {
             return <div>No trades listed.</div>;
         }
-        return entries.map(([key, details]) => (
-            <div key={key} className="trade-item">
-                <img 
-                    src={details.currentImage} // Use the image URL from the details object
-                    alt={`Pokemon ${details.pokemon_id}`}
-                    className="pokemon-image"
-                />
+        return (
+            <div className="wanted-list-container">
+                {entries.map(([key, details]) => (
+                    <div key={key} className="trade-item">
+                        <img 
+                            src={details.currentImage} // Use the image URL from the details object
+                            alt={`${key}`} // Provide a meaningful alternative text
+                        />
+                    </div>
+                ))}
             </div>
-        ));
-    };
+        );
+    };    
 
     const handleFriendshipChange = (e) => {
         const newFriendshipLevel = parseInt(e.target.value, 10);
