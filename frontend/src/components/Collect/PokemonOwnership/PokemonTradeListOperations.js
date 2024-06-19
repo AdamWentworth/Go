@@ -6,6 +6,7 @@ import { createNewDataForVariant } from "./pokemonOwnershipManager";
 
 export function updateTradeList(pokemonKey, ownershipData, variants, newStatus) {
     const { baseKey, hasUUID } = parsePokemonKey(pokemonKey);
+    console.log(ownershipData);
 
     const variantData = variants.find(variant => variant.pokemonKey === baseKey);
     if (!variantData) {
@@ -13,22 +14,23 @@ export function updateTradeList(pokemonKey, ownershipData, variants, newStatus) 
         return;
     }
 
-    if (!hasUUID) {
-        let needNewInstance = true;
-        Object.keys(ownershipData).forEach(key => {
-            // Check if the key starts with the pokemonKey and if the instance is unowned and not wanted
-            if (key.startsWith(pokemonKey) && ownershipData[key].is_unowned && !ownershipData[key].is_wanted) {
-                pokemonKey = key; // Reassign to existing key meeting the criteria
-                needNewInstance = false;
-            }
-        });
+    // if (!hasUUID) {
+    //     let needNewInstance = true;
+    //     Object.keys(ownershipData).forEach(key => {
+    //     // Check if the key starts with the pokemonKey and if the instance is unowned and not wanted
+    //     if (key.startsWith(pokemonKey)) {
+    //         console.log(ownershipData[key])
+    //         pokemonKey = key;
+    //         needNewInstance = false;
+    //         }
+    //     });
 
-        // If no suitable instance is found, create a new one
-        if (needNewInstance) {
-            pokemonKey = `${baseKey}_${generateUUID()}`; // Create a new key with UUID
-            ownershipData[pokemonKey] = createNewDataForVariant(variantData);
-        }
-    }
+    //     // If no suitable instance is found, create a new one
+    //     if (needNewInstance) {
+    //         pokemonKey = `${pokemonKey}_${generateUUID()}`;
+    //         ownershipData[pokemonKey] = createNewDataForVariant(variantData);
+    //     }
+    // }
 
     const instance = ownershipData[pokemonKey];
     // Initialize both lists for the current instance

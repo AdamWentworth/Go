@@ -26,10 +26,10 @@ export function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershi
 function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData, variants) {
     let needNewInstance = true;
     Object.keys(ownershipData).forEach(key => {
-        // Check if the key starts with the pokemonKey and if the instance is unowned and not wanted
-        if (key.startsWith(pokemonKey) && ownershipData[key].is_unowned && !ownershipData[key].is_wanted) {
-            updateInstanceStatus(key, newStatus, ownershipData, pokemonKey, variants);
-            needNewInstance = false;
+    // Check if the key starts with the pokemonKey and if the instance is unowned and not wanted
+    if (key.startsWith(pokemonKey) && ownershipData[key].is_unowned && !ownershipData[key].is_wanted) {
+        updateInstanceStatus(key, newStatus, ownershipData, pokemonKey, variants);
+        needNewInstance = false;
         }
     });
 
