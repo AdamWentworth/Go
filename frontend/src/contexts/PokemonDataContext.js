@@ -2,8 +2,9 @@
 
 import React, { useContext, createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { getPokemons } from '../components/Collect/utils/api';
-import { updatePokemonOwnership, updatePokemonDetails } from '../components/Collect/utils/pokemonOwnershipManager';
-import { initializeOrUpdateOwnershipData, initializeOrUpdateOwnershipDataAsync } from '../components/Collect/utils/pokemonOwnershipStorage';
+import { updatePokemonDetails } from '../components/Collect/PokemonOwnership/pokemonOwnershipManager';
+import { updatePokemonOwnership } from '../components/Collect/PokemonOwnership/PokemonOwnershipUpdateService';
+import { initializeOrUpdateOwnershipData, initializeOrUpdateOwnershipDataAsync } from '../components/Collect/PokemonOwnership/pokemonOwnershipStorage';
 import createPokemonVariants from '../components/Collect/utils/createPokemonVariants';
 import { determinePokemonKey, preloadImage } from '../components/Collect/utils/imageHelpers'; 
 import { isDataFresh } from '../components/Collect/utils/cacheHelpers';

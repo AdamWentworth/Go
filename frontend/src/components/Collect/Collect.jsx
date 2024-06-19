@@ -9,8 +9,8 @@ import SortOverlay from './SortOverlay';
 import { usePokemonData } from '../../contexts/PokemonDataContext'; // Import the context hook
 import useSortManager from './hooks/useSortManager';
 import useFilterPokemons from './hooks/useFilterPokemons';
-import { confirmMoveToFilter } from './utils/pokemonOwnershipManager';
-import { getFilteredPokemonsByOwnership } from './utils/PokemonOwnershipFilter';
+import { confirmMoveToFilter } from './PokemonOwnership/pokemonOwnershipManager';
+import { getFilteredPokemonsByOwnership } from './PokemonOwnership/PokemonOwnershipFilter';
 
 const PokemonListMemo = React.memo(PokemonList);
 const HeaderUIMemo = React.memo(HeaderUI);
