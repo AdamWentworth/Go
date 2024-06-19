@@ -5,7 +5,7 @@ import EditSaveComponent from './EditSaveComponent';
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
 
 const TradeDetails = ({ pokemon }) => {
-    const { friendship_level, pref_lucky, mirror, trade_list } = pokemon.ownershipStatus;
+    const { friendship_level, pref_lucky, mirror, wanted_list } = pokemon.ownershipStatus;
     const [editMode, setEditMode] = useState(false);
     const [isLucky, setIsLucky] = useState(pref_lucky);
     const [isMirror, setIsMirror] = useState(mirror);
@@ -31,8 +31,8 @@ const TradeDetails = ({ pokemon }) => {
         setIsMirror(!isMirror);
     };
 
-    const renderTradeListDetails = () => {
-        const entries = Object.entries(trade_list);
+    const renderWantedListDetails = () => {
+        const entries = Object.entries(wanted_list);
         if (entries.length === 0) {
             return <div>No trades listed.</div>;
         }
@@ -110,8 +110,8 @@ const TradeDetails = ({ pokemon }) => {
             </div>
             {renderFriendshipLevel()}
             <div>
-                <strong>Trade List:</strong>
-                {renderTradeListDetails()}
+                <strong>Wanted List:</strong>
+                {renderWantedListDetails()}
             </div>
         </div>
     );

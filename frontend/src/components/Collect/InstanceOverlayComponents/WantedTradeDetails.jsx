@@ -116,7 +116,7 @@ const WantedTradeDetails = ({ pokemon }) => {
                 />
             </div>
             {renderFriendshipLevel()}
-            <div><strong>Trade List:</strong> {renderTradeListDetails()}</div>
+            <div><strong>For Trade:</strong> {renderTradeListDetails()}</div>
         </div>
     );
 };

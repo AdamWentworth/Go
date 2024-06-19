@@ -1,5 +1,7 @@
-import { generateUUID, validateUUID } from '../utils/PokemonIDUtils';
+import { generateUUID } from '../utils/PokemonIDUtils';
 import { createNewDataForVariant } from './pokemonOwnershipManager';
+import { updateTradeList } from './PokemonTradeListOperations';
+import { parsePokemonKey } from '../utils/PokemonIDUtils';
 
 export function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershipData, setOwnershipData) {
     const { baseKey, hasUUID } = parsePokemonKey(pokemonKey);
@@ -20,22 +22,6 @@ export function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershi
         setOwnershipData(ownershipData);  // This should trigger a re-render
     }, 0);
 }
-
-function parsePokemonKey(pokemonKey) {
-    const keyParts = pokemonKey.split('_');
-    const possibleUUID = keyParts[keyParts.length - 1];
-    const hasUUID = validateUUID(possibleUUID);
-
-    if (hasUUID) {
-        keyParts.pop();  // Remove the UUID part if it's valid
-    }
-
-    return {
-        baseKey: keyParts.join('_'),
-        hasUUID
-    };
-}
-
 
 function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData, variants) {
     let needNewInstance = true;
@@ -194,61 +180,4 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
             }
             break;            
     }
-}
-
-
-function updateTradeList(pokemonKey, ownershipData, variants, newStatus) {
-    console.log("Starting trade list update for:", pokemonKey);
-
-    const instance = ownershipData[pokemonKey];
-    instance.trade_list = {};
-    console.log("Trade list cleared.");
-
-    const relatedInstances = Object.entries(ownershipData).filter(([key, _]) => key !== pokemonKey);
-    console.log("Related instances found:", relatedInstances.length);
-
-    relatedInstances.forEach(([key, otherInstance]) => {
-        const { baseKey: baseKeyOfOther } = parsePokemonKey(key);
-        const otherVariantDetails = variants.find(variant => variant.pokemonKey === baseKeyOfOther);
-        const currentVariantDetails = variants.find(variant => variant.pokemonKey === parsePokemonKey(pokemonKey).baseKey);
-
-        if (otherVariantDetails && currentVariantDetails) {
-            const simplifiedInstanceDetail = {
-                pokemonKey: key,
-                currentImage: otherVariantDetails.currentImage
-            };
-
-            if (newStatus === 'Trade' && otherInstance.is_wanted) {
-                console.log(`Adding to trade list for trade: ${key}`);
-                instance.trade_list[key] = simplifiedInstanceDetail;
-
-                if (!otherInstance.trade_list) {
-                    otherInstance.trade_list = {};
-                    console.log(`Initializing trade list for reciprocal instance: ${key}`);
-                }
-                otherInstance.trade_list[pokemonKey] = {
-                    pokemonKey: pokemonKey,
-                    currentImage: currentVariantDetails.currentImage
-                };
-                console.log(`Reciprocal update done for: ${key}`);
-            }
-            else if (newStatus === 'Wanted' && otherInstance.is_for_trade) {
-                console.log(`Adding to trade list for wanted: ${key}`);
-                instance.trade_list[key] = simplifiedInstanceDetail;
-
-                if (!otherInstance.trade_list) {
-                    otherInstance.trade_list = {};
-                    console.log(`Initializing trade list for reciprocal instance: ${key}`);
-                }
-                otherInstance.trade_list[pokemonKey] = {
-                    pokemonKey: pokemonKey,
-                    currentImage: currentVariantDetails.currentImage
-                };
-                console.log(`Reciprocal update done for: ${key}`);
-            }
-        } else {
-            console.log("No variant details available for:", baseKeyOfOther);
-        }
-    });
-    console.log("Trade list update completed for:", pokemonKey);
 }

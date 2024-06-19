@@ -31,3 +31,18 @@ export function getKeyParts(key) {
     }
     return parts;
 }
+
+export function parsePokemonKey(pokemonKey) {
+    const keyParts = pokemonKey.split('_');
+    const possibleUUID = keyParts[keyParts.length - 1];
+    const hasUUID = validateUUID(possibleUUID);
+
+    if (hasUUID) {
+        keyParts.pop();  // Remove the UUID part if it's valid
+    }
+
+    return {
+        baseKey: keyParts.join('_'),
+        hasUUID
+    };
+}

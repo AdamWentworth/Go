@@ -40,7 +40,8 @@ export function createNewDataForVariant(variant) {
         is_owned: false,
         is_for_trade: false,
         is_wanted: false,
-        trade_list: {}
+        trade_list: {},
+        wanted_list: {}
     };
 }
 
