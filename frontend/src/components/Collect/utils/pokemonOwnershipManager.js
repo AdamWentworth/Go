@@ -145,6 +145,7 @@ function createNewDataForVariant(variant) {
         height: null,
         gender: null,
         mirror: false,
+        pref_lucky: false,
         registered: false,
         favorite: false,
         location_card: null,

@@ -2,7 +2,13 @@
 import React from 'react';
 import './InstanceOverlay.css';
 import OwnedInstance from './InstanceOverlayComponents/OwnedInstance';
+
+import TradeInstance from './InstanceOverlayComponents/TradeInstance';
 import TradeDetails from './InstanceOverlayComponents/TradeDetails';
+
+import WantedInstance from './InstanceOverlayComponents/WantedInstance';
+import WantedTradeDetails from './InstanceOverlayComponents/WantedTradeDetails';
+
 import WindowOverlay from './WindowOverlay';  // Ensure WindowOverlay is imported correctly
 
 const InstanceOverlay = ({ pokemon, onClose, ownershipFilter }) => {
@@ -25,9 +31,9 @@ const InstanceOverlay = ({ pokemon, onClose, ownershipFilter }) => {
       case 'Trade':
         return (
           <div className="trade-instance-overlay">
-              <div className="overlay-row other-overlays-row">
-              <WindowOverlay onClose={onClose} className="owned-instance-window">
-                <OwnedInstance pokemon={pokemon} />
+            <div className="overlay-row other-overlays-row">
+              <WindowOverlay onClose={onClose} className="trade-instance-window">
+                <TradeInstance pokemon={pokemon} />
               </WindowOverlay>
               <WindowOverlay onClose={onClose} className="trade-details-window">
                 <TradeDetails pokemon={pokemon} />
@@ -36,7 +42,18 @@ const InstanceOverlay = ({ pokemon, onClose, ownershipFilter }) => {
           </div>
         );
       case 'Wanted':
-        return <div>Wanted Instance Component</div>; // Placeholder for WantedInstance component
+        return (
+          <div className="wanted-instance-overlay">
+            <div className="overlay-row other-overlays-row">
+              <WindowOverlay onClose={onClose} className="wanted-instance-window">
+                <WantedInstance pokemon={pokemon} />
+              </WindowOverlay>
+              <WindowOverlay onClose={onClose} className="trade-details-window">
+                <WantedTradeDetails pokemon={pokemon} />
+              </WindowOverlay>
+            </div>
+          </div>
+        );
       default:
         return null;
     }

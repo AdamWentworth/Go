@@ -1,10 +1,10 @@
-// TradeDetails.jsx
+// WantedTradeDetails.jsx
 import React, { useState, useContext } from 'react';
-import './TradeDetails.css';
+import './WantedTradeDetails.css';
 import EditSaveComponent from './EditSaveComponent';
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
 
-const TradeDetails = ({ pokemon }) => {
+const WantedTradeDetails = ({ pokemon }) => {
     const { friendship_level, pref_lucky, mirror, trade_list } = pokemon.ownershipStatus;
     const [editMode, setEditMode] = useState(false);
     const [isLucky, setIsLucky] = useState(pref_lucky);
@@ -115,4 +115,4 @@ const TradeDetails = ({ pokemon }) => {
     );
 };
 
-export default TradeDetails;
+export default WantedTradeDetails;

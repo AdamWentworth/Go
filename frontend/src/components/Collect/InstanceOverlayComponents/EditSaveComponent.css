@@ -1,0 +1,19 @@
+.edit-save-container {
+    display: flex;
+    align-items: center;
+    z-index: 10; /* Ensures it is above other elements */
+}
+.edit-save-container .icon-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+  
+.edit-save-container .icon-button img {
+    width: 24px; /* Adequate size for easy clicking */
+    height: 24px;
+    display: block; /* Ensures the image is treated as a block element, making it easier to manage */
+}

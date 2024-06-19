@@ -1,6 +1,6 @@
-// OwnedInstance.jsx
+// TradeInstance.jsx
 import React, { useState, useContext } from 'react';
-import './OwnedInstance.css';
+import './TradeInstance.css';
 
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext'; 
 
@@ -10,7 +10,6 @@ import FavoriteComponent from './OwnedComponents/FavoriteComponent';
 
 import NameComponent from './OwnedComponents/NameComponent';
 
-import LuckyComponent from './OwnedComponents/LuckyComponent';
 import GenderComponent from './OwnedComponents/GenderComponent';
 
 import WeightComponent from './OwnedComponents/WeightComponent';
@@ -23,11 +22,10 @@ import IVComponent from './OwnedComponents/IVComponent';
 import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
 
-const OwnedInstance = ({ pokemon }) => {
+const TradeInstance = ({ pokemon }) => {
   // console.log("Initial Pokemon Data: ", pokemon);
 
   const { updateDetails } = useContext(PokemonDataContext);
-  const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
   const [cp, setCP] = useState(pokemon.ownershipStatus.cp);
@@ -50,10 +48,6 @@ const OwnedInstance = ({ pokemon }) => {
 
   const handleCPChange = (newCP) => {
     setCP(newCP);  // Update CP state
-  };
-
-  const handleLuckyToggle = (newLuckyStatus) => {
-    setIsLucky(newLuckyStatus);
   };
 
   const handleNicknameChange = (newNickname) => {
@@ -96,8 +90,7 @@ const OwnedInstance = ({ pokemon }) => {
     if (editMode) {
       console.log("Saving changes...");
       updateDetails(pokemon.pokemonKey, { 
-        nickname: nickname, 
-        lucky: isLucky, 
+        nickname: nickname,
         cp: cp, 
         favorite: isFavorite, 
         gender: gender, 
@@ -126,16 +119,10 @@ const OwnedInstance = ({ pokemon }) => {
         </div>
       </div>
       <div className="pokemon-image-container">
-        {isLucky && <img src={process.env.PUBLIC_URL + '/images/lucky.png'} alt="Lucky Backdrop" className="lucky-backdrop" />}
         <img src={process.env.PUBLIC_URL + pokemon.currentImage} alt={pokemon.name} className="pokemon-image" />
       </div>
       <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
-      <div className="gender-lucky-row">
-        {pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade ? <div className="lucky-placeholder"></div> : (
-          <LuckyComponent pokemon={pokemon} onToggleLucky={handleLuckyToggle} isLucky={isLucky} editMode={editMode} />
-        )}
-        <GenderComponent pokemon={pokemon} editMode={editMode} onGenderChange={handleGenderChange} />
-      </div>
+      <GenderComponent pokemon={pokemon} editMode={editMode} onGenderChange={handleGenderChange} />
       <div className="stats-container">
         <WeightComponent pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
         <TypeComponent pokemon={pokemon} />
@@ -151,4 +138,4 @@ const OwnedInstance = ({ pokemon }) => {
   );
 }
 
-export default OwnedInstance;
+export default TradeInstance;
