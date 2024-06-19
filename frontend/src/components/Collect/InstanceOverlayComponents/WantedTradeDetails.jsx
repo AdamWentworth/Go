@@ -37,12 +37,18 @@ const WantedTradeDetails = ({ pokemon }) => {
     };
 
     const renderTradeListDetails = () => {
-        const keys = Object.keys(trade_list);
-        if (keys.length === 0) {
-            return "No trades listed.";
+        const entries = Object.entries(trade_list);
+        if (entries.length === 0) {
+            return <div>No trades listed.</div>;
         }
-        return keys.map(key => (
-            <div key={key}>{key}: {trade_list[key]}</div>
+        return entries.map(([key, details]) => (
+            <div key={key} className="trade-item">
+                <img 
+                    src={details.currentImage} // Use the image URL from the details object
+                    alt={`Pokemon ${details.pokemon_id}`}
+                    className="pokemon-image"
+                />
+            </div>
         ));
     };
 
@@ -92,7 +98,7 @@ const WantedTradeDetails = ({ pokemon }) => {
             <div className="top-row">
                 <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
             </div>
-            <h2>Trade Details</h2>
+            <h2>Wanted Trade Details</h2>
             <div className="icon-row">
                 <img 
                     src={process.env.PUBLIC_URL + '/images/mirror.png'} 

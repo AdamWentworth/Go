@@ -21,46 +21,47 @@ const TradeDetails = ({ pokemon }) => {
     };
 
     const toggleLucky = () => {
-        if (editMode) {
-            const newLuckyStatus = !isLucky;
-            setIsLucky(newLuckyStatus);
-            if (newLuckyStatus) {
-                setFriendship(4); // Automatically set to max friendship if lucky is toggled on
-            }
+        setIsLucky(!isLucky);
+        if (!isLucky) {  // If becoming lucky
+            setFriendship(4); // Automatically set to max friendship if lucky is toggled on
         }
     };
 
     const toggleMirror = () => {
-        if (editMode) {
-            setIsMirror(!isMirror);
-        }
+        setIsMirror(!isMirror);
     };
 
     const renderTradeListDetails = () => {
-        const keys = Object.keys(trade_list);
-        if (keys.length === 0) {
-            return "No trades listed.";
+        const entries = Object.entries(trade_list);
+        if (entries.length === 0) {
+            return <div>No trades listed.</div>;
         }
-        return keys.map(key => (
-            <div key={key}>{key}: {trade_list[key]}</div>
+        return entries.map(([key, details]) => (
+            <div key={key} className="trade-item">
+                <img 
+                    src={details.currentImage} // Use the image URL from the details object
+                    alt={`Pokemon ${details.pokemon_id}`}
+                    className="pokemon-image"
+                />
+            </div>
         ));
     };
 
     const handleFriendshipChange = (e) => {
         const newFriendshipLevel = parseInt(e.target.value, 10);
         setFriendship(newFriendshipLevel);
-    
         // Automatically disable 'Lucky' if friendship level is less than maximum
         if (newFriendshipLevel < 4) {
             setIsLucky(false);
         }
-    };    
+    };
 
     const renderFriendshipLevel = () => {
         const hearts = [];
         for (let i = 0; i < 4; i++) {
             hearts.push(
                 <img 
+                    key={i}
                     src={`${process.env.PUBLIC_URL}/images/${i < friendship ? 'heart-filled' : 'heart-unfilled'}.png`}
                     alt={`Friendship Level ${i < friendship ? 'Filled' : 'Unfilled'}`}
                     className="heart"
@@ -70,9 +71,7 @@ const TradeDetails = ({ pokemon }) => {
 
         return (
             <div className="friendship-level-container">
-                <div className="hearts">
-                    {hearts}
-                </div>
+                <div className="hearts">{hearts}</div>
                 {editMode && (
                     <input
                         type="range"
@@ -110,7 +109,10 @@ const TradeDetails = ({ pokemon }) => {
                 />
             </div>
             {renderFriendshipLevel()}
-            <div><strong>Trade List:</strong> {renderTradeListDetails()}</div>
+            <div>
+                <strong>Trade List:</strong>
+                {renderTradeListDetails()}
+            </div>
         </div>
     );
 };
