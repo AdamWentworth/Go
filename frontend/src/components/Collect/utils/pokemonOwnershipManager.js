@@ -1,123 +1,6 @@
 //pokemonOwnershipManager.js
-import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
-const cacheStorageName = 'pokemonCache'; // Consistent cache name
+import { generateUUID, validateUUID, getKeyParts } from './PokemonIDUtils';
 const ownershipDataCacheKey = "pokemonOwnership";
-
-export function initializeOrUpdateOwnershipData(keys, variants) {
-    let rawOwnershipData = localStorage.getItem(ownershipDataCacheKey);
-
-    let storedData = rawOwnershipData ? JSON.parse(rawOwnershipData) : {};
-    console.log("Parsed ownershipData:", storedData);  // Verify parsed data
-
-     // Safeguard to ensure top-level data and timestamp only
-     if (storedData.data && storedData.timestamp) {
-        storedData = storedData.data; // Unwrap if wrapped correctly
-    }
-
-    let shouldUpdateStorage = false;
-    let updates = {};
-    
-    variants.forEach((variant, index) => {
-        const key = keys[index]; // Ensure keys and variants are synchronized by index
-        // Check if any existing key starts with the provided key
-        if (!Object.keys(storedData).some(existingKey => existingKey.startsWith(key))) {
-            const fullKey = `${key}_${uuidv4()}`; // Append UUID to create a full key
-            storedData[fullKey] = createNewDataForVariant(variant); // Use variant here instead of fullKey
-            updates[fullKey] = storedData[fullKey];
-            shouldUpdateStorage = true;
-        }
-    });
-
-    // Save updates if necessary
-    if (shouldUpdateStorage) {
-        console.log('Added new ownership data for keys:', updates);
-        localStorage.setItem(ownershipDataCacheKey, JSON.stringify({ data: storedData, timestamp: Date.now() }));
-    } else {
-        console.log('No ownership updates required.');
-    }
-    return storedData
-}
-
-export async function initializeOrUpdateOwnershipDataAsync(keys, variants) {
-    try {
-        // Open the cache
-        const cache = await caches.open(cacheStorageName);
-        
-        // Retrieve the cached response
-        const response = await cache.match(ownershipDataCacheKey);
-        let storedData = response ? await response.json() : {};
-        console.log("Parsed ownershipData:", storedData);  // Verify parsed data
-
-        // Unwrap if wrapped correctly
-        if (storedData.data && storedData.timestamp) {
-            storedData = storedData.data;
-        }
-
-        let shouldUpdateStorage = false;
-        let updates = {};
-
-        // Convert the stored keys into a set of prefixes by isolating the UUID part if present
-        const existingKeys = new Set(Object.keys(storedData).map(key => {
-            const keyParts = key.split('_');
-            const possibleUUID = keyParts[keyParts.length - 1];
-            if (uuidValidate(possibleUUID)) {
-                // If the last part is a UUID, return the key without the UUID
-                keyParts.pop();
-            }
-            return keyParts.join('_'); // Rejoin the remaining parts to form the base key
-        }));
-
-        variants.forEach((variant, index) => {
-            const key = keys[index];
-            // Check if the base part of any existing key matches the provided key
-            if (!existingKeys.has(key)) {
-                const fullKey = `${key}_${uuidv4()}`; // Append UUID to create a full key
-                storedData[fullKey] = createNewDataForVariant(variant);
-                updates[fullKey] = storedData[fullKey];
-                shouldUpdateStorage = true;
-            }
-        });
-
-        if (shouldUpdateStorage) {
-            console.log('Added new ownership data for keys:', updates);
-        } else {
-            console.log('No ownership updates required.');
-        }
-
-        return storedData;
-    } catch (error) {
-        console.error('Error updating ownership data:', error);
-        throw new Error('Failed to update ownership data');
-    }
-}
-
-const getKeyParts = (key) => {
-
-    const parts = {
-        pokemonId: parseInt(key.split('-')[0]),
-        costumeName: null,
-        isShiny: key.includes("_shiny") || key.includes("-shiny"),
-        isDefault: key.includes("_default") || key.includes("-default"),
-        isShadow: key.includes("_shadow") || key.includes("-shadow")
-    };
-
-    let costumeSplit = key.split('-')[1];
-    if (costumeSplit) {
-
-        // Check for the presence of known suffixes and adjust the split accordingly
-        if (parts.isShiny) {
-            costumeSplit = costumeSplit.split('_shiny')[0];
-        } else if (parts.isDefault) {
-            costumeSplit = costumeSplit.split('_default')[0];
-        } else if (parts.isShadow) {
-            costumeSplit = costumeSplit.split('_shadow')[0];
-        }
-        parts.costumeName = costumeSplit;
-
-    }
-
-    return parts;
-};
 
 function createNewDataForVariant(variant) {
 
@@ -161,49 +44,10 @@ function createNewDataForVariant(variant) {
     };
 }
 
-export function getFilteredPokemonsByOwnership(variants, ownershipData, filter) {
-    // Adjust the filter if necessary to handle special cases
-    const adjustedFilter = filter === 'Trade' ? 'for_trade' : filter;
-    const filterKey = `is_${adjustedFilter.toLowerCase()}`;
-    console.log(`Filtering for status: ${filterKey}`);
-
-    // Get all keys that match the filter criteria, including their UUIDs
-    const filteredKeys = Object.entries(ownershipData)
-        .filter(([key, data]) => data[filterKey])
-        .map(([key]) => key);  // Maintain the full key with UUID
-
-    // Map the filtered keys to their corresponding variant data
-    const filteredPokemons = filteredKeys.map(key => {
-        // Dynamically determine the base key based on the presence of a UUID
-        const keyParts = key.split('_');
-        const possibleUUID = keyParts[keyParts.length - 1];
-        const hasUUID = uuidValidate(possibleUUID);
-        let baseKey;
-
-        if (hasUUID) {
-            keyParts.pop(); // Remove the UUID part for matching in variants
-            baseKey = keyParts.join('_');
-        } else {
-            baseKey = key; // Use the full key if no UUID is present
-        }
-        const variant = variants.find(v => v.pokemonKey === baseKey);
-        if (variant) {
-            return {
-                ...variant,
-                pokemonKey: key,  // Use the full key to maintain uniqueness
-                ownershipStatus: ownershipData[key]  // Optional: include ownership data if needed
-            };
-        }
-    }).filter(pokemon => pokemon !== undefined);  // Filter out any undefined results due to missing variants
-
-    console.log(`Pokémons after applying filter:`, filteredPokemons);
-    return filteredPokemons;
-}
-
 export function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershipData, setOwnershipData) {
     const keyParts = pokemonKey.split('_');
     const possibleUUID = keyParts[keyParts.length - 1];
-    const hasUUID = uuidValidate(possibleUUID);
+    const hasUUID = validateUUID(possibleUUID);
     let baseKey;
 
     if (hasUUID) {
@@ -254,7 +98,7 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
     relatedInstances.forEach(([key, otherInstance]) => {
         let keyParts = key.split('_');
         const possibleUUID = keyParts.pop(); // Assume last part could be a UUID
-        let baseKeyOfOther = uuidValidate(possibleUUID) ? keyParts.join('_') : key; // Reassemble base key if UUID is valid
+        let baseKeyOfOther = validateUUID(possibleUUID) ? keyParts.join('_') : key; // Reassemble base key if UUID is valid
 
         const variantDetails = variants.find(variant => variant.pokemonKey === baseKeyOfOther);
 
@@ -293,7 +137,7 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
                 let keyParts = pokemonKey.split('_');
                 keyParts.pop(); // Remove the UUID part
                 let basePrefix = keyParts.join('_'); // Rejoin to form the actual prefix
-                const newKey = `${basePrefix}_${uuidv4()}`;
+                const newKey = `${basePrefix}_${generateUUID()}`;
                 const newData = { 
                     ...instance,
                     is_wanted: true,
@@ -362,7 +206,7 @@ function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData, v
 
     // If no suitable instance is found, create a new one
     if (needNewInstance) {
-        const newKey = `${pokemonKey}_${uuidv4()}`;
+        const newKey = `${pokemonKey}_${generateUUID()}`;
         ownershipData[newKey] = createNewDataForVariant(variantData);
         updateInstanceStatus(ownershipData[newKey], newStatus, ownershipData, pokemonKey, variants);
     }
@@ -394,7 +238,7 @@ function updateInstanceStatus(instance, newStatus, ownershipData, baseKey, varia
     relatedInstances.forEach(([key, otherInstance]) => {
         let keyParts = key.split('_');
         const possibleUUID = keyParts.pop(); // Assume last part could be a UUID
-        let baseKeyOfOther = uuidValidate(possibleUUID) ? keyParts.join('_') : key; // Reassemble base key if UUID is valid
+        let baseKeyOfOther = validateUUID(possibleUUID) ? keyParts.join('_') : key; // Reassemble base key if UUID is valid
 
         const variantDetails = variants.find(variant => variant.pokemonKey === baseKeyOfOther);
 
