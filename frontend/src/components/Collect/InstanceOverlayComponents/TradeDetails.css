@@ -1,0 +1,12 @@
+/* TradeDetails.css */
+.trade-details-container {
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.trade-layout {
+    display: flex;
+    justify-content: center;
+    align-items: start;
+}

@@ -1,7 +1,5 @@
 // PokemonOverlay.jsx
 
-// PokemonOverlay.jsx
-
 import React, { useState, useEffect } from 'react';
 import './PokemonOverlay.css';
 import WindowOverlay from './WindowOverlay';
@@ -74,7 +72,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
     const hasFewCostumes = pokemon.costumes && pokemon.costumes.length <= 3;
 
     return (
-      <>
+      <div className="overlay-row other-overlays-row">
         <div className="column moves-column">
           {renderMoves()}
         </div>
@@ -117,7 +115,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
             </>
           )}
         </div>
-      </>
+      </div>
     );
 }
 
@@ -209,21 +207,21 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
       </div>
 
       {isMediumScreen && (
-        <div className="overlay-row other-overlays-row">
+        <div>
           {/* Medium screen layout */}
           {renderMediumScreenLayout()}
         </div>
       )}
 
       {isWidescreen && !isMediumScreen && (
-        <div className="overlay-row other-overlays-row">
+        <div>
           {/* Wide screen layout */}
           {renderWidescreenLayout()}
         </div>
       )}
 
       {isNarrowScreen && (
-        <div className="overlay-row other-overlays-row column-layout">
+        <div>
           {/* Narrow screen layout */}
           {renderNarrowScreenLayout()}
         </div>

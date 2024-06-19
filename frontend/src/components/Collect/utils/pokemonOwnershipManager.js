@@ -237,6 +237,11 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
         console.error("No variant data found for key:", pokemonKey);
         return;
     }
+
+    if ((newStatus === 'Trade' && instance.lucky) || instance.shadow) {
+        alert(`Cannot move ${pokemonKey} to Trade as it is ${instance.lucky ? 'lucky' : 'shadow'}.`);
+        return;
+    }
     
     switch (newStatus) {
         case 'Owned':
@@ -327,7 +332,10 @@ function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData) {
 }
 
 function updateInstanceStatus(instance, newStatus, ownershipData, baseKey) {
-    // console.log(`Updating status for ${instance.pokemon_id}: Current status is ${JSON.stringify(instance)}`);
+    if ((newStatus === 'Trade' && instance.lucky) || instance.shadow) {
+        alert(`Cannot move ${baseKey} to Trade as it is ${instance.lucky ? 'lucky' : 'shadow'}.`);
+        return;
+    }
 
     // Initial setup for statuses based on the newStatus
     instance.is_unowned = newStatus === 'Unowned';

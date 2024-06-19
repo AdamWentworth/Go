@@ -1,5 +1,3 @@
-/* windowOverlay.jsx */
-
 // WindowOverlay.jsx
 
 import React from 'react';

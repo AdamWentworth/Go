@@ -7,7 +7,6 @@ import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
 import EditSaveComponent from './OwnedComponents/EditSaveComponent';
 import CPComponent from './OwnedComponents/CPComponent';
 import FavoriteComponent from './OwnedComponents/FavoriteComponent';
-import FriendshipComponent from './OwnedComponents/FriendshipComponent';
 
 import NameComponent from './OwnedComponents/NameComponent';
 
@@ -46,6 +45,8 @@ const OwnedInstance = ({ pokemon }) => {
     Defense: pokemon.ownershipStatus.defense_iv,
     Stamina: pokemon.ownershipStatus.stamina_iv
   });
+  const [locationCaught, setLocationCaught] = useState(pokemon.ownershipStatus.location_caught);
+  const [dateCaught, setDateCaught] = useState(pokemon.ownershipStatus.date_caught);
 
   const handleCPChange = (newCP) => {
     setCP(newCP);  // Update CP state
@@ -83,6 +84,14 @@ const OwnedInstance = ({ pokemon }) => {
     setIvs(newIvs);
   };
 
+  const handleLocationCaughtChange = (newLocation) => {
+    setLocationCaught(newLocation);
+  };
+
+  const handleDateCaughtChange = (newDate) => {
+    setDateCaught(newDate);
+  };
+
   const toggleEditMode = () => {
     if (editMode) {
       console.log("Saving changes...");
@@ -99,7 +108,9 @@ const OwnedInstance = ({ pokemon }) => {
         charged_move2_id: moves.chargedMove2,
         attack_iv: ivs.Attack,
         defense_iv: ivs.Defense,
-        stamina_iv: ivs.Stamina
+        stamina_iv: ivs.Stamina,
+        location_caught: locationCaught,
+        date_caught: dateCaught
       });
     }
     setEditMode(!editMode);
@@ -112,7 +123,6 @@ const OwnedInstance = ({ pokemon }) => {
         <CPComponent pokemon={pokemon} editMode={editMode} toggleEditMode={toggleEditMode} onCPChange={handleCPChange} />
         <div className="right-stack">
           <FavoriteComponent pokemon={pokemon} editMode={editMode} onFavoriteChange={handleFavoriteChange} />
-          <FriendshipComponent pokemon={pokemon} />
         </div>
       </div>
       <div className="pokemon-image-container">
@@ -135,8 +145,8 @@ const OwnedInstance = ({ pokemon }) => {
         <MovesComponent pokemon={pokemon} editMode={editMode} onMovesChange={handleMovesChange} />
       </div>
       <IVComponent pokemon={pokemon} editMode={editMode} onIvChange={handleIvChange} />
-      <LocationCaughtComponent pokemon={pokemon} editMode={editMode} />
-      <DateCaughtComponent pokemon={pokemon} editMode={editMode} />
+      <LocationCaughtComponent pokemon={pokemon} editMode={editMode} onLocationChange={handleLocationCaughtChange} />
+      <DateCaughtComponent pokemon={pokemon} editMode={editMode} onDateChange={handleDateCaughtChange} />      
     </div>
   );
 }

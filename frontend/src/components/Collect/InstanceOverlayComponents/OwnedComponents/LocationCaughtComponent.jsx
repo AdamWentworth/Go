@@ -1,13 +1,16 @@
 // LocationCaughtComponent.jsx
-
 import React, { useRef, useState, useEffect } from 'react';
 import axios from 'axios';
 import './LocationCaughtComponent.css';
 
-const LocationCaughtComponent = ({ pokemon, editMode }) => {
+const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
   const [location, setLocation] = useState(pokemon.ownershipStatus.location_caught);
   const [suggestions, setSuggestions] = useState([]);
   const locationRef = useRef(null);
+
+  useEffect(() => {
+    setLocation(pokemon.ownershipStatus.location_caught);
+  }, [pokemon]);
 
   useEffect(() => {
     if (editMode && locationRef.current) {
@@ -38,6 +41,7 @@ const LocationCaughtComponent = ({ pokemon, editMode }) => {
   const handleLocationInput = (event) => {
     const userInput = event.target.textContent;
     setLocation(userInput);
+    onLocationChange(userInput);
     if (userInput.length > 2) {
       fetchSuggestions(userInput);
     } else {
@@ -48,6 +52,7 @@ const LocationCaughtComponent = ({ pokemon, editMode }) => {
   const selectSuggestion = (suggestion) => {
     const formattedLocation = suggestion.displayName;
     setLocation(formattedLocation);
+    onLocationChange(formattedLocation);
     if (locationRef.current) {
       locationRef.current.textContent = formattedLocation;
       setCaretToEnd(locationRef.current);
@@ -104,7 +109,7 @@ const LocationCaughtComponent = ({ pokemon, editMode }) => {
         </div>
       )}
     </div>
-  );  
+  );
 };
 
 export default LocationCaughtComponent;

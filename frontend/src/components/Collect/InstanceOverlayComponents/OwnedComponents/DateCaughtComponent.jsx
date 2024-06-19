@@ -1,5 +1,4 @@
 // DateCaughtComponent.jsx
-
 import React, { useRef, useState, useEffect } from 'react';
 import { parse, format, isValid } from 'date-fns';
 import DatePicker, { registerLocale } from 'react-datepicker';
@@ -9,7 +8,7 @@ import './DateCaughtComponent.css';
 
 registerLocale('en-US', enUS);
 
-const DateCaughtComponent = ({ pokemon, editMode }) => {
+const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
   const parseInitialDate = () => {
     const dateString = pokemon.ownershipStatus.date_caught;
     if (dateString) {
@@ -26,6 +25,10 @@ const DateCaughtComponent = ({ pokemon, editMode }) => {
   const [showCalendar, setShowCalendar] = useState(false);
 
   useEffect(() => {
+    setDate(parseInitialDate());
+  }, [pokemon]);
+
+  useEffect(() => {
     if (editMode && dateRef.current && date) {
       dateRef.current.textContent = format(date, 'yyyy-MM-dd');
     }
@@ -35,9 +38,10 @@ const DateCaughtComponent = ({ pokemon, editMode }) => {
     const userInput = event.target.textContent.trim();
     if (userInput) {
       try {
-        const parsedDate = parse(userInput, 'P', new Date()); // 'P' for flexible date parsing
+        const parsedDate = parse(userInput, 'yyyy-MM-dd', new Date());
         if (isValid(parsedDate)) {
           setDate(parsedDate);
+          onDateChange(format(parsedDate, 'yyyy-MM-dd'));
           setShowCalendar(false);
         } else {
           throw new Error('Invalid date');
@@ -69,6 +73,7 @@ const DateCaughtComponent = ({ pokemon, editMode }) => {
 
   const handleDateSelect = (selectedDate) => {
     setDate(selectedDate);
+    onDateChange(format(selectedDate, 'yyyy-MM-dd'));
     setShowCalendar(false);
   };
 
