@@ -1,7 +1,34 @@
+// PokemonTradeListOperations.js
+
 import { parsePokemonKey } from "../utils/PokemonIDUtils";
+import { generateUUID } from "../utils/PokemonIDUtils";
+import { createNewDataForVariant } from "./pokemonOwnershipManager";
 
 export function updateTradeList(pokemonKey, ownershipData, variants, newStatus) {
-    // console.log("Starting trade list update for:", pokemonKey);
+    const { baseKey, hasUUID } = parsePokemonKey(pokemonKey);
+
+    const variantData = variants.find(variant => variant.pokemonKey === baseKey);
+    if (!variantData) {
+        console.error("No variant data found for base key:", baseKey);
+        return;
+    }
+
+    if (!hasUUID) {
+        let needNewInstance = true;
+        Object.keys(ownershipData).forEach(key => {
+            // Check if the key starts with the pokemonKey and if the instance is unowned and not wanted
+            if (key.startsWith(pokemonKey) && ownershipData[key].is_unowned && !ownershipData[key].is_wanted) {
+                pokemonKey = key; // Reassign to existing key meeting the criteria
+                needNewInstance = false;
+            }
+        });
+
+        // If no suitable instance is found, create a new one
+        if (needNewInstance) {
+            pokemonKey = `${baseKey}_${generateUUID()}`; // Create a new key with UUID
+            ownershipData[pokemonKey] = createNewDataForVariant(variantData);
+        }
+    }
 
     const instance = ownershipData[pokemonKey];
     // Initialize both lists for the current instance
@@ -48,8 +75,6 @@ export function updateTradeList(pokemonKey, ownershipData, variants, newStatus) 
                 };
                 // console.log(`Reciprocal update done for: ${key}`);
             }
-        } else {
-            // console.log("No variant details available for:", baseKeyOfOther);
         }
     });
     // console.log("Trade list and wanted list update completed for:", pokemonKey);

@@ -55,33 +55,6 @@ export const updateOwnershipFilter = (setOwnershipFilter, filterType) => {
     setOwnershipFilter(prev => prev === filterType ? "" : filterType);
 };
 
-export const moveHighlightedToFilter = async (highlightedCards, setHighlightedCards, loadOwnershipData, setOwnershipFilter, filter, Variants, updatePokemonOwnership) => {
-    const batchUpdateSize = 5;  // Define batch size
-    let processed = 0;
-
-    // Function to process a single batch
-    const processBatch = () => {
-        const batch = Array.from(highlightedCards).slice(processed, processed + batchUpdateSize);
-        batch.forEach(pokemonKey => {
-            updatePokemonOwnership(pokemonKey, filter, Variants);
-        });
-        processed += batch.length;
-
-        // Update UI after each batch
-        loadOwnershipData();
-        if (processed < highlightedCards.size) {
-            setTimeout(processBatch, 0); // Schedule next batch
-        } else {
-            // Finalize
-            setHighlightedCards(new Set());
-            setOwnershipFilter(filter);
-            console.log("Filter moved and ownership data reloaded for filter:", filter);
-        }
-    };
-
-    processBatch();  // Start processing
-};
-
 export const confirmMoveToFilter = (moveHighlightedToFilter, filter, highlightedCards, Variants, ownershipData) => {
     let messageDetails = [];  // Details for dynamic confirmation message
 

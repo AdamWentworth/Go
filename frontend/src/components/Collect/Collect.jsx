@@ -20,7 +20,7 @@ function Collect() {
     console.log('Collect component mounting');
 
     //States
-    const { variants, ownershipData, loading, updateOwnership } = usePokemonData();
+    const { variants, ownershipData, loading, updateOwnership, updateTradeLists } = usePokemonData();
 
     const [selectedPokemon, setSelectedPokemon] = useState(null);
     const [highlightedCards, setHighlightedCards] = useState(new Set());
@@ -146,6 +146,7 @@ function Collect() {
     const handleMoveHighlightedToFilter = useCallback(filter => {
         highlightedCards.forEach(pokemonKey => {
             updateOwnership(pokemonKey, filter);
+            updateTradeLists(pokemonKey, filter)
         });
         setHighlightedCards(new Set());
         setOwnershipFilter(filter);  // Assuming this sets the current filter state
