@@ -262,6 +262,8 @@ export const PokemonDataProvider = ({ children }) => {
             ...prevData,
             ownershipData: newData
         }));
+
+        updateLists();
     
         // Send updated data to syncWorker for asynchronous synchronization
         if (syncWorker) {
@@ -271,7 +273,7 @@ export const PokemonDataProvider = ({ children }) => {
                 data: { data: newData, timestamp: Date.now() }
             });
         }
-    }, [data.ownershipData]);
+    }, [data.ownershipData, updateLists]);
 
     // Context value includes all state and the update function
     const contextValue = useMemo(() => ({

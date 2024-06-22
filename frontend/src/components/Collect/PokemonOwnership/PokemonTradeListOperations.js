@@ -16,7 +16,11 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
 
         // Prepare the object to be added to the list
         const listItem = {
-            currentImage: variantDetail.currentImage
+            currentImage: variantDetail.currentImage,
+            friendship_level: value.friendship_level,
+            mirror: value.mirror,
+            pref_lucky: value.pref_lucky,
+            pokemon_id: value.pokemon_id
         };
 
         // Assigning the listItem under the corresponding pokemonKey in each list
@@ -44,7 +48,11 @@ export const initializePokemonLists = (ownershipData, variants) => {
 
         // Prepare the object to be added to the list
         const listItem = {
-            currentImage: variantDetail.currentImage
+            currentImage: variantDetail.currentImage,
+            friendship_level: value.friendship_level,
+            mirror: value.mirror,
+            pref_lucky: value.pref_lucky,
+            pokemon_id: value.pokemon_id
         };
 
         // Assigning the listItem under the corresponding pokemonKey in each list

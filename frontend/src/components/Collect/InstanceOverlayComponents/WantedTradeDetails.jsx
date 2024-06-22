@@ -5,17 +5,16 @@ import EditSaveComponent from './EditSaveComponent';
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
 
 const WantedTradeDetails = ({ pokemon, lists }) => {
-    const { friendship_level, pref_lucky, mirror, not_trade_list } = pokemon.ownershipStatus;
+    const { friendship_level, pref_lucky, not_trade_list } = pokemon.ownershipStatus;
     const [editMode, setEditMode] = useState(false);
     const [isLucky, setIsLucky] = useState(pref_lucky);
-    const [isMirror, setIsMirror] = useState(mirror);
     const [friendship, setFriendship] = useState(friendship_level);
     const { updateDetails } = useContext(PokemonDataContext);
 
     const toggleEditMode = () => {
         if (editMode) {
             console.log("Saving changes...");
-            updateDetails(pokemon.pokemonKey, { pref_lucky: isLucky, mirror: isMirror, friendship_level: friendship });
+            updateDetails(pokemon.pokemonKey, { pref_lucky: isLucky, friendship_level: friendship });
         }
         setEditMode(!editMode);
     };
@@ -70,13 +69,14 @@ const WantedTradeDetails = ({ pokemon, lists }) => {
         for (let i = 0; i < 4; i++) {
             hearts.push(
                 <img 
+                    key={`heart-${i}`}  // Use loop index as key
                     src={`${process.env.PUBLIC_URL}/images/${i < friendship ? 'heart-filled' : 'heart-unfilled'}.png`}
                     alt={`Friendship Level ${i < friendship ? 'Filled' : 'Unfilled'}`}
                     className="heart"
                 />
             );
         }
-
+    
         return (
             <div className="friendship-level-container">
                 <div className="hearts">
@@ -94,7 +94,7 @@ const WantedTradeDetails = ({ pokemon, lists }) => {
                 )}
             </div>
         );
-    };
+    };    
 
     return (
         <div className="wanted-details-container">

@@ -20,7 +20,8 @@ function PokemonList({
     showShadow,
     singleFormPokedexNumbers,
     ownershipFilter,
-    lists
+    lists,
+    ownershipData
 }) {
 
     const handleSelect = (pokemon) => {
@@ -65,6 +66,7 @@ function PokemonList({
                             allPokemons={sortedPokemons}
                             ownershipFilter={ownershipFilter}
                             lists={lists}
+                            ownershipData={ownershipData}
                         /> :
                         <PokemonOverlay
                             pokemon={selectedPokemon.overlayType ? selectedPokemon.pokemon : selectedPokemon}

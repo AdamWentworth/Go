@@ -222,6 +222,7 @@ function Collect() {
                 singleFormPokedexNumbers={[201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741]}
                 ownershipFilter={ownershipFilter}
                 lists={lists}
+                ownershipData={ownershipData}
             />
             <SortOverlayMemo
                 sortType={sortType}
