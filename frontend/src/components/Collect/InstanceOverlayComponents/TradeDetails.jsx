@@ -4,8 +4,8 @@ import './TradeDetails.css';
 import EditSaveComponent from './EditSaveComponent';
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
 
-const TradeDetails = ({ pokemon }) => {
-    const { friendship_level, pref_lucky, mirror, wanted_list } = pokemon.ownershipStatus;
+const TradeDetails = ({ pokemon, lists }) => {
+    const { friendship_level, pref_lucky, mirror, not_wanted_list } = pokemon.ownershipStatus;
     const [editMode, setEditMode] = useState(false);
     const [isLucky, setIsLucky] = useState(pref_lucky);
     const [isMirror, setIsMirror] = useState(mirror);
@@ -32,23 +32,20 @@ const TradeDetails = ({ pokemon }) => {
     };
 
     const renderWantedListDetails = () => {
-        const entries = Object.entries(wanted_list);
-        if (entries.length === 0) {
-            return <div>No trades listed.</div>;
+        if (!lists || Object.keys(lists.wanted).length === 0) {
+            return <div>No Pokémon currently wanted.</div>;
         }
+
         return (
             <div className="wanted-list-container">
-                {entries.map(([key, details]) => (
-                    <div key={key} className="trade-item">
-                        <img 
-                            src={details.currentImage} // Use the image URL from the details object
-                            alt={`${key}`} // Provide a meaningful alternative text
-                        />
+                {Object.entries(lists.wanted).map(([key, details]) => (
+                    <div key={key} className="wanted-item">
+                        <img src={details.currentImage} alt={`Wanted Pokémon ${key}`} />
                     </div>
                 ))}
             </div>
         );
-    };    
+    }; 
 
     const handleFriendshipChange = (e) => {
         const newFriendshipLevel = parseInt(e.target.value, 10);

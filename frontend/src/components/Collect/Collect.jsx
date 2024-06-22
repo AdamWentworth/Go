@@ -20,7 +20,7 @@ function Collect() {
     console.log('Collect component mounting');
 
     //States
-    const { variants, ownershipData, loading, updateOwnership, updateTradeLists } = usePokemonData();
+    const { variants, ownershipData, lists, loading, updateOwnership, updateLists } = usePokemonData();
 
     const [selectedPokemon, setSelectedPokemon] = useState(null);
     const [highlightedCards, setHighlightedCards] = useState(new Set());
@@ -146,11 +146,11 @@ function Collect() {
     const handleMoveHighlightedToFilter = useCallback(filter => {
         highlightedCards.forEach(pokemonKey => {
             updateOwnership(pokemonKey, filter);
-            // updateTradeLists(pokemonKey, filter)
         });
+        updateLists()
         setHighlightedCards(new Set());
         setOwnershipFilter(filter);  // Assuming this sets the current filter state
-    }, [highlightedCards, updateOwnership]);    
+    }, [highlightedCards, updateOwnership, updateLists]);    
 
     // // Handler for confirming the move to new Ownership filter
     const handleConfirmMoveToFilter = useCallback((filter) => {
@@ -221,6 +221,7 @@ function Collect() {
                 showShadow={showShadow}
                 singleFormPokedexNumbers={[201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741]}
                 ownershipFilter={ownershipFilter}
+                lists={lists}
             />
             <SortOverlayMemo
                 sortType={sortType}

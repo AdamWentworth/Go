@@ -11,7 +11,9 @@ import WantedTradeDetails from './InstanceOverlayComponents/WantedTradeDetails';
 
 import WindowOverlay from './WindowOverlay';  // Ensure WindowOverlay is imported correctly
 
-const InstanceOverlay = ({ pokemon, onClose, ownershipFilter }) => {
+const InstanceOverlay = ({ pokemon, onClose, ownershipFilter, lists }) => {
+
+  console.log(lists)
   const handleOverlayClick = (event) => {
     if (!event.target.closest('.overlay-windows')) {
       onClose();
@@ -36,7 +38,7 @@ const InstanceOverlay = ({ pokemon, onClose, ownershipFilter }) => {
                 <TradeInstance pokemon={pokemon} />
               </WindowOverlay>
               <WindowOverlay onClose={onClose} className="trade-details-window">
-                <TradeDetails pokemon={pokemon} />
+                <TradeDetails pokemon={pokemon} lists={lists} />
               </WindowOverlay>
             </div>
           </div>
@@ -49,7 +51,7 @@ const InstanceOverlay = ({ pokemon, onClose, ownershipFilter }) => {
                 <WantedInstance pokemon={pokemon} />
               </WindowOverlay>
               <WindowOverlay onClose={onClose} className="trade-details-window">
-                <WantedTradeDetails pokemon={pokemon} />
+                <WantedTradeDetails pokemon={pokemon} lists={lists} />
               </WindowOverlay>
             </div>
           </div>

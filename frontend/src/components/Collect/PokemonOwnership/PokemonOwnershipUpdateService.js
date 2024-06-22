@@ -57,7 +57,7 @@ function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey, var
     instance.is_for_trade = newStatus === 'Trade';
     instance.is_wanted = newStatus === 'Wanted';
 
-    updateTradeList(pokemonKey, ownershipData, variants, newStatus);
+    // updateTradeList(pokemonKey, ownershipData, variants, newStatus);
 
     // Conditional application of status updates to other instances sharing the same prefix
     Object.keys(ownershipData).forEach(key => {
@@ -106,7 +106,7 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
         return;
     }
 
-    updateTradeList(pokemonKey, ownershipData, variants, newStatus);
+    // updateTradeList(pokemonKey, ownershipData, variants, newStatus);
     
     switch (newStatus) {
         case 'Owned':

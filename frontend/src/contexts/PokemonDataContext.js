@@ -4,7 +4,7 @@ import React, { useContext, createContext, useState, useEffect, useMemo, useCall
 import { getPokemons } from '../components/Collect/utils/api';
 import { updatePokemonDetails } from '../components/Collect/PokemonOwnership/pokemonOwnershipManager';
 import { updatePokemonOwnership } from '../components/Collect/PokemonOwnership/PokemonOwnershipUpdateService';
-import { updateTradeList } from '../components/Collect/PokemonOwnership/PokemonTradeListOperations';
+import { initializePokemonLists, updatePokemonLists } from '../components/Collect/PokemonOwnership/PokemonTradeListOperations';
 import { initializeOrUpdateOwnershipData, initializeOrUpdateOwnershipDataAsync } from '../components/Collect/PokemonOwnership/pokemonOwnershipStorage';
 import createPokemonVariants from '../components/Collect/utils/createPokemonVariants';
 import { determinePokemonKey, preloadImage } from '../components/Collect/utils/imageHelpers'; 
@@ -35,6 +35,7 @@ export const PokemonDataProvider = ({ children }) => {
     const [data, setData] = useState({
         variants: [],
         ownershipData: {},
+        lists: {},
         loading: true
     });
 
@@ -45,29 +46,34 @@ export const PokemonDataProvider = ({ children }) => {
             const pokemonDataCacheKey = "pokemonData";
             const variantsCacheKey = "pokemonVariants";
             const ownershipDataCacheKey = "pokemonOwnership";
+            const listsCacheKey = "pokemonLists"
             const cacheStorageName = 'pokemonCache';
 
             // Open the cache storage
             const cacheStorage = await caches.open(cacheStorageName);
 
             // Try to retrieve the cached variants and ownership data simultaneously
-            const [cachedVariantsResponse, cachedOwnershipResponse] = await Promise.all([
+            const [cachedVariantsResponse, cachedOwnershipResponse, cachedListsResponse] = await Promise.all([
                 cacheStorage.match(variantsCacheKey),
-                cacheStorage.match(ownershipDataCacheKey)
+                cacheStorage.match(ownershipDataCacheKey),
+                cacheStorage.match(listsCacheKey)
             ]);
 
             let freshDataAvailable = false;
-            let variants, ownershipData;
+            let variants, ownershipData, lists;
 
             // Deserialize responses if available
             const cachedVariants = cachedVariantsResponse ? await cachedVariantsResponse.json() : null;
             const cachedOwnership = cachedOwnershipResponse ? await cachedOwnershipResponse.json() : null;
+            const cachedLists = cachedListsResponse ? await cachedListsResponse.json() : null;
 
             // Log cached data freshness and details
-            if (cachedVariants && cachedOwnership) {
+            if (cachedVariants && cachedOwnership && cachedLists) {
                 // Both cached data are available
                 console.log(`Cached Variants Age: ${formatTimeAgo(cachedVariants.timestamp)}`);
                 console.log(`Cached Ownership Data Age: ${formatTimeAgo(cachedOwnership.timestamp)}`);
+                console.log(`Cached Lists Data Age: ${formatTimeAgo(cachedLists.timestamp)}`);
+
             } else if (cachedVariants && !cachedOwnership) {
                 // Only cached variants are available
                 console.log(`Cached Variants Age: ${formatTimeAgo(cachedVariants.timestamp)}`);
@@ -82,10 +88,11 @@ export const PokemonDataProvider = ({ children }) => {
             }
 
             // Best case scenario - All Data is less than 24hrs old
-            if (cachedVariants && cachedOwnership && isDataFresh(cachedVariants.timestamp) && isDataFresh(cachedOwnership.timestamp)) {
+            if (cachedVariants && cachedOwnership && cachedLists && isDataFresh(cachedVariants.timestamp) && isDataFresh(cachedOwnership.timestamp) && isDataFresh(cachedLists.timestamp)) {
                 console.log("Using cached variants and ownership data");
                 variants = cachedVariants.data;
                 ownershipData = cachedOwnership.data;
+                lists = cachedLists.lists
                 freshDataAvailable = true;
 
             // Ownership Data is fresh in the browser but the Pokemon Variants data is possibly outdated.
@@ -121,8 +128,9 @@ export const PokemonDataProvider = ({ children }) => {
 
                 // If Variants data has changed, maybe update ownership data too
                 ownershipData = await initializeOrUpdateOwnershipDataAsync(keys, variants);
-                // console.log("Updated ownership data:", ownershipData);
+                lists = initializePokemonLists(ownershipData, variants)
                 await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
+                await cacheStorage.put(listsCacheKey, new Response(JSON.stringify({ data: lists, timestamp: Date.now() })));
                 console.log("As the ownership data may be missing the newest Variants, we have initialized any missing variants in ownershipdata");
                 freshDataAvailable = true;
 
@@ -136,7 +144,9 @@ export const PokemonDataProvider = ({ children }) => {
                 // If Ownership cache data is outdated, update it with new Variants.
                 ownershipData = await initializeOrUpdateOwnershipDataAsync(keys, variants);
                 console.log("we have now initialized any missing variants in ownershipdata");
+                lists = initializePokemonLists(ownershipData, variants)
                 await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
+                await cacheStorage.put(listsCacheKey, new Response(JSON.stringify({ data: lists, timestamp: Date.now() })));
                 freshDataAvailable = true;
 
             // Cache Pokemon Variants are updated, but Ownership data is missing altogether.
@@ -154,8 +164,9 @@ export const PokemonDataProvider = ({ children }) => {
 
                 // If no valid cached ownership data, initialize or update from local data
                 ownershipData = initializeOrUpdateOwnershipData(keys, variants);
-                // console.log("Updated ownership data:", ownershipData);
+                lists = initializePokemonLists(ownershipData, variants)
                 await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
+                await cacheStorage.put(listsCacheKey, new Response(JSON.stringify({ data: lists, timestamp: Date.now() })));
                 console.log("Variants were fresh so we've now rebuilt fresh ownership data both in local and cache storage");
                 freshDataAvailable = true;
             }
@@ -190,12 +201,12 @@ export const PokemonDataProvider = ({ children }) => {
 
                 // If no valid cached ownership data, initialize or update from local data
                 ownershipData = initializeOrUpdateOwnershipData(keys, variants);
-                // console.log("Updated ownership data:", ownershipData);
+                lists = initializePokemonLists(ownershipData, variants)
                 await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
+                await cacheStorage.put(listsCacheKey, new Response(JSON.stringify({ data: lists, timestamp: Date.now() })));
             }
-
             // Update state with new data
-            setData({ variants, ownershipData, loading: false });
+            setData({ variants, ownershipData, lists, loading: false });
         }
 
         fetchData().catch(error => {
@@ -220,20 +231,23 @@ export const PokemonDataProvider = ({ children }) => {
         });
     }, [data.variants, data.ownershipData]);
 
-    const updateTradeLists = useCallback((pokemonKey, newStatus) => {
-        updateTradeList(pokemonKey, data.ownershipData, data.variants, newStatus, updatedOwnershipData => {
+    const updateLists = useCallback(() => {
+        updatePokemonLists(data.ownershipData, data.variants, sortedLists => {
+            // Update the local state with the new lists
             setData(prevData => ({
                 ...prevData,
-                ownershipData: updatedOwnershipData
+                lists: sortedLists
             }));
+    
+            // If using a worker to handle side effects like caching or posting to a server
             if (syncWorker) {
                 syncWorker.postMessage({
-                    action: 'syncData',
-                    data: {data: updatedOwnershipData, timestamp: Date.now()}
+                    action: 'updatePokemonLists',
+                    data: { lists: sortedLists, timestamp: Date.now() }
                 });
             }
         });
-    }, [data.variants, data.ownershipData]);
+    }, [data.ownershipData, setData, syncWorker]);  
 
     // Function to update Instance details
     const updateDetails = useCallback((pokemonKey, details) => {
@@ -263,7 +277,7 @@ export const PokemonDataProvider = ({ children }) => {
     const contextValue = useMemo(() => ({
         ...data,
         updateOwnership,
-        updateTradeLists,
+        updateLists,
         updateDetails
     }), [data, updateOwnership, updateDetails]);
 
