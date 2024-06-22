@@ -30,11 +30,11 @@ const WantedTradeDetails = ({ pokemon, lists }) => {
         }
     };
 
-    const toggleMirror = () => {
-        if (editMode) {
-            setIsMirror(!isMirror);
-        }
-    };
+    // const toggleMirror = () => {
+    //     if (editMode) {
+    //         setIsMirror(!isMirror);
+    //     }
+    // };
 
     const renderTradeListDetails = () => {
         if (!lists || Object.keys(lists.trade).length === 0) {
@@ -97,19 +97,13 @@ const WantedTradeDetails = ({ pokemon, lists }) => {
     };
 
     return (
-        <div className="trade-details-container">
+        <div className="wanted-details-container">
             <div className="top-row">
                 <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
             </div>
             <h2>Wanted Trade Details</h2>
             <div className="icon-row">
-                <img 
-                    src={process.env.PUBLIC_URL + '/images/mirror.png'} 
-                    alt="Mirror" 
-                    className={isMirror ? '' : 'grey-out'} 
-                    onClick={toggleMirror}
-                    style={{ cursor: editMode ? 'pointer' : 'default' }}
-                />
+                {renderFriendshipLevel()}
                 <img 
                     src={process.env.PUBLIC_URL + '/images/lucky_friend_icon.png'} 
                     alt="Lucky Friend" 
@@ -118,7 +112,6 @@ const WantedTradeDetails = ({ pokemon, lists }) => {
                     style={{ cursor: editMode ? 'pointer' : 'default' }}
                 />
             </div>
-            {renderFriendshipLevel()}
             <div><strong>For Trade:</strong> {renderTradeListDetails()}</div>
         </div>
     );

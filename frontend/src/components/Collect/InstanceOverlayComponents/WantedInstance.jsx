@@ -10,7 +10,6 @@ import FavoriteComponent from './OwnedComponents/FavoriteComponent';
 
 import NameComponent from './OwnedComponents/NameComponent';
 
-import LuckyComponent from './OwnedComponents/LuckyComponent';
 import GenderComponent from './OwnedComponents/GenderComponent';
 
 import WeightComponent from './OwnedComponents/WeightComponent';
@@ -23,7 +22,6 @@ const WantedInstance = ({ pokemon }) => {
   // console.log("Initial Pokemon Data: ", pokemon);
 
   const { updateDetails } = useContext(PokemonDataContext);
-  const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
 
@@ -36,10 +34,6 @@ const WantedInstance = ({ pokemon }) => {
     chargedMove1: pokemon.ownershipStatus.charged_move1_id,
     chargedMove2: pokemon.ownershipStatus.charged_move2_id,
   });
-
-  const handleLuckyToggle = (newLuckyStatus) => {
-    setIsLucky(newLuckyStatus);
-  };
 
   const handleNicknameChange = (newNickname) => {
     setNickname(newNickname);  // Update state with new nickname
@@ -70,7 +64,6 @@ const WantedInstance = ({ pokemon }) => {
       console.log("Saving changes...");
       updateDetails(pokemon.pokemonKey, { 
         nickname: nickname, 
-        lucky: isLucky, 
         favorite: isFavorite, 
         gender: gender, 
         weight: weight, 
@@ -92,14 +85,10 @@ const WantedInstance = ({ pokemon }) => {
         </div>
       </div>
       <div className="pokemon-image-container">
-        {isLucky && <img src={process.env.PUBLIC_URL + '/images/lucky.png'} alt="Lucky Backdrop" className="lucky-backdrop" />}
         <img src={process.env.PUBLIC_URL + pokemon.currentImage} alt={pokemon.name} className="pokemon-image" />
       </div>
       <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
       <div className="gender-lucky-row">
-        {pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade ? <div className="lucky-placeholder"></div> : (
-          <LuckyComponent pokemon={pokemon} onToggleLucky={handleLuckyToggle} isLucky={isLucky} editMode={editMode} />
-        )}
         <GenderComponent pokemon={pokemon} editMode={editMode} onGenderChange={handleGenderChange} />
       </div>
       <div className="stats-container">

@@ -90,27 +90,18 @@ const TradeDetails = ({ pokemon, lists }) => {
         <div className="trade-details-container">
             <div className="top-row">
                 <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
-            </div>
-            <h2>Trade Details</h2>
-            <div className="icon-row">
-                <img 
-                    src={process.env.PUBLIC_URL + '/images/mirror.png'} 
-                    alt="Mirror" 
-                    className={isMirror ? '' : 'grey-out'} 
-                    onClick={toggleMirror}
-                    style={{ cursor: editMode ? 'pointer' : 'default' }}
-                />
-                <img 
-                    src={process.env.PUBLIC_URL + '/images/lucky_friend_icon.png'} 
-                    alt="Lucky Friend" 
-                    className={isLucky ? '' : 'grey-out'}
-                    onClick={toggleLucky}
-                    style={{ cursor: editMode ? 'pointer' : 'default' }}
-                />
-            </div>
-            {renderFriendshipLevel()}
+                <div className="mirror">
+                    <img 
+                        src={process.env.PUBLIC_URL + '/images/mirror.png'} 
+                        alt="Mirror" 
+                        className={isMirror ? '' : 'grey-out'} 
+                        onClick={toggleMirror}
+                        style={{ cursor: editMode ? 'pointer' : 'default' }}
+                    />
+                </div>
+            </div>         
             <div>
-                <strong>Wanted List:</strong>
+                <h2>Wanted List:</h2>
                 {renderWantedListDetails()}
             </div>
         </div>
