@@ -11,7 +11,6 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
     const [isMirror, setIsMirror] = useState(mirror);
     const [displayedWantedList, setDisplayedWantedList] = useState(lists.wanted);
     const { updateDetails } = useContext(PokemonDataContext);
-    const [mirrorCreated, setMirrorCreated] = useState(false); // Use state to track if mirror has been created
 
     const toggleEditMode = () => {
         if (editMode) {
@@ -22,7 +21,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
     };
 
     useEffect(() => {
-        if (isMirror && !mirrorCreated) {
+        if (isMirror) {
             initializeMirror();
         } else {
             setDisplayedWantedList(lists.wanted); // Reset to original wanted list when toggled off
@@ -73,41 +72,9 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
     const toggleMirror = () => {
         if (editMode) {
             const newMirrorState = !isMirror;
-            setIsMirror(newMirrorState);
-            if (newMirrorState) {
-                initializeMirror(); // Ensure the mirror is initialized and displayed
-            } else {
-                updateDisplayedWantedListAfterMirrorOff(); // Update the list to include the mirror when toggled off
-            }
+            setIsMirror(newMirrorState);  // This will trigger the useEffect below
         }
-    };    
-
-    const updateDisplayedWantedListAfterMirrorOff = () => {
-        const originalData = ownershipData[pokemon.pokemonKey];
-        let basePrefix = pokemon.pokemonKey.split('_').slice(0, -1).join('_');
-    
-        // Attempt to find any existing mirror, whether it was toggled off or not
-        let existingMirrorKey = Object.keys(ownershipData).find(key => {
-            const targetData = ownershipData[key];
-            return key.startsWith(basePrefix) &&
-                   targetData.pokemon_id === originalData.pokemon_id && // Match by Pokémon ID
-                   targetData.is_wanted; // The mirror should be wanted, regardless of other statuses
-        });
-    
-        if (existingMirrorKey) {
-            // If an existing mirror entry is found, use it
-            setDisplayedWantedList({ [existingMirrorKey]: ownershipData[existingMirrorKey] });
-        } else {
-            // No mirror found, show the entire wanted list, including the original and any mirrors
-            let updatedList = {};
-            Object.keys(ownershipData).forEach(key => {
-                if (ownershipData[key].is_wanted) {
-                    updatedList[key] = ownershipData[key];
-                }
-            });
-            setDisplayedWantedList(updatedList);
-        }
-    };    
+    };   
 
     const renderWantedListDetails = () => {
         if (!displayedWantedList || Object.keys(displayedWantedList).length === 0) {
