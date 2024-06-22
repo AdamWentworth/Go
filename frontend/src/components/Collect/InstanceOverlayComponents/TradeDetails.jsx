@@ -64,8 +64,8 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
                 mirror: true // Explicitly mark as mirror
             };
             ownershipData[newKey] = newData;
+            lists.wanted[newKey] = newData
             setDisplayedWantedList({ [newKey]: newData });
-            updateDetails(pokemon.pokemonKey, { mirror: isMirror});
         }
     };     
 
@@ -91,7 +91,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
                         <div key={key} className="wanted-item">
                             <img src={imageSrc} alt={`Wanted Pokémon ${key}`} onError={(e) => {
                                 // Fallback to pokemon.currentImage if details.currentImage fails to load
-                                if (e.target.src !== pokemon.currentImage) {
+                                if (e.target.src !== details.currentImage) {
                                     e.target.src = pokemon.currentImage;
                                 }
                             }} />
