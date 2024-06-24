@@ -10,6 +10,7 @@ import WantedListDisplay from './WantedListDisplay';
 const TradeDetails = ({ pokemon, lists, ownershipData }) => {
     const { mirror, not_wanted_list } = pokemon.ownershipStatus;
     const [editMode, setEditMode] = useState(false);
+    console.log("Initial mirror value from prop:", mirror);
     const [isMirror, setIsMirror] = useState(mirror);
     const [displayedWantedList, setDisplayedWantedList] = useState(lists.wanted);
     const [localNotWantedList, setLocalNotWantedList] = useState({ ...not_wanted_list });
@@ -22,12 +23,20 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
                 mirror: isMirror,
                 not_wanted_list: localNotWantedList
             });
+            // Update global not_wanted_list here for consistency
             Object.assign(not_wanted_list, localNotWantedList);
+    
+            // Immediately update displayed list after saving
+            const filteredList = Object.keys(lists.wanted)
+                .filter(key => !(key in localNotWantedList))
+                .reduce((res, key) => (res[key] = lists.wanted[key], res), {});
+            setDisplayedWantedList(filteredList);
         } else {
             setLocalNotWantedList({ ...not_wanted_list });
+            setDisplayedWantedList(lists.wanted);
         }
         setEditMode(!editMode);
-    };
+    };    
 
     useEffect(() => {
         const cleanNotWantedList = () => {
@@ -50,13 +59,13 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
     useEffect(() => {
         if (!editMode) {
             const filteredList = Object.keys(lists.wanted)
-                .filter(key => !(key in not_wanted_list))
+                .filter(key => !(key in localNotWantedList))
                 .reduce((res, key) => (res[key] = lists.wanted[key], res), {});
             setDisplayedWantedList(filteredList);
         } else {
             setDisplayedWantedList(lists.wanted);
         }
-    }, [editMode, lists.wanted, not_wanted_list]);
+    }, [editMode, lists.wanted, localNotWantedList]);    
 
     const toggleMirror = () => {
         if (editMode) {
