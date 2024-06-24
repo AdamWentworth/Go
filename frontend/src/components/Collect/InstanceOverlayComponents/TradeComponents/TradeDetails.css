@@ -36,7 +36,7 @@
     width: 40px;
 }
 
-.wanted-item-img.grey-out {
+.wanted-item-img.grey-out, .grey-out {
     filter: grayscale(100%);
     opacity: 0.5;
 }

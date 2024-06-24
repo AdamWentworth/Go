@@ -2,13 +2,7 @@
 
 import React from 'react';
 
-const NotWantedListManager = ({ 
-    pokemonKey, 
-    localNotWantedList, 
-    toggleNotWanted 
-}) => {
-    const isNotWanted = localNotWantedList[pokemonKey];
-
+const NotWantedListManager = ({ pokemonKey, toggleNotWanted, isNotWanted }) => {
     return (
         <button className="toggle-not-wanted" onClick={() => toggleNotWanted(pokemonKey)}>
             {isNotWanted ? '✓' : 'X'}
