@@ -6,7 +6,7 @@ import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
 import { generateUUID } from '../utils/PokemonIDUtils';
 
 const TradeDetails = ({ pokemon, lists, ownershipData }) => {
-    const { mirror } = pokemon.ownershipStatus;
+    const { mirror, not_wanted_list } = pokemon.ownershipStatus;
     const [editMode, setEditMode] = useState(false);
     const [isMirror, setIsMirror] = useState(mirror);
     const [displayedWantedList, setDisplayedWantedList] = useState(lists.wanted);
