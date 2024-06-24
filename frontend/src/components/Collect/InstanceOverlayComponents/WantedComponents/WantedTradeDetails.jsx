@@ -1,8 +1,8 @@
 // WantedTradeDetails.jsx
 import React, { useState, useContext } from 'react';
 import './WantedTradeDetails.css';
-import EditSaveComponent from './EditSaveComponent';
-import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
+import EditSaveComponent from '../EditSaveComponent';
+import { PokemonDataContext } from '../../../../contexts/PokemonDataContext';
 
 const WantedTradeDetails = ({ pokemon, lists }) => {
     const { friendship_level, pref_lucky, not_trade_list } = pokemon.ownershipStatus;

@@ -36,7 +36,7 @@
     width: 40px;
 }
 
-.trade-details-container .grey-out {
+.wanted-item-img.grey-out {
     filter: grayscale(100%);
     opacity: 0.5;
 }
@@ -65,7 +65,7 @@
     display: none; /* Chrome, Safari, and Opera */
 }
 
-.trade-details-container .wanted-item img {
+.trade-details-container .wanted-item img.wanted-item-img {
     width: 120px; /* Adjusts width */
     height: auto; /* Maintains aspect ratio */
     border-radius: 8px; /* Rounds corners */

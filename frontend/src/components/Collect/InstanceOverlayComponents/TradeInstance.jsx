@@ -6,7 +6,6 @@ import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
 
 import EditSaveComponent from './EditSaveComponent';
 import CPComponent from './OwnedComponents/CPComponent';
-import FavoriteComponent from './OwnedComponents/FavoriteComponent';
 
 import NameComponent from './OwnedComponents/NameComponent';
 

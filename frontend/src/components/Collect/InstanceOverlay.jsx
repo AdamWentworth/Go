@@ -4,10 +4,10 @@ import './InstanceOverlay.css';
 import OwnedInstance from './InstanceOverlayComponents/OwnedInstance';
 
 import TradeInstance from './InstanceOverlayComponents/TradeInstance';
-import TradeDetails from './InstanceOverlayComponents/TradeDetails';
+import TradeDetails from './InstanceOverlayComponents/TradeComponents/TradeDetails';
 
 import WantedInstance from './InstanceOverlayComponents/WantedInstance';
-import WantedTradeDetails from './InstanceOverlayComponents/WantedTradeDetails';
+import WantedTradeDetails from './InstanceOverlayComponents/WantedComponents/WantedTradeDetails';
 
 import WindowOverlay from './WindowOverlay';  // Ensure WindowOverlay is imported correctly
 
