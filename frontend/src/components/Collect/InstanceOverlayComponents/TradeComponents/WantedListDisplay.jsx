@@ -2,50 +2,28 @@
 import React from 'react';
 import NotWantedListManager from './NotWantedListManager';
 
-const WantedListDisplay = ({
-    lists,
-    localNotWantedList,
-    setLocalNotWantedList,
-    editMode
-}) => {
-    const toggleNotWanted = (key) => {
-        const updatedList = { ...localNotWantedList };
-        if (key in updatedList) {
-            delete updatedList[key];
-        } else {
-            updatedList[key] = true;
-        }
-        setLocalNotWantedList(updatedList);
-    };
+const WantedListDisplay = ({ lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode }) => {
 
     const displayedWantedList = Object.keys(lists.wanted)
-        .filter(key => editMode || !(key in localNotWantedList))
-        .reduce((res, key) => (res[key] = lists.wanted[key], res), {});
-
+        .filter(key => (editMode || !localNotWantedList[key]) && (!isMirror || (isMirror && key === mirrorKey)))
+        .reduce((obj, key) => {
+            obj[key] = lists.wanted[key];
+            return obj;
+        }, {});
+    
     return (
         <div className="wanted-list-container">
             {Object.entries(displayedWantedList).map(([key, details]) => {
                 const isNotWanted = localNotWantedList[key];
                 const imageClasses = `wanted-item-img ${isNotWanted ? 'grey-out' : ''}`;
-
                 return (
                     <div key={key} className="wanted-item">
+                        <img src={details.currentImage || details.fallbackImage} className={imageClasses} alt={`Wanted Pokémon ${key}`} />
                         {editMode && (
-                            <NotWantedListManager
-                                pokemonKey={key}
-                                toggleNotWanted={toggleNotWanted}
-                                isNotWanted={isNotWanted}
-                            />
+                            <button className="toggle-not-wanted" onClick={() => setLocalNotWantedList({...localNotWantedList, [key]: !isNotWanted})}>
+                                {isNotWanted ? '✓' : 'X'}
+                            </button>
                         )}
-                        <img 
-                            src={details.currentImage || details.fallbackImage} 
-                            className={imageClasses} 
-                            alt={`Wanted Pokémon ${key}`}
-                            onError={(e) => {
-                                console.error(`Failed to load image at URL: ${e.target.src}`);
-                                e.target.src = '/images/fallback.png'; // Ensure you have a fallback image
-                            }}
-                        />
                     </div>
                 );
             })}
@@ -54,4 +32,3 @@ const WantedListDisplay = ({
 };
 
 export default WantedListDisplay;
-

@@ -11,6 +11,3 @@ const NotWantedListManager = ({ pokemonKey, toggleNotWanted, isNotWanted }) => {
 };
 
 export default NotWantedListManager;
-
-
-
