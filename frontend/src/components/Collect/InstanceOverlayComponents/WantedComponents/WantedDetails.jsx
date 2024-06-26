@@ -51,7 +51,6 @@ const WantedDetails = ({ pokemon, lists, ownershipData }) => {
             <div className="top-row">
                 <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
             </div>
-            <h2>Wanted Trade Details</h2>
             <div className="icon-row">
                 <FriendshipManager friendship={friendship} setFriendship={setFriendship} editMode={editMode} />
                 <img 
@@ -62,6 +61,7 @@ const WantedDetails = ({ pokemon, lists, ownershipData }) => {
                     style={{ cursor: editMode ? 'pointer' : 'default' }}
                 />
             </div>
+            <h2>For Trade List:</h2>
             <TradeListDisplay
                 pokemon={pokemon}
                 lists={lists}
