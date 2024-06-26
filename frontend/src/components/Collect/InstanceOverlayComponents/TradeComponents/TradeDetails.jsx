@@ -99,6 +99,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
                     mirrorKey={mirrorKey}
                     setLocalNotWantedList={setLocalNotWantedList}
                     editMode={editMode}
+                    ownershipData={ownershipData}
                 />
             </div>
         </div>
