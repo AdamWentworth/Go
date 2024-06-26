@@ -13,9 +13,9 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
 
     const toggleNotWanted = (key) => {
         const updatedNotWanted = !localNotWantedList[key];
-        console.log(`Toggle not wanted: ${key} from ${localNotWantedList[key]} to ${updatedNotWanted}`);
+        // console.log(`Toggle not wanted: ${key} from ${localNotWantedList[key]} to ${updatedNotWanted}`);
         setLocalNotWantedList({...localNotWantedList, [key]: updatedNotWanted});
-        console.log(`Local not wanted list updated:`, localNotWantedList);
+        // console.log(`Local not wanted list updated:`, localNotWantedList);
     
         // Call to update reciprocal list, passing ownershipData
         updateNotTradeList(ownershipData, pokemon.pokemonKey, key, updatedNotWanted);
@@ -26,7 +26,7 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
             {Object.entries(displayedWantedList).map(([key, details]) => {
                 const isNotWanted = localNotWantedList[key];
                 const imageClasses = `wanted-item-img ${isNotWanted ? 'grey-out' : ''}`;
-                console.log(`Rendering ${key}, Not Wanted: ${isNotWanted}`);
+                // console.log(`Rendering ${key}, Not Wanted: ${isNotWanted}`);
                 return (
                     <div key={key} className="wanted-item" style={{ position: 'relative', overflow: 'hidden' }}>
                         {details.pref_lucky && (

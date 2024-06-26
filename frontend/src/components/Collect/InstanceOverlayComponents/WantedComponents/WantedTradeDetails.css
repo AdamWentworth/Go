@@ -69,3 +69,34 @@
     height: auto; /* Maintains aspect ratio */
     border-radius: 8px; /* Rounds corners */
 }
+
+/* WantedTradeDetails.css additions for the toggle button */
+.wanted-details-container .trade-item {
+    position: relative;
+}
+
+.wanted-details-container .toggle-not-trade {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 30px;
+    height: 30px;
+    background-color: white;
+    border: 1px solid black;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10; /* Ensure it is on top of the image */
+}
+
+.wanted-details-container .toggle-not-trade:focus {
+    outline: none;
+}
+
+.wanted-details-container .toggle-not-trade:hover {
+    background-color: lightgray;
+}

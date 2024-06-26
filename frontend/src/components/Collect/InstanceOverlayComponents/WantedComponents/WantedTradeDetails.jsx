@@ -7,16 +7,30 @@ import { PokemonDataContext } from '../../../../contexts/PokemonDataContext';
 const WantedTradeDetails = ({ pokemon, lists }) => {
     const { friendship_level, pref_lucky, not_trade_list } = pokemon.ownershipStatus;
     const [editMode, setEditMode] = useState(false);
+    const [localNotTradeList, setLocalNotTradeList] = useState({ ...not_trade_list });
     const [isLucky, setIsLucky] = useState(pref_lucky);
     const [friendship, setFriendship] = useState(friendship_level || 0);
     const { updateDetails } = useContext(PokemonDataContext);
 
-    const toggleEditMode = () => {
+    const toggleNotTrade = (key) => {
         if (editMode) {
-            console.log("Saving changes...");
-            updateDetails(pokemon.pokemonKey, { pref_lucky: isLucky, friendship_level: friendship });
+            const updatedNotTrade = !(localNotTradeList[key] || false);
+            setLocalNotTradeList({ ...localNotTradeList, [key]: updatedNotTrade });
         }
+    };
+
+    const toggleEditMode = () => {
         setEditMode(!editMode);
+        if (!editMode) { // If we're entering edit mode, do nothing else
+            return;
+        }
+        // Save changes when exiting edit mode
+        console.log("Saving changes...");
+        updateDetails(pokemon.pokemonKey, {
+            pref_lucky: isLucky,
+            friendship_level: friendship,
+            not_trade_list: localNotTradeList
+        });
     };
 
     const toggleLucky = () => {
@@ -29,30 +43,35 @@ const WantedTradeDetails = ({ pokemon, lists }) => {
         }
     };
 
-    // const toggleMirror = () => {
-    //     if (editMode) {
-    //         setIsMirror(!isMirror);
-    //     }
-    // };
-
     const renderTradeListDetails = () => {
         if (!lists || Object.keys(lists.trade).length === 0) {
             return <div>No Pokémon currently for trade.</div>;
         }
-
+    
         return (
             <div className="trade-list-container">
-                {Object.entries(lists.trade).map(([key, details]) => (
+                {Object.entries(lists.trade).filter(([key, details]) => 
+                    editMode || !(localNotTradeList[key]) // Show all if in edit mode or not marked in not_trade_list
+                ).map(([key, details]) => (
                     <div key={key} className="trade-item">
                         <img 
-                            src={details.currentImage} // Use the image URL from the details object
-                            alt={`Trade Pokémon ${key}`} // Provide a meaningful alternative text
+                            src={details.currentImage}
+                            alt={`Trade Pokémon ${key}`}
+                            className={localNotTradeList[key] ? 'grey-out' : ''}
                         />
+                        {editMode && (
+                            <button 
+                                className="toggle-not-trade" 
+                                onClick={() => toggleNotTrade(key)}
+                            >
+                                {localNotTradeList[key] ? '✓' : 'X'}
+                            </button>
+                        )}
                     </div>
                 ))}
             </div>
         );
-    };
+    };    
 
     const handleFriendshipChange = (e) => {
         const newFriendshipLevel = parseInt(e.target.value, 10);
