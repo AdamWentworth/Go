@@ -34,7 +34,7 @@ self.addEventListener('message', (event) => {
 
 async function syncData(data) {
     try {
-        const cache = await caches.open('pokemonDataCache');
+        const cache = await caches.open('pokemonCache');
         const response = new Response(JSON.stringify(data.data), {
             headers: { 'Content-Type': 'application/json' }
         });
@@ -49,7 +49,7 @@ async function syncData(data) {
 
 async function updatePokemonLists(data) {
     try {
-        const cache = await caches.open('pokemonDataCache');
+        const cache = await caches.open('pokemonCache');
         const response = new Response(JSON.stringify(data.lists), {
             headers: { 'Content-Type': 'application/json' }
         });

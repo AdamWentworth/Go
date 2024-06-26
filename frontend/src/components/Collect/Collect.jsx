@@ -144,10 +144,8 @@ function Collect() {
 
     // Updating highlighted pokemon to new Ownership filter: now using updateOwnership
     const handleMoveHighlightedToFilter = useCallback(filter => {
-        highlightedCards.forEach(pokemonKey => {
-            updateOwnership(pokemonKey, filter);
-        });
-        updateLists()
+        updateOwnership([...highlightedCards], filter);
+        updateLists();
         setHighlightedCards(new Set());
         setOwnershipFilter(filter);  // Assuming this sets the current filter state
     }, [highlightedCards, updateOwnership, updateLists]);    

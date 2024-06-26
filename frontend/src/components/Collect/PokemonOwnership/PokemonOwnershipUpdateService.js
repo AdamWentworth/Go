@@ -3,12 +3,13 @@ import { createNewDataForVariant } from './pokemonOwnershipManager';
 import { updateTradeList } from './PokemonTradeListOperations';
 import { parsePokemonKey } from '../utils/PokemonIDUtils';
 
-export function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershipData, setOwnershipData) {
+export function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershipData, callback) {
     const { baseKey, hasUUID } = parsePokemonKey(pokemonKey);
-
     const variantData = variants.find(variant => variant.pokemonKey === baseKey);
+
     if (!variantData) {
         console.error("No variant data found for base key:", baseKey);
+        callback(); // Ensuring callback is called even if there's an error
         return;
     }
 
@@ -18,10 +19,9 @@ export function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershi
         handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData, variants);
     }
 
-    setTimeout(() => {
-        setOwnershipData(ownershipData);  // This should trigger a re-render
-    }, 0);
+    callback(); // Ensures that callback is always called to update the counter
 }
+
 
 function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData, variants) {
     let needNewInstance = true;

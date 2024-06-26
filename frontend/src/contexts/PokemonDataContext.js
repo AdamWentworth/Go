@@ -225,20 +225,29 @@ export const PokemonDataProvider = ({ children }) => {
     }, []);
 
     // Function to update ownership status
-    const updateOwnership = useCallback((pokemonKey, newStatus) => {
-        updatePokemonOwnership(pokemonKey, newStatus, data.variants, data.ownershipData, updatedOwnershipData => {
-            setData(prevData => ({
-                ...prevData,
-                ownershipData: updatedOwnershipData
-            }));
-            navigator.serviceWorker.ready.then(registration => {
-                registration.active.postMessage({
-                    action: 'syncData',
-                    data: { data: updatedOwnershipData, timestamp: Date.now() }
-                });
+    const updateOwnership = useCallback((pokemonKeys, newStatus) => {
+        const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
+        const tempOwnershipData = { ...data.ownershipData }; // Cloning to avoid direct mutation
+        let processedKeys = 0;
+    
+        keys.forEach(key => {
+            updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, () => {
+                processedKeys++;
+                if (processedKeys === keys.length) { // Only update state and SW when all keys are processed
+                    setData(prevData => ({
+                        ...prevData,
+                        ownershipData: tempOwnershipData
+                    }));
+                    navigator.serviceWorker.ready.then(registration => {
+                        registration.active.postMessage({
+                            action: 'syncData',
+                            data: { data: tempOwnershipData, timestamp: Date.now() }
+                        });
+                    });
+                }
             });
         });
-    }, [data.variants, data.ownershipData]);    
+    }, [data.variants, data.ownershipData]);           
 
     const updateLists = useCallback(() => {
         updatePokemonLists(data.ownershipData, data.variants, sortedLists => {
