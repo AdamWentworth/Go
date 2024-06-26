@@ -63,7 +63,9 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
             is_for_trade: false,
             is_unowned: false,
             mirror: true,
-            currentImage: pokemon.currentImage
+            currentImage: pokemon.currentImage,
+            pref_lucky: false,
+            friendship_level: null
         };
         ownershipData[newKey] = newData;
         lists.wanted[newKey] = newData;
