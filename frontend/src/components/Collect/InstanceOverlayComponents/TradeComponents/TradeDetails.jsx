@@ -38,9 +38,10 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
         }, {});
     };
 
-    const toggleEditMode = () => {
+     const toggleEditMode = () => {
         setEditMode(!editMode);
-        if (!editMode) {
+        if (editMode) {
+            // Update the details only when exiting edit mode
             updateDetails(pokemon.pokemonKey, {
                 not_wanted_list: localNotWantedList,
                 mirror: isMirror

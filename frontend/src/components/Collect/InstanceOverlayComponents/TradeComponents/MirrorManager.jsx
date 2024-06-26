@@ -37,29 +37,23 @@ const MirrorManager = ({
 
     const enableMirror = () => {
         const existingMirrorKey = findExistingMirrorKey();
-        console.log("Existing mirror key found:", existingMirrorKey);
         if (existingMirrorKey) {
             setMirrorKey(existingMirrorKey);
             updateDisplayedList({ [existingMirrorKey]: ownershipData[existingMirrorKey] });
-            console.log("Mirror enabled with existing key");
         } else {
-            console.log("No existing mirror key, setting new mirror");
+            setMirrorKey('placeholder');
             const placeholderData = {
                 ...pokemon,
                 currentImage: pokemon.currentImage,
                 mirror: true
             };
-            setMirrorKey('placeholder');
             updateDisplayedList({ 'placeholder': placeholderData });
         }
-        updateDetails(pokemon.pokemonKey, { mirror: true });
     };
 
     const disableMirror = () => {
-        console.log("Disabling mirror functionality");
         setMirrorKey(null);
         updateDisplayedList({});
-        updateDetails(pokemon.pokemonKey, { mirror: false });
     };
 
     const toggleMirror = () => {
