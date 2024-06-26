@@ -1,65 +1,87 @@
 // MirrorManager.jsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 const MirrorManager = ({
   pokemon, ownershipData, isMirror, setIsMirror, setMirrorKey, editMode, updateDisplayedList, updateDetails
 }) => {
-    // Effect for initial mirror status check and setup
+    const initialMount = useRef(true);
+
+    // Initial setup only on component mount
     useEffect(() => {
-        if (!editMode && pokemon.ownershipStatus.mirror) {
-            const existingMirrorKey = findExistingMirrorKey();
-            if (existingMirrorKey) {
-                setMirrorKey(existingMirrorKey);
-                setIsMirror(true);
-                updateDisplayedList({ [existingMirrorKey]: ownershipData[existingMirrorKey] });
+        if (initialMount.current) {
+            initialMount.current = false;
+            console.log("Initial setup for MirrorManager");
+            // Initialize isMirror based on ownershipStatus from props
+            setIsMirror(pokemon.ownershipStatus.mirror);
+            if (pokemon.ownershipStatus.mirror) {
+                enableMirror();  // Directly enable mirror if initially true
             } else {
-                setIsMirror(false);
-                setMirrorKey(null);
-                updateDisplayedList({});
-                updateDetails(pokemon.pokemonKey, {
-                    mirror: false
-                }); // Update mirror status in context or state management.
+                disableMirror();  // Ensure mirror is disabled if initially false
             }
         }
-    }, [pokemon, ownershipData, setIsMirror, setMirrorKey, updateDisplayedList, editMode, updateDetails]);    
+    }, []); // Empty dependency array ensures this runs only once on mount
 
-    // Toggling mirror functionality
-    const toggleMirror = () => {
-        if (!editMode) return; // Only allow toggling in edit mode
-        const shouldEnableMirror = !isMirror;
-        setIsMirror(shouldEnableMirror);
-    
-        if (shouldEnableMirror) {
-            // If enabling mirror, find existing or use placeholder
-            const existingMirrorKey = findExistingMirrorKey();
-            if (existingMirrorKey) {
-                setMirrorKey(existingMirrorKey);
-                updateDisplayedList({ [existingMirrorKey]: ownershipData[existingMirrorKey] });
+    // Subsequent updates based on state changes
+    useEffect(() => {
+        if (!initialMount.current && editMode) {  // Ensure this does not run on initial mount
+            console.log("Subsequent update for MirrorManager based on isMirror state change");
+            // Update the external ownership status to reflect the state of isMirror
+            pokemon.ownershipStatus.mirror = isMirror;
+            if (isMirror) {
+                enableMirror();
             } else {
-                const placeholderData = {
-                    ...pokemon,
-                    currentImage: pokemon.currentImage,
-                    mirror: true
-                };
-                setMirrorKey('placeholder');
-                updateDisplayedList({ 'placeholder': placeholderData });
+                disableMirror();
             }
+        }
+    }, [isMirror]); // React only to changes in isMirror
+
+    const enableMirror = () => {
+        const existingMirrorKey = findExistingMirrorKey();
+        console.log("Existing mirror key found:", existingMirrorKey);
+        if (existingMirrorKey) {
+            setMirrorKey(existingMirrorKey);
+            updateDisplayedList({ [existingMirrorKey]: ownershipData[existingMirrorKey] });
+            console.log("Mirror enabled with existing key");
         } else {
-            // If disabling mirror, clear the display list
-            setMirrorKey(null);
-            updateDisplayedList({});
+            console.log("No existing mirror key, setting new mirror");
+            const placeholderData = {
+                ...pokemon,
+                currentImage: pokemon.currentImage,
+                mirror: true
+            };
+            setMirrorKey('placeholder');
+            updateDisplayedList({ 'placeholder': placeholderData });
         }
-    };    
+        updateDetails(pokemon.pokemonKey, { mirror: true });
+    };
 
-    // Find an existing mirror entry
+    const disableMirror = () => {
+        console.log("Disabling mirror functionality");
+        setMirrorKey(null);
+        updateDisplayedList({});
+        updateDetails(pokemon.pokemonKey, { mirror: false });
+    };
+
+    const toggleMirror = () => {
+        if (!editMode) {
+            console.log("Attempt to toggle mirror in view mode, action blocked");
+            return;
+        }
+        const shouldEnableMirror = !isMirror;
+        console.log("Toggling mirror from", isMirror, "to", shouldEnableMirror);
+        setIsMirror(shouldEnableMirror); // This change will trigger the second useEffect
+    };
+
     const findExistingMirrorKey = () => {
         const basePrefix = pokemon.pokemonKey.split('_').slice(0, -1).join('_');
-        return Object.keys(ownershipData).find(key => key.startsWith(basePrefix) &&
+        const foundKey = Object.keys(ownershipData).find(key => key.startsWith(basePrefix) &&
             ownershipData[key].is_wanted &&
             !ownershipData[key].is_owned &&
             !ownershipData[key].is_for_trade &&
             ownershipData[key].pokemon_id === pokemon.pokemon_id &&
             ownershipData[key].mirror);
+        console.log("findExistingMirrorKey:", foundKey || "No key found");
+        return foundKey;
     };
 
     return (

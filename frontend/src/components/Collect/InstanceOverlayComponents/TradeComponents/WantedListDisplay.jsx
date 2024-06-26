@@ -1,6 +1,5 @@
 // WantedListDisplay.jsx
 import React from 'react';
-import NotWantedListManager from './NotWantedListManager';
 
 const WantedListDisplay = ({ lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode }) => {
 
