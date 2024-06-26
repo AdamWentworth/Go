@@ -35,7 +35,7 @@ self.addEventListener('message', (event) => {
 async function syncData(data) {
     try {
         const cache = await caches.open('pokemonCache');
-        const response = new Response(JSON.stringify(data.data), {
+        const response = new Response(JSON.stringify({data: data.data, timestamp: data.timestamp}), {
             headers: { 'Content-Type': 'application/json' }
         });
         await cache.put('/pokemonOwnership', response);
@@ -50,7 +50,7 @@ async function syncData(data) {
 async function updatePokemonLists(data) {
     try {
         const cache = await caches.open('pokemonCache');
-        const response = new Response(JSON.stringify(data.lists), {
+        const response = new Response(JSON.stringify({ lists: data.lists, timestamp: data.timestamp }), {
             headers: { 'Content-Type': 'application/json' }
         });
         await cache.put('/pokemonLists', response);

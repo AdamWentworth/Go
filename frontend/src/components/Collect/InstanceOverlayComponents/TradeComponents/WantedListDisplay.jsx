@@ -1,7 +1,7 @@
 // WantedListDisplay.jsx
 
 import React from 'react';
-import { updateNotTradeList } from './ReciprocalUpdate.jsx'; // Make sure the import path matches the file location
+import { updateNotTradeList } from '../ReciprocalUpdate.jsx'; // Make sure the import path matches the file location
 
 const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode, ownershipData }) => {
     const displayedWantedList = Object.keys(lists.wanted)
