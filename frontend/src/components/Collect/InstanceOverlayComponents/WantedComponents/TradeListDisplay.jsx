@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-const TradeListDisplay = ({ lists, localNotTradeList, setLocalNotTradeList, editMode, toggleReciprocalUpdates }) => {
+const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeList, editMode, toggleReciprocalUpdates }) => {
     const handleNotTradeToggle = (key) => {
         if (editMode) {
             const updatedNotTrade = !(localNotTradeList[key] || false);
@@ -15,12 +15,16 @@ const TradeListDisplay = ({ lists, localNotTradeList, setLocalNotTradeList, edit
     if (!lists || Object.keys(lists.trade).length === 0) {
         return <div>No Pokémon currently for trade.</div>;
     }
-
+    console.log(pokemon.ownershipStatus.mirror)
     return (
         <div className="trade-list-container">
             {Object.entries(lists.trade)
                 // Filter out entries that are not for trade or have details.mirror true
-                .filter(([key, details]) => (!localNotTradeList[key] && !details.mirror) || (editMode && !details.mirror))
+                .filter(([key, details]) => {
+                    const shouldShow = !localNotTradeList[key] && (!details.mirror || (details.mirror && pokemon.ownershipStatus.mirror));
+                    const shouldShowInEditMode = editMode && (!details.mirror || (details.mirror && pokemon.ownershipStatus.mirror));
+                    return shouldShow || shouldShowInEditMode;
+                })
                 .map(([key, details]) => (
                     <div key={key} className="trade-item">
                         <img 
