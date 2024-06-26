@@ -58,13 +58,12 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
         const basePrefix = pokemon.pokemonKey.split('_').slice(0, -1).join('_');
         const newKey = `${basePrefix}_${generateUUID()}`;
         const newData = {
-            ...pokemon,
+            ...pokemon.ownershipStatus,
             is_wanted: true,
             is_owned: false,
             is_for_trade: false,
             is_unowned: false,
             mirror: true,
-            currentImage: pokemon.currentImage,
             pref_lucky: false,
             friendship_level: null
         };
@@ -92,6 +91,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
             <div>
                 <h2>Wanted List:</h2>
                 <WantedListDisplay
+                    pokemon={pokemon}
                     lists={listsState}
                     localNotWantedList={localNotWantedList}
                     isMirror={isMirror}

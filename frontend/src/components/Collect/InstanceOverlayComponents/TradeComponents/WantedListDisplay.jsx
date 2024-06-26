@@ -1,7 +1,7 @@
 // WantedListDisplay.jsx
 import React from 'react';
 
-const WantedListDisplay = ({ lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode }) => {
+const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode }) => {
 
     const displayedWantedList = Object.keys(lists.wanted)
         .filter(key => (editMode || !localNotWantedList[key]) && (!isMirror || (isMirror && key === mirrorKey)))
@@ -17,7 +17,7 @@ const WantedListDisplay = ({ lists, localNotWantedList, setLocalNotWantedList, i
                 const imageClasses = `wanted-item-img ${isNotWanted ? 'grey-out' : ''}`;
                 return (
                     <div key={key} className="wanted-item">
-                        <img src={details.currentImage || details.fallbackImage} className={imageClasses} alt={`Wanted Pokémon ${key}`} />
+                        <img src={details.currentImage || pokemon.currentImage} className={imageClasses} alt={`Wanted Pokémon ${key}`} />
                         {editMode && (
                             <button className="toggle-not-wanted" onClick={() => setLocalNotWantedList({...localNotWantedList, [key]: !isNotWanted})}>
                                 {isNotWanted ? '✓' : 'X'}
