@@ -8,7 +8,7 @@ const WantedTradeDetails = ({ pokemon, lists }) => {
     const { friendship_level, pref_lucky, not_trade_list } = pokemon.ownershipStatus;
     const [editMode, setEditMode] = useState(false);
     const [isLucky, setIsLucky] = useState(pref_lucky);
-    const [friendship, setFriendship] = useState(friendship_level);
+    const [friendship, setFriendship] = useState(friendship_level || 0);
     const { updateDetails } = useContext(PokemonDataContext);
 
     const toggleEditMode = () => {
