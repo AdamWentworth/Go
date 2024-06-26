@@ -14,17 +14,17 @@ import { formatTimeAgo } from '../components/Collect/utils/formattingHelpers';
 // Create a React context for sharing Pokemon data across components
 const PokemonDataContext = createContext();
 
-let syncWorker;
+// let syncWorker;
 
-if (window.Worker) {
-    syncWorker = new Worker(new URL('../components/Collect/workers/syncWorker.js', import.meta.url));
-    syncWorker.onmessage = function(event) {
-      console.log('Data synced successfully:', event.data);
-    };
-    syncWorker.onerror = function(event) {
-      console.error('Error in worker:', event.message);
-    };
-}
+// if (window.Worker) {
+//     syncWorker = new Worker(new URL('../components/Collect/workers/syncWorker.js', import.meta.url));
+//     syncWorker.onmessage = function(event) {
+//       console.log('Data synced successfully:', event.data);
+//     };
+//     syncWorker.onerror = function(event) {
+//       console.error('Error in worker:', event.message);
+//     };
+// }
 
 // Custom hook to use the context
 export const usePokemonData = () => useContext(PokemonDataContext);
@@ -215,6 +215,15 @@ export const PokemonDataProvider = ({ children }) => {
         });
     }, []);
 
+    // Add this in a useEffect to handle messages from the service worker
+    useEffect(() => {
+        // Make sure the service worker is ready and listening for messages
+        navigator.serviceWorker.addEventListener('message', event => {
+            console.log('Received message from service worker:', event.data);
+            // Handle specific messages or data updates here
+        });
+    }, []);
+
     // Function to update ownership status
     const updateOwnership = useCallback((pokemonKey, newStatus) => {
         updatePokemonOwnership(pokemonKey, newStatus, data.variants, data.ownershipData, updatedOwnershipData => {
@@ -222,14 +231,14 @@ export const PokemonDataProvider = ({ children }) => {
                 ...prevData,
                 ownershipData: updatedOwnershipData
             }));
-            if (syncWorker) {
-                syncWorker.postMessage({
+            navigator.serviceWorker.ready.then(registration => {
+                registration.active.postMessage({
                     action: 'syncData',
-                    data: {data: updatedOwnershipData, timestamp: Date.now()}
+                    data: { data: updatedOwnershipData, timestamp: Date.now() }
                 });
-            }
+            });
         });
-    }, [data.variants, data.ownershipData]);
+    }, [data.variants, data.ownershipData]);    
 
     const updateLists = useCallback(() => {
         updatePokemonLists(data.ownershipData, data.variants, sortedLists => {
@@ -239,15 +248,15 @@ export const PokemonDataProvider = ({ children }) => {
                 lists: sortedLists
             }));
     
-            // If using a worker to handle side effects like caching or posting to a server
-            if (syncWorker) {
-                syncWorker.postMessage({
+            // Send updated lists to the service worker
+            navigator.serviceWorker.ready.then(registration => {
+                registration.active.postMessage({
                     action: 'updatePokemonLists',
                     data: { lists: sortedLists, timestamp: Date.now() }
                 });
-            }
+            });
         });
-    }, [data.ownershipData, setData, syncWorker]);  
+    }, [data.ownershipData, data.variants]);    
 
     // Function to update Instance details
     const updateDetails = useCallback((pokemonKey, details) => {
@@ -262,18 +271,17 @@ export const PokemonDataProvider = ({ children }) => {
             ...prevData,
             ownershipData: newData
         }));
-
+    
         updateLists();
     
-        // Send updated data to syncWorker for asynchronous synchronization
-        if (syncWorker) {
-            console.log("Sending updated data to worker for sync");
-            syncWorker.postMessage({
+        // Send updated data to the service worker for asynchronous synchronization
+        navigator.serviceWorker.ready.then(registration => {
+            registration.active.postMessage({
                 action: 'syncData',
                 data: { data: newData, timestamp: Date.now() }
             });
-        }
-    }, [data.ownershipData, updateLists]);
+        });
+    }, [data.ownershipData, updateLists]);    
 
     // Context value includes all state and the update function
     const contextValue = useMemo(() => ({

@@ -19,9 +19,9 @@ async function syncData(data) {
         // Ensure you are storing the entire object including the timestamp
         const response = new Response(JSON.stringify({data: data.data, timestamp: data.timestamp}));
         await cache.put('/pokemonOwnership', response);
-        postMessage({ status: 'success' });
+        postMessage({ status: 'success', message: 'Pokemon ownership updated successfully under /pokemonOwnership with timestamp.' });
     } catch (error) {
-        postMessage({ status: 'failed', error });
+        postMessage({ status: 'failed', message: 'Failed to update pokemon ownership.', error });
     }
 }
 
