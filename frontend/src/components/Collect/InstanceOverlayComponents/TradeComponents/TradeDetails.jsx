@@ -4,9 +4,9 @@ import './TradeDetails.css';
 import EditSaveComponent from '../EditSaveComponent';
 import { PokemonDataContext } from '../../../../contexts/PokemonDataContext';
 import { generateUUID } from '../../utils/PokemonIDUtils';
-
 import WantedListDisplay from './WantedListDisplay';
 import MirrorManager from './MirrorManager';
+import { updateNotTradeList } from '../ReciprocalUpdate.jsx';
 
 const TradeDetails = ({ pokemon, lists, ownershipData }) => {
     const { not_wanted_list } = pokemon.ownershipStatus;
@@ -16,6 +16,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
     const [isMirror, setIsMirror] = useState(pokemon.ownershipStatus.mirror); // Initialize from pokemon status
     const [mirrorKey, setMirrorKey] = useState(null);
     const [listsState, setListsState] = useState(lists);
+    const [pendingUpdates, setPendingUpdates] = useState({});
 
     useEffect(() => {
         // Synchronize isMirror with external mirror status after component mount
@@ -39,9 +40,13 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
     };
 
      const toggleEditMode = () => {
-        setEditMode(!editMode);
         if (editMode) {
-            // Update the details only when exiting edit mode
+            Object.keys(pendingUpdates).forEach(key => {
+                if (localNotWantedList[key] !== not_wanted_list[key]) { // Only update if changed
+                    updateNotTradeList(ownershipData, pokemon.pokemonKey, key, localNotWantedList[key]);
+                }
+            });
+            setPendingUpdates({});
             updateDetails(pokemon.pokemonKey, {
                 not_wanted_list: localNotWantedList,
                 mirror: isMirror
@@ -52,6 +57,11 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
                 updateDisplayedList({ [newMirrorKey]: ownershipData[newMirrorKey] });
             }
         }
+        setEditMode(!editMode);
+    };
+
+    const toggleReciprocalUpdates = (key, updatedNotTrade) => {
+        setPendingUpdates(prev => ({ ...prev, [key]: updatedNotTrade }));
     };
 
     const createNewMirrorEntry = (pokemon) => {
@@ -100,6 +110,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
                     setLocalNotWantedList={setLocalNotWantedList}
                     editMode={editMode}
                     ownershipData={ownershipData}
+                    toggleReciprocalUpdates={toggleReciprocalUpdates}
                 />
             </div>
         </div>

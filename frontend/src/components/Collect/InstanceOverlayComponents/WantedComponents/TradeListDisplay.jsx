@@ -1,16 +1,14 @@
 // TradeListDisplay.jsx
 
 import React from 'react';
-import { updateNotWantedList } from '../ReciprocalUpdate.jsx';
 
-const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeList, editMode, ownershipData }) => {
-    const toggleNotTrade = (otherPokemonKey) => {
+const TradeListDisplay = ({ lists, localNotTradeList, setLocalNotTradeList, editMode, toggleReciprocalUpdates }) => {
+    const handleNotTradeToggle = (key) => {
         if (editMode) {
-            const updatedNotTrade = !(localNotTradeList[otherPokemonKey] || false);
-            setLocalNotTradeList({ ...localNotTradeList, [otherPokemonKey]: updatedNotTrade });
-
-            // Call to update reciprocal list, using both the current and other Pokemon keys
-            updateNotWantedList(ownershipData, pokemon.pokemonKey, otherPokemonKey, updatedNotTrade);
+            const updatedNotTrade = !(localNotTradeList[key] || false);
+            setLocalNotTradeList({ ...localNotTradeList, [key]: updatedNotTrade });
+            // Prepare for reciprocal updates once edit mode is off
+            toggleReciprocalUpdates(key, updatedNotTrade);
         }
     };
 
@@ -30,7 +28,7 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
                     {editMode && (
                         <button 
                             className="toggle-not-trade"
-                            onClick={() => toggleNotTrade(key)}
+                            onClick={() => handleNotTradeToggle(key)}
                         >
                             {localNotTradeList[key] ? '✓' : 'X'}
                         </button>

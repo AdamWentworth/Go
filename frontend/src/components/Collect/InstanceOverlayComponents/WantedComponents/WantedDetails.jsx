@@ -1,10 +1,11 @@
 // WantedDetails.jsx
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import './WantedDetails.css';
 import EditSaveComponent from '../EditSaveComponent';
 import { PokemonDataContext } from '../../../../contexts/PokemonDataContext';
 import FriendshipManager from './FriendshipManager';
 import TradeListDisplay from './TradeListDisplay';
+import { updateNotWantedList } from '../ReciprocalUpdate.jsx';
 
 const WantedDetails = ({ pokemon, lists, ownershipData }) => {
     const { pref_lucky } = pokemon.ownershipStatus;
@@ -12,20 +13,27 @@ const WantedDetails = ({ pokemon, lists, ownershipData }) => {
     const [localNotTradeList, setLocalNotTradeList] = useState({ ...pokemon.ownershipStatus.not_trade_list });
     const [isLucky, setIsLucky] = useState(pref_lucky);
     const [friendship, setFriendship] = useState(pokemon.ownershipStatus.friendship_level || 0);
+    const [pendingUpdates, setPendingUpdates] = useState({});
     const { updateDetails } = useContext(PokemonDataContext);
 
     const toggleEditMode = () => {
-        setEditMode(!editMode);
-        if (!editMode) { // If we're entering edit mode, do nothing else
-            return;
+        if (editMode) {
+            // Commit changes when toggling edit mode off
+            Object.keys(pendingUpdates).forEach(key => {
+                updateNotWantedList(ownershipData, pokemon.pokemonKey, key, pendingUpdates[key]);
+            });
+            setPendingUpdates({});
+            updateDetails(pokemon.pokemonKey, {
+                pref_lucky: isLucky,
+                friendship_level: friendship,
+                not_trade_list: localNotTradeList
+            });
         }
-        // Save changes when exiting edit mode
-        console.log("Saving changes...");
-        updateDetails(pokemon.pokemonKey, {
-            pref_lucky: isLucky,
-            friendship_level: friendship,
-            not_trade_list: localNotTradeList
-        });
+        setEditMode(!editMode);
+    };
+
+    const toggleReciprocalUpdates = (key, updatedNotTrade) => {
+        setPendingUpdates(prev => ({ ...prev, [key]: updatedNotTrade }));
     };
 
     const toggleLucky = () => {
@@ -56,10 +64,11 @@ const WantedDetails = ({ pokemon, lists, ownershipData }) => {
             </div>
             <TradeListDisplay
                 pokemon={pokemon}
-                lists={lists} 
-                localNotTradeList={localNotTradeList} 
-                setLocalNotTradeList={setLocalNotTradeList} 
+                lists={lists}
+                localNotTradeList={localNotTradeList}
+                setLocalNotTradeList={setLocalNotTradeList}
                 editMode={editMode}
+                toggleReciprocalUpdates={toggleReciprocalUpdates}
                 ownershipData={ownershipData}
             />
         </div>
