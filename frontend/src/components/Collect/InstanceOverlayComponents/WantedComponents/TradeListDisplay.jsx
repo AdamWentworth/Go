@@ -15,7 +15,7 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
     if (!lists || Object.keys(lists.trade).length === 0) {
         return <div>No Pokémon currently for trade.</div>;
     }
-    console.log(pokemon.ownershipStatus.mirror)
+
     return (
         <div className="trade-list-container">
             {Object.entries(lists.trade)
