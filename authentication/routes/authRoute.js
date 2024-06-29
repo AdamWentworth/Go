@@ -282,4 +282,38 @@ router.delete('/delete/:id', async (req, res) => {
     }
 });
 
+router.post('/logout', (req, res) => {
+    // console.log('Cookies received on logout:', req.cookies); // Log cookies received
+
+    const accessToken = req.cookies ? req.cookies.accessToken : null;
+
+    if (!accessToken) {
+        logger.error('Logout failed: No access token provided');
+        return res.status(401).json({ message: 'No access token provided' });
+    }
+
+    try {
+        const payload = jwt.verify(accessToken, secretKey);
+
+        res.clearCookie('accessToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+            path: '/'
+        });
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+            path: '/'
+        });
+
+        logger.info(`User ${payload.username} logged out successfully with status ${200}`);
+        res.status(200).json({ message: 'Logged out successfully' });
+    } catch (err) {
+        logger.error(`Logout error: ${err.message}`);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
 module.exports = router;

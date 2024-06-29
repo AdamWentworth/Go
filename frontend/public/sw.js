@@ -33,6 +33,7 @@ self.addEventListener('message', (event) => {
 });
 
 async function syncData(data) {
+    console.log('Sync data called:', data); // Add this log
     try {
         const cache = await caches.open('pokemonCache');
         const response = new Response(JSON.stringify({data: data.data, timestamp: data.timestamp}), {

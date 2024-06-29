@@ -3,7 +3,7 @@
 import axios from 'axios';
 
 axios.defaults.baseURL = process.env.REACT_APP_AUTH_API_URL;
-axios.defaults.withCredentials = true; 
+axios.defaults.withCredentials = true;
 
 export const registerUser = async (userData) => {
   try {
@@ -19,6 +19,10 @@ export const loginUser = async (loginData) => {
   try {
     const response = await axios.post('/auth/login', loginData);
     console.log("Login response:", response.data); // Log to debug
+
+    // Log cookies to verify they are set
+    console.log("Cookies after login:", document.cookie);
+
     return response.data;
   } catch (error) {
     console.error('Error logging in user:', error.response || error);
@@ -28,9 +32,13 @@ export const loginUser = async (loginData) => {
 
 export const logoutUser = async () => {
   try {
-    await axios.post('/auth/logout');
+    await axios.post('/auth/logout', {}, { withCredentials: true });
+    // Clear local storage (client-side session invalidation)
+    localStorage.removeItem('user');
+    return Promise.resolve(); // Resolve the promise immediately as there's no backend call
   } catch (error) {
     console.error('Error during logout:', error);
+    throw error;
   }
 };
 

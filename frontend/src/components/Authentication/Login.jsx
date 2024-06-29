@@ -21,7 +21,7 @@ function Login() {
   function onSubmit(formValues) {
     loginUser(formValues)
       .then(response => {
-        const { email, username, pokemonGoName, trainerCode, user_id, token, allowLocation, country, city } = response;
+        const { email, username, pokemonGoName, trainerCode, user_id, token, allowLocation, country, city, accessTokenExpiry, refreshTokenExpiry } = response;
         const user = {
           email,
           username,
@@ -30,7 +30,9 @@ function Login() {
           user_id,
           allowLocation,
           country,
-          city
+          city,
+          accessTokenExpiry,
+          refreshTokenExpiry
         };
 
         login(user, token); // Pass user and token to login function

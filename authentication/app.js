@@ -6,6 +6,7 @@ const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.en
 dotenv.config({ path: envFile });
 
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
@@ -51,6 +52,8 @@ app.use(passport.session());
 
 // Apply JSON parsing middleware
 app.use(express.json());
+
+app.use(cookieParser());
 
 // CORS setup
 app.use(cors({
