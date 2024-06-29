@@ -1,7 +1,9 @@
 // app.js
 
 // Load environment variables
-require('dotenv').config();
+const dotenv = require('dotenv');
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
+dotenv.config({ path: envFile });
 
 const express = require('express');
 const cors = require('cors');
@@ -33,10 +35,14 @@ const app = express();
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(session({
-    secret: 'secret', // Change to a random secret in production
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: true } // Enable secure cookies when using HTTPS
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    }
 }));
 
 // Initialize Passport and use sessions
@@ -46,10 +52,11 @@ app.use(passport.session());
 // Apply JSON parsing middleware
 app.use(express.json());
 
-// CORS configuration for development
+// CORS setup
 app.use(cors({
-    origin: 'http://localhost:3001', // Allow connections from the front-end URL
-    optionsSuccessStatus: 200 // For compatibility with IE
+    origin: process.env.FRONTEND_URL, // Ensure this matches exactly with the front-end's origin
+    credentials: true,
+    optionsSuccessStatus: 200
 }));
 
 // Security enhancements with Helmet

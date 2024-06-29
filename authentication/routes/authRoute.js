@@ -8,6 +8,32 @@ const jwt = require('jsonwebtoken');
 const secretKey = process.env.JWT_SECRET;
 const logger = require('../middlewares/logger'); // Ensure logger is imported correctly
 
+// Helper to calculate expiry times
+const calculateExpiryTime = (seconds) => {
+    return new Date(new Date().getTime() + seconds * 1000);
+}
+
+// Function to create tokens and calculate expirations
+function createTokens(user) {
+    const accessToken = jwt.sign({ userId: user._id, username: user.username }, secretKey, { expiresIn: '1h' });
+    const refreshToken = jwt.sign({ userId: user._id, username: user.username }, secretKey, { expiresIn: '7d' });
+
+    const accessTokenExpiry = calculateExpiryTime(3600); // 3600 seconds = 1 hour
+    const refreshTokenExpiry = calculateExpiryTime(604800); // 604800 seconds = 7 days
+
+    return { accessToken, refreshToken, accessTokenExpiry, refreshTokenExpiry };
+}
+
+// Save refresh token in the database
+async function saveRefreshToken(userId, refreshToken, expiresIn) {
+    const expiration = new Date();
+    expiration.setDate(expiration.getDate() + 7); // 7 days from now
+    await User.findByIdAndUpdate(userId, {
+        'refreshToken.token': refreshToken,
+        'refreshToken.expires': expiration
+    });
+}
+
 router.post('/register', async (req, res) => {
     try {
         if (await User.findOne({ username: req.body.username })) {
@@ -41,14 +67,28 @@ router.post('/register', async (req, res) => {
         const savedUser = await newUser.save({ writeConcern: { w: "majority" } });
         logger.debug(`User ${req.body.username} saved successfully, attempting to create token.`);
 
-        const token = jwt.sign({ userId: savedUser._id, username: savedUser.username }, secretKey, { expiresIn: '24h' });
+        const { accessToken, refreshToken } = createTokens(savedUser);
+        await saveRefreshToken(savedUser._id, refreshToken, 7);
+
+        // Set tokens as HttpOnly cookies
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+            maxAge: 3600000 // 1 hour
+        });
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+            maxAge: 604800000 // 7 days
+        });
 
         res.status(201).json({
             user: {
                 username: savedUser.username,
                 email: savedUser.email
             },
-            token: token,
             message: 'Account created successfully.'
         });
         logger.info(`User ${savedUser.username} registered successfully with status ${201}`);
@@ -79,18 +119,33 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Invalid password' });
         }
 
-        const token = jwt.sign({ userId: user._id, username: user.username }, secretKey, { expiresIn: '24h' });
+        const { accessToken, refreshToken, accessTokenExpiry, refreshTokenExpiry } = createTokens(user);
+        await saveRefreshToken(user._id, refreshToken, 7);
+
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+            maxAge: 3600000 // 1 hour
+        });
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+            maxAge: 604800000 // 7 days
+        });
 
         res.status(200).json({
             user_id: user._id.toString(),
             username: user.username,
             email: user.email,
-            pokemonGoName: user.pokemonGoName, // Ensure these fields exist
+            pokemonGoName: user.pokemonGoName,
             trainerCode: user.trainerCode,
-            token: token,
             allowLocation: user.allowLocation,
             country: user.country,
             city: user.city,
+            accessTokenExpiry: accessTokenExpiry.toISOString(),
+            refreshTokenExpiry: refreshTokenExpiry.toISOString(),
             message: 'Logged in successfully'
         });
         logger.info(`User ${user.username} logged in successfully with status ${200}`);
@@ -99,6 +154,51 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
+
+// Refresh token endpoint
+router.post('/refresh', async (req, res) => {
+    const { refreshToken } = req.cookies;
+    if (!refreshToken) {
+        logger.error('Refresh token request failed: No token provided');
+        return res.status(401).json({ message: 'No token provided' });
+    }
+
+    try {
+        const payload = jwt.verify(refreshToken, secretKey);
+        const user = await User.findOne({
+            _id: payload.userId,
+            'refreshToken.token': refreshToken,
+            'refreshToken.expires': { $gt: new Date() }
+        });
+        if (!user) {
+            logger.error(`Refresh token validation failed: Invalid or expired token for user ID ${payload.userId}`);
+            return res.status(404).json({ message: 'Invalid or expired token' });
+        }
+
+        const { accessToken, refreshToken: newRefreshToken } = createTokens(user);
+        await saveRefreshToken(user._id, newRefreshToken, 7);
+
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 3600000 // 1 hour
+        });
+        res.cookie('refreshToken', newRefreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 604800000 // 7 days
+        });
+
+        logger.info(`Tokens successfully refreshed for user ID ${user._id}`);
+        res.status(200).json({ message: 'Tokens refreshed successfully' });
+    } catch (err) {
+        logger.error(`Refresh token error: ${err.message}`);
+        res.status(500).json({ message: 'Failed to refresh tokens' });
+    }
+});
+
 
 // Update user details
 router.put('/update/:id', async (req, res) => {

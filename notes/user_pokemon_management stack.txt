@@ -1,0 +1,21 @@
+2. Backend Services
+a. API Gateway / Receiver Service
+Role: Receives requests from the frontend, authenticates, and forwards to appropriate services (e.g., CRUD operations on Pokémon data).
+Deployment: Stateless, scalable through Kubernetes deployments. It acts as the entry point and can distribute requests to other services through internal load balancing.
+b. Kafka Message Queue
+Role: Buffers write operations to decouple the receiving service from the processing/storage services. This ensures that the receiver service is not overwhelmed by write loads and improves fault tolerance.
+Deployment: Kafka can be deployed as a StatefulSet in Kubernetes because it requires stable network identifiers and persistent storage for fault tolerance and data durability.
+c. Storage Service (Write Model)
+Role: Consumes messages from Kafka and performs write operations to the MySQL database. This service ensures data integrity and consistency.
+Deployment: This could be deployed as a StatefulSet if it requires persistent storage or stable network identifiers. However, if it's primarily processing and pushing data to MySQL and does not itself need to store data persistently, a regular Deployment could suffice. If you’re concerned about performance, ensure it's properly configured to handle high loads, possibly using techniques like connection pooling and batching operations.
+d. MySQL Database
+Role: The primary storage of Pokémon data, ensuring ACID compliance.
+Deployment: Best deployed as a StatefulSet in Kubernetes to handle persistent storage needs and facilitate things like replication and backups.
+e. Read Service (Read Model)
+Role: Handles read queries to the database, can be optimized for read operations, and could use caching mechanisms to enhance performance.
+Deployment: Stateless, can be replicated across multiple pods to distribute the read load. This service is an ideal candidate for auto-scaling based on read demand.
+3. Data Management Considerations
+Data Integrity and Transactions: Handle transactions effectively in the storage service to maintain data integrity.
+Scalability: Both the receiver and read services can be scaled horizontally as they are stateless. Kafka and MySQL scaling should be managed carefully, considering their stateful nature.
+High Availability: Use Kubernetes features like liveness and readiness probes, as well as proper replication for all services, to ensure high availability.
+Security: Secure inter-service communications with mTLS and manage sensitive configurations (like database credentials) using Kubernetes Secrets.

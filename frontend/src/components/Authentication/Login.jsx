@@ -30,7 +30,7 @@ function Login() {
           user_id,
           allowLocation,
           country,
-          city,
+          city
         };
 
         login(user, token); // Pass user and token to login function

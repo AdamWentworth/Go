@@ -11,25 +11,39 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Initialize from local storage
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-      setIsLoggedIn(true);
-    }
-  }, []);
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        const refreshTokenExpiry = localStorage.getItem('refreshTokenExpiry');
 
-  const login = (userData, token) => {
+        if (storedUser && refreshTokenExpiry) {
+            const userData = JSON.parse(storedUser);
+            setUser(userData);
+            setIsLoggedIn(true);
+
+            const currentTime = new Date().getTime();
+            const expiryTime = new Date(refreshTokenExpiry).getTime();
+
+            // Log out user when refresh token has expired
+            const logoutTimer = setTimeout(() => {
+                logout();
+                console.log("Refresh token has expired. Logging out.");
+            }, expiryTime - currentTime);
+
+            return () => clearTimeout(logoutTimer);
+        }
+    }, []);
+
+  const login = (userData) => {
+    console.log(userData)
     localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('token', token);
     setIsLoggedIn(true);
     setUser(userData);
   };
 
   const logout = async () => {
     try {
-        await logoutUser(); // This should internally handle clearing local storage
+        await logoutUser();
+        localStorage.removeItem('user');
         setIsLoggedIn(false);
         setUser(null);
     } catch (error) {
