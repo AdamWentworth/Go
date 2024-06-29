@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, minlength: 6, maxlength: 36 },
     email: { type: String, unique: true, maxlength: 255, minlength: 6 },
     password: { type: String, maxlength: 1024, minlength: 6 },
-    pokemonGoName: { type: String, unique: true, default: "" },
+    pokemonGoName: { type: String, default: null },
     trainerCode: { type: String, match: [/^\d{12}$/, 'Trainer code must be 12 digits'], default: null },
     country: { type: String, default: "" },
     city: { type: String, default: "" },
@@ -18,18 +18,20 @@ const userSchema = new mongoose.Schema({
     discordId: { type: String, default: "" },
     refreshToken: {
         token: String,
-        expires: Date
+        expires: Date,
+        sessionToken: String
     }
 });
 
 // Apply a unique index with a correct partial filter expression
+userSchema.index({ pokemonGoName: 1 }, {
+    unique: true,
+    partialFilterExpression: { pokemonGoName: { $type: "string", $exists: true, $ne: null } }
+});
 userSchema.index({ trainerCode: 1 }, {
     unique: true,
-    partialFilterExpression: {
-        trainerCode: { $type: "string" } // Assuming trainerCode should be a non-null string
-    }
+    partialFilterExpression: { trainerCode: { $type: "string", $exists: true, $ne: null } }
 });
-
 
 // Pre-save middleware to handle empty strings for all string fields
 userSchema.pre('save', function(next) {

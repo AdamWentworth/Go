@@ -64,19 +64,19 @@ export const AuthProvider = ({ children }) => {
     try {
         console.log('Attempting to refresh token...');
         const response = await refreshTokenService();
-        if (response.status === 200 && response.data.accessToken) {
+        if (response.accessToken) {
             console.log('Token refreshed successfully.');
             const newUserData = { 
                 ...user, 
-                accessToken: response.data.accessToken, 
-                accessTokenExpiry: response.data.accessTokenExpiry 
+                accessToken: response.accessToken, 
+                accessTokenExpiry: response.accessTokenExpiry 
             };
             setUser(newUserData);
             localStorage.setItem('user', JSON.stringify(newUserData));
 
             // Schedule next token refresh
             const currentTime = new Date().getTime();
-            const accessTokenExpiryTime = new Date(response.data.accessTokenExpiry).getTime();
+            const accessTokenExpiryTime = new Date(response.accessTokenExpiry).getTime();
             const refreshTiming = accessTokenExpiryTime - currentTime - (5 * 60 * 1000); // Refresh 5 minutes before expiry
 
             console.log(`Next refresh scheduled in ${msToTime(refreshTiming)}`);
@@ -96,10 +96,24 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = (userData) => {
-    console.log(userData)
     localStorage.setItem('user', JSON.stringify(userData));
     setIsLoggedIn(true);
     setUser(userData);
+
+    // Schedule token refresh
+    const currentTime = new Date().getTime();
+    const accessTokenExpiryTime = new Date(userData.accessTokenExpiry).getTime();
+    const refreshTiming = accessTokenExpiryTime - currentTime - (5 * 60 * 1000); // Refresh 5 minutes before expiry
+
+    if (refreshTiming > 0) {
+      const refreshTimeout = setTimeout(() => {
+          refreshToken();
+      }, refreshTiming);
+
+      return () => clearTimeout(refreshTimeout);
+    } else {
+      refreshToken();
+    }
   };
 
   const logout = async () => {

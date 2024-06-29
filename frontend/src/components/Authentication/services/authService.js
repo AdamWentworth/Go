@@ -20,9 +20,6 @@ export const loginUser = async (loginData) => {
     const response = await axios.post('/auth/login', loginData);
     console.log("Login response:", response.data); // Log to debug
 
-    // Log cookies to verify they are set
-    console.log("Cookies after login:", document.cookie);
-
     return response.data;
   } catch (error) {
     console.error('Error logging in user:', error.response || error);
@@ -65,10 +62,12 @@ export const deleteAccount = async (userId) => {
   }
 };
 
-/**
- * Any other authentication-related API calls can be added here, such as:
- * - Logout
- * - Refresh Tokens
- * - etc.
- */
-
+export const refreshTokenService = async () => {
+  try {
+    const response = await axios.post('/auth/refresh');
+    return response.data;
+  } catch (error) {
+    console.error('Error refreshing token:', error.response || error);
+    throw error;
+  }
+};

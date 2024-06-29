@@ -35,7 +35,7 @@ function Login() {
           refreshTokenExpiry
         };
 
-        login(user, token); // Pass user and token to login function
+        login(user); // Pass user and token to login function
         setIsSuccessful(true);
         setFeedback('Successfully Logged in');
       })

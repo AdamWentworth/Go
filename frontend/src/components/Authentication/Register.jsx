@@ -46,11 +46,12 @@ function Register() {
                 allowLocation: loginResponse.allowLocation,
                 country: loginResponse.country,
                 city: loginResponse.city,
+                accessTokenExpiry: loginResponse.accessTokenExpiry,
+                refreshTokenExpiry: loginResponse.refreshTokenExpiry
               };
-              const { token } = loginResponse;
 
-              if (user && token) {
-                login(user, token);
+              if (user) {
+                login(user);
                 setIsRegistered(true); // Set registered state to true
                 setFeedback('Successfully Registered and Logged in');
               } else {
