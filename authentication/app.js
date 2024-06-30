@@ -19,6 +19,7 @@ const YAML = require('yamljs');
 const fs = require('fs');
 const path = require('path');
 const logger = require('./middlewares/logger'); // Assuming the logger is in the middlewares folder
+// const axios = require('axios');
 
 // Ensure correct path and file reading
 const appConfigPath = path.join(__dirname, 'config', 'app_conf.yml');

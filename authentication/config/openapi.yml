@@ -63,6 +63,28 @@ paths:
         '409':
           description: Username or email already exists
 
+  /auth/refresh:
+    post:
+      summary: Refresh the authentication tokens
+      description: Refreshes access and refresh tokens for a user based on the session token provided in cookies.
+      responses:
+        '200':
+          description: Tokens refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Tokens refreshed successfully."
+        '401':
+          description: Unauthorized request, session token required or token is invalid
+        '404':
+          description: No session found with the provided token
+        '500':
+          description: Internal Server Error
+
   /auth/google:
     get:
       summary: Redirect to Google for authentication

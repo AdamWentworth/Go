@@ -1,6 +1,7 @@
 // AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService } from '../components/Authentication/services/authService';
+import { refreshTokenService } from '../components/Authentication/services/authService';
 
 const AuthContext = createContext();
 
@@ -10,16 +11,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Function to convert milliseconds to human-readable time
-  const msToTime = (duration) => {
-    const milliseconds = parseInt((duration % 1000) / 100),
-          seconds = Math.floor((duration / 1000) % 60),
-          minutes = Math.floor((duration / (1000 * 60)) % 60),
-          hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
-
-    return `${hours}h ${minutes}m ${seconds}s`;
-  };
-
   // Initialize from local storage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -28,7 +19,7 @@ export const AuthProvider = ({ children }) => {
         const currentTime = new Date().getTime();
         const refreshTokenExpiryTime = new Date(userData.refreshTokenExpiry).getTime();
 
-        console.log(`Current time: ${new Date(currentTime).toLocaleString()}, Refresh token expiry time: ${new Date(refreshTokenExpiryTime).toLocaleString()}`);
+        console.log(`Current time: ${currentTime}, Refresh token expiry time: ${refreshTokenExpiryTime}`);
 
         if (refreshTokenExpiryTime > currentTime) {
             setUser(userData);
@@ -39,7 +30,7 @@ export const AuthProvider = ({ children }) => {
             const accessTokenExpiryTime = new Date(userData.accessTokenExpiry).getTime();
             const refreshTiming = accessTokenExpiryTime - currentTime - (5 * 60 * 1000); // Refresh 5 minutes before expiry
 
-            console.log(`Access token expiry time: ${new Date(accessTokenExpiryTime).toLocaleString()}, Time until refresh: ${msToTime(refreshTiming)}`);
+            console.log(`Access token expiry time: ${accessTokenExpiryTime}, Refresh timing: ${refreshTiming}`);
 
             if (refreshTiming > 0) {
                 const refreshTimeout = setTimeout(() => {
@@ -64,28 +55,18 @@ export const AuthProvider = ({ children }) => {
     try {
         console.log('Attempting to refresh token...');
         const response = await refreshTokenService();
-        if (response.accessToken) {
+        if (response.status === 200 && response.data.accessToken) {
             console.log('Token refreshed successfully.');
             const newUserData = { 
                 ...user, 
-                accessToken: response.accessToken, 
-                accessTokenExpiry: response.accessTokenExpiry 
+                accessToken: response.data.accessToken, 
+                accessTokenExpiry: response.data.accessTokenExpiry 
             };
             setUser(newUserData);
             localStorage.setItem('user', JSON.stringify(newUserData));
 
             // Schedule next token refresh
-            const currentTime = new Date().getTime();
-            const accessTokenExpiryTime = new Date(response.accessTokenExpiry).getTime();
-            const refreshTiming = accessTokenExpiryTime - currentTime - (5 * 60 * 1000); // Refresh 5 minutes before expiry
-
-            console.log(`Next refresh scheduled in ${msToTime(refreshTiming)}`);
-
-            const refreshTimeout = setTimeout(() => {
-                refreshToken();
-            }, refreshTiming);
-
-            return () => clearTimeout(refreshTimeout);
+            scheduleTokenRefresh(response.data.accessTokenExpiry);
         } else {
             throw new Error('Failed to refresh token');
         }
@@ -95,25 +76,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = (userData) => {
-    localStorage.setItem('user', JSON.stringify(userData));
-    setIsLoggedIn(true);
-    setUser(userData);
+  const scheduleTokenRefresh = (expiryTime) => {
+      const currentTime = new Date().getTime();
+      const accessTokenExpiryTime = new Date(expiryTime).getTime();
+      const refreshTiming = accessTokenExpiryTime - currentTime - (5 * 60 * 1000); // Refresh 5 minutes before expiry
 
-    // Schedule token refresh
-    const currentTime = new Date().getTime();
-    const accessTokenExpiryTime = new Date(userData.accessTokenExpiry).getTime();
-    const refreshTiming = accessTokenExpiryTime - currentTime - (5 * 60 * 1000); // Refresh 5 minutes before expiry
+      console.log(`Next refresh scheduled in ${refreshTiming}ms`);
 
-    if (refreshTiming > 0) {
       const refreshTimeout = setTimeout(() => {
           refreshToken();
       }, refreshTiming);
 
       return () => clearTimeout(refreshTimeout);
-    } else {
-      refreshToken();
-    }
+  };
+
+  const login = (userData) => {
+    console.log(userData)
+    localStorage.setItem('user', JSON.stringify(userData));
+    setIsLoggedIn(true);
+    setUser(userData);
   };
 
   const logout = async () => {

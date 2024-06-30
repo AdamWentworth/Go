@@ -14,8 +14,8 @@ const createTokens = (user) => {
     return {
         accessToken,
         refreshToken,
-        accessTokenExpiry: calculateExpiryTime(3600),
-        refreshTokenExpiry: calculateExpiryTime(604800)
+        accessTokenExpiry: calculateExpiryTime(60),
+        refreshTokenExpiry: calculateExpiryTime(180)
     };
 };
 
