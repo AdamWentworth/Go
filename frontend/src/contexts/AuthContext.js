@@ -1,8 +1,10 @@
 // AuthContext.js
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService } from '../components/Authentication/services/authService';
 import { refreshTokenService } from '../components/Authentication/services/authService';
 import { formatTimeUntil } from '../components/Collect/utils/formattingHelpers';
+import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
 
@@ -12,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const userRef = useRef(null);  // Create a ref to store the user state
+  const navigate = useNavigate();  // Initialize the useNavigate hook
 
   // Initialize from local storage
   useEffect(() => {
@@ -39,15 +42,25 @@ export const AuthProvider = ({ children }) => {
           checkAndRefreshToken(); // Immediately check and refresh token if timing is <= 0
         }
       } else {
-        clearSession();
+        clearSession(true);  // Force logout due to token expiration
       }
     }
   }, []);
 
   const checkAndRefreshToken = async () => {
+    if (!userRef.current) {
+      return;
+    }
+
     const currentTime = new Date().getTime();
-    const accessTokenExpiryTime = new Date(userRef.current.accessTokenExpiry).getTime();  // Use the ref to get the current user
+    const accessTokenExpiryTime = new Date(userRef.current.accessTokenExpiry).getTime();
+    const refreshTokenExpiryTime = new Date(userRef.current.refreshTokenExpiry).getTime();
     const refreshTiming = accessTokenExpiryTime - currentTime - (1 * 60 * 1000);
+
+    if (currentTime >= refreshTokenExpiryTime) {
+      clearSession(true); // Force logout due to refresh token expiration
+      return;
+    }
 
     if (refreshTiming <= 0) {
       await refreshToken();
@@ -83,7 +96,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Error during token refresh:', error);
-      clearSession();
+      clearSession(true);  // Force logout due to error in token refresh
     }
   };
 
@@ -120,41 +133,54 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
-      clearSession();
+      clearSession(false);  // Manual logout
     }
   };
 
-  const clearSession = () => {
+  const clearSession = (isForcedLogout) => {
     localStorage.removeItem('user');
     setIsLoggedIn(false);
     setUser(null);
     userRef.current = null;  // Clear the ref
+    if (isForcedLogout) {
+      navigate('/login');
+      setTimeout(() => {
+        alert('Your session has expired, please log in again.');
+      }, 0);
+    }
     console.log('Session cleared locally.');
   };
 
   const updateUserDetails = async (userId, userData) => {
     try {
       const response = await updateUserService(userId, userData);
-      const updatedData = response.data;  // Assuming the response structure is { success: true, data: {...} }
-      if (response.success) {
-        setUser(updatedData);  // Update the user state with the new data
-        userRef.current = updatedData;  // Update the ref with the new user data
-        localStorage.setItem('user', JSON.stringify(updatedData)); // Optionally update local storage
-        return { success: true, data: updatedData };
-      } else {
-        console.error('Failed to update user details:', response.message);
-        return { success: false, error: response.message }; // Return an error object with the failure message
+      console.log("Full response from update:", response); // Log the full response
+  
+      if (!response.success) {
+        console.error('Update failed:', response);
+        alert(`Failed to update account details: ${response.error}`);
+        return { success: false, error: response.error };
       }
+  
+      const updatedData = { ...userRef.current, ...response.data };
+      console.log("Updated user data after merge:", updatedData); // Log after merging
+  
+      setUser(updatedData); // Update the user state with the new data
+      localStorage.setItem('user', JSON.stringify(updatedData)); // Optionally update local storage
+  
+      toast.success('Account details updated successfully!');
+      return { success: true, data: updatedData };
     } catch (error) {
       console.error('Error updating user details:', error);
-      return { success: false, error: error.message }; // Return an error object
+      alert(`Failed to update account details: ${error.message}`);
+      return { success: false, error: error.message };
     }
-  };
+  };  
 
   const deleteAccount = async (userId) => {
     try {
       await deleteAccountService(userId);
-      clearSession(); // Clear session after deleting the account
+      clearSession(false); // Clear session after deleting the account
     } catch (error) {
       throw error;
     }

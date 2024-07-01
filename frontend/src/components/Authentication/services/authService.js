@@ -38,16 +38,14 @@ export const logoutUser = async () => {
   }
 };
 
+// authService.js
 export const updateUserDetails = async (userId, userData) => {
   try {
     const response = await axios.put(`/auth/update/${userId}`, userData);
     return { success: true, data: response.data };
   } catch (error) {
     console.error('Error updating user:', error.response || error);
-    throw {
-      status: error.response.status,
-      message: error.response.data.message
-    };
+    return { success: false, error: error.response.data.message };
   }
 };
 

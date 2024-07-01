@@ -171,38 +171,65 @@ router.post('/refresh', async (req, res, next) => {
 
 // Update user details
 router.put('/update/:id', async (req, res) => {
+    const { id } = req.params; // Ensure id is fetched at the start of the function
+    if (!id) {
+        logger.error('No ID provided in the request parameters');
+        return res.status(400).json({ message: 'Request must include an ID' });
+    }
+
     try {
-        const { id } = req.params;
         const updates = { ...req.body };
 
-        const existingUserWithUsername = await User.findOne({ username: updates.username, _id: { $ne: id } });
+        // Remove token expiry fields from updates to prevent them from being modified
+        const { accessTokenExpiry, refreshTokenExpiry } = updates;
+        delete updates.accessTokenExpiry;
+        delete updates.refreshTokenExpiry;
+
+        // Check if the username is already taken by another user
+        const existingUserWithUsername = await User.findOne({
+            username: updates.username, 
+            _id: { $ne: id }
+        });
         if (existingUserWithUsername) {
-            logger.error(`Update failed: Username already exists with status ${409}`);
+            logger.error(`Update failed: Username already exists with status 409`);
             return res.status(409).json({ message: 'Username already exists' });
         }
 
-        const existingUserWithEmail = await User.findOne({ email: updates.email, _id: { $ne: id } });
+        // Check if the email is already taken by another user
+        const existingUserWithEmail = await User.findOne({
+            email: updates.email, 
+            _id: { $ne: id }
+        });
         if (existingUserWithEmail) {
-            logger.error(`Update failed: Email already exists with status ${409}`);
+            logger.error(`Update failed: Email already exists with status 409`);
             return res.status(409).json({ message: 'Email already exists' });
         }
 
+        // Check if the Pokémon Go name is already taken by another user
         if (updates.pokemonGoName) {
-            const existingUserWithPokemonGoName = await User.findOne({ pokemonGoName: updates.pokemonGoName, _id: { $ne: id } });
+            const existingUserWithPokemonGoName = await User.findOne({
+                pokemonGoName: updates.pokemonGoName, 
+                _id: { $ne: id }
+            });
             if (existingUserWithPokemonGoName) {
-                logger.error(`Update failed: Pokémon Go name already exists with status ${409}`);
+                logger.error(`Update failed: Pokémon Go name already exists with status 409`);
                 return res.status(409).json({ message: 'Pokémon Go name already exists' });
             }
         }
 
+        // Check if the trainer code is already taken by another user
         if (updates.trainerCode) {
-            const existingUserWithTrainerCode = await User.findOne({ trainerCode: updates.trainerCode, _id: { $ne: id } });
+            const existingUserWithTrainerCode = await User.findOne({
+                trainerCode: updates.trainerCode, 
+                _id: { $ne: id }
+            });
             if (existingUserWithTrainerCode) {
-                logger.error(`Update failed: Trainer Code already exists with status ${409}`);
+                logger.error(`Update failed: Trainer Code already exists with status 409`);
                 return res.status(409).json({ message: 'Trainer Code already exists' });
             }
         }
 
+        // Hash new password if provided
         if (updates.password && updates.password.trim() !== "") {
             updates.password = await bcrypt.hash(updates.password, 10);
         } else {
@@ -215,9 +242,9 @@ router.put('/update/:id', async (req, res) => {
             logger.error(`Update failed: User not found with ID: ${id}`);
             return res.status(404).json({ message: 'User not found' });
         }
-        logger.info(`User ${updatedUser.username} updated successfully`);
 
-        res.status(200).json({
+        logger.info(`User ${updatedUser.username} updated successfully`);
+        const responsePayload = {
             user_id: updatedUser._id.toString(),
             username: updatedUser.username,
             email: updatedUser.email,
@@ -226,12 +253,15 @@ router.put('/update/:id', async (req, res) => {
             allowLocation: updatedUser.allowLocation || false,
             country: updatedUser.country || '',
             city: updatedUser.city || '',
+            accessTokenExpiry: accessTokenExpiry,
+            refreshTokenExpiry: refreshTokenExpiry,
             message: 'Updated account details successfully'
-        });
+        };
+        res.status(200).json(responsePayload);
     } catch (err) {
         logger.error(`Unhandled exception on user update for ID: ${id}: ${err}`);
         res.status(500).json({ message: 'Internal Server Error' });
-    }    
+    }
 });
 
 router.delete('/delete/:id', async (req, res) => {

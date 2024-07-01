@@ -17,8 +17,10 @@ const Account = () => {
 
     const handleUpdateUserDetails = async (userId, userData) => {
         const result = await updateUserDetails(userId, userData);
+        console.log("Update result:", result);
+
         if (result.success) {
-            toast.success('Account details updated successfully!');
+            console.log('Account details updated successfully!');
         } else {
             setErrors(prevErrors => ({
                 ...prevErrors,
@@ -28,8 +30,9 @@ const Account = () => {
                 trainerCode: result.error.includes('Trainer Code') ? 'This Trainer Code is already in use.' : ''
             }));
             toast.error('Update failed: ' + result.error);
+            console.error('Update failed:', result.error);
         }
-    };                 
+    };
 
     const handleLogout = async () => {
         try {
@@ -63,7 +66,7 @@ const Account = () => {
         <div className="account-page">
             <AccountForm
                 user={user}
-                onUpdateUserDetails={handleUpdateUserDetails}
+                handleUpdateUserDetails={handleUpdateUserDetails}
                 onLogout={handleLogout}
                 onDeleteAccount={handleDeleteAccount}
                 errors={errors}

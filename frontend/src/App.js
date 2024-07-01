@@ -12,15 +12,17 @@ import './App.css';
 import CacheContext from './contexts/CacheContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { PokemonDataProvider } from './contexts/PokemonDataContext'; // Import the PokemonDataProvider
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
     const cache = new Map();
 
     return (
         <CacheContext.Provider value={cache}>
-            <AuthProvider>
-                <PokemonDataProvider> {/* Wrap the Router with PokemonDataProvider */}
-                    <Router>
+            <Router>
+                <AuthProvider>
+                    <PokemonDataProvider>
                         <div className="App">
                             <Navbar />
                             <main>
@@ -33,9 +35,10 @@ function App() {
                                 </Routes>
                             </main>
                         </div>
-                    </Router>
-                </PokemonDataProvider>
-            </AuthProvider>
+                        <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+                    </PokemonDataProvider>
+                </AuthProvider>
+            </Router>
         </CacheContext.Provider>
     );
 }

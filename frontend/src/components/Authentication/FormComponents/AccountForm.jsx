@@ -1,31 +1,33 @@
 // AccountForm.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useForm from '../hooks/useForm'; // Ensure the path to useForm is correct
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import './AccountForm.css';
 
-const AccountForm = ({ user, onUpdateUserDetails, onLogout, onDeleteAccount }) => {
+const AccountForm = ({ user, handleUpdateUserDetails, onLogout, onDeleteAccount }) => {
     const [isEditable, setIsEditable] = useState(false);
+
+    useEffect(() => {
+        if (!user) {
+            alert("No user data available, please log in.");
+            console.error("No user data available, please log in.");
+        }
+    }, [user]);
 
     const onSubmit = values => {
         if (isEditable) {
-            // Ensure trainerCode is submitted without spaces
-            const submissionValues = {
-                ...values,
-                trainerCode: values.trainerCode.replace(/\s+/g, ''),
-            };
-            onUpdateUserDetails(user.user_id, submissionValues).then(response => {
-                if (response.status === 200) {
-                    toast.success("Account details updated successfully!");
-                    setIsEditable(false);
-                } else {
-                    throw new Error('Failed to update account details');
-                }
-            }).catch(error => {
-                // toast.error("Failed to update account details: " + error.message);
-            });
+          // Ensure trainerCode is submitted without spaces
+          const submissionValues = {
+            ...values,
+            trainerCode: values.trainerCode.replace(/\s+/g, ''),
+          };
+          console.log("Submitting values:", submissionValues);
+      
+          handleUpdateUserDetails(user.user_id, submissionValues)
         }
+    };      
+
+    if (!user) {
+        return <div>Please log in to view and edit account details.</div>;
     }
 
     const { values, errors, handleChange, handleSubmit } = useForm({
@@ -38,7 +40,9 @@ const AccountForm = ({ user, onUpdateUserDetails, onLogout, onDeleteAccount }) =
         country: user.country || '',
         city: user.city || '',
         allowLocation: user.allowLocation || false,
-        pokemonGoNameDisabled: user.pokemonGoName === user.username
+        pokemonGoNameDisabled: user.pokemonGoName === user.username,
+        accessTokenExpiry: user.accessTokenExpiry,
+        refreshTokenExpiry: user.refreshTokenExpiry
     }, onSubmit, 'edit');
 
     const handleEditToggle = (e) => {
@@ -48,7 +52,6 @@ const AccountForm = ({ user, onUpdateUserDetails, onLogout, onDeleteAccount }) =
 
     return (
         <form onSubmit={handleSubmit} className="account-form">
-            <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
             <h1>Account Details</h1>
             <div className="user-details">
                 <div className="left-column">

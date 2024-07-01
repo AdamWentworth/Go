@@ -21,8 +21,14 @@ const openAPIPath = path.join(__dirname, 'config', 'openapi.yml');
 const openAPIContent = fs.readFileSync(openAPIPath, 'utf8');
 const swaggerDocument = YAML.parse(openAPIContent);
 
+// CORS configuration
+const corsOptions = {
+  origin: 'http://localhost:3001', // Allow only this origin
+  credentials: true, // Allow credentials (cookies, headers)
+};
+
 // Basic Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
