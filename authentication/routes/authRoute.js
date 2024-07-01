@@ -7,11 +7,12 @@ const bcrypt = require('bcrypt');
 const logger = require('../middlewares/logger'); // Ensure logger is imported correctly
 const tokenService = require('../services/tokenService'); // Adjust the path as necessary
 const setCookies = require('../middlewares/setCookies'); // Adjust the path as necessary
+const setAccessTokenCookie = require('../middlewares/setAccessTokenCookie');
 
 // Function to handle token response more dynamically
 function handleTokenResponse(req, res, user, tokens) {
     req.accessToken = tokens.accessToken;
-    req.sessionToken = tokenService.encryptToken(tokens.refreshToken);
+    req.refreshToken = tokens.refreshToken;
     res.locals.user = user;
     res.locals.tokens = tokens;
 }
@@ -94,6 +95,13 @@ router.post('/login', async (req, res, next) => {
         }
 
         const tokens = tokenService.createTokens(user);
+
+        // Update user with new refresh token details
+        await User.findByIdAndUpdate(user._id, {
+            'refreshToken.token': tokens.refreshToken,
+            'refreshToken.expires': tokens.refreshTokenExpiry
+        });
+
         handleTokenResponse(req, res, user, tokens);
         next();
     } catch (err) {
@@ -118,35 +126,48 @@ router.post('/login', async (req, res, next) => {
     logger.info(`User ${user.username} logged in successfully with status ${200}`);
 });
 
-router.post('/refresh', async (req, res) => {
-    const { sessionToken } = req.cookies;
-
-    if (!sessionToken) {
-        logger.error('Refresh failed: No session token provided');
-        return res.status(401).json({ message: 'Session token required' });
+router.post('/refresh', async (req, res, next) => {
+    const refreshToken = req.cookies.refreshToken;  // Assuming refreshToken cookie name is refreshToken
+  
+    if (!refreshToken) {
+      logger.error('Refresh failed: No refresh token provided');
+      return res.status(401).json({ message: 'Refresh token required' });
     }
-
+  
     try {
-        const decryptedToken = tokenService.decryptToken(sessionToken);
-        const user = await User.findOne({
-            'refreshToken.token': decryptedToken,
-            'refreshToken.expires': { $gt: new Date() }
-        });
-
-        if (!user) {
-            logger.error('Refresh failed: Invalid session or token expired');
-            return res.status(401).json({ message: 'Session expired or invalid' });
-        }
-
-        // Refresh both access and session tokens
-        const tokens = tokenService.createTokens(user);
-        handleTokenResponse(req, res, user, tokens); // This sets the new tokens on the response
-        res.status(200).json({ message: 'Tokens refreshed successfully', accessToken: tokens.accessToken, accessTokenExpiry: tokens.accessTokenExpiry.toISOString(), refreshTokenExpiry: tokens.refreshTokenExpiry.toISOString() });
+      const user = await User.findOne({
+        'refreshToken.token': refreshToken,
+        'refreshToken.expires': { $gt: new Date() }
+      }).exec();
+  
+      if (!user) {
+        logger.error('Refresh failed: Invalid or expired refresh token');
+        return res.status(401).json({ message: 'Invalid or expired refresh token' });
+      }
+  
+      const tokens = tokenService.createAccessToken(user); // Create only the access token
+      handleTokenResponse(req, res, user, tokens);
+      next();
     } catch (err) {
-        logger.error(`Refresh token error: ${err.message}`);
-        res.status(500).json({ message: 'Failed to refresh tokens', error: err.toString() });
+      logger.error(`Refresh token error: ${err.message}`);
+      res.status(500).json({ message: 'Failed to refresh tokens', error: err.toString() });
     }
-});
+  }, setAccessTokenCookie, (req, res) => {
+    const { user, tokens } = res.locals;
+    res.status(200).json({
+      user_id: user._id.toString(),
+      username: user.username,
+      email: user.email,
+      pokemonGoName: user.pokemonGoName,
+      trainerCode: user.trainerCode,
+      allowLocation: user.allowLocation,
+      country: user.country,
+      city: user.city,
+      accessTokenExpiry: tokens.accessTokenExpiry.toISOString(),
+      refreshTokenExpiry: user.refreshToken.expires.toISOString() // Keep the original refresh token expiry
+    });
+    logger.info(`User ${user.username} refreshed token successfully with status ${200}`);
+});  
 
 // Update user details
 router.put('/update/:id', async (req, res) => {
@@ -230,22 +251,21 @@ router.delete('/delete/:id', async (req, res) => {
 });
 
 router.post('/logout', async (req, res) => {
-    const sessionToken = req.cookies.sessionToken;
+    const refreshToken = req.cookies.refreshToken;
 
-    if (!sessionToken) {
-        logger.error('Logout failed: No session token provided');
-        return res.status(401).json({ message: 'No session token provided' });
+    if (!refreshToken) {
+        logger.error('Logout failed: No refresh token provided');
+        return res.status(401).json({ message: 'No refresh token provided' });
     }
 
     try {
-        await User.findOneAndUpdate({ 'refreshToken.sessionToken': sessionToken }, {
+        await User.findOneAndUpdate({ 'refreshToken.token': refreshToken }, {
             'refreshToken.token': null,
-            'refreshToken.sessionToken': null,
             'refreshToken.expires': new Date()
         });
 
         res.clearCookie('accessToken');
-        res.clearCookie('sessionToken');
+        res.clearCookie('refreshToken');
 
         logger.info('User logged out successfully');
         res.status(200).json({ message: 'Logged out successfully' });

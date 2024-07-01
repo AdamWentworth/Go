@@ -14,18 +14,6 @@ import { formatTimeAgo } from '../components/Collect/utils/formattingHelpers';
 // Create a React context for sharing Pokemon data across components
 const PokemonDataContext = createContext();
 
-// let syncWorker;
-
-// if (window.Worker) {
-//     syncWorker = new Worker(new URL('../components/Collect/workers/syncWorker.js', import.meta.url));
-//     syncWorker.onmessage = function(event) {
-//       console.log('Data synced successfully:', event.data);
-//     };
-//     syncWorker.onerror = function(event) {
-//       console.error('Error in worker:', event.message);
-//     };
-// }
-
 // Custom hook to use the context
 export const usePokemonData = () => useContext(PokemonDataContext);
 

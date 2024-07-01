@@ -8,14 +8,29 @@ const IV_LENGTH = 16;
 const calculateExpiryTime = (seconds) => new Date(new Date().getTime() + seconds * 1000);
 
 const createTokens = (user) => {
-    const accessToken = jwt.sign({ userId: user._id, username: user.username }, secretKey, { expiresIn: '1h' });
-    const refreshToken = jwt.sign({ userId: user._id, username: user.username }, secretKey, { expiresIn: '7d' });
+    const accessToken = jwt.sign({ userId: user._id, username: user.username }, secretKey, {
+        expiresIn: '5m'  // 5 minutes for development testing
+    });
+    const refreshToken = jwt.sign({ userId: user._id, username: user.username }, secretKey, {
+        expiresIn: '10m'  // 10 minutes for development testing
+    });
 
     return {
         accessToken,
         refreshToken,
-        accessTokenExpiry: calculateExpiryTime(60),
-        refreshTokenExpiry: calculateExpiryTime(180)
+        accessTokenExpiry: calculateExpiryTime(5 * 60),  // 5 minutes in seconds
+        refreshTokenExpiry: calculateExpiryTime(10 * 60)  // 10 minutes in seconds
+    };
+};
+
+const createAccessToken = (user) => {
+    const accessToken = jwt.sign({ userId: user._id, username: user.username }, secretKey, {
+        expiresIn: '5m'  // 5 minutes for development testing
+    });
+
+    return {
+        accessToken,
+        accessTokenExpiry: calculateExpiryTime(5 * 60),  // 5 minutes in seconds
     };
 };
 
@@ -37,4 +52,4 @@ const decryptToken = (encryptedText) => {
     return decrypted;
 };
 
-module.exports = { createTokens, encryptToken, decryptToken };
+module.exports = { createTokens, createAccessToken, encryptToken, decryptToken };

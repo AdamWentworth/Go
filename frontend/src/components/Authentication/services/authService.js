@@ -18,7 +18,6 @@ export const registerUser = async (userData) => {
 export const loginUser = async (loginData) => {
   try {
     const response = await axios.post('/auth/login', loginData);
-    console.log("Login response:", response.data); // Log to debug
 
     return response.data;
   } catch (error) {
@@ -64,10 +63,11 @@ export const deleteAccount = async (userId) => {
 
 export const refreshTokenService = async () => {
   try {
-    const response = await axios.post('/auth/refresh');
+    const response = await axios.post('/auth/refresh', { withCredentials: true });
     return response.data;
   } catch (error) {
     console.error('Error refreshing token:', error.response || error);
+    console.log('Detailed error response:', error.response.data);  // Log the detailed error message from server
     throw error;
   }
 };
