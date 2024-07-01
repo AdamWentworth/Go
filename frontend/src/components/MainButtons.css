@@ -110,8 +110,8 @@
         margin-bottom: -10px;  /* Optionally adjust border-radius for aesthetic consistency */
     }
     .mainButton {
-        font-size: 3rem;  /* Increase font size */
-        padding: 2.55rem 3rem;
+        font-size: 2rem;  /* Increase font size */
+        padding: 2.25rem 2.5rem;
     }
 }
 
@@ -133,8 +133,8 @@
     }
     
     .mainButton {
-        font-size: 4rem;  /* Increase font size */
-        padding: 3rem 4rem;
+        font-size: 3rem;  /* Increase font size */
+        padding: 2rem 3.5rem;
     }
 }
 @media (min-width: 1440px) and (max-width: 1919px) {
@@ -142,7 +142,7 @@
         justify-content: center; /* Center buttons horizontally */
         align-items: center; /* Center align on the Y axis */
         flex-direction: row; /* Ensure buttons are in a row */
-        gap: 4rem;   /* Spacing between buttons */
+        gap: 2rem;   /* Spacing between buttons */
     }
 
     .mainButtonsContainerNavbar .mainButton {

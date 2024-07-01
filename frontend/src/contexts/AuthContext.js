@@ -6,7 +6,6 @@ import { refreshTokenService } from '../components/Authentication/services/authS
 import { formatTimeUntil } from '../components/Collect/utils/formattingHelpers';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Cookies from 'js-cookie';
 
 const AuthContext = createContext();
 
@@ -133,7 +132,7 @@ export const AuthProvider = ({ children }) => {
       console.log('Access token is about to expire or already expired, refreshing immediately.');
       refreshToken();
     } else {
-      console.log(`Next refresh scheduled in: ${formatTimeUntil(currentTime + refreshTiming)}`);
+      console.log(`Next Access token refresh scheduled in: ${formatTimeUntil(currentTime + refreshTiming)}`);
       refreshTimeoutRef.current = setTimeout(() => {
         checkAndRefreshToken();  // Changed to checkAndRefreshToken to ensure correct timing
       }, refreshTiming);
@@ -161,15 +160,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const clearSession = (isForcedLogout) => {
-    const options = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax'
-    };
-
-    Cookies.remove('accessToken', options);
-    Cookies.remove('refreshToken', options);
-
     localStorage.removeItem('user');
     setIsLoggedIn(false);
     setUser(null);

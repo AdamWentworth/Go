@@ -6,14 +6,14 @@ module.exports = (req, res, next) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-        maxAge: 300000  // 5 minutes in milliseconds
+        maxAge: 3600000  // 1 hour in milliseconds
     });
 
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-        maxAge: 600000  // 10 minutes in milliseconds
+        maxAge: 7 * 24 * 60 * 60 * 1000  // 7 days in milliseconds
     });
 
     next();

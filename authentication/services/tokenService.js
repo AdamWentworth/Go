@@ -9,28 +9,28 @@ const calculateExpiryTime = (seconds) => new Date(new Date().getTime() + seconds
 
 const createTokens = (user) => {
     const accessToken = jwt.sign({ userId: user._id, username: user.username }, secretKey, {
-        expiresIn: '5m'  // 5 minutes for development testing
+        expiresIn: '1h'  // 1 hour
     });
     const refreshToken = jwt.sign({ userId: user._id, username: user.username }, secretKey, {
-        expiresIn: '10m'  // 10 minutes for development testing
+        expiresIn: '7d'  // 7 days
     });
 
     return {
         accessToken,
         refreshToken,
-        accessTokenExpiry: calculateExpiryTime(5 * 60),  // 5 minutes in seconds
-        refreshTokenExpiry: calculateExpiryTime(10 * 60)  // 10 minutes in seconds
+        accessTokenExpiry: calculateExpiryTime(1 * 60 * 60),  // 1 hour in seconds
+        refreshTokenExpiry: calculateExpiryTime(7 * 24 * 60 * 60)  // 7 days in seconds
     };
 };
 
 const createAccessToken = (user) => {
     const accessToken = jwt.sign({ userId: user._id, username: user.username }, secretKey, {
-        expiresIn: '5m'  // 5 minutes for development testing
+        expiresIn: '1h'  // 1 hour
     });
 
     return {
         accessToken,
-        accessTokenExpiry: calculateExpiryTime(5 * 60),  // 5 minutes in seconds
+        accessTokenExpiry: calculateExpiryTime(1 * 60 * 60),  // 1 hour in seconds
     };
 };
 
