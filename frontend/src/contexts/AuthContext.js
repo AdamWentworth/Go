@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService } from '../components/Authentication/services/authService';
 import { refreshTokenService } from '../components/Authentication/services/authService';
 import { formatTimeUntil } from '../components/Collect/utils/formattingHelpers';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Cookies from 'js-cookie';
 
 const AuthContext = createContext();
 
@@ -15,6 +17,8 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const userRef = useRef(null);  // Create a ref to store the user state
   const navigate = useNavigate();  // Initialize the useNavigate hook
+  const intervalRef = useRef(null); // Ref to store the interval ID
+  const refreshTimeoutRef = useRef(null); // Ref to store the refresh token timeout
 
   // Initialize from local storage
   useEffect(() => {
@@ -35,17 +39,37 @@ export const AuthProvider = ({ children }) => {
         setIsLoggedIn(true);
 
         if (refreshTiming > 0) {
-          setTimeout(() => {
+          refreshTimeoutRef.current = setTimeout(() => {
             checkAndRefreshToken();
           }, refreshTiming);
         } else {
           checkAndRefreshToken(); // Immediately check and refresh token if timing is <= 0
         }
+
+        startTokenExpirationCheck();
       } else {
         clearSession(true);  // Force logout due to token expiration
       }
     }
+
+    return () => {
+      clearInterval(intervalRef.current);
+      clearTimeout(refreshTimeoutRef.current);
+    };
   }, []);
+
+  const startTokenExpirationCheck = () => {
+    clearInterval(intervalRef.current); // Clear any existing interval
+    intervalRef.current = setInterval(() => {
+      const currentTime = new Date().getTime();
+      if (userRef.current) {
+        const refreshTokenExpiryTime = new Date(userRef.current.refreshTokenExpiry).getTime();
+        if (currentTime >= refreshTokenExpiryTime) {
+          clearSession(true); // Force logout due to refresh token expiration
+        }
+      }
+    }, 60000); // Check every 1 minute
+  };
 
   const checkAndRefreshToken = async () => {
     if (!userRef.current) {
@@ -73,7 +97,6 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Attempting to refresh token...');
       const response = await refreshTokenService();
-      console.log('Refresh token response:', response); // Debug log
       if (response && response.accessTokenExpiry && response.refreshTokenExpiry) {
         console.log('Token refreshed successfully.');
         const updatedUser = response;
@@ -101,18 +124,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const scheduleTokenRefresh = (expiryTime) => {
+    clearTimeout(refreshTimeoutRef.current); // Clear any existing timeout
     const currentTime = new Date().getTime();
     const accessTokenExpiryTime = new Date(expiryTime).getTime();
     let refreshTiming = accessTokenExpiryTime - currentTime - (1 * 60 * 1000); // Refresh 1 minute before actual expiry
-
-    console.log(`Current Time: ${new Date(currentTime).toISOString()}, Access Token Expiry Time: ${new Date(accessTokenExpiryTime).toISOString()}, Refresh Timing: ${formatTimeUntil(accessTokenExpiryTime)}`);
 
     if (refreshTiming <= 0) {
       console.log('Access token is about to expire or already expired, refreshing immediately.');
       refreshToken();
     } else {
-      console.log(`Next refresh scheduled in ${formatTimeUntil(currentTime + refreshTiming)}`);
-      setTimeout(() => {
+      console.log(`Next refresh scheduled in: ${formatTimeUntil(currentTime + refreshTiming)}`);
+      refreshTimeoutRef.current = setTimeout(() => {
         checkAndRefreshToken();  // Changed to checkAndRefreshToken to ensure correct timing
       }, refreshTiming);
     }
@@ -124,7 +146,8 @@ export const AuthProvider = ({ children }) => {
     setIsLoggedIn(true);
     setUser(userData);
     userRef.current = userData;  // Update the ref with the new user data
-    scheduleTokenRefresh(userData.accessTokenExpiry);  // Schedule next token refresh based on the provided expiry time
+    startTokenExpirationCheck();
+    scheduleTokenRefresh(userData.accessTokenExpiry); // Pass the correct expiry time
   };
 
   const logout = async () => {
@@ -138,17 +161,30 @@ export const AuthProvider = ({ children }) => {
   };
 
   const clearSession = (isForcedLogout) => {
+    const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax'
+    };
+
+    Cookies.remove('accessToken', options);
+    Cookies.remove('refreshToken', options);
+
     localStorage.removeItem('user');
     setIsLoggedIn(false);
     setUser(null);
     userRef.current = null;  // Clear the ref
+    clearInterval(intervalRef.current); // Clear the interval
+    clearTimeout(refreshTimeoutRef.current); // Clear the refresh token timeout
+    console.log('Session cleared locally.');
     if (isForcedLogout) {
-      navigate('/login');
+      navigate('/login', { replace: true });
       setTimeout(() => {
         alert('Your session has expired, please log in again.');
-      }, 0);
+      }, 1000);
+    } else {
+      navigate('/login', { replace: true });
     }
-    console.log('Session cleared locally.');
   };
 
   const updateUserDetails = async (userId, userData) => {
@@ -158,7 +194,7 @@ export const AuthProvider = ({ children }) => {
   
       if (!response.success) {
         console.error('Update failed:', response);
-        alert(`Failed to update account details: ${response.error}`);
+        toast.error(`Failed to update account details: ${response.error}`);
         return { success: false, error: response.error };
       }
   
@@ -172,7 +208,7 @@ export const AuthProvider = ({ children }) => {
       return { success: true, data: updatedData };
     } catch (error) {
       console.error('Error updating user details:', error);
-      alert(`Failed to update account details: ${error.message}`);
+      toast.error(`Failed to update account details: ${error.message}`);
       return { success: false, error: error.message };
     }
   };  
@@ -189,6 +225,7 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{ user, isLoggedIn, login, logout, updateUserDetails, deleteAccount }}>
       {children}
+      <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
     </AuthContext.Provider>
   );
 };

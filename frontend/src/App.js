@@ -34,8 +34,8 @@ function App() {
                                     <Route path="/account" element={<Account />} />
                                 </Routes>
                             </main>
+                            <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
                         </div>
-                        <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
                     </PokemonDataProvider>
                 </AuthProvider>
             </Router>
