@@ -27,6 +27,8 @@ export const PokemonDataProvider = ({ children }) => {
         loading: true
     });
 
+    const [batchedUpdates, setBatchedUpdates] = useState(new Map());
+
     // Effect to fetch data on component mount
     useEffect(() => {
         async function fetchData() {
@@ -217,10 +219,15 @@ export const PokemonDataProvider = ({ children }) => {
         const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
         const tempOwnershipData = { ...data.ownershipData }; // Cloning to avoid direct mutation
         let processedKeys = 0;
-    
+
+        const updates = new Map();
+
         keys.forEach(key => {
-            updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, () => {
+            updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, (fullKey) => {
                 processedKeys++;
+                if (fullKey) {
+                    updates.set(fullKey, { ...tempOwnershipData[fullKey], last_update: Date.now() });
+                }
                 if (processedKeys === keys.length) { // Only update state and SW when all keys are processed
                     setData(prevData => ({
                         ...prevData,
@@ -232,10 +239,48 @@ export const PokemonDataProvider = ({ children }) => {
                             data: { data: tempOwnershipData, timestamp: Date.now() }
                         });
                     });
+                    setBatchedUpdates(prevUpdates => {
+                        const newUpdates = new Map(prevUpdates);
+                        updates.forEach((value, key) => {
+                            newUpdates.set(key, value);
+                        });
+                        return newUpdates;
+                    });
                 }
             });
         });
-    }, [data.variants, data.ownershipData]);           
+    }, [data.variants, data.ownershipData]);     
+    
+    const sendUpdatesToBackend = useCallback(async () => {
+        if (batchedUpdates.size === 0) return;
+    
+        const updatesObject = Object.fromEntries(batchedUpdates);
+
+        console.log('Updates that would be sent to backend:', updatesObject);
+
+        // Commented out the actual fetch call to backend
+        // try {
+        //     await fetch('https://your-backend-api.com/update', {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //         },
+        //         body: JSON.stringify(updatesObject),
+        //     });
+        //     console.log('Updates sent to backend:', updatesObject);
+        //     setBatchedUpdates(new Map()); // Clear updates after sending
+        // } catch (error) {
+        //     console.error('Failed to send updates to backend:', error);
+        // }
+        // Clear updates after sending
+        setBatchedUpdates(new Map());
+    }, [batchedUpdates]);   
+
+    useEffect(() => {
+        const intervalId = setInterval(sendUpdatesToBackend, 60000); // 60000 ms = 1 minute
+    
+        return () => clearInterval(intervalId); // Clean up on unmount
+    }, [sendUpdatesToBackend]);       
 
     const updateLists = useCallback(() => {
         updatePokemonLists(data.ownershipData, data.variants, sortedLists => {

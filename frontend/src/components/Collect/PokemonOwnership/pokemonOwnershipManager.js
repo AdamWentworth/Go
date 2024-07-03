@@ -36,6 +36,7 @@ export function createNewDataForVariant(variant) {
         friendship_level: null,
         date_caught: null,
         date_added: new Date().toISOString(),
+        last_update: Date.now(),
         is_unowned: true,
         is_owned: false,
         is_for_trade: false,
