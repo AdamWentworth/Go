@@ -17,6 +17,7 @@ self.addEventListener('fetch', (event) => {
             return fetch(event.request);
         })
     );
+    event.waitUntil(checkAndScheduleSync()); // Check and schedule sync if needed
 });
 
 self.addEventListener('message', (event) => {
@@ -29,13 +30,30 @@ self.addEventListener('message', (event) => {
             updatePokemonLists(data);
             break;
         case 'scheduleSync':
-            scheduleInitialSync('message');
+            scheduleSync();
             break;
     }
 });
 
-let syncIntervalId = null;
 let syncTimeoutId = null;
+let syncIntervalId = null;
+let isInitialSyncScheduled = false;
+
+async function checkAndScheduleSync() {
+    if (isInitialSyncScheduled) return;
+
+    const cache = await caches.open('pokemonCache');
+    const cachedResponse = await cache.match('/batchedUpdates');
+
+    if (cachedResponse) {
+        const batchedUpdates = await cachedResponse.json();
+        if (Object.keys(batchedUpdates).length > 0 && !syncIntervalId) {
+            console.log(`Batched updates found, starting periodic sync.`);
+            scheduleInitialSync();
+            isInitialSyncScheduled = true;  // Set the flag to true
+        }
+    }
+}
 
 async function syncData(data) {
     console.log(`Sync data called:`, data);
@@ -47,7 +65,8 @@ async function syncData(data) {
         await cache.put('/pokemonOwnership', response);
         console.log(`Pokemon ownership data has been updated and cached.`);
         sendMessageToClients({ status: 'success', message: 'Data synced successfully.' });
-        scheduleSync();
+        scheduleSync(); // Ensure sync is scheduled after data is cached
+        await checkAndScheduleSync(); // Check and schedule sync if needed
     } catch (error) {
         console.error(`Failed to update pokemon ownership:`, error);
         sendMessageToClients({ status: 'failed', message: 'Failed to update pokemon ownership.', error });
@@ -75,13 +94,13 @@ function scheduleInitialSync() {
     console.log(`[${new Date().toLocaleTimeString()}] Starting 1-minute initial backend sync timer`);
     syncTimeoutId = setTimeout(async () => {
         await sendBatchedUpdatesToBackend();
-        startPeriodicSync();
+        schedulePeriodicSync();
     }, 60000); // 60 seconds delay
 }
 
-function startPeriodicSync() {
-    if (syncIntervalId) clearInterval(syncIntervalId);
+function schedulePeriodicSync() {
     console.log(`Starting periodic sync every 1 minute.`);
+    if (syncIntervalId) clearInterval(syncIntervalId);
     syncIntervalId = setInterval(async () => {
         await sendBatchedUpdatesToBackend();
     }, 60000); // 60 seconds interval
@@ -94,6 +113,7 @@ async function sendBatchedUpdatesToBackend() {
         console.log(`No batched updates found, stopping periodic sync.`);
         clearInterval(syncIntervalId);
         syncIntervalId = null;
+        isInitialSyncScheduled = false;  // Reset the flag
         return;
     }
 
@@ -103,6 +123,7 @@ async function sendBatchedUpdatesToBackend() {
         console.log(`Batched updates are empty, stopping periodic sync.`);
         clearInterval(syncIntervalId);
         syncIntervalId = null;
+        isInitialSyncScheduled = false;  // Reset the flag
         return;
     }
 
@@ -125,6 +146,7 @@ async function sendBatchedUpdatesToBackend() {
 
     // Clear updates after logging
     await cache.delete('/batchedUpdates');
+    isInitialSyncScheduled = false;  // Reset the flag
 }
 
 function sendMessageToClients(msg) {

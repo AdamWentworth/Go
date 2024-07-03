@@ -214,9 +214,9 @@ export const PokemonDataProvider = ({ children }) => {
         const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
         const tempOwnershipData = { ...data.ownershipData }; // Cloning to avoid direct mutation
         let processedKeys = 0;
-
+    
         const updates = new Map();
-
+    
         keys.forEach(key => {
             updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, (fullKey) => {
                 processedKeys++;
@@ -228,25 +228,30 @@ export const PokemonDataProvider = ({ children }) => {
                         ...prevData,
                         ownershipData: tempOwnershipData
                     }));
-                    navigator.serviceWorker.ready.then(registration => {
+                    navigator.serviceWorker.ready.then(async registration => {
+                        // Send message to service worker to sync data
                         registration.active.postMessage({
                             action: 'syncData',
                             data: { data: tempOwnershipData, timestamp: Date.now() }
                         });
-                    });
-                    navigator.serviceWorker.ready.then(async registration => {
+    
+                        // Cache the updates for the service worker to pick up
                         const cache = await caches.open('pokemonCache');
                         const cachedUpdates = await cache.match('/batchedUpdates');
                         let updatesData = cachedUpdates ? await cachedUpdates.json() : {};
-
+    
                         updates.forEach((value, key) => {
                             updatesData[key] = value;
                         });
-
+    
                         await cache.put('/batchedUpdates', new Response(JSON.stringify(updatesData), {
                             headers: { 'Content-Type': 'application/json' }
                         }));
-                        registration.sync.register('sync-updates');
+    
+                        // Trigger the service worker to schedule sync
+                        registration.active.postMessage({
+                            action: 'scheduleSync'
+                        });
                     });
                 }
             });
