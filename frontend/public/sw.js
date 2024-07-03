@@ -1,4 +1,5 @@
 // Service Worker (sw.js)
+let userData = null;
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
@@ -23,6 +24,9 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
     const { action, data } = event.data;
     switch (action) {
+        case 'setUserData':
+            userData = data;
+            break;
         case 'syncData':
             syncData(data);
             break;
@@ -47,10 +51,9 @@ async function checkAndScheduleSync() {
 
     if (cachedResponse) {
         const batchedUpdates = await cachedResponse.json();
-        if (Object.keys(batchedUpdates).length > 0 && !syncIntervalId) {
+        if (Object.keys(batchedUpdates).length > 0) {
             console.log(`Batched updates found, starting periodic sync.`);
             scheduleInitialSync();
-            isInitialSyncScheduled = true;  // Set the flag to true
         }
     }
 }
@@ -65,7 +68,6 @@ async function syncData(data) {
         await cache.put('/pokemonOwnership', response);
         console.log(`Pokemon ownership data has been updated and cached.`);
         sendMessageToClients({ status: 'success', message: 'Data synced successfully.' });
-        scheduleSync(); // Ensure sync is scheduled after data is cached
         await checkAndScheduleSync(); // Check and schedule sync if needed
     } catch (error) {
         console.error(`Failed to update pokemon ownership:`, error);
@@ -90,7 +92,8 @@ async function updatePokemonLists(data) {
 }
 
 function scheduleInitialSync() {
-    if (syncTimeoutId) clearTimeout(syncTimeoutId);
+    if (isInitialSyncScheduled) return; // Prevent multiple initial syncs
+    isInitialSyncScheduled = true;
     console.log(`[${new Date().toLocaleTimeString()}] Starting 1-minute initial backend sync timer`);
     syncTimeoutId = setTimeout(async () => {
         await sendBatchedUpdatesToBackend();
@@ -99,8 +102,8 @@ function scheduleInitialSync() {
 }
 
 function schedulePeriodicSync() {
+    if (syncIntervalId) return; // Prevent multiple intervals
     console.log(`Starting periodic sync every 1 minute.`);
-    if (syncIntervalId) clearInterval(syncIntervalId);
     syncIntervalId = setInterval(async () => {
         await sendBatchedUpdatesToBackend();
     }, 60000); // 60 seconds interval
@@ -129,24 +132,38 @@ async function sendBatchedUpdatesToBackend() {
 
     console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, batchedUpdates);
 
-    // Uncomment and modify the following code to send the updates to your backend
-    // try {
-    //     await fetch('https://your-backend-api.com/update', {
-    //         method: 'POST',
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //         },
-    //         body: JSON.stringify(batchedUpdates),
-    //     });
-    //     console.log('Updates sent to backend:', batchedUpdates);
-    //     await cache.delete('/batchedUpdates');
-    // } catch (error) {
-    //     console.error('Failed to send updates to backend:', error);
-    // }
+    if (userData) {
+        const { username, user_id } = userData;
+
+        // Log the data that would be sent to the backend
+        console.log('Updates to backend with user data:', {
+            batchedUpdates,
+            username,
+            user_id
+        });
+
+        // Uncomment and modify the following code to send the updates to your backend
+        // try {
+        //     await fetch('https://your-backend-api.com/update', {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //             'username': username,
+        //             'user_id': user_id
+        //         },
+        //         body: JSON.stringify(batchedUpdates),
+        //     });
+        //     console.log('Updates sent to backend:', batchedUpdates);
+        //     await cache.delete('/batchedUpdates');
+        // } catch (error) {
+        //     console.error('Failed to send updates to backend:', error);
+        // }
+    } else {
+        console.error('User data is not available.');
+    }
 
     // Clear updates after logging
     await cache.delete('/batchedUpdates');
-    isInitialSyncScheduled = false;  // Reset the flag
 }
 
 function sendMessageToClients(msg) {
@@ -157,7 +174,7 @@ function sendMessageToClients(msg) {
 
 // Function to schedule sync when triggered
 function scheduleSync() {
-    if (!syncTimeoutId) {
+    if (!syncTimeoutId && !syncIntervalId) {
         scheduleInitialSync();
     }
 }

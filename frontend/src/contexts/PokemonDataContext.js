@@ -108,7 +108,9 @@ export const PokemonDataProvider = ({ children }) => {
                 });
             
                 // Update cache with new variants
-                await cacheStorage.put(variantsCacheKey, new Response(JSON.stringify({ data: variants, timestamp: Date.now() })));
+                await cacheStorage.put(variantsCacheKey, new Response(JSON.stringify({ data: variants, timestamp: Date.now() }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
                 console.log("We have now stored the up to date Variants in the Cache Storage");
 
                 // Prepare keys for ownership data
@@ -117,8 +119,12 @@ export const PokemonDataProvider = ({ children }) => {
                 // If Variants data has changed, maybe update ownership data too
                 ownershipData = await initializeOrUpdateOwnershipDataAsync(keys, variants);
                 lists = initializePokemonLists(ownershipData, variants)
-                await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
-                await cacheStorage.put(listsCacheKey, new Response(JSON.stringify({ data: lists, timestamp: Date.now() })));
+                await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+                await cacheStorage.put(listsCacheKey, new Response(JSON.stringify({ data: lists, timestamp: Date.now() }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
                 console.log("As the ownership data may be missing the newest Variants, we have initialized any missing variants in ownershipdata");
                 freshDataAvailable = true;
 
@@ -133,8 +139,12 @@ export const PokemonDataProvider = ({ children }) => {
                 ownershipData = await initializeOrUpdateOwnershipDataAsync(keys, variants);
                 console.log("we have now initialized any missing variants in ownershipdata");
                 lists = initializePokemonLists(ownershipData, variants)
-                await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
-                await cacheStorage.put(listsCacheKey, new Response(JSON.stringify({ data: lists, timestamp: Date.now() })));
+                await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+                await cacheStorage.put(listsCacheKey, new Response(JSON.stringify({ data: lists, timestamp: Date.now() }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
                 freshDataAvailable = true;
 
             // Cache Pokemon Variants are updated, but Ownership data is missing altogether.
@@ -153,8 +163,12 @@ export const PokemonDataProvider = ({ children }) => {
                 // If no valid cached ownership data, initialize or update from local data
                 ownershipData = initializeOrUpdateOwnershipData(keys, variants);
                 lists = initializePokemonLists(ownershipData, variants)
-                await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
-                await cacheStorage.put(listsCacheKey, new Response(JSON.stringify({ data: lists, timestamp: Date.now() })));
+                await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+                await cacheStorage.put(listsCacheKey, new Response(JSON.stringify({ data: lists, timestamp: Date.now() }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
                 console.log("Variants were fresh so we've now rebuilt fresh ownership data both in local and cache storage");
                 freshDataAvailable = true;
             }
@@ -182,7 +196,9 @@ export const PokemonDataProvider = ({ children }) => {
                 });
             
                 // Update cache with new variants
-                await cacheStorage.put(variantsCacheKey, new Response(JSON.stringify({ data: variants, timestamp: Date.now() })));
+                await cacheStorage.put(variantsCacheKey, new Response(JSON.stringify({ data: variants, timestamp: Date.now() }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
 
                 // Prepare keys for ownership data
                 const keys = variants.map(variant => variant.pokemonKey);
@@ -190,8 +206,12 @@ export const PokemonDataProvider = ({ children }) => {
                 // If no valid cached ownership data, initialize or update from local data
                 ownershipData = initializeOrUpdateOwnershipData(keys, variants);
                 lists = initializePokemonLists(ownershipData, variants)
-                await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() })));
-                await cacheStorage.put(listsCacheKey, new Response(JSON.stringify({ data: lists, timestamp: Date.now() })));
+                await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({ data: ownershipData, timestamp: Date.now() }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+                await cacheStorage.put(listsCacheKey, new Response(JSON.stringify({ data: lists, timestamp: Date.now() }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
             }
             // Update state with new data
             setData({ variants, ownershipData, lists, loading: false });
@@ -214,9 +234,9 @@ export const PokemonDataProvider = ({ children }) => {
         const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
         const tempOwnershipData = { ...data.ownershipData }; // Cloning to avoid direct mutation
         let processedKeys = 0;
-    
+
         const updates = new Map();
-    
+
         keys.forEach(key => {
             updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, (fullKey) => {
                 processedKeys++;
@@ -229,25 +249,30 @@ export const PokemonDataProvider = ({ children }) => {
                         ownershipData: tempOwnershipData
                     }));
                     navigator.serviceWorker.ready.then(async registration => {
+                        const user = JSON.parse(localStorage.getItem('user'));
+                        if (user) {
+                            registration.active.postMessage({ action: 'setUserData', data: user });
+                        }
+
                         // Send message to service worker to sync data
                         registration.active.postMessage({
                             action: 'syncData',
                             data: { data: tempOwnershipData, timestamp: Date.now() }
                         });
-    
+
                         // Cache the updates for the service worker to pick up
                         const cache = await caches.open('pokemonCache');
                         const cachedUpdates = await cache.match('/batchedUpdates');
                         let updatesData = cachedUpdates ? await cachedUpdates.json() : {};
-    
+
                         updates.forEach((value, key) => {
                             updatesData[key] = value;
                         });
-    
+
                         await cache.put('/batchedUpdates', new Response(JSON.stringify(updatesData), {
                             headers: { 'Content-Type': 'application/json' }
                         }));
-    
+
                         // Trigger the service worker to schedule sync
                         registration.active.postMessage({
                             action: 'scheduleSync'

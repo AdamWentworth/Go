@@ -6,7 +6,7 @@ module.exports = (req, res, next) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-        maxAge: 300000  // 5 minutes in milliseconds
+        maxAge: 3600000  // 1 hour in milliseconds
     });
 
     next();
