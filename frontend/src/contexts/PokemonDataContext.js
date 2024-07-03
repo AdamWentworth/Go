@@ -27,8 +27,6 @@ export const PokemonDataProvider = ({ children }) => {
         loading: true
     });
 
-    const [batchedUpdates, setBatchedUpdates] = useState(new Map());
-
     // Effect to fetch data on component mount
     useEffect(() => {
         async function fetchData() {
@@ -205,12 +203,9 @@ export const PokemonDataProvider = ({ children }) => {
         });
     }, []);
 
-    // Add this in a useEffect to handle messages from the service worker
     useEffect(() => {
-        // Make sure the service worker is ready and listening for messages
         navigator.serviceWorker.addEventListener('message', event => {
             console.log('Received message from service worker:', event.data);
-            // Handle specific messages or data updates here
         });
     }, []);
 
@@ -239,48 +234,24 @@ export const PokemonDataProvider = ({ children }) => {
                             data: { data: tempOwnershipData, timestamp: Date.now() }
                         });
                     });
-                    setBatchedUpdates(prevUpdates => {
-                        const newUpdates = new Map(prevUpdates);
+                    navigator.serviceWorker.ready.then(async registration => {
+                        const cache = await caches.open('pokemonCache');
+                        const cachedUpdates = await cache.match('/batchedUpdates');
+                        let updatesData = cachedUpdates ? await cachedUpdates.json() : {};
+
                         updates.forEach((value, key) => {
-                            newUpdates.set(key, value);
+                            updatesData[key] = value;
                         });
-                        return newUpdates;
+
+                        await cache.put('/batchedUpdates', new Response(JSON.stringify(updatesData), {
+                            headers: { 'Content-Type': 'application/json' }
+                        }));
+                        registration.sync.register('sync-updates');
                     });
                 }
             });
         });
-    }, [data.variants, data.ownershipData]);     
-    
-    const sendUpdatesToBackend = useCallback(async () => {
-        if (batchedUpdates.size === 0) return;
-    
-        const updatesObject = Object.fromEntries(batchedUpdates);
-
-        console.log('Updates that would be sent to backend:', updatesObject);
-
-        // Commented out the actual fetch call to backend
-        // try {
-        //     await fetch('https://your-backend-api.com/update', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //         },
-        //         body: JSON.stringify(updatesObject),
-        //     });
-        //     console.log('Updates sent to backend:', updatesObject);
-        //     setBatchedUpdates(new Map()); // Clear updates after sending
-        // } catch (error) {
-        //     console.error('Failed to send updates to backend:', error);
-        // }
-        // Clear updates after sending
-        setBatchedUpdates(new Map());
-    }, [batchedUpdates]);   
-
-    useEffect(() => {
-        const intervalId = setInterval(sendUpdatesToBackend, 60000); // 60000 ms = 1 minute
-    
-        return () => clearInterval(intervalId); // Clean up on unmount
-    }, [sendUpdatesToBackend]);       
+    }, [data.variants, data.ownershipData]);
 
     const updateLists = useCallback(() => {
         updatePokemonLists(data.ownershipData, data.variants, sortedLists => {
