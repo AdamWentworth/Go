@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { generations, pokemonTypes } from '../utils/constants'; // Import the required functions and arrays
 import { handleSearchTermChange } from '../utils/searchFunctions';
 
-
 const useSearchFilters = (allPokemons) => {
     const [isShiny, setIsShiny] = useState(false);
     const [showShadow, setShowShadow] = useState(false);
@@ -15,14 +14,14 @@ const useSearchFilters = (allPokemons) => {
     const isTypeSearch = pokemonTypes.includes(searchTerm.toLowerCase());
     const isGenerationSearch = generations.some(gen => gen.toLowerCase() === searchTerm.toLowerCase());
 
-    const [filteredPokemonList, setFilteredPokemonList] = useState(allPokemons); 
+    const [filteredPokemonList, setFilteredPokemonList] = useState(allPokemons);
 
     useEffect(() => {
-        handleSearchTermChange(allPokemons, searchTerm, generations, pokemonTypes, setFilteredPokemonList);
-    }, [searchTerm, allPokemons, setFilteredPokemonList]);    
+        handleSearchTermChange(allPokemons, searchTerm, generations, pokemonTypes, setFilteredPokemonList, setIsShiny, setShowShadow, setShowCostume);
+    }, [searchTerm, allPokemons, setFilteredPokemonList, setIsShiny, setShowShadow, setShowCostume]);    
 
     return {
-        isShiny, setIsShiny, showShadow, setShowShadow, 
+        isShiny, setIsShiny, showShadow, setShowShadow,
         selectedGeneration, setSelectedGeneration, searchTerm, setSearchTerm,
         showCostume, setShowCostume, generations, pokemonTypes,
         isTypeSearch, isGenerationSearch,

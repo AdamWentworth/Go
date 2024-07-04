@@ -17,7 +17,7 @@ const HeaderUIMemo = React.memo(HeaderUI);
 const SortOverlayMemo = React.memo(SortOverlay);
 
 function Collect() {
-    console.log('Collect component mounting');
+    // console.log('Collect component mounting');
 
     //States
     const { variants, ownershipData, lists, loading, updateOwnership, updateLists } = usePokemonData();
@@ -167,7 +167,7 @@ function Collect() {
 
     // Automatically set UI visibility based on window width
     useEffect(() => {
-        console.log("Window width changed:", windowWidth);
+        // console.log("Window width changed:", windowWidth);
         const isWide = windowWidth >= 1024;
         setShowFilterUI(isWide); // Always show filters on wide screens
         setShowCollectUI(isWide); // Always show collect UI on wide screens

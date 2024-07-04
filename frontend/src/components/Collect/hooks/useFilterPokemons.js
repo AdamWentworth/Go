@@ -81,7 +81,7 @@ const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine, showAll) 
         });
     }, [allPokemons, showEvolutionaryLine, showAll, isShiny, showShadow, showCostume, searchTerm, selectedGeneration, pokemonTypes, generations, singleFormPokedexNumbers]);
 
-    console.log(`Displayed Pokemons: ${displayedPokemons.length}`);
+    // console.log(`Displayed Pokemons: ${displayedPokemons.length}`);
 
     // console.log('Displayed Pokemons', displayedPokemons)
 

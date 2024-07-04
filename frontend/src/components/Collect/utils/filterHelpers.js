@@ -39,13 +39,14 @@ export function getEvolutionaryFamily(searchTerm, allPokemons) {
 }
 
 
-export function shouldAddPokemon(pokemon, costume, selectedGeneration, isShiny, pokemonTypes, searchTerm, generations, showShadow) {
+export function shouldAddPokemon(pokemon, costume, selectedGeneration, isShiny, pokemonTypes, searchTerm, generations, showShadow, showCostume) {
     const matchesGeneration = selectedGeneration ? pokemon.generation === selectedGeneration : true;
     const matchesShiny = isShiny && showShadow ? pokemon.shiny_available === 1 && pokemon.shadow_shiny_available === 1 : (isShiny ? pokemon.shiny_available === 1 : true);
+    const matchesCostume = showCostume ? pokemon.variantType.includes('costume') : true;
 
     const matchesSearch = matchesSearchTerm(pokemon, searchTerm, pokemonTypes, generations);
 
-    const basicMatches = matchesGeneration && matchesShiny && matchesSearch;
+    const basicMatches = matchesGeneration && matchesShiny && matchesSearch && matchesCostume;
 
     if (costume) {
         return (
