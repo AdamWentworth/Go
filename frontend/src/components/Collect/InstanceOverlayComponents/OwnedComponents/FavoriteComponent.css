@@ -1,5 +1,11 @@
 /* FavoriteComponent.css */
 
+.favorite-component {
+    display: flex;
+    justify-content: flex-end; /* Align the image to the right */
+    align-items: center; /* Center the image vertically */
+}
+
 .favorite-component img {
     width: 24px;
     height: 24px;

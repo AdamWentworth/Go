@@ -80,7 +80,8 @@ const WantedInstance = ({ pokemon }) => {
     <div>
       <div className="top-row">
         <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
-        <div className="right-stack">
+        <div className="spacer"></div>
+        <div className="favorite-container">
           <FavoriteComponent pokemon={pokemon} editMode={editMode} onFavoriteChange={handleFavoriteChange} />
         </div>
       </div>
@@ -88,7 +89,7 @@ const WantedInstance = ({ pokemon }) => {
         <img src={process.env.PUBLIC_URL + pokemon.currentImage} alt={pokemon.name} className="pokemon-image" />
       </div>
       <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
-      <div className="gender-lucky-row">
+      <div className="gender-container">
         <GenderComponent pokemon={pokemon} editMode={editMode} onGenderChange={handleGenderChange} />
       </div>
       <div className="stats-container">
