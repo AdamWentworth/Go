@@ -1,11 +1,25 @@
 // FriendshipManager.jsx
 
 import React from 'react';
+import './FriendshipManager.css';
 
-const FriendshipManager = ({ friendship, setFriendship, editMode }) => {
+const FriendshipManager = ({ friendship, setFriendship, editMode, isLucky, setIsLucky }) => {
     const handleFriendshipChange = (e) => {
         const newFriendshipLevel = parseInt(e.target.value, 10);
+        if (isLucky && newFriendshipLevel !== 4) {
+            setIsLucky(false); // Turn off lucky if friendship level is not 4
+        }
         setFriendship(newFriendshipLevel);
+    };
+
+    const toggleLucky = () => {
+        if (editMode) {
+            const newLuckyStatus = !isLucky;
+            setIsLucky(newLuckyStatus);
+            if (newLuckyStatus) {
+                setFriendship(4); // Automatically set to max friendship if lucky is toggled on
+            }
+        }
     };
 
     const hearts = [];
@@ -22,8 +36,17 @@ const FriendshipManager = ({ friendship, setFriendship, editMode }) => {
 
     return (
         <div className="friendship-level-container">
-            <div className="hearts">
-                {hearts}
+            <div className="hearts-lucky-container">
+                <div className="hearts">
+                    {hearts}
+                </div>
+                <img 
+                    src={`${process.env.PUBLIC_URL}/images/lucky_friend_icon.png`} 
+                    alt="Lucky Friend" 
+                    className={`lucky-icon ${isLucky ? '' : 'grey-out'}`}
+                    onClick={toggleLucky}
+                    style={{ cursor: editMode ? 'pointer' : 'default' }}
+                />
             </div>
             {editMode && (
                 <input

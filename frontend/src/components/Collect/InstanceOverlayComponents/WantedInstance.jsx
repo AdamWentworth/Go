@@ -18,13 +18,15 @@ import HeightComponent from './OwnedComponents/HeightComponent';
 
 import MovesComponent from './OwnedComponents/MovesComponent';
 
+import FriendshipManager from './WantedComponents/FriendshipManager';
+
 const WantedInstance = ({ pokemon }) => {
   // console.log("Initial Pokemon Data: ", pokemon);
 
   const { updateDetails } = useContext(PokemonDataContext);
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
-
+  
   const [isFavorite, setIsFavorite] = useState(pokemon.ownershipStatus.favorite);
   const [gender, setGender] = useState(pokemon.ownershipStatus.gender);
   const [weight, setWeight] = useState(pokemon.ownershipStatus.weight);
@@ -34,30 +36,15 @@ const WantedInstance = ({ pokemon }) => {
     chargedMove1: pokemon.ownershipStatus.charged_move1_id,
     chargedMove2: pokemon.ownershipStatus.charged_move2_id,
   });
+  const [friendship, setFriendship] = useState(pokemon.ownershipStatus.friendship_level || 0);
+  const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.pref_lucky);
 
-  const handleNicknameChange = (newNickname) => {
-    setNickname(newNickname);  // Update state with new nickname
-  };
-
-  const handleFavoriteChange = (newFavoriteStatus) => {
-    setIsFavorite(newFavoriteStatus);  // Update state with new favorite status
-  };
-
-  const handleGenderChange = (newGender) => {
-    setGender(newGender);
-  };
-
-  const handleWeightChange = (newWeight) => {
-    setWeight(newWeight);
-  };
-
-  const handleHeightChange = (newHeight) => {
-    setHeight(newHeight);
-  };
-
-  const handleMovesChange = (newMoves) => {
-    setMoves(newMoves);
-  };
+  const handleNicknameChange = (newNickname) => setNickname(newNickname);
+  const handleFavoriteChange = (newFavoriteStatus) => setIsFavorite(newFavoriteStatus);
+  const handleGenderChange = (newGender) => setGender(newGender);
+  const handleWeightChange = (newWeight) => setWeight(newWeight);
+  const handleHeightChange = (newHeight) => setHeight(newHeight);
+  const handleMovesChange = (newMoves) => setMoves(newMoves);
 
   const toggleEditMode = () => {
     if (editMode) {
@@ -70,7 +57,9 @@ const WantedInstance = ({ pokemon }) => {
         height: height,
         fast_move_id: moves.fastMove,
         charged_move1_id: moves.chargedMove1,
-        charged_move2_id: moves.chargedMove2
+        charged_move2_id: moves.chargedMove2,
+        friendship_level: friendship,
+        pref_lucky: isLucky,
       });
     }
     setEditMode(!editMode);
@@ -85,6 +74,13 @@ const WantedInstance = ({ pokemon }) => {
           <FavoriteComponent pokemon={pokemon} editMode={editMode} onFavoriteChange={handleFavoriteChange} />
         </div>
       </div>
+      <FriendshipManager 
+        friendship={friendship} 
+        setFriendship={setFriendship} 
+        editMode={editMode} 
+        isLucky={isLucky}
+        setIsLucky={setIsLucky}
+      />
       <div className="pokemon-image-container">
         <img src={process.env.PUBLIC_URL + pokemon.currentImage} alt={pokemon.name} className="pokemon-image" />
       </div>
