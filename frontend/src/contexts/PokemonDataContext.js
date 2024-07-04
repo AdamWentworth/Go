@@ -281,6 +281,7 @@ export const PokemonDataProvider = ({ children }) => {
                 }
             });
         });
+        updateLists();
     }, [data.variants, data.ownershipData]);
 
     const updateLists = useCallback(() => {
@@ -318,10 +319,30 @@ export const PokemonDataProvider = ({ children }) => {
         updateLists();
     
         // Send updated data to the service worker for asynchronous synchronization
-        navigator.serviceWorker.ready.then(registration => {
+        navigator.serviceWorker.ready.then(async registration => {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                registration.active.postMessage({ action: 'setUserData', data: user });
+            }
+
             registration.active.postMessage({
                 action: 'syncData',
                 data: { data: newData, timestamp: Date.now() }
+            });
+
+            const cache = await caches.open('pokemonCache');
+            const cachedUpdates = await cache.match('/batchedUpdates');
+            let updatesData = cachedUpdates ? await cachedUpdates.json() : {};
+
+            updatesData[pokemonKey] = newData[pokemonKey];
+
+            await cache.put('/batchedUpdates', new Response(JSON.stringify(updatesData), {
+                headers: { 'Content-Type': 'application/json' }
+            }));
+
+            // Trigger the service worker to schedule sync
+            registration.active.postMessage({
+                action: 'scheduleSync'
             });
         });
     }, [data.ownershipData, updateLists]);    

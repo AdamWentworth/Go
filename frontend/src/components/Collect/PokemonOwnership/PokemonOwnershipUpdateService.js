@@ -107,8 +107,6 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
         alert(`Cannot move ${pokemonKey} to Trade as it is ${instance.lucky ? 'lucky' : 'shadow'}.`);
         return;
     }
-
-    // updateTradeList(pokemonKey, ownershipData, variants, newStatus);
     
     switch (newStatus) {
         case 'Owned':
