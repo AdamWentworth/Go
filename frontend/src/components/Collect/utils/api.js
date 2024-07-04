@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:3000/api';
+// Use the environment variable for the base URL
+const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 // Ensure credentials are included in requests
 axios.defaults.withCredentials = true;

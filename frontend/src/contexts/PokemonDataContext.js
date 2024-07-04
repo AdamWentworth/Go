@@ -223,12 +223,6 @@ export const PokemonDataProvider = ({ children }) => {
         });
     }, []);
 
-    useEffect(() => {
-        navigator.serviceWorker.addEventListener('message', event => {
-            console.log('Received message from service worker:', event.data);
-        });
-    }, []);
-
     // Function to update ownership status
     const updateOwnership = useCallback((pokemonKeys, newStatus) => {
         const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];

@@ -15,12 +15,13 @@ const Account = () => {
         return <div>Loading user details...</div>;
     }
 
-    const handleUpdateUserDetails = async (userId, userData) => {
+    const handleUpdateUserDetails = async (userId, userData, setIsEditable) => {
         const result = await updateUserDetails(userId, userData);
         console.log("Update result:", result);
 
         if (result.success) {
             console.log('Account details updated successfully!');
+            setIsEditable(false); // Reset form to non-editable state
         } else {
             setErrors(prevErrors => ({
                 ...prevErrors,

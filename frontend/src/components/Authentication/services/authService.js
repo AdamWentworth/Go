@@ -7,7 +7,7 @@ axios.defaults.withCredentials = true;
 
 export const registerUser = async (userData) => {
   try {
-    const response = await axios.post('/auth/register', userData);
+    const response = await axios.post('/register', userData);
     return response.data;
   } catch (error) {
     console.error('Error registering user:', error.response || error);
@@ -17,7 +17,7 @@ export const registerUser = async (userData) => {
 
 export const loginUser = async (loginData) => {
   try {
-    const response = await axios.post('/auth/login', loginData);
+    const response = await axios.post('/login', loginData);
 
     return response.data;
   } catch (error) {
@@ -28,7 +28,7 @@ export const loginUser = async (loginData) => {
 
 export const logoutUser = async () => {
   try {
-    await axios.post('/auth/logout', {}, { withCredentials: true });
+    await axios.post('/logout', {}, { withCredentials: true });
     // Clear local storage (client-side session invalidation)
     localStorage.removeItem('user');
     return Promise.resolve(); // Resolve the promise immediately as there's no backend call
@@ -41,7 +41,7 @@ export const logoutUser = async () => {
 // authService.js
 export const updateUserDetails = async (userId, userData) => {
   try {
-    const response = await axios.put(`/auth/update/${userId}`, userData);
+    const response = await axios.put(`/update/${userId}`, userData);
     return { success: true, data: response.data };
   } catch (error) {
     console.error('Error updating user:', error.response || error);
@@ -51,7 +51,7 @@ export const updateUserDetails = async (userId, userData) => {
 
 export const deleteAccount = async (userId) => {
   try {
-    const response = await axios.delete(`/auth/delete/${userId}`);
+    const response = await axios.delete(`/delete/${userId}`);
     return response.data;
   } catch (error) {
     console.error('Error deleting account:', error);
@@ -61,7 +61,7 @@ export const deleteAccount = async (userId) => {
 
 export const refreshTokenService = async () => {
   try {
-    const response = await axios.post('/auth/refresh', { withCredentials: true });
+    const response = await axios.post('/refresh', { withCredentials: true });
     return response.data;
   } catch (error) {
     console.error('Error refreshing token:', error.response || error);

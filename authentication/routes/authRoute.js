@@ -239,11 +239,11 @@ router.put('/update/:id', async (req, res) => {
         logger.info(`Updating user details for User ID: ${id} with data: ${JSON.stringify(updates)}`);
         const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true });
         if (!updatedUser) {
-            logger.error(`Update failed: User not found with ID: ${id}`);
+            logger.error(`Update failed: User not found with ID: ${id} with status 404`);
             return res.status(404).json({ message: 'User not found' });
         }
 
-        logger.info(`User ${updatedUser.username} updated successfully`);
+        logger.info(`User ${updatedUser.username} updated successfully with status 200`);
         const responsePayload = {
             user_id: updatedUser._id.toString(),
             username: updatedUser.username,
@@ -259,7 +259,7 @@ router.put('/update/:id', async (req, res) => {
         };
         res.status(200).json(responsePayload);
     } catch (err) {
-        logger.error(`Unhandled exception on user update for ID: ${id}: ${err}`);
+        logger.error(`Unhandled exception on user update for ID: ${id}: ${err} with status 500`);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
@@ -272,10 +272,10 @@ router.delete('/delete/:id', async (req, res) => {
             logger.error(`Delete failed: User not found with ID: ${id}`);
             return res.status(404).json({ message: 'User not found' });
         }
-        logger.info(`User ${id} deleted successfully`);
+        logger.info(`User ${user.username} with ID ${id} deleted successfully with status ${200}`);
         res.status(200).json({ message: 'User deleted successfully' });
     } catch (err) {
-        logger.error(`Unhandled exception on user delete for ID: ${id}: ${err}`);
+        logger.error(`Unhandled exception on user delete for ID: ${id}: ${err} with status ${500}`);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
@@ -289,7 +289,7 @@ router.post('/logout', async (req, res) => {
     }
 
     try {
-        await User.findOneAndUpdate({ 'refreshToken.token': refreshToken }, {
+        const user = await User.findOneAndUpdate({ 'refreshToken.token': refreshToken }, {
             'refreshToken.token': null,
             'refreshToken.expires': new Date()
         });
@@ -297,10 +297,15 @@ router.post('/logout', async (req, res) => {
         res.clearCookie('accessToken');
         res.clearCookie('refreshToken');
 
-        logger.info('User logged out successfully');
+        if (user) {
+            logger.info(`User ${user.username} logged out successfully with status ${200}`);
+        } else {
+            logger.warn('Logout attempt failed: User not found');
+        }
+
         res.status(200).json({ message: 'Logged out successfully' });
     } catch (err) {
-        logger.error(`Logout error: ${err.message}`);
+        logger.error(`Logout error: ${err.message} with status ${500}`);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });

@@ -22,7 +22,7 @@ const AccountForm = ({ user, handleUpdateUserDetails, onLogout, onDeleteAccount 
           };
           console.log("Submitting values:", submissionValues);
       
-          handleUpdateUserDetails(user.user_id, submissionValues)
+          handleUpdateUserDetails(user.user_id, submissionValues, setIsEditable)
         }
     };      
 
