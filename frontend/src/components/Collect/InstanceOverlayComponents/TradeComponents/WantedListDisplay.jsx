@@ -1,7 +1,7 @@
 // WantedListDisplay.jsx
 
 import React from 'react';
-import { updateNotTradeList } from '../ReciprocalUpdate.jsx'; // Make sure the import path matches the file location
+import './WantedListDisplay.css'
 
 const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode, ownershipData, toggleReciprocalUpdates}) => {
     const displayedWantedList = Object.keys(lists.wanted)
@@ -14,11 +14,7 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
     const handleNotWantedToggle = (key) => {
         if (editMode) {
             const updatedNotWanted = !(localNotWantedList[key] || false);
-            // console.log(`Toggle not wanted: ${key} from ${localNotWantedList[key]} to ${updatedNotWanted}`);
             setLocalNotWantedList({...localNotWantedList, [key]: updatedNotWanted});
-            // console.log(`Local not wanted list updated:`, localNotWantedList);
-        
-            // Call to update reciprocal list, passing ownershipData
             toggleReciprocalUpdates(key, updatedNotWanted);
         }
     };
@@ -28,7 +24,6 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
             {Object.entries(displayedWantedList).map(([key, details]) => {
                 const isNotWanted = localNotWantedList[key];
                 const imageClasses = `wanted-item-img ${isNotWanted ? 'grey-out' : ''}`;
-                // console.log(`Rendering ${key}, Not Wanted: ${isNotWanted}`);
                 return (
                     <div key={key} className="wanted-item" style={{ position: 'relative', overflow: 'hidden' }}>
                         {details.pref_lucky && (
@@ -42,7 +37,8 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
                                     left: '50%',
                                     width: '75%',
                                     height: 'auto',
-                                    transform: 'translate(-50%, -50%)'
+                                    transform: 'translate(-50%, -50%)',
+                                    zIndex: 1 // Ensure the backdrop is behind the image
                                 }}
                             />
                         )}
@@ -50,9 +46,10 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
                             src={details.currentImage || pokemon.currentImage} 
                             className={imageClasses} 
                             alt={`Wanted Pokémon ${key}`} 
+                            style={{ zIndex: 2 }} // Ensure the image is in front of the backdrop
                         />
                         {editMode && (
-                            <button className="toggle-not-wanted" onClick={() => handleNotWantedToggle(key)}>
+                            <button className="toggle-not-wanted" onClick={() => handleNotWantedToggle(key)} style={{ zIndex: 3 }}>
                                 {isNotWanted ? '✓' : 'X'}
                             </button>
                         )}

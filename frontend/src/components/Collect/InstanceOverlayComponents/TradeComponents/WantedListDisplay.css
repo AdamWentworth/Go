@@ -1,0 +1,26 @@
+/* WantedListDisplay.css */
+
+.wanted-item {
+    position: relative;
+    overflow: hidden;
+}
+
+.wanted-item .lucky-backdrop {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 75%;
+    height: auto;
+    transform: translate(-50%, -50%);
+    z-index: 1; /* Ensure the backdrop is behind the image */
+}
+
+.wanted-item .wanted-item-img {
+    position: relative;
+    z-index: 2; /* Ensure the image is in front of the backdrop */
+}
+
+.wanted-item .toggle-not-wanted {
+    position: absolute;
+    z-index: 3; /* Ensure the button is in front of both the image and the backdrop */
+}
