@@ -80,7 +80,7 @@ export const PokemonDataProvider = ({ children }) => {
                 console.log("Using cached variants and ownership data");
                 variants = cachedVariants.data;
                 ownershipData = cachedOwnership.data;
-                lists = cachedLists.lists
+                lists = cachedLists.data
                 freshDataAvailable = true;
 
             // Ownership Data is fresh in the browser but the Pokemon Variants data is possibly outdated.
@@ -214,7 +214,7 @@ export const PokemonDataProvider = ({ children }) => {
                 }));
             }
             // Update state with new data
-            setData({ variants, ownershipData, lists, loading: false });
+            setData({ variants, ownershipData, lists, loading: false, updateOwnership, updateLists});
         }
 
         fetchData().catch(error => {

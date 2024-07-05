@@ -176,7 +176,7 @@ function Collect() {
     if (loading) {
         return <div>Loading...</div>; // Or any other loading indicator
     }
-     
+
     return (
         <div>
             <HeaderUIMemo
