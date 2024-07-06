@@ -34,12 +34,9 @@ paths:
                 properties:
                   message:
                     type: string
-      security:
-        - BearerAuth: []
-
-components:
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    options:
+      summary: "CORS Preflight"
+      operationId: app.handle_batched_updates
+      responses:
+        '200':
+          description: "Successful operation"

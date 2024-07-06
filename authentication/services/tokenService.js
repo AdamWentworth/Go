@@ -5,10 +5,10 @@ const secretKey = process.env.JWT_SECRET;
 const calculateExpiryTime = (seconds) => new Date(new Date().getTime() + seconds * 1000);
 
 const createTokens = (user) => {
-    const accessToken = jwt.sign({ userId: user._id, username: user.username }, secretKey, {
+    const accessToken = jwt.sign({ user_id: user._id, username: user.username }, secretKey, {
         expiresIn: '1h'  // 1 hour
     });
-    const refreshToken = jwt.sign({ userId: user._id, username: user.username }, secretKey, {
+    const refreshToken = jwt.sign({ user_id: user._id, username: user.username }, secretKey, {
         expiresIn: '7d'  // 7 days
     });
 
@@ -21,7 +21,7 @@ const createTokens = (user) => {
 };
 
 const createAccessToken = (user) => {
-    const accessToken = jwt.sign({ userId: user._id, username: user.username }, secretKey, {
+    const accessToken = jwt.sign({ user_id: user._id, username: user.username }, secretKey, {
         expiresIn: '1h'  // 1 hour
     });
 

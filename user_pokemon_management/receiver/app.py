@@ -1,18 +1,17 @@
 # app.py
 import os
-import connexion
-from connexion import NoContent
 import yaml
 import uuid
 import logging
 import logging.config
 import json
+import time
 from datetime import datetime
 from pykafka import KafkaClient
-from flask import request
+from flask import Flask, request, jsonify, make_response
 from jose import jwt
 from dotenv import load_dotenv
-import time
+from flask_cors import CORS
 
 # Load environment variables
 load_dotenv(dotenv_path=".env.development")
@@ -32,6 +31,9 @@ with open(app_conf_file, 'r') as f:
 # Kafka setup using loaded app configuration
 kafka_config = app_config['events']
 kafka_config['hostname'] = os.getenv('HOST_IP')
+
+app = Flask(__name__)
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
 producer = None
 
@@ -55,26 +57,40 @@ def initialize_kafka_producer_with_retry():
     return None
 
 def verify_access_token():
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
+    token = request.cookies.get('accessToken')
+    if not token:
+        logger.error("JWT token is missing in cookies")
         return None
-    
-    token = auth_header.split(" ")[1]
+
     secret_key = os.getenv('JWT_SECRET')
     try:
         payload = jwt.decode(token, secret_key, algorithms=['HS256'])
-        return payload.get('user_id')
+        logger.info(f"Token decoded successfully, payload: {payload}")
+        return payload.get('user_id'), payload.get('username')
     except jwt.JWTError as e:
         logger.error(f"Token verification failed: {e}")
         return None
 
+@app.route('/api/batchedUpdates', methods=['POST', 'OPTIONS'])
 def handle_batched_updates():
-    user_id = verify_access_token()
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response
+
+    user_id, username = verify_access_token()
     if not user_id:
-        return {"message": "Unauthorized"}, 401
+        logger.error("Unauthorized access attempt detected")
+        response = make_response(jsonify({"message": "Unauthorized"}), 401)
+        response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response
 
     data = request.json
-    logger.info(f"Received batched updates with user ID {user_id}: {data}")
+    logger.info(f"Received batched updates for user ID {user_id} - {username}")
 
     trace_id = str(uuid.uuid4())
     data['trace_id'] = trace_id
@@ -82,14 +98,14 @@ def handle_batched_updates():
     try:
         producer.produce(json.dumps(data).encode('utf-8'))
         logger.info(f"Produced batchedUpdates event to Kafka topic with trace ID {trace_id}")
-        return {"message": "Batched updates successfully processed"}, 200
+        response = make_response(jsonify({"message": "Batched updates successfully processed"}), 200)
     except Exception as e:
         logger.error(f"Failed to produce to Kafka: {e}", exc_info=True)
-        return {"message": "Internal Server Error"}, 500
+        response = make_response(jsonify({"message": "Internal Server Error"}), 500)
 
-# Setting up Connexion app
-connexion_app = connexion.FlaskApp(__name__, specification_dir='./config')
-connexion_app.add_api("openapi.yml", base_path="/api", strict_validation=True, validate_responses=True)
+    response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
 
 if __name__ == "__main__":
     # Initialize Kafka producer
@@ -97,7 +113,5 @@ if __name__ == "__main__":
     if not producer:
         logger.error("Exiting due to failure to initialize Kafka producer.")
         exit(1)
-    
-    # Start the Connexion app
-    connexion_app.run(port=3003, host="0.0.0.0")
-
+    # Start the Flask app with CORS support
+    app.run(port=3003, host="0.0.0.0")

@@ -127,25 +127,21 @@ async function sendBatchedUpdatesToBackend() {
 
     console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, batchedUpdates);
 
-    // Assuming the accessToken is stored in cookies and passed in headers automatically
-    // Uncomment and modify the following code to send the updates to your backend
-    // try {
-    //     await fetch('https://your-backend-api.com/update', {
-    //         method: 'POST',
-    //         headers: {
-    //             'Content-Type': 'application/json'
-    //         },
-    //         credentials: 'include',  // Include cookies in the request
-    //         body: JSON.stringify(batchedUpdates),
-    //     });
-    //     console.log('Updates sent to backend:', batchedUpdates);
-    //     await cache.delete('/batchedUpdates');
-    // } catch (error) {
-    //     console.error('Failed to send updates to backend:', error);
-    // }
-
-    // Clear updates after logging
-    await cache.delete('/batchedUpdates');
+    // Send the updates to your backend API
+    try {
+        await fetch('http://localhost:3003/api/batchedUpdates', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',  // Include cookies in the request
+            body: JSON.stringify(batchedUpdates),
+        });
+        console.log('Updates sent to backend:', batchedUpdates);
+        await cache.delete('/batchedUpdates');
+    } catch (error) {
+        console.error('Failed to send updates to backend:', error);
+    }
 }
 
 function sendMessageToClients(msg) {

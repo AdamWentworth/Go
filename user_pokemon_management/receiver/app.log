@@ -131,3 +131,58 @@ pykafka.exceptions.NoBrokersAvailableError: Unable to connect to a broker to fet
 2024-07-06 13:38:34,214 - basicLogger - INFO - Attempting to connect to Kafka...
 2024-07-06 13:38:34,253 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
 2024-07-06 13:38:34,262 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:00:02,888 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:00:02,909 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:00:02,927 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:01:48,297 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:01:48,320 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:01:48,342 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:04:01,295 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:04:01,306 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:04:01,313 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:05:55,629 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:05:55,645 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:05:55,668 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:07:33,139 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:07:33,150 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:07:33,166 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:11:05,934 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:11:05,949 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:11:05,966 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:22:39,905 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:22:39,922 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:22:39,936 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:27:27,386 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:27:27,416 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:27:27,430 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:32:08,907 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:32:08,929 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:32:08,942 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:38:15,710 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:38:15,725 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:38:15,745 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:42:28,520 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:42:28,530 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:42:28,538 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:52:47,247 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:52:47,260 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:52:47,288 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:54:52,121 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:54:52,131 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:54:52,149 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 14:58:31,308 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 14:58:31,318 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 14:58:31,342 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 15:01:45,414 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 15:01:45,441 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 15:01:45,460 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 15:03:00,515 - basicLogger - ERROR - JWT token is missing in cookies
+2024-07-06 15:03:00,517 - basicLogger - ERROR - Unauthorized access attempt detected
+2024-07-06 15:05:29,184 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 15:05:29,196 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 15:05:29,205 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 15:06:36,972 - basicLogger - INFO - Token decoded successfully, payload: {'userId': '663eb6e4bfcb4886a044ebdc', 'username': 'AdamZilla', 'iat': 1720302514, 'exp': 1720306114}
+2024-07-06 15:06:36,973 - basicLogger - ERROR - Unauthorized access attempt detected
+2024-07-06 15:10:23,286 - basicLogger - INFO - Token decoded successfully, payload: {'user_id': '663eb6e4bfcb4886a044ebdc', 'username': 'AdamZilla', 'iat': 1720303735, 'exp': 1720307335}
+2024-07-06 15:10:23,287 - basicLogger - INFO - Received batched updates with user ID 663eb6e4bfcb4886a044ebdc: {'1-default_f230936f-0d4e-425b-a56b-2c0f20859627': {'pokemon_id': 1, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': False, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T20:46:48.373Z', 'last_update': 1720303762478, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '2-default_1a4616f5-fd37-4c16-a90b-622cb0e66275': {'pokemon_id': 2, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': False, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T20:46:48.374Z', 'last_update': 1720303762480, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '3-default_6de6929f-3c65-4950-83d7-cd8dae58d9ca': {'pokemon_id': 3, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': False, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T20:46:48.374Z', 'last_update': 1720303762483, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '4-default_0c2f3c8c-4e88-4f10-a24b-a119f0e05696': {'pokemon_id': 4, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': False, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T20:46:48.374Z', 'last_update': 1720303762485, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '5-default_0fd0ca8a-97c6-414f-99cb-1bb5d305b18f': {'pokemon_id': 5, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': False, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T20:46:48.375Z', 'last_update': 1720303762488, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '6-default_1179f7bc-4561-449b-8950-7e494509d3d7': {'pokemon_id': 6, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': False, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T20:46:48.375Z', 'last_update': 1720303762490, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}}
+2024-07-06 15:10:23,446 - basicLogger - INFO - Produced batchedUpdates event to Kafka topic with trace ID 851041d7-6088-4e90-bf9b-10c3bc0b00f9
