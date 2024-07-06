@@ -23,7 +23,7 @@ const swaggerDocument = YAML.parse(openAPIContent);
 
 // CORS configuration
 const corsOptions = {
-  origin: 'http://localhost:3001', // Allow only this origin
+  origin: 'http://localhost:3000', // Allow only this origin
   credentials: true, // Allow credentials (cookies, headers)
 };
 
@@ -45,7 +45,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(pokemonRoutes);
 
 // Use configuration from app_conf.yml
-const port = appConfig.app.port || 3000;
+const port = appConfig.app.port || 3001;
 
 // Starting the Server
 app.listen(port, () => {

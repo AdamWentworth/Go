@@ -243,12 +243,6 @@ export const PokemonDataProvider = ({ children }) => {
                         ownershipData: tempOwnershipData
                     }));
                     navigator.serviceWorker.ready.then(async registration => {
-                        const user = JSON.parse(localStorage.getItem('user'));
-                        if (user) {
-                            registration.active.postMessage({ action: 'setUserData', data: user });
-                        }
-
-                        // Send message to service worker to sync data
                         registration.active.postMessage({
                             action: 'syncData',
                             data: { data: tempOwnershipData, timestamp: Date.now() }
@@ -314,11 +308,6 @@ export const PokemonDataProvider = ({ children }) => {
     
         // Send updated data to the service worker for asynchronous synchronization
         navigator.serviceWorker.ready.then(async registration => {
-            const user = JSON.parse(localStorage.getItem('user'));
-            if (user) {
-                registration.active.postMessage({ action: 'setUserData', data: user });
-            }
-
             registration.active.postMessage({
                 action: 'syncData',
                 data: { data: newData, timestamp: Date.now() }

@@ -1,6 +1,4 @@
 // Service Worker (sw.js)
-let userData = null;
-
 self.addEventListener('install', (event) => {
     self.skipWaiting();
 });
@@ -24,9 +22,6 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
     const { action, data } = event.data;
     switch (action) {
-        case 'setUserData':
-            userData = data;
-            break;
         case 'syncData':
             syncData(data);
             break;
@@ -132,35 +127,22 @@ async function sendBatchedUpdatesToBackend() {
 
     console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, batchedUpdates);
 
-    if (userData) {
-        const { username, user_id } = userData;
-
-        // Log the data that would be sent to the backend
-        console.log('Updates to backend with user data:', {
-            batchedUpdates,
-            username,
-            user_id
-        });
-
-        // Uncomment and modify the following code to send the updates to your backend
-        // try {
-        //     await fetch('https://your-backend-api.com/update', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //             'username': username,
-        //             'user_id': user_id
-        //         },
-        //         body: JSON.stringify(batchedUpdates),
-        //     });
-        //     console.log('Updates sent to backend:', batchedUpdates);
-        //     await cache.delete('/batchedUpdates');
-        // } catch (error) {
-        //     console.error('Failed to send updates to backend:', error);
-        // }
-    } else {
-        console.error('User data is not available.');
-    }
+    // Assuming the accessToken is stored in cookies and passed in headers automatically
+    // Uncomment and modify the following code to send the updates to your backend
+    // try {
+    //     await fetch('https://your-backend-api.com/update', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json'
+    //         },
+    //         credentials: 'include',  // Include cookies in the request
+    //         body: JSON.stringify(batchedUpdates),
+    //     });
+    //     console.log('Updates sent to backend:', batchedUpdates);
+    //     await cache.delete('/batchedUpdates');
+    // } catch (error) {
+    //     console.error('Failed to send updates to backend:', error);
+    // }
 
     // Clear updates after logging
     await cache.delete('/batchedUpdates');

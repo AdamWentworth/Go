@@ -10,7 +10,7 @@ const { getMovesForPokemon, formatMoves } = require('../services/movesService');
 
 const db = new sqlite3.Database('./data/pokego.db');
 
-router.get('/api/pokemons', (req, res) => {
+router.get('/pokemon/pokemons', (req, res) => {
     getPokemonsFromDb((err, rows) => {
         if (err) {
             logger.error(`Error fetching pokemons from DB: ${err.message}`);

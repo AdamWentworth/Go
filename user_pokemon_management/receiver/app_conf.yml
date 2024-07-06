@@ -1,0 +1,8 @@
+# app_conf.yml
+jwt_secret_key: "your_jwt_secret_here"
+events:
+  hostname: "localhost"
+  port: "9092"
+  topic: "batchedUpdates"
+  max_retries: 5
+  retry_interval: 3 # seconds

@@ -1,0 +1,49 @@
+openapi: "3.1.0"
+info:
+  title: "Batch Update Receiver API"
+  version: "1.0.0"
+  description: "API to receive batched updates and forward them to Kafka."
+
+servers:
+  - url: "/api"
+
+paths:
+  /batchedUpdates:
+    post:
+      summary: "Receives batched updates to be forwarded to Kafka."
+      operationId: "handle_batched_updates"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+      security:
+        - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

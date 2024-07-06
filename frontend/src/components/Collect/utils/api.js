@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Use the environment variable for the base URL
-const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const BASE_URL = process.env.REACT_APP_POKEMON_API_URL;
 
 // Ensure credentials are included in requests
 axios.defaults.withCredentials = true;
