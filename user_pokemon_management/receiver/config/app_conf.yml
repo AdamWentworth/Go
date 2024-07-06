@@ -1,7 +1,7 @@
 # app_conf.yml
 events:
-  hostname: "localhost"
-  port: "3004"
+  hostname: "192.168.1.67"
+  port: "9093"
   topic: "batchedUpdates"
   max_retries: 5
   retry_interval: 3  # seconds

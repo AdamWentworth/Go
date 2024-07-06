@@ -1,24 +1,20 @@
-openapi: "3.1.0"
+#openapi.yml
+openapi: "3.0.0"
 info:
   title: "Batch Update Receiver API"
   version: "1.0.0"
   description: "API to receive batched updates and forward them to Kafka."
-
-servers:
-  - url: "/api"
-
 paths:
   /batchedUpdates:
     post:
       summary: "Receives batched updates to be forwarded to Kafka."
-      operationId: "handle_batched_updates"
+      operationId: app.handle_batched_updates
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              type: object  # Adjust schema as per your requirements
       responses:
         '200':
           description: "Successful operation"
