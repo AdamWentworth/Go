@@ -1,4 +1,6 @@
 kafka/data/kafka
 kafka/data/zookeeper
+kakfa/.env
 
 receiver/__pycache__
+receiver/.env.development

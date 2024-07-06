@@ -89,3 +89,45 @@ pykafka.exceptions.LeaderNotFoundError
 2024-07-06 11:49:07,032 - basicLogger - INFO - Attempting to connect to Kafka...
 2024-07-06 11:49:07,046 - basicLogger - INFO - Kafka client connected to 192.168.1.67:9093
 2024-07-06 11:49:07,060 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 13:10:42,001 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 13:10:44,722 - basicLogger - ERROR - Failed to connect to Kafka on retry 0: Unable to connect to a broker to fetch metadata. See logs.
+Traceback (most recent call last):
+  File "C:\Visual-Studio-Code\Go\user_pokemon_management\receiver\app.py", line 41, in initialize_kafka_producer_with_retry
+    kafka_client = KafkaClient(hosts=f"{kafka_config['hostname']}:{kafka_config['port']}")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\adam\.pyenv\pyenv-win\versions\3.12.1\Lib\site-packages\pykafka\client.py", line 133, in __init__
+    self.cluster = Cluster(
+                   ^^^^^^^^
+  File "C:\Users\adam\.pyenv\pyenv-win\versions\3.12.1\Lib\site-packages\pykafka\cluster.py", line 215, in __init__
+    self.update()
+  File "C:\Users\adam\.pyenv\pyenv-win\versions\3.12.1\Lib\site-packages\pykafka\cluster.py", line 510, in update
+    metadata = self._get_metadata()
+               ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\adam\.pyenv\pyenv-win\versions\3.12.1\Lib\site-packages\pykafka\cluster.py", line 304, in _get_metadata
+    raise NoBrokersAvailableError(
+pykafka.exceptions.NoBrokersAvailableError: Unable to connect to a broker to fetch metadata. See logs.
+2024-07-06 13:10:47,727 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 13:10:50,437 - basicLogger - ERROR - Failed to connect to Kafka on retry 1: Unable to connect to a broker to fetch metadata. See logs.
+Traceback (most recent call last):
+  File "C:\Visual-Studio-Code\Go\user_pokemon_management\receiver\app.py", line 41, in initialize_kafka_producer_with_retry
+    kafka_client = KafkaClient(hosts=f"{kafka_config['hostname']}:{kafka_config['port']}")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\adam\.pyenv\pyenv-win\versions\3.12.1\Lib\site-packages\pykafka\client.py", line 133, in __init__
+    self.cluster = Cluster(
+                   ^^^^^^^^
+  File "C:\Users\adam\.pyenv\pyenv-win\versions\3.12.1\Lib\site-packages\pykafka\cluster.py", line 215, in __init__
+    self.update()
+  File "C:\Users\adam\.pyenv\pyenv-win\versions\3.12.1\Lib\site-packages\pykafka\cluster.py", line 510, in update
+    metadata = self._get_metadata()
+               ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\adam\.pyenv\pyenv-win\versions\3.12.1\Lib\site-packages\pykafka\cluster.py", line 304, in _get_metadata
+    raise NoBrokersAvailableError(
+pykafka.exceptions.NoBrokersAvailableError: Unable to connect to a broker to fetch metadata. See logs.
+2024-07-06 13:15:41,433 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 13:16:32,226 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 13:18:52,747 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 13:19:56,809 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 13:19:56,824 - basicLogger - INFO - Connected to topic batchedUpdates
+2024-07-06 13:38:34,214 - basicLogger - INFO - Attempting to connect to Kafka...
+2024-07-06 13:38:34,253 - basicLogger - INFO - Kafka client connected to 192.168.56.1:9093
+2024-07-06 13:38:34,262 - basicLogger - INFO - Connected to topic batchedUpdates

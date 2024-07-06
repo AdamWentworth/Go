@@ -31,6 +31,8 @@ with open(app_conf_file, 'r') as f:
 
 # Kafka setup using loaded app configuration
 kafka_config = app_config['events']
+kafka_config['hostname'] = os.getenv('HOST_IP')
+
 producer = None
 
 def initialize_kafka_producer_with_retry():
