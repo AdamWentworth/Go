@@ -9,24 +9,25 @@ import json
 from datetime import datetime
 from pykafka import KafkaClient
 from flask import request
-from jose import jwt  # You can also use pyjwt
+from jose import jwt  # Ensure jose is installed
+from dotenv import load_dotenv  # Ensure python-dotenv is installed
 
-# Load configuration based on environment
-env = os.getenv("TARGET_ENV", "dev")
-app_conf_file = f"config/app_conf_{env}.yml"
-log_conf_file = f"config/log_conf_{env}.yml"
+# Load environment variables
+load_dotenv(dotenv_path=".env.development")  # Adjust the path as necessary
 
-# Setup logging
+# Setup logging from YAML configuration
+log_conf_file = "config/log_conf.yml"
 with open(log_conf_file, 'r') as f:
     log_config = yaml.safe_load(f.read())
     logging.config.dictConfig(log_config)
 logger = logging.getLogger('basicLogger')
 
 # Load app configuration
+app_conf_file = f"config/app_conf.yml"
 with open(app_conf_file, 'r') as f:
     app_config = yaml.safe_load(f.read())
 
-# Kafka setup
+# Kafka setup using loaded app configuration
 kafka_config = app_config['events']
 producer = None
 
@@ -49,10 +50,10 @@ producer = initialize_kafka_producer_with_retry()
 
 def verify_access_token():
     token = request.headers.get('Authorization').split(" ")[1]  # Assuming Bearer token
-    secret_key = app_config['jwt_secret_key']
+    secret_key = os.getenv('JWT_SECRET')  # Fetch the JWT secret from environment variables
     try:
         payload = jwt.decode(token, secret_key, algorithms=['HS256'])
-        return payload['user_id']  # assuming user_id is embedded in the token
+        return payload.get('user_id')  # Use .get for safer access to the user_id
     except jwt.JWTError as e:
         logger.error(f"Token verification failed: {e}")
         return None
@@ -82,4 +83,4 @@ app = connexion.FlaskApp(__name__, specification_dir='./')
 app.add_api("openapi.yaml", base_path="/api", strict_validation=True, validate_responses=True)
 
 if __name__ == "__main__":
-    app.run(port=8080, host="0.0.0.0")
+    app.run(port=3003, host="0.0.0.0")

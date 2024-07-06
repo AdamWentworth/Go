@@ -17,7 +17,7 @@ const session = require('express-session');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const fs = require('fs');
-const path = require('path');
+const path = require('path')
 const logger = require('./middlewares/logger'); // Assuming the logger is in the middlewares folder
 // const axios = require('axios');
 

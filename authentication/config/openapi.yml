@@ -84,6 +84,31 @@ paths:
           description: No session found with the provided token
         '500':
           description: Internal Server Error
+  
+  /auth/logout:
+    post:
+      summary: Log out a user
+      description: Invalidates the user's session or token to securely log out.
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Successfully logged out."
+        '401':
+          description: Unauthorized to log out (e.g., not logged in)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
 
   /auth/google:
     get:
@@ -158,6 +183,12 @@ paths:
           description: Authentication failed.
 
 components:
+  securitySchemes:
+    bearerAuth:    # Assuming JWT Bearer Token is used
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     LoginResponse:
       type: object
@@ -183,5 +214,11 @@ components:
               type: string
         token:
           type: string
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
         message:
           type: string

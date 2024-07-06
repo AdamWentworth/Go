@@ -3,7 +3,7 @@ const router = express.Router();
 const sqlite3 = require('sqlite3').verbose();
 const logger = require('../middlewares/logger'); // Import the logger
 const { getPokemonsFromDb } = require('../services/pokemonService');
-const { getEvolutionsFromDb, buildEvolutionMap } = require('../services/evolutionsService');
+const { getEvolutionsFromDb } = require('../services/evolutionsService');
 const { getImagePathsForPokemon } = require('../utils/imagePaths');
 const { getCostumesForPokemon, formatCostumes } = require('../services/costumeService');
 const { getMovesForPokemon, formatMoves } = require('../services/movesService');
@@ -68,7 +68,7 @@ router.get('/pokemon/pokemons', (req, res) => {
                         });
 
                         res.json(pokemonsWithEvolutions);
-                        logger.info(`Returned data for /api/pokemons with status ${res.statusCode}`);
+                        logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
                     });
                 });
             });

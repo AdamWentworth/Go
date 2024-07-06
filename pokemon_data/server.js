@@ -1,5 +1,4 @@
 // server.js
-
 const express = require('express');
 const cors = require('cors');
 const logger = require('./middlewares/logger');
@@ -8,6 +7,11 @@ const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const fs = require('fs');
 const path = require('path');
+
+// Load environment variables
+const dotenv = require('dotenv');
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
+dotenv.config({ path: envFile });
 
 const app = express();
 
@@ -45,7 +49,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(pokemonRoutes);
 
 // Use configuration from app_conf.yml
-const port = appConfig.app.port || 3001;
+const port = process.env.PORT || appConfig.app.port || 3001;
 
 // Starting the Server
 app.listen(port, () => {
