@@ -5,3 +5,7 @@ kafka/.env
 receiver/__pycache__
 receiver/.env.development
 receiver/app.log
+
+storage/__pycache__
+storage/.env.development
+storage/app.log
