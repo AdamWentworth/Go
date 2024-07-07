@@ -1,24 +1,30 @@
 #log_conf.yml
 version: 1
+disable_existing_loggers: False
 formatters:
   simple:
-    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format: '%(asctime)s - %(levelname)s - %(message)s'
 handlers:
   console:
     class: logging.StreamHandler
-    level: DEBUG
+    level: INFO  # Change this to WARNING or ERROR to reduce verbosity
     formatter: simple
     stream: ext://sys.stdout
   file:
     class: logging.FileHandler
     level: DEBUG
     formatter: simple
-    filename: app.log
+    filename: 'app.log'
 loggers:
   basicLogger:
     level: DEBUG
     handlers: [console, file]
     propagate: no
+  pykafka:
+    level: WARNING  # Reduce verbosity for pykafka
+    handlers: [console, file]
+    propagate: no
 root:
-  level: DEBUG
+  level: WARNING  # Adjust the root logger level to reduce overall verbosity
   handlers: [console]
+

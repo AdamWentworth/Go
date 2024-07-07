@@ -104,7 +104,7 @@ def handle_batched_updates():
     try:
         producer.produce(json.dumps(data).encode('utf-8'))
         logger.info(f"Produced batchedUpdates event to Kafka topic with trace ID {trace_id}")
-        logger.info(f"All the data loaded into kafka:", {data})
+        logger.info(f"All the data loaded into Kafka: {json.dumps(data)}")
         response = make_response(jsonify({"message": "Batched updates successfully processed"}), 200)
     except Exception as e:
         logger.error(f"Failed to produce to Kafka: {e}", exc_info=True)

@@ -1,0 +1,3 @@
+data/kafka
+data/zookeeper
+.env

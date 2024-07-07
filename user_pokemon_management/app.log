@@ -1,0 +1,159 @@
+2024-07-06 19:19:08,401 - INFO - Could not load pykafka.rdkafka extension.
+2024-07-06 19:19:08,401 - DEBUG - Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Captain Monk\.pyenv\pyenv-win\versions\3.10.0\lib\site-packages\pykafka\topic.py", line 43, in <module>
+    from . import rdkafka
+  File "C:\Users\Captain Monk\.pyenv\pyenv-win\versions\3.10.0\lib\site-packages\pykafka\rdkafka\__init__.py", line 1, in <module>
+    from .producer import RdKafkaProducer
+  File "C:\Users\Captain Monk\.pyenv\pyenv-win\versions\3.10.0\lib\site-packages\pykafka\rdkafka\producer.py", line 7, in <module>
+    from . import _rd_kafka
+ImportError: cannot import name '_rd_kafka' from partially initialized module 'pykafka.rdkafka' (most likely due to a circular import) (C:\Users\Captain Monk\.pyenv\pyenv-win\versions\3.10.0\lib\site-packages\pykafka\rdkafka\__init__.py)
+2024-07-06 19:19:08,425 - INFO - Attempting to connect to Kafka...
+2024-07-06 19:19:08,425 - INFO - Broker version is too old to use automatic API version discovery. Falling back to hardcoded versions list.
+2024-07-06 19:19:08,426 - DEBUG - Updating cluster, attempt 1/3
+2024-07-06 19:19:08,426 - DEBUG - Connecting to 192.168.1.67:9093
+2024-07-06 19:19:08,430 - DEBUG - Successfully connected to 192.168.1.67:9093
+2024-07-06 19:19:08,433 - INFO - RequestHandler.stop: about to flush requests queue
+2024-07-06 19:19:08,434 - INFO - Discovered 1 brokers
+2024-07-06 19:19:08,434 - DEBUG - Discovered broker id 1: b'192.168.1.67':9093
+2024-07-06 19:19:08,434 - DEBUG - Connecting to b'192.168.1.67':9093
+2024-07-06 19:19:08,435 - DEBUG - Successfully connected to b'192.168.1.67':9093
+2024-07-06 19:19:08,435 - INFO - Discovered 1 topics
+2024-07-06 19:19:08,436 - DEBUG - Discovered topic 'b'batchedUpdates''
+2024-07-06 19:19:08,436 - INFO - Kafka client connected to 192.168.1.67:9093
+2024-07-06 19:19:08,436 - DEBUG - Connecting to 192.168.1.67:9093
+2024-07-06 19:19:08,437 - DEBUG - Successfully connected to 192.168.1.67:9093
+2024-07-06 19:19:08,440 - INFO - RequestHandler.stop: about to flush requests queue
+2024-07-06 19:19:08,441 - INFO - Adding 1 partitions
+2024-07-06 19:19:08,441 - DEBUG - Adding partition b'batchedUpdates'/0
+2024-07-06 19:19:08,441 - INFO - Connected to topic batchedUpdates
+2024-07-06 19:19:08,441 - INFO - Starting new produce worker for broker 1
+2024-07-06 19:19:09,433 - INFO - RequestHandler worker: exiting cleanly
+2024-07-06 19:19:09,440 - INFO - RequestHandler worker: exiting cleanly
+2024-07-06 19:19:16,810 - DEBUG - Finalising <pykafka.producer.Producer at 0x21268530550>
+2024-07-06 19:19:16,811 - INFO - Blocking until all messages are sent or until pending_timeout_ms
+2024-07-06 19:19:16,811 - INFO - Blocking until all messages are sent or until pending_timeout_ms
+2024-07-06 19:19:21,440 - INFO - Could not load pykafka.rdkafka extension.
+2024-07-06 19:19:21,440 - DEBUG - Traceback:
+Traceback (most recent call last):
+  File "C:\Users\Captain Monk\.pyenv\pyenv-win\versions\3.10.0\lib\site-packages\pykafka\topic.py", line 43, in <module>
+    from . import rdkafka
+  File "C:\Users\Captain Monk\.pyenv\pyenv-win\versions\3.10.0\lib\site-packages\pykafka\rdkafka\__init__.py", line 1, in <module>
+    from .producer import RdKafkaProducer
+  File "C:\Users\Captain Monk\.pyenv\pyenv-win\versions\3.10.0\lib\site-packages\pykafka\rdkafka\producer.py", line 7, in <module>
+    from . import _rd_kafka
+ImportError: cannot import name '_rd_kafka' from partially initialized module 'pykafka.rdkafka' (most likely due to a circular import) (C:\Users\Captain Monk\.pyenv\pyenv-win\versions\3.10.0\lib\site-packages\pykafka\rdkafka\__init__.py)
+2024-07-06 19:19:21,444 - INFO - Attempting to connect to Kafka...
+2024-07-06 19:19:21,444 - INFO - Broker version is too old to use automatic API version discovery. Falling back to hardcoded versions list.
+2024-07-06 19:19:21,444 - DEBUG - Updating cluster, attempt 1/3
+2024-07-06 19:19:21,445 - DEBUG - Connecting to 192.168.1.67:9093
+2024-07-06 19:19:21,448 - DEBUG - Successfully connected to 192.168.1.67:9093
+2024-07-06 19:19:21,451 - INFO - RequestHandler.stop: about to flush requests queue
+2024-07-06 19:19:21,451 - INFO - Discovered 1 brokers
+2024-07-06 19:19:21,451 - DEBUG - Discovered broker id 1: b'192.168.1.67':9093
+2024-07-06 19:19:21,452 - DEBUG - Connecting to b'192.168.1.67':9093
+2024-07-06 19:19:21,452 - DEBUG - Successfully connected to b'192.168.1.67':9093
+2024-07-06 19:19:21,453 - INFO - Discovered 1 topics
+2024-07-06 19:19:21,453 - DEBUG - Discovered topic 'b'batchedUpdates''
+2024-07-06 19:19:21,454 - INFO - Kafka client connected to 192.168.1.67:9093
+2024-07-06 19:19:21,454 - DEBUG - Connecting to 192.168.1.67:9093
+2024-07-06 19:19:21,454 - DEBUG - Successfully connected to 192.168.1.67:9093
+2024-07-06 19:19:21,457 - INFO - RequestHandler.stop: about to flush requests queue
+2024-07-06 19:19:21,457 - INFO - Adding 1 partitions
+2024-07-06 19:19:21,458 - DEBUG - Adding partition b'batchedUpdates'/0
+2024-07-06 19:19:21,458 - INFO - Connected to topic batchedUpdates
+2024-07-06 19:19:21,458 - INFO - Starting new produce worker for broker 1
+2024-07-06 19:19:22,451 - INFO - RequestHandler worker: exiting cleanly
+2024-07-06 19:19:22,458 - INFO - RequestHandler worker: exiting cleanly
+2024-07-06 19:20:52,330 - DEBUG - Finalising <pykafka.producer.Producer at 0x1da314d0520>
+2024-07-06 19:20:52,331 - INFO - Blocking until all messages are sent or until pending_timeout_ms
+2024-07-06 19:20:52,331 - INFO - Blocking until all messages are sent or until pending_timeout_ms
+2024-07-06 19:20:56,238 - INFO - Could not load pykafka.rdkafka extension.
+2024-07-06 19:20:56,240 - INFO - Attempting to connect to Kafka...
+2024-07-06 19:20:56,240 - INFO - Broker version is too old to use automatic API version discovery. Falling back to hardcoded versions list.
+2024-07-06 19:20:56,257 - INFO - RequestHandler.stop: about to flush requests queue
+2024-07-06 19:20:56,257 - INFO - Discovered 1 brokers
+2024-07-06 19:20:56,268 - INFO - Discovered 1 topics
+2024-07-06 19:20:56,269 - INFO - Kafka client connected to 192.168.1.67:9093
+2024-07-06 19:20:56,272 - INFO - RequestHandler.stop: about to flush requests queue
+2024-07-06 19:20:56,273 - INFO - Adding 1 partitions
+2024-07-06 19:20:56,273 - INFO - Connected to topic batchedUpdates
+2024-07-06 19:20:56,273 - INFO - Starting new produce worker for broker 1
+2024-07-06 19:20:57,257 - INFO - RequestHandler worker: exiting cleanly
+2024-07-06 19:20:57,273 - INFO - RequestHandler worker: exiting cleanly
+2024-07-06 19:21:13,412 - INFO - Blocking until all messages are sent or until pending_timeout_ms
+2024-07-06 19:21:13,412 - INFO - Blocking until all messages are sent or until pending_timeout_ms
+2024-07-06 19:21:14,337 - INFO - Could not load pykafka.rdkafka extension.
+2024-07-06 19:21:14,339 - INFO - Attempting to connect to Kafka...
+2024-07-06 19:21:14,339 - INFO - Broker version is too old to use automatic API version discovery. Falling back to hardcoded versions list.
+2024-07-06 19:21:14,346 - INFO - RequestHandler.stop: about to flush requests queue
+2024-07-06 19:21:14,346 - INFO - Discovered 1 brokers
+2024-07-06 19:21:14,347 - INFO - Discovered 1 topics
+2024-07-06 19:21:14,347 - INFO - Kafka client connected to 192.168.1.67:9093
+2024-07-06 19:21:14,351 - INFO - RequestHandler.stop: about to flush requests queue
+2024-07-06 19:21:14,351 - INFO - Adding 1 partitions
+2024-07-06 19:21:14,352 - INFO - Connected to topic batchedUpdates
+2024-07-06 19:21:14,352 - INFO - Starting new produce worker for broker 1
+2024-07-06 19:21:15,345 - INFO - RequestHandler worker: exiting cleanly
+2024-07-06 19:21:15,351 - INFO - RequestHandler worker: exiting cleanly
+2024-07-06 19:21:53,301 - INFO - Blocking until all messages are sent or until pending_timeout_ms
+2024-07-06 19:21:53,301 - INFO - Blocking until all messages are sent or until pending_timeout_ms
+2024-07-06 19:21:56,910 - INFO - Could not load pykafka.rdkafka extension.
+2024-07-06 19:21:56,912 - INFO - Attempting to connect to Kafka...
+2024-07-06 19:21:56,912 - INFO - Broker version is too old to use automatic API version discovery. Falling back to hardcoded versions list.
+2024-07-06 19:21:56,918 - INFO - RequestHandler.stop: about to flush requests queue
+2024-07-06 19:21:56,919 - INFO - Discovered 1 brokers
+2024-07-06 19:21:56,929 - INFO - Discovered 1 topics
+2024-07-06 19:21:56,930 - INFO - Kafka client connected to 192.168.1.67:9093
+2024-07-06 19:21:56,933 - INFO - RequestHandler.stop: about to flush requests queue
+2024-07-06 19:21:56,934 - INFO - Adding 1 partitions
+2024-07-06 19:21:56,934 - INFO - Connected to topic batchedUpdates
+2024-07-06 19:21:56,935 - INFO - Starting new produce worker for broker 1
+2024-07-06 19:21:57,919 - INFO - RequestHandler worker: exiting cleanly
+2024-07-06 19:21:57,934 - INFO - RequestHandler worker: exiting cleanly
+2024-07-06 19:22:06,727 - INFO - Blocking until all messages are sent or until pending_timeout_ms
+2024-07-06 19:22:06,728 - INFO - Blocking until all messages are sent or until pending_timeout_ms
+2024-07-06 19:22:10,480 - INFO - Attempting to connect to Kafka...
+2024-07-06 19:22:10,497 - INFO - Kafka client connected to 192.168.1.67:9093
+2024-07-06 19:22:10,502 - INFO - Connected to topic batchedUpdates
+2024-07-06 19:22:38,934 - INFO - Attempting to connect to Kafka...
+2024-07-06 19:22:38,952 - INFO - Kafka client connected to 192.168.1.67:9093
+2024-07-06 19:22:38,955 - INFO - Connected to topic batchedUpdates
+2024-07-06 19:26:22,886 - INFO - Attempting to connect to Kafka...
+2024-07-06 19:26:22,893 - INFO - Kafka client connected to 192.168.1.67:9093
+2024-07-06 19:26:22,907 - INFO - Connected to topic batchedUpdates
+2024-07-06 19:27:16,532 - INFO - Token decoded successfully, payload: {'user_id': '663d6760537fa61b79ac8bab', 'username': 'AdamZilla', 'iat': 1720317566, 'exp': 1720321166}
+2024-07-06 19:27:16,533 - INFO - Received batched updates for user ID 663d6760537fa61b79ac8bab - AdamZilla
+2024-07-06 19:27:16,590 - INFO - Produced batchedUpdates event to Kafka topic with trace ID 7202b382-d13a-4ce0-a966-3fe8dad9c747
+2024-07-06 19:27:16,591 - INFO - All the data loaded into Kafka: {"user_id": "663d6760537fa61b79ac8bab", "username": "AdamZilla", "trace_id": "7202b382-d13a-4ce0-a966-3fe8dad9c747", "pokemon": {"1-default_4d6d66b1-66a4-41f6-bbc7-63c50b152834": {"pokemon_id": 1, "nickname": null, "cp": null, "attack_iv": null, "defense_iv": null, "stamina_iv": null, "shiny": false, "costume_id": null, "lucky": false, "shadow": false, "purified": false, "fast_move_id": null, "charged_move1_id": null, "charged_move2_id": null, "weight": null, "height": null, "gender": null, "mirror": false, "pref_lucky": false, "registered": false, "favorite": false, "location_card": null, "location_caught": null, "friendship_level": null, "date_caught": null, "date_added": "2024-07-06T16:30:12.120Z", "last_update": 1720318995306, "is_unowned": true, "is_owned": false, "is_for_trade": false, "is_wanted": true, "not_trade_list": {}, "not_wanted_list": {}}, "2-default_f858ab98-a99d-41b3-9c99-11254e987e8b": {"pokemon_id": 2, "nickname": null, "cp": null, "attack_iv": null, "defense_iv": null, "stamina_iv": null, "shiny": false, "costume_id": null, "lucky": false, "shadow": false, "purified": false, "fast_move_id": null, "charged_move1_id": null, "charged_move2_id": null, "weight": null, "height": null, "gender": null, "mirror": false, "pref_lucky": false, "registered": false, "favorite": false, "location_card": null, "location_caught": null, "friendship_level": null, "date_caught": null, "date_added": "2024-07-06T16:30:12.121Z", "last_update": 1720318995308, "is_unowned": true, "is_owned": false, "is_for_trade": false, "is_wanted": true, "not_trade_list": {}, "not_wanted_list": {}}, "12-default_7655111b-750d-4ccb-9fa4-99a9786cd9bd": {"pokemon_id": 12, "nickname": null, "cp": null, "attack_iv": null, "defense_iv": null, "stamina_iv": null, "shiny": false, "costume_id": null, "lucky": false, "shadow": false, "purified": false, "fast_move_id": null, "charged_move1_id": null, "charged_move2_id": null, "weight": null, "height": null, "gender": null, "mirror": false, "pref_lucky": false, "registered": false, "favorite": false, "location_card": null, "location_caught": null, "friendship_level": null, "date_caught": null, "date_added": "2024-07-06T16:30:12.123Z", "last_update": 1720318995309, "is_unowned": true, "is_owned": false, "is_for_trade": false, "is_wanted": true, "not_trade_list": {}, "not_wanted_list": {}}, "16-default_8dd582d4-6fef-404a-a3cd-fdd39d25908c": {"pokemon_id": 16, "nickname": null, "cp": null, "attack_iv": null, "defense_iv": null, "stamina_iv": null, "shiny": false, "costume_id": null, "lucky": false, "shadow": false, "purified": false, "fast_move_id": null, "charged_move1_id": null, "charged_move2_id": null, "weight": null, "height": null, "gender": null, "mirror": false, "pref_lucky": false, "registered": false, "favorite": false, "location_card": null, "location_caught": null, "friendship_level": null, "date_caught": null, "date_added": "2024-07-06T16:30:12.123Z", "last_update": 1720318995310, "is_unowned": true, "is_owned": false, "is_for_trade": false, "is_wanted": true, "not_trade_list": {}, "not_wanted_list": {}}, "8-default_9a24a5ab-f9b1-4c53-9566-5d636daa27c1": {"pokemon_id": 8, "nickname": null, "cp": null, "attack_iv": null, "defense_iv": null, "stamina_iv": null, "shiny": false, "costume_id": null, "lucky": false, "shadow": false, "purified": false, "fast_move_id": null, "charged_move1_id": null, "charged_move2_id": null, "weight": null, "height": null, "gender": null, "mirror": false, "pref_lucky": false, "registered": false, "favorite": false, "location_card": null, "location_caught": null, "friendship_level": null, "date_caught": null, "date_added": "2024-07-06T16:30:12.123Z", "last_update": 1720318995311, "is_unowned": true, "is_owned": false, "is_for_trade": false, "is_wanted": true, "not_trade_list": {}, "not_wanted_list": {}}, "6-default_0a243208-3378-4de1-a765-5bc9d877c014": {"pokemon_id": 6, "nickname": null, "cp": null, "attack_iv": null, "defense_iv": null, "stamina_iv": null, "shiny": false, "costume_id": null, "lucky": false, "shadow": false, "purified": false, "fast_move_id": null, "charged_move1_id": null, "charged_move2_id": null, "weight": null, "height": null, "gender": null, "mirror": false, "pref_lucky": false, "registered": false, "favorite": false, "location_card": null, "location_caught": null, "friendship_level": null, "date_caught": null, "date_added": "2024-07-06T16:30:12.122Z", "last_update": 1720318995312, "is_unowned": true, "is_owned": false, "is_for_trade": false, "is_wanted": true, "not_trade_list": {}, "not_wanted_list": {}}}}
+2024-07-06 19:31:11,738 - INFO - Attempting to connect to Kafka...
+2024-07-06 19:31:11,765 - INFO - Kafka client connected to 192.168.1.67:9093
+2024-07-06 19:31:11,778 - INFO - Connected to topic batchedUpdates
+2024-07-06 19:32:57,124 - INFO - POST /api/batchedUpdates
+2024-07-06 19:32:57,125 - INFO - Token decoded successfully, payload: {'user_id': '663d6760537fa61b79ac8bab', 'username': 'AdamZilla', 'iat': 1720317566, 'exp': 1720321166}
+2024-07-06 19:32:57,125 - INFO - Received batched updates for user ID 663d6760537fa61b79ac8bab - AdamZilla
+2024-07-06 19:32:57,135 - INFO - Produced batchedUpdates event to Kafka topic with trace ID 7c8f4f8b-2fde-451f-9259-35bed1762c83
+2024-07-06 19:32:57,135 - INFO - All the data loaded into Kafka: {"user_id": "663d6760537fa61b79ac8bab", "username": "AdamZilla", "trace_id": "7c8f4f8b-2fde-451f-9259-35bed1762c83", "pokemon": {"16-default_8dd582d4-6fef-404a-a3cd-fdd39d25908c": {"pokemon_id": 16, "nickname": null, "cp": null, "attack_iv": null, "defense_iv": null, "stamina_iv": null, "shiny": false, "costume_id": null, "lucky": false, "shadow": false, "purified": false, "fast_move_id": null, "charged_move1_id": null, "charged_move2_id": null, "weight": null, "height": null, "gender": null, "mirror": false, "pref_lucky": false, "registered": false, "favorite": false, "location_card": null, "location_caught": null, "friendship_level": null, "date_caught": null, "date_added": "2024-07-06T16:30:12.123Z", "last_update": 1720319484367, "is_unowned": true, "is_owned": false, "is_for_trade": false, "is_wanted": false, "not_trade_list": {}, "not_wanted_list": {}}, "12-default_7655111b-750d-4ccb-9fa4-99a9786cd9bd": {"pokemon_id": 12, "nickname": null, "cp": null, "attack_iv": null, "defense_iv": null, "stamina_iv": null, "shiny": false, "costume_id": null, "lucky": false, "shadow": false, "purified": false, "fast_move_id": null, "charged_move1_id": null, "charged_move2_id": null, "weight": null, "height": null, "gender": null, "mirror": false, "pref_lucky": false, "registered": false, "favorite": false, "location_card": null, "location_caught": null, "friendship_level": null, "date_caught": null, "date_added": "2024-07-06T16:30:12.123Z", "last_update": 1720319484367, "is_unowned": true, "is_owned": false, "is_for_trade": false, "is_wanted": false, "not_trade_list": {}, "not_wanted_list": {}}, "8-default_9a24a5ab-f9b1-4c53-9566-5d636daa27c1": {"pokemon_id": 8, "nickname": null, "cp": null, "attack_iv": null, "defense_iv": null, "stamina_iv": null, "shiny": false, "costume_id": null, "lucky": false, "shadow": false, "purified": false, "fast_move_id": null, "charged_move1_id": null, "charged_move2_id": null, "weight": null, "height": null, "gender": null, "mirror": false, "pref_lucky": false, "registered": false, "favorite": false, "location_card": null, "location_caught": null, "friendship_level": null, "date_caught": null, "date_added": "2024-07-06T16:30:12.123Z", "last_update": 1720319484368, "is_unowned": true, "is_owned": false, "is_for_trade": false, "is_wanted": false, "not_trade_list": {}, "not_wanted_list": {}}, "6-default_0a243208-3378-4de1-a765-5bc9d877c014": {"pokemon_id": 6, "nickname": null, "cp": null, "attack_iv": null, "defense_iv": null, "stamina_iv": null, "shiny": false, "costume_id": null, "lucky": false, "shadow": false, "purified": false, "fast_move_id": null, "charged_move1_id": null, "charged_move2_id": null, "weight": null, "height": null, "gender": null, "mirror": false, "pref_lucky": false, "registered": false, "favorite": false, "location_card": null, "location_caught": null, "friendship_level": null, "date_caught": null, "date_added": "2024-07-06T16:30:12.122Z", "last_update": 1720319484368, "is_unowned": true, "is_owned": false, "is_for_trade": false, "is_wanted": false, "not_trade_list": {}, "not_wanted_list": {}}, "2-default_f858ab98-a99d-41b3-9c99-11254e987e8b": {"pokemon_id": 2, "nickname": null, "cp": null, "attack_iv": null, "defense_iv": null, "stamina_iv": null, "shiny": false, "costume_id": null, "lucky": false, "shadow": false, "purified": false, "fast_move_id": null, "charged_move1_id": null, "charged_move2_id": null, "weight": null, "height": null, "gender": null, "mirror": false, "pref_lucky": false, "registered": false, "favorite": false, "location_card": null, "location_caught": null, "friendship_level": null, "date_caught": null, "date_added": "2024-07-06T16:30:12.121Z", "last_update": 1720319484368, "is_unowned": true, "is_owned": false, "is_for_trade": false, "is_wanted": false, "not_trade_list": {}, "not_wanted_list": {}}, "1-default_4d6d66b1-66a4-41f6-bbc7-63c50b152834": {"pokemon_id": 1, "nickname": null, "cp": null, "attack_iv": null, "defense_iv": null, "stamina_iv": null, "shiny": false, "costume_id": null, "lucky": false, "shadow": false, "purified": false, "fast_move_id": null, "charged_move1_id": null, "charged_move2_id": null, "weight": null, "height": null, "gender": null, "mirror": false, "pref_lucky": false, "registered": false, "favorite": false, "location_card": null, "location_caught": null, "friendship_level": null, "date_caught": null, "date_added": "2024-07-06T16:30:12.120Z", "last_update": 1720319484368, "is_unowned": true, "is_owned": false, "is_for_trade": false, "is_wanted": false, "not_trade_list": {}, "not_wanted_list": {}}}}
+2024-07-06 19:32:57,140 - INFO - User AdamZilla successfully processed batched updates with status 200
+2024-07-06 19:35:42,449 - INFO - Attempting to connect to Kafka...
+2024-07-06 19:35:42,456 - INFO - Kafka client connected to 192.168.1.67:9093
+2024-07-06 19:35:42,459 - INFO - Connected to topic batchedUpdates
+2024-07-06 19:37:14,286 - INFO - POST /api/batchedUpdates
+2024-07-06 19:37:14,288 - INFO - Token decoded successfully, payload: {'user_id': '663d6760537fa61b79ac8bab', 'username': 'AdamZilla', 'iat': 1720317566, 'exp': 1720321166}
+2024-07-06 19:37:14,288 - INFO - Received batched updates for user ID 663d6760537fa61b79ac8bab - AdamZilla, number of Pokemon: 10
+2024-07-06 19:37:14,293 - INFO - Produced batchedUpdates event to Kafka topic with trace ID ed0d5b36-1a03-4ad6-bfa2-d27accc1ba4a
+2024-07-06 19:37:14,293 - INFO - User AdamZilla successfully loaded 10 pokemon into Kafka with status 200
+2024-07-06 19:38:42,100 - INFO - Attempting to connect to Kafka...
+2024-07-06 19:38:42,118 - INFO - Kafka client connected to 192.168.1.67:9093
+2024-07-06 19:38:42,131 - INFO - Connected to topic batchedUpdates
+2024-07-06 19:40:24,649 - INFO - POST /api/batchedUpdates
+2024-07-06 19:40:24,651 - INFO - Token decoded successfully, payload: {'user_id': '663d6760537fa61b79ac8bab', 'username': 'AdamZilla', 'iat': 1720317566, 'exp': 1720321166}
+2024-07-06 19:40:24,651 - INFO - Received batched updates for user ID 663d6760537fa61b79ac8bab - AdamZilla, number of Pokemon: 8
+2024-07-06 19:40:24,656 - INFO - Produced batchedUpdates event to Kafka topic with trace ID 42d04439-daca-44b8-9e8b-919a2d387157
+2024-07-06 19:40:24,656 - INFO - User AdamZilla successfully loaded 8 pokemon into Kafka with status 200
+2024-07-06 19:46:42,903 - INFO - Attempting to connect to Kafka...
+2024-07-06 19:46:42,919 - INFO - Kafka client connected to 192.168.1.67:9093
+2024-07-06 19:46:42,933 - INFO - Connected to topic batchedUpdates
+2024-07-06 19:48:22,620 - INFO - POST /api/batchedUpdates
+2024-07-06 19:48:22,621 - INFO - Token decoded successfully
+2024-07-06 19:48:22,627 - INFO - User AdamZilla loaded 6 pokemon into Kafka with status 200
