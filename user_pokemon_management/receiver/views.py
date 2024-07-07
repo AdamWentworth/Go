@@ -1,7 +1,11 @@
+# receiver/views.py
+
 import json
 import uuid
 import logging
 import time
+import os
+import threading
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from pykafka import KafkaClient
@@ -50,6 +54,30 @@ def verify_access_token(request):
         logger.error(f"Token verification failed: {e}")
         return None, None
 
+def save_to_local_storage(data, filename="pending_kafka_data.json"):
+    with open(filename, 'a') as f:
+        json.dump(data, f)
+        f.write('\n')
+    logger.info("Data saved to local storage due to Kafka connection failure")
+
+def retry_sending_to_kafka():
+    filename = "pending_kafka_data.json"
+    while True:
+        if os.path.exists(filename):
+            with open(filename, 'r') as f:
+                lines = f.readlines()
+            with open(filename, 'w') as f:
+                for line in lines:
+                    try:
+                        data = json.loads(line.strip())
+                        producer.produce(json.dumps(data).encode('utf-8'))
+                    except Exception as e:
+                        logger.error(f"Failed to produce to Kafka: {e}", exc_info=True)
+                        f.write(line)  # Write back to the file for retrying later
+                    else:
+                        logger.info("Successfully sent pending data to Kafka")
+        time.sleep(60)  # Retry every 60 seconds
+
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
 def handle_batched_updates(request):
@@ -89,9 +117,14 @@ def handle_batched_updates(request):
         logger.info(f"User {username} loaded {pokemon_count} pokemon into Kafka with status {response.status_code}")
     except Exception as e:
         logger.error(f"Failed to produce to Kafka: {e}", exc_info=True)
+        save_to_local_storage(data)
         response = JsonResponse({"message": "Internal Server Error"}, status=500)
         logger.info(f"User {username} failed to load {pokemon_count} pokemon into Kafka with status {response.status_code}")
 
     response['Access-Control-Allow-Origin'] = 'http://localhost:3000'
     response['Access-Control-Allow-Credentials'] = 'true'
     return response
+
+# Start the retry thread when the application starts
+retry_thread = threading.Thread(target=retry_sending_to_kafka, daemon=True)
+retry_thread.start()

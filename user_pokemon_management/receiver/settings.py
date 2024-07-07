@@ -1,3 +1,5 @@
+# receiver/settings.py
+
 import os
 import yaml
 import logging.config

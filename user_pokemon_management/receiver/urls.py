@@ -1,3 +1,5 @@
+# receiver/urls.py
+
 from django.urls import path
 from .views import handle_batched_updates
 
