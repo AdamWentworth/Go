@@ -151,6 +151,15 @@ export const PokemonDataProvider = ({ children }) => {
             } else if (cachedVariants && !cachedOwnership && Date.now() - cachedVariants.timestamp < 24 * 60 * 60 * 1000) {
                 console.log("Using cached variants but rebuilding ownership data");
                 variants = cachedVariants.data;
+            } else if (cachedVariants && cachedOwnership && isDataFresh(cachedVariants.timestamp) && isDataFresh(cachedOwnership.timestamp) && !cachedLists) {
+                console.log("Variants and ownership data are fresh, but lists are missing, initializing lists data");
+                variants = cachedVariants.data;
+                ownershipData = cachedOwnership.data;
+                lists = initializePokemonLists(ownershipData, variants);
+                await cacheStorage.put(listsCacheKey, new Response(JSON.stringify({ data: lists, timestamp: Date.now() }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+                freshDataAvailable = true;
             } else {
                 console.log("Cached data is stale or incomplete, refetching...");
             }
