@@ -89,15 +89,22 @@ def handle_batched_updates():
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         return response
 
-    data = request.json
+    pokemon = request.json
     logger.info(f"Received batched updates for user ID {user_id} - {username}")
 
     trace_id = str(uuid.uuid4())
-    data['trace_id'] = trace_id
+    
+    data = {
+        'used_id': user_id,
+        'username': username,
+        'trace_id': trace_id,
+        'pokemon': pokemon
+    }
 
     try:
         producer.produce(json.dumps(data).encode('utf-8'))
         logger.info(f"Produced batchedUpdates event to Kafka topic with trace ID {trace_id}")
+        logger.info(f"All the data loaded into kafka:", {data})
         response = make_response(jsonify({"message": "Batched updates successfully processed"}), 200)
     except Exception as e:
         logger.error(f"Failed to produce to Kafka: {e}", exc_info=True)
