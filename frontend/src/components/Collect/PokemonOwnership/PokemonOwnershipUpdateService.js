@@ -25,10 +25,15 @@ export function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershi
 function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData, variants) {
     let needNewInstance = true;
     let updatedKey;
-    
+
     Object.keys(ownershipData).forEach(key => {
-        // Check if the key starts with the pokemonKey and if the instance is unowned and not wanted
-        if (key.startsWith(pokemonKey) && ownershipData[key].is_unowned && !ownershipData[key].is_wanted) {
+        let keyParts = key.split('_');
+        keyParts.pop(); // Remove the UUID part if present
+        let currentPrefix = keyParts.join('_');
+
+        // Check if the key matches the pokemonKey exactly
+        if (currentPrefix === pokemonKey && ownershipData[key].is_unowned && !ownershipData[key].is_wanted) {
+            // console.log(`Updating instance status for key: ${key}`);
             updateInstanceStatus(key, newStatus, ownershipData, pokemonKey, variants);
             updatedKey = key;
             needNewInstance = false;
@@ -39,6 +44,7 @@ function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData, v
     if (needNewInstance) {
         const newKey = `${pokemonKey}_${generateUUID()}`;
         ownershipData[newKey] = createNewDataForVariant(variantData);
+        // console.log(`Creating new instance with key: ${newKey}`);
         updateInstanceStatus(newKey, newStatus, ownershipData, pokemonKey, variants);
         updatedKey = newKey;
     }
@@ -48,10 +54,11 @@ function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData, v
 
 function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey, variants) {
     const instance = ownershipData[pokemonKey];
+    // console.log(`Updating status for instance: ${pokemonKey} to ${newStatus}`);
 
     if ((newStatus === 'Trade' && instance.lucky) || instance.shadow) {
         alert(`Cannot move ${baseKey} to Trade as it is ${instance.lucky ? 'lucky' : 'shadow'}.`);
-        console.log(`Move to Trade blocked due to status: ${instance.lucky ? 'lucky' : 'shadow'}`);
+        // console.log(`Move to Trade blocked due to status: ${instance.lucky ? 'lucky' : 'shadow'}`);
         return;
     }
 
@@ -61,9 +68,21 @@ function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey, var
     instance.is_for_trade = newStatus === 'Trade';
     instance.is_wanted = newStatus === 'Wanted';
 
+    // console.log(`Initial status set for ${pokemonKey}:`, {
+    //     is_unowned: instance.is_unowned,
+    //     is_owned: instance.is_owned,
+    //     is_for_trade: instance.is_for_trade,
+    //     is_wanted: instance.is_wanted
+    // });
+
     // Conditional application of status updates to other instances sharing the same prefix
     Object.keys(ownershipData).forEach(key => {
-        if (key.startsWith(baseKey) && key !== instance.pokemon_id) {
+        let keyParts = key.split('_');
+        keyParts.pop(); // Remove the UUID part if present
+        let currentPrefix = keyParts.join('_');
+
+        if (currentPrefix === baseKey && key !== pokemonKey) {
+            // console.log(`Updating related instance: ${key}`);
             switch (newStatus) {
                 case 'Unowned':
                     ownershipData[key].is_owned = false;
@@ -79,25 +98,41 @@ function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey, var
                     }
                     break;
             }
+            // console.log(`Updated related instance status for ${key}:`, ownershipData[key]);
         }
     });
 
     // Ensure that if the new status is 'Trade', the instance is marked as owned
     if (newStatus === 'Trade' && !instance.is_owned) {
         instance.is_owned = true;
+        // console.log(`Marked instance as owned for Trade: ${pokemonKey}`);
     }
 
     // Additional handling to ensure the 'Wanted' status doesn't incorrectly set 'is_unowned' to false
     if (newStatus === 'Wanted') {
         let anyOwned = Object.values(ownershipData).some(data => {
-            let isOwnedAndMatch = data.is_owned && String(data.pokemonKey).startsWith(baseKey);
+            let keyParts = String(data.pokemonKey).split('_');
+            keyParts.pop(); // Remove the UUID part if present
+            let currentPrefix = keyParts.join('_');
+
+            let isOwnedAndMatch = data.is_owned && currentPrefix === baseKey;
             return isOwnedAndMatch;
         });
 
         if (!anyOwned) {
             instance.is_unowned = true;
+            // console.log(`No owned instances found, setting is_unowned to true for ${pokemonKey}`);
+        } else {
+            // console.log(`Owned instances found, not setting is_unowned for ${pokemonKey}`);
         }
     }
+
+    // console.log(`Final status for ${pokemonKey}:`, {
+    //     is_unowned: instance.is_unowned,
+    //     is_owned: instance.is_owned,
+    //     is_for_trade: instance.is_for_trade,
+    //     is_wanted: instance.is_wanted
+    // });
 }
 
 function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, variants) {
@@ -161,12 +196,19 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
             }
             break;
         case 'Unowned':
-            // Isolating the prefix by excluding the last UUID segment
             let keyParts = pokemonKey.split('_');
             keyParts.pop(); // Remove the UUID part
             let basePrefix = keyParts.join('_'); // Rejoin to form the actual prefix
-        
-            let relatedInstances = Object.keys(ownershipData).filter(key => key.startsWith(basePrefix) && key !== pokemonKey);
+            // console.log(basePrefix);
+            
+            let relatedInstances = Object.keys(ownershipData).filter(key => {
+                let parts = key.split('_');
+                parts.pop(); // Remove the UUID part
+                let currentPrefix = parts.join('_');
+                return currentPrefix === basePrefix && key !== pokemonKey;
+            });
+            
+            // console.log(relatedInstances);
             let isOnlyInstance = relatedInstances.length === 0; // Check if there are no other related instances
         
             if (!isOnlyInstance) {
@@ -181,7 +223,7 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
                 instance.is_wanted = false; // Explicitly setting is_wanted to false
             }
             return pokemonKey;
-            break;            
+            break;                        
     }
 
     return pokemonKey; // Return the original key if none of the conditions match

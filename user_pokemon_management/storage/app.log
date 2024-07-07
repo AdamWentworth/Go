@@ -1,3 +1,1978 @@
 2024-05-05 16:38:58,569 - asyncio - DEBUG - Using proactor: IocpProactor
 2024-05-05 16:38:58,633 - connexion.middleware.abstract - DEBUG - Adding /user_pokemon_data/users/{user_id}...
 2024-05-05 16:38:58,633 - connexion.middleware.abstract - ERROR - Failed to add operation for GET /user_pokemon_data/users/{user_id}
+2024-07-07 13:32:20,978 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 13:32:20,991 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 13:32:20,992 - DEBUG - Polling for message...
+2024-07-07 13:32:21,079 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 13:32:21,086 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 13:32:21,088 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 13:32:21,094 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 13:39:40,217 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 13:39:40,235 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 13:39:40,236 - DEBUG - Polling for message...
+2024-07-07 13:39:40,308 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 13:39:40,309 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 13:39:40,311 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 13:39:40,316 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 13:56:01,744 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 13:56:01,764 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 13:56:01,764 - DEBUG - Polling for message...
+2024-07-07 13:56:01,835 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 13:56:01,837 - DEBUG - (0.016) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 13:56:01,838 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 13:56:01,843 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 13:56:06,765 - DEBUG - No message received.
+2024-07-07 13:56:06,765 - DEBUG - Polling for message...
+2024-07-07 13:56:11,766 - DEBUG - No message received.
+2024-07-07 13:56:11,766 - DEBUG - Polling for message...
+2024-07-07 13:57:24,647 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 13:57:24,659 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 13:57:24,659 - DEBUG - Polling for message...
+2024-07-07 13:57:24,724 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 13:57:24,726 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 13:57:24,727 - DEBUG - (0.016) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 13:57:24,731 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 13:58:51,124 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 13:58:51,136 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 13:58:51,136 - DEBUG - Polling for message...
+2024-07-07 13:58:51,177 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 13:58:51,179 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 13:58:51,179 - DEBUG - (0.016) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 13:58:51,246 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 13:58:51,248 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 13:58:51,254 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 13:58:51,256 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 13:58:51,258 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 13:58:51,262 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 13:58:51,276 - DEBUG - CREATE TABLE `storage_pokemoninstance` (`instance_id` char(32) NOT NULL PRIMARY KEY, `pokemon_id` integer NOT NULL, `cp` integer NULL, `attack_iv` integer NULL, `defense_iv` integer NULL, `stamina_iv` integer NULL, `shiny` bool NOT NULL, `costume_id` integer NULL, `lucky` bool NOT NULL, `shadow` bool NOT NULL, `purified` bool NOT NULL, `fast_move_id` integer NULL, `charged_move1_id` integer NULL, `charged_move2_id` integer NULL, `weight` double precision NULL, `height` double precision NULL, `gender` varchar(1) NULL, `mirror` bool NOT NULL, `friendship_level` integer NULL, `date_caught` datetime(6) NULL, `date_added` datetime(6) NOT NULL); (params None)
+2024-07-07 13:58:51,302 - DEBUG - (0.015) CREATE TABLE `storage_pokemoninstance` (`instance_id` char(32) NOT NULL PRIMARY KEY, `pokemon_id` integer NOT NULL, `cp` integer NULL, `attack_iv` integer NULL, `defense_iv` integer NULL, `stamina_iv` integer NULL, `shiny` bool NOT NULL, `costume_id` integer NULL, `lucky` bool NOT NULL, `shadow` bool NOT NULL, `purified` bool NOT NULL, `fast_move_id` integer NULL, `charged_move1_id` integer NULL, `charged_move2_id` integer NULL, `weight` double precision NULL, `height` double precision NULL, `gender` varchar(1) NULL, `mirror` bool NOT NULL, `friendship_level` integer NULL, `date_caught` datetime(6) NULL, `date_added` datetime(6) NOT NULL); args=None; alias=default
+2024-07-07 13:58:51,304 - DEBUG - CREATE TABLE `storage_user` (`user_id` varchar(255) NOT NULL PRIMARY KEY, `username` varchar(255) NOT NULL, `trainer_code` varchar(255) NULL); (params None)
+2024-07-07 13:58:51,325 - DEBUG - (0.015) CREATE TABLE `storage_user` (`user_id` varchar(255) NOT NULL PRIMARY KEY, `username` varchar(255) NOT NULL, `trainer_code` varchar(255) NULL); args=None; alias=default
+2024-07-07 13:58:51,328 - DEBUG - CREATE TABLE `storage_ownership` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `is_owned` bool NOT NULL, `is_for_trade` bool NOT NULL, `is_wanted` bool NOT NULL, `instance_id` char(32) NOT NULL); (params None)
+2024-07-07 13:58:51,349 - DEBUG - (0.016) CREATE TABLE `storage_ownership` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `is_owned` bool NOT NULL, `is_for_trade` bool NOT NULL, `is_wanted` bool NOT NULL, `instance_id` char(32) NOT NULL); args=None; alias=default
+2024-07-07 13:58:51,351 - DEBUG - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'storage_ownership' AND
+                table_schema = DATABASE()
+            ; args=['storage_ownership']; alias=default
+2024-07-07 13:58:51,354 - DEBUG - CREATE TABLE `storage_tradepair` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `desired_instance_id` char(32) NOT NULL, `offered_instance_id` char(32) NOT NULL, `user_id` varchar(255) NOT NULL); (params None)
+2024-07-07 13:58:51,372 - DEBUG - (0.015) CREATE TABLE `storage_tradepair` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `desired_instance_id` char(32) NOT NULL, `offered_instance_id` char(32) NOT NULL, `user_id` varchar(255) NOT NULL); args=None; alias=default
+2024-07-07 13:58:51,373 - DEBUG - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'storage_tradepair' AND
+                table_schema = DATABASE()
+            ; args=['storage_tradepair']; alias=default
+2024-07-07 13:58:51,374 - DEBUG - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'storage_tradepair' AND
+                table_schema = DATABASE()
+            ; args=['storage_tradepair']; alias=default
+2024-07-07 13:58:51,376 - DEBUG - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'storage_tradepair' AND
+                table_schema = DATABASE()
+            ; args=['storage_tradepair']; alias=default
+2024-07-07 13:58:51,380 - DEBUG - CREATE TABLE `storage_trade` (`trade_id` char(32) NOT NULL PRIMARY KEY, `status` varchar(255) NULL, `engagement_date` datetime(6) NULL, `completion_date` datetime(6) NULL, `cancellation_date` datetime(6) NULL, `instance_from_user_1_id` char(32) NOT NULL, `instance_from_user_2_id` char(32) NOT NULL, `user_1_id` varchar(255) NOT NULL, `user_2_id` varchar(255) NOT NULL); (params None)
+2024-07-07 13:58:51,401 - DEBUG - (0.032) CREATE TABLE `storage_trade` (`trade_id` char(32) NOT NULL PRIMARY KEY, `status` varchar(255) NULL, `engagement_date` datetime(6) NULL, `completion_date` datetime(6) NULL, `cancellation_date` datetime(6) NULL, `instance_from_user_1_id` char(32) NOT NULL, `instance_from_user_2_id` char(32) NOT NULL, `user_1_id` varchar(255) NOT NULL, `user_2_id` varchar(255) NOT NULL); args=None; alias=default
+2024-07-07 13:58:51,402 - DEBUG - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'storage_trade' AND
+                table_schema = DATABASE()
+            ; args=['storage_trade']; alias=default
+2024-07-07 13:58:51,404 - DEBUG - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'storage_trade' AND
+                table_schema = DATABASE()
+            ; args=['storage_trade']; alias=default
+2024-07-07 13:58:51,405 - DEBUG - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'storage_trade' AND
+                table_schema = DATABASE()
+            ; args=['storage_trade']; alias=default
+2024-07-07 13:58:51,407 - DEBUG - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'storage_trade' AND
+                table_schema = DATABASE()
+            ; args=['storage_trade']; alias=default
+2024-07-07 13:58:51,411 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `user_id` varchar(255) NOT NULL , ADD CONSTRAINT `storage_pokemoninstance_user_id_d539cc4e_fk_storage_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `storage_user`(`user_id`); (params None)
+2024-07-07 13:58:51,475 - DEBUG - (0.062) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `user_id` varchar(255) NOT NULL , ADD CONSTRAINT `storage_pokemoninstance_user_id_d539cc4e_fk_storage_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `storage_user`(`user_id`); args=None; alias=default
+2024-07-07 13:58:51,477 - DEBUG - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'storage_pokemoninstance' AND
+                table_schema = DATABASE()
+            ; args=['storage_pokemoninstance']; alias=default
+2024-07-07 13:58:51,478 - DEBUG - ALTER TABLE `storage_ownership` ADD CONSTRAINT `storage_ownership_instance_id_c7d154ea_fk_storage_p` FOREIGN KEY (`instance_id`) REFERENCES `storage_pokemoninstance` (`instance_id`); (params ())
+2024-07-07 13:58:51,537 - DEBUG - (0.047) ALTER TABLE `storage_ownership` ADD CONSTRAINT `storage_ownership_instance_id_c7d154ea_fk_storage_p` FOREIGN KEY (`instance_id`) REFERENCES `storage_pokemoninstance` (`instance_id`); args=(); alias=default
+2024-07-07 13:58:51,537 - DEBUG - ALTER TABLE `storage_tradepair` ADD CONSTRAINT `storage_tradepair_desired_instance_id_57708b83_fk_storage_p` FOREIGN KEY (`desired_instance_id`) REFERENCES `storage_pokemoninstance` (`instance_id`); (params ())
+2024-07-07 13:58:51,595 - DEBUG - (0.062) ALTER TABLE `storage_tradepair` ADD CONSTRAINT `storage_tradepair_desired_instance_id_57708b83_fk_storage_p` FOREIGN KEY (`desired_instance_id`) REFERENCES `storage_pokemoninstance` (`instance_id`); args=(); alias=default
+2024-07-07 13:58:51,596 - DEBUG - ALTER TABLE `storage_tradepair` ADD CONSTRAINT `storage_tradepair_offered_instance_id_c5b942b5_fk_storage_p` FOREIGN KEY (`offered_instance_id`) REFERENCES `storage_pokemoninstance` (`instance_id`); (params ())
+2024-07-07 13:58:51,656 - DEBUG - (0.063) ALTER TABLE `storage_tradepair` ADD CONSTRAINT `storage_tradepair_offered_instance_id_c5b942b5_fk_storage_p` FOREIGN KEY (`offered_instance_id`) REFERENCES `storage_pokemoninstance` (`instance_id`); args=(); alias=default
+2024-07-07 13:58:51,657 - DEBUG - ALTER TABLE `storage_tradepair` ADD CONSTRAINT `storage_tradepair_user_id_4269e91f_fk_storage_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `storage_user` (`user_id`); (params ())
+2024-07-07 13:58:51,725 - DEBUG - (0.062) ALTER TABLE `storage_tradepair` ADD CONSTRAINT `storage_tradepair_user_id_4269e91f_fk_storage_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `storage_user` (`user_id`); args=(); alias=default
+2024-07-07 13:58:51,726 - DEBUG - ALTER TABLE `storage_trade` ADD CONSTRAINT `storage_trade_instance_from_user_1_6cbd3d12_fk_storage_p` FOREIGN KEY (`instance_from_user_1_id`) REFERENCES `storage_pokemoninstance` (`instance_id`); (params ())
+2024-07-07 13:58:51,790 - DEBUG - (0.062) ALTER TABLE `storage_trade` ADD CONSTRAINT `storage_trade_instance_from_user_1_6cbd3d12_fk_storage_p` FOREIGN KEY (`instance_from_user_1_id`) REFERENCES `storage_pokemoninstance` (`instance_id`); args=(); alias=default
+2024-07-07 13:58:51,790 - DEBUG - ALTER TABLE `storage_trade` ADD CONSTRAINT `storage_trade_instance_from_user_2_6ac619f2_fk_storage_p` FOREIGN KEY (`instance_from_user_2_id`) REFERENCES `storage_pokemoninstance` (`instance_id`); (params ())
+2024-07-07 13:58:51,857 - DEBUG - (0.063) ALTER TABLE `storage_trade` ADD CONSTRAINT `storage_trade_instance_from_user_2_6ac619f2_fk_storage_p` FOREIGN KEY (`instance_from_user_2_id`) REFERENCES `storage_pokemoninstance` (`instance_id`); args=(); alias=default
+2024-07-07 13:58:51,858 - DEBUG - ALTER TABLE `storage_trade` ADD CONSTRAINT `storage_trade_user_1_id_611a7bb2_fk_storage_user_user_id` FOREIGN KEY (`user_1_id`) REFERENCES `storage_user` (`user_id`); (params ())
+2024-07-07 13:58:51,921 - DEBUG - (0.062) ALTER TABLE `storage_trade` ADD CONSTRAINT `storage_trade_user_1_id_611a7bb2_fk_storage_user_user_id` FOREIGN KEY (`user_1_id`) REFERENCES `storage_user` (`user_id`); args=(); alias=default
+2024-07-07 13:58:51,921 - DEBUG - ALTER TABLE `storage_trade` ADD CONSTRAINT `storage_trade_user_2_id_c4697472_fk_storage_user_user_id` FOREIGN KEY (`user_2_id`) REFERENCES `storage_user` (`user_id`); (params ())
+2024-07-07 13:58:51,984 - DEBUG - (0.063) ALTER TABLE `storage_trade` ADD CONSTRAINT `storage_trade_user_2_id_c4697472_fk_storage_user_user_id` FOREIGN KEY (`user_2_id`) REFERENCES `storage_user` (`user_id`); args=(); alias=default
+2024-07-07 13:58:51,987 - DEBUG - (0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('storage', '0001_initial', '2024-07-07 20:58:51.984969'); args=['storage', '0001_initial', '2024-07-07 20:58:51.984969']; alias=default
+2024-07-07 13:58:51,991 - DEBUG - ALTER TABLE `storage_user` DROP COLUMN `trainer_code`; (params ())
+2024-07-07 13:58:52,013 - DEBUG - (0.031) ALTER TABLE `storage_user` DROP COLUMN `trainer_code`; args=(); alias=default
+2024-07-07 13:58:52,016 - DEBUG - (0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('storage', '0002_remove_user_trainer_code', '2024-07-07 20:58:52.013748'); args=['storage', '0002_remove_user_trainer_code', '2024-07-07 20:58:52.013748']; alias=default
+2024-07-07 13:58:52,024 - DEBUG - (0.016) 
+            SELECT kc.`constraint_name`, kc.`column_name`,
+                kc.`referenced_table_name`, kc.`referenced_column_name`,
+                c.`constraint_type`
+            FROM
+                information_schema.key_column_usage AS kc,
+                information_schema.table_constraints AS c
+            WHERE
+                kc.table_schema = DATABASE() AND
+                (
+                    kc.referenced_table_schema = DATABASE() OR
+                    kc.referenced_table_schema IS NULL
+                ) AND
+                c.table_schema = kc.table_schema AND
+                c.constraint_name = kc.constraint_name AND
+                c.constraint_type != 'CHECK' AND
+                kc.table_name = 'storage_trade'
+            ORDER BY kc.`ordinal_position`
+        ; args=['storage_trade']; alias=default
+2024-07-07 13:58:52,027 - DEBUG - (0.000) 
+            SELECT  table_collation
+            FROM    information_schema.tables
+            WHERE   table_schema = DATABASE()
+            AND     table_name = 'storage_trade'
+            ; args=['storage_trade']; alias=default
+2024-07-07 13:58:52,029 - DEBUG - (0.000) 
+            SELECT
+                column_name, data_type, character_maximum_length,
+                numeric_precision, numeric_scale, extra, column_default,
+                CASE
+                    WHEN collation_name = 'utf8mb4_0900_ai_ci' THEN NULL
+                    ELSE collation_name
+                END AS collation_name,
+                CASE
+                    WHEN column_type LIKE '% unsigned' THEN 1
+                    ELSE 0
+                END AS is_unsigned,
+                column_comment
+            FROM information_schema.columns
+            WHERE table_name = 'storage_trade' AND table_schema = DATABASE()
+            ; args=['utf8mb4_0900_ai_ci', 'storage_trade']; alias=default
+2024-07-07 13:58:52,032 - DEBUG - (0.000) SELECT * FROM `storage_trade` LIMIT 1; args=None; alias=default
+2024-07-07 13:58:52,034 - DEBUG - (0.000) 
+                    SELECT cc.constraint_name, cc.check_clause
+                    FROM
+                        information_schema.check_constraints AS cc,
+                        information_schema.table_constraints AS tc
+                    WHERE
+                        cc.constraint_schema = DATABASE() AND
+                        tc.table_schema = cc.constraint_schema AND
+                        cc.constraint_name = tc.constraint_name AND
+                        tc.constraint_type = 'CHECK' AND
+                        tc.table_name = 'storage_trade'
+                ; args=['storage_trade']; alias=default
+2024-07-07 13:58:52,044 - DEBUG - (0.015) SHOW INDEX FROM `storage_trade`; args=None; alias=default
+2024-07-07 13:58:52,044 - DEBUG - ALTER TABLE `storage_trade` DROP FOREIGN KEY `storage_trade_instance_from_user_1_6cbd3d12_fk_storage_p`; (params ())
+2024-07-07 13:58:52,057 - DEBUG - (0.016) ALTER TABLE `storage_trade` DROP FOREIGN KEY `storage_trade_instance_from_user_1_6cbd3d12_fk_storage_p`; args=(); alias=default
+2024-07-07 13:58:52,058 - DEBUG - ALTER TABLE `storage_trade` DROP COLUMN `instance_from_user_1_id`; (params ())
+2024-07-07 13:58:52,160 - DEBUG - (0.094) ALTER TABLE `storage_trade` DROP COLUMN `instance_from_user_1_id`; args=(); alias=default
+2024-07-07 13:58:52,165 - DEBUG - (0.015) 
+            SELECT kc.`constraint_name`, kc.`column_name`,
+                kc.`referenced_table_name`, kc.`referenced_column_name`,
+                c.`constraint_type`
+            FROM
+                information_schema.key_column_usage AS kc,
+                information_schema.table_constraints AS c
+            WHERE
+                kc.table_schema = DATABASE() AND
+                (
+                    kc.referenced_table_schema = DATABASE() OR
+                    kc.referenced_table_schema IS NULL
+                ) AND
+                c.table_schema = kc.table_schema AND
+                c.constraint_name = kc.constraint_name AND
+                c.constraint_type != 'CHECK' AND
+                kc.table_name = 'storage_trade'
+            ORDER BY kc.`ordinal_position`
+        ; args=['storage_trade']; alias=default
+2024-07-07 13:58:52,168 - DEBUG - (0.000) 
+            SELECT  table_collation
+            FROM    information_schema.tables
+            WHERE   table_schema = DATABASE()
+            AND     table_name = 'storage_trade'
+            ; args=['storage_trade']; alias=default
+2024-07-07 13:58:52,170 - DEBUG - (0.000) 
+            SELECT
+                column_name, data_type, character_maximum_length,
+                numeric_precision, numeric_scale, extra, column_default,
+                CASE
+                    WHEN collation_name = 'utf8mb4_0900_ai_ci' THEN NULL
+                    ELSE collation_name
+                END AS collation_name,
+                CASE
+                    WHEN column_type LIKE '% unsigned' THEN 1
+                    ELSE 0
+                END AS is_unsigned,
+                column_comment
+            FROM information_schema.columns
+            WHERE table_name = 'storage_trade' AND table_schema = DATABASE()
+            ; args=['utf8mb4_0900_ai_ci', 'storage_trade']; alias=default
+2024-07-07 13:58:52,172 - DEBUG - (0.000) SELECT * FROM `storage_trade` LIMIT 1; args=None; alias=default
+2024-07-07 13:58:52,173 - DEBUG - (0.000) 
+                    SELECT cc.constraint_name, cc.check_clause
+                    FROM
+                        information_schema.check_constraints AS cc,
+                        information_schema.table_constraints AS tc
+                    WHERE
+                        cc.constraint_schema = DATABASE() AND
+                        tc.table_schema = cc.constraint_schema AND
+                        cc.constraint_name = tc.constraint_name AND
+                        tc.constraint_type = 'CHECK' AND
+                        tc.table_name = 'storage_trade'
+                ; args=['storage_trade']; alias=default
+2024-07-07 13:58:52,175 - DEBUG - (0.000) SHOW INDEX FROM `storage_trade`; args=None; alias=default
+2024-07-07 13:58:52,175 - DEBUG - ALTER TABLE `storage_trade` DROP FOREIGN KEY `storage_trade_instance_from_user_2_6ac619f2_fk_storage_p`; (params ())
+2024-07-07 13:58:52,187 - DEBUG - (0.016) ALTER TABLE `storage_trade` DROP FOREIGN KEY `storage_trade_instance_from_user_2_6ac619f2_fk_storage_p`; args=(); alias=default
+2024-07-07 13:58:52,187 - DEBUG - ALTER TABLE `storage_trade` DROP COLUMN `instance_from_user_2_id`; (params ())
+2024-07-07 13:58:52,234 - DEBUG - (0.047) ALTER TABLE `storage_trade` DROP COLUMN `instance_from_user_2_id`; args=(); alias=default
+2024-07-07 13:58:52,239 - DEBUG - (0.000) 
+            SELECT kc.`constraint_name`, kc.`column_name`,
+                kc.`referenced_table_name`, kc.`referenced_column_name`,
+                c.`constraint_type`
+            FROM
+                information_schema.key_column_usage AS kc,
+                information_schema.table_constraints AS c
+            WHERE
+                kc.table_schema = DATABASE() AND
+                (
+                    kc.referenced_table_schema = DATABASE() OR
+                    kc.referenced_table_schema IS NULL
+                ) AND
+                c.table_schema = kc.table_schema AND
+                c.constraint_name = kc.constraint_name AND
+                c.constraint_type != 'CHECK' AND
+                kc.table_name = 'storage_trade'
+            ORDER BY kc.`ordinal_position`
+        ; args=['storage_trade']; alias=default
+2024-07-07 13:58:52,243 - DEBUG - (0.000) 
+            SELECT  table_collation
+            FROM    information_schema.tables
+            WHERE   table_schema = DATABASE()
+            AND     table_name = 'storage_trade'
+            ; args=['storage_trade']; alias=default
+2024-07-07 13:58:52,244 - DEBUG - (0.000) 
+            SELECT
+                column_name, data_type, character_maximum_length,
+                numeric_precision, numeric_scale, extra, column_default,
+                CASE
+                    WHEN collation_name = 'utf8mb4_0900_ai_ci' THEN NULL
+                    ELSE collation_name
+                END AS collation_name,
+                CASE
+                    WHEN column_type LIKE '% unsigned' THEN 1
+                    ELSE 0
+                END AS is_unsigned,
+                column_comment
+            FROM information_schema.columns
+            WHERE table_name = 'storage_trade' AND table_schema = DATABASE()
+            ; args=['utf8mb4_0900_ai_ci', 'storage_trade']; alias=default
+2024-07-07 13:58:52,246 - DEBUG - (0.000) SELECT * FROM `storage_trade` LIMIT 1; args=None; alias=default
+2024-07-07 13:58:52,247 - DEBUG - (0.000) 
+                    SELECT cc.constraint_name, cc.check_clause
+                    FROM
+                        information_schema.check_constraints AS cc,
+                        information_schema.table_constraints AS tc
+                    WHERE
+                        cc.constraint_schema = DATABASE() AND
+                        tc.table_schema = cc.constraint_schema AND
+                        cc.constraint_name = tc.constraint_name AND
+                        tc.constraint_type = 'CHECK' AND
+                        tc.table_name = 'storage_trade'
+                ; args=['storage_trade']; alias=default
+2024-07-07 13:58:52,249 - DEBUG - (0.000) SHOW INDEX FROM `storage_trade`; args=None; alias=default
+2024-07-07 13:58:52,250 - DEBUG - ALTER TABLE `storage_trade` DROP FOREIGN KEY `storage_trade_user_1_id_611a7bb2_fk_storage_user_user_id`; (params ())
+2024-07-07 13:58:52,259 - DEBUG - (0.016) ALTER TABLE `storage_trade` DROP FOREIGN KEY `storage_trade_user_1_id_611a7bb2_fk_storage_user_user_id`; args=(); alias=default
+2024-07-07 13:58:52,259 - DEBUG - ALTER TABLE `storage_trade` DROP COLUMN `user_1_id`; (params ())
+2024-07-07 13:58:52,307 - DEBUG - (0.047) ALTER TABLE `storage_trade` DROP COLUMN `user_1_id`; args=(); alias=default
+2024-07-07 13:58:52,312 - DEBUG - (0.000) 
+            SELECT kc.`constraint_name`, kc.`column_name`,
+                kc.`referenced_table_name`, kc.`referenced_column_name`,
+                c.`constraint_type`
+            FROM
+                information_schema.key_column_usage AS kc,
+                information_schema.table_constraints AS c
+            WHERE
+                kc.table_schema = DATABASE() AND
+                (
+                    kc.referenced_table_schema = DATABASE() OR
+                    kc.referenced_table_schema IS NULL
+                ) AND
+                c.table_schema = kc.table_schema AND
+                c.constraint_name = kc.constraint_name AND
+                c.constraint_type != 'CHECK' AND
+                kc.table_name = 'storage_trade'
+            ORDER BY kc.`ordinal_position`
+        ; args=['storage_trade']; alias=default
+2024-07-07 13:58:52,315 - DEBUG - (0.000) 
+            SELECT  table_collation
+            FROM    information_schema.tables
+            WHERE   table_schema = DATABASE()
+            AND     table_name = 'storage_trade'
+            ; args=['storage_trade']; alias=default
+2024-07-07 13:58:52,316 - DEBUG - (0.000) 
+            SELECT
+                column_name, data_type, character_maximum_length,
+                numeric_precision, numeric_scale, extra, column_default,
+                CASE
+                    WHEN collation_name = 'utf8mb4_0900_ai_ci' THEN NULL
+                    ELSE collation_name
+                END AS collation_name,
+                CASE
+                    WHEN column_type LIKE '% unsigned' THEN 1
+                    ELSE 0
+                END AS is_unsigned,
+                column_comment
+            FROM information_schema.columns
+            WHERE table_name = 'storage_trade' AND table_schema = DATABASE()
+            ; args=['utf8mb4_0900_ai_ci', 'storage_trade']; alias=default
+2024-07-07 13:58:52,318 - DEBUG - (0.000) SELECT * FROM `storage_trade` LIMIT 1; args=None; alias=default
+2024-07-07 13:58:52,319 - DEBUG - (0.000) 
+                    SELECT cc.constraint_name, cc.check_clause
+                    FROM
+                        information_schema.check_constraints AS cc,
+                        information_schema.table_constraints AS tc
+                    WHERE
+                        cc.constraint_schema = DATABASE() AND
+                        tc.table_schema = cc.constraint_schema AND
+                        cc.constraint_name = tc.constraint_name AND
+                        tc.constraint_type = 'CHECK' AND
+                        tc.table_name = 'storage_trade'
+                ; args=['storage_trade']; alias=default
+2024-07-07 13:58:52,321 - DEBUG - (0.000) SHOW INDEX FROM `storage_trade`; args=None; alias=default
+2024-07-07 13:58:52,321 - DEBUG - ALTER TABLE `storage_trade` DROP FOREIGN KEY `storage_trade_user_2_id_c4697472_fk_storage_user_user_id`; (params ())
+2024-07-07 13:58:52,330 - DEBUG - (0.000) ALTER TABLE `storage_trade` DROP FOREIGN KEY `storage_trade_user_2_id_c4697472_fk_storage_user_user_id`; args=(); alias=default
+2024-07-07 13:58:52,331 - DEBUG - ALTER TABLE `storage_trade` DROP COLUMN `user_2_id`; (params ())
+2024-07-07 13:58:52,368 - DEBUG - (0.047) ALTER TABLE `storage_trade` DROP COLUMN `user_2_id`; args=(); alias=default
+2024-07-07 13:58:52,373 - DEBUG - (0.000) 
+            SELECT kc.`constraint_name`, kc.`column_name`,
+                kc.`referenced_table_name`, kc.`referenced_column_name`,
+                c.`constraint_type`
+            FROM
+                information_schema.key_column_usage AS kc,
+                information_schema.table_constraints AS c
+            WHERE
+                kc.table_schema = DATABASE() AND
+                (
+                    kc.referenced_table_schema = DATABASE() OR
+                    kc.referenced_table_schema IS NULL
+                ) AND
+                c.table_schema = kc.table_schema AND
+                c.constraint_name = kc.constraint_name AND
+                c.constraint_type != 'CHECK' AND
+                kc.table_name = 'storage_tradepair'
+            ORDER BY kc.`ordinal_position`
+        ; args=['storage_tradepair']; alias=default
+2024-07-07 13:58:52,376 - DEBUG - (0.000) 
+            SELECT  table_collation
+            FROM    information_schema.tables
+            WHERE   table_schema = DATABASE()
+            AND     table_name = 'storage_tradepair'
+            ; args=['storage_tradepair']; alias=default
+2024-07-07 13:58:52,377 - DEBUG - (0.000) 
+            SELECT
+                column_name, data_type, character_maximum_length,
+                numeric_precision, numeric_scale, extra, column_default,
+                CASE
+                    WHEN collation_name = 'utf8mb4_0900_ai_ci' THEN NULL
+                    ELSE collation_name
+                END AS collation_name,
+                CASE
+                    WHEN column_type LIKE '% unsigned' THEN 1
+                    ELSE 0
+                END AS is_unsigned,
+                column_comment
+            FROM information_schema.columns
+            WHERE table_name = 'storage_tradepair' AND table_schema = DATABASE()
+            ; args=['utf8mb4_0900_ai_ci', 'storage_tradepair']; alias=default
+2024-07-07 13:58:52,380 - DEBUG - (0.000) SELECT * FROM `storage_tradepair` LIMIT 1; args=None; alias=default
+2024-07-07 13:58:52,381 - DEBUG - (0.000) 
+                    SELECT cc.constraint_name, cc.check_clause
+                    FROM
+                        information_schema.check_constraints AS cc,
+                        information_schema.table_constraints AS tc
+                    WHERE
+                        cc.constraint_schema = DATABASE() AND
+                        tc.table_schema = cc.constraint_schema AND
+                        cc.constraint_name = tc.constraint_name AND
+                        tc.constraint_type = 'CHECK' AND
+                        tc.table_name = 'storage_tradepair'
+                ; args=['storage_tradepair']; alias=default
+2024-07-07 13:58:52,389 - DEBUG - (0.000) SHOW INDEX FROM `storage_tradepair`; args=None; alias=default
+2024-07-07 13:58:52,389 - DEBUG - ALTER TABLE `storage_tradepair` DROP FOREIGN KEY `storage_tradepair_desired_instance_id_57708b83_fk_storage_p`; (params ())
+2024-07-07 13:58:52,401 - DEBUG - (0.016) ALTER TABLE `storage_tradepair` DROP FOREIGN KEY `storage_tradepair_desired_instance_id_57708b83_fk_storage_p`; args=(); alias=default
+2024-07-07 13:58:52,402 - DEBUG - ALTER TABLE `storage_tradepair` DROP COLUMN `desired_instance_id`; (params ())
+2024-07-07 13:58:52,458 - DEBUG - (0.046) ALTER TABLE `storage_tradepair` DROP COLUMN `desired_instance_id`; args=(); alias=default
+2024-07-07 13:58:52,463 - DEBUG - (0.000) 
+            SELECT kc.`constraint_name`, kc.`column_name`,
+                kc.`referenced_table_name`, kc.`referenced_column_name`,
+                c.`constraint_type`
+            FROM
+                information_schema.key_column_usage AS kc,
+                information_schema.table_constraints AS c
+            WHERE
+                kc.table_schema = DATABASE() AND
+                (
+                    kc.referenced_table_schema = DATABASE() OR
+                    kc.referenced_table_schema IS NULL
+                ) AND
+                c.table_schema = kc.table_schema AND
+                c.constraint_name = kc.constraint_name AND
+                c.constraint_type != 'CHECK' AND
+                kc.table_name = 'storage_tradepair'
+            ORDER BY kc.`ordinal_position`
+        ; args=['storage_tradepair']; alias=default
+2024-07-07 13:58:52,466 - DEBUG - (0.000) 
+            SELECT  table_collation
+            FROM    information_schema.tables
+            WHERE   table_schema = DATABASE()
+            AND     table_name = 'storage_tradepair'
+            ; args=['storage_tradepair']; alias=default
+2024-07-07 13:58:52,468 - DEBUG - (0.000) 
+            SELECT
+                column_name, data_type, character_maximum_length,
+                numeric_precision, numeric_scale, extra, column_default,
+                CASE
+                    WHEN collation_name = 'utf8mb4_0900_ai_ci' THEN NULL
+                    ELSE collation_name
+                END AS collation_name,
+                CASE
+                    WHEN column_type LIKE '% unsigned' THEN 1
+                    ELSE 0
+                END AS is_unsigned,
+                column_comment
+            FROM information_schema.columns
+            WHERE table_name = 'storage_tradepair' AND table_schema = DATABASE()
+            ; args=['utf8mb4_0900_ai_ci', 'storage_tradepair']; alias=default
+2024-07-07 13:58:52,470 - DEBUG - (0.000) SELECT * FROM `storage_tradepair` LIMIT 1; args=None; alias=default
+2024-07-07 13:58:52,471 - DEBUG - (0.000) 
+                    SELECT cc.constraint_name, cc.check_clause
+                    FROM
+                        information_schema.check_constraints AS cc,
+                        information_schema.table_constraints AS tc
+                    WHERE
+                        cc.constraint_schema = DATABASE() AND
+                        tc.table_schema = cc.constraint_schema AND
+                        cc.constraint_name = tc.constraint_name AND
+                        tc.constraint_type = 'CHECK' AND
+                        tc.table_name = 'storage_tradepair'
+                ; args=['storage_tradepair']; alias=default
+2024-07-07 13:58:52,473 - DEBUG - (0.000) SHOW INDEX FROM `storage_tradepair`; args=None; alias=default
+2024-07-07 13:58:52,474 - DEBUG - ALTER TABLE `storage_tradepair` DROP FOREIGN KEY `storage_tradepair_offered_instance_id_c5b942b5_fk_storage_p`; (params ())
+2024-07-07 13:58:52,484 - DEBUG - (0.016) ALTER TABLE `storage_tradepair` DROP FOREIGN KEY `storage_tradepair_offered_instance_id_c5b942b5_fk_storage_p`; args=(); alias=default
+2024-07-07 13:58:52,484 - DEBUG - ALTER TABLE `storage_tradepair` DROP COLUMN `offered_instance_id`; (params ())
+2024-07-07 13:58:52,533 - DEBUG - (0.047) ALTER TABLE `storage_tradepair` DROP COLUMN `offered_instance_id`; args=(); alias=default
+2024-07-07 13:58:52,538 - DEBUG - (0.000) 
+            SELECT kc.`constraint_name`, kc.`column_name`,
+                kc.`referenced_table_name`, kc.`referenced_column_name`,
+                c.`constraint_type`
+            FROM
+                information_schema.key_column_usage AS kc,
+                information_schema.table_constraints AS c
+            WHERE
+                kc.table_schema = DATABASE() AND
+                (
+                    kc.referenced_table_schema = DATABASE() OR
+                    kc.referenced_table_schema IS NULL
+                ) AND
+                c.table_schema = kc.table_schema AND
+                c.constraint_name = kc.constraint_name AND
+                c.constraint_type != 'CHECK' AND
+                kc.table_name = 'storage_tradepair'
+            ORDER BY kc.`ordinal_position`
+        ; args=['storage_tradepair']; alias=default
+2024-07-07 13:58:52,541 - DEBUG - (0.000) 
+            SELECT  table_collation
+            FROM    information_schema.tables
+            WHERE   table_schema = DATABASE()
+            AND     table_name = 'storage_tradepair'
+            ; args=['storage_tradepair']; alias=default
+2024-07-07 13:58:52,542 - DEBUG - (0.000) 
+            SELECT
+                column_name, data_type, character_maximum_length,
+                numeric_precision, numeric_scale, extra, column_default,
+                CASE
+                    WHEN collation_name = 'utf8mb4_0900_ai_ci' THEN NULL
+                    ELSE collation_name
+                END AS collation_name,
+                CASE
+                    WHEN column_type LIKE '% unsigned' THEN 1
+                    ELSE 0
+                END AS is_unsigned,
+                column_comment
+            FROM information_schema.columns
+            WHERE table_name = 'storage_tradepair' AND table_schema = DATABASE()
+            ; args=['utf8mb4_0900_ai_ci', 'storage_tradepair']; alias=default
+2024-07-07 13:58:52,544 - DEBUG - (0.000) SELECT * FROM `storage_tradepair` LIMIT 1; args=None; alias=default
+2024-07-07 13:58:52,545 - DEBUG - (0.000) 
+                    SELECT cc.constraint_name, cc.check_clause
+                    FROM
+                        information_schema.check_constraints AS cc,
+                        information_schema.table_constraints AS tc
+                    WHERE
+                        cc.constraint_schema = DATABASE() AND
+                        tc.table_schema = cc.constraint_schema AND
+                        cc.constraint_name = tc.constraint_name AND
+                        tc.constraint_type = 'CHECK' AND
+                        tc.table_name = 'storage_tradepair'
+                ; args=['storage_tradepair']; alias=default
+2024-07-07 13:58:52,547 - DEBUG - (0.000) SHOW INDEX FROM `storage_tradepair`; args=None; alias=default
+2024-07-07 13:58:52,547 - DEBUG - ALTER TABLE `storage_tradepair` DROP FOREIGN KEY `storage_tradepair_user_id_4269e91f_fk_storage_user_user_id`; (params ())
+2024-07-07 13:58:52,556 - DEBUG - (0.016) ALTER TABLE `storage_tradepair` DROP FOREIGN KEY `storage_tradepair_user_id_4269e91f_fk_storage_user_user_id`; args=(); alias=default
+2024-07-07 13:58:52,556 - DEBUG - ALTER TABLE `storage_tradepair` DROP COLUMN `user_id`; (params ())
+2024-07-07 13:58:52,589 - DEBUG - (0.031) ALTER TABLE `storage_tradepair` DROP COLUMN `user_id`; args=(); alias=default
+2024-07-07 13:58:52,591 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `favorite` bool DEFAULT %s NOT NULL; (params [False])
+2024-07-07 13:58:52,609 - DEBUG - (0.016) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `favorite` bool DEFAULT 0 NOT NULL; args=[False]; alias=default
+2024-07-07 13:58:52,610 - DEBUG - ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `favorite` DROP DEFAULT; (params [])
+2024-07-07 13:58:52,621 - DEBUG - (0.015) ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `favorite` DROP DEFAULT; args=[]; alias=default
+2024-07-07 13:58:52,624 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `is_for_trade` bool DEFAULT %s NOT NULL; (params [False])
+2024-07-07 13:58:52,643 - DEBUG - (0.016) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `is_for_trade` bool DEFAULT 0 NOT NULL; args=[False]; alias=default
+2024-07-07 13:58:52,644 - DEBUG - ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `is_for_trade` DROP DEFAULT; (params [])
+2024-07-07 13:58:52,659 - DEBUG - (0.016) ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `is_for_trade` DROP DEFAULT; args=[]; alias=default
+2024-07-07 13:58:52,661 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `is_owned` bool DEFAULT %s NOT NULL; (params [False])
+2024-07-07 13:58:52,678 - DEBUG - (0.015) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `is_owned` bool DEFAULT 0 NOT NULL; args=[False]; alias=default
+2024-07-07 13:58:52,678 - DEBUG - ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `is_owned` DROP DEFAULT; (params [])
+2024-07-07 13:58:52,690 - DEBUG - (0.016) ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `is_owned` DROP DEFAULT; args=[]; alias=default
+2024-07-07 13:58:52,693 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `is_unowned` bool DEFAULT %s NOT NULL; (params [False])
+2024-07-07 13:58:52,709 - DEBUG - (0.015) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `is_unowned` bool DEFAULT 0 NOT NULL; args=[False]; alias=default
+2024-07-07 13:58:52,710 - DEBUG - ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `is_unowned` DROP DEFAULT; (params [])
+2024-07-07 13:58:52,722 - DEBUG - (0.016) ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `is_unowned` DROP DEFAULT; args=[]; alias=default
+2024-07-07 13:58:52,725 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `is_wanted` bool DEFAULT %s NOT NULL; (params [False])
+2024-07-07 13:58:52,743 - DEBUG - (0.031) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `is_wanted` bool DEFAULT 0 NOT NULL; args=[False]; alias=default
+2024-07-07 13:58:52,743 - DEBUG - ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `is_wanted` DROP DEFAULT; (params [])
+2024-07-07 13:58:52,759 - DEBUG - (0.016) ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `is_wanted` DROP DEFAULT; args=[]; alias=default
+2024-07-07 13:58:52,762 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `last_update` bigint DEFAULT %s NOT NULL; (params [0])
+2024-07-07 13:58:52,781 - DEBUG - (0.016) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `last_update` bigint DEFAULT 0 NOT NULL; args=[0]; alias=default
+2024-07-07 13:58:52,782 - DEBUG - ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `last_update` DROP DEFAULT; (params [])
+2024-07-07 13:58:52,794 - DEBUG - (0.015) ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `last_update` DROP DEFAULT; args=[]; alias=default
+2024-07-07 13:58:52,798 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `location_card` varchar(255) NULL; (params None)
+2024-07-07 13:58:52,818 - DEBUG - (0.016) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `location_card` varchar(255) NULL; args=None; alias=default
+2024-07-07 13:58:52,820 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `location_caught` varchar(255) NULL; (params None)
+2024-07-07 13:58:52,838 - DEBUG - (0.016) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `location_caught` varchar(255) NULL; args=None; alias=default
+2024-07-07 13:58:52,841 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `nickname` varchar(255) NULL; (params None)
+2024-07-07 13:58:52,861 - DEBUG - (0.016) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `nickname` varchar(255) NULL; args=None; alias=default
+2024-07-07 13:58:52,864 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `not_trade_list` json DEFAULT (%s) NOT NULL; (params ['{}'])
+2024-07-07 13:58:52,931 - DEBUG - (0.078) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `not_trade_list` json DEFAULT ('{}') NOT NULL; args=['{}']; alias=default
+2024-07-07 13:58:52,934 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `not_wanted_list` json DEFAULT (%s) NOT NULL; (params ['{}'])
+2024-07-07 13:58:52,997 - DEBUG - (0.062) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `not_wanted_list` json DEFAULT ('{}') NOT NULL; args=['{}']; alias=default
+2024-07-07 13:58:53,000 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `pref_lucky` bool DEFAULT %s NOT NULL; (params [False])
+2024-07-07 13:58:53,020 - DEBUG - (0.016) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `pref_lucky` bool DEFAULT 0 NOT NULL; args=[False]; alias=default
+2024-07-07 13:58:53,020 - DEBUG - ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `pref_lucky` DROP DEFAULT; (params [])
+2024-07-07 13:58:53,035 - DEBUG - (0.016) ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `pref_lucky` DROP DEFAULT; args=[]; alias=default
+2024-07-07 13:58:53,038 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD COLUMN `registered` bool DEFAULT %s NOT NULL; (params [False])
+2024-07-07 13:58:53,074 - DEBUG - (0.046) ALTER TABLE `storage_pokemoninstance` ADD COLUMN `registered` bool DEFAULT 0 NOT NULL; args=[False]; alias=default
+2024-07-07 13:58:53,075 - DEBUG - ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `registered` DROP DEFAULT; (params [])
+2024-07-07 13:58:53,088 - DEBUG - (0.016) ALTER TABLE `storage_pokemoninstance` ALTER COLUMN `registered` DROP DEFAULT; args=[]; alias=default
+2024-07-07 13:58:53,090 - DEBUG - ALTER TABLE `storage_user` ADD CONSTRAINT `storage_user_username_8d5acb00_uniq` UNIQUE (`username`); (params ())
+2024-07-07 13:58:53,116 - DEBUG - (0.016) ALTER TABLE `storage_user` ADD CONSTRAINT `storage_user_username_8d5acb00_uniq` UNIQUE (`username`); args=(); alias=default
+2024-07-07 13:58:53,117 - DEBUG - DROP TABLE `storage_ownership` CASCADE; (params ())
+2024-07-07 13:58:53,157 - DEBUG - (0.032) DROP TABLE `storage_ownership` CASCADE; args=(); alias=default
+2024-07-07 13:58:53,158 - DEBUG - DROP TABLE `storage_trade` CASCADE; (params ())
+2024-07-07 13:58:53,169 - DEBUG - (0.015) DROP TABLE `storage_trade` CASCADE; args=(); alias=default
+2024-07-07 13:58:53,170 - DEBUG - DROP TABLE `storage_tradepair` CASCADE; (params ())
+2024-07-07 13:58:53,184 - DEBUG - (0.016) DROP TABLE `storage_tradepair` CASCADE; args=(); alias=default
+2024-07-07 13:58:53,190 - DEBUG - (0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('storage', '0003_remove_trade_instance_from_user_1_and_more', '2024-07-07 20:58:53.184157'); args=['storage', '0003_remove_trade_instance_from_user_1_and_more', '2024-07-07 20:58:53.184157']; alias=default
+2024-07-07 13:58:53,191 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 13:58:53,194 - DEBUG - (0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'contenttypes'; args=('contenttypes',); alias=default
+2024-07-07 13:58:53,195 - DEBUG - (0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'sessions'; args=('sessions',); alias=default
+2024-07-07 13:58:53,196 - DEBUG - (0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'storage'; args=('storage',); alias=default
+2024-07-07 14:02:51,574 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 14:03:27,181 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 14:03:27,312 - DEBUG - Added sensor with name connections-closed
+2024-07-07 14:03:27,312 - DEBUG - Added sensor with name connections-created
+2024-07-07 14:03:27,313 - DEBUG - Added sensor with name select-time
+2024-07-07 14:03:27,313 - DEBUG - Added sensor with name io-time
+2024-07-07 14:03:27,313 - DEBUG - Initiating connection to node bootstrap-0 at localhost:9092
+2024-07-07 14:03:27,314 - DEBUG - Added sensor with name bytes-sent-received
+2024-07-07 14:03:27,314 - DEBUG - Added sensor with name bytes-sent
+2024-07-07 14:03:27,314 - DEBUG - Added sensor with name bytes-received
+2024-07-07 14:03:27,314 - DEBUG - Added sensor with name request-latency
+2024-07-07 14:03:27,315 - DEBUG - Added sensor with name node-bootstrap-0.bytes-sent
+2024-07-07 14:03:27,315 - DEBUG - Added sensor with name node-bootstrap-0.bytes-received
+2024-07-07 14:03:27,315 - DEBUG - Added sensor with name node-bootstrap-0.latency
+2024-07-07 14:03:27,319 - DEBUG - <BrokerConnection node_id=bootstrap-0 host=localhost:9092 <disconnected> [unspecified None]>: creating new socket
+2024-07-07 14:03:27,320 - DEBUG - <BrokerConnection node_id=bootstrap-0 host=localhost:9092 <disconnected> [IPv6 ('::1', 9092, 0, 0)]>: setting socket option (6, 1, 1)
+2024-07-07 14:03:27,320 - INFO - <BrokerConnection node_id=bootstrap-0 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: connecting to localhost:9092 [('::1', 9092, 0, 0) IPv6]
+2024-07-07 14:03:27,320 - INFO - Probing node bootstrap-0 broker version
+2024-07-07 14:03:27,321 - DEBUG - <BrokerConnection node_id=bootstrap-0 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: established TCP connection
+2024-07-07 14:03:27,321 - INFO - <BrokerConnection node_id=bootstrap-0 host=localhost:9092 <connecting> [IPv6 ('::1', 9092, 0, 0)]>: Connection complete.
+2024-07-07 14:03:27,322 - DEBUG - Node bootstrap-0 connected
+2024-07-07 14:03:27,322 - DEBUG - Sending request ApiVersionRequest_v0()
+2024-07-07 14:03:27,322 - DEBUG - <BrokerConnection node_id=bootstrap-0 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]> Request 1: ApiVersionRequest_v0()
+2024-07-07 14:03:27,423 - DEBUG - Sending request MetadataRequest_v0(topics=[])
+2024-07-07 14:03:27,423 - DEBUG - <BrokerConnection node_id=bootstrap-0 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]> Request 2: MetadataRequest_v0(topics=[])
+2024-07-07 14:03:27,424 - DEBUG - Received correlation id: 1
+2024-07-07 14:03:27,424 - DEBUG - Processing response ApiVersionResponse_v0
+2024-07-07 14:03:27,424 - DEBUG - <BrokerConnection node_id=bootstrap-0 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]> Response 1 (101.5021800994873 ms): ApiVersionResponse_v0(error_code=0, api_versions=[(api_key=0, min_version=0, max_version=9), (api_key=1, min_version=0, max_version=12), (api_key=2, min_version=0, max_version=6), (api_key=3, min_version=0, max_version=11), (api_key=4, min_version=0, max_version=5), (api_key=5, min_version=0, max_version=3), (api_key=6, min_version=0, max_version=7), (api_key=7, min_version=0, max_version=3), (api_key=8, min_version=0, max_version=8), (api_key=9, min_version=0, max_version=7), (api_key=10, min_version=0, max_version=3), (api_key=11, min_version=0, max_version=7), (api_key=12, min_version=0, max_version=4), (api_key=13, min_version=0, max_version=4), (api_key=14, min_version=0, max_version=5), (api_key=15, min_version=0, max_version=5), (api_key=16, min_version=0, max_version=4), (api_key=17, min_version=0, max_version=1), (api_key=18, min_version=0, max_version=3), (api_key=19, min_version=0, max_version=7), (api_key=20, min_version=0, max_version=6), (api_key=21, min_version=0, max_version=2), (api_key=22, min_version=0, max_version=4), (api_key=23, min_version=0, max_version=4), (api_key=24, min_version=0, max_version=3), (api_key=25, min_version=0, max_version=3), (api_key=26, min_version=0, max_version=3), (api_key=27, min_version=0, max_version=1), (api_key=28, min_version=0, max_version=3), (api_key=29, min_version=0, max_version=2), (api_key=30, min_version=0, max_version=2), (api_key=31, min_version=0, max_version=2), (api_key=32, min_version=0, max_version=4), (api_key=33, min_version=0, max_version=2), (api_key=34, min_version=0, max_version=2), (api_key=35, min_version=0, max_version=2), (api_key=36, min_version=0, max_version=2), (api_key=37, min_version=0, max_version=3), (api_key=38, min_version=0, max_version=2), (api_key=39, min_version=0, max_version=2), (api_key=40, min_version=0, max_version=2), (api_key=41, min_version=0, max_version=2), (api_key=42, min_version=0, max_version=2), (api_key=43, min_version=0, max_version=2), (api_key=44, min_version=0, max_version=1), (api_key=45, min_version=0, max_version=0), (api_key=46, min_version=0, max_version=0), (api_key=47, min_version=0, max_version=0), (api_key=48, min_version=0, max_version=1), (api_key=49, min_version=0, max_version=1), (api_key=50, min_version=0, max_version=0), (api_key=51, min_version=0, max_version=0), (api_key=56, min_version=0, max_version=0), (api_key=57, min_version=0, max_version=0), (api_key=60, min_version=0, max_version=0), (api_key=61, min_version=0, max_version=0)])
+2024-07-07 14:03:27,427 - DEBUG - Received correlation id: 2
+2024-07-07 14:03:27,427 - DEBUG - Processing response MetadataResponse_v0
+2024-07-07 14:03:27,428 - DEBUG - <BrokerConnection node_id=bootstrap-0 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]> Response 2 (4.499197006225586 ms): MetadataResponse_v0(brokers=[(node_id=1, host='kafka', port=9092)], topics=[(error_code=0, topic='batchedUpdates', partitions=[(error_code=0, partition=0, leader=1, replicas=[1], isr=[1])]), (error_code=0, topic='__consumer_offsets', partitions=[(error_code=0, partition=0, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=10, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=20, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=40, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=30, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=9, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=11, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=31, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=39, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=13, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=18, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=22, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=8, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=32, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=43, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=29, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=34, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=1, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=6, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=41, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=27, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=48, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=5, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=15, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=35, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=25, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=46, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=26, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=36, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=44, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=16, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=37, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=17, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=45, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=3, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=24, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=38, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=33, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=23, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=28, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=2, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=12, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=19, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=14, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=4, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=47, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=49, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=42, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=7, leader=1, replicas=[1], isr=[1]), (error_code=0, partition=21, leader=1, replicas=[1], isr=[1])])])
+2024-07-07 14:03:27,430 - INFO - Broker version identified as 2.5.0
+2024-07-07 14:03:27,431 - INFO - Set configuration api_version=(2, 5, 0) to skip auto check_version requests on startup
+2024-07-07 14:03:27,431 - DEBUG - Added sensor with name bytes-fetched
+2024-07-07 14:03:27,431 - DEBUG - Added sensor with name records-fetched
+2024-07-07 14:03:27,431 - DEBUG - Added sensor with name fetch-latency
+2024-07-07 14:03:27,432 - DEBUG - Added sensor with name records-lag
+2024-07-07 14:03:27,432 - DEBUG - Added sensor with name fetch-throttle-time
+2024-07-07 14:03:27,432 - DEBUG - Added sensor with name heartbeat-latency
+2024-07-07 14:03:27,433 - DEBUG - Added sensor with name join-latency
+2024-07-07 14:03:27,433 - DEBUG - Added sensor with name sync-latency
+2024-07-07 14:03:27,433 - DEBUG - Added sensor with name commit-latency
+2024-07-07 14:03:27,433 - INFO - Updating subscribed topics to: ('batchedUpdates',)
+2024-07-07 14:03:27,434 - DEBUG - Sending group coordinator request for group my-group to broker bootstrap-0
+2024-07-07 14:03:27,434 - DEBUG - Sending request GroupCoordinatorRequest_v0(consumer_group='my-group')
+2024-07-07 14:03:27,434 - DEBUG - <BrokerConnection node_id=bootstrap-0 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]> Request 3: GroupCoordinatorRequest_v0(consumer_group='my-group')
+2024-07-07 14:03:27,435 - DEBUG - Sending metadata request MetadataRequest_v1(topics=['batchedUpdates']) to node bootstrap-0
+2024-07-07 14:03:27,435 - DEBUG - Sending request MetadataRequest_v1(topics=['batchedUpdates'])
+2024-07-07 14:03:27,435 - DEBUG - <BrokerConnection node_id=bootstrap-0 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]> Request 4: MetadataRequest_v1(topics=['batchedUpdates'])
+2024-07-07 14:03:27,437 - DEBUG - Received correlation id: 3
+2024-07-07 14:03:27,437 - DEBUG - Processing response GroupCoordinatorResponse_v0
+2024-07-07 14:03:27,438 - DEBUG - <BrokerConnection node_id=bootstrap-0 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]> Response 3 (2.9990673065185547 ms): GroupCoordinatorResponse_v0(error_code=0, coordinator_id=1, host='kafka', port=9092)
+2024-07-07 14:03:27,438 - DEBUG - Received group coordinator response GroupCoordinatorResponse_v0(error_code=0, coordinator_id=1, host='kafka', port=9092)
+2024-07-07 14:03:27,438 - DEBUG - Updating coordinator for my-group: GroupCoordinatorResponse_v0(error_code=0, coordinator_id=1, host='kafka', port=9092)
+2024-07-07 14:03:27,439 - INFO - Group coordinator for my-group is BrokerMetadata(nodeId='coordinator-1', host='kafka', port=9092, rack=None)
+2024-07-07 14:03:27,439 - INFO - Discovered coordinator coordinator-1 for group my-group
+2024-07-07 14:03:27,439 - INFO - Starting new heartbeat thread
+2024-07-07 14:03:27,440 - DEBUG - Heartbeat thread started
+2024-07-07 14:03:27,440 - INFO - Revoking previously assigned partitions set() for group my-group
+2024-07-07 14:03:27,440 - DEBUG - Initiating connection to node coordinator-1 at kafka:9092
+2024-07-07 14:03:27,441 - DEBUG - Added sensor with name node-coordinator-1.bytes-sent
+2024-07-07 14:03:27,441 - DEBUG - Added sensor with name node-coordinator-1.bytes-received
+2024-07-07 14:03:27,441 - DEBUG - Added sensor with name node-coordinator-1.latency
+2024-07-07 14:03:29,699 - WARNING - DNS lookup failed for kafka:9092, exception was [Errno 11001] getaddrinfo failed. Is your advertised.listeners (called advertised.host.name before Kafka 9) correct and resolvable?
+2024-07-07 14:03:29,699 - ERROR - DNS lookup failed for kafka:9092 (AddressFamily.AF_UNSPEC)
+2024-07-07 14:03:29,700 - DEBUG - Received correlation id: 4
+2024-07-07 14:03:29,700 - DEBUG - Processing response MetadataResponse_v1
+2024-07-07 14:03:29,700 - DEBUG - <BrokerConnection node_id=bootstrap-0 host=localhost:9092 <connected> [IPv6 ('::1', 9092, 0, 0)]> Response 4 (2264.455795288086 ms): MetadataResponse_v1(brokers=[(node_id=1, host='kafka', port=9092, rack=None)], controller_id=1, topics=[(error_code=0, topic='batchedUpdates', is_internal=False, partitions=[(error_code=0, partition=0, leader=1, replicas=[1], isr=[1])])])
+2024-07-07 14:03:29,701 - DEBUG - Updated cluster metadata to ClusterMetadata(brokers: 1, topics: 1, groups: 1)
+2024-07-07 14:03:29,801 - WARNING - Marking the coordinator dead (node coordinator-1) for group my-group: Node Disconnected.
+2024-07-07 14:03:29,802 - DEBUG - Initiating connection to node 1 at kafka:9092
+2024-07-07 14:03:29,802 - DEBUG - Added sensor with name node-1.bytes-sent
+2024-07-07 14:03:29,802 - DEBUG - Added sensor with name node-1.bytes-received
+2024-07-07 14:03:29,803 - DEBUG - Added sensor with name node-1.latency
+2024-07-07 14:03:32,058 - WARNING - DNS lookup failed for kafka:9092, exception was [Errno 11001] getaddrinfo failed. Is your advertised.listeners (called advertised.host.name before Kafka 9) correct and resolvable?
+2024-07-07 14:03:32,058 - ERROR - DNS lookup failed for kafka:9092 (AddressFamily.AF_UNSPEC)
+2024-07-07 14:03:34,315 - WARNING - DNS lookup failed for kafka:9092, exception was [Errno 11001] getaddrinfo failed. Is your advertised.listeners (called advertised.host.name before Kafka 9) correct and resolvable?
+2024-07-07 14:03:34,315 - ERROR - DNS lookup failed for kafka:9092 (AddressFamily.AF_UNSPEC)
+2024-07-07 14:03:36,671 - WARNING - DNS lookup failed for kafka:9092, exception was [Errno 11001] getaddrinfo failed. Is your advertised.listeners (called advertised.host.name before Kafka 9) correct and resolvable?
+2024-07-07 14:03:36,672 - ERROR - DNS lookup failed for kafka:9092 (AddressFamily.AF_UNSPEC)
+2024-07-07 14:03:38,928 - WARNING - DNS lookup failed for kafka:9092, exception was [Errno 11001] getaddrinfo failed. Is your advertised.listeners (called advertised.host.name before Kafka 9) correct and resolvable?
+2024-07-07 14:03:38,929 - ERROR - DNS lookup failed for kafka:9092 (AddressFamily.AF_UNSPEC)
+2024-07-07 14:03:41,284 - WARNING - DNS lookup failed for kafka:9092, exception was [Errno 11001] getaddrinfo failed. Is your advertised.listeners (called advertised.host.name before Kafka 9) correct and resolvable?
+2024-07-07 14:03:41,285 - ERROR - DNS lookup failed for kafka:9092 (AddressFamily.AF_UNSPEC)
+2024-07-07 14:03:43,540 - WARNING - DNS lookup failed for kafka:9092, exception was [Errno 11001] getaddrinfo failed. Is your advertised.listeners (called advertised.host.name before Kafka 9) correct and resolvable?
+2024-07-07 14:03:43,540 - ERROR - DNS lookup failed for kafka:9092 (AddressFamily.AF_UNSPEC)
+2024-07-07 14:03:45,896 - WARNING - DNS lookup failed for kafka:9092, exception was [Errno 11001] getaddrinfo failed. Is your advertised.listeners (called advertised.host.name before Kafka 9) correct and resolvable?
+2024-07-07 14:03:45,896 - ERROR - DNS lookup failed for kafka:9092 (AddressFamily.AF_UNSPEC)
+2024-07-07 14:03:48,152 - DEBUG - Heartbeat disabled. Waiting
+2024-07-07 14:03:48,192 - INFO - Stopping heartbeat thread
+2024-07-07 14:09:08,190 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 14:09:08,211 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:09:08,212 - DEBUG - Polling for message...
+2024-07-07 14:10:01,374 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 14:10:01,385 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:10:01,385 - DEBUG - Polling for message...
+2024-07-07 14:10:01,450 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:10:01,451 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:10:01,453 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:10:38,634 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 14:10:38,645 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:10:38,645 - DEBUG - Polling for message...
+2024-07-07 14:10:38,705 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:10:38,707 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:10:38,708 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:10:38,711 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:11:27,133 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 14:11:27,144 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:11:27,144 - DEBUG - Polling for message...
+2024-07-07 14:11:27,209 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:11:27,211 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:11:27,212 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:11:34,810 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 14:11:34,820 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:11:34,820 - DEBUG - Polling for message...
+2024-07-07 14:11:34,856 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:11:34,858 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:11:34,858 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:11:34,896 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:11:34,897 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:11:34,899 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:11:34,901 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:11:34,903 - DEBUG - CREATE TABLE `django_migrations` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `app` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `applied` datetime(6) NOT NULL); (params None)
+2024-07-07 14:11:34,925 - DEBUG - (0.031) CREATE TABLE `django_migrations` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `app` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `applied` datetime(6) NOT NULL); args=None; alias=default
+2024-07-07 14:11:34,927 - DEBUG - CREATE TABLE `django_content_type` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `name` varchar(100) NOT NULL, `app_label` varchar(100) NOT NULL, `model` varchar(100) NOT NULL); (params None)
+2024-07-07 14:11:34,946 - DEBUG - (0.015) CREATE TABLE `django_content_type` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `name` varchar(100) NOT NULL, `app_label` varchar(100) NOT NULL, `model` varchar(100) NOT NULL); args=None; alias=default
+2024-07-07 14:11:34,951 - DEBUG - ALTER TABLE `django_content_type` ADD CONSTRAINT `django_content_type_app_label_model_76bd3d3b_uniq` UNIQUE (`app_label`, `model`); (params ())
+2024-07-07 14:11:34,965 - DEBUG - (0.016) ALTER TABLE `django_content_type` ADD CONSTRAINT `django_content_type_app_label_model_76bd3d3b_uniq` UNIQUE (`app_label`, `model`); args=(); alias=default
+2024-07-07 14:11:34,966 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:11:34,971 - DEBUG - (0.016) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('contenttypes', '0001_initial', '2024-07-07 21:11:34.968225'); args=['contenttypes', '0001_initial', '2024-07-07 21:11:34.968225']; alias=default
+2024-07-07 14:11:34,973 - DEBUG - ALTER TABLE `django_content_type` MODIFY `name` varchar(100) NULL; (params [])
+2024-07-07 14:11:35,027 - DEBUG - (0.047) ALTER TABLE `django_content_type` MODIFY `name` varchar(100) NULL; args=[]; alias=default
+2024-07-07 14:11:35,027 - DEBUG - (0.000) BEGIN; args=None; alias=default
+2024-07-07 14:11:35,028 - DEBUG - (0.000) COMMIT; args=None; alias=default
+2024-07-07 14:11:35,038 - DEBUG - ALTER TABLE `django_content_type` DROP COLUMN `name`; (params ())
+2024-07-07 14:11:35,049 - DEBUG - (0.016) ALTER TABLE `django_content_type` DROP COLUMN `name`; args=(); alias=default
+2024-07-07 14:11:35,054 - DEBUG - (0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('contenttypes', '0002_remove_content_type_name', '2024-07-07 21:11:35.050223'); args=['contenttypes', '0002_remove_content_type_name', '2024-07-07 21:11:35.050223']; alias=default
+2024-07-07 14:11:35,055 - DEBUG - CREATE TABLE `django_session` (`session_key` varchar(40) NOT NULL PRIMARY KEY, `session_data` longtext NOT NULL, `expire_date` datetime(6) NOT NULL); (params None)
+2024-07-07 14:11:35,078 - DEBUG - (0.015) CREATE TABLE `django_session` (`session_key` varchar(40) NOT NULL PRIMARY KEY, `session_data` longtext NOT NULL, `expire_date` datetime(6) NOT NULL); args=None; alias=default
+2024-07-07 14:11:35,079 - DEBUG - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'django_session' AND
+                table_schema = DATABASE()
+            ; args=['django_session']; alias=default
+2024-07-07 14:11:35,080 - DEBUG - CREATE INDEX `django_session_expire_date_a5c62663` ON `django_session` (`expire_date`); (params ())
+2024-07-07 14:11:35,114 - DEBUG - (0.031) CREATE INDEX `django_session_expire_date_a5c62663` ON `django_session` (`expire_date`); args=(); alias=default
+2024-07-07 14:11:35,117 - DEBUG - (0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('sessions', '0001_initial', '2024-07-07 21:11:35.114759'); args=['sessions', '0001_initial', '2024-07-07 21:11:35.114759']; alias=default
+2024-07-07 14:11:35,118 - DEBUG - CREATE TABLE `storage_user` (`user_id` varchar(255) NOT NULL PRIMARY KEY, `username` varchar(255) NOT NULL UNIQUE); (params None)
+2024-07-07 14:11:35,148 - DEBUG - (0.032) CREATE TABLE `storage_user` (`user_id` varchar(255) NOT NULL PRIMARY KEY, `username` varchar(255) NOT NULL UNIQUE); args=None; alias=default
+2024-07-07 14:11:35,151 - DEBUG - CREATE TABLE `storage_pokemoninstance` (`instance_id` char(32) NOT NULL PRIMARY KEY, `pokemon_id` integer NOT NULL, `nickname` varchar(255) NULL, `cp` integer NULL, `attack_iv` integer NULL, `defense_iv` integer NULL, `stamina_iv` integer NULL, `shiny` bool NOT NULL, `costume_id` integer NULL, `lucky` bool NOT NULL, `shadow` bool NOT NULL, `purified` bool NOT NULL, `fast_move_id` integer NULL, `charged_move1_id` integer NULL, `charged_move2_id` integer NULL, `weight` double precision NULL, `height` double precision NULL, `gender` varchar(1) NULL, `mirror` bool NOT NULL, `pref_lucky` bool NOT NULL, `registered` bool NOT NULL, `favorite` bool NOT NULL, `location_card` varchar(255) NULL, `location_caught` varchar(255) NULL, `friendship_level` integer NULL, `date_caught` datetime(6) NULL, `date_added` datetime(6) NOT NULL, `last_update` bigint NOT NULL, `is_unowned` bool NOT NULL, `is_owned` bool NOT NULL, `is_for_trade` bool NOT NULL, `is_wanted` bool NOT NULL, `not_trade_list` json NOT NULL, `not_wanted_list` json NOT NULL, `user_id` varchar(255) NOT NULL); (params None)
+2024-07-07 14:11:35,174 - DEBUG - (0.015) CREATE TABLE `storage_pokemoninstance` (`instance_id` char(32) NOT NULL PRIMARY KEY, `pokemon_id` integer NOT NULL, `nickname` varchar(255) NULL, `cp` integer NULL, `attack_iv` integer NULL, `defense_iv` integer NULL, `stamina_iv` integer NULL, `shiny` bool NOT NULL, `costume_id` integer NULL, `lucky` bool NOT NULL, `shadow` bool NOT NULL, `purified` bool NOT NULL, `fast_move_id` integer NULL, `charged_move1_id` integer NULL, `charged_move2_id` integer NULL, `weight` double precision NULL, `height` double precision NULL, `gender` varchar(1) NULL, `mirror` bool NOT NULL, `pref_lucky` bool NOT NULL, `registered` bool NOT NULL, `favorite` bool NOT NULL, `location_card` varchar(255) NULL, `location_caught` varchar(255) NULL, `friendship_level` integer NULL, `date_caught` datetime(6) NULL, `date_added` datetime(6) NOT NULL, `last_update` bigint NOT NULL, `is_unowned` bool NOT NULL, `is_owned` bool NOT NULL, `is_for_trade` bool NOT NULL, `is_wanted` bool NOT NULL, `not_trade_list` json NOT NULL, `not_wanted_list` json NOT NULL, `user_id` varchar(255) NOT NULL); args=None; alias=default
+2024-07-07 14:11:35,176 - DEBUG - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'storage_pokemoninstance' AND
+                table_schema = DATABASE()
+            ; args=['storage_pokemoninstance']; alias=default
+2024-07-07 14:11:35,177 - DEBUG - ALTER TABLE `storage_pokemoninstance` ADD CONSTRAINT `storage_pokemoninstance_user_id_d539cc4e_fk_storage_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `storage_user` (`user_id`); (params ())
+2024-07-07 14:11:35,261 - DEBUG - (0.078) ALTER TABLE `storage_pokemoninstance` ADD CONSTRAINT `storage_pokemoninstance_user_id_d539cc4e_fk_storage_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `storage_user` (`user_id`); args=(); alias=default
+2024-07-07 14:11:35,264 - DEBUG - (0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('storage', '0001_initial', '2024-07-07 21:11:35.261756'); args=['storage', '0001_initial', '2024-07-07 21:11:35.261756']; alias=default
+2024-07-07 14:11:35,265 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:11:35,269 - DEBUG - (0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'contenttypes'; args=('contenttypes',); alias=default
+2024-07-07 14:11:35,269 - DEBUG - (0.000) BEGIN; args=None; alias=default
+2024-07-07 14:11:35,270 - DEBUG - (0.000) INSERT INTO `django_content_type` (`app_label`, `model`) VALUES ('contenttypes', 'contenttype'); args=('contenttypes', 'contenttype'); alias=default
+2024-07-07 14:11:35,273 - DEBUG - (0.000) COMMIT; args=None; alias=default
+2024-07-07 14:11:35,274 - DEBUG - (0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'sessions'; args=('sessions',); alias=default
+2024-07-07 14:11:35,275 - DEBUG - (0.000) BEGIN; args=None; alias=default
+2024-07-07 14:11:35,276 - DEBUG - (0.000) INSERT INTO `django_content_type` (`app_label`, `model`) VALUES ('sessions', 'session'); args=('sessions', 'session'); alias=default
+2024-07-07 14:11:35,278 - DEBUG - (0.000) COMMIT; args=None; alias=default
+2024-07-07 14:11:35,280 - DEBUG - (0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'storage'; args=('storage',); alias=default
+2024-07-07 14:11:35,280 - DEBUG - (0.000) BEGIN; args=None; alias=default
+2024-07-07 14:11:35,281 - DEBUG - (0.000) INSERT INTO `django_content_type` (`app_label`, `model`) VALUES ('storage', 'user'), ('storage', 'pokemoninstance'); args=('storage', 'user', 'storage', 'pokemoninstance'); alias=default
+2024-07-07 14:11:35,284 - DEBUG - (0.015) COMMIT; args=None; alias=default
+2024-07-07 14:13:42,180 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 14:13:42,191 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:13:42,192 - DEBUG - Polling for message...
+2024-07-07 14:13:42,257 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:13:42,258 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:13:42,260 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:13:42,264 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:14:00,207 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 14:14:00,218 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:14:00,219 - DEBUG - Polling for message...
+2024-07-07 14:14:00,253 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:14:00,255 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:14:00,255 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:14:00,293 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:14:00,294 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:14:00,298 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:14:00,299 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:14:00,301 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:14:00,320 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:14:00,322 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:14:00,324 - DEBUG - (0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'contenttypes'; args=('contenttypes',); alias=default
+2024-07-07 14:14:00,325 - DEBUG - (0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'sessions'; args=('sessions',); alias=default
+2024-07-07 14:14:00,326 - DEBUG - (0.000) SELECT `django_content_type`.`id`, `django_content_type`.`app_label`, `django_content_type`.`model` FROM `django_content_type` WHERE `django_content_type`.`app_label` = 'storage'; args=('storage',); alias=default
+2024-07-07 14:16:49,249 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 14:16:49,260 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:16:49,260 - DEBUG - Polling for message...
+2024-07-07 14:16:49,347 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:16:49,349 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:16:49,350 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:16:57,498 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 14:16:57,509 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:16:57,510 - DEBUG - Polling for message...
+2024-07-07 14:16:57,599 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:16:57,600 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:16:57,601 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:16:57,611 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:16:57,613 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:16:57,615 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:16:57,618 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:16:57,619 - DEBUG - CREATE TABLE `django_migrations` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `app` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `applied` datetime(6) NOT NULL); (params None)
+2024-07-07 14:16:57,640 - DEBUG - (0.016) CREATE TABLE `django_migrations` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `app` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `applied` datetime(6) NOT NULL); args=None; alias=default
+2024-07-07 14:16:57,641 - DEBUG - CREATE TABLE `users` (`user_id` varchar(255) NOT NULL PRIMARY KEY, `username` varchar(255) NOT NULL UNIQUE); (params None)
+2024-07-07 14:16:57,676 - DEBUG - (0.031) CREATE TABLE `users` (`user_id` varchar(255) NOT NULL PRIMARY KEY, `username` varchar(255) NOT NULL UNIQUE); args=None; alias=default
+2024-07-07 14:16:57,679 - DEBUG - CREATE TABLE `instances` (`instance_id` char(32) NOT NULL PRIMARY KEY, `pokemon_id` integer NOT NULL, `nickname` varchar(255) NULL, `cp` integer NULL, `attack_iv` integer NULL, `defense_iv` integer NULL, `stamina_iv` integer NULL, `shiny` bool NOT NULL, `costume_id` integer NULL, `lucky` bool NOT NULL, `shadow` bool NOT NULL, `purified` bool NOT NULL, `fast_move_id` integer NULL, `charged_move1_id` integer NULL, `charged_move2_id` integer NULL, `weight` double precision NULL, `height` double precision NULL, `gender` varchar(1) NULL, `mirror` bool NOT NULL, `pref_lucky` bool NOT NULL, `registered` bool NOT NULL, `favorite` bool NOT NULL, `location_card` varchar(255) NULL, `location_caught` varchar(255) NULL, `friendship_level` integer NULL, `date_caught` datetime(6) NULL, `date_added` datetime(6) NOT NULL, `last_update` bigint NOT NULL, `is_unowned` bool NOT NULL, `is_owned` bool NOT NULL, `is_for_trade` bool NOT NULL, `is_wanted` bool NOT NULL, `not_trade_list` json NOT NULL, `not_wanted_list` json NOT NULL, `user_id` varchar(255) NOT NULL); (params None)
+2024-07-07 14:16:57,704 - DEBUG - (0.031) CREATE TABLE `instances` (`instance_id` char(32) NOT NULL PRIMARY KEY, `pokemon_id` integer NOT NULL, `nickname` varchar(255) NULL, `cp` integer NULL, `attack_iv` integer NULL, `defense_iv` integer NULL, `stamina_iv` integer NULL, `shiny` bool NOT NULL, `costume_id` integer NULL, `lucky` bool NOT NULL, `shadow` bool NOT NULL, `purified` bool NOT NULL, `fast_move_id` integer NULL, `charged_move1_id` integer NULL, `charged_move2_id` integer NULL, `weight` double precision NULL, `height` double precision NULL, `gender` varchar(1) NULL, `mirror` bool NOT NULL, `pref_lucky` bool NOT NULL, `registered` bool NOT NULL, `favorite` bool NOT NULL, `location_card` varchar(255) NULL, `location_caught` varchar(255) NULL, `friendship_level` integer NULL, `date_caught` datetime(6) NULL, `date_added` datetime(6) NOT NULL, `last_update` bigint NOT NULL, `is_unowned` bool NOT NULL, `is_owned` bool NOT NULL, `is_for_trade` bool NOT NULL, `is_wanted` bool NOT NULL, `not_trade_list` json NOT NULL, `not_wanted_list` json NOT NULL, `user_id` varchar(255) NOT NULL); args=None; alias=default
+2024-07-07 14:16:57,706 - DEBUG - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'instances' AND
+                table_schema = DATABASE()
+            ; args=['instances']; alias=default
+2024-07-07 14:16:57,707 - DEBUG - ALTER TABLE `instances` ADD CONSTRAINT `instances_user_id_a608406c_fk_users_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`); (params ())
+2024-07-07 14:16:57,777 - DEBUG - (0.063) ALTER TABLE `instances` ADD CONSTRAINT `instances_user_id_a608406c_fk_users_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`); args=(); alias=default
+2024-07-07 14:16:57,779 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:16:57,786 - DEBUG - (0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('storage', '0001_initial', '2024-07-07 21:16:57.780823'); args=['storage', '0001_initial', '2024-07-07 21:16:57.780823']; alias=default
+2024-07-07 14:16:57,787 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:21:10,845 - INFO - StorageConfig is ready, starting Kafka consumer...
+2024-07-07 14:21:10,856 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:21:10,857 - DEBUG - Polling for message...
+2024-07-07 14:21:10,857 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:21:10,858 - DEBUG - Polling for message...
+2024-07-07 14:21:15,858 - DEBUG - No message received.
+2024-07-07 14:21:15,859 - DEBUG - Polling for message...
+2024-07-07 14:21:15,859 - DEBUG - No message received.
+2024-07-07 14:21:15,859 - DEBUG - Polling for message...
+2024-07-07 14:21:20,859 - DEBUG - No message received.
+2024-07-07 14:21:20,859 - DEBUG - Polling for message...
+2024-07-07 14:21:20,860 - DEBUG - No message received.
+2024-07-07 14:21:20,860 - DEBUG - Polling for message...
+2024-07-07 14:21:25,860 - DEBUG - No message received.
+2024-07-07 14:21:25,860 - DEBUG - Polling for message...
+2024-07-07 14:21:25,861 - DEBUG - No message received.
+2024-07-07 14:21:25,861 - DEBUG - Polling for message...
+2024-07-07 14:21:30,860 - DEBUG - No message received.
+2024-07-07 14:21:30,860 - DEBUG - Polling for message...
+2024-07-07 14:21:30,861 - DEBUG - No message received.
+2024-07-07 14:21:30,861 - DEBUG - Polling for message...
+2024-07-07 14:21:35,861 - DEBUG - No message received.
+2024-07-07 14:21:35,861 - DEBUG - Polling for message...
+2024-07-07 14:21:35,862 - DEBUG - No message received.
+2024-07-07 14:21:35,862 - DEBUG - Polling for message...
+2024-07-07 14:21:40,862 - DEBUG - No message received.
+2024-07-07 14:21:40,862 - DEBUG - Polling for message...
+2024-07-07 14:21:40,862 - DEBUG - No message received.
+2024-07-07 14:21:40,863 - DEBUG - Polling for message...
+2024-07-07 14:21:45,863 - DEBUG - No message received.
+2024-07-07 14:21:45,863 - DEBUG - Polling for message...
+2024-07-07 14:21:45,863 - DEBUG - No message received.
+2024-07-07 14:21:45,864 - DEBUG - Polling for message...
+2024-07-07 14:21:50,863 - DEBUG - No message received.
+2024-07-07 14:21:50,863 - DEBUG - Polling for message...
+2024-07-07 14:21:50,864 - DEBUG - No message received.
+2024-07-07 14:21:50,864 - DEBUG - Polling for message...
+2024-07-07 14:21:55,864 - DEBUG - No message received.
+2024-07-07 14:21:55,864 - DEBUG - Polling for message...
+2024-07-07 14:21:55,865 - DEBUG - No message received.
+2024-07-07 14:21:55,865 - DEBUG - Polling for message...
+2024-07-07 14:22:00,865 - DEBUG - No message received.
+2024-07-07 14:22:00,865 - DEBUG - Polling for message...
+2024-07-07 14:22:00,865 - DEBUG - No message received.
+2024-07-07 14:22:00,866 - DEBUG - Polling for message...
+2024-07-07 14:22:05,866 - DEBUG - No message received.
+2024-07-07 14:22:05,866 - DEBUG - Polling for message...
+2024-07-07 14:22:05,866 - DEBUG - No message received.
+2024-07-07 14:22:05,867 - DEBUG - Polling for message...
+2024-07-07 14:22:10,866 - DEBUG - No message received.
+2024-07-07 14:22:10,866 - DEBUG - Polling for message...
+2024-07-07 14:22:10,867 - DEBUG - No message received.
+2024-07-07 14:22:10,867 - DEBUG - Polling for message...
+2024-07-07 14:22:15,867 - DEBUG - No message received.
+2024-07-07 14:22:15,868 - DEBUG - No message received.
+2024-07-07 14:22:15,868 - DEBUG - Polling for message...
+2024-07-07 14:22:15,868 - DEBUG - Polling for message...
+2024-07-07 14:22:20,868 - DEBUG - No message received.
+2024-07-07 14:22:20,868 - DEBUG - No message received.
+2024-07-07 14:22:20,869 - DEBUG - Polling for message...
+2024-07-07 14:22:20,869 - DEBUG - Polling for message...
+2024-07-07 14:22:25,869 - DEBUG - No message received.
+2024-07-07 14:22:25,869 - DEBUG - No message received.
+2024-07-07 14:22:25,870 - DEBUG - Polling for message...
+2024-07-07 14:22:25,870 - DEBUG - Polling for message...
+2024-07-07 14:22:30,871 - DEBUG - No message received.
+2024-07-07 14:22:30,871 - DEBUG - No message received.
+2024-07-07 14:22:30,871 - DEBUG - Polling for message...
+2024-07-07 14:22:30,871 - DEBUG - Polling for message...
+2024-07-07 14:22:35,872 - DEBUG - No message received.
+2024-07-07 14:22:35,872 - DEBUG - No message received.
+2024-07-07 14:22:35,872 - DEBUG - Polling for message...
+2024-07-07 14:22:35,872 - DEBUG - Polling for message...
+2024-07-07 14:22:40,872 - DEBUG - No message received.
+2024-07-07 14:22:40,872 - DEBUG - No message received.
+2024-07-07 14:22:40,873 - DEBUG - Polling for message...
+2024-07-07 14:22:40,873 - DEBUG - Polling for message...
+2024-07-07 14:22:45,874 - DEBUG - No message received.
+2024-07-07 14:22:45,874 - DEBUG - No message received.
+2024-07-07 14:22:45,874 - DEBUG - Polling for message...
+2024-07-07 14:22:45,874 - DEBUG - Polling for message...
+2024-07-07 14:22:50,875 - DEBUG - No message received.
+2024-07-07 14:22:50,875 - DEBUG - No message received.
+2024-07-07 14:22:50,876 - DEBUG - Polling for message...
+2024-07-07 14:22:50,875 - DEBUG - Polling for message...
+2024-07-07 14:22:55,876 - DEBUG - No message received.
+2024-07-07 14:22:55,876 - DEBUG - No message received.
+2024-07-07 14:22:55,876 - DEBUG - Polling for message...
+2024-07-07 14:22:55,877 - DEBUG - Polling for message...
+2024-07-07 14:23:00,877 - DEBUG - No message received.
+2024-07-07 14:23:00,877 - DEBUG - Polling for message...
+2024-07-07 14:23:00,878 - DEBUG - No message received.
+2024-07-07 14:23:00,878 - DEBUG - Polling for message...
+2024-07-07 14:23:07,841 - INFO - StorageConfig is ready.
+2024-07-07 14:23:07,854 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:23:07,855 - DEBUG - Polling for message...
+2024-07-07 14:23:12,855 - DEBUG - No message received.
+2024-07-07 14:23:12,855 - DEBUG - Polling for message...
+2024-07-07 14:23:17,855 - DEBUG - No message received.
+2024-07-07 14:23:17,855 - DEBUG - Polling for message...
+2024-07-07 14:23:22,856 - DEBUG - No message received.
+2024-07-07 14:23:22,857 - DEBUG - Polling for message...
+2024-07-07 14:23:27,857 - DEBUG - No message received.
+2024-07-07 14:23:27,857 - DEBUG - Polling for message...
+2024-07-07 14:23:32,858 - DEBUG - No message received.
+2024-07-07 14:23:32,858 - DEBUG - Polling for message...
+2024-07-07 14:23:37,858 - DEBUG - No message received.
+2024-07-07 14:23:37,859 - DEBUG - Polling for message...
+2024-07-07 14:23:42,859 - DEBUG - No message received.
+2024-07-07 14:23:42,859 - DEBUG - Polling for message...
+2024-07-07 14:23:47,859 - DEBUG - No message received.
+2024-07-07 14:23:47,860 - DEBUG - Polling for message...
+2024-07-07 14:23:52,860 - DEBUG - No message received.
+2024-07-07 14:23:52,860 - DEBUG - Polling for message...
+2024-07-07 14:23:57,861 - DEBUG - No message received.
+2024-07-07 14:23:57,861 - DEBUG - Polling for message...
+2024-07-07 14:24:02,861 - DEBUG - No message received.
+2024-07-07 14:24:02,862 - DEBUG - Polling for message...
+2024-07-07 14:24:07,862 - DEBUG - No message received.
+2024-07-07 14:24:07,862 - DEBUG - Polling for message...
+2024-07-07 14:24:12,862 - DEBUG - No message received.
+2024-07-07 14:24:12,863 - DEBUG - Polling for message...
+2024-07-07 14:24:17,863 - DEBUG - No message received.
+2024-07-07 14:24:17,863 - DEBUG - Polling for message...
+2024-07-07 14:24:22,864 - DEBUG - No message received.
+2024-07-07 14:24:22,864 - DEBUG - Polling for message...
+2024-07-07 14:24:27,864 - DEBUG - No message received.
+2024-07-07 14:24:27,865 - DEBUG - Polling for message...
+2024-07-07 14:24:28,248 - INFO - Consumed message: {'user_id': '663d6760537fa61b79ac8bab', 'username': 'AdamZilla', 'trace_id': 'b1fc4237-ee9d-4211-a3c0-7eb0b0371482', 'pokemon': {'1-shiny_3fc5e085-1b60-4171-8dc5-7007ada73fa4': {'pokemon_id': 1, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-07T21:23:27.294Z', 'last_update': 1720387407294, 'is_unowned': False, 'is_owned': True, 'is_for_trade': True, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}, '4-shiny_67c7cd87-909c-4ca4-b9be-696274c7b490': {'pokemon_id': 4, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-07T21:23:27.294Z', 'last_update': 1720387407295, 'is_unowned': False, 'is_owned': True, 'is_for_trade': True, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}, '7-shiny_0e8e6a6a-eecc-49fc-a965-567ea79e1805': {'pokemon_id': 7, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-07T21:23:27.295Z', 'last_update': 1720387407295, 'is_unowned': False, 'is_owned': True, 'is_for_trade': True, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}, '10-shiny_4959231c-0b6d-4573-97d9-5e0359a9c171': {'pokemon_id': 10, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.123Z', 'last_update': 1720387407296, 'is_unowned': False, 'is_owned': True, 'is_for_trade': True, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}, '13-shiny_1630c5a8-4408-4225-8f6c-d7a9dd2c2eeb': {'pokemon_id': 13, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.123Z', 'last_update': 1720387407296, 'is_unowned': False, 'is_owned': True, 'is_for_trade': True, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}, '16-shiny_2f35187d-ae85-4cfd-97d0-99d415532c40': {'pokemon_id': 16, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.123Z', 'last_update': 1720387407297, 'is_unowned': False, 'is_owned': True, 'is_for_trade': True, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}}}
+2024-07-07 14:24:28,253 - DEBUG - Handling message: {'user_id': '663d6760537fa61b79ac8bab', 'username': 'AdamZilla', 'trace_id': 'b1fc4237-ee9d-4211-a3c0-7eb0b0371482', 'pokemon': {'1-shiny_3fc5e085-1b60-4171-8dc5-7007ada73fa4': {'pokemon_id': 1, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-07T21:23:27.294Z', 'last_update': 1720387407294, 'is_unowned': False, 'is_owned': True, 'is_for_trade': True, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}, '4-shiny_67c7cd87-909c-4ca4-b9be-696274c7b490': {'pokemon_id': 4, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-07T21:23:27.294Z', 'last_update': 1720387407295, 'is_unowned': False, 'is_owned': True, 'is_for_trade': True, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}, '7-shiny_0e8e6a6a-eecc-49fc-a965-567ea79e1805': {'pokemon_id': 7, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-07T21:23:27.295Z', 'last_update': 1720387407295, 'is_unowned': False, 'is_owned': True, 'is_for_trade': True, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}, '10-shiny_4959231c-0b6d-4573-97d9-5e0359a9c171': {'pokemon_id': 10, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.123Z', 'last_update': 1720387407296, 'is_unowned': False, 'is_owned': True, 'is_for_trade': True, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}, '13-shiny_1630c5a8-4408-4225-8f6c-d7a9dd2c2eeb': {'pokemon_id': 13, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.123Z', 'last_update': 1720387407296, 'is_unowned': False, 'is_owned': True, 'is_for_trade': True, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}, '16-shiny_2f35187d-ae85-4cfd-97d0-99d415532c40': {'pokemon_id': 16, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.123Z', 'last_update': 1720387407297, 'is_unowned': False, 'is_owned': True, 'is_for_trade': True, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}}}
+2024-07-07 14:24:28,269 - INFO - User processed: 663d6760537fa61b79ac8bab, created: True
+2024-07-07 14:24:28,280 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 1
+2024-07-07 14:24:28,289 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 4
+2024-07-07 14:24:28,298 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 7
+2024-07-07 14:24:28,312 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 10
+2024-07-07 14:24:28,318 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 13
+2024-07-07 14:24:28,324 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 16
+2024-07-07 14:24:28,324 - DEBUG - Polling for message...
+2024-07-07 14:24:33,325 - DEBUG - No message received.
+2024-07-07 14:24:33,326 - DEBUG - Polling for message...
+2024-07-07 14:24:38,326 - DEBUG - No message received.
+2024-07-07 14:24:38,326 - DEBUG - Polling for message...
+2024-07-07 14:24:43,327 - DEBUG - No message received.
+2024-07-07 14:24:43,327 - DEBUG - Polling for message...
+2024-07-07 14:24:48,327 - DEBUG - No message received.
+2024-07-07 14:24:48,328 - DEBUG - Polling for message...
+2024-07-07 14:24:53,328 - DEBUG - No message received.
+2024-07-07 14:24:53,328 - DEBUG - Polling for message...
+2024-07-07 14:24:58,329 - DEBUG - No message received.
+2024-07-07 14:24:58,329 - DEBUG - Polling for message...
+2024-07-07 14:25:03,329 - DEBUG - No message received.
+2024-07-07 14:25:03,329 - DEBUG - Polling for message...
+2024-07-07 14:25:08,330 - DEBUG - No message received.
+2024-07-07 14:25:08,330 - DEBUG - Polling for message...
+2024-07-07 14:25:13,331 - DEBUG - No message received.
+2024-07-07 14:25:13,331 - DEBUG - Polling for message...
+2024-07-07 14:25:18,331 - DEBUG - No message received.
+2024-07-07 14:25:18,332 - DEBUG - Polling for message...
+2024-07-07 14:25:23,332 - DEBUG - No message received.
+2024-07-07 14:25:23,333 - DEBUG - Polling for message...
+2024-07-07 14:25:28,333 - DEBUG - No message received.
+2024-07-07 14:25:28,333 - DEBUG - Polling for message...
+2024-07-07 14:25:33,334 - DEBUG - No message received.
+2024-07-07 14:25:33,334 - DEBUG - Polling for message...
+2024-07-07 14:25:38,334 - DEBUG - No message received.
+2024-07-07 14:25:38,334 - DEBUG - Polling for message...
+2024-07-07 14:25:43,335 - DEBUG - No message received.
+2024-07-07 14:25:43,335 - DEBUG - Polling for message...
+2024-07-07 14:25:48,336 - DEBUG - No message received.
+2024-07-07 14:25:48,336 - DEBUG - Polling for message...
+2024-07-07 14:25:53,336 - DEBUG - No message received.
+2024-07-07 14:25:53,337 - DEBUG - Polling for message...
+2024-07-07 14:25:58,337 - DEBUG - No message received.
+2024-07-07 14:25:58,338 - DEBUG - Polling for message...
+2024-07-07 14:26:03,338 - DEBUG - No message received.
+2024-07-07 14:26:03,338 - DEBUG - Polling for message...
+2024-07-07 14:26:08,338 - DEBUG - No message received.
+2024-07-07 14:26:08,338 - DEBUG - Polling for message...
+2024-07-07 14:26:13,339 - DEBUG - No message received.
+2024-07-07 14:26:13,340 - DEBUG - Polling for message...
+2024-07-07 14:26:18,340 - DEBUG - No message received.
+2024-07-07 14:26:18,340 - DEBUG - Polling for message...
+2024-07-07 14:26:23,341 - DEBUG - No message received.
+2024-07-07 14:26:23,341 - DEBUG - Polling for message...
+2024-07-07 14:26:28,342 - DEBUG - No message received.
+2024-07-07 14:26:28,342 - DEBUG - Polling for message...
+2024-07-07 14:26:33,342 - DEBUG - No message received.
+2024-07-07 14:26:33,342 - DEBUG - Polling for message...
+2024-07-07 14:26:38,343 - DEBUG - No message received.
+2024-07-07 14:26:38,343 - DEBUG - Polling for message...
+2024-07-07 14:26:43,343 - DEBUG - No message received.
+2024-07-07 14:26:43,344 - DEBUG - Polling for message...
+2024-07-07 14:26:48,344 - DEBUG - No message received.
+2024-07-07 14:26:48,345 - DEBUG - Polling for message...
+2024-07-07 14:26:53,345 - DEBUG - No message received.
+2024-07-07 14:26:53,345 - DEBUG - Polling for message...
+2024-07-07 14:26:58,346 - DEBUG - No message received.
+2024-07-07 14:26:58,346 - DEBUG - Polling for message...
+2024-07-07 14:27:03,346 - DEBUG - No message received.
+2024-07-07 14:27:03,346 - DEBUG - Polling for message...
+2024-07-07 14:27:08,347 - DEBUG - No message received.
+2024-07-07 14:27:08,348 - DEBUG - Polling for message...
+2024-07-07 14:27:13,348 - DEBUG - No message received.
+2024-07-07 14:27:13,348 - DEBUG - Polling for message...
+2024-07-07 14:27:18,349 - DEBUG - No message received.
+2024-07-07 14:27:18,350 - DEBUG - Polling for message...
+2024-07-07 14:27:23,350 - DEBUG - No message received.
+2024-07-07 14:27:23,350 - DEBUG - Polling for message...
+2024-07-07 14:27:28,351 - DEBUG - No message received.
+2024-07-07 14:27:28,351 - DEBUG - Polling for message...
+2024-07-07 14:27:33,351 - DEBUG - No message received.
+2024-07-07 14:27:33,351 - DEBUG - Polling for message...
+2024-07-07 14:27:38,352 - DEBUG - No message received.
+2024-07-07 14:27:38,352 - DEBUG - Polling for message...
+2024-07-07 14:27:43,353 - DEBUG - No message received.
+2024-07-07 14:27:43,353 - DEBUG - Polling for message...
+2024-07-07 14:27:48,354 - DEBUG - No message received.
+2024-07-07 14:27:48,354 - DEBUG - Polling for message...
+2024-07-07 14:27:53,355 - DEBUG - No message received.
+2024-07-07 14:27:53,355 - DEBUG - Polling for message...
+2024-07-07 14:27:58,355 - DEBUG - No message received.
+2024-07-07 14:27:58,356 - DEBUG - Polling for message...
+2024-07-07 14:28:03,356 - DEBUG - No message received.
+2024-07-07 14:28:03,356 - DEBUG - Polling for message...
+2024-07-07 14:28:08,357 - DEBUG - No message received.
+2024-07-07 14:28:08,357 - DEBUG - Polling for message...
+2024-07-07 14:28:13,357 - DEBUG - No message received.
+2024-07-07 14:28:13,358 - DEBUG - Polling for message...
+2024-07-07 14:28:18,358 - DEBUG - No message received.
+2024-07-07 14:28:18,358 - DEBUG - Polling for message...
+2024-07-07 14:28:23,358 - DEBUG - No message received.
+2024-07-07 14:28:23,359 - DEBUG - Polling for message...
+2024-07-07 14:28:28,359 - DEBUG - No message received.
+2024-07-07 14:28:28,359 - DEBUG - Polling for message...
+2024-07-07 14:28:33,359 - DEBUG - No message received.
+2024-07-07 14:28:33,360 - DEBUG - Polling for message...
+2024-07-07 14:28:38,360 - DEBUG - No message received.
+2024-07-07 14:28:38,361 - DEBUG - Polling for message...
+2024-07-07 14:28:43,361 - DEBUG - No message received.
+2024-07-07 14:28:43,361 - DEBUG - Polling for message...
+2024-07-07 14:28:48,362 - DEBUG - No message received.
+2024-07-07 14:28:48,362 - DEBUG - Polling for message...
+2024-07-07 14:28:54,093 - INFO - StorageConfig is ready.
+2024-07-07 14:31:02,649 - INFO - StorageConfig is ready.
+2024-07-07 14:31:57,271 - INFO - StorageConfig is ready.
+2024-07-07 14:31:57,284 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:31:57,285 - DEBUG - Polling for message...
+2024-07-07 14:32:08,137 - INFO - StorageConfig is ready.
+2024-07-07 14:32:08,148 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:32:08,148 - DEBUG - Polling for message...
+2024-07-07 14:32:13,149 - DEBUG - No message received.
+2024-07-07 14:32:13,149 - DEBUG - Polling for message...
+2024-07-07 14:32:18,149 - DEBUG - No message received.
+2024-07-07 14:32:18,150 - DEBUG - Polling for message...
+2024-07-07 14:32:23,150 - DEBUG - No message received.
+2024-07-07 14:32:23,150 - DEBUG - Polling for message...
+2024-07-07 14:32:28,151 - DEBUG - No message received.
+2024-07-07 14:32:28,151 - DEBUG - Polling for message...
+2024-07-07 14:32:33,151 - DEBUG - No message received.
+2024-07-07 14:32:33,152 - DEBUG - Polling for message...
+2024-07-07 14:32:38,152 - DEBUG - No message received.
+2024-07-07 14:32:38,152 - DEBUG - Polling for message...
+2024-07-07 14:32:43,153 - DEBUG - No message received.
+2024-07-07 14:32:43,154 - DEBUG - Polling for message...
+2024-07-07 14:32:48,154 - DEBUG - No message received.
+2024-07-07 14:32:48,154 - DEBUG - Polling for message...
+2024-07-07 14:32:53,155 - DEBUG - No message received.
+2024-07-07 14:32:53,155 - DEBUG - Polling for message...
+2024-07-07 14:32:58,156 - DEBUG - No message received.
+2024-07-07 14:32:58,156 - DEBUG - Polling for message...
+2024-07-07 14:33:03,156 - DEBUG - No message received.
+2024-07-07 14:33:03,157 - DEBUG - Polling for message...
+2024-07-07 14:33:08,157 - DEBUG - No message received.
+2024-07-07 14:33:08,157 - DEBUG - Polling for message...
+2024-07-07 14:33:13,158 - DEBUG - No message received.
+2024-07-07 14:33:13,158 - DEBUG - Polling for message...
+2024-07-07 14:33:18,158 - DEBUG - No message received.
+2024-07-07 14:33:18,158 - DEBUG - Polling for message...
+2024-07-07 14:33:23,159 - DEBUG - No message received.
+2024-07-07 14:33:23,160 - DEBUG - Polling for message...
+2024-07-07 14:33:28,160 - DEBUG - No message received.
+2024-07-07 14:33:28,160 - DEBUG - Polling for message...
+2024-07-07 14:33:33,161 - DEBUG - No message received.
+2024-07-07 14:33:33,161 - DEBUG - Polling for message...
+2024-07-07 14:33:38,162 - DEBUG - No message received.
+2024-07-07 14:33:38,162 - DEBUG - Polling for message...
+2024-07-07 14:33:41,726 - INFO - Consumed message: {'user_id': '663d6760537fa61b79ac8bab', 'username': 'AdamZilla', 'trace_id': 'bff8267e-b32c-44ff-b097-ca970a1bfb5d', 'pokemon': {'570-shiny_156bed83-926d-4503-9f43-1f574285991d': {'pokemon_id': 570, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.359Z', 'last_update': 1720387961243, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '696-shiny_2d41b7f9-5c27-417f-a456-fe85443ea5a7': {'pokemon_id': 696, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.430Z', 'last_update': 1720387961244, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '529-shiny_dd4cb59e-223e-4187-9b49-0930eceb75e3': {'pokemon_id': 529, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.342Z', 'last_update': 1720387961246, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}}}
+2024-07-07 14:33:41,729 - DEBUG - Handling message: {'user_id': '663d6760537fa61b79ac8bab', 'username': 'AdamZilla', 'trace_id': 'bff8267e-b32c-44ff-b097-ca970a1bfb5d', 'pokemon': {'570-shiny_156bed83-926d-4503-9f43-1f574285991d': {'pokemon_id': 570, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.359Z', 'last_update': 1720387961243, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '696-shiny_2d41b7f9-5c27-417f-a456-fe85443ea5a7': {'pokemon_id': 696, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.430Z', 'last_update': 1720387961244, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '529-shiny_dd4cb59e-223e-4187-9b49-0930eceb75e3': {'pokemon_id': 529, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.342Z', 'last_update': 1720387961246, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}}}
+2024-07-07 14:33:41,736 - INFO - User processed: 663d6760537fa61b79ac8bab, created: False
+2024-07-07 14:33:41,738 - ERROR - Failed to handle message: ['“570-shiny_156bed83-926d-4503-9f43-1f574285991d” is not a valid UUID.']
+2024-07-07 14:33:41,739 - DEBUG - Polling for message...
+2024-07-07 14:33:46,740 - DEBUG - No message received.
+2024-07-07 14:33:46,740 - DEBUG - Polling for message...
+2024-07-07 14:33:51,740 - DEBUG - No message received.
+2024-07-07 14:33:51,741 - DEBUG - Polling for message...
+2024-07-07 14:33:56,741 - DEBUG - No message received.
+2024-07-07 14:33:56,742 - DEBUG - Polling for message...
+2024-07-07 14:34:01,742 - DEBUG - No message received.
+2024-07-07 14:34:01,742 - DEBUG - Polling for message...
+2024-07-07 14:34:06,742 - DEBUG - No message received.
+2024-07-07 14:34:06,742 - DEBUG - Polling for message...
+2024-07-07 14:34:11,743 - DEBUG - No message received.
+2024-07-07 14:34:11,744 - DEBUG - Polling for message...
+2024-07-07 14:34:16,744 - DEBUG - No message received.
+2024-07-07 14:34:16,744 - DEBUG - Polling for message...
+2024-07-07 14:34:21,744 - DEBUG - No message received.
+2024-07-07 14:34:21,744 - DEBUG - Polling for message...
+2024-07-07 14:34:26,745 - DEBUG - No message received.
+2024-07-07 14:34:26,745 - DEBUG - Polling for message...
+2024-07-07 14:34:31,746 - DEBUG - No message received.
+2024-07-07 14:34:31,746 - DEBUG - Polling for message...
+2024-07-07 14:34:36,746 - DEBUG - No message received.
+2024-07-07 14:34:36,746 - DEBUG - Polling for message...
+2024-07-07 14:34:41,747 - DEBUG - No message received.
+2024-07-07 14:34:41,747 - DEBUG - Polling for message...
+2024-07-07 14:34:46,747 - DEBUG - No message received.
+2024-07-07 14:34:46,747 - DEBUG - Polling for message...
+2024-07-07 14:34:51,748 - DEBUG - No message received.
+2024-07-07 14:34:51,749 - DEBUG - Polling for message...
+2024-07-07 14:34:56,749 - DEBUG - No message received.
+2024-07-07 14:34:56,750 - DEBUG - Polling for message...
+2024-07-07 14:35:01,750 - DEBUG - No message received.
+2024-07-07 14:35:01,750 - DEBUG - Polling for message...
+2024-07-07 14:35:06,750 - DEBUG - No message received.
+2024-07-07 14:35:06,751 - DEBUG - Polling for message...
+2024-07-07 14:35:11,751 - DEBUG - No message received.
+2024-07-07 14:35:11,751 - DEBUG - Polling for message...
+2024-07-07 14:35:16,752 - DEBUG - No message received.
+2024-07-07 14:35:16,752 - DEBUG - Polling for message...
+2024-07-07 14:35:21,753 - DEBUG - No message received.
+2024-07-07 14:35:21,753 - DEBUG - Polling for message...
+2024-07-07 14:36:04,274 - INFO - StorageConfig is ready.
+2024-07-07 14:36:04,379 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:36:04,381 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:36:04,382 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:36:04,386 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:36:12,699 - INFO - StorageConfig is ready.
+2024-07-07 14:36:12,791 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:36:12,793 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:36:12,793 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:36:12,803 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:36:12,805 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:36:12,809 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:36:12,811 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:36:12,812 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:36:12,818 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:36:12,819 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:39:17,112 - INFO - StorageConfig is ready.
+2024-07-07 14:39:17,132 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:40:37,831 - INFO - Consumed message: {'user_id': '663d6760537fa61b79ac8bab', 'username': 'AdamZilla', 'trace_id': '61466193-3747-43a1-b492-4d3d60bc6bbd', 'pokemon': {'145-shiny_shadow_9d416d38-3495-46ff-b4b8-74dc75efc008': {'pokemon_id': 145, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': True, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.165Z', 'last_update': 1720388377381, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}}}
+2024-07-07 14:40:37,837 - INFO - User processed: 663d6760537fa61b79ac8bab, created: False
+2024-07-07 14:40:37,844 - ERROR - Failed to handle message: (1406, "Data too long for column 'instance_id' at row 1")
+2024-07-07 14:42:33,745 - INFO - StorageConfig is ready.
+2024-07-07 14:42:33,839 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:42:33,841 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:42:33,842 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:42:33,846 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:42:39,751 - INFO - StorageConfig is ready.
+2024-07-07 14:42:39,842 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:42:39,844 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:42:39,844 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:42:39,853 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:42:39,855 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:42:39,859 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:42:39,860 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:42:39,861 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:42:39,867 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:42:39,869 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:42:49,922 - INFO - StorageConfig is ready.
+2024-07-07 14:42:49,934 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:44:33,222 - INFO - Consumed message: {'user_id': '663d6760537fa61b79ac8bab', 'username': 'AdamZilla', 'trace_id': 'f1abdbc5-a808-445f-90a0-f3d593c9152d', 'pokemon': {'158-shiny_bc75c7b1-d48f-4d26-b0d2-9892d6dfd1ee': {'pokemon_id': 158, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.169Z', 'last_update': 1720388611398, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '161-shiny_1f9502d4-b111-4be8-8030-d278525e681e': {'pokemon_id': 161, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.169Z', 'last_update': 1720388611399, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '165-shiny_e4353a47-c2b0-4b84-8567-52b6e8bf2129': {'pokemon_id': 165, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.171Z', 'last_update': 1720388611400, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '173-shiny_478f0efe-163f-43d7-bde8-22b1fe15b897': {'pokemon_id': 173, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.175Z', 'last_update': 1720388611401, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '190-shiny_shadow_36eb8fd0-ab21-4bb7-8c25-fc7f372c157d': {'pokemon_id': 190, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': True, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.180Z', 'last_update': 1720388612507, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}, '191-shiny_30135bb6-5812-477e-ab89-caf1e853630a': {'pokemon_id': 191, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.181Z', 'last_update': 1720388612508, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '198-shiny_shadow_27e1cc0f-d091-4234-818b-9118f59616c5': {'pokemon_id': 198, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': True, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.185Z', 'last_update': 1720388613067, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': False, 'not_trade_list': {}, 'not_wanted_list': {}}, '200-shiny_f49c5b55-a5a2-4d8f-90c8-5bf8d20e2678': {'pokemon_id': 200, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.186Z', 'last_update': 1720388613069, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '202-shiny_cccdc6c1-0eff-4b40-8c5b-c3707e9a6652': {'pokemon_id': 202, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.193Z', 'last_update': 1720388613070, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}}}
+2024-07-07 14:44:33,235 - INFO - User processed: 663d6760537fa61b79ac8bab, created: False
+2024-07-07 14:44:33,237 - ERROR - Failed to handle message: (1146, "Table 'user_pokemon_management.instances' doesn't exist")
+2024-07-07 14:45:50,499 - INFO - StorageConfig is ready.
+2024-07-07 14:45:50,596 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:45:50,597 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:45:50,598 - DEBUG - (0.015) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:45:50,602 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:45:59,094 - INFO - StorageConfig is ready.
+2024-07-07 14:45:59,185 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:45:59,187 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:45:59,188 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:45:59,198 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:45:59,199 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:45:59,203 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:45:59,205 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:45:59,206 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:45:59,212 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:45:59,214 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:46:54,892 - INFO - StorageConfig is ready.
+2024-07-07 14:46:55,023 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:46:55,024 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:46:55,026 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:46:55,031 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:47:06,200 - INFO - StorageConfig is ready.
+2024-07-07 14:47:06,293 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:47:06,294 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:47:06,295 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:47:06,304 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:47:06,306 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:47:06,310 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:47:06,311 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:47:06,313 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:47:06,319 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:47:06,320 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:47:11,431 - INFO - StorageConfig is ready.
+2024-07-07 14:47:54,489 - INFO - StorageConfig is ready.
+2024-07-07 14:47:54,585 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:47:54,587 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:47:54,588 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:48:01,745 - INFO - StorageConfig is ready.
+2024-07-07 14:48:01,838 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:48:01,839 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:48:01,840 - DEBUG - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 14:48:01,850 - DEBUG - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 14:48:01,851 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:48:01,854 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:48:01,856 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:48:01,857 - DEBUG - CREATE TABLE `django_migrations` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `app` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `applied` datetime(6) NOT NULL); (params None)
+2024-07-07 14:48:01,885 - DEBUG - (0.032) CREATE TABLE `django_migrations` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `app` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `applied` datetime(6) NOT NULL); args=None; alias=default
+2024-07-07 14:48:01,886 - DEBUG - CREATE TABLE `users` (`user_id` varchar(255) NOT NULL PRIMARY KEY, `username` varchar(255) NOT NULL UNIQUE); (params None)
+2024-07-07 14:48:01,923 - DEBUG - (0.031) CREATE TABLE `users` (`user_id` varchar(255) NOT NULL PRIMARY KEY, `username` varchar(255) NOT NULL UNIQUE); args=None; alias=default
+2024-07-07 14:48:01,926 - DEBUG - CREATE TABLE `instances` (`instance_id` varchar(255) NOT NULL PRIMARY KEY, `pokemon_id` integer NOT NULL, `nickname` varchar(255) NULL, `cp` integer NULL, `attack_iv` integer NULL, `defense_iv` integer NULL, `stamina_iv` integer NULL, `shiny` bool NOT NULL, `costume_id` integer NULL, `lucky` bool NOT NULL, `shadow` bool NOT NULL, `purified` bool NOT NULL, `fast_move_id` integer NULL, `charged_move1_id` integer NULL, `charged_move2_id` integer NULL, `weight` double precision NULL, `height` double precision NULL, `gender` varchar(1) NULL, `mirror` bool NOT NULL, `pref_lucky` bool NOT NULL, `registered` bool NOT NULL, `favorite` bool NOT NULL, `location_card` varchar(255) NULL, `location_caught` varchar(255) NULL, `friendship_level` integer NULL, `date_caught` datetime(6) NULL, `date_added` datetime(6) NOT NULL, `last_update` bigint NOT NULL, `is_unowned` bool NOT NULL, `is_owned` bool NOT NULL, `is_for_trade` bool NOT NULL, `is_wanted` bool NOT NULL, `not_trade_list` json NOT NULL, `not_wanted_list` json NOT NULL, `user_id` varchar(255) NOT NULL); (params None)
+2024-07-07 14:48:01,951 - DEBUG - (0.016) CREATE TABLE `instances` (`instance_id` varchar(255) NOT NULL PRIMARY KEY, `pokemon_id` integer NOT NULL, `nickname` varchar(255) NULL, `cp` integer NULL, `attack_iv` integer NULL, `defense_iv` integer NULL, `stamina_iv` integer NULL, `shiny` bool NOT NULL, `costume_id` integer NULL, `lucky` bool NOT NULL, `shadow` bool NOT NULL, `purified` bool NOT NULL, `fast_move_id` integer NULL, `charged_move1_id` integer NULL, `charged_move2_id` integer NULL, `weight` double precision NULL, `height` double precision NULL, `gender` varchar(1) NULL, `mirror` bool NOT NULL, `pref_lucky` bool NOT NULL, `registered` bool NOT NULL, `favorite` bool NOT NULL, `location_card` varchar(255) NULL, `location_caught` varchar(255) NULL, `friendship_level` integer NULL, `date_caught` datetime(6) NULL, `date_added` datetime(6) NOT NULL, `last_update` bigint NOT NULL, `is_unowned` bool NOT NULL, `is_owned` bool NOT NULL, `is_for_trade` bool NOT NULL, `is_wanted` bool NOT NULL, `not_trade_list` json NOT NULL, `not_wanted_list` json NOT NULL, `user_id` varchar(255) NOT NULL); args=None; alias=default
+2024-07-07 14:48:01,954 - DEBUG - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'instances' AND
+                table_schema = DATABASE()
+            ; args=['instances']; alias=default
+2024-07-07 14:48:01,955 - DEBUG - ALTER TABLE `instances` ADD CONSTRAINT `instances_user_id_a608406c_fk_users_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`); (params ())
+2024-07-07 14:48:02,015 - DEBUG - (0.063) ALTER TABLE `instances` ADD CONSTRAINT `instances_user_id_a608406c_fk_users_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`); args=(); alias=default
+2024-07-07 14:48:02,017 - DEBUG - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 14:48:02,023 - DEBUG - (0.000) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('storage', '0001_initial', '2024-07-07 21:48:02.017640'); args=['storage', '0001_initial', '2024-07-07 21:48:02.017640']; alias=default
+2024-07-07 14:48:02,024 - DEBUG - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 14:48:21,812 - INFO - StorageConfig is ready.
+2024-07-07 14:48:21,822 - INFO - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 14:50:03,589 - INFO - Consumed message: {'user_id': '663d6760537fa61b79ac8bab', 'username': 'AdamZilla', 'trace_id': '7a956967-c402-4004-a5d3-a42696b45ee8', 'pokemon': {'252-shiny_72a38e8d-897f-4899-82c1-16991d376624': {'pokemon_id': 252, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.212Z', 'last_update': 1720388943115, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '255-shiny_eb35c35f-bafc-4007-9724-615e7a470f83': {'pokemon_id': 255, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.213Z', 'last_update': 1720388943116, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '261-shiny_5ea112f4-b276-451b-9665-994c67918252': {'pokemon_id': 261, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.215Z', 'last_update': 1720388943117, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '270-shiny_dfd3e7b9-fff2-46b1-ab75-3ad9809107e1': {'pokemon_id': 270, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.218Z', 'last_update': 1720388943118, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '283-shiny_26954043-521e-485d-aa57-bd2d5d01fc70': {'pokemon_id': 283, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.223Z', 'last_update': 1720388943119, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '290-shiny_98455d97-bb4e-4e25-8a8c-5a4a28707318': {'pokemon_id': 290, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.226Z', 'last_update': 1720388943121, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '293-shiny_1410e817-0fa7-4173-8eee-6c41a06e46df': {'pokemon_id': 293, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.227Z', 'last_update': 1720388943121, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}, '296-shiny_86a83c5b-a55b-4dea-a83d-696d688a6487': {'pokemon_id': 296, 'nickname': None, 'cp': None, 'attack_iv': None, 'defense_iv': None, 'stamina_iv': None, 'shiny': True, 'costume_id': None, 'lucky': False, 'shadow': False, 'purified': False, 'fast_move_id': None, 'charged_move1_id': None, 'charged_move2_id': None, 'weight': None, 'height': None, 'gender': None, 'mirror': False, 'pref_lucky': False, 'registered': False, 'favorite': False, 'location_card': None, 'location_caught': None, 'friendship_level': None, 'date_caught': None, 'date_added': '2024-07-06T16:30:12.228Z', 'last_update': 1720388943122, 'is_unowned': True, 'is_owned': False, 'is_for_trade': False, 'is_wanted': True, 'not_trade_list': {}, 'not_wanted_list': {}}}}
+2024-07-07 14:50:03,605 - INFO - User processed: 663d6760537fa61b79ac8bab, created: True
+2024-07-07 14:50:03,611 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 252
+2024-07-07 14:50:03,616 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 255
+2024-07-07 14:50:03,622 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 261
+2024-07-07 14:50:03,629 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 270
+2024-07-07 14:50:03,635 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 283
+2024-07-07 14:50:03,641 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 290
+2024-07-07 14:50:03,647 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 293
+2024-07-07 14:50:03,653 - INFO - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 296
+2024-07-07 15:01:19,605 - INFO - N/A - StorageConfig is ready.
+2024-07-07 15:01:19,717 - DEBUG - N/A - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 15:01:19,717 - DEBUG - N/A - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 15:01:19,718 - DEBUG - N/A - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 15:01:24,628 - INFO - N/A - StorageConfig is ready.
+2024-07-07 15:01:24,719 - DEBUG - N/A - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 15:01:24,719 - DEBUG - N/A - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 15:01:24,720 - DEBUG - N/A - (0.000) 
+                SELECT VERSION(),
+                       @@sql_mode,
+                       @@default_storage_engine,
+                       @@sql_auto_is_null,
+                       @@lower_case_table_names,
+                       CONVERT_TZ('2001-01-01 01:00:00', 'UTC', 'UTC') IS NOT NULL
+            ; args=None; alias=default
+2024-07-07 15:01:24,728 - DEBUG - N/A - (0.000) SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED; args=None; alias=default
+2024-07-07 15:01:24,729 - DEBUG - N/A - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 15:01:24,730 - DEBUG - N/A - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 15:01:24,732 - DEBUG - N/A - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 15:01:24,732 - DEBUG - N/A - CREATE TABLE `django_migrations` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `app` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `applied` datetime(6) NOT NULL); (params None)
+2024-07-07 15:01:24,750 - DEBUG - N/A - (0.032) CREATE TABLE `django_migrations` (`id` integer AUTO_INCREMENT NOT NULL PRIMARY KEY, `app` varchar(255) NOT NULL, `name` varchar(255) NOT NULL, `applied` datetime(6) NOT NULL); args=None; alias=default
+2024-07-07 15:01:24,751 - DEBUG - N/A - CREATE TABLE `users` (`user_id` varchar(255) NOT NULL PRIMARY KEY, `username` varchar(255) NOT NULL UNIQUE); (params None)
+2024-07-07 15:01:24,780 - DEBUG - N/A - (0.031) CREATE TABLE `users` (`user_id` varchar(255) NOT NULL PRIMARY KEY, `username` varchar(255) NOT NULL UNIQUE); args=None; alias=default
+2024-07-07 15:01:24,783 - DEBUG - N/A - CREATE TABLE `instances` (`instance_id` varchar(255) NOT NULL PRIMARY KEY, `pokemon_id` integer NOT NULL, `nickname` varchar(255) NULL, `cp` integer NULL, `attack_iv` integer NULL, `defense_iv` integer NULL, `stamina_iv` integer NULL, `shiny` bool NOT NULL, `costume_id` integer NULL, `lucky` bool NOT NULL, `shadow` bool NOT NULL, `purified` bool NOT NULL, `fast_move_id` integer NULL, `charged_move1_id` integer NULL, `charged_move2_id` integer NULL, `weight` double precision NULL, `height` double precision NULL, `gender` varchar(1) NULL, `mirror` bool NOT NULL, `pref_lucky` bool NOT NULL, `registered` bool NOT NULL, `favorite` bool NOT NULL, `location_card` varchar(255) NULL, `location_caught` varchar(255) NULL, `friendship_level` integer NULL, `date_caught` datetime(6) NULL, `date_added` datetime(6) NOT NULL, `last_update` bigint NOT NULL, `is_unowned` bool NOT NULL, `is_owned` bool NOT NULL, `is_for_trade` bool NOT NULL, `is_wanted` bool NOT NULL, `not_trade_list` json NOT NULL, `not_wanted_list` json NOT NULL, `trace_id` varchar(255) NULL, `user_id` varchar(255) NOT NULL); (params None)
+2024-07-07 15:01:24,804 - DEBUG - N/A - (0.015) CREATE TABLE `instances` (`instance_id` varchar(255) NOT NULL PRIMARY KEY, `pokemon_id` integer NOT NULL, `nickname` varchar(255) NULL, `cp` integer NULL, `attack_iv` integer NULL, `defense_iv` integer NULL, `stamina_iv` integer NULL, `shiny` bool NOT NULL, `costume_id` integer NULL, `lucky` bool NOT NULL, `shadow` bool NOT NULL, `purified` bool NOT NULL, `fast_move_id` integer NULL, `charged_move1_id` integer NULL, `charged_move2_id` integer NULL, `weight` double precision NULL, `height` double precision NULL, `gender` varchar(1) NULL, `mirror` bool NOT NULL, `pref_lucky` bool NOT NULL, `registered` bool NOT NULL, `favorite` bool NOT NULL, `location_card` varchar(255) NULL, `location_caught` varchar(255) NULL, `friendship_level` integer NULL, `date_caught` datetime(6) NULL, `date_added` datetime(6) NOT NULL, `last_update` bigint NOT NULL, `is_unowned` bool NOT NULL, `is_owned` bool NOT NULL, `is_for_trade` bool NOT NULL, `is_wanted` bool NOT NULL, `not_trade_list` json NOT NULL, `not_wanted_list` json NOT NULL, `trace_id` varchar(255) NULL, `user_id` varchar(255) NOT NULL); args=None; alias=default
+2024-07-07 15:01:24,805 - DEBUG - N/A - (0.000) 
+            SELECT engine
+            FROM information_schema.tables
+            WHERE
+                table_name = 'instances' AND
+                table_schema = DATABASE()
+            ; args=['instances']; alias=default
+2024-07-07 15:01:24,805 - DEBUG - N/A - ALTER TABLE `instances` ADD CONSTRAINT `instances_user_id_a608406c_fk_users_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`); (params ())
+2024-07-07 15:01:24,867 - DEBUG - N/A - (0.063) ALTER TABLE `instances` ADD CONSTRAINT `instances_user_id_a608406c_fk_users_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`); args=(); alias=default
+2024-07-07 15:01:24,868 - DEBUG - N/A - (0.000) 
+            SELECT
+                table_name,
+                table_type,
+                table_comment
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ; args=None; alias=default
+2024-07-07 15:01:24,874 - DEBUG - N/A - (0.016) INSERT INTO `django_migrations` (`app`, `name`, `applied`) VALUES ('storage', '0001_initial', '2024-07-07 22:01:24.868966'); args=['storage', '0001_initial', '2024-07-07 22:01:24.868966']; alias=default
+2024-07-07 15:01:24,874 - DEBUG - N/A - (0.000) SELECT `django_migrations`.`id`, `django_migrations`.`app`, `django_migrations`.`name`, `django_migrations`.`applied` FROM `django_migrations`; args=(); alias=default
+2024-07-07 15:01:35,925 - INFO - N/A - StorageConfig is ready.
+2024-07-07 15:01:35,936 - INFO - N/A - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 15:03:12,125 - INFO - N/A - 2843f67c-b621-4ce2-9338-b598aa286801 - Consumed message for user AdamZilla
+2024-07-07 15:03:12,134 - INFO - N/A - 2843f67c-b621-4ce2-9338-b598aa286801 - User processed: 663d6760537fa61b79ac8bab, created: True
+2024-07-07 15:03:12,141 - INFO - N/A - 2843f67c-b621-4ce2-9338-b598aa286801 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 387
+2024-07-07 15:03:12,149 - INFO - N/A - 2843f67c-b621-4ce2-9338-b598aa286801 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 393
+2024-07-07 15:03:12,155 - INFO - N/A - 2843f67c-b621-4ce2-9338-b598aa286801 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 399
+2024-07-07 15:03:12,161 - INFO - N/A - 2843f67c-b621-4ce2-9338-b598aa286801 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 412
+2024-07-07 15:03:12,166 - INFO - N/A - 2843f67c-b621-4ce2-9338-b598aa286801 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 1062
+2024-07-07 15:03:12,172 - INFO - N/A - 2843f67c-b621-4ce2-9338-b598aa286801 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 1063
+2024-07-07 15:03:12,179 - INFO - N/A - 2843f67c-b621-4ce2-9338-b598aa286801 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 427
+2024-07-07 15:10:54,461 - INFO - trace_id: N/A - StorageConfig is ready.
+2024-07-07 15:10:54,484 - INFO - trace_id: N/A - Kafka consumer started and subscribed to topic: batchedUpdates
+2024-07-07 15:12:48,337 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - Consumed message for user AdamZilla
+2024-07-07 15:12:48,342 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - User processed: 663d6760537fa61b79ac8bab, created: False
+2024-07-07 15:12:48,350 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 504-shiny_5331146d-2fe6-4772-a9bb-fc0c65444518
+2024-07-07 15:12:48,356 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 506-shiny_a7135d5c-1e6d-45fb-bc99-765c0abe3608
+2024-07-07 15:12:48,364 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 509-shiny_99640e45-2c91-4362-be1e-cda99677d89d
+2024-07-07 15:12:48,370 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 511-shiny_f051cdfb-f3d6-4857-94fb-c2c6c1d24341
+2024-07-07 15:12:48,376 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 519-shiny_5b772881-d047-4dd3-b664-492f3f27e674
+2024-07-07 15:12:48,382 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 538-shiny_279ca469-14ea-4d96-aaed-0eba5bb8b8bd
+2024-07-07 15:12:48,387 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 539-shiny_68e07a69-3081-4d3a-a108-f39ee0d693cd
+2024-07-07 15:12:48,393 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 554-shiny_ed9cc125-7532-469a-8884-eed20cd4b988
+2024-07-07 15:12:48,399 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 559-shiny_8e631673-ff14-4278-a6e3-bb3098f95e0c
+2024-07-07 15:12:48,404 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 562-shiny_bbbf029c-1b8a-451f-9ee6-98fb9839be39
+2024-07-07 15:12:48,411 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 564-shiny_bd71752a-b31f-4648-af84-28316885c827
+2024-07-07 15:12:48,416 - INFO - trace_id: N/A - 09a800bf-dec4-4505-9203-67cb293689a6 - PokemonInstance created/updated for user 663d6760537fa61b79ac8bab: 566-shiny_40d0492c-3e45-4342-b4d8-f1fba4a140d6
+2024-07-07 15:12:48,417 - INFO - trace_id: N/A - User AdamZilla created/updated 12 Instances with status 200
+2024-07-07 15:31:50,085 - INFO - trace_id: N/A - trace_id 0ac8f213-32a3-489c-90a5-4db314752c2b - Consumed message for user 663d6760537fa61b79ac8bab
+2024-07-07 15:31:50,090 - INFO - trace_id: N/A - trace_id 0ac8f213-32a3-489c-90a5-4db314752c2b - User processed: 663d6760537fa61b79ac8bab, created: False
+2024-07-07 15:31:50,096 - INFO - trace_id: N/A - trace_id 0ac8f213-32a3-489c-90a5-4db314752c2b - instance created/updated for user 663d6760537fa61b79ac8bab: 667-shiny_628269e3-f491-4f92-8d34-18d4ae8eedd6
+2024-07-07 15:31:50,101 - INFO - trace_id: N/A - trace_id 0ac8f213-32a3-489c-90a5-4db314752c2b - instance created/updated for user 663d6760537fa61b79ac8bab: 672-shiny_4552170b-a3e2-4d72-afd6-5448357c3694
+2024-07-07 15:31:50,106 - INFO - trace_id: N/A - trace_id 0ac8f213-32a3-489c-90a5-4db314752c2b - instance created/updated for user 663d6760537fa61b79ac8bab: 674-shiny_495986bf-f78c-4484-a2db-742e8f0a1531
+2024-07-07 15:31:50,111 - INFO - trace_id: N/A - trace_id 0ac8f213-32a3-489c-90a5-4db314752c2b - instance created/updated for user 663d6760537fa61b79ac8bab: 684-shiny_0299bc65-8532-497b-9af4-cbb029035117
+2024-07-07 15:31:50,117 - INFO - trace_id: N/A - trace_id 0ac8f213-32a3-489c-90a5-4db314752c2b - instance created/updated for user 663d6760537fa61b79ac8bab: 686-shiny_ec195d1f-93e4-47d2-a2da-b67b38da7b08
+2024-07-07 15:31:50,122 - INFO - trace_id: N/A - trace_id 0ac8f213-32a3-489c-90a5-4db314752c2b - instance created/updated for user 663d6760537fa61b79ac8bab: 690-shiny_74a8d18f-2940-43e2-a82e-d1fbb94ba7bd
+2024-07-07 15:31:50,127 - INFO - trace_id: N/A - trace_id 0ac8f213-32a3-489c-90a5-4db314752c2b - instance created/updated for user 663d6760537fa61b79ac8bab: 692-shiny_8c109c86-2a51-4aac-a409-15fef3ab593e
+2024-07-07 15:31:50,131 - INFO - trace_id: N/A - trace_id 0ac8f213-32a3-489c-90a5-4db314752c2b - instance created/updated for user 663d6760537fa61b79ac8bab: 698-shiny_ed06f264-9144-4f4c-ba92-a08568a19c17
+2024-07-07 15:31:50,136 - INFO - trace_id: N/A - trace_id 0ac8f213-32a3-489c-90a5-4db314752c2b - instance created/updated for user 663d6760537fa61b79ac8bab: 702-shiny_11a56c65-2a3a-4781-b3d8-901e7efd7c7e
+2024-07-07 15:31:50,144 - INFO - trace_id: N/A - trace_id 0ac8f213-32a3-489c-90a5-4db314752c2b - instance created/updated for user 663d6760537fa61b79ac8bab: 708-shiny_3881daf3-8176-4c53-a090-c2cbbe66487a
+2024-07-07 15:31:50,149 - INFO - trace_id: N/A - trace_id 0ac8f213-32a3-489c-90a5-4db314752c2b - instance created/updated for user 663d6760537fa61b79ac8bab: 712-shiny_b5666c99-5f90-46f9-9833-e4e6f8e909ba
+2024-07-07 15:49:22,015 - INFO - trace_id: N/A - trace_id 7dfdb2ea-6689-4566-ae03-a1a07def16dd - Consumed message for user 663d6760537fa61b79ac8bab
+2024-07-07 15:49:22,019 - INFO - trace_id: N/A - trace_id 7dfdb2ea-6689-4566-ae03-a1a07def16dd - User processed: 663d6760537fa61b79ac8bab, created: False
+2024-07-07 15:49:22,026 - ERROR - trace_id: N/A - trace_id 7dfdb2ea-6689-4566-ae03-a1a07def16dd - Failed to handle message: (1048, "Column 'pokemon_id' cannot be null")
+2024-07-07 16:02:59,902 - INFO - trace_id: N/A - trace_id 2710be3d-c347-4541-979a-97c934ad0926 - Consumed message for user 663d6760537fa61b79ac8bab
+2024-07-07 16:02:59,907 - INFO - trace_id: N/A - trace_id 2710be3d-c347-4541-979a-97c934ad0926 - User processed: 663d6760537fa61b79ac8bab, created: False
+2024-07-07 16:02:59,913 - ERROR - trace_id: N/A - trace_id 2710be3d-c347-4541-979a-97c934ad0926 - Failed to handle message: (1048, "Column 'pokemon_id' cannot be null")
+2024-07-07 16:07:52,808 - INFO - trace_id: N/A - trace_id 67cd393b-45a1-4ff5-a045-aa23eb82176b - Consumed message for user 663d6760537fa61b79ac8bab
+2024-07-07 16:07:52,810 - INFO - trace_id: N/A - trace_id 67cd393b-45a1-4ff5-a045-aa23eb82176b - User processed: 663d6760537fa61b79ac8bab, created: False
+2024-07-07 16:07:52,816 - INFO - trace_id: N/A - trace_id 67cd393b-45a1-4ff5-a045-aa23eb82176b - instance created/updated for user 663d6760537fa61b79ac8bab: 1-shiny_shadow_82d7c1a1-7e97-4f05-ac99-bc1c0729b0a7
+2024-07-07 16:07:52,822 - ERROR - trace_id: N/A - trace_id 67cd393b-45a1-4ff5-a045-aa23eb82176b - Failed to handle message: (1048, "Column 'pokemon_id' cannot be null")
+2024-07-07 16:14:59,770 - INFO - trace_id: N/A - trace_id 05f1a268-3abd-4458-98db-ec2dfc32a251 - Consumed message for user 663d6760537fa61b79ac8bab
+2024-07-07 16:14:59,771 - INFO - trace_id: N/A - trace_id 05f1a268-3abd-4458-98db-ec2dfc32a251 - User processed: 663d6760537fa61b79ac8bab, created: False
+2024-07-07 16:14:59,779 - INFO - trace_id: N/A - trace_id 05f1a268-3abd-4458-98db-ec2dfc32a251 - instance created/updated for user 663d6760537fa61b79ac8bab: 1-shiny_shadow_82d7c1a1-7e97-4f05-ac99-bc1c0729b0a7
+2024-07-07 16:14:59,782 - ERROR - trace_id: N/A - trace_id 05f1a268-3abd-4458-98db-ec2dfc32a251 - Failed to handle message: (1048, "Column 'pokemon_id' cannot be null")
+2024-07-07 16:18:54,365 - INFO - trace_id: N/A - trace_id 5a6f5be8-57f9-424e-a15a-5f0e2b6ab7e3 - Consumed message for user 663d6760537fa61b79ac8bab
+2024-07-07 16:18:54,366 - INFO - trace_id: N/A - trace_id 5a6f5be8-57f9-424e-a15a-5f0e2b6ab7e3 - User processed: 663d6760537fa61b79ac8bab, created: False
+2024-07-07 16:18:54,382 - INFO - trace_id: N/A - trace_id 5a6f5be8-57f9-424e-a15a-5f0e2b6ab7e3 - instance created/updated for user 663d6760537fa61b79ac8bab: 1-shiny_shadow_82d7c1a1-7e97-4f05-ac99-bc1c0729b0a7
+2024-07-07 16:18:54,389 - INFO - trace_id: N/A - trace_id 5a6f5be8-57f9-424e-a15a-5f0e2b6ab7e3 - instance created/updated for user 663d6760537fa61b79ac8bab: 1-shiny_3d6359a0-9805-4332-96f5-bc25a0e057c3
+2024-07-07 16:24:12,769 - INFO - trace_id: N/A - trace_id e61cb8f4-ea78-4e39-a011-396fd9d84fb8 - Consumed message for user 663d6760537fa61b79ac8bab
+2024-07-07 16:24:12,770 - INFO - trace_id: N/A - trace_id e61cb8f4-ea78-4e39-a011-396fd9d84fb8 - User processed: 663d6760537fa61b79ac8bab, created: False
+2024-07-07 16:24:12,777 - INFO - trace_id: N/A - trace_id e61cb8f4-ea78-4e39-a011-396fd9d84fb8 - instance created/updated for user 663d6760537fa61b79ac8bab: 1-shiny_shadow_82d7c1a1-7e97-4f05-ac99-bc1c0729b0a7

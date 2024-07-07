@@ -2,18 +2,8 @@
 import os
 import sys
 
-def run_service(service):
-    port_mapping = {
-        'receiver': 3003,
-        'storage': 3004,
-        'reader': 3005
-    }
-
-    if service not in port_mapping:
-        print(f"Unknown service: {service}")
-        return
-
-    os.environ['DJANGO_SETTINGS_MODULE'] = f'{service}.settings'
+def execute_command(command):
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'storage.settings'
     os.environ['PYTHONPATH'] = os.path.dirname(os.path.abspath(__file__))
 
     try:
@@ -25,15 +15,15 @@ def run_service(service):
             "forget to activate a virtual environment?"
         ) from exc
 
-    execute_from_command_line([sys.argv[0], 'runserver', '--noreload', str(port_mapping[service])])
+    execute_from_command_line([sys.argv[0]] + command)
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: manage.py <service>")
+    if len(sys.argv) < 2:
+        print("Usage: migrate.py <command> [<args>]")
         return
 
-    service = sys.argv[1]
-    run_service(service)
+    command = sys.argv[1:]
+    execute_command(command)
 
 if __name__ == '__main__':
     main()
