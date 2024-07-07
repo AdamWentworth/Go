@@ -284,7 +284,7 @@ export const PokemonDataProvider = ({ children }) => {
             navigator.serviceWorker.ready.then(registration => {
                 registration.active.postMessage({
                     action: 'updatePokemonLists',
-                    data: { lists: sortedLists, timestamp: Date.now() }
+                    data: { data: sortedLists, timestamp: Date.now() }
                 });
             });
         });

@@ -137,7 +137,7 @@ async function sendBatchedUpdatesToBackend() {
             credentials: 'include',  // Include cookies in the request
             body: JSON.stringify(batchedUpdates),
         });
-        console.log('Updates sent to backend:', batchedUpdates);
+        console.log('Updates successfully sent to backend');
         await cache.delete('/batchedUpdates');
     } catch (error) {
         console.error('Failed to send updates to backend:', error);
