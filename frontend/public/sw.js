@@ -1,7 +1,7 @@
 // Service Worker (sw.js)
 
 let isLoggedIn = false;  // Global state to track if any user is logged in
-console.log(`logged in:`, isLoggedIn)
+console.log(`logged in:`, isLoggedIn);
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
@@ -42,6 +42,12 @@ self.addEventListener('message', async (event) => {
         case 'updateLoginStatus':
             isLoggedIn = data.isLoggedIn;  // Update the global logged-in state
             console.log(`Login status updated: ${isLoggedIn}`);
+            if (!isLoggedIn) {
+                clearTimers();
+            } else {
+                // When user logs in, immediately check and schedule sync if needed
+                checkAndScheduleSync();
+            }
             break;
     }
 });
@@ -52,7 +58,7 @@ let isInitialSyncScheduled = false;
 let authStatusPromises = new Map();
 
 async function checkAndScheduleSync() {
-    if (isInitialSyncScheduled) return;
+    if (isInitialSyncScheduled || !isLoggedIn) return;
 
     const cache = await caches.open('pokemonCache');
     const cachedResponse = await cache.match('/batchedUpdates');
@@ -60,8 +66,9 @@ async function checkAndScheduleSync() {
     if (cachedResponse) {
         const batchedUpdates = await cachedResponse.json();
         if (Object.keys(batchedUpdates).length > 0) {
-            console.log(`Batched updates found, starting periodic sync.`);
-            scheduleInitialSync();
+            console.log(`Batched updates found, starting immediate sync.`);
+            await immediateSync(); // Perform immediate sync
+            schedulePeriodicSync(); // Schedule periodic sync
         }
     }
 }
@@ -76,7 +83,7 @@ async function syncData(data) {
         await cache.put('/pokemonOwnership', response);
         console.log(`Pokemon ownership data has been updated and cached.`);
         sendMessageToClients({ status: 'success', message: 'Data synced successfully.' });
-        await checkAndScheduleSync(); // Check and schedule sync if needed
+        if (isLoggedIn) await checkAndScheduleSync(); // Check and schedule sync if needed
     } catch (error) {
         console.error(`Failed to update pokemon ownership:`, error);
         sendMessageToClients({ status: 'failed', message: 'Failed to update pokemon ownership.', error });
@@ -100,31 +107,36 @@ async function syncLists(data) {
 }
 
 function scheduleInitialSync() {
-    if (isInitialSyncScheduled) return; // Prevent multiple initial syncs
+    if (isInitialSyncScheduled || !isLoggedIn) return; // Prevent multiple initial syncs
     isInitialSyncScheduled = true;
-    console.log(`[${new Date().toLocaleTimeString()}] Starting 1-minute initial backend sync timer`);
-    syncTimeoutId = setTimeout(async () => {
-        await sendBatchedUpdatesToBackend();
-        schedulePeriodicSync();
-    }, 60000); // 60 seconds delay
+    console.log(`[${new Date().toLocaleTimeString()}] Starting immediate sync followed by 1-minute interval`);
+    immediateSync().then(schedulePeriodicSync); // Perform immediate sync and then schedule periodic sync
 }
 
 function schedulePeriodicSync() {
-    if (syncIntervalId) return; // Prevent multiple intervals
+    if (syncIntervalId || !isLoggedIn) return; // Prevent multiple intervals
     console.log(`Starting periodic sync every 1 minute.`);
     syncIntervalId = setInterval(async () => {
         await sendBatchedUpdatesToBackend();
     }, 60000); // 60 seconds interval
 }
 
+async function immediateSync() {
+    await sendBatchedUpdatesToBackend();
+}
+
 async function sendBatchedUpdatesToBackend() {
+    if (!isLoggedIn) {
+        console.log("User is not logged in. Skipping backend update.");
+        clearTimers();
+        return;
+    }
+
     const cache = await caches.open('pokemonCache');
     const cachedResponse = await cache.match('/batchedUpdates');
     if (!cachedResponse) {
         console.log(`No batched updates found, stopping periodic sync.`);
-        clearInterval(syncIntervalId);
-        syncIntervalId = null;
-        isInitialSyncScheduled = false;
+        clearTimers();
         return;
     }
 
@@ -132,18 +144,11 @@ async function sendBatchedUpdatesToBackend() {
 
     if (Object.keys(batchedUpdates).length === 0) {
         console.log(`Batched updates are empty, stopping periodic sync.`);
-        clearInterval(syncIntervalId);
-        syncIntervalId = null;
-        isInitialSyncScheduled = false;
+        clearTimers();
         return;
     }
 
     console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, batchedUpdates);
-
-    if (!isLoggedIn) {
-        console.log("User is not logged in. Skipping backend update.");
-        return;
-    }
 
     // Send the updates to your backend API
     try {
@@ -173,9 +178,21 @@ function sendMessageToClients(msg) {
     });
 }
 
+function clearTimers() {
+    if (syncTimeoutId) {
+        clearTimeout(syncTimeoutId);
+        syncTimeoutId = null;
+    }
+    if (syncIntervalId) {
+        clearInterval(syncIntervalId);
+        syncIntervalId = null;
+    }
+    isInitialSyncScheduled = false;
+}
+
 // Function to schedule sync when triggered
 function scheduleSync() {
-    if (!syncTimeoutId && !syncIntervalId) {
+    if (!syncTimeoutId && !syncIntervalId && isLoggedIn) {
         scheduleInitialSync();
     }
 }
