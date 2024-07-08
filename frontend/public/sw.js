@@ -25,8 +25,8 @@ self.addEventListener('message', (event) => {
         case 'syncData':
             syncData(data);
             break;
-        case 'updatePokemonLists':
-            updatePokemonLists(data);
+        case 'syncLists':
+            syncLists(data);
             break;
         case 'scheduleSync':
             scheduleSync();
@@ -70,11 +70,11 @@ async function syncData(data) {
     }
 }
 
-async function updatePokemonLists(data) {
-    console.log(`Update Pokemon lists called:`, data);
+async function syncLists(data) {
+    console.log(`Sync lists called:`, data);
     try {
         const cache = await caches.open('pokemonCache');
-        const response = new Response(JSON.stringify({ lists: data.lists, timestamp: data.timestamp }), {
+        const response = new Response(JSON.stringify({ lists: data.data, timestamp: data.timestamp }), {
             headers: { 'Content-Type': 'application/json' }
         });
         await cache.put('/pokemonLists', response);

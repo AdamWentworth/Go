@@ -232,6 +232,25 @@ export const PokemonDataProvider = ({ children }) => {
         });
     }, []);
 
+    // Function to update Pokemon lists
+    const updateLists = useCallback(() => {
+        updatePokemonLists(data.ownershipData, data.variants, sortedLists => {
+            // Update the local state with the new lists
+            setData(prevData => ({
+                ...prevData,
+                lists: sortedLists
+            }));
+
+            // Send updated lists to the service worker
+            navigator.serviceWorker.ready.then(registration => {
+                registration.active.postMessage({
+                    action: 'syncLists',
+                    data: { data: sortedLists, timestamp: Date.now() }
+                });
+            });
+        });
+    }, [data.ownershipData, data.variants]);
+
     // Function to update ownership status
     const updateOwnership = useCallback((pokemonKeys, newStatus) => {
         const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
@@ -274,48 +293,27 @@ export const PokemonDataProvider = ({ children }) => {
                         registration.active.postMessage({
                             action: 'scheduleSync'
                         });
+
+                        updateLists();
                     });
                 }
             });
         });
-        updateLists();
-    }, [data.variants, data.ownershipData]);
-
-    const updateLists = useCallback(() => {
-        updatePokemonLists(data.ownershipData, data.variants, sortedLists => {
-            // Update the local state with the new lists
-            setData(prevData => ({
-                ...prevData,
-                lists: sortedLists
-            }));
-    
-            // Send updated lists to the service worker
-            navigator.serviceWorker.ready.then(registration => {
-                registration.active.postMessage({
-                    action: 'updatePokemonLists',
-                    data: { data: sortedLists, timestamp: Date.now() }
-                });
-            });
-        });
-    }, [data.ownershipData, data.variants]);    
+    }, [data.variants, data.ownershipData, updateLists]);
 
     // Function to update Instance details
     const updateDetails = useCallback((pokemonKey, details) => {
-        console.log("Updating details for:", pokemonKey, details);
         updatePokemonDetails(pokemonKey, details, data.ownershipData);
-    
+
         // Assuming the update is successful, we update the context state
-        const newData = {...data.ownershipData};
-        newData[pokemonKey] = {...newData[pokemonKey], ...details};
-    
+        const newData = { ...data.ownershipData };
+        newData[pokemonKey] = { ...newData[pokemonKey], ...details };
+
         setData(prevData => ({
             ...prevData,
             ownershipData: newData
         }));
-    
-        updateLists();
-    
-        // Send updated data to the service worker for asynchronous synchronization
+
         navigator.serviceWorker.ready.then(async registration => {
             registration.active.postMessage({
                 action: 'syncData',
@@ -336,8 +334,11 @@ export const PokemonDataProvider = ({ children }) => {
             registration.active.postMessage({
                 action: 'scheduleSync'
             });
+
+            // Now call updateLists after syncData is complete
+            updateLists();
         });
-    }, [data.ownershipData, updateLists]);    
+    }, [data.ownershipData, updateLists]);
 
     // Context value includes all state and the update function
     const contextValue = useMemo(() => ({
