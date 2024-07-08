@@ -1,6 +1,7 @@
 // PokemonDataContext.js
 
 import React, { useContext, createContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { AuthContext } from './AuthContext';  // Adjust the import path as needed
 import { getPokemons } from '../components/Collect/utils/api';
 import { updatePokemonDetails } from '../components/Collect/PokemonOwnership/pokemonOwnershipManager';
 import { updatePokemonOwnership } from '../components/Collect/PokemonOwnership/PokemonOwnershipUpdateService';

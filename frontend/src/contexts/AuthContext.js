@@ -145,6 +145,14 @@ export const AuthProvider = ({ children }) => {
     setIsLoggedIn(true);
     setUser(userData);
     userRef.current = userData;  // Update the ref with the new user data
+
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+          action: 'updateLoginStatus',
+          data: { isLoggedIn: true }
+      });
+    }
+
     startTokenExpirationCheck();
     scheduleTokenRefresh(userData.accessTokenExpiry); // Pass the correct expiry time
   };
@@ -156,6 +164,12 @@ export const AuthProvider = ({ children }) => {
       console.error('Error during logout:', error);
     } finally {
       clearSession(false);  // Manual logout
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+            action: 'updateLoginStatus',
+            data: { isLoggedIn: false }
+        });
+      }
     }
   };
 
@@ -201,7 +215,7 @@ export const AuthProvider = ({ children }) => {
       toast.error(`Failed to update account details: ${error.message}`);
       return { success: false, error: error.message };
     }
-  };  
+  };
 
   const deleteAccount = async (userId) => {
     try {

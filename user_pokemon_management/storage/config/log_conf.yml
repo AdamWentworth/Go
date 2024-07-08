@@ -2,8 +2,10 @@ version: 1
 formatters:
   simple:
     format: '%(asctime)s - %(levelname)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
   detailed:
     format: '%(asctime)s - %(levelname)s - trace_id: %(trace_id)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
 filters:
   add_trace_id:
     (): storage.logging_filters.AddTraceIDFilter

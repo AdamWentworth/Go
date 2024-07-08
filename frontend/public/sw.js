@@ -1,4 +1,8 @@
 // Service Worker (sw.js)
+
+let isLoggedIn = false;  // Global state to track if any user is logged in
+console.log(`logged in:`, isLoggedIn)
+
 self.addEventListener('install', (event) => {
     self.skipWaiting();
 });
@@ -13,23 +17,31 @@ self.addEventListener('fetch', (event) => {
             if (cachedResponse) {
                 return cachedResponse;
             }
-            return fetch(event.request);
+            return fetch(event.request).catch((error) => {
+                console.error('Fetch failed:', error);
+                throw error;
+            });
         })
     );
     event.waitUntil(checkAndScheduleSync()); // Check and schedule sync if needed
 });
 
-self.addEventListener('message', (event) => {
+// Event handler for messages
+self.addEventListener('message', async (event) => {
     const { action, data } = event.data;
     switch (action) {
         case 'syncData':
-            syncData(data);
+            await syncData(data);
             break;
         case 'syncLists':
-            syncLists(data);
+            await syncLists(data);
             break;
         case 'scheduleSync':
             scheduleSync();
+            break;
+        case 'updateLoginStatus':
+            isLoggedIn = data.isLoggedIn;  // Update the global logged-in state
+            console.log(`Login status updated: ${isLoggedIn}`);
             break;
     }
 });
@@ -37,6 +49,7 @@ self.addEventListener('message', (event) => {
 let syncTimeoutId = null;
 let syncIntervalId = null;
 let isInitialSyncScheduled = false;
+let authStatusPromises = new Map();
 
 async function checkAndScheduleSync() {
     if (isInitialSyncScheduled) return;
@@ -111,7 +124,7 @@ async function sendBatchedUpdatesToBackend() {
         console.log(`No batched updates found, stopping periodic sync.`);
         clearInterval(syncIntervalId);
         syncIntervalId = null;
-        isInitialSyncScheduled = false;  // Reset the flag
+        isInitialSyncScheduled = false;
         return;
     }
 
@@ -121,15 +134,20 @@ async function sendBatchedUpdatesToBackend() {
         console.log(`Batched updates are empty, stopping periodic sync.`);
         clearInterval(syncIntervalId);
         syncIntervalId = null;
-        isInitialSyncScheduled = false;  // Reset the flag
+        isInitialSyncScheduled = false;
         return;
     }
 
     console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, batchedUpdates);
 
+    if (!isLoggedIn) {
+        console.log("User is not logged in. Skipping backend update.");
+        return;
+    }
+
     // Send the updates to your backend API
     try {
-        await fetch('http://localhost:3003/api/batchedUpdates', {
+        const response = await fetch('http://localhost:3003/api/batchedUpdates', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -137,6 +155,11 @@ async function sendBatchedUpdatesToBackend() {
             credentials: 'include',  // Include cookies in the request
             body: JSON.stringify(batchedUpdates),
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         console.log('Updates successfully sent to backend');
         await cache.delete('/batchedUpdates');
     } catch (error) {
