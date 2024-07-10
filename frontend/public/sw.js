@@ -94,7 +94,7 @@ async function syncLists(data) {
     console.log(`Sync lists called:`, data);
     try {
         const cache = await caches.open('pokemonCache');
-        const response = new Response(JSON.stringify({ lists: data.data, timestamp: data.timestamp }), {
+        const response = new Response(JSON.stringify({ data: data.data, timestamp: data.timestamp }), {
             headers: { 'Content-Type': 'application/json' }
         });
         await cache.put('/pokemonLists', response);
