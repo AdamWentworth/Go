@@ -1,5 +1,5 @@
 .pokemon-container {
-    background-color: #111;
+    background-color: #222;
     display: grid;
     grid-template-columns: repeat(9, 1fr); 
     gap: 16px;

@@ -1,9 +1,9 @@
 .pokemon-card {
     text-align: center;
-    border: 1px solid #ddd;
+    /* border: 1px solid #ddd; */
     padding: 8px;
     border-radius: 8px;
-    background-color: #333;
+    /* background-color: #333; */
     color: white;
     font-size: calc((100vw - (8 * 16px)) / 100);
     box-sizing: border-box;
@@ -169,15 +169,15 @@
 }
 
 @media (min-width: 1440px) {
-    .pokemon-card {
+    /* .pokemon-card {
     border: 1px solid #ddd;
-}
+} */
 }
 /* Extra large devices (4k monitors, 3840px and up) */
 @media (min-width: 2559px) {
-    .pokemon-card {
+    /* .pokemon-card {
         border: 2px solid #ddd;
-    }
+    } */
     .pokemon-card p {
         font-size: 24px; /* Double the size */
     }

@@ -1,5 +1,5 @@
 # storage/consumer.py
-
+import time
 import json
 import logging
 from confluent_kafka import Consumer, KafkaException
@@ -22,12 +22,25 @@ def consume_messages():
         'auto.offset.reset': 'earliest'
     }
 
-    try:
-        consumer = Consumer(conf)
-        consumer.subscribe([kafka_config['topic']])
-        logger.info(f"Kafka consumer started and subscribed to topic: {kafka_config['topic']}")
-    except Exception as e:
-        logger.error(f"Failed to start Kafka consumer: {e}")
+    consumer = None
+    max_retries = 5
+    retry_attempt = 0
+    backoff_time = 2  # Initial backoff time in seconds
+
+    while retry_attempt < max_retries:
+        try:
+            consumer = Consumer(conf)
+            consumer.subscribe([kafka_config['topic']])
+            logger.info(f"Kafka consumer started and subscribed to topic: {kafka_config['topic']}")
+            break  # Exit the retry loop if connection is successful
+        except Exception as e:
+            logger.error(f"Failed to start Kafka consumer: {e}")
+            retry_attempt += 1
+            time.sleep(backoff_time)
+            backoff_time *= 2  # Exponential backoff
+
+    if consumer is None:
+        logger.error("Failed to start Kafka consumer after multiple attempts")
         return
 
     while True:
@@ -48,8 +61,16 @@ def consume_messages():
             trace_logger.info(f"Consumed message for user {data.get('user_id', 'unknown')}")
             handle_message(data, trace_logger)
             consumer.commit()
+        except KafkaException as ke:
+            logger.error(f"Kafka error: {ke}")
+            retry_attempt += 1
+            time.sleep(backoff_time)
+            backoff_time = min(backoff_time * 2, 60)  # Cap the backoff time at 60 seconds
         except Exception as e:
             logger.error(f"Error in consuming messages: {e}")
+            retry_attempt += 1
+            time.sleep(backoff_time)
+            backoff_time = min(backoff_time * 2, 60)  # Cap the backoff time at 60 seconds
 
 def handle_message(data, trace_logger):
     try:
