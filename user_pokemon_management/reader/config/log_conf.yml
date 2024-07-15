@@ -1,0 +1,35 @@
+version: 1
+formatters:
+  simple:
+    format: '%(asctime)s - %(levelname)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  detailed:
+    format: '%(asctime)s - %(levelname)s - %(module)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+filters:
+  add_trace_id:
+    (): storage.logging_filters.AddTraceIDFilter
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: INFO  # Reduced to INFO to limit verbosity on console
+    formatter: simple  # Using simpler format for console
+    stream: ext://sys.stdout
+  file:
+    class: logging.FileHandler
+    level: DEBUG  # Maintaining DEBUG for file to capture all details
+    formatter: detailed  # Detailed formatting for file logs
+    filters: [add_trace_id]
+    filename: 'reader/app.log'
+loggers:
+  basicLogger:
+    level: INFO  # Adjusted to INFO for general application logs
+    handlers: [console, file]
+    propagate: no
+  django:
+    level: WARNING  # Capture only warnings and above from Django
+    handlers: [console, file]
+    propagate: no
+root:
+  level: INFO  # Root logger capturing at INFO level
+  handlers: [console, file]

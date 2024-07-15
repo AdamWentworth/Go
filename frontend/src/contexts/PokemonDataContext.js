@@ -341,15 +341,20 @@ export const PokemonDataProvider = ({ children }) => {
         });
     }, [data.ownershipData, updateLists]);
 
-    // New function to set ownership data
-    const setOwnershipData = (ownershipData) => {
-        setData(prevData => ({
-            ...prevData,
-            ownershipData,
-            lists: initializePokemonLists(ownershipData, prevData.variants) // Reinitialize lists
-        }));
-    };
+    // Function to set ownership data and reinitialize lists
+    const setOwnershipData = (newOwnershipData) => {
+        setData(prevData => {
+            // Access variants from prevData to ensure it uses the current state
+            const updatedLists = initializePokemonLists(newOwnershipData, prevData.variants);
 
+            return {
+                ...prevData,
+                ownershipData: newOwnershipData,
+                lists: updatedLists, // Set the updated lists
+            };
+        });
+    };
+    
     // Context value includes all state and the update function
     const contextValue = useMemo(() => ({
         ...data,

@@ -1,4 +1,4 @@
-// Service Worker (sw.js)
+// sw.js
 
 let isLoggedIn = false;  // Global state to track if any user is logged in
 console.log(`logged in:`, isLoggedIn);
@@ -12,18 +12,46 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-            return fetch(event.request).catch((error) => {
+    const url = new URL(event.request.url);
+
+    // Bypass the service worker for specific API requests
+    if (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/ownershipData/')) {
+        return; // Do not intercept this request
+    }
+
+    // Handle requests to Google Fonts
+    if (url.origin === 'https://fonts.gstatic.com') {
+        event.respondWith(
+            fetch(event.request).catch((error) => {
                 console.error('Fetch failed:', error);
                 throw error;
-            });
-        })
-    );
-    event.waitUntil(checkAndScheduleSync()); // Check and schedule sync if needed
+            })
+        );
+        return;
+    }
+
+    if (url.origin === self.location.origin) {
+        event.respondWith(
+            caches.match(event.request).then((cachedResponse) => {
+                if (cachedResponse) {
+                    return cachedResponse;
+                }
+                return fetch(event.request, { credentials: 'include' }).catch((error) => {
+                    console.error('Fetch failed:', error);
+                    throw error;
+                });
+            })
+        );
+    } else {
+        // Handle requests to other origins
+        event.respondWith(
+            fetch(event.request).catch((error) => {
+                console.error('Fetch failed:', error);
+                throw error;
+            })
+        );
+    }
+    event.waitUntil(checkAndScheduleSync());
 });
 
 // Event handler for messages
@@ -55,7 +83,6 @@ self.addEventListener('message', async (event) => {
 let syncTimeoutId = null;
 let syncIntervalId = null;
 let isInitialSyncScheduled = false;
-let authStatusPromises = new Map();
 
 async function checkAndScheduleSync() {
     if (isInitialSyncScheduled || !isLoggedIn) return;

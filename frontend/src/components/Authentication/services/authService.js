@@ -2,12 +2,19 @@
 
 import axios from 'axios';
 
-axios.defaults.baseURL = process.env.REACT_APP_AUTH_API_URL;
 axios.defaults.withCredentials = true;
+
+const authApi = axios.create({
+  baseURL: process.env.REACT_APP_AUTH_API_URL,
+});
+
+const readApi = axios.create({
+  baseURL: process.env.REACT_APP_READ_API_URL,
+});
 
 export const registerUser = async (userData) => {
   try {
-    const response = await axios.post('/register', userData);
+    const response = await authApi.post('/register', userData);
     return response.data;
   } catch (error) {
     console.error('Error registering user:', error.response || error);
@@ -17,8 +24,7 @@ export const registerUser = async (userData) => {
 
 export const loginUser = async (loginData) => {
   try {
-    const response = await axios.post('/login', loginData);
-
+    const response = await authApi.post('/login', loginData);
     return response.data;
   } catch (error) {
     console.error('Error logging in user:', error.response || error);
@@ -28,20 +34,18 @@ export const loginUser = async (loginData) => {
 
 export const logoutUser = async () => {
   try {
-    await axios.post('/logout', {}, { withCredentials: true });
-    // Clear local storage (client-side session invalidation)
+    await authApi.post('/logout', {});
     localStorage.removeItem('user');
-    return Promise.resolve(); // Resolve the promise immediately as there's no backend call
+    return Promise.resolve();
   } catch (error) {
     console.error('Error during logout:', error);
     throw error;
   }
 };
 
-// authService.js
 export const updateUserDetails = async (userId, userData) => {
   try {
-    const response = await axios.put(`/update/${userId}`, userData);
+    const response = await authApi.put(`/update/${userId}`, userData);
     return { success: true, data: response.data };
   } catch (error) {
     console.error('Error updating user:', error.response || error);
@@ -51,7 +55,7 @@ export const updateUserDetails = async (userId, userData) => {
 
 export const deleteAccount = async (userId) => {
   try {
-    const response = await axios.delete(`/delete/${userId}`);
+    const response = await authApi.delete(`/delete/${userId}`);
     return response.data;
   } catch (error) {
     console.error('Error deleting account:', error);
@@ -61,21 +65,26 @@ export const deleteAccount = async (userId) => {
 
 export const refreshTokenService = async () => {
   try {
-    const response = await axios.post('/refresh', { withCredentials: true });
+    const response = await authApi.post('/refresh', {});
     return response.data;
   } catch (error) {
     console.error('Error refreshing token:', error.response || error);
-    console.log('Detailed error response:', error.response.data);  // Log the detailed error message from server
     throw error;
   }
 };
 
 export const fetchOwnershipData = async (userId) => {
   try {
-    const response = await axios.get(`/api/ownershipData/${userId}`);
-    return response.data;
+      const response = await readApi.get(`/ownershipData/${userId}`, {
+          method: 'GET',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          credentials: 'include'  // Include credentials in the request
+      });
+      return response.data;
   } catch (error) {
-    console.error('Error fetching ownership data:', error);
-    throw error;
+      console.error('Error fetching ownership data:', error);
+      throw error;
   }
 };

@@ -6,9 +6,9 @@ import useForm from './hooks/useForm';
 import { loginUser, fetchOwnershipData } from './services/authService';
 import './Login.css';
 import { useAuth } from '../../contexts/AuthContext';
-import { usePokemonData } from '../../contexts/PokemonDataContext'; 
-import { toast, ToastContainer } from 'react-toastify'; // Import toast and ToastContainer
-import 'react-toastify/dist/ReactToastify.css'; // Import toastify CSS
+import { usePokemonData } from '../../contexts/PokemonDataContext';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function Login() {
   const { values, errors, handleChange, handleSubmit } = useForm({
@@ -16,46 +16,41 @@ function Login() {
     password: ''
   }, onSubmit, 'login');
   const [feedback, setFeedback] = useState('');
-  const [isSuccessful, setIsSuccessful] = useState(false); // State to manage if login was successful
-  const { login } = useAuth(); // Get login function from context
-  const { setOwnershipData } = usePokemonData(); 
+  const [isSuccessful, setIsSuccessful] = useState(false);
+  const { login } = useAuth();
+  const { setOwnershipData } = usePokemonData();
 
-  function onSubmit(formValues) {
-    loginUser(formValues)
-      .then(response => {
-        const { email, username, pokemonGoName, trainerCode, user_id, token, allowLocation, country, city, accessTokenExpiry, refreshTokenExpiry } = response;
-        const user = {
-          email,
-          username,
-          pokemonGoName,
-          trainerCode,
-          user_id,
-          allowLocation,
-          country,
-          city,
-          accessTokenExpiry,
-          refreshTokenExpiry
-        };
+  async function onSubmit(formValues) {
+    try {
+      const response = await loginUser(formValues);
+      const { email, username, pokemonGoName, trainerCode, user_id, token, allowLocation, country, city, accessTokenExpiry, refreshTokenExpiry } = response;
+      const user = {
+        email,
+        username,
+        pokemonGoName,
+        trainerCode,
+        user_id,
+        allowLocation,
+        country,
+        city,
+        accessTokenExpiry,
+        refreshTokenExpiry
+      };
 
-        login(user, token); // Pass user and token to login function
+      login(user, token);
 
-        // // Fetch ownership data
-        // try {
-        //   const ownershipData = await fetchOwnershipData(user.user_id);
-        //   console.log('Ownership Data:', ownershipData);
-        //   setOwnershipData(ownershipData); // Set ownershipData in the context
-        // } catch (error) {
-        //   console.error('Error fetching ownership data:', error);
-        // }
+      // Fetch ownership data
+      const ownershipData = await fetchOwnershipData(user.user_id);
+      console.log('Ownership Data:', ownershipData);
+      setOwnershipData(ownershipData);
 
-        setIsSuccessful(true);
-        setFeedback('Successfully Logged in');
-      })
-      .catch(error => {
-        const errorMessage = error.response?.data?.message || 'Please check your username and password and try again.';
-        toast.error('Login failed: ' + errorMessage); // Use toast for error
-        setIsSuccessful(false); // Ensure the success message does not display
-      });
+      setIsSuccessful(true);
+      setFeedback('Successfully Logged in');
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Please check your username and password and try again.';
+      toast.error('Login failed: ' + errorMessage);
+      setIsSuccessful(false);
+    }
   }
 
   return (
@@ -70,4 +65,3 @@ function Login() {
 }
 
 export default Login;
-
