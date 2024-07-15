@@ -341,20 +341,73 @@ export const PokemonDataProvider = ({ children }) => {
         });
     }, [data.ownershipData, updateLists]);
 
-    // Function to set ownership data and reinitialize lists
+    function mergeOwnershipData(oldData, newData) {
+        console.log(oldData)
+        const mergedData = {};
+        const oldDataProcessed = {};
+    
+        // Helper to extract the base prefix
+        const extractPrefix = (key) => {
+            const keyParts = key.split('_');
+            keyParts.pop(); // Remove the UUID part
+            return keyParts.join('_'); // Rejoin to form the actual prefix
+        };
+    
+        // First, incorporate all new data
+        Object.keys(newData).forEach(key => {
+            const prefix = extractPrefix(key);
+            mergedData[key] = newData[key];
+            oldDataProcessed[prefix] = oldDataProcessed[prefix] || [];
+            oldDataProcessed[prefix].push(key); // Track new data processed by prefix
+        });
+    
+        // Now, check old data for any unprocessed entries
+        Object.keys(oldData).forEach(oldKey => {
+            const prefix = extractPrefix(oldKey);
+            if (!oldDataProcessed[prefix]) {
+                // No new data with this prefix, add old data as is
+                mergedData[oldKey] = oldData[oldKey];
+            } else {
+                // New data exists, decide based on significance
+                const significantOld = oldData[oldKey].is_owned || oldData[oldKey].is_for_trade || oldData[oldKey].is_wanted;
+                const anySignificantNew = oldDataProcessed[prefix].some(newKey => 
+                    newData[newKey].is_owned || newData[newKey].is_for_trade || newData[newKey].is_wanted);
+    
+                if (significantOld && !anySignificantNew) {
+                    // Old data is significant and no new significant data, retain old
+                    mergedData[oldKey] = oldData[oldKey];
+                }
+                // Otherwise, new data has already been added, do nothing
+            }
+        });
+        console.log(mergedData)
+        return mergedData;
+    }
+    
+    // Function to set ownership data and reinitialize lists, ensuring data synchronization
     const setOwnershipData = (newOwnershipData) => {
+        // Update local state first
         setData(prevData => {
-            // Access variants from prevData to ensure it uses the current state
-            const updatedLists = initializePokemonLists(newOwnershipData, prevData.variants);
-
+            const updatedOwnershipData = mergeOwnershipData(prevData.ownershipData, newOwnershipData);
             return {
                 ...prevData,
-                ownershipData: newOwnershipData,
-                lists: updatedLists, // Set the updated lists
+                ownershipData: updatedOwnershipData,
             };
         });
+
+        // After state update, perform these actions
+        navigator.serviceWorker.ready.then(registration => {
+            // Send data to the service worker
+            registration.active.postMessage({
+                action: 'syncData',
+                data: { data: newOwnershipData, timestamp: Date.now() }
+            });
+
+            // After updating the cache, update lists
+            updateLists();
+            });
     };
-    
+
     // Context value includes all state and the update function
     const contextValue = useMemo(() => ({
         ...data,

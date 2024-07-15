@@ -44,7 +44,12 @@ class UserPokemonList(APIView):
             serializer = PokemonInstanceSerializer(pokemon_instances, many=True)
             
             # Transform the list of serialized data into a dictionary keyed by instance_id
-            response_data = {instance['instance_id']: instance for instance in serializer.data}
+            response_data = {}
+            for instance in serializer.data:
+                instance_id = instance.pop('instance_id')
+                instance.pop('user', None)
+                instance.pop('trace_id', None)
+                response_data[instance_id] = instance
             
             return JsonResponse(response_data, safe=False)  # safe=False is necessary to allow serialization of dicts
         except User.DoesNotExist:
