@@ -69,3 +69,13 @@ export const refreshTokenService = async () => {
     throw error;
   }
 };
+
+export const fetchOwnershipData = async (userId) => {
+  try {
+    const response = await axios.get(`/api/ownershipData/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching ownership data:', error);
+    throw error;
+  }
+};

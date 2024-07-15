@@ -1,8 +1,7 @@
 // AuthContext.js
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService } from '../components/Authentication/services/authService';
-import { refreshTokenService } from '../components/Authentication/services/authService';
+import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService, refreshTokenService, fetchOwnershipData } from '../components/Authentication/services/authService';
 import { formatTimeUntil } from '../components/Collect/utils/formattingHelpers';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -141,6 +140,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = (userData) => {
     console.log("Login response:", userData);
+
+    // Assuming you will receive ownershipData with the userData object after successful login
+    // const userWithOwnershipData = {
+    //   ...userData,
+    //   // ownershipData: fetchedOwnershipData // Uncomment this line once the endpoint is live
+    // };
+
     localStorage.setItem('user', JSON.stringify(userData));
     setIsLoggedIn(true);
     setUser(userData);

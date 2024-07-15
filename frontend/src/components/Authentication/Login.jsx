@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 import LoginForm from './FormComponents/LoginForm';
 import SuccessMessage from './SuccessMessage';
 import useForm from './hooks/useForm';
-import { loginUser } from './services/authService';
+import { loginUser, fetchOwnershipData } from './services/authService';
 import './Login.css';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePokemonData } from '../../contexts/PokemonDataContext'; 
 import { toast, ToastContainer } from 'react-toastify'; // Import toast and ToastContainer
 import 'react-toastify/dist/ReactToastify.css'; // Import toastify CSS
 
@@ -17,6 +18,7 @@ function Login() {
   const [feedback, setFeedback] = useState('');
   const [isSuccessful, setIsSuccessful] = useState(false); // State to manage if login was successful
   const { login } = useAuth(); // Get login function from context
+  const { setOwnershipData } = usePokemonData(); 
 
   function onSubmit(formValues) {
     loginUser(formValues)
@@ -36,6 +38,16 @@ function Login() {
         };
 
         login(user, token); // Pass user and token to login function
+
+        // // Fetch ownership data
+        // try {
+        //   const ownershipData = await fetchOwnershipData(user.user_id);
+        //   console.log('Ownership Data:', ownershipData);
+        //   setOwnershipData(ownershipData); // Set ownershipData in the context
+        // } catch (error) {
+        //   console.error('Error fetching ownership data:', error);
+        // }
+
         setIsSuccessful(true);
         setFeedback('Successfully Logged in');
       })

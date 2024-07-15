@@ -1,7 +1,7 @@
 // PokemonDataContext.js
 
 import React, { useContext, createContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { AuthContext } from './AuthContext';  // Adjust the import path as needed
+import { AuthContext } from './AuthContext';
 import { getPokemons } from '../components/Collect/utils/api';
 import { updatePokemonDetails } from '../components/Collect/PokemonOwnership/pokemonOwnershipManager';
 import { updatePokemonOwnership } from '../components/Collect/PokemonOwnership/PokemonOwnershipUpdateService';
@@ -341,12 +341,22 @@ export const PokemonDataProvider = ({ children }) => {
         });
     }, [data.ownershipData, updateLists]);
 
+    // New function to set ownership data
+    const setOwnershipData = (ownershipData) => {
+        setData(prevData => ({
+            ...prevData,
+            ownershipData,
+            lists: initializePokemonLists(ownershipData, prevData.variants) // Reinitialize lists
+        }));
+    };
+
     // Context value includes all state and the update function
     const contextValue = useMemo(() => ({
         ...data,
         updateOwnership,
         updateLists,
-        updateDetails
+        updateDetails,
+        setOwnershipData // Add setOwnershipData to context value
     }), [data, updateOwnership, updateDetails]);
 
     // Provider wraps children with the Pokemon data context
