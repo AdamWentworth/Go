@@ -1,6 +1,6 @@
 // PokemonDataContext.js
 
-import React, { useContext, createContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useContext, createContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { AuthContext } from './AuthContext';
 import { getPokemons } from '../components/Collect/utils/api';
 import { updatePokemonDetails } from '../components/Collect/PokemonOwnership/pokemonOwnershipManager';
@@ -27,6 +27,9 @@ export const PokemonDataProvider = ({ children }) => {
         lists: {},
         loading: true
     });
+
+    // Ref to always hold the latest ownershipData
+    const ownershipDataRef = useRef(data.ownershipData);
 
     // Effect to fetch data on component mount
     useEffect(() => {
@@ -255,22 +258,34 @@ export const PokemonDataProvider = ({ children }) => {
     // Function to update ownership status
     const updateOwnership = useCallback((pokemonKeys, newStatus) => {
         const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
-        const tempOwnershipData = { ...data.ownershipData }; // Cloning to avoid direct mutation
+        const tempOwnershipData = { ...ownershipDataRef.current };
         let processedKeys = 0;
 
         const updates = new Map();
-
+        console.log("Current Ownership Data as retrieved by updateOwnership:", ownershipDataRef.current);
         keys.forEach(key => {
+            console.log(`Processing key: ${key}`);
             updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, (fullKey) => {
                 processedKeys++;
                 if (fullKey) {
-                    updates.set(fullKey, { ...tempOwnershipData[fullKey], last_update: Date.now() });
+                    if (tempOwnershipData[fullKey]) {
+                        console.log(`Updating fullKey: ${fullKey}, Current Data:`, tempOwnershipData[fullKey]);
+                        updates.set(fullKey, { ...tempOwnershipData[fullKey], last_update: Date.now() });
+                    } else {
+                        console.warn(`Key ${fullKey} has no data in tempOwnershipData`);
+                        updates.set(fullKey, { last_update: Date.now() });
+                    }
                 }
                 if (processedKeys === keys.length) { // Only update state and SW when all keys are processed
+                    console.log(`All keys processed. Updating state and service worker.`);
                     setData(prevData => ({
                         ...prevData,
                         ownershipData: tempOwnershipData
                     }));
+
+                    // Update the ref
+                    ownershipDataRef.current = tempOwnershipData;
+
                     navigator.serviceWorker.ready.then(async registration => {
                         registration.active.postMessage({
                             action: 'syncData',
@@ -300,7 +315,7 @@ export const PokemonDataProvider = ({ children }) => {
                 }
             });
         });
-    }, [data.variants, data.ownershipData, updateLists]);
+    }, [data.variants, updateLists]); 
 
     // Function to update Instance details
     const updateDetails = useCallback((pokemonKey, details) => {
@@ -342,72 +357,94 @@ export const PokemonDataProvider = ({ children }) => {
     }, [data.ownershipData, updateLists]);
 
     function mergeOwnershipData(oldData, newData) {
-        console.log(oldData)
         const mergedData = {};
         const oldDataProcessed = {};
     
-        // Helper to extract the base prefix
         const extractPrefix = (key) => {
             const keyParts = key.split('_');
             keyParts.pop(); // Remove the UUID part
             return keyParts.join('_'); // Rejoin to form the actual prefix
         };
     
-        // First, incorporate all new data
+        console.log("Starting merge process...");
+    
         Object.keys(newData).forEach(key => {
             const prefix = extractPrefix(key);
-            mergedData[key] = newData[key];
+            // Check for exact key match in old and new data
+            if (oldData.hasOwnProperty(key)) {
+                // If matching keys, compare their last_update values
+                const newDate = new Date(newData[key].last_update);
+                const oldDate = new Date(oldData[key].last_update);
+                if (newDate > oldDate) {
+                    mergedData[key] = newData[key];
+                } else {
+                    mergedData[key] = oldData[key];
+                }
+                console.log(`Merging based on latest update for key: ${key}`);
+            } else {
+                mergedData[key] = newData[key];
+            }
             oldDataProcessed[prefix] = oldDataProcessed[prefix] || [];
-            oldDataProcessed[prefix].push(key); // Track new data processed by prefix
+            oldDataProcessed[prefix].push(key);
+            console.log(`Processed new key: ${key} with prefix: ${prefix}`);
         });
     
-        // Now, check old data for any unprocessed entries
         Object.keys(oldData).forEach(oldKey => {
             const prefix = extractPrefix(oldKey);
             if (!oldDataProcessed[prefix]) {
                 // No new data with this prefix, add old data as is
                 mergedData[oldKey] = oldData[oldKey];
             } else {
-                // New data exists, decide based on significance
                 const significantOld = oldData[oldKey].is_owned || oldData[oldKey].is_for_trade || oldData[oldKey].is_wanted;
-                const anySignificantNew = oldDataProcessed[prefix].some(newKey => 
+                const anySignificantNew = oldDataProcessed[prefix].some(newKey =>
                     newData[newKey].is_owned || newData[newKey].is_for_trade || newData[newKey].is_wanted);
     
                 if (significantOld && !anySignificantNew) {
                     // Old data is significant and no new significant data, retain old
                     mergedData[oldKey] = oldData[oldKey];
+                    console.log(`Retaining significant old data for key: ${oldKey}`);
+                } else {
+                    // New significant data found, already handled by timestamp comparison or adding new data
+                    console.log(`New significant data found or updated for prefix: ${prefix}. Not duplicating entry for key: ${oldKey}`);
                 }
-                // Otherwise, new data has already been added, do nothing
             }
         });
-        console.log(mergedData)
-        return mergedData;
-    }
     
-    // Function to set ownership data and reinitialize lists, ensuring data synchronization
+        console.log("Merge process completed.");
+        return mergedData;
+    }        
+    
+    useEffect(() => {
+        ownershipDataRef.current = data.ownershipData;
+    }, [data.ownershipData]);    
+
     const setOwnershipData = (newOwnershipData) => {
-        // Update local state first
         setData(prevData => {
             const updatedOwnershipData = mergeOwnershipData(prevData.ownershipData, newOwnershipData);
+            // Immediately update the ref to keep it in sync with state changes.
+            ownershipDataRef.current = updatedOwnershipData;
+    
+            // Update state
             return {
                 ...prevData,
                 ownershipData: updatedOwnershipData,
+                lists: initializePokemonLists(updatedOwnershipData, prevData.variants),
             };
         });
-
-        // After state update, perform these actions
+    
+        // Now post the updated data to service workers or any other side effects
         navigator.serviceWorker.ready.then(registration => {
-            // Send data to the service worker
             registration.active.postMessage({
                 action: 'syncData',
-                data: { data: newOwnershipData, timestamp: Date.now() }
+                data: { data: ownershipDataRef.current, timestamp: Date.now() }
             });
-
-            // After updating the cache, update lists
-            updateLists();
+            registration.active.postMessage({
+                action: 'syncLists',
+                data: { data: initializePokemonLists(ownershipDataRef.current, data.variants), timestamp: Date.now() }
             });
-    };
-
+        });
+    };  
+    
     // Context value includes all state and the update function
     const contextValue = useMemo(() => ({
         ...data,
