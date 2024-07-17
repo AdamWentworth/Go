@@ -395,6 +395,7 @@ export const PokemonDataProvider = ({ children }) => {
     
         console.log("Starting merge process...");
     
+        // Merge new data
         Object.keys(newData).forEach(key => {
             const prefix = extractPrefix(key);
             // Check for exact key match in old and new data
@@ -416,6 +417,7 @@ export const PokemonDataProvider = ({ children }) => {
             console.log(`Processed new key: ${key} with prefix: ${prefix}`);
         });
     
+        // Merge old data
         Object.keys(oldData).forEach(oldKey => {
             const prefix = extractPrefix(oldKey);
             if (!oldDataProcessed[prefix]) {
@@ -437,9 +439,28 @@ export const PokemonDataProvider = ({ children }) => {
             }
         });
     
+        // Ensure at most one instance per prefix has is_unowned: true
+        const finalData = {};
+        const unownedTracker = new Set();
+    
+        Object.keys(mergedData).forEach(key => {
+            const prefix = extractPrefix(key);
+    
+            if (mergedData[key].is_unowned === true) {
+                if (unownedTracker.has(prefix)) {
+                    // Set the extra unowned instances to owned: false
+                    mergedData[key].is_unowned = false;
+                } else {
+                    unownedTracker.add(prefix);
+                }
+            }
+    
+            finalData[key] = mergedData[key];
+        });
+    
         console.log("Merge process completed.");
-        return mergedData;
-    }        
+        return finalData;
+    }     
     
     useEffect(() => {
         ownershipDataRef.current = data.ownershipData;

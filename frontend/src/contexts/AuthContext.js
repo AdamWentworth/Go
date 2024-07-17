@@ -36,6 +36,14 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         setIsLoggedIn(true);
 
+        // Send login status to the service worker
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+              action: 'updateLoginStatus',
+              data: { isLoggedIn: true }
+          });
+        }
+
         if (refreshTiming > 0) {
           refreshTimeoutRef.current = setTimeout(() => {
             checkAndRefreshToken();

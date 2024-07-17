@@ -1,7 +1,6 @@
 // sw.js
 
 let isLoggedIn = false;  // Global state to track if any user is logged in
-console.log(`logged in:`, isLoggedIn);
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
@@ -57,6 +56,7 @@ self.addEventListener('fetch', (event) => {
 // Event handler for messages
 self.addEventListener('message', async (event) => {
     const { action, data } = event.data;
+    console.log(`Service Worker received message: ${action}`, data); // Add this log
     switch (action) {
         case 'syncData':
             await syncData(data);
@@ -83,6 +83,7 @@ self.addEventListener('message', async (event) => {
 let syncTimeoutId = null;
 let syncIntervalId = null;
 let isInitialSyncScheduled = false;
+let isSyncInProgress = false; // Flag to track if a sync is in progress
 
 async function checkAndScheduleSync() {
     if (isInitialSyncScheduled || !isLoggedIn) return;
@@ -153,17 +154,19 @@ async function immediateSync() {
 }
 
 async function sendBatchedUpdatesToBackend() {
-    if (!isLoggedIn) {
-        console.log("User is not logged in. Skipping backend update.");
-        clearTimers();
+    if (!isLoggedIn || isSyncInProgress) {
+        console.log("User is not logged in or sync is already in progress. Skipping backend update.");
         return;
     }
+
+    isSyncInProgress = true; // Set sync in progress flag
 
     const cache = await caches.open('pokemonCache');
     const cachedResponse = await cache.match('/batchedUpdates');
     if (!cachedResponse) {
         console.log(`No batched updates found, stopping periodic sync.`);
         clearTimers();
+        isSyncInProgress = false; // Reset sync in progress flag
         return;
     }
 
@@ -172,6 +175,7 @@ async function sendBatchedUpdatesToBackend() {
     if (Object.keys(batchedUpdates).length === 0) {
         console.log(`Batched updates are empty, stopping periodic sync.`);
         clearTimers();
+        isSyncInProgress = false; // Reset sync in progress flag
         return;
     }
 
@@ -196,6 +200,8 @@ async function sendBatchedUpdatesToBackend() {
         await cache.delete('/batchedUpdates');
     } catch (error) {
         console.error('Failed to send updates to backend:', error);
+    } finally {
+        isSyncInProgress = false; // Reset sync in progress flag
     }
 }
 
@@ -215,6 +221,7 @@ function clearTimers() {
         syncIntervalId = null;
     }
     isInitialSyncScheduled = false;
+    isSyncInProgress = false; // Reset sync in progress flag
 }
 
 // Function to schedule sync when triggered
