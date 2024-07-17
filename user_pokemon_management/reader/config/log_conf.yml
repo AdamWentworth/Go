@@ -12,24 +12,27 @@ filters:
 handlers:
   console:
     class: logging.StreamHandler
-    level: INFO  # Reduced to INFO to limit verbosity on console
-    formatter: simple  # Using simpler format for console
+    level: INFO
+    formatter: simple
     stream: ext://sys.stdout
   file:
     class: logging.FileHandler
-    level: DEBUG  # Maintaining DEBUG for file to capture all details
-    formatter: detailed  # Detailed formatting for file logs
-    filters: [add_trace_id]
+    level: DEBUG
+    formatter: detailed
     filename: 'reader/app.log'
 loggers:
-  basicLogger:
-    level: INFO  # Adjusted to INFO for general application logs
-    handlers: [console, file]
+  consoleLogger:
+    level: INFO
+    handlers: [console]
+    propagate: no
+  fileLogger:
+    level: DEBUG
+    handlers: [file]
     propagate: no
   django:
-    level: WARNING  # Capture only warnings and above from Django
+    level: WARNING
     handlers: [console, file]
     propagate: no
 root:
-  level: INFO  # Root logger capturing at INFO level
+  level: INFO
   handlers: [console, file]

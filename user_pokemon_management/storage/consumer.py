@@ -81,7 +81,10 @@ def handle_message(data, trace_logger):
         user, created = User.objects.get_or_create(user_id=user_id, defaults={'username': username})
         trace_logger.info(f"User processed: {user_id}, created: {created}")
 
-        instance_count = 0
+        created_count = 0
+        updated_count = 0
+        deleted_count = 0
+
         for instance_id, pokemon in pokemon_data.items():
             # Check if the instance should be deleted
             if (
@@ -93,7 +96,8 @@ def handle_message(data, trace_logger):
                 # Delete the instance if it exists
                 deleted, _ = PokemonInstance.objects.filter(instance_id=instance_id).delete()
                 if deleted:
-                    trace_logger.info(f"instance deleted for user {user_id}: {instance_id}")
+                    deleted_count += 1
+                    trace_logger.info(f"Instance deleted for user {user_id}: {instance_id}")
             else:
                 # Check if the instance already exists and its last_update
                 try:
@@ -141,12 +145,25 @@ def handle_message(data, trace_logger):
                     'not_wanted_list': pokemon.get('not_wanted_list', {}),
                     'trace_id': trace_logger.extra.get('trace_id')
                 }
-                PokemonInstance.objects.update_or_create(instance_id=instance_id, user=user, defaults=defaults)
-                instance_count += 1
-                # Detailed log to file
-                trace_logger.info(f"instance created/updated for user {user_id}: {instance_id}")
+                obj, created = PokemonInstance.objects.update_or_create(instance_id=instance_id, user=user, defaults=defaults)
+                if created:
+                    created_count += 1
+                else:
+                    updated_count += 1
+                trace_logger.info(f"Instance created/updated for user {user_id}: {instance_id}")
 
         # Summary log to console
-        logger.info(f"User {username} created/updated {instance_count} Instances with status 200")
+        actions = []
+        if created_count > 0:
+            actions.append(f"{created_count} created")
+        if updated_count > 0:
+            actions.append(f"{updated_count} updated")
+        if deleted_count > 0:
+            actions.append(f"{deleted_count} dropped")
+        action_summary = ", ".join(actions)
+
+        logger.info(f"User {username} {action_summary} instances with status 200")
+        file_logger.debug(f"User {username} {action_summary} instances with status 200")  # Detailed log for app.log
     except Exception as e:
         trace_logger.error(f"Failed to handle message: {e}")
+

@@ -262,22 +262,22 @@ export const PokemonDataProvider = ({ children }) => {
         let processedKeys = 0;
 
         const updates = new Map();
-        console.log("Current Ownership Data as retrieved by updateOwnership:", ownershipDataRef.current);
+        // console.log("Current Ownership Data as retrieved by updateOwnership:", ownershipDataRef.current);
         keys.forEach(key => {
-            console.log(`Processing key: ${key}`);
+            // console.log(`Processing key: ${key}`);
             updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, (fullKey) => {
                 processedKeys++;
                 if (fullKey) {
                     if (tempOwnershipData[fullKey]) {
-                        console.log(`Updating fullKey: ${fullKey}, Current Data:`, tempOwnershipData[fullKey]);
+                        // console.log(`Updating fullKey: ${fullKey}, Current Data:`, tempOwnershipData[fullKey]);
                         updates.set(fullKey, { ...tempOwnershipData[fullKey], last_update: Date.now() });
                     } else {
-                        console.warn(`Key ${fullKey} has no data in tempOwnershipData`);
+                        // console.warn(`Key ${fullKey} has no data in tempOwnershipData`);
                         updates.set(fullKey, { last_update: Date.now() });
                     }
                 }
                 if (processedKeys === keys.length) { // Only update state and SW when all keys are processed
-                    console.log(`All keys processed. Updating state and service worker.`);
+                    // console.log(`All keys processed. Updating state and service worker.`);
                     setData(prevData => ({
                         ...prevData,
                         ownershipData: tempOwnershipData
@@ -408,13 +408,13 @@ export const PokemonDataProvider = ({ children }) => {
                 } else {
                     mergedData[key] = oldData[key];
                 }
-                console.log(`Merging based on latest update for key: ${key}`);
+                // console.log(`Merging based on latest update for key: ${key}`);
             } else {
                 mergedData[key] = newData[key];
             }
             oldDataProcessed[prefix] = oldDataProcessed[prefix] || [];
             oldDataProcessed[prefix].push(key);
-            console.log(`Processed new key: ${key} with prefix: ${prefix}`);
+            // console.log(`Processed new key: ${key} with prefix: ${prefix}`);
         });
     
         // Merge old data
@@ -431,10 +431,10 @@ export const PokemonDataProvider = ({ children }) => {
                 if (significantOld && !anySignificantNew) {
                     // Old data is significant and no new significant data, retain old
                     mergedData[oldKey] = oldData[oldKey];
-                    console.log(`Retaining significant old data for key: ${oldKey}`);
+                    // console.log(`Retaining significant old data for key: ${oldKey}`);
                 } else {
                     // New significant data found, already handled by timestamp comparison or adding new data
-                    console.log(`New significant data found or updated for prefix: ${prefix}. Not duplicating entry for key: ${oldKey}`);
+                    // console.log(`New significant data found or updated for prefix: ${prefix}. Not duplicating entry for key: ${oldKey}`);
                 }
             }
         });
@@ -471,6 +471,8 @@ export const PokemonDataProvider = ({ children }) => {
             const updatedOwnershipData = mergeOwnershipData(prevData.ownershipData, newOwnershipData);
             // Immediately update the ref to keep it in sync with state changes.
             ownershipDataRef.current = updatedOwnershipData;
+
+            localStorage.setItem('pokemonOwnership', JSON.stringify({ data: updatedOwnershipData, timestamp: Date.now() }));
     
             // Update state
             return {
@@ -479,7 +481,7 @@ export const PokemonDataProvider = ({ children }) => {
                 lists: initializePokemonLists(updatedOwnershipData, prevData.variants),
             };
         });
-    
+
         // Now post the updated data to service workers or any other side effects
         navigator.serviceWorker.ready.then(registration => {
             registration.active.postMessage({

@@ -91,6 +91,9 @@ def handle_batched_updates(request):
         response['Access-Control-Allow-Credentials'] = 'true'
         return response
 
+    # Log the exact data the server is receiving
+    # logger.info(f"Received data: {request.body.decode('utf-8')}")
+    
     user_id, username = verify_access_token(request)
     if not user_id:
         logger.error("Unauthorized access attempt detected")
