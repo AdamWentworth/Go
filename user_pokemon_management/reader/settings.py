@@ -72,11 +72,11 @@ ROOT_URLCONF = 'reader.urls'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': app_config['database']['db'],
-        'USER': app_config['database']['user'],
-        'PASSWORD': app_config['database']['password'],
-        'HOST': app_config['database']['hostname'],
-        'PORT': app_config['database']['port'],
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOSTNAME'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 

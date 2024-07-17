@@ -1,10 +1,4 @@
 version: 1
-database:
-  user: 'adam'
-  password: 'REMOVED_PASSWORD'
-  hostname: 'localhost'
-  port: 3306
-  db: 'user_pokemon_management'
 
 events:
   port: "9093"
