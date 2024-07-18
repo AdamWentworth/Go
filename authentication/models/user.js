@@ -16,10 +16,10 @@ const userSchema = new mongoose.Schema({
     twitterId: { type: String, default: "" },
     nintendoId: { type: String, default: "" },
     discordId: { type: String, default: "" },
-    refreshToken: {
+    refreshToken: [{
         token: String,
         expires: Date
-    }
+    }]
 });
 
 // Apply a unique index with a correct partial filter expression

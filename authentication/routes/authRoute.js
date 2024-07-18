@@ -96,10 +96,12 @@ router.post('/login', async (req, res, next) => {
 
         const tokens = tokenService.createTokens(user);
 
-        // Update user with new refresh token details
+        // Update user with new refresh token details by adding to the array
         await User.findByIdAndUpdate(user._id, {
-            'refreshToken.token': tokens.refreshToken,
-            'refreshToken.expires': tokens.refreshTokenExpiry
+            $push: {'refreshToken': {
+                token: tokens.refreshToken,
+                expires: tokens.refreshTokenExpiry
+            }}
         });
 
         handleTokenResponse(req, res, user, tokens);
@@ -133,41 +135,48 @@ router.post('/refresh', async (req, res, next) => {
       logger.error('Refresh failed: No refresh token provided');
       return res.status(401).json({ message: 'Refresh token required' });
     }
-  
+    
     try {
-      const user = await User.findOne({
-        'refreshToken.token': refreshToken,
-        'refreshToken.expires': { $gt: new Date() }
-      }).exec();
-  
-      if (!user) {
-        logger.error('Refresh failed: Invalid or expired refresh token');
-        return res.status(401).json({ message: 'Invalid or expired refresh token' });
-      }
-  
-      const tokens = tokenService.createAccessToken(user); // Create only the access token
-      handleTokenResponse(req, res, user, tokens);
-      next();
+        const user = await User.findOne({
+            'refreshToken': { $elemMatch: { token: refreshToken, expires: { $gt: new Date() }}}
+        }).exec();
+
+        if (!user) {
+            logger.error('Refresh failed: Invalid or expired refresh token');
+            return res.status(401).json({ message: 'Invalid or expired refresh token' });
+        }
+
+        const tokenIndex = user.refreshToken.findIndex(rt => rt.token === refreshToken);
+        if (tokenIndex === -1 || user.refreshToken[tokenIndex].expires <= new Date()) {
+            logger.error('Refresh failed: Token not found or expired');
+            return res.status(401).json({ message: 'Invalid or expired refresh token' });
+        }
+
+        logger.debug(`User ${user.username} found with valid refresh token. Proceeding to create new access token.`);
+
+        const tokens = tokenService.createAccessToken(user); // Create only the access token
+        handleTokenResponse(req, res, user, tokens);
+        next();
     } catch (err) {
-      logger.error(`Refresh token error: ${err.message}`);
-      res.status(500).json({ message: 'Failed to refresh tokens', error: err.toString() });
+        logger.error(`Refresh token error: ${err.message}`);
+        res.status(500).json({ message: 'Failed to refresh tokens', error: err.toString() });
     }
-  }, setAccessTokenCookie, (req, res) => {
+}, setAccessTokenCookie, (req, res) => {
     const { user, tokens } = res.locals;
     res.status(200).json({
-      user_id: user._id.toString(),
-      username: user.username,
-      email: user.email,
-      pokemonGoName: user.pokemonGoName,
-      trainerCode: user.trainerCode,
-      allowLocation: user.allowLocation,
-      country: user.country,
-      city: user.city,
-      accessTokenExpiry: tokens.accessTokenExpiry.toISOString(),
-      refreshTokenExpiry: user.refreshToken.expires.toISOString() // Keep the original refresh token expiry
+        user_id: user._id.toString(),
+        username: user.username,
+        email: user.email,
+        pokemonGoName: user.pokemonGoName,
+        trainerCode: user.trainerCode,
+        allowLocation: user.allowLocation,
+        country: user.country,
+        city: user.city,
+        accessTokenExpiry: tokens.accessTokenExpiry.toISOString(),
+        refreshTokenExpiry: user.refreshToken[tokenIndex].expires.toISOString() // Update to reference the specific token
     });
     logger.info(`User ${user.username} refreshed token successfully with status ${200}`);
-});  
+});
 
 // Update user details
 router.put('/update/:id', async (req, res) => {
@@ -289,10 +298,10 @@ router.post('/logout', async (req, res) => {
     }
 
     try {
-        const user = await User.findOneAndUpdate({ 'refreshToken.token': refreshToken }, {
-            'refreshToken.token': null,
-            'refreshToken.expires': new Date()
-        });
+        const user = await User.findOneAndUpdate(
+            { 'refreshToken.token': refreshToken },
+            { $pull: {'refreshToken': { token: refreshToken }}}
+        );
 
         res.clearCookie('accessToken');
         res.clearCookie('refreshToken');
