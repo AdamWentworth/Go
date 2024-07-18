@@ -2,7 +2,7 @@
 
 import React, { memo } from 'react';
 import { formatPokemonName, formatCostumeName } from './utils/formattingHelpers';
-import './PokemonCard.css'
+import './PokemonCard.css';
 
 const PokemonCard = ({
     pokemon,
@@ -17,9 +17,7 @@ const PokemonCard = ({
     const imageUrl = pokemon.currentImage;
 
     const getOwnershipClass = () => {
-        // Convert the filter to lowercase to ensure proper matching
         const filter = ownershipFilter.toLowerCase();
-
         let ownershipClass = '';
         switch (filter) {
             case 'owned': ownershipClass = 'owned'; break;
@@ -30,7 +28,35 @@ const PokemonCard = ({
         return ownershipClass;
     };
 
-    // Check for image visibility
+    const generateH2Content = () => {
+        let costumeText = pokemon.currentCostumeName ? formatCostumeName(pokemon.currentCostumeName) : '';
+        let nameText;
+    
+        // Determine if the form should be included in the nameText
+        const shouldIncludeForm = pokemon.form && pokemon.form !== 'Average' && !singleFormPokedexNumbers.includes(pokemon.pokedex_number);
+    
+        // Adjusting logic for handling pokedex_number 710 and 711 with conditions for costume and form
+        if (pokemon.pokedex_number === 710 || pokemon.pokedex_number === 711) {
+            if (!pokemon.currentCostumeName && shouldIncludeForm) {
+                // Include form only if there's no costume and form is not 'Average'
+                nameText = formatPokemonName(pokemon.name, pokemon.form);
+            } else {
+                // Use name only or include costume if available
+                nameText = pokemon.name;
+            }
+        } else {
+            // Apply existing logic for other Pokédex numbers
+            nameText = shouldIncludeForm ? formatPokemonName(pokemon.name, pokemon.form) : pokemon.name;
+        }
+    
+        return (
+            <>
+                {costumeText && <span className="pokemon-costume">{costumeText} </span>}
+                <span className="pokemon-form">{nameText}</span>
+            </>
+        );
+    };    
+
     if (isShiny && showShadow && (!pokemon.image_url_shiny_shadow || pokemon.shadow_shiny_available !== 1)) {
         return null;
     }
@@ -44,8 +70,7 @@ const PokemonCard = ({
     return (
         <div className={cardClass} onClick={() => {
             if (isFastSelectEnabled) {
-                // Logic to highlight the card
-                console.log("Card highlighted:", pokemon.name); // Placeholder logic
+                console.log(`Card highlighted: ${pokemon.name}`);
             } else {
                 onSelect(); // This will call `setSelectedPokemon(pokemon)`
             }
@@ -60,20 +85,9 @@ const PokemonCard = ({
                     <img src={pokemon.type_2_icon} alt={pokemon.type2_name} loading="lazy" />
                 )}
             </div>
-            <h2>
-                {pokemon.currentCostumeName && (
-                    <span className="pokemon-costume">{formatCostumeName(pokemon.currentCostumeName)} </span>
-                )}
-                {pokemon.form && !singleFormPokedexNumbers.includes(pokemon.pokedex_number) && (
-                    <span className="pokemon-form">
-                        {formatPokemonName(pokemon.name, pokemon.form)}
-                    </span>
-                )}
-                {!pokemon.form && pokemon.name}
-            </h2>
+            <h2>{generateH2Content()}</h2>
         </div>
     );    
 };
 
 export default memo(PokemonCard);
-
