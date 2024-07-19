@@ -129,32 +129,29 @@ router.post('/login', async (req, res, next) => {
 });
 
 router.post('/refresh', async (req, res, next) => {
-    const refreshToken = req.cookies.refreshToken;  // Assuming refreshToken cookie name is refreshToken
-  
+    const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) {
-      logger.error('Refresh failed: No refresh token provided');
-      return res.status(401).json({ message: 'Refresh token required' });
+        logger.error('Refresh failed: No refresh token provided');
+        return res.status(401).json({ message: 'Refresh token required' });
     }
-    
     try {
         const user = await User.findOne({
             'refreshToken': { $elemMatch: { token: refreshToken, expires: { $gt: new Date() }}}
         }).exec();
-
         if (!user) {
             logger.error('Refresh failed: Invalid or expired refresh token');
             return res.status(401).json({ message: 'Invalid or expired refresh token' });
         }
 
-        const tokenIndex = user.refreshToken.findIndex(rt => rt.token === refreshToken);
-        if (tokenIndex === -1 || user.refreshToken[tokenIndex].expires <= new Date()) {
+        req.tokenIndex = user.refreshToken.findIndex(rt => rt.token === refreshToken);
+        if (req.tokenIndex === -1 || user.refreshToken[req.tokenIndex].expires <= new Date()) {
             logger.error('Refresh failed: Token not found or expired');
             return res.status(401).json({ message: 'Invalid or expired refresh token' });
         }
 
         logger.debug(`User ${user.username} found with valid refresh token. Proceeding to create new access token.`);
 
-        const tokens = tokenService.createAccessToken(user); // Create only the access token
+        const tokens = tokenService.createAccessToken(user);
         handleTokenResponse(req, res, user, tokens);
         next();
     } catch (err) {
@@ -173,7 +170,7 @@ router.post('/refresh', async (req, res, next) => {
         country: user.country,
         city: user.city,
         accessTokenExpiry: tokens.accessTokenExpiry.toISOString(),
-        refreshTokenExpiry: user.refreshToken[tokenIndex].expires.toISOString() // Update to reference the specific token
+        refreshTokenExpiry: user.refreshToken[req.tokenIndex].expires.toISOString() // Now using req.tokenIndex
     });
     logger.info(`User ${user.username} refreshed token successfully with status ${200}`);
 });

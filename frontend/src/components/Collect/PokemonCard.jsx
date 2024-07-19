@@ -86,8 +86,6 @@ const PokemonCard = ({
             </div>
             <h2>
                 {generateH2Content()}
-                {isShiny && <span className="pokemon-detail">Shiny </span>}
-                {showShadow && <span className="pokemon-detail">Shadow </span>}
             </h2>
         </div>
     );    
