@@ -12,7 +12,8 @@ const PokemonCard = ({
     singleFormPokedexNumbers,
     ownershipFilter,
     isFastSelectEnabled,
-    isHighlighted
+    isHighlighted,
+    showAll
 }) => {
     const imageUrl = pokemon.currentImage;
 
@@ -29,36 +30,31 @@ const PokemonCard = ({
     };
 
     const generateH2Content = () => {
-        let costumeText = pokemon.currentCostumeName ? formatCostumeName(pokemon.currentCostumeName) : '';
+        let contentParts = [];
+
+        if (pokemon.currentCostumeName) {
+            contentParts.push(formatCostumeName(pokemon.currentCostumeName));
+        }
+
         let nameText;
-    
-        // Determine if the form should be included in the nameText
-        const shouldIncludeForm = pokemon.form && pokemon.form !== 'Average' && !singleFormPokedexNumbers.includes(pokemon.pokedex_number);
-    
-        // Adjusting logic for handling pokedex_number 710, 711, and 741 with conditions for costume and form
-        if (pokemon.pokedex_number === 710 || pokemon.pokedex_number === 711) {
-            if (!pokemon.currentCostumeName && shouldIncludeForm) {
-                // Include form only if there's no costume and form is not 'Average'
-                nameText = formatPokemonName(pokemon.name, pokemon.form);
-            } else {
-                // Use name only or include costume if available
-                nameText = pokemon.name;
-            }
-        } else if (pokemon.pokedex_number === 741) {
-            // Always include the form in the nameText for pokedex_number 741
+        const shouldIncludeForm = pokemon.form && pokemon.form !== 'Average' && (!singleFormPokedexNumbers.includes(pokemon.pokedex_number) || showAll);
+
+        if (shouldIncludeForm) {
             nameText = formatPokemonName(pokemon.name, pokemon.form);
         } else {
-            // Apply existing logic for other Pokédex numbers
-            nameText = shouldIncludeForm ? formatPokemonName(pokemon.name, pokemon.form) : pokemon.name;
+            nameText = pokemon.name;
         }
-    
+
+        contentParts.push(nameText);
+
         return (
             <>
-                {costumeText && <span className="pokemon-costume">{costumeText} </span>}
-                <span className="pokemon-form">{nameText}</span>
+                {contentParts.map((part, index) => (
+                    <span key={index} className="pokemon-detail">{part} </span>
+                ))}
             </>
         );
-    };    
+    };
 
     if (isShiny && showShadow && (!pokemon.image_url_shiny_shadow || pokemon.shadow_shiny_available !== 1)) {
         return null;
@@ -88,7 +84,11 @@ const PokemonCard = ({
                     <img src={pokemon.type_2_icon} alt={pokemon.type2_name} loading="lazy" />
                 )}
             </div>
-            <h2>{generateH2Content()}</h2>
+            <h2>
+                {generateH2Content()}
+                {isShiny && <span className="pokemon-detail">Shiny </span>}
+                {showShadow && <span className="pokemon-detail">Shadow </span>}
+            </h2>
         </div>
     );    
 };

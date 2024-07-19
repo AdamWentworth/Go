@@ -21,7 +21,8 @@ function PokemonList({
     singleFormPokedexNumbers,
     ownershipFilter,
     lists,
-    ownershipData
+    ownershipData,
+    showAll
 }) {
 
     const handleSelect = (pokemon) => {
@@ -55,6 +56,7 @@ function PokemonList({
                             showShadow={showShadow}
                             singleFormPokedexNumbers={singleFormPokedexNumbers}
                             ownershipFilter={ownershipFilter}
+                            showAll={showAll}
                         />
                     ))}
                     {selectedPokemon && (
