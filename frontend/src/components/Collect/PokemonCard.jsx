@@ -35,7 +35,7 @@ const PokemonCard = ({
         // Determine if the form should be included in the nameText
         const shouldIncludeForm = pokemon.form && pokemon.form !== 'Average' && !singleFormPokedexNumbers.includes(pokemon.pokedex_number);
     
-        // Adjusting logic for handling pokedex_number 710 and 711 with conditions for costume and form
+        // Adjusting logic for handling pokedex_number 710, 711, and 741 with conditions for costume and form
         if (pokemon.pokedex_number === 710 || pokemon.pokedex_number === 711) {
             if (!pokemon.currentCostumeName && shouldIncludeForm) {
                 // Include form only if there's no costume and form is not 'Average'
@@ -44,6 +44,9 @@ const PokemonCard = ({
                 // Use name only or include costume if available
                 nameText = pokemon.name;
             }
+        } else if (pokemon.pokedex_number === 741) {
+            // Always include the form in the nameText for pokedex_number 741
+            nameText = formatPokemonName(pokemon.name, pokemon.form);
         } else {
             // Apply existing logic for other Pokédex numbers
             nameText = shouldIncludeForm ? formatPokemonName(pokemon.name, pokemon.form) : pokemon.name;
