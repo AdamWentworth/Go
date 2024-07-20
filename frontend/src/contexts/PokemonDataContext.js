@@ -262,22 +262,23 @@ export const PokemonDataProvider = ({ children }) => {
         let processedKeys = 0;
 
         const updates = new Map();
-        // console.log("Current Ownership Data as retrieved by updateOwnership:", ownershipDataRef.current);
+        console.log("Current Ownership Data as retrieved by updateOwnership:", ownershipDataRef.current);
         keys.forEach(key => {
-            // console.log(`Processing key: ${key}`);
+            console.log(`Processing key: ${key}`);
             updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, (fullKey) => {
                 processedKeys++;
+                const currentTimestamp = Date.now();
                 if (fullKey) {
                     if (tempOwnershipData[fullKey]) {
-                        // console.log(`Updating fullKey: ${fullKey}, Current Data:`, tempOwnershipData[fullKey]);
-                        updates.set(fullKey, { ...tempOwnershipData[fullKey], last_update: Date.now() });
+                        console.log(`Updating fullKey: ${fullKey}, Current Data:`, tempOwnershipData[fullKey]);
+                        updates.set(fullKey, { ...tempOwnershipData[fullKey], last_update: currentTimestamp });
                     } else {
-                        // console.warn(`Key ${fullKey} has no data in tempOwnershipData`);
-                        updates.set(fullKey, { last_update: Date.now() });
+                        console.warn(`Key ${fullKey} has no data in tempOwnershipData`);
+                        updates.set(fullKey, { last_update: currentTimestamp });
                     }
                 }
                 if (processedKeys === keys.length) { // Only update state and SW when all keys are processed
-                    // console.log(`All keys processed. Updating state and service worker.`);
+                    console.log(`All keys processed. Updating state and service worker.`);
                     setData(prevData => ({
                         ...prevData,
                         ownershipData: tempOwnershipData
@@ -292,20 +293,20 @@ export const PokemonDataProvider = ({ children }) => {
                             tempOwnershipData[key].is_owned === false &&
                             tempOwnershipData[key].is_for_trade === false &&
                             tempOwnershipData[key].is_wanted === false) {
-    
+
                             let keyParts = key.split('_');
                             keyParts.pop(); // Remove the UUID part
                             let basePrefix = keyParts.join('_'); // Rejoin to form the actual prefix
-    
+
                             let relatedInstances = Object.keys(tempOwnershipData).filter(k => {
                                 let parts = k.split('_');
                                 parts.pop(); // Remove the UUID part
                                 let currentPrefix = parts.join('_');
                                 return currentPrefix === basePrefix && k !== key;
                             });
-    
+
                             let isOnlyInstance = relatedInstances.length === 0; // Check if there are no other related instances
-    
+
                             if (!isOnlyInstance) {
                                 // If there are other instances, confirm deletion
                                 delete tempOwnershipData[key]; // Delete the instance from temp ownership data
@@ -342,7 +343,7 @@ export const PokemonDataProvider = ({ children }) => {
                 }
             });
         });
-    }, [data.variants, updateLists]); 
+    }, [data.variants, updateLists]);
 
     // Function to update Instance details
     const updateDetails = useCallback((pokemonKey, details) => {
@@ -350,7 +351,8 @@ export const PokemonDataProvider = ({ children }) => {
 
         // Assuming the update is successful, we update the context state
         const newData = { ...data.ownershipData };
-        newData[pokemonKey] = { ...newData[pokemonKey], ...details };
+        const currentTimestamp = Date.now();
+        newData[pokemonKey] = { ...newData[pokemonKey], ...details, last_update: currentTimestamp };
 
         setData(prevData => ({
             ...prevData,

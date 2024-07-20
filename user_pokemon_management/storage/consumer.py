@@ -45,16 +45,20 @@ def consume_messages():
 
     while True:
         try:
+            logger.debug("Polling for messages")
             msg = consumer.poll(timeout=5.0)
             if msg is None:
+                logger.debug("No message received in this poll cycle")
                 continue
             if msg.error():
                 if msg.error().code() == KafkaException._PARTITION_EOF:
+                    logger.debug("End of partition reached")
                     continue
                 else:
                     logger.error(f"Consumer error: {msg.error()}")
                     continue
 
+            logger.debug(f"Message received: {msg.value()}")
             data = json.loads(msg.value().decode('utf-8'))
             trace_id = data.get('trace_id', 'N/A')
             trace_logger = TraceIDLoggerAdapter(file_logger, {'trace_id': trace_id})
@@ -78,6 +82,8 @@ def handle_message(data, trace_logger):
         username = data.get('username')
         pokemon_data = data.get('pokemon', {})
 
+        trace_logger.info(f"Handling message for user_id: {user_id}, username: {username}")
+
         user, created = User.objects.get_or_create(user_id=user_id, defaults={'username': username})
         trace_logger.info(f"User processed: {user_id}, created: {created}")
 
@@ -86,6 +92,13 @@ def handle_message(data, trace_logger):
         deleted_count = 0
 
         for instance_id, pokemon in pokemon_data.items():
+            trace_logger.info(f"Processing instance {instance_id} for user {user_id} with data: {pokemon}")
+
+            # Convert empty string 'cp' to None
+            cp = pokemon.get('cp')
+            if cp == "":
+                cp = None
+
             # Check if the instance should be deleted
             if (
                 pokemon.get('is_unowned', False) and
@@ -102,17 +115,18 @@ def handle_message(data, trace_logger):
                 # Check if the instance already exists and its last_update
                 try:
                     existing_instance = PokemonInstance.objects.get(instance_id=instance_id)
+                    trace_logger.info(f"Existing instance last_update: {existing_instance.last_update}, incoming last_update: {pokemon.get('last_update', 0)}")
                     if existing_instance.last_update >= pokemon.get('last_update', 0):
                         trace_logger.info(f"Ignored older or same update for instance {instance_id}")
                         continue  # Skip update if existing record is newer or same
                 except PokemonInstance.DoesNotExist:
-                    pass  # Continue to create new instance
+                    trace_logger.info(f"Instance {instance_id} does not exist, will create a new one.")
 
                 # Update or create the instance
                 defaults = {
                     'pokemon_id': pokemon.get('pokemon_id'),
                     'nickname': pokemon.get('nickname'),
-                    'cp': pokemon.get('cp'),
+                    'cp': cp,
                     'attack_iv': pokemon.get('attack_iv'),
                     'defense_iv': pokemon.get('defense_iv'),
                     'stamina_iv': pokemon.get('stamina_iv'),
@@ -145,12 +159,16 @@ def handle_message(data, trace_logger):
                     'not_wanted_list': pokemon.get('not_wanted_list', {}),
                     'trace_id': trace_logger.extra.get('trace_id')
                 }
+
+                trace_logger.info(f"Defaults to be used for update/create: {defaults}")
+
                 obj, created = PokemonInstance.objects.update_or_create(instance_id=instance_id, user=user, defaults=defaults)
                 if created:
                     created_count += 1
+                    trace_logger.info(f"Instance created for user {user_id}: {instance_id}")
                 else:
                     updated_count += 1
-                trace_logger.info(f"Instance created/updated for user {user_id}: {instance_id}")
+                    trace_logger.info(f"Instance updated for user {user_id}: {instance_id}")
 
         # Summary log to console
         actions = []
@@ -166,4 +184,3 @@ def handle_message(data, trace_logger):
         file_logger.debug(f"User {username} {action_summary} instances with status 200")  # Detailed log for app.log
     except Exception as e:
         trace_logger.error(f"Failed to handle message: {e}")
-
