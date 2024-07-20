@@ -30,8 +30,8 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
                 // If this is a mirror instance, only show trade instances with matching baseKey
                 return extractBaseKey(key) === baseKey;
             }
-            // Otherwise, show all instances not marked as 'not_trade'
-            return !localNotTradeList[key];
+            // Otherwise, show all instances not marked as 'not_trade' and not mirror
+            return !localNotTradeList[key] && !details.mirror;
         });
 
     if (!lists || tradeListToDisplay.length === 0) {
