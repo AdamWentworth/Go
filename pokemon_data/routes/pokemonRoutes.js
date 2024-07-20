@@ -7,6 +7,7 @@ const { getEvolutionsFromDb } = require('../services/evolutionsService');
 const { getImagePathsForPokemon } = require('../utils/imagePaths');
 const { getCostumesForPokemon, formatCostumes } = require('../services/costumeService');
 const { getMovesForPokemon, formatMoves } = require('../services/movesService');
+const { formatFusionData } = require('../services/fusionService');
 
 const db = new sqlite3.Database('./data/pokego.db');
 
@@ -47,6 +48,8 @@ router.get('/pokemon/pokemons', (req, res) => {
 
                     const pokemonsWithAllData = formatMoves(pokemonsWithCostumes, allMoves, pokemonMoves);
 
+                    const pokemonsWithFusionData = formatFusionData(pokemonsWithAllData);
+
                     // Get evolutions and add them to the response
                     getEvolutionsFromDb((err, evolutionMap) => {
                         if (err) {
@@ -55,7 +58,7 @@ router.get('/pokemon/pokemons', (req, res) => {
                             return;
                         }
 
-                        const pokemonsWithEvolutions = pokemonsWithAllData.map(pokemon => {
+                        const pokemonsWithEvolutions = pokemonsWithFusionData.map(pokemon => {
                             const evolutionData = evolutionMap[pokemon.pokemon_id];
                             if (evolutionData) {
                                 return {

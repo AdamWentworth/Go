@@ -1,7 +1,7 @@
 import sqlite3
 
 # Connect to the SQLite database
-conn = sqlite3.connect('./data/pokego.db')
+conn = sqlite3.connect('../pokego.db')
 
 # Create a cursor object
 cur = conn.cursor()
