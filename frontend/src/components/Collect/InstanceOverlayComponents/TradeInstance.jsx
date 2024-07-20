@@ -21,7 +21,7 @@ import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
 
 const TradeInstance = ({ pokemon }) => {
-  // console.log("Initial Pokemon Data: ", pokemon);
+  console.log("Initial Pokemon Data: ", pokemon);
 
   const { updateDetails } = useContext(PokemonDataContext);
   const [editMode, setEditMode] = useState(false);

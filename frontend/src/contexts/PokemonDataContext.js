@@ -264,13 +264,11 @@ export const PokemonDataProvider = ({ children }) => {
         const updates = new Map();
         console.log("Current Ownership Data as retrieved by updateOwnership:", ownershipDataRef.current);
         keys.forEach(key => {
-            console.log(`Processing key: ${key}`);
             updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, (fullKey) => {
                 processedKeys++;
                 const currentTimestamp = Date.now();
                 if (fullKey) {
                     if (tempOwnershipData[fullKey]) {
-                        console.log(`Updating fullKey: ${fullKey}, Current Data:`, tempOwnershipData[fullKey]);
                         updates.set(fullKey, { ...tempOwnershipData[fullKey], last_update: currentTimestamp });
                     } else {
                         console.warn(`Key ${fullKey} has no data in tempOwnershipData`);

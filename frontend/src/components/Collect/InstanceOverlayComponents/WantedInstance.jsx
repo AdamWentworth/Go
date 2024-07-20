@@ -21,7 +21,7 @@ import MovesComponent from './OwnedComponents/MovesComponent';
 import FriendshipManager from './WantedComponents/FriendshipManager';
 
 const WantedInstance = ({ pokemon }) => {
-  // console.log("Initial Pokemon Data: ", pokemon);
+  console.log("Initial Pokemon Data: ", pokemon);
 
   const { updateDetails } = useContext(PokemonDataContext);
   const [editMode, setEditMode] = useState(false);

@@ -43,7 +43,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
         if (editMode) {
             Object.keys(pendingUpdates).forEach(key => {
                 if (localNotWantedList[key] !== not_wanted_list[key]) { // Only update if changed
-                    updateNotTradeList(ownershipData, pokemon.pokemonKey, key, localNotWantedList[key]);
+                    updateNotTradeList(ownershipData, pokemon.pokemonKey, key, localNotWantedList[key], isMirror);
                 }
             });
             setPendingUpdates({});
