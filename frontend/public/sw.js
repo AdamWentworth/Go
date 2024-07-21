@@ -18,6 +18,11 @@ self.addEventListener('fetch', (event) => {
         return; // Do not intercept this request
     }
 
+    // Bypass the service worker for requests to the photon API
+    if (url.origin === 'https://photon.komoot.io') {
+        return;
+    }
+
     // Handle requests to Google Fonts
     if (url.origin === 'https://fonts.gstatic.com') {
         event.respondWith(

@@ -3,18 +3,18 @@
     background-color: #e2ead5;
 }
 
-.navbar h1, .evo-line-checkbox, .overlay-content {
+.navbar h1, .evo-line-checkbox, .overlay-content, .iv-input, .iv-value {
     color:black
 }
 
 .evo-line-custom-checkbox, .add-move-button {
     border: 2px solid black
 }
-.pokemon-container {
+.pokemon-container, .move-select, .move-select option  {
     background-color: #f8fff9;
 }
 
-.pokemon-card h2, p, .add-move-button, .favorite-component {
+.pokemon-card h2, p, .add-move-button, .favorite-component, .move-select, .move-select option {
     color: black
 }
 

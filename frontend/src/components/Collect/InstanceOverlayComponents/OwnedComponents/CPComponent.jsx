@@ -1,6 +1,5 @@
 // CPComponent.jsx
 
-// CPComponent.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import './CPComponent.css';
 
@@ -46,7 +45,7 @@ const CPComponent = ({ pokemon, editMode, toggleEditMode, onCPChange }) => {
   };
 
   const handleBlur = () => {
-    onCPChange(cp.trim());  // Ensure to trim and update on blur
+    onCPChange(String(cp).trim());  // Ensure to trim and update on blur
   };
 
   const handleContainerClick = () => {

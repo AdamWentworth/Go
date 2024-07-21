@@ -45,6 +45,7 @@
 
 .pokemon-card h2 {
     margin-top: 17.5px;
+    margin-bottom: 0px;
     font-size: calc((100vw - (8 * 16px)) / 100 * 1.2);
 }
 

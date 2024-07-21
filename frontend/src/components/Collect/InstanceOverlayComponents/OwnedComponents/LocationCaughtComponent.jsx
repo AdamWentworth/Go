@@ -21,7 +21,9 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
 
   const fetchSuggestions = async (userInput) => {
     try {
-      const response = await axios.get(`https://photon.komoot.io/api/?q=${encodeURIComponent(userInput)}`);
+      const response = await axios.get(`https://photon.komoot.io/api/?q=${encodeURIComponent(userInput)}`, {
+        withCredentials: false // Ensure credentials are not included in the request
+      });
       const formattedSuggestions = response.data.features.slice(0, 4).map(feature => {
         const { name, state, country } = feature.properties;
         let displayName = `${name}`;
@@ -34,6 +36,7 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
       });
       setSuggestions(formattedSuggestions);
     } catch (error) {
+      console.error('Error fetching suggestions:', error);
       setSuggestions([]);
     }
   };
