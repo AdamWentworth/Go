@@ -1,0 +1,15 @@
+.wanted-details-container .trade-list-container.large-list {
+    grid-template-columns: repeat(5, 1fr); /* 5 items per row if the list is large */
+}
+
+.wanted-details-container .trade-list-container.xlarge-list {
+    grid-template-columns: repeat(6, 1fr); /* 6 items per row if the list exceeds 15 */
+}
+
+.wanted-details-container .trade-list-container.xxlarge-list {
+    grid-template-columns: repeat(9, 1fr); /* 9 items per row if the list exceeds 30 */
+}
+
+.trade-list-container .trade-item {
+    filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2)); /* Adds a more prominent shadow to the non-transparent parts */
+}

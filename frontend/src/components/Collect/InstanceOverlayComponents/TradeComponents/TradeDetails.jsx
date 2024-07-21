@@ -109,17 +109,21 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
     return (
         <div className="trade-details-container">
             <div className="top-row">
-                <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
-                <MirrorManager
-                    pokemon={pokemon}
-                    ownershipData={ownershipData}
-                    isMirror={isMirror}
-                    setIsMirror={setIsMirror}
-                    setMirrorKey={setMirrorKey}
-                    editMode={editMode}
-                    updateDisplayedList={updateDisplayedList}
-                    updateDetails={updateDetails}
-                />
+                <div className="edit-save-container">
+                    <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+                </div>
+                <div className="mirror">
+                    <MirrorManager
+                        pokemon={pokemon}
+                        ownershipData={ownershipData}
+                        isMirror={isMirror}
+                        setIsMirror={setIsMirror}
+                        setMirrorKey={setMirrorKey}
+                        editMode={editMode}
+                        updateDisplayedList={updateDisplayedList}
+                        updateDetails={updateDetails}
+                    />
+                </div>
             </div>
             <div>
                 <h2>Wanted List:</h2>

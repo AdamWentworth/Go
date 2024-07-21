@@ -1,9 +1,9 @@
 // WantedListDisplay.jsx
 
 import React from 'react';
-import './WantedListDisplay.css'
+import './WantedListDisplay.css';
 
-const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode, ownershipData, toggleReciprocalUpdates}) => {
+const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode, ownershipData, toggleReciprocalUpdates }) => {
     const displayedWantedList = Object.keys(lists.wanted)
         .filter(key => (editMode || !localNotWantedList[key]) && (!isMirror || (isMirror && key === mirrorKey)))
         .reduce((obj, key) => {
@@ -14,13 +14,26 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
     const handleNotWantedToggle = (key) => {
         if (editMode) {
             const updatedNotWanted = !(localNotWantedList[key] || false);
-            setLocalNotWantedList({...localNotWantedList, [key]: updatedNotWanted});
+            setLocalNotWantedList({ ...localNotWantedList, [key]: updatedNotWanted });
             toggleReciprocalUpdates(key, updatedNotWanted);
         }
     };
-    
+
+    // Determine the container class based on the length of the displayed wanted list
+    const wantedListLength = Object.keys(displayedWantedList).length;
+    let containerClass = '';
+    if (wantedListLength === 1 && isMirror) {
+        containerClass = 'single-item-list';
+    } else if (wantedListLength > 30) {
+        containerClass = 'xxlarge-list';
+    } else if (wantedListLength > 15) {
+        containerClass = 'xlarge-list';
+    } else if (wantedListLength > 9) {
+        containerClass = 'large-list';
+    }
+
     return (
-        <div className="wanted-list-container">
+        <div className={`wanted-list-container ${containerClass}`}>
             {Object.entries(displayedWantedList).map(([key, details]) => {
                 const isNotWanted = localNotWantedList[key];
                 const imageClasses = `wanted-item-img ${isNotWanted ? 'grey-out' : ''}`;

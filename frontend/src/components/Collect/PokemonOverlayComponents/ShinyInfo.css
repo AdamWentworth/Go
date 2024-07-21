@@ -2,4 +2,5 @@
 
     max-width: 240px;
     margin-top: -15px;
+    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3)); /* Adds a more prominent shadow to the non-transparent parts */
     }

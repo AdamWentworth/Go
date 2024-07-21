@@ -8,6 +8,7 @@
     font-size: calc((100vw - (8 * 16px)) / 100);
     box-sizing: border-box;
     position: relative;
+    margin-bottom: 10px;
 }
 
 /* Adjust the backlight pseudo-element to create a centered glow */
@@ -21,7 +22,7 @@
     height: 140%; /* Extend the size to allow a centered glow */
     transform: translate(-50%, -50%) scale(0.5); /* Center the element and scale down */
     border-radius: 50%; /* Circular effect */
-    z-index: 0; /* Behind the image */
+    z-index: 1; /* Behind the image and lucky backdrop */
     background: radial-gradient(circle, rgba(255,255,255,0.4) 20%, transparent 70%); /* Create a centered glowing effect */
     transition: opacity 0.3s ease; /* Smooth transition for opacity */
     opacity: 0; /* Default to no glow */
@@ -43,6 +44,11 @@
     opacity: 1; /* Show the glow */
 }
 
+/* Add shadow drop to Pokémon images in light mode */
+.pokemon-image-container img {
+    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3)); /* Adds a more prominent shadow to the non-transparent parts */
+}
+
 .pokemon-card h2 {
     margin-top: 17.5px;
     margin-bottom: 0px;
@@ -51,11 +57,19 @@
 
 .pokemon-card p {
     font-size: 12px;
+    margin-top: -10px; 
     margin-bottom: 5px;
 }
 
 .cp-placeholder {
     height: 20px; /* Adjust height as necessary */
+    margin-top: -10px;
+    position: relative; /* Ensure proper positioning */
+}
+
+/* Default mode specific styles */
+.lucky-backdrop {
+    filter: brightness(0.85); /* Set default brightness for non-light mode */
 }
 
 .cp-display {
@@ -63,10 +77,12 @@
     display: flex;
     justify-content: center;
     align-items: baseline;
+    margin-top: -10px;
 }
 
 p.cp-display {
     margin-bottom: 0px;
+    font-weight: bold;
 }
 
 .cp-text {
@@ -78,7 +94,7 @@ p.cp-display {
     max-width: 100%;
     height: auto;
     position: relative; /* Ensure the image is above the pseudo-element */
-    z-index: 1;
+    z-index: 4; /* Ensure the image is above the lucky backdrop */
 }
 
 .pokemon-card h2, p {

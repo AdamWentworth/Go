@@ -91,17 +91,16 @@ const PokemonCard = ({
                             width: '150px', // Double the original width of 91px
                             height: '100px', // Double the original height of 63px
                             transform: 'translate(-50%, -50%)',
-                            zIndex: 1, // Ensure the backdrop is behind the image
-                            filter: 'brightness(0.85)' // Adjust brightness to 85%
+                            zIndex: 2, // Ensure the backdrop is behind the image
                         }}
                     />
                 )}
-                <div className="cp-placeholder">
+                <div className="cp-placeholder" style={{ zIndex: 3 }}>
                     {['owned', 'trade'].includes(ownershipFilter.toLowerCase()) && pokemon.ownershipStatus.cp && pokemon.ownershipStatus.cp !== '' && (
                         <p className="cp-display"><span className="cp-text">CP</span>{pokemon.ownershipStatus.cp}</p>
                     )}
                 </div>
-                <img src={imageUrl} alt={pokemon.name} loading="lazy" style={{ zIndex: 2 }} />
+                <img src={imageUrl} alt={pokemon.name} loading="lazy" style={{ zIndex: 4 }} />
             </div>
             <p>#{pokemon.pokedex_number}</p>
             <div className="type-icons">

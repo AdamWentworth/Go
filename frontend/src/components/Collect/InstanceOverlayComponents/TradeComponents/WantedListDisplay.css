@@ -18,9 +18,26 @@
 .wanted-item .wanted-item-img {
     position: relative;
     z-index: 2; /* Ensure the image is in front of the backdrop */
+    filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2)); /* Adds a more prominent shadow to the non-transparent parts */
 }
 
 .wanted-item .toggle-not-wanted {
     position: absolute;
     z-index: 3; /* Ensure the button is in front of both the image and the backdrop */
+}
+
+.wanted-list-container.large-list {
+    grid-template-columns: repeat(5, 1fr); /* 5 items per row if the list is large */
+}
+
+.wanted-list-container.xlarge-list {
+    grid-template-columns: repeat(6, 1fr); /* 6 items per row if the list exceeds 15 */
+}
+
+.wanted-list-container.xxlarge-list {
+    grid-template-columns: repeat(9, 1fr); /* 9 items per row if the list exceeds 30 */
+}
+
+.wanted-list-container.single-item-list {
+    grid-template-columns: repeat(1, 1fr); /* 1 item per row if the list has only one item due to mirror being true */
 }

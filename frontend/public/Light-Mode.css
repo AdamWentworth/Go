@@ -10,7 +10,7 @@
 .evo-line-custom-checkbox, .add-move-button {
     border: 2px solid black
 }
-.pokemon-container, .move-select, .move-select option  {
+.pokemon-container, .move-select, .move-select option, .App  {
     background-color: #f8fff9;
 }
 
@@ -18,9 +18,9 @@
     color: black
 }
 
-.pokemon-card h2 {
+/* .pokemon-card h2 {
     font-weight: normal
-}
+} */
 
 .favorite-component img {
     filter: invert(1); /* Apply a black overlay effect */
@@ -28,4 +28,9 @@
 
 .edit-save-container .icon-button img {
     filter: none
+}
+
+/* Light mode specific styles */
+.lucky-backdrop {
+    filter: brightness(1.0); /* Set higher brightness for light mode */
 }

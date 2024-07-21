@@ -16,6 +16,7 @@
     width: 80px; /* Adjust as needed */
     height: 80px; /* Adjust as needed, keeping aspect ratio in mind */
     object-fit: cover; /* Optional, for maintaining aspect ratio */
+    filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2)); /* Adds a more prominent shadow to the non-transparent parts */
 }
 
 

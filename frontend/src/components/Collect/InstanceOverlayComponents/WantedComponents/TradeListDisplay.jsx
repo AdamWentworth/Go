@@ -1,6 +1,7 @@
 // TradeListDisplay.jsx
 
 import React from 'react';
+import './TradeListDisplay.css'
 
 const extractBaseKey = (pokemonKey) => {
     let keyParts = String(pokemonKey).split('_');
