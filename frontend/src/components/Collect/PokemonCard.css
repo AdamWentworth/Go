@@ -1,9 +1,9 @@
+/* PokemonCard.css */
+
 .pokemon-card {
     text-align: center;
-    /* border: 1px solid #ddd; */
     padding: 8px;
     border-radius: 8px;
-    /* background-color: #333; */
     color: white;
     font-size: calc((100vw - (8 * 16px)) / 100);
     box-sizing: border-box;
@@ -51,6 +51,26 @@
 .pokemon-card p {
     font-size: 12px;
     margin-bottom: 5px;
+}
+
+.cp-placeholder {
+    height: 20px; /* Adjust height as necessary */
+}
+
+.cp-display {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+}
+
+p.cp-display {
+    margin-bottom: 0px;
+}
+
+.cp-text {
+    font-size: 60%; /* Set font size to 60% of the parent */
+    vertical-align: baseline;
 }
 
 .pokemon-card img {

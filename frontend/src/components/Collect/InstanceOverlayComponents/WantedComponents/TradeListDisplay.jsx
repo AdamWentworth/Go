@@ -21,25 +21,28 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
     // Extract the baseKey of the current Pokémon
     const baseKey = extractBaseKey(pokemon.pokemonKey);
 
-    // Check if the current wanted instance is a mirror
-    const isMirror = pokemon.ownershipStatus.mirror;
-
     const tradeListToDisplay = Object.entries(lists.trade)
         .filter(([key, details]) => {
-            if (isMirror) {
-                // If this is a mirror instance, only show trade instances with matching baseKey
-                return extractBaseKey(key) === baseKey;
-            }
-            // Otherwise, show all instances not marked as 'not_trade' and not mirror
-            return !localNotTradeList[key] && !details.mirror;
+            const itemBaseKey = extractBaseKey(key);
+            // Include all non-mirror items and only mirror items with the same baseKey
+            return !localNotTradeList[key] && (!details.mirror || (details.mirror && itemBaseKey === baseKey));
         });
 
     if (!lists || tradeListToDisplay.length === 0) {
         return <div>No Pokémon currently for trade.</div>;
     }
 
+    let containerClass = '';
+    if (tradeListToDisplay.length > 30) {
+        containerClass = 'xxlarge-list';
+    } else if (tradeListToDisplay.length > 15) {
+        containerClass = 'xlarge-list';
+    } else if (tradeListToDisplay.length > 9) {
+        containerClass = 'large-list';
+    }
+
     return (
-        <div className="trade-list-container">
+        <div className={`trade-list-container ${containerClass}`}>
             {tradeListToDisplay.map(([key, details]) => (
                 <div key={key} className="trade-item">
                     <img 

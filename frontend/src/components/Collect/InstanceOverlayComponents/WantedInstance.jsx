@@ -83,8 +83,8 @@ const WantedInstance = ({ pokemon }) => {
               position: 'absolute',
               top: '50%',
               left: '50%',
-              width: '209px', // Double the original width of 91px
-              height: '145px', // Double the original height of 63px
+              width: '175px', // Double the original width of 91px
+              height: '125px', // Double the original height of 63px
               transform: 'translate(-50%, -50%)',
               zIndex: 1 // Ensure the backdrop is behind the image
             }}

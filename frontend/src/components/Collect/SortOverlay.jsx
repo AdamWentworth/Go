@@ -37,7 +37,7 @@ const SortOverlay = ({ sortType, setSortType, sortMode, setSortMode }) => {
     };
 
     const handleSortTypeChange = (newSortType) => {
-        if (newSortType === 'favorite' || newSortType === 'combatPower') {
+        if (newSortType === 'favorite') {
             // Handle unimplemented sort types with an error message
             setErrorMessage(`Sorting by ${sortTypeDisplayNames[newSortType]} is not implemented yet.`);
             setTimeout(() => setErrorMessage(''), 3000); // Clear message after 3 seconds

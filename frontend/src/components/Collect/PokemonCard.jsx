@@ -17,8 +17,6 @@ const PokemonCard = ({
 }) => {
     const imageUrl = pokemon.currentImage;
 
-    // console.log(pokemon);
-
     const getOwnershipClass = () => {
         const filter = ownershipFilter.toLowerCase();
         let ownershipClass = '';
@@ -68,6 +66,10 @@ const PokemonCard = ({
 
     const cardClass = `pokemon-card ${getOwnershipClass()} ${isHighlighted ? 'highlighted' : ''}`;
 
+    const shouldDisplayLuckyBackdrop = 
+        (ownershipFilter.toLowerCase() === 'wanted' && pokemon.ownershipStatus.pref_lucky) ||
+        (ownershipFilter.toLowerCase() === 'owned' && pokemon.ownershipStatus.lucky);
+
     return (
         <div className={cardClass} onClick={() => {
             if (isFastSelectEnabled) {
@@ -77,7 +79,7 @@ const PokemonCard = ({
             }
         }}>
             <div className="pokemon-image-container" style={{ position: 'relative' }}>
-                {ownershipFilter.toLowerCase() === 'wanted' && pokemon.ownershipStatus.pref_lucky && (
+                {shouldDisplayLuckyBackdrop && (
                     <img
                         src={`${process.env.PUBLIC_URL}/images/lucky.png`}
                         alt="Lucky backdrop"
@@ -86,13 +88,19 @@ const PokemonCard = ({
                             position: 'absolute',
                             top: '50%',
                             left: '50%',
-                            width: '182px', // Double the original width of 91px
-                            height: '126px', // Double the original height of 63px
+                            width: '150px', // Double the original width of 91px
+                            height: '100px', // Double the original height of 63px
                             transform: 'translate(-50%, -50%)',
-                            zIndex: 1 // Ensure the backdrop is behind the image
+                            zIndex: 1, // Ensure the backdrop is behind the image
+                            filter: 'brightness(0.85)' // Adjust brightness to 85%
                         }}
                     />
                 )}
+                <div className="cp-placeholder">
+                    {['owned', 'trade'].includes(ownershipFilter.toLowerCase()) && pokemon.ownershipStatus.cp && pokemon.ownershipStatus.cp !== '' && (
+                        <p className="cp-display"><span className="cp-text">CP</span>{pokemon.ownershipStatus.cp}</p>
+                    )}
+                </div>
                 <img src={imageUrl} alt={pokemon.name} loading="lazy" style={{ zIndex: 2 }} />
             </div>
             <p>#{pokemon.pokedex_number}</p>

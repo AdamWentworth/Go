@@ -31,9 +31,21 @@
     gap: 10px;
     margin-top: 10px;
     overflow-y: auto; /* Enables scrolling */
-    max-height: 400px; /* Adjust based on your layout */
+    max-height: 650px; /* Adjust based on your layout */
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.wanted-details-container .trade-list-container.large-list {
+    grid-template-columns: repeat(5, 1fr); /* 5 items per row if the list is large */
+}
+
+.wanted-details-container .trade-list-container.xlarge-list {
+    grid-template-columns: repeat(6, 1fr); /* 6 items per row if the list exceeds 15 */
+}
+
+.wanted-details-container .trade-list-container.xxlarge-list {
+    grid-template-columns: repeat(9, 1fr); /* 9 items per row if the list exceeds 30 */
 }
 
 .wanted-details-container .trade-list-container::-webkit-scrollbar {
