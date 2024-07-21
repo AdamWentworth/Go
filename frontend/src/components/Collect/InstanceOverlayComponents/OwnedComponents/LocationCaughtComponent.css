@@ -2,7 +2,6 @@
 .location-container {
     display: flex;
     flex-direction: column;
-    color: white;
     margin-top: 10px;
     position: relative;
     width: 100%;

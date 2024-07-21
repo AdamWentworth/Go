@@ -3,7 +3,6 @@
   position: relative; /* Relative position for absolute child positioning */
   display: flex;
   flex-direction: column;
-  color: white;
   margin-top: 5px;
 }
 

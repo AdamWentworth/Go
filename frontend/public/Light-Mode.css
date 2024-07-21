@@ -1,0 +1,31 @@
+/* Light-Mode.css */
+.navbar, .header, .overlay-content {
+    background-color: #e2ead5;
+}
+
+.navbar h1, .evo-line-checkbox, .overlay-content {
+    color:black
+}
+
+.evo-line-custom-checkbox, .add-move-button {
+    border: 2px solid black
+}
+.pokemon-container {
+    background-color: #f8fff9;
+}
+
+.pokemon-card h2, p, .add-move-button, .favorite-component {
+    color: black
+}
+
+.pokemon-card h2 {
+    font-weight: normal
+}
+
+.favorite-component img {
+    filter: invert(1); /* Apply a black overlay effect */
+}
+
+.edit-save-container .icon-button img {
+    filter: none
+}

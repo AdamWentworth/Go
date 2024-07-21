@@ -1,4 +1,4 @@
-//pokemonCard.jsx
+// PokemonCard.jsx
 
 import React, { memo } from 'react';
 import { formatPokemonName, formatCostumeName } from './utils/formattingHelpers';
@@ -16,6 +16,8 @@ const PokemonCard = ({
     showAll
 }) => {
     const imageUrl = pokemon.currentImage;
+
+    // console.log(pokemon);
 
     const getOwnershipClass = () => {
         const filter = ownershipFilter.toLowerCase();
@@ -74,7 +76,25 @@ const PokemonCard = ({
                 onSelect(); // This will call `setSelectedPokemon(pokemon)`
             }
         }}>
-            <img src={imageUrl} alt={pokemon.name} loading="lazy" />
+            <div className="pokemon-image-container" style={{ position: 'relative' }}>
+                {ownershipFilter.toLowerCase() === 'wanted' && pokemon.ownershipStatus.pref_lucky && (
+                    <img
+                        src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                        alt="Lucky backdrop"
+                        className="lucky-backdrop"
+                        style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            width: '182px', // Double the original width of 91px
+                            height: '126px', // Double the original height of 63px
+                            transform: 'translate(-50%, -50%)',
+                            zIndex: 1 // Ensure the backdrop is behind the image
+                        }}
+                    />
+                )}
+                <img src={imageUrl} alt={pokemon.name} loading="lazy" style={{ zIndex: 2 }} />
+            </div>
             <p>#{pokemon.pokedex_number}</p>
             <div className="type-icons">
                 {pokemon.type_1_icon && (
@@ -88,7 +108,7 @@ const PokemonCard = ({
                 {generateH2Content()}
             </h2>
         </div>
-    );    
+    );
 };
 
 export default memo(PokemonCard);

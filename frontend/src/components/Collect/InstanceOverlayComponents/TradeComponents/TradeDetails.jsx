@@ -39,7 +39,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
         }, {});
     };
 
-     const toggleEditMode = () => {
+    const toggleEditMode = () => {
         if (editMode) {
             Object.keys(pendingUpdates).forEach(key => {
                 if (localNotWantedList[key] !== not_wanted_list[key]) { // Only update if changed
@@ -51,10 +51,25 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
                 not_wanted_list: localNotWantedList,
                 mirror: isMirror
             });
+
             if (isMirror && mirrorKey === 'placeholder') {
                 const newMirrorKey = createNewMirrorEntry(pokemon);
                 setMirrorKey(newMirrorKey);
                 updateDisplayedList({ [newMirrorKey]: ownershipData[newMirrorKey] });
+            } else if (!isMirror && mirrorKey) {
+                // Remove the mirror entry if the mirror is set to false
+                delete ownershipData[mirrorKey];
+                delete lists.wanted[mirrorKey];
+                updateDisplayedList(null); // Update the displayed list to remove the mirror entry
+                setMirrorKey(null);
+            }
+        } else {
+            // When toggling edit mode off, if mirror is being disabled, update the original trade instance as well
+            if (!isMirror && pokemon.ownershipStatus.mirror) {
+                updateDetails(pokemon.pokemonKey, {
+                    ...pokemon.ownershipStatus,
+                    mirror: false
+                });
             }
         }
         setEditMode(!editMode);
@@ -81,6 +96,13 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
         ownershipData[newKey] = newData;
         lists.wanted[newKey] = newData;
         updateDetails(newKey, newData);
+
+        // Update the original trade instance to set its mirror value to true
+        updateDetails(pokemon.pokemonKey, {
+            ...pokemon.ownershipStatus,
+            mirror: true
+        });
+
         return newKey;
     };
 

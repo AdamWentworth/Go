@@ -14,8 +14,6 @@
   }
   
 .costume-column {
-    background-color: #333;
-    color: white;
     border-radius: 10px;
     width: auto; /* This will make the column only as wide as its content */
     max-height: 80vh;
