@@ -8,6 +8,7 @@ const { getImagePathsForPokemon } = require('../utils/imagePaths');
 const { getCostumesForPokemon, formatCostumes } = require('../services/costumeService');
 const { getMovesForPokemon, formatMoves } = require('../services/movesService');
 const { formatFusionData } = require('../services/fusionService');
+const { getBackgroundsForPokemon } = require('../services/backgroundService'); // Import the background service
 
 const db = new sqlite3.Database('./data/pokego.db');
 
@@ -50,28 +51,47 @@ router.get('/pokemon/pokemons', (req, res) => {
 
                     const pokemonsWithFusionData = formatFusionData(pokemonsWithAllData);
 
-                    // Get evolutions and add them to the response
-                    getEvolutionsFromDb((err, evolutionMap) => {
+                    getBackgroundsForPokemon((err, backgroundMap) => {
                         if (err) {
-                            logger.error(`Error fetching evolution data: ${err.message}`);
+                            logger.error(`Error fetching backgrounds for pokemons: ${err.message}`);
                             res.status(500).json({ error: err.message });
                             return;
                         }
 
-                        const pokemonsWithEvolutions = pokemonsWithFusionData.map(pokemon => {
-                            const evolutionData = evolutionMap[pokemon.pokemon_id];
-                            if (evolutionData) {
-                                return {
-                                    ...pokemon,
-                                    evolves_from: evolutionData.evolves_from,
-                                    evolves_to: evolutionData.evolves_to,
-                                };
-                            }
-                            return pokemon;
+                        const pokemonsWithBackgrounds = pokemonsWithFusionData.map(pokemon => {
+                            const backgrounds = backgroundMap[pokemon.pokemon_id] || [];
+                            return {
+                                ...pokemon,
+                                backgrounds: backgrounds.map(background => ({
+                                    ...background,
+                                    costume_id: background.costume_id || null // Ensure costume_id is included
+                                }))
+                            };
                         });
 
-                        res.json(pokemonsWithEvolutions);
-                        logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
+                        // Get evolutions and add them to the response
+                        getEvolutionsFromDb((err, evolutionMap) => {
+                            if (err) {
+                                logger.error(`Error fetching evolution data: ${err.message}`);
+                                res.status(500).json({ error: err.message });
+                                return;
+                            }
+
+                            const pokemonsWithEvolutions = pokemonsWithBackgrounds.map(pokemon => {
+                                const evolutionData = evolutionMap[pokemon.pokemon_id];
+                                if (evolutionData) {
+                                    return {
+                                        ...pokemon,
+                                        evolves_from: evolutionData.evolves_from,
+                                        evolves_to: evolutionData.evolves_to,
+                                    };
+                                }
+                                return pokemon;
+                            });
+
+                            res.json(pokemonsWithEvolutions);
+                            logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
+                        });
                     });
                 });
             });
