@@ -46,7 +46,7 @@
 
 /* Add shadow drop to Pokémon images in light mode */
 .pokemon-image-container img {
-    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3)); /* Adds a more prominent shadow to the non-transparent parts */
+    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3)) !important; /* Adds a more prominent shadow to the non-transparent parts */
 }
 
 .pokemon-card h2 {

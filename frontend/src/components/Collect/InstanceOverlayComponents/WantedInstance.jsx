@@ -59,6 +59,7 @@ const WantedInstance = ({ pokemon }) => {
 
   return (
     <div>
+      <h2>Wanted</h2>
       <div className="top-row">
         <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
         <div className="spacer"></div>

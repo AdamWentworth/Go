@@ -100,7 +100,12 @@ const PokemonCard = ({
                         <p className="cp-display"><span className="cp-text">CP</span>{pokemon.ownershipStatus.cp}</p>
                     )}
                 </div>
-                <img src={imageUrl} alt={pokemon.name} loading="lazy" style={{ zIndex: 4 }} />
+                <img 
+                    src={imageUrl} 
+                    alt={pokemon.name} 
+                    loading="lazy" 
+                    style={{ zIndex: 4, filter: ownershipFilter.toLowerCase() === 'unowned' ? 'brightness(0)' : 'none' }} 
+                />
             </div>
             <p>#{pokemon.pokedex_number}</p>
             <div className="type-icons">

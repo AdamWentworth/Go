@@ -19,7 +19,8 @@ def consume_messages():
     conf = {
         'bootstrap.servers': f"{kafka_config['hostname']}:{kafka_config['port']}",
         'group.id': 'event_group',
-        'auto.offset.reset': 'earliest'
+        'auto.offset.reset': 'earliest',
+        'enable.auto.commit': False  # Disable auto commit
     }
 
     consumer = None
@@ -43,38 +44,42 @@ def consume_messages():
         logger.error("Failed to start Kafka consumer after multiple attempts")
         return
 
-    while True:
-        try:
-            logger.debug("Polling for messages")
-            msg = consumer.poll(timeout=5.0)
-            if msg is None:
-                logger.debug("No message received in this poll cycle")
-                continue
-            if msg.error():
-                if msg.error().code() == KafkaException._PARTITION_EOF:
-                    logger.debug("End of partition reached")
+    try:
+        while True:
+            try:
+                logger.debug("Polling for messages")
+                msg = consumer.poll(timeout=5.0)
+                if msg is None:
+                    logger.debug("No message received in this poll cycle")
                     continue
-                else:
-                    logger.error(f"Consumer error: {msg.error()}")
-                    continue
+                if msg.error():
+                    if msg.error().code() == KafkaException._PARTITION_EOF:
+                        logger.debug("End of partition reached")
+                        continue
+                    else:
+                        logger.error(f"Consumer error: {msg.error()}")
+                        continue
 
-            logger.debug(f"Message received: {msg.value()}")
-            data = json.loads(msg.value().decode('utf-8'))
-            trace_id = data.get('trace_id', 'N/A')
-            trace_logger = TraceIDLoggerAdapter(file_logger, {'trace_id': trace_id})
-            trace_logger.info(f"Consumed message for user {data.get('user_id', 'unknown')}")
-            handle_message(data, trace_logger)
-            consumer.commit()
-        except KafkaException as ke:
-            logger.error(f"Kafka error: {ke}")
-            retry_attempt += 1
-            time.sleep(backoff_time)
-            backoff_time = min(backoff_time * 2, 60)  # Cap the backoff time at 60 seconds
-        except Exception as e:
-            logger.error(f"Error in consuming messages: {e}")
-            retry_attempt += 1
-            time.sleep(backoff_time)
-            backoff_time = min(backoff_time * 2, 60)  # Cap the backoff time at 60 seconds
+                logger.debug(f"Message received: {msg.value()}")
+                data = json.loads(msg.value().decode('utf-8'))
+                trace_id = data.get('trace_id', 'N/A')
+                trace_logger = TraceIDLoggerAdapter(file_logger, {'trace_id': trace_id})
+                trace_logger.info(f"Consumed message for user {data.get('user_id', 'unknown')}")
+                handle_message(data, trace_logger)
+                consumer.commit()  # Commit only after successful processing
+            except KafkaException as ke:
+                logger.error(f"Kafka error: {ke}")
+                retry_attempt += 1
+                time.sleep(backoff_time)
+                backoff_time = min(backoff_time * 2, 60)  # Cap the backoff time at 60 seconds
+            except Exception as e:
+                logger.error(f"Error in consuming messages: {e}")
+                retry_attempt += 1
+                time.sleep(backoff_time)
+                backoff_time = min(backoff_time * 2, 60)  # Cap the backoff time at 60 seconds
+    finally:
+        consumer.close()
+        logger.info("Kafka consumer closed")
 
 def handle_message(data, trace_logger):
     try:
