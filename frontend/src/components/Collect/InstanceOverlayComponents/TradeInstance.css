@@ -41,7 +41,7 @@
     z-index: 0; /* Ensure it's slightly behind the main image but above any other content */
   }
   
-  .pokemon-image {
+  .trade-instance .pokemon-image {
     position: relative;
     max-width: 100%;
     z-index: 1; /* Ensure it's above the backdrop */

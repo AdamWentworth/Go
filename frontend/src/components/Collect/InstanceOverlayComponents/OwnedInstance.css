@@ -1,4 +1,5 @@
 /* OwnedInstance.css */
+
 .owned-instance {
   display: flex;
   flex-direction: column;
@@ -6,26 +7,78 @@
 }
 
 .top-row {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr; /* 1fr for the spacer, auto for CPComponent, 1fr for the right stack */
-    align-items: center;
-    width: 100%;
-  }
-  
-  .cp-component {
-    /* Ensures CPComponent is not stretched and takes the space it requires */
-    justify-self: center; /* Centering CPComponent horizontally in its grid area */
-  }
-  
-  .right-stack {
-    display: flex;
-    flex-direction: column;
-    justify-content: center; /* Center the stack vertically if there's extra space */
-    align-items: flex-end; /* Aligns the children (FavoriteComponent and FriendshipComponent) to the right */
-  }
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* 1fr for the spacer, auto for CPComponent, 1fr for FavoriteComponent */
+  align-items: center;
+  width: 100%;
+}
 
-.pokemon-image-container {
+.cp-component {
+  justify-self: center; /* Centering CPComponent horizontally in its grid area */
+}
+
+.background-select-row {
+  position: relative; /* To position the background-select-row within this container */
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.background-icon {
+  position: absolute;
+  top: 10px; /* Adjust this value to move it down a bit */
+  right: -8px; /* Adjust this value to move it a tiny bit to the right */
+  z-index: 10; /* Ensure it is above other elements */
+}
+
+.background-select-row.active .background-icon {
+  cursor: pointer;
+}
+
+.image-container {
   position: relative;
+  width: 240px; /* Set the width as needed */
+  height: 240px; /* Set the height as needed */
+}
+
+.background-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Ensure the gradient stays within the container */
+  z-index: 1; /* Ensure it is behind the Pokemon image */
+}
+
+.background-image {
+  width: 100%;
+  height: 100%;
+  background-size: cover; /* Ensure the background image covers the container */
+  background-position: center; /* Center the background image */
+  background-repeat: no-repeat; /* Prevent the background image from repeating */
+  -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0.3) 70%, transparent 100%);
+  mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 45%, rgba(0, 0, 0, 0.3) 65%, transparent 70%);
+}
+
+.brightness-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 70%);
+  z-index: 2; /* Ensure it is above the background image but below the Pokemon image */
+}
+
+.owned-instance .pokemon-image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3; /* Ensure it is above the background */
 }
 
 .lucky-placeholder {
@@ -38,13 +91,12 @@
   left: 15%;
   width: 180px;
   height: auto;
-  z-index: 0; /* Ensure it's slightly behind the main image but above any other content */
+  z-index: 4; /* Ensure it's above the background but below the Pokémon image */
 }
 
-.pokemon-image {
-  position: relative;
+.owned-instance .pokemon-image {
   max-width: 100%;
-  z-index: 1; /* Ensure it's above the backdrop */
+  z-index: 5; /* Ensure it's above the backdrop */
 }
 
 .gender-lucky-row {
@@ -57,7 +109,6 @@
 .gender-component, .lucky-component {
   flex: 1; /* Adjust flex settings to manage width and spacing */
 }
-
 
 .stats-container {
   display: flex;

@@ -90,7 +90,7 @@ const TradeInstance = ({ pokemon }) => {
   };
 
   return (
-    <div>
+    <div className="trade-instance">
       <h2>For Trade</h2>
       <div className="top-row">
         <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />

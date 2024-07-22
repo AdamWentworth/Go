@@ -1,31 +1,26 @@
 // OwnedInstance.jsx
-import React, { useState, useContext } from 'react';
+
+import React, { useState, useContext, useEffect } from 'react';
 import './OwnedInstance.css';
-
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext'; 
-
 import EditSaveComponent from './EditSaveComponent';
 import CPComponent from './OwnedComponents/CPComponent';
 import FavoriteComponent from './OwnedComponents/FavoriteComponent';
-
 import NameComponent from './OwnedComponents/NameComponent';
-
 import LuckyComponent from './OwnedComponents/LuckyComponent';
 import GenderComponent from './OwnedComponents/GenderComponent';
-
 import WeightComponent from './OwnedComponents/WeightComponent';
 import TypeComponent from './OwnedComponents/TypeComponent';
 import HeightComponent from './OwnedComponents/HeightComponent';
-
 import MovesComponent from './OwnedComponents/MovesComponent';
 import IVComponent from './OwnedComponents/IVComponent';
-
 import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
+import BackgroundComponent from './OwnedComponents/BackgroundComponent';
 
 const OwnedInstance = ({ pokemon }) => {
-  console.log("Initial Pokemon Data: ", pokemon);
 
+  console.log(pokemon)
   const { updateDetails } = useContext(PokemonDataContext);
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
   const [editMode, setEditMode] = useState(false);
@@ -47,6 +42,18 @@ const OwnedInstance = ({ pokemon }) => {
   });
   const [locationCaught, setLocationCaught] = useState(pokemon.ownershipStatus.location_caught);
   const [dateCaught, setDateCaught] = useState(pokemon.ownershipStatus.date_caught);
+  const [showBackgrounds, setShowBackgrounds] = useState(false);
+  const [selectedBackground, setSelectedBackground] = useState(null);
+
+  useEffect(() => {
+    if (pokemon.ownershipStatus.location_card !== null) {
+      const locationCardId = parseInt(pokemon.ownershipStatus.location_card, 10); // Ensure it's a number
+      const background = pokemon.backgrounds.find(bg => bg.background_id === locationCardId);
+      if (background) {
+        setSelectedBackground(background);
+      }
+    }
+  }, [pokemon.backgrounds, pokemon.ownershipStatus.location_card]);
 
   const handleCPChange = (newCP) => {
     setCP(newCP);  // Update CP state
@@ -94,7 +101,6 @@ const OwnedInstance = ({ pokemon }) => {
 
   const toggleEditMode = () => {
     if (editMode) {
-      console.log("Saving changes...");
       updateDetails(pokemon.pokemonKey, { 
         nickname: nickname, 
         lucky: isLucky, 
@@ -110,24 +116,56 @@ const OwnedInstance = ({ pokemon }) => {
         defense_iv: ivs.Defense,
         stamina_iv: ivs.Stamina,
         location_caught: locationCaught,
-        date_caught: dateCaught
+        date_caught: dateCaught,
+        location_card: selectedBackground ? selectedBackground.background_id : null
       });
     }
     setEditMode(!editMode);
   };
+
+  const handleBackgroundSelect = (background) => {
+    setSelectedBackground(background);
+    setShowBackgrounds(false); // Close the background selection overlay
+  };
+
+  const selectableBackgrounds = pokemon.backgrounds.filter((background) => {
+    if (!background.costume_id) {
+      return true;
+    }
+    const variantTypeId = pokemon.variantType.split('_')[1];
+    return background.costume_id === parseInt(variantTypeId, 10);
+  });
 
   return (
     <div>
       <div className="top-row">
         <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
         <CPComponent pokemon={pokemon} editMode={editMode} toggleEditMode={toggleEditMode} onCPChange={handleCPChange} />
-        <div className="right-stack">
-          <FavoriteComponent pokemon={pokemon} editMode={editMode} onFavoriteChange={handleFavoriteChange} />
-        </div>
+        <FavoriteComponent pokemon={pokemon} editMode={editMode} onFavoriteChange={handleFavoriteChange} />
       </div>
-      <div className="pokemon-image-container">
-        {isLucky && <img src={process.env.PUBLIC_URL + '/images/lucky.png'} alt="Lucky Backdrop" className="lucky-backdrop" />}
-        <img src={process.env.PUBLIC_URL + pokemon.currentImage} alt={pokemon.name} className="pokemon-image" />
+      {selectableBackgrounds.length > 0 && (
+        <div className={`background-select-row ${editMode ? 'active' : ''}`}>
+          <img
+            src={process.env.PUBLIC_URL + '/images/location.png'}
+            alt="Background Selector"
+            className="background-icon"
+            onClick={editMode ? () => setShowBackgrounds(!showBackgrounds) : null}
+          />
+        </div>
+      )}
+      <div className="owned-instance">
+        <div className="image-container">
+          {selectedBackground && (
+            <div className="background-container">
+              <div className="background-image" style={{ backgroundImage: `url(${selectedBackground.image_url})` }}></div>
+              <div className="brightness-overlay"></div>
+            </div>
+          )}
+          <div className="pokemon-image-container">
+            {isLucky && <img src={process.env.PUBLIC_URL + '/images/lucky.png'} alt="Lucky Backdrop" className="lucky-backdrop" />}
+            <img src={process.env.PUBLIC_URL + pokemon.currentImage} alt={pokemon.name} className="pokemon-image" />
+          </div>
+        </div>
       </div>
       <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
       <div className="gender-lucky-row">
@@ -146,9 +184,17 @@ const OwnedInstance = ({ pokemon }) => {
       </div>
       <IVComponent pokemon={pokemon} editMode={editMode} onIvChange={handleIvChange} />
       <LocationCaughtComponent pokemon={pokemon} editMode={editMode} onLocationChange={handleLocationCaughtChange} />
-      <DateCaughtComponent pokemon={pokemon} editMode={editMode} onDateChange={handleDateCaughtChange} />      
+      <DateCaughtComponent pokemon={pokemon} editMode={editMode} onDateChange={handleDateCaughtChange} />
+      {showBackgrounds && (
+        <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
+          <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-button" onClick={() => setShowBackgrounds(false)}>Close</button>
+            <BackgroundComponent pokemon={pokemon} onSelectBackground={handleBackgroundSelect} />
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default OwnedInstance;
