@@ -49,13 +49,13 @@
     left: 15%;
     width: 180px;
     height: auto;
-    z-index: 0; /* Ensure it's slightly behind the main image but above any other content */
+    z-index: 1; /* Ensure it's slightly behind the main image but above any other content */
 }
   
 .pokemon-image {
     position: relative;
     max-width: 100%;
-    z-index: 1; /* Ensure it's above the backdrop */
+    z-index: 2; /* Ensure it's above the backdrop */
 }
   
 .gender-component {

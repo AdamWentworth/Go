@@ -13,7 +13,7 @@ import MovesComponent from './OwnedComponents/MovesComponent';
 import FriendshipManager from './WantedComponents/FriendshipManager';
 
 const WantedInstance = ({ pokemon }) => {
-  console.log("Initial Pokemon Data: ", pokemon);
+  // console.log("Initial Pokemon Data: ", pokemon);
 
   const { updateDetails } = useContext(PokemonDataContext);
   const [editMode, setEditMode] = useState(false);
@@ -84,14 +84,22 @@ const WantedInstance = ({ pokemon }) => {
               position: 'absolute',
               top: '50%',
               left: '50%',
-              width: '175px', // Double the original width of 91px
-              height: '125px', // Double the original height of 63px
+              width: '175px',
+              height: '125px',
               transform: 'translate(-50%, -50%)',
-              zIndex: 1 // Ensure the backdrop is behind the image
+              zIndex: 1
             }}
           />
         )}
-        <img src={process.env.PUBLIC_URL + pokemon.currentImage} alt={pokemon.name} className="pokemon-image" style={{ zIndex: 2 }} />
+        <img 
+          src={process.env.PUBLIC_URL + pokemon.currentImage} 
+          alt={pokemon.name} 
+          className="pokemon-image" 
+          style={{ 
+            position: 'relative',
+            zIndex: 2 
+          }} 
+        />
       </div>
       <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
       <div className="gender-container">

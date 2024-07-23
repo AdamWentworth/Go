@@ -124,3 +124,4 @@ const PokemonCard = ({
 };
 
 export default memo(PokemonCard);
+
