@@ -5,6 +5,7 @@ import logging
 from confluent_kafka import Consumer, KafkaException
 from django.conf import settings
 from .models import User, PokemonInstance
+from django.db import connections
 
 logger = logging.getLogger('basicLogger')
 file_logger = logging.getLogger('fileLogger')
@@ -83,6 +84,10 @@ def consume_messages():
 
 def handle_message(data, trace_logger):
     try:
+        # Validate database connection
+        for conn in connections.all():
+            conn.ensure_connection()
+
         user_id = data.get('user_id')
         username = data.get('username')
         pokemon_data = data.get('pokemon', {})
@@ -99,35 +104,30 @@ def handle_message(data, trace_logger):
         for instance_id, pokemon in pokemon_data.items():
             trace_logger.info(f"Processing instance {instance_id} for user {user_id} with data: {pokemon}")
 
-            # Convert empty string 'cp' to None
             cp = pokemon.get('cp')
             if cp == "":
                 cp = None
 
-            # Check if the instance should be deleted
             if (
                 pokemon.get('is_unowned', False) and
                 not pokemon.get('is_owned', False) and
                 not pokemon.get('is_wanted', False) and
                 not pokemon.get('is_for_trade', False)
             ):
-                # Delete the instance if it exists
                 deleted, _ = PokemonInstance.objects.filter(instance_id=instance_id).delete()
                 if deleted:
                     deleted_count += 1
                     trace_logger.info(f"Instance deleted for user {user_id}: {instance_id}")
             else:
-                # Check if the instance already exists and its last_update
                 try:
                     existing_instance = PokemonInstance.objects.get(instance_id=instance_id)
                     trace_logger.info(f"Existing instance last_update: {existing_instance.last_update}, incoming last_update: {pokemon.get('last_update', 0)}")
                     if existing_instance.last_update >= pokemon.get('last_update', 0):
                         trace_logger.info(f"Ignored older or same update for instance {instance_id}")
-                        continue  # Skip update if existing record is newer or same
+                        continue
                 except PokemonInstance.DoesNotExist:
                     trace_logger.info(f"Instance {instance_id} does not exist, will create a new one.")
 
-                # Update or create the instance
                 defaults = {
                     'pokemon_id': pokemon.get('pokemon_id'),
                     'nickname': pokemon.get('nickname'),
@@ -175,7 +175,6 @@ def handle_message(data, trace_logger):
                     updated_count += 1
                     trace_logger.info(f"Instance updated for user {user_id}: {instance_id}")
 
-        # Summary log to console
         actions = []
         if created_count > 0:
             actions.append(f"{created_count} created")
@@ -186,6 +185,6 @@ def handle_message(data, trace_logger):
         action_summary = ", ".join(actions)
 
         logger.info(f"User {username} {action_summary} instances with status 200")
-        file_logger.debug(f"User {username} {action_summary} instances with status 200")  # Detailed log for app.log
+        file_logger.debug(f"User {username} {action_summary} instances with status 200")
     except Exception as e:
         trace_logger.error(f"Failed to handle message: {e}")

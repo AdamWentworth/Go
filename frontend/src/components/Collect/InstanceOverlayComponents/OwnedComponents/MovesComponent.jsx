@@ -32,10 +32,13 @@ const MovesComponent = ({ pokemon, editMode, onMovesChange }) => {
   };
 
   const addSecondChargedMove = () => {
-    const firstAvailableMove = chargedMoves.find(move => move.move_id !== chargedMove1); // Find the first different move
-    const newChargedMove2 = firstAvailableMove.move_id;
-    setChargedMove2(newChargedMove2);
-    onMovesChange({ fastMove, chargedMove1, chargedMove2: newChargedMove2 });
+    // Find the first different move that is not already set as the first charged move
+    const firstAvailableMove = chargedMoves.find(move => move.move_id !== chargedMove1);
+    if (firstAvailableMove) { // Check if there is a move available to add
+        const newChargedMove2 = firstAvailableMove.move_id;
+        setChargedMove2(newChargedMove2);
+        onMovesChange({ fastMove, chargedMove1, chargedMove2: newChargedMove2 });
+    } // If no available move is found, do nothing (ignoring the click)
   };
 
   const renderMoveOptions = (moves, selectedMove, moveType) => {
