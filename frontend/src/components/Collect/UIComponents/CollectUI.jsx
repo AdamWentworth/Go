@@ -10,7 +10,7 @@ const preloadImage = (url) => {
 
 const CollectUI = ({
   statusFilter, setStatusFilter, onFastSelectToggle,
-  onSelectAll, highlightedCards, confirmMoveToFilter, showAll, toggleShowAll
+  onSelectAll, highlightedCards, confirmMoveToFilter, showAll, toggleShowAll, isShiny, showCostume, showShadow
 }) => {
   const filters = ['Owned', 'Trade', 'Unowned', 'Wanted'];
   const [selectedFilter, setSelectedFilter] = useState("");
@@ -36,13 +36,13 @@ const CollectUI = ({
       const newFilter = statusFilter === filter ? "" : filter; // Toggle filter on or off
       setStatusFilter(newFilter); // Update the filter state
 
-      // Update `showAll` state based on the filter toggling
-      if (newFilter === "") {
+      // Update `showAll` state based on the filter toggling logic
+      if (statusFilter === "" && !showAll && newFilter !== "" && !isShiny && !showCostume && !showShadow) {
+        // If no filter is active and `showAll` is false, set `showAll` to true when a new filter is selected
+        toggleShowAll(true);
+      } else if (newFilter === "" && !isShiny && !showCostume && !showShadow) {
         // If no filter is active, set `showAll` to false
         toggleShowAll(false);
-      } else if (!showAll && statusFilter !== filter) {
-        // If a new filter is being activated and `showAll` is currently false, set it to true
-        toggleShowAll(true);
       }
     }
   setSelectAllEnabled(false);

@@ -102,29 +102,21 @@ function Collect() {
     const toggleShowAll = useCallback(() => {
         setShowAll(prevShowAll => !prevShowAll);
 
-        if (!showAll) {
-            setIsShiny(false);
-            setShowCostume(false);
-            setShowShadow(false);
-        }
     }, [showAll]);
     
     // Toggle Shiny State
     const toggleShiny = useCallback(() => {
         setIsShiny(prevState => !prevState);
-        setShowAll(false);
     }, []);
     
     // Toggle Costume State
     const toggleCostume = useCallback(() => {
         setShowCostume(prevState => !prevState);
-        setShowAll(false);
     }, []);
 
     // Toggle Shadow State
     const toggleShadow = useCallback(() => {
         setShowShadow(prevState => !prevState);
-        setShowAll(false);
     }, []);
 
     // Handler to toggle fast select mode from CollectUI

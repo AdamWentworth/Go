@@ -53,6 +53,9 @@ const HeaderUI = ({
               confirmMoveToFilter={confirmMoveToFilter}
               showAll={showAll}
               toggleShowAll={toggleShowAll}
+              isShiny={isShiny}
+              showCostume={showCostume}
+              showShadow={showShadow}
           />
       )}
       <button className="toggle-button collect-ui-toggle" onClick={toggleCollectUI}>

@@ -8,6 +8,7 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
     event.waitUntil(self.clients.claim());
+    event.waitUntil(loadStateFromCache()); // Load state when activated
 });
 
 self.addEventListener('fetch', (event) => {
@@ -75,6 +76,7 @@ self.addEventListener('message', async (event) => {
         case 'updateLoginStatus':
             isLoggedIn = data.isLoggedIn;  // Update the global logged-in state
             console.log(`Login status updated: ${isLoggedIn}`);
+            await saveStateToCache(); // Save state to cache when login status changes
             if (!isLoggedIn) {
                 clearTimers();
             } else {
@@ -89,6 +91,33 @@ let syncTimeoutId = null;
 let syncIntervalId = null;
 let isInitialSyncScheduled = false;
 let isSyncInProgress = false; // Flag to track if a sync is in progress
+
+async function loadStateFromCache() {
+    const cache = await caches.open('stateCache');
+    const response = await cache.match('state');
+    if (response) {
+        const state = await response.json();
+        isLoggedIn = state.isLoggedIn;
+        isInitialSyncScheduled = state.isInitialSyncScheduled;
+        console.log('Loaded state from cache:', state);
+        if (isLoggedIn) {
+            scheduleInitialSync();
+        }
+    }
+}
+
+async function saveStateToCache() {
+    const state = {
+        isLoggedIn,
+        isInitialSyncScheduled,
+    };
+    const cache = await caches.open('stateCache');
+    const response = new Response(JSON.stringify(state), {
+        headers: { 'Content-Type': 'application/json' }
+    });
+    await cache.put('state', response);
+    console.log('Saved state to cache:', state);
+}
 
 async function checkAndScheduleSync() {
     if (isInitialSyncScheduled || !isLoggedIn) return;
@@ -144,6 +173,7 @@ function scheduleInitialSync() {
     isInitialSyncScheduled = true;
     console.log(`[${new Date().toLocaleTimeString()}] Starting immediate sync followed by 1-minute interval`);
     immediateSync().then(schedulePeriodicSync); // Perform immediate sync and then schedule periodic sync
+    saveStateToCache(); // Save state to cache after scheduling initial sync
 }
 
 function schedulePeriodicSync() {
@@ -227,6 +257,7 @@ function clearTimers() {
     }
     isInitialSyncScheduled = false;
     isSyncInProgress = false; // Reset sync in progress flag
+    saveStateToCache(); // Save state to cache when clearing timers
 }
 
 // Function to schedule sync when triggered
