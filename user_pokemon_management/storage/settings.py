@@ -18,6 +18,13 @@ with open(log_conf_file, 'r') as f:
     logging.config.dictConfig(log_config)
 logger = logging.getLogger('basicLogger')
 
+# Additional logger configuration for backup process
+log_config['loggers']['backupLogger'] = {
+    'handlers': ['file'],
+    'level': 'INFO',
+    'propagate': False,
+}
+
 # Load app configuration
 app_conf_file = BASE_DIR / "config/app_conf.yml"
 with open(app_conf_file, 'r') as f:

@@ -30,6 +30,10 @@ loggers:
     level: DEBUG
     handlers: [file]
     propagate: no
+  backupLogger:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: no
 root:
   level: DEBUG
   handlers: [console, file]

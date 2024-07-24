@@ -9,6 +9,7 @@ receiver/app.log
 storage/__pycache__
 storage/.env.development
 storage/app.log
+storage/my.cnf
 
 reader/__pycache__
 reader/.env.development
