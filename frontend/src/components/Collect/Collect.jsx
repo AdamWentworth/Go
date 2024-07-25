@@ -213,6 +213,7 @@ function Collect() {
                 lists={lists}
                 ownershipData={ownershipData}
                 showAll={showAll}
+                sortType={sortType}
             />
             <SortOverlayMemo
                 sortType={sortType}

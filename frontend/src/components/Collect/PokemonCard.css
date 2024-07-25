@@ -62,7 +62,7 @@
 }
 
 .cp-placeholder {
-    height: 20px; /* Adjust height as necessary */
+    height: 15px; /* Adjust height as necessary */
     margin-top: -10px;
     position: relative; /* Ensure proper positioning */
 }
@@ -95,6 +95,7 @@ p.cp-display {
     height: auto;
     position: relative; /* Ensure the image is above the pseudo-element */
     z-index: 4; /* Ensure the image is above the lucky backdrop */
+    margin-bottom: 5px;
 }
 
 .pokemon-card h2, p {

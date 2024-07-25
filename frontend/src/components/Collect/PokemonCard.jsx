@@ -13,7 +13,8 @@ const PokemonCard = ({
     ownershipFilter,
     isFastSelectEnabled,
     isHighlighted,
-    showAll
+    showAll,
+    sortType
 }) => {
     const imageUrl = pokemon.currentImage;
 
@@ -67,15 +68,15 @@ const PokemonCard = ({
     const cardClass = `pokemon-card ${getOwnershipClass()} ${isHighlighted ? 'highlighted' : ''}`;
 
     const shouldDisplayLuckyBackdrop = 
-        (ownershipFilter.toLowerCase() === 'wanted' && pokemon.ownershipStatus.pref_lucky) ||
-        (ownershipFilter.toLowerCase() === 'owned' && pokemon.ownershipStatus.lucky);
+        (ownershipFilter.toLowerCase() === 'wanted' && pokemon.ownershipStatus && pokemon.ownershipStatus.pref_lucky) ||
+        (ownershipFilter.toLowerCase() === 'owned' && pokemon.ownershipStatus && pokemon.ownershipStatus.lucky);
 
     return (
         <div className={cardClass} onClick={() => {
             if (isFastSelectEnabled) {
                 console.log(`Card highlighted: ${pokemon.name}`);
             } else {
-                onSelect(); // This will call `setSelectedPokemon(pokemon)`
+                onSelect(); // This will call setSelectedPokemon(pokemon)
             }
         }}>
             <div className="pokemon-image-container" style={{ position: 'relative' }}>
@@ -96,8 +97,8 @@ const PokemonCard = ({
                     />
                 )}
                 <div className="cp-placeholder" style={{ zIndex: 3 }}>
-                    {['owned', 'trade'].includes(ownershipFilter.toLowerCase()) && pokemon.ownershipStatus.cp && pokemon.ownershipStatus.cp !== '' && (
-                        <p className="cp-display"><span className="cp-text">CP</span>{pokemon.ownershipStatus.cp}</p>
+                    {sortType === 'combatPower' && (pokemon.ownershipStatus ? pokemon.ownershipStatus.cp : pokemon.cp50) && (
+                        <p className="cp-display"><span className="cp-text">CP</span>{pokemon.ownershipStatus ? pokemon.ownershipStatus.cp : pokemon.cp50}</p>
                     )}
                 </div>
                 <img 
@@ -124,4 +125,3 @@ const PokemonCard = ({
 };
 
 export default memo(PokemonCard);
-

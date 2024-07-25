@@ -1,3 +1,5 @@
+/* MainInfo.css */
+
 .type-section img {
     padding: 5px;
     margin-top: -15px;
@@ -6,13 +8,44 @@
     height: 24px;
 }
 
-.main-info-column img {
+.pokemon-image {
     margin-top: -30px;
     margin-bottom: -15px;
     max-width: 240px;
-    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3)); /* Adds a more prominent shadow to the non-transparent parts */
+    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
 }
 
 .type-section img {
-    filter: none
+    filter: none;
+}
+
+.stat-gauge {
+    margin-top: 5px; /* Reduced gap between name and stats */
+    margin-bottom: 5px;
+}
+
+.stat-text { /* Modify class for the stat text styling */
+    margin-bottom: 3px; /* Small space after text before gauge */
+    font-weight: bold; /* Ensure the stat names are bold */
+}
+
+.gauge-container {
+    background-color: #ddd; /* Light grey background for unfilled gauge */
+    width: 75%; /* Reducing width to 75% of its container */
+    height: 18px; /* Reducing height by 10% */
+    border-radius: 10px; /* More rounded corners */
+    margin: 0 auto; /* Center the gauge within its container */
+}
+
+.gauge {
+    height: 100%;
+    border-radius: 10px; /* Ensure rounded corners on the filled part too */
+}
+
+.cp {
+    margin-top: 20px;
+}
+
+.cp + .cp {
+    margin-top: 10px;
 }

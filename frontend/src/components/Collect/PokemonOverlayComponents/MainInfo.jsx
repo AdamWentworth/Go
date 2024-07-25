@@ -9,13 +9,17 @@ function MainInfo({ pokemon }) {
     return name.substring(name.lastIndexOf(' ') + 1);
   };
 
-  // Apply the getBaseName function to pokemon.name
+  // Function to calculate the width percentage of the stat gauge
+  const calculateWidth = (stat, maxStat) => {
+    return `${(stat / maxStat) * 100}%`;
+  };
+
   const baseName = getBaseName(pokemon.name);
 
   return (
     <div className="column main-info-column">
       <h1>Main Info</h1>
-      <img src={pokemon.image_url} alt={baseName} /> {/* Adjust alt text to use baseName */}
+      <img src={pokemon.image_url} alt={baseName} className="pokemon-image" />
       <p>#{pokemon.pokedex_number}</p>
       <div className="type-section">
         <img src={pokemon.type_1_icon} alt={pokemon.type1_name} />
@@ -23,20 +27,35 @@ function MainInfo({ pokemon }) {
           <img src={pokemon.type_2_icon} alt={pokemon.type2_name} />
         )}
       </div>
-      <h2>{baseName}</h2> {/* Use baseName instead of pokemon.name */}
+      <h2>{baseName}</h2>
 
-      <div>
-        <strong>Attack:</strong> {pokemon.attack}
+      <div className="stat-gauge">
+        <div className="stat-text"><strong>Attack:</strong> {pokemon.attack}</div>
+        <div className="gauge-container">
+          <div className="gauge" style={{ width: calculateWidth(pokemon.attack, 345), backgroundColor: '#ae4c4c' }}></div>
+        </div>
       </div>
-      <div>
-        <strong>Defense:</strong> {pokemon.defense}
+      <div className="stat-gauge">
+        <div className="stat-text"><strong>Defense:</strong> {pokemon.defense}</div>
+        <div className="gauge-container">
+          <div className="gauge" style={{ width: calculateWidth(pokemon.defense, 396), backgroundColor: '#4cae4f' }}></div>
+        </div>
       </div>
-      <div>
-        <strong>Stamina:</strong> {pokemon.stamina}
+      <div className="stat-gauge">
+        <div className="stat-text"><strong>Stamina:</strong> {pokemon.stamina}</div>
+        <div className="gauge-container">
+          <div className="gauge" style={{ width: calculateWidth(pokemon.stamina, 496), backgroundColor: '#4c7aae' }}></div>
+        </div>
+      </div>
+
+      <div className="cp">
+        <strong>Level 40 Max CP:</strong> {pokemon.cp40}
+      </div>
+      <div className="cp">
+        <strong>Level 50 Max CP:</strong> {pokemon.cp50}
       </div>
     </div>
   );
 }
 
 export default MainInfo;
-

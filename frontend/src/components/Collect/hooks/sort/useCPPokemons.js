@@ -17,15 +17,32 @@ const useCPPokemons = (displayedPokemons, sortMode, { isShiny, showShadow, showC
         });
 
         const sortedPokemons = filteredPokemons.sort((a, b) => {
-            const cpA = a.ownershipStatus?.cp ?? 0;
-            const cpB = b.ownershipStatus?.cp ?? 0;
+            // Determine the CP values for sorting based on ownership status and ensure numeric comparison
+            let cpA = a.ownershipStatus ? (a.ownershipStatus.cp !== undefined ? parseInt(a.ownershipStatus.cp) : parseInt(a.cp50)) : parseInt(a.cp50);
+            let cpB = b.ownershipStatus ? (b.ownershipStatus.cp !== undefined ? parseInt(b.ownershipStatus.cp) : parseInt(b.cp50)) : parseInt(b.cp50);
 
+            // Handle possible NaN cases where cp values might not be parseable
+            cpA = isNaN(cpA) ? -1 : cpA;  // Assign a low value to ensure these sort last
+            cpB = isNaN(cpB) ? -1 : cpB;
+
+            // Secondary sort by Pokedex number if CP is null or not provided
+            if (cpA === cpB) {
+                return a.pokedex_number - b.pokedex_number;
+            }
+
+            // Primary CP sort
             if (sortMode === 'ascending') {
                 return cpA - cpB;
             } else {
                 return cpB - cpA;
             }
         });
+
+        // Log the sorted pokemons using cp50 only when ownershipStatus is missing
+        const pokemonsUsingCP50 = sortedPokemons.filter(p => !p.ownershipStatus);
+        if (pokemonsUsingCP50.length > 0) {
+            console.log("Pokemons sorted using cp50 due to missing ownershipStatus:", pokemonsUsingCP50);
+        }
 
         return sortedPokemons;
     }, [displayedPokemons, sortMode, isShiny, showShadow, showCostume, showAll]);
