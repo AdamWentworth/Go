@@ -26,15 +26,15 @@ const useRecentPokemons = (displayedPokemons, sortMode, { isShiny, showShadow, s
                         const costumeData = pokemon.costumes.find(costume => costume.costume_id === costumeId);
                         if (costumeData) {
                             return new Date(isShinyVariant ? costumeData.date_shiny_available : costumeData.date_available);
-                        }}
+                        }
+                    }
                     if (pokemon.variantType.startsWith('shadow_costume')) {
                         const costumeId = parseInt(pokemon.variantType.match(/\d+/)[0], 10);
                         const costumeData = pokemon.costumes.find(costume => costume.costume_id === costumeId);
                         if (costumeData) {
                             return new Date(costumeData.shadow_costume.date_available);
                         }
-                    }
-                    else {
+                    } else {
                         switch (pokemon.variantType) {
                             case 'default': return new Date(pokemon.date_available);
                             case 'shiny': return new Date(pokemon.date_shiny_available);
@@ -73,9 +73,8 @@ const useRecentPokemons = (displayedPokemons, sortMode, { isShiny, showShadow, s
                         if (costumeData) {
                             return new Date(costumeData.shadow_costume.date_available);
                         }
-                    }
-                    else {
-                    return new Date(pokemon.date_shadow_available);
+                    } else {
+                        return new Date(pokemon.date_shadow_available);
                     }
                 }
                 if (showShadow && showCostume) {
@@ -95,7 +94,15 @@ const useRecentPokemons = (displayedPokemons, sortMode, { isShiny, showShadow, s
 
             // Use `sortOrder` to determine the sorting direction
             const comparison = sortOrder * (dateA - dateB);
-            return comparison !== 0 ? comparison : a.pokemon_id - b.pokemon_id;
+
+            if (comparison !== 0) {
+                return comparison;
+            } else {
+                // If dates are the same, tie-breaking logic
+                return sortMode === 'ascending' ? 
+                    a.pokedex_number - b.pokedex_number : 
+                    b.pokedex_number - a.pokedex_number;
+            }
         });
     }, [displayedPokemons, sortMode, isShiny, showShadow, showCostume, showAll]);
 };
