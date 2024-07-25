@@ -1,3 +1,5 @@
+// constants.js
+
 export const generations = ["Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola", "Galar", "Hisui", "Paldea"];
 
 export const pokemonTypes = [

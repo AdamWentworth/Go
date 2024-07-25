@@ -3,7 +3,7 @@
 import { generationMap } from './constants';
 
 export function handleSearchTermChange(allPokemons, term, generations, pokemonTypes, setFilteredPokemonList, setIsShiny, setShowShadow, setShowCostume) {
-    const unionTerms = term.split(',').map(t => t.trim());
+    const unionTerms = term.split(',').map(t => t.trim().toLowerCase());
 
     // Use a set to store the results to avoid duplicates
     let resultsSet = new Set();
@@ -15,37 +15,49 @@ export function handleSearchTermChange(allPokemons, term, generations, pokemonTy
     let costumeNegationFlag = false;
 
     unionTerms.forEach(uTerm => {
-        const intersectionTerms = uTerm.split('&').map(t => t.trim());
+        const intersectionTerms = uTerm.split('&').map(t => t.trim().toLowerCase());
 
         let tempResults = [...allPokemons]; // start with all pokemons and then filter them down
 
         intersectionTerms.forEach(iTerm => {
-            if (iTerm.toLowerCase() === 'shiny') {
+            if (iTerm === 'shiny') {
                 shinyFlag = true;
-            } else if (iTerm.toLowerCase() === '!shiny') {
+            } else if (iTerm === '!shiny') {
                 shinyNegationFlag = true;
-            } else if (iTerm.toLowerCase() === 'shadow') {
+            } else if (iTerm === 'shadow') {
                 shadowFlag = true;
-            } else if (iTerm.toLowerCase() === '!shadow') {
+            } else if (iTerm === '!shadow') {
                 shadowNegationFlag = true;
-            } else if (iTerm.toLowerCase() === 'costume') {
+            } else if (iTerm === 'costume') {
                 costumeFlag = true;
-            } else if (iTerm.toLowerCase() === '!costume') {
+            } else if (iTerm === '!costume') {
                 costumeNegationFlag = true;
-            }
-
-            const generationNumber = generationMap[iTerm.toLowerCase()];
-            if (generationNumber !== undefined) {
-                tempResults = tempResults.filter(pokemon => pokemon.generation === generationNumber);
-            } else if (pokemonTypes.includes(iTerm.toLowerCase())) {
-                tempResults = tempResults.filter(pokemon =>
-                    Array.isArray(pokemon.type) &&
-                    pokemon.type.includes(iTerm.toLowerCase())
-                );
+            } else if (iTerm === 'legendary') {
+                tempResults = tempResults.filter(pokemon => pokemon.rarity && pokemon.rarity.toLowerCase() === 'legendary');
+            } else if (iTerm === '!legendary') {
+                tempResults = tempResults.filter(pokemon => !pokemon.rarity || pokemon.rarity.toLowerCase() !== 'legendary');
+            } else if (iTerm === 'mythical') {
+                tempResults = tempResults.filter(pokemon => pokemon.rarity && pokemon.rarity.toLowerCase() === 'mythic');
+            } else if (iTerm === '!mythical') {
+                tempResults = tempResults.filter(pokemon => !pokemon.rarity || pokemon.rarity.toLowerCase() !== 'mythic');
+            } else if (iTerm === 'ultrabeast') {
+                tempResults = tempResults.filter(pokemon => pokemon.rarity && pokemon.rarity.toLowerCase() === 'ultra beast');
+            } else if (iTerm === '!ultrabeast') {
+                tempResults = tempResults.filter(pokemon => !pokemon.rarity || pokemon.rarity.toLowerCase() !== 'ultra beast');
             } else {
-                tempResults = tempResults.filter(pokemon =>
-                    pokemon.name.toLowerCase().includes(iTerm.toLowerCase())
-                );
+                const generationNumber = generationMap[iTerm];
+                if (generationNumber !== undefined) {
+                    tempResults = tempResults.filter(pokemon => pokemon.generation === generationNumber);
+                } else if (pokemonTypes.includes(iTerm)) {
+                    tempResults = tempResults.filter(pokemon =>
+                        Array.isArray(pokemon.type) &&
+                        pokemon.type.includes(iTerm)
+                    );
+                } else {
+                    tempResults = tempResults.filter(pokemon =>
+                        pokemon.name.toLowerCase().includes(iTerm)
+                    );
+                }
             }
         });
 
@@ -91,6 +103,9 @@ export function checkTermMatches(pokemon, term, pokemonTypes, generationMap) {
     const isShinySearch = term === 'shiny';
     const isShadowSearch = term === 'shadow';
     const isCostumeSearch = term === 'costume';
+    const isLegendarySearch = term === 'legendary';
+    const isMythicalSearch = term === 'mythical';
+    const isUltraBeastSearch = term === 'ultrabeast';
 
     let result = false;
 
@@ -107,6 +122,12 @@ export function checkTermMatches(pokemon, term, pokemonTypes, generationMap) {
         result = pokemon.variantType && pokemon.variantType.includes('shadow');
     } else if (isCostumeSearch) {
         result = pokemon.variantType && pokemon.variantType.includes('costume');
+    } else if (isLegendarySearch) {
+        result = pokemon.rarity && pokemon.rarity.toLowerCase() === 'legendary';
+    } else if (isMythicalSearch) {
+        result = pokemon.rarity && pokemon.rarity.toLowerCase() === 'mythic';
+    } else if (isUltraBeastSearch) {
+        result = pokemon.rarity && pokemon.rarity.toLowerCase() === 'ultra beast';
     } else {
         result = (
             pokemon.name &&
