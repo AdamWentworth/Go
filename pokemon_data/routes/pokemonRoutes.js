@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const sqlite3 = require('sqlite3').verbose();
+const async = require('async'); // Ensure async is installed using npm
 const logger = require('../middlewares/logger'); // Import the logger
 const { getPokemonsFromDb } = require('../services/pokemonService');
 const { getEvolutionsFromDb } = require('../services/evolutionsService');
@@ -9,6 +10,7 @@ const { getCostumesForPokemon, formatCostumes } = require('../services/costumeSe
 const { getMovesForPokemon, formatMoves } = require('../services/movesService');
 const { formatFusionData } = require('../services/fusionService');
 const { getBackgroundsForPokemon } = require('../services/backgroundService'); // Import the background service
+const { getCpForPokemon } = require('../services/cpService');
 
 const db = new sqlite3.Database('./data/pokego.db');
 
@@ -69,28 +71,41 @@ router.get('/pokemon/pokemons', (req, res) => {
                             };
                         });
 
-                        // Get evolutions and add them to the response
-                        getEvolutionsFromDb((err, evolutionMap) => {
-                            if (err) {
-                                logger.error(`Error fetching evolution data: ${err.message}`);
-                                res.status(500).json({ error: err.message });
-                                return;
-                            }
-
-                            const pokemonsWithEvolutions = pokemonsWithBackgrounds.map(pokemon => {
-                                const evolutionData = evolutionMap[pokemon.pokemon_id];
-                                if (evolutionData) {
-                                    return {
-                                        ...pokemon,
-                                        evolves_from: evolutionData.evolves_from,
-                                        evolves_to: evolutionData.evolves_to,
-                                    };
+                        // Attach CP data for level 40 and 50
+                        async.map(pokemonsWithBackgrounds, (pokemon, callback) => {
+                            getCpForPokemon(pokemon.pokemon_id, (err, cpData) => {
+                                if (err) {
+                                    callback(err);
+                                } else {
+                                    const cpDetails = cpData.reduce((acc, data) => {
+                                        acc[`cp${data.level_id}`] = data.cp;
+                                        return acc;
+                                    }, {});
+                                    callback(null, { ...pokemon, ...cpDetails });
                                 }
-                                return pokemon;
                             });
+                        }, (err, finalPokemons) => {
+                            if (err) {
+                                logger.error(`Error fetching CP data for pokemons: ${err.message}`);
+                                res.status(500).json({ error: err.message });
+                            } else {
+                                // Get evolutions and add them to the response
+                                getEvolutionsFromDb((err, evolutionMap) => {
+                                    if (err) {
+                                        logger.error(`Error fetching evolution data: ${err.message}`);
+                                        res.status(500).json({ error: err.message });
+                                        return;
+                                    }
 
-                            res.json(pokemonsWithEvolutions);
-                            logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
+                                    const pokemonsWithEvolutions = finalPokemons.map(pokemon => {
+                                        const evolutionData = evolutionMap[pokemon.pokemon_id];
+                                        return evolutionData ? { ...pokemon, ...evolutionData } : pokemon;
+                                    });
+
+                                    res.json(pokemonsWithEvolutions);
+                                    logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
+                                });
+                            }
                         });
                     });
                 });

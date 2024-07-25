@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "async": "^3.2.5",
     "config": "^3.3.11",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
