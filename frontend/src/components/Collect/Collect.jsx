@@ -11,6 +11,7 @@ import useSortManager from './hooks/useSortManager';
 import useFilterPokemons from './hooks/useFilterPokemons';
 import { confirmMoveToFilter } from './PokemonOwnership/pokemonOwnershipManager';
 import { getFilteredPokemonsByOwnership } from './PokemonOwnership/PokemonOwnershipFilter';
+import LoadingSpinner from '../LoadingSpinner';
 
 const PokemonListMemo = React.memo(PokemonList);
 const HeaderUIMemo = React.memo(HeaderUI);
@@ -21,6 +22,8 @@ function Collect() {
 
     //States
     const { variants, ownershipData, lists, loading, updateOwnership, updateLists } = usePokemonData();
+
+    const [dotState, setDotState] = useState(0);
 
     const [selectedPokemon, setSelectedPokemon] = useState(null);
     const [highlightedCards, setHighlightedCards] = useState(new Set());
@@ -166,8 +169,8 @@ function Collect() {
     }, [windowWidth]);  
     
     if (loading) {
-        return <div>Loading...</div>; // Or any other loading indicator
-    }
+        return <LoadingSpinner />; // Use the LoadingIndicator component when loading
+    }   
 
     return (
         <div>
