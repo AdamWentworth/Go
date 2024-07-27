@@ -1,10 +1,10 @@
 # pokemon_details_window.py
 
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox, simpledialog
 from database_manager import DatabaseManager
 
+# Import necessary frames
 from frames.pokemon_info_frames import PokemonInfoFrames
 from frames.pokemon_moves_frame import PokemonMovesFrame
 from frames.pokemon_evolutions_frame import PokemonEvolutionsFrame
@@ -125,9 +125,14 @@ class PokemonDetailsWindow:
         mega_evolutions = self.db_manager.fetch_mega_pokemon_data(self.pokemon_id)
         self.mega_frames = []
         for mega_data in mega_evolutions:
-            mega_frame = PokemonMegaFrame(mega_container, self.pokemon_id, mega_data, self)
+            mega_evolution_id = mega_data[0]
+            mega_frame = PokemonMegaFrame(mega_container, mega_evolution_id, self.pokemon_id, mega_data[1:], self)
             mega_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             self.mega_frames.append(mega_frame)
+
+        # Add button to add a new Mega Evolution
+        self.btn_add_mega = tk.Button(mega_container, text="Add Mega Evolution", command=self.add_mega_evolution)
+        self.btn_add_mega.pack(side=tk.BOTTOM, pady=10)
 
         # Create a container for Shadow Costume Frames
         shadow_costume_container = tk.Frame(main_container)
@@ -156,6 +161,21 @@ class PokemonDetailsWindow:
         self.window.lift()
         # Optional: You can flash the window or change the title to indicate the update
         self.window.title("Details Updated - Pokémon ID: {}".format(self.pokemon_id))
+
+    def add_mega_evolution(self):
+        # Insert a new mega evolution into the database and fetch its ID
+        new_mega_id = self.db_manager.add_mega_evolution(self.pokemon_id)
+        
+        # Create a new PokemonMegaFrame with default values
+        new_mega_frame = PokemonMegaFrame(
+            self.scrollable_frame,
+            new_mega_id,
+            self.pokemon_id,
+            (0, 0, 0, 0, '', '', '', 'None', ''),  # Default values
+            self
+        )
+        new_mega_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.mega_frames.append(new_mega_frame)
 
     def save_changes(self):
         # Retrieve general and additional attributes from info_frames
@@ -196,7 +216,7 @@ class PokemonDetailsWindow:
 
         # Save mega evolution data
         mega_data_list = [mega_frame.get_mega_data() for mega_frame in self.mega_frames]
-        self.db_manager.update_mega_evolution_data(self.pokemon_id, mega_data_list)
+        self.db_manager.update_mega_evolution_data(mega_data_list)
 
         # Show a confirmation message
         tk.messagebox.showinfo("Update", "Pokemon data updated successfully")

@@ -399,21 +399,31 @@ class DatabaseManager:
     def fetch_mega_pokemon_data(self, pokemon_id):
         cursor = self.conn.cursor()
         cursor.execute("""
-            SELECT mega_energy_cost, attack, defense, stamina, image_url, image_url_shiny, sprite_url, primal
+            SELECT id, mega_energy_cost, attack, defense, stamina, image_url, image_url_shiny, sprite_url, primal, form
             FROM mega_evolution
             WHERE pokemon_id = ?
         """, (pokemon_id,))
         results = cursor.fetchall()
         return results
 
-    def update_mega_evolution_data(self, pokemon_id, mega_data):
+    def update_mega_evolution_data(self, mega_data_list):
         cursor = self.conn.cursor()
-        for data in mega_data:
+        for data in mega_data_list:
             update_query = """
             UPDATE mega_evolution
-            SET mega_energy_cost = ?, attack = ?, defense = ?, stamina = ?, image_url = ?, image_url_shiny = ?, sprite_url = ?, primal = ?
-            WHERE pokemon_id = ? AND mega_energy_cost = ?
+            SET mega_energy_cost = ?, attack = ?, defense = ?, stamina = ?, image_url = ?, image_url_shiny = ?, sprite_url = ?, primal = ?, form = ?
+            WHERE id = ?
             """
-            parameters = data + (pokemon_id, data[0])
+            parameters = [None if value == '' else value for value in data[:-1]] + [data[-1]]  # data[-1] is the mega_evolution_id
             cursor.execute(update_query, parameters)
         self.conn.commit()
+
+    def add_mega_evolution(self, pokemon_id):
+        cursor = self.conn.cursor()
+        insert_query = """
+            INSERT INTO mega_evolution (pokemon_id, mega_energy_cost, attack, defense, stamina, image_url, image_url_shiny, sprite_url, primal, form)
+            VALUES (?, 0, 0, 0, 0, '', '', '', 'None', '')
+        """
+        cursor.execute(insert_query, (pokemon_id,))
+        self.conn.commit()
+        return cursor.lastrowid
