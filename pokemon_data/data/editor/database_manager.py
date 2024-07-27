@@ -396,4 +396,24 @@ class DatabaseManager:
 
         self.conn.commit()
 
+    def fetch_mega_pokemon_data(self, pokemon_id):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT mega_energy_cost, attack, defense, stamina, image_url, image_url_shiny, sprite_url, primal
+            FROM mega_evolution
+            WHERE pokemon_id = ?
+        """, (pokemon_id,))
+        results = cursor.fetchall()
+        return results
 
+    def update_mega_evolution_data(self, pokemon_id, mega_data):
+        cursor = self.conn.cursor()
+        for data in mega_data:
+            update_query = """
+            UPDATE mega_evolution
+            SET mega_energy_cost = ?, attack = ?, defense = ?, stamina = ?, image_url = ?, image_url_shiny = ?, sprite_url = ?, primal = ?
+            WHERE pokemon_id = ? AND mega_energy_cost = ?
+            """
+            parameters = data + (pokemon_id, data[0])
+            cursor.execute(update_query, parameters)
+        self.conn.commit()

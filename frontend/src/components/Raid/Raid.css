@@ -1,0 +1,31 @@
+.raid-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.raid-table {
+    width: 100%;
+    max-width: 960px; /* Adjust this as needed for your design */
+    margin: 20px;
+    border-collapse: collapse;
+}
+
+.raid-table th,
+.raid-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    background-color: white; /* Ensures all cells are white */
+}
+
+.raid-table th {
+    background-color: #4CAF50;
+    color: white;
+}
+
+/* Removing hover effect */
+.raid-table tr:hover {
+    background-color: inherit; /* Keeps the background the same on hover */
+}

@@ -14,9 +14,11 @@ from frames.pokemon_shiny_image_frame import PokemonShinyImageFrame
 from frames.pokemon_shadow_image_frames import PokemonShadowImageFrame, PokemonShinyShadowImageFrame
 from frames.pokemon_costume_image_frame import PokemonCostumeImageFrame
 from frames.pokemon_shadow_costume_frame import PokemonShadowCostumeFrame
+from frames.pokemon_mega_frame import PokemonMegaFrame
+
+import os
 
 class PokemonDetailsWindow:
-    
     def __init__(self, parent, pokemon_id, details):
         self.window = tk.Toplevel(parent)
         self.window.title(f"Details of Pokémon ID: {pokemon_id}")
@@ -29,6 +31,11 @@ class PokemonDetailsWindow:
 
         self.type_ids = self.db_manager.fetch_type_ids()
         self.existing_move_ids = self.db_manager.fetch_pokemon_moves(pokemon_id)
+
+        # Define the relative path to images
+        script_directory = os.path.dirname(os.path.realpath(__file__))
+        go_directory = os.path.normpath(os.path.join(script_directory, '../../../frontend/public'))
+        self.relative_path_to_images = go_directory
 
         # Scrollable container setup
         self.canvas = tk.Canvas(self.window)
@@ -108,9 +115,21 @@ class PokemonDetailsWindow:
 
         # Shiny Shadow Image Frame
         self.shiny_shadow_image_frame = PokemonShinyShadowImageFrame(image_frames_container, shiny_shadow_image_url, pokemon_id, self)
-        self.shiny_shadow_image_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # Correctly pack the frame attribute
+        self.shiny_shadow_image_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # Correctly pack the frame attribute
 
-        # Create a container for Shadow and Costume Frames
+        # Create a container for Mega Evolution Frames
+        mega_container = tk.Frame(main_container)
+        mega_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        # Fetch and integrate Mega Evolution Frames
+        mega_evolutions = self.db_manager.fetch_mega_pokemon_data(self.pokemon_id)
+        self.mega_frames = []
+        for mega_data in mega_evolutions:
+            mega_frame = PokemonMegaFrame(mega_container, self.pokemon_id, mega_data, self)
+            mega_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            self.mega_frames.append(mega_frame)
+
+        # Create a container for Shadow Costume Frames
         shadow_costume_container = tk.Frame(main_container)
         shadow_costume_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
@@ -174,6 +193,10 @@ class PokemonDetailsWindow:
 
         # Save shadow data
         self.shadow_frame.save_shadow_info()
+
+        # Save mega evolution data
+        mega_data_list = [mega_frame.get_mega_data() for mega_frame in self.mega_frames]
+        self.db_manager.update_mega_evolution_data(self.pokemon_id, mega_data_list)
 
         # Show a confirmation message
         tk.messagebox.showinfo("Update", "Pokemon data updated successfully")
