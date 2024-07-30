@@ -1,7 +1,8 @@
 import sqlite3
 
-# Define the SQLite database file
-DATABASE_FILE = '../pokego.db'
+# Define the SQLite database files
+SOURCE_DATABASE_FILE = '../pokego - Copy.db'
+DESTINATION_DATABASE_FILE = '../pokego.db'
 
 def create_connection(db_file):
     """ Create a database connection to the SQLite database specified by db_file """
@@ -13,24 +14,38 @@ def create_connection(db_file):
         print(f"Error creating connection: {e}")
     return conn
 
-def add_form_column_to_mega_evolution(cur):
-    """ Add the form column to the mega_evolution table """
+def copy_data_from_backup(source_conn, dest_conn):
+    """ Copy data from the mega_evolution table in the backup database to the new table """
     try:
-        cur.execute("ALTER TABLE mega_evolution ADD COLUMN form TEXT")
-        print("Added 'form' column to mega_evolution table.")
+        source_cur = source_conn.cursor()
+        dest_cur = dest_conn.cursor()
+        
+        # Fetch data from the backup database's mega_evolution table
+        source_cur.execute("SELECT id, pokemon_id, mega_energy_cost, attack, defense, stamina, image_url, image_url_shiny, sprite_url, primal FROM mega_evolution;")
+        rows = source_cur.fetchall()
+        
+        # Insert data into the new mega_evolution table
+        dest_cur.executemany("""
+            INSERT INTO mega_evolution (id, pokemon_id, mega_energy_cost, attack, defense, stamina, image_url, image_url_shiny, sprite_url, primal)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """, rows)
+        
+        dest_conn.commit()
+        print("Data copied successfully from backup.")
     except sqlite3.Error as e:
-        print(f"Error adding 'form' column to mega_evolution table: {e}")
+        print(f"Error copying data: {e}")
 
 def main():
-    # Create a database connection
-    conn = create_connection(DATABASE_FILE)
-    if conn is None:
-        print("Error! Cannot create the database connection.")
+    # Create connections to both databases
+    source_conn = create_connection(SOURCE_DATABASE_FILE)
+    dest_conn = create_connection(DESTINATION_DATABASE_FILE)
+    
+    if source_conn is None or dest_conn is None:
+        print("Error! Cannot create the database connections.")
         return
 
-    with conn:
-        cur = conn.cursor()
-        add_form_column_to_mega_evolution(cur)
+    with source_conn, dest_conn:
+        copy_data_from_backup(source_conn, dest_conn)
 
 if __name__ == '__main__':
     main()

@@ -1,3 +1,5 @@
+# pokemon_mega_frame.py
+
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 from PIL import Image, ImageTk
@@ -21,12 +23,21 @@ class PokemonMegaFrame:
         self.frame_label = tk.Label(self.container_frame, text=f"Mega Evolution ID: {mega_evolution_id} for Pokemon ID: {pokemon_id}", bg="white")
         self.frame_label.pack(side=tk.TOP, fill=tk.X)
 
-        self.mega_energy_cost, self.attack, self.defense, self.stamina, self.image_url, self.image_url_shiny, self.sprite_url, self.primal, self.form = mega_data
+        self.mega_energy_cost, self.attack, self.defense, self.stamina, self.image_url, self.image_url_shiny, self.sprite_url, self.primal, self.form, self.type_1_id, self.type_2_id = mega_data
+
+        # Fetch type data from the database and create lookup dictionaries
+        self.type_name_to_id = self.details_window.db_manager.fetch_type_ids()
+        self.type_id_to_name = {v: k for k, v in self.type_name_to_id.items()}
 
         # Entry fields for editable values
         self.create_editable_fields()
         # Display the mega details
         self.display_mega_details()
+
+        # Path to the shiny icon
+        script_directory = os.path.dirname(os.path.realpath(__file__))
+        go_directory = os.path.normpath(os.path.join(script_directory, '../../../../'))
+        self.shiny_icon_path = os.path.normpath(os.path.join(go_directory, 'frontend', 'public', 'images', 'shiny_icon.png'))
 
     def create_editable_fields(self):
         self.energy_entry = self.create_entry_field("Energy Cost", self.mega_energy_cost)
@@ -35,6 +46,8 @@ class PokemonMegaFrame:
         self.stamina_entry = self.create_entry_field("Stamina", self.stamina)
         self.primal_entry = self.create_entry_field("Primal", self.primal)
         self.form_entry = self.create_entry_field("Form", self.form if self.form is not None else '')  # Handle None for form field
+        self.type_1_entry = self.create_entry_field("Type 1", self.type_id_to_name.get(self.type_1_id, ''))
+        self.type_2_entry = self.create_entry_field("Type 2", self.type_id_to_name.get(self.type_2_id, ''))
 
     def create_entry_field(self, label_text, value):
         tk.Label(self.container_frame, text=f"{label_text}:", bg="white").pack()
@@ -128,6 +141,9 @@ class PokemonMegaFrame:
             save_name = f'shiny_mega_{self.pokemon_id}{form_suffix}.png'
             label = self.shiny_image_label
 
+            # Combine the shiny icon with the shiny image
+            image = self.combine_images(image)
+
         # Ensure the correct path construction with a single "Go" folder
         save_path = os.path.join(self.details_window.relative_path_to_images, save_dir, save_name)
 
@@ -157,8 +173,21 @@ class PokemonMegaFrame:
         # You can call a method on details_window to react to the update if needed
         self.details_window.react_to_image_update()
 
+    def combine_images(self, pokemon_image):
+        """
+        Combine the downloaded or selected Pokémon image with the shiny icon.
+        """
+        shiny_icon = Image.open(self.shiny_icon_path).convert("RGBA")
+        base_image = pokemon_image.convert("RGBA")
+        base_image.paste(shiny_icon, (0, 0), shiny_icon)
+        return base_image
+
     def get_mega_data(self):
         form_value = self.form_entry.get() or None  # Convert empty string to None
+        type_1_name = self.type_1_entry.get().strip()
+        type_2_name = self.type_2_entry.get().strip()
+        type_1_id = self.type_name_to_id.get(type_1_name, None)
+        type_2_id = self.type_name_to_id.get(type_2_name, None)
         return (
             self.energy_entry.get() or None,
             self.attack_entry.get() or None,
@@ -169,5 +198,7 @@ class PokemonMegaFrame:
             self.sprite_url or None,
             self.primal_entry.get() or None,
             form_value,  # Added form to the return tuple
+            type_1_id,
+            type_2_id,
             self.mega_evolution_id  # Added mega_evolution_id to the return tuple
         )

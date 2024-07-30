@@ -1,16 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const sqlite3 = require('sqlite3').verbose();
-const async = require('async'); // Ensure async is installed using npm
-const logger = require('../middlewares/logger'); // Import the logger
+const async = require('async');
+const logger = require('../middlewares/logger');
 const { getPokemonsFromDb } = require('../services/pokemonService');
 const { getEvolutionsFromDb } = require('../services/evolutionsService');
 const { getImagePathsForPokemon } = require('../utils/imagePaths');
 const { getCostumesForPokemon, formatCostumes } = require('../services/costumeService');
 const { getMovesForPokemon, formatMoves } = require('../services/movesService');
 const { formatFusionData } = require('../services/fusionService');
-const { getBackgroundsForPokemon } = require('../services/backgroundService'); // Import the background service
+const { getBackgroundsForPokemon } = require('../services/backgroundService');
 const { getCpForPokemon } = require('../services/cpService');
+const { getMegaEvolutionsForPokemon } = require('../services/megaService');
 
 const db = new sqlite3.Database('./data/pokego.db');
 
@@ -66,7 +67,7 @@ router.get('/pokemon/pokemons', (req, res) => {
                                 ...pokemon,
                                 backgrounds: backgrounds.map(background => ({
                                     ...background,
-                                    costume_id: background.costume_id || null // Ensure costume_id is included
+                                    costume_id: background.costume_id || null
                                 }))
                             };
                         });
@@ -102,8 +103,24 @@ router.get('/pokemon/pokemons', (req, res) => {
                                         return evolutionData ? { ...pokemon, ...evolutionData } : pokemon;
                                     });
 
-                                    res.json(pokemonsWithEvolutions);
-                                    logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
+                                    // Get mega evolutions and add them to the response
+                                    async.map(pokemonsWithEvolutions, (pokemon, callback) => {
+                                        getMegaEvolutionsForPokemon(pokemon.pokemon_id, (err, megaEvolutions) => {
+                                            if (err) {
+                                                callback(err);
+                                            } else {
+                                                callback(null, { ...pokemon, megaEvolutions });
+                                            }
+                                        });
+                                    }, (err, pokemonsWithMegaEvolutions) => {
+                                        if (err) {
+                                            logger.error(`Error fetching mega evolutions: ${err.message}`);
+                                            res.status(500).json({ error: err.message });
+                                        } else {
+                                            res.json(pokemonsWithMegaEvolutions);
+                                            logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
+                                        }
+                                    });
                                 });
                             }
                         });

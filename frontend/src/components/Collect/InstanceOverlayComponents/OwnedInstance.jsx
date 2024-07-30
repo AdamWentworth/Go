@@ -20,7 +20,7 @@ import BackgroundComponent from './OwnedComponents/BackgroundComponent';
 
 const OwnedInstance = ({ pokemon }) => {
 
-  console.log(pokemon)
+  // console.log(pokemon)
   const { updateDetails } = useContext(PokemonDataContext);
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
   const [editMode, setEditMode] = useState(false);

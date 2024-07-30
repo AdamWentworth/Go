@@ -171,7 +171,7 @@ class PokemonDetailsWindow:
             self.scrollable_frame,
             new_mega_id,
             self.pokemon_id,
-            (0, 0, 0, 0, '', '', '', 'None', ''),  # Default values
+            (0, 0, 0, 0, '', '', '', 'None', '', None, None),  # Default values
             self
         )
         new_mega_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)

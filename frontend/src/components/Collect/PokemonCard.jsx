@@ -32,22 +32,23 @@ const PokemonCard = ({
 
     const generateH2Content = () => {
         let contentParts = [];
-
+    
         if (pokemon.currentCostumeName) {
             contentParts.push(formatCostumeName(pokemon.currentCostumeName));
         }
-
+    
         let nameText;
-        const shouldIncludeForm = pokemon.form && pokemon.form !== 'Average' && (!singleFormPokedexNumbers.includes(pokemon.pokedex_number) || showAll);
-
+        const isMegaVariant = pokemon.variantType && pokemon.variantType.includes('mega');
+        const shouldIncludeForm = !isMegaVariant && pokemon.form && pokemon.form !== 'Average' && (!singleFormPokedexNumbers.includes(pokemon.pokedex_number) || showAll);
+    
         if (shouldIncludeForm) {
             nameText = formatPokemonName(pokemon.name, pokemon.form);
         } else {
             nameText = pokemon.name;
         }
-
+    
         contentParts.push(nameText);
-
+    
         return (
             <>
                 {contentParts.map((part, index) => (
@@ -55,7 +56,7 @@ const PokemonCard = ({
                 ))}
             </>
         );
-    };
+    };    
 
     if (isShiny && showShadow && (!pokemon.image_url_shiny_shadow || pokemon.shadow_shiny_available !== 1)) {
         return null;

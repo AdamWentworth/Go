@@ -27,23 +27,32 @@ export function determinePokemonKey(pokemon) {
         suffix = '-shiny_shadow';
     }
 
-    // Check for a match with costume image URLs
-    pokemon.costumes.forEach(costume => {
-        if (pokemon.currentImage === costume.image_url) {
-            suffix = `-${costume.name}_default`;
-        } else if (pokemon.currentImage === costume.image_url_shiny) {
-            suffix = `-${costume.name}_shiny`;
-        }
+    // Check for Mega and Shiny Mega Evolutions
+    if (pokemon.variantType && pokemon.variantType.startsWith('mega_')) {
+        suffix = `-${pokemon.variantType}`;
+    } else if (pokemon.variantType && pokemon.variantType.startsWith('shiny_mega_')) {
+        suffix = `-${pokemon.variantType}`;
+    }
 
-        // Additional checks for shadow costume images
-        if (costume.shadow_costume) {
-            if (pokemon.currentImage === costume.shadow_costume.image_url_shadow_costume) {
-                suffix = `-shadow_${costume.name}_default`;
-            } else if (pokemon.currentImage === costume.shadow_costume.image_url_shiny_shadow_costume && costume.shadow_costume.image_url_shiny_shadow_costume) {
-                suffix = `-shadow_${costume.name}_shiny`;
+    // Check for a match with costume image URLs
+    if (pokemon.costumes) {
+        pokemon.costumes.forEach(costume => {
+            if (pokemon.currentImage === costume.image_url) {
+                suffix = `-${costume.name}_default`;
+            } else if (pokemon.currentImage === costume.image_url_shiny) {
+                suffix = `-${costume.name}_shiny`;
             }
-        }
-    });
+
+            // Additional checks for shadow costume images
+            if (costume.shadow_costume) {
+                if (pokemon.currentImage === costume.shadow_costume.image_url_shadow_costume) {
+                    suffix = `-shadow_${costume.name}_default`;
+                } else if (pokemon.currentImage === costume.shadow_costume.image_url_shiny_shadow_costume) {
+                    suffix = `-shadow_${costume.name}_shiny`;
+                }
+            }
+        });
+    }
 
     // Construct the final pokemonKey with the determined suffix
     const pokemonKey = `${pokemon.pokemon_id}${suffix}`;

@@ -1,6 +1,6 @@
 // calculateDPS.js
 
-export function calculateDPS(fastMove, chargedMove, pokemonHP, enemyDPS) {
+export function calculateDPS(fastMove, chargedMove, pokemonHP = 15000, enemyDPS = 50) {
     const FDPS = fastMove.raid_power / (fastMove.raid_cooldown / 1000);
     const CDPS = chargedMove.raid_power / (chargedMove.raid_cooldown / 1000);
     const FEPS = fastMove.raid_energy / (fastMove.raid_cooldown / 1000);

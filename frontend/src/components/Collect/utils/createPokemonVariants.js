@@ -83,6 +83,46 @@ const createPokemonVariants = (pokemons) => {
       });
     }
 
+    // Check if there are Mega Evolutions and merge them into the base Pokemon data
+    if (pokemon.megaEvolutions && pokemon.megaEvolutions.length > 0) {
+      pokemon.megaEvolutions.forEach(megaEvolution => {
+        const baseVariant = {
+          ...pokemon,
+          attack: megaEvolution.attack || pokemon.attack,
+          defense: megaEvolution.defense || pokemon.defense,
+          stamina: megaEvolution.stamina || pokemon.stamina,
+          image_url: megaEvolution.image_url || pokemon.image_url,
+          image_url_shiny: megaEvolution.image_url_shiny || pokemon.image_url_shiny,
+          sprite_url: megaEvolution.sprite_url || pokemon.sprite_url,
+          primal: megaEvolution.primal || pokemon.primal,
+          form: megaEvolution.form || pokemon.form,
+          type_1_id: megaEvolution.type_1_id || pokemon.type_1_id,
+          type_2_id: megaEvolution.type_2_id || pokemon.type_2_id,
+          type1_name: megaEvolution.type1_name || pokemon.type1_name,
+          type2_name: megaEvolution.type2_name || pokemon.type2_name,
+          type_1_icon: `/images/types/${megaEvolution.type1_name.toLowerCase()}.png`,
+          type_2_icon: megaEvolution.type2_name ? `/images/types/${megaEvolution.type2_name.toLowerCase()}.png` : null,
+          currentImage: megaEvolution.image_url,
+          name: megaEvolution.primal ? `Primal ${pokemon.name}` : `Mega ${pokemon.name} ${megaEvolution.form ? megaEvolution.form : ''}`.trim(),
+          variantType: megaEvolution.primal ? `primal_${megaEvolution.id}` : `mega_${megaEvolution.id}`
+        };
+
+        baseVariant.pokemonKey = determinePokemonKey(baseVariant);
+        variants.push(baseVariant);
+
+        if (megaEvolution.image_url_shiny) {
+          const shinyVariant = {
+            ...baseVariant,
+            currentImage: megaEvolution.image_url_shiny,
+            name: megaEvolution.primal ? `Shiny Primal ${pokemon.name}` : `Shiny Mega ${pokemon.name} ${megaEvolution.form ? megaEvolution.form : ''}`.trim(),
+            variantType: megaEvolution.primal ? `shiny_primal_${megaEvolution.id}` : `shiny_mega_${megaEvolution.id}`
+          };
+          shinyVariant.pokemonKey = determinePokemonKey(shinyVariant);
+          variants.push(shinyVariant);
+        }
+      });
+    }
+
     return variants;
   };
 
