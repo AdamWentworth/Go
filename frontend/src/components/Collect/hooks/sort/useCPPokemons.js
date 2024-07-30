@@ -38,12 +38,6 @@ const useCPPokemons = (displayedPokemons, sortMode, { isShiny, showShadow, showC
             }
         });
 
-        // Log the sorted pokemons using cp50 only when ownershipStatus is missing
-        const pokemonsUsingCP50 = sortedPokemons.filter(p => !p.ownershipStatus);
-        if (pokemonsUsingCP50.length > 0) {
-            console.log("Pokemons sorted using cp50 due to missing ownershipStatus:", pokemonsUsingCP50);
-        }
-
         return sortedPokemons;
     }, [displayedPokemons, sortMode, isShiny, showShadow, showCostume, showAll]);
 };

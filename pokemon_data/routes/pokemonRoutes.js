@@ -1,3 +1,5 @@
+// pokemonRoutes.js
+
 const express = require('express');
 const router = express.Router();
 const sqlite3 = require('sqlite3').verbose();
@@ -10,7 +12,7 @@ const { getCostumesForPokemon, formatCostumes } = require('../services/costumeSe
 const { getMovesForPokemon, formatMoves } = require('../services/movesService');
 const { formatFusionData } = require('../services/fusionService');
 const { getBackgroundsForPokemon } = require('../services/backgroundService');
-const { getCpForPokemon } = require('../services/cpService');
+const { getCpForPokemon, getCpForMegaEvolution } = require('../services/cpService');
 const { getMegaEvolutionsForPokemon } = require('../services/megaService');
 
 const db = new sqlite3.Database('./data/pokego.db');
@@ -109,7 +111,25 @@ router.get('/pokemon/pokemons', (req, res) => {
                                             if (err) {
                                                 callback(err);
                                             } else {
-                                                callback(null, { ...pokemon, megaEvolutions });
+                                                async.map(megaEvolutions, (megaEvolution, megaCallback) => {
+                                                    getCpForMegaEvolution(megaEvolution.id, (err, cpData) => {
+                                                        if (err) {
+                                                            megaCallback(err);
+                                                        } else {
+                                                            const cpDetails = cpData.reduce((acc, data) => {
+                                                                acc[`cp${data.level_id}`] = data.cp;
+                                                                return acc;
+                                                            }, {});
+                                                            megaCallback(null, { ...megaEvolution, ...cpDetails });
+                                                        }
+                                                    });
+                                                }, (err, megaEvolutionsWithCp) => {
+                                                    if (err) {
+                                                        callback(err);
+                                                    } else {
+                                                        callback(null, { ...pokemon, megaEvolutions: megaEvolutionsWithCp });
+                                                    }
+                                                });
                                             }
                                         });
                                     }, (err, pokemonsWithMegaEvolutions) => {

@@ -86,9 +86,8 @@ const createPokemonVariants = (pokemons) => {
     // Check if there are Mega Evolutions and merge them into the base Pokemon data
     if (pokemon.megaEvolutions && pokemon.megaEvolutions.length > 0) {
       pokemon.megaEvolutions.forEach(megaEvolution => {
-
         const formSuffix = megaEvolution.form ? `_${megaEvolution.form.toLowerCase()}` : '';
-        
+
         const baseVariant = {
           ...pokemon,
           attack: megaEvolution.attack || pokemon.attack,
@@ -107,7 +106,9 @@ const createPokemonVariants = (pokemons) => {
           type_2_icon: megaEvolution.type2_name ? `/images/types/${megaEvolution.type2_name.toLowerCase()}.png` : null,
           currentImage: megaEvolution.image_url,
           name: megaEvolution.primal ? `Primal ${pokemon.name}` : `Mega ${pokemon.name} ${megaEvolution.form ? megaEvolution.form : ''}`.trim(),
-          variantType: megaEvolution.primal ? `primal` : `mega${formSuffix}`
+          variantType: megaEvolution.primal ? `primal` : `mega${formSuffix}`,
+          cp40: megaEvolution.cp40 || pokemon.cp40,
+          cp50: megaEvolution.cp50 || pokemon.cp50
         };
 
         baseVariant.pokemonKey = determinePokemonKey(baseVariant);
@@ -118,7 +119,9 @@ const createPokemonVariants = (pokemons) => {
             ...baseVariant,
             currentImage: megaEvolution.image_url_shiny,
             name: megaEvolution.primal ? `Shiny Primal ${pokemon.name}` : `Shiny Mega ${pokemon.name} ${megaEvolution.form ? megaEvolution.form : ''}`.trim(),
-            variantType: megaEvolution.primal ? `shiny_primal` : `shiny_mega${formSuffix}`
+            variantType: megaEvolution.primal ? `shiny_primal` : `shiny_mega${formSuffix}`,
+            cp40: megaEvolution.cp40 || pokemon.cp40,
+            cp50: megaEvolution.cp50 || pokemon.cp50
           };
           shinyVariant.pokemonKey = determinePokemonKey(shinyVariant);
           variants.push(shinyVariant);

@@ -32,19 +32,19 @@ function MainInfo({ pokemon }) {
       <div className="stat-gauge">
         <div className="stat-text"><strong>Attack:</strong> {pokemon.attack}</div>
         <div className="gauge-container">
-          <div className="gauge" style={{ width: calculateWidth(pokemon.attack, 345), backgroundColor: '#ae4c4c' }}></div>
+          <div className="gauge" style={{ width: calculateWidth(pokemon.attack, 400), backgroundColor: '#ae4c4c' }}></div>
         </div>
       </div>
       <div className="stat-gauge">
         <div className="stat-text"><strong>Defense:</strong> {pokemon.defense}</div>
         <div className="gauge-container">
-          <div className="gauge" style={{ width: calculateWidth(pokemon.defense, 396), backgroundColor: '#4cae4f' }}></div>
+          <div className="gauge" style={{ width: calculateWidth(pokemon.defense, 400), backgroundColor: '#4cae4f' }}></div>
         </div>
       </div>
       <div className="stat-gauge">
         <div className="stat-text"><strong>Stamina:</strong> {pokemon.stamina}</div>
         <div className="gauge-container">
-          <div className="gauge" style={{ width: calculateWidth(pokemon.stamina, 496), backgroundColor: '#4c7aae' }}></div>
+          <div className="gauge" style={{ width: calculateWidth(pokemon.stamina, 400), backgroundColor: '#4c7aae' }}></div>
         </div>
       </div>
 
