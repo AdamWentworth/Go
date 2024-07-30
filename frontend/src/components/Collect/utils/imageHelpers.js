@@ -27,11 +27,17 @@ export function determinePokemonKey(pokemon) {
         suffix = '-shiny_shadow';
     }
 
-    // Check for Mega and Shiny Mega Evolutions
-    if (pokemon.variantType && pokemon.variantType.startsWith('mega_')) {
-        suffix = `-${pokemon.variantType}`;
-    } else if (pokemon.variantType && pokemon.variantType.startsWith('shiny_mega_')) {
-        suffix = `-${pokemon.variantType}`;
+    // Check for Mega, Shiny Mega, Primal, and Shiny Primal Evolutions
+    if (pokemon.variantType) {
+        if (pokemon.variantType.startsWith('mega')) {
+            suffix = `-${pokemon.variantType}`;
+        } else if (pokemon.variantType.startsWith('shiny_mega')) {
+            suffix = `-${pokemon.variantType}`;
+        } else if (pokemon.variantType.startsWith('primal')) {
+            suffix = `-${pokemon.variantType}`;
+        } else if (pokemon.variantType.startsWith('shiny_primal')) {
+            suffix = `-${pokemon.variantType}`;
+        }
     }
 
     // Check for a match with costume image URLs
