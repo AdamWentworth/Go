@@ -11,7 +11,6 @@ function Raid() {
     const { variants, loading } = usePokemonData();
     const [currentPage, setCurrentPage] = useState(0);
     const itemsPerPage = 15;
-    const enemyDPS = 20; // Example value for enemy DPS, adjust as needed
 
     if (loading) {
         return <LoadingSpinner />;
@@ -21,7 +20,11 @@ function Raid() {
         !(variant.variantType.includes('shiny') || variant.variantType.startsWith('costume'))
     );
 
-    const moveCombinations = filteredVariants.flatMap(variant => getMoveCombinations(variant, enemyDPS));
+    // No need to pass raidBoss defense, getMoveCombinations uses default if not provided
+    const moveCombinations = filteredVariants.flatMap(variant => 
+        getMoveCombinations(variant)
+    );
+
     const totalPages = Math.ceil(moveCombinations.length / itemsPerPage);
     const currentItems = moveCombinations.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
