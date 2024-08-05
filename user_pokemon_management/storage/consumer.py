@@ -1,14 +1,22 @@
 # storage/consumer.py
-import time
+import os
 import json
+import time
 import logging
+from pathlib import Path
 from confluent_kafka import Consumer, KafkaException
 from django.conf import settings
 from .models import User, PokemonInstance
-from django.db import connections
+from django.db import connections, OperationalError
+from apscheduler.schedulers.background import BackgroundScheduler
 
 logger = logging.getLogger('basicLogger')
 file_logger = logging.getLogger('fileLogger')
+
+# Path to store messages
+FAILED_MESSAGES_DIR = Path(__file__).resolve().parent / 'failed_messages'
+FAILED_MESSAGES_DIR.mkdir(parents=True, exist_ok=True)
+FAILED_MESSAGES_FILE = FAILED_MESSAGES_DIR / 'failed_messages.jsonl'
 
 class TraceIDLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
@@ -82,12 +90,25 @@ def consume_messages():
         consumer.close()
         logger.info("Kafka consumer closed")
 
-def handle_message(data, trace_logger):
-    try:
-        # Validate database connection
-        for conn in connections.all():
-            conn.ensure_connection()
+def ensure_db_connection(max_retries=5, retry_interval=5):
+    retries = 0
+    while retries < max_retries:
+        try:
+            for conn in connections.all():
+                conn.ensure_connection()
+            return True
+        except OperationalError:
+            retries += 1
+            logger.error(f"Database connection failed, retrying {retries}/{max_retries}...")
+            time.sleep(retry_interval)
+    return False
 
+def handle_message(data, trace_logger):
+    if not ensure_db_connection():
+        save_failed_message(data)
+        return
+
+    try:
         user_id = data.get('user_id')
         username = data.get('username')
         pokemon_data = data.get('pokemon', {})
@@ -186,5 +207,47 @@ def handle_message(data, trace_logger):
 
         logger.info(f"User {username} {action_summary} instances with status 200")
         file_logger.debug(f"User {username} {action_summary} instances with status 200")
+    except OperationalError as oe:
+        trace_logger.error(f"Failed to handle message due to database error: {oe}")
+        save_failed_message(data)
     except Exception as e:
         trace_logger.error(f"Failed to handle message: {e}")
+
+def save_failed_message(data):
+    try:
+        with open(FAILED_MESSAGES_FILE, 'a') as f:
+            f.write(json.dumps(data) + "\n")
+        logger.info(f"Message saved to {FAILED_MESSAGES_FILE} for later reprocessing.")
+    except Exception as e:
+        logger.error(f"Failed to save message to file: {e}")
+
+def reprocess_failed_messages():
+    if FAILED_MESSAGES_FILE.exists() and FAILED_MESSAGES_FILE.stat().st_size > 0:
+        with open(FAILED_MESSAGES_FILE, 'r') as f:
+            messages = f.readlines()
+
+        for message in messages:
+            try:
+                data = json.loads(message)
+                trace_id = data.get('trace_id', 'N/A')
+                trace_logger = TraceIDLoggerAdapter(file_logger, {'trace_id': trace_id})
+                handle_message(data, trace_logger)
+            except Exception as e:
+                logger.error(f"Failed to reprocess message: {e}")
+
+        # Clear the file after reprocessing
+        with open(FAILED_MESSAGES_FILE, 'w') as f:
+            pass
+
+        logger.info("Reprocessed failed messages.")
+    else:
+        logger.debug("No failed messages to reprocess.")
+
+def start_reprocessing_scheduler():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(reprocess_failed_messages, 'interval', minutes=5)
+    scheduler.start()
+    logger.info("Scheduler started for reprocessing failed messages every 5 minutes.")
+
+# In your startup script or main Django app initialization, start the reprocessing scheduler
+start_reprocessing_scheduler()

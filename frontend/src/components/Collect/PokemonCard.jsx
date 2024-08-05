@@ -31,6 +31,12 @@ const PokemonCard = ({
     };
 
     const generateH2Content = () => {
+        // Check if nickname exists
+        const nickname = pokemon.ownershipStatus?.nickname;
+        if (nickname && nickname.trim()) {
+            return nickname;
+        }
+
         let contentParts = [];
     
         if (pokemon.currentCostumeName) {
