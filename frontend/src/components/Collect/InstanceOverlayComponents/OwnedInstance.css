@@ -85,7 +85,7 @@
   flex: 1; 
 }
 
-.lucky-backdrop {
+.owned-instance .lucky-backdrop {
   position: absolute;
   top: 18%;
   left: 15%;

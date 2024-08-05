@@ -68,7 +68,24 @@
 }
 
 /* Default mode specific styles */
+.lucky-backdrop-wrapper {
+    position: absolute;
+    top: 65%; /* Adjust to move the backdrop lower */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%; /* Ensures full width */
+    height: 0; /* This will be set by padding-bottom */
+    padding-bottom: 40%; /* Adjust based on the aspect ratio of the image */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2; /* Ensure the backdrop is behind the image */
+}
+
 .lucky-backdrop {
+    width: 100%;
+    height: auto; /* Maintain aspect ratio */
+    max-width: 10vw; /* Adjust size as necessary */
     filter: brightness(0.85); /* Set default brightness for non-light mode */
 }
 

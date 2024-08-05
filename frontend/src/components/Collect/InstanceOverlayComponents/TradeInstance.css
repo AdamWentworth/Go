@@ -32,7 +32,7 @@
     flex: 1; 
   }
   
-  .lucky-backdrop {
+.trade-instance .lucky-backdrop {
     position: absolute;
     top: 18%;
     left: 15%;

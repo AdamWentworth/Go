@@ -82,20 +82,13 @@ const PokemonCard = ({
         }}>
             <div className="pokemon-image-container" style={{ position: 'relative' }}>
                 {shouldDisplayLuckyBackdrop && (
-                    <img
-                        src={`${process.env.PUBLIC_URL}/images/lucky.png`}
-                        alt="Lucky backdrop"
-                        className="lucky-backdrop"
-                        style={{
-                            position: 'absolute',
-                            top: '50%',
-                            left: '50%',
-                            width: '150px', // Double the original width of 91px
-                            height: '100px', // Double the original height of 63px
-                            transform: 'translate(-50%, -50%)',
-                            zIndex: 2, // Ensure the backdrop is behind the image
-                        }}
-                    />
+                    <div className="lucky-backdrop-wrapper">
+                        <img
+                            src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                            alt="Lucky backdrop"
+                            className="lucky-backdrop"
+                        />
+                    </div>
                 )}
                 <div className="cp-placeholder" style={{ zIndex: 3 }}>
                     {sortType === 'combatPower' && (pokemon.ownershipStatus ? pokemon.ownershipStatus.cp : pokemon.cp50) && (
