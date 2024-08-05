@@ -1,20 +1,25 @@
 // createPokemonVariants.js
 
 import { formatCostumeName } from './formattingHelpers';
-import { determinePokemonKey } from './imageHelpers'; // Make sure the path is correct
+import { determinePokemonKey } from './imageHelpers';
+import { matchFormsAndVariantType } from './formMatcher';
 
 const createPokemonVariants = (pokemons) => {
   const generateVariants = (pokemon) => {
     let variants = [];
 
-    // Generate each type of variant
+    const addVariant = (variant, type) => {
+      variant.pokemonKey = determinePokemonKey(variant);
+      variant.variantType = type;
+      variants.push(variant);
+    };
+
     const defaultVariant = {
       ...pokemon,
       currentImage: pokemon.image_url,
       variantType: 'default'
     };
-    defaultVariant.pokemonKey = determinePokemonKey(defaultVariant);
-    variants.push(defaultVariant);
+    addVariant(defaultVariant, 'default');
 
     if (pokemon.shiny_available) {
       const shinyVariant = {
@@ -23,8 +28,7 @@ const createPokemonVariants = (pokemons) => {
         variantType: 'shiny',
         name: `Shiny ${pokemon.name}`
       };
-      shinyVariant.pokemonKey = determinePokemonKey(shinyVariant);
-      variants.push(shinyVariant);
+      addVariant(shinyVariant, 'shiny');
     }
 
     if (pokemon.date_shadow_available) {
@@ -34,8 +38,7 @@ const createPokemonVariants = (pokemons) => {
         variantType: 'shadow',
         name: `Shadow ${pokemon.name}`
       };
-      shadowVariant.pokemonKey = determinePokemonKey(shadowVariant);
-      variants.push(shadowVariant);
+      addVariant(shadowVariant, 'shadow');
 
       if (pokemon.date_shiny_shadow_available) {
         const shinyShadowVariant = {
@@ -44,8 +47,7 @@ const createPokemonVariants = (pokemons) => {
           variantType: 'shiny_shadow',
           name: `Shiny Shadow ${pokemon.name}`
         };
-        shinyShadowVariant.pokemonKey = determinePokemonKey(shinyShadowVariant);
-        variants.push(shinyShadowVariant);
+        addVariant(shinyShadowVariant, 'shiny_shadow');
       }
     }
 
@@ -57,8 +59,7 @@ const createPokemonVariants = (pokemons) => {
           variantType: `costume_${costume.costume_id}`,
           name: `${formatCostumeName(costume.name)} ${pokemon.name}`
         };
-        costumeVariant.pokemonKey = determinePokemonKey(costumeVariant);
-        variants.push(costumeVariant);
+        addVariant(costumeVariant, `costume_${costume.costume_id}`);
 
         if (costume.shiny_available) {
           const shinyCostumeVariant = {
@@ -67,8 +68,7 @@ const createPokemonVariants = (pokemons) => {
             variantType: `costume_${costume.costume_id}_shiny`,
             name: `Shiny ${formatCostumeName(costume.name)} ${pokemon.name}`
           };
-          shinyCostumeVariant.pokemonKey = determinePokemonKey(shinyCostumeVariant);
-          variants.push(shinyCostumeVariant);
+          addVariant(shinyCostumeVariant, `costume_${costume.costume_id}_shiny`);
         }
         if (costume.shadow_costume) {
           const shadowCostumeVariant = {
@@ -77,13 +77,11 @@ const createPokemonVariants = (pokemons) => {
             variantType: `shadow_costume_${costume.costume_id}`,
             name: `Shadow ${formatCostumeName(costume.name)} ${pokemon.name}`
           };
-          shadowCostumeVariant.pokemonKey = determinePokemonKey(shadowCostumeVariant);
-          variants.push(shadowCostumeVariant);
+          addVariant(shadowCostumeVariant, `shadow_costume_${costume.costume_id}`);
         }
       });
     }
 
-    // Check if there are Mega Evolutions and merge them into the base Pokemon data
     if (pokemon.megaEvolutions && pokemon.megaEvolutions.length > 0) {
       pokemon.megaEvolutions.forEach(megaEvolution => {
         const formSuffix = megaEvolution.form ? `_${megaEvolution.form.toLowerCase()}` : '';
@@ -111,8 +109,7 @@ const createPokemonVariants = (pokemons) => {
           cp50: megaEvolution.cp50 || pokemon.cp50
         };
 
-        baseVariant.pokemonKey = determinePokemonKey(baseVariant);
-        variants.push(baseVariant);
+        addVariant(baseVariant, megaEvolution.primal ? `primal` : `mega${formSuffix}`);
 
         if (megaEvolution.image_url_shiny) {
           const shinyVariant = {
@@ -123,11 +120,21 @@ const createPokemonVariants = (pokemons) => {
             cp40: megaEvolution.cp40 || pokemon.cp40,
             cp50: megaEvolution.cp50 || pokemon.cp50
           };
-          shinyVariant.pokemonKey = determinePokemonKey(shinyVariant);
-          variants.push(shinyVariant);
+          addVariant(shinyVariant, megaEvolution.primal ? `shiny_primal` : `shiny_mega${formSuffix}`);
         }
       });
     }
+
+     // Remove raid boss data from variants that do not meet the criteria
+    variants = variants.map(variant => {
+      const raidBossForms = pokemon.raid_boss.map(rb => rb.form);
+      const matchResult = raidBossForms.some(raidBossForm => matchFormsAndVariantType(variant, variant.form, raidBossForm, variant.variantType, pokemon.pokemon_id));
+      if (!matchResult) {
+        const { raid_boss, ...rest } = variant;
+        return rest;
+      }
+      return variant;
+    });
 
     return variants;
   };
@@ -136,4 +143,3 @@ const createPokemonVariants = (pokemons) => {
 };
 
 export default createPokemonVariants;
-

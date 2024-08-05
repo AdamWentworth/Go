@@ -14,6 +14,7 @@ const { formatFusionData } = require('../services/fusionService');
 const { getBackgroundsForPokemon } = require('../services/backgroundService');
 const { getCpForPokemon, getCpForMegaEvolution } = require('../services/cpService');
 const { getMegaEvolutionsForPokemon } = require('../services/megaService');
+const { getRaidBossData } = require('../services/raidService');
 
 const db = new sqlite3.Database('./data/pokego.db');
 
@@ -137,8 +138,25 @@ router.get('/pokemon/pokemons', (req, res) => {
                                             logger.error(`Error fetching mega evolutions: ${err.message}`);
                                             res.status(500).json({ error: err.message });
                                         } else {
-                                            res.json(pokemonsWithMegaEvolutions);
-                                            logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
+                                            // Add raid boss data to the response
+                                            getRaidBossData((err, raidBossData) => {
+                                                if (err) {
+                                                    logger.error(`Error fetching raid boss data: ${err.message}`);
+                                                    res.status(500).json({ error: err.message });
+                                                    return;
+                                                }
+
+                                                const pokemonsWithRaidBossData = pokemonsWithMegaEvolutions.map(pokemon => {
+                                                    const raidBossEntries = raidBossData[pokemon.pokemon_id] || [];
+                                                    return {
+                                                        ...pokemon,
+                                                        raid_boss: raidBossEntries
+                                                    };
+                                                });
+
+                                                res.json(pokemonsWithRaidBossData);
+                                                logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
+                                            });
                                         }
                                     });
                                 });

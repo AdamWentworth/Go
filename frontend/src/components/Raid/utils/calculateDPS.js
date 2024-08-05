@@ -3,8 +3,18 @@
 export function calculateDPS(name, variant, fastMove, chargedMove, playerAttackStat, playerDefenseStat, playerStaminaStat, 
     raidBossDPS, raidBossAttack, raidBossDefense, raidBossStamina) {
 
-    const FDmg = calculateDamage(fastMove.raid_power, playerAttackStat, raidBossDefense, fastMove.type_name, variant.type1_name, variant.type2_name);
-    const CDmg = calculateDamage(chargedMove.raid_power, playerAttackStat, raidBossDefense, chargedMove.type_name, variant.type1_name, variant.type2_name);
+    // Check if the variant is a Shadow Pokémon
+    const isShadow = variant.variantType && variant.variantType.toLowerCase().includes("shadow");
+
+    // Calculate damage dealt by the player's Pokémon
+    let FDmg = calculateDamage(fastMove.raid_power, playerAttackStat, raidBossDefense, fastMove.type_name, variant.type1_name, variant.type2_name);
+    let CDmg = calculateDamage(chargedMove.raid_power, playerAttackStat, raidBossDefense, chargedMove.type_name, variant.type1_name, variant.type2_name);
+
+    // Apply Shadow Pokémon attack boost
+    if (isShadow) {
+        FDmg *= 1.2;
+        CDmg *= 1.2;
+    }
 
     const fastCooldownSeconds = fastMove.raid_cooldown / 1000;
     const chargedCooldownSeconds = chargedMove.raid_cooldown / 1000;
@@ -16,7 +26,12 @@ export function calculateDPS(name, variant, fastMove, chargedMove, playerAttackS
     const CEPS = Math.abs(chargedMove.raid_energy) / chargedCooldownSeconds;
 
     // Calculate damage taken per second (DTPS) by the player
-    const DTPS = calculateDamage(raidBossDPS, raidBossAttack, playerDefenseStat, '', '', '');
+    let DTPS = calculateDamage(raidBossDPS, raidBossAttack, playerDefenseStat, '', '', '');
+
+    // Apply Shadow Pokémon defense reduction
+    if (isShadow) {
+        DTPS *= 1.2;
+    }
 
     // Assume a specific amount of energy gained per damage taken (this value can be adjusted based on actual game mechanics)
     const energyGainedPerDamage = 0.5; // Example value, this can be adjusted

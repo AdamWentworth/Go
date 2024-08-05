@@ -1,18 +1,20 @@
 // Raid.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Raid.css';
 import { usePokemonData } from '../../contexts/PokemonDataContext';
 import LoadingSpinner from '../LoadingSpinner';
 import { getMoveCombinations } from './utils/moveCombinations';
 import Pagination from './Pagination';
 import Table from './Table';
+import useRaidBossesData from './hooks/useRaidBossesData';
 
 function Raid() {
     const { variants, loading } = usePokemonData();
+    const { raidBossesData, raidLoading } = useRaidBossesData(variants, loading);
     const [currentPage, setCurrentPage] = useState(0);
     const itemsPerPage = 15;
 
-    if (loading) {
+    if (loading || raidLoading) {
         return <LoadingSpinner />;
     }
 
