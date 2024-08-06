@@ -18,6 +18,11 @@ def run_service(service):
     os.environ['DJANGO_SETTINGS_MODULE'] = f'{service}.settings'
     os.environ['PYTHONPATH'] = os.path.dirname(os.path.abspath(__file__))
 
+    if service == 'storage':
+        os.environ['STORAGE_SERVICE'] = 'true'
+    else:
+        os.environ['STORAGE_SERVICE'] = 'false'
+
     try:
         django.setup()
     except ImportError as exc:
@@ -44,4 +49,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

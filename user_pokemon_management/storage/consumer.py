@@ -104,150 +104,161 @@ def ensure_db_connection(max_retries=5, retry_interval=5):
     return False
 
 def handle_message(data, trace_logger):
-    if not ensure_db_connection():
-        save_failed_message(data)
-        return
+    max_retries = 5
+    retry_interval = 5
+    retries = 0
 
-    try:
-        user_id = data.get('user_id')
-        username = data.get('username')
-        pokemon_data = data.get('pokemon', {})
+    while retries < max_retries:
+        try:
+            if not ensure_db_connection():
+                retries += 1
+                time.sleep(retry_interval)
+                continue
 
-        trace_logger.info(f"Handling message for user_id: {user_id}, username: {username}")
+            user_id = data.get('user_id')
+            username = data.get('username')
+            pokemon_data = data.get('pokemon', {})
 
-        user, created = User.objects.get_or_create(user_id=user_id, defaults={'username': username})
-        trace_logger.info(f"User processed: {user_id}, created: {created}")
+            trace_logger.info(f"Handling message for user_id: {user_id}, username: {username}")
 
-        created_count = 0
-        updated_count = 0
-        deleted_count = 0
+            user, created = User.objects.get_or_create(user_id=user_id, defaults={'username': username})
+            trace_logger.info(f"User processed: {user_id}, created: {created}")
 
-        for instance_id, pokemon in pokemon_data.items():
-            trace_logger.info(f"Processing instance {instance_id} for user {user_id} with data: {pokemon}")
+            created_count = 0
+            updated_count = 0
+            deleted_count = 0
 
-            cp = pokemon.get('cp')
-            if cp == "":
-                cp = None
+            for instance_id, pokemon in pokemon_data.items():
+                trace_logger.info(f"Processing instance {instance_id} for user {user_id} with data: {pokemon}")
 
-            if (
-                pokemon.get('is_unowned', False) and
-                not pokemon.get('is_owned', False) and
-                not pokemon.get('is_wanted', False) and
-                not pokemon.get('is_for_trade', False)
-            ):
-                deleted, _ = PokemonInstance.objects.filter(instance_id=instance_id).delete()
-                if deleted:
-                    deleted_count += 1
-                    trace_logger.info(f"Instance deleted for user {user_id}: {instance_id}")
-            else:
-                try:
-                    existing_instance = PokemonInstance.objects.get(instance_id=instance_id)
-                    trace_logger.info(f"Existing instance last_update: {existing_instance.last_update}, incoming last_update: {pokemon.get('last_update', 0)}")
-                    if existing_instance.last_update >= pokemon.get('last_update', 0):
-                        trace_logger.info(f"Ignored older or same update for instance {instance_id}")
-                        continue
-                except PokemonInstance.DoesNotExist:
-                    trace_logger.info(f"Instance {instance_id} does not exist, will create a new one.")
+                cp = pokemon.get('cp')
+                if cp == "":
+                    cp = None
 
-                defaults = {
-                    'pokemon_id': pokemon.get('pokemon_id'),
-                    'nickname': pokemon.get('nickname'),
-                    'cp': cp,
-                    'attack_iv': pokemon.get('attack_iv'),
-                    'defense_iv': pokemon.get('defense_iv'),
-                    'stamina_iv': pokemon.get('stamina_iv'),
-                    'shiny': pokemon.get('shiny', False),
-                    'costume_id': pokemon.get('costume_id'),
-                    'lucky': pokemon.get('lucky', False),
-                    'shadow': pokemon.get('shadow', False),
-                    'purified': pokemon.get('purified', False),
-                    'fast_move_id': pokemon.get('fast_move_id'),
-                    'charged_move1_id': pokemon.get('charged_move1_id'),
-                    'charged_move2_id': pokemon.get('charged_move2_id'),
-                    'weight': pokemon.get('weight'),
-                    'height': pokemon.get('height'),
-                    'gender': pokemon.get('gender'),
-                    'mirror': pokemon.get('mirror', False),
-                    'pref_lucky': pokemon.get('pref_lucky', False),
-                    'registered': pokemon.get('registered', False),
-                    'favorite': pokemon.get('favorite', False),
-                    'location_card': pokemon.get('location_card'),
-                    'location_caught': pokemon.get('location_caught'),
-                    'friendship_level': pokemon.get('friendship_level'),
-                    'date_caught': pokemon.get('date_caught'),
-                    'date_added': pokemon.get('date_added'),
-                    'last_update': pokemon.get('last_update'),
-                    'is_unowned': pokemon.get('is_unowned', False),
-                    'is_owned': pokemon.get('is_owned', False),
-                    'is_for_trade': pokemon.get('is_for_trade', False),
-                    'is_wanted': pokemon.get('is_wanted', False),
-                    'not_trade_list': pokemon.get('not_trade_list', {}),
-                    'not_wanted_list': pokemon.get('not_wanted_list', {}),
-                    'trace_id': trace_logger.extra.get('trace_id')
-                }
-
-                trace_logger.info(f"Defaults to be used for update/create: {defaults}")
-
-                obj, created = PokemonInstance.objects.update_or_create(instance_id=instance_id, user=user, defaults=defaults)
-                if created:
-                    created_count += 1
-                    trace_logger.info(f"Instance created for user {user_id}: {instance_id}")
+                if (
+                    pokemon.get('is_unowned', False) and
+                    not pokemon.get('is_owned', False) and
+                    not pokemon.get('is_wanted', False) and
+                    not pokemon.get('is_for_trade', False)
+                ):
+                    deleted, _ = PokemonInstance.objects.filter(instance_id=instance_id).delete()
+                    if deleted:
+                        deleted_count += 1
+                        trace_logger.info(f"Instance deleted for user {user_id}: {instance_id}")
                 else:
-                    updated_count += 1
-                    trace_logger.info(f"Instance updated for user {user_id}: {instance_id}")
+                    try:
+                        existing_instance = PokemonInstance.objects.get(instance_id=instance_id)
+                        trace_logger.info(f"Existing instance last_update: {existing_instance.last_update}, incoming last_update: {pokemon.get('last_update', 0)}")
+                        if existing_instance.last_update >= pokemon.get('last_update', 0):
+                            trace_logger.info(f"Ignored older or same update for instance {instance_id}")
+                            continue
+                    except PokemonInstance.DoesNotExist:
+                        trace_logger.info(f"Instance {instance_id} does not exist, will create a new one.")
 
-        actions = []
-        if created_count > 0:
-            actions.append(f"{created_count} created")
-        if updated_count > 0:
-            actions.append(f"{updated_count} updated")
-        if deleted_count > 0:
-            actions.append(f"{deleted_count} dropped")
-        action_summary = ", ".join(actions)
+                    defaults = {
+                        'pokemon_id': pokemon.get('pokemon_id'),
+                        'nickname': pokemon.get('nickname'),
+                        'cp': cp,
+                        'attack_iv': pokemon.get('attack_iv'),
+                        'defense_iv': pokemon.get('defense_iv'),
+                        'stamina_iv': pokemon.get('stamina_iv'),
+                        'shiny': pokemon.get('shiny', False),
+                        'costume_id': pokemon.get('costume_id'),
+                        'lucky': pokemon.get('lucky', False),
+                        'shadow': pokemon.get('shadow', False),
+                        'purified': pokemon.get('purified', False),
+                        'fast_move_id': pokemon.get('fast_move_id'),
+                        'charged_move1_id': pokemon.get('charged_move1_id'),
+                        'charged_move2_id': pokemon.get('charged_move2_id'),
+                        'weight': pokemon.get('weight'),
+                        'height': pokemon.get('height'),
+                        'gender': pokemon.get('gender'),
+                        'mirror': pokemon.get('mirror', False),
+                        'pref_lucky': pokemon.get('pref_lucky', False),
+                        'registered': pokemon.get('registered', False),
+                        'favorite': pokemon.get('favorite', False),
+                        'location_card': pokemon.get('location_card'),
+                        'location_caught': pokemon.get('location_caught'),
+                        'friendship_level': pokemon.get('friendship_level'),
+                        'date_caught': pokemon.get('date_caught'),
+                        'date_added': pokemon.get('date_added'),
+                        'last_update': pokemon.get('last_update'),
+                        'is_unowned': pokemon.get('is_unowned', False),
+                        'is_owned': pokemon.get('is_owned', False),
+                        'is_for_trade': pokemon.get('is_for_trade', False),
+                        'is_wanted': pokemon.get('is_wanted', False),
+                        'not_trade_list': pokemon.get('not_trade_list', {}),
+                        'not_wanted_list': pokemon.get('not_wanted_list', {}),
+                        'trace_id': trace_logger.extra.get('trace_id')
+                    }
 
-        logger.info(f"User {username} {action_summary} instances with status 200")
-        file_logger.debug(f"User {username} {action_summary} instances with status 200")
-    except OperationalError as oe:
-        trace_logger.error(f"Failed to handle message due to database error: {oe}")
-        save_failed_message(data)
-    except Exception as e:
-        trace_logger.error(f"Failed to handle message: {e}")
+                    trace_logger.info(f"Defaults to be used for update/create: {defaults}")
+
+                    obj, created = PokemonInstance.objects.update_or_create(instance_id=instance_id, user=user, defaults=defaults)
+                    if created:
+                        created_count += 1
+                        trace_logger.info(f"Instance created for user {user_id}: {instance_id}")
+                    else:
+                        updated_count += 1
+                        trace_logger.info(f"Instance updated for user {user_id}: {instance_id}")
+
+            actions = []
+            if created_count > 0:
+                actions.append(f"{created_count} created")
+            if updated_count > 0:
+                actions.append(f"{updated_count} updated")
+            if deleted_count > 0:
+                actions.append(f"{deleted_count} dropped")
+            action_summary = ", ".join(actions)
+
+            logger.info(f"User {username} {action_summary} instances with status 200")
+            file_logger.debug(f"User {username} {action_summary} instances with status 200")
+            return  # Exit the retry loop if processing is successful
+        except OperationalError as oe:
+            trace_logger.error(f"Failed to handle message due to database error: {oe}")
+            retries += 1
+            time.sleep(retry_interval)
+        except Exception as e:
+            trace_logger.error(f"Failed to handle message: {e}")
+            break
+
+    save_failed_message(data)
 
 def save_failed_message(data):
     try:
         with open(FAILED_MESSAGES_FILE, 'a') as f:
             f.write(json.dumps(data) + "\n")
-        logger.info(f"Message saved to {FAILED_MESSAGES_FILE} for later reprocessing.")
+        logger.warning(f"Message saved to {FAILED_MESSAGES_FILE} for later reprocessing.")
     except Exception as e:
         logger.error(f"Failed to save message to file: {e}")
 
-def reprocess_failed_messages():
+def reprocess_failed_messages_silent():
     if FAILED_MESSAGES_FILE.exists() and FAILED_MESSAGES_FILE.stat().st_size > 0:
         with open(FAILED_MESSAGES_FILE, 'r') as f:
-            messages = f.readlines()
+            messages = [line.strip() for line in f if line.strip()]
 
-        for message in messages:
-            try:
-                data = json.loads(message)
-                trace_id = data.get('trace_id', 'N/A')
-                trace_logger = TraceIDLoggerAdapter(file_logger, {'trace_id': trace_id})
-                handle_message(data, trace_logger)
-            except Exception as e:
-                logger.error(f"Failed to reprocess message: {e}")
+        if messages:
+            logger.warning(f"Reprocessing {len(messages)} failed messages.")
 
-        # Clear the file after reprocessing
-        with open(FAILED_MESSAGES_FILE, 'w') as f:
-            pass
+            for message in messages:
+                try:
+                    data = json.loads(message)
+                    trace_id = data.get('trace_id', 'N/A')
+                    trace_logger = TraceIDLoggerAdapter(file_logger, {'trace_id': trace_id})
+                    handle_message(data, trace_logger)
+                except Exception as e:
+                    logger.error(f"Failed to reprocess message: {e}")
 
-        logger.info("Reprocessed failed messages.")
-    else:
-        logger.debug("No failed messages to reprocess.")
+            # Clear the file after reprocessing
+            with open(FAILED_MESSAGES_FILE, 'w') as f:
+                pass
+
+            logger.warning("Reprocessed failed messages.")
 
 def start_reprocessing_scheduler():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(reprocess_failed_messages, 'interval', minutes=5)
+    scheduler.add_job(reprocess_failed_messages_silent, 'interval', minutes=5)
     scheduler.start()
-    logger.info("Scheduler started for reprocessing failed messages every 5 minutes.")
 
 # In your startup script or main Django app initialization, start the reprocessing scheduler
 start_reprocessing_scheduler()

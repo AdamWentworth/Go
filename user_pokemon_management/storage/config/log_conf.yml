@@ -34,6 +34,10 @@ loggers:
     level: DEBUG
     handlers: [console, file]
     propagate: no
+  apscheduler:
+    level: WARNING
+    handlers: [console, file]
+    propagate: no
 root:
   level: DEBUG
   handlers: [console, file]
