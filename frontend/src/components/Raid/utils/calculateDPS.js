@@ -1,14 +1,20 @@
 // calculateDPS.js
 
+import { calculateDamage } from './calculateDamage';
+
 export function calculateDPS(name, variant, fastMove, chargedMove, playerAttackStat, playerDefenseStat, playerStaminaStat, 
-    raidBossDPS, raidBossAttack, raidBossDefense, raidBossStamina) {
+    raidBossDPS, raidBossAttack, raidBossDefense, raidBossStamina, selectedRaidBoss) {
 
     // Check if the variant is a Shadow Pokémon
     const isShadow = variant.variantType && variant.variantType.toLowerCase().includes("shadow");
 
+    // Determine the raid boss types
+    const raidBossType1 = selectedRaidBoss && selectedRaidBoss.type1_name ? selectedRaidBoss.type1_name.toLowerCase() : null;
+    const raidBossType2 = selectedRaidBoss && selectedRaidBoss.type2_name ? selectedRaidBoss.type2_name.toLowerCase() : null;
+
     // Calculate damage dealt by the player's Pokémon
-    let FDmg = calculateDamage(fastMove.raid_power, playerAttackStat, raidBossDefense, fastMove.type_name, variant.type1_name, variant.type2_name);
-    let CDmg = calculateDamage(chargedMove.raid_power, playerAttackStat, raidBossDefense, chargedMove.type_name, variant.type1_name, variant.type2_name);
+    let FDmg = calculateDamage(fastMove.raid_power, playerAttackStat, raidBossDefense, fastMove.type_name, variant.type1_name, variant.type2_name, raidBossType1, raidBossType2);
+    let CDmg = calculateDamage(chargedMove.raid_power, playerAttackStat, raidBossDefense, chargedMove.type_name, variant.type1_name, variant.type2_name, raidBossType1, raidBossType2);
 
     // Apply Shadow Pokémon attack boost
     if (isShadow) {
@@ -25,19 +31,24 @@ export function calculateDPS(name, variant, fastMove, chargedMove, playerAttackS
     const FEPS = fastMove.raid_energy / fastCooldownSeconds;
     const CEPS = Math.abs(chargedMove.raid_energy) / chargedCooldownSeconds;
 
-    // Calculate damage taken per second (DTPS) by the player
-    let DTPS = calculateDamage(raidBossDPS, raidBossAttack, playerDefenseStat, '', '', '');
+    let DTPS = calculateDamage(
+        raidBossDPS, 
+        raidBossAttack, 
+        playerDefenseStat, 
+        selectedRaidBoss && selectedRaidBoss.type1_name ? selectedRaidBoss.type1_name.toLowerCase() : '', 
+        selectedRaidBoss && selectedRaidBoss.type1_name ? selectedRaidBoss.type1_name.toLowerCase() : '', 
+        selectedRaidBoss && selectedRaidBoss.type2_name ? selectedRaidBoss.type2_name.toLowerCase() : '', 
+        variant.type1_name, 
+        variant.type2_name
+    );    
 
-    // Apply Shadow Pokémon defense reduction
     if (isShadow) {
         DTPS *= 1.2;
     }
 
-    // Assume a specific amount of energy gained per damage taken (this value can be adjusted based on actual game mechanics)
-    const energyGainedPerDamage = 0.5; // Example value, this can be adjusted
+    const energyGainedPerDamage = 0.5;
     const energyFromDamageTaken = DTPS * energyGainedPerDamage;
 
-    // Adjusted EPS values
     const adjustedFEPS = FEPS + energyFromDamageTaken;
     const adjustedCEPS = CEPS + energyFromDamageTaken;
 
@@ -49,7 +60,7 @@ export function calculateDPS(name, variant, fastMove, chargedMove, playerAttackS
 
     const DPS = DPS0 + EE * (0.5 - x / playerStaminaStat) * y;
 
-    if (variant.pokemon_id === 3 && variant.variantType === "default" && fastMove.move_id === 15 && chargedMove.move_id === 204) {
+    if (variant.pokemon_id === 3 && variant.variantType === "default" && fastMove.move_id === 16 && chargedMove.move_id === 204) {
         console.log(`Detailed Calculation Logs for ${name} (Pokemon ID 3, default variant):`);
         console.log(`Moves:`, fastMove.name, chargedMove.name);
         console.log(`Fast Move Damage (FDmg): ${FDmg}`);
@@ -70,15 +81,4 @@ export function calculateDPS(name, variant, fastMove, chargedMove, playerAttackS
     }
 
     return DPS.toFixed(2);
-}
-
-function calculateDamage(power, attackStat, defenseStat, moveType, pokemonType1, pokemonType2) {
-    moveType = moveType ? moveType.toLowerCase() : '';
-    pokemonType1 = pokemonType1 ? pokemonType1.toLowerCase() : '';
-    pokemonType2 = pokemonType2 ? pokemonType2.toLowerCase() : '';
-
-    const STAB = (moveType === pokemonType1 || moveType === pokemonType2) ? 1.2 : 1.0;
-    const effectiveness = 1; // Placeholder for actual effectiveness based on type matchups
-
-    return Math.floor((0.5 * power * (attackStat / defenseStat) * effectiveness * STAB) + 1);
 }

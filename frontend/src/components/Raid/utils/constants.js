@@ -104,4 +104,9 @@ export const cpMultipliers = {
   "51.0": 0.84529999
 };
 
-export default cpMultipliers;
+export const DEFAULT_RAID_BOSS_STATS = {
+  dps: 20,
+  attack: 200,
+  defense: 160,
+  stamina: 15000
+};

@@ -1,3 +1,5 @@
+// useRaidBossesData.js
+
 import { useEffect, useState } from 'react';
 
 const CACHE_NAME = 'raidCache';
@@ -32,16 +34,13 @@ const useRaidBossesData = (variants, loading) => {
       const raidBossCount = {};
       const foundRaidBossIds = new Set();
 
-      // List of all possible raid boss IDs between 1 and 643
       const allRaidBossIds = Array.from({ length: 643 }, (_, i) => i + 1);
 
-      // Filter out the variants that do not have a raid_boss property or where raid_boss is an empty list
       const raidBossVariants = variants.filter(variant => {
         const hasRaidBoss = Array.isArray(variant.raid_boss) && variant.raid_boss.length > 0;
         return hasRaidBoss;
       });
 
-      // Increment count for each raid_boss item and track found IDs
       raidBossVariants.forEach(variant => {
         variant.raid_boss.forEach(boss => {
           const bossId = boss.id;
@@ -54,20 +53,24 @@ const useRaidBossesData = (variants, loading) => {
         });
       });
 
-      // Determine the IDs not found in the processed data
       const notFoundRaidBossIds = allRaidBossIds.filter(id => !foundRaidBossIds.has(id));
 
-      // Log the IDs not found in the data processed
       console.log('Raid boss IDs not found:', notFoundRaidBossIds);
-
-      // Log the object that will be stored in the cache
       console.log('Storing raid boss variants in cache:', raidBossVariants);
+
+      const enhancedRaidBossVariants = raidBossVariants.map(variant => ({
+        ...variant,
+        dps: variant.dps || DEFAULT_BOSS_DPS,
+        attack: variant.attack || DEFAULT_BOSS_ATTACK,
+        defense: variant.defense || DEFAULT_BOSS_DEFENSE,
+        stamina: variant.stamina || DEFAULT_BOSS_STAMINA
+      }));
 
       try {
         const cache = await caches.open(CACHE_NAME);
-        const response = new Response(JSON.stringify(raidBossVariants));
+        const response = new Response(JSON.stringify(enhancedRaidBossVariants));
         await cache.put(CACHE_KEY, response);
-        setRaidBossesData(raidBossVariants);
+        setRaidBossesData(enhancedRaidBossVariants);
       } catch (error) {
         console.error('Error storing data in cache:', error);
       }
