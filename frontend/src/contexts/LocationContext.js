@@ -2,6 +2,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { toast } from 'react-toastify';
 
 const LocationContext = createContext();
 
@@ -12,32 +13,40 @@ export const LocationProvider = ({ children }) => {
   const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const storedLocation = localStorage.getItem('location');
-    const locationPermissionDenied = localStorage.getItem('locationPermissionDenied');
+    const fetchLocation = () => {
+      const storedLocation = localStorage.getItem('location');
+      const locationPermissionDenied = localStorage.getItem('locationPermissionDenied');
 
-    if (storedLocation) {
-      setLocation(JSON.parse(storedLocation));
-    } else if (locationPermissionDenied) {
-      console.log("Location permission previously denied.");
-      setLocation(null);
+      if (storedLocation) {
+        const parsedLocation = JSON.parse(storedLocation);
+        console.log(`Latitude: ${parsedLocation.latitude}, Longitude: ${parsedLocation.longitude}`);
+        setLocation(parsedLocation);
+      } else if (locationPermissionDenied && !user) {
+        console.log("Location permission previously denied for non-logged-in user.");
+      }
+    };
+
+    if (!isLoading && user !== undefined) {
+      fetchLocation();
     }
-  }, []);
+  }, [user, isLoading]);
 
   const handleLocationPermission = async (showPopupCallback) => {
-    // Wait until the user data is fully loaded
-    while (isLoading) {
-      await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100ms before checking again
+    if (isLoading || user === undefined) {
+      await new Promise(resolve => setTimeout(resolve, 100)); // Wait for the user data to fully load
+      return handleLocationPermission(showPopupCallback); // Recursively call again after waiting
+    }
+
+    const storedLocation = localStorage.getItem('location');
+    if (storedLocation) {
+      console.log("Location already set.");
+      return JSON.parse(storedLocation);
     }
 
     const locationPermissionDenied = localStorage.getItem('locationPermissionDenied');
-    if (locationPermissionDenied) {
-      console.log("Location permission previously denied.");
+    if (locationPermissionDenied && !user) {
+      console.log("Location permission previously denied for non-logged-in user.");
       return null;
-    }
-
-    if (location) {
-      console.log("Location already set.");
-      return location;
     }
 
     if (!user) {
@@ -52,12 +61,14 @@ export const LocationProvider = ({ children }) => {
           navigator.geolocation.getCurrentPosition(
             (position) => {
               console.log("Location acquired:", position);
-              setLocation(position.coords);
-              localStorage.setItem('location', JSON.stringify(position.coords));
-              resolve(position.coords);
+              const coords = position.coords;
+              localStorage.setItem('location', JSON.stringify(coords));
+              setLocation(coords);
+              resolve(coords);
             },
             (error) => {
               console.error("Error acquiring location:", error);
+              toast.error('Location services are disabled in your browser. Please enable location services in your browser settings to use location-based features.');
               resolve(null);
             }
           );
