@@ -1,7 +1,8 @@
 // AuthContext.js
+
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService, refreshTokenService, fetchOwnershipData } from '../components/Authentication/services/authService';
+import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService, refreshTokenService } from '../components/Authentication/services/authService';
 import { formatTimeUntil } from '../components/Collect/utils/formattingHelpers';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -13,30 +14,27 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const userRef = useRef(null);  // Create a ref to store the user state
-  const navigate = useNavigate();  // Initialize the useNavigate hook
-  const intervalRef = useRef(null); // Ref to store the interval ID
-  const refreshTimeoutRef = useRef(null); // Ref to store the refresh token timeout
+  const [isLoading, setIsLoading] = useState(true);
+  const userRef = useRef(null);
+  const navigate = useNavigate();
+  const intervalRef = useRef(null);
+  const refreshTimeoutRef = useRef(null);
 
   // Initialize from local storage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const userData = JSON.parse(storedUser);
-      userRef.current = userData;  // Set the ref to the initial user data
+      userRef.current = userData;
+      setUser(userData);
+      setIsLoggedIn(true);
+      setIsLoading(false);
       const currentTime = new Date().getTime();
       const accessTokenExpiryTime = new Date(userData.accessTokenExpiry).getTime();
       const refreshTokenExpiryTime = new Date(userData.refreshTokenExpiry).getTime();
       const refreshTiming = accessTokenExpiryTime - currentTime - (1 * 60 * 1000);
 
-      console.log(`Access Token expires in: ${formatTimeUntil(accessTokenExpiryTime)}`);
-      console.log(`Refresh Token expires in: ${formatTimeUntil(refreshTokenExpiryTime)}`);
-
       if (refreshTokenExpiryTime > currentTime) {
-        setUser(userData);
-        setIsLoggedIn(true);
-
-        // Send login status to the service worker
         if (navigator.serviceWorker.controller) {
           navigator.serviceWorker.controller.postMessage({
               action: 'updateLoginStatus',
@@ -49,13 +47,15 @@ export const AuthProvider = ({ children }) => {
             checkAndRefreshToken();
           }, refreshTiming);
         } else {
-          checkAndRefreshToken(); // Immediately check and refresh token if timing is <= 0
+          checkAndRefreshToken();
         }
 
         startTokenExpirationCheck();
       } else {
-        clearSession(true);  // Force logout due to token expiration
+        clearSession(true);
       }
+    } else {
+      setIsLoading(false);
     }
 
     return () => {
@@ -65,16 +65,16 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const startTokenExpirationCheck = () => {
-    clearInterval(intervalRef.current); // Clear any existing interval
+    clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
       const currentTime = new Date().getTime();
       if (userRef.current) {
         const refreshTokenExpiryTime = new Date(userRef.current.refreshTokenExpiry).getTime();
         if (currentTime >= refreshTokenExpiryTime) {
-          clearSession(true); // Force logout due to refresh token expiration
+          clearSession(true);
         }
       }
-    }, 60000); // Check every 1 minute
+    }, 60000);
   };
 
   const checkAndRefreshToken = async () => {
@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }) => {
     const refreshTiming = accessTokenExpiryTime - currentTime - (1 * 60 * 1000);
 
     if (currentTime >= refreshTokenExpiryTime) {
-      clearSession(true); // Force logout due to refresh token expiration
+      clearSession(true);
       return;
     }
 
@@ -101,64 +101,47 @@ export const AuthProvider = ({ children }) => {
 
   const refreshToken = async () => {
     try {
-      console.log('Attempting to refresh token...');
       const response = await refreshTokenService();
       if (response && response.accessTokenExpiry && response.refreshTokenExpiry) {
-        console.log('Token refreshed successfully.');
         const updatedUser = response;
 
-        // Update user state and local storage with new expiry times
         const newUser = {
           ...userRef.current,
           accessTokenExpiry: new Date(updatedUser.accessTokenExpiry),
           refreshTokenExpiry: new Date(updatedUser.refreshTokenExpiry),
         };
         setUser(newUser);
-        userRef.current = newUser;  // Update the ref with the new user data
+        userRef.current = newUser;
         localStorage.setItem('user', JSON.stringify(newUser));
-
-        // Re-schedule the next token refresh
         scheduleTokenRefresh(new Date(updatedUser.accessTokenExpiry));
       } else {
-        console.error('Failed to refresh token:', response);
         throw new Error('Failed to refresh token');
       }
     } catch (error) {
-      console.error('Error during token refresh:', error);
-      clearSession(true);  // Force logout due to error in token refresh
+      clearSession(true);
     }
   };
 
   const scheduleTokenRefresh = (expiryTime) => {
-    clearTimeout(refreshTimeoutRef.current); // Clear any existing timeout
+    clearTimeout(refreshTimeoutRef.current);
     const currentTime = new Date().getTime();
     const accessTokenExpiryTime = new Date(expiryTime).getTime();
-    let refreshTiming = accessTokenExpiryTime - currentTime - (1 * 60 * 1000); // Refresh 1 minute before actual expiry
+    let refreshTiming = accessTokenExpiryTime - currentTime - (1 * 60 * 1000);
 
     if (refreshTiming <= 0) {
-      console.log('Access token is about to expire or already expired, refreshing immediately.');
       refreshToken();
     } else {
-      console.log(`Next Access token refresh scheduled in: ${formatTimeUntil(currentTime + refreshTiming)}`);
       refreshTimeoutRef.current = setTimeout(() => {
-        checkAndRefreshToken();  // Changed to checkAndRefreshToken to ensure correct timing
+        checkAndRefreshToken();
       }, refreshTiming);
     }
   };
 
   const login = (userData) => {
-    console.log("Login response:", userData);
-
-    // Assuming you will receive ownershipData with the userData object after successful login
-    // const userWithOwnershipData = {
-    //   ...userData,
-    //   // ownershipData: fetchedOwnershipData // Uncomment this line once the endpoint is live
-    // };
-
     localStorage.setItem('user', JSON.stringify(userData));
     setIsLoggedIn(true);
     setUser(userData);
-    userRef.current = userData;  // Update the ref with the new user data
+    userRef.current = userData;
 
     if (navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({
@@ -168,7 +151,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     startTokenExpirationCheck();
-    scheduleTokenRefresh(userData.accessTokenExpiry); // Pass the correct expiry time
+    scheduleTokenRefresh(userData.accessTokenExpiry);
   };
 
   const logout = async () => {
@@ -177,7 +160,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
-      clearSession(false);  // Manual logout
+      clearSession(false);
       if (navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
             action: 'updateLoginStatus',
@@ -189,12 +172,12 @@ export const AuthProvider = ({ children }) => {
 
   const clearSession = (isForcedLogout) => {
     localStorage.removeItem('user');
+    localStorage.removeItem('location'); // Clear stored location
     setIsLoggedIn(false);
     setUser(null);
-    userRef.current = null;  // Clear the ref
-    clearInterval(intervalRef.current); // Clear the interval
-    clearTimeout(refreshTimeoutRef.current); // Clear the refresh token timeout
-    console.log('Session cleared locally.');
+    userRef.current = null;
+    clearInterval(intervalRef.current);
+    clearTimeout(refreshTimeoutRef.current);
     if (isForcedLogout) {
       navigate('/login', { replace: true });
       setTimeout(() => {
@@ -208,24 +191,17 @@ export const AuthProvider = ({ children }) => {
   const updateUserDetails = async (userId, userData) => {
     try {
       const response = await updateUserService(userId, userData);
-      console.log("Full response from update:", response); // Log the full response
-  
       if (!response.success) {
-        console.error('Update failed:', response);
         toast.error(`Failed to update account details: ${response.error}`);
         return { success: false, error: response.error };
       }
-  
+
       const updatedData = { ...userRef.current, ...response.data };
-      console.log("Updated user data after merge:", updatedData); // Log after merging
-  
-      setUser(updatedData); // Update the user state with the new data
-      localStorage.setItem('user', JSON.stringify(updatedData)); // Optionally update local storage
-  
+      setUser(updatedData);
+      localStorage.setItem('user', JSON.stringify(updatedData));
       toast.success('Account details updated successfully!');
       return { success: true, data: updatedData };
     } catch (error) {
-      console.error('Error updating user details:', error);
       toast.error(`Failed to update account details: ${error.message}`);
       return { success: false, error: error.message };
     }
@@ -234,14 +210,14 @@ export const AuthProvider = ({ children }) => {
   const deleteAccount = async (userId) => {
     try {
       await deleteAccountService(userId);
-      clearSession(false); // Clear session after deleting the account
+      clearSession(false);
     } catch (error) {
       throw error;
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn, login, logout, updateUserDetails, deleteAccount }}>
+    <AuthContext.Provider value={{ user, isLoggedIn, isLoading, login, logout, updateUserDetails, deleteAccount }}>
       {children}
       <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
     </AuthContext.Provider>
