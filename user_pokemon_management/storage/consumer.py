@@ -92,15 +92,18 @@ def consume_messages():
 
 def ensure_db_connection(max_retries=5, retry_interval=5):
     retries = 0
+    backoff_time = retry_interval
     while retries < max_retries:
         try:
             for conn in connections.all():
+                conn.close_if_unusable_or_obsolete()  # Close and reopen connections if needed
                 conn.ensure_connection()
             return True
-        except OperationalError:
+        except OperationalError as e:
             retries += 1
-            logger.error(f"Database connection failed, retrying {retries}/{max_retries}...")
-            time.sleep(retry_interval)
+            logger.warning(f"Database connection failed (attempt {retries}/{max_retries}): {e}")
+            time.sleep(backoff_time)
+            backoff_time = min(backoff_time * 2, 60)  # Exponential backoff
     return False
 
 def handle_message(data, trace_logger):
