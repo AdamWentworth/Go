@@ -15,16 +15,21 @@ const AccountForm = ({ user, handleUpdateUserDetails, onLogout, onDeleteAccount 
 
     const onSubmit = values => {
         if (isEditable) {
-          // Ensure trainerCode is submitted without spaces
-          const submissionValues = {
-            ...values,
-            trainerCode: values.trainerCode.replace(/\s+/g, ''),
-          };
-          console.log("Submitting values:", submissionValues);
-      
-          handleUpdateUserDetails(user.user_id, submissionValues, setIsEditable)
+            // Ensure trainerCode is submitted without spaces
+            const submissionValues = {
+                ...values,
+                trainerCode: values.trainerCode.replace(/\s+/g, ''),
+            };
+            console.log("Submitting values:", submissionValues);
+            
+            // Delete location from local storage if allowLocation is false
+            if (!submissionValues.allowLocation) {
+                localStorage.removeItem('location');
+            }
+
+            handleUpdateUserDetails(user.user_id, submissionValues, setIsEditable)
         }
-    };      
+    };    
 
     if (!user) {
         return <div>Please log in to view and edit account details.</div>;
