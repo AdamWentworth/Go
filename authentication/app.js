@@ -43,7 +43,6 @@ cron.schedule('0 0 * * *', () => {
     createBackup();
 });
 
-
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(session({
