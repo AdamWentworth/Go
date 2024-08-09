@@ -9,7 +9,8 @@ const logger = require('../middlewares/logger'); // Use the same logger configur
 // Load environment variables from .env file
 dotenv.config();
 
-const DATABASE_NAME = 'users';
+const DATABASE_NAME = 'PoGo_App_Users'; // Your actual database name
+const COLLECTION_NAME = 'users'; // The collection you want to back up
 const DATABASE_URL = process.env.DATABASE_URL || 'mongodb://localhost:27017';
 const BACKUP_DIRECTORY = process.env.BACKUP_DIRECTORY || path.join(__dirname, '../backups'); // Ensure this directory exists
 
@@ -28,7 +29,7 @@ const createBackup = () => {
     logger.info(`Backup path: ${backupPath}`);
 
     // Construct the mongodump command to output a single archive file
-    const command = `mongodump --uri="${DATABASE_URL}" --db=${DATABASE_NAME} --archive=${backupPath} --gzip`;
+    const command = `mongodump --uri="${DATABASE_URL}" --db=${DATABASE_NAME} --collection=${COLLECTION_NAME} --archive=${backupPath} --gzip`;
 
     // Log the command to verify
     logger.debug(`Executing command: ${command}`);
