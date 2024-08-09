@@ -1,28 +1,34 @@
 package config
 
 import (
-	"fmt"
-	"log"
-	"os"
+	"io/ioutil"
 
-	"github.com/joho/godotenv"
+	"gopkg.in/yaml.v2"
 )
 
-func LoadConfig() {
-	// Load environment variables from .env.development file
-	err := godotenv.Load(".env.development")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
+type KafkaConfig struct {
+	Port          string `yaml:"port"`
+	Topic         string `yaml:"topic"`
+	MaxRetries    int    `yaml:"max_retries"`
+	RetryInterval int    `yaml:"retry_interval"`
 }
 
-func GetDSN() string {
-	// Fetch database credentials from environment variables
-	return fmt.Sprintf(
-		"user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_PORT"),
-	)
+type AppConfig struct {
+	Version string      `yaml:"version"`
+	Events  KafkaConfig `yaml:"events"`
+}
+
+func LoadConfig() (*AppConfig, error) {
+	data, err := ioutil.ReadFile("config/app_conf.yml")
+	if err != nil {
+		return nil, err
+	}
+
+	var config AppConfig
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }

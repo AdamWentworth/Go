@@ -1,47 +1,62 @@
 package handlers
 
 import (
-	"encoding/json"
-	"net/http"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"location/database"
-	"location/models"
+	"location/config"
 
-	"gorm.io/gorm"
+	"github.com/Shopify/sarama"
 )
 
-func StorePokemonLocation(w http.ResponseWriter, r *http.Request) {
-	var pokemonLocation models.PokemonLocation
-	if err := json.NewDecoder(r.Body).Decode(&pokemonLocation); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+func ConsumeMessages() {
+	// Load Kafka configuration from app_conf.yml
+	appConfig, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load config: %s", err)
 	}
 
-	if err := database.DB.Save(&pokemonLocation).Error; err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	// Set up Sarama configuration
+	saramaConfig := sarama.NewConfig()
+	saramaConfig.Consumer.Return.Errors = true
+	saramaConfig.Version = sarama.V2_1_0_0 // Use the appropriate Kafka version
+
+	// Create a new Sarama consumer
+	consumer, err := sarama.NewConsumer([]string{"localhost:" + appConfig.Events.Port}, saramaConfig)
+	if err != nil {
+		log.Fatalf("Failed to create Kafka consumer: %s", err)
 	}
+	defer consumer.Close()
 
-	w.WriteHeader(http.StatusCreated)
-}
-
-func GetPokemonLocation(w http.ResponseWriter, r *http.Request) {
-	instanceID := r.URL.Query().Get("instance_id")
-	if instanceID == "" {
-		http.Error(w, "Missing Pokemon Instance ID", http.StatusBadRequest)
-		return
+	// Get partition consumer
+	partitionConsumer, err := consumer.ConsumePartition(appConfig.Events.Topic, 0, sarama.OffsetOldest)
+	if err != nil {
+		log.Fatalf("Failed to consume partition: %s", err)
 	}
+	defer partitionConsumer.Close()
 
-	var pokemonLocation models.PokemonLocation
-	if err := database.DB.First(&pokemonLocation, "instance_id = ?", instanceID).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			http.Error(w, "Pokemon not found", http.StatusNotFound)
-			return
+	log.Printf("Kafka consumer started and subscribed to topic: %s", appConfig.Events.Topic)
+
+	// Handle system signals for graceful shutdown
+	sigchan := make(chan os.Signal, 1)
+	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
+
+	run := true
+	for run {
+		select {
+		case sig := <-sigchan:
+			log.Printf("Caught signal %v: terminating\n", sig)
+			run = false
+		case msg := <-partitionConsumer.Messages():
+			log.Printf("Message received on topic %s: %s", msg.Topic, string(msg.Value))
+			// Example: Parse and log user_id from the message
+			// You can add JSON unmarshalling here as needed
+		case err := <-partitionConsumer.Errors():
+			log.Printf("Consumer error: %v\n", err)
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(pokemonLocation)
+	log.Println("Kafka consumer closed")
 }
