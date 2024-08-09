@@ -4,7 +4,7 @@ import jwt
 from django.conf import settings
 from django.http import JsonResponse
 from rest_framework.views import APIView
-from storage.models import PokemonInstance, User
+from .models import PokemonInstance, User  # Import from reader.models now
 from .serializers import PokemonInstanceSerializer
 import logging
 

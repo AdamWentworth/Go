@@ -15403,3 +15403,11 @@ pykafka.exceptions.MessageSizeTooLarge: Message size larger than max_request_siz
 2024-08-08 18:39:03 - INFO - Attempting to connect to Kafka...
 2024-08-08 18:39:03 - INFO - Kafka client connected to 192.168.1.67:9093
 2024-08-08 18:39:04 - INFO - Connected to topic batchedUpdates
+2024-08-08 19:24:17 - INFO - POST /api/batchedUpdates
+2024-08-08 19:24:17 - INFO - Token decoded successfully
+2024-08-08 19:24:17 - WARNING - Error encountered when producing to broker b'192.168.1.67':9093. Retrying.
+2024-08-08 19:24:17 - INFO - User AdamZilla loaded 1 pokemon into Kafka with status 200
+2024-08-08 19:40:50 - INFO - POST /api/batchedUpdates
+2024-08-08 19:40:50 - INFO - Token decoded successfully
+2024-08-08 19:40:50 - WARNING - Error encountered when producing to broker b'192.168.1.67':9093. Retrying.
+2024-08-08 19:40:50 - INFO - User AdamZilla loaded 1 pokemon into Kafka with status 200

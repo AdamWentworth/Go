@@ -1,7 +1,7 @@
 # reader/serializers.py
 
 from rest_framework import serializers
-from storage.models import PokemonInstance, User
+from .models import PokemonInstance, User  # Import from reader.models now
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
