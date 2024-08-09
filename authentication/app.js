@@ -21,6 +21,9 @@ const path = require('path')
 const logger = require('./middlewares/logger'); // Assuming the logger is in the middlewares folder
 // const axios = require('axios');
 
+const cron = require('node-cron');
+const createBackup = require('./tasks/backup');
+
 // Ensure correct path and file reading
 const appConfigPath = path.join(__dirname, 'config', 'app_conf.yml');
 const appConfigContent = fs.readFileSync(appConfigPath, 'utf8');
@@ -33,6 +36,13 @@ const swaggerDocument = YAML.parse(openAPIContent);
 
 // Create an Express application
 const app = express();
+
+// Schedule task to run at Midnight every day
+cron.schedule('0 0 * * *', () => {
+    console.log('Running daily database backup...');
+    createBackup();
+});
+
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 

@@ -45,7 +45,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
   const chargedMoves = pokemon.moves.filter(move => move.is_fast === 0);
   const showShinyWindow = pokemon.shiny_available === 1;
   const showCostumesWindow = Array.isArray(pokemon.costumes) && pokemon.costumes.length > 0;
-  const showShadowWindow = pokemon.image_url_shadow != null;
+  const showShadowWindow = pokemon.date_shadow_available != null;
 
   const switchOverlay = (newPokemonData) => {
     setCurrentPokemon(newPokemonData);
