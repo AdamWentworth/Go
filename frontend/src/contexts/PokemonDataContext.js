@@ -230,11 +230,13 @@ export const PokemonDataProvider = ({ children }) => {
             setData({ variants, ownershipData, lists, loading: false, updateOwnership, updateLists});
         }
 
-        fetchData().catch(error => {
-            console.error("Failed to load Pokemon data:", error);
-            setData(prev => ({ ...prev, loading: false }));
-        });
-    }, []);
+        if (data.loading) {
+            fetchData().catch(error => {
+                console.error("Failed to load Pokemon data:", error);
+                setData(prev => ({ ...prev, loading: false }));
+            });
+        }
+    }, [data.loading]);
 
     // Function to update Pokemon lists
     const updateLists = useCallback(() => {
@@ -464,7 +466,18 @@ export const PokemonDataProvider = ({ children }) => {
     
     useEffect(() => {
         ownershipDataRef.current = data.ownershipData;
-    }, [data.ownershipData]);    
+    }, [data.ownershipData]);   
+    
+    // Define the resetData function
+    const resetData = () => {
+        // Reset the state to the initial loading state
+        setData({
+            variants: [],
+            ownershipData: {},
+            lists: {},
+            loading: true // This will trigger the useEffect to refetch data
+        });
+    };
 
     const setOwnershipData = (newOwnershipData) => {
         setData(prevData => {
@@ -501,7 +514,8 @@ export const PokemonDataProvider = ({ children }) => {
         updateOwnership,
         updateLists,
         updateDetails,
-        setOwnershipData // Add setOwnershipData to context value
+        setOwnershipData,
+        resetData, // Expose resetData to the context value
     }), [data, updateOwnership, updateDetails]);
 
     // Provider wraps children with the Pokemon data context

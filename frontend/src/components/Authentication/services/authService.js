@@ -36,7 +36,7 @@ export const logoutUser = async () => {
   try {
     await authApi.post('/logout', {});
     localStorage.removeItem('user');
-    // localStorage.removeItem('location')
+    localStorage.removeItem('pokemonOwnership'); // Remove pokemonOwnership from localStorage
     return Promise.resolve();
   } catch (error) {
     console.error('Error during logout:', error);

@@ -24,8 +24,8 @@ function App() {
     return (
         <CacheContext.Provider value={cache}>
             <Router>
+            <PokemonDataProvider>
                 <AuthProvider>
-                    <PokemonDataProvider>
                         <LocationProvider>
                             <div className="App">
                                 <Navbar />
@@ -43,8 +43,8 @@ function App() {
                                 <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
                             </div>
                         </LocationProvider>
-                    </PokemonDataProvider>
-                </AuthProvider>
+                    </AuthProvider>
+                </PokemonDataProvider>
             </Router>
         </CacheContext.Provider>
     );

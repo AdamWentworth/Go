@@ -5,6 +5,7 @@ import { logoutUser, updateUserDetails as updateUserService, deleteAccount as de
 import { formatTimeUntil } from '../components/Collect/utils/formattingHelpers';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { usePokemonData } from './PokemonDataContext';
 
 const AuthContext = createContext();
 
@@ -179,21 +180,35 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const clearSession = (isForcedLogout) => {
+  // Inside your AuthProvider component
+  const { resetData  } = usePokemonData(); // Destructure setData from the context
+
+  const clearSession = async (isForcedLogout) => {
     localStorage.removeItem('user');
+    localStorage.removeItem('pokemonOwnership');
     setIsLoggedIn(false);
     setUser(null);
-    userRef.current = null;  // Clear the ref
-    clearInterval(intervalRef.current); // Clear the interval
-    clearTimeout(refreshTimeoutRef.current); // Clear the refresh token timeout
-    console.log('Session cleared locally.');
+    userRef.current = null;
+
+    // Clear relevant caches
+    if ('caches' in window) {
+        try {
+            const cache = await caches.open('pokemonCache');
+            await cache.delete('/pokemonOwnership');
+            await cache.delete('/pokemonLists');
+        } catch (error) {
+            console.error('Error clearing cache storage:', error);
+        }
+    }
+
+    // Call resetData to clear and reinitialize the Pokemon data
+    resetData();
+
     if (isForcedLogout) {
-      navigate('/login', { replace: true });
-      setTimeout(() => {
-        alert('Your session has expired, please log in again.');
-      }, 1000);
+        navigate('/login', { replace: true });
+        setTimeout(() => alert('Your session has expired, please log in again.'), 1000);
     } else {
-      navigate('/login', { replace: true });
+        navigate('/login', { replace: true });
     }
   };
 
@@ -232,56 +247,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // New function to handle location permissions
-  const handleLocationPermission = async () => {
-    const userData = userRef.current;
-    
-    if (!userData) {
-      console.log("User not logged in. Prompting for location permission.");
-      // If user is not logged in, prompt for location permission
-      return new Promise((resolve) => {
-        const userConsent = window.confirm("May we use your current location to optimize location-based services?");
-        if (userConsent) {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              console.log("Location acquired:", position);
-              resolve(position);
-            },
-            (error) => {
-              console.error("Error acquiring location:", error);
-              resolve(null);
-            }
-          );
-        } else {
-          resolve(null);
-        }
-      });
-    } else {
-      console.log("User logged in. Checking allowLocation:", userData.allowLocation);
-      // If user is logged in, check if they allowed location data collection
-      if (userData.allowLocation) {
-        console.log("User allowed location. Acquiring location.");
-        return new Promise((resolve) => {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              console.log("Location acquired:", position);
-              resolve(position);
-            },
-            (error) => {
-              console.error("Error acquiring location:", error);
-              resolve(null);
-            }
-          );
-        });
-      } else {
-        console.log("User did not allow location. Doing nothing.");
-        return null;
-      }
-    }
-  };
-
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn, login, logout, updateUserDetails, deleteAccount, handleLocationPermission }}>
+    <AuthContext.Provider value={{ user, isLoggedIn, login, logout, updateUserDetails, deleteAccount }}>
       {children}
       <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
     </AuthContext.Provider>
