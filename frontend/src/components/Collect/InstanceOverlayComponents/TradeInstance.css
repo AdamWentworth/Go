@@ -1,64 +1,73 @@
 /* TradeInstance.css */
-.owned-instance {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .top-row {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr; /* 1fr for the spacer, auto for CPComponent, 1fr for the right stack */
-      align-items: center;
-      width: 100%;
-    }
-    
-    .cp-component {
-      /* Ensures CPComponent is not stretched and takes the space it requires */
-      justify-self: center; /* Centering CPComponent horizontally in its grid area */
-    }
-    
-    .right-stack {
-      display: flex;
-      flex-direction: column;
-      justify-content: center; /* Center the stack vertically if there's extra space */
-      align-items: flex-end; /* Aligns the children (FavoriteComponent and FriendshipComponent) to the right */
-    }
-  
-  .pokemon-image-container {
-    position: relative;
-  }
-  
-  .lucky-placeholder {
-    flex: 1; 
-  }
-  
+.trade-instance {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.trade-instance .top-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0 1rem;
+  position: relative;
+}
+
+.trade-instance .top-row h2 {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  text-align: center;
+}
+
+.trade-instance .top-row .edit-save-component {
+  position: relative;
+  z-index: 1; /* Ensure it is above the h2 */
+  margin-right: auto; /* Aligns it to the far left */
+}
+
+.trade-instance .cp-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.trade-instance .pokemon-image-container {
+  position: relative;
+}
+
+.trade-instance .lucky-placeholder {
+  flex: 1; 
+}
+
 .trade-instance .lucky-backdrop {
-    position: absolute;
-    top: 18%;
-    left: 15%;
-    width: 180px;
-    height: auto;
-    z-index: 0; /* Ensure it's slightly behind the main image but above any other content */
-  }
-  
-  .trade-instance .pokemon-image {
-    position: relative;
-    max-width: 100%;
-    z-index: 1; /* Ensure it's above the backdrop */
-  }
-  
-  .gender-component {
-    flex: 1; /* Adjust flex settings to manage width and spacing */
-  }
-  
-  .stats-container {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-  }
-  
-  .weight-component, .type-component, .height-component {
-    display: flex;
-    align-items: center;
-  }
-  
+  position: absolute;
+  top: 18%;
+  left: 15%;
+  width: 180px;
+  height: auto;
+  z-index: 0; /* Ensure it's slightly behind the main image but above any other content */
+}
+
+.trade-instance .pokemon-image {
+  position: relative;
+  max-width: 100%;
+  z-index: 1; /* Ensure it's above the backdrop */
+}
+
+.trade-instance .gender-component {
+  flex: 1; /* Adjust flex settings to manage width and spacing */
+}
+
+.trade-instance .stats-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.trade-instance .weight-component, .trade-instance .type-component, .trade-instance .height-component {
+  display: flex;
+  align-items: center;
+}

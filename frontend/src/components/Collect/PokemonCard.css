@@ -191,7 +191,7 @@ p.cp-display {
     }
 
     .pokemon-card h2 {
-        font-size: calc((100vw - (8 * 12px)) / 100 * 1.2);
+        font-size: calc((100vw - (8 * 12px)) / 100 * 1.5);
     }
 
     .type-icons img {

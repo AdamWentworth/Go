@@ -24,8 +24,8 @@ function App() {
     return (
         <CacheContext.Provider value={cache}>
             <Router>
-            <PokemonDataProvider>
-                <AuthProvider>
+                <PokemonDataProvider>
+                    <AuthProvider>
                         <LocationProvider>
                             <div className="App">
                                 <Navbar />

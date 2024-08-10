@@ -91,9 +91,11 @@ const TradeInstance = ({ pokemon }) => {
 
   return (
     <div className="trade-instance">
-      <h2>For Trade</h2>
       <div className="top-row">
         <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+        <h2>For Trade</h2>
+      </div>
+      <div className="cp-row">
         <CPComponent pokemon={pokemon} editMode={editMode} toggleEditMode={toggleEditMode} onCPChange={handleCPChange} />
       </div>
       <div className="pokemon-image-container">

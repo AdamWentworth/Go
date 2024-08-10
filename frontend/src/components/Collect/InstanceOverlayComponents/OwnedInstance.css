@@ -1,74 +1,99 @@
 /* OwnedInstance.css */
-
 .owned-instance {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%; /* Ensure the parent container takes up the full width */
 }
 
-.top-row {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr; /* 1fr for the spacer, auto for CPComponent, 1fr for FavoriteComponent */
+.owned-instance .top-row {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   width: 100%;
+  padding: 0 1rem;
+  position: relative;
 }
 
-.cp-component {
-  justify-self: center; /* Centering CPComponent horizontally in its grid area */
+.owned-instance .top-row .edit-save-component {
+  margin-right: auto;
 }
 
-.background-select-row {
-  position: relative; /* To position the background-select-row within this container */
+.owned-instance .top-row .cp-component {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.owned-instance .top-row .favorite-component {
+  margin-left: auto;
+}
+
+.owned-instance .cp-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.owned-instance .pokemon-image-container {
+  position: relative;
+  width: 100%; /* Make sure the container spans the full width */
+}
+
+.owned-instance .background-select-row {
+  position: relative;
   display: flex;
   justify-content: flex-end;
   width: 100%;
 }
 
-.background-icon {
+.owned-instance .background-icon {
   position: absolute;
-  top: 10px; /* Adjust this value to move it down a bit */
-  right: -8px; /* Adjust this value to move it a tiny bit to the right */
-  z-index: 10; /* Ensure it is above other elements */
+  top: 10px;
+  right: -8px;
+  z-index: 10;
 }
 
-.background-select-row.active .background-icon {
+.owned-instance .background-select-row.active .background-icon {
   cursor: pointer;
 }
 
-.image-container {
+.owned-instance .image-container {
   position: relative;
-  width: 240px; /* Set the width as needed */
-  height: 240px; /* Set the height as needed */
+  width: 240px;
+  height: 240px;
 }
 
-.background-container {
+.owned-instance .background-container {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden; /* Ensure the gradient stays within the container */
-  z-index: 1; /* Ensure it is behind the Pokemon image */
+  overflow: hidden;
+  z-index: 1;
 }
 
-.background-image {
+.owned-instance .background-image {
   width: 100%;
   height: 100%;
-  background-size: cover; /* Ensure the background image covers the container */
-  background-position: center; /* Center the background image */
-  background-repeat: no-repeat; /* Prevent the background image from repeating */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0.3) 70%, transparent 100%);
   mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 45%, rgba(0, 0, 0, 0.3) 65%, transparent 70%);
 }
 
-.brightness-overlay {
+.owned-instance .brightness-overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 70%);
-  z-index: 2; /* Ensure it is above the background image but below the Pokemon image */
+  z-index: 2;
 }
 
 .owned-instance .pokemon-image-container {
@@ -78,10 +103,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3; /* Ensure it is above the background */
+  z-index: 3;
 }
 
-.lucky-placeholder {
+.owned-instance .lucky-placeholder {
   flex: 1; 
 }
 
@@ -91,32 +116,39 @@
   left: 15%;
   width: 180px;
   height: auto;
-  z-index: 4; /* Ensure it's above the background but below the Pokémon image */
+  z-index: 4;
 }
 
 .owned-instance .pokemon-image {
   max-width: 100%;
-  z-index: 5; /* Ensure it's above the backdrop */
+  z-index: 5;
 }
 
-.gender-lucky-row {
+.owned-instance .gender-lucky-row {
   display: flex;
-  align-items: center; /* This ensures vertical centering of children */
-  justify-content: space-around; /* Adjust this if needed for horizontal spacing */
+  align-items: center;
+  justify-content: space-around;
   width: 100%;
 }
 
-.gender-component, .lucky-component {
-  flex: 1; /* Adjust flex settings to manage width and spacing */
+.owned-instance .gender-component, .owned-instance .lucky-component {
+  flex: 1;
 }
 
-.stats-container {
+.owned-instance .stats-container {
   display: flex;
   justify-content: space-between;
   width: 100%;
 }
 
-.weight-component, .type-component, .height-component {
+.owned-instance .weight-component, .owned-instance .type-component, .owned-instance .height-component {
   display: flex;
   align-items: center;
+}
+
+.owned-instance .moves-content, 
+.owned-instance .iv-component, 
+.owned-instance .location-caught-component, 
+.owned-instance .date-caught-component {
+  width: 100%; /* Ensure these containers take up the full width */
 }
