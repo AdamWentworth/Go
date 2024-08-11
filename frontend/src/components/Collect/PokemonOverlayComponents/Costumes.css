@@ -23,6 +23,10 @@
     padding-right: 5px;
     position: relative;
   }
+
+.costume-column h1 {
+  padding-bottom: 15px !important;
+}
   
 .costume-item {
     display: flex;

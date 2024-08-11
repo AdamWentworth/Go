@@ -44,8 +44,9 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
   const fastMoves = pokemon.moves.filter(move => move.is_fast === 1);
   const chargedMoves = pokemon.moves.filter(move => move.is_fast === 0);
   const showShinyWindow = pokemon.shiny_available === 1;
-  const showCostumesWindow = Array.isArray(pokemon.costumes) && pokemon.costumes.length > 0;
-  const showShadowWindow = pokemon.date_shadow_available != null;
+  const isMega = pokemon.variantType && pokemon.variantType.includes("mega"); // Check if the Pokémon is a mega variant
+  const showCostumesWindow = !isMega && Array.isArray(pokemon.costumes) && pokemon.costumes.length > 0; // Only show costumes if not mega
+  const showShadowWindow = !isMega && pokemon.date_shadow_available != null; // Only show shadow overlay if not mega
 
   const switchOverlay = (newPokemonData) => {
     setCurrentPokemon(newPokemonData);
@@ -69,92 +70,91 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
     )
   );
 
-    function renderMediumScreenLayout() {
-      const hasFewCostumes = pokemon.costumes && pokemon.costumes.length <= 2;
-      const hasNoCostumes = pokemon.costumes.length == 0
+  function renderMediumScreenLayout() {
+    const hasFewCostumes = pokemon.costumes && pokemon.costumes.length <= 2;
+    const hasNoCostumes = pokemon.costumes.length == 0;
 
-      return (
-        <div className="overlay-row other-overlays-row">
-          <div className="column moves-column">
-            {renderMoves()}
-          </div>
-          <div className="column main-info-column">
-            <WindowOverlay onClose={onClose} className="overlay-main-info">
-              <MainInfo pokemon={pokemon} className="main-info" />
+    return (
+      <div className="overlay-row other-overlays-row">
+        <div className="column moves-column">
+          {renderMoves()}
+        </div>
+        <div className="column main-info-column">
+          <WindowOverlay onClose={onClose} className="overlay-main-info">
+            <MainInfo pokemon={pokemon} className="main-info" />
+          </WindowOverlay>
+          {(hasFewCostumes && showShadowWindow && !hasNoCostumes) && (
+            <WindowOverlay onClose={onClose} className="overlay-shadow-info">
+              <ShadowInfo pokemon={pokemon} className="shadow-info" />
             </WindowOverlay>
-            {(hasFewCostumes && showShadowWindow && !hasNoCostumes) && (
+          )}
+        </div>
+        {hasFewCostumes ? (
+          <div className="column third-column">
+            {showShinyWindow && (
+              <WindowOverlay onClose={onClose} className="overlay-shiny-info">
+                <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} className="shiny-info" />
+              </WindowOverlay>
+            )}
+            {(showShadowWindow && hasNoCostumes) && (
               <WindowOverlay onClose={onClose} className="overlay-shadow-info">
                 <ShadowInfo pokemon={pokemon} className="shadow-info" />
               </WindowOverlay>
             )}
+            {showCostumesWindow && (
+              <WindowOverlay onClose={onClose} className="overlay-costumes">
+                <Costumes costumes={pokemon.costumes} className="costumes-info" />
+              </WindowOverlay>
+            )}
           </div>
-          {hasFewCostumes ? (
+        ) : (
+          <>
             <div className="column third-column">
               {showShinyWindow && (
                 <WindowOverlay onClose={onClose} className="overlay-shiny-info">
                   <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} className="shiny-info" />
                 </WindowOverlay>
               )}
-              {(showShadowWindow && hasNoCostumes) && (
-              <WindowOverlay onClose={onClose} className="overlay-shadow-info">
-                <ShadowInfo pokemon={pokemon} className="shadow-info" />
-              </WindowOverlay>
+              {showShadowWindow && (
+                <WindowOverlay onClose={onClose} className="overlay-shadow-info">
+                  <ShadowInfo pokemon={pokemon} className="shadow-info" />
+                </WindowOverlay>
               )}
+            </div>
+            <div className="column fourth-column">
               {showCostumesWindow && (
                 <WindowOverlay onClose={onClose} className="overlay-costumes">
                   <Costumes costumes={pokemon.costumes} className="costumes-info" />
                 </WindowOverlay>
               )}
             </div>
-          ) : (
-            <>
-              <div className="column third-column">
-                {showShinyWindow && (
-                  <WindowOverlay onClose={onClose} className="overlay-shiny-info">
-                    <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} className="shiny-info" />
-                  </WindowOverlay>
-                )}
-                {showShadowWindow && (
-                  <WindowOverlay onClose={onClose} className="overlay-shadow-info">
-                    <ShadowInfo pokemon={pokemon} className="shadow-info" />
-                  </WindowOverlay>
-                )}
-              </div>
-              <div className="column fourth-column">
-                {showCostumesWindow && (
-                  <WindowOverlay onClose={onClose} className="overlay-costumes">
-                    <Costumes costumes={pokemon.costumes} className="costumes-info" />
-                  </WindowOverlay>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      );
-    }  
+          </>
+        )}
+      </div>
+    );
+  }  
 
- 
   function renderWidescreenLayout() {
     return (
       <div className="overlay-row other-overlays-row">
         {renderMoves()}
-  
+
         <WindowOverlay onClose={onClose} className="overlay-main-info">
           <MainInfo pokemon={pokemon} className="main-info" />
         </WindowOverlay>
-  
+
         {showShinyWindow && (
           <WindowOverlay onClose={onClose} className="overlay-shiny-info">
             <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} className="shiny-info" />
           </WindowOverlay>
         )}
-  
+
         {showShadowWindow && (
           <WindowOverlay onClose={onClose} className="overlay-shadow-info">
             <ShadowInfo pokemon={pokemon} className="shadow-info" />
           </WindowOverlay>
         )}
-  
+
         {showCostumesWindow && (
           <WindowOverlay onClose={onClose} className="overlay-costumes">
             <Costumes costumes={pokemon.costumes} className="costumes-info" />
@@ -163,36 +163,37 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
       </div>
     );
   }  
+
   function renderNarrowScreenLayout() {
     return (
       <div className="overlay-row other-overlays-row column-layout">
         <WindowOverlay onClose={onClose} className="overlay-main-info">
           <MainInfo pokemon={pokemon} className="main-info" />
         </WindowOverlay>
-  
+
         {showShinyWindow && (
           <WindowOverlay onClose={onClose} className="overlay-shiny-info">
             <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} className="shiny-info" />
           </WindowOverlay>
         )}
-  
+
         {showShadowWindow && (
           <WindowOverlay onClose={onClose} className="overlay-shadow-info">
             <ShadowInfo pokemon={pokemon} className="shadow-info" />
           </WindowOverlay>
         )}
-  
+
         {showCostumesWindow && (
           <WindowOverlay onClose={onClose} className="overlay-costumes">
             <Costumes costumes={pokemon.costumes} className="costumes-info" />
           </WindowOverlay>
         )}
-  
+
         {renderMoves()}
       </div>
     );
   }  
-  
+
   return (
     <div className="pokemon-overlay" onClick={handleOverlayClick}>
       <div className={`overlay-row evolution-shortcuts-row ${isWidescreen ? '' : 'column-layout'}`}>
