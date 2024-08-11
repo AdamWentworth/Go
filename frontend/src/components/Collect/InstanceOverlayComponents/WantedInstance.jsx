@@ -1,5 +1,5 @@
 // WantedInstance.jsx
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import './WantedInstance.css';
 
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext'; 
@@ -13,6 +13,7 @@ import TypeComponent from './OwnedComponents/TypeComponent';
 import HeightComponent from './OwnedComponents/HeightComponent';
 import MovesComponent from './OwnedComponents/MovesComponent';
 import FriendshipManager from './WantedComponents/FriendshipManager';
+import BackgroundComponent from './OwnedComponents/BackgroundComponent'; // Import BackgroundComponent
 
 const WantedInstance = ({ pokemon }) => {
   const { updateDetails } = useContext(PokemonDataContext);
@@ -30,12 +31,31 @@ const WantedInstance = ({ pokemon }) => {
   const [friendship, setFriendship] = useState(pokemon.ownershipStatus.friendship_level || 0);
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.pref_lucky);
 
+  // Background-related state
+  const [showBackgrounds, setShowBackgrounds] = useState(false);
+  const [selectedBackground, setSelectedBackground] = useState(null);
+
+  useEffect(() => {
+    if (pokemon.ownershipStatus.location_card !== null) {
+      const locationCardId = parseInt(pokemon.ownershipStatus.location_card, 10);
+      const background = pokemon.backgrounds.find(bg => bg.background_id === locationCardId);
+      if (background) {
+        setSelectedBackground(background);
+      }
+    }
+  }, [pokemon.backgrounds, pokemon.ownershipStatus.location_card]);
+
   const handleNicknameChange = (newNickname) => setNickname(newNickname);
   const handleFavoriteChange = (newFavoriteStatus) => setIsFavorite(newFavoriteStatus);
   const handleGenderChange = (newGender) => setGender(newGender);
   const handleWeightChange = (newWeight) => setWeight(newWeight);
   const handleHeightChange = (newHeight) => setHeight(newHeight);
   const handleMovesChange = (newMoves) => setMoves(newMoves);
+
+  const handleBackgroundSelect = (background) => {
+    setSelectedBackground(background);
+    setShowBackgrounds(false);
+  };
 
   const toggleEditMode = () => {
     if (editMode) {
@@ -50,10 +70,19 @@ const WantedInstance = ({ pokemon }) => {
         charged_move2_id: moves.chargedMove2,
         friendship_level: friendship,
         pref_lucky: isLucky,
+        location_card: selectedBackground ? selectedBackground.background_id : null,
       });
     }
     setEditMode(!editMode);
   };
+
+  const selectableBackgrounds = pokemon.backgrounds.filter((background) => {
+    if (!background.costume_id) {
+      return true;
+    }
+    const variantTypeId = pokemon.variantType.split('_')[1];
+    return background.costume_id === parseInt(variantTypeId, 10);
+  });
 
   return (
     <div className="wanted-instance">
@@ -67,6 +96,17 @@ const WantedInstance = ({ pokemon }) => {
         </div>
       </div>
 
+      {selectableBackgrounds.length > 0 && (
+        <div className={`background-select-row ${editMode ? 'active' : ''}`}>
+          <img
+            src={process.env.PUBLIC_URL + '/images/location.png'}
+            alt="Background Selector"
+            className="background-icon"
+            onClick={editMode ? () => setShowBackgrounds(!showBackgrounds) : null}
+          />
+        </div>
+      )}
+
       <FriendshipManager 
         friendship={friendship} 
         setFriendship={setFriendship} 
@@ -76,18 +116,26 @@ const WantedInstance = ({ pokemon }) => {
       />
 
       <div className="image-container">
-        {isLucky && (
-          <img
-            src={`${process.env.PUBLIC_URL}/images/lucky.png`}
-            alt="Lucky backdrop"
-            className="lucky-backdrop"
-          />
+        {selectedBackground && (
+          <div className="background-container">
+            <div className="background-image" style={{ backgroundImage: `url(${selectedBackground.image_url})` }}></div>
+            <div className="brightness-overlay"></div>
+          </div>
         )}
-        <img 
-          src={process.env.PUBLIC_URL + pokemon.currentImage} 
-          alt={pokemon.name} 
-          className="pokemon-image"
-        />
+        <div className="pokemon-image-container">
+          {isLucky && (
+            <img
+              src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+              alt="Lucky backdrop"
+              className="lucky-backdrop"
+            />
+          )}
+          <img 
+            src={process.env.PUBLIC_URL + pokemon.currentImage} 
+            alt={pokemon.name} 
+            className="pokemon-image"
+          />
+        </div>
       </div>
 
       <div className="name-container">
@@ -107,6 +155,15 @@ const WantedInstance = ({ pokemon }) => {
       <div className="moves-container">
         <MovesComponent pokemon={pokemon} editMode={editMode} onMovesChange={handleMovesChange} />
       </div>
+
+      {showBackgrounds && (
+        <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
+          <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-button" onClick={() => setShowBackgrounds(false)}>Close</button>
+            <BackgroundComponent pokemon={pokemon} onSelectBackground={handleBackgroundSelect} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

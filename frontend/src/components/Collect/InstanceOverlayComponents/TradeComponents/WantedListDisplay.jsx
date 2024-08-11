@@ -41,20 +41,25 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
         ...details, // Include all other properties by spreading the details object
     }));
 
-    // Apply sorting to the transformed list using the useSortManager hook
-    const sortedWantedListToDisplay = useSortManager(transformedWantedList, sortType, sortMode, { 
-        isShiny: false, 
-        showShadow: false, 
-        showCostume: false, 
-        showAll: true 
-    });
+    // Conditionally apply sorting if not in mirror mode
+    const sortedWantedListToDisplay = isMirror 
+        ? transformedWantedList 
+        : useSortManager(transformedWantedList, sortType, sortMode, { 
+            isShiny: false, 
+            showShadow: false, 
+            showCostume: false, 
+            showAll: true 
+        });
 
     if (!lists || sortedWantedListToDisplay.length === 0) {
         return <div>No Pokémon currently wanted.</div>;
     }
 
+    // Set the container class based on list size or mirror status
     let containerClass = '';
-    if (sortedWantedListToDisplay.length > 30) {
+    if (isMirror) {
+        containerClass = 'single-item-list';
+    } else if (sortedWantedListToDisplay.length > 30) {
         containerClass = 'xxlarge-list';
     } else if (sortedWantedListToDisplay.length > 15) {
         containerClass = 'xlarge-list';

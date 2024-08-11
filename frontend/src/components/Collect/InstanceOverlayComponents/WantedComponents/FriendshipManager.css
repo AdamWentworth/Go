@@ -1,11 +1,11 @@
 /* FriendshipManager.css */
 
 .friendship-level-container {
-    padding: 10px;
     border-radius: 8px;
     display: flex;
     flex-direction: column;
     align-items: center; /* Center items horizontally */
+    transform: scale(0.85);
 }
 
 .friendship-level-container .hearts-lucky-container {
