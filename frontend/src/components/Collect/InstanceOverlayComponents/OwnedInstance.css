@@ -152,3 +152,33 @@
 .owned-instance .date-caught-component {
   width: 100%; /* Ensure these containers take up the full width */
 }
+
+@media (max-width: 480px) {
+}
+
+@media (min-width: 481px) and (max-width: 767px){
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+  /* Ensures .owned-instance-window itself is a flex container */
+  .owned-instance-window {
+    transform: scale(0.75);
+    transform-origin: center; /* Scales from the center */
+    overflow-y: visible; /* Allows content to show without scrollbar */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 20%; /* Full viewport width */
+  }
+  
+  /* Ensure the .owned-instance uses all the available space in its container */
+  .owned-instance-window .overlay-content .owned-instance {
+    width: 100%; /* Full width to take up scaled container space */
+  }
+}
+
+
+

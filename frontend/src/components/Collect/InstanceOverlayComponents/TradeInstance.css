@@ -82,3 +82,30 @@
 .trade-instance .date-container {
   width: 100%;
 }
+
+@media (max-width: 480px) {
+}
+
+@media (min-width: 481px) and (max-width: 767px){
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .trade-instance-overlay {
+    transform: scale(0.75);
+    transform-origin: center;
+    overflow-y: visible;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .trade-details-container .wanted-item img.wanted-item-img {
+    width: 100px !important;
+  }
+  .trade-instance-overlay .overlay-row {
+    flex-wrap: nowrap;
+  }
+}

@@ -82,7 +82,7 @@
     z-index: 2; /* Ensure the backdrop is behind the image */
 }
 
-.lucky-backdrop {
+.pokemon-card .lucky-backdrop {
     width: 100%;
     height: auto; /* Maintain aspect ratio */
     max-width: 10vw; /* Adjust size as necessary */

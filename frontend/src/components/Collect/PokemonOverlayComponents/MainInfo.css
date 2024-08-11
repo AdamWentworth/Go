@@ -8,6 +8,10 @@
     height: 24px;
 }
 
+.main-info-column p {
+    margin: 0px;
+}
+
 .pokemon-image {
     margin-top: -30px;
     margin-bottom: -15px;
@@ -42,8 +46,8 @@
     border-radius: 10px; /* Ensure rounded corners on the filled part too */
 }
 
-.cp {
-    margin-top: 20px;
+.main-info-column .cp {
+    margin-top: 10px;
 }
 
 .cp + .cp {

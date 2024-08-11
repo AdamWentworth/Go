@@ -196,7 +196,7 @@
         gap: 10px; /* Space between windows */
     }
 
-    .overlay-row.other-overlays-row {
+    .overlay-row .other-overlays-row {
         position: relative;
         top: 0px; /* Eliminate this if it's still causing issues */
         width: 100%; /* Full width of the container */

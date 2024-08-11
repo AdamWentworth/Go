@@ -28,7 +28,6 @@
 .wanted-details-container .trade-list-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
     margin-top: 10px;
     overflow-y: auto; /* Enables scrolling */
     max-height: 650px; /* Adjust based on your layout */
