@@ -59,12 +59,13 @@ function Collect() {
         pokemonTypes, isTypeSearch
     } = useSearchFilters(variants);
 
+    console.log(lists)
     // Handle filtered and sorted pokemon display
     const filteredVariants = useMemo(() => {
         // console.log('Ownership Data before filtering:', ownershipData);
         if (ownershipFilter) {
             console.log("Filtering variants based on ownership:", ownershipFilter);
-            return getFilteredPokemonsByOwnership(variants, ownershipData, ownershipFilter);
+            return getFilteredPokemonsByOwnership(variants, ownershipData, ownershipFilter, lists);
         }
         return variants; // No filter: use original variants data
     }, [variants, ownershipData, ownershipFilter]);
