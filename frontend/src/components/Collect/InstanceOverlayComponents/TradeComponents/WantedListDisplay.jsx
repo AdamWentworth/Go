@@ -1,15 +1,15 @@
 // WantedListDisplay.jsx
 import React from 'react';
 import './WantedListDisplay.css';
+import useSortManager from '../../hooks/useSortManager';  // Ensure this import is correct
+
+const extractBaseKey = (pokemonKey) => {
+    let keyParts = String(pokemonKey).split('_');
+    keyParts.pop(); // Remove the UUID part if present
+    return keyParts.join('_');
+};
 
 const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode, ownershipData, toggleReciprocalUpdates, sortType, sortMode }) => {
-    const displayedWantedList = Object.keys(lists.wanted)
-        .filter(key => (editMode || !localNotWantedList[key]) && (!isMirror || (isMirror && key === mirrorKey)))
-        .reduce((obj, key) => {
-            obj[key] = lists.wanted[key];
-            return obj;
-        }, {});
-
     const handleNotWantedToggle = (key) => {
         if (editMode) {
             const updatedNotWanted = !(localNotWantedList[key] || false);
@@ -18,29 +18,60 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
         }
     };
 
-    // Determine the container class based on the length of the displayed wanted list
-    const wantedListLength = Object.keys(displayedWantedList).length;
+    // Extract the baseKey of the current Pokémon
+    const baseKey = extractBaseKey(pokemon.pokemonKey);
+
+    // Filter the wanted list to display relevant items
+    const wantedListToDisplay = Object.entries(lists.wanted)
+        .filter(([key, details]) => {
+            const itemBaseKey = extractBaseKey(key);
+            // Show all items if in edit mode or if not toggled off
+            return (editMode || !localNotWantedList[key]) && 
+                   (!isMirror || (isMirror && itemBaseKey === baseKey));
+        });
+
+    // Transform the array to match the format expected by useSortManager
+    const transformedWantedList = wantedListToDisplay.map(([key, details]) => ({
+        key: key, // Use the original key for React rendering
+        pokemon_id: details.pokemon_id,
+        name: details.name,
+        pokedex_number: details.pokedex_number,
+        image_url: details.currentImage || pokemon.currentImage, // Use the correct image URL
+        image_url_shiny: details.image_url_shiny || details.currentImage, // Use shiny image if available
+        ...details, // Include all other properties by spreading the details object
+    }));
+
+    // Apply sorting to the transformed list using the useSortManager hook
+    const sortedWantedListToDisplay = useSortManager(transformedWantedList, sortType, sortMode, { 
+        isShiny: false, 
+        showShadow: false, 
+        showCostume: false, 
+        showAll: true 
+    });
+
+    if (!lists || sortedWantedListToDisplay.length === 0) {
+        return <div>No Pokémon currently wanted.</div>;
+    }
+
     let containerClass = '';
-    if (wantedListLength === 1 && isMirror) {
-        containerClass = 'single-item-list';
-    } else if (wantedListLength > 30) {
+    if (sortedWantedListToDisplay.length > 30) {
         containerClass = 'xxlarge-list';
-    } else if (wantedListLength > 15) {
+    } else if (sortedWantedListToDisplay.length > 15) {
         containerClass = 'xlarge-list';
-    } else if (wantedListLength > 9) {
+    } else if (sortedWantedListToDisplay.length > 9) {
         containerClass = 'large-list';
     }
 
     return (
         <div className={`wanted-list-container ${containerClass}`}>
-            {Object.entries(displayedWantedList).map(([key, details]) => {
-                const isNotWanted = localNotWantedList[key];
+            {sortedWantedListToDisplay.map((pokemon) => {
+                const isNotWanted = localNotWantedList[pokemon.key]; // Use the correct key to check if it's not wanted
                 const imageClasses = `wanted-item-img ${isNotWanted ? 'grey-out' : ''}`;
                 const backdropClasses = `lucky-backdrop ${isNotWanted ? 'grey-out' : ''}`;
                 
                 return (
-                    <div key={key} className="wanted-item" style={{ position: 'relative', overflow: 'hidden' }}>
-                        {details.pref_lucky && (
+                    <div key={pokemon.key} className="wanted-item" style={{ position: 'relative', overflow: 'hidden' }}>
+                        {pokemon.pref_lucky && (
                             <img 
                                 src={`${process.env.PUBLIC_URL}/images/lucky.png`} 
                                 className={backdropClasses} 
@@ -57,13 +88,13 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
                             />
                         )}
                         <img 
-                            src={details.currentImage || pokemon.currentImage} 
+                            src={pokemon.image_url} 
                             className={imageClasses} 
-                            alt={`Wanted Pokémon ${key}`} 
+                            alt={`Wanted Pokémon ${pokemon.name}`} 
                             style={{ zIndex: 2 }} // Ensure the image is in front of the backdrop
                         />
                         {editMode && (
-                            <button className="toggle-not-wanted" onClick={() => handleNotWantedToggle(key)} style={{ zIndex: 3 }}>
+                            <button className="toggle-not-wanted" onClick={() => handleNotWantedToggle(pokemon.key)} style={{ zIndex: 3 }}>
                                 {isNotWanted ? '✓' : 'X'}
                             </button>
                         )}

@@ -171,7 +171,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 20%; /* Full viewport width */
   }
   
   /* Ensure the .owned-instance uses all the available space in its container */
