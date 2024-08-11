@@ -6,7 +6,6 @@
   width: 100%;
 }
 
-/* Top row containing the edit/save button and title */
 .trade-instance .top-row {
   display: flex;
   justify-content: space-between;
@@ -28,37 +27,92 @@
   margin-right: auto;
 }
 
-/* CP Component container */
 .trade-instance .cp-container {
   display: flex;
   justify-content: center;
+  align-items: center;
+  position: relative;
   width: 100%;
   margin-top: 5px;
 }
 
-/* Image container */
-.trade-instance .image-container {
+.trade-instance .background-select-row {
   position: relative;
-  width: 100%;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
+  width: 100%;
 }
 
-/* Name Component container */
+.trade-instance .background-icon {
+  position: absolute;
+  top: 0;
+  right: 0;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.trade-instance .background-select-row.active .background-icon {
+  cursor: pointer;
+}
+
+.trade-instance .image-container {
+  position: relative;
+  width: 240px;
+  height: 240px;
+}
+
+.trade-instance .background-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.trade-instance .background-image {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0.3) 70%, transparent 100%);
+  mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 45%, rgba(0, 0, 0, 0.3) 65%, transparent 70%);
+}
+
+.trade-instance .brightness-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 70%);
+  z-index: 2;
+}
+
+.trade-instance .pokemon-image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+}
+
 .trade-instance .name-container {
   width: 100%;
   display: flex;
   justify-content: center;
 }
 
-/* Gender Component container */
 .trade-instance .gender-container {
   width: 100%;
   display: flex;
-  justify-content: flex-end; /* Align to the right */
+  justify-content: flex-end;
 }
 
-/* Stats container with individual component alignments */
 .trade-instance .stats-container {
   display: flex;
   width: 100%;
@@ -68,17 +122,14 @@
   flex: 1;
 }
 
-/* Moves Component container */
 .trade-instance .moves-container {
   width: 100%;
 }
 
-/* Location Caught Component container */
 .trade-instance .location-container {
   width: 100%;
 }
 
-/* Date Caught Component container */
 .trade-instance .date-container {
   width: 100%;
 }
@@ -86,7 +137,7 @@
 @media (max-width: 480px) {
 }
 
-@media (min-width: 481px) and (max-width: 767px){
+@media (min-width: 481px) and (max-width: 767px) {
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
@@ -105,6 +156,7 @@
   .trade-details-container .wanted-item img.wanted-item-img {
     width: 100px !important;
   }
+
   .trade-instance-overlay .overlay-row {
     flex-wrap: nowrap;
   }

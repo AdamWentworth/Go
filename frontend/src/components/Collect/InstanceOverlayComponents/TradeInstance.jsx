@@ -1,5 +1,5 @@
 // TradeInstance.jsx
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import './TradeInstance.css';
 
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext'; 
@@ -14,6 +14,7 @@ import HeightComponent from './OwnedComponents/HeightComponent';
 import MovesComponent from './OwnedComponents/MovesComponent';
 import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
+import BackgroundComponent from './OwnedComponents/BackgroundComponent'; // Import BackgroundComponent
 
 const TradeInstance = ({ pokemon }) => {
   const { updateDetails } = useContext(PokemonDataContext);
@@ -30,14 +31,27 @@ const TradeInstance = ({ pokemon }) => {
   });
   const [locationCaught, setLocationCaught] = useState(pokemon.ownershipStatus.location_caught);
   const [dateCaught, setDateCaught] = useState(pokemon.ownershipStatus.date_caught);
+  
+  // Background-related state
+  const [showBackgrounds, setShowBackgrounds] = useState(false);
+  const [selectedBackground, setSelectedBackground] = useState(null);
 
-  // Define the handleCPChange function
+  useEffect(() => {
+    if (pokemon.ownershipStatus.location_card !== null) {
+      const locationCardId = parseInt(pokemon.ownershipStatus.location_card, 10);
+      const background = pokemon.backgrounds.find(bg => bg.background_id === locationCardId);
+      if (background) {
+        setSelectedBackground(background);
+      }
+    }
+  }, [pokemon.backgrounds, pokemon.ownershipStatus.location_card]);
+
   const handleCPChange = (newCP) => {
-    setCP(newCP);  // Update CP state
+    setCP(newCP);
   };
 
   const handleNicknameChange = (newNickname) => {
-    setNickname(newNickname);  // Update state with new nickname
+    setNickname(newNickname);
   };
 
   const handleGenderChange = (newGender) => {
@@ -76,11 +90,25 @@ const TradeInstance = ({ pokemon }) => {
         charged_move1_id: moves.chargedMove1,
         charged_move2_id: moves.chargedMove2,
         location_caught: locationCaught,
-        date_caught: dateCaught
+        date_caught: dateCaught,
+        location_card: selectedBackground ? selectedBackground.background_id : null,  // Include background ID
       });
     }
     setEditMode(!editMode);
   };
+
+  const handleBackgroundSelect = (background) => {
+    setSelectedBackground(background);
+    setShowBackgrounds(false);
+  };
+
+  const selectableBackgrounds = pokemon.backgrounds.filter((background) => {
+    if (!background.costume_id) {
+      return true;
+    }
+    const variantTypeId = pokemon.variantType.split('_')[1];
+    return background.costume_id === parseInt(variantTypeId, 10);
+  });
 
   return (
     <div className="trade-instance">
@@ -88,15 +116,30 @@ const TradeInstance = ({ pokemon }) => {
         <div className="edit-save-container">
           <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
         </div>
-        <h2>For Trade</h2>
-      </div>
-
-      <div className="cp-container">
         <CPComponent pokemon={pokemon} editMode={editMode} onCPChange={handleCPChange} />
       </div>
 
+      {selectableBackgrounds.length > 0 && (
+        <div className={`background-select-row ${editMode ? 'active' : ''}`}>
+          <img
+            src={process.env.PUBLIC_URL + '/images/location.png'}
+            alt="Background Selector"
+            className="background-icon"
+            onClick={editMode ? () => setShowBackgrounds(!showBackgrounds) : null}
+          />
+        </div>
+      )}
+
       <div className="image-container">
-        <img src={process.env.PUBLIC_URL + pokemon.currentImage} alt={pokemon.name} className="pokemon-image" />
+        {selectedBackground && (
+          <div className="background-container">
+            <div className="background-image" style={{ backgroundImage: `url(${selectedBackground.image_url})` }}></div>
+            <div className="brightness-overlay"></div>
+          </div>
+        )}
+        <div className="pokemon-image-container">
+          <img src={process.env.PUBLIC_URL + pokemon.currentImage} alt={pokemon.name} className="pokemon-image" />
+        </div>
       </div>
 
       <div className="name-container">
@@ -124,6 +167,15 @@ const TradeInstance = ({ pokemon }) => {
       <div className="date-container">
         <DateCaughtComponent pokemon={pokemon} editMode={editMode} onDateChange={handleDateCaughtChange} />
       </div>
+
+      {showBackgrounds && (
+        <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
+          <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-button" onClick={() => setShowBackgrounds(false)}>Close</button>
+            <BackgroundComponent pokemon={pokemon} onSelectBackground={handleBackgroundSelect} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

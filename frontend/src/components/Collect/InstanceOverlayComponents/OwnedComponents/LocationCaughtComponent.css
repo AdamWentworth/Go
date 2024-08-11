@@ -15,7 +15,6 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    width: 240px; /* add a fixed width */
     max-width: 100%;
     box-sizing: border-box;
   }
