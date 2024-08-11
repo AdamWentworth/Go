@@ -3,10 +3,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
 }
 
+/* Top row containing the edit/save button and title */
 .trade-instance .top-row {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   width: 100%;
   padding: 0 1rem;
@@ -21,53 +24,61 @@
   text-align: center;
 }
 
-.trade-instance .top-row .edit-save-component {
-  position: relative;
-  z-index: 1; /* Ensure it is above the h2 */
-  margin-right: auto; /* Aligns it to the far left */
+.trade-instance .edit-save-container {
+  margin-right: auto;
 }
 
-.trade-instance .cp-row {
+/* CP Component container */
+.trade-instance .cp-container {
   display: flex;
   justify-content: center;
   width: 100%;
-  margin-top: 1rem;
+  margin-top: 5px;
 }
 
-.trade-instance .pokemon-image-container {
+/* Image container */
+.trade-instance .image-container {
   position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
-.trade-instance .lucky-placeholder {
-  flex: 1; 
+/* Name Component container */
+.trade-instance .name-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
-.trade-instance .lucky-backdrop {
-  position: absolute;
-  top: 18%;
-  left: 15%;
-  width: 180px;
-  height: auto;
-  z-index: 0; /* Ensure it's slightly behind the main image but above any other content */
+/* Gender Component container */
+.trade-instance .gender-container {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end; /* Align to the right */
 }
 
-.trade-instance .pokemon-image {
-  position: relative;
-  max-width: 100%;
-  z-index: 1; /* Ensure it's above the backdrop */
-}
-
-.trade-instance .gender-component {
-  flex: 1; /* Adjust flex settings to manage width and spacing */
-}
-
+/* Stats container with individual component alignments */
 .trade-instance .stats-container {
   display: flex;
-  justify-content: space-between;
   width: 100%;
 }
 
-.trade-instance .weight-component, .trade-instance .type-component, .trade-instance .height-component {
-  display: flex;
-  align-items: center;
+.trade-instance .type-container {
+  flex: 1;
+}
+
+/* Moves Component container */
+.trade-instance .moves-container {
+  width: 100%;
+}
+
+/* Location Caught Component container */
+.trade-instance .location-container {
+  width: 100%;
+}
+
+/* Date Caught Component container */
+.trade-instance .date-container {
+  width: 100%;
 }

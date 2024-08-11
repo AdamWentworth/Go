@@ -6,23 +6,16 @@ import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
 
 import EditSaveComponent from './EditSaveComponent';
 import CPComponent from './OwnedComponents/CPComponent';
-
 import NameComponent from './OwnedComponents/NameComponent';
-
 import GenderComponent from './OwnedComponents/GenderComponent';
-
 import WeightComponent from './OwnedComponents/WeightComponent';
 import TypeComponent from './OwnedComponents/TypeComponent';
 import HeightComponent from './OwnedComponents/HeightComponent';
-
 import MovesComponent from './OwnedComponents/MovesComponent';
-
 import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
 
 const TradeInstance = ({ pokemon }) => {
-  console.log("Initial Pokemon Data: ", pokemon);
-
   const { updateDetails } = useContext(PokemonDataContext);
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
@@ -38,6 +31,7 @@ const TradeInstance = ({ pokemon }) => {
   const [locationCaught, setLocationCaught] = useState(pokemon.ownershipStatus.location_caught);
   const [dateCaught, setDateCaught] = useState(pokemon.ownershipStatus.date_caught);
 
+  // Define the handleCPChange function
   const handleCPChange = (newCP) => {
     setCP(newCP);  // Update CP state
   };
@@ -72,7 +66,6 @@ const TradeInstance = ({ pokemon }) => {
 
   const toggleEditMode = () => {
     if (editMode) {
-      console.log("Saving changes...");
       updateDetails(pokemon.pokemonKey, { 
         nickname: nickname,
         cp: cp,
@@ -92,29 +85,47 @@ const TradeInstance = ({ pokemon }) => {
   return (
     <div className="trade-instance">
       <div className="top-row">
-        <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+        <div className="edit-save-container">
+          <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+        </div>
         <h2>For Trade</h2>
       </div>
-      <div className="cp-row">
-        <CPComponent pokemon={pokemon} editMode={editMode} toggleEditMode={toggleEditMode} onCPChange={handleCPChange} />
+
+      <div className="cp-container">
+        <CPComponent pokemon={pokemon} editMode={editMode} onCPChange={handleCPChange} />
       </div>
-      <div className="pokemon-image-container">
+
+      <div className="image-container">
         <img src={process.env.PUBLIC_URL + pokemon.currentImage} alt={pokemon.name} className="pokemon-image" />
       </div>
-      <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
-      <GenderComponent pokemon={pokemon} editMode={editMode} onGenderChange={handleGenderChange} />
-      <div className="stats-container">
-        <WeightComponent pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
-        <TypeComponent pokemon={pokemon} />
-        <HeightComponent pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
+
+      <div className="name-container">
+        <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
       </div>
-      <div className="moves-content">
+
+      <div className="gender-container">
+        <GenderComponent pokemon={pokemon} editMode={editMode} onGenderChange={handleGenderChange} />
+      </div>
+
+      <div className="stats-container">
+          <WeightComponent pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
+          <TypeComponent pokemon={pokemon} />
+          <HeightComponent pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
+      </div>
+
+      <div className="moves-container">
         <MovesComponent pokemon={pokemon} editMode={editMode} onMovesChange={handleMovesChange} />
       </div>
-      <LocationCaughtComponent pokemon={pokemon} editMode={editMode} onLocationChange={handleLocationCaughtChange} />
-      <DateCaughtComponent pokemon={pokemon} editMode={editMode} onDateChange={handleDateCaughtChange} />      
+
+      <div className="location-container">
+        <LocationCaughtComponent pokemon={pokemon} editMode={editMode} onLocationChange={handleLocationCaughtChange} />
+      </div>
+
+      <div className="date-container">
+        <DateCaughtComponent pokemon={pokemon} editMode={editMode} onDateChange={handleDateCaughtChange} />
+      </div>
     </div>
   );
-}
+};
 
 export default TradeInstance;

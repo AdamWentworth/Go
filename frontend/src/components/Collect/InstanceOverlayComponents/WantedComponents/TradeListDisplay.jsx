@@ -1,7 +1,7 @@
 // TradeListDisplay.jsx
 
 import React from 'react';
-import './TradeListDisplay.css'
+import './TradeListDisplay.css';
 
 const extractBaseKey = (pokemonKey) => {
     let keyParts = String(pokemonKey).split('_');
@@ -25,8 +25,9 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
     const tradeListToDisplay = Object.entries(lists.trade)
         .filter(([key, details]) => {
             const itemBaseKey = extractBaseKey(key);
-            // Include all non-mirror items and only mirror items with the same baseKey
-            return !localNotTradeList[key] && (!details.mirror || (details.mirror && itemBaseKey === baseKey));
+            // Show all items if in edit mode or if not toggled off
+            return (editMode || !localNotTradeList[key]) && 
+                   (!details.mirror || (details.mirror && itemBaseKey === baseKey));
         });
 
     if (!lists || tradeListToDisplay.length === 0) {
@@ -44,23 +45,27 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
 
     return (
         <div className={`trade-list-container ${containerClass}`}>
-            {tradeListToDisplay.map(([key, details]) => (
-                <div key={key} className="trade-item">
-                    <img 
-                        src={details.currentImage}
-                        alt={`Trade Pokémon ${key}`}
-                        className={localNotTradeList[key] ? 'grey-out' : ''}
-                    />
-                    {editMode && (
-                        <button 
-                            className="toggle-not-trade"
-                            onClick={() => handleNotTradeToggle(key)}
-                        >
-                            {localNotTradeList[key] ? '✓' : 'X'}
-                        </button>
-                    )}
-                </div>
-            ))}
+            {tradeListToDisplay.map(([key, details]) => {
+                const isNotTrade = localNotTradeList[key];
+                const imageClasses = `trade-item-img ${isNotTrade ? 'grey-out' : ''}`;
+                return (
+                    <div key={key} className="trade-item">
+                        <img 
+                            src={details.currentImage}
+                            alt={`Trade Pokémon ${key}`}
+                            className={imageClasses}
+                        />
+                        {editMode && (
+                            <button 
+                                className="toggle-not-trade"
+                                onClick={() => handleNotTradeToggle(key)}
+                            >
+                                {isNotTrade ? '✓' : 'X'}
+                            </button>
+                        )}
+                    </div>
+                );
+            })}
         </div>
     );
 };

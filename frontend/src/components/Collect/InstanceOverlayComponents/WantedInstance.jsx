@@ -1,7 +1,9 @@
 // WantedInstance.jsx
 import React, { useState, useContext } from 'react';
-import './OwnedInstance.css';
+import './WantedInstance.css';
+
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext'; 
+
 import EditSaveComponent from './EditSaveComponent';
 import FavoriteComponent from './OwnedComponents/FavoriteComponent';
 import NameComponent from './OwnedComponents/NameComponent';
@@ -13,12 +15,9 @@ import MovesComponent from './OwnedComponents/MovesComponent';
 import FriendshipManager from './WantedComponents/FriendshipManager';
 
 const WantedInstance = ({ pokemon }) => {
-  // console.log("Initial Pokemon Data: ", pokemon);
-
   const { updateDetails } = useContext(PokemonDataContext);
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
-  
   const [isFavorite, setIsFavorite] = useState(pokemon.ownershipStatus.favorite);
   const [gender, setGender] = useState(pokemon.ownershipStatus.gender);
   const [weight, setWeight] = useState(pokemon.ownershipStatus.weight);
@@ -40,13 +39,12 @@ const WantedInstance = ({ pokemon }) => {
 
   const toggleEditMode = () => {
     if (editMode) {
-      console.log("Saving changes...");
       updateDetails(pokemon.pokemonKey, { 
-        nickname: nickname, 
+        nickname, 
         favorite: isFavorite, 
-        gender: gender, 
-        weight: weight, 
-        height: height,
+        gender, 
+        weight, 
+        height,
         fast_move_id: moves.fastMove,
         charged_move1_id: moves.chargedMove1,
         charged_move2_id: moves.chargedMove2,
@@ -58,15 +56,17 @@ const WantedInstance = ({ pokemon }) => {
   };
 
   return (
-    <div>
-      <h2>Wanted</h2>
+    <div className="wanted-instance">
       <div className="top-row">
-        <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
-        <div className="spacer"></div>
+        <div className="edit-save-container">
+          <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+        </div>
+        <h2>Wanted</h2>
         <div className="favorite-container">
           <FavoriteComponent pokemon={pokemon} editMode={editMode} onFavoriteChange={handleFavoriteChange} />
         </div>
       </div>
+
       <FriendshipManager 
         friendship={friendship} 
         setFriendship={setFriendship} 
@@ -74,47 +74,41 @@ const WantedInstance = ({ pokemon }) => {
         isLucky={isLucky}
         setIsLucky={setIsLucky}
       />
-      <div className="pokemon-image-container" style={{ position: 'relative' }}>
-        {pokemon.ownershipStatus.pref_lucky && (
+
+      <div className="image-container">
+        {isLucky && (
           <img
             src={`${process.env.PUBLIC_URL}/images/lucky.png`}
             alt="Lucky backdrop"
             className="lucky-backdrop"
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              width: '175px',
-              height: '125px',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 1
-            }}
           />
         )}
         <img 
           src={process.env.PUBLIC_URL + pokemon.currentImage} 
           alt={pokemon.name} 
-          className="pokemon-image" 
-          style={{ 
-            position: 'relative',
-            zIndex: 2 
-          }} 
+          className="pokemon-image"
         />
       </div>
-      <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
+
+      <div className="name-container">
+        <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
+      </div>
+
       <div className="gender-container">
         <GenderComponent pokemon={pokemon} editMode={editMode} onGenderChange={handleGenderChange} />
       </div>
+
       <div className="stats-container">
         <WeightComponent pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
         <TypeComponent pokemon={pokemon} />
         <HeightComponent pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
       </div>
-      <div className="moves-content">
+
+      <div className="moves-container">
         <MovesComponent pokemon={pokemon} editMode={editMode} onMovesChange={handleMovesChange} />
       </div>
     </div>
   );
-}
+};
 
 export default WantedInstance;

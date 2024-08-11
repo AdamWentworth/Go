@@ -1,5 +1,4 @@
 /* WantedListDisplay.css */
-
 .wanted-item {
     position: relative;
     overflow: hidden;
@@ -19,6 +18,11 @@
     position: relative;
     z-index: 2; /* Ensure the image is in front of the backdrop */
     filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2)); /* Adds a more prominent shadow to the non-transparent parts */
+}
+
+.wanted-item .wanted-item-img.grey-out,
+.wanted-item .lucky-backdrop.grey-out {
+    filter: grayscale(100%) !important; /* Apply grayscale to both the image and backdrop and force it with !important */
 }
 
 .wanted-item .toggle-not-wanted {

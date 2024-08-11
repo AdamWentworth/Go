@@ -47,11 +47,11 @@ const InstanceOverlay = ({ pokemon, onClose, ownershipFilter, lists, ownershipDa
         return (
           <div className="wanted-instance-overlay">
             <div className="overlay-row other-overlays-row">
-              <WindowOverlay onClose={onClose} className="wanted-instance-window">
-                <WantedInstance pokemon={pokemon} />
-              </WindowOverlay>
               <WindowOverlay onClose={onClose} className="trade-details-window">
                 <WantedDetails pokemon={pokemon} lists={lists} ownershipData={ownershipData} />
+              </WindowOverlay>
+              <WindowOverlay onClose={onClose} className="wanted-instance-window">
+                <WantedInstance pokemon={pokemon} />
               </WindowOverlay>
             </div>
           </div>

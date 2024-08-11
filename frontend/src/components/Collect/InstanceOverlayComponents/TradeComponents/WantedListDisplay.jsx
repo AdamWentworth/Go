@@ -1,5 +1,4 @@
 // WantedListDisplay.jsx
-
 import React from 'react';
 import './WantedListDisplay.css';
 
@@ -37,12 +36,14 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
             {Object.entries(displayedWantedList).map(([key, details]) => {
                 const isNotWanted = localNotWantedList[key];
                 const imageClasses = `wanted-item-img ${isNotWanted ? 'grey-out' : ''}`;
+                const backdropClasses = `lucky-backdrop ${isNotWanted ? 'grey-out' : ''}`;
+                
                 return (
                     <div key={key} className="wanted-item" style={{ position: 'relative', overflow: 'hidden' }}>
                         {details.pref_lucky && (
                             <img 
                                 src={`${process.env.PUBLIC_URL}/images/lucky.png`} 
-                                className="lucky-backdrop" 
+                                className={backdropClasses} 
                                 alt="Lucky backdrop" 
                                 style={{
                                     position: 'absolute',
