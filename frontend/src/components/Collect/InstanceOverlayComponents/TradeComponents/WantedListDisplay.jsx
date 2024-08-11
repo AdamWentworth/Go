@@ -2,7 +2,7 @@
 import React from 'react';
 import './WantedListDisplay.css';
 
-const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode, ownershipData, toggleReciprocalUpdates }) => {
+const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode, ownershipData, toggleReciprocalUpdates, sortType, sortMode }) => {
     const displayedWantedList = Object.keys(lists.wanted)
         .filter(key => (editMode || !localNotWantedList[key]) && (!isMirror || (isMirror && key === mirrorKey)))
         .reduce((obj, key) => {

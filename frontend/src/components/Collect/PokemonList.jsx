@@ -23,7 +23,8 @@ function PokemonList({
     lists,
     ownershipData,
     showAll,
-    sortType
+    sortType,
+    sortMode
 }) {
 
     const handleSelect = (pokemon) => {
@@ -42,7 +43,7 @@ function PokemonList({
             }
         }
     };        
-
+    
     return (
         <div className="pokemon-container">
             {loading ? <p>Loading...</p> : (
@@ -71,6 +72,8 @@ function PokemonList({
                             ownershipFilter={ownershipFilter}
                             lists={lists}
                             ownershipData={ownershipData}
+                            sortType={sortType}
+                            sortMode={sortMode}
                         /> :
                         <PokemonOverlay
                             pokemon={selectedPokemon.overlayType ? selectedPokemon.pokemon : selectedPokemon}

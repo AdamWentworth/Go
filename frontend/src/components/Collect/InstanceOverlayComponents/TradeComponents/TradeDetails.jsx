@@ -8,7 +8,7 @@ import WantedListDisplay from './WantedListDisplay';
 import MirrorManager from './MirrorManager';
 import { updateNotTradeList } from '../ReciprocalUpdate.jsx';
 
-const TradeDetails = ({ pokemon, lists, ownershipData }) => {
+const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => {
     const { not_wanted_list } = pokemon.ownershipStatus;
     const [editMode, setEditMode] = useState(false);
     const [localNotWantedList, setLocalNotWantedList] = useState({ ...not_wanted_list });
@@ -137,6 +137,8 @@ const TradeDetails = ({ pokemon, lists, ownershipData }) => {
                     editMode={editMode}
                     ownershipData={ownershipData}
                     toggleReciprocalUpdates={toggleReciprocalUpdates}
+                    sortType={sortType}
+                    sortMode={sortMode}
                 />
             </div>
         </div>

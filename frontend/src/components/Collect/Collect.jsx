@@ -23,8 +23,6 @@ function Collect() {
     //States
     const { variants, ownershipData, lists, loading, updateOwnership, updateLists } = usePokemonData();
 
-    const [dotState, setDotState] = useState(0);
-
     const [selectedPokemon, setSelectedPokemon] = useState(null);
     const [highlightedCards, setHighlightedCards] = useState(new Set());
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -217,6 +215,7 @@ function Collect() {
                 ownershipData={ownershipData}
                 showAll={showAll}
                 sortType={sortType}
+                sortMode={sortMode}
             />
             <SortOverlayMemo
                 sortType={sortType}

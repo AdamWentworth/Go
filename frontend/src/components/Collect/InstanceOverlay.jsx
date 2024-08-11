@@ -11,9 +11,8 @@ import WantedDetails from './InstanceOverlayComponents/WantedComponents/WantedDe
 
 import WindowOverlay from './WindowOverlay';  // Ensure WindowOverlay is imported correctly
 
-const InstanceOverlay = ({ pokemon, onClose, ownershipFilter, lists, ownershipData }) => {
+const InstanceOverlay = ({ pokemon, onClose, ownershipFilter, lists, ownershipData, sortType, sortMode }) => {
 
-  console.log(lists)
   const handleOverlayClick = (event) => {
     if (!event.target.closest('.overlay-windows')) {
       onClose();
@@ -38,7 +37,7 @@ const InstanceOverlay = ({ pokemon, onClose, ownershipFilter, lists, ownershipDa
                 <TradeInstance pokemon={pokemon} />
               </WindowOverlay>
               <WindowOverlay onClose={onClose} className="trade-details-window">
-                <TradeDetails pokemon={pokemon} lists={lists} ownershipData={ownershipData} />
+                <TradeDetails pokemon={pokemon} lists={lists} ownershipData={ownershipData} sortType={sortType} sortMode={sortMode} />
               </WindowOverlay>
             </div>
           </div>
@@ -48,7 +47,7 @@ const InstanceOverlay = ({ pokemon, onClose, ownershipFilter, lists, ownershipDa
           <div className="wanted-instance-overlay">
             <div className="overlay-row other-overlays-row">
               <WindowOverlay onClose={onClose} className="trade-details-window">
-                <WantedDetails pokemon={pokemon} lists={lists} ownershipData={ownershipData} />
+                <WantedDetails pokemon={pokemon} lists={lists} ownershipData={ownershipData} sortType={sortType} sortMode={sortMode} />
               </WindowOverlay>
               <WindowOverlay onClose={onClose} className="wanted-instance-window">
                 <WantedInstance pokemon={pokemon} />

@@ -6,7 +6,7 @@ import { PokemonDataContext } from '../../../../contexts/PokemonDataContext';
 import TradeListDisplay from './TradeListDisplay';
 import { updateNotWantedList } from '../ReciprocalUpdate.jsx';
 
-const WantedDetails = ({ pokemon, lists, ownershipData }) => {
+const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => {
     const [editMode, setEditMode] = useState(false);
     const [localNotTradeList, setLocalNotTradeList] = useState({ ...pokemon.ownershipStatus.not_trade_list });
     const [pendingUpdates, setPendingUpdates] = useState({});
@@ -44,6 +44,8 @@ const WantedDetails = ({ pokemon, lists, ownershipData }) => {
                 editMode={editMode}
                 toggleReciprocalUpdates={toggleReciprocalUpdates}
                 ownershipData={ownershipData}
+                sortType={sortType}
+                sortMode={sortMode}
             />
         </div>
     );
