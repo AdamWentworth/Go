@@ -12,6 +12,7 @@ const getPokemonsFromDb = (callback) => {
         sp.apex AS shadow_apex,
         sp.date_available AS date_shadow_available,
         sp.date_shiny_available AS date_shiny_shadow_available,
+        sp.shiny_rarity AS shiny_shadow_rarity,
         sp.image_url_shadow,
         sp.image_url_shiny_shadow,
         fusion_pokemon.fusion_id,

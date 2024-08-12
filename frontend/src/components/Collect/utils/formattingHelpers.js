@@ -46,15 +46,15 @@ export function formatCostume(costume) {
 export function formatShinyRarity(rarity) {
     switch(rarity) {
         case "community_day":
-            return "Community Day ~1/25";
+            return "Community Day ~1/25\nFull Odds ~1/500";
         case "research_day":
-            return "Research Day ~1/10";
+            return "Research Day ~1/10\nFull Odds ~1/500";
+        case "raid_day":
+            return "Raid Day ~1/10";
         case "mega_raid":
             return "Mega Raid ~1/64";
         case "permaboosted":
             return "Permaboosted ~1/64";
-        case "raid_day":
-            return "Raid Day ~1/10";
         case "baby_boost":
             return "Egg ~1/64";
         case "hatch_day":
@@ -70,6 +70,17 @@ export function formatShinyRarity(rarity) {
     }
 }
 
+
+export function formatShinyShadowRarity(rarity) {
+    switch(rarity) {
+        case "shadow_encounter":
+            return "Rocket Boss ~1/64\nRocket Grunt ~1/256\nShadow Raid ~1/256";
+        case "legendary_raid":
+            return "Shadow Raid ~1/20";
+        default:
+            return "Unavailable";
+    }
+}
 
 export function formatCostumeName(name) {
     return name

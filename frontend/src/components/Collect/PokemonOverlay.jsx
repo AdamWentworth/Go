@@ -85,7 +85,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
           </WindowOverlay>
           {(hasFewCostumes && showShadowWindow && !hasNoCostumes) && (
             <WindowOverlay onClose={onClose} className="overlay-shadow-info">
-              <ShadowInfo pokemon={pokemon} className="shadow-info" />
+              <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} className="shadow-info" />
             </WindowOverlay>
           )}
         </div>
@@ -98,7 +98,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
             )}
             {(showShadowWindow && hasNoCostumes) && (
               <WindowOverlay onClose={onClose} className="overlay-shadow-info">
-                <ShadowInfo pokemon={pokemon} className="shadow-info" />
+                <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} className="shadow-info" />
               </WindowOverlay>
             )}
             {showCostumesWindow && (
@@ -117,7 +117,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
               )}
               {showShadowWindow && (
                 <WindowOverlay onClose={onClose} className="overlay-shadow-info">
-                  <ShadowInfo pokemon={pokemon} className="shadow-info" />
+                  <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} className="shadow-info" />
                 </WindowOverlay>
               )}
             </div>
@@ -151,7 +151,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
 
         {showShadowWindow && (
           <WindowOverlay onClose={onClose} className="overlay-shadow-info">
-            <ShadowInfo pokemon={pokemon} className="shadow-info" />
+            <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} className="shadow-info" />
           </WindowOverlay>
         )}
 
@@ -179,7 +179,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
 
         {showShadowWindow && (
           <WindowOverlay onClose={onClose} className="overlay-shadow-info">
-            <ShadowInfo pokemon={pokemon} className="shadow-info" />
+            <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} className="shadow-info" />
           </WindowOverlay>
         )}
 

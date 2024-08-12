@@ -37,13 +37,17 @@ function ShinyInfo({ pokemon, allPokemonData }) {
       <h1>Shiny Info</h1>
       <img src={pokemon.image_url_shiny} alt={`${pokemon.name} Shiny`} />
       <div>
-        <strong>Shiny Rarity:</strong> {displayShinyRarity()}
+        <strong>Shiny Rarity:</strong> {
+          displayShinyRarity().split('\n').map((line, index) => (
+            <React.Fragment key={index}>
+              {line}
+              <br />
+            </React.Fragment>
+          ))
+        }
       </div>
     </div>
   );
 }
 
 export default ShinyInfo;
-
-
-
