@@ -50,13 +50,21 @@ export function formatShinyRarity(rarity) {
         case "research_day":
             return "Research Day ~1/10";
         case "mega_raid":
-            return "Mega Raid ~1/60";
+            return "Mega Raid ~1/64";
         case "permaboosted":
             return "Permaboosted ~1/64";
         case "raid_day":
             return "Raid Day ~1/10";
-        case "egg":
-            return "Egg ~1/10 - 1/64";
+        case "baby_boost":
+            return "Egg ~1/64";
+        case "hatch_day":
+            return "Egg ~1/10";
+        case "legendary_raid":
+            return "Legendary Raid ~1/20";
+        case "ultra_beast_raid":
+            return "Ultra Beast Raid ~1/20";
+        case "mythical_raid":
+            return "Mythical Raid ~1/20";
         default:
             return "Full Odds ~1/500";
     }
