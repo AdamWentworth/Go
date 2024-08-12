@@ -33,17 +33,26 @@ export function handleSearchTermChange(allPokemons, term, generations, pokemonTy
             } else if (iTerm === '!costume') {
                 costumeNegationFlag = true;
             } else if (iTerm === 'legendary') {
-                tempResults = tempResults.filter(pokemon => pokemon.rarity && pokemon.rarity.toLowerCase() === 'legendary');
+                tempResults = tempResults.filter(pokemon => 
+                    pokemon.rarity && pokemon.rarity.toLowerCase().includes('legendary')
+                );
             } else if (iTerm === '!legendary') {
-                tempResults = tempResults.filter(pokemon => !pokemon.rarity || pokemon.rarity.toLowerCase() !== 'legendary');
-            } else if (iTerm === 'mythical') {
+                tempResults = tempResults.filter(pokemon => 
+                    !pokemon.rarity || !pokemon.rarity.toLowerCase().includes('legendary')
+                );
+            }
+             else if (iTerm === 'mythical') {
                 tempResults = tempResults.filter(pokemon => pokemon.rarity && pokemon.rarity.toLowerCase() === 'mythic');
             } else if (iTerm === '!mythical') {
                 tempResults = tempResults.filter(pokemon => !pokemon.rarity || pokemon.rarity.toLowerCase() !== 'mythic');
             } else if (iTerm === 'ultrabeast') {
-                tempResults = tempResults.filter(pokemon => pokemon.rarity && pokemon.rarity.toLowerCase() === 'ultra beast');
+                tempResults = tempResults.filter(pokemon => 
+                    pokemon.rarity && pokemon.rarity.toLowerCase().includes('ultra beast')
+                );
             } else if (iTerm === '!ultrabeast') {
-                tempResults = tempResults.filter(pokemon => !pokemon.rarity || pokemon.rarity.toLowerCase() !== 'ultra beast');
+                tempResults = tempResults.filter(pokemon => 
+                    !pokemon.rarity || !pokemon.rarity.toLowerCase().includes('ultra beast')
+                );
             } else {
                 const generationNumber = generationMap[iTerm];
                 if (generationNumber !== undefined) {
@@ -123,11 +132,11 @@ export function checkTermMatches(pokemon, term, pokemonTypes, generationMap) {
     } else if (isCostumeSearch) {
         result = pokemon.variantType && pokemon.variantType.includes('costume');
     } else if (isLegendarySearch) {
-        result = pokemon.rarity && pokemon.rarity.toLowerCase() === 'legendary';
+        result = pokemon.rarity && pokemon.rarity.toLowerCase().includes('legendary');
     } else if (isMythicalSearch) {
         result = pokemon.rarity && pokemon.rarity.toLowerCase() === 'mythic';
     } else if (isUltraBeastSearch) {
-        result = pokemon.rarity && pokemon.rarity.toLowerCase() === 'ultra beast';
+        result = pokemon.rarity && pokemon.rarity.toLowerCase().includes('ultra beast');
     } else {
         result = (
             pokemon.name &&

@@ -1,0 +1,22 @@
+standard
+legendary
+mythical
+regional
+ultra beast
+
+in person costume
+global costume
+
+global shiny costume
+in person shiny costume
+
+full odds shiny
+community day shiny
+raid day shiny
+research day shiny
+legendary / ultra beast shiny
+regional shiny
+permaboosted shiny
+
+
+
