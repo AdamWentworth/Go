@@ -40,8 +40,7 @@ export function handleSearchTermChange(allPokemons, term, generations, pokemonTy
                 tempResults = tempResults.filter(pokemon => 
                     !pokemon.rarity || !pokemon.rarity.toLowerCase().includes('legendary')
                 );
-            }
-             else if (iTerm === 'mythical') {
+            } else if (iTerm === 'mythical') {
                 tempResults = tempResults.filter(pokemon => pokemon.rarity && pokemon.rarity.toLowerCase() === 'mythic');
             } else if (iTerm === '!mythical') {
                 tempResults = tempResults.filter(pokemon => !pokemon.rarity || pokemon.rarity.toLowerCase() !== 'mythic');
@@ -52,6 +51,14 @@ export function handleSearchTermChange(allPokemons, term, generations, pokemonTy
             } else if (iTerm === '!ultrabeast') {
                 tempResults = tempResults.filter(pokemon => 
                     !pokemon.rarity || !pokemon.rarity.toLowerCase().includes('ultra beast')
+                );
+            } else if (iTerm === 'regional') {
+                tempResults = tempResults.filter(pokemon => 
+                    pokemon.rarity && pokemon.rarity.toLowerCase().includes('regional')
+                );
+            } else if (iTerm === '!regional') {
+                tempResults = tempResults.filter(pokemon => 
+                    !pokemon.rarity || !pokemon.rarity.toLowerCase().includes('regional')
                 );
             } else {
                 const generationNumber = generationMap[iTerm];
@@ -115,6 +122,7 @@ export function checkTermMatches(pokemon, term, pokemonTypes, generationMap) {
     const isLegendarySearch = term === 'legendary';
     const isMythicalSearch = term === 'mythical';
     const isUltraBeastSearch = term === 'ultrabeast';
+    const isRegionalSearch = term === 'regional';
 
     let result = false;
 
@@ -137,6 +145,8 @@ export function checkTermMatches(pokemon, term, pokemonTypes, generationMap) {
         result = pokemon.rarity && pokemon.rarity.toLowerCase() === 'mythic';
     } else if (isUltraBeastSearch) {
         result = pokemon.rarity && pokemon.rarity.toLowerCase().includes('ultra beast');
+    } else if (isRegionalSearch) {
+        result = pokemon.rarity && pokemon.rarity.toLowerCase().includes('regional');
     } else {
         result = (
             pokemon.name &&

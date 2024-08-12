@@ -1,5 +1,4 @@
 // createPokemonVariants.js
-
 import { formatCostumeName } from './formattingHelpers';
 import { determinePokemonKey } from './imageHelpers';
 import { matchFormsAndVariantType } from './formMatcher';
@@ -111,7 +110,8 @@ const createPokemonVariants = (pokemons) => {
 
         addVariant(baseVariant, megaEvolution.primal ? `primal` : `mega${formSuffix}`);
 
-        if (megaEvolution.image_url_shiny) {
+        // Specific Handling for Shiny Mega Variants
+        if (megaEvolution.image_url_shiny && pokemon.shiny_available) {
           const shinyVariant = {
             ...baseVariant,
             currentImage: megaEvolution.image_url_shiny,
@@ -125,7 +125,7 @@ const createPokemonVariants = (pokemons) => {
       });
     }
 
-     // Remove raid boss data from variants that do not meet the criteria
+    // Remove raid boss data from variants that do not meet the criteria
     variants = variants.map(variant => {
       const raidBossForms = pokemon.raid_boss.map(rb => rb.form);
       const matchResult = raidBossForms.some(raidBossForm => matchFormsAndVariantType(variant, variant.form, raidBossForm, variant.variantType, pokemon.pokemon_id));
