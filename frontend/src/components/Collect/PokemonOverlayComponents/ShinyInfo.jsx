@@ -13,6 +13,13 @@ function ShinyInfo({ pokemon, allPokemonData }) {
     return null;
   };
 
+  // Function to extract the base name by slicing off everything before the last space
+  const getBaseName = (name) => {
+    return name.substring(name.lastIndexOf(' ') + 1);
+  };
+
+  const baseName = getBaseName(pokemon.name);
+
   // Function to determine what text to display for shiny rarity
   const displayShinyRarity = () => {
     const defaultShinyRarity = formatShinyRarity(pokemon.shiny_rarity);
@@ -34,7 +41,7 @@ function ShinyInfo({ pokemon, allPokemonData }) {
 
   return (
     <div className="column shiny-info-column">
-      <h1>Shiny Info</h1>
+      <h1>Shiny {baseName}</h1>
       <img src={pokemon.image_url_shiny} alt={`${pokemon.name} Shiny`} />
       <div>
         <strong>Shiny Rarity:</strong> {

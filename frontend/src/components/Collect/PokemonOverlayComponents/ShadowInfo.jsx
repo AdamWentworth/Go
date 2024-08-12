@@ -39,7 +39,7 @@ function ShadowInfo({ pokemon, allPokemonData }) {
 
     return (
       <div className="column shadow-info-column">
-        <h1>Shadow Info</h1>
+        <h1>Shadow {baseName}</h1>
   
         {/* New container for images */}
         <div className="images-container">
@@ -52,7 +52,7 @@ function ShadowInfo({ pokemon, allPokemonData }) {
         {/* Render shiny shadow rarity information */}
         {showShinyShadow && (
           <div className="shiny-rarity-info">
-            <strong>Shiny Rarity:</strong> {
+            <strong>Shiny Shadow Rarity:</strong> {
               // Replace newline characters with <br /> for proper rendering
               displayShinyShadowRarity().split('\n').map((line, index) => (
                 <React.Fragment key={index}>

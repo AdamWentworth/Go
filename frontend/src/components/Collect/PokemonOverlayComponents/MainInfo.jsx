@@ -18,7 +18,13 @@ function MainInfo({ pokemon }) {
 
   return (
     <div className="column main-info-column">
-      <h1>Main Info</h1>
+      <div className="header-section">
+        <h1>Main Info</h1>
+        {pokemon.rarity.includes("Regional") && (
+          <img src="/images/regional.png" alt="Regional" className="regional-icon" />
+        )}
+      </div>
+      
       <img src={pokemon.image_url} alt={baseName} className="pokemon-image" />
       <p>#{pokemon.pokedex_number}</p>
       <div className="type-section">

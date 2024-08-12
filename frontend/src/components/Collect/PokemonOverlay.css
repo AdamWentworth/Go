@@ -36,6 +36,7 @@
 
 .column {
     padding: 10px;
+    padding-top: 0px;
     box-sizing: border-box;
 }
 
@@ -217,6 +218,8 @@
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {
+    @media (min-width: 1024px) and (max-width: 1439px) {
+    }
     .column {
         padding: 0px;
     }

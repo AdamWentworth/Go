@@ -13,7 +13,7 @@
 }
 
 .pokemon-image {
-    margin-top: -30px;
+    margin-top: -20px;
     margin-bottom: -15px;
     max-width: 240px;
     filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
@@ -53,3 +53,24 @@
 .cp + .cp {
     margin-top: 10px;
 }
+
+.header-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  
+  .header-section h1 {
+    margin: 0;
+  }
+  
+  .regional-icon {
+    width: 25px; /* Adjust the size as needed */
+    height: auto;
+    position: absolute;
+    right: 0;
+    margin-bottom: 10px;
+  }
+  
+  
