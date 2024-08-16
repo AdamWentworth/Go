@@ -42,6 +42,6 @@
         grid-template-columns: repeat(9, 1fr);
         padding: 10px;
         width: calc(100vw - 10px); /* Adjust width if necessary */
-        gap: 9px;
+        gap: 0px;
     }
 }

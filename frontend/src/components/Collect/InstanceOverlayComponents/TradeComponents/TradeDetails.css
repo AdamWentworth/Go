@@ -10,9 +10,46 @@
 .trade-details-container .top-row {
     display: flex;
     justify-content: space-between; /* Ensure top-row items are spread out */
+    align-items: center; /* Vertically center the items in the row */
     position: relative; /* Ensure top-row is the reference point for absolute positioning */
-    height: 40px; /* Adjust height if needed */
     margin-bottom: 30px;
+}
+
+.trade-details-container .edit-save-container {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%); /* Center vertically */
+}
+
+.trade-details-container .mirror {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%); /* Center vertically */
+}
+
+.trade-details-container .image-row {
+    display: flex;
+    justify-content: center; /* Center the images as a group */
+    align-items: center; /* Vertically center the images */
+    flex-grow: 1; /* Allow the image row to expand and take up space between the left and right elements */
+}
+
+.trade-details-container .image-row img {
+    max-width: 35px; /* Reduce the size of the images */
+    max-height: 35px; /* Ensure the height doesn't exceed the specified value */
+    margin-right: 5px; /* Adjust spacing between images */
+    object-fit: contain; /* Maintain aspect ratio */
+}
+
+.trade-details-container .image-row img:last-child {
+    margin-right: 0; /* Remove margin from the last image */
+}
+
+.trade-details-container h2 {
+    margin-bottom: 10px;
+    margin-top: -20px;
 }
 
 .trade-details-container .edit-save-container {

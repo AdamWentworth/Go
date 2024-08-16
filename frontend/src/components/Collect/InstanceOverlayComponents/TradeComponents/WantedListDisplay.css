@@ -45,3 +45,14 @@
 .wanted-list-container.single-item-list {
     grid-template-columns: repeat(1, 1fr); /* 1 item per row if the list has only one item due to mirror being true */
 }
+
+.header-row {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px; /* Add some space below the images */
+}
+
+.header-row img {
+    max-width: 50px; /* Adjust size as necessary */
+    height: auto;
+}

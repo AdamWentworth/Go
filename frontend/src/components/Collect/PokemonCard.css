@@ -8,7 +8,6 @@
     font-size: calc((100vw - (8 * 16px)) / 100);
     box-sizing: border-box;
     position: relative;
-    margin-bottom: 10px;
 }
 
 /* Adjust the backlight pseudo-element to create a centered glow */

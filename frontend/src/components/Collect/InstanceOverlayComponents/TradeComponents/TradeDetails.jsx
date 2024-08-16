@@ -112,6 +112,17 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                 <div className="edit-save-container">
                     <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
                 </div>
+                <div className="image-row">
+                    <img src="/images/community_day.png" alt="Community Day" />
+                    <img src="/images/research.png" alt="Research" />
+                    <img src="/images/raid_day.png" alt="Raid Day" />
+                    <img src="/images/legendary_raid.png" alt="Legendary Raid" />
+                    <img src="/images/costume_icon.png" alt="Costume Icon" />
+                    <img src="/images/shiny_icon.png" alt="Shiny Icon" />
+                    <img src="/images/ultra_beast.png" alt="Ultra Beast" />
+                    <img src="/images/regional.png" alt="Regional" />
+                    <img src="/images/location.png" alt="Location" />
+                </div>
                 <div className="mirror">
                     <MirrorManager
                         pokemon={pokemon}
@@ -125,6 +136,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                     />
                 </div>
             </div>
+
             <div>
                 <h2>Wanted List:</h2>
                 <WantedListDisplay
