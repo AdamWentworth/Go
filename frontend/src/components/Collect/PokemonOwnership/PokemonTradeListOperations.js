@@ -13,8 +13,8 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
     Object.entries(ownershipData).forEach(([key, value]) => {
         const { baseKey } = parsePokemonKey(key); // Extract the base key from the key
         const variantDetail = variants.find(variant => variant.pokemonKey === baseKey); // Find the corresponding variant
-        console.log(variantDetail)
-        console.log(value)
+        // console.log(variantDetail)
+        // console.log(value)
         // Prepare the object to be added to the list
         const listItem = {
             currentImage: variantDetail.currentImage,
