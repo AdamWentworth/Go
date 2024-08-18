@@ -1,18 +1,15 @@
 import { validateUUID } from '../utils/PokemonIDUtils';
 
-export function getFilteredPokemonsByOwnership(variants, ownershipData, filter, lists) {
+export function getFilteredPokemonsByOwnership(variants, ownershipData, filter) {
     // Adjust the filter if necessary to handle special cases
-    const adjustedFilter = filter === 'Trade' ? 'trade' : filter.toLowerCase();
-    console.log(`Filtering for status: ${adjustedFilter}`);
+    const adjustedFilter = filter === 'Trade' ? 'for_trade' : filter;
+    const filterKey = `is_${adjustedFilter.toLowerCase()}`;
+    console.log(`Filtering for status: ${filterKey}`);
 
-    // Select the correct list based on the filter
-    const selectedList = lists[adjustedFilter];
-    if (!selectedList) {
-        return [];
-    }
-
-    // Get all keys from the selected list
-    const filteredKeys = Object.keys(selectedList);
+    // Get all keys that match the filter criteria, including their UUIDs
+    const filteredKeys = Object.entries(ownershipData)
+        .filter(([key, data]) => data[filterKey])
+        .map(([key]) => key);  // Maintain the full key with UUID
 
     // Map the filtered keys to their corresponding variant data
     const filteredPokemons = filteredKeys.map(key => {
@@ -28,7 +25,6 @@ export function getFilteredPokemonsByOwnership(variants, ownershipData, filter, 
         } else {
             baseKey = key; // Use the full key if no UUID is present
         }
-
         const variant = variants.find(v => v.pokemonKey === baseKey);
         if (variant) {
             return {
