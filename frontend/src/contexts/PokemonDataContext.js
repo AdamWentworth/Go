@@ -33,23 +33,65 @@ export const PokemonDataProvider = ({ children }) => {
 
     const updateLists = useCallback(importedUpdateLists(data, setData), [data.ownershipData, data.variants]);
 
+    let scheduledSync;
+    let timer;
+
+    const periodicUpdates = useCallback(() => {
+        if (scheduledSync == null) {
+            console.log("First call: Triggering immediate update.");
+            
+            // First call, trigger the immediate update
+            navigator.serviceWorker.ready.then(registration => {
+                registration.active.postMessage({
+                    action: 'sendBatchedUpdatesToBackend'
+                });
+                console.log("Immediate update sent to backend.");
+            });
+            scheduledSync = true;
+
+            // Set a 60-second timer to handle future batched updates
+            console.log("Setting 60-second timer for future batched updates.");
+            timer = setTimeout(function sendUpdates() {
+                console.log("Timer expired: Checking for batched updates in cache.");
+                
+                caches.open('pokemonCache').then(cache => {
+                    cache.match('/batchedUpdates').then(response => {
+                        if (!response) {
+                            // If cache is empty, stop periodic updates
+                            console.log("No updates in cache: Stopping periodic updates.");
+                            scheduledSync = null;
+                            timer = null;
+                        } else {
+                            // Cache is not empty, send batched updates
+                            console.log("Updates found in cache: Sending batched updates to backend.");
+                            navigator.serviceWorker.ready.then(registration => {
+                                registration.active.postMessage({
+                                    action: 'sendBatchedUpdatesToBackend'
+                                });
+                                console.log("Batched updates sent to backend.");
+                            });
+
+                            // Set the next 60-second timer for the next update
+                            console.log("Setting another 60-second timer for the next update.");
+                            timer = setTimeout(sendUpdates, 60000);
+                        }
+                    });
+                });
+            }, 60000);
+
+        } else {
+            console.log("Function called again but is currently waiting for the timer to expire.");
+        }
+    }, []);
+
     const updateOwnership = useCallback((...args) => {
         importedUpdateOwnership(data, setData, ownershipDataRef, updateLists)(...args);
-        navigator.serviceWorker.ready.then(registration => {
-            registration.active.postMessage({
-                action: 'sendBatchedUpdatesToBackend'
-            });
-        });
-
+        periodicUpdates();
     }, [data.variants, updateLists]);
 
     const updateDetails = useCallback((...args) => {
         importedUpdateDetails(data, setData, updateLists)(...args);
-        navigator.serviceWorker.ready.then(registration => {
-            registration.active.postMessage({
-                action: 'sendBatchedUpdatesToBackend'
-            });
-        });
+        periodicUpdates();
     }, [data.ownershipData, updateLists]);
 
     useEffect(() => {
