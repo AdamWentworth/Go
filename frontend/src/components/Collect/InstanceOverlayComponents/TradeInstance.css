@@ -8,10 +8,9 @@
 
 .trade-instance .top-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: center;
   width: 100%;
-  padding: 0 1rem;
   position: relative;
 }
 
@@ -23,17 +22,23 @@
   text-align: center;
 }
 
+.trade-instance .CPComponent {
+  margin-top: 10px;
+}
+
 .trade-instance .edit-save-container {
   margin-right: auto;
 }
 
-.trade-instance .cp-container {
+/* .CPComponent {
+  flex-grow: 1;
   display: flex;
-  justify-content: center;
+  justify-content: center; 
   align-items: center;
-  position: relative;
-  width: 100%;
-  margin-top: 5px;
+} */
+
+.trade-instance .edit-save-container {
+  flex-shrink: 0; /* Ensures this container doesn't grow or shrink */
 }
 
 .trade-instance .background-select-row {

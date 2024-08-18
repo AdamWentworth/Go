@@ -2,22 +2,17 @@
 
 import React, { useContext, createContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { initializePokemonLists } from '../components/Collect/PokemonOwnership/PokemonTradeListOperations';
-
 import { fetchData } from './PokemonData/fetchData';
 import { updateOwnership as importedUpdateOwnership } from './PokemonData/updateOwnership';
 import { updateLists as importedUpdateLists } from './PokemonData/updateLists';
 import { updateDetails as importedUpdateDetails } from './PokemonData/updateDetails';
 import { mergeOwnershipData as importedMergeOwnershipData } from './PokemonData/mergeOwnershipData';
 
-// Create a React context for sharing Pokemon data across components
 const PokemonDataContext = createContext();
 
-// Custom hook to use the context
 export const usePokemonData = () => useContext(PokemonDataContext);
 
-// Context provider component that wraps around children components
 export const PokemonDataProvider = ({ children }) => {
-    // State to hold all Pokemon data and loading status
     const [data, setData] = useState({
         variants: [],
         ownershipData: {},
@@ -25,10 +20,12 @@ export const PokemonDataProvider = ({ children }) => {
         loading: true
     });
 
-    // Ref to always hold the latest ownershipData
+    const [isInitialSyncScheduled, setIsInitialSyncScheduled] = useState(false);
+    const [timerValue, setTimerValue] = useState(0);
+    const countdownRef = useRef(null);
+
     const ownershipDataRef = useRef(data.ownershipData);
 
-    // Effect to fetch data on component mount
     useEffect(() => {
         if (data.loading) {
             fetchData(setData, ownershipDataRef, updateOwnership, updateLists).catch(error => {
@@ -36,49 +33,81 @@ export const PokemonDataProvider = ({ children }) => {
                 setData(prev => ({ ...prev, loading: false }));
             });
         }
-    }, [data.loading]);    
+    }, [data.loading]);
 
-    // Function to update Pokemon lists
+    useEffect(() => {
+        if (isInitialSyncScheduled && countdownRef.current) {
+            const interval = setInterval(() => {
+                setTimerValue(prev => {
+                    if (prev <= 1) {
+                        console.log("Timer has expired. Resetting isInitialSyncScheduled to false.");
+                        clearInterval(interval);
+                        countdownRef.current = null;
+                        setIsInitialSyncScheduled(false);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+
+            return () => clearInterval(interval);
+        }
+    }, [isInitialSyncScheduled]);
+
+    const startCountdown = useCallback(() => {
+        if (!countdownRef.current) {
+            console.log("Starting a 60-second countdown and setting isInitialSyncScheduled to true.");
+            setIsInitialSyncScheduled(true);
+            setTimerValue(60);
+            countdownRef.current = setTimeout(() => {
+                console.log("Countdown complete. Timer expired.");
+                countdownRef.current = null;
+                setIsInitialSyncScheduled(false);
+            }, 60000);
+        } else {
+            console.log("Countdown is already active.");
+        }
+    }, []);
+
     const updateLists = useCallback(importedUpdateLists(data, setData), [data.ownershipData, data.variants]);
 
-    // Function to update ownership status
-    const updateOwnership = useCallback(importedUpdateOwnership(data, setData, ownershipDataRef, updateLists), [data.variants, updateLists]);
+    const updateOwnership = useCallback((...args) => {
+        startCountdown();
+        importedUpdateOwnership(data, setData, ownershipDataRef, updateLists, isInitialSyncScheduled, setIsInitialSyncScheduled, startCountdown, timerValue)(...args);
+    }, [data.variants, updateLists, startCountdown, isInitialSyncScheduled, setIsInitialSyncScheduled, timerValue]);
 
-    // Function to update Instance details
-    const updateDetails = useCallback(importedUpdateDetails(data, setData, updateLists), [data.ownershipData, updateLists]);
-    
+    const updateDetails = useCallback((...args) => {
+        startCountdown();
+        importedUpdateDetails(data, setData, updateLists, isInitialSyncScheduled, setIsInitialSyncScheduled, startCountdown, timerValue)(...args);
+    }, [data.ownershipData, updateLists, startCountdown, isInitialSyncScheduled, setIsInitialSyncScheduled, timerValue]);
+
     useEffect(() => {
         ownershipDataRef.current = data.ownershipData;
-    }, [data.ownershipData]);   
-    
-    // Define the resetData function
+    }, [data.ownershipData]);
+
     const resetData = () => {
-        // Reset the state to the initial loading state
         setData({
             variants: [],
             ownershipData: {},
             lists: {},
-            loading: true // This will trigger the useEffect to refetch data
+            loading: true
         });
     };
 
     const setOwnershipData = (newOwnershipData) => {
         setData(prevData => {
             const updatedOwnershipData = importedMergeOwnershipData(prevData.ownershipData, newOwnershipData);
-            // Immediately update the ref to keep it in sync with state changes.
             ownershipDataRef.current = updatedOwnershipData;
-    
+
             localStorage.setItem('pokemonOwnership', JSON.stringify({ data: updatedOwnershipData, timestamp: Date.now() }));
-    
-            // Update state
+
             return {
                 ...prevData,
                 ownershipData: updatedOwnershipData,
                 lists: initializePokemonLists(updatedOwnershipData, prevData.variants),
             };
         });
-    
-        // Now post the updated data to service workers or any other side effects
+
         navigator.serviceWorker.ready.then(registration => {
             registration.active.postMessage({
                 action: 'syncData',
@@ -89,19 +118,18 @@ export const PokemonDataProvider = ({ children }) => {
                 data: { data: initializePokemonLists(ownershipDataRef.current, data.variants), timestamp: Date.now() }
             });
         });
-    };    
-    
-    // Context value includes all state and the update function
+    };
+
     const contextValue = useMemo(() => ({
         ...data,
         updateOwnership,
         updateLists,
         updateDetails,
         setOwnershipData,
-        resetData
-    }), [data, updateOwnership, updateDetails]);
+        resetData,
+        isInitialSyncScheduled
+    }), [data, updateOwnership, updateDetails, isInitialSyncScheduled]);
 
-    // Provider wraps children with the Pokemon data context
     return (
         <PokemonDataContext.Provider value={contextValue}>
             {children}
@@ -109,5 +137,4 @@ export const PokemonDataProvider = ({ children }) => {
     );
 };
 
-// Exporting the Context object itself along with other components
 export { PokemonDataContext };

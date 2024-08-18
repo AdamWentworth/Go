@@ -56,7 +56,6 @@ self.addEventListener('fetch', (event) => {
             })
         );
     }
-    event.waitUntil(checkAndScheduleSync());
 });
 
 // Event handler for messages
@@ -70,27 +69,15 @@ self.addEventListener('message', async (event) => {
         case 'syncLists':
             await syncLists(data);
             break;
-        case 'scheduleSync':
-            scheduleSync();
+        case 'sendBatchedUpdatesToBackend':
+            await sendBatchedUpdatesToBackend();
             break;
         case 'updateLoginStatus':
             isLoggedIn = data.isLoggedIn;  // Update the global logged-in state
-            console.log(`Login status updated: ${isLoggedIn}`);
             await saveStateToCache(); // Save state to cache when login status changes
-            if (!isLoggedIn) {
-                clearTimers();
-            } else {
-                // When user logs in, immediately check and schedule sync if needed
-                checkAndScheduleSync();
-            }
             break;
     }
 });
-
-let syncTimeoutId = null;
-let syncIntervalId = null;
-let isInitialSyncScheduled = false;
-let isSyncInProgress = false; // Flag to track if a sync is in progress
 
 async function loadStateFromCache() {
     const cache = await caches.open('stateCache');
@@ -98,41 +85,19 @@ async function loadStateFromCache() {
     if (response) {
         const state = await response.json();
         isLoggedIn = state.isLoggedIn;
-        isInitialSyncScheduled = state.isInitialSyncScheduled;
         console.log('Loaded state from cache:', state);
-        if (isLoggedIn) {
-            scheduleInitialSync();
-        }
     }
 }
 
 async function saveStateToCache() {
     const state = {
         isLoggedIn,
-        isInitialSyncScheduled,
     };
     const cache = await caches.open('stateCache');
     const response = new Response(JSON.stringify(state), {
         headers: { 'Content-Type': 'application/json' }
     });
     await cache.put('state', response);
-    console.log('Saved state to cache:', state);
-}
-
-async function checkAndScheduleSync() {
-    if (isInitialSyncScheduled || !isLoggedIn) return;
-
-    const cache = await caches.open('pokemonCache');
-    const cachedResponse = await cache.match('/batchedUpdates');
-
-    if (cachedResponse) {
-        const batchedUpdates = await cachedResponse.json();
-        if (Object.keys(batchedUpdates).length > 0) {
-            console.log(`Batched updates found, starting immediate sync.`);
-            await immediateSync(); // Perform immediate sync
-            schedulePeriodicSync(); // Schedule periodic sync
-        }
-    }
 }
 
 async function syncData(data) {
@@ -145,7 +110,6 @@ async function syncData(data) {
         await cache.put('/pokemonOwnership', response);
         console.log(`Pokemon ownership data has been updated and cached.`);
         sendMessageToClients({ status: 'success', message: 'Data synced successfully.' });
-        if (isLoggedIn) await checkAndScheduleSync(); // Check and schedule sync if needed
     } catch (error) {
         console.error(`Failed to update pokemon ownership:`, error);
         sendMessageToClients({ status: 'failed', message: 'Failed to update pokemon ownership.', error });
@@ -168,49 +132,23 @@ async function syncLists(data) {
     }
 }
 
-function scheduleInitialSync() {
-    if (isInitialSyncScheduled || !isLoggedIn) return; // Prevent multiple initial syncs
-    isInitialSyncScheduled = true;
-    console.log(`[${new Date().toLocaleTimeString()}] Starting immediate sync followed by 1-minute interval`);
-    immediateSync().then(schedulePeriodicSync); // Perform immediate sync and then schedule periodic sync
-    saveStateToCache(); // Save state to cache after scheduling initial sync
-}
-
-function schedulePeriodicSync() {
-    if (syncIntervalId || !isLoggedIn) return; // Prevent multiple intervals
-    console.log(`Starting periodic sync every 1 minute.`);
-    syncIntervalId = setInterval(async () => {
-        await sendBatchedUpdatesToBackend();
-    }, 60000); // 60 seconds interval
-}
-
-async function immediateSync() {
-    await sendBatchedUpdatesToBackend();
-}
-
 async function sendBatchedUpdatesToBackend() {
-    if (!isLoggedIn || isSyncInProgress) {
-        console.log("User is not logged in or sync is already in progress. Skipping backend update.");
+    if (!isLoggedIn) {
+        console.log("User is not logged in. Skipping backend update.");
         return;
     }
-
-    isSyncInProgress = true; // Set sync in progress flag
 
     const cache = await caches.open('pokemonCache');
     const cachedResponse = await cache.match('/batchedUpdates');
     if (!cachedResponse) {
-        console.log(`No batched updates found, stopping periodic sync.`);
-        clearTimers();
-        isSyncInProgress = false; // Reset sync in progress flag
+        console.log(`No batched updates found.`);
         return;
     }
 
     const batchedUpdates = await cachedResponse.json();
 
     if (Object.keys(batchedUpdates).length === 0) {
-        console.log(`Batched updates are empty, stopping periodic sync.`);
-        clearTimers();
-        isSyncInProgress = false; // Reset sync in progress flag
+        console.log(`Batched updates are empty.`);
         return;
     }
 
@@ -235,8 +173,6 @@ async function sendBatchedUpdatesToBackend() {
         await cache.delete('/batchedUpdates');
     } catch (error) {
         console.error('Failed to send updates to backend:', error);
-    } finally {
-        isSyncInProgress = false; // Reset sync in progress flag
     }
 }
 
@@ -244,25 +180,4 @@ function sendMessageToClients(msg) {
     self.clients.matchAll().then(clients => {
         clients.forEach(client => client.postMessage(msg));
     });
-}
-
-function clearTimers() {
-    if (syncTimeoutId) {
-        clearTimeout(syncTimeoutId);
-        syncTimeoutId = null;
-    }
-    if (syncIntervalId) {
-        clearInterval(syncIntervalId);
-        syncIntervalId = null;
-    }
-    isInitialSyncScheduled = false;
-    isSyncInProgress = false; // Reset sync in progress flag
-    saveStateToCache(); // Save state to cache when clearing timers
-}
-
-// Function to schedule sync when triggered
-function scheduleSync() {
-    if (!syncTimeoutId && !syncIntervalId && isLoggedIn) {
-        scheduleInitialSync();
-    }
 }

@@ -1,9 +1,8 @@
 // updateOwnership.js
 
 import { updatePokemonOwnership } from '../../components/Collect/PokemonOwnership/PokemonOwnershipUpdateService';
-import { initializePokemonLists, updatePokemonLists } from '../../components/Collect/PokemonOwnership/PokemonTradeListOperations';
 
-export const updateOwnership = (data, setData, ownershipDataRef, updateLists) => (pokemonKeys, newStatus) => {
+export const updateOwnership = (data, setData, ownershipDataRef, updateLists, isInitialSyncScheduled, timerValue) => (pokemonKeys, newStatus) => {
     const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
     const tempOwnershipData = { ...ownershipDataRef.current };
     let processedKeys = 0;
@@ -80,7 +79,7 @@ export const updateOwnership = (data, setData, ownershipDataRef, updateLists) =>
 
                     // Trigger the service worker to schedule sync
                     registration.active.postMessage({
-                        action: 'scheduleSync'
+                        action: 'sendBatchedUpdatesToBackend'
                     });
 
                     updateLists();

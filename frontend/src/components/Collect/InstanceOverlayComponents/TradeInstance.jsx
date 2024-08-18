@@ -112,13 +112,19 @@ const TradeInstance = ({ pokemon }) => {
 
   return (
     <div className="trade-instance">
+      <div className="trade-title">
+      </div>
       <div className="top-row">
         <div className="edit-save-container">
           <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
         </div>
-        <CPComponent pokemon={pokemon} editMode={editMode} onCPChange={handleCPChange} />
+        <h2>Trade</h2>
       </div>
 
+      <div className="CPComponent">
+      <CPComponent pokemon={pokemon} editMode={editMode} onCPChange={handleCPChange} />
+      </div>
+      
       {selectableBackgrounds.length > 0 && (
         <div className={`background-select-row ${editMode ? 'active' : ''}`}>
           <img

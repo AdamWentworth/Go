@@ -1,9 +1,8 @@
 // updateDetails.js
 
 import { updatePokemonDetails } from '../../components/Collect/PokemonOwnership/pokemonOwnershipManager';
-import { initializePokemonLists } from '../../components/Collect/PokemonOwnership/PokemonTradeListOperations';
 
-export const updateDetails = (data, setData, updateLists) => (pokemonKey, details) => {
+export const updateDetails = (data, setData, updateLists, isInitialSyncScheduled, timerValue) => (pokemonKey, details) => {
     updatePokemonDetails(pokemonKey, details, data.ownershipData);
 
     // Assuming the update is successful, we update the context state
@@ -34,7 +33,7 @@ export const updateDetails = (data, setData, updateLists) => (pokemonKey, detail
 
         // Trigger the service worker to schedule sync
         registration.active.postMessage({
-            action: 'scheduleSync'
+            action: 'sendBatchedUpdatesToBackend'
         });
 
         // Now call updateLists after syncData is complete
