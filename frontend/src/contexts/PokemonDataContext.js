@@ -20,10 +20,6 @@ export const PokemonDataProvider = ({ children }) => {
         loading: true
     });
 
-    const [isInitialSyncScheduled, setIsInitialSyncScheduled] = useState(false);
-    const [timerValue, setTimerValue] = useState(0);
-    const countdownRef = useRef(null);
-
     const ownershipDataRef = useRef(data.ownershipData);
 
     useEffect(() => {
@@ -35,51 +31,26 @@ export const PokemonDataProvider = ({ children }) => {
         }
     }, [data.loading]);
 
-    useEffect(() => {
-        if (isInitialSyncScheduled && countdownRef.current) {
-            const interval = setInterval(() => {
-                setTimerValue(prev => {
-                    if (prev <= 1) {
-                        console.log("Timer has expired. Resetting isInitialSyncScheduled to false.");
-                        clearInterval(interval);
-                        countdownRef.current = null;
-                        setIsInitialSyncScheduled(false);
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-
-            return () => clearInterval(interval);
-        }
-    }, [isInitialSyncScheduled]);
-
-    const startCountdown = useCallback(() => {
-        if (!countdownRef.current) {
-            console.log("Starting a 60-second countdown and setting isInitialSyncScheduled to true.");
-            setIsInitialSyncScheduled(true);
-            setTimerValue(60);
-            countdownRef.current = setTimeout(() => {
-                console.log("Countdown complete. Timer expired.");
-                countdownRef.current = null;
-                setIsInitialSyncScheduled(false);
-            }, 60000);
-        } else {
-            console.log("Countdown is already active.");
-        }
-    }, []);
-
     const updateLists = useCallback(importedUpdateLists(data, setData), [data.ownershipData, data.variants]);
 
     const updateOwnership = useCallback((...args) => {
-        startCountdown();
-        importedUpdateOwnership(data, setData, ownershipDataRef, updateLists, isInitialSyncScheduled, setIsInitialSyncScheduled, startCountdown, timerValue)(...args);
-    }, [data.variants, updateLists, startCountdown, isInitialSyncScheduled, setIsInitialSyncScheduled, timerValue]);
+        importedUpdateOwnership(data, setData, ownershipDataRef, updateLists)(...args);
+        navigator.serviceWorker.ready.then(registration => {
+            registration.active.postMessage({
+                action: 'sendBatchedUpdatesToBackend'
+            });
+        });
+
+    }, [data.variants, updateLists]);
 
     const updateDetails = useCallback((...args) => {
-        startCountdown();
-        importedUpdateDetails(data, setData, updateLists, isInitialSyncScheduled, setIsInitialSyncScheduled, startCountdown, timerValue)(...args);
-    }, [data.ownershipData, updateLists, startCountdown, isInitialSyncScheduled, setIsInitialSyncScheduled, timerValue]);
+        importedUpdateDetails(data, setData, updateLists)(...args);
+        navigator.serviceWorker.ready.then(registration => {
+            registration.active.postMessage({
+                action: 'sendBatchedUpdatesToBackend'
+            });
+        });
+    }, [data.ownershipData, updateLists]);
 
     useEffect(() => {
         ownershipDataRef.current = data.ownershipData;
@@ -127,8 +98,7 @@ export const PokemonDataProvider = ({ children }) => {
         updateDetails,
         setOwnershipData,
         resetData,
-        isInitialSyncScheduled
-    }), [data, updateOwnership, updateDetails, isInitialSyncScheduled]);
+        }), [data, updateOwnership, updateDetails ]);
 
     return (
         <PokemonDataContext.Provider value={contextValue}>

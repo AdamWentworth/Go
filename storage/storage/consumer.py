@@ -134,9 +134,9 @@ def handle_message(data, trace_logger):
             for instance_id, pokemon in pokemon_data.items():
                 trace_logger.info(f"Processing instance {instance_id} for user {user_id} with data: {pokemon}")
 
-                cp = pokemon.get('cp')
-                if cp == "":
-                    cp = None
+                cp = pokemon.get('cp') if pokemon.get('cp') != "" else None
+                weight = pokemon.get('weight') if pokemon.get('weight') != "" else None
+                height = pokemon.get('height') if pokemon.get('height') != "" else None
 
                 if (
                     pokemon.get('is_unowned', False) and
@@ -173,8 +173,8 @@ def handle_message(data, trace_logger):
                         'fast_move_id': pokemon.get('fast_move_id'),
                         'charged_move1_id': pokemon.get('charged_move1_id'),
                         'charged_move2_id': pokemon.get('charged_move2_id'),
-                        'weight': pokemon.get('weight'),
-                        'height': pokemon.get('height'),
+                        'weight': weight,
+                        'height': height,
                         'gender': pokemon.get('gender'),
                         'mirror': pokemon.get('mirror', False),
                         'pref_lucky': pokemon.get('pref_lucky', False),

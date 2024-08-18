@@ -77,11 +77,6 @@ export const updateOwnership = (data, setData, ownershipDataRef, updateLists, is
                         headers: { 'Content-Type': 'application/json' }
                     }));
 
-                    // Trigger the service worker to schedule sync
-                    registration.active.postMessage({
-                        action: 'sendBatchedUpdatesToBackend'
-                    });
-
                     updateLists();
                 });
             }
