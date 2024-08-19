@@ -1,14 +1,11 @@
 // sw.js
 
-let isLoggedIn = false;  // Global state to track if any user is logged in
-
 self.addEventListener('install', (event) => {
     self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
     event.waitUntil(self.clients.claim());
-    event.waitUntil(loadStateFromCache()); // Load state when activated
 });
 
 self.addEventListener('fetch', (event) => {
@@ -72,33 +69,8 @@ self.addEventListener('message', async (event) => {
         case 'sendBatchedUpdatesToBackend':
             await sendBatchedUpdatesToBackend();
             break;
-        case 'updateLoginStatus':
-            isLoggedIn = data.isLoggedIn;  // Update the global logged-in state
-            await saveStateToCache(); // Save state to cache when login status changes
-            break;
     }
 });
-
-async function loadStateFromCache() {
-    const cache = await caches.open('stateCache');
-    const response = await cache.match('state');
-    if (response) {
-        const state = await response.json();
-        isLoggedIn = state.isLoggedIn;
-        console.log('Loaded state from cache:', state);
-    }
-}
-
-async function saveStateToCache() {
-    const state = {
-        isLoggedIn,
-    };
-    const cache = await caches.open('stateCache');
-    const response = new Response(JSON.stringify(state), {
-        headers: { 'Content-Type': 'application/json' }
-    });
-    await cache.put('state', response);
-}
 
 async function syncData(data) {
     console.log(`Sync data called:`, data);
@@ -133,10 +105,6 @@ async function syncLists(data) {
 }
 
 async function sendBatchedUpdatesToBackend() {
-    if (!isLoggedIn) {
-        console.log("User is not logged in. Skipping backend update.");
-        return;
-    }
 
     const cache = await caches.open('pokemonCache');
     const cachedResponse = await cache.match('/batchedUpdates');

@@ -35,6 +35,6 @@ export function getFilteredPokemonsByOwnership(variants, ownershipData, filter) 
         }
     }).filter(pokemon => pokemon !== undefined);  // Filter out any undefined results due to missing variants
 
-    console.log(`Pokémons after applying filter:`, filteredPokemons);
+    // console.log(`Pokémons after applying filter:`, filteredPokemons);
     return filteredPokemons;
 }

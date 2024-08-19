@@ -11,7 +11,7 @@
     align-items: center;
     background-color: rgba(0, 0, 0, 0.7); /* Dimming background */
     z-index: 1001; /* Ensures overlay is on top */
-    flex-direction: column; 
+    flex-direction: column;
 }
 
 .trade-instance-overlay .overlay-row {

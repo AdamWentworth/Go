@@ -98,7 +98,7 @@ const PokemonCard = ({
                 )}
                 <div className="cp-placeholder" style={{ zIndex: 3 }}>
                     {sortType === 'combatPower' && (pokemon.ownershipStatus ? pokemon.ownershipStatus.cp : pokemon.cp50) && (
-                        <p className="cp-display"><span className="cp-text">CP</span>{pokemon.ownershipStatus ? pokemon.ownershipStatus.cp : pokemon.cp50}</p>
+                        <h2 className="cp-display"><span className="cp-text">CP</span>{pokemon.ownershipStatus ? pokemon.ownershipStatus.cp : pokemon.cp50}</h2>
                     )}
                 </div>
                 <img 

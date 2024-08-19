@@ -6,6 +6,7 @@ import { formatTimeUntil } from '../components/Collect/utils/formattingHelpers';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { usePokemonData } from './PokemonDataContext';
+import { useGlobalState } from './GlobalStateContext'
 
 const AuthContext = createContext();
 
@@ -13,11 +14,11 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const userRef = useRef(null);  // Create a ref to store the user state
   const navigate = useNavigate();  // Initialize the useNavigate hook
   const intervalRef = useRef(null); // Ref to store the interval ID
   const refreshTimeoutRef = useRef(null); // Ref to store the refresh token timeout
+  const { isLoggedIn, setIsLoggedIn } = useGlobalState(); 
 
   // Initialize from local storage
   useEffect(() => {
@@ -36,13 +37,6 @@ export const AuthProvider = ({ children }) => {
       console.log(`Refresh Token expires in: ${formatTimeUntil(refreshTokenExpiryTime)}`);
 
       if (refreshTokenExpiryTime > currentTime) {
-        if (navigator.serviceWorker.controller) {
-          navigator.serviceWorker.controller.postMessage({
-              action: 'updateLoginStatus',
-              data: { isLoggedIn: true }
-          });
-        }
-
         if (refreshTiming > 0) {
           refreshTimeoutRef.current = setTimeout(() => {
             checkAndRefreshToken();
@@ -61,7 +55,7 @@ export const AuthProvider = ({ children }) => {
       clearInterval(intervalRef.current);
       clearTimeout(refreshTimeoutRef.current);
     };
-  }, []);
+  }, [setIsLoggedIn]);
 
   const startTokenExpirationCheck = () => {
     clearInterval(intervalRef.current); // Clear any existing interval
@@ -153,13 +147,6 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
     userRef.current = userData;  // Update the ref with the new user data
 
-    if (navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-          action: 'updateLoginStatus',
-          data: { isLoggedIn: true }
-      });
-    }
-
     startTokenExpirationCheck();
     scheduleTokenRefresh(userData.accessTokenExpiry); // Pass the correct expiry time
   };
@@ -171,12 +158,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Error during logout:', error);
     } finally {
       clearSession(false);  // Manual logout
-      if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-            action: 'updateLoginStatus',
-            data: { isLoggedIn: false }
-        });
-      }
+      setIsLoggedIn(false);
     }
   };
 

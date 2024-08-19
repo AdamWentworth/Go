@@ -15,6 +15,7 @@ import CacheContext from './contexts/CacheContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { PokemonDataProvider } from './contexts/PokemonDataContext';
 import { LocationProvider } from './contexts/LocationContext';
+import { GlobalStateProvider } from './contexts/GlobalStateContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -24,27 +25,29 @@ function App() {
     return (
         <CacheContext.Provider value={cache}>
             <Router>
-                <PokemonDataProvider>
-                    <AuthProvider>
-                        <LocationProvider>
-                            <div className="App">
-                                <Navbar />
-                                <LocationPermission />
-                                <main>
-                                    <Routes>
-                                        <Route path="/" element={<MainButtons />} />
-                                        <Route path="/collect" element={<Collect />} />
-                                        <Route path="/login" element={<Login />} />
-                                        <Route path="/register" element={<Register />} />
-                                        <Route path="/account" element={<Account />} />
-                                        <Route path="/raid" element={<Raid />} />
-                                    </Routes>
-                                </main>
-                                <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
-                            </div>
-                        </LocationProvider>
-                    </AuthProvider>
-                </PokemonDataProvider>
+                <GlobalStateProvider>
+                    <PokemonDataProvider>
+                        <AuthProvider>
+                            <LocationProvider>
+                                <div className="App">
+                                    <Navbar />
+                                    <LocationPermission />
+                                    <main>
+                                        <Routes>
+                                            <Route path="/" element={<MainButtons />} />
+                                            <Route path="/collect" element={<Collect />} />
+                                            <Route path="/login" element={<Login />} />
+                                            <Route path="/register" element={<Register />} />
+                                            <Route path="/account" element={<Account />} />
+                                            <Route path="/raid" element={<Raid />} />
+                                        </Routes>
+                                    </main>
+                                    <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+                                </div>
+                            </LocationProvider>
+                        </AuthProvider>
+                    </PokemonDataProvider>
+                </GlobalStateProvider>
             </Router>
         </CacheContext.Provider>
     );
