@@ -25,36 +25,36 @@ const PokemonCard = ({
             case 'owned': ownershipClass = 'owned'; break;
             case 'trade': ownershipClass = 'trade'; break;
             case 'wanted': ownershipClass = 'wanted'; break;
+            case 'unowned': ownershipClass = 'unowned'; break;
             default: ownershipClass = ''; break;
         }
         return ownershipClass;
     };
 
     const generateH2Content = () => {
-        // Check if nickname exists
         const nickname = pokemon.ownershipStatus?.nickname;
         if (nickname && nickname.trim()) {
             return nickname;
         }
 
         let contentParts = [];
-    
+
         if (pokemon.currentCostumeName) {
             contentParts.push(formatCostumeName(pokemon.currentCostumeName));
         }
-    
+
         let nameText;
         const isMegaVariant = pokemon.variantType && pokemon.variantType.includes('mega');
         const shouldIncludeForm = !isMegaVariant && pokemon.form && pokemon.form !== 'Average' && (!singleFormPokedexNumbers.includes(pokemon.pokedex_number) || showAll);
-    
+
         if (shouldIncludeForm) {
             nameText = formatPokemonName(pokemon.name, pokemon.form);
         } else {
             nameText = pokemon.name;
         }
-    
+
         contentParts.push(nameText);
-    
+
         return (
             <>
                 {contentParts.map((part, index) => (
@@ -62,7 +62,7 @@ const PokemonCard = ({
                 ))}
             </>
         );
-    };    
+    };
 
     if (isShiny && showShadow && (!pokemon.image_url_shiny_shadow || pokemon.shadow_shiny_available !== 1)) {
         return null;
@@ -74,7 +74,7 @@ const PokemonCard = ({
 
     const cardClass = `pokemon-card ${getOwnershipClass()} ${isHighlighted ? 'highlighted' : ''}`;
 
-    const shouldDisplayLuckyBackdrop = 
+    const shouldDisplayLuckyBackdrop =
         (ownershipFilter.toLowerCase() === 'wanted' && pokemon.ownershipStatus && pokemon.ownershipStatus.pref_lucky) ||
         (ownershipFilter.toLowerCase() === 'owned' && pokemon.ownershipStatus && pokemon.ownershipStatus.lucky);
 
@@ -83,7 +83,7 @@ const PokemonCard = ({
             if (isFastSelectEnabled) {
                 console.log(`Card highlighted: ${pokemon.name}`);
             } else {
-                onSelect(); // This will call setSelectedPokemon(pokemon)
+                onSelect();
             }
         }}>
             <div className="pokemon-image-container" style={{ position: 'relative' }}>
@@ -105,7 +105,8 @@ const PokemonCard = ({
                     src={imageUrl} 
                     alt={pokemon.name} 
                     loading="lazy" 
-                    style={{ zIndex: 4, filter: ownershipFilter.toLowerCase() === 'unowned' ? 'brightness(0)' : 'none' }} 
+                    className="pokemon-image"
+                    style={{ zIndex: 4 }} 
                 />
             </div>
             <p>#{pokemon.pokedex_number}</p>
@@ -117,7 +118,7 @@ const PokemonCard = ({
                     <img src={pokemon.type_2_icon} alt={pokemon.type2_name} loading="lazy" />
                 )}
             </div>
-            <h2>
+            <h2 className="pokemon-name-display">
                 {generateH2Content()}
             </h2>
         </div>
