@@ -9,66 +9,66 @@
 
 .trade-details-container .top-row {
     display: flex;
-    justify-content: space-between; /* Ensure top-row items are spread out */
-    align-items: center; /* Vertically center the items in the row */
-    position: relative; /* Ensure top-row is the reference point for absolute positioning */
-    margin-bottom: 30px;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.trade-details-container .edit-save-container,
+.trade-details-container .mirror {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .trade-details-container .edit-save-container {
-    position: absolute;
     left: 0;
-    top: 50%;
-    transform: translateY(-50%); /* Center vertically */
 }
 
 .trade-details-container .mirror {
-    position: absolute;
     right: 0;
-    top: 50%;
-    transform: translateY(-50%); /* Center vertically */
+}
+
+.trade-details-container .header-group {
+    flex-grow: 1;
+    text-align: center;
+    margin-top: -15px;
+}
+
+.trade-details-container .image-row-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: -10px
+}
+
+.trade-details-container .image-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .trade-details-container .image-row {
     display: flex;
-    justify-content: center; /* Center the images as a group */
-    align-items: center; /* Vertically center the images */
-    flex-grow: 1; /* Allow the image row to expand and take up space between the left and right elements */
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
 }
 
 .trade-details-container .image-row img {
-    max-width: 35px; /* Reduce the size of the images */
-    max-height: 35px; /* Ensure the height doesn't exceed the specified value */
-    margin-right: 5px; /* Adjust spacing between images */
-    object-fit: contain; /* Maintain aspect ratio */
+    max-width: 35px;
+    max-height: 35px;
+    margin-right: 5px;
+    object-fit: contain;
 }
 
 .trade-details-container .image-row img:last-child {
-    margin-right: 0; /* Remove margin from the last image */
+    margin-right: 0;
 }
 
 .trade-details-container h2 {
-    margin-bottom: 10px;
-    margin-top: -20px;
-}
-
-.trade-details-container .edit-save-container {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%); /* Center vertically */
-}
-
-.trade-details-container .mirror {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%); /* Center vertically */
-}
-
-.trade-details-container h2 {
-    margin-bottom: 10px;
-    margin-top: -20px;
+    margin: -20px 0 10px;
 }
 
 .trade-details-container .mirror img {
@@ -81,7 +81,8 @@
     width: 40px;
 }
 
-.wanted-item-img.grey-out, .grey-out {
+.wanted-item-img.grey-out, 
+.grey-out {
     filter: grayscale(100%);
     opacity: 0.5;
 }
@@ -115,36 +116,6 @@
     border-radius: 8px; /* Rounds corners */
 }
 
-.wanted-item.grey-out img {
-    filter: grayscale(100%);
-}
-
 .trade-details-container .wanted-item {
     position: relative;
-}
-
-.toggle-not-wanted {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 30px;
-    height: 30px;
-    background-color: white;
-    border: 1px solid black;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 10; /* Ensure it is on top of the image */
-}
-
-.toggle-not-wanted:focus {
-    outline: none;
-}
-
-.toggle-not-wanted:hover {
-    background-color: lightgray;
 }

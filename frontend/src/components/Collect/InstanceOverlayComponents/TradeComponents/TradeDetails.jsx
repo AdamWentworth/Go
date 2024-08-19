@@ -112,17 +112,16 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                 <div className="edit-save-container">
                     <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
                 </div>
-                <div className="image-row">
-                    <img src="/images/community_day.png" alt="Community Day" />
-                    <img src="/images/research.png" alt="Research" />
-                    <img src="/images/raid_day.png" alt="Raid Day" />
-                    <img src="/images/legendary_raid.png" alt="Legendary Raid" />
-                    <img src="/images/costume_icon.png" alt="Costume Icon" />
-                    <img src="/images/shiny_icon.png" alt="Shiny Icon" />
-                    <img src="/images/ultra_beast.png" alt="Ultra Beast" />
-                    <img src="/images/regional.png" alt="Regional" />
-                    <img src="/images/location.png" alt="Location" />
-                </div>
+                {!isMirror && (
+                    <>
+                        <div className="header-group">
+                            <h3>Exclude</h3>
+                        </div>
+                        <div className="header-group">
+                            <h3>Include Only</h3>
+                        </div>
+                    </>
+                )}
                 <div className="mirror">
                     <MirrorManager
                         pokemon={pokemon}
@@ -136,6 +135,30 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                     />
                 </div>
             </div>
+
+            {!isMirror && (
+                <div className="image-row-container">
+                    <div className="exclude-header-group image-group">
+                        <div className="image-row">
+                            <img src="/images/community_day.png" alt="Community Day" />
+                            <img src="/images/field_research.png" alt="Research" />
+                            <img src="/images/raid_day.png" alt="Raid Day" />
+                            <img src="/images/legendary_raid.png" alt="Legendary Raid" />
+                            <img src="/images/mega_raid.png" alt="Mega Raid" />
+                            <img src="/images/permaboosted.png" alt="Permaboosted" />
+                        </div>
+                    </div>
+                    <div className="include-only-header-group image-group">
+                        <div className="image-row">
+                            <img src="/images/shiny_icon.png" alt="Shiny Icon" />
+                            <img src="/images/costume_icon.png" alt="Costume Icon" />
+                            <img src="/images/legendary.png" alt="Legendary" />
+                            <img src="/images/regional.png" alt="Regional" />
+                            <img src="/images/location.png" alt="Location" />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div>
                 <h2>Wanted List:</h2>
