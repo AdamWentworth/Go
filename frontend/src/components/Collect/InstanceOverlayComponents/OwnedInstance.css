@@ -26,6 +26,15 @@
   z-index: 1;
 }
 
+.owned-instance .cp-display {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  margin-top: -10px;
+  font-weight: bold;
+}
+
 .owned-instance .top-row .favorite-component {
   margin-left: auto;
 }

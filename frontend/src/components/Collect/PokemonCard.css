@@ -52,7 +52,7 @@
     opacity: 1;
 }
 
-.cp-container {
+.pokemon-card .cp-container {
     position: absolute; /* Make the container position absolute */
     top: 15px; /* Adjust the top position as needed */
     left: 50%; /* Center it horizontally */
@@ -84,19 +84,12 @@
     height: 20px;
 }
 
-/* Adjust cp-display alignment */
-.cp-display {
-    font-weight: bold;
-    display: inline-flex;
-    align-items: baseline;
-}
-
 .cp-display .cp-text {
     font-size: 60%;
     vertical-align: baseline;
 }
 
-.cp-display {
+.pokemon-card .cp-container .cp-display {
     margin: 0;
     display: flex;
     justify-content: center;
