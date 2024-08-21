@@ -85,7 +85,23 @@ const PokemonCard = ({
             } else {
                 onSelect();
             }
-        }}>
+            }}> 
+            <div className="cp-container">
+                <div className="cp-placeholder" style={{ zIndex: 3 }}>
+                    {sortType === 'combatPower' && (pokemon.ownershipStatus ? pokemon.ownershipStatus.cp : pokemon.cp50) && (
+                        <h2 className="cp-display"><span className="cp-text">CP</span>{pokemon.ownershipStatus ? pokemon.ownershipStatus.cp : pokemon.cp50}</h2>
+                    )}
+                </div>
+            </div>
+            <div className="fav-container">
+                {pokemon.ownershipStatus?.favorite && (
+                    <img 
+                        src={`${process.env.PUBLIC_URL}/images/fav_pressed.png`} 
+                        alt="Favorite" 
+                        className="favorite-icon" 
+                    />
+                )}
+            </div>
             <div className="pokemon-image-container" style={{ position: 'relative' }}>
                 {shouldDisplayLuckyBackdrop && (
                     <div className="lucky-backdrop-wrapper">
@@ -96,11 +112,6 @@ const PokemonCard = ({
                         />
                     </div>
                 )}
-                <div className="cp-placeholder" style={{ zIndex: 3 }}>
-                    {sortType === 'combatPower' && (pokemon.ownershipStatus ? pokemon.ownershipStatus.cp : pokemon.cp50) && (
-                        <h2 className="cp-display"><span className="cp-text">CP</span>{pokemon.ownershipStatus ? pokemon.ownershipStatus.cp : pokemon.cp50}</h2>
-                    )}
-                </div>
                 <img 
                     src={imageUrl} 
                     alt={pokemon.name} 

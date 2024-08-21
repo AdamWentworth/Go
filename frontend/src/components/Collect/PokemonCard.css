@@ -52,11 +52,48 @@
     opacity: 1;
 }
 
-/* Styles for the CP display */
+.cp-container {
+    position: absolute; /* Make the container position absolute */
+    top: 15px; /* Adjust the top position as needed */
+    left: 50%; /* Center it horizontally */
+    transform: translateX(-50%); /* Center it exactly */
+    padding: 0px;
+    z-index: 5; /* Ensure it appears on top of other elements */
+    margin-top: -5px;
+}
+
 .cp-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     height: 15px;
-    margin-top: -10px;
     position: relative;
+}
+
+.fav-container {
+    position: absolute; /* Make the container position absolute */
+    top: 0; /* Position it at the top */
+    right: 0; /* Position it at the right */
+    padding: 5px;
+    z-index: 5; /* Ensure it appears on top of other elements */
+    margin-right: 10px;
+}
+
+.favorite-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Adjust cp-display alignment */
+.cp-display {
+    font-weight: bold;
+    display: inline-flex;
+    align-items: baseline;
+}
+
+.cp-display .cp-text {
+    font-size: 60%;
+    vertical-align: baseline;
 }
 
 .cp-display {
@@ -114,6 +151,7 @@
     position: relative;
     z-index: 4;
     margin-bottom: 5px;
+    margin-top: 20px;
 }
 
 .type-icons img {
