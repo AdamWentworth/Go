@@ -119,3 +119,18 @@
 .trade-details-container .wanted-item {
     position: relative;
 }
+
+/* Greyscale effect */
+.greyscale {
+    filter: grayscale(100%);
+}
+
+/* Transition effect for toggling */
+.toggleable-image {
+    transition: filter 0.3s ease;
+}
+
+/* Pointer cursor only when editable */
+.toggleable-image.editable {
+    cursor: pointer;
+}

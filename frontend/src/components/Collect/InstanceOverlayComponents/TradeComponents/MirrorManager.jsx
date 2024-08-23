@@ -1,31 +1,28 @@
 // MirrorManager.jsx
 import React, { useEffect, useRef } from 'react';
+import { createMirrorEntry } from './utils/createMirrorEntry';
 
 const MirrorManager = ({
-  pokemon, ownershipData, isMirror, setIsMirror, setMirrorKey, editMode, updateDisplayedList, updateDetails
+  pokemon, ownershipData, lists, isMirror, setIsMirror, setMirrorKey, editMode, updateDisplayedList, updateDetails
 }) => {
     const initialMount = useRef(true);
 
-    // Initial setup only on component mount
     useEffect(() => {
         if (initialMount.current) {
             initialMount.current = false;
             console.log("Initial setup for MirrorManager");
-            // Initialize isMirror based on ownershipStatus from props
             setIsMirror(pokemon.ownershipStatus.mirror);
             if (pokemon.ownershipStatus.mirror) {
-                enableMirror();  // Directly enable mirror if initially true
+                enableMirror();  // Enable mirror if initially true
             } else {
-                disableMirror();  // Ensure mirror is disabled if initially false
+                disableMirror();  // Disable mirror if initially false
             }
         }
     }, []); // Empty dependency array ensures this runs only once on mount
 
-    // Subsequent updates based on state changes
     useEffect(() => {
-        if (!initialMount.current && editMode) {  // Ensure this does not run on initial mount
+        if (!initialMount.current && editMode) {
             console.log("Subsequent update for MirrorManager based on isMirror state change");
-            // Update the external ownership status to reflect the state of isMirror
             pokemon.ownershipStatus.mirror = isMirror;
             if (isMirror) {
                 enableMirror();
@@ -33,21 +30,46 @@ const MirrorManager = ({
                 disableMirror();
             }
         }
-    }, [isMirror]); // React only to changes in isMirror
+    }, [isMirror]);
 
     const enableMirror = () => {
         const existingMirrorKey = findExistingMirrorKey();
         if (existingMirrorKey) {
             setMirrorKey(existingMirrorKey);
-            updateDisplayedList({ [existingMirrorKey]: ownershipData[existingMirrorKey] });
-        } else {
-            setMirrorKey('placeholder');
-            const placeholderData = {
-                ...pokemon,
+
+            // Enrich the existing mirror entry with additional properties
+            const enrichedMirrorEntry = {
+                ...ownershipData[existingMirrorKey],
+                variantType: pokemon.variantType,
+                pokedex_number: pokemon.pokedex_number,
                 currentImage: pokemon.currentImage,
-                mirror: true
+                name: pokemon.name,
+                date_available: pokemon.date_available,
+                date_shiny_available: pokemon.date_shiny_available,
+                date_shadow_available: pokemon.date_shadow_available,
+                date_shiny_shadow_available: pokemon.date_shiny_shadow_available,
+                costumes: pokemon.costumes,
             };
-            updateDisplayedList({ 'placeholder': placeholderData });
+
+            updateDisplayedList({ [existingMirrorKey]: enrichedMirrorEntry });
+        } else {
+            const newMirrorKey = createMirrorEntry(pokemon, ownershipData, lists, updateDetails);
+            setMirrorKey(newMirrorKey);
+
+            const enrichedMirrorEntry = {
+                ...ownershipData[newMirrorKey],
+                variantType: pokemon.variantType,
+                pokedex_number: pokemon.pokedex_number,
+                currentImage: pokemon.currentImage,
+                name: pokemon.name,
+                date_available: pokemon.date_available,
+                date_shiny_available: pokemon.date_shiny_available,
+                date_shadow_available: pokemon.date_shadow_available,
+                date_shiny_shadow_available: pokemon.date_shiny_shadow_available,
+                costumes: pokemon.costumes,
+            };
+
+            updateDisplayedList({ [newMirrorKey]: enrichedMirrorEntry });
         }
     };
 
@@ -57,23 +79,19 @@ const MirrorManager = ({
     };
 
     const toggleMirror = () => {
-        if (!editMode) {
-            console.log("Attempt to toggle mirror in view mode, action blocked");
-            return;
-        }
-        const shouldEnableMirror = !isMirror;
-        console.log("Toggling mirror from", isMirror, "to", shouldEnableMirror);
-        setIsMirror(shouldEnableMirror); // This change will trigger the second useEffect
+        setIsMirror(prevIsMirror => !prevIsMirror);
     };
 
     const findExistingMirrorKey = () => {
         const basePrefix = pokemon.pokemonKey.split('_').slice(0, -1).join('_');
-        const foundKey = Object.keys(ownershipData).find(key => key.startsWith(basePrefix) &&
+        const foundKey = Object.keys(ownershipData).find(key =>
+            key.startsWith(basePrefix) &&
             ownershipData[key].is_wanted &&
             !ownershipData[key].is_owned &&
             !ownershipData[key].is_for_trade &&
             ownershipData[key].pokemon_id === pokemon.pokemon_id &&
-            ownershipData[key].mirror);
+            ownershipData[key].mirror
+        );
         console.log("findExistingMirrorKey:", foundKey || "No key found");
         return foundKey;
     };

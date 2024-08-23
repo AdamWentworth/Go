@@ -16,6 +16,7 @@ import FriendshipManager from './WantedComponents/FriendshipManager';
 import BackgroundComponent from './OwnedComponents/BackgroundComponent'; // Import BackgroundComponent
 
 const WantedInstance = ({ pokemon }) => {
+  console.log(pokemon)
   const { updateDetails } = useContext(PokemonDataContext);
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
