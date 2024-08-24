@@ -5,89 +5,120 @@ import EditSaveComponent from '../EditSaveComponent';
 import { PokemonDataContext } from '../../../../contexts/PokemonDataContext';
 import WantedListDisplay from './WantedListDisplay';
 import MirrorManager from './MirrorManager';
-import { updateNotTradeList } from '../ReciprocalUpdate.jsx';
+import { updateNotTradeList } from '../ReciprocalUpdate.jsx'; 
 import ImageGroup from './ImageGroup';
 import { updateDisplayedList } from './utils/listUtils.js';
 import filters from './utils/filters';
-import useImageSelection from './utils/useImageSelection.js'
+import useImageSelection from './utils/useImageSelection.js';
+import { EXCLUDE_IMAGES, INCLUDE_ONLY_IMAGES, FILTER_NAMES } from './utils/constants';  // Importing constants
 
 const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => {
-    const { not_wanted_list } = pokemon.ownershipStatus;
+    const { not_wanted_list, wanted_filters } = pokemon.ownershipStatus;
     const [editMode, setEditMode] = useState(false);
     const [localNotWantedList, setLocalNotWantedList] = useState({ ...not_wanted_list });
+    const [localWantedFilters, setLocalWantedFilters] = useState({ ...wanted_filters });
     const { updateDetails } = useContext(PokemonDataContext);
     const [isMirror, setIsMirror] = useState(pokemon.ownershipStatus.mirror);
     const [mirrorKey, setMirrorKey] = useState(null);
     const [listsState, setListsState] = useState(lists);
-    const [filteredWantedList, setFilteredWantedList] = useState(lists.wanted); // To hold the filtered list
+    const [filteredWantedList, setFilteredWantedList] = useState(lists.wanted); 
     const [pendingUpdates, setPendingUpdates] = useState({});
+    const [filteredOutPokemon, setFilteredOutPokemon] = useState([]); // Track filtered Pokémon
 
-    const excludeImages = [
-        "/images/community_day.png",
-        "/images/field_research.png",
-        "/images/raid_day.png",
-        "/images/legendary_raid.png",
-        "/images/mega_raid.png",
-        "/images/permaboosted.png"
-    ];
+    const initializeSelection = (filterNames, filters) => {
+        return filterNames.map(name => !!filters[name]);
+    };
 
-    const includeOnlyImages = [
-        "/images/shiny_icon.png",
-        "/images/costume_icon.png",
-        "/images/legendary.png",
-        "/images/regional.png",
-        "/images/location.png"
-    ];
-
-    const { selectedImages: selectedExcludeImages, toggleImageSelection: toggleExcludeImageSelection } = useImageSelection(excludeImages);
-    const { selectedImages: selectedIncludeOnlyImages, toggleImageSelection: toggleIncludeOnlyImageSelection } = useImageSelection(includeOnlyImages);
+    const { selectedImages: selectedExcludeImages, toggleImageSelection: toggleExcludeImageSelection, setSelectedImages: setSelectedExcludeImages } = useImageSelection(EXCLUDE_IMAGES);
+    const { selectedImages: selectedIncludeOnlyImages, toggleImageSelection: toggleIncludeOnlyImageSelection, setSelectedImages: setSelectedIncludeOnlyImages } = useImageSelection(INCLUDE_ONLY_IMAGES);
 
     useEffect(() => {
+        if (wanted_filters) {
+            setSelectedExcludeImages(initializeSelection(FILTER_NAMES.slice(0, EXCLUDE_IMAGES.length), wanted_filters));
+            setSelectedIncludeOnlyImages(initializeSelection(FILTER_NAMES.slice(EXCLUDE_IMAGES.length), wanted_filters));
+        }
+
         setIsMirror(pokemon.ownershipStatus.mirror);
-    }, [pokemon.ownershipStatus.mirror]);
+    }, [pokemon.ownershipStatus.mirror, wanted_filters]);
 
     useEffect(() => {
         let updatedList = { ...listsState.wanted };
-        
-        // Apply exclude filters
+        const newlyFilteredOutPokemon = [];
+
+        // Apply exclude filters first
         selectedExcludeImages.forEach((isSelected, index) => {
-            if (isSelected && filters[index]) {
-                updatedList = filters[index](updatedList);
+            const filterName = FILTER_NAMES[index];
+            if (isSelected && filters[filterName]) {
+                updatedList = filters[filterName](updatedList);
+                localWantedFilters[filterName] = true;
+            } else {
+                delete localWantedFilters[filterName];
+            }
+        });
+
+        // Track Pokémon filtered out by exclude filters
+        Object.keys(listsState.wanted).forEach(key => {
+            if (!updatedList[key]) {
+                newlyFilteredOutPokemon.push(key);
             }
         });
 
         // Apply include-only filters
-        let includeOnlyApplied = false;
         selectedIncludeOnlyImages.forEach((isSelected, index) => {
-            if (isSelected && filters[excludeImages.length + index]) {
-                updatedList = filters[excludeImages.length + index](updatedList);
-                includeOnlyApplied = true;
+            const filterIndex = EXCLUDE_IMAGES.length + index;
+            const filterName = FILTER_NAMES[filterIndex];
+            if (isSelected && filters[filterName]) {
+                updatedList = filters[filterName](updatedList);
+                localWantedFilters[filterName] = true;
+            } else {
+                delete localWantedFilters[filterName];
             }
         });
 
-        // If no include-only filters are applied, keep the full list
-        setFilteredWantedList(includeOnlyApplied ? updatedList : listsState.wanted);
+        // Track Pokémon filtered out by include-only filters
+        Object.keys(listsState.wanted).forEach(key => {
+            if (!updatedList[key] && !newlyFilteredOutPokemon.includes(key)) {
+                newlyFilteredOutPokemon.push(key);
+            }
+        });
+
+        // Update the state with the final filtered list and the filtered-out Pokémon
+        setFilteredWantedList(updatedList);
+        setFilteredOutPokemon(newlyFilteredOutPokemon);
+        setLocalWantedFilters({ ...localWantedFilters });
     }, [selectedExcludeImages, selectedIncludeOnlyImages, listsState.wanted]);
 
     const toggleEditMode = () => {
         if (editMode) {
-            Object.keys(pendingUpdates).forEach(key => {
-                if (localNotWantedList[key] !== not_wanted_list[key]) {
-                    updateNotTradeList(ownershipData, pokemon.pokemonKey, key, localNotWantedList[key], isMirror);
-                }
+            // Add filtered Pokémon to the not_wanted_list
+            const updatedNotWantedList = { ...localNotWantedList };
+            filteredOutPokemon.forEach(key => {
+                updatedNotWantedList[key] = true;
             });
-            setPendingUpdates({});
+
+            // Save the wanted_filters along with other details
             updateDetails(pokemon.pokemonKey, {
-                not_wanted_list: localNotWantedList,
+                not_wanted_list: updatedNotWantedList,
+                wanted_filters: localWantedFilters,
                 mirror: isMirror,
             });
 
+            // Apply reciprocal updates for the not_wanted_list and filtered Pokémon
+            Object.keys(updatedNotWantedList).forEach(key => {
+                if (updatedNotWantedList[key] !== not_wanted_list[key]) {
+                    updateNotTradeList(ownershipData, pokemon.pokemonKey, key, updatedNotWantedList[key], isMirror);
+                }
+            });
+
+            // Handle mirror key management
             if (!isMirror && mirrorKey) {
                 delete ownershipData[mirrorKey];
                 delete lists.wanted[mirrorKey];
                 updateDisplayedList(null, listsState, setListsState);
                 setMirrorKey(null);
             }
+
+            setLocalNotWantedList(updatedNotWantedList);
         } else {
             if (!isMirror && pokemon.ownershipStatus.mirror) {
                 updateDetails(pokemon.pokemonKey, {
@@ -138,7 +169,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                 <div className="image-row-container">
                     <div className="exclude-header-group image-group">
                         <ImageGroup
-                            images={excludeImages}
+                            images={EXCLUDE_IMAGES}
                             selectedImages={selectedExcludeImages}
                             toggleImageSelection={toggleExcludeImageSelection}
                             editMode={editMode}
@@ -146,7 +177,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                     </div>
                     <div className="include-only-header-group image-group">
                         <ImageGroup
-                            images={includeOnlyImages}
+                            images={INCLUDE_ONLY_IMAGES}
                             selectedImages={selectedIncludeOnlyImages}
                             toggleImageSelection={toggleIncludeOnlyImageSelection}
                             editMode={editMode}
@@ -159,7 +190,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                 <h2>Wanted List:</h2>
                 <WantedListDisplay
                     pokemon={pokemon}
-                    lists={{ wanted: filteredWantedList }} // Pass the filtered wanted list
+                    lists={{ wanted: filteredWantedList }}
                     localNotWantedList={localNotWantedList}
                     isMirror={isMirror}
                     mirrorKey={mirrorKey}

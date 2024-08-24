@@ -42,7 +42,10 @@ export function createNewDataForVariant(variant) {
         is_for_trade: false,
         is_wanted: false,
         not_trade_list: {},
-        not_wanted_list: {}
+        not_wanted_list: {},
+        trade_filters: {},
+        wanted_filters: {},
+        gps: null
     };
 }
 

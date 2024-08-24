@@ -20,7 +20,8 @@ const useImageSelection = (initialImages) => {
         });
     };
 
-    return { selectedImages, toggleImageSelection };
+    // Return selectedImages, toggleImageSelection, and setSelectedImages
+    return { selectedImages, toggleImageSelection, setSelectedImages };
 };
 
 export default useImageSelection;

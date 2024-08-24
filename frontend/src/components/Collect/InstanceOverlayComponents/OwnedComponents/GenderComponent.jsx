@@ -32,7 +32,7 @@ const GenderComponent = ({ pokemon, editMode, onGenderChange }) => {
       <div className="gender-display">
         {gender === 'Male' && <img src={maleIcon} alt="Male" className="gender-icon" />}
         {gender === 'Female' && <img src={femaleIcon} alt="Female" className="gender-icon" />}
-        {(gender === 'Genderless' || gender == null) && <span className="gender-text">Genderless</span>}
+        {gender === 'Genderless' && editMode && <span className="gender-text">Genderless</span>}
       </div>
     </div>
   );
