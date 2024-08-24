@@ -10,7 +10,7 @@ const MirrorManager = ({
     useEffect(() => {
         if (initialMount.current) {
             initialMount.current = false;
-            console.log("Initial setup for MirrorManager");
+            // console.log("Initial setup for MirrorManager");
             setIsMirror(pokemon.ownershipStatus.mirror);
             if (pokemon.ownershipStatus.mirror) {
                 enableMirror();  // Enable mirror if initially true
@@ -22,7 +22,7 @@ const MirrorManager = ({
 
     useEffect(() => {
         if (!initialMount.current && editMode) {
-            console.log("Subsequent update for MirrorManager based on isMirror state change");
+            // console.log("Subsequent update for MirrorManager based on isMirror state change");
             pokemon.ownershipStatus.mirror = isMirror;
             if (isMirror) {
                 enableMirror();
@@ -49,6 +49,8 @@ const MirrorManager = ({
                 date_shadow_available: pokemon.date_shadow_available,
                 date_shiny_shadow_available: pokemon.date_shiny_shadow_available,
                 costumes: pokemon.costumes,
+                shiny_rarity: pokemon.shiny_rarity,
+                rarity: pokemon.rarity,
             };
 
             updateDisplayedList({ [existingMirrorKey]: enrichedMirrorEntry });
@@ -67,6 +69,8 @@ const MirrorManager = ({
                 date_shadow_available: pokemon.date_shadow_available,
                 date_shiny_shadow_available: pokemon.date_shiny_shadow_available,
                 costumes: pokemon.costumes,
+                shiny_rarity: pokemon.shiny_rarity,
+                rarity: pokemon.rarity,
             };
 
             updateDisplayedList({ [newMirrorKey]: enrichedMirrorEntry });

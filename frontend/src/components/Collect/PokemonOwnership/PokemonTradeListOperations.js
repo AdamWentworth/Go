@@ -33,6 +33,9 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
             date_shiny_shadow_available: variantDetail.date_shiny_shadow_available,
             costumes: variantDetail.costumes,
             variantType: variantDetail.variantType,
+            shiny_rarity: variantDetail.shiny_rarity,
+            rarity: variantDetail.rarity,
+            location_card: value.location_card,
             key: key
         };
 
@@ -77,6 +80,9 @@ export const initializePokemonLists = (ownershipData, variants) => {
             date_shiny_shadow_available: variantDetail.date_shiny_shadow_available,
             costumes: variantDetail.costumes,
             variantType: variantDetail.variantType,
+            shiny_rarity: variantDetail.shiny_rarity,
+            rarity: variantDetail.rarity,
+            location_card: value.location_card,
             key: key
         };
 

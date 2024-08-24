@@ -1,23 +1,22 @@
 // useImageSelection.js
 import { useState } from 'react';
 
-const useImageSelection = () => {
-    const [selectedImages, setSelectedImages] = useState({
-        exclude: [false, false, false, false, false, false], // Initially all images are greyscaled
-        includeOnly: [false, false, false, false, false],
-    });
+const useImageSelection = (initialImages) => {
+    // Initialize state for each image, each with its own selected state
+    const [selectedImages, setSelectedImages] = useState(
+        initialImages.map(() => false) // Set all images to unselected initially
+    );
 
-    const toggleImageSelection = (group, index, editMode) => {
-        if (!editMode) return; // Only allow toggling in edit mode
+    const toggleImageSelection = (index, editMode) => {
+        if (!editMode) {
+            return;
+        }
 
         setSelectedImages((prevSelectedImages) => {
-            const updatedGroup = [...prevSelectedImages[group]];
-            updatedGroup[index] = !updatedGroup[index]; // Toggle the selection
+            const updatedImages = [...prevSelectedImages];
+            updatedImages[index] = !updatedImages[index]; // Toggle the selected state
 
-            return {
-                ...prevSelectedImages,
-                [group]: updatedGroup,
-            };
+            return updatedImages;
         });
     };
 

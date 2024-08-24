@@ -56,17 +56,6 @@
     flex-grow: 1;
 }
 
-.trade-details-container .image-row img {
-    max-width: 35px;
-    max-height: 35px;
-    margin-right: 5px;
-    object-fit: contain;
-}
-
-.trade-details-container .image-row img:last-child {
-    margin-right: 0;
-}
-
 .trade-details-container h2 {
     margin: -20px 0 10px;
 }
@@ -120,9 +109,26 @@
     position: relative;
 }
 
-/* Greyscale effect */
-.greyscale {
+.trade-details-container .image-row img {
+    width: 35px; /* Set fixed size for consistency */
+    height: 35px;
+    margin-right: 5px;
+    object-fit: contain; /* Ensure the image fits within its container without distortion */
+    padding: 0; /* Ensure no padding that might affect clickable area */
+    border: none; /* Remove any borders that could reduce the clickable area */
+}
+
+.trade-details-container .image-row img:last-child {
+    margin-right: 0;
+}
+
+.toggleable-image.editable {
+    cursor: pointer;
+}
+
+.toggleable-image.greyscale {
     filter: grayscale(100%);
+    opacity: 0.6; /* Slightly lower opacity for unselected images */
 }
 
 /* Transition effect for toggling */
@@ -130,7 +136,13 @@
     transition: filter 0.3s ease;
 }
 
-/* Pointer cursor only when editable */
-.toggleable-image.editable {
-    cursor: pointer;
+.toggleable-image.editable:hover {
+    filter: brightness(1.1); /* Slight visual feedback on hover */
+}
+
+.toggleable-image {
+    display: block; /* Ensures image occupies the full area of its container */
+    background: transparent; /* No background that could affect hitbox */
+    padding: 0;
+    margin: 0;
 }
