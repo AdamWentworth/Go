@@ -9,15 +9,21 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
         trade: {},
         wanted: {}
     };
-
+    console.log(ownershipData)
     Object.entries(ownershipData).forEach(([key, value]) => {
         const { baseKey } = parsePokemonKey(key); // Extract the base key from the key
         const variantDetail = variants.find(variant => variant.pokemonKey === baseKey); // Find the corresponding variant
-        // console.log(variantDetail)
-        // console.log(value)
+
+        if (!variantDetail) {
+            console.error(`Variant not found for baseKey: ${baseKey}`);
+            console.error(`Key: ${key}, Value:`, value);
+        } else {
+            // console.log(`Variant found for baseKey: ${baseKey}`, variantDetail);
+        }
+
         // Prepare the object to be added to the list
         const listItem = {
-            currentImage: variantDetail.currentImage,
+            currentImage: variantDetail?.currentImage, // Safe navigation to avoid error if variantDetail is undefined
             friendship_level: value.friendship_level,
             mirror: value.mirror,
             pref_lucky: value.pref_lucky,
@@ -25,16 +31,16 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
             cp: value.cp,
             hp: value.hp,
             favorite: value.favorite,
-            name: variantDetail.name,
-            pokedex_number: variantDetail.pokedex_number,
-            date_available: variantDetail.date_available,
-            date_shiny_available: variantDetail.date_shiny_available,
-            date_shadow_available: variantDetail.date_shadow_available,
-            date_shiny_shadow_available: variantDetail.date_shiny_shadow_available,
-            costumes: variantDetail.costumes,
-            variantType: variantDetail.variantType,
-            shiny_rarity: variantDetail.shiny_rarity,
-            rarity: variantDetail.rarity,
+            name: variantDetail?.name,
+            pokedex_number: variantDetail?.pokedex_number,
+            date_available: variantDetail?.date_available,
+            date_shiny_available: variantDetail?.date_shiny_available,
+            date_shadow_available: variantDetail?.date_shadow_available,
+            date_shiny_shadow_available: variantDetail?.date_shiny_shadow_available,
+            costumes: variantDetail?.costumes,
+            variantType: variantDetail?.variantType,
+            shiny_rarity: variantDetail?.shiny_rarity,
+            rarity: variantDetail?.rarity,
             location_card: value.location_card,
             key: key
         };
@@ -61,10 +67,10 @@ export const initializePokemonLists = (ownershipData, variants) => {
     Object.entries(ownershipData).forEach(([key, value]) => {
         const { baseKey } = parsePokemonKey(key); // Extract the base key from the key
         const variantDetail = variants.find(variant => variant.pokemonKey === baseKey); // Find the corresponding variant
-
+        
         // Prepare the object to be added to the list
         const listItem = {
-            currentImage: variantDetail.currentImage,
+            currentImage: variantDetail?.currentImage, // Safe navigation to avoid error if variantDetail is undefined
             friendship_level: value.friendship_level,
             mirror: value.mirror,
             pref_lucky: value.pref_lucky,
@@ -72,16 +78,16 @@ export const initializePokemonLists = (ownershipData, variants) => {
             cp: value.cp,
             hp: value.hp,
             favorite: value.favorite,
-            name: variantDetail.name,
-            pokedex_number: variantDetail.pokedex_number,
-            date_available: variantDetail.date_available,
-            date_shiny_available: variantDetail.date_shiny_available,
-            date_shadow_available: variantDetail.date_shadow_available,
-            date_shiny_shadow_available: variantDetail.date_shiny_shadow_available,
-            costumes: variantDetail.costumes,
-            variantType: variantDetail.variantType,
-            shiny_rarity: variantDetail.shiny_rarity,
-            rarity: variantDetail.rarity,
+            name: variantDetail?.name,
+            pokedex_number: variantDetail?.pokedex_number,
+            date_available: variantDetail?.date_available,
+            date_shiny_available: variantDetail?.date_shiny_available,
+            date_shadow_available: variantDetail?.date_shadow_available,
+            date_shiny_shadow_available: variantDetail?.date_shiny_shadow_available,
+            costumes: variantDetail?.costumes,
+            variantType: variantDetail?.variantType,
+            shiny_rarity: variantDetail?.shiny_rarity,
+            rarity: variantDetail?.rarity,
             location_card: value.location_card,
             key: key
         };

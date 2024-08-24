@@ -95,21 +95,30 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
             filteredOutPokemon.forEach(key => {
                 updatedNotWantedList[key] = true;
             });
-
-            // Save the wanted_filters along with other details
-            updateDetails(pokemon.pokemonKey, {
+    
+            // Create a list of all Pokémon keys that need to be updated
+            const allKeysToUpdate = [
+                ...new Set([
+                    ...Object.keys(updatedNotWantedList),
+                    ...filteredOutPokemon,
+                    pokemon.pokemonKey, // Include the key of the Pokémon being edited
+                ]),
+            ];
+    
+            // Save the wanted_filters and not_wanted_list for each Pokémon in allKeysToUpdate
+            updateDetails(allKeysToUpdate, {
                 not_wanted_list: updatedNotWantedList,
                 wanted_filters: localWantedFilters,
                 mirror: isMirror,
             });
-
-            // Apply reciprocal updates for the not_wanted_list and filtered Pokémon
-            Object.keys(updatedNotWantedList).forEach(key => {
+    
+            // Apply reciprocal updates for each Pokémon in allKeysToUpdate
+            allKeysToUpdate.forEach(key => {
                 if (updatedNotWantedList[key] !== not_wanted_list[key]) {
                     updateNotTradeList(ownershipData, pokemon.pokemonKey, key, updatedNotWantedList[key], isMirror);
                 }
             });
-
+    
             // Handle mirror key management
             if (!isMirror && mirrorKey) {
                 delete ownershipData[mirrorKey];
@@ -117,7 +126,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                 updateDisplayedList(null, listsState, setListsState);
                 setMirrorKey(null);
             }
-
+    
             setLocalNotWantedList(updatedNotWantedList);
         } else {
             if (!isMirror && pokemon.ownershipStatus.mirror) {
@@ -128,7 +137,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
             }
         }
         setEditMode(!editMode);
-    };
+    };    
 
     const toggleReciprocalUpdates = (key, updatedNotTrade) => {
         setPendingUpdates(prev => ({ ...prev, [key]: updatedNotTrade }));

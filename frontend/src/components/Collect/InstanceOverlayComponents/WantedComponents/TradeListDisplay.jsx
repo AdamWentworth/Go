@@ -39,11 +39,12 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
         name: details.name,
         pokedex_number: details.pokedex_number,
         image_url: details.currentImage, // Use the correct image URL
+        currentImage: details.currentImage,
         image_url_shiny: details.image_url_shiny || details.currentImage, // Use shiny image if available
         ...details, // Include all other properties by spreading the details object
     }));
 
-    console.log(transformedTradeList)
+    // console.log(transformedTradeList)
     // Apply sorting to the transformed list using the useSortManager hook
     const sortedTradeListToDisplay = useSortManager(transformedTradeList, sortType, sortMode, { 
         isShiny: false, 
