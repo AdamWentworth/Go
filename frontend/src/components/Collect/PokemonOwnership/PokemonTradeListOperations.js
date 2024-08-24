@@ -9,7 +9,7 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
         trade: {},
         wanted: {}
     };
-    console.log(ownershipData)
+    // console.log(ownershipData)
     Object.entries(ownershipData).forEach(([key, value]) => {
         const { baseKey } = parsePokemonKey(key); // Extract the base key from the key
         const variantDetail = variants.find(variant => variant.pokemonKey === baseKey); // Find the corresponding variant
@@ -67,7 +67,7 @@ export const initializePokemonLists = (ownershipData, variants) => {
     Object.entries(ownershipData).forEach(([key, value]) => {
         const { baseKey } = parsePokemonKey(key); // Extract the base key from the key
         const variantDetail = variants.find(variant => variant.pokemonKey === baseKey); // Find the corresponding variant
-        
+
         // Prepare the object to be added to the list
         const listItem = {
             currentImage: variantDetail?.currentImage, // Safe navigation to avoid error if variantDetail is undefined

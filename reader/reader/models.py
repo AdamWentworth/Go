@@ -46,6 +46,8 @@ class PokemonInstance(models.Model):
     not_trade_list = models.JSONField(default=dict)
     not_wanted_list = models.JSONField(default=dict)
     trace_id = models.CharField(max_length=255, null=True, blank=True)
+    wanted_filters = models.JSONField(default=dict)
+    trade_filters = models.JSONField(default=dict)
 
     class Meta:
         db_table = 'instances'

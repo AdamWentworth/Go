@@ -192,7 +192,9 @@ def handle_message(data, trace_logger):
                         'is_wanted': pokemon.get('is_wanted', False),
                         'not_trade_list': pokemon.get('not_trade_list', {}),
                         'not_wanted_list': pokemon.get('not_wanted_list', {}),
-                        'trace_id': trace_logger.extra.get('trace_id')
+                        'trace_id': trace_logger.extra.get('trace_id'),
+                        'wanted_filters': pokemon.get('wanted_filters', {}),
+                        'trade_filters': pokemon.get('trade_filters', {}),
                     }
 
                     trace_logger.info(f"Defaults to be used for update/create: {defaults}")
