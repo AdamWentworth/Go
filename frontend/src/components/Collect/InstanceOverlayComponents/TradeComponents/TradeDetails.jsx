@@ -44,7 +44,8 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
     useEffect(() => {
         let updatedList = { ...listsState.wanted };
         const newlyFilteredOutPokemon = [];
-
+        const reappearingPokemon = []; // Track Pokémon reappearing after filter removal
+    
         // Apply exclude filters first
         selectedExcludeImages.forEach((isSelected, index) => {
             const filterName = FILTER_NAMES[index];
@@ -52,17 +53,23 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                 updatedList = filters[filterName](updatedList);
                 localWantedFilters[filterName] = true;
             } else {
+                // If a filter is disabled, we should re-evaluate the visibility of Pokémon previously filtered by this filter
+                Object.keys(listsState.wanted).forEach(key => {
+                    if (!filters[filterName](updatedList)[key] && updatedList[key]) {
+                        reappearingPokemon.push(key);
+                    }
+                });
                 delete localWantedFilters[filterName];
             }
         });
-
+    
         // Track Pokémon filtered out by exclude filters
         Object.keys(listsState.wanted).forEach(key => {
             if (!updatedList[key]) {
                 newlyFilteredOutPokemon.push(key);
             }
         });
-
+    
         // Apply include-only filters
         selectedIncludeOnlyImages.forEach((isSelected, index) => {
             const filterIndex = EXCLUDE_IMAGES.length + index;
@@ -71,81 +78,113 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                 updatedList = filters[filterName](updatedList);
                 localWantedFilters[filterName] = true;
             } else {
+                // Similar to exclude filters, handle reappearing Pokémon
+                Object.keys(listsState.wanted).forEach(key => {
+                    if (!filters[filterName](updatedList)[key] && updatedList[key]) {
+                        reappearingPokemon.push(key);
+                    }
+                });
                 delete localWantedFilters[filterName];
             }
         });
-
+    
         // Track Pokémon filtered out by include-only filters
         Object.keys(listsState.wanted).forEach(key => {
             if (!updatedList[key] && !newlyFilteredOutPokemon.includes(key)) {
                 newlyFilteredOutPokemon.push(key);
             }
         });
-
+    
         // Update the state with the final filtered list and the filtered-out Pokémon
         setFilteredWantedList(updatedList);
         setFilteredOutPokemon(newlyFilteredOutPokemon);
         setLocalWantedFilters({ ...localWantedFilters });
-    }, [selectedExcludeImages, selectedIncludeOnlyImages, listsState.wanted]);
-
-    const toggleEditMode = () => {
-        // console.log('Toggle Edit Mode Triggered');
-        // console.log('Edit Mode:', editMode);
-
-        if (editMode) {
-            // Add filtered Pokémon to the not_wanted_list
+    
+        // Remove reappearing Pokémon from the not_wanted_list
+        if (reappearingPokemon.length > 0) {
             const updatedNotWantedList = { ...localNotWantedList };
+            reappearingPokemon.forEach(key => {
+                delete updatedNotWantedList[key];
+            });
+            setLocalNotWantedList(updatedNotWantedList);
+        }
+    }, [selectedExcludeImages, selectedIncludeOnlyImages, listsState.wanted]);    
+
+    // Ensure localNotWantedList is in sync with pokemon.ownershipStatus.not_wanted_list when remounting
+    useEffect(() => {
+        setLocalNotWantedList({ ...not_wanted_list });
+    }, []);
+    
+    const toggleEditMode = () => {
+        console.log('Toggle Edit Mode Triggered');
+        console.log('Edit Mode:', editMode);
+    
+        // Log the original not_wanted_list
+        console.log('Original not_wanted_list:', not_wanted_list);
+    
+        // Log the localNotWantedList before any updates
+        console.log('Local not_wanted_list before update:', localNotWantedList);
+    
+        if (editMode) {
+            // Copy the current localNotWantedList
+            const updatedNotWantedList = { ...localNotWantedList };
+    
+            // Add filtered Pokémon to the updated not_wanted_list
             filteredOutPokemon.forEach(key => {
                 updatedNotWantedList[key] = true;
             });
-
-            // Create a list of all Pokémon keys that need to be updated, ensuring pokemon.pokemonKey is included
-            const allKeysToUpdate = [
-                ...new Set([
-                    pokemon.pokemonKey,
-                    ...Object.keys(updatedNotWantedList),
-                    ...filteredOutPokemon
-                ]),
-            ];
-
-            // console.log('All Keys to Update:', allKeysToUpdate);
-
+    
+            // Log the localNotWantedList after adding filtered out Pokémon
+            console.log('Local not_wanted_list after adding filtered Pokémon:', updatedNotWantedList);
+    
+            // Determine which keys have been added or removed
+            const removedKeys = Object.keys(not_wanted_list).filter(key => !updatedNotWantedList[key]);
+            const addedKeys = Object.keys(updatedNotWantedList).filter(key => !not_wanted_list[key]);
+    
             // Object to accumulate updates for updateDetails
             const updatesToApply = {};
-
+    
+            // Handle removed keys
+            removedKeys.forEach(key => {
+                const updatedNotTradeList = updateNotTradeList(
+                    ownershipData,
+                    pokemon.pokemonKey,
+                    key,
+                    false, // Remove from not_trade_list
+                    isMirror
+                );
+    
+                if (updatedNotTradeList) {
+                    updatesToApply[key] = {
+                        not_trade_list: updatedNotTradeList,
+                    };
+                }
+            });
+    
+            // Handle added keys
+            addedKeys.forEach(key => {
+                const updatedNotTradeList = updateNotTradeList(
+                    ownershipData,
+                    pokemon.pokemonKey,
+                    key,
+                    true, // Add to not_trade_list
+                    isMirror
+                );
+    
+                if (updatedNotTradeList) {
+                    updatesToApply[key] = {
+                        not_trade_list: updatedNotTradeList,
+                    };
+                }
+            });
+    
             // Include updates for the main pokemonKey
             updatesToApply[pokemon.pokemonKey] = {
                 not_wanted_list: updatedNotWantedList,
                 wanted_filters: localWantedFilters,
                 mirror: isMirror,
             };
-
-            // console.log(`Initial Updates to Apply for ${pokemon.pokemonKey}:`, updatesToApply[pokemon.pokemonKey]);
-
-            // Apply reciprocal updates for each Pokémon in allKeysToUpdate
-            allKeysToUpdate.forEach(key => {
-                if (updatedNotWantedList[key] !== not_wanted_list[key]) {
-                    const updatedNotTradeList = updateNotTradeList(ownershipData, pokemon.pokemonKey, key, updatedNotWantedList[key], isMirror);
-
-                    if (updatedNotTradeList) {
-                        if (updatesToApply[key]) {
-                            // Merge with existing updates if this key already has entries in updatesToApply
-                            updatesToApply[key] = {
-                                ...updatesToApply[key],
-                                not_trade_list: updatedNotTradeList
-                            };
-                        } else {
-                            // Otherwise, add a new entry
-                            updatesToApply[key] = {
-                                not_trade_list: updatedNotTradeList
-                            };
-                        }
-                    }
-
-                    // console.log(`Updates to Apply for ${key}:`, updatesToApply[key]);
-                }
-            });
-
+    
             // Handle mirror key management
             if (!isMirror && mirrorKey) {
                 console.log('Handling Mirror Key Management');
@@ -154,11 +193,13 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                 updateDisplayedList(null, listsState, setListsState);
                 setMirrorKey(null);
             }
-
+    
             // After all updates have been accumulated, updateDetails with all keys and their specific updates
-            updateDetails(allKeysToUpdate, updatesToApply);
-
+            updateDetails([...removedKeys, ...addedKeys, pokemon.pokemonKey], updatesToApply);
+    
+            // Update localNotWantedList to match updatedNotWantedList
             setLocalNotWantedList(updatedNotWantedList);
+    
         } else {
             if (!isMirror && pokemon.ownershipStatus.mirror) {
                 updateDetails(pokemon.pokemonKey, {
@@ -167,9 +208,16 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                 });
             }
         }
-
+    
+        // Log the localNotWantedList after the toggleEditMode operation
+        console.log('Local not_wanted_list after toggleEditMode:', localNotWantedList);
+    
         setEditMode(!editMode);
-    };    
+
+        // Update the not_wanted_list to match localNotWantedList
+        pokemon.ownershipStatus.not_wanted_list = localNotWantedList;
+    };
+    
 
     const toggleReciprocalUpdates = (key, updatedNotTrade) => {
         setPendingUpdates(prev => ({ ...prev, [key]: updatedNotTrade }));
