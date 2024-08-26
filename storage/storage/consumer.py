@@ -106,6 +106,9 @@ def ensure_db_connection(max_retries=5, retry_interval=5):
             backoff_time = min(backoff_time * 2, 60)  # Exponential backoff
     return False
 
+def filter_json_fields(data):
+    return {k: v for k, v in data.items() if v is True}
+
 def handle_message(data, trace_logger):
     max_retries = 5
     retry_interval = 5
@@ -137,6 +140,12 @@ def handle_message(data, trace_logger):
                 cp = pokemon.get('cp') if pokemon.get('cp') != "" else None
                 weight = pokemon.get('weight') if pokemon.get('weight') != "" else None
                 height = pokemon.get('height') if pokemon.get('height') != "" else None
+
+                # Filter the JSON fields
+                not_trade_list = filter_json_fields(pokemon.get('not_trade_list', {}))
+                not_wanted_list = filter_json_fields(pokemon.get('not_wanted_list', {}))
+                trade_filters = filter_json_fields(pokemon.get('trade_filters', {}))
+                wanted_filters = filter_json_fields(pokemon.get('wanted_filters', {}))
 
                 if (
                     pokemon.get('is_unowned', False) and
@@ -190,11 +199,11 @@ def handle_message(data, trace_logger):
                         'is_owned': pokemon.get('is_owned', False),
                         'is_for_trade': pokemon.get('is_for_trade', False),
                         'is_wanted': pokemon.get('is_wanted', False),
-                        'not_trade_list': pokemon.get('not_trade_list', {}),
-                        'not_wanted_list': pokemon.get('not_wanted_list', {}),
+                        'not_trade_list': not_trade_list,
+                        'not_wanted_list': not_wanted_list,
                         'trace_id': trace_logger.extra.get('trace_id'),
-                        'wanted_filters': pokemon.get('wanted_filters', {}),
-                        'trade_filters': pokemon.get('trade_filters', {}),
+                        'wanted_filters': wanted_filters,
+                        'trade_filters': trade_filters,
                     }
 
                     trace_logger.info(f"Defaults to be used for update/create: {defaults}")
