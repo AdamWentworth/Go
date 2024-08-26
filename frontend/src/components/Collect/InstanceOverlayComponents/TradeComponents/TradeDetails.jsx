@@ -7,10 +7,10 @@ import WantedListDisplay from './WantedListDisplay';
 import MirrorManager from './MirrorManager';
 import { updateNotTradeList } from '../ReciprocalUpdate.jsx'; 
 import ImageGroup from './ImageGroup';
-import { updateDisplayedList } from './utils/listUtils.js';
-import filters from './utils/filters';
+import { updateDisplayedList } from './utils/listUtils.js'; // Importing updateDisplayedList
 import useImageSelection from './utils/useImageSelection.js';
-import { EXCLUDE_IMAGES, INCLUDE_ONLY_IMAGES, FILTER_NAMES } from './utils/constants';  // Importing constants
+import { EXCLUDE_IMAGES, INCLUDE_ONLY_IMAGES, FILTER_NAMES } from './utils/constants';
+import usePokemonFiltering from './hooks/usePokemonFiltering';
 
 const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => {
     const { not_wanted_list, wanted_filters } = pokemon.ownershipStatus;
@@ -21,16 +21,15 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
     const [isMirror, setIsMirror] = useState(pokemon.ownershipStatus.mirror);
     const [mirrorKey, setMirrorKey] = useState(null);
     const [listsState, setListsState] = useState(lists);
-    const [filteredWantedList, setFilteredWantedList] = useState(lists.wanted); 
     const [pendingUpdates, setPendingUpdates] = useState({});
-    const [filteredOutPokemon, setFilteredOutPokemon] = useState([]); // Track filtered Pokémon
-
-    const initializeSelection = (filterNames, filters) => {
-        return filterNames.map(name => !!filters[name]);
-    };
 
     const { selectedImages: selectedExcludeImages, toggleImageSelection: toggleExcludeImageSelection, setSelectedImages: setSelectedExcludeImages } = useImageSelection(EXCLUDE_IMAGES);
     const { selectedImages: selectedIncludeOnlyImages, toggleImageSelection: toggleIncludeOnlyImageSelection, setSelectedImages: setSelectedIncludeOnlyImages } = useImageSelection(INCLUDE_ONLY_IMAGES);
+
+    // Function to initialize selection states
+    const initializeSelection = (filterNames, filters) => {
+        return filterNames.map(name => !!filters[name]);
+    };
 
     useEffect(() => {
         if (wanted_filters) {
@@ -41,74 +40,20 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
         setIsMirror(pokemon.ownershipStatus.mirror);
     }, [pokemon.ownershipStatus.mirror, wanted_filters]);
 
+    // Use the custom hook to manage the filtering
+    const { filteredWantedList, filteredOutPokemon, updatedLocalWantedFilters } = usePokemonFiltering(
+        listsState,
+        selectedExcludeImages,
+        selectedIncludeOnlyImages,
+        localWantedFilters,
+        setLocalNotWantedList,  // Pass this function to handle reappearing Pokémon
+        localNotWantedList      // Pass the current localNotWantedList
+    );
+
+    // Sync local filters with the updated filters from the hook
     useEffect(() => {
-        let updatedList = { ...listsState.wanted };
-        const newlyFilteredOutPokemon = [];
-        const reappearingPokemon = []; // Track Pokémon reappearing after filter removal
-    
-        // Apply exclude filters first
-        selectedExcludeImages.forEach((isSelected, index) => {
-            const filterName = FILTER_NAMES[index];
-            if (isSelected && filters[filterName]) {
-                updatedList = filters[filterName](updatedList);
-                localWantedFilters[filterName] = true;
-            } else {
-                // If a filter is disabled, we should re-evaluate the visibility of Pokémon previously filtered by this filter
-                Object.keys(listsState.wanted).forEach(key => {
-                    if (!filters[filterName](updatedList)[key] && updatedList[key]) {
-                        reappearingPokemon.push(key);
-                    }
-                });
-                delete localWantedFilters[filterName];
-            }
-        });
-    
-        // Track Pokémon filtered out by exclude filters
-        Object.keys(listsState.wanted).forEach(key => {
-            if (!updatedList[key]) {
-                newlyFilteredOutPokemon.push(key);
-            }
-        });
-    
-        // Apply include-only filters
-        selectedIncludeOnlyImages.forEach((isSelected, index) => {
-            const filterIndex = EXCLUDE_IMAGES.length + index;
-            const filterName = FILTER_NAMES[filterIndex];
-            if (isSelected && filters[filterName]) {
-                updatedList = filters[filterName](updatedList);
-                localWantedFilters[filterName] = true;
-            } else {
-                // Similar to exclude filters, handle reappearing Pokémon
-                Object.keys(listsState.wanted).forEach(key => {
-                    if (!filters[filterName](updatedList)[key] && updatedList[key]) {
-                        reappearingPokemon.push(key);
-                    }
-                });
-                delete localWantedFilters[filterName];
-            }
-        });
-    
-        // Track Pokémon filtered out by include-only filters
-        Object.keys(listsState.wanted).forEach(key => {
-            if (!updatedList[key] && !newlyFilteredOutPokemon.includes(key)) {
-                newlyFilteredOutPokemon.push(key);
-            }
-        });
-    
-        // Update the state with the final filtered list and the filtered-out Pokémon
-        setFilteredWantedList(updatedList);
-        setFilteredOutPokemon(newlyFilteredOutPokemon);
-        setLocalWantedFilters({ ...localWantedFilters });
-    
-        // Remove reappearing Pokémon from the not_wanted_list
-        if (reappearingPokemon.length > 0) {
-            const updatedNotWantedList = { ...localNotWantedList };
-            reappearingPokemon.forEach(key => {
-                delete updatedNotWantedList[key];
-            });
-            setLocalNotWantedList(updatedNotWantedList);
-        }
-    }, [selectedExcludeImages, selectedIncludeOnlyImages, listsState.wanted]);    
+        setLocalWantedFilters(updatedLocalWantedFilters);
+    }, [updatedLocalWantedFilters]);   
 
     // Ensure localNotWantedList is in sync with pokemon.ownershipStatus.not_wanted_list when remounting
     useEffect(() => {
