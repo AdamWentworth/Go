@@ -7,6 +7,7 @@ export const updateDetails = (
     setData,
     updateLists
 ) => async (pokemonKeys, details) => {
+
     // Ensure pokemonKeys is an array
     const keysArray = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
 
@@ -16,8 +17,13 @@ export const updateDetails = (
 
     // Update details for each Pokémon key
     keysArray.forEach((pokemonKey) => {
-        updatePokemonDetails(pokemonKey, details, data.ownershipData);
-        newData[pokemonKey] = { ...newData[pokemonKey], ...details, last_update: currentTimestamp };
+        // If details is an object keyed by pokemonKey, use the specific details for that key
+        const specificDetails = Array.isArray(pokemonKeys) && typeof details === 'object' && !Array.isArray(details) 
+            ? details[pokemonKey] || {} 
+            : details;
+
+        updatePokemonDetails(pokemonKey, specificDetails, data.ownershipData);
+        newData[pokemonKey] = { ...newData[pokemonKey], ...specificDetails, last_update: currentTimestamp };
     });
 
     // Update the ownership data in context state once after all updates

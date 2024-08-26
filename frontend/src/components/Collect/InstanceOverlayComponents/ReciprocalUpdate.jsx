@@ -1,10 +1,11 @@
 //RecriprocalUpdate.jsx
 
-export const updateNotTradeList = (ownershipData, currentPokemonKey, otherPokemonKey, add, isMirror = false) => {
+// ReciprocalUpdate.jsx
 
+export const updateNotTradeList = (ownershipData, currentPokemonKey, otherPokemonKey, add, isMirror = false) => {
     if (!ownershipData[otherPokemonKey]) {
         console.error(`No data found for ${otherPokemonKey}`);
-        return;
+        return null;
     }
 
     // Fetch the current not_trade_list from the ownership data
@@ -24,7 +25,10 @@ export const updateNotTradeList = (ownershipData, currentPokemonKey, otherPokemo
 
     // Commit the updated not_trade_list back to the ownership data
     ownershipData[otherPokemonKey].not_trade_list = notTradeList;
-    console.log(`Updated ${otherPokemonKey}'s not_trade_list to ${add ? 'add' : 'remove'} ${currentPokemonKey}`, ownershipData[otherPokemonKey].not_trade_list);
+    // console.log(`Updated ${otherPokemonKey}'s not_trade_list to ${add ? 'add' : 'remove'} ${currentPokemonKey}`, ownershipData[otherPokemonKey].not_trade_list);
+
+    // Return the updated not_trade_list for further processing
+    return notTradeList;
 };
 
 export const updateNotWantedList = (ownershipData, currentPokemonKey, otherPokemonKey, add) => {

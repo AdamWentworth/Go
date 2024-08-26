@@ -89,44 +89,75 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
     }, [selectedExcludeImages, selectedIncludeOnlyImages, listsState.wanted]);
 
     const toggleEditMode = () => {
+        // console.log('Toggle Edit Mode Triggered');
+        // console.log('Edit Mode:', editMode);
+
         if (editMode) {
             // Add filtered Pokémon to the not_wanted_list
             const updatedNotWantedList = { ...localNotWantedList };
             filteredOutPokemon.forEach(key => {
                 updatedNotWantedList[key] = true;
             });
-    
-            // Create a list of all Pokémon keys that need to be updated
+
+            // Create a list of all Pokémon keys that need to be updated, ensuring pokemon.pokemonKey is included
             const allKeysToUpdate = [
                 ...new Set([
+                    pokemon.pokemonKey,
                     ...Object.keys(updatedNotWantedList),
-                    ...filteredOutPokemon,
-                    pokemon.pokemonKey, // Include the key of the Pokémon being edited
+                    ...filteredOutPokemon
                 ]),
             ];
-    
-            // Save the wanted_filters and not_wanted_list for each Pokémon in allKeysToUpdate
-            updateDetails(allKeysToUpdate, {
+
+            // console.log('All Keys to Update:', allKeysToUpdate);
+
+            // Object to accumulate updates for updateDetails
+            const updatesToApply = {};
+
+            // Include updates for the main pokemonKey
+            updatesToApply[pokemon.pokemonKey] = {
                 not_wanted_list: updatedNotWantedList,
                 wanted_filters: localWantedFilters,
                 mirror: isMirror,
-            });
-    
+            };
+
+            // console.log(`Initial Updates to Apply for ${pokemon.pokemonKey}:`, updatesToApply[pokemon.pokemonKey]);
+
             // Apply reciprocal updates for each Pokémon in allKeysToUpdate
             allKeysToUpdate.forEach(key => {
                 if (updatedNotWantedList[key] !== not_wanted_list[key]) {
-                    updateNotTradeList(ownershipData, pokemon.pokemonKey, key, updatedNotWantedList[key], isMirror);
+                    const updatedNotTradeList = updateNotTradeList(ownershipData, pokemon.pokemonKey, key, updatedNotWantedList[key], isMirror);
+
+                    if (updatedNotTradeList) {
+                        if (updatesToApply[key]) {
+                            // Merge with existing updates if this key already has entries in updatesToApply
+                            updatesToApply[key] = {
+                                ...updatesToApply[key],
+                                not_trade_list: updatedNotTradeList
+                            };
+                        } else {
+                            // Otherwise, add a new entry
+                            updatesToApply[key] = {
+                                not_trade_list: updatedNotTradeList
+                            };
+                        }
+                    }
+
+                    // console.log(`Updates to Apply for ${key}:`, updatesToApply[key]);
                 }
             });
-    
+
             // Handle mirror key management
             if (!isMirror && mirrorKey) {
+                console.log('Handling Mirror Key Management');
                 delete ownershipData[mirrorKey];
                 delete lists.wanted[mirrorKey];
                 updateDisplayedList(null, listsState, setListsState);
                 setMirrorKey(null);
             }
-    
+
+            // After all updates have been accumulated, updateDetails with all keys and their specific updates
+            updateDetails(allKeysToUpdate, updatesToApply);
+
             setLocalNotWantedList(updatedNotWantedList);
         } else {
             if (!isMirror && pokemon.ownershipStatus.mirror) {
@@ -136,6 +167,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                 });
             }
         }
+
         setEditMode(!editMode);
     };    
 
