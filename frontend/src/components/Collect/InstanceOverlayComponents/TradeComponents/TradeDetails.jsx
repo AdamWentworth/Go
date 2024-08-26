@@ -9,6 +9,7 @@ import ImageGroup from './ImageGroup';
 import useImageSelection from './utils/useImageSelection.js';
 import { updateDisplayedList } from './utils/listUtils.js';
 import { EXCLUDE_IMAGES, INCLUDE_ONLY_IMAGES, FILTER_NAMES } from './utils/constants';
+import { TOOLTIP_TEXTS } from './utils/tooltipTexts';
 import usePokemonFiltering from './hooks/usePokemonFiltering';
 import useToggleEditMode from './hooks/useToggleEditMode'; 
 
@@ -115,6 +116,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                             selectedImages={selectedExcludeImages}
                             toggleImageSelection={toggleExcludeImageSelection}
                             editMode={editMode}
+                            tooltipTexts={FILTER_NAMES.map(name => TOOLTIP_TEXTS[name])}
                         />
                     </div>
                     <div className="include-only-header-group image-group">
@@ -123,6 +125,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                             selectedImages={selectedIncludeOnlyImages}
                             toggleImageSelection={toggleIncludeOnlyImageSelection}
                             editMode={editMode}
+                            tooltipTexts={FILTER_NAMES.slice(EXCLUDE_IMAGES.length).map(name => TOOLTIP_TEXTS[name])}
                         />
                     </div>
                 </div>
