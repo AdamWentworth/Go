@@ -94,9 +94,9 @@ const MirrorManager = ({
             ownershipData[key].is_wanted &&
             !ownershipData[key].is_owned &&
             !ownershipData[key].is_for_trade &&
-            ownershipData[key].pokemon_id === pokemon.pokemon_id &&
-            ownershipData[key].mirror
+            ownershipData[key].pokemon_id === pokemon.pokemon_id
         );
+        ownershipData[foundKey].mirror = true
         console.log("findExistingMirrorKey:", foundKey || "No key found");
         return foundKey;
     };

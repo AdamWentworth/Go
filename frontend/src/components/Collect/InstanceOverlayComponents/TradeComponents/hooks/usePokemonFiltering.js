@@ -68,14 +68,17 @@ const usePokemonFiltering = (listsState, selectedExcludeImages, selectedIncludeO
         setFilteredOutPokemon(newlyFilteredOutPokemon);
         setUpdatedLocalWantedFilters({ ...updatedLocalWantedFilters });
 
-        // Remove reappearing Pokémon from the not_wanted_list
+        // Update localNotWantedList to remove only reappearing Pokémon
         if (reappearingPokemon.length > 0) {
             const updatedNotWantedList = { ...localNotWantedList };
             reappearingPokemon.forEach(key => {
                 delete updatedNotWantedList[key];
             });
-            setLocalNotWantedList(updatedNotWantedList);
-        }
+            setLocalNotWantedList((prevList) => ({
+                ...prevList, // Keep all existing not-wanted Pokémon
+                ...updatedNotWantedList, // Remove only the reappearing Pokémon
+            }));
+        }     
 
     }, [selectedExcludeImages, selectedIncludeOnlyImages, listsState.wanted]);
 

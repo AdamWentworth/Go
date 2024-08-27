@@ -48,6 +48,8 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
         localNotWantedList
     );
 
+    // console.log(filteredWantedList)
+
     useEffect(() => {
         setLocalWantedFilters(updatedLocalWantedFilters);
     }, [updatedLocalWantedFilters]);   
@@ -77,21 +79,32 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
         setPendingUpdates(prev => ({ ...prev, [key]: updatedNotTrade }));
     };
 
+    // Calculate the number of items in filteredWantedList
+    const filteredWantedListCount = Object.keys(filteredWantedList).length;
+
     return (
         <div className="trade-details-container">
-            <div className="top-row">
+            <div className={`top-row ${isMirror ? 'few-wanted' : ''}`}>
                 <div className="edit-save-container">
                     <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
                 </div>
-                {!isMirror && (
-                    <>
-                        <div className="header-group">
+                {!isMirror ? (
+                    filteredWantedListCount > 15 ? (
+                        <>
+                            <div className="header-group">
+                                <h3>Exclude</h3>
+                            </div>
+                            <div className="header-group">
+                                <h3>Include Only</h3>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="header-group include-few">
                             <h3>Exclude</h3>
                         </div>
-                        <div className="header-group">
-                            <h3>Include Only</h3>
-                        </div>
-                    </>
+                    )
+                ) : (
+                    <div className="spacer"></div>
                 )}
                 <div className="mirror">
                     <MirrorManager
@@ -109,33 +122,57 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
             </div>
 
             {!isMirror && (
-                <div className="image-row-container">
-                    <div className="exclude-header-group image-group">
-                        <ImageGroup
-                            images={EXCLUDE_IMAGES}
-                            selectedImages={selectedExcludeImages}
-                            toggleImageSelection={toggleExcludeImageSelection}
-                            editMode={editMode}
-                            tooltipTexts={FILTER_NAMES.map(name => TOOLTIP_TEXTS[name])}
-                        />
+                filteredWantedListCount > 15 ? (
+                    <div className="image-row-container">
+                        <div className="exclude-header-group image-group">
+                            <ImageGroup
+                                images={EXCLUDE_IMAGES}
+                                selectedImages={selectedExcludeImages}
+                                toggleImageSelection={toggleExcludeImageSelection}
+                                editMode={editMode}
+                                tooltipTexts={FILTER_NAMES.map(name => TOOLTIP_TEXTS[name])}
+                            />
+                        </div>
+                        <div className="include-only-header-group image-group">
+                            <ImageGroup
+                                images={INCLUDE_ONLY_IMAGES}
+                                selectedImages={selectedIncludeOnlyImages}
+                                toggleImageSelection={toggleIncludeOnlyImageSelection}
+                                editMode={editMode}
+                                tooltipTexts={FILTER_NAMES.slice(EXCLUDE_IMAGES.length).map(name => TOOLTIP_TEXTS[name])}
+                            />
+                        </div>
                     </div>
-                    <div className="include-only-header-group image-group">
-                        <ImageGroup
-                            images={INCLUDE_ONLY_IMAGES}
-                            selectedImages={selectedIncludeOnlyImages}
-                            toggleImageSelection={toggleIncludeOnlyImageSelection}
-                            editMode={editMode}
-                            tooltipTexts={FILTER_NAMES.slice(EXCLUDE_IMAGES.length).map(name => TOOLTIP_TEXTS[name])}
-                        />
-                    </div>
-                </div>
+                ) : (
+                    <>
+                        <div className="exclude-header-group image-group exclude-few">
+                            <ImageGroup
+                                images={EXCLUDE_IMAGES}
+                                selectedImages={selectedExcludeImages}
+                                toggleImageSelection={toggleExcludeImageSelection}
+                                editMode={editMode}
+                                tooltipTexts={FILTER_NAMES.map(name => TOOLTIP_TEXTS[name])}
+                            />
+                        </div>
+                        <div className="include-only-header-group include-few">
+                            <h3>Include Only</h3>
+                            <ImageGroup
+                                images={INCLUDE_ONLY_IMAGES}
+                                selectedImages={selectedIncludeOnlyImages}
+                                toggleImageSelection={toggleIncludeOnlyImageSelection}
+                                editMode={editMode}
+                                tooltipTexts={FILTER_NAMES.slice(EXCLUDE_IMAGES.length).map(name => TOOLTIP_TEXTS[name])}
+                            />
+                        </div>
+                    </>
+                )
             )}
 
             <div>
                 <h2>Wanted List:</h2>
                 <WantedListDisplay
                     pokemon={pokemon}
-                    lists={{ wanted: filteredWantedList }}
+                    lists={{wanted: filteredWantedList}}
                     localNotWantedList={localNotWantedList}
                     isMirror={isMirror}
                     mirrorKey={mirrorKey}

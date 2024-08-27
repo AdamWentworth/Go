@@ -146,3 +146,25 @@
     padding: 0;
     margin: 0;
 }
+
+.header-group.include-few {
+    margin-top: -30px;
+}
+
+.exclude-header-group.image-group.exclude-few {
+    margin-bottom: -15px;
+    margin-top: -25px;
+}
+
+.include-only-header-group.include-few {
+    margin-bottom: 40px;
+}
+
+.include-only-header-group.include-few h3 {
+    margin-bottom: 5px;
+}
+
+.trade-details-container .top-row.few-wanted {
+    margin-bottom: 35px; /* Adjusts space below only when few-wanted is active */
+}
+
