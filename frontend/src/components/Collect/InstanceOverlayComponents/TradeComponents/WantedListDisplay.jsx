@@ -13,10 +13,19 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
     const handleNotWantedToggle = (key) => {
         if (editMode) {
             const updatedNotWanted = !(localNotWantedList[key] || false);
-            setLocalNotWantedList({ ...localNotWantedList, [key]: updatedNotWanted });
+    
+            if (updatedNotWanted) {
+                // If the value is becoming true, update it as normal
+                setLocalNotWantedList({ ...localNotWantedList, [key]: updatedNotWanted });
+            } else {
+                // If the value is becoming false, drop the key
+                const { [key]: _, ...newNotWantedList } = localNotWantedList;
+                setLocalNotWantedList(newNotWantedList);
+            }
+    
             toggleReciprocalUpdates(key, updatedNotWanted);
         }
-    };
+    };    
 
     // Extract the baseKey of the current Pokémon
     const baseKey = extractBaseKey(pokemon.pokemonKey);
