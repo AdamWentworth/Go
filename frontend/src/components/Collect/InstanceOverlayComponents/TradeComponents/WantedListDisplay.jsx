@@ -1,5 +1,5 @@
 // WantedListDisplay.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './WantedListDisplay.css';
 import useSortManager from '../../hooks/useSortManager';  // Ensure this import is correct
 
@@ -10,10 +10,24 @@ const extractBaseKey = (pokemonKey) => {
 };
 
 const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode, ownershipData, toggleReciprocalUpdates, sortType, sortMode, onPokemonClick }) => {
+    const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsSmallScreen(window.innerWidth < 1024);
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+
     const handleNotWantedToggle = (key) => {
         if (editMode) {
             const updatedNotWanted = !(localNotWantedList[key] || false);
-    
+
             if (updatedNotWanted) {
                 // If the value is becoming true, update it as normal
                 setLocalNotWantedList({ ...localNotWantedList, [key]: updatedNotWanted });
@@ -22,10 +36,10 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
                 const { [key]: _, ...newNotWantedList } = localNotWantedList;
                 setLocalNotWantedList(newNotWantedList);
             }
-    
+
             toggleReciprocalUpdates(key, updatedNotWanted);
         }
-    };    
+    };
 
     // Extract the baseKey of the current Pokémon
     const baseKey = extractBaseKey(pokemon.pokemonKey);
@@ -76,8 +90,11 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
         containerClass = 'large-list';
     }
 
+    // Conditionally limit max items per row to 3 on small screens
+    const gridClass = isSmallScreen ? 'max-3-per-row' : '';
+
     return (
-        <div className={`wanted-list-container ${containerClass}`}>
+        <div className={`wanted-list-container ${containerClass} ${gridClass}`}>
             {sortedWantedListToDisplay.map((pokemon) => {
                 const isNotWanted = localNotWantedList[pokemon.key];
                 const imageClasses = `wanted-item-img ${isNotWanted ? 'grey-out' : ''}`;
@@ -89,8 +106,11 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
                         className="wanted-item"
                         style={{ position: 'relative', overflow: 'hidden' }}
                         onClick={() => {
-                            console.log(`Clicked Pokemon Key: ${pokemon.key}`);
-                            onPokemonClick(pokemon.key);
+                            if (!editMode) {
+                                // Only trigger onPokemonClick when not in edit mode
+                                console.log(`Clicked Pokemon Key: ${pokemon.key}`);
+                                onPokemonClick(pokemon.key);
+                            }
                         }}
                     >
                         {pokemon.pref_lucky && (

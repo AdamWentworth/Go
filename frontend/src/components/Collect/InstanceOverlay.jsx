@@ -1,20 +1,30 @@
 // InstanceOverlay.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './InstanceOverlay.css';
 import OwnedInstance from './InstanceOverlayComponents/OwnedInstance';
-
 import TradeInstance from './InstanceOverlayComponents/TradeInstance';
 import TradeDetails from './InstanceOverlayComponents/TradeComponents/TradeDetails';
-
 import WantedInstance from './InstanceOverlayComponents/WantedInstance';
 import WantedDetails from './InstanceOverlayComponents/WantedComponents/WantedDetails';
-
-import WindowOverlay from './WindowOverlay';  // Ensure WindowOverlay is imported correctly
+import WindowOverlay from './WindowOverlay';
 
 const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, ownershipData, sortType, sortMode }) => {
   const [currentOverlay, setCurrentOverlay] = useState(ownershipFilter);
   const [selectedPokemon, setSelectedPokemon] = useState(pokemon);
-  // console.log(variants)
+  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 686);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth <= 686);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   const handleOverlayClick = (event) => {
     if (!event.target.closest('.overlay-windows')) {
       onClose();
@@ -22,7 +32,6 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
   };
 
   const handleOpenWantedOverlay = (pokemonData) => {
-    // console.log('Opening Wanted Overlay with data:', pokemonData);
     setSelectedPokemon(pokemonData);
     setCurrentOverlay('Wanted');
   };
@@ -45,8 +54,8 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
         return <div>Unowned Instance Component</div>; // Placeholder for UnownedInstance component
       case 'Trade':
         return (
-          <div className="trade-instance-overlay">
-            <div className="overlay-row other-overlays-row">
+          <div className={`trade-instance-overlay ${isSmallScreen ? 'small-screen' : ''}`}>
+            <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
               <WindowOverlay onClose={handleCloseOverlay} className="trade-instance-window">
                 <TradeInstance pokemon={selectedPokemon} />
               </WindowOverlay>
@@ -91,6 +100,11 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
 
   return (
     <div className="instance-overlay" onClick={handleOverlayClick}>
+      {isSmallScreen && (
+        <button className="close-overlay-button" onClick={handleCloseOverlay}>
+          &times;
+        </button>
+      )}
       {renderContent()}
     </div>
   );

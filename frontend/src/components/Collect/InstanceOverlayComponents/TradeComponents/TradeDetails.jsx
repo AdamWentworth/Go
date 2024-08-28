@@ -22,6 +22,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
     const [mirrorKey, setMirrorKey] = useState(null);
     const [listsState, setListsState] = useState(lists);
     const [pendingUpdates, setPendingUpdates] = useState({});
+    const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
 
     const { selectedImages: selectedExcludeImages, toggleImageSelection: toggleExcludeImageSelection, setSelectedImages: setSelectedExcludeImages } = useImageSelection(EXCLUDE_IMAGES);
     const { selectedImages: selectedIncludeOnlyImages, toggleImageSelection: toggleIncludeOnlyImageSelection, setSelectedImages: setSelectedIncludeOnlyImages } = useImageSelection(INCLUDE_ONLY_IMAGES);
@@ -47,8 +48,6 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
         setLocalNotWantedList,
         localNotWantedList
     );
-
-    // console.log(filteredWantedList)
 
     useEffect(() => {
         setLocalWantedFilters(updatedLocalWantedFilters);
@@ -89,11 +88,8 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
     };    
 
     const handlePokemonClick = (pokemonKey) => {
-        // console.log(`Handling click for Pokemon Key: ${pokemonKey}`);
-        
         // Extract the base key using the existing function
         const baseKey = extractBaseKey(pokemonKey);
-        // console.log(`Base Key: ${baseKey}`);
         
         // Look up in variants
         const variantData = variants.find(variant => variant.pokemonKey === baseKey);
@@ -109,9 +105,6 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
             return;
         }
         
-        // console.log('Found variantData:', variantData);
-        // console.log('Found ownershipDataEntry:', ownershipDataEntry);
-        
         // Merge the ownershipData into the ownershipStatus of the variant
         const mergedPokemonData = {
             ...variantData,
@@ -121,11 +114,22 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
             },
         };
         
-        // console.log('Merged Pokemon Data:', mergedPokemonData);
-        
         // Open the Wanted overlay with the merged data
         openWantedOverlay(mergedPokemonData);
-    };              
+    };
+
+    // Effect to monitor screen width changes
+    useEffect(() => {
+        const handleResize = () => {
+            setIsSmallScreen(window.innerWidth < 1024);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+
+    const shouldShowFewLayout = isSmallScreen || filteredWantedListCount <= 15;
 
     return (
         <div className="trade-details-container">
@@ -134,7 +138,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                     <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
                 </div>
                 {!isMirror ? (
-                    filteredWantedListCount > 15 ? (
+                    !shouldShowFewLayout ? (
                         <>
                             <div className="header-group">
                                 <h3>Exclude</h3>
@@ -167,7 +171,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
             </div>
 
             {!isMirror && (
-                filteredWantedListCount > 15 ? (
+                !shouldShowFewLayout ? (
                     <div className="image-row-container">
                         <div className="exclude-header-group image-group">
                             <ImageGroup

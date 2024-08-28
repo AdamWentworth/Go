@@ -75,3 +75,24 @@
 .toggle-not-wanted:hover {
     background-color: lightgray;
 }
+
+.wanted-list-container.max-3-per-row {
+    grid-template-columns: repeat(3, minmax(80px, 1fr)); /* Force max 5 columns per row */
+}
+
+/* Ensure .single-item-list takes precedence */
+.wanted-list-container.single-item-list.max-3-per-row {
+    grid-template-columns: repeat(1, 1fr); /* Ensure single-item-list still applies even when max-3-per-row is also present */
+}
+
+@media (max-width: 480px) {
+}
+
+@media (min-width: 481px) and (max-width: 767px){
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+}
