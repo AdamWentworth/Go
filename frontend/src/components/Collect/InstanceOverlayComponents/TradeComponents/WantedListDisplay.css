@@ -77,12 +77,7 @@
 }
 
 .wanted-list-container.max-3-per-row {
-    grid-template-columns: repeat(3, minmax(80px, 1fr)); /* Force max 5 columns per row */
-}
-
-/* Ensure .single-item-list takes precedence */
-.wanted-list-container.single-item-list.max-3-per-row {
-    grid-template-columns: repeat(1, 1fr); /* Ensure single-item-list still applies even when max-3-per-row is also present */
+    grid-template-columns: repeat(3, minmax(80px, 1fr)); /* Force max 3 columns per row */
 }
 
 @media (max-width: 480px) {
@@ -94,5 +89,25 @@
 @media (min-width: 768px) and (max-width: 1023px) {
 }
 
+/* Specific rule for widths between 1024px and 1439px */
+/* Specific rule for widths between 1024px and 1439px */
 @media (min-width: 1024px) and (max-width: 1439px) {
+    .wanted-list-container.xxlarge-list {
+        grid-template-columns: repeat(6, 1fr); /* Force max 6 columns per row */
+    }
+
+    .wanted-list-container.xlarge-list,
+    .wanted-list-container.large-list {
+        grid-template-columns: repeat(6, 1fr); /* Force max 6 columns per row */
+    }
+
+    /* Override to ensure single-item-list still works */
+    .wanted-list-container.single-item-list {
+        grid-template-columns: repeat(1, 1fr); /* Ensure single-item-list still applies */
+    }
+}
+
+/* Ensure .single-item-list takes precedence over everything else */
+.wanted-list-container.single-item-list {
+    grid-template-columns: repeat(1, 1fr) !important; /* Use !important to enforce single-item layout */
 }
