@@ -9,7 +9,7 @@ const extractBaseKey = (pokemonKey) => {
     return keyParts.join('_');
 };
 
-const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode, ownershipData, toggleReciprocalUpdates, sortType, sortMode }) => {
+const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode, ownershipData, toggleReciprocalUpdates, sortType, sortMode, onPokemonClick }) => {
     const handleNotWantedToggle = (key) => {
         if (editMode) {
             const updatedNotWanted = !(localNotWantedList[key] || false);
@@ -79,17 +79,25 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
     return (
         <div className={`wanted-list-container ${containerClass}`}>
             {sortedWantedListToDisplay.map((pokemon) => {
-                const isNotWanted = localNotWantedList[pokemon.key]; // Use the correct key to check if it's not wanted
+                const isNotWanted = localNotWantedList[pokemon.key];
                 const imageClasses = `wanted-item-img ${isNotWanted ? 'grey-out' : ''}`;
                 const backdropClasses = `lucky-backdrop ${isNotWanted ? 'grey-out' : ''}`;
-                
+
                 return (
-                    <div key={pokemon.key} className="wanted-item" style={{ position: 'relative', overflow: 'hidden' }}>
+                    <div
+                        key={pokemon.key}
+                        className="wanted-item"
+                        style={{ position: 'relative', overflow: 'hidden' }}
+                        onClick={() => {
+                            console.log(`Clicked Pokemon Key: ${pokemon.key}`);
+                            onPokemonClick(pokemon.key);
+                        }}
+                    >
                         {pokemon.pref_lucky && (
-                            <img 
-                                src={`${process.env.PUBLIC_URL}/images/lucky.png`} 
-                                className={backdropClasses} 
-                                alt="Lucky backdrop" 
+                            <img
+                                src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                                className={backdropClasses}
+                                alt="Lucky backdrop"
                                 style={{
                                     position: 'absolute',
                                     top: '50%',
@@ -97,18 +105,22 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
                                     width: '75%',
                                     height: 'auto',
                                     transform: 'translate(-50%, -50%)',
-                                    zIndex: 1 // Ensure the backdrop is behind the image
+                                    zIndex: 1,
                                 }}
                             />
                         )}
-                        <img 
-                            src={pokemon.image_url} 
-                            className={imageClasses} 
-                            alt={`Wanted Pokémon ${pokemon.name}`} 
-                            style={{ zIndex: 2 }} // Ensure the image is in front of the backdrop
+                        <img
+                            src={pokemon.image_url}
+                            className={imageClasses}
+                            alt={`Wanted Pokémon ${pokemon.name}`}
+                            style={{ zIndex: 2 }}
                         />
                         {editMode && (
-                            <button className="toggle-not-wanted" onClick={() => handleNotWantedToggle(pokemon.key)} style={{ zIndex: 3 }}>
+                            <button
+                                className="toggle-not-wanted"
+                                onClick={() => handleNotWantedToggle(pokemon.key)}
+                                style={{ zIndex: 3 }}
+                            >
                                 {isNotWanted ? '✓' : 'X'}
                             </button>
                         )}

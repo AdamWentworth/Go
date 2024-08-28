@@ -24,7 +24,8 @@ function PokemonList({
     ownershipData,
     showAll,
     sortType,
-    sortMode
+    sortMode,
+    variants
 }) {
 
     const handleSelect = (pokemon) => {
@@ -74,6 +75,7 @@ function PokemonList({
                             ownershipData={ownershipData}
                             sortType={sortType}
                             sortMode={sortMode}
+                            variants={variants}
                         /> :
                         <PokemonOverlay
                             pokemon={selectedPokemon.overlayType ? selectedPokemon.pokemon : selectedPokemon}

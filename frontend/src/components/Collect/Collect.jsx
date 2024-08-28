@@ -216,6 +216,7 @@ function Collect() {
                 showAll={showAll}
                 sortType={sortType}
                 sortMode={sortMode}
+                variants={variants}
             />
             <SortOverlayMemo
                 sortType={sortType}

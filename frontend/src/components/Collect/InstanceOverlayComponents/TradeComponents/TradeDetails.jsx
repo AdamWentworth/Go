@@ -13,7 +13,7 @@ import { TOOLTIP_TEXTS } from './utils/tooltipTexts';
 import usePokemonFiltering from './hooks/usePokemonFiltering';
 import useToggleEditMode from './hooks/useToggleEditMode'; 
 
-const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => {
+const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClose, openWantedOverlay, variants }) => {
     const { not_wanted_list, wanted_filters } = pokemon.ownershipStatus;
     const [localNotWantedList, setLocalNotWantedList] = useState({ ...not_wanted_list });
     const [localWantedFilters, setLocalWantedFilters] = useState({ ...wanted_filters });
@@ -81,6 +81,51 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
 
     // Calculate the number of items in filteredWantedList
     const filteredWantedListCount = Object.keys(filteredWantedList).length;
+
+    const extractBaseKey = (pokemonKey) => {
+        let keyParts = String(pokemonKey).split('_');
+        keyParts.pop(); // Remove the UUID part if present
+        return keyParts.join('_');
+    };    
+
+    const handlePokemonClick = (pokemonKey) => {
+        // console.log(`Handling click for Pokemon Key: ${pokemonKey}`);
+        
+        // Extract the base key using the existing function
+        const baseKey = extractBaseKey(pokemonKey);
+        // console.log(`Base Key: ${baseKey}`);
+        
+        // Look up in variants
+        const variantData = variants.find(variant => variant.pokemonKey === baseKey);
+        if (!variantData) {
+            console.error(`Variant not found for pokemonKey: ${pokemonKey}`);
+            return;
+        }
+        
+        // Look up in ownershipData
+        const ownershipDataEntry = ownershipData[pokemonKey];
+        if (!ownershipDataEntry) {
+            console.error(`Pokemon not found in ownershipData for key: ${pokemonKey}`);
+            return;
+        }
+        
+        // console.log('Found variantData:', variantData);
+        // console.log('Found ownershipDataEntry:', ownershipDataEntry);
+        
+        // Merge the ownershipData into the ownershipStatus of the variant
+        const mergedPokemonData = {
+            ...variantData,
+            ownershipStatus: {
+                ...variantData.ownershipStatus,
+                ...ownershipDataEntry,
+            },
+        };
+        
+        // console.log('Merged Pokemon Data:', mergedPokemonData);
+        
+        // Open the Wanted overlay with the merged data
+        openWantedOverlay(mergedPokemonData);
+    };              
 
     return (
         <div className="trade-details-container">
@@ -172,7 +217,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                 <h2>Wanted List:</h2>
                 <WantedListDisplay
                     pokemon={pokemon}
-                    lists={{wanted: filteredWantedList}}
+                    lists={{ wanted: filteredWantedList }}
                     localNotWantedList={localNotWantedList}
                     isMirror={isMirror}
                     mirrorKey={mirrorKey}
@@ -182,6 +227,8 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => 
                     toggleReciprocalUpdates={toggleReciprocalUpdates}
                     sortType={sortType}
                     sortMode={sortMode}
+                    onPokemonClick={handlePokemonClick}
+                    variants={variants}
                 />
             </div>
         </div>

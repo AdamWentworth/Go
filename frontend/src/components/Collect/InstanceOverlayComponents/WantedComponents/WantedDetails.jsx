@@ -7,6 +7,7 @@ import TradeListDisplay from './TradeListDisplay';
 import { updateNotWantedList } from '../ReciprocalUpdate.jsx';
 
 const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => {
+    // console.log('Rendering WantedDetails with Pokemon:', pokemon);
     const [editMode, setEditMode] = useState(false);
     const [localNotTradeList, setLocalNotTradeList] = useState({ ...pokemon.ownershipStatus.not_trade_list });
     const [pendingUpdates, setPendingUpdates] = useState({});
