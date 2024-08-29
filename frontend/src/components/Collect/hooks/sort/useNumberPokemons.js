@@ -17,11 +17,18 @@ const useNumberPokemons = (displayedPokemons, sortMode, { isShiny, showShadow, s
             const isVariantShadow = pokemon.variantType === 'shadow';
             const isVariantShinyShadow = pokemon.variantType === 'shiny_shadow';
             const isVariantCostume = pokemon.variantType.includes('costume');
+            const isVariantShinyCostume = isVariantCostume && pokemon.variantType.includes('shiny');
+            const isVariantShadowCostume = isVariantCostume && pokemon.variantType.includes('shadow');
 
             if (!showAll) {
-                if (isShiny && !isVariantShiny) return false;
-                if (showShadow && !isVariantShadow && !isVariantShinyShadow) return false;
-                if (showCostume && !isVariantCostume) return false;
+                // Shiny filtering
+                if (isShiny && !isVariantShiny && !isVariantShinyShadow && !isVariantShinyCostume) return false;
+
+                // Shadow filtering
+                if (showShadow && !isVariantShadow && !isVariantShinyShadow && !isVariantShadowCostume) return false;
+
+                // Costume filtering
+                if (showCostume && !isVariantCostume && !isVariantShinyCostume && !isVariantShadowCostume) return false;
             }
 
             return true;
