@@ -59,7 +59,7 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
               <WindowOverlay onClose={handleCloseOverlay} className="trade-instance-window">
                 <TradeInstance pokemon={selectedPokemon} />
               </WindowOverlay>
-              <WindowOverlay onClose={handleCloseOverlay} className="trade-details-window">
+              <WindowOverlay onClose={handleCloseOverlay} className="wanted-details-window">
                 <TradeDetails
                   pokemon={selectedPokemon}
                   lists={lists}
