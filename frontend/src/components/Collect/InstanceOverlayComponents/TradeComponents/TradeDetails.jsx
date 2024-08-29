@@ -78,8 +78,8 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
         setPendingUpdates(prev => ({ ...prev, [key]: updatedNotTrade }));
     };
 
-    // Calculate the number of items in filteredWantedList
-    const filteredWantedListCount = Object.keys(filteredWantedList).length;
+    // Calculate the number of items in filteredWantedList excluding those in the not_wanted_list
+    const filteredWantedListCount = Object.keys(filteredWantedList).filter(key => !localNotWantedList[key]).length;
 
     const extractBaseKey = (pokemonKey) => {
         let keyParts = String(pokemonKey).split('_');
@@ -130,6 +130,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
     }, []);
 
     const shouldShowFewLayout = isSmallScreen || filteredWantedListCount <= 15;
+    console.log(filteredWantedListCount)
 
     return (
         <div className="trade-details-container">

@@ -7,7 +7,7 @@ const NameComponent = ({ pokemon, editMode, onNicknameChange }) => {
   const initialNickname = () => {
     return pokemon.ownershipStatus.nickname && pokemon.ownershipStatus.nickname.trim() !== ''
       ? pokemon.ownershipStatus.nickname
-      : getLastWord(pokemon.name);
+      : '';
   };
 
   const [nickname, setNicknameState] = useState(initialNickname());
@@ -15,12 +15,20 @@ const NameComponent = ({ pokemon, editMode, onNicknameChange }) => {
 
   useEffect(() => {
     setNicknameState(initialNickname());
-  }, [pokemon.ownershipStatus.nickname]);
+  }, [pokemon.ownershipStatus.nickname, pokemon.name]);
+
+  useEffect(() => {
+    if (editMode && editableRef.current) {
+      // Ensure React is in charge of updates
+      editableRef.current.textContent = nickname;
+      setCaretToEnd();
+    }
+  }, [editMode, nickname]);
 
   const setCaretToEnd = () => {
-    const range = document.createRange();
-    const sel = window.getSelection();
     if (editableRef.current) {
+      const range = document.createRange();
+      const sel = window.getSelection();
       range.selectNodeContents(editableRef.current);
       range.collapse(false);
       sel.removeAllRanges();
@@ -29,21 +37,15 @@ const NameComponent = ({ pokemon, editMode, onNicknameChange }) => {
     }
   };
 
-  useEffect(() => {
-    if (editMode && editableRef.current) {
-      editableRef.current.innerText = nickname;
-      setCaretToEnd();
-    }
-  }, [editMode, nickname]);
-
   const handleInput = (event) => {
-    let newValue = event.target.innerText.trim();
-    if (!newValue) {
-      event.target.innerText = '';
-      setCaretToEnd();
+    const newValue = event.target.textContent;
+    if (newValue.trim() === '') {
+      // If the input is cleared, we treat nickname as null/empty
+      setNicknameState('');
+      onNicknameChange(''); // Pass empty value to parent
     } else if (validateNickname(newValue)) {
       setNicknameState(newValue);
-      onNicknameChange(newValue); // Pass up immediately
+      onNicknameChange(newValue);
     }
   };
 
@@ -71,10 +73,12 @@ const NameComponent = ({ pokemon, editMode, onNicknameChange }) => {
               ref={editableRef}
               className={`name-editable-content ${editMode ? 'editable' : ''}`}
             >
-              {nickname || ''}
+              {nickname}
             </span>
           ) : (
-            <span className="name-editable-content">{nickname || getLastWord(pokemon.name)}</span>
+            <span className="name-editable-content">
+              {nickname || getLastWord(pokemon.name)} {/* Fallback to default name if nickname is empty */}
+            </span>
           )}
         </div>
       </div>
