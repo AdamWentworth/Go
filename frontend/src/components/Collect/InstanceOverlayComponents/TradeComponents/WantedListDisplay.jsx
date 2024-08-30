@@ -65,16 +65,25 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
     }));
 
     // Conditionally apply sorting if not in mirror mode
-    const sortedWantedListToDisplay = isMirror 
-        ? transformedWantedList 
-        : useSortManager(transformedWantedList, sortType, sortMode, { 
+    const sortedWantedListToDisplay = useSortManager(
+        transformedWantedList,
+        sortType,
+        sortMode,
+        { 
             isShiny: false, 
             showShadow: false, 
             showCostume: false, 
             showAll: true 
-        });
+        }
+    );
+    
+    // Then, conditionally handle the result
+    const finalWantedListToDisplay = isMirror 
+        ? transformedWantedList 
+        : sortedWantedListToDisplay;
+    
 
-    if (!lists || sortedWantedListToDisplay.length === 0) {
+    if (!lists || finalWantedListToDisplay.length === 0) {
         return <div>No Pokémon currently wanted.</div>;
     }
 
@@ -82,11 +91,11 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
     let containerClass = '';
     if (isMirror) {
         containerClass = 'single-item-list';
-    } else if (sortedWantedListToDisplay.length > 30) {
+    } else if (finalWantedListToDisplay.length > 30) {
         containerClass = 'xxlarge-list';
-    } else if (sortedWantedListToDisplay.length > 15) {
+    } else if (finalWantedListToDisplay.length > 15) {
         containerClass = 'xlarge-list';
-    } else if (sortedWantedListToDisplay.length > 9) {
+    } else if (finalWantedListToDisplay.length > 9) {
         containerClass = 'large-list';
     }
 
@@ -95,7 +104,7 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
 
     return (
         <div className={`wanted-list-container ${containerClass} ${gridClass}`}>
-            {sortedWantedListToDisplay.map((pokemon) => {
+            {finalWantedListToDisplay.map((pokemon) => {
                 const isNotWanted = localNotWantedList[pokemon.key];
                 const imageClasses = `wanted-item-img ${isNotWanted ? 'grey-out' : ''}`;
                 const backdropClasses = `lucky-backdrop ${isNotWanted ? 'grey-out' : ''}`;
