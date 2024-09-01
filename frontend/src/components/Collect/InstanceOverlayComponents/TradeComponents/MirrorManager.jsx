@@ -1,7 +1,7 @@
 // MirrorManager.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { createMirrorEntry } from './utils/createMirrorEntry';
+import { createMirrorEntry } from '../utils/createMirrorEntry';
 import './MirrorManager.css';
 
 const MirrorManager = ({

@@ -5,13 +5,13 @@ import EditSaveComponent from '../EditSaveComponent';
 import { PokemonDataContext } from '../../../../contexts/PokemonDataContext';
 import WantedListDisplay from './WantedListDisplay';
 import MirrorManager from './MirrorManager';
-import ImageGroup from './ImageGroup';
-import useImageSelection from './utils/useImageSelection.js';
-import { updateDisplayedList } from './utils/listUtils.js';
-import { EXCLUDE_IMAGES, INCLUDE_ONLY_IMAGES, FILTER_NAMES } from './utils/constants';
-import { TOOLTIP_TEXTS } from './utils/tooltipTexts';
-import usePokemonFiltering from './hooks/usePokemonFiltering';
-import useToggleEditMode from './hooks/useToggleEditMode'; 
+import ImageGroup from '../FilterImages.jsx';
+import useImageSelection from '../utils/useImageSelection.js';
+import { updateDisplayedList } from '../utils/listUtils.js';
+import { EXCLUDE_IMAGES, INCLUDE_ONLY_IMAGES, FILTER_NAMES } from '../utils/constants';
+import { TOOLTIP_TEXTS } from '../utils/tooltipTexts';
+import usePokemonFiltering from '../hooks/usePokemonFiltering.js';
+import useToggleEditMode from '../hooks/useToggleEditMode.js'; 
 
 const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClose, openWantedOverlay, variants }) => {
     const { not_wanted_list, wanted_filters } = pokemon.ownershipStatus;

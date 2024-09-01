@@ -6,14 +6,42 @@
     flex-direction: column;
 }
 
-.wanted-details-container h2 {
-    margin-bottom: 0px;
-    margin-top: 0px;
+.wanted-details-container .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    position: relative;
+    width: 100%;
 }
 
 .wanted-details-container .edit-save-container {
-    margin-left: -5px;
-    margin-top: -5px;
+    flex-shrink: 0;
+    margin-right: auto; /* Align to the far left */
+}
+
+.wanted-details-container .header-group-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.wanted-details-container .header-group {
+    text-align: center;
+    flex: 1; /* Make each header take half the space */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.wanted-details-container .header-group h3 {
+    margin-block-end: 0px;
+    margin-block-start: 0px;
+}
+
+.wanted-details-container h2 {
+    margin-bottom: 0;
+    margin-top: 0;
 }
 
 .wanted-details-container .grey-out {
@@ -29,7 +57,7 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     margin-top: 10px;
-    overflow-y: auto; /* Enables scrolling */
+    overflow-y: auto;
     max-height: 650px; /* Adjust based on your layout */
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* Internet Explorer 10+ */
@@ -43,11 +71,6 @@
     width: 120px; /* Adjusts width */
     height: auto; /* Maintains aspect ratio */
     border-radius: 8px; /* Rounds corners */
-}
-
-/* WantedTradeDetails.css additions for the toggle button */
-.wanted-details-container .trade-item {
-    position: relative;
 }
 
 .wanted-details-container .toggle-not-trade {
@@ -74,4 +97,26 @@
 
 .wanted-details-container .toggle-not-trade:hover {
     background-color: lightgray;
+}
+
+.wanted-details-container .image-row-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.wanted-details-container .image-group {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.wanted-details-container .image-row img {
+    width: 35px;
+    height: 35px;
+    margin-right: 5px;
+    object-fit: contain;
+    padding: 0;
+    border: none;
 }
