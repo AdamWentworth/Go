@@ -77,7 +77,7 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
       case 'Wanted':
         return (
           <div className="wanted-instance-overlay">
-            <div className="overlay-row other-overlays-row">
+            <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
               <WindowOverlay onClose={handleCloseOverlay} className="trade-details-window">
                 <WantedDetails
                   pokemon={selectedPokemon}

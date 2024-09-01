@@ -147,7 +147,7 @@
         position: relative;
         top: 0px; /* Eliminate this if it's still causing issues */
         width: 100%; /* Full width of the container */
-        flex-direction: column; /* Stack the elements vertically */
+        /* flex-direction: column; Stack the elements vertically */
     }
 
     .overlay-content {
@@ -192,7 +192,7 @@
 
     .overlay-row {
         display: flex;
-        flex-direction: column; /* Stack the rows vertically on smaller screens */
+        /* flex-direction: column; */
         width: 100%; /* Full width of the container */
         gap: 10px; /* Space between windows */
     }

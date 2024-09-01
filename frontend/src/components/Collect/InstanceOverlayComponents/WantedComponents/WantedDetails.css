@@ -155,3 +155,11 @@
     position: absolute;
     left: 0;
 }
+
+@media (max-width: 480px) {
+    .wanted-details-container .trade-item img.trade-item-img {
+        width: 80px;
+        height: auto;
+        border-radius: 8px;
+    }
+}
