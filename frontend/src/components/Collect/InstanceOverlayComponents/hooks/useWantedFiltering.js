@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import filters from '../utils/filters';
 import { EXCLUDE_IMAGES, INCLUDE_ONLY_IMAGES, FILTER_NAMES } from '../utils/constants';
 
-const usePokemonFiltering = (listsState, selectedExcludeImages, selectedIncludeOnlyImages, localWantedFilters, setLocalNotWantedList, localNotWantedList) => {
+const useWantedFiltering = (listsState, selectedExcludeImages, selectedIncludeOnlyImages, localWantedFilters, setLocalNotWantedList, localNotWantedList) => {
     const [filteredWantedList, setFilteredWantedList] = useState(listsState.wanted);
     const [filteredOutPokemon, setFilteredOutPokemon] = useState([]);
     const [updatedLocalWantedFilters, setUpdatedLocalWantedFilters] = useState({ ...localWantedFilters });
@@ -82,4 +82,4 @@ const usePokemonFiltering = (listsState, selectedExcludeImages, selectedIncludeO
     return { filteredWantedList, filteredOutPokemon, updatedLocalWantedFilters };
 };
 
-export default usePokemonFiltering;
+export default useWantedFiltering;

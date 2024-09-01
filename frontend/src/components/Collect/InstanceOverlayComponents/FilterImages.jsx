@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import './FilterImages.css';
 
-const ImageGroup = ({ images, selectedImages, toggleImageSelection, editMode, tooltipTexts }) => {
+const FilterImages = ({ images, selectedImages, toggleImageSelection, editMode, tooltipTexts }) => {
     const [hoveredImageIndex, setHoveredImageIndex] = useState(null);
 
     const handleMouseEnter = (index) => {
@@ -49,4 +49,4 @@ const ImageGroup = ({ images, selectedImages, toggleImageSelection, editMode, to
     );
 };
 
-export default ImageGroup;
+export default FilterImages;

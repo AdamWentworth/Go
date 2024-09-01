@@ -4,14 +4,18 @@ import './TradeDetails.css';
 import EditSaveComponent from '../EditSaveComponent';
 import { PokemonDataContext } from '../../../../contexts/PokemonDataContext';
 import WantedListDisplay from './WantedListDisplay';
+
 import MirrorManager from './MirrorManager';
-import ImageGroup from '../FilterImages.jsx';
+
+import FilterImages from '../FilterImages.jsx';
 import useImageSelection from '../utils/useImageSelection.js';
 import { updateDisplayedList } from '../utils/listUtils.js';
+
 import { EXCLUDE_IMAGES, INCLUDE_ONLY_IMAGES, FILTER_NAMES } from '../utils/constants';
 import { TOOLTIP_TEXTS } from '../utils/tooltipTexts';
-import usePokemonFiltering from '../hooks/usePokemonFiltering.js';
-import useToggleEditMode from '../hooks/useToggleEditMode.js'; 
+
+import usePokemonFiltering from '../hooks/useWantedFiltering.js';
+import useToggleEditModeTrade from '../hooks/useToggleEditModeTrade.js'; 
 
 const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClose, openWantedOverlay, variants }) => {
     const { not_wanted_list, wanted_filters } = pokemon.ownershipStatus;
@@ -57,7 +61,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
         setLocalNotWantedList({ ...not_wanted_list });
     }, []);
     
-    const { editMode, toggleEditMode } = useToggleEditMode(
+    const { editMode, toggleEditMode } = useToggleEditModeTrade(
         pokemon,
         ownershipData,
         isMirror,
@@ -130,7 +134,6 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
     }, []);
 
     const shouldShowFewLayout = isSmallScreen || filteredWantedListCount <= 15;
-    console.log(filteredWantedListCount)
 
     return (
         <div className="trade-details-container">
@@ -175,7 +178,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                 !shouldShowFewLayout ? (
                     <div className="image-row-container">
                         <div className="exclude-header-group image-group">
-                            <ImageGroup
+                            <FilterImages
                                 images={EXCLUDE_IMAGES}
                                 selectedImages={selectedExcludeImages}
                                 toggleImageSelection={toggleExcludeImageSelection}
@@ -184,7 +187,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                             />
                         </div>
                         <div className="include-only-header-group image-group">
-                            <ImageGroup
+                            <FilterImages
                                 images={INCLUDE_ONLY_IMAGES}
                                 selectedImages={selectedIncludeOnlyImages}
                                 toggleImageSelection={toggleIncludeOnlyImageSelection}
@@ -196,7 +199,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                 ) : (
                     <>
                         <div className="exclude-header-group image-group exclude-few">
-                            <ImageGroup
+                            <FilterImages
                                 images={EXCLUDE_IMAGES}
                                 selectedImages={selectedExcludeImages}
                                 toggleImageSelection={toggleExcludeImageSelection}
@@ -206,7 +209,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                         </div>
                         <div className="include-only-header-group include-few">
                             <h3>Include Only</h3>
-                            <ImageGroup
+                            <FilterImages
                                 images={INCLUDE_ONLY_IMAGES}
                                 selectedImages={selectedIncludeOnlyImages}
                                 toggleImageSelection={toggleIncludeOnlyImageSelection}

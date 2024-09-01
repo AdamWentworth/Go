@@ -1,10 +1,10 @@
-// useToggleEditMode.js
+// useToggleEditModeTrade.js
 
 import { useState } from 'react';
 import { updateNotTradeList } from '../ReciprocalUpdate.jsx';
 import { updateDisplayedList } from '../utils/listUtils.js';
 
-const useToggleEditMode = (
+const useToggleEditModeTrade = (
     pokemon,
     ownershipData,
     isMirror,
@@ -105,4 +105,4 @@ const useToggleEditMode = (
     return { editMode, toggleEditMode };
 };
 
-export default useToggleEditMode;
+export default useToggleEditModeTrade;

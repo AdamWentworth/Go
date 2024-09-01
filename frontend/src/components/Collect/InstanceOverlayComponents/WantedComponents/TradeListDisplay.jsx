@@ -2,7 +2,7 @@
 
 import React from 'react';
 import './TradeListDisplay.css';
-import useSortManager from '../../hooks/useSortManager';  // Ensure this import is correct
+import useSortManager from '../../hooks/useSortManager';
 
 const extractBaseKey = (pokemonKey) => {
     let keyParts = String(pokemonKey).split('_');
@@ -15,37 +15,30 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
         if (editMode) {
             const updatedNotTrade = !(localNotTradeList[key] || false);
             setLocalNotTradeList({ ...localNotTradeList, [key]: updatedNotTrade });
-            // Prepare for reciprocal updates once edit mode is off
             toggleReciprocalUpdates(key, updatedNotTrade);
         }
     };
 
-    // Extract the baseKey of the current Pokémon
     const baseKey = extractBaseKey(pokemon.pokemonKey);
 
-    // Filter the trade list to display relevant items
     const tradeListToDisplay = Object.entries(lists.trade)
         .filter(([key, details]) => {
             const itemBaseKey = extractBaseKey(key);
-            // Show all items if in edit mode or if not toggled off
             return (editMode || !localNotTradeList[key]) && 
                    (!details.mirror || (details.mirror && itemBaseKey === baseKey));
         });
 
-    // Transform the array to match the format expected by useSortManager
     const transformedTradeList = tradeListToDisplay.map(([key, details]) => ({
-        key: key, // Use the original key for React rendering
+        key,
         pokemon_id: details.pokemon_id,
         name: details.name,
         pokedex_number: details.pokedex_number,
-        image_url: details.currentImage, // Use the correct image URL
+        image_url: details.currentImage,
         currentImage: details.currentImage,
-        image_url_shiny: details.image_url_shiny || details.currentImage, // Use shiny image if available
-        ...details, // Include all other properties by spreading the details object
+        image_url_shiny: details.image_url_shiny || details.currentImage,
+        ...details,
     }));
 
-    // console.log(transformedTradeList)
-    // Apply sorting to the transformed list using the useSortManager hook
     const sortedTradeListToDisplay = useSortManager(transformedTradeList, sortType, sortMode, { 
         isShiny: false, 
         showShadow: false, 
@@ -69,12 +62,12 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
     return (
         <div className={`trade-list-container ${containerClass}`}>
             {sortedTradeListToDisplay.map((pokemon) => {
-                const isNotTrade = localNotTradeList[pokemon.key]; // Use the correct key to check if it's not for trade
+                const isNotTrade = localNotTradeList[pokemon.key];
                 const imageClasses = `trade-item-img ${isNotTrade ? 'grey-out' : ''}`;
                 return (
-                    <div key={pokemon.key} className="trade-item"> {/* Use the unique key here */}
+                    <div key={pokemon.key} className="trade-item">
                         <img 
-                            src={pokemon.image_url}  // Use the correct image URL for rendering
+                            src={pokemon.image_url}
                             alt={`Trade Pokémon ${pokemon.name}`}
                             className={imageClasses}
                         />
