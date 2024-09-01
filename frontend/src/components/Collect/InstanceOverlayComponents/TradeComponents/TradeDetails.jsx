@@ -14,7 +14,7 @@ import { updateDisplayedList } from '../utils/listUtils.js';
 import { EXCLUDE_IMAGES, INCLUDE_ONLY_IMAGES, FILTER_NAMES } from '../utils/constants';
 import { TOOLTIP_TEXTS } from '../utils/tooltipTexts';
 
-import usePokemonFiltering from '../hooks/useWantedFiltering.js';
+import useWantedFiltering from '../hooks/useWantedFiltering.js';
 import useToggleEditModeTrade from '../hooks/useToggleEditModeTrade.js'; 
 
 const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClose, openWantedOverlay, variants }) => {
@@ -44,7 +44,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
         setIsMirror(pokemon.ownershipStatus.mirror);
     }, [pokemon.ownershipStatus.mirror, wanted_filters]);
 
-    const { filteredWantedList, filteredOutPokemon, updatedLocalWantedFilters } = usePokemonFiltering(
+    const { filteredWantedList, filteredOutPokemon, updatedLocalWantedFilters } = useWantedFiltering(
         listsState,
         selectedExcludeImages,
         selectedIncludeOnlyImages,
@@ -148,7 +148,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                                 <h3>Exclude</h3>
                             </div>
                             <div className="header-group">
-                                <h3>Include Only</h3>
+                                <h3>Include</h3>
                             </div>
                         </>
                     ) : (
@@ -208,7 +208,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                             />
                         </div>
                         <div className="include-only-header-group include-few">
-                            <h3>Include Only</h3>
+                            <h3>Include</h3>
                             <FilterImages
                                 images={INCLUDE_ONLY_IMAGES}
                                 selectedImages={selectedIncludeOnlyImages}

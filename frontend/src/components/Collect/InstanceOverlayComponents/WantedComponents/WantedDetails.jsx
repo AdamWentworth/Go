@@ -83,7 +83,7 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) =>
                 </div>
                 {!shouldShowFewLayout && (
                     <div className="header-group include-header">
-                        <h3>Include Only</h3>
+                        <h3>Include</h3>
                     </div>
                 )}
             </div>
@@ -101,7 +101,7 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) =>
                     </div>
     
                     <div className="include-only-header-group">
-                        <h3>Include Only</h3>
+                        <h3>Include</h3>
                     </div>
                     <div className="image-group include-few">
                         <FilterImages

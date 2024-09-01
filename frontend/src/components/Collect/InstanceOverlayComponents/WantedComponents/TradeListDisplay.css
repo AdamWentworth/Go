@@ -1,19 +1,68 @@
-/* Default styles for larger screens */
-.wanted-details-container .trade-list-container.large-list {
+/* TradeListDisplay.css */
+
+.trade-item {
+    position: relative;
+    overflow: hidden;
+}
+
+.trade-item .trade-item-img {
+    position: relative;
+    z-index: 2; /* Ensure the image is in front of the backdrop */
+    filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2)); /* Adds a more prominent shadow to the non-transparent parts */
+}
+
+.trade-item .trade-item-img.grey-out {
+    filter: grayscale(100%) !important; /* Apply grayscale to the image and force it with !important */
+}
+
+.trade-item .toggle-not-trade {
+    position: absolute;
+    z-index: 3; /* Ensure the button is in front of the image */
+    bottom: 10px; /* Position the button near the bottom of the image */
+    right: 10px; /* Position the button near the right side of the image */
+}
+
+.trade-list-container.large-list {
     grid-template-columns: repeat(5, 1fr); /* 5 items per row if the list is large */
 }
 
-.wanted-details-container .trade-list-container.xlarge-list {
+.trade-list-container.xlarge-list {
     grid-template-columns: repeat(6, 1fr); /* 6 items per row if the list exceeds 15 */
 }
 
-.wanted-details-container .trade-list-container.xxlarge-list {
+.trade-list-container.xxlarge-list {
     grid-template-columns: repeat(9, 1fr); /* 9 items per row if the list exceeds 30 */
+}
+
+.toggle-not-trade {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background-color: white;
+    border: 1px solid black;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10; /* Ensure it is on top of the image */
+}
+
+.toggle-not-trade:focus {
+    outline: none;
+}
+
+.toggle-not-trade:hover {
+    background-color: lightgray;
 }
 
 /* Styles for small screens */
 @media (max-width: 1023px) {
-    .wanted-details-container .trade-list-container.max-3-per-row {
+    .trade-list-container.max-3-per-row {
         grid-template-columns: repeat(3, 1fr); /* Max 3 items per row on small screens */
     }
 }

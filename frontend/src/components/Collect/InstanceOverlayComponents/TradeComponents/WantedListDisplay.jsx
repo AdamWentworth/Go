@@ -1,4 +1,5 @@
 // WantedListDisplay.jsx
+
 import React, { useState, useEffect } from 'react';
 import './WantedListDisplay.css';
 import useSortManager from '../../hooks/useSortManager';  // Ensure this import is correct
