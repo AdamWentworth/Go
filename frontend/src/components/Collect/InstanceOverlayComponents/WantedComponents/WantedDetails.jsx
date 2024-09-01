@@ -75,18 +75,45 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) =>
     return (
         <div className="wanted-details-container">
             <div className="top-row">
-                <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
-                <div className="header-group">
-                    <h3>Exclude</h3>
+                <div className={shouldShowFewLayout ? "centered" : "left-side"}>
+                    <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+                    <div className="header-group exclude-header">
+                        <h3>Exclude</h3>
+                    </div>
                 </div>
                 {!shouldShowFewLayout && (
-                    <div className="header-group">
+                    <div className="header-group include-header">
                         <h3>Include Only</h3>
                     </div>
                 )}
             </div>
-
-            {!shouldShowFewLayout ? (
+    
+            {shouldShowFewLayout ? (
+                <>
+                    <div className="image-group exclude-few">
+                        <FilterImages
+                            images={INCLUDE_ONLY_IMAGES}
+                            selectedImages={selectedExcludeImages}
+                            toggleImageSelection={toggleExcludeImageSelection}
+                            editMode={editMode}
+                            tooltipTexts={FILTER_NAMES.slice(EXCLUDE_IMAGES.length).map(name => TOOLTIP_TEXTS[name])}
+                        />
+                    </div>
+    
+                    <div className="include-only-header-group">
+                        <h3>Include Only</h3>
+                    </div>
+                    <div className="image-group include-few">
+                        <FilterImages
+                            images={EXCLUDE_IMAGES}
+                            selectedImages={selectedIncludeOnlyImages}
+                            toggleImageSelection={toggleIncludeOnlyImageSelection}
+                            editMode={editMode}
+                            tooltipTexts={FILTER_NAMES.map(name => TOOLTIP_TEXTS[name])}
+                        />
+                    </div>
+                </>
+            ) : (
                 <div className="image-row-container">
                     <div className="exclude-header-group image-group">
                         <FilterImages
@@ -107,30 +134,8 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) =>
                         />
                     </div>
                 </div>
-            ) : (
-                <>
-                    <div className="exclude-header-group image-group exclude-few">
-                        <FilterImages
-                            images={INCLUDE_ONLY_IMAGES}
-                            selectedImages={selectedExcludeImages}
-                            toggleImageSelection={toggleExcludeImageSelection}
-                            editMode={editMode}
-                            tooltipTexts={FILTER_NAMES.slice(EXCLUDE_IMAGES.length).map(name => TOOLTIP_TEXTS[name])}
-                        />
-                    </div>
-                    <div className="include-only-header-group image-group include-few">
-                        <h3>Include Only</h3>
-                        <FilterImages
-                            images={EXCLUDE_IMAGES}
-                            selectedImages={selectedIncludeOnlyImages}
-                            toggleImageSelection={toggleIncludeOnlyImageSelection}
-                            editMode={editMode}
-                            tooltipTexts={FILTER_NAMES.map(name => TOOLTIP_TEXTS[name])}
-                        />
-                    </div>
-                </>
             )}
-
+    
             <h2>For Trade List:</h2>
             <TradeListDisplay
                 pokemon={pokemon}
@@ -144,7 +149,7 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) =>
                 sortMode={sortMode}
             />
         </div>
-    );
+    );               
 };
 
 export default WantedDetails;

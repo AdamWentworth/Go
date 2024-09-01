@@ -10,28 +10,58 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
-    position: relative;
     width: 100%;
+    position: relative; /* Allows for absolute positioning */
+}
+
+.wanted-details-container .left-side {
+    display: flex;
+    align-items: flex-end;
+    width: 50%; /* Take up the first half of the top row */
+    position: relative;
+    margin-top: -20px;
+}
+
+.wanted-details-container .image-group.include-few {
+    margin-bottom: 20px;
+}
+
+.wanted-details-container .image-row-container {
+    margin-bottom: 10px;
+}
+
+.wanted-details-container .centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+    margin-top: 0px;
+    margin-bottom: 15px;
+}
+
+.wanted-details-container .include-only-header-group {
+    margin-top: -10px;
+    margin-bottom: -10px;
 }
 
 .wanted-details-container .edit-save-container {
     flex-shrink: 0;
     margin-right: auto; /* Align to the far left */
-}
-
-.wanted-details-container .header-group-container {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
+    margin-top: 20px;
 }
 
 .wanted-details-container .header-group {
-    text-align: center;
-    flex: 1; /* Make each header take half the space */
     display: flex;
     justify-content: center;
     align-items: center;
+    width: 50%;
+}
+
+.wanted-details-container .header-group.exclude-header {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .wanted-details-container .header-group h3 {
@@ -119,4 +149,9 @@
     object-fit: contain;
     padding: 0;
     border: none;
+}
+
+.wanted-details-container .centered .edit-save-container {
+    position: absolute;
+    left: 0;
 }

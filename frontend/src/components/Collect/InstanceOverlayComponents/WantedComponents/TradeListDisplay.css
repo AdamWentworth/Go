@@ -1,3 +1,4 @@
+/* Default styles for larger screens */
 .wanted-details-container .trade-list-container.large-list {
     grid-template-columns: repeat(5, 1fr); /* 5 items per row if the list is large */
 }
@@ -10,6 +11,9 @@
     grid-template-columns: repeat(9, 1fr); /* 9 items per row if the list exceeds 30 */
 }
 
-.trade-list-container .trade-item {
-    filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2)); /* Adds a more prominent shadow to the non-transparent parts */
+/* Styles for small screens */
+@media (max-width: 1023px) {
+    .wanted-details-container .trade-list-container.max-3-per-row {
+        grid-template-columns: repeat(3, 1fr); /* Max 3 items per row on small screens */
+    }
 }

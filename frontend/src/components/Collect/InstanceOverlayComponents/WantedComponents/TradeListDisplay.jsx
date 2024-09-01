@@ -1,6 +1,6 @@
 // TradeListDisplay.jsx
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './TradeListDisplay.css';
 import useSortManager from '../../hooks/useSortManager';
 
@@ -11,6 +11,20 @@ const extractBaseKey = (pokemonKey) => {
 };
 
 const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeList, editMode, toggleReciprocalUpdates, sortType, sortMode }) => {
+    const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsSmallScreen(window.innerWidth < 1024);
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+
     const handleNotTradeToggle = (key) => {
         if (editMode) {
             const updatedNotTrade = !(localNotTradeList[key] || false);
@@ -59,8 +73,11 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
         containerClass = 'large-list';
     }
 
+    // Conditionally limit max items per row to 3 on small screens
+    const gridClass = isSmallScreen ? 'max-3-per-row' : '';
+
     return (
-        <div className={`trade-list-container ${containerClass}`}>
+        <div className={`trade-list-container ${containerClass} ${gridClass}`}>
             {sortedTradeListToDisplay.map((pokemon) => {
                 const isNotTrade = localNotTradeList[pokemon.key];
                 const imageClasses = `trade-item-img ${isNotTrade ? 'grey-out' : ''}`;
