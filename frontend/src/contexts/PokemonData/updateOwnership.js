@@ -2,7 +2,7 @@
 
 import { updatePokemonOwnership } from '../../components/Collect/PokemonOwnership/PokemonOwnershipUpdateService';
 
-export const updateOwnership = (data, setData, ownershipDataRef) => (pokemonKeys, newStatus) => {
+export const updateOwnership = (data, setData, ownershipDataRef, updateLists) => (pokemonKeys, newStatus) => {
     const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
     const tempOwnershipData = { ...ownershipDataRef.current };
     let processedKeys = 0;

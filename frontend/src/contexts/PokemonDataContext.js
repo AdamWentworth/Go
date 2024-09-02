@@ -44,14 +44,25 @@ export const PokemonDataProvider = ({ children }) => {
 
     const updateLists = useCallback(importedUpdateLists(data, setData), [data.ownershipData, data.variants]);
 
+    const relevantOwnershipData = useMemo(() => 
+        Object.fromEntries(
+            Object.entries(data.ownershipData).map(([key, pokemon]) => [
+                key,
+                {
+                    is_for_trade: pokemon.is_for_trade,
+                    is_wanted: pokemon.is_wanted,
+                    is_owned: pokemon.is_owned,
+                    is_unowned: pokemon.is_unowned,
+                },
+            ])
+        ), [data.ownershipData]
+    );
+    
     useEffect(() => {
         if (!data.loading) {
             updateLists();
         }
-    }, [data.ownershipData, data.variants]);
-
-    let scheduledSync;
-    let timer;
+    }, [relevantOwnershipData, data.variants]);    
 
     useEffect(() => {
         if (isLoggedIn) {
