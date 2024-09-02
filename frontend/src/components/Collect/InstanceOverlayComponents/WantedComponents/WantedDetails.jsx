@@ -10,28 +10,79 @@ import { updateNotWantedList } from '../ReciprocalUpdate.jsx';
 import FilterImages from '../FilterImages.jsx';
 import useImageSelection from '../utils/useImageSelection';
 
-import { EXCLUDE_IMAGES, INCLUDE_ONLY_IMAGES, FILTER_NAMES } from '../utils/constants';
+import { EXCLUDE_IMAGES_trade, INCLUDE_IMAGES_trade, FILTER_NAMES } from '../utils/constants';
 import { TOOLTIP_TEXTS } from '../utils/tooltipTexts';
 
 import useTradeFiltering from '../hooks/useTradeFiltering';
 
 const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) => {
+    const { not_trade_list, trade_filters } = pokemon.ownershipStatus;
     const [editMode, setEditMode] = useState(false);
-    const [localNotTradeList, setLocalNotTradeList] = useState({ ...pokemon.ownershipStatus.not_trade_list });
-    const [pendingUpdates, setPendingUpdates] = useState({});
+    const [localNotTradeList, setLocalNotTradeList] = useState({ ...not_trade_list });
+    const [localTradeFilters, setLocalTradeFilters] = useState({ ...trade_filters });
     const { updateDetails } = useContext(PokemonDataContext);
+    const [listsState, setListsState] = useState(lists);
+    const [pendingUpdates, setPendingUpdates] = useState({});
     const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
 
-    const { selectedImages: selectedExcludeImages, toggleImageSelection: toggleExcludeImageSelection, setSelectedImages: setSelectedExcludeImages } = useImageSelection(INCLUDE_ONLY_IMAGES);
-    const { selectedImages: selectedIncludeOnlyImages, toggleImageSelection: toggleIncludeOnlyImageSelection, setSelectedImages: setSelectedIncludeOnlyImages } = useImageSelection(EXCLUDE_IMAGES);
+    // Swap the images used for the states
+    const { selectedImages: selectedExcludeImages, toggleImageSelection: toggleExcludeImageSelection, setSelectedImages: setSelectedExcludeImages } = useImageSelection(EXCLUDE_IMAGES_trade); // Previously was INCLUDE_IMAGES_trade
+    const { selectedImages: selectedIncludeOnlyImages, toggleImageSelection: toggleIncludeOnlyImageSelection, setSelectedImages: setSelectedIncludeOnlyImages } = useImageSelection(INCLUDE_IMAGES_trade); // Previously was EXCLUDE_IMAGES_trade
+
+    const initializeSelection = (filterNames, filters) => {
+        return filterNames.map(name => !!filters[name]);
+    };
 
     useEffect(() => {
-        const { not_trade_filters } = pokemon.ownershipStatus;
-        if (not_trade_filters) {
-            setSelectedIncludeOnlyImages(initializeSelection(FILTER_NAMES.slice(0, EXCLUDE_IMAGES.length), not_trade_filters));
-            setSelectedExcludeImages(initializeSelection(FILTER_NAMES.slice(EXCLUDE_IMAGES.length), not_trade_filters));
+        if (trade_filters) {
+            // Note: Use the first half of FILTER_NAMES for exclude images and the second half for include images
+            setSelectedExcludeImages(initializeSelection(FILTER_NAMES.slice(6), trade_filters));
+            setSelectedIncludeOnlyImages(initializeSelection(FILTER_NAMES.slice(0, 6), trade_filters));
         }
-    }, [pokemon.ownershipStatus.not_trade_filters]);
+    }, [trade_filters]);
+
+    const { filteredTradeList, filteredOutPokemon, updatedLocalTradeFilters } = useTradeFiltering(
+        listsState,
+        selectedExcludeImages,
+        selectedIncludeOnlyImages,
+        localTradeFilters,
+        setLocalNotTradeList,
+        localNotTradeList
+    );
+
+    useEffect(() => {
+        setLocalTradeFilters(updatedLocalTradeFilters);
+    }, [updatedLocalTradeFilters]);
+
+    useEffect(() => {
+        setLocalNotTradeList({ ...not_trade_list });
+    }, []);
+
+    const toggleEditMode = () => {
+        if (editMode) {
+            Object.keys(pendingUpdates).forEach(key => {
+                updateNotWantedList(ownershipData, pokemon.pokemonKey, key, pendingUpdates[key]);
+            });
+            setPendingUpdates({});
+
+            console.log(`Saving: `, pokemon.pokemonKey);
+            console.log(`Not Trade List: `, localNotTradeList);
+            console.log(`Trade Filters: `, updatedLocalTradeFilters);
+            // Save the updated not_trade_list and trade_filters
+            updateDetails(pokemon.pokemonKey, {
+                not_trade_list: localNotTradeList,
+                trade_filters: updatedLocalTradeFilters,
+            });
+        }
+        setEditMode(!editMode);
+    };
+
+    const toggleReciprocalUpdates = (key, updatedNotTrade) => {
+        setPendingUpdates(prev => ({ ...prev, [key]: updatedNotTrade }));
+    };
+
+    // Calculate the number of items in filteredTradeList excluding those in the not_trade_list
+    const filteredTradeListCount = Object.keys(filteredTradeList).filter(key => !localNotTradeList[key]).length;
 
     useEffect(() => {
         const handleResize = () => {
@@ -43,33 +94,6 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) =>
         };
     }, []);
 
-    const toggleEditMode = () => {
-        if (editMode) {
-            Object.keys(pendingUpdates).forEach(key => {
-                updateNotWantedList(ownershipData, pokemon.pokemonKey, key, pendingUpdates[key]);
-            });
-            setPendingUpdates({});
-            updateDetails(pokemon.pokemonKey, {
-                not_trade_list: localNotTradeList
-            });
-        }
-        setEditMode(!editMode);
-    };
-
-    const toggleReciprocalUpdates = (key, updatedNotTrade) => {
-        setPendingUpdates(prev => ({ ...prev, [key]: updatedNotTrade }));
-    };
-
-    const { filteredTradeList } = useTradeFiltering(
-        lists,
-        selectedExcludeImages,
-        selectedIncludeOnlyImages,
-        localNotTradeList,
-        setLocalNotTradeList,
-        localNotTradeList
-    );
-
-    const filteredTradeListCount = Object.keys(filteredTradeList).length;
     const shouldShowFewLayout = isSmallScreen || filteredTradeListCount <= 15;
 
     return (
@@ -92,11 +116,11 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) =>
                 <>
                     <div className="image-group exclude-few">
                         <FilterImages
-                            images={INCLUDE_ONLY_IMAGES}
+                            images={EXCLUDE_IMAGES_trade} // Previously was INCLUDE_IMAGES_trade
                             selectedImages={selectedExcludeImages}
                             toggleImageSelection={toggleExcludeImageSelection}
                             editMode={editMode}
-                            tooltipTexts={FILTER_NAMES.slice(EXCLUDE_IMAGES.length).map(name => TOOLTIP_TEXTS[name])}
+                            tooltipTexts={FILTER_NAMES.slice(6).map(name => TOOLTIP_TEXTS[name])} // Slice for exclude tooltips
                         />
                     </div>
     
@@ -105,11 +129,11 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) =>
                     </div>
                     <div className="image-group include-few">
                         <FilterImages
-                            images={EXCLUDE_IMAGES}
+                            images={INCLUDE_IMAGES_trade} // Previously was EXCLUDE_IMAGES_trade
                             selectedImages={selectedIncludeOnlyImages}
                             toggleImageSelection={toggleIncludeOnlyImageSelection}
                             editMode={editMode}
-                            tooltipTexts={FILTER_NAMES.map(name => TOOLTIP_TEXTS[name])}
+                            tooltipTexts={FILTER_NAMES.slice(0, 6).map(name => TOOLTIP_TEXTS[name])} // Slice for include tooltips
                         />
                     </div>
                 </>
@@ -117,20 +141,20 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) =>
                 <div className="image-row-container">
                     <div className="exclude-header-group image-group">
                         <FilterImages
-                            images={INCLUDE_ONLY_IMAGES}
+                            images={EXCLUDE_IMAGES_trade} // Previously was INCLUDE_IMAGES_trade
                             selectedImages={selectedExcludeImages}
                             toggleImageSelection={toggleExcludeImageSelection}
                             editMode={editMode}
-                            tooltipTexts={FILTER_NAMES.slice(EXCLUDE_IMAGES.length).map(name => TOOLTIP_TEXTS[name])}
+                            tooltipTexts={FILTER_NAMES.slice(6).map(name => TOOLTIP_TEXTS[name])} // Slice for exclude tooltips
                         />
                     </div>
                     <div className="include-only-header-group image-group">
                         <FilterImages
-                            images={EXCLUDE_IMAGES}
+                            images={INCLUDE_IMAGES_trade} // Previously was EXCLUDE_IMAGES_trade
                             selectedImages={selectedIncludeOnlyImages}
                             toggleImageSelection={toggleIncludeOnlyImageSelection}
                             editMode={editMode}
-                            tooltipTexts={FILTER_NAMES.map(name => TOOLTIP_TEXTS[name])}
+                            tooltipTexts={FILTER_NAMES.slice(0, 6).map(name => TOOLTIP_TEXTS[name])} // Slice for include tooltips
                         />
                     </div>
                 </div>
@@ -149,7 +173,7 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) =>
                 sortMode={sortMode}
             />
         </div>
-    );               
+    );
 };
 
 export default WantedDetails;

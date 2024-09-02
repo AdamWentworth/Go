@@ -11,7 +11,7 @@ import FilterImages from '../FilterImages.jsx';
 import useImageSelection from '../utils/useImageSelection.js';
 import { updateDisplayedList } from '../utils/listUtils.js';
 
-import { EXCLUDE_IMAGES, INCLUDE_ONLY_IMAGES, FILTER_NAMES } from '../utils/constants';
+import { EXCLUDE_IMAGES_wanted, INCLUDE_IMAGES_wanted, FILTER_NAMES } from '../utils/constants';
 import { TOOLTIP_TEXTS } from '../utils/tooltipTexts';
 
 import useWantedFiltering from '../hooks/useWantedFiltering.js';
@@ -28,8 +28,8 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
     const [pendingUpdates, setPendingUpdates] = useState({});
     const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
 
-    const { selectedImages: selectedExcludeImages, toggleImageSelection: toggleExcludeImageSelection, setSelectedImages: setSelectedExcludeImages } = useImageSelection(EXCLUDE_IMAGES);
-    const { selectedImages: selectedIncludeOnlyImages, toggleImageSelection: toggleIncludeOnlyImageSelection, setSelectedImages: setSelectedIncludeOnlyImages } = useImageSelection(INCLUDE_ONLY_IMAGES);
+    const { selectedImages: selectedExcludeImages, toggleImageSelection: toggleExcludeImageSelection, setSelectedImages: setSelectedExcludeImages } = useImageSelection(EXCLUDE_IMAGES_wanted);
+    const { selectedImages: selectedIncludeOnlyImages, toggleImageSelection: toggleIncludeOnlyImageSelection, setSelectedImages: setSelectedIncludeOnlyImages } = useImageSelection(INCLUDE_IMAGES_wanted);
 
     const initializeSelection = (filterNames, filters) => {
         return filterNames.map(name => !!filters[name]);
@@ -37,8 +37,8 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
 
     useEffect(() => {
         if (wanted_filters) {
-            setSelectedExcludeImages(initializeSelection(FILTER_NAMES.slice(0, EXCLUDE_IMAGES.length), wanted_filters));
-            setSelectedIncludeOnlyImages(initializeSelection(FILTER_NAMES.slice(EXCLUDE_IMAGES.length), wanted_filters));
+            setSelectedExcludeImages(initializeSelection(FILTER_NAMES.slice(0, EXCLUDE_IMAGES_wanted.length), wanted_filters));
+            setSelectedIncludeOnlyImages(initializeSelection(FILTER_NAMES.slice(EXCLUDE_IMAGES_wanted.length), wanted_filters));
         }
 
         setIsMirror(pokemon.ownershipStatus.mirror);
@@ -136,8 +136,8 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
     const shouldShowFewLayout = isSmallScreen || filteredWantedListCount <= 15;
 
     const handleResetFilters = () => {
-        setSelectedExcludeImages(EXCLUDE_IMAGES.map(() => false));
-        setSelectedIncludeOnlyImages(INCLUDE_ONLY_IMAGES.map(() => false));
+        setSelectedExcludeImages(EXCLUDE_IMAGES_wanted.map(() => false));
+        setSelectedIncludeOnlyImages(INCLUDE_IMAGES_wanted.map(() => false));
         setLocalWantedFilters({});
         setLocalNotWantedList({});
     };    
@@ -147,6 +147,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
             <div className={`top-row ${isMirror ? 'few-wanted' : ''}`}>
                 <div className="edit-save-container">
                     <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+                    {!isMirror && (
                     <div className={`reset-container ${editMode ? 'editable' : ''}`}>
                         <img
                             src={`${process.env.PUBLIC_URL}/images/reset.png`}
@@ -159,6 +160,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                             onClick={editMode ? handleResetFilters : null}
                         />
                     </div>
+                    )}
                 </div>
                 {!isMirror ? (
                     !shouldShowFewLayout ? (
@@ -198,7 +200,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                     <div className="image-row-container">
                         <div className="exclude-header-group image-group">
                             <FilterImages
-                                images={EXCLUDE_IMAGES}
+                                images={EXCLUDE_IMAGES_wanted}
                                 selectedImages={selectedExcludeImages}
                                 toggleImageSelection={toggleExcludeImageSelection}
                                 editMode={editMode}
@@ -207,11 +209,11 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                         </div>
                         <div className="include-only-header-group image-group">
                             <FilterImages
-                                images={INCLUDE_ONLY_IMAGES}
+                                images={INCLUDE_IMAGES_wanted}
                                 selectedImages={selectedIncludeOnlyImages}
                                 toggleImageSelection={toggleIncludeOnlyImageSelection}
                                 editMode={editMode}
-                                tooltipTexts={FILTER_NAMES.slice(EXCLUDE_IMAGES.length).map(name => TOOLTIP_TEXTS[name])}
+                                tooltipTexts={FILTER_NAMES.slice(EXCLUDE_IMAGES_wanted.length).map(name => TOOLTIP_TEXTS[name])}
                             />
                         </div>
                     </div>
@@ -219,7 +221,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                     <>
                         <div className="exclude-header-group image-group exclude-few">
                             <FilterImages
-                                images={EXCLUDE_IMAGES}
+                                images={EXCLUDE_IMAGES_wanted}
                                 selectedImages={selectedExcludeImages}
                                 toggleImageSelection={toggleExcludeImageSelection}
                                 editMode={editMode}
@@ -229,11 +231,11 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                         <div className="include-only-header-group include-few">
                             <h3>Include</h3>
                             <FilterImages
-                                images={INCLUDE_ONLY_IMAGES}
+                                images={INCLUDE_IMAGES_wanted}
                                 selectedImages={selectedIncludeOnlyImages}
                                 toggleImageSelection={toggleIncludeOnlyImageSelection}
                                 editMode={editMode}
-                                tooltipTexts={FILTER_NAMES.slice(EXCLUDE_IMAGES.length).map(name => TOOLTIP_TEXTS[name])}
+                                tooltipTexts={FILTER_NAMES.slice(EXCLUDE_IMAGES_wanted.length).map(name => TOOLTIP_TEXTS[name])}
                             />
                         </div>
                     </>

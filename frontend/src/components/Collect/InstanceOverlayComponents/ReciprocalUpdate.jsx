@@ -50,4 +50,6 @@ export const updateNotWantedList = (ownershipData, currentPokemonKey, otherPokem
 
     ownershipData[otherPokemonKey].not_wanted_list = notWantedList;
     console.log(`Updated ${otherPokemonKey}'s not_wanted_list to include/exclude ${currentPokemonKey}`);
+
+    return notWantedList
 };

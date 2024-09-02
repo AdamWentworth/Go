@@ -96,7 +96,7 @@ const MirrorManager = ({
             !ownershipData[key].is_for_trade &&
             ownershipData[key].pokemon_id === pokemon.pokemon_id
         );
-        ownershipData[foundKey].mirror = true
+        // ownershipData[foundKey].mirror = true
         console.log("findExistingMirrorKey:", foundKey || "No key found");
         return foundKey;
     };

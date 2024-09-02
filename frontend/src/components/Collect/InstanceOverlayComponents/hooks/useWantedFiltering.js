@@ -1,8 +1,8 @@
 // hooks/useWantedFiltering.js
 
 import { useState, useEffect } from 'react';
-import filters from '../utils/filters';
-import { EXCLUDE_IMAGES, INCLUDE_ONLY_IMAGES, FILTER_NAMES } from '../utils/constants';
+import filters from '../utils/wantedFilters';
+import { EXCLUDE_IMAGES_wanted, INCLUDE_IMAGES_wanted, FILTER_NAMES } from '../utils/constants';
 
 const useWantedFiltering = (listsState, selectedExcludeImages, selectedIncludeOnlyImages, localWantedFilters, setLocalNotWantedList, localNotWantedList, editMode) => {
     const [filteredWantedList, setFilteredWantedList] = useState(listsState.wanted);
@@ -40,7 +40,7 @@ const useWantedFiltering = (listsState, selectedExcludeImages, selectedIncludeOn
 
         // Apply include-only filters
         selectedIncludeOnlyImages.forEach((isSelected, index) => {
-            const filterIndex = EXCLUDE_IMAGES.length + index;
+            const filterIndex = EXCLUDE_IMAGES_wanted.length + index;
             const filterName = FILTER_NAMES[filterIndex];
             if (isSelected && filters[filterName]) {
                 updatedList = filters[filterName](updatedList);
