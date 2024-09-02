@@ -26,6 +26,26 @@
     left: 0;
 }
 
+.trade-details-container .edit-save-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.trade-details-container .reset-container {
+    margin-top: 100px;
+    margin-left: -2px;
+    filter: invert(1);
+}
+
+.trade-details-container .reset-container img {
+    transition: filter 0.3s ease, cursor 0.3s ease;
+}
+
+.trade-details-container .reset-container.editable img {
+    cursor: pointer;
+}
+
 .trade-details-container .mirror {
     right: 0;
 }

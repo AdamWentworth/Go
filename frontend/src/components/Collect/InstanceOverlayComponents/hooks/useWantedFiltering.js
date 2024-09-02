@@ -1,10 +1,10 @@
-// useWantedFiltering.js
+// hooks/useWantedFiltering.js
 
 import { useState, useEffect } from 'react';
 import filters from '../utils/filters';
 import { EXCLUDE_IMAGES, INCLUDE_ONLY_IMAGES, FILTER_NAMES } from '../utils/constants';
 
-const useWantedFiltering = (listsState, selectedExcludeImages, selectedIncludeOnlyImages, localWantedFilters, setLocalNotWantedList, localNotWantedList) => {
+const useWantedFiltering = (listsState, selectedExcludeImages, selectedIncludeOnlyImages, localWantedFilters, setLocalNotWantedList, localNotWantedList, editMode) => {
     const [filteredWantedList, setFilteredWantedList] = useState(listsState.wanted);
     const [filteredOutPokemon, setFilteredOutPokemon] = useState([]);
     const [updatedLocalWantedFilters, setUpdatedLocalWantedFilters] = useState({ ...localWantedFilters });
@@ -21,15 +21,17 @@ const useWantedFiltering = (listsState, selectedExcludeImages, selectedIncludeOn
                 updatedList = filters[filterName](updatedList);
                 updatedLocalWantedFilters[filterName] = true;
             } else {
+                // Re-evaluate visibility of Pokémon previously filtered by this filter
                 Object.keys(listsState.wanted).forEach(key => {
                     if (!filters[filterName](updatedList)[key] && updatedList[key]) {
                         reappearingPokemon.push(key);
                     }
                 });
-                delete updatedLocalWantedFilters[filterName];
+                updatedLocalWantedFilters[filterName] = false;
             }
         });
 
+        // Track Pokémon filtered out by exclude filters
         Object.keys(listsState.wanted).forEach(key => {
             if (!updatedList[key]) {
                 newlyFilteredOutPokemon.push(key);
@@ -37,45 +39,54 @@ const useWantedFiltering = (listsState, selectedExcludeImages, selectedIncludeOn
         });
 
         // Apply include-only filters
-        if (selectedIncludeOnlyImages.some(isSelected => isSelected)) {
-            let includeOnlyResults = {};
-            selectedIncludeOnlyImages.forEach((isSelected, index) => {
-                if (isSelected) {
-                    const filterIndex = EXCLUDE_IMAGES.length + index;
-                    const filterName = FILTER_NAMES[filterIndex];
-                    const filtered = filters[filterName](listsState.wanted);
-                    Object.keys(filtered).forEach(key => {
-                        if (filtered[key]) {
-                            includeOnlyResults[key] = filtered[key];
-                        }
-                    });
-                    updatedLocalWantedFilters[filterName] = true;
-                } else {
-                    delete updatedLocalWantedFilters[FILTER_NAMES[EXCLUDE_IMAGES.length + index]];
-                }
-            });
+        selectedIncludeOnlyImages.forEach((isSelected, index) => {
+            const filterIndex = EXCLUDE_IMAGES.length + index;
+            const filterName = FILTER_NAMES[filterIndex];
+            if (isSelected && filters[filterName]) {
+                updatedList = filters[filterName](updatedList);
+                updatedLocalWantedFilters[filterName] = true;
+            } else {
+                // Re-evaluate visibility of Pokémon previously filtered by this filter
+                Object.keys(listsState.wanted).forEach(key => {
+                    if (!filters[filterName](updatedList)[key] && updatedList[key]) {
+                        reappearingPokemon.push(key);
+                    }
+                });
+                updatedLocalWantedFilters[filterName] = false;
+            }
+        });
 
-            updatedList = includeOnlyResults;
-        }
-
+        // Track Pokémon filtered out by include-only filters
         Object.keys(listsState.wanted).forEach(key => {
             if (!updatedList[key] && !newlyFilteredOutPokemon.includes(key)) {
                 newlyFilteredOutPokemon.push(key);
             }
         });
 
+        // If in edit mode, include the filtered-out Pokémon in the final list (greyed out)
+        if (editMode) {
+            newlyFilteredOutPokemon.forEach(key => {
+                if (!localNotWantedList[key]) {
+                    updatedList[key] = { ...listsState.wanted[key], greyedOut: true };
+                    setLocalNotWantedList(prev => ({ ...prev, [key]: true }));
+                }
+            });
+        }
+
         setFilteredWantedList(updatedList);
         setFilteredOutPokemon(newlyFilteredOutPokemon);
         setUpdatedLocalWantedFilters({ ...updatedLocalWantedFilters });
 
+        // Remove reappearing Pokémon from the not_wanted_list
         if (reappearingPokemon.length > 0) {
             const updatedNotWantedList = { ...localNotWantedList };
             reappearingPokemon.forEach(key => {
                 delete updatedNotWantedList[key];
             });
-        }        
+            // setLocalNotWantedList(updatedNotWantedList); // Un-comment if you want to reflect these changes immediately
+        }
 
-    }, [selectedExcludeImages, selectedIncludeOnlyImages, listsState.wanted]);
+    }, [selectedExcludeImages, selectedIncludeOnlyImages, listsState.wanted, editMode]);
 
     return { filteredWantedList, filteredOutPokemon, updatedLocalWantedFilters };
 };

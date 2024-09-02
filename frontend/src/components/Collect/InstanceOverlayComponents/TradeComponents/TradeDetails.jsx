@@ -135,11 +135,30 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
 
     const shouldShowFewLayout = isSmallScreen || filteredWantedListCount <= 15;
 
+    const handleResetFilters = () => {
+        setSelectedExcludeImages(EXCLUDE_IMAGES.map(() => false));
+        setSelectedIncludeOnlyImages(INCLUDE_ONLY_IMAGES.map(() => false));
+        setLocalWantedFilters({});
+        setLocalNotWantedList({});
+    };    
+
     return (
         <div className="trade-details-container">
             <div className={`top-row ${isMirror ? 'few-wanted' : ''}`}>
                 <div className="edit-save-container">
                     <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+                    <div className={`reset-container ${editMode ? 'editable' : ''}`}>
+                        <img
+                            src={`${process.env.PUBLIC_URL}/images/reset.png`}
+                            alt="Reset Filters"
+                            style={{
+                                cursor: editMode ? 'pointer' : 'default',
+                                width: '25px',
+                                height: 'auto'
+                            }}
+                            onClick={editMode ? handleResetFilters : null}
+                        />
+                    </div>
                 </div>
                 {!isMirror ? (
                     !shouldShowFewLayout ? (
@@ -173,7 +192,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                     />
                 </div>
             </div>
-
+    
             {!isMirror && (
                 !shouldShowFewLayout ? (
                     <div className="image-row-container">
@@ -220,7 +239,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                     </>
                 )
             )}
-
+        
             <div>
                 <h2>Wanted List:</h2>
                 <WantedListDisplay
@@ -240,7 +259,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                 />
             </div>
         </div>
-    );
+    );        
 };
 
 export default TradeDetails;
