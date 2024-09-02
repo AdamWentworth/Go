@@ -36,6 +36,11 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
     setCurrentOverlay('Wanted');
   };
 
+  const handleOpenTradeOverlay = (pokemonData) => {
+    setSelectedPokemon(pokemonData);
+    setCurrentOverlay('Trade');
+  };
+
   const handleCloseOverlay = () => {
     onClose();
     setCurrentOverlay(ownershipFilter);
@@ -85,6 +90,8 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
                   ownershipData={ownershipData}
                   sortType={sortType}
                   sortMode={sortMode}
+                  openTradeOverlay={handleOpenTradeOverlay}
+                  variants={variants}
                 />
               </WindowOverlay>
               <WindowOverlay onClose={handleCloseOverlay} className="wanted-instance-window">

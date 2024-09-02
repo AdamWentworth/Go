@@ -10,7 +10,7 @@ const extractBaseKey = (pokemonKey) => {
     return keyParts.join('_');
 };
 
-const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeList, editMode, toggleReciprocalUpdates, sortType, sortMode }) => {
+const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeList, editMode, toggleReciprocalUpdates, sortType, sortMode, onPokemonClick }) => {
     const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
 
     useEffect(() => {
@@ -81,8 +81,19 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
             {sortedTradeListToDisplay.map((pokemon) => {
                 const isNotTrade = localNotTradeList[pokemon.key];
                 const imageClasses = `trade-item-img ${isNotTrade ? 'grey-out' : ''}`;
+
                 return (
-                    <div key={pokemon.key} className="trade-item">
+                    <div
+                        key={pokemon.key}
+                        className="trade-item"
+                        onClick={() => {
+                            if (!editMode) {
+                                // Only trigger onPokemonClick when not in edit mode
+                                console.log(`Clicked Pokemon Key: ${pokemon.key}`);
+                                onPokemonClick(pokemon.key);
+                            }
+                        }}
+                    >
                         <img 
                             src={pokemon.image_url}
                             alt={`Trade Pokémon ${pokemon.name}`}
