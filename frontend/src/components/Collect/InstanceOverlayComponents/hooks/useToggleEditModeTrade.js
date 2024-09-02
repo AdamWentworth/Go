@@ -23,10 +23,10 @@ const useToggleEditModeTrade = (
     const [editMode, setEditMode] = useState(false);
 
     const toggleEditMode = () => {
-        console.log('Toggle Edit Mode Triggered');
-        console.log('Edit Mode:', editMode);
-        console.log('Original not_wanted_list:', pokemon.ownershipStatus.not_wanted_list);
-        console.log('Local not_wanted_list before update:', localNotWantedList);
+        // console.log('Toggle Edit Mode Triggered');
+        // console.log('Edit Mode:', editMode);
+        // console.log('Original not_wanted_list:', pokemon.ownershipStatus.not_wanted_list);
+        // console.log('Local not_wanted_list before update:', localNotWantedList);
 
         if (editMode) {
             const updatedNotWantedList = { ...localNotWantedList };

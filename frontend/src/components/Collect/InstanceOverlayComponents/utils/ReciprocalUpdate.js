@@ -6,7 +6,7 @@ export const updateNotTradeList = (ownershipData, currentPokemonKey, otherPokemo
         return null;
     }
 
-    console.log(`updateNotTradeList called for ${otherPokemonKey} with add=${add}`);
+    // console.log(`updateNotTradeList called for ${otherPokemonKey} with add=${add}`);
 
     // Fetch the current not_trade_list from the ownership data
     const notTradeList = ownershipData[otherPokemonKey].not_trade_list || {};
@@ -30,7 +30,7 @@ export const updateNotTradeList = (ownershipData, currentPokemonKey, otherPokemo
     // Commit the updated not_trade_list back to the ownership data
     ownershipData[otherPokemonKey].not_trade_list = notTradeList;
 
-    console.log(`Final not_trade_list for ${otherPokemonKey}:`, notTradeList);
+    // console.log(`Final not_trade_list for ${otherPokemonKey}:`, notTradeList);
 
     // Return the updated not_trade_list for further processing
     return notTradeList;
@@ -49,7 +49,7 @@ export const updateNotWantedList = (ownershipData, currentPokemonKey, otherPokem
     notWantedList[currentPokemonKey] = add;
 
     ownershipData[otherPokemonKey].not_wanted_list = notWantedList;
-    console.log(`Updated ${otherPokemonKey}'s not_wanted_list to include/exclude ${currentPokemonKey}`);
+    // console.log(`Updated ${otherPokemonKey}'s not_wanted_list to include/exclude ${currentPokemonKey}`);
 
     return notWantedList
 };
