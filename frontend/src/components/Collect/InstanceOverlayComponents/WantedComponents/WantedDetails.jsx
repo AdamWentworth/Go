@@ -5,7 +5,7 @@ import EditSaveComponent from '../EditSaveComponent';
 import { PokemonDataContext } from '../../../../contexts/PokemonDataContext';
 import TradeListDisplay from './TradeListDisplay';
 
-import { updateNotWantedList } from '../ReciprocalUpdate.jsx';
+import { updateNotWantedList } from '../utils/ReciprocalUpdate.js';
 
 import FilterImages from '../FilterImages.jsx';
 import useImageSelection from '../utils/useImageSelection';
@@ -96,11 +96,30 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode }) =>
 
     const shouldShowFewLayout = isSmallScreen || filteredTradeListCount <= 15;
 
+    const handleResetFilters = () => {
+        setSelectedExcludeImages(EXCLUDE_IMAGES_trade.map(() => false));
+        setSelectedIncludeOnlyImages(INCLUDE_IMAGES_trade.map(() => false));
+        setLocalTradeFilters({});
+        setLocalNotTradeList({});
+    };
+
     return (
         <div className="wanted-details-container">
             <div className="top-row">
                 <div className={shouldShowFewLayout ? "centered" : "left-side"}>
                     <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+                    <div className={`reset-container ${editMode ? 'editable' : ''}`}>
+                        <img
+                            src={`${process.env.PUBLIC_URL}/images/reset.png`}
+                            alt="Reset Filters"
+                            style={{
+                                cursor: editMode ? 'pointer' : 'default',
+                                width: '25px',
+                                height: 'auto'
+                            }}
+                            onClick={editMode ? handleResetFilters : null}
+                        />
+                    </div>
                     <div className="header-group exclude-header">
                         <h3>Exclude</h3>
                     </div>

@@ -1,7 +1,7 @@
 // useToggleEditModeTrade.js
 
 import { useState } from 'react';
-import { updateNotTradeList } from '../ReciprocalUpdate.jsx';
+import { updateNotTradeList } from '../utils/ReciprocalUpdate.js';
 import { updateDisplayedList } from '../utils/listUtils.js';
 
 const useToggleEditModeTrade = (

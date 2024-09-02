@@ -163,3 +163,24 @@
         border-radius: 8px;
     }
 }
+
+.wanted-details-container .reset-container {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    margin-left: -2px;
+    filter: invert(1);
+    margin-top: 60px;
+}
+
+.wanted-details-container .reset-container img {
+    transition: filter 0.3s ease, cursor 0.3s ease;
+    cursor: default;
+    width: 25px;
+    height: auto;
+}
+
+.wanted-details-container .reset-container.editable img {
+    cursor: pointer;
+}
