@@ -44,6 +44,12 @@ export const PokemonDataProvider = ({ children }) => {
 
     const updateLists = useCallback(importedUpdateLists(data, setData), [data.ownershipData, data.variants]);
 
+    useEffect(() => {
+        if (!data.loading) {
+            updateLists();
+        }
+    }, [data.ownershipData, data.variants]);
+
     let scheduledSync;
     let timer;
 

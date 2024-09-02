@@ -9,20 +9,28 @@ export const updateOwnership = (data, setData, ownershipDataRef, updateLists, is
 
     const updates = new Map();
     console.log("Current Ownership Data as retrieved by updateOwnership:", ownershipDataRef.current);
+    console.log("Keys to be processed:", keys);
+
     keys.forEach(key => {
+        console.log(`Processing key: ${key}`);
         updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, (fullKey) => {
             processedKeys++;
             const currentTimestamp = Date.now();
+            console.log(`updatePokemonOwnership callback for key: ${fullKey} at ${currentTimestamp}`);
+
             if (fullKey) {
                 if (tempOwnershipData[fullKey]) {
+                    console.log(`Updating tempOwnershipData for key: ${fullKey} with new status at ${currentTimestamp}`);
                     updates.set(fullKey, { ...tempOwnershipData[fullKey], last_update: currentTimestamp });
                 } else {
-                    console.warn(`Key ${fullKey} has no data in tempOwnershipData`);
+                    console.warn(`Key ${fullKey} has no data in tempOwnershipData, adding new entry with timestamp ${currentTimestamp}`);
                     updates.set(fullKey, { last_update: currentTimestamp });
                 }
             }
+
             if (processedKeys === keys.length) { // Only update state and SW when all keys are processed
-                console.log(`All keys processed. Updating state and service worker.`);
+                console.log(`All keys processed. Updating state and service worker with tempOwnershipData:`, tempOwnershipData);
+
                 setData(prevData => ({
                     ...prevData,
                     ownershipData: tempOwnershipData
@@ -30,6 +38,7 @@ export const updateOwnership = (data, setData, ownershipDataRef, updateLists, is
 
                 // Update the ref
                 ownershipDataRef.current = tempOwnershipData;
+                console.log("Updated ownershipDataRef:", ownershipDataRef.current);
 
                 keys.forEach(key => {
                     if (tempOwnershipData[key] &&
@@ -52,13 +61,14 @@ export const updateOwnership = (data, setData, ownershipDataRef, updateLists, is
                         let isOnlyInstance = relatedInstances.length === 0; // Check if there are no other related instances
 
                         if (!isOnlyInstance) {
-                            // If there are other instances, confirm deletion
+                            console.log(`Deleting key ${key} from tempOwnershipData as it is not the only instance.`);
                             delete tempOwnershipData[key]; // Delete the instance from temp ownership data
                         }
                     }
                 });
 
                 navigator.serviceWorker.ready.then(async registration => {
+                    console.log("Service worker is ready. Sending data to service worker.");
                     registration.active.postMessage({
                         action: 'syncData',
                         data: { data: tempOwnershipData, timestamp: Date.now() }
@@ -70,6 +80,7 @@ export const updateOwnership = (data, setData, ownershipDataRef, updateLists, is
                     let updatesData = cachedUpdates ? await cachedUpdates.json() : {};
 
                     updates.forEach((value, key) => {
+                        console.log(`Caching update for key: ${key}`, value);
                         updatesData[key] = value;
                     });
 
@@ -77,7 +88,7 @@ export const updateOwnership = (data, setData, ownershipDataRef, updateLists, is
                         headers: { 'Content-Type': 'application/json' }
                     }));
 
-                    updateLists();
+                    console.log("Cached updates:", updatesData);
                 });
             }
         });
