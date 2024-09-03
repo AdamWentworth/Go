@@ -71,7 +71,7 @@
 
 .wanted-details-container h2 {
     margin-bottom: 0;
-    margin-top: 0;
+    margin-top: -20px;
 }
 
 .wanted-details-container .grey-out {
