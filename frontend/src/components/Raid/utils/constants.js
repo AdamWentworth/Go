@@ -110,3 +110,24 @@ export const DEFAULT_RAID_BOSS_STATS = {
   defense: 160,
   stamina: 15000
 };
+
+export const TYPE_MAPPING = {
+  1: { name: 'bug' },
+  2: { name: 'dark' },
+  3: { name: 'dragon' },
+  4: { name: 'electric' },
+  5: { name: 'fairy' },
+  6: { name: 'fighting' },
+  7: { name: 'fire' },
+  8: { name: 'flying' },
+  9: { name: 'ghost' },
+  10: { name: 'grass' },
+  11: { name: 'ground' },
+  12: { name: 'ice' },
+  13: { name: 'normal' },
+  14: { name: 'poison' },
+  15: { name: 'psychic' },
+  16: { name: 'rock' },
+  17: { name: 'steel' },
+  18: { name: 'water' },
+};

@@ -60,25 +60,5 @@ export function calculateDPS(name, variant, fastMove, chargedMove, playerAttackS
 
     const DPS = DPS0 + EE * (0.5 - x / playerStaminaStat) * y;
 
-    if (variant.pokemon_id === 3 && variant.variantType === "default" && fastMove.move_id === 16 && chargedMove.move_id === 204) {
-        console.log(`Detailed Calculation Logs for ${name} (Pokemon ID 3, default variant):`);
-        console.log(`Moves:`, fastMove.name, chargedMove.name);
-        console.log(`Fast Move Damage (FDmg): ${FDmg}`);
-        console.log(`Charged Move Damage (CDmg): ${CDmg}`);
-        console.log(`Fast DPS (FDPS): ${FDPS}`);
-        console.log(`Charged DPS (CDPS): ${CDPS}`);
-        console.log(`Fast Energy Per Second (FEPS): ${FEPS}`);
-        console.log(`Charged Energy Per Second (CEPS): ${CEPS}`);
-        console.log(`Combined DPS (DPS0): ${DPS0}`);
-        console.log(`Energy Efficiency (EE): ${EE}`);
-        console.log(`Energy balance factor (x): ${x}`);
-        console.log(`Boss stamina scaling factor (y): ${y}`);
-        console.log(`Damage Taken Per Second (DTPS): ${DTPS}`);
-        console.log(`Energy Gained from Damage Taken: ${energyFromDamageTaken}`);
-        console.log(`Adjusted Fast Energy Per Second (adjustedFEPS): ${adjustedFEPS}`);
-        console.log(`Adjusted Charged Energy Per Second (adjustedCEPS): ${adjustedCEPS}`);
-        console.log(`Final DPS: ${DPS}`);
-    }
-
     return DPS.toFixed(2);
 }

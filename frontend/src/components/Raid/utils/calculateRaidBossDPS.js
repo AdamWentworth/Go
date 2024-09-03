@@ -1,17 +1,22 @@
 // calculateRaidBossDPS.js
 import { calculateDamage } from './calculateDamage';
+import { TYPE_MAPPING } from './constants';
 
-export function calculateRaidBossDPS(raidBoss, raidBossAttack, raidBossDefense, raidBossStamina, playerPokemons) {
-    const fastMoves = raidBoss.moves.filter(move => move.is_fast === 1);
-    const chargedMoves = raidBoss.moves.filter(move => move.is_fast === 0);
+export function calculateRaidBossDPS(raidBoss, raidBossAttack, playerPokemons, selectedFastMove, selectedChargedMove) {
+    // Use selected moves if available, otherwise, default to all moves of that type
+    const fastMoves = selectedFastMove ? [selectedFastMove] : raidBoss.moves.filter(move => move.is_fast === 1);
+    const chargedMoves = selectedChargedMove ? [selectedChargedMove] : raidBoss.moves.filter(move => move.is_fast === 0);
 
-    let totalDPS = 0;
+    let dpsResults = [];
+    
+    let RaidBossType1= TYPE_MAPPING[raidBoss.type_1_id]?.name;
+    let RaidBossType2= TYPE_MAPPING[raidBoss.type_2_id]?.name || 'none';
 
     playerPokemons.forEach(playerPokemon => {
-        const playerDpsValues = fastMoves.flatMap(fastMove => 
+        const raidBossDpsValues = fastMoves.flatMap(fastMove =>
             chargedMoves.map(chargedMove => {
-                const FDmg = calculateDamage(fastMove.raid_power, raidBossAttack, playerPokemon.defense, fastMove.type_name, playerPokemon.type1, playerPokemon.type2);
-                const CDmg = calculateDamage(chargedMove.raid_power, raidBossAttack, playerPokemon.defense, chargedMove.type_name, playerPokemon.type1, playerPokemon.type2);
+                const FDmg = calculateDamage(fastMove.raid_power, raidBossAttack, playerPokemon.defense, fastMove.type_name, RaidBossType1, RaidBossType2, playerPokemon.type1, playerPokemon.type2);
+                const CDmg = calculateDamage(chargedMove.raid_power, raidBossAttack, playerPokemon.defense, chargedMove.type_name, RaidBossType1, RaidBossType2, playerPokemon.type1, playerPokemon.type2);
 
                 const fastCooldownSeconds = fastMove.raid_cooldown / 1000;
                 const chargedCooldownSeconds = chargedMove.raid_cooldown / 1000;
@@ -23,16 +28,10 @@ export function calculateRaidBossDPS(raidBoss, raidBossAttack, raidBossDefense, 
             })
         );
 
-        const playerAverageDPS = playerDpsValues.reduce((sum, dps) => sum + dps, 0) / playerDpsValues.length;
-        totalDPS += playerAverageDPS;
+        const RaidBossAverageDPS = raidBossDpsValues.reduce((sum, dps) => sum + dps, 0) / raidBossDpsValues.length;
+        dpsResults.push(RaidBossAverageDPS.toFixed(2));  // Store the average DPS for this specific Pokémon
     });
-
-    const averageDPS = totalDPS / playerPokemons.length;
-
-    if (raidBoss.pokemon_id === 260) {
-        playerPokemons.forEach(playerPokemon => {
-        });
-    }
-
-    return averageDPS.toFixed(2);
+    console.log(dpsResults)
+    console.log(playerPokemons)
+    return dpsResults;  // Return an array of DPS values for each player's Pokémon
 }

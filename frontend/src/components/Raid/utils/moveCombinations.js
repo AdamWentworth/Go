@@ -3,8 +3,13 @@ import { calculateDPS } from './calculateDPS';
 import { cpMultipliers } from './constants';
 
 const LEVEL_40_CP_MULTIPLIER = cpMultipliers["40.0"];
+const LEVEL_50_CP_MULTIPLIER = cpMultipliers["50.0"];
 
 export function getMoveCombinations(variant, raidBossDPS, raidBossAttack, raidBossDefense, raidBossStamina, selectedRaidBoss) {
+    if (!variant || !variant.moves) {
+        return []; // Return an empty array if variant or moves are undefined
+    }
+
     const fastMoves = variant.moves.filter(move => move.is_fast === 1);
     const chargedMoves = variant.moves.filter(move => move.is_fast === 0);
 
@@ -14,14 +19,6 @@ export function getMoveCombinations(variant, raidBossDPS, raidBossAttack, raidBo
     const name = variant.name;
 
     const cp = calculateCP(variant.attack + 15, variant.defense + 15, variant.stamina + 15, LEVEL_40_CP_MULTIPLIER);
-
-    if (variant.pokemon_id === 3 && variant.variantType === "default") {
-        console.log(`Calculating move combinations for ${name} (Pokémon ID 3)`);
-        console.log(`Attack stat (with multiplier): ${playerAttackStat}`);
-        console.log(`Defense stat (with multiplier): ${playerDefenseStat}`);
-        console.log(`Stamina stat (with multiplier): ${playerStaminaStat}`);
-        console.log(`CP: ${cp}`);
-    }
 
     return fastMoves.flatMap(fastMove => 
         chargedMoves.map(chargedMove => {
