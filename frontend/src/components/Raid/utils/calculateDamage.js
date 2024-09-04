@@ -12,10 +12,10 @@ export function calculateDamage(power, attackStat, defenseStat, moveType, attack
     const STAB = (moveType === attackerType1 || moveType === attackerType2) ? 1.2 : 1.0;
     const effectiveness = getTypeEffectivenessMultiplier(moveType, [defenderType1, defenderType2]);
 
-    const baseDamage = 0.5 * power * (attackStat / defenseStat);
-    const modifiedDamage = baseDamage * effectiveness * STAB;
+    const baseDamage = power * (attackStat / defenseStat);
+    const modifiedDamage = 0.5 * baseDamage * effectiveness * STAB;
 
-    return Math.floor(modifiedDamage + 1);
+    return Math.floor(modifiedDamage + 0.5);
 }
 
 

@@ -13,16 +13,16 @@ export function getMoveCombinations(variant, raidBossDPS, raidBossAttack, raidBo
     const fastMoves = variant.moves.filter(move => move.is_fast === 1);
     const chargedMoves = variant.moves.filter(move => move.is_fast === 0);
 
-    const playerAttackStat = Math.floor((variant.attack + 15) * LEVEL_40_CP_MULTIPLIER);
-    const playerDefenseStat = Math.floor((variant.defense + 15) * LEVEL_40_CP_MULTIPLIER);
-    const playerStaminaStat = Math.floor((variant.stamina + 15) * LEVEL_40_CP_MULTIPLIER);
+    const playerAttackStat = Math.floor((variant.attack + 15) * LEVEL_50_CP_MULTIPLIER);
+    const playerDefenseStat = Math.floor((variant.defense + 15) * LEVEL_50_CP_MULTIPLIER);
+    const playerStaminaStat = Math.floor((variant.stamina + 15) * LEVEL_50_CP_MULTIPLIER);
     const name = variant.name;
 
-    const cp = calculateCP(variant.attack + 15, variant.defense + 15, variant.stamina + 15, LEVEL_40_CP_MULTIPLIER);
+    const cp = calculateCP(variant.attack + 15, variant.defense + 15, variant.stamina + 15, LEVEL_50_CP_MULTIPLIER);
 
     return fastMoves.flatMap(fastMove => 
         chargedMoves.map(chargedMove => {
-            const dps = calculateDPS(name, variant, fastMove, chargedMove, playerAttackStat, playerDefenseStat, playerStaminaStat, 
+            const dps = calculateDPS(variant, fastMove, chargedMove, playerAttackStat, playerDefenseStat, playerStaminaStat, 
                 raidBossDPS, raidBossAttack, raidBossDefense, raidBossStamina, selectedRaidBoss);
             
             return {

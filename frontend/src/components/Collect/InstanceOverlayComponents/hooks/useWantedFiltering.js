@@ -1,4 +1,4 @@
-// hooks/useWantedFiltering.js
+// useWantedFiltering.js
 
 import { useState, useEffect } from 'react';
 import filters from '../utils/wantedFilters';
@@ -18,7 +18,7 @@ const useWantedFiltering = (listsState, selectedExcludeImages, selectedIncludeOn
         selectedExcludeImages.forEach((isSelected, index) => {
             const filterName = FILTER_NAMES[index];
             if (isSelected && filters[filterName]) {
-                updatedList = filters[filterName](updatedList);
+                updatedList = filters[filterName](updatedList);  // Apply exclude filter
                 updatedLocalWantedFilters[filterName] = true;
             } else {
                 // Re-evaluate visibility of Pokémon previously filtered by this filter
@@ -38,23 +38,30 @@ const useWantedFiltering = (listsState, selectedExcludeImages, selectedIncludeOn
             }
         });
 
-        // Apply include-only filters
-        selectedIncludeOnlyImages.forEach((isSelected, index) => {
-            const filterIndex = EXCLUDE_IMAGES_wanted.length + index;
-            const filterName = FILTER_NAMES[filterIndex];
-            if (isSelected && filters[filterName]) {
-                updatedList = filters[filterName](updatedList);
-                updatedLocalWantedFilters[filterName] = true;
-            } else {
-                // Re-evaluate visibility of Pokémon previously filtered by this filter
-                Object.keys(listsState.wanted).forEach(key => {
-                    if (!filters[filterName](updatedList)[key] && updatedList[key]) {
-                        reappearingPokemon.push(key);
-                    }
-                });
-                updatedLocalWantedFilters[filterName] = false;
-            }
-        });
+        // Apply include-only filters (as a union) only to remaining Pokémon
+        if (selectedIncludeOnlyImages.some(isSelected => isSelected)) {
+            let unionIncludeList = {};
+            selectedIncludeOnlyImages.forEach((isSelected, index) => {
+                const filterIndex = EXCLUDE_IMAGES_wanted.length + index;
+                const filterName = FILTER_NAMES[filterIndex];
+
+                if (isSelected && filters[filterName]) {
+                    const filteredByThisInclude = filters[filterName](listsState.wanted);  // Filter only on the original wanted list
+                    Object.keys(filteredByThisInclude).forEach(key => {
+                        // Add Pokémon to the union list if it passes any include filter and hasn't been excluded
+                        if (filteredByThisInclude[key] && updatedList[key]) {
+                            unionIncludeList[key] = listsState.wanted[key];
+                        }
+                    });
+                    updatedLocalWantedFilters[filterName] = true;
+                } else {
+                    updatedLocalWantedFilters[filterName] = false;
+                }
+            });
+
+            // Use the union of all include-only filters, but only for Pokémon not excluded
+            updatedList = unionIncludeList;
+        }
 
         // Track Pokémon filtered out by include-only filters
         Object.keys(listsState.wanted).forEach(key => {

@@ -18,69 +18,87 @@ const useTradeFiltering = (
     const [updatedLocalTradeFilters, setUpdatedLocalTradeFilters] = useState({ ...localTradeFilters });
 
     useEffect(() => {
-        let includeFilteredList = {};
+        let updatedList = { ...listsState.trade };
         const newlyFilteredOutPokemon = [];
-        const updatedNotTradeList = { ...localNotTradeList };
-
-        // Initialize all filters to false
-        const resetFilters = () => {
-            Object.keys(updatedLocalTradeFilters).forEach(filterName => {
-                updatedLocalTradeFilters[filterName] = false;
-            });
-        };
-
-        resetFilters();
-
-        // Apply include-only filters (with an OR logic)
-        if (selectedIncludeOnlyImages.some(isSelected => isSelected)) {
-            Object.keys(listsState.trade).forEach(key => {
-                selectedIncludeOnlyImages.forEach((isSelected, index) => {
-                    const filterName = FILTER_NAMES[index];
-                    if (isSelected && typeof filters[filterName] === 'function') {
-                        if (filters[filterName]({ [key]: listsState.trade[key] })[key]) {
-                            includeFilteredList[key] = listsState.trade[key];
-                            updatedLocalTradeFilters[filterName] = true;
-                        }
-                    }
-                });
-            });
-        } else {
-            includeFilteredList = { ...listsState.trade };
-        }
-
-        let excludeFilteredList = { ...includeFilteredList };
+        const reappearingPokemon = [];
 
         // Apply exclude filters
         selectedExcludeImages.forEach((isSelected, index) => {
-            const filterName = FILTER_NAMES[INCLUDE_IMAGES_trade.length + index];
+            const filterName = FILTER_NAMES[index + INCLUDE_IMAGES_trade.length]; // Exclude filter names start after include filters
             if (isSelected && typeof filters[filterName] === 'function') {
-                excludeFilteredList = filters[filterName](excludeFilteredList, false); // Ensure correct function call
+                updatedList = filters[filterName](updatedList); // Apply exclude filter
                 updatedLocalTradeFilters[filterName] = true;
             } else {
-                // Ensure filter is marked as false when deselected
+                // Re-evaluate visibility of Pokémon previously filtered by this filter
+                Object.keys(listsState.trade).forEach(key => {
+                    if (!filters[filterName](updatedList)[key] && updatedList[key]) {
+                        reappearingPokemon.push(key);
+                    }
+                });
                 updatedLocalTradeFilters[filterName] = false;
             }
         });
 
-        // Track Pokémon filtered out by include-only and exclude filters and add them to not_trade_list
+        // Track Pokémon filtered out by exclude filters
         Object.keys(listsState.trade).forEach(key => {
-            if (!excludeFilteredList[key]) {
+            if (!updatedList[key]) {
                 newlyFilteredOutPokemon.push(key);
-                updatedNotTradeList[key] = true;  // Add filtered out Pokémon to not_trade_list
+            }
+        });
+
+        // Apply include-only filters (as a union)
+        if (selectedIncludeOnlyImages.some(isSelected => isSelected)) {
+            let unionIncludeList = {};
+            selectedIncludeOnlyImages.forEach((isSelected, index) => {
+                const filterName = FILTER_NAMES[index];
+
+                if (isSelected && typeof filters[filterName] === 'function') {
+                    const filteredByThisInclude = filters[filterName](listsState.trade); // Filter only on the original trade list
+                    Object.keys(filteredByThisInclude).forEach(key => {
+                        // Add Pokémon to the union list if it passes any include filter and hasn't been excluded
+                        if (filteredByThisInclude[key] && updatedList[key]) {
+                            unionIncludeList[key] = listsState.trade[key];
+                        }
+                    });
+                    updatedLocalTradeFilters[filterName] = true;
+                } else {
+                    updatedLocalTradeFilters[filterName] = false;
+                }
+            });
+
+            // Use the union of all include-only filters but only for Pokémon not excluded
+            updatedList = unionIncludeList;
+        }
+
+        // Track Pokémon filtered out by include-only filters
+        Object.keys(listsState.trade).forEach(key => {
+            if (!updatedList[key] && !newlyFilteredOutPokemon.includes(key)) {
+                newlyFilteredOutPokemon.push(key);
             }
         });
 
         // If in edit mode, include the filtered-out Pokémon in the final list (greyed out)
         if (editMode) {
             newlyFilteredOutPokemon.forEach(key => {
-                excludeFilteredList[key] = { ...listsState.trade[key], greyedOut: true };
+                if (!localNotTradeList[key]) {
+                    updatedList[key] = { ...listsState.trade[key], greyedOut: true };
+                    setLocalNotTradeList(prev => ({ ...prev, [key]: true }));
+                }
             });
         }
 
-        setFilteredTradeList(excludeFilteredList);
+        setFilteredTradeList(updatedList);
         setFilteredOutPokemon(newlyFilteredOutPokemon);
         setUpdatedLocalTradeFilters({ ...updatedLocalTradeFilters });
-        setLocalNotTradeList(updatedNotTradeList);  // Update not_trade_list with all filtered out Pokémon
+
+        // Remove reappearing Pokémon from the not_trade_list
+        if (reappearingPokemon.length > 0) {
+            const updatedNotTradeList = { ...localNotTradeList };
+            reappearingPokemon.forEach(key => {
+                delete updatedNotTradeList[key];
+            });
+            setLocalNotTradeList(updatedNotTradeList);
+        }
 
     }, [selectedExcludeImages, selectedIncludeOnlyImages, listsState.trade, editMode]);
 

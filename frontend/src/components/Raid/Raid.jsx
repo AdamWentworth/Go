@@ -93,11 +93,11 @@ function Raid() {
         const playerPokemons = filteredVariants.map(variant => ({
             name: variant.name,
             form: variant.form, // Include form or variant information
-            attack: Math.floor((variant.attack + 15) * LEVEL_40_CP_MULTIPLIER),
-            defense: Math.floor((variant.defense + 15) * LEVEL_40_CP_MULTIPLIER),
-            stamina: Math.floor((variant.stamina + 15) * LEVEL_40_CP_MULTIPLIER),
-            type1: TYPE_MAPPING[variant.type_1_id]?.name || 'Unknown',
-            type2: TYPE_MAPPING[variant.type_2_id]?.name || 'Unknown',
+            attack: Math.floor((variant.attack + 15) * LEVEL_50_CP_MULTIPLIER),
+            defense: Math.floor((variant.defense + 15) * LEVEL_50_CP_MULTIPLIER),
+            stamina: Math.floor((variant.stamina + 15) * LEVEL_50_CP_MULTIPLIER),
+            type1: TYPE_MAPPING[variant.type_1_id]?.name,
+            type2: TYPE_MAPPING[variant.type_2_id]?.name || 'none',
         }));
 
         // Calculate DPS even if only one or neither move is selected
@@ -137,21 +137,10 @@ function Raid() {
     if (showBest) {
         const bestCombinations = {};
 
-        console.log("Processing move combinations for 'Best' filter");
-
         moveCombinations.forEach(combo => {
             const key = combo.name; // Use only the name as the key to identify unique Pokémon
 
-            if (combo.name === 'Mega Charizard Y') {
-                console.log("Considering Mega Charizard Y combo:");
-                console.log(`Fast Move: ${combo.fastMove}, Charged Move: ${combo.chargedMove}, DPS: ${combo.dps}`);
-            }
-
             if (!bestCombinations[key] || parseFloat(combo.dps) > parseFloat(bestCombinations[key].dps)) {
-                if (combo.name === 'Mega Charizard Y') {
-                    console.log(`Updating best combo for ${key}:`);
-                    console.log(`Previous Best DPS: ${bestCombinations[key] ? bestCombinations[key].dps : 'None'}, New Best DPS: ${combo.dps}`);
-                }
                 bestCombinations[key] = combo;  // Store the best combo with the highest DPS
             }
         });
@@ -161,14 +150,6 @@ function Raid() {
 
         // Final sort to ensure highest DPS order
         moveCombinations.sort((a, b) => parseFloat(b.dps) - parseFloat(a.dps));
-
-        // Log the sorted best combinations for verification
-        moveCombinations.forEach(combo => {
-            if (combo.name === 'Mega Charizard Y') {
-                console.log(`Final best combo for Mega Charizard Y:`);
-                console.log(`Fast Move: ${combo.fastMove}, Charged Move: ${combo.chargedMove}, DPS: ${combo.dps}`);
-            }
-        });
     }
 
     const totalPages = Math.ceil(moveCombinations.length / itemsPerPage);
