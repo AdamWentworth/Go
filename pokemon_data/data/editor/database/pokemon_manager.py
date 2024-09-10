@@ -1,7 +1,5 @@
 # pokemon_manager.py
 
-from database.db_utils import DatabaseConnection
-
 class PokemonManager:
     def __init__(self, db_conn):
         self.conn = db_conn
