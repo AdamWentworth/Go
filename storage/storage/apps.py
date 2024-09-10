@@ -41,8 +41,22 @@ def start_scheduler():
 def run_backup():
     from .backup_database import create_backup, manage_retention
     logger.info("Starting backup process.")
-    create_backup()
-    manage_retention()
+    
+    # Create a new backup
+    try:
+        create_backup()
+        logger.info("Backup created successfully.")
+    except Exception as e:
+        logger.error(f"Error during backup creation: {e}")
+
+    # Call manage_retention with logging and error handling
+    try:
+        logger.info("Starting retention management process.")
+        manage_retention()
+        logger.info("Retention management completed successfully.")
+    except Exception as e:
+        logger.error(f"Error during retention management: {e}")
+
     logger.info("Backup process completed.")
 
 def start_kafka_consumer():

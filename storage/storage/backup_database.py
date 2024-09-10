@@ -45,21 +45,31 @@ def manage_retention():
     monthly_cutoff = today - datetime.timedelta(days=365)
     yearly_cutoff = today - datetime.timedelta(days=365*5)
 
+    logger.info("Starting to manage backup retention...")
+    
     for file in BACKUP_DIR.iterdir():
         if file.suffix == ".sql":
             try:
                 # Extract the date part from the filename
                 file_date_str = file.stem.split('_')[-1]
                 file_date = datetime.datetime.strptime(file_date_str, "%Y-%m-%d")
+                logger.info(f"Processing backup: {file.name}, Date: {file_date}")
 
                 # Determine retention policy
                 if file_date < daily_cutoff and file_date.day != 1:
+                    logger.info(f"Backup older than daily cutoff: {file.name}")
                     if file_date < monthly_cutoff and file_date.month != 1:
+                        logger.info(f"Backup older than monthly cutoff: {file.name}")
                         if file_date < yearly_cutoff:
+                            logger.info(f"Deleting backup older than yearly cutoff: {file.name}")
                             file.unlink()
-                            logger.info(f"Deleted old backup: {file}")
+                            logger.info(f"Deleted backup: {file.name}")
+                else:
+                    logger.info(f"Retained backup: {file.name}")
             except ValueError as e:
                 logger.error(f"Error parsing date from file {file}: {e}")
+
+    logger.info("Finished managing backup retention.")
 
 if __name__ == "__main__":
     create_backup()

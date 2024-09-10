@@ -94,6 +94,11 @@ router.post('/login', async (req, res, next) => {
             return res.status(401).json({ message: 'Invalid password' });
         }
 
+        // Clean up expired refresh tokens before adding a new one
+        await User.findByIdAndUpdate(user._id, {
+            $pull: { 'refreshToken': { expires: { $lte: new Date() } } } // Remove expired tokens
+        });
+
         const tokens = tokenService.createTokens(user);
 
         // Update user with new refresh token details by adding to the array
@@ -135,6 +140,11 @@ router.post('/refresh', async (req, res, next) => {
         return res.status(401).json({ message: 'Refresh token required' });
     }
     try {
+        // Clean up expired refresh tokens
+        await User.findOneAndUpdate(
+            { 'refreshToken.token': refreshToken },
+            { $pull: { 'refreshToken': { expires: { $lte: new Date() } } } }
+        );
         const user = await User.findOne({
             'refreshToken': { $elemMatch: { token: refreshToken, expires: { $gt: new Date() }}}
         }).exec();
