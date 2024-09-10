@@ -14,6 +14,15 @@ const useWantedFiltering = (listsState, selectedExcludeImages, selectedIncludeOn
         const newlyFilteredOutPokemon = [];
         const reappearingPokemon = [];
 
+        // Initialize all filters to false
+        const resetFilters = () => {
+            Object.keys(updatedLocalWantedFilters).forEach(filterName => {
+                updatedLocalWantedFilters[filterName] = false;
+            });
+        };
+
+        resetFilters();
+
         // Apply exclude filters
         selectedExcludeImages.forEach((isSelected, index) => {
             const filterName = FILTER_NAMES[index];
