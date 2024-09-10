@@ -1,7 +1,6 @@
 # pokemon_details_window.py
-
+from details_window.ui_setup import create_scrollable_window, bind_scroll_events
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
 from database_manager import DatabaseManager
 
 # Import necessary frames
@@ -20,10 +19,6 @@ import os
 
 class PokemonDetailsWindow:
     def __init__(self, parent, pokemon_id, details):
-        self.window = tk.Toplevel(parent)
-        self.window.title(f"Details of Pokémon ID: {pokemon_id}")
-        self.window.state('zoomed')
-
         self.pokemon_id = pokemon_id
         self.db_manager = DatabaseManager('./data/pokego.db')  # Adjust the path as necessary
 
@@ -38,25 +33,10 @@ class PokemonDetailsWindow:
         self.relative_path_to_images = go_directory
 
         # Scrollable container setup
-        self.canvas = tk.Canvas(self.window)
-        self.scrollable_frame = ttk.Frame(self.canvas)
-
-        self.scrollbar = ttk.Scrollbar(self.window, orient="vertical", command=self.canvas.yview)
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        self.scrollbar.pack(side="right", fill="y")
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-
-        self.scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-
-        # Horizontal scrollbar
-        h_scrollbar = ttk.Scrollbar(self.window, orient="horizontal", command=self.canvas.xview)
-        self.canvas.configure(xscrollcommand=h_scrollbar.set)
-        h_scrollbar.pack(side="bottom", fill="x")
+        self.window, self.canvas, self.scrollable_frame = create_scrollable_window(parent, f"Details of Pokémon ID: {pokemon_id}")
 
         # Bind scroll events for smooth scrolling
-        self.window.bind("<MouseWheel>", self._on_mousewheel)
-        self.window.bind("<Shift-MouseWheel>", self._on_shift_mousewheel)
+        bind_scroll_events(self.window, self.canvas)
 
         # Assuming details is a tuple of (pokemon_data, moves, evolutions)
         self.pokemon_data, self.moves, self.evolutions = details
@@ -65,8 +45,21 @@ class PokemonDetailsWindow:
         main_container = tk.Frame(self.scrollable_frame)
         main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # Top container for General Info and Moves Frames
-        top_container = tk.Frame(main_container)
+        # Call methods to create frames while keeping the layout the same
+        self.create_info_and_moves_frames(main_container)
+        self.create_evolutions_and_shadow_frames(main_container)
+        self.create_image_frames(main_container)
+        self.create_mega_frames(main_container)
+        self.create_shadow_costume_frames(main_container)
+        self.create_costume_frame(main_container)
+
+        # Save Button
+        save_button = tk.Button(self.window, text="Save Changes", command=self.save_changes)
+        save_button.pack(side="bottom", pady=10)
+
+    def create_info_and_moves_frames(self, parent):
+        """ Create top container for General Info and Moves Frames """
+        top_container = tk.Frame(parent)
         top_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         # Container for General and Additional Info Frames
@@ -80,8 +73,9 @@ class PokemonDetailsWindow:
         self.moves_frame = PokemonMovesFrame(top_container, self.db_manager, self.moves)
         self.moves_frame.create_moves_frame()
 
-        # Second container for Evolutions and Shadow Frames
-        second_container = tk.Frame(main_container)
+    def create_evolutions_and_shadow_frames(self, parent):
+        """ Create second container for Evolutions and Shadow Frames """
+        second_container = tk.Frame(parent)
         second_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         # Evolutions Frame
@@ -92,36 +86,37 @@ class PokemonDetailsWindow:
         self.shadow_frame = PokemonShadowFrame(second_container, self.pokemon_id, self.shadow_pokemon_data, self.db_manager)
         self.shadow_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # Image Frames Container
-        image_frames_container = tk.Frame(main_container)
+    def create_image_frames(self, parent):
+        """ Create container for Image Frames """
+        image_frames_container = tk.Frame(parent)
         image_frames_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         # Image Frame
         image_url = self.pokemon_data[3]  # Assuming the image URL is at this index
-        self.image_frame = PokemonImageFrame(image_frames_container, image_url, pokemon_id, self)
+        self.image_frame = PokemonImageFrame(image_frames_container, image_url, self.pokemon_id, self)
         self.image_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # Correctly pack the frame attribute
 
         # Shiny Image Frame
         shiny_image_url = self.pokemon_data[4]  # Assuming the shiny image URL is at this index (update as necessary)
-        self.shiny_image_frame = PokemonShinyImageFrame(image_frames_container, shiny_image_url, pokemon_id, self)
+        self.shiny_image_frame = PokemonShinyImageFrame(image_frames_container, shiny_image_url, self.pokemon_id, self)
         self.shiny_image_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # Correctly pack the frame attribute
 
         shadow_image_url = self.shadow_pokemon_data[4] if len(self.shadow_pokemon_data) > 4 else None
         shiny_shadow_image_url = self.shadow_pokemon_data[5] if len(self.shadow_pokemon_data) > 5 else None
 
         # Shadow Image Frame
-        self.shadow_image_frame = PokemonShadowImageFrame(image_frames_container, shadow_image_url, pokemon_id, self)
+        self.shadow_image_frame = PokemonShadowImageFrame(image_frames_container, shadow_image_url, self.pokemon_id, self)
         self.shadow_image_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # Correctly pack the frame attribute
 
         # Shiny Shadow Image Frame
-        self.shiny_shadow_image_frame = PokemonShinyShadowImageFrame(image_frames_container, shiny_shadow_image_url, pokemon_id, self)
+        self.shiny_shadow_image_frame = PokemonShinyShadowImageFrame(image_frames_container, shiny_shadow_image_url, self.pokemon_id, self)
         self.shiny_shadow_image_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)  # Correctly pack the frame attribute
 
-        # Create a container for Mega Evolution Frames
-        mega_container = tk.Frame(main_container)
+    def create_mega_frames(self, parent):
+        """ Create container for Mega Evolution Frames """
+        mega_container = tk.Frame(parent)
         mega_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        # Fetch and integrate Mega Evolution Frames
         mega_evolutions = self.db_manager.fetch_mega_pokemon_data(self.pokemon_id)
         self.mega_frames = []
         for mega_data in mega_evolutions:
@@ -134,22 +129,19 @@ class PokemonDetailsWindow:
         self.btn_add_mega = tk.Button(mega_container, text="Add Mega Evolution", command=self.add_mega_evolution)
         self.btn_add_mega.pack(side=tk.BOTTOM, pady=10)
 
-        # Create a container for Shadow Costume Frames
-        shadow_costume_container = tk.Frame(main_container)
+    def create_shadow_costume_frames(self, parent):
+        """ Create container for Shadow Costume Frames """
+        shadow_costume_container = tk.Frame(parent)
         shadow_costume_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        # Integrate the new Shadow Costume Frame
         self.shadow_costume_frame = PokemonShadowCostumeFrame(shadow_costume_container, self.db_manager, self.pokemon_id)
         self.shadow_costume_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # Costume Frame - this is the frame in question, pack the object directly
-        self.costume_frame = PokemonCostumeImageFrame(main_container, pokemon_id, self)
-        self.costume_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)  # pack the object directly
-
-        # Save Button
-        save_button = tk.Button(self.window, text="Save Changes", command=self.save_changes)
-        save_button.pack(side="bottom", pady=10)
-
+    def create_costume_frame(self, parent):
+        """ Create Costume Frame """
+        self.costume_frame = PokemonCostumeImageFrame(parent, self.pokemon_id, self)
+        self.costume_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        
     def _on_mousewheel(self, event):
         self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
