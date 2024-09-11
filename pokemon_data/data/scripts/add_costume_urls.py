@@ -1,7 +1,7 @@
 import sqlite3
 
 # Database connection
-db_path = 'backend/data/pokego.db'  # Update with the path to your database
+db_path = '../pokego.db'  # Update with the path to your database
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
