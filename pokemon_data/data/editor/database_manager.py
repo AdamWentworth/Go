@@ -6,6 +6,7 @@ from database.shadow_pokemon_manager import ShadowPokemonManager
 from database.costume_pokemon_manager import CostumePokemonManager
 from database.evolution_manager import EvolutionManager
 from database.mega_evolution_manager import MegaEvolutionManager
+from database.female_pokemon_manager import FemalePokemonManager
 
 class DatabaseManager:
     def __init__(self, db_path):
@@ -15,6 +16,7 @@ class DatabaseManager:
         self.costume_pokemon_manager = CostumePokemonManager(self.conn)
         self.evolution_manager = EvolutionManager(self.conn)
         self.mega_evolution_manager = MegaEvolutionManager(self.conn)
+        self.female_pokemon_manager = FemalePokemonManager(self.conn)
 
     def fetch_all_pokemon_sorted(self, sort_by='pokemon_id'):
         return self.pokemon_manager.fetch_all_pokemon_sorted(sort_by)
@@ -98,3 +100,13 @@ class DatabaseManager:
 
     def add_mega_evolution(self, pokemon_id):
         return self.mega_evolution_manager.add_mega_evolution(pokemon_id)
+    
+    # Female Pokémon-related methods
+    def fetch_female_pokemon(self):
+        return self.female_pokemon_manager.fetch_female_pokemon()
+
+    def fetch_female_pokemon_image_data(self, pokemon_id):
+        return self.female_pokemon_manager.fetch_female_pokemon_image_data(pokemon_id)
+
+    def update_female_pokemon_images(self, pokemon_id, image_data):
+        return self.female_pokemon_manager.update_female_pokemon_images(pokemon_id, image_data)

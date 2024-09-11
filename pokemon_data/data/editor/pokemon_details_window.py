@@ -14,6 +14,7 @@ from frames.pokemon_shadow_image_frames import PokemonShadowImageFrame, PokemonS
 from frames.pokemon_costume_image_frame import PokemonCostumeImageFrame
 from frames.pokemon_shadow_costume_frame import PokemonShadowCostumeFrame
 from frames.pokemon_mega_frame import PokemonMegaFrame
+from frames.pokemon_female_image_frame import PokemonFemaleImageFrame
 
 import os
 
@@ -21,6 +22,8 @@ class PokemonDetailsWindow:
     def __init__(self, parent, pokemon_id, details):
         self.pokemon_id = pokemon_id
         self.db_manager = DatabaseManager('./data/pokego.db')  # Adjust the path as necessary
+
+        self.female_pokemon_data = self.db_manager.fetch_female_pokemon()
 
         self.shadow_pokemon_data = self.db_manager.fetch_shadow_pokemon_data(pokemon_id)
 
@@ -52,6 +55,7 @@ class PokemonDetailsWindow:
         self.create_mega_frames(main_container)
         self.create_shadow_costume_frames(main_container)
         self.create_costume_frame(main_container)
+        self.create_female_image_frame(main_container)
 
         # Save Button
         save_button = tk.Button(self.window, text="Save Changes", command=self.save_changes)
@@ -147,7 +151,7 @@ class PokemonDetailsWindow:
 
     def _on_shift_mousewheel(self, event):
         self.canvas.xview_scroll(int(-1*(event.delta/120)), "units")
-
+    
     def react_to_image_update(self):
         # Bring the window to the front
         self.window.lift()
@@ -168,6 +172,45 @@ class PokemonDetailsWindow:
         )
         new_mega_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.mega_frames.append(new_mega_frame)
+
+    def create_female_image_frame(self, parent):
+        """ Create frame for Female Pokémon Images if the Pokémon has a unique female version """
+        
+        # Extract all Pokémon IDs with unique female forms and ensure they are integers
+        female_pokemon_ids = [int(row[0]) for row in self.female_pokemon_data]  # Ensure IDs are integers
+        print(f"[DEBUG] Current Pokémon ID: {self.pokemon_id} (Type: {type(self.pokemon_id)})")
+
+        # Ensure self.pokemon_id is also an integer
+        if isinstance(self.pokemon_id, str):
+            self.pokemon_id = int(self.pokemon_id)
+        
+        # Check if pokemon_id is in the list of female IDs
+        if self.pokemon_id in female_pokemon_ids:
+            print(f"[DEBUG] Pokémon ID {self.pokemon_id} has a unique female form")
+
+            # Get the image data for the female version
+            female_data = next((row for row in self.female_pokemon_data if int(row[0]) == self.pokemon_id), None)
+            print(f"[DEBUG] Female data for Pokémon ID {self.pokemon_id}: {female_data}")
+
+            # Ensure default placeholders if URLs are missing
+            female_image_url = female_data[1] if female_data and female_data[1] else "placeholder.png"
+            shiny_female_image_url = female_data[2] if female_data and female_data[2] else "placeholder.png"
+            shadow_female_image_url = female_data[3] if female_data and female_data[3] else "placeholder.png"
+            shiny_shadow_female_image_url = female_data[4] if female_data and female_data[4] else "placeholder.png"
+
+            # Debug: Print out what is being passed
+            print(f"[DEBUG] Creating female image frame with: female_image_url={female_image_url}, shiny_female_image_url={shiny_female_image_url}, shadow_female_image_url={shadow_female_image_url}, shiny_shadow_female_image_url={shiny_shadow_female_image_url}")
+
+            # Create the frame for Female Pokémon Images
+            self.female_image_frame = PokemonFemaleImageFrame(
+                parent, female_image_url, shiny_female_image_url, 
+                shadow_female_image_url, shiny_shadow_female_image_url, 
+                self.pokemon_id, self
+            )
+            # Pack the frame and expand it fully
+            self.female_image_frame.frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        else:
+            print(f"[DEBUG] Pokémon ID {self.pokemon_id} does not have a unique female form")
 
     def save_changes(self):
         # Retrieve general and additional attributes from info_frames
