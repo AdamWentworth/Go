@@ -17,10 +17,12 @@ class CostumePokemonManager:
         query = """
             UPDATE costume_pokemon
             SET costume_name = ?, shiny_available = ?, date_available = ?, 
-                date_shiny_available = ?, image_url_costume = ?, image_url_shiny_costume = ?
+                date_shiny_available = ?, image_url_costume = ?, image_url_shiny_costume = ?,
+                image_url_costume_female = ?, image_url_shiny_costume_female = ?
             WHERE costume_id = ?
         """
         
+        # Handle shiny_available flag as before
         shiny_index = 1  # Assuming 'shiny_available' is the second item in updated_details
         if updated_details[shiny_index] in [True, 'True', 'true', 1]:
             updated_details[shiny_index] = 1
@@ -28,7 +30,7 @@ class CostumePokemonManager:
             updated_details[shiny_index] = 0
         else:
             updated_details[shiny_index] = None  # Or raise an error if an invalid value is passed
-        
+
         updated_details = [None if detail == '' else detail for detail in updated_details]
         cursor.execute(query, (*updated_details, costume_id))
         self.conn.commit()
@@ -37,8 +39,9 @@ class CostumePokemonManager:
         cursor = self.conn.get_cursor()
         query = """
             INSERT INTO costume_pokemon (pokemon_id, costume_name, shiny_available, date_available, 
-                                        date_shiny_available, image_url_costume, image_url_shiny_costume)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                                        date_shiny_available, image_url_costume, image_url_shiny_costume,
+                                        image_url_costume_female, image_url_shiny_costume_female)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         values = (pokemon_id,) + tuple(costume_details.values())
         cursor.execute(query, values)

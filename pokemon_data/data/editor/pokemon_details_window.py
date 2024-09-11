@@ -178,7 +178,7 @@ class PokemonDetailsWindow:
         
         # Extract all Pokémon IDs with unique female forms and ensure they are integers
         female_pokemon_ids = [int(row[0]) for row in self.female_pokemon_data]  # Ensure IDs are integers
-        print(f"[DEBUG] Current Pokémon ID: {self.pokemon_id} (Type: {type(self.pokemon_id)})")
+        # print(f"[DEBUG] Current Pokémon ID: {self.pokemon_id} (Type: {type(self.pokemon_id)})")
 
         # Ensure self.pokemon_id is also an integer
         if isinstance(self.pokemon_id, str):
@@ -186,11 +186,11 @@ class PokemonDetailsWindow:
         
         # Check if pokemon_id is in the list of female IDs
         if self.pokemon_id in female_pokemon_ids:
-            print(f"[DEBUG] Pokémon ID {self.pokemon_id} has a unique female form")
+            # print(f"[DEBUG] Pokémon ID {self.pokemon_id} has a unique female form")
 
             # Get the image data for the female version
             female_data = next((row for row in self.female_pokemon_data if int(row[0]) == self.pokemon_id), None)
-            print(f"[DEBUG] Female data for Pokémon ID {self.pokemon_id}: {female_data}")
+            # print(f"[DEBUG] Female data for Pokémon ID {self.pokemon_id}: {female_data}")
 
             # Ensure default placeholders if URLs are missing
             female_image_url = female_data[1] if female_data and female_data[1] else "placeholder.png"
@@ -199,7 +199,7 @@ class PokemonDetailsWindow:
             shiny_shadow_female_image_url = female_data[4] if female_data and female_data[4] else "placeholder.png"
 
             # Debug: Print out what is being passed
-            print(f"[DEBUG] Creating female image frame with: female_image_url={female_image_url}, shiny_female_image_url={shiny_female_image_url}, shadow_female_image_url={shadow_female_image_url}, shiny_shadow_female_image_url={shiny_shadow_female_image_url}")
+            # print(f"[DEBUG] Creating female image frame with: female_image_url={female_image_url}, shiny_female_image_url={shiny_female_image_url}, shadow_female_image_url={shadow_female_image_url}, shiny_shadow_female_image_url={shiny_shadow_female_image_url}")
 
             # Create the frame for Female Pokémon Images
             self.female_image_frame = PokemonFemaleImageFrame(
@@ -209,8 +209,8 @@ class PokemonDetailsWindow:
             )
             # Pack the frame and expand it fully
             self.female_image_frame.frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        else:
-            print(f"[DEBUG] Pokémon ID {self.pokemon_id} does not have a unique female form")
+        # else:
+            # print(f"[DEBUG] Pokémon ID {self.pokemon_id} does not have a unique female form")
 
     def save_changes(self):
         # Retrieve general and additional attributes from info_frames
