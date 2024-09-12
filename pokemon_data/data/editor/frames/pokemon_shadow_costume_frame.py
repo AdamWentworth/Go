@@ -170,25 +170,26 @@ class PokemonShadowCostumeFrame(tk.Frame):
         data = self.db_manager.fetch_shadow_costume_data(self.pokemon_id)
         if data:
             first_record = data[0]
-            self.shadow_dropdown.set("{}: {}".format(first_record['shadow_id'], first_record['shadow_id']))
-            self.costume_dropdown.set("{}: {}".format(first_record['costume_id'], first_record['costume_id']))
+            # Assuming first_record is a tuple, access by index:
+            self.shadow_dropdown.set("{}: {}".format(first_record[0], first_record[0]))  # first_record[0] for shadow_id
+            self.costume_dropdown.set("{}: {}".format(first_record[2], first_record[2]))  # first_record[2] for costume_id
 
             # Clear the fields before inserting new data to avoid duplication
             self.date_available_entry.delete(0, tk.END)
-            self.date_available_entry.insert(0, first_record['date_available'])
+            self.date_available_entry.insert(0, first_record[3])  # date_available
 
             self.date_shiny_available_entry.delete(0, tk.END)
-            self.date_shiny_available_entry.insert(0, first_record['date_shiny_available'])
+            self.date_shiny_available_entry.insert(0, first_record[4])  # date_shiny_available
 
             self.image_url_shadow_costume_entry.delete(0, tk.END)
-            self.image_url_shadow_costume_entry.insert(0, first_record['image_url_shadow_costume'])
+            self.image_url_shadow_costume_entry.insert(0, first_record[5])  # image_url_shadow_costume
 
             self.image_url_shiny_shadow_costume_entry.delete(0, tk.END)
-            self.image_url_shiny_shadow_costume_entry.insert(0, first_record['image_url_shiny_shadow_costume'])
+            self.image_url_shiny_shadow_costume_entry.insert(0, first_record[6])  # image_url_shiny_shadow_costume
 
-            self.view_image(first_record['image_url_shadow_costume'], 'shadow')
-            if first_record['image_url_shiny_shadow_costume']:
-                self.view_image(first_record['image_url_shiny_shadow_costume'], 'shiny')
+            self.view_image(first_record[5], 'shadow')
+            if first_record[6]:
+                self.view_image(first_record[6], 'shiny')
 
     def refresh_data(self):
         self.clear_entries()

@@ -1,40 +1,32 @@
-import requests
 import sqlite3
 
-# Send GET request to the API and fetch data
-api_url = "https://pogoapi.net/api/v1/community_days.json"
-try:
-    response = requests.get(api_url)
-    data = response.json()
-except requests.RequestException as e:
-    print(f"Error fetching data from API: {str(e)}")
-    data = []
-
-# Connect to SQLite3 database
-conn = sqlite3.connect('D:\\Visual-Studio-Code\\Go\\backend\\data\\pokego.db')
+# Connect to the SQLite database
+conn = sqlite3.connect('../pokego.db')
 cursor = conn.cursor()
 
+# Add two new columns to the shadow_costume_pokemon table
 try:
-    # Loop through API data and update the shiny_rarity attribute in the database
-    for event in data:
-        boosted_pokemon = event['boosted_pokemon']
-        for pokemon in boosted_pokemon:
-            try:
-                # Update shiny_rarity attribute in the database
-                cursor.execute(
-                    "UPDATE pokemon SET shiny_rarity = ? WHERE name = ?",
-                    ("community_day", pokemon)
-                )
-            except sqlite3.Error as e:
-                print(f"Database error: {str(e)}")
-    
-    # Commit changes to the database
-    conn.commit()
-    print("Database updated successfully.")
+    # Add the column image_url_female_shadow_costume if it doesn't exist
+    cursor.execute("""
+        ALTER TABLE shadow_costume_pokemon
+        ADD COLUMN image_url_female_shadow_costume TEXT;
+    """)
+    print("Added column: image_url_female_shadow_costume")
+except sqlite3.OperationalError:
+    print("Column image_url_female_shadow_costume already exists.")
 
-except sqlite3.Error as e:
-    print(f"Database error: {str(e)}")
+try:
+    # Add the column image_url_female_shiny_shadow_costume if it doesn't exist
+    cursor.execute("""
+        ALTER TABLE shadow_costume_pokemon
+        ADD COLUMN image_url_female_shiny_shadow_costume TEXT;
+    """)
+    print("Added column: image_url_female_shiny_shadow_costume")
+except sqlite3.OperationalError:
+    print("Column image_url_female_shiny_shadow_costume already exists.")
 
-finally:
-    # Close the database connection
-    conn.close()
+# Commit the changes and close the connection
+conn.commit()
+conn.close()
+
+print("Database updated successfully.")
