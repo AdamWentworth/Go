@@ -6,6 +6,7 @@ const getPokemonsFromDb = (callback) => {
     const query = `
     SELECT 
         pokemon.*,
+        pokemon.female_unique,  -- Include this field
         t1.name AS type1_name, 
         t2.name AS type2_name,
         sp.shiny_available AS shadow_shiny_available,
