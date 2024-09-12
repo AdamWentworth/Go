@@ -3,7 +3,7 @@ import './Costumes.css';
 import './Costumes-Fullscreen.css';
 import { formatCostumeName } from '../utils/formattingHelpers';
 
-function Costumes({ costumes }) {
+function Costumes({ costumes, isMale }) {
   const [isFullScreen, setIsFullScreen] = useState(false);
 
   const toggleFullScreen = () => {
@@ -32,9 +32,15 @@ function Costumes({ costumes }) {
         {costumes.map((costume, index) => (
           <li key={index}>
             <div className="costume-images">
-              <img src={costume.image_url} alt={`Costume - ${formatCostumeName(costume.name)}`} />
+              <img 
+                src={isMale ? costume.image_url : costume.image_url_female || costume.image_url} 
+                alt={`Costume - ${formatCostumeName(costume.name)}`} 
+              />
               {costume.shiny_available === 1 && (
-                <img src={costume.image_url_shiny} alt={`Shiny Costume - ${formatCostumeName(costume.name)}`} />
+                <img 
+                  src={isMale ? costume.image_url_shiny : costume.image_url_shiny_female || costume.image_url_shiny} 
+                  alt={`Shiny Costume - ${formatCostumeName(costume.name)}`} 
+                />
               )}
             </div>
             <strong>{formatCostumeName(costume.name)}</strong>

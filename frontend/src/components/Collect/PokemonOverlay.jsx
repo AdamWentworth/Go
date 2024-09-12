@@ -29,10 +29,17 @@ const useScreenWidth = () => {
 
 const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) => {
   const [currentPokemon, setCurrentPokemon] = useState(pokemon);
+  const [isMale, setIsMale] = useState(true); // Gender state, default is male
   const screenWidth = useScreenWidth();
   const isWidescreen = screenWidth >= 1440;
   const isMediumScreen = screenWidth >= 1024 && screenWidth < 1440;
   const isNarrowScreen = screenWidth < 1024;
+
+  // Toggle gender state between male and female
+  const toggleGender = () => {
+    console.log("Male?", isMale)
+    setIsMale((prevIsMale) => !prevIsMale);
+  };
 
   const handleOverlayClick = (event) => {
     if (!event.target.closest('.overlay-windows')) {
@@ -46,7 +53,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
   const showShinyWindow = pokemon.shiny_available === 1;
   const isMega = pokemon.variantType && pokemon.variantType.includes("mega"); // Check if the Pokémon is a mega variant
   const showCostumesWindow = !isMega && Array.isArray(pokemon.costumes) && pokemon.costumes.length > 0; // Only show costumes if not mega
-  const showShadowWindow = !isMega && pokemon.date_shadow_available != null; // Only show shadow overlay if not mega
+  const showShadowWindow = !isMega && pokemon.date_shadow_available && pokemon.date_shadow_available.trim() !== '';
 
   const switchOverlay = (newPokemonData) => {
     setCurrentPokemon(newPokemonData);
@@ -81,30 +88,35 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
         </div>
         <div className="column main-info-column">
           <WindowOverlay onClose={onClose} className="overlay-main-info">
-            <MainInfo pokemon={pokemon} className="main-info" />
+            <MainInfo
+              pokemon={pokemon}
+              className="main-info"
+              isMale={isMale} // Pass the gender state to MainInfo
+              toggleGender={toggleGender} // Pass the toggle function to MainInfo
+            />
           </WindowOverlay>
           {(hasFewCostumes && showShadowWindow && !hasNoCostumes) && (
             <WindowOverlay onClose={onClose} className="overlay-shadow-info">
-              <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} className="shadow-info" />
-            </WindowOverlay>
+              <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} isMale={isMale} />
+            </WindowOverlay>          
           )}
         </div>
         {hasFewCostumes ? (
           <div className="column third-column">
             {showShinyWindow && (
               <WindowOverlay onClose={onClose} className="overlay-shiny-info">
-                <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} className="shiny-info" />
-              </WindowOverlay>
+                <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} isMale={isMale} />
+              </WindowOverlay>            
             )}
             {(showShadowWindow && hasNoCostumes) && (
               <WindowOverlay onClose={onClose} className="overlay-shadow-info">
-                <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} className="shadow-info" />
-              </WindowOverlay>
+                <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} isMale={isMale} />
+              </WindowOverlay>            
             )}
             {showCostumesWindow && (
               <WindowOverlay onClose={onClose} className="overlay-costumes">
-                <Costumes costumes={pokemon.costumes} className="costumes-info" />
-              </WindowOverlay>
+                <Costumes costumes={pokemon.costumes} isMale={isMale} className="costumes-info" />
+              </WindowOverlay>            
             )}
           </div>
         ) : (
@@ -112,20 +124,20 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
             <div className="column third-column">
               {showShinyWindow && (
                 <WindowOverlay onClose={onClose} className="overlay-shiny-info">
-                  <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} className="shiny-info" />
-                </WindowOverlay>
+                  <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} isMale={isMale} />
+                </WindowOverlay>              
               )}
               {showShadowWindow && (
                 <WindowOverlay onClose={onClose} className="overlay-shadow-info">
-                  <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} className="shadow-info" />
-                </WindowOverlay>
+                  <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} isMale={isMale} />
+                </WindowOverlay>              
               )}
             </div>
             <div className="column fourth-column">
               {showCostumesWindow && (
                 <WindowOverlay onClose={onClose} className="overlay-costumes">
-                  <Costumes costumes={pokemon.costumes} className="costumes-info" />
-                </WindowOverlay>
+                  <Costumes costumes={pokemon.costumes} isMale={isMale} className="costumes-info" />
+                </WindowOverlay>              
               )}
             </div>
           </>
@@ -140,25 +152,30 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
         {renderMoves()}
 
         <WindowOverlay onClose={onClose} className="overlay-main-info">
-          <MainInfo pokemon={pokemon} className="main-info" />
+          <MainInfo
+            pokemon={pokemon}
+            className="main-info"
+            isMale={isMale} // Pass the gender state to MainInfo
+            toggleGender={toggleGender} // Pass the toggle function to MainInfo
+          />
         </WindowOverlay>
 
         {showShinyWindow && (
           <WindowOverlay onClose={onClose} className="overlay-shiny-info">
-            <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} className="shiny-info" />
-          </WindowOverlay>
+            <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} isMale={isMale} />
+          </WindowOverlay>        
         )}
 
         {showShadowWindow && (
           <WindowOverlay onClose={onClose} className="overlay-shadow-info">
-            <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} className="shadow-info" />
-          </WindowOverlay>
+            <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} isMale={isMale} />
+          </WindowOverlay>        
         )}
 
         {showCostumesWindow && (
           <WindowOverlay onClose={onClose} className="overlay-costumes">
-            <Costumes costumes={pokemon.costumes} className="costumes-info" />
-          </WindowOverlay>
+            <Costumes costumes={pokemon.costumes} isMale={isMale} className="costumes-info" />
+          </WindowOverlay>        
         )}
       </div>
     );
@@ -168,24 +185,29 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
     return (
       <div className="overlay-row other-overlays-row column-layout">
         <WindowOverlay onClose={onClose} className="overlay-main-info">
-          <MainInfo pokemon={pokemon} className="main-info" />
+          <MainInfo
+            pokemon={pokemon}
+            className="main-info"
+            isMale={isMale} // Pass the gender state to MainInfo
+            toggleGender={toggleGender} // Pass the toggle function to MainInfo
+          />
         </WindowOverlay>
 
         {showShinyWindow && (
           <WindowOverlay onClose={onClose} className="overlay-shiny-info">
-            <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} className="shiny-info" />
-          </WindowOverlay>
+            <ShinyInfo pokemon={currentPokemon} allPokemonData={allPokemons} isMale={isMale} />
+          </WindowOverlay>        
         )}
 
         {showShadowWindow && (
           <WindowOverlay onClose={onClose} className="overlay-shadow-info">
-            <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} className="shadow-info" />
-          </WindowOverlay>
+            <ShadowInfo pokemon={pokemon} allPokemonData={allPokemons} isMale={isMale} />
+          </WindowOverlay>        
         )}
 
         {showCostumesWindow && (
           <WindowOverlay onClose={onClose} className="overlay-costumes">
-            <Costumes costumes={pokemon.costumes} className="costumes-info" />
+            <Costumes costumes={pokemon.costumes} isMale={isMale} className="costumes-info" />
           </WindowOverlay>
         )}
 

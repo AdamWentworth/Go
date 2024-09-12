@@ -3,7 +3,7 @@
 import React from 'react';
 import './MainInfo.css';
 
-function MainInfo({ pokemon }) {
+function MainInfo({ pokemon, isMale, toggleGender }) {
   // Function to extract the base name by slicing off everything before the last space
   const getBaseName = (name) => {
     return name.substring(name.lastIndexOf(' ') + 1);
@@ -25,7 +25,11 @@ function MainInfo({ pokemon }) {
         )}
       </div>
       
-      <img src={pokemon.image_url} alt={baseName} className="pokemon-image" />
+      <img 
+        src={isMale ? pokemon.image_url : pokemon.female_data.image_url} 
+        alt={baseName} 
+        className="pokemon-image" 
+      />
       <p>#{pokemon.pokedex_number}</p>
       <div className="type-section">
         <img src={pokemon.type_1_icon} alt={pokemon.type1_name} />
@@ -60,6 +64,11 @@ function MainInfo({ pokemon }) {
       <div className="cp">
         <strong>Level 50 Max CP:</strong> {pokemon.cp50}
       </div>
+      {pokemon.female_data && (
+        <button onClick={toggleGender} className="toggle-gender-btn">
+          Toggle Gender
+        </button>
+      )}
     </div>
   );
 }

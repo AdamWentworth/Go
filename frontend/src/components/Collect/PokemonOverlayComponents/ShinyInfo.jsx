@@ -3,7 +3,7 @@ import React from 'react';
 import './ShinyInfo.css';
 import { formatShinyRarity, getLastWord } from '../utils/formattingHelpers';
 
-function ShinyInfo({ pokemon, allPokemonData }) {
+function ShinyInfo({ pokemon, allPokemonData, isMale }) {
   // Helper function to find previous evolution's name and ID if needed
   const getPreviousEvolution = () => {
     if (pokemon.evolves_from) {
@@ -42,7 +42,10 @@ function ShinyInfo({ pokemon, allPokemonData }) {
   return (
     <div className="column shiny-info-column">
       <h1>Shiny {baseName}</h1>
-      <img src={pokemon.image_url_shiny} alt={`${pokemon.name} Shiny`} />
+      <img 
+        src={isMale ? pokemon.image_url_shiny : pokemon.female_data?.shiny_image_url || pokemon.image_url_shiny} 
+        alt={`${pokemon.name} Shiny`} 
+      />
       <div>
         <strong>Shiny Rarity:</strong> {
           displayShinyRarity().split('\n').map((line, index) => (

@@ -3,7 +3,7 @@ import React from 'react';
 import './ShadowInfo.css';
 import { formatShinyShadowRarity, getLastWord } from '../utils/formattingHelpers';
 
-function ShadowInfo({ pokemon, allPokemonData }) {
+function ShadowInfo({ pokemon, allPokemonData, isMale }) {
     // Function to extract the base name by slicing off everything before the last space
     const getBaseName = (name) => {
         return name.substring(name.lastIndexOf(' ') + 1);
@@ -43,9 +43,16 @@ function ShadowInfo({ pokemon, allPokemonData }) {
   
         {/* New container for images */}
         <div className="images-container">
-          <img src={pokemon.image_url_shadow} alt={`Shadow ${baseName}`} />
+          <img 
+            src={isMale ? pokemon.image_url_shadow : pokemon.female_data?.shadow_image_url || pokemon.image_url_shadow} 
+            alt={`Shadow ${baseName}`} 
+          />
           {showShinyShadow && (
-            <img src={pokemon.image_url_shiny_shadow} alt={`Shiny Shadow ${baseName}`} className="shiny-shadow-image" />
+            <img 
+              src={isMale ? pokemon.image_url_shiny_shadow : pokemon.female_data?.shiny_shadow_image_url || pokemon.image_url_shiny_shadow} 
+              alt={`Shiny Shadow ${baseName}`} 
+              className="shiny-shadow-image" 
+            />
           )}
         </div>
         
