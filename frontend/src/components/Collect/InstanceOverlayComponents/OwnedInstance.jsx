@@ -1,7 +1,7 @@
 // OwnedInstance.jsx
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import './OwnedInstance.css';
-import { PokemonDataContext } from '../../../contexts/PokemonDataContext'; 
+import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
 import EditSaveComponent from './EditSaveComponent';
 import CPComponent from './OwnedComponents/CPComponent';
 import FavoriteComponent from './OwnedComponents/FavoriteComponent';
@@ -17,9 +17,15 @@ import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
 import BackgroundComponent from './OwnedComponents/BackgroundComponent';
 
+import { determineImageUrl } from '../utils/imageHelpers';
+
 const OwnedInstance = ({ pokemon }) => {
   const { updateDetails } = useContext(PokemonDataContext);
+
+  const [isFemale, setIsFemale] = useState(pokemon.ownershipStatus.gender === 'Female');
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
+  const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon)); // Initialize based on gender
+
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
   const [cp, setCP] = useState(pokemon.ownershipStatus.cp);
@@ -52,6 +58,17 @@ const OwnedInstance = ({ pokemon }) => {
     }
   }, [pokemon.backgrounds, pokemon.ownershipStatus.location_card]);
 
+  useEffect(() => {
+    // When gender or pokemon changes, update current image
+    const updatedImage = determineImageUrl(isFemale, pokemon);
+    setCurrentImage(updatedImage); 
+  }, [isFemale, pokemon]);
+
+  const handleGenderChange = (newGender) => {
+    setGender(newGender);
+    setIsFemale(newGender === 'Female'); // Update the gender state and isFemale
+  };
+
   const handleCPChange = (newCP) => {
     setCP(newCP);
   };
@@ -66,10 +83,6 @@ const OwnedInstance = ({ pokemon }) => {
 
   const handleFavoriteChange = (newFavoriteStatus) => {
     setIsFavorite(newFavoriteStatus);
-  };
-
-  const handleGenderChange = (newGender) => {
-    setGender(newGender);
   };
 
   const handleWeightChange = (newWeight) => {
@@ -98,13 +111,13 @@ const OwnedInstance = ({ pokemon }) => {
 
   const toggleEditMode = () => {
     if (editMode) {
-      updateDetails(pokemon.pokemonKey, { 
-        nickname: nickname, 
-        lucky: isLucky, 
-        cp: cp, 
-        favorite: isFavorite, 
-        gender: gender, 
-        weight: weight, 
+      updateDetails(pokemon.pokemonKey, {
+        nickname: nickname,
+        lucky: isLucky,
+        cp: cp,
+        favorite: isFavorite,
+        gender: gender,
+        weight: weight,
         height: height,
         fast_move_id: moves.fastMove,
         charged_move1_id: moves.chargedMove1,
@@ -135,11 +148,14 @@ const OwnedInstance = ({ pokemon }) => {
 
   return (
     <div className="owned-instance">
+      {/* Render component UI */}
       <div className="top-row">
         <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
         <CPComponent pokemon={pokemon} editMode={editMode} toggleEditMode={toggleEditMode} onCPChange={handleCPChange} />
         <FavoriteComponent pokemon={pokemon} editMode={editMode} onFavoriteChange={handleFavoriteChange} />
       </div>
+
+      {/* Background and image rendering */}
       {selectableBackgrounds.length > 0 && (
         <div className={`background-select-row ${editMode ? 'active' : ''}`}>
           <img
@@ -159,9 +175,11 @@ const OwnedInstance = ({ pokemon }) => {
         )}
         <div className="pokemon-image-container">
           {isLucky && <img src={process.env.PUBLIC_URL + '/images/lucky.png'} alt="Lucky Backdrop" className="lucky-backdrop" />}
-          <img src={process.env.PUBLIC_URL + pokemon.currentImage} alt={pokemon.name} className="pokemon-image" />
+          <img src={currentImage} alt={pokemon.name} className="pokemon-image" />
         </div>
       </div>
+      
+      {/* Other components */}
       <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
       <div className="gender-lucky-row">
         {pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade ? (
@@ -169,7 +187,13 @@ const OwnedInstance = ({ pokemon }) => {
         ) : (
           <LuckyComponent pokemon={pokemon} onToggleLucky={handleLuckyToggle} isLucky={isLucky} editMode={editMode} />
         )}
-        <GenderComponent pokemon={pokemon} editMode={editMode} onGenderChange={handleGenderChange} />
+        {/* Remove this line in OwnedInstance.jsx */}
+        <GenderComponent 
+          pokemon={pokemon} 
+          editMode={editMode} 
+          isFemale={isFemale} 
+          onGenderChange={handleGenderChange} // Pass only handleGenderChange
+        />
       </div>
       <div className="stats-container">
         <WeightComponent pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />

@@ -13,15 +13,18 @@ import TypeComponent from './OwnedComponents/TypeComponent';
 import HeightComponent from './OwnedComponents/HeightComponent';
 import MovesComponent from './OwnedComponents/MovesComponent';
 import FriendshipManager from './WantedComponents/FriendshipManager';
-import BackgroundComponent from './OwnedComponents/BackgroundComponent'; // Import BackgroundComponent
+import BackgroundComponent from './OwnedComponents/BackgroundComponent'; 
+import { determineImageUrl } from '../utils/imageHelpers';  // Import the image helper
 
 const WantedInstance = ({ pokemon }) => {
-  // console.log('Rendering WantedInstance with Pokemon:', pokemon);
   const { updateDetails } = useContext(PokemonDataContext);
+
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
   const [isFavorite, setIsFavorite] = useState(pokemon.ownershipStatus.favorite);
   const [gender, setGender] = useState(pokemon.ownershipStatus.gender);
+  const [isFemale, setIsFemale] = useState(pokemon.ownershipStatus.gender === 'Female');
+  const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon));  // Set the initial image based on gender
   const [weight, setWeight] = useState(pokemon.ownershipStatus.weight);
   const [height, setHeight] = useState(pokemon.ownershipStatus.height);
   const [moves, setMoves] = useState({
@@ -46,9 +49,18 @@ const WantedInstance = ({ pokemon }) => {
     }
   }, [pokemon.backgrounds, pokemon.ownershipStatus.location_card]);
 
+  useEffect(() => {
+    // Update the image when the gender or pokemon changes
+    const updatedImage = determineImageUrl(isFemale, pokemon);
+    setCurrentImage(updatedImage);
+  }, [isFemale, pokemon]);
+
   const handleNicknameChange = (newNickname) => setNickname(newNickname);
   const handleFavoriteChange = (newFavoriteStatus) => setIsFavorite(newFavoriteStatus);
-  const handleGenderChange = (newGender) => setGender(newGender);
+  const handleGenderChange = (newGender) => {
+    setGender(newGender);
+    setIsFemale(newGender === 'Female');  // Update gender state and isFemale flag
+  };
   const handleWeightChange = (newWeight) => setWeight(newWeight);
   const handleHeightChange = (newHeight) => setHeight(newHeight);
   const handleMovesChange = (newMoves) => setMoves(newMoves);
@@ -132,7 +144,7 @@ const WantedInstance = ({ pokemon }) => {
             />
           )}
           <img 
-            src={process.env.PUBLIC_URL + pokemon.currentImage} 
+            src={currentImage}  // Use the updated image state here
             alt={pokemon.name} 
             className="pokemon-image"
           />

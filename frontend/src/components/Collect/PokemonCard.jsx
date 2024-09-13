@@ -1,7 +1,8 @@
 // PokemonCard.jsx
 
-import React, { memo } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { formatPokemonName, formatCostumeName } from './utils/formattingHelpers';
+import { determineImageUrl } from "./utils/imageHelpers"
 import './PokemonCard.css';
 
 const PokemonCard = ({
@@ -16,10 +17,23 @@ const PokemonCard = ({
     showAll,
     sortType
 }) => {
-    const imageUrl = pokemon.currentImage;
+    const [currentImage, setCurrentImage] = useState(pokemon.currentImage);
+
+    const isFemale = pokemon.ownershipStatus?.gender === "Female";
+
+    useEffect(() => {
+        if (isFemale && pokemon.female_data) {
+            const updatedImage = determineImageUrl(isFemale, pokemon);
+            if (updatedImage) {
+                setCurrentImage(updatedImage);  // Update local state, not pokemon directly
+            }
+        } else {
+            setCurrentImage(pokemon.currentImage);  // Use the default currentImage
+        }
+    }, [isFemale, pokemon]);
 
     const getOwnershipClass = () => {
-        const filter = ownershipFilter.toLowerCase();
+        const filter = ownershipFilter?.toLowerCase() || '';
         let ownershipClass = '';
         switch (filter) {
             case 'owned': ownershipClass = 'owned'; break;
@@ -113,7 +127,7 @@ const PokemonCard = ({
                     </div>
                 )}
                 <img 
-                    src={imageUrl} 
+                    src={currentImage}  // Use local state for image
                     alt={pokemon.name} 
                     loading="lazy" 
                     className="pokemon-image"

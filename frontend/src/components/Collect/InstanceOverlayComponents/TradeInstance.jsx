@@ -1,7 +1,6 @@
 // TradeInstance.jsx
 import React, { useState, useContext, useEffect } from 'react';
 import './TradeInstance.css';
-
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext'; 
 
 import EditSaveComponent from './EditSaveComponent';
@@ -14,10 +13,14 @@ import HeightComponent from './OwnedComponents/HeightComponent';
 import MovesComponent from './OwnedComponents/MovesComponent';
 import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
-import BackgroundComponent from './OwnedComponents/BackgroundComponent'; // Import BackgroundComponent
+import BackgroundComponent from './OwnedComponents/BackgroundComponent';
+import { determineImageUrl } from '../utils/imageHelpers'; // Import image helper
 
 const TradeInstance = ({ pokemon }) => {
   const { updateDetails } = useContext(PokemonDataContext);
+  
+  const [isFemale, setIsFemale] = useState(pokemon.ownershipStatus.gender === 'Female');
+  const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon)); // Set initial image based on gender
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
   const [cp, setCP] = useState(pokemon.ownershipStatus.cp);
@@ -31,7 +34,7 @@ const TradeInstance = ({ pokemon }) => {
   });
   const [locationCaught, setLocationCaught] = useState(pokemon.ownershipStatus.location_caught);
   const [dateCaught, setDateCaught] = useState(pokemon.ownershipStatus.date_caught);
-  
+
   // Background-related state
   const [showBackgrounds, setShowBackgrounds] = useState(false);
   const [selectedBackground, setSelectedBackground] = useState(null);
@@ -46,16 +49,23 @@ const TradeInstance = ({ pokemon }) => {
     }
   }, [pokemon.backgrounds, pokemon.ownershipStatus.location_card]);
 
+  // Update the image whenever gender or Pokémon changes
+  useEffect(() => {
+    const updatedImage = determineImageUrl(isFemale, pokemon);
+    setCurrentImage(updatedImage);
+  }, [isFemale, pokemon]);
+
+  const handleGenderChange = (newGender) => {
+    setGender(newGender);
+    setIsFemale(newGender === 'Female'); // Update gender state and isFemale flag
+  };
+
   const handleCPChange = (newCP) => {
     setCP(newCP);
   };
 
   const handleNicknameChange = (newNickname) => {
     setNickname(newNickname);
-  };
-
-  const handleGenderChange = (newGender) => {
-    setGender(newGender);
   };
 
   const handleWeightChange = (newWeight) => {
@@ -112,8 +122,7 @@ const TradeInstance = ({ pokemon }) => {
 
   return (
     <div className="trade-instance">
-      <div className="trade-title">
-      </div>
+      <div className="trade-title"></div>
       <div className="top-row">
         <div className="edit-save-container">
           <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
@@ -122,7 +131,7 @@ const TradeInstance = ({ pokemon }) => {
       </div>
 
       <div className="CPComponent">
-      <CPComponent pokemon={pokemon} editMode={editMode} onCPChange={handleCPChange} />
+        <CPComponent pokemon={pokemon} editMode={editMode} onCPChange={handleCPChange} />
       </div>
       
       {selectableBackgrounds.length > 0 && (
@@ -144,7 +153,7 @@ const TradeInstance = ({ pokemon }) => {
           </div>
         )}
         <div className="pokemon-image-container">
-          <img src={process.env.PUBLIC_URL + pokemon.currentImage} alt={pokemon.name} className="pokemon-image" />
+          <img src={currentImage} alt={pokemon.name} className="pokemon-image" />
         </div>
       </div>
 
@@ -157,9 +166,9 @@ const TradeInstance = ({ pokemon }) => {
       </div>
 
       <div className="stats-container">
-          <WeightComponent pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
-          <TypeComponent pokemon={pokemon} />
-          <HeightComponent pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
+        <WeightComponent pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
+        <TypeComponent pokemon={pokemon} />
+        <HeightComponent pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
       </div>
 
       <div className="moves-container">
