@@ -270,6 +270,10 @@
         max-width: 120px !important;
         padding-bottom: 10px !important;
     }
+    .gender-toggle-icon {
+        width: 25px !important;
+        height: 25px !important;
+    }
 }
 
 @media (min-width: 1440px) and (max-width: 1720px) {
@@ -308,5 +312,9 @@
     .shadow-info-column img {
         max-width: 120px !important;
         padding-bottom: 10px !important;
+    }
+    .gender-toggle-icon {
+        width: 30px !important;
+        height: 30px !important;
     }
 }

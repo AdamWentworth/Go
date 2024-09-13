@@ -73,4 +73,17 @@
     margin-bottom: 10px;
   }
   
-  
+  /* Ensure the parent container is positioned relatively */
+.main-info-column {
+    position: relative;
+}
+
+.gender-toggle-icon {
+    position: absolute;
+    right: 0; /* Aligns the icon to the right */
+    top: 50; /* Adjust the vertical alignment as needed */
+    cursor: pointer;
+    width: 40px; /* Set your desired width */
+    height: 40px; /* Set your desired height */
+    transform: translate(-10px, 10px); /* Optional: fine-tune position, negative X moves left, positive Y moves down */
+}

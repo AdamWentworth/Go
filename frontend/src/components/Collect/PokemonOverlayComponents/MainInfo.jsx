@@ -1,9 +1,12 @@
-/* mainInfo.jsx */
+/* MainInfo.jsx */
 
 import React from 'react';
 import './MainInfo.css';
 
 function MainInfo({ pokemon, isMale, toggleGender }) {
+  const maleIcon = `/images/male-icon.png`;   // Male icon location
+  const femaleIcon = `/images/female-icon.png`; // Female icon location
+
   // Function to extract the base name by slicing off everything before the last space
   const getBaseName = (name) => {
     return name.substring(name.lastIndexOf(' ') + 1);
@@ -21,7 +24,12 @@ function MainInfo({ pokemon, isMale, toggleGender }) {
       <div className="header-section">
         <h1>Main Info</h1>
         {pokemon.rarity.includes("Regional") && (
-          <img src="/images/regional.png" alt="Regional" className="regional-icon" />
+          <img 
+            src="/images/regional.png" 
+            alt="Regional" 
+            className="regional-icon" 
+            title="Regional"  // Tooltip for the Regional image
+          />
         )}
       </div>
       
@@ -31,6 +39,17 @@ function MainInfo({ pokemon, isMale, toggleGender }) {
         className="pokemon-image" 
       />
       <p>#{pokemon.pokedex_number}</p>
+      {pokemon.female_data && (
+        <img 
+          src={isMale ? maleIcon : femaleIcon} 
+          alt={isMale ? "Male" : "Female"} 
+          onClick={toggleGender} 
+          className="gender-toggle-icon" 
+          role="button" 
+          aria-label={`Toggle gender to ${isMale ? 'Female' : 'Male'}`}
+          style={{ cursor: 'pointer' }}  // Add custom styling as necessary
+        />
+      )}
       <div className="type-section">
         <img src={pokemon.type_1_icon} alt={pokemon.type1_name} />
         {pokemon.type2_name && (
@@ -64,11 +83,6 @@ function MainInfo({ pokemon, isMale, toggleGender }) {
       <div className="cp">
         <strong>Level 50 Max CP:</strong> {pokemon.cp50}
       </div>
-      {pokemon.female_data && (
-        <button onClick={toggleGender} className="toggle-gender-btn">
-          Toggle Gender
-        </button>
-      )}
     </div>
   );
 }

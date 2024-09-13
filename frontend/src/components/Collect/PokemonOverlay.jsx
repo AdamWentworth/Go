@@ -37,7 +37,6 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
 
   // Toggle gender state between male and female
   const toggleGender = () => {
-    console.log("Male?", isMale)
     setIsMale((prevIsMale) => !prevIsMale);
   };
 
