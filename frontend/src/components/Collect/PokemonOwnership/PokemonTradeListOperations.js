@@ -1,6 +1,7 @@
 // PokemonTradeListOperations.js
 
 import { parsePokemonKey } from "../utils/PokemonIDUtils";
+import { determineImageUrl } from "../utils/imageHelpers"; 
 
 export const updatePokemonLists = (ownershipData, variants, callback) => {
     const lists = {
@@ -17,13 +18,19 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
         if (!variantDetail) {
             console.error(`Variant not found for baseKey: ${baseKey}`);
             console.error(`Key: ${key}, Value:`, value);
-        } else {
-            // console.log(`Variant found for baseKey: ${baseKey}`, variantDetail);
+        }
+
+        // Check if the Pokémon is female and has female data, and update the image accordingly
+        const isFemale = value.gender === 'Female';
+        let currentImage = variantDetail?.currentImage;  // Default image
+
+        if (isFemale && variantDetail?.female_data) {
+            currentImage = determineImageUrl(isFemale, variantDetail);  // Update the image for female Pokémon
         }
 
         // Prepare the object to be added to the list
         const listItem = {
-            currentImage: variantDetail?.currentImage, // Safe navigation to avoid error if variantDetail is undefined
+            currentImage: currentImage, // Safe navigation to avoid error if variantDetail is undefined
             friendship_level: value.friendship_level,
             mirror: value.mirror,
             pref_lucky: value.pref_lucky,
@@ -42,7 +49,8 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
             shiny_rarity: variantDetail?.shiny_rarity,
             rarity: variantDetail?.rarity,
             location_card: value.location_card,
-            key: key
+            key: key,
+            gender: value.gender
         };
 
         // Assigning the listItem under the corresponding pokemonKey in each list
@@ -68,9 +76,17 @@ export const initializePokemonLists = (ownershipData, variants) => {
         const { baseKey } = parsePokemonKey(key); // Extract the base key from the key
         const variantDetail = variants.find(variant => variant.pokemonKey === baseKey); // Find the corresponding variant
 
+        // Check if the Pokémon is female and has female data, and update the image accordingly
+        const isFemale = value.gender === 'Female';
+        let currentImage = variantDetail?.currentImage;  // Default image
+
+        if (isFemale && variantDetail?.female_data) {
+            currentImage = determineImageUrl(isFemale, variantDetail);  // Update the image for female Pokémon
+        }
+
         // Prepare the object to be added to the list
         const listItem = {
-            currentImage: variantDetail?.currentImage, // Safe navigation to avoid error if variantDetail is undefined
+            currentImage: currentImage, // Safe navigation to avoid error if variantDetail is undefined
             friendship_level: value.friendship_level,
             mirror: value.mirror,
             pref_lucky: value.pref_lucky,
@@ -89,7 +105,8 @@ export const initializePokemonLists = (ownershipData, variants) => {
             shiny_rarity: variantDetail?.shiny_rarity,
             rarity: variantDetail?.rarity,
             location_card: value.location_card,
-            key: key
+            key: key,
+            gender: value.gender
         };
 
         // Assigning the listItem under the corresponding pokemonKey in each list
