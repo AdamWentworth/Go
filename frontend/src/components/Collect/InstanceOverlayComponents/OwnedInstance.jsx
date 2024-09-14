@@ -182,7 +182,7 @@ const OwnedInstance = ({ pokemon }) => {
       {/* Other components */}
       <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
       <div className="gender-lucky-row">
-        {pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade ? (
+        {pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade || pokemon.rarity === "Mythic" ? (
           <div className="lucky-placeholder"></div>
         ) : (
           <LuckyComponent pokemon={pokemon} onToggleLucky={handleLuckyToggle} isLucky={isLucky} editMode={editMode} />
