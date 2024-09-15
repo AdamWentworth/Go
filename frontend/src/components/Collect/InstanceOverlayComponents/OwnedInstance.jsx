@@ -24,7 +24,7 @@ const OwnedInstance = ({ pokemon }) => {
 
   const [isFemale, setIsFemale] = useState(pokemon.ownershipStatus.gender === 'Female');
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
-  const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon)); // Initialize based on gender
+  const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon));
 
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
@@ -59,7 +59,6 @@ const OwnedInstance = ({ pokemon }) => {
   }, [pokemon.backgrounds, pokemon.ownershipStatus.location_card]);
 
   useEffect(() => {
-    // When gender or pokemon changes, update current image
     const updatedImage = determineImageUrl(isFemale, pokemon);
     setCurrentImage(updatedImage); 
   }, [isFemale, pokemon]);
@@ -148,14 +147,11 @@ const OwnedInstance = ({ pokemon }) => {
 
   return (
     <div className="owned-instance">
-      {/* Render component UI */}
       <div className="top-row">
         <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
         <CPComponent pokemon={pokemon} editMode={editMode} toggleEditMode={toggleEditMode} onCPChange={handleCPChange} />
         <FavoriteComponent pokemon={pokemon} editMode={editMode} onFavoriteChange={handleFavoriteChange} />
       </div>
-
-      {/* Background and image rendering */}
       {selectableBackgrounds.length > 0 && (
         <div className={`background-select-row ${editMode ? 'active' : ''}`}>
           <img
@@ -178,8 +174,6 @@ const OwnedInstance = ({ pokemon }) => {
           <img src={currentImage} alt={pokemon.name} className="pokemon-image" />
         </div>
       </div>
-      
-      {/* Other components */}
       <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
       <div className="gender-lucky-row">
         {pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade || pokemon.rarity === "Mythic" ? (
@@ -187,12 +181,11 @@ const OwnedInstance = ({ pokemon }) => {
         ) : (
           <LuckyComponent pokemon={pokemon} onToggleLucky={handleLuckyToggle} isLucky={isLucky} editMode={editMode} />
         )}
-        {/* Remove this line in OwnedInstance.jsx */}
         <GenderComponent 
           pokemon={pokemon} 
           editMode={editMode} 
           isFemale={isFemale} 
-          onGenderChange={handleGenderChange} // Pass only handleGenderChange
+          onGenderChange={handleGenderChange}
         />
       </div>
       <div className="stats-container">

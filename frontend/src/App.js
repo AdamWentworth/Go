@@ -9,7 +9,6 @@ import Login from './components/Authentication/Login';
 import Register from './components/Authentication/Register';
 import Account from './components/Authentication/Account';
 import Raid from './components/Raid/Raid';
-import LocationPermission from './components/Discover/Location/LocationPermission';
 import './App.css';
 import CacheContext from './contexts/CacheContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -31,7 +30,6 @@ function App() {
                             <LocationProvider>
                                 <div className="App">
                                     <Navbar />
-                                    <LocationPermission />
                                     <main>
                                         <Routes>
                                             <Route path="/" element={<MainButtons />} />

@@ -1,5 +1,4 @@
 // LocationContext.js
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { toast } from 'react-toastify';
@@ -10,78 +9,64 @@ export const useLocation = () => useContext(LocationContext);
 
 export const LocationProvider = ({ children }) => {
   const [location, setLocation] = useState(null);
+  const [locationStatus, setLocationStatus] = useState('checking');
   const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const fetchLocation = () => {
-      const storedLocation = localStorage.getItem('location');
-      const locationPermissionDenied = localStorage.getItem('locationPermissionDenied');
+    const checkLocationPermissionAndFetch = async () => {
+      if (!user) {
+        console.log("User not logged in. Skipping location fetching.");
+        setLocationStatus('unavailable');
+        return;
+      }
 
+      // If user is logged in but hasn't allowed location
+      if (user && !user.allowLocation) {
+        console.log("User has not allowed location. Skipping location fetching.");
+        setLocationStatus('unavailable');
+        return;
+      }
+
+      // Check if location is already stored in localStorage
+      const storedLocation = localStorage.getItem('location');
       if (storedLocation) {
         const parsedLocation = JSON.parse(storedLocation);
-        console.log(`Latitude: ${parsedLocation.latitude}, Longitude: ${parsedLocation.longitude}`);
+        console.log(`Location already stored. Latitude: ${parsedLocation.latitude}, Longitude: ${parsedLocation.longitude}`);
         setLocation(parsedLocation);
-      } else if (locationPermissionDenied && !user) {
-        console.log("Location permission previously denied for non-logged-in user.");
+        setLocationStatus('available');
+        return;
+      }
+
+      // If no location is stored, request it
+      try {
+        console.log("Requesting location...");
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const coords = position.coords;
+            localStorage.setItem('location', JSON.stringify(coords));
+            setLocation(coords);
+            setLocationStatus('available');
+            console.log(`Location acquired and stored. Latitude: ${coords.latitude}, Longitude: ${coords.longitude}`);
+          },
+          (error) => {
+            console.error("Error acquiring location:", error);
+            toast.error('Location services are disabled in your browser. Please enable location services in your browser settings to use location-based features.');
+            setLocationStatus('unavailable');
+          }
+        );
+      } catch (error) {
+        console.error("Error accessing geolocation:", error);
+        setLocationStatus('unavailable');
       }
     };
 
-    if (!isLoading && user !== undefined) {
-      fetchLocation();
+    if (!isLoading) {
+      checkLocationPermissionAndFetch();  // Call the function after user status and loading state is resolved
     }
   }, [user, isLoading]);
 
-  const handleLocationPermission = async (showPopupCallback) => {
-    if (isLoading || user === undefined) {
-      await new Promise(resolve => setTimeout(resolve, 100)); // Wait for the user data to fully load
-      return handleLocationPermission(showPopupCallback); // Recursively call again after waiting
-    }
-
-    const storedLocation = localStorage.getItem('location');
-    if (storedLocation) {
-      console.log("Location already set.");
-      return JSON.parse(storedLocation);
-    }
-
-    const locationPermissionDenied = localStorage.getItem('locationPermissionDenied');
-    if (locationPermissionDenied && !user) {
-      console.log("Location permission previously denied for non-logged-in user.");
-      return null;
-    }
-
-    if (!user) {
-      console.log("User not logged in. Prompting for location permission.");
-      showPopupCallback(true);
-      return null;
-    } else {
-      console.log("User logged in. Checking allowLocation:", user.allowLocation);
-      if (user.allowLocation) {
-        console.log("User allowed location. Acquiring location.");
-        return new Promise((resolve) => {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              console.log("Location acquired:", position);
-              const coords = position.coords;
-              localStorage.setItem('location', JSON.stringify(coords));
-              setLocation(coords);
-              resolve(coords);
-            },
-            (error) => {
-              console.error("Error acquiring location:", error);
-              toast.error('Location services are disabled in your browser. Please enable location services in your browser settings to use location-based features.');
-              resolve(null);
-            }
-          );
-        });
-      } else {
-        console.log("User did not allow location. Doing nothing.");
-        return null;
-      }
-    }
-  };
-
   return (
-    <LocationContext.Provider value={{ location, handleLocationPermission }}>
+    <LocationContext.Provider value={{ location, locationStatus }}>
       {children}
     </LocationContext.Provider>
   );
