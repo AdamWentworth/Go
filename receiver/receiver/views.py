@@ -82,7 +82,7 @@ def retry_sending_to_kafka():
 @require_http_methods(["POST", "OPTIONS"])
 def handle_batched_updates(request):
     logger.info(f"{request.method} {request.path}")
-    
+
     if request.method == 'OPTIONS':
         response = HttpResponse()
         response['Access-Control-Allow-Origin'] = 'http://localhost:3000'
@@ -91,9 +91,6 @@ def handle_batched_updates(request):
         response['Access-Control-Allow-Credentials'] = 'true'
         return response
 
-    # Log the exact data the server is receiving
-    # logger.info(f"Received data: {request.body.decode('utf-8')}")
-    
     user_id, username = verify_access_token(request)
     if not user_id:
         logger.error("Unauthorized access attempt detected")
@@ -102,27 +99,47 @@ def handle_batched_updates(request):
             'Access-Control-Allow-Credentials': 'true'
         })
 
-    pokemon = json.loads(request.body)
-    pokemon_count = len(pokemon)
+    # Parse the received data from the request
+    try:
+        request_data = json.loads(request.body)
+
+        # Extract the location if available
+        location = request_data.pop('location', None)  # Fetch the location field and remove it from the main dictionary
+        
+        # Everything else in the request_data is assumed to be Pokémon updates
+        pokemon_updates = {key: value for key, value in request_data.items() if key != 'location'}
+
+        if not pokemon_updates:
+            logger.error("No Pokémon data found in request")
+            return JsonResponse({"message": "Bad Request - No Pokémon data"}, status=400)
+
+        pokemon_count = len(pokemon_updates)
+    except json.JSONDecodeError:
+        logger.error("Failed to parse JSON from request body")
+        return JsonResponse({"message": "Bad Request"}, status=400)
 
     trace_id = str(uuid.uuid4())
-    
+
+    # Prepare the data to be sent to Kafka, including location if present
     data = {
         'user_id': user_id,
         'username': username,
         'trace_id': trace_id,
-        'pokemon': pokemon
+        'pokemon': pokemon_updates,
+        'location': location  # Include the location in the message (can be null or valid data)
     }
 
     try:
+        # Send data to Kafka
         producer.produce(json.dumps(data).encode('utf-8'))
         response = JsonResponse({"message": "Batched updates successfully processed"}, status=200)
-        logger.info(f"User {username} loaded {pokemon_count} pokemon into Kafka with status {response.status_code}")
+        logger.info(f"User {username} loaded {pokemon_count} Pokémon into Kafka with status {response.status_code}")
     except Exception as e:
+        # Save to local storage in case of failure
         logger.error(f"Failed to produce to Kafka: {e}", exc_info=True)
         save_to_local_storage(data)
         response = JsonResponse({"message": "Internal Server Error"}, status=500)
-        logger.info(f"User {username} failed to load {pokemon_count} pokemon into Kafka with status {response.status_code}")
+        logger.info(f"User {username} failed to load {pokemon_count} Pokémon into Kafka with status {response.status_code}")
 
     response['Access-Control-Allow-Origin'] = 'http://localhost:3000'
     response['Access-Control-Allow-Credentials'] = 'true'

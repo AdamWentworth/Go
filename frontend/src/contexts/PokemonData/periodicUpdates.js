@@ -2,13 +2,21 @@
 
 export const periodicUpdates = (scheduledSyncRef, timerRef) => {
     return () => {
+        // Retrieve the location from localStorage
+        const storedLocation = localStorage.getItem('location');
+        let location = null;
+        if (storedLocation) {
+            location = JSON.parse(storedLocation);
+        }
+
         if (scheduledSyncRef.current == null) {
             console.log("First call: Triggering immediate update.");
 
             // First call, trigger the immediate update
             navigator.serviceWorker.ready.then(registration => {
                 registration.active.postMessage({
-                    action: 'sendBatchedUpdatesToBackend'
+                    action: 'sendBatchedUpdatesToBackend',
+                    data: location || null,
                 });
                 console.log("Immediate update sent to backend.");
             });
@@ -30,10 +38,13 @@ export const periodicUpdates = (scheduledSyncRef, timerRef) => {
                             // Cache is not empty, send batched updates
                             console.log("Updates found in cache: Sending batched updates to backend.");
                             navigator.serviceWorker.ready.then(registration => {
-                                registration.active.postMessage({
-                                    action: 'sendBatchedUpdatesToBackend'
+                                response.json().then(batchedUpdates => {
+                                    // Send the location to the service worker
+                                    registration.active.postMessage({
+                                        action: 'sendBatchedUpdatesToBackend',
+                                        data: location || null,
+                                    });
                                 });
-                                console.log("Batched updates sent to backend.");
                             });
 
                             // Set the next 60-second timer for the next update

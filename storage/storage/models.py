@@ -5,6 +5,8 @@ from django.db import models
 class User(models.Model):
     user_id = models.CharField(max_length=255, primary_key=True)
     username = models.CharField(max_length=255, unique=True)
+    latitude = models.FloatField(null=True, blank=True)  # New field for latitude
+    longitude = models.FloatField(null=True, blank=True)  # New field for longitude
 
     class Meta:
         db_table = 'users'

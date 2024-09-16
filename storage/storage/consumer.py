@@ -124,16 +124,27 @@ def handle_message(data, trace_logger):
             user_id = data.get('user_id')
             username = data.get('username')
             pokemon_data = data.get('pokemon', {})
+            
+            # Extract the location data (latitude and longitude)
+            location = data.get('location', {})
+            latitude = location.get('latitude') if location else None
+            longitude = location.get('longitude') if location else None
 
-            trace_logger.info(f"Handling message for user_id: {user_id}, username: {username}")
+            trace_logger.info(f"Handling message for user_id: {user_id}, username: {username}, location: {latitude}, {longitude}")
 
-            user, created = User.objects.get_or_create(user_id=user_id, defaults={'username': username})
+            # Update or create the user record, including location
+            user, created = User.objects.update_or_create(
+                user_id=user_id,
+                defaults={'username': username, 'latitude': latitude, 'longitude': longitude}
+            )
+
             trace_logger.info(f"User processed: {user_id}, created: {created}")
 
             created_count = 0
             updated_count = 0
             deleted_count = 0
 
+            # Process each Pokemon instance
             for instance_id, pokemon in pokemon_data.items():
                 trace_logger.info(f"Processing instance {instance_id} for user {user_id} with data: {pokemon}")
 
@@ -147,6 +158,7 @@ def handle_message(data, trace_logger):
                 trade_filters = filter_json_fields(pokemon.get('trade_filters', {}))
                 wanted_filters = filter_json_fields(pokemon.get('wanted_filters', {}))
 
+                # Check if the instance should be deleted
                 if (
                     pokemon.get('is_unowned', False) and
                     not pokemon.get('is_owned', False) and
@@ -218,11 +230,11 @@ def handle_message(data, trace_logger):
 
             actions = []
             if created_count > 0:
-                actions.append(f"{created_count} created")
+                actions.append(f"created {created_count}")
             if updated_count > 0:
-                actions.append(f"{updated_count} updated")
+                actions.append(f"updated {updated_count}")
             if deleted_count > 0:
-                actions.append(f"{deleted_count} dropped")
+                actions.append(f"dropped {deleted_count}")
             action_summary = ", ".join(actions)
 
             logger.info(f"User {username} {action_summary} instances with status 200")

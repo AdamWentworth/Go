@@ -56,5 +56,5 @@ export const updateDetails = (
     });
 
     // Call updateLists after all syncing and caching is complete
-    updateLists();
+    // updateLists();
 };

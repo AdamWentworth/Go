@@ -16,19 +16,7 @@ self.addEventListener('fetch', (event) => {
         return; // Do not intercept this request
     }
 
-    // Bypass the service worker for requests to the photon API
     if (url.origin === 'https://photon.komoot.io') {
-        return;
-    }
-
-    // Handle requests to Google Fonts
-    if (url.origin === 'https://fonts.gstatic.com') {
-        event.respondWith(
-            fetch(event.request).catch((error) => {
-                console.error('Fetch failed:', error);
-                throw error;
-            })
-        );
         return;
     }
 
@@ -45,7 +33,6 @@ self.addEventListener('fetch', (event) => {
             })
         );
     } else {
-        // Handle requests to other origins
         event.respondWith(
             fetch(event.request).catch((error) => {
                 console.error('Fetch failed:', error);
@@ -57,8 +44,9 @@ self.addEventListener('fetch', (event) => {
 
 // Event handler for messages
 self.addEventListener('message', async (event) => {
-    const { action, data } = event.data;
-    console.log(`Service Worker received message: ${action}`, data); // Add this log
+    const { action, data } = event.data;  // Extract both data and location
+    console.log(`Service Worker received message: ${action}`, data);
+
     switch (action) {
         case 'syncData':
             await syncData(data);
@@ -67,7 +55,7 @@ self.addEventListener('message', async (event) => {
             await syncLists(data);
             break;
         case 'sendBatchedUpdatesToBackend':
-            await sendBatchedUpdatesToBackend();
+            await sendBatchedUpdatesToBackend(data);  // Pass both data and location to the function
             break;
     }
 });
@@ -104,8 +92,7 @@ async function syncLists(data) {
     }
 }
 
-async function sendBatchedUpdatesToBackend() {
-
+async function sendBatchedUpdatesToBackend(location) {
     const cache = await caches.open('pokemonCache');
     const cachedResponse = await cache.match('/batchedUpdates');
     if (!cachedResponse) {
@@ -121,8 +108,13 @@ async function sendBatchedUpdatesToBackend() {
     }
 
     console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, batchedUpdates);
+    
+    // Send the batched updates along with location to your backend API
+    const payload = {
+        ...batchedUpdates,   // Include the batched updates
+        location: location || null  // Add location if available, otherwise null
+    };
 
-    // Send the updates to your backend API
     try {
         const response = await fetch('http://localhost:3003/api/batchedUpdates', {
             method: 'POST',
@@ -130,7 +122,7 @@ async function sendBatchedUpdatesToBackend() {
                 'Content-Type': 'application/json'
             },
             credentials: 'include',  // Include cookies in the request
-            body: JSON.stringify(batchedUpdates),
+            body: JSON.stringify(payload),  // Send batched updates and location as payload
         });
         
         if (!response.ok) {
@@ -138,7 +130,8 @@ async function sendBatchedUpdatesToBackend() {
         }
         
         console.log('Updates successfully sent to backend');
-        await cache.delete('/batchedUpdates');
+        const cache = await caches.open('pokemonCache');
+        await cache.delete('/batchedUpdates');  // Clear the batched updates after successful sync
     } catch (error) {
         console.error('Failed to send updates to backend:', error);
     }
