@@ -1,0 +1,43 @@
+version: 1
+formatters:
+  simple:
+    format: '%(asctime)s - %(levelname)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  detailed:
+    format: '%(asctime)s - %(levelname)s - %(module)s - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+
+filters:
+  add_trace_id:
+    (): reader.logging_filters.AddTraceIDFilter
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: simple
+    stream: ext://sys.stdout
+  file:
+    class: logging.FileHandler
+    level: DEBUG
+    formatter: detailed
+    filename: 'reader/app.log'
+    filters: [add_trace_id]  # Add this line if you're using the filter
+
+loggers:
+  consoleLogger:
+    level: INFO
+    handlers: [console]
+    propagate: no
+  fileLogger:
+    level: DEBUG
+    handlers: [file]
+    propagate: no
+  django:
+    level: WARNING
+    handlers: [console, file]
+    propagate: no
+
+root:
+  level: INFO
+  handlers: [console, file]
