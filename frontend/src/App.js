@@ -9,6 +9,7 @@ import Login from './components/Authentication/Login';
 import Register from './components/Authentication/Register';
 import Account from './components/Authentication/Account';
 import Raid from './components/Raid/Raid';
+import Discover from './components/Discover/Discover';
 import './App.css';
 import CacheContext from './contexts/CacheContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -38,6 +39,7 @@ function App() {
                                             <Route path="/register" element={<Register />} />
                                             <Route path="/account" element={<Account />} />
                                             <Route path="/raid" element={<Raid />} />
+                                            <Route path="/discover" element={<Discover />} />
                                         </Routes>
                                     </main>
                                     <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />

@@ -1,0 +1,33 @@
+/* PokemonSearchBar.css */
+.pokemon-search-bar {
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #111;
+}
+
+.search-bar-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1200px;
+  gap: 20px; /* Added to ensure space between sections */
+}
+
+.pokemon-variant,
+.location-search,
+.ownership-status {
+  flex: 1;
+  margin: 10px;
+}
+
+.search-button {
+  margin-top: 20px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}

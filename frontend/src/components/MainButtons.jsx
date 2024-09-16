@@ -1,3 +1,5 @@
+// MainButtons.js
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './MainButtons.css';
@@ -14,7 +16,9 @@ function MainButtons({ navbar }) {
             <Link to="/raid">
                 <button className="mainButton raid-btn">Raid</button>
             </Link>
-            <button className="mainButton discover-btn">Discover</button>
+            <Link to="/discover"> 
+                <button className="mainButton discover-btn">Discover</button>
+            </Link>
         </div>
     );
 }
