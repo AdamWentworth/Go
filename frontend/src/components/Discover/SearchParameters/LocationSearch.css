@@ -1,38 +1,46 @@
 /* LocationSearch.css */
 .location-search {
     color: white;
-  }
-  
-  .location-container {
+}
+
+.location-container {
     display: grid;
     grid-template-columns: 1fr 1fr; /* Two equal columns */
     gap: 20px; /* Space between the columns */
     align-items: start;
-  }
-  
-  .location-fields {
+}
+
+.location-fields {
     display: flex;
     flex-direction: column;
     gap: 10px;
-  }
-  
-  .field label {
+}
+
+.field label {
     margin-bottom: 5px;
-  }
-  
-  .field input {
+}
+
+.field input[type="text"] {
     width: 100%;
     padding: 5px;
-  }
-  
-  .location-buttons {
+}
+
+.location-buttons {
     display: flex;
     flex-direction: column;
     gap: 10px;
-  }
-  
-  .location-buttons button {
+}
+
+.location-buttons .field {
+    display: flex;
+    flex-direction: column;
+}
+
+.location-buttons input[type="range"] {
+    width: 100%;
+}
+
+.location-buttons button {
     padding: 5px 10px;
     cursor: pointer;
-  }
-  
+}
