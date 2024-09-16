@@ -9,15 +9,23 @@ import './DateCaughtComponent.css';
 registerLocale('en-US', enUS);
 
 const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
+  // Function to parse date from both "yyyy-MM-dd" and ISO 8601 formats
   const parseInitialDate = () => {
     const dateString = pokemon.ownershipStatus.date_caught;
     if (dateString) {
-      const parsedDate = parse(dateString, 'yyyy-MM-dd', new Date());
+      // First try parsing "yyyy-MM-dd"
+      let parsedDate = parse(dateString, 'yyyy-MM-dd', new Date());
+      if (isValid(parsedDate)) {
+        return parsedDate;
+      }
+
+      // If that fails, try parsing ISO 8601
+      parsedDate = new Date(dateString);
       if (isValid(parsedDate)) {
         return parsedDate;
       }
     }
-    return null; // No default date
+    return null; // No valid date found, return null
   };
 
   const [date, setDate] = useState(parseInitialDate());
@@ -38,7 +46,12 @@ const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
     const userInput = event.target.textContent.trim();
     if (userInput) {
       try {
-        const parsedDate = parse(userInput, 'yyyy-MM-dd', new Date());
+        // First try parsing "yyyy-MM-dd"
+        let parsedDate = parse(userInput, 'yyyy-MM-dd', new Date());
+        if (!isValid(parsedDate)) {
+          // If that fails, try parsing ISO 8601
+          parsedDate = new Date(userInput);
+        }
         if (isValid(parsedDate)) {
           setDate(parsedDate);
           onDateChange(format(parsedDate, 'yyyy-MM-dd'));
@@ -55,7 +68,7 @@ const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
   };
 
   const handleKeyDown = (event) => {
-    if (event.key == 'Enter') {
+    if (event.key === 'Enter') {
       event.preventDefault();
       setShowCalendar(false);
     }
@@ -85,14 +98,17 @@ const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
     <div className="date-container">
       <div className="date-field">
         <label id="date-label">Date Caught:</label>
-        <span aria-labelledby="date-label" contentEditable={editMode}
-              ref={dateRef}
-              onInput={handleDateInput}
-              onKeyDown={handleKeyDown}
-              onFocus={handleFocus}
-              role="textbox"
-              suppressContentEditableWarning={true}
-              className={editMode ? 'editable' : 'text'}>
+        <span
+          aria-labelledby="date-label"
+          contentEditable={editMode}
+          ref={dateRef}
+          onInput={handleDateInput}
+          onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
+          role="textbox"
+          suppressContentEditableWarning={true}
+          className={editMode ? 'editable' : 'text'}
+        >
           {date ? format(date, 'yyyy-MM-dd') : ''}
         </span>
         {showCalendar && (

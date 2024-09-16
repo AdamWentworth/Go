@@ -116,10 +116,6 @@ export const PokemonDataProvider = ({ children }) => {
                 action: 'syncData',
                 data: { data: ownershipDataRef.current, timestamp: Date.now() }
             });
-            // registration.active.postMessage({
-            //     action: 'syncLists',
-            //     data: { data: initializePokemonLists(ownershipDataRef.current, data.variants), timestamp: Date.now() }
-            // });
         });
     };
 

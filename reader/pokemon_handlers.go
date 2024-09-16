@@ -42,9 +42,6 @@ func GetPokemonInstances(c *gin.Context) {
 	// Prepare the response data, even if no instances exist
 	responseData := make(map[string]interface{})
 	for _, instance := range instances {
-		instance.User = nil    // Remove the user field like Django does
-		instance.TraceID = nil // Remove TraceID
-
 		// Create a new map to represent the instance without `user_id` and `instance_id`
 		instanceMap := map[string]interface{}{
 			"pokemon_id":       instance.PokemonID,

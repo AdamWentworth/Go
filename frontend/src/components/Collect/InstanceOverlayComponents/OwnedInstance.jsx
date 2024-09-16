@@ -20,6 +20,7 @@ import BackgroundComponent from './OwnedComponents/BackgroundComponent';
 import { determineImageUrl } from '../utils/imageHelpers';
 
 const OwnedInstance = ({ pokemon }) => {
+  console.log(pokemon)
   const { updateDetails } = useContext(PokemonDataContext);
 
   const [isFemale, setIsFemale] = useState(pokemon.ownershipStatus.gender === 'Female');
