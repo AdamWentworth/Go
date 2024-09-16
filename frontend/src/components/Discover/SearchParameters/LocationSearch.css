@@ -3,7 +3,7 @@
     color: white;
 }
 
-.location-container {
+.location-search .location-container {
     display: grid;
     grid-template-columns: 1fr 1fr; /* Two equal columns */
     gap: 20px; /* Space between the columns */

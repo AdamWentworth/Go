@@ -2,13 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import validatePokemon from '../utils/ValidatePokemon';
+import { updateImage } from '../utils/updateImage';
+import { formatCostumeName } from '../utils/formatCostumeName';
+import Dropdown from '../components/Dropdown'; 
+import useErrorHandler from '../hooks/useErrorHandler'; 
 
 const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, setIsShadow, costume, setCostume }) => {
-  const [error, setError] = useState(null);
+  const { error, handleError, clearError } = useErrorHandler();
+  const [availableForms, setAvailableForms] = useState([]);
+  const [selectedForm, setSelectedForm] = useState("");
   const [availableCostumes, setAvailableCostumes] = useState([]);
   const [pokemonData, setPokemonData] = useState([]);
-  const [imageUrl, setImageUrl] = useState(null); // Store the image URL
-  const [imageError, setImageError] = useState(false); // Handle image error state
+  const [imageUrl, setImageUrl] = useState(null);
+  const [imageError, setImageError] = useState(false);
 
   // Load Pokémon data from localStorage
   useEffect(() => {
@@ -18,93 +24,65 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
       if (parsedData && parsedData.data) {
         setPokemonData(parsedData.data);
       } else {
-        setError('No valid Pokémon data found.');
+        handleError('No valid Pokémon data found.');
       }
     } else {
-      setError('No Pokémon data found in local storage.');
+      handleError('No Pokémon data found in local storage.');
     }
   }, []);
 
-  const handleValidation = (name, shinyChecked, shadowChecked, selectedCostume) => {
-    const { error, availableCostumes } = validatePokemon(pokemonData, name, shinyChecked, shadowChecked, selectedCostume);
-    setError(error);
+  const handleValidation = (name, shinyChecked, shadowChecked, selectedCostume, form) => {
+    const { error, availableCostumes, availableForms } = validatePokemon(pokemonData, name, shinyChecked, shadowChecked, selectedCostume, form);
+    if (error) handleError(error);
+    else clearError();
 
-    // Sort the costumes by date_available before setting them
+    // Sort the available costumes by date_available before setting them
     const sortedCostumes = availableCostumes.sort((a, b) => new Date(a.date_available) - new Date(b.date_available));
     setAvailableCostumes(sortedCostumes);
 
+    // Filter out any null or "None" form values
+    const filteredForms = availableForms.filter((form) => form && form.toLowerCase() !== "none");
+    setAvailableForms(filteredForms || []);
+
     // Update image URL based on conditions
     if (!error) {
-      updateImage(name, shinyChecked, shadowChecked, selectedCostume);
-    }
-  };
-
-  const updateImage = (name, shinyChecked, shadowChecked, selectedCostume) => {
-    const matchedPokemon = pokemonData.find(
-      (variant) => variant.name.toLowerCase() === name.toLowerCase()
-    );
-
-    if (matchedPokemon) {
-      let url = matchedPokemon.image_url;
-
-      // Handle both shiny and shadow selected
-      if (shinyChecked && shadowChecked) {
-        if (matchedPokemon.shadow_shiny_available) {
-          url = matchedPokemon.image_url_shiny_shadow || matchedPokemon.image_url_shiny;
-        } else {
-          url = matchedPokemon.image_url_shadow;
-        }
-      } else if (shinyChecked) {
-        url = matchedPokemon.image_url_shiny;
-      } else if (shadowChecked) {
-        url = matchedPokemon.image_url_shadow;
-      }
-
-      // If a costume is selected and it's not "None"
-      if (selectedCostume && selectedCostume !== "") {
-        const selectedCostumeData = matchedPokemon.costumes.find((costume) => costume.name === selectedCostume);
-        if (selectedCostumeData) {
-          if (shinyChecked) {
-            url = selectedCostumeData.image_url_shiny || selectedCostumeData.image_url;
-          } else if (shadowChecked) {
-            url = selectedCostumeData.image_url_shadow || selectedCostumeData.image_url;
-          } else {
-            url = selectedCostumeData.image_url;
-          }
-        }
-      }
-
-      setImageError(false); // Reset image error state
-      setImageUrl(url); // Set the appropriate image URL
+      const url = updateImage(pokemonData, name, shinyChecked, shadowChecked, selectedCostume, form);
+      setImageUrl(url);
     }
   };
 
   const handleImageError = () => {
-    setImageError(true); // Set the error state if the image fails to load
+    setImageError(true);
   };
 
   // Handlers
   const handlePokemonChange = (e) => {
     const newPokemon = e.target.value;
     setPokemon(newPokemon);
-    handleValidation(newPokemon, isShiny, isShadow, costume);
+    setSelectedForm("");
+    handleValidation(newPokemon, isShiny, isShadow, costume, "");
   };
 
   const handleShinyChange = (e) => {
     const shinyChecked = e.target.checked;
     setIsShiny(shinyChecked);
-    handleValidation(pokemon, shinyChecked, isShadow, costume);
+    handleValidation(pokemon, shinyChecked, isShadow, costume, selectedForm);
   };
 
   const handleShadowChange = (e) => {
     const shadowChecked = e.target.checked;
     setIsShadow(shadowChecked);
-    handleValidation(pokemon, isShiny, shadowChecked, costume);
+    handleValidation(pokemon, isShiny, shadowChecked, costume, selectedForm);
   };
 
   const handleCostumeChange = (e) => {
     setCostume(e.target.value);
-    handleValidation(pokemon, isShiny, isShadow, e.target.value);
+    handleValidation(pokemon, isShiny, isShadow, e.target.value, selectedForm);
+  };
+
+  const handleFormChange = (e) => {
+    setSelectedForm(e.target.value);
+    handleValidation(pokemon, isShiny, isShadow, costume, e.target.value);
   };
 
   return (
@@ -121,6 +99,14 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
           placeholder="Enter Pokémon name"
         />
       </div>
+
+      {/* Form dropdown (always visible) */}
+      <Dropdown
+        label="Form"
+        value={selectedForm}
+        options={availableForms}
+        handleChange={handleFormChange}
+      />
 
       {/* Shiny checkbox */}
       <div>
@@ -147,18 +133,13 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
       </div>
 
       {/* Costume dropdown */}
-      <div>
-        <label>Costume: </label>
-        <select value={costume} onChange={handleCostumeChange}>
-          <option value="">None</option>
-          {/* Dynamically populate costume options */}
-          {availableCostumes.map((costume) => (
-            <option key={costume.costume_id} value={costume.name}>
-              {costume.name.charAt(0).toUpperCase() + costume.name.slice(1)} {/* Capitalize the costume name */}
-            </option>
-          ))}
-        </select>
-      </div>
+      <Dropdown
+        label="Costume"
+        value={costume}
+        options={availableCostumes.map((costume) => costume.name)}
+        handleChange={handleCostumeChange}
+        formatLabel={formatCostumeName}
+      />
 
       {/* Error message display */}
       {error && <div style={{ color: 'red', marginTop: '10px' }}>{error}</div>}
@@ -170,7 +151,7 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
             src={imageUrl}
             alt={pokemon}
             style={{ width: '200px', height: '200px' }}
-            onError={handleImageError} // Handle error if image doesn't load
+            onError={handleImageError}
           />
         </div>
       ) : imageError ? (
