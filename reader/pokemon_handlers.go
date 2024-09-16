@@ -25,7 +25,8 @@ func GetPokemonInstances(c *gin.Context) {
 	// Retrieve the user from the database
 	var user User
 	if err := db.Where("user_id = ?", userID).First(&user).Error; err != nil {
-		logrus.Info("User not found")
+		// User is not found, log info and return empty response in the same format
+		logrus.Infof("User %s not found, returning 0 Pokemon instances", userID)
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}
@@ -38,7 +39,7 @@ func GetPokemonInstances(c *gin.Context) {
 		return
 	}
 
-	// Prepare the response data, excluding `user_id` and `instance_id`
+	// Prepare the response data, even if no instances exist
 	responseData := make(map[string]interface{})
 	for _, instance := range instances {
 		instance.User = nil    // Remove the user field like Django does
@@ -87,7 +88,8 @@ func GetPokemonInstances(c *gin.Context) {
 	}
 
 	instanceCount := len(responseData)
-	logrus.Infof("User %s retrieved %d Pokemon instances with status 200", user.Username, instanceCount)
 
+	// Log and return the response data, even if empty
+	logrus.Infof("User %s retrieved %d Pokemon instances with status 200", user.Username, instanceCount)
 	c.JSON(http.StatusOK, responseData)
 }

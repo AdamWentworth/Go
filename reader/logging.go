@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -23,6 +24,8 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		levelUpper = "INFO"
 	} else if level == "error" {
 		levelUpper = "ERROR"
+	} else if level == "fatal" {
+		levelUpper = "FATAL"
 	}
 
 	// Construct the log message to match the Python format
@@ -31,16 +34,22 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 }
 
 func initLogging() {
+	// Open the log file in append mode, create if it doesn't exist
+	file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Printf("Failed to open log file: %v", err)
+		return
+	}
+
 	// Set the custom formatter
 	logrus.SetFormatter(&CustomFormatter{})
 
-	// Set the output to standard out
-	logrus.SetOutput(os.Stdout)
+	// MultiWriter to log to both the file and stdout
+	multiWriter := io.MultiWriter(os.Stdout, file)
 
-	// Set log level
-	logLevel, err := logrus.ParseLevel(os.Getenv("LOG_LEVEL"))
-	if err != nil {
-		logLevel = logrus.InfoLevel
-	}
-	logrus.SetLevel(logLevel)
+	// Set the output to both standard out and the log file
+	logrus.SetOutput(multiWriter)
+
+	// Set the log level to capture everything for app.log
+	logrus.SetLevel(logrus.TraceLevel)
 }

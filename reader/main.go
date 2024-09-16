@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var db *gorm.DB
@@ -26,19 +28,35 @@ func initJWTSecret() {
 	jwtSecret = []byte(secret) // Set the global jwtSecret
 }
 
-// Initialize database connection
+// Initialize database connection with custom GORM logger
 func initDB() {
+	// Open the log file for GORM to use the same app.log file
+	file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal("Failed to open log file for GORM: ", err)
+	}
+
+	// Create a new logger for GORM with file output and log level
+	newLogger := logger.New(
+		log.New(file, "\r\n", log.LstdFlags), // Use the file for GORM logs
+		logger.Config{
+			SlowThreshold: time.Second, // Log slow SQL queries if needed (optional)
+			LogLevel:      logger.Info, // Log everything to file
+			Colorful:      false,       // Disable color output
+		},
+	)
+
 	dsn := os.Getenv("DB_USER") + ":" + os.Getenv("DB_PASSWORD") + "@tcp(" + os.Getenv("DB_HOSTNAME") + ")/" + os.Getenv("DB_NAME") + "?parseTime=true"
-	var err error
-	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: newLogger, // Use the custom logger for GORM logs
+	})
 	if err != nil {
 		log.Fatal("Failed to connect to the database: ", err)
 	}
 
 	// Log that the system checks have completed
-	fmt.Println("Performing system checks...")
-	// Here, you can add real checks for database connections, configs, etc.
-	fmt.Println("System check identified no issues.")
+	logrus.Info("Performing system checks...")
+	logrus.Info("System check identified no issues.")
 }
 
 // Load environment variables from .env
@@ -48,7 +66,7 @@ func initEnv() {
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
-	fmt.Println("Environment variables loaded successfully.")
+	logrus.Info("Environment variables loaded successfully.")
 }
 
 func main() {
@@ -56,8 +74,8 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 
 	// Initialize configuration, environment, and logging
-	initEnv()       // Load environment variables
 	initLogging()   // Initialize logging early
+	initEnv()       // Load environment variables
 	initJWTSecret() // Load the JWT_SECRET environment variable
 	initDB()        // Connect to the database
 

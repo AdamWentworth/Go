@@ -16,8 +16,6 @@ var jwtSecret []byte // This is where the JWT_SECRET is stored after loading fro
 // Middleware to verify the JWT
 func verifyJWT() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Log the incoming request here
-		logrus.Infof("GET /api/ownershipData - user_id: %s", c.Param("user_id"))
 
 		// Ensure jwtSecret has been initialized
 		if len(jwtSecret) == 0 {
