@@ -21,7 +21,7 @@
     align-items: flex-end; /* Align buttons to the start */
 }
 
-.error-message {
+.sort-overlay .error-message {
     color: red;
     font-size: 14px;
     position: absolute;

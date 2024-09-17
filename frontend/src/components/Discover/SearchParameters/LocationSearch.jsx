@@ -6,10 +6,9 @@ import './LocationSearch.css';
 
 const breakpoints = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-const LocationSearch = ({ country, setCountry, city, setCity, useCurrentLocation, setUseCurrentLocation, setCoordinates }) => {
+const LocationSearch = ({ country, setCountry, city, setCity, useCurrentLocation, setUseCurrentLocation, setCoordinates, range, setRange }) => {
   const [countrySuggestions, setCountrySuggestions] = useState([]);
   const [citySuggestions, setCitySuggestions] = useState([]);
-  const [range, setRange] = useState(5); // Default range value
 
   // Fetch location suggestions based on user input
   const fetchSuggestions = async (query, type) => {

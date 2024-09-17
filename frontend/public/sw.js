@@ -26,17 +26,29 @@ self.addEventListener('fetch', (event) => {
                 if (cachedResponse) {
                     return cachedResponse;
                 }
-                return fetch(event.request, { credentials: 'include' }).catch((error) => {
-                    console.error('Fetch failed:', error);
-                    throw error;
-                });
+                return fetch(event.request, { credentials: 'include' })
+                    .then((response) => {
+                        // Clone the response and update the cache
+                        const clonedResponse = response.clone();
+                        caches.open('dynamic-cache').then((cache) => {
+                            cache.put(event.request, clonedResponse);
+                        });
+                        return response;
+                    })
+                    .catch((error) => {
+                        console.error('Fetch failed:', error);
+                        return caches.match('/offline.html'); // Fallback for failed fetch
+                    });
             })
         );
     } else {
         event.respondWith(
             fetch(event.request).catch((error) => {
-                console.error('Fetch failed:', error);
-                throw error;
+                console.error('External Fetch failed:', error);
+                return new Response('Network error occurred', {
+                    status: 408,
+                    statusText: 'Request Timeout',
+                });
             })
         );
     }

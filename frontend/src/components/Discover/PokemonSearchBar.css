@@ -5,6 +5,7 @@
   flex-direction: column;
   align-items: center;
   background-color: #111;
+  padding: 20px; /* Add padding to space the form from the edges */
 }
 
 .search-bar-container {
@@ -12,7 +13,7 @@
   justify-content: space-between;
   width: 100%;
   max-width: 1200px;
-  gap: 20px; /* Added to ensure space between sections */
+  gap: 20px; /* Ensure space between sections */
 }
 
 .pokemon-variant,
@@ -22,12 +23,33 @@
   margin: 10px;
 }
 
-.search-button {
+.search-button-container {
+  display: flex;
+  align-items: center; /* Align button and message vertically */
+  gap: 20px; /* Space between the button and error message */
   margin-top: 20px;
+  position: relative;
 }
 
-.pokemon-search-bar button {
+.search-button-container button {
   padding: 10px 20px;
   font-size: 16px;
   cursor: pointer;
+}
+
+.search-button-container .error-message {
+  color: red;
+  font-size: 14px;
+  visibility: hidden; /* Make the error message invisible by default */
+  white-space: nowrap; /* Prevent the error message from wrapping */
+  position: absolute; /* Position it next to the button without shifting the button */
+  left: calc(100% + 20px); /* Place it next to the button with a small gap */
+}
+
+.search-button-container .error-visible {
+  visibility: visible; /* Only show the error message when there's an error */
+}
+
+.results-limit {
+  margin-top: 20px;
 }
