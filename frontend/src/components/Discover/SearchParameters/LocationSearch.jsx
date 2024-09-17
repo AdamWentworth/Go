@@ -1,10 +1,12 @@
+// LocationSearch.jsx
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './LocationSearch.css';
 
 const breakpoints = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-const LocationSearch = ({ country, setCountry, city, setCity, useCurrentLocation, setUseCurrentLocation }) => {
+const LocationSearch = ({ country, setCountry, city, setCity, useCurrentLocation, setUseCurrentLocation, setCoordinates }) => {
   const [countrySuggestions, setCountrySuggestions] = useState([]);
   const [citySuggestions, setCitySuggestions] = useState([]);
   const [range, setRange] = useState(5); // Default range value
@@ -74,10 +76,21 @@ const LocationSearch = ({ country, setCountry, city, setCity, useCurrentLocation
     setUseCurrentLocation(true);
     setCountry('');
     setCity('');
+
+    // Get location from localStorage
+    const storedLocation = localStorage.getItem('location');
+    if (storedLocation) {
+      const { latitude, longitude } = JSON.parse(storedLocation);
+      setCoordinates({ latitude, longitude }); // Set the coordinates from localStorage
+      console.log(`Using current location: Latitude ${latitude}, Longitude ${longitude}`);
+    } else {
+      console.error('No location found in localStorage.');
+    }
   };
 
   const handleDoNotUseLocation = () => {
     setUseCurrentLocation(false);
+    setCoordinates({ latitude: null, longitude: null }); // Reset coordinates
   };
 
   // Handle range change with snapping behavior
