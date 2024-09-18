@@ -14,19 +14,24 @@ export const LocationProvider = ({ children }) => {
 
   useEffect(() => {
     const checkLocationPermissionAndFetch = async () => {
+      if (isLoading) {
+        console.log("Still loading user info, skipping location fetching.");
+        return;  // Wait until loading is finished
+      }
+  
       if (!user) {
         console.log("User not logged in. Skipping location fetching.");
         setLocationStatus('unavailable');
         return;
       }
-
+  
       // If user is logged in but hasn't allowed location
-      if (user && !user.allowLocation) {
+      if (!user.allowLocation) {
         console.log("User has not allowed location. Skipping location fetching.");
         setLocationStatus('unavailable');
         return;
       }
-
+  
       // Check if location is already stored in localStorage
       const storedLocation = localStorage.getItem('location');
       if (storedLocation) {
@@ -36,7 +41,7 @@ export const LocationProvider = ({ children }) => {
         setLocationStatus('available');
         return;
       }
-
+  
       // If no location is stored, request it
       try {
         console.log("Requesting location...");
@@ -59,11 +64,11 @@ export const LocationProvider = ({ children }) => {
         setLocationStatus('unavailable');
       }
     };
-
-    if (!isLoading) {
-      checkLocationPermissionAndFetch();  // Call the function after user status and loading state is resolved
+  
+    if (!isLoading && user) {
+      checkLocationPermissionAndFetch(); // Call the function after user status and loading state is resolved
     }
-  }, [user, isLoading]);
+  }, [user, isLoading]);  
 
   return (
     <LocationContext.Provider value={{ location, locationStatus }}>

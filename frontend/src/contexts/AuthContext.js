@@ -1,7 +1,7 @@
 // AuthContext.js
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService, refreshTokenService, fetchOwnershipData } from '../components/Authentication/services/authService';
+import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService, refreshTokenService } from '../components/Authentication/services/authService';
 import { formatTimeUntil } from '../components/Collect/utils/formattingHelpers';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -19,6 +19,18 @@ export const AuthProvider = ({ children }) => {
   const intervalRef = useRef(null); // Ref to store the interval ID
   const refreshTimeoutRef = useRef(null); // Ref to store the refresh token timeout
   const { isLoggedIn, setIsLoggedIn } = useGlobalState(); 
+  const [isLoading, setIsLoading] = useState(true);  // Add loading state
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      userRef.current = userData;
+      setUser(userData);
+      setIsLoggedIn(true);
+    }
+    setIsLoading(false);  // Ensure loading is set to false after the user data has been checked
+  }, [setIsLoggedIn]);  
 
   // Initialize from local storage
   useEffect(() => {
@@ -230,11 +242,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn, login, logout, updateUserDetails, deleteAccount }}>
+    <AuthContext.Provider value={{ user, isLoggedIn, isLoading, login, logout, updateUserDetails, deleteAccount }}>
       {children}
-      <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      <ToastContainer />
     </AuthContext.Provider>
-  );
+  );  
 };
 
 export default AuthProvider;

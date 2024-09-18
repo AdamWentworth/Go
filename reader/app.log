@@ -176,3 +176,40 @@
 2024/09/17 19:36:04 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:36
 [34.868ms] [rows:2141] SELECT * FROM `instances` WHERE user_id = '663d6760537fa61b79ac8bab'
 2024-09-17 19:36:04 - INFO - User AdamZilla retrieved 2141 Pokemon instances with status 200
+2024-09-18 01:08:33 - INFO - Token decoded successfully
+
+2024/09/18 01:08:33 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:27
+[1.500ms] [rows:1] SELECT * FROM `users` WHERE user_id = '663d6760537fa61b79ac8bab' ORDER BY `users`.`user_id` LIMIT 1
+
+2024/09/18 01:08:33 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:36
+[36.816ms] [rows:2141] SELECT * FROM `instances` WHERE user_id = '663d6760537fa61b79ac8bab'
+2024-09-18 01:08:33 - INFO - User AdamZilla retrieved 2141 Pokemon instances with status 200
+2024-09-18 01:08:43 - INFO - Token decoded successfully
+
+2024/09/18 01:08:43 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:27
+[0.388ms] [rows:1] SELECT * FROM `users` WHERE user_id = '663d6760537fa61b79ac8bab' ORDER BY `users`.`user_id` LIMIT 1
+
+2024/09/18 01:08:43 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:36
+[31.495ms] [rows:2141] SELECT * FROM `instances` WHERE user_id = '663d6760537fa61b79ac8bab'
+2024-09-18 01:08:43 - INFO - User AdamZilla retrieved 2141 Pokemon instances with status 200
+2024-09-18 01:08:54 - INFO - Token decoded successfully
+
+2024/09/18 01:08:54 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:27 record not found
+[0.500ms] [rows:0] SELECT * FROM `users` WHERE user_id = '6682e0d67e755716f6132ab0' ORDER BY `users`.`user_id` LIMIT 1
+2024-09-18 01:08:54 - INFO - User 6682e0d67e755716f6132ab0 not found, returning 0 Pokemon instances
+2024-09-18 01:09:15 - INFO - Token decoded successfully
+
+2024/09/18 01:09:15 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:27
+[0.500ms] [rows:1] SELECT * FROM `users` WHERE user_id = '663d6760537fa61b79ac8bab' ORDER BY `users`.`user_id` LIMIT 1
+
+2024/09/18 01:09:15 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:36
+[28.999ms] [rows:2141] SELECT * FROM `instances` WHERE user_id = '663d6760537fa61b79ac8bab'
+2024-09-18 01:09:15 - INFO - User AdamZilla retrieved 2141 Pokemon instances with status 200
+2024-09-18 12:47:44 - INFO - Token decoded successfully
+
+2024/09/18 12:47:44 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:27
+[22.498ms] [rows:1] SELECT * FROM `users` WHERE user_id = '663d6760537fa61b79ac8bab' ORDER BY `users`.`user_id` LIMIT 1
+
+2024/09/18 12:47:44 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:36
+[26.524ms] [rows:2141] SELECT * FROM `instances` WHERE user_id = '663d6760537fa61b79ac8bab'
+2024-09-18 12:47:44 - INFO - User AdamZilla retrieved 2141 Pokemon instances with status 200
