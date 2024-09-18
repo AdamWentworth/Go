@@ -1,8 +1,1 @@
-storage/__pycache__
-storage/.env.development
-storage/app.log
-storage/my.cnf
-
-reader/__pycache__
-reader/.env.development
-reader/app.log
+.env.development

@@ -3,6 +3,7 @@ import os
 import json
 import time
 import logging
+from datetime import datetime
 from pathlib import Path
 from confluent_kafka import Consumer, KafkaException
 from django.conf import settings
@@ -158,6 +159,19 @@ def handle_message(data, trace_logger):
                 trade_filters = filter_json_fields(pokemon.get('trade_filters', {}))
                 wanted_filters = filter_json_fields(pokemon.get('wanted_filters', {}))
 
+                date_caught_str = pokemon.get('date_caught')
+                date_caught = None
+                if date_caught_str:
+                    try:
+                        # Try parsing as date
+                        date_caught = datetime.strptime(date_caught_str, '%Y-%m-%d').date()
+                    except ValueError:
+                        try:
+                            # Try parsing as datetime with timezone
+                            date_caught = datetime.strptime(date_caught_str, '%Y-%m-%dT%H:%M:%SZ').date()
+                        except ValueError:
+                            trace_logger.error(f"Unrecognized date format for date_caught: {date_caught_str}")
+
                 # Check if the instance should be deleted
                 if (
                     pokemon.get('is_unowned', False) and
@@ -204,7 +218,7 @@ def handle_message(data, trace_logger):
                         'location_card': pokemon.get('location_card'),
                         'location_caught': pokemon.get('location_caught'),
                         'friendship_level': pokemon.get('friendship_level'),
-                        'date_caught': pokemon.get('date_caught'),
+                        'date_caught': date_caught,
                         'date_added': pokemon.get('date_added'),
                         'last_update': pokemon.get('last_update'),
                         'is_unowned': pokemon.get('is_unowned', False),
