@@ -157,3 +157,22 @@
 2024/09/16 16:44:27 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:35
 [31.500ms] [rows:2141] SELECT * FROM `instances` WHERE user_id = '663d6760537fa61b79ac8bab'
 2024-09-16 16:44:27 - INFO - User AdamZilla retrieved 2141 Pokemon instances with status 200
+2024-09-17 19:29:39 - INFO - Environment variables loaded successfully.
+2024-09-17 19:29:39 - INFO - Performing system checks...
+2024-09-17 19:29:39 - INFO - System check identified no issues.
+2024-09-17 19:30:20 - INFO - Token decoded successfully
+
+2024/09/17 19:30:20 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:27
+[0.759ms] [rows:1] SELECT * FROM `users` WHERE user_id = '663d6760537fa61b79ac8bab' ORDER BY `users`.`user_id` LIMIT 1
+
+2024/09/17 19:30:20 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:36
+[35.998ms] [rows:2141] SELECT * FROM `instances` WHERE user_id = '663d6760537fa61b79ac8bab'
+2024-09-17 19:30:20 - INFO - User AdamZilla retrieved 2141 Pokemon instances with status 200
+2024-09-17 19:36:04 - INFO - Token decoded successfully
+
+2024/09/17 19:36:04 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:27
+[0.500ms] [rows:1] SELECT * FROM `users` WHERE user_id = '663d6760537fa61b79ac8bab' ORDER BY `users`.`user_id` LIMIT 1
+
+2024/09/17 19:36:04 A:/Visual-Studio-Code/Go/reader/pokemon_handlers.go:36
+[34.868ms] [rows:2141] SELECT * FROM `instances` WHERE user_id = '663d6760537fa61b79ac8bab'
+2024-09-17 19:36:04 - INFO - User AdamZilla retrieved 2141 Pokemon instances with status 200

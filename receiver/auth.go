@@ -22,6 +22,7 @@ func verifyAccessToken(r *http.Request) (string, string, error) {
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		userID := claims["user_id"].(string)
 		username := claims["username"].(string)
+		logger.Infof("Token decoded successfully")
 		return userID, username, nil
 	} else {
 		logger.Warnf("Invalid JWT token: %v", err)

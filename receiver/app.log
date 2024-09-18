@@ -383,3 +383,96 @@ Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-
 [GIN] 2024/09/17 - 19:31:09 |[97;42m 204 [0m|            0s |             ::1 |[90;47m OPTIONS [0m "/api/batchedUpdates"
 2024-09-17 19:31:10 - INFO - User AdamZilla loaded 1 Pokémon into Kafka
 [GIN] 2024/09/17 - 19:31:10 |[97;42m 200 [0m|    1.0035006s |             ::1 |[97;46m POST    [0m "/api/batchedUpdates"
+[GIN] 2024/09/17 - 19:36:23 |[97;42m 204 [0m|            0s |             ::1 |[90;47m OPTIONS [0m "/api/batchedUpdates"
+2024-09-17 19:36:24 - INFO - User AdamZilla loaded 1 Pokémon into Kafka
+[GIN] 2024/09/17 - 19:36:24 |[97;42m 200 [0m|    1.0030003s |             ::1 |[97;46m POST    [0m "/api/batchedUpdates"
+2024-09-17 19:45:52 - INFO - Attempting to connect to Kafka...
+2024-09-17 19:45:52 - INFO - Kafka client connected to 192.168.213.1:9093
+2024-09-17 19:45:52 - INFO - Connected to topic batchedUpdates
+2024-09-17 19:45:52 - INFO - Server started on port 3003
+[GIN] 2024/09/17 - 19:46:09 |[97;42m 204 [0m|            0s |             ::1 |[90;47m OPTIONS [0m "/api/batchedUpdates"
+2024-09-17 19:46:10 - INFO - User AdamZilla loaded 1 Pokémon into Kafka
+[GIN] 2024/09/17 - 19:46:10 |[97;42m 200 [0m|     1.010999s |             ::1 |[97;46m POST    [0m "/api/batchedUpdates"
+2024-09-17 19:54:42 - INFO - Attempting to connect to Kafka...
+2024-09-17 19:54:42 - INFO - Kafka client configured to connect to 192.168.213.1:9093
+2024-09-17 19:54:42 - INFO - Configured to write to topic batchedUpdates
+2024-09-17 19:54:42 - INFO - Server started on port 3003
+2024-09-17 19:54:43 - INFO - Warm-up message sent successfully in 1.0079982s
+[GIN] 2024/09/17 - 19:55:05 |[97;42m 204 [0m|            0s |             ::1 |[90;47m OPTIONS [0m "/api/batchedUpdates"
+2024-09-17 19:55:06 - INFO - Time taken to write message to Kafka: 1.0026177s
+2024-09-17 19:55:06 - INFO - Time taken to produce to Kafka: 1.0029963s
+2024-09-17 19:55:06 - INFO - Total time taken to handle request: 1.0038505s
+2024-09-17 19:55:06 - INFO - User AdamZilla loaded 1 Pokémon into Kafka
+[GIN] 2024/09/17 - 19:55:06 |[97;42m 200 [0m|    1.0043465s |             ::1 |[97;46m POST    [0m "/api/batchedUpdates"
+2024-09-17 19:58:10 - INFO - Attempting to connect to Kafka...
+2024-09-17 19:58:10 - INFO - Kafka client configured to connect to 192.168.213.1:9093
+2024-09-17 19:58:10 - INFO - Configured to write to topic batchedUpdates
+2024-09-17 19:58:10 - INFO - Server started on port 3003
+2024-09-17 19:58:11 - INFO - Warm-up message sent successfully in 1.0090369s
+[GIN] 2024/09/17 - 19:58:40 |[97;42m 204 [0m|            0s |             ::1 |[90;47m OPTIONS [0m "/api/batchedUpdates"
+2024-09-17 19:58:41 - INFO - Time taken to write message to Kafka: 1.0021874s
+2024-09-17 19:58:41 - INFO - Time taken to produce to Kafka: 1.0025031s
+2024-09-17 19:58:41 - INFO - Total time taken to handle request: 1.0030023s
+2024-09-17 19:58:41 - INFO - User AdamZilla loaded 1 Pokémon into Kafka
+[GIN] 2024/09/17 - 19:58:41 |[97;42m 200 [0m|    1.0034991s |             ::1 |[97;46m POST    [0m "/api/batchedUpdates"
+2024-09-17 20:03:38 - INFO - Attempting to connect to Kafka...
+2024-09-17 20:03:38 - INFO - Kafka client configured to connect to 192.168.213.1:9093
+2024-09-17 20:03:38 - INFO - Configured to write to topic batchedUpdates
+2024-09-17 20:03:38 - INFO - Server started on port 3003
+2024-09-17 20:03:38 - ERROR - Failed to send warm-up message: [3] Unknown Topic Or Partition: the request is for a topic or partition that does not exist on this broker
+[GIN] 2024/09/17 - 20:03:59 |[97;42m 204 [0m|            0s |             ::1 |[90;47m OPTIONS [0m "/api/batchedUpdates"
+2024-09-17 20:03:59 - INFO - Time taken to write message to Kafka: 0s
+2024-09-17 20:03:59 - ERROR - Failed to write message to Kafka: [3] Unknown Topic Or Partition: the request is for a topic or partition that does not exist on this broker
+2024-09-17 20:03:59 - INFO - Data saved to local storage for retry
+2024-09-17 20:03:59 - INFO - Time taken to produce to Kafka: 2.0001ms
+2024-09-17 20:03:59 - ERROR - Failed to produce to Kafka: [3] Unknown Topic Or Partition: the request is for a topic or partition that does not exist on this broker
+[GIN] 2024/09/17 - 20:03:59 |[97;41m 500 [0m|      3.5008ms |             ::1 |[97;46m POST    [0m "/api/batchedUpdates"
+2024-09-17 20:04:38 - INFO - Time taken to write message to Kafka: 0s
+2024-09-17 20:04:38 - ERROR - Failed to write message to Kafka: [3] Unknown Topic Or Partition: the request is for a topic or partition that does not exist on this broker
+2024-09-17 20:04:38 - INFO - Data saved to local storage for retry
+2024-09-17 20:04:38 - WARNING - Failed to resend data to Kafka: [3] Unknown Topic Or Partition: the request is for a topic or partition that does not exist on this broker
+[GIN] 2024/09/17 - 20:04:59 |[97;42m 204 [0m|            0s |             ::1 |[90;47m OPTIONS [0m "/api/batchedUpdates"
+2024-09-17 20:04:59 - INFO - Time taken to write message to Kafka: 0s
+2024-09-17 20:04:59 - ERROR - Failed to write message to Kafka: [3] Unknown Topic Or Partition: the request is for a topic or partition that does not exist on this broker
+2024-09-17 20:04:59 - INFO - Data saved to local storage for retry
+2024-09-17 20:04:59 - INFO - Time taken to produce to Kafka: 995.4µs
+2024-09-17 20:04:59 - ERROR - Failed to produce to Kafka: [3] Unknown Topic Or Partition: the request is for a topic or partition that does not exist on this broker
+[GIN] 2024/09/17 - 20:04:59 |[97;41m 500 [0m|      1.9993ms |             ::1 |[97;46m POST    [0m "/api/batchedUpdates"
+2024-09-17 20:10:02 - INFO - Attempting to connect to Kafka...
+2024-09-17 20:10:02 - INFO - Kafka client configured to connect to 192.168.213.1:9093
+2024-09-17 20:10:02 - INFO - Configured to write to topic batchedUpdates
+2024-09-17 20:10:02 - INFO - Server started on port 3003
+2024-09-17 20:10:02 - INFO - Warm-up message sent successfully in 19.003ms
+[GIN] 2024/09/17 - 20:10:12 |[97;42m 204 [0m|            0s |             ::1 |[90;47m OPTIONS [0m "/api/batchedUpdates"
+2024-09-17 20:10:12 - INFO - Time taken to write message to Kafka: 16.5001ms
+2024-09-17 20:10:12 - INFO - Time taken to produce to Kafka: 18.0002ms
+2024-09-17 20:10:12 - INFO - Total time taken to handle request: 18.0002ms
+2024-09-17 20:10:12 - INFO - User AdamZilla loaded 1 Pokémon into Kafka
+[GIN] 2024/09/17 - 20:10:12 |[97;42m 200 [0m|     19.0013ms |             ::1 |[97;46m POST    [0m "/api/batchedUpdates"
+2024-09-17 20:13:46 - INFO - Attempting to connect to Kafka...
+2024-09-17 20:13:46 - INFO - Kafka client configured to connect to 192.168.213.1:9093
+2024-09-17 20:13:46 - INFO - Configured to write to topic batchedUpdates
+2024-09-17 20:13:46 - INFO - Server started on port 3003
+[GIN] 2024/09/17 - 20:14:00 |[97;42m 204 [0m|            0s |             ::1 |[90;47m OPTIONS [0m "/api/batchedUpdates"
+2024-09-17 20:14:00 - INFO - Time taken to write message to Kafka: 18ms
+2024-09-17 20:14:00 - INFO - Time taken to produce to Kafka: 19.004ms
+2024-09-17 20:14:00 - INFO - Total time taken to handle request: 19.5003ms
+2024-09-17 20:14:00 - INFO - User AdamZilla loaded 1 Pokémon into Kafka
+[GIN] 2024/09/17 - 20:14:00 |[97;42m 200 [0m|     20.0033ms |             ::1 |[97;46m POST    [0m "/api/batchedUpdates"
+2024-09-17 20:15:42 - INFO - Attempting to connect to Kafka...
+2024-09-17 20:15:42 - INFO - Kafka client configured to connect to 192.168.213.1:9093
+2024-09-17 20:15:42 - INFO - Configured to write to topic batchedUpdates
+2024-09-17 20:15:42 - INFO - Server started on port 3003
+[GIN] 2024/09/17 - 20:15:57 |[97;42m 204 [0m|            0s |             ::1 |[90;47m OPTIONS [0m "/api/batchedUpdates"
+2024-09-17 20:15:57 - INFO - Time taken to produce to Kafka: 20.5318ms
+2024-09-17 20:15:57 - INFO - User AdamZilla loaded 1 Pokémon into Kafka
+[GIN] 2024/09/17 - 20:15:57 |[97;42m 200 [0m|     21.8595ms |             ::1 |[97;46m POST    [0m "/api/batchedUpdates"
+2024-09-18 00:52:48 - INFO - Attempting to connect to Kafka...
+2024-09-18 00:52:48 - INFO - Kafka client configured to connect to 192.168.213.1:9093
+2024-09-18 00:52:48 - INFO - Configured to write to topic batchedUpdates
+2024-09-18 00:52:48 - INFO - Server started on port 3003
+[GIN] 2024/09/18 - 00:53:00 |[97;42m 204 [0m|            0s |             ::1 |[90;47m OPTIONS [0m "/api/batchedUpdates"
+2024-09-18 00:53:00 - INFO - Token decoded successfully
+2024-09-18 00:53:00 - INFO - Time taken to produce to Kafka: 37.0005ms
+2024-09-18 00:53:00 - INFO - User AdamZilla loaded 1 Pokémon into Kafka
+[GIN] 2024/09/18 - 00:53:00 |[97;42m 200 [0m|     40.3556ms |             ::1 |[97;46m POST    [0m "/api/batchedUpdates"

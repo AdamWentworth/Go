@@ -71,14 +71,13 @@ func handleBatchedUpdates(c *gin.Context) {
 		return
 	}
 
-	// Produce data to Kafka
 	err = produceToKafka(message)
+
 	if err != nil {
 		logger.Errorf("Failed to produce to Kafka: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
 		return
 	}
-
 	// Respond to the client
 	c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
 	c.Header("Access-Control-Allow-Credentials", "true")
