@@ -34,6 +34,7 @@ func main() {
 	// Protected routes
 	protected := app.Group("/", verifyJWT) // JWT middleware to protect routes
 	protected.Get("/api/ownershipData/:user_id", GetPokemonInstances)
+	protected.Get("/api/discoverPokemon/", SearchPokemonInstances)
 
 	// Use fmt.Println for startup messages without time and log level
 	fmt.Println("Starting development server at http://127.0.0.1:3005/")

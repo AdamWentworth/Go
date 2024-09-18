@@ -43,17 +43,22 @@ func (j *JSON) Scan(src interface{}) error {
 
 // User struct for the users table
 type User struct {
-	UserID    string   `gorm:"column:user_id;primaryKey" json:"user_id"` // Use correct database column and json field
+	UserID    string   `gorm:"column:user_id;primaryKey" json:"user_id"`
 	Username  string   `gorm:"column:username;unique" json:"username"`
 	Latitude  *float64 `gorm:"column:latitude" json:"latitude"`
 	Longitude *float64 `gorm:"column:longitude" json:"longitude"`
 }
 
+// TableName sets the name of the table in the database
+func (User) TableName() string {
+	return "users"
+}
+
 // PokemonInstance struct for the instances table
 type PokemonInstance struct {
-	InstanceID      string   `gorm:"column:instance_id;primaryKey" json:"instance_id"` // Explicit column name and JSON
+	InstanceID      string   `gorm:"column:instance_id;primaryKey" json:"instance_id"`
 	UserID          string   `gorm:"column:user_id" json:"user_id"`
-	User            *User    `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	User            *User    `gorm:"foreignKey:UserID;references:UserID" json:"user,omitempty"`
 	PokemonID       int      `gorm:"column:pokemon_id" json:"pokemon_id"`
 	Nickname        *string  `gorm:"column:nickname" json:"nickname"`
 	CP              *int     `gorm:"column:cp" json:"cp"`

@@ -100,18 +100,34 @@ const PokemonSearchBar = () => {
       shiny: isShiny,
       shadow: isShadow,
       costume_id,  // This could be null if no costume is selected
-      location: {
-        latitude: locationCoordinates.latitude,
-        longitude: locationCoordinates.longitude,
-      },
+      latitude: locationCoordinates.latitude,
+      longitude: locationCoordinates.longitude,
       ownership: ownershipStatus,
-      range_km: range,  // Include the range in kilometers
-      limit: resultsLimit  // Include the selected limit for the number of results
+      range_km: range,        // Include the range in kilometers
+      limit: resultsLimit,    // Include the selected limit for the number of results
     };
 
-    console.log('API request parameters:', queryParams);
-
-    setIsLoading(false); // Re-enable the search button after the request
+    console.log(queryParams)
+  
+    try {
+      const response = await axios.get('http://localhost:3005/api/discoverPokemon', {
+        params: queryParams,
+        withCredentials: true, // Include cookies for authentication
+      });
+  
+      if (response.status === 200) {
+        const data = response.data;
+        console.log('Search results:', data);
+        // Handle the results as needed
+      } else {
+        setErrorMessage('Failed to retrieve search results.');
+      }
+    } catch (error) {
+      console.error('Error during API request:', error);
+      setErrorMessage('An error occurred while searching. Please try again.');
+    } finally {
+      setIsLoading(false); // Re-enable the search button after the request
+    }
   };
 
   return (
