@@ -2,11 +2,14 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	// Set Gin to release mode to suppress debug logs
+	gin.SetMode(gin.ReleaseMode)
+
 	// Initialize the logger
 	initLogger()
 
@@ -28,22 +31,20 @@ func main() {
 	// Initialize Kafka producer (using kafka-go)
 	initializeKafkaProducer()
 
-	// Initialize Fiber app
-	app := fiber.New(fiber.Config{
-		ErrorHandler: errorHandler, // Custom error handler
-	})
+	// Initialize GIN router
+	router := gin.New()
 
-	// Use custom logger middleware
-	app.Use(requestLogger)
+	// **Add the Gin logger middleware**
+	router.Use(gin.Logger())
 
 	// Use recovery middleware to handle panics and log errors
-	app.Use(recoverMiddleware)
+	router.Use(gin.Recovery())
 
 	// Set up CORS middleware to allow requests from localhost:3000
-	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://localhost:3000",
-		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
-		AllowHeaders:     "Content-Type,Authorization,X-Requested-With",
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Content-Type", "Authorization", "X-Requested-With"},
 		AllowCredentials: true,
 	}))
 
@@ -51,10 +52,10 @@ func main() {
 	logger.Infof("Server started on port %s", port)
 
 	// Define the route for handling batched updates
-	app.Post("/api/batchedUpdates", handleBatchedUpdates)
+	router.POST("/api/batchedUpdates", handleBatchedUpdates)
 
 	// Start the server
-	if err := app.Listen(":" + port); err != nil {
+	if err := router.Run(":" + port); err != nil {
 		logger.Fatal("Error starting server:", err)
 	}
 }

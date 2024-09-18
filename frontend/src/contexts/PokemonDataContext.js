@@ -77,8 +77,8 @@ export const PokemonDataProvider = ({ children }) => {
         }
     }, [data.variants, updateLists]);
 
-    const updateDetails = useCallback((...args) => {
-        importedUpdateDetails(data, setData, updateLists)(...args);
+    const updateDetails = useCallback(async (...args) => {
+        await importedUpdateDetails(data, setData, updateLists)(...args);
         if (isLoggedIn) {
             periodicUpdates();
         }

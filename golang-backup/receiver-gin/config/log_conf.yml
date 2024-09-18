@@ -1,0 +1,12 @@
+# log_conf.yml
+
+handlers:
+  console:
+    class: console
+    level: info
+    formatter: simple
+  file:
+    class: file
+    level: info
+    filename: app.log
+    formatter: simple

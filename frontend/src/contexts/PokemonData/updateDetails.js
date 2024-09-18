@@ -33,28 +33,26 @@ export const updateDetails = (
     }));
 
     // Sync the updated data to the service worker once
-    navigator.serviceWorker.ready.then(registration => {
-        registration.active.postMessage({
-            action: 'syncData',
-            data: { data: newData, timestamp: currentTimestamp }
-        });
+    const registration = await navigator.serviceWorker.ready;
+    registration.active.postMessage({
+        action: 'syncData',
+        data: { data: newData, timestamp: currentTimestamp }
     });
 
     // Cache the updates once
-    caches.open('pokemonCache').then(async cache => {
-        const cachedUpdates = await cache.match('/batchedUpdates');
-        let updatesData = cachedUpdates ? await cachedUpdates.json() : {};
+    const cache = await caches.open('pokemonCache');
+    const cachedUpdatesResponse = await cache.match('/batchedUpdates');
+    let updatesData = cachedUpdatesResponse ? await cachedUpdatesResponse.json() : {};
 
-        // Add each updated Pokémon key to the cache
-        keysArray.forEach((pokemonKey) => {
-            updatesData[pokemonKey] = newData[pokemonKey];
-        });
-
-        await cache.put('/batchedUpdates', new Response(JSON.stringify(updatesData), {
-            headers: { 'Content-Type': 'application/json' }
-        }));
+    // Add each updated Pokémon key to the cache
+    keysArray.forEach((pokemonKey) => {
+        updatesData[pokemonKey] = newData[pokemonKey];
     });
 
-    // Call updateLists after all syncing and caching is complete
+    await cache.put('/batchedUpdates', new Response(JSON.stringify(updatesData), {
+        headers: { 'Content-Type': 'application/json' }
+    }));
+
+    // Optionally, call updateLists if needed
     // updateLists();
 };

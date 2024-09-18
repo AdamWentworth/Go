@@ -2,30 +2,28 @@
 package main
 
 import (
-	"net/http"
-
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
 )
 
-func verifyAccessToken(r *http.Request) (string, string, error) {
-	cookie, err := r.Cookie("accessToken")
-	if err != nil {
-		logger.Warnf("Access token cookie not found: %v", err)
-		return "", "", err
+func verifyAccessToken(c *fiber.Ctx) (string, string, error) {
+	cookie := c.Cookies("accessToken")
+	if cookie == "" {
+		logger.Warn("Access token cookie not found")
+		return "", "", fiber.ErrUnauthorized
 	}
 
-	tokenString := cookie.Value
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(jwtSecret), nil // Use jwtSecret from config.go
+	token, err := jwt.Parse(cookie, func(token *jwt.Token) (interface{}, error) {
+		return []byte(jwtSecret), nil
 	})
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		userID := claims["user_id"].(string)
-		username := claims["username"].(string)
+		userID, _ := claims["user_id"].(string)
+		username, _ := claims["username"].(string)
 		logger.Infof("Token decoded successfully")
 		return userID, username, nil
 	} else {
 		logger.Warnf("Invalid JWT token: %v", err)
-		return "", "", err
+		return "", "", fiber.ErrUnauthorized
 	}
 }

@@ -6,9 +6,8 @@ import (
 	"io"
 	"os"
 	"strings"
-	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
@@ -53,11 +52,14 @@ func initLogger() {
 		logger.Fatalf("Failed to open log file: %v", err)
 	}
 
+	// Force GIN to output color
+	gin.ForceConsoleColor()
+
 	// Create a filtered writer for the terminal
 	filteredWriter := &FilteredWriter{
 		Writer: os.Stdout,
 		Filters: []string{
-			"[Fiber]", // Adjust the filter as necessary
+			"[GIN-debug]", // Filter out Gin debug logs from the terminal
 		},
 	}
 
@@ -76,52 +78,8 @@ func initLogger() {
 
 	// Set the logger's level
 	logger.SetLevel(logrus.InfoLevel)
-}
 
-// Custom request logger middleware for Fiber
-func requestLogger(c *fiber.Ctx) error {
-	start := time.Now()
-	err := c.Next()
-	stop := time.Now()
-
-	latency := stop.Sub(start).Milliseconds()
-	method := c.Method()
-	path := c.OriginalURL()
-	status := c.Response().StatusCode()
-	ip := c.IP()
-
-	logger.Infof("%s - %s %s - %d - %dms", ip, method, path, status, latency)
-	return err
-}
-
-// Recovery middleware for Fiber to handle panics
-func recoverMiddleware(c *fiber.Ctx) error {
-	defer func() {
-		if r := recover(); r != nil {
-			logger.Errorf("Panic recovered: %v", r)
-			c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"message": "Internal Server Error",
-			})
-		}
-	}()
-	return c.Next()
-}
-
-// Custom error handler for Fiber
-func errorHandler(c *fiber.Ctx, err error) error {
-	// Default 500 status code
-	code := fiber.StatusInternalServerError
-
-	// Retrieve the custom status code if it's a *fiber.Error
-	if e, ok := err.(*fiber.Error); ok {
-		code = e.Code
-	}
-
-	// Log the error
-	logger.Errorf("Error %d: %v", code, err)
-
-	// Send JSON response
-	return c.Status(code).JSON(fiber.Map{
-		"message": err.Error(),
-	})
+	// Configure Gin to write its default logs to both terminal and app.log
+	gin.DefaultWriter = io.MultiWriter(terminalWriter, appLogWriter)
+	gin.DefaultErrorWriter = io.MultiWriter(terminalWriter, appLogWriter)
 }
