@@ -524,3 +524,7 @@ Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-
 2024-09-18 13:42:02 - INFO - Kafka client configured to connect to 192.168.213.1:9093
 2024-09-18 13:42:02 - INFO - Configured to write to topic batchedUpdates
 2024-09-18 13:42:02 - INFO - Server started on port 3003
+2024-09-18 13:45:24 - INFO - 127.0.0.1 - OPTIONS /api/batchedUpdates - 204 - 0ms
+2024-09-18 13:45:24 - INFO - Token decoded successfully
+2024-09-18 13:45:24 - INFO - User AdamZilla loaded 1 Pokémon into Kafka
+2024-09-18 13:45:24 - INFO - 127.0.0.1 - POST /api/batchedUpdates - 200 - 18ms

@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 
-	"github.com/gofiber/fiber/v2" // Corrected import
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,15 +20,12 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 
 	// Use the uppercase format for the log level
 	levelUpper := level
-	switch level {
-	case "info":
+	if level == "info" {
 		levelUpper = "INFO"
-	case "error":
+	} else if level == "error" {
 		levelUpper = "ERROR"
-	case "fatal":
+	} else if level == "fatal" {
 		levelUpper = "FATAL"
-	default:
-		levelUpper = level
 	}
 
 	// Construct the log message to match the Python format
@@ -57,49 +52,4 @@ func initLogging() {
 
 	// Set the log level to capture everything for app.log
 	logrus.SetLevel(logrus.TraceLevel)
-}
-
-// Custom error handler for Fiber
-func errorHandler(c *fiber.Ctx, err error) error {
-	// Default to 500 Internal Server Error
-	code := fiber.StatusInternalServerError
-
-	// Retrieve the custom status code if it's a *fiber.Error
-	if e, ok := err.(*fiber.Error); ok {
-		code = e.Code
-	}
-
-	// Log the error
-	logrus.Errorf("Error %d: %v", code, err)
-
-	// Send custom JSON response
-	return c.Status(code).JSON(fiber.Map{
-		"error": err.Error(),
-	})
-}
-
-// Custom request logging middleware
-func requestLogger(c *fiber.Ctx) error {
-	start := time.Now()
-
-	// Proceed with the next handler
-	err := c.Next()
-
-	// Calculate the latency
-	stop := time.Now()
-	latency := stop.Sub(start)
-
-	// Get request details
-	ip := c.IP()
-	method := c.Method()
-	path := c.OriginalURL()
-	status := c.Response().StatusCode()
-
-	// Format the log message
-	logMessage := fmt.Sprintf("%s - %s %s - %d - %dms", ip, method, path, status, latency.Milliseconds())
-
-	// Log the message
-	logrus.Infof(logMessage)
-
-	return err
 }

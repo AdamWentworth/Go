@@ -3,19 +3,23 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
 // GetPokemonInstances handles the GET requests to retrieve Pokémon instances for a user
-func GetPokemonInstances(c *fiber.Ctx) error {
-	userID := c.Params("user_id")
-	tokenUserID := c.Locals("user_id").(string) // Extract user_id from context
+func GetPokemonInstances(c *gin.Context) {
+
+	userID := c.Param("user_id")
+	tokenUserID := c.GetString("user_id") // Extract user_id from context
 
 	// Check if user_id from the token matches the requested user_id
 	if tokenUserID != userID {
 		logrus.Error("Authentication failed: User mismatch")
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "User mismatch"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "User mismatch"})
+		return
 	}
 
 	// Retrieve the user from the database
@@ -23,14 +27,16 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 	if err := db.Where("user_id = ?", userID).First(&user).Error; err != nil {
 		// User is not found, log info and return empty response in the same format
 		logrus.Infof("User %s not found, returning 0 Pokemon instances", userID)
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{})
+		c.JSON(http.StatusOK, gin.H{})
+		return
 	}
 
 	// Retrieve Pokémon instances for the user
 	var instances []PokemonInstance
 	if err := db.Where("user_id = ?", userID).Find(&instances).Error; err != nil {
 		logrus.Error("Error retrieving instances")
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve instances"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve instances"})
+		return
 	}
 
 	// Prepare the response data, even if no instances exist
@@ -81,6 +87,6 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 	instanceCount := len(responseData)
 
 	// Log and return the response data, even if empty
-	logrus.Infof("User %s retrieved %d Pokemon instances", user.Username, instanceCount)
-	return c.Status(fiber.StatusOK).JSON(responseData)
+	logrus.Infof("User %s retrieved %d Pokemon instances with status 200", user.Username, instanceCount)
+	c.JSON(http.StatusOK, responseData)
 }

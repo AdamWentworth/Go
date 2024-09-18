@@ -84,6 +84,11 @@ func requestLogger(c *fiber.Ctx) error {
 	err := c.Next()
 	stop := time.Now()
 
+	// Skip logging for OPTIONS requests
+	if c.Method() == "OPTIONS" {
+		return err
+	}
+
 	latency := stop.Sub(start).Milliseconds()
 	method := c.Method()
 	path := c.OriginalURL()
