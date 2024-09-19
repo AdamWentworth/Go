@@ -1,6 +1,0 @@
-# app_conf.yml
-events:
-  port: "9093"
-  topic: "batchedUpdates"
-  max_retries: 5
-  retry_interval: 3  # seconds
