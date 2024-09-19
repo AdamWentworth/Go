@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import PokemonSearchBar from './PokemonSearchBar';
 import ListView from './views/ListView';
-import GlobeView from './views/GlobeView';
+import MapView from './views/MapView';
 
 // Sample data for both views
 const sampleData = [
@@ -28,7 +28,7 @@ const Discover = () => {
       {view === 'list' ? (
         <ListView data={sampleData} />
       ) : (
-        <GlobeView data={sampleData} />
+        <MapView data={sampleData} />
       )}
     </div>
   );

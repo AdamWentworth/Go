@@ -1,0 +1,76 @@
+Pokémon Image Recognition System Overview
+Objective:
+To build a machine learning system that can automatically identify Pokémon species and attributes (e.g., CP, shiny/shadow status) from user-uploaded images through a React frontend, using a trained ResNet model.
+
+System Components:
+Frontend (React):
+
+Users upload images of their Pokémon through the React app.
+Images are sent to the backend for storage and processing.
+Backend Services:
+
+Receiver Service: Receives image uploads, stores them in an S3 bucket, and adds the image URL along with labeled parameters (e.g., species, CP, shiny status) to a MySQL database.
+Storage Service: Consumes data from Kafka and stores it in the MySQL database for later retrieval.
+Reader Service: Retrieves Pokémon data based on user queries, including specific species or attributes.
+Database (MySQL):
+
+Stores Pokémon data, including image URLs, species labels, CP, shiny/shadow status, and other attributes.
+Links each Pokémon image to its labeled parameters.
+Image Storage (S3):
+
+Stores uploaded Pokémon images in an S3 bucket.
+Image URLs are referenced in the MySQL database for training and inference.
+Machine Learning Pipeline:
+
+Data Preparation:
+Retrieve image URLs and labels from MySQL.
+Download images from S3 and apply necessary preprocessing (resizing, normalization) using PyTorch.
+Model Training:
+Use a pre-trained ResNet model, modifying the final layer to match the number of Pokémon species.
+Train the model using the labeled images to recognize Pokémon species and attributes.
+Model Evaluation:
+Evaluate model accuracy and performance using a separate validation set.
+Inference:
+Once trained, use the model to predict species and attributes for new images uploaded by users.
+Model Deployment:
+
+Deploy the trained model using Flask or a model serving platform (e.g., AWS SageMaker or TorchServe).
+The deployed API accepts new images, processes them using the trained model, and returns predictions for Pokémon species and attributes.
+Step-by-Step Implementation:
+Image Upload & Storage:
+
+Users upload Pokémon images via the React frontend.
+Images are stored in an S3 bucket, and image URLs, along with labeled parameters, are stored in a MySQL database.
+Data Retrieval for Training:
+
+Retrieve image URLs and labels from the MySQL database.
+Download images from S3 and apply preprocessing steps (resizing, normalization).
+Model Training:
+
+Use a pre-trained ResNet model, replacing the final layer to classify Pokémon species.
+Train the model using PyTorch, with labeled images as input and species as output labels.
+Optionally expand the model to predict additional attributes like shiny or shadow status.
+Model Evaluation & Refinement:
+
+Evaluate the model's performance on a validation set to ensure it generalizes well.
+Refine the model as needed by adjusting hyperparameters or adding more training data.
+Inference & API Deployment:
+
+Deploy the trained model using Flask or a serving platform.
+Create an API endpoint that accepts new image uploads and returns predictions for Pokémon species and attributes.
+Continuous Improvement:
+
+Collect new images from users, label them, and add them to the training dataset.
+Periodically retrain the model with the expanded dataset to improve accuracy and handle new Pokémon species or forms.
+Technical Stack:
+Frontend: React (for user interface and image uploads)
+Backend Services: Node.js or Python (Flask/Django) for handling API requests and data processing
+Database: MySQL (for storing Pokémon data and image URLs)
+Storage: AWS S3 (for storing images)
+Machine Learning: PyTorch and ResNet (for model training and inference)
+Deployment: Flask, AWS SageMaker, or TorchServe (for model serving)
+Key Features:
+Automated Pokémon species recognition and attribute extraction from user-uploaded images.
+A scalable system with continuous improvement through active learning and user data.
+Integration with an S3 bucket for image storage and a MySQL database for data management.
+This comprehensive overview captures the core functionality and architecture of your Pokémon image recognition system, outlining each component and its role in the workflow.

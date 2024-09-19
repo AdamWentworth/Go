@@ -1,23 +1,19 @@
 // Navbar.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Navbar.css';
-import { useAuth } from '../contexts/AuthContext'; // Import useAuth
-import MainButtons from './MainButtons'; // Make sure to import MainButtons
+import { useAuth } from '../contexts/AuthContext';
+import MainButtons from './MainButtons';
+import { useTheme } from '../contexts/ThemeContext';  // Import useTheme
 
 function Navbar() {
     const location = useLocation();
     const logoUrl = process.env.PUBLIC_URL + '/images/logo/logo.png';
-    const { isLoggedIn } = useAuth(); // Use the auth context to determine logged in state
-    const [isLightMode, setIsLightMode] = useState(false); // State to track light/dark mode
-  
+    const { isLoggedIn } = useAuth();
+    const { isLightMode, toggleTheme } = useTheme(); // Use theme context
+    
     const showMainButtons = location.pathname !== '/';
-  
-    const toggleLightMode = () => {
-        setIsLightMode(!isLightMode);
-        console.log('Light/Dark mode toggled');
-    };
 
     useEffect(() => {
         const lightModeStylesheet = document.getElementById('light-mode-stylesheet');
@@ -46,7 +42,7 @@ function Navbar() {
             </div>
             {showMainButtons && <MainButtons navbar={true} />}
             <div className="navbar-buttons">
-                <button onClick={toggleLightMode}>
+                <button onClick={toggleTheme}>  {/* Updated to use toggleTheme from context */}
                     {isLightMode ? 'Dark Mode' : 'Light Mode'}
                 </button>
                 {isLoggedIn ? (

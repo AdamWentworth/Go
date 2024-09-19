@@ -1,9 +1,9 @@
 /* Light-Mode.css */
-.navbar, .header, .overlay-content {
+.navbar, .header, .overlay-content, .pokemon-search-bar {
     background-color: #e2ead5;
 }
 
-.navbar h1, .evo-line-checkbox, .overlay-content, .iv-input, .iv-value {
+.navbar h1, .evo-line-checkbox, .overlay-content, .iv-input, .iv-value, .pokemon-search-bar {
     color:black
 }
 
@@ -18,10 +18,6 @@
     color: black
 }
 
-/* .pokemon-card h2 {
-    font-weight: normal
-} */
-
 .favorite-component img {
     filter: invert(1); /* Apply a black overlay effect */
 }
@@ -34,3 +30,4 @@
 .lucky-backdrop {
     filter: brightness(1.0); /* Set higher brightness for light mode */
 }
+

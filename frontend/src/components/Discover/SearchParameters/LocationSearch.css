@@ -1,8 +1,4 @@
 /* LocationSearch.css */
-.location-search {
-    color: white;
-}
-
 .location-search .location-container {
     display: grid;
     grid-template-columns: 1fr 1fr; /* Two equal columns */
