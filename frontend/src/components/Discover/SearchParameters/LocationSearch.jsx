@@ -4,9 +4,19 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './LocationSearch.css';
 
-const breakpoints = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const breakpoints = [1, 2, 3, 4, 5, 10, 15, 20, 25]; // All breakpoints included
 
-const LocationSearch = ({ country, setCountry, city, setCity, useCurrentLocation, setUseCurrentLocation, setCoordinates, range, setRange }) => {
+const LocationSearch = ({
+  country,
+  setCountry,
+  city,
+  setCity,
+  useCurrentLocation,
+  setUseCurrentLocation,
+  setCoordinates,
+  range,
+  setRange
+}) => {
   const [countrySuggestions, setCountrySuggestions] = useState([]);
   const [citySuggestions, setCitySuggestions] = useState([]);
 
@@ -162,9 +172,9 @@ const LocationSearch = ({ country, setCountry, city, setCity, useCurrentLocation
             <label>Range (km): {range}</label>
             <input
               type="range"
-              min="1"
-              max="10"
-              step="0.1"
+              min="1" // Updated minimum value to include 1
+              max="25" // Updated maximum value to include 25
+              step="1" // Step changed to 1 for more precise adjustments
               value={range}
               onChange={handleRangeChange}
             />

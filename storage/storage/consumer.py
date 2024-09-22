@@ -108,6 +108,8 @@ def ensure_db_connection(max_retries=5, retry_interval=5):
     return False
 
 def filter_json_fields(data):
+    if data is None:
+        return {}
     return {k: v for k, v in data.items() if v is True}
 
 def handle_message(data, trace_logger):
@@ -154,10 +156,10 @@ def handle_message(data, trace_logger):
                 height = pokemon.get('height') if pokemon.get('height') != "" else None
 
                 # Filter the JSON fields
-                not_trade_list = filter_json_fields(pokemon.get('not_trade_list', {}))
-                not_wanted_list = filter_json_fields(pokemon.get('not_wanted_list', {}))
-                trade_filters = filter_json_fields(pokemon.get('trade_filters', {}))
-                wanted_filters = filter_json_fields(pokemon.get('wanted_filters', {}))
+                not_trade_list = filter_json_fields(pokemon.get('not_trade_list') or {})
+                not_wanted_list = filter_json_fields(pokemon.get('not_wanted_list') or {})
+                trade_filters = filter_json_fields(pokemon.get('trade_filters') or {})
+                wanted_filters = filter_json_fields(pokemon.get('wanted_filters') or {})
 
                 date_caught_str = pokemon.get('date_caught')
                 date_caught = None

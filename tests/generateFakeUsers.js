@@ -1,69 +1,78 @@
-const mongoose = require('mongoose');
+const mongoose = require('../authentication/middlewares/mongoose');
 const bcrypt = require('bcrypt');
 const { faker } = require('@faker-js/faker');
-const User = require('../models/user'); // Adjust the path as necessary
+const User = require('../authentication/models/user'); // Adjust the path as necessary
 
-const NUM_USERS = 1000;
-const BATCH_SIZE = 100;
-
-// MongoDB connection
-const mongoURI = 'mongodb://localhost:27017/PoGo_App_Users'; // Change this to your MongoDB URI
-mongoose.connect(mongoURI)
-    .then(() => {
-        console.log('Connected to MongoDB');
-        generateUsers();
-    })
-    .catch(err => {
-        console.error('MongoDB connection error:', err);
-        process.exit(1); // Exit the process with a failure code
-    });
+const NUM_USERS = 500; // Number of users to generate
 
 // Helper function to generate a 12-digit number as a string
 function generateTrainerCode() {
-    let code = '';
-    for (let i = 0; i < 12; i++) {
-        code += Math.floor(Math.random() * 10); // Random digit between 0 and 9
-    }
-    return code;
+  let code = '';
+  for (let i = 0; i < 12; i++) {
+    code += Math.floor(Math.random() * 10); // Random digit between 0 and 9
+  }
+  return code;
 }
 
 async function generateUsers() {
-    const users = [];
-
     for (let i = 0; i < NUM_USERS; i++) {
-        try {
-            const hashedPassword = await bcrypt.hash('password123', 10); // Use a generic password for all fake users
-
-            const user = {
-                username: faker.internet.userName(),
-                email: faker.internet.email(),
-                password: hashedPassword,
-                pokemonGoName: faker.internet.userName(),  // Or set this to `null` randomly if not always needed
-                trainerCode: generateTrainerCode(),  // Generate a 12-digit string manually
-                country: faker.location.country(),  // Updated from deprecated address API
-                city: faker.location.city(),  // Updated from deprecated address API
-                allowLocation: faker.datatype.boolean(),
-                googleId: faker.string.uuid(),  // Replaced with string.uuid
-                facebookId: faker.string.uuid(), // Replaced with string.uuid
-                twitterId: faker.string.uuid(), // Replaced with string.uuid
-                nintendoId: faker.string.uuid(), // Replaced with string.uuid
-                discordId: faker.string.uuid(),  // Replaced with string.uuid
-            };
-
-            users.push(user);
-
-            // Insert in batches
-            if (users.length >= BATCH_SIZE || i === NUM_USERS - 1) {
-                await User.insertMany(users, { ordered: false });
-                console.log(`Inserted ${users.length} users`);
-                users.length = 0; // Clear the batch
-            }
-        } catch (error) {
-            console.error(`Error processing user batch: ${error.message}`);
-            return process.exit(1); // Exit the process with a failure code
-        }
+      const hashedPassword = await bcrypt.hash('password123', 10); // Use a generic password for all fake users
+  
+      const user = new User({
+        username: faker.internet.userName(),
+        email: faker.internet.email(),
+        password: hashedPassword,
+        pokemonGoName: faker.internet.userName(), // Optional field
+        trainerCode: generateTrainerCode(), // Generate a 12-digit string manually
+        country: 'Canada', // Hardcoded to Canada
+        city: 'Vancouver', // Hardcoded to Vancouver
+        allowLocation: true, // Set allowLocation to always be true
+        googleId: faker.string.uuid(),
+        facebookId: faker.string.uuid(),
+        twitterId: faker.string.uuid(),
+        nintendoId: faker.string.uuid(),
+        discordId: faker.string.uuid(),
+      });
+  
+      try {
+        await user.save();
+        console.log(`User ${user.username} inserted successfully`);
+      } catch (error) {
+        console.error(`Error inserting user ${user.username}: ${error.message}`);
+      }
+  
+      // Log progress every 100 users
+      if ((i + 1) % 100 === 0) {
+        console.log(`Progress: ${i + 1}/${NUM_USERS} users generated`);
+      }
     }
-
+  
     console.log('Finished inserting fake users');
     mongoose.disconnect();
+  }
+  
+  // Start generating users after ensuring the connection is established
+  if (mongoose.connection.readyState === 1) {
+    generateUsers();
+  } else {
+    mongoose.connection.on('connected', generateUsers);
+  }
+  
+  // Catch unhandled promise rejections
+  process.on('unhandledRejection', error => {
+    console.error('Unhandled promise rejection:', error);
+    mongoose.disconnect();
+});  
+
+// Start generating users after ensuring the connection is established
+if (mongoose.connection.readyState === 1) {
+  generateUsers();
+} else {
+  mongoose.connection.on('connected', generateUsers);
 }
+
+// Catch unhandled promise rejections
+process.on('unhandledRejection', error => {
+  console.error('Unhandled promise rejection:', error);
+  mongoose.disconnect();
+});

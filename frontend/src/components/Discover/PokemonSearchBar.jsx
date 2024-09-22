@@ -7,7 +7,7 @@ import OwnershipSearch from './SearchParameters/OwnershipSearch';
 import './PokemonSearchBar.css';
 import axios from 'axios';
 
-const PokemonSearchBar = () => {
+const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage }) => {
   const [pokemon, setPokemon] = useState('');
   const [isShiny, setIsShiny] = useState(false);
   const [isShadow, setIsShadow] = useState(false);
@@ -20,23 +20,18 @@ const PokemonSearchBar = () => {
   const [coordinates, setCoordinates] = useState({ latitude: null, longitude: null });
   const [range, setRange] = useState(5); // Default range
   const [resultsLimit, setResultsLimit] = useState(5); // Default limit for results
-  const [errorMessage, setErrorMessage] = useState(''); // To store error messages
-  const [isLoading, setIsLoading] = useState(false); // To prevent spamming the search button
 
   const handleSearch = async () => {
     setErrorMessage(''); // Clear previous error messages
-    setIsLoading(true); // Disable the button during request
 
     // Validation checks
     if (!pokemon) {
       setErrorMessage('Please provide a Pokémon name.');
-      setIsLoading(false);
       return;
     }
 
     if (!useCurrentLocation && (!city || !country)) {
       setErrorMessage('Please provide a city and country or use your current location.');
-      setIsLoading(false);
       return;
     }
 
@@ -56,12 +51,10 @@ const PokemonSearchBar = () => {
           locationCoordinates = { latitude: lat, longitude: lon };
         } else {
           setErrorMessage('No results found for the location.');
-          setIsLoading(false);
           return;
         }
       } catch (error) {
         setErrorMessage('Error fetching GPS coordinates. Please try again.');
-        setIsLoading(false);
         return;
       }
     }
@@ -70,7 +63,6 @@ const PokemonSearchBar = () => {
     const storedData = localStorage.getItem('pokemonData');
     if (!storedData) {
       setErrorMessage('No Pokémon data found in local storage.');
-      setIsLoading(false);
       return;
     }
 
@@ -84,7 +76,6 @@ const PokemonSearchBar = () => {
 
     if (!matchingPokemon) {
       setErrorMessage('No matching Pokémon found.');
-      setIsLoading(false);
       return;
     }
 
@@ -107,27 +98,11 @@ const PokemonSearchBar = () => {
       limit: resultsLimit,    // Include the selected limit for the number of results
     };
 
-    console.log(queryParams)
-  
-    try {
-      const response = await axios.get('http://localhost:3005/api/discoverPokemon', {
-        params: queryParams,
-        withCredentials: true, // Include cookies for authentication
-      });
-  
-      if (response.status === 200) {
-        const data = response.data;
-        console.log('Search results:', data);
-        // Handle the results as needed
-      } else {
-        setErrorMessage('Failed to retrieve search results.');
-      }
-    } catch (error) {
-      console.error('Error during API request:', error);
-      setErrorMessage('An error occurred while searching. Please try again.');
-    } finally {
-      setIsLoading(false); // Re-enable the search button after the request
-    }
+    // Log the prepared query parameters before sending them to the parent component
+    console.log('Search Query Parameters:', queryParams);
+
+    // Pass query parameters to parent component's search handler
+    onSearch(queryParams);
   };
 
   return (
@@ -183,10 +158,6 @@ const PokemonSearchBar = () => {
         <button onClick={handleSearch} disabled={isLoading}>
           {isLoading ? 'Searching...' : 'Search'}
         </button>
-        {/* Add class conditionally to control visibility */}
-        <div className={`error-message ${errorMessage ? 'error-visible' : ''}`}>
-          {errorMessage}
-        </div>
       </div>
     </div>
   );

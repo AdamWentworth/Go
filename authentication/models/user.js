@@ -1,6 +1,6 @@
 // user.js
 
-const mongoose = require('mongoose');
+const mongoose = require('../middlewares/mongoose');
 
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, minlength: 6, maxlength: 36 },

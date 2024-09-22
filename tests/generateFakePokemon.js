@@ -1,11 +1,10 @@
-const mongoose = require('mongoose');
+const mongoose = require('../authentication/middlewares/mongoose');
 const mysql = require('mysql2/promise');
 const { faker } = require('@faker-js/faker');
-const axios = require('axios');
 const fs = require('fs');
 
 // MongoDB user model
-const User = require('../models/user'); // Adjust the path to your User model
+const User = require('../authentication/models/user'); // Adjust the path to your User model
 
 // MySQL connection configuration
 const mysqlConfig = {
@@ -16,31 +15,15 @@ const mysqlConfig = {
 };
 
 // Load Pokémon data from JSON file
-const pokemonData = JSON.parse(fs.readFileSync('./tasks/pokemon.json', 'utf8'));
+const pokemonData = JSON.parse(fs.readFileSync('./pokemon.json', 'utf8'));
 
-// Helper function to get latitude and longitude from a city and country using the Photon API
-async function getCoordinates(city, country) {
-    try {
-        const response = await axios.get(`https://photon.komoot.io/api/?q=${encodeURIComponent(city)},${encodeURIComponent(country)}&limit=1`, {
-            withCredentials: false // Ensure credentials are not included in the request
-        });
-
-        if (response.data && response.data.features && response.data.features.length > 0) {
-            // Check if the first feature has the correct latitude and longitude
-            const coordinates = response.data.features[0].geometry.coordinates;
-            const latitude = coordinates[1]; // Latitude is at index 1
-            const longitude = coordinates[0]; // Longitude is at index 0
-
-            console.log(`Coordinates for ${city}, ${country}: Latitude ${latitude}, Longitude ${longitude}`);
-            return { latitude, longitude };
-        } else {
-            console.error(`No coordinates found for ${city}, ${country}`);
-            return { latitude: null, longitude: null };
-        }
-    } catch (error) {
-        console.error(`Error fetching coordinates for ${city}, ${country}:`, error.message);
-        return { latitude: null, longitude: null };
-    }
+// Helper function to generate random coordinates within Vancouver
+function getRandomVancouverCoordinates() {
+    // Vancouver latitude ranges approximately from 49.198 to 49.316
+    // Vancouver longitude ranges approximately from -123.264 to -123.023
+    const latitude = faker.number.float({ min: 49.198, max: 49.316, precision: 0.00001 });
+    const longitude = faker.number.float({ min: -123.264, max: -123.023, precision: 0.00001 });
+    return { latitude, longitude };
 }
 
 // Function to get a random Pokémon from the JSON data
@@ -160,22 +143,20 @@ function generatePokemonInstance(pokemon, userId) {
     };
 }
 
-// Function to check if the user already exists in the MySQL `users` table
-async function userExists(connection, userId) {
+// Function to check if the username already exists in the MySQL `users` table
+async function usernameExists(connection, username) {
     const [rows] = await connection.execute(
-        `SELECT COUNT(*) AS count FROM users WHERE user_id = ?`,
-        [userId]
+        `SELECT COUNT(*) AS count FROM users WHERE username = ?`,
+        [username]
     );
     return rows[0].count > 0;
 }
 
 // Function to insert a user into MySQL once
 async function insertUser(connection, mongoUser, coordinates) {
-    // Ensure we properly handle the coordinates
     const latitude = coordinates.latitude !== undefined ? coordinates.latitude : null;
     const longitude = coordinates.longitude !== undefined ? coordinates.longitude : null;
 
-    // Log the values being inserted for debugging
     console.log(`Inserting user: ${mongoUser.username}, Latitude: ${latitude}, Longitude: ${longitude}`);
 
     const [rows] = await connection.execute(
@@ -227,10 +208,6 @@ async function insertPokemonInstance(connection, instance) {
         instance.wanted_filters || '{}'   // wanted_filters (json)
     ];
 
-    // Log the number of values and the values themselves
-    // console.log('Inserting Pokémon instance with values count:', values.length);
-    // console.log('Values:', values);
-
     const query = `INSERT INTO instances (
         instance_id, pokemon_id, nickname, cp, attack_iv, defense_iv, stamina_iv, shiny, costume_id, lucky, shadow, purified, fast_move_id, charged_move1_id, charged_move2_id, weight, height, gender, mirror, pref_lucky, registered, favorite, location_card, location_caught, friendship_level, date_caught, date_added, last_update, is_unowned, is_owned, is_for_trade, is_wanted, not_trade_list, not_wanted_list, trace_id, user_id, trade_filters, wanted_filters
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
@@ -259,10 +236,10 @@ async function generateFakeData() {
             }
         
             // Check if the user already exists in MySQL
-            const exists = await userExists(mysqlConnection, mongoUser._id.toString());
+            const exists = await usernameExists(mysqlConnection, mongoUser.username);
             if (!exists) {
-                // Fetch coordinates and insert the user
-                const coordinates = await getCoordinates(mongoUser.city, mongoUser.country);
+                // Generate coordinates and insert the user
+                const coordinates = getRandomVancouverCoordinates(); // Generate random coordinates within Vancouver
                 await insertUser(mysqlConnection, mongoUser, coordinates);
             } else {
                 console.log(`User ${mongoUser.username} already exists in MySQL, skipping insertion.`);
