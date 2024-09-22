@@ -148,6 +148,7 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		}
 	}
 
+	// Determine the value of costumeID based on the input
 	var costumeID *int
 	if costumeIDStr != "" && costumeIDStr != "null" {
 		cid, err := strconv.Atoi(costumeIDStr)
@@ -206,7 +207,12 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		query = query.Where("shadow = ?", shadow)
 	}
 
-	if costumeID != nil {
+	// Apply costume_id filtering logic
+	if costumeIDStr == "" || costumeIDStr == "null" {
+		// If costumeID is not specified or explicitly set to "null", search for instances with costume_id IS NULL
+		query = query.Where("costume_id IS NULL")
+	} else if costumeID != nil {
+		// Otherwise, search for the specified costume_id
 		query = query.Where("costume_id = ?", *costumeID)
 	}
 
@@ -265,9 +271,12 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		// Ensure that User is not nil and calculate the distance
 		var userDistance float64
 		var userID, username string
+		var userLatitude, userLongitude *float64
 		if instance.User != nil {
 			userID = instance.User.UserID
 			username = instance.User.Username
+			userLatitude = instance.User.Latitude
+			userLongitude = instance.User.Longitude
 			if instance.User.Latitude != nil && instance.User.Longitude != nil {
 				// Calculate the distance
 				userDistance = haversine(latitude, longitude, *instance.User.Latitude, *instance.User.Longitude)
@@ -320,6 +329,10 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		if userID != "" && username != "" {
 			instanceData["user_id"] = userID
 			instanceData["username"] = username
+			if userLatitude != nil && userLongitude != nil {
+				instanceData["latitude"] = *userLatitude
+				instanceData["longitude"] = *userLongitude
+			}
 		}
 
 		// Add the instance data to the response, using instance_id as the key
