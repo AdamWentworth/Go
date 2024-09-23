@@ -6,6 +6,7 @@ import { updateImage } from '../utils/updateImage';
 import { formatCostumeName } from '../utils/formatCostumeName';
 import Dropdown from '../components/Dropdown'; 
 import useErrorHandler from '../hooks/useErrorHandler'; 
+import './VariantSearch.css'; // Import the CSS file
 
 const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, setIsShadow, costume, setCostume, selectedForm, setSelectedForm }) => {
   const { error, handleError, clearError } = useErrorHandler();
@@ -14,6 +15,7 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
   const [pokemonData, setPokemonData] = useState([]);
   const [imageUrl, setImageUrl] = useState(null);
   const [imageError, setImageError] = useState(false);
+  const [showCostumeDropdown, setShowCostumeDropdown] = useState(false); // State for toggling costume dropdown
 
   // Load Pokémon data from localStorage
   useEffect(() => {
@@ -38,8 +40,12 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
     const sortedCostumes = availableCostumes.sort((a, b) => new Date(a.date_available) - new Date(b.date_available));
     setAvailableCostumes(sortedCostumes);
 
-    const filteredForms = availableForms.filter((form) => form && form.toLowerCase() !== "none");
-    setAvailableForms(filteredForms || []);
+    // Ensure "None" is included only if there are multiple valid forms
+    const filteredForms = availableForms
+      .filter((form) => form && form.trim().toLowerCase() !== '') // Remove empty or undefined forms
+      .map((form) => (form.toLowerCase() === 'none' ? 'None' : form)); // Normalize form names
+
+    setAvailableForms(filteredForms.length > 0 ? filteredForms : []);
 
     if (!error) {
       const url = updateImage(pokemonData, name, shinyChecked, shadowChecked, selectedCostume, form);
@@ -59,16 +65,24 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
     handleValidation(newPokemon, isShiny, isShadow, costume, "");
   };
 
-  const handleShinyChange = (e) => {
-    const shinyChecked = e.target.checked;
+  const handleShinyChange = () => {
+    const shinyChecked = !isShiny;
     setIsShiny(shinyChecked);
     handleValidation(pokemon, shinyChecked, isShadow, costume, selectedForm);
   };
 
-  const handleShadowChange = (e) => {
-    const shadowChecked = e.target.checked;
+  const handleShadowChange = () => {
+    const shadowChecked = !isShadow;
     setIsShadow(shadowChecked);
     handleValidation(pokemon, isShiny, shadowChecked, costume, selectedForm);
+  };
+
+  const handleCostumeToggle = () => {
+    setShowCostumeDropdown(!showCostumeDropdown); // Toggle costume dropdown
+    if (showCostumeDropdown) {
+      setCostume('None'); // Reset costume to 'None' when toggled off
+      handleValidation(pokemon, isShiny, isShadow, 'None', selectedForm);
+    }
   };
 
   const handleCostumeChange = (e) => {
@@ -82,72 +96,82 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
   };
 
   return (
-    <div className="pokemon-variant">
-      <h3>Pokémon Variant</h3>
+    <div className="pokemon-variant-container">
+      {/* Main Content Section */}
+      <div className="main-content">
+        <div className="pokemon-variant-details">
+          <h3>Pokémon Variant</h3>
 
-      <div>
-        <label>Pokémon: </label>
-        <input
-          type="text"
-          value={pokemon}
-          onChange={handlePokemonChange}
-          placeholder="Enter Pokémon name"
-        />
-      </div>
+          <div className="pokemon-search-row"> {/* Added class for Pokémon search row */}
+            <label>Pokémon: </label>
+            <input
+              type="text"
+              value={pokemon}
+              onChange={handlePokemonChange}
+              placeholder="Enter Pokémon name"
+            />
+          </div>
 
-      <Dropdown
-        label="Form"
-        value={selectedForm}  // Use selectedForm prop
-        options={availableForms}
-        handleChange={handleFormChange}
-      />
+          <div className="button-container">
+            <button onClick={handleShinyChange} className={`shiny-button ${isShiny ? 'active' : ''}`}>
+              <img src="/images/shiny_icon.png" alt="Toggle Shiny" />
+            </button>
+            {/* Costume toggle button */}
+            <button onClick={handleCostumeToggle} className={`costume-button ${showCostumeDropdown ? 'active' : ''}`}>
+              <img src="/images/costume_icon.png" alt="Toggle Costume" />
+            </button>
+            <button onClick={handleShadowChange} className={`shadow-button ${isShadow ? 'active' : ''}`}>
+              <img src="/images/shadow_icon.png" alt="Toggle Shadow" />
+            </button>
+          </div>
 
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            checked={isShiny}
-            onChange={handleShinyChange}
-          />
-          Shiny
-        </label>
-      </div>
+          {/* Form Dropdown placed below the buttons */}
+          {availableForms.length > 0 && (
+            <Dropdown
+              label="Form"
+              value={selectedForm}  // Use selectedForm prop
+              options={availableForms}
+              handleChange={handleFormChange}
+              className="form-dropdown" // Added className for form dropdown
+            />
+          )}
 
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            checked={isShadow}
-            onChange={handleShadowChange}
-          />
-          Shadow
-        </label>
-      </div>
-
-      <Dropdown
-        label="Costume"
-        value={costume}
-        options={availableCostumes.map((costume) => costume.name)}
-        handleChange={handleCostumeChange}
-        formatLabel={formatCostumeName}
-      />
-
-      {error && <div style={{ color: 'red', marginTop: '10px' }}>{error}</div>}
-
-      {imageUrl && !imageError ? (
-        <div style={{ marginTop: '20px' }}>
-          <img
-            src={imageUrl}
-            alt={pokemon}
-            style={{ width: '200px', height: '200px' }}
-            onError={handleImageError}
-          />
+          {/* Costume Dropdown with Specific Class */}
+          {showCostumeDropdown && availableCostumes.length > 0 && (
+            <Dropdown
+              label="Costume"
+              value={costume}
+              options={availableCostumes.map((costume) => costume.name)}
+              handleChange={handleCostumeChange}
+              formatLabel={formatCostumeName}
+              className="costume-dropdown" // Added className for costume dropdown
+            />
+          )}
         </div>
-      ) : imageError ? (
-        <div style={{ marginTop: '20px', color: 'red' }}>
-          This variant doesn't exist.
+
+        {/* Image Section */}
+        <div className="pokemon-variant-image">
+          {imageUrl && !imageError ? (
+            <img
+              src={imageUrl}
+              alt={pokemon}
+              onError={handleImageError}
+              style={{ width: '200px', height: '200px' }}
+            />
+          ) : imageError ? (
+            <div className="pokemon-variant-image-error">
+              This variant doesn't exist.
+            </div>
+          ) : null}
         </div>
-      ) : null}
+      </div>
+
+      {/* Validation error message row */}
+      {error && (
+        <div className="pokemon-variant-error-row">
+          <div className="error-message">{error}</div>
+        </div>
+      )}
     </div>
   );
 };

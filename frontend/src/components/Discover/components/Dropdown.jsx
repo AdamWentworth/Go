@@ -2,9 +2,9 @@
 
 import React from 'react';
 
-const Dropdown = ({ label, value, options, handleChange, formatLabel = (x) => x }) => {
+const Dropdown = ({ label, value, options, handleChange, formatLabel = (x) => x, className }) => {
   return (
-    <div>
+    <div className={className}> {/* Use the className prop here */}
       <label>{label}: </label>
       <select value={value} onChange={handleChange}>
         <option value="">None</option>
@@ -19,3 +19,4 @@ const Dropdown = ({ label, value, options, handleChange, formatLabel = (x) => x 
 };
 
 export default Dropdown;
+
