@@ -15,42 +15,65 @@
 
 .location-search h3 {
     margin-block-start: 10px;
-  }
-  
+}
 
 .location-search .location-container {
     display: flex;
     flex-direction: row;
-    gap: 20px;
-    justify-content: space-between;
-    width: 100%; /* ensure container uses full width */
+    width: 100%;
+    justify-content: space-between; /* Space between columns */
 }
 
 .location-fields, .location-buttons {
-    flex: 1;
+    flex: 1; /* Both columns will take equal space */
     display: flex;
     flex-direction: column;
+    max-width: 50%; /* Each column should not exceed 50% width */
+    box-sizing: border-box; /* Ensure padding/border does not cause overflow */
 }
-/* Change .field to flex layout */
+
 .field {
     display: flex;
-    align-items: center; /* Align items vertically in the center */
-    margin-bottom: 10px; /* Add space between fields */
+    align-items: center;
+    margin-bottom: 10px; /* Space between fields */
+    width: 100%; /* Use full available width */
 }
 
-/* Adjust label styling */
 .field label {
-    width: 100px; /* Set width to align labels */
+    width: 105px; /* Adjust the label width as needed */
+    min-width: 80px; /* Prevent shrinking below this width */
+    white-space: nowrap; /* Prevent text wrapping */
+    text-align: right; /* Align text to the right */
+    margin-right: 10px; /* Add space between label and input */
 }
 
-/* Ensure input fields take up remaining space */
+.field input[type="range"] {
+    flex: 1; /* Make sure range input fills available space */
+    margin-left: 5px; /* Add some space between label and range input */
+}
+
 .field input[type="text"] {
     flex: 1; /* Allow input to take the rest of the space */
     padding: 3px;
+    margin-right: 10px;
 }
 
+/* Button styling */
 .location-buttons button {
     padding: 5px 10px;
+    cursor: pointer;
+}
+
+/* Search button container styling */
+.location-search-button {
+    display: flex;
+    justify-content: center; /* Center the button horizontally */
+    margin-top: 20px; /* Add space between the button and fields */
+}
+
+.location-search-button button {
+    padding: 10px 20px;
+    font-size: 16px;
     cursor: pointer;
 }
 
@@ -70,3 +93,15 @@
 .suggestion-item:hover {
     background-color: #e0e0e0;
 }
+
+
+.view-toggle-buttons {
+    margin-top: 20px;
+    text-align: center;
+  }
+  
+  .view-toggle-buttons button {
+    margin: 0 10px;
+    padding: 10px 20px;
+    cursor: pointer;
+  }

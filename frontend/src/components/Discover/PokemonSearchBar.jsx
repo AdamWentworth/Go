@@ -7,7 +7,7 @@ import OwnershipSearch from './SearchParameters/OwnershipSearch';
 import './PokemonSearchBar.css';
 import axios from 'axios';
 
-const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage }) => {
+const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView }) => {
   const [pokemon, setPokemon] = useState('');
   const [isShiny, setIsShiny] = useState(false);
   const [isShadow, setIsShadow] = useState(false);
@@ -134,6 +134,10 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage }) => {
             setCoordinates={setCoordinates}
             range={range}  // Pass the range to LocationSearch
             setRange={setRange}  // Pass the setter for range to LocationSearch
+            handleSearch={handleSearch}  // Pass handleSearch function to LocationSearch
+            isLoading={isLoading}  // Pass loading state to LocationSearch
+            view={view}  // Pass the view state to LocationSearch
+            setView={setView}  // Pass the setter for view state to LocationSearch
           />
         </div>
 
@@ -143,12 +147,6 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage }) => {
             setOwnershipStatus={setOwnershipStatus}
           />
         </div>
-      </div>
-
-      <div className="search-button-container">
-        <button onClick={handleSearch} disabled={isLoading}>
-          {isLoading ? 'Searching...' : 'Search'}
-        </button>
       </div>
     </div>
   );

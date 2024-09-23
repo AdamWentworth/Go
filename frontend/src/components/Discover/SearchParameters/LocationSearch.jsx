@@ -1,7 +1,5 @@
 // LocationSearch.jsx
 
-// LocationSearch.jsx
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './LocationSearch.css';
@@ -17,7 +15,11 @@ const LocationSearch = ({
   setUseCurrentLocation,
   setCoordinates,
   range,
-  setRange
+  setRange,
+  handleSearch,  // New prop for handling the search
+  isLoading,     // New prop for loading state
+  view,          // New prop for view state
+  setView        // New prop for view state setter
 }) => {
   const [countrySuggestions, setCountrySuggestions] = useState([]);
   const [citySuggestions, setCitySuggestions] = useState([]);
@@ -81,7 +83,7 @@ const LocationSearch = ({
   const toggleUseCurrentLocation = () => {
     const newUseCurrentLocation = !useCurrentLocation;
     setUseCurrentLocation(newUseCurrentLocation);
-    
+
     if (newUseCurrentLocation) {
       setCountry('');
       setCity('');
@@ -176,6 +178,19 @@ const LocationSearch = ({
             {useCurrentLocation ? 'Disable Current Location' : 'Use Current Location'}
           </button>
         </div>
+      </div>
+
+      {/* Search Button */}
+      <div className="location-search-button">
+        <button onClick={handleSearch} disabled={isLoading}>
+          {isLoading ? 'Searching...' : 'Search'}
+        </button>
+      </div>
+
+      {/* View Toggle Buttons */}
+      <div className="view-toggle-buttons">
+        <button onClick={() => setView('list')}>List View</button>
+        <button onClick={() => setView('globe')}>Globe View</button>
       </div>
     </div>
   );

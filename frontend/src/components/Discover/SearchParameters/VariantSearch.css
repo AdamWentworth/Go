@@ -30,7 +30,7 @@
     margin-bottom: 10px; /* Margin below the search field */
   }
 
-  .pokemon-search-row input[type="text"] {
+.pokemon-search-row input[type="text"] {
     padding: 3px;
 }
   
