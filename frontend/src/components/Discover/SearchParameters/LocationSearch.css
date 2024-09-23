@@ -1,42 +1,65 @@
 /* LocationSearch.css */
-.location-search .location-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Two equal columns */
-    gap: 20px; /* Space between the columns */
-    align-items: start;
-}
-
-.location-fields {
+.location-search {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
-.field label {
-    margin-bottom: 5px;
+.location-header {
+    text-align: center;
+    margin-bottom: 20px;
+    width: 100%;
 }
 
-.field input[type="text"] {
+.location-search h3 {
+    margin-block-start: 10px;
+  }
+  
+
+.location-container {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    justify-content: space-between;
+    width: 100%; /* ensure container uses full width */
+}
+
+.location-fields, .location-buttons {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.field input[type="text"], .location-buttons input[type="range"] {
     width: 100%;
     padding: 5px;
 }
 
-.location-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.location-buttons .field {
-    display: flex;
-    flex-direction: column;
-}
-
-.location-buttons input[type="range"] {
-    width: 100%;
+.field label, .location-buttons label {
+    margin-bottom: 5px;
 }
 
 .location-buttons button {
     padding: 5px 10px;
     cursor: pointer;
+}
+
+.suggestions {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    margin-top: 5px;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    padding: 5px;
+    cursor: pointer;
+}
+
+.suggestion-item:hover {
+    background-color: #e0e0e0;
 }

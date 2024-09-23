@@ -15,22 +15,21 @@
   margin: 0 auto;
 }
 
-.pokemon-variant, .location-search, .ownership-status {
-  width: 100%; /* Explicitly define the width to be one-third */
-  display: flex;
-  align-items: center;
-}
-
 .pokemon-variant {
-  justify-content: flex-start; /* Aligns content to the left */
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
 }
 
 .location-search {
-  justify-content: center; /* Centers content */
+  flex: 1;
+  display: flex;
 }
 
 .ownership-status {
-  justify-content: flex-end; /* Aligns content to the right */
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .search-button-container {
@@ -38,7 +37,6 @@
   align-items: center;
   gap: 20px;
   margin-top: 20px;
-  position: relative;
 }
 
 .search-button-container button {
