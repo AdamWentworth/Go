@@ -89,7 +89,7 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
   }, [suggestions, editMode]);
 
   return (
-    <div className="location-container">
+    <div className="location-caught-container">
       <div className="location-field">
         <label id="location-label">Location Caught:</label>
         <span aria-labelledby="location-label" contentEditable={editMode}

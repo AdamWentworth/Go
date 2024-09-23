@@ -1,11 +1,14 @@
+// OwnershipSearch.jsx
+
 import React from 'react';
+import './OwnershipSearch.css'; // Import the CSS file for OwnershipSearch styling
 
 const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
   return (
     <div className="ownership-status">
-      <h3>Ownership Status</h3>
-      <div>
-        <label>
+      <h3 className="ownership-header">Ownership Status</h3>
+      <div className="ownership-options">
+        <label className="ownership-option">
           <input
             type="radio"
             value="owned"
@@ -14,7 +17,7 @@ const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
           />
           Owned
         </label>
-        <label>
+        <label className="ownership-option">
           <input
             type="radio"
             value="trade"
@@ -23,7 +26,7 @@ const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
           />
           Trade
         </label>
-        <label>
+        <label className="ownership-option">
           <input
             type="radio"
             value="wanted"

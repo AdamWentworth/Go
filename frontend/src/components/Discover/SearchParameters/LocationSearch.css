@@ -10,7 +10,6 @@
 
 .location-header {
     text-align: center;
-    margin-bottom: 20px;
     width: 100%;
 }
 
@@ -19,7 +18,7 @@
   }
   
 
-.location-container {
+.location-search .location-container {
     display: flex;
     flex-direction: row;
     gap: 20px;
@@ -32,14 +31,22 @@
     display: flex;
     flex-direction: column;
 }
-
-.field input[type="text"], .location-buttons input[type="range"] {
-    width: 100%;
-    padding: 5px;
+/* Change .field to flex layout */
+.field {
+    display: flex;
+    align-items: center; /* Align items vertically in the center */
+    margin-bottom: 10px; /* Add space between fields */
 }
 
-.field label, .location-buttons label {
-    margin-bottom: 5px;
+/* Adjust label styling */
+.field label {
+    width: 100px; /* Set width to align labels */
+}
+
+/* Ensure input fields take up remaining space */
+.field input[type="text"] {
+    flex: 1; /* Allow input to take the rest of the space */
+    padding: 3px;
 }
 
 .location-buttons button {
