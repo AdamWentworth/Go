@@ -60,9 +60,12 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
   // Handlers
   const handlePokemonChange = (e) => {
     const newPokemon = e.target.value;
-    setPokemon(newPokemon);
-    setSelectedForm("");  // Reset form when Pokémon changes
-    handleValidation(newPokemon, isShiny, isShadow, costume, "");
+    // Limit Pokémon name to 11 characters
+    if (newPokemon.length <= 11) {
+      setPokemon(newPokemon);
+      setSelectedForm("");  // Reset form when Pokémon changes
+      handleValidation(newPokemon, isShiny, isShadow, costume, "");
+    }
   };
 
   const handleShinyChange = () => {
@@ -78,16 +81,23 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
   };
 
   const handleCostumeToggle = () => {
-    setShowCostumeDropdown(!showCostumeDropdown); // Toggle costume dropdown
-    if (showCostumeDropdown) {
-      setCostume('None'); // Reset costume to 'None' when toggled off
-      handleValidation(pokemon, isShiny, isShadow, 'None', selectedForm);
+    const newShowCostumeDropdown = !showCostumeDropdown;
+    setShowCostumeDropdown(newShowCostumeDropdown); // Toggle costume dropdown
+  
+    if (!newShowCostumeDropdown) {
+      // Reset costume to an empty value and update validation and image
+      setCostume(''); // Set costume to an empty string
+      clearError(); // Clear any error related to costume toggle
+      handleValidation(pokemon, isShiny, isShadow, '', selectedForm); // Revalidate without costume
+      const defaultImageUrl = updateImage(pokemonData, pokemon, isShiny, isShadow, '', selectedForm); // Update image without costume
+      setImageUrl(defaultImageUrl); // Reset the image URL
     }
-  };
-
+  };  
+  
   const handleCostumeChange = (e) => {
-    setCostume(e.target.value);
-    handleValidation(pokemon, isShiny, isShadow, e.target.value, selectedForm);
+    const selectedCostume = e.target.value;
+    setCostume(selectedCostume);
+    handleValidation(pokemon, isShiny, isShadow, selectedCostume, selectedForm); // Update validation with the selected costume
   };
 
   const handleFormChange = (e) => {
@@ -166,12 +176,10 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
         </div>
       </div>
 
-      {/* Validation error message row */}
-      {error && (
-        <div className="pokemon-variant-error-row">
-          <div className="error-message">{error}</div>
-        </div>
-      )}
+      <div className="pokemon-variant-error-row">
+        <div className="error-message">{error || "\u00A0"}</div>
+      </div>
+
     </div>
   );
 };

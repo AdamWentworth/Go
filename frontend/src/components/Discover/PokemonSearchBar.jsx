@@ -108,49 +108,40 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage }) => {
   return (
     <div className="pokemon-search-bar">
       <div className="search-bar-container">
-        <VariantSearch
-          pokemon={pokemon}
-          setPokemon={setPokemon}
-          isShiny={isShiny}
-          setIsShiny={setIsShiny}
-          isShadow={isShadow}
-          setIsShadow={setIsShadow}
-          costume={costume}
-          setCostume={setCostume}
-          selectedForm={selectedForm}  // Pass selectedForm state to VariantSearch
-          setSelectedForm={setSelectedForm}  // Pass the setter for the form
-        />
+        <div className="pokemon-variant">
+          <VariantSearch
+            pokemon={pokemon}
+            setPokemon={setPokemon}
+            isShiny={isShiny}
+            setIsShiny={setIsShiny}
+            isShadow={isShadow}
+            setIsShadow={setIsShadow}
+            costume={costume}
+            setCostume={setCostume}
+            selectedForm={selectedForm}  // Pass selectedForm state to VariantSearch
+            setSelectedForm={setSelectedForm}  // Pass the setter for the form
+          />
+        </div>
 
-        <LocationSearch
-          country={country}
-          setCountry={setCountry}
-          city={city}
-          setCity={setCity}
-          useCurrentLocation={useCurrentLocation}
-          setUseCurrentLocation={setUseCurrentLocation}
-          setCoordinates={setCoordinates}
-          range={range}  // Pass the range to LocationSearch
-          setRange={setRange}  // Pass the setter for range to LocationSearch
-        />
+        <div className="location-search">
+          <LocationSearch
+            country={country}
+            setCountry={setCountry}
+            city={city}
+            setCity={setCity}
+            useCurrentLocation={useCurrentLocation}
+            setUseCurrentLocation={setUseCurrentLocation}
+            setCoordinates={setCoordinates}
+            range={range}  // Pass the range to LocationSearch
+            setRange={setRange}  // Pass the setter for range to LocationSearch
+          />
+        </div>
 
-        <OwnershipSearch
-          ownershipStatus={ownershipStatus}
-          setOwnershipStatus={setOwnershipStatus}
-        />
-
-        {/* Dropdown to select the number of results */}
-        <div className="results-limit">
-          <label htmlFor="results-limit">Results Limit:</label>
-          <select
-            id="results-limit"
-            value={resultsLimit}
-            onChange={(e) => setResultsLimit(parseInt(e.target.value))}
-          >
-            <option value={5}>5</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
+        <div className="ownership-status">
+          <OwnershipSearch
+            ownershipStatus={ownershipStatus}
+            setOwnershipStatus={setOwnershipStatus}
+          />
         </div>
       </div>
 

@@ -47,20 +47,27 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    min-height: 200px; /* Fixed height to always allocate space */
+    min-width: 200px; /* Fixed width to always allocate space */
+    background-color: transparent;
   }
   
   /* Error message row styling */
   .pokemon-variant-error-row {
     display: flex;
-    justify-content: center;
     align-items: center;
+    height: 50px; /* Fixed height to always allocate space */
+    margin-top: 10px; /* Space above the error row */
+    width: 100%; /* Ensure it spans the entire width of the container */
   }
   
   /* Error message styling */
   .error-message {
     color: red;
     font-weight: bold;
-    text-align: center;
+    text-align: left; /* Align text to the left */
+    width: 100%; /* Take the full width to avoid centering */
+    padding-left: 10px; /* Add some padding to not stick to the border */
   }
   
   /* Button styles */
