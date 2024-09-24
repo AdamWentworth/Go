@@ -60,7 +60,6 @@
   .pokemon-variant-error-row {
     display: flex;
     align-items: center;
-    height: 50px; /* Fixed height to always allocate space */
     margin-top: 10px; /* Space above the error row */
     width: 100%; /* Ensure it spans the entire width of the container */
   }

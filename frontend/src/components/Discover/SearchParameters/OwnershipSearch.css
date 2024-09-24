@@ -13,7 +13,6 @@
   
   .ownership-header {
     margin-bottom: 10px;
-    color: #fff;
     font-size: 18px;
   }
   
@@ -25,7 +24,6 @@
   .ownership-option {
     display: flex;
     align-items: center;
-    color: #ccc;
   }
   
   .ownership-option input[type="radio"] {

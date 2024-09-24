@@ -1,6 +1,7 @@
 // ListView.jsx
 
 import React from 'react';
+import './ListView.css'
 
 const ListView = ({ data }) => {
   // Ensure data is an array
