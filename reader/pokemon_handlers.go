@@ -115,13 +115,18 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 	rangeKMStr := c.Query("range_km")
 	latitudeStr := c.Query("latitude")
 	longitudeStr := c.Query("longitude")
+	fastMoveIDStr := c.Query("fast_move_id")
+	chargedMove1IDStr := c.Query("charged_move_1_id")
+	chargedMove2IDStr := c.Query("charged_move_2_id")
 
-	logrus.Infof("Received search query with params: pokemon_id=%s, shiny=%s, shadow=%s, costume_id=%s, ownership=%s, limit=%s, range_km=%s, latitude=%s, longitude=%s",
-		pokemonIDStr, shinyStr, shadowStr, costumeIDStr, ownership, limitStr, rangeKMStr, latitudeStr, longitudeStr)
+	logrus.Infof("Received search query with params: pokemon_id=%s, shiny=%s, shadow=%s, costume_id=%s, ownership=%s, limit=%s, range_km=%s, latitude=%s, longitude=%s, fast_move_id=%s, charged_move_1_id=%s, charged_move_2_id=%s",
+		pokemonIDStr, shinyStr, shadowStr, costumeIDStr, ownership, limitStr, rangeKMStr, latitudeStr, longitudeStr, fastMoveIDStr, chargedMove1IDStr, chargedMove2IDStr)
 
 	// Parse parameters into appropriate types
-	var pokemonID int
+	var pokemonID, fastMoveID, chargedMove1ID, chargedMove2ID int
 	var err error
+
+	// Parse individual parameters
 	if pokemonIDStr != "" {
 		pokemonID, err = strconv.Atoi(pokemonIDStr)
 		if err != nil {
@@ -130,7 +135,31 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		}
 	}
 
-	var shiny bool
+	if fastMoveIDStr != "" {
+		fastMoveID, err = strconv.Atoi(fastMoveIDStr)
+		if err != nil {
+			logrus.Error("Invalid fast_move_id: ", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid fast_move_id"})
+		}
+	}
+
+	if chargedMove1IDStr != "" {
+		chargedMove1ID, err = strconv.Atoi(chargedMove1IDStr)
+		if err != nil {
+			logrus.Error("Invalid charged_move_1_id: ", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid charged_move_1_id"})
+		}
+	}
+
+	if chargedMove2IDStr != "" {
+		chargedMove2ID, err = strconv.Atoi(chargedMove2IDStr)
+		if err != nil {
+			logrus.Error("Invalid charged_move_2_id: ", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid charged_move_2_id"})
+		}
+	}
+
+	var shiny, shadow bool
 	if shinyStr != "" {
 		shiny, err = strconv.ParseBool(shinyStr)
 		if err != nil {
@@ -139,7 +168,6 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		}
 	}
 
-	var shadow bool
 	if shadowStr != "" {
 		shadow, err = strconv.ParseBool(shadowStr)
 		if err != nil {
@@ -209,10 +237,8 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 
 	// Apply costume_id filtering logic
 	if costumeIDStr == "" || costumeIDStr == "null" {
-		// If costumeID is not specified or explicitly set to "null", search for instances with costume_id IS NULL
 		query = query.Where("costume_id IS NULL")
 	} else if costumeID != nil {
-		// Otherwise, search for the specified costume_id
 		query = query.Where("costume_id = ?", *costumeID)
 	}
 
@@ -231,20 +257,46 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		}
 	}
 
+	// Apply fast_move_id filter if present
+	if fastMoveIDStr != "" {
+		query = query.Where("fast_move_id = ?", fastMoveID)
+	}
+
+	// Apply charged_move filtering logic
+	if chargedMove1IDStr != "" || chargedMove2IDStr != "" {
+		var chargedMoveQuery string
+		var chargedMoveArgs []interface{}
+
+		if chargedMove1IDStr != "" && chargedMove2IDStr != "" {
+			// Both charged moves are present, add OR logic to match any order
+			chargedMoveQuery = "(charged_move1_id = ? AND charged_move2_id = ?) OR (charged_move1_id = ? AND charged_move2_id = ?)"
+			chargedMoveArgs = append(chargedMoveArgs, chargedMove1ID, chargedMove2ID, chargedMove2ID, chargedMove1ID)
+		} else if chargedMove1IDStr != "" {
+			// Only charged_move1_id is present, match against either move slot
+			chargedMoveQuery = "charged_move1_id = ? OR charged_move2_id = ?"
+			chargedMoveArgs = append(chargedMoveArgs, chargedMove1ID, chargedMove1ID)
+		} else if chargedMove2IDStr != "" {
+			// Only charged_move2_id is present, match against either move slot
+			chargedMoveQuery = "charged_move1_id = ? OR charged_move2_id = ?"
+			chargedMoveArgs = append(chargedMoveArgs, chargedMove2ID, chargedMove2ID)
+		}
+
+		// Apply the constructed query and arguments
+		query = query.Where(chargedMoveQuery, chargedMoveArgs...)
+	}
+
 	// Handle location and range filtering
 	if latitudeStr != "" && longitudeStr != "" {
-		// Use GORM's association to join the User table
-		// Adjust WHERE clauses to use "User" instead of "users"
 		query = query.Joins("User").
 			Where("User.latitude IS NOT NULL AND User.longitude IS NOT NULL").
 			Where(`
-			6371 * 2 * ASIN(
-				SQRT(
-					POWER(SIN(RADIANS(User.latitude - ?) / 2), 2) +
-					COS(RADIANS(?)) * COS(RADIANS(User.latitude)) *
-					POWER(SIN(RADIANS(User.longitude - ?) / 2), 2)
-				)
-			) < ?`, latitude, latitude, longitude, rangeKM)
+            6371 * 2 * ASIN(
+                SQRT(
+                    POWER(SIN(RADIANS(User.latitude - ?) / 2), 2) +
+                    COS(RADIANS(?)) * COS(RADIANS(User.latitude)) *
+                    POWER(SIN(RADIANS(User.longitude - ?) / 2), 2)
+                )
+            ) < ?`, latitude, latitude, longitude, rangeKM)
 	}
 
 	// Apply the limit
@@ -268,7 +320,6 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 	// Prepare the response data (object of objects, keyed by instance_id)
 	responseData := make(map[string]interface{})
 	for _, instance := range instances {
-		// Ensure that User is not nil and calculate the distance
 		var userDistance float64
 		var userID, username string
 		var userLatitude, userLongitude *float64
@@ -278,7 +329,6 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 			userLatitude = instance.User.Latitude
 			userLongitude = instance.User.Longitude
 			if instance.User.Latitude != nil && instance.User.Longitude != nil {
-				// Calculate the distance
 				userDistance = haversine(latitude, longitude, *instance.User.Latitude, *instance.User.Longitude)
 			} else {
 				logrus.Warnf("User %s has missing latitude/longitude data, skipping distance calculation", instance.User.UserID)
@@ -287,7 +337,6 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 			logrus.Warnf("Instance %s has no associated user, skipping user and distance information", instance.InstanceID)
 		}
 
-		// Build the instance data to return (excluding trace_id)
 		instanceData := map[string]interface{}{
 			"pokemon_id":       instance.PokemonID,
 			"nickname":         instance.Nickname,
@@ -322,10 +371,9 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 			"date_added":       instance.DateAdded,
 			"wanted_filters":   instance.WantedFilters,
 			"trade_filters":    instance.TradeFilters,
-			"distance":         userDistance, // Calculated distance from the querying user
+			"distance":         userDistance,
 		}
 
-		// Add user info if available
 		if userID != "" && username != "" {
 			instanceData["user_id"] = userID
 			instanceData["username"] = username
@@ -335,11 +383,9 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 			}
 		}
 
-		// Add the instance data to the response, using instance_id as the key
 		responseData[instance.InstanceID] = instanceData
 	}
 
-	// Log and return the response data
 	logrus.Infof("Returning %d Pokemon instances", len(responseData))
 	return c.Status(fiber.StatusOK).JSON(responseData)
 }
