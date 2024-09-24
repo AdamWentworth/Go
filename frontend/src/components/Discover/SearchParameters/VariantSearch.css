@@ -2,159 +2,172 @@
 
 /* Container for the entire component */
 .pokemon-variant-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
-  .pokemon-variant-container h3 {
-    margin-block-start: 10px;
-  }
-  
-  /* Main content area, with left and right sections */
-  .main-content {
-    display: flex;
-    justify-content: space-between;
-  }
-  
-  /* Details section styling */
-  .pokemon-variant-details {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  /* Search field row styling */
-  .pokemon-search-row {
-    margin-bottom: 10px; /* Margin below the search field */
-  }
+.pokemon-variant-container h3 {
+  margin-block-start: 10px;
+}
+
+/* Main content area with flexible columns */
+.main-content {
+  display: flex;
+  justify-content: space-between;
+  width: 100%; /* Adjust to take full width */
+  min-width: 320px;
+}
+
+/* Details section styling */
+.pokemon-variant-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Image section styling */
+.pokemon-variant-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px; /* Fixed height to always allocate space */
+  min-width: 200px; /* Fixed width to always allocate space */
+  background-color: transparent;
+  flex: 0 0 200px; /* Fixed width */
+}
+
+/* Moves section styling */
+.pokemon-moves-section {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 10px;
+  border-radius: 8px; /* Optional border radius */
+}
+
+/* Search field row styling */
+.pokemon-search-row {
+  margin-bottom: 10px; /* Margin below the search field */
+}
 
 .pokemon-search-row input[type="text"] {
-    padding: 3px;
+  padding: 3px;
 }
-  
-  /* Button container styling */
-  .button-container {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px; /* Margin below the buttons */
-  }
-  
-  /* Styling for form dropdown */
-  .form-dropdown {
-    margin-bottom: 10px; /* Margin below the form dropdown */
-  }
-  
-  /* Image section styling */
-  .pokemon-variant-image {
-    display: flex;
-    justify-content: center;
+
+/* Button container styling */
+.button-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px; /* Margin below the buttons */
+}
+
+/* Styling for form dropdown */
+.form-dropdown {
+  margin-bottom: 10px; /* Margin below the form dropdown */
+}
+
+/* Error message row styling */
+.pokemon-variant-error-row {
+  display: flex;
+  align-items: center;
+  margin-top: 10px; /* Space above the error row */
+  width: 100%; /* Ensure it spans the entire width of the container */
+}
+
+/* Error message styling */
+.error-message {
+  color: red;
+  font-weight: bold;
+  text-align: left; /* Align text to the left */
+  width: 100%; /* Take the full width to avoid centering */
+  padding-left: 10px; /* Add some padding to not stick to the border */
+}
+
+/* Button styles */
+.pokemon-variant-container .button-container button {
+  width: 50px; /* Adjust width as needed */
+  background-color: #ccc;
+  border: none;
+  outline: none;
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  transition: background-color 0.3s ease;
+}
+
+/* Icon styles */
+.button-container img {
+  width: 24px;
+  height: 24px;
+}
+
+/* Active button styles */
+.button-container .shiny-button.active {
+  background-color: gold;
+}
+.button-container .costume-button.active {
+  background-color: cyan;
+}
+
+.button-container .shadow-button.active {
+  background-color: rgb(182, 92, 182);
+}
+
+/* Hover styles */
+.button-container .shiny-button:hover {
+  background-color: #ffcc00;
+}
+
+.button-container .costume-button:hover {
+  background-color: rgb(58, 216, 216);
+}
+
+.button-container .shadow-button:hover {
+  background-color: rgb(152, 0, 152);
+}
+
+/* Hover states for active buttons */
+.button-container .shiny-button.active:hover {
+  background-color: #ffcc00;
+}
+
+.button-container .costume-button.active:hover {
+  background-color: rgb(58, 216, 216); /* Slightly darker color */
+}
+
+.button-container .shadow-button.active:hover {
+  background-color: rgb(152, 0, 152);
+}
+
+/* Image styling */
+.pokemon-variant-image img {
+  width: 200px;
+  height: 200px;
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    flex-direction: column;
     align-items: center;
-    min-height: 200px; /* Fixed height to always allocate space */
-    min-width: 200px; /* Fixed width to always allocate space */
-    background-color: transparent;
   }
-  
-  /* Error message row styling */
-  .pokemon-variant-error-row {
-    display: flex;
-    align-items: center;
-    margin-top: 10px; /* Space above the error row */
-    width: 100%; /* Ensure it spans the entire width of the container */
-  }
-  
-  /* Error message styling */
-  .error-message {
-    color: red;
-    font-weight: bold;
-    text-align: left; /* Align text to the left */
-    width: 100%; /* Take the full width to avoid centering */
-    padding-left: 10px; /* Add some padding to not stick to the border */
-  }
-  
-  /* Button styles */
-  .pokemon-variant-container .button-container button {
-    width: 50px; /* Adjust width as needed */
-    background-color: #ccc;
-    border: none;
-    outline: none;
-    padding: 10px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 15px;
-    transition: background-color 0.3s ease;
-  }
-  
-  /* Icon styles */
   .button-container img {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
   }
-  
-  /* Active button styles */
-  .button-container .shiny-button.active {
-    background-color: gold;
+}
+
+@media (min-width: 1024px) {
+  .pokemon-variant-container .button-container img {
+    width: 32px;
+    height: 32px;
   }
-  .button-container .costume-button.active {
-    background-color: cyan;
+  .pokemon-variant-container .button-container button {
+    padding: 8px; /* Adjust padding */
   }
-  
-  .button-container .shadow-button.active {
-    background-color: rgb(182, 92, 182);
-  }
-  
-  /* Hover styles */
-  .button-container .shiny-button:hover {
-    background-color: #ffcc00;
-  }
-  
-  .button-container .costume-button:hover {
-    background-color: rgb(58, 216, 216);
-  }
-  
-  .button-container .shadow-button:hover {
-    background-color: rgb(152, 0, 152);
-  }
-  
-  /* Hover states for active buttons */
-  .button-container .shiny-button.active:hover {
-    background-color: #ffcc00;
-  }
-  
-  .button-container .costume-button.active:hover {
-    background-color: rgb(58, 216, 216); /* Slightly darker color */
-  }
-  
-  .button-container .shadow-button.active:hover {
-    background-color: rgb(152, 0, 152);
-  }
-  
-  /* Image styling */
-  .pokemon-variant-image img {
-    width: 200px;
-    height: 200px;
-  }
-  
-  @media (max-width: 480px) {
-    .main-content {
-      flex-direction: column;
-      align-items: center;
-    }
-    .button-container img {
-      width: 20px;
-      height: 20px;
-    }
-  }
-  
-  @media (min-width: 1024px) {
-    .pokemon-variant-container .button-container img {
-      width: 32px;
-      height: 32px;
-    }
-    .pokemon-variant-container .button-container button {
-      padding: 8px; /* Adjust padding */
-    }
-  }  
+}  

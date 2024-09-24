@@ -1,0 +1,113 @@
+/* MovesSearch.css */
+
+.moves-search-container {
+  display: flex;
+  flex-direction: column;
+  margin-top: 5px;
+  width: 100%; /* Ensure the container takes the full width */
+}
+
+.moves-search-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  width: 100%; /* Ensures the sections take the full width */
+}
+
+.moves-search-option-container,
+.moves-search-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  position: relative; /* Allows for better positioning control */
+}
+
+.moves-search-type-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px; /* Space between the icon and text */
+}
+
+.moves-search-select-container {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center the dropdown horizontally */
+  width: 60%; /* Control the width of the dropdown container */
+  margin: 0 auto; /* Center the container in the available space */
+}
+
+.moves-search-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #333;
+  color: white;
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  border: none;
+  cursor: pointer;
+  outline: 1px solid #a3a3a3;
+  width: 70%; /* Ensure the select fills its container */
+  text-align-last: center; /* Centers the text inside the select dropdown */
+}
+
+.moves-search-select option {
+  background-color: #333;
+  color: white;
+  text-align: center; /* Aligns text of options to center */
+}
+
+.moves-search-name {
+  white-space: nowrap;
+  background-color: transparent;
+  border-radius: 2px;
+  font-size: 16px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+.moves-search-icon-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+}
+
+.moves-search-add-move-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0 auto;
+  background-color: transparent;
+  color: white;
+  font-size: 24px;
+  border: 2px solid white;
+  border-radius: 50%; /* Adjusted for circular design */
+  margin-top: 5px;
+  cursor: default; /* Default non-clickable cursor */
+}
+
+/* Apply pointer cursor only when in editable mode */
+.moves-search-container.moves-search-editable .moves-search-add-move-button {
+  cursor: pointer; /* Cursor changes to pointer when editable */
+}
+
+.moves-search-move-add-icon {
+  display: inline-block;
+  padding: 0;
+  line-height: 1; /* Adjust line height for vertical alignment */
+}
+
+.moves-search-spacer {
+  width: 24px; /* Width of the removed icon button to preserve spacing */
+  height: 24px; /* Height to match the button size */
+}
+

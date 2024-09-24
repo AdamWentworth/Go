@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import validatePokemon from '../utils/ValidatePokemon';
 import { updateImage } from '../utils/updateImage';
 import { formatCostumeName } from '../utils/formatCostumeName';
-import Dropdown from '../components/Dropdown'; 
-import useErrorHandler from '../hooks/useErrorHandler'; 
+import Dropdown from '../components/Dropdown';
+import MovesSearch from '../components/MovesSearch'; // Import the new MovesComponent
+import useErrorHandler from '../hooks/useErrorHandler';
 import './VariantSearch.css'; // Import the CSS file
 
 const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, setIsShadow, costume, setCostume, selectedForm, setSelectedForm }) => {
@@ -16,6 +17,8 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
   const [imageUrl, setImageUrl] = useState(null);
   const [imageError, setImageError] = useState(false);
   const [showCostumeDropdown, setShowCostumeDropdown] = useState(false); // State for toggling costume dropdown
+  const [selectedMoves, setSelectedMoves] = useState({ fastMove: null, chargedMove1: null, chargedMove2: null }); // State for selected moves
+  const [editMode, setEditMode] = useState(true); // State for move edit mode
 
   // Load Pokémon data from localStorage
   useEffect(() => {
@@ -40,10 +43,9 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
     const sortedCostumes = availableCostumes.sort((a, b) => new Date(a.date_available) - new Date(b.date_available));
     setAvailableCostumes(sortedCostumes);
 
-    // Ensure "None" is included only if there are multiple valid forms
     const filteredForms = availableForms
-      .filter((form) => form && form.trim().toLowerCase() !== '') // Remove empty or undefined forms
-      .map((form) => (form.toLowerCase() === 'none' ? 'None' : form)); // Normalize form names
+      .filter((form) => form && form.trim().toLowerCase() !== '')
+      .map((form) => (form.toLowerCase() === 'none' ? 'None' : form));
 
     setAvailableForms(filteredForms.length > 0 ? filteredForms : []);
 
@@ -60,7 +62,6 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
   // Handlers
   const handlePokemonChange = (e) => {
     const newPokemon = e.target.value;
-    // Limit Pokémon name to 11 characters
     if (newPokemon.length <= 11) {
       setPokemon(newPokemon);
       setSelectedForm("");  // Reset form when Pokémon changes
@@ -82,37 +83,42 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
 
   const handleCostumeToggle = () => {
     const newShowCostumeDropdown = !showCostumeDropdown;
-    setShowCostumeDropdown(newShowCostumeDropdown); // Toggle costume dropdown
-  
+    setShowCostumeDropdown(newShowCostumeDropdown);
+
     if (!newShowCostumeDropdown) {
-      // Reset costume to an empty value and update validation and image
-      setCostume(''); // Set costume to an empty string
-      clearError(); // Clear any error related to costume toggle
-      handleValidation(pokemon, isShiny, isShadow, '', selectedForm); // Revalidate without costume
-      const defaultImageUrl = updateImage(pokemonData, pokemon, isShiny, isShadow, '', selectedForm); // Update image without costume
-      setImageUrl(defaultImageUrl); // Reset the image URL
+      setCostume('');
+      clearError();
+      handleValidation(pokemon, isShiny, isShadow, '', selectedForm);
+      const defaultImageUrl = updateImage(pokemonData, pokemon, isShiny, isShadow, '', selectedForm);
+      setImageUrl(defaultImageUrl);
     }
-  };  
-  
+  };
+
   const handleCostumeChange = (e) => {
     const selectedCostume = e.target.value;
     setCostume(selectedCostume);
-    handleValidation(pokemon, isShiny, isShadow, selectedCostume, selectedForm); // Update validation with the selected costume
+    handleValidation(pokemon, isShiny, isShadow, selectedCostume, selectedForm);
   };
 
   const handleFormChange = (e) => {
-    setSelectedForm(e.target.value);  // Update selected form from dropdown
+    setSelectedForm(e.target.value);
     handleValidation(pokemon, isShiny, isShadow, costume, e.target.value);
+  };
+
+  const handleMovesChange = (moves) => {
+    setSelectedMoves(moves);
+    // Additional logic for updating variant based on moves can be added here
   };
 
   return (
     <div className="pokemon-variant-container">
       {/* Main Content Section */}
       <div className="main-content">
+        {/* Details Section */}
         <div className="pokemon-variant-details">
           <h3>Pokémon Variant</h3>
 
-          <div className="pokemon-search-row"> {/* Added class for Pokémon search row */}
+          <div className="pokemon-search-row">
             <label>Pokémon: </label>
             <input
               type="text"
@@ -126,7 +132,6 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
             <button onClick={handleShinyChange} className={`shiny-button ${isShiny ? 'active' : ''}`}>
               <img src="/images/shiny_icon.png" alt="Toggle Shiny" />
             </button>
-            {/* Costume toggle button */}
             <button onClick={handleCostumeToggle} className={`costume-button ${showCostumeDropdown ? 'active' : ''}`}>
               <img src="/images/costume_icon.png" alt="Toggle Costume" />
             </button>
@@ -139,14 +144,14 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
           {availableForms.length > 0 && (
             <Dropdown
               label="Form"
-              value={selectedForm}  // Use selectedForm prop
+              value={selectedForm}
               options={availableForms}
               handleChange={handleFormChange}
-              className="form-dropdown" // Added className for form dropdown
+              className="form-dropdown"
             />
           )}
 
-          {/* Costume Dropdown with Specific Class */}
+          {/* Costume Dropdown */}
           {showCostumeDropdown && availableCostumes.length > 0 && (
             <Dropdown
               label="Costume"
@@ -154,7 +159,7 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
               options={availableCostumes.map((costume) => costume.name)}
               handleChange={handleCostumeChange}
               formatLabel={formatCostumeName}
-              className="costume-dropdown" // Added className for costume dropdown
+              className="costume-dropdown"
             />
           )}
         </div>
@@ -174,6 +179,18 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
             </div>
           ) : null}
         </div>
+
+        {/* Moves Section */}
+        {pokemon && pokemonData.length > 0 && (
+          <div className="pokemon-moves-section">
+            <MovesSearch
+              pokemon={pokemonData.find((p) => p.name.toLowerCase() === pokemon.toLowerCase())}
+              selectedMoves={selectedMoves}
+              editMode={editMode}
+              onMovesChange={handleMovesChange}
+            />
+          </div>
+        )}
       </div>
 
       <div className="pokemon-variant-error-row">
