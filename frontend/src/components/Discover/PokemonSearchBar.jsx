@@ -5,6 +5,7 @@ import VariantSearch from './SearchParameters/VariantSearch';
 import LocationSearch from './SearchParameters/LocationSearch';
 import OwnershipSearch from './SearchParameters/OwnershipSearch';
 import './PokemonSearchBar.css';
+import { FaChevronUp, FaChevronDown } from 'react-icons/fa';
 import axios from 'axios';
 
 const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView }) => {
@@ -20,6 +21,12 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
   const [coordinates, setCoordinates] = useState({ latitude: null, longitude: null });
   const [range, setRange] = useState(5);
   const [resultsLimit, setResultsLimit] = useState(5);
+
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
 
   const handleSearch = async () => {
     setErrorMessage('');
@@ -85,9 +92,9 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
       shiny: isShiny,
       shadow: isShadow,
       costume_id,
-      fast_move_id: selectedMoves.fastMove,  // Pass fast move ID
-      charged_move_1_id: selectedMoves.chargedMove1,  // Pass first charged move ID
-      charged_move_2_id: selectedMoves.chargedMove2,  // Pass second charged move ID
+      fast_move_id: selectedMoves.fastMove,  
+      charged_move_1_id: selectedMoves.chargedMove1,  
+      charged_move_2_id: selectedMoves.chargedMove2,  
       latitude: locationCoordinates.latitude,
       longitude: locationCoordinates.longitude,
       ownership: ownershipStatus,
@@ -101,49 +108,57 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
   };
 
   return (
-    <div className="pokemon-search-bar">
-      <div className="search-bar-container">
-        <div className="pokemon-variant">
-          <VariantSearch
-            pokemon={pokemon}
-            setPokemon={setPokemon}
-            isShiny={isShiny}
-            setIsShiny={setIsShiny}
-            isShadow={isShadow}
-            setIsShadow={setIsShadow}
-            costume={costume}
-            setCostume={setCostume}
-            selectedForm={selectedForm}
-            setSelectedForm={setSelectedForm}
-            selectedMoves={selectedMoves} // Pass the selectedMoves state as a prop
-            setSelectedMoves={setSelectedMoves}  // Pass the setSelectedMoves function to update moves
-          />
-        </div>
+    <div className="pokemon-search-bar-container">
+      <div className={`pokemon-search-bar ${isCollapsed ? 'collapsed' : ''}`}>
+        <div className="collapsible-container">
+          <div className="search-bar-container content">
+            <div className="pokemon-variant">
+              <VariantSearch
+                pokemon={pokemon}
+                setPokemon={setPokemon}
+                isShiny={isShiny}
+                setIsShiny={setIsShiny}
+                isShadow={isShadow}
+                setIsShadow={setIsShadow}
+                costume={costume}
+                setCostume={setCostume}
+                selectedForm={selectedForm}
+                setSelectedForm={setSelectedForm}
+                selectedMoves={selectedMoves}
+                setSelectedMoves={setSelectedMoves}
+              />
+            </div>
 
-        <div className="location-search">
-          <LocationSearch
-            city={city}
-            setCity={setCity}
-            useCurrentLocation={useCurrentLocation}
-            setUseCurrentLocation={setUseCurrentLocation}
-            setCoordinates={setCoordinates}
-            range={range}
-            setRange={setRange}
-            resultsLimit={resultsLimit}
-            setResultsLimit={setResultsLimit}
-            handleSearch={handleSearch}
-            isLoading={isLoading}
-            view={view}
-            setView={setView}
-          />
-        </div>
+            <div className="location-search">
+              <LocationSearch
+                city={city}
+                setCity={setCity}
+                useCurrentLocation={useCurrentLocation}
+                setUseCurrentLocation={setUseCurrentLocation}
+                setCoordinates={setCoordinates}
+                range={range}
+                setRange={setRange}
+                resultsLimit={resultsLimit}
+                setResultsLimit={setResultsLimit}
+                handleSearch={handleSearch}
+                isLoading={isLoading}
+                view={view}
+                setView={setView}
+              />
+            </div>
 
-        <div className="ownership-status">
-          <OwnershipSearch
-            ownershipStatus={ownershipStatus}
-            setOwnershipStatus={setOwnershipStatus}
-          />
+            <div className="ownership-status">
+              <OwnershipSearch
+                ownershipStatus={ownershipStatus}
+                setOwnershipStatus={setOwnershipStatus}
+              />
+            </div>
+          </div>
         </div>
+      </div>
+      {/* Place the button outside the pokemon-search-bar container */}
+      <div className="toggle-button" onClick={toggleCollapse}>
+        {isCollapsed ? <FaChevronDown /> : <FaChevronUp />}
       </div>
     </div>
   );
