@@ -1,30 +1,31 @@
 // LocationSearch.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './LocationSearch.css';
 
 const breakpoints = [1, 2, 3, 4, 5, 10, 15, 20, 25];
+const resultsLimits = [5, 25, 50, 100]; // Define available results limits
 
 const LocationSearch = ({
-  country,
-  setCountry,
-  city,
-  setCity,
+  city, 
+  setCity, 
   useCurrentLocation,
   setUseCurrentLocation,
   setCoordinates,
   range,
   setRange,
-  handleSearch,  // New prop for handling the search
-  isLoading,     // New prop for loading state
-  view,          // New prop for view state
-  setView        // New prop for view state setter
+  resultsLimit, 
+  setResultsLimit, 
+  handleSearch,  
+  isLoading,     
+  view,          
+  setView        
 }) => {
-  const [countrySuggestions, setCountrySuggestions] = useState([]);
-  const [citySuggestions, setCitySuggestions] = useState([]);
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const inputRef = useRef(null);
 
-  const fetchSuggestions = async (query, type) => {
+  const fetchSuggestions = async (query) => {
     try {
       const response = await axios.get(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`, {
         withCredentials: false
@@ -37,47 +38,25 @@ const LocationSearch = ({
         return { name, country, displayName };
       });
 
-      if (type === 'country') {
-        setCountrySuggestions(suggestions);
-      } else if (type === 'city') {
-        setCitySuggestions(suggestions);
-      }
+      setLocationSuggestions(suggestions);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
     }
   };
 
-  const handleCityChange = (e) => {
-    const newCity = e.target.value;
-    setCity(newCity);
-    if (newCity.length > 2) {
-      fetchSuggestions(newCity, 'city');
+  const handleLocationChange = (e) => {
+    const newLocation = e.target.value;
+    setCity(newLocation);
+    if (newLocation.length > 2) {
+      fetchSuggestions(newLocation);
     } else {
-      setCitySuggestions([]);
+      setLocationSuggestions([]);
     }
   };
 
-  const handleCountryChange = (e) => {
-    const newCountry = e.target.value;
-    setCountry(newCountry);
-    if (newCountry.length > 2) {
-      fetchSuggestions(newCountry, 'country');
-    } else {
-      setCountrySuggestions([]);
-    }
-  };
-
-  const selectCity = (suggestion) => {
-    setCity(suggestion.name);
-    if (!country) {
-      setCountry(suggestion.country);
-    }
-    setCitySuggestions([]);
-  };
-
-  const selectCountry = (suggestion) => {
-    setCountry(suggestion.name);
-    setCountrySuggestions([]);
+  const selectLocation = (suggestion) => {
+    setCity(suggestion.displayName);
+    setLocationSuggestions([]);
   };
 
   const toggleUseCurrentLocation = () => {
@@ -85,7 +64,6 @@ const LocationSearch = ({
     setUseCurrentLocation(newUseCurrentLocation);
 
     if (newUseCurrentLocation) {
-      setCountry('');
       setCity('');
       const storedLocation = localStorage.getItem('location');
       if (storedLocation) {
@@ -106,81 +84,81 @@ const LocationSearch = ({
     setRange(closest);
   };
 
+  const handleResultsLimitChange = (e) => {
+    const newValue = parseInt(e.target.value, 10);
+    const closest = resultsLimits.reduce((prev, curr) => (Math.abs(curr - newValue) < Math.abs(prev - newValue) ? curr : prev));
+    setResultsLimit(closest);
+  };
+
   return (
     <div className="location-search">
       <h3 className="location-header">Location</h3>
 
       <div className="location-container">
-        {/* Column 1: Text Fields */}
-        <div className="location-fields">
-          <div className="field">
-            <label>City:</label>
-            <input
-              type="text"
-              value={city}
-              onChange={handleCityChange}
-              disabled={useCurrentLocation}
-              placeholder="Enter city"
-            />
-            {citySuggestions.length > 0 && (
-              <div className="suggestions">
-                {citySuggestions.map((suggestion, index) => (
-                  <div
-                    key={index}
-                    className="suggestion-item"
-                    onClick={() => selectCity(suggestion)}
-                  >
-                    {suggestion.displayName}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="field">
-            <label>Country:</label>
-            <input
-              type="text"
-              value={country}
-              onChange={handleCountryChange}
-              disabled={useCurrentLocation}
-              placeholder="Enter country"
-            />
-            {countrySuggestions.length > 0 && (
-              <div className="suggestions">
-                {countrySuggestions.map((suggestion, index) => (
-                  <div
-                    key={index}
-                    className="suggestion-item"
-                    onClick={() => selectCountry(suggestion)}
-                  >
-                    {suggestion.displayName}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Column 2: Range and Toggle Button */}
-        <div className="location-buttons">
-          <div className="field">
-            <label>Range (km): {range}</label>
-            <input
-              type="range"
-              min="1"
-              max="25"
-              step="1"
-              value={range}
-              onChange={handleRangeChange}
-            />
-          </div>
+        {/* Column 1: Toggle Button Centered */}
+        <div className="location-button-centered">
           <button onClick={toggleUseCurrentLocation}>
             {useCurrentLocation ? 'Disable Current Location' : 'Use Current Location'}
           </button>
         </div>
+
+        {/* Column 2: Location Field */}
+        <div className="location-field">
+          <div className="location-input">
+            <label>Location:</label>
+            <input
+              ref={inputRef}
+              type="text"
+              value={city} 
+              onChange={handleLocationChange}
+              disabled={useCurrentLocation}
+              placeholder="Enter location"
+            />
+            {locationSuggestions.length > 0 && (
+              <div className="suggestions" style={{ position: 'absolute', top: `${inputRef.current?.offsetHeight || 40}px` }}>
+                {locationSuggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    className="suggestion-item"
+                    onClick={() => selectLocation(suggestion)}
+                  >
+                    {suggestion.displayName}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Search Button */}
+      {/* Sliders Row: Range and Results Limit */}
+      <div className="sliders-container">
+        <div className="range-field">
+          <label>Range (km): {range}</label>
+          <input
+            type="range"
+            min="1"
+            max="25"
+            step="1"
+            value={range}
+            onChange={handleRangeChange}
+          />
+        </div>
+
+        <div className="results-limit">
+          <label>Results Limit: {resultsLimit}</label>
+          <input
+            type="range"
+            min="5"
+            max="100"
+            step="5"
+            value={resultsLimit}
+            onChange={handleResultsLimitChange}
+          />
+        </div>
+      </div>
+
+      {/* Search Button Row */}
       <div className="location-search-button">
         <button onClick={handleSearch} disabled={isLoading}>
           {isLoading ? 'Searching...' : 'Search'}

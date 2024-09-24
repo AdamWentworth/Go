@@ -6,6 +6,11 @@
     width: 100%;
     max-width: 600px;
     margin: 0 auto;
+    position: relative; /* Ensure it is the positioning context for absolute elements */
+}
+
+.location-search h3 {
+    margin-block-start: 10px;
 }
 
 .location-header {
@@ -13,62 +18,83 @@
     width: 100%;
 }
 
-.location-search h3 {
-    margin-block-start: 10px;
-}
-
-.location-search .location-container {
+.location-container {
     display: flex;
-    flex-direction: row;
     width: 100%;
-    justify-content: space-between; /* Space between columns */
+    justify-content: space-around; /* Adjust space between columns */
 }
 
-.location-fields, .location-buttons {
-    flex: 1; /* Both columns will take equal space */
+.location-button-centered {
     display: flex;
-    flex-direction: column;
-    max-width: 50%; /* Each column should not exceed 50% width */
-    box-sizing: border-box; /* Ensure padding/border does not cause overflow */
-}
-
-.field {
-    display: flex;
+    justify-content: center;
     align-items: center;
-    margin-bottom: 10px; /* Space between fields */
-    width: 100%; /* Use full available width */
+    flex: 1; /* Ensure it takes equal space */
 }
 
-.field label {
-    width: 105px; /* Adjust the label width as needed */
-    min-width: 80px; /* Prevent shrinking below this width */
-    white-space: nowrap; /* Prevent text wrapping */
-    text-align: right; /* Align text to the right */
-    margin-right: 10px; /* Add space between label and input */
-}
-
-.field input[type="range"] {
-    flex: 1; /* Make sure range input fills available space */
-    margin-left: 5px; /* Add some space between label and range input */
-}
-
-.field input[type="text"] {
-    flex: 1; /* Allow input to take the rest of the space */
-    padding: 3px;
-    margin-right: 10px;
-}
-
-/* Button styling */
-.location-buttons button {
-    padding: 5px 10px;
+.location-button-centered button {
+    padding: 10px 15px;
+    width: 200px;
     cursor: pointer;
 }
 
-/* Search button container styling */
+.location-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 50%; /* Adjust width as needed */
+    position: relative; /* Relative positioning for suggestion dropdown */
+}
+
+.location-input {
+    display: flex; /* Changed to flex to align items horizontally */
+    align-items: center; /* Center label and input vertically */
+    position: relative; /* Ensure dropdown is positioned relative to input */
+    justify-content: center;
+}
+
+.location-input label {
+    margin-right: 10px; /* Space between label and input */
+    white-space: nowrap; /* Prevent label text from wrapping */
+}
+
+.location-input input {
+    flex: 1;
+    padding: 3px;
+    box-sizing: border-box;
+}
+
+/* Container for both sliders */
+.sliders-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin: 10px 0; /* Add margin to create space around the sliders */
+}
+
+.range-field, .results-limit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    padding: 0 10px; /* Add padding to each field for spacing */
+}
+
+.range-field label, .results-limit label {
+    margin-bottom: 5px;
+}
+
+.range-field input[type="range"], 
+.results-limit input[type="range"] {
+    width: 75%;
+}
+
+/* Search button styling */
 .location-search-button {
     display: flex;
-    justify-content: center; /* Center the button horizontally */
-    margin-top: 20px; /* Add space between the button and fields */
+    justify-content: center;
+    width: 100%;
 }
 
 .location-search-button button {
@@ -77,16 +103,22 @@
     cursor: pointer;
 }
 
+/* Suggestions dropdown styling */
 .suggestions {
-    background-color: #f0f0f0;
+    background-color: #333;
     border: 1px solid #ccc;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.25);
     margin-top: 5px;
-    max-height: 100px;
+    max-height: 150px;
     overflow-y: auto;
+    width: 80%;
+    z-index: 1000; /* Ensure it appears above other elements */
+    position: absolute; /* Position relative to the input field */
+    box-sizing: border-box;
 }
 
 .suggestion-item {
-    padding: 5px;
+    padding: 8px;
     cursor: pointer;
 }
 
@@ -94,14 +126,15 @@
     background-color: #e0e0e0;
 }
 
-
 .view-toggle-buttons {
+    display: flex;
+    justify-content: center;
     margin-top: 20px;
-    text-align: center;
-  }
+    width: 100%;
+}
   
-  .view-toggle-buttons button {
+.view-toggle-buttons button {
     margin: 0 10px;
     padding: 10px 20px;
     cursor: pointer;
-  }
+}

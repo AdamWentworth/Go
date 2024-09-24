@@ -13,8 +13,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
   const [isShadow, setIsShadow] = useState(false);
   const [costume, setCostume] = useState('');
   const [selectedForm, setSelectedForm] = useState('');
-  const [country, setCountry] = useState('');
-  const [city, setCity] = useState('');
+  const [city, setCity] = useState(''); // Replaced with 'location'
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
   const [ownershipStatus, setOwnershipStatus] = useState('trade');
   const [coordinates, setCoordinates] = useState({ latitude: null, longitude: null });
@@ -30,17 +29,17 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
       return;
     }
 
-    if (!useCurrentLocation && (!city || !country)) {
-      setErrorMessage('Please provide a city and country or use your current location.');
+    if (!useCurrentLocation && !city) {
+      setErrorMessage('Please provide a location or use your current location.');
       return;
     }
 
     let locationCoordinates = coordinates;
 
-    // If not using current location, get coordinates based on city and country
+    // If not using current location, get coordinates based on city
     if (!useCurrentLocation) {
       try {
-        const query = `${city}, ${country}`;
+        const query = city;
         const response = await axios.get(
           `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1`,
           { withCredentials: false }  // Disable credentials for CORS compatibility
@@ -125,8 +124,6 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
 
         <div className="location-search">
           <LocationSearch
-            country={country}
-            setCountry={setCountry}
             city={city}
             setCity={setCity}
             useCurrentLocation={useCurrentLocation}
@@ -134,6 +131,8 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
             setCoordinates={setCoordinates}
             range={range}  // Pass the range to LocationSearch
             setRange={setRange}  // Pass the setter for range to LocationSearch
+            resultsLimit={resultsLimit} // Pass the results limit to LocationSearch
+            setResultsLimit={setResultsLimit} // Pass the setter for results limit
             handleSearch={handleSearch}  // Pass handleSearch function to LocationSearch
             isLoading={isLoading}  // Pass loading state to LocationSearch
             view={view}  // Pass the view state to LocationSearch

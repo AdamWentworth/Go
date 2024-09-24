@@ -12,7 +12,7 @@ const validatePokemon = (pokemonData, name, shinyChecked, shadowChecked, selecte
     return { error: `No match found for Pokémon "${name}" with form "${form}".`, availableCostumes: [], availableForms: [] };
   }
 
-  console.log("Matched Pokémon:", matchedPokemon);
+  // console.log("Matched Pokémon:", matchedPokemon);
 
   if (shinyChecked && !matchedPokemon.shiny_available) {
     // console.log("Shiny not available for:", name);
