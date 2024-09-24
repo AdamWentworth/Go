@@ -1,10 +1,10 @@
-/* GlobeView.css */
+/* MapView.css */
 
-.globe-view {
+.map-view {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100vw;  /* Full width of the viewport */
+    width: 90vw;  /* Full width of the viewport */
     height: 100vh; /* Full height of the viewport */
     margin: 0;
     padding: 0;
@@ -20,5 +20,9 @@
     border-radius: 5px;
     font-size: 14px;
   }
+
+  .ol-zoom {
+    top: 70px !important; /* Adjusts the top position of the zoom controls */
+}
 
   
