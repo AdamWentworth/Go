@@ -1,37 +1,65 @@
 /* OwnershipSearch.css */
 
 .ownership-status {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    border-radius: 8px;
-  }
-
-  .ownership-status h3 {
-    margin-block-start: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 8px;
 }
-  
-  .ownership-header {
-    margin-bottom: 10px;
-    font-size: 18px;
-  }
-  
-  .ownership-options {
-    display: flex;
-    gap: 15px; /* Add space between each option */
-  }
-  
-  .ownership-option {
-    display: flex;
-    align-items: center;
-  }
-  
-  .ownership-option input[type="radio"] {
-    margin-right: 5px; /* Space between radio button and label */
-  }
-  
-  /* Optional: Hover effect on the labels */
-  .ownership-option:hover {
-    color: #fff;
-  }
-  
+
+.ownership-status h3 {
+  margin-block-start: 10px;
+}
+
+.ownership-header {
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.ownership-options {
+  display: flex;
+  gap: 15px; /* Add space between each option */
+}
+
+.ownership-button {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center content within buttons */
+  border-radius: 15px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  padding: 10px 20px; /* Add padding for button size */
+  font-size: 16px;
+  background-color: #e0e0e0; /* Light grey background for non-active buttons */
+  color: #000; /* Default text color */
+}
+
+/* Active button styles with their specific colors */
+.ownership-button.active.owned {
+  background-color: #2196F3; /* Blue for 'Owned' */
+}
+
+.ownership-button.active.trade {
+  background-color: #4CAF50; /* Green for 'Trade' */
+}
+
+.ownership-button.active.wanted {
+  background-color: #F44336; /* Red for 'Wanted' */
+}
+
+.ownership-button.inactive.owned:hover,
+.ownership-button.active.owned:hover {
+  background-color: #176bbe; /* Darker Blue */
+}
+
+.ownership-button.inactive.trade:hover,
+.ownership-button.active.trade:hover {
+  background-color: #327e36; /* Darker Green */
+}
+
+.ownership-button.inactive.wanted:hover, 
+.ownership-button.active.wanted:hover {
+  background-color: #be2c2c; /* Darker Red */
+}

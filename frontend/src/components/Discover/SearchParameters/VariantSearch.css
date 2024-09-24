@@ -74,7 +74,7 @@
   }
   
   /* Button styles */
-  .button-container button {
+  .pokemon-variant-container .button-container button {
     width: 50px; /* Adjust width as needed */
     background-color: #ccc;
     border: none;
@@ -150,11 +150,11 @@
   }
   
   @media (min-width: 1024px) {
-    .button-container img {
+    .pokemon-variant-container .button-container img {
       width: 32px;
       height: 32px;
     }
-    .button-container button {
+    .pokemon-variant-container .button-container button {
       padding: 8px; /* Adjust padding */
     }
   }  
