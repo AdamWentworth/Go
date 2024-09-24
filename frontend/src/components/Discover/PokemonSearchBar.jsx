@@ -5,7 +5,7 @@ import VariantSearch from './SearchParameters/VariantSearch';
 import LocationSearch from './SearchParameters/LocationSearch';
 import OwnershipSearch from './SearchParameters/OwnershipSearch';
 import './PokemonSearchBar.css';
-import { FaChevronUp, FaChevronDown } from 'react-icons/fa';
+import { FaChevronUp, FaChevronDown, FaList, FaGlobe } from 'react-icons/fa';
 import axios from 'axios';
 
 const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView }) => {
@@ -108,57 +108,63 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
   };
 
   return (
-    <div className="pokemon-search-bar-container">
-      <div className={`pokemon-search-bar ${isCollapsed ? 'collapsed' : ''}`}>
-        <div className="collapsible-container">
-          <div className="search-bar-container content">
-            <div className="pokemon-variant">
-              <VariantSearch
-                pokemon={pokemon}
-                setPokemon={setPokemon}
-                isShiny={isShiny}
-                setIsShiny={setIsShiny}
-                isShadow={isShadow}
-                setIsShadow={setIsShadow}
-                costume={costume}
-                setCostume={setCostume}
-                selectedForm={selectedForm}
-                setSelectedForm={setSelectedForm}
-                selectedMoves={selectedMoves}
-                setSelectedMoves={setSelectedMoves}
-              />
-            </div>
+    <div className="pokemon-search-bar sticky">
+      <div className={`collapsible-container ${isCollapsed ? 'collapsed' : ''}`}>
+        <div className="search-bar-container content">
+          <div className="pokemon-variant">
+            <VariantSearch
+              pokemon={pokemon}
+              setPokemon={setPokemon}
+              isShiny={isShiny}
+              setIsShiny={setIsShiny}
+              isShadow={isShadow}
+              setIsShadow={setIsShadow}
+              costume={costume}
+              setCostume={setCostume}
+              selectedForm={selectedForm}
+              setSelectedForm={setSelectedForm}
+              selectedMoves={selectedMoves}
+              setSelectedMoves={setSelectedMoves}
+            />
+          </div>
 
-            <div className="location-search">
-              <LocationSearch
-                city={city}
-                setCity={setCity}
-                useCurrentLocation={useCurrentLocation}
-                setUseCurrentLocation={setUseCurrentLocation}
-                setCoordinates={setCoordinates}
-                range={range}
-                setRange={setRange}
-                resultsLimit={resultsLimit}
-                setResultsLimit={setResultsLimit}
-                handleSearch={handleSearch}
-                isLoading={isLoading}
-                view={view}
-                setView={setView}
-              />
-            </div>
+          <div className="location-search">
+            <LocationSearch
+              city={city}
+              setCity={setCity}
+              useCurrentLocation={useCurrentLocation}
+              setUseCurrentLocation={setUseCurrentLocation}
+              setCoordinates={setCoordinates}
+              range={range}
+              setRange={setRange}
+              resultsLimit={resultsLimit}
+              setResultsLimit={setResultsLimit}
+              handleSearch={handleSearch}
+              isLoading={isLoading}
+              view={view}
+              setView={setView}
+            />
+          </div>
 
-            <div className="ownership-status">
-              <OwnershipSearch
-                ownershipStatus={ownershipStatus}
-                setOwnershipStatus={setOwnershipStatus}
-              />
-            </div>
+          <div className="ownership-status">
+            <OwnershipSearch
+              ownershipStatus={ownershipStatus}
+              setOwnershipStatus={setOwnershipStatus}
+            />
           </div>
         </div>
       </div>
-      {/* Place the button outside the pokemon-search-bar container */}
-      <div className="toggle-button" onClick={toggleCollapse}>
-        {isCollapsed ? <FaChevronDown /> : <FaChevronUp />}
+      {/* Include the toggle button with ListView and GlobeView buttons */}
+      <div className="view-controls">
+        <button className="view-button" onClick={() => setView('list')}>
+          <FaList />
+        </button>
+        <div className="toggle-button" onClick={toggleCollapse}>
+          {isCollapsed ? <FaChevronDown /> : <FaChevronUp />}
+        </div>
+        <button className="view-button" onClick={() => setView('globe')}>
+          <FaGlobe />
+        </button>
       </div>
     </div>
   );

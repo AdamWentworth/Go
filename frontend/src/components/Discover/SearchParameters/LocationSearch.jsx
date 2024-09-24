@@ -163,12 +163,6 @@ const LocationSearch = ({
           {isLoading ? 'Searching...' : 'Search'}
         </button>
       </div>
-
-      {/* View Toggle Buttons */}
-      <div className="view-toggle-buttons">
-        <button onClick={() => setView('list')}>List View</button>
-        <button onClick={() => setView('globe')}>Globe View</button>
-      </div>
     </div>
   );
 };
