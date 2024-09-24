@@ -59,7 +59,7 @@
 }
 
 .location-input input {
-    /* flex: 1; */
+    width: 210px;
     padding: 3px;
     box-sizing: border-box;
 }

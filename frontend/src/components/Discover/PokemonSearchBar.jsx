@@ -13,17 +13,17 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
   const [isShadow, setIsShadow] = useState(false);
   const [costume, setCostume] = useState('');
   const [selectedForm, setSelectedForm] = useState('');
-  const [city, setCity] = useState(''); // Replaced with 'location'
+  const [selectedMoves, setSelectedMoves] = useState({ fastMove: null, chargedMove1: null, chargedMove2: null });
+  const [city, setCity] = useState('');
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
   const [ownershipStatus, setOwnershipStatus] = useState('trade');
   const [coordinates, setCoordinates] = useState({ latitude: null, longitude: null });
-  const [range, setRange] = useState(5); // Default range
-  const [resultsLimit, setResultsLimit] = useState(5); // Default limit for results
+  const [range, setRange] = useState(5);
+  const [resultsLimit, setResultsLimit] = useState(5);
 
   const handleSearch = async () => {
-    setErrorMessage(''); // Clear previous error messages
+    setErrorMessage('');
 
-    // Validation checks
     if (!pokemon) {
       setErrorMessage('Please provide a Pokémon name.');
       return;
@@ -36,13 +36,12 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
 
     let locationCoordinates = coordinates;
 
-    // If not using current location, get coordinates based on city
     if (!useCurrentLocation) {
       try {
         const query = city;
         const response = await axios.get(
           `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1`,
-          { withCredentials: false }  // Disable credentials for CORS compatibility
+          { withCredentials: false }
         );
 
         if (response.data?.features?.length > 0) {
@@ -58,7 +57,6 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
       }
     }
 
-    // Get Pokémon data from localStorage
     const storedData = localStorage.getItem('pokemonData');
     if (!storedData) {
       setErrorMessage('No Pokémon data found in local storage.');
@@ -67,7 +65,6 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
 
     const pokemonData = JSON.parse(storedData).data;
 
-    // Check if pokemonData exists and find matching Pokémon based on name and form
     const matchingPokemon = pokemonData.find((p) => 
       p.name?.toLowerCase() === pokemon.toLowerCase() && 
       (!selectedForm || p.form?.toLowerCase() === selectedForm.toLowerCase())
@@ -78,29 +75,28 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
       return;
     }
 
-    const { pokemon_id } = matchingPokemon;  // Get the matching Pokémon ID
+    const { pokemon_id } = matchingPokemon;
 
-    // Find the costume_id based on the selected costume
     const matchingCostume = matchingPokemon.costumes?.find(c => c.name === costume);
     const costume_id = matchingCostume ? matchingCostume.costume_id : null;
 
-    // Prepare API request parameters
     const queryParams = {
       pokemon_id,
       shiny: isShiny,
       shadow: isShadow,
-      costume_id,  // This could be null if no costume is selected
+      costume_id,
+      fast_move_id: selectedMoves.fastMove,  // Pass fast move ID
+      charged_move_1_id: selectedMoves.chargedMove1,  // Pass first charged move ID
+      charged_move_2_id: selectedMoves.chargedMove2,  // Pass second charged move ID
       latitude: locationCoordinates.latitude,
       longitude: locationCoordinates.longitude,
       ownership: ownershipStatus,
-      range_km: range,        // Include the range in kilometers
-      limit: resultsLimit,    // Include the selected limit for the number of results
+      range_km: range,
+      limit: resultsLimit,
     };
 
-    // Log the prepared query parameters before sending them to the parent component
     console.log('Search Query Parameters:', queryParams);
 
-    // Pass query parameters to parent component's search handler
     onSearch(queryParams);
   };
 
@@ -117,8 +113,10 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
             setIsShadow={setIsShadow}
             costume={costume}
             setCostume={setCostume}
-            selectedForm={selectedForm}  // Pass selectedForm state to VariantSearch
-            setSelectedForm={setSelectedForm}  // Pass the setter for the form
+            selectedForm={selectedForm}
+            setSelectedForm={setSelectedForm}
+            selectedMoves={selectedMoves} // Pass the selectedMoves state as a prop
+            setSelectedMoves={setSelectedMoves}  // Pass the setSelectedMoves function to update moves
           />
         </div>
 
@@ -129,14 +127,14 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
             useCurrentLocation={useCurrentLocation}
             setUseCurrentLocation={setUseCurrentLocation}
             setCoordinates={setCoordinates}
-            range={range}  // Pass the range to LocationSearch
-            setRange={setRange}  // Pass the setter for range to LocationSearch
-            resultsLimit={resultsLimit} // Pass the results limit to LocationSearch
-            setResultsLimit={setResultsLimit} // Pass the setter for results limit
-            handleSearch={handleSearch}  // Pass handleSearch function to LocationSearch
-            isLoading={isLoading}  // Pass loading state to LocationSearch
-            view={view}  // Pass the view state to LocationSearch
-            setView={setView}  // Pass the setter for view state to LocationSearch
+            range={range}
+            setRange={setRange}
+            resultsLimit={resultsLimit}
+            setResultsLimit={setResultsLimit}
+            handleSearch={handleSearch}
+            isLoading={isLoading}
+            view={view}
+            setView={setView}
           />
         </div>
 

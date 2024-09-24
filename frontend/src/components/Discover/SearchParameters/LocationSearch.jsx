@@ -105,7 +105,6 @@ const LocationSearch = ({
         {/* Column 2: Location Field */}
         <div className="location-field">
           <div className="location-input">
-            <label>Location:</label>
             <input
               ref={inputRef}
               type="text"

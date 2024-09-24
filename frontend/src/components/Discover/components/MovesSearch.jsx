@@ -1,6 +1,6 @@
 // MovesSearch.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './MovesSearch.css'; // Import any specific CSS for MovesComponent
 
 const MovesSearch = ({ pokemon, selectedMoves, editMode, onMovesChange }) => {
@@ -9,12 +9,17 @@ const MovesSearch = ({ pokemon, selectedMoves, editMode, onMovesChange }) => {
   const chargedMoves = allMoves.filter(move => !move.is_fast);
 
   const getDefaultMoveId = (moves, currentId) => (
-    moves.length > 0 ? (moves.find(move => move.move_id === currentId) || moves[0]).move_id : ''
+    moves.length > 0 ? (moves.find(move => move.move_id === currentId) || {}).move_id || '' : ''
   );
 
   const [fastMove, setFastMove] = useState(getDefaultMoveId(fastMoves, selectedMoves.fastMove));
   const [chargedMove1, setChargedMove1] = useState(getDefaultMoveId(chargedMoves, selectedMoves.chargedMove1));
   const [chargedMove2, setChargedMove2] = useState(selectedMoves.chargedMove2 ? getDefaultMoveId(chargedMoves, selectedMoves.chargedMove2) : '');
+
+  // Update selected moves state and notify parent component on change
+  useEffect(() => {
+    onMovesChange({ fastMove, chargedMove1, chargedMove2 });
+  }, [fastMove, chargedMove1, chargedMove2]);
 
   const getMoveById = (id) => allMoves.find(move => move.move_id === id);
 
@@ -22,22 +27,17 @@ const MovesSearch = ({ pokemon, selectedMoves, editMode, onMovesChange }) => {
     const selectedMoveId = event.target.value ? Number(event.target.value) : '';
     if (moveType === 'fast') {
       setFastMove(selectedMoveId);
-      onMovesChange({ fastMove: selectedMoveId, chargedMove1, chargedMove2 });
     } else if (moveType === 'charged1') {
       setChargedMove1(selectedMoveId);
-      onMovesChange({ fastMove, chargedMove1: selectedMoveId, chargedMove2 });
     } else {
       setChargedMove2(selectedMoveId);
-      onMovesChange({ fastMove, chargedMove1, chargedMove2: selectedMoveId });
     }
   };
 
   const addSecondChargedMove = () => {
     const firstAvailableMove = chargedMoves.find(move => move.move_id !== chargedMove1);
     if (firstAvailableMove) {
-      const newChargedMove2 = firstAvailableMove.move_id;
-      setChargedMove2(newChargedMove2);
-      onMovesChange({ fastMove, chargedMove1, chargedMove2: newChargedMove2 });
+      setChargedMove2(firstAvailableMove.move_id);
     }
   };
 
@@ -46,12 +46,11 @@ const MovesSearch = ({ pokemon, selectedMoves, editMode, onMovesChange }) => {
     const move = getMoveById(selectedMove);
     return (
       <div className="moves-search-option-container">
-        {/* Use absolute path or path relative to the public directory for images */}
         {move && (
           <img src={`/images/types/${move?.type.toLowerCase()}.png`} alt={move?.type_name} className="moves-search-type-icon" />
         )}
         <select value={selectedMove || ''} onChange={(event) => handleMoveChange(event, moveType)} className="moves-search-select">
-          <option value="" disabled>Select a move</option>
+          <option value="">Any Move</option>
           {filteredMoves.map(move => (
             <option key={move.move_id} value={move.move_id}>{move.name}</option>
           ))}
@@ -66,7 +65,6 @@ const MovesSearch = ({ pokemon, selectedMoves, editMode, onMovesChange }) => {
     if (!move) return 'No moves available';
     return (
       <div className="moves-search-info">
-        {/* Use absolute path or path relative to the public directory for images */}
         <img src={`/images/types/${move.type.toLowerCase()}.png`} alt={move.type_name} className="moves-search-type-icon" />
         <span className="moves-search-name">{move.name}</span>
         <div className="moves-search-spacer"></div>

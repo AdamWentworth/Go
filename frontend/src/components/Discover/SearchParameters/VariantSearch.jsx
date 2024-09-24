@@ -5,22 +5,20 @@ import validatePokemon from '../utils/ValidatePokemon';
 import { updateImage } from '../utils/updateImage';
 import { formatCostumeName } from '../utils/formatCostumeName';
 import Dropdown from '../components/Dropdown';
-import MovesSearch from '../components/MovesSearch'; // Import the new MovesComponent
+import MovesSearch from '../components/MovesSearch';
 import useErrorHandler from '../hooks/useErrorHandler';
-import './VariantSearch.css'; // Import the CSS file
+import './VariantSearch.css';
 
-const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, setIsShadow, costume, setCostume, selectedForm, setSelectedForm }) => {
+const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, setIsShadow, costume, setCostume, selectedForm, setSelectedForm, selectedMoves, setSelectedMoves }) => {
   const { error, handleError, clearError } = useErrorHandler();
   const [availableForms, setAvailableForms] = useState([]);
   const [availableCostumes, setAvailableCostumes] = useState([]);
   const [pokemonData, setPokemonData] = useState([]);
   const [imageUrl, setImageUrl] = useState(null);
   const [imageError, setImageError] = useState(false);
-  const [showCostumeDropdown, setShowCostumeDropdown] = useState(false); // State for toggling costume dropdown
-  const [selectedMoves, setSelectedMoves] = useState({ fastMove: null, chargedMove1: null, chargedMove2: null }); // State for selected moves
-  const [editMode, setEditMode] = useState(true); // State for move edit mode
+  const [showCostumeDropdown, setShowCostumeDropdown] = useState(false);
+  const [editMode, setEditMode] = useState(true);
 
-  // Load Pokémon data from localStorage
   useEffect(() => {
     const storedData = localStorage.getItem('pokemonData');
     if (storedData) {
@@ -59,12 +57,11 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
     setImageError(true);
   };
 
-  // Handlers
   const handlePokemonChange = (e) => {
     const newPokemon = e.target.value;
     if (newPokemon.length <= 11) {
       setPokemon(newPokemon);
-      setSelectedForm("");  // Reset form when Pokémon changes
+      setSelectedForm("");
       handleValidation(newPokemon, isShiny, isShadow, costume, "");
     }
   };
@@ -107,19 +104,15 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
 
   const handleMovesChange = (moves) => {
     setSelectedMoves(moves);
-    // Additional logic for updating variant based on moves can be added here
   };
 
   return (
     <div className="pokemon-variant-container">
-      {/* Main Content Section */}
       <div className="main-content">
-        {/* Details Section */}
         <div className="pokemon-variant-details">
           <h3>Pokémon Variant</h3>
 
           <div className="pokemon-search-row">
-            <label>Pokémon: </label>
             <input
               type="text"
               value={pokemon}
@@ -140,7 +133,6 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
             </button>
           </div>
 
-          {/* Form Dropdown placed below the buttons */}
           {availableForms.length > 0 && (
             <Dropdown
               label="Form"
@@ -151,7 +143,6 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
             />
           )}
 
-          {/* Costume Dropdown */}
           {showCostumeDropdown && availableCostumes.length > 0 && (
             <Dropdown
               label="Costume"
@@ -164,7 +155,6 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
           )}
         </div>
 
-        {/* Image Section */}
         <div className="pokemon-variant-image">
           {imageUrl && !imageError ? (
             <img
@@ -180,12 +170,11 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
           ) : null}
         </div>
 
-        {/* Moves Section */}
         {pokemon && pokemonData.length > 0 && (
           <div className="pokemon-moves-section">
             <MovesSearch
               pokemon={pokemonData.find((p) => p.name.toLowerCase() === pokemon.toLowerCase())}
-              selectedMoves={selectedMoves}
+              selectedMoves={selectedMoves} // Use selectedMoves as a prop
               editMode={editMode}
               onMovesChange={handleMovesChange}
             />
