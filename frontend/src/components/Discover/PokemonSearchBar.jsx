@@ -15,6 +15,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
   const [costume, setCostume] = useState('');
   const [selectedForm, setSelectedForm] = useState('');
   const [selectedMoves, setSelectedMoves] = useState({ fastMove: null, chargedMove1: null, chargedMove2: null });
+  const [selectedGender, setSelectedGender] = useState('Any'); // Add selectedGender state
   const [city, setCity] = useState('');
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
   const [ownershipStatus, setOwnershipStatus] = useState('trade');
@@ -96,12 +97,13 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
       fast_move_id: selectedMoves.fastMove,  
       charged_move_1_id: selectedMoves.chargedMove1,  
       charged_move_2_id: selectedMoves.chargedMove2,  
+      gender: selectedGender === 'Any' ? null : selectedGender, // Don't send gender if 'Any'
       latitude: locationCoordinates.latitude,
       longitude: locationCoordinates.longitude,
       ownership: ownershipStatus,
       range_km: range,
       limit: resultsLimit,
-    };
+    };    
 
     console.log('Search Query Parameters:', queryParams);
 
@@ -126,6 +128,8 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
               setSelectedForm={setSelectedForm}
               selectedMoves={selectedMoves}
               setSelectedMoves={setSelectedMoves}
+              selectedGender={selectedGender}
+              setSelectedGender={setSelectedGender} // Pass setter for selectedGender
               setErrorMessage={setErrorMessage}
             />
           </div>

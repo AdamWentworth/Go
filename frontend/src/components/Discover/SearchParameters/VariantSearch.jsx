@@ -6,10 +6,27 @@ import { updateImage } from '../utils/updateImage';
 import { formatCostumeName } from '../utils/formatCostumeName';
 import Dropdown from '../components/Dropdown';
 import MovesSearch from '../components/MovesSearch';
+import GenderSearch from '../components/GenderSearch';
 import useErrorHandler from '../hooks/useErrorHandler';
 import './VariantSearch.css';
 
-const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, setIsShadow, costume, setCostume, selectedForm, setSelectedForm, selectedMoves, setSelectedMoves, setErrorMessage }) => {
+const VariantSearch = ({
+  pokemon,
+  setPokemon,
+  isShiny,
+  setIsShiny,
+  isShadow,
+  setIsShadow,
+  costume,
+  setCostume,
+  selectedForm,
+  setSelectedForm,
+  selectedMoves,
+  setSelectedMoves,
+  selectedGender, 
+  setSelectedGender,
+  setErrorMessage,
+}) => {
   const { error, handleError, clearError } = useErrorHandler();
   const [availableForms, setAvailableForms] = useState([]);
   const [availableCostumes, setAvailableCostumes] = useState([]);
@@ -17,7 +34,6 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
   const [imageUrl, setImageUrl] = useState(null);
   const [imageError, setImageError] = useState(false);
   const [showCostumeDropdown, setShowCostumeDropdown] = useState(false);
-  const [editMode, setEditMode] = useState(true);
 
   useEffect(() => {
     const storedData = localStorage.getItem('pokemonData');
@@ -34,7 +50,14 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
   }, []);
 
   const handleValidation = (name, shinyChecked, shadowChecked, selectedCostume, form) => {
-    const { error, availableCostumes, availableForms } = validatePokemon(pokemonData, name, shinyChecked, shadowChecked, selectedCostume, form);
+    const { error, availableCostumes, availableForms } = validatePokemon(
+      pokemonData,
+      name,
+      shinyChecked,
+      shadowChecked,
+      selectedCostume,
+      form
+    );
     if (error) {
       handleError(error);
       setErrorMessage(error); // Pass error message to parent
@@ -43,7 +66,9 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
       setErrorMessage(null); // Clear error message in parent
     }
 
-    const sortedCostumes = availableCostumes.sort((a, b) => new Date(a.date_available) - new Date(b.date_available));
+    const sortedCostumes = availableCostumes.sort(
+      (a, b) => new Date(a.date_available) - new Date(b.date_available)
+    );
     setAvailableCostumes(sortedCostumes);
 
     const filteredForms = availableForms
@@ -55,7 +80,12 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
     if (!error) {
       const url = updateImage(pokemonData, name, shinyChecked, shadowChecked, selectedCostume, form);
       setImageUrl(url);
+      setImageError(false); // Reset the image error when updating the image URL
     }
+  };
+
+  const handleGenderChange = (gender) => {
+    setSelectedGender(gender); // Update the selectedGender state
   };
 
   const handleImageError = () => {
@@ -66,10 +96,11 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
     const newPokemon = e.target.value;
     if (newPokemon.length <= 11) {
       setPokemon(newPokemon);
-      setSelectedForm("");
-      handleValidation(newPokemon, isShiny, isShadow, costume, "");
+      setSelectedForm('');
+      setSelectedGender('Any'); // Reset gender only if new Pokémon is selected.
+      handleValidation(newPokemon, isShiny, isShadow, costume, '');
     }
-  };
+  };  
 
   const handleShinyChange = () => {
     const shinyChecked = !isShiny;
@@ -93,6 +124,7 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
       handleValidation(pokemon, isShiny, isShadow, '', selectedForm);
       const defaultImageUrl = updateImage(pokemonData, pokemon, isShiny, isShadow, '', selectedForm);
       setImageUrl(defaultImageUrl);
+      setImageError(false); // Reset the image error when toggling costume dropdown
     }
   };
 
@@ -111,6 +143,11 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
     setSelectedMoves(moves);
   };
 
+  // Get the current Pokémon data based on the entered name
+  const currentPokemonData = pokemonData.find(
+    (p) => p.name.toLowerCase() === pokemon.toLowerCase()
+  );
+
   return (
     <div className="pokemon-variant-container">
       <div className="main-content">
@@ -127,13 +164,22 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
           </div>
 
           <div className="button-container">
-            <button onClick={handleShinyChange} className={`shiny-button ${isShiny ? 'active' : ''}`}>
+            <button
+              onClick={handleShinyChange}
+              className={`shiny-button ${isShiny ? 'active' : ''}`}
+            >
               <img src="/images/shiny_icon.png" alt="Toggle Shiny" />
             </button>
-            <button onClick={handleCostumeToggle} className={`costume-button ${showCostumeDropdown ? 'active' : ''}`}>
+            <button
+              onClick={handleCostumeToggle}
+              className={`costume-button ${showCostumeDropdown ? 'active' : ''}`}
+            >
               <img src="/images/costume_icon.png" alt="Toggle Costume" />
             </button>
-            <button onClick={handleShadowChange} className={`shadow-button ${isShadow ? 'active' : ''}`}>
+            <button
+              onClick={handleShadowChange}
+              className={`shadow-button ${isShadow ? 'active' : ''}`}
+            >
               <img src="/images/shadow_icon.png" alt="Toggle Shadow" />
             </button>
           </div>
@@ -175,12 +221,18 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
           ) : null}
         </div>
 
+        {/* Moves and Gender Search Section */}
         {pokemon && pokemonData.length > 0 && (
-          <div className="pokemon-moves-section">
+          <div className="pokemon-moves-gender-section">
+            {currentPokemonData && currentPokemonData.gender_rate && (
+              <GenderSearch
+                genderRate={currentPokemonData.gender_rate}
+                onGenderChange={handleGenderChange} // Pass handleGenderChange to GenderSearch
+              />
+            )}
             <MovesSearch
-              pokemon={pokemonData.find((p) => p.name.toLowerCase() === pokemon.toLowerCase())}
-              selectedMoves={selectedMoves} // Use selectedMoves as a prop
-              editMode={editMode}
+              pokemon={currentPokemonData}
+              selectedMoves={selectedMoves}
               onMovesChange={handleMovesChange}
             />
           </div>

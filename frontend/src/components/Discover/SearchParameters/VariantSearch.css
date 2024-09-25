@@ -16,7 +16,7 @@
 .main-content {
   display: flex;
   justify-content: space-between;
-  width: 100%; /* Adjust to take full width */
+  width: 100%;
   min-width: 320px;
 }
 
@@ -33,46 +33,48 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 200px; /* Fixed height to always allocate space */
-  min-width: 200px; /* Fixed width to always allocate space */
+  min-height: 200px;
+  min-width: 200px;
   background-color: transparent;
-  flex: 0 0 200px; /* Fixed width */
+  flex: 0 0 200px;
 }
 
-/* Moves section styling */
-.pokemon-moves-section {
+/* Moves and Gender section styling */
+.pokemon-moves-gender-section {
   flex: 1;
   display: flex;
-  justify-content: center;
+  flex-direction: column; /* Ensure moves and gender are in the same column */
   align-items: center;
-  padding: 10px;
-  border-radius: 8px; /* Optional border radius */
+  border-radius: 8px;
+  justify-content: center;
+  width: 200px;
 }
 
 /* Search field row styling */
 .pokemon-search-row {
-  margin-bottom: 10px; /* Margin below the search field */
+  margin-bottom: 10px;
 }
 
 .pokemon-search-row input[type="text"] {
   padding: 3px;
+  width: 170px;
 }
 
 /* Button container styling */
 .button-container {
   display: flex;
   gap: 10px;
-  margin-bottom: 10px; /* Margin below the buttons */
+  margin-bottom: 10px;
 }
 
 /* Styling for form dropdown */
 .form-dropdown {
-  margin-bottom: 10px; /* Margin below the form dropdown */
+  margin-bottom: 7px;
 }
 
 /* Button styles */
 .pokemon-variant-container .button-container button {
-  width: 50px; /* Adjust width as needed */
+  width: 50px;
   background-color: #ccc;
   border: none;
   outline: none;
@@ -122,7 +124,7 @@
 }
 
 .button-container .costume-button.active:hover {
-  background-color: rgb(58, 216, 216); /* Slightly darker color */
+  background-color: rgb(58, 216, 216);
 }
 
 .button-container .shadow-button.active:hover {
@@ -135,6 +137,12 @@
   height: 200px;
 }
 
+/* Gender Search section styling */
+.gender-toggle-container {
+  margin-top: 10px;
+}
+
+/* Responsive layout adjustments */
 @media (max-width: 480px) {
   .main-content {
     flex-direction: column;
@@ -152,6 +160,6 @@
     height: 32px;
   }
   .pokemon-variant-container .button-container button {
-    padding: 8px; /* Adjust padding */
+    padding: 8px;
   }
-}  
+}

@@ -5,6 +5,7 @@
   flex-direction: column;
   margin-top: 5px;
   width: 100%; /* Ensure the container takes the full width */
+  height: 100px
 }
 
 .moves-search-section {

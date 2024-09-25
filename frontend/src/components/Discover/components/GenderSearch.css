@@ -1,0 +1,19 @@
+/* GenderSearch.css */
+
+.gender-toggle-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+  }
+  
+  .gender-icon {
+    width: 40px;
+    height: 40px;
+    transition: transform 0.2s ease;
+  }
+  
+  .gender-toggle-container:hover .gender-icon {
+    transform: scale(1.1);
+  }
+  
