@@ -18,7 +18,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
   const [selectedGender, setSelectedGender] = useState('Any'); // Add selectedGender state
   const [city, setCity] = useState('');
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
-  const [ownershipStatus, setOwnershipStatus] = useState('trade');
+  const [ownershipStatus, setOwnershipStatus] = useState('owned');
   const [coordinates, setCoordinates] = useState({ latitude: null, longitude: null });
   const [range, setRange] = useState(5);
   const [resultsLimit, setResultsLimit] = useState(5);

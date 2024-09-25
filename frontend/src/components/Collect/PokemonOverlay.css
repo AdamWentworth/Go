@@ -34,7 +34,7 @@
     gap: 10px; /* Adjust as needed - adds a gap between window elements */
 }
 
-.column {
+.pokemon-overlay .column {
     padding: 10px;
     padding-top: 0px;
     box-sizing: border-box;

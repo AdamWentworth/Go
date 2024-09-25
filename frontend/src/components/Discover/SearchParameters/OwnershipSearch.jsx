@@ -1,9 +1,33 @@
 // OwnershipSearch.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import './OwnershipSearch.css'; // Import the CSS file for OwnershipSearch styling
+import StatsInput from '../components/StatsInput'; // Import StatsInput component
+import FieldGroup from '../components/FieldGroup'; // Import FieldGroup component
 
 const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
   const options = ['owned', 'trade', 'wanted']; // Define the options
+
+  // States for additional fields when "owned", "trade", or "wanted" is selected
+  const [isLucky, setIsLucky] = useState(false);
+  const [prefLucky, setPrefLucky] = useState(false);
+  const [background, setBackground] = useState('');
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  
+  // Set initial stats to empty strings instead of zeros
+  const [stats, setStats] = useState({ attack: '', defense: '', stamina: '' });
+  const [onlyMatchingTrades, setOnlyMatchingTrades] = useState(false);
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+
+  // List of background options as a placeholder
+  const backgroundOptions = ['Forest', 'Desert', 'Mountain', 'Urban'];
+
+  const handleStatChange = (statName, value) => {
+    setStats((prevStats) => ({
+      ...prevStats,
+      [statName]: value,
+    }));
+  };
 
   return (
     <div className="ownership-status">
@@ -19,6 +43,87 @@ const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
           </button>
         ))}
       </div>
+
+      {/* Conditionally render additional fields for 'owned' status */}
+      {ownershipStatus === 'owned' && (
+        <div className="owned-options-container">
+          <div className="column stats-column">
+            <StatsInput stats={stats} onStatChange={handleStatChange} />
+          </div>
+          <div className="column field-group-column">
+            <FieldGroup
+              isLucky={isLucky}
+              setIsLucky={setIsLucky}
+              background={background}
+              setBackground={setBackground}
+              height={height}
+              setHeight={setHeight}
+              weight={weight}
+              setWeight={setWeight}
+              backgroundOptions={backgroundOptions}
+              showPrefLucky={false} // Do not show Preferred Lucky for "owned"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Conditionally render additional fields for 'trade' status */}
+      {ownershipStatus === 'trade' && (
+        <div className="trade-options">
+          <FieldGroup
+            isLucky={false}
+            prefLucky={prefLucky}
+            setPrefLucky={setPrefLucky}
+            background={background}
+            setBackground={setBackground}
+            height={height}
+            setHeight={setHeight}
+            weight={weight}
+            setWeight={setWeight}
+            backgroundOptions={backgroundOptions}
+            showLucky={false} // Do not show Lucky for "trade"
+            showPrefLucky={true} // Show Preferred Lucky for "trade"
+          />
+          <div className="field">
+            <label>
+              Include Only Matches Who Want a Pokémon from Your Trade List
+            </label>
+            <input
+              type="checkbox"
+              checked={onlyMatchingTrades}
+              onChange={(e) => setOnlyMatchingTrades(e.target.checked)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Conditionally render additional fields for 'wanted' status */}
+      {ownershipStatus === 'wanted' && (
+        <div className="wanted-options">
+          <FieldGroup
+            isLucky={false}
+            prefLucky={prefLucky}
+            setPrefLucky={setPrefLucky}
+            background={background}
+            setBackground={setBackground}
+            height={height}
+            setHeight={setHeight}
+            weight={weight}
+            setWeight={setWeight}
+            backgroundOptions={backgroundOptions}
+            showLucky={false} // Do not show Lucky for "wanted"
+            showPrefLucky={true} // Show Preferred Lucky for "wanted"
+          />
+          <div className="field">
+            <label>Already Registered?</label>
+            <input
+              type="checkbox"
+              checked={alreadyRegistered}
+              onChange={(e) => setAlreadyRegistered(e.target.checked)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
