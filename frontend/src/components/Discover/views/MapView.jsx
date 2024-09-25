@@ -56,7 +56,7 @@ const MapView = ({ data }) => {
     const baseTileLayer = new TileLayer({
       source: new XYZ({
         url: isLightMode ? 
-          'https://{1-4}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png' :
+          'https://{1-4}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png' :
           'https://{1-4}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       }),
     });

@@ -70,23 +70,6 @@
   margin-bottom: 10px; /* Margin below the form dropdown */
 }
 
-/* Error message row styling */
-.pokemon-variant-error-row {
-  display: flex;
-  align-items: center;
-  margin-top: 10px; /* Space above the error row */
-  width: 100%; /* Ensure it spans the entire width of the container */
-}
-
-/* Error message styling */
-.error-message {
-  color: red;
-  font-weight: bold;
-  text-align: left; /* Align text to the left */
-  width: 100%; /* Take the full width to avoid centering */
-  padding-left: 10px; /* Add some padding to not stick to the border */
-}
-
 /* Button styles */
 .pokemon-variant-container .button-container button {
   width: 50px; /* Adjust width as needed */

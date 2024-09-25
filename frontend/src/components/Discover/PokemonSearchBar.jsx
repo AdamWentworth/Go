@@ -8,7 +8,7 @@ import './PokemonSearchBar.css';
 import { FaChevronUp, FaChevronDown, FaList, FaGlobe } from 'react-icons/fa';
 import axios from 'axios';
 
-const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView }) => {
+const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
   const [pokemon, setPokemon] = useState('');
   const [isShiny, setIsShiny] = useState(false);
   const [isShadow, setIsShadow] = useState(false);
@@ -23,6 +23,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
   const [resultsLimit, setResultsLimit] = useState(5);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(''); // State to hold error message
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -125,6 +126,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
               setSelectedForm={setSelectedForm}
               selectedMoves={selectedMoves}
               setSelectedMoves={setSelectedMoves}
+              setErrorMessage={setErrorMessage}
             />
           </div>
 
@@ -154,17 +156,23 @@ const PokemonSearchBar = ({ onSearch, isLoading, setErrorMessage, view, setView 
           </div>
         </div>
       </div>
-      {/* Include the toggle button with ListView and GlobeView buttons */}
-      <div className="view-controls">
-        <button className="view-button" onClick={() => setView('list')}>
-          <FaList />
-        </button>
-        <div className="toggle-button" onClick={toggleCollapse}>
-          {isCollapsed ? <FaChevronDown /> : <FaChevronUp />}
+
+      {/* Combined error message and view controls container */}
+      <div className="controls-container">
+        <div className="error-message">
+          {errorMessage}
         </div>
-        <button className="view-button" onClick={() => setView('globe')}>
-          <FaGlobe />
-        </button>
+        <div className="view-controls">
+          <button className="view-button" onClick={() => setView('list')}>
+            <FaList />
+          </button>
+          <div className="toggle-button" onClick={toggleCollapse}>
+            {isCollapsed ? <FaChevronDown /> : <FaChevronUp />}
+          </div>
+          <button className="view-button" onClick={() => setView('globe')}>
+            <FaGlobe />
+          </button>
+        </div>
       </div>
     </div>
   );

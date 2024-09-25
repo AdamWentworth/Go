@@ -53,6 +53,8 @@
   text-align-last: center; /* Centers the text inside the select dropdown */
   width: 100%; /* Make the select take full width of its container */
   min-width: 150px; /* Ensures minimum width large enough for longest names */
+  padding-top: 2px;
+  padding-bottom: 4px;
 }
 
 .moves-search-select option {

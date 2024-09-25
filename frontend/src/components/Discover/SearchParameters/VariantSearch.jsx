@@ -9,7 +9,7 @@ import MovesSearch from '../components/MovesSearch';
 import useErrorHandler from '../hooks/useErrorHandler';
 import './VariantSearch.css';
 
-const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, setIsShadow, costume, setCostume, selectedForm, setSelectedForm, selectedMoves, setSelectedMoves }) => {
+const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, setIsShadow, costume, setCostume, selectedForm, setSelectedForm, selectedMoves, setSelectedMoves, setErrorMessage }) => {
   const { error, handleError, clearError } = useErrorHandler();
   const [availableForms, setAvailableForms] = useState([]);
   const [availableCostumes, setAvailableCostumes] = useState([]);
@@ -35,8 +35,13 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
 
   const handleValidation = (name, shinyChecked, shadowChecked, selectedCostume, form) => {
     const { error, availableCostumes, availableForms } = validatePokemon(pokemonData, name, shinyChecked, shadowChecked, selectedCostume, form);
-    if (error) handleError(error);
-    else clearError();
+    if (error) {
+      handleError(error);
+      setErrorMessage(error); // Pass error message to parent
+    } else {
+      clearError();
+      setErrorMessage(null); // Clear error message in parent
+    }
 
     const sortedCostumes = availableCostumes.sort((a, b) => new Date(a.date_available) - new Date(b.date_available));
     setAvailableCostumes(sortedCostumes);
@@ -181,11 +186,6 @@ const VariantSearch = ({ pokemon, setPokemon, isShiny, setIsShiny, isShadow, set
           </div>
         )}
       </div>
-
-      <div className="pokemon-variant-error-row">
-        <div className="error-message">{error || "\u00A0"}</div>
-      </div>
-
     </div>
   );
 };

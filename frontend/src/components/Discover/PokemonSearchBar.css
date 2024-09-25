@@ -14,6 +14,81 @@
   transition: height 0.3s ease;
 }
 
+/* Combined container for both error message and view controls */
+.controls-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Align items to the start */
+  width: 100%;
+  padding: 10px 20px; /* Add padding for layout */
+  position: relative; /* Use relative positioning to ensure correct height */
+}
+
+.error-message {
+  color: red;
+  font-weight: bold;
+  background-color: #111; /* Optional background */
+  padding: 5px 10px;
+  border-radius: 5px;
+  flex-grow: 1; /* Take up remaining space */
+  text-align: left; /* Align text to the left */
+  height: 30px;
+  align-content:center;
+  margin-left: 10px;
+}
+
+/* Centered view controls */
+.view-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute; /* Position it relative to the controls-container */
+  left: 50%; /* Center it */
+  transform: translateX(-50%); /* Correct the centering */
+  gap: 10px; /* Add space between buttons */
+  margin-top: 0; /* Remove top margin */
+}
+
+.view-button {
+  background: #444;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0 5px;
+}
+
+.view-button:hover {
+  background-color: #666;
+}
+
+.pokemon-search-bar .toggle-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: transparent;
+  color: white;
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.pokemon-search-bar .toggle-button:hover {
+  background-color: #333;
+}
+
+.pokemon-search-bar .toggle-button svg {
+  width: 12px;
+  height: 12px;
+}
+
 .pokemon-search-bar.collapsed {
   height: 0;
   overflow: hidden;
@@ -54,54 +129,3 @@
   opacity: 1;
   transition: opacity 0.3s ease;
 }
-
-/* Styles for the view controls and toggle button container */
-.view-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 10px;
-  margin-top: 10px;
-}
-
-.view-button {
-  background: #444;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  margin: 0 5px;
-}
-
-.view-button:hover {
-  background-color: #666;
-}
-
-.pokemon-search-bar .toggle-button {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: transparent;
-  color: white;
-  cursor: pointer;
-  padding: 3px 6px;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
-  margin: 0 5px;
-}
-
-.pokemon-search-bar .toggle-button:hover {
-  background-color: #333;
-}
-
-.pokemon-search-bar .toggle-button svg {
-  width: 12px;
-  height: 12px;
-}
-
