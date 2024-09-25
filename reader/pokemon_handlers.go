@@ -118,9 +118,10 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 	fastMoveIDStr := c.Query("fast_move_id")
 	chargedMove1IDStr := c.Query("charged_move_1_id")
 	chargedMove2IDStr := c.Query("charged_move_2_id")
+	genderStr := c.Query("gender")
 
-	logrus.Infof("Received search query with params: pokemon_id=%s, shiny=%s, shadow=%s, costume_id=%s, ownership=%s, limit=%s, range_km=%s, latitude=%s, longitude=%s, fast_move_id=%s, charged_move_1_id=%s, charged_move_2_id=%s",
-		pokemonIDStr, shinyStr, shadowStr, costumeIDStr, ownership, limitStr, rangeKMStr, latitudeStr, longitudeStr, fastMoveIDStr, chargedMove1IDStr, chargedMove2IDStr)
+	logrus.Infof("Received search query with params: pokemon_id=%s, shiny=%s, shadow=%s, costume_id=%s, ownership=%s, limit=%s, range_km=%s, latitude=%s, longitude=%s, fast_move_id=%s, charged_move_1_id=%s, charged_move_2_id=%s, gender=%s",
+		pokemonIDStr, shinyStr, shadowStr, costumeIDStr, ownership, limitStr, rangeKMStr, latitudeStr, longitudeStr, fastMoveIDStr, chargedMove1IDStr, chargedMove2IDStr, genderStr)
 
 	// Parse parameters into appropriate types
 	var pokemonID, fastMoveID, chargedMove1ID, chargedMove2ID int
@@ -187,6 +188,28 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		costumeID = &cid
 	}
 
+	// Determine the value of gender based on the input
+	var gender *string
+	if genderStr != "" && genderStr != "null" {
+		validGenders := []string{"Male", "Female", "Any"}
+		isValidGender := false
+		for _, g := range validGenders {
+			if genderStr == g {
+				isValidGender = true
+				break
+			}
+		}
+
+		if !isValidGender {
+			logrus.Error("Invalid gender value: ", genderStr)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid gender value"})
+		}
+
+		if genderStr != "Any" {
+			gender = &genderStr
+		}
+	}
+
 	var limit int = 25 // Default limit
 	if limitStr != "" {
 		limit, err = strconv.Atoi(limitStr)
@@ -240,6 +263,11 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		query = query.Where("costume_id IS NULL")
 	} else if costumeID != nil {
 		query = query.Where("costume_id = ?", *costumeID)
+	}
+
+	// Apply gender filtering logic
+	if gender != nil {
+		query = query.Where("gender = ?", *gender)
 	}
 
 	// Ownership status
