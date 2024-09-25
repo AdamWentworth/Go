@@ -25,7 +25,7 @@
     margin-right: auto;
 }
 
-.toggle-button, .collect-ui-toggle {
+.header .toggle-button, .header .collect-ui-toggle {
     background: none;
     border: 1px solid white;
     color: white;

@@ -98,7 +98,14 @@ const VariantSearch = ({
       setPokemon(newPokemon);
       setSelectedForm('');
       setSelectedGender('Any'); // Reset gender only if new Pokémon is selected.
-      handleValidation(newPokemon, isShiny, isShadow, costume, '');
+  
+      if (newPokemon.trim() === "") {
+        setImageUrl(null); // Clear the image if the input is empty
+        setAvailableForms([]); // Clear available forms if needed
+        setAvailableCostumes([]); // Clear available costumes if needed
+      } else {
+        handleValidation(newPokemon, isShiny, isShadow, costume, '');
+      }
     }
   };  
 
@@ -151,9 +158,9 @@ const VariantSearch = ({
   return (
     <div className="pokemon-variant-container">
       <div className="main-content">
+        {/* Fixed Width Column for Details */}
         <div className="pokemon-variant-details">
           <h3>Pokémon Variant</h3>
-
           <div className="pokemon-search-row">
             <input
               type="text"
@@ -162,7 +169,6 @@ const VariantSearch = ({
               placeholder="Enter Pokémon name"
             />
           </div>
-
           <div className="button-container">
             <button
               onClick={handleShinyChange}
@@ -183,7 +189,6 @@ const VariantSearch = ({
               <img src="/images/shadow_icon.png" alt="Toggle Shadow" />
             </button>
           </div>
-
           {availableForms.length > 0 && (
             <Dropdown
               label="Form"
@@ -193,7 +198,6 @@ const VariantSearch = ({
               className="form-dropdown"
             />
           )}
-
           {showCostumeDropdown && availableCostumes.length > 0 && (
             <Dropdown
               label="Costume"
@@ -205,7 +209,8 @@ const VariantSearch = ({
             />
           )}
         </div>
-
+  
+        {/* Fixed Width Column for Image */}
         <div className="pokemon-variant-image">
           {imageUrl && !imageError ? (
             <img
@@ -220,26 +225,27 @@ const VariantSearch = ({
             </div>
           ) : null}
         </div>
-
-        {/* Moves and Gender Search Section */}
+  
+        {/* Fixed Width Column for Moves and Gender */}
         {pokemon && pokemonData.length > 0 && (
           <div className="pokemon-moves-gender-section">
-            {currentPokemonData && currentPokemonData.gender_rate && (
-              <GenderSearch
-                genderRate={currentPokemonData.gender_rate}
-                onGenderChange={handleGenderChange} // Pass handleGenderChange to GenderSearch
-              />
-            )}
             <MovesSearch
               pokemon={currentPokemonData}
               selectedMoves={selectedMoves}
               onMovesChange={handleMovesChange}
             />
+            {/* Always reserve space for GenderSearch */}
+            <div className="gender-search-container">
+              <GenderSearch
+                genderRate={currentPokemonData ? currentPokemonData.gender_rate : null}
+                onGenderChange={handleGenderChange} // Pass handleGenderChange to GenderSearch
+              />
+            </div>
           </div>
         )}
       </div>
     </div>
-  );
+  );  
 };
 
 export default VariantSearch;

@@ -3,14 +3,14 @@
     background-color: #e2ead5;
 }
 
-.navbar h1, .evo-line-checkbox, .overlay-content, .iv-input, .iv-value, .pokemon-search-bar, .list-view {
+.navbar h1, .evo-line-checkbox, .overlay-content, .iv-input, .iv-value, .pokemon-search-bar, .list-view, .moves-search-select, .moves-search-move-add-icon, .moves-search-move-add-icon {
     color:black
 }
 
-.evo-line-custom-checkbox, .add-move-button {
+.evo-line-custom-checkbox, .add-move-button, .moves-search-add-move-button {
     border: 2px solid black
 }
-.pokemon-container, .move-select, .move-select option, .App  {
+.pokemon-container, .move-select, .move-select option, .App, .moves-search-select  {
     background-color: #f8fff9;
 }
 

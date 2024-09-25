@@ -7,6 +7,12 @@ const GenderSearch = ({ genderRate, onGenderChange }) => {
   const [selectedGender, setSelectedGender] = useState('Neutral');
 
   useEffect(() => {
+    if (!genderRate) {
+      // If genderRate is null or undefined, set empty genders
+      setAvailableGenders([]);
+      return;
+    }
+
     // Remove letters and extract only numeric values
     const parseGenderRate = (rate) => {
       const match = rate.match(/(\d+)/);
@@ -19,7 +25,7 @@ const GenderSearch = ({ genderRate, onGenderChange }) => {
     const genderlessRate = parseGenderRate(genderRateArray[2]);
 
     const genders = [];
-    
+
     if (genderlessRate === 100) {
       setAvailableGenders([]); // If genderless, don't show the component
     } else {
@@ -57,12 +63,21 @@ const GenderSearch = ({ genderRate, onGenderChange }) => {
     }
   };
 
-  // Don't render the component if there are no genders available
-  if (availableGenders.length === 0) return null;
-
+  // Render the component even if there are no genders, to reserve space
   return (
-    <div className="gender-toggle-container" onClick={toggleGender} style={{ cursor: availableGenders.length === 2 ? 'pointer' : 'default' }}>
-      <img src={getGenderIcon()} alt={selectedGender} className="gender-icon" />
+    <div 
+      className="gender-toggle-container" 
+      onClick={toggleGender} 
+      style={{ 
+        cursor: availableGenders.length === 2 ? 'pointer' : 'default', 
+        minHeight: '40px' // Ensure the space is always reserved
+      }}
+    >
+      {availableGenders.length > 0 ? (
+        <img src={getGenderIcon()} alt={selectedGender} className="gender-icon" />
+      ) : (
+        <div style={{ minHeight: '40px' }}></div> // Empty div to reserve space
+      )}
     </div>
   );
 };

@@ -1,19 +1,20 @@
 /* GenderSearch.css */
 
 .gender-toggle-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 10px;
-  }
-  
-  .gender-icon {
-    width: 40px;
-    height: 40px;
-    transition: transform 0.2s ease;
-  }
-  
-  .gender-toggle-container:hover .gender-icon {
-    transform: scale(1.1);
-  }
+  display: flex;
+  justify-content: flex-start; /* This ensures alignment to the left */
+  align-items: center;
+  width: 100%; /* Make sure the container takes full width */
+}
+
+.gender-icon {
+  width: 40px;
+  height: 40px;
+  transition: transform 0.2s ease;
+}
+
+.gender-toggle-container:hover .gender-icon {
+  transform: scale(1.1);
+}
+
   

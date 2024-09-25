@@ -27,7 +27,6 @@
 .error-message {
   color: red;
   font-weight: bold;
-  background-color: #111; /* Optional background */
   padding: 5px 10px;
   border-radius: 5px;
   flex-grow: 1; /* Take up remaining space */
@@ -70,7 +69,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: transparent;
+  background-color: #444;
   color: white;
   cursor: pointer;
   padding: 3px 5px;
@@ -81,7 +80,7 @@
 }
 
 .pokemon-search-bar .toggle-button:hover {
-  background-color: #333;
+  background-color: #666;
 }
 
 .pokemon-search-bar .toggle-button svg {

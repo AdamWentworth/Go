@@ -17,12 +17,12 @@
   display: flex;
   justify-content: space-between;
   width: 100%;
-  min-width: 320px;
+  min-width: 600px; /* 3 columns * 200px */
 }
 
 /* Details section styling */
 .pokemon-variant-details {
-  flex: 1;
+  width: 200px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -30,24 +30,31 @@
 
 /* Image section styling */
 .pokemon-variant-image {
+  width: 200px;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 200px;
-  min-width: 200px;
   background-color: transparent;
-  flex: 0 0 200px;
 }
 
 /* Moves and Gender section styling */
 .pokemon-moves-gender-section {
-  flex: 1;
+  width: 200px;
   display: flex;
   flex-direction: column; /* Ensure moves and gender are in the same column */
   align-items: center;
   border-radius: 8px;
-  justify-content: center;
-  width: 200px;
+  justify-content: flex-end;
+  margin-bottom: 5px;
+}
+
+.gender-search-container {
+  width: 100%; /* Matches the width of the GenderSearch component */
+  min-height: 40px; /* Fixed height to reserve space */
+  display: flex;
+  justify-content: center; /* Center any content if needed */
+  align-items: center; /* Center any content if needed */
 }
 
 /* Search field row styling */
@@ -56,8 +63,8 @@
 }
 
 .pokemon-search-row input[type="text"] {
+  width: 180px; /* Slight adjustment for better spacing */
   padding: 3px;
-  width: 170px;
 }
 
 /* Button container styling */
@@ -135,11 +142,6 @@
 .pokemon-variant-image img {
   width: 200px;
   height: 200px;
-}
-
-/* Gender Search section styling */
-.gender-toggle-container {
-  margin-top: 10px;
 }
 
 /* Responsive layout adjustments */
