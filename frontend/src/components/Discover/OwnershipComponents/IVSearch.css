@@ -1,11 +1,14 @@
-/* StatsInput.css */
+/* IVSearch.css */
 .stat-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    width: 95%;
-    margin-bottom: 5px;
-    margin-top: -5px;
+    height: 100%; /* Take full height of the parent container */
+    width: 100%;
+    justify-content: center;
+  }
+
+.stat-container .checkbox-container {
+    justify-content: center;
 }
 
 .stat-display {

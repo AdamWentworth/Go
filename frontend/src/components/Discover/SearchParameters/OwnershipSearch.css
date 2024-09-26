@@ -1,14 +1,32 @@
 /* OwnershipSearch.css */
 
-.ownership-status {
+.ownership-status-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  border-radius: 8px;
+  flex-direction: row; /* Arrange items side by side */
+  align-items: flex-start; /* Align items at the top */
+  justify-content: right;
+  width: 100%;
+  padding-right: 20px;
 }
 
-.ownership-status h3 {
+.ownership-status-container h3 {
   margin-block-start: 10px;
+}
+
+/* Left Column: Dynamic content */
+.ownership-content {
+  align-items: right;
+  flex: 1; /* Take up remaining space */
+  max-width: 350px; /* Optional max width for the content area */
+  height: 100%
+}
+
+/* Right Column: Ownership buttons */
+.ownership-options-container {
+  display: flex;
+  flex-direction: column; /* Arrange buttons in a column */
+  align-items: flex-end;
+  max-width: 200px; /* Set a max width for the button column */
 }
 
 .ownership-header {
@@ -18,7 +36,9 @@
 
 .ownership-options {
   display: flex;
-  gap: 15px; /* Add space between each option */
+  flex-direction: column; /* Arrange buttons in a column */
+  gap: 10px; /* Add space between each button */
+  align-items: stretch; /* Stretch buttons to fill the width */
 }
 
 .ownership-button {
@@ -27,13 +47,14 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center; /* Center content within buttons */
+  justify-content: center;
   border-radius: 15px;
   transition: background-color 0.3s ease, color 0.3s ease;
-  padding: 10px 20px; /* Add padding for button size */
+  padding: 10px 20px;
   font-size: 16px;
   background-color: #e0e0e0; /* Light grey background for non-active buttons */
   color: #000; /* Default text color */
+  width: 100%; /* Full width for buttons */
 }
 
 /* Active button styles with their specific colors */
@@ -62,28 +83,4 @@
 .ownership-button.inactive.wanted:hover, 
 .ownership-button.active.wanted:hover {
   background-color: #be2c2c; /* Darker Red */
-}
-
-.owned-options-container {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-  align-items: flex-start;
-  width: 100%;
-  margin-top: 5px;
-}
-
-.ownership-status .column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 50%; /* Adjust width as needed for two columns */
-}
-
-.stats-column {
-  align-items: center;
-}
-
-.field-group-column {
-  align-items: flex-start;
 }
