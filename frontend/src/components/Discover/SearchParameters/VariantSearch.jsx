@@ -108,14 +108,17 @@ const VariantSearch = ({
       setSelectedGender('Any'); // Reset gender only if new Pokémon is selected.
   
       if (newPokemon.trim() === "") {
-        setImageUrl(null); // Clear the image if the input is empty
-        setAvailableForms([]); // Clear available forms if needed
-        setAvailableCostumes([]); // Clear available costumes if needed
+        // Clear the image, costume, background, and any other states when the input is empty
+        setImageUrl(null); 
+        setAvailableForms([]); 
+        setAvailableCostumes([]);
+        setCostume(null); // Reset costume to null
+        setSelectedBackground(null); // Reset background to null
       } else {
         handleValidation(newPokemon, isShiny, isShadow, costume, '');
       }
     }
-  };  
+  };
 
   const handleShinyChange = () => {
     const shinyChecked = !isShiny;
@@ -134,7 +137,7 @@ const VariantSearch = ({
     setShowCostumeDropdown(newShowCostumeDropdown);
 
     if (!newShowCostumeDropdown) {
-      setCostume('');
+      setCostume(null); // Reset costume to null
       clearError();
       handleValidation(pokemon, isShiny, isShadow, '', selectedForm);
       const defaultImageUrl = updateImage(pokemonData, pokemon, isShiny, isShadow, '', selectedForm);
@@ -162,6 +165,23 @@ const VariantSearch = ({
   const currentPokemonData = pokemonData.find(
     (p) => p.name.toLowerCase() === pokemon.toLowerCase()
   );
+
+  // Check if the selected costume allows backgrounds or if the backgrounds have null costume_id
+  const isBackgroundAllowed = () => {
+    if (!currentPokemonData || !currentPokemonData.backgrounds) return false;
+    if (!costume) {
+      // If no costume is selected, allow backgrounds with null costume_id
+      return currentPokemonData.backgrounds.some((background) => background.costume_id === null);
+    }
+    const selectedCostumeId = availableCostumes.find((c) => c.name === costume)?.costume_id;
+    return currentPokemonData.backgrounds.some(
+      (background) =>
+        background.costume_id === selectedCostumeId || background.costume_id === null
+    );
+  };
+
+  // Retrieve the costume ID for the currently selected costume
+  const selectedCostumeId = availableCostumes.find(c => c.name === costume)?.costume_id;
 
   return (
     <div className="pokemon-variant-container">
@@ -253,7 +273,7 @@ const VariantSearch = ({
                 onGenderChange={handleGenderChange} // Pass handleGenderChange to GenderSearch
               />
               {/* Background Button to Open Overlay */}
-              {currentPokemonData?.backgrounds?.length > 0 && (
+              {isBackgroundAllowed() && (
                 <div className="background-button-container">
                   <img
                     src="/images/location.png" // Use location.png for the background button
@@ -266,7 +286,6 @@ const VariantSearch = ({
             </div>
           </div>
         )}
-
       </div>
 
       {/* Background Overlay */}
@@ -277,6 +296,7 @@ const VariantSearch = ({
             <BackgroundSearch
               pokemon={currentPokemonData}
               onSelectBackground={handleBackgroundChange}
+              selectedCostumeId={selectedCostumeId} // Pass the costume ID to BackgroundSearch
             />
           </div>
         </div>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import './BackgroundSearch.css';
 
-const BackgroundSearch = ({ pokemon, onSelectBackground }) => {
+const BackgroundSearch = ({ pokemon, onSelectBackground, selectedCostumeId }) => {
   const [selectedBackground, setSelectedBackground] = useState(null);
 
   useEffect(() => {
@@ -18,11 +18,9 @@ const BackgroundSearch = ({ pokemon, onSelectBackground }) => {
   };
 
   const isBackgroundSelectable = (background) => {
-    if (!background.costume_id) {
-      return true;
-    }
-    const variantTypeId = pokemon.variantType.split('_')[1];
-    return background.costume_id === parseInt(variantTypeId, 10);
+    if (!pokemon) return false;
+    if (!background.costume_id) return true; // Background is selectable if no specific costume is required
+    return background.costume_id === selectedCostumeId;
   };
 
   const selectableBackgrounds = pokemon ? pokemon.backgrounds.filter(isBackgroundSelectable) : [];
