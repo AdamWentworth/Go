@@ -31,11 +31,45 @@
 /* Image section styling */
 .pokemon-variant-image {
   width: 200px;
+  height: 200px;
+  position: relative; /* Allows for background image positioning */
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 200px;
-  background-color: transparent;
+  overflow: hidden; /* Ensures background image stays within bounds */
+}
+
+.pokemon-variant-container .background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  z-index: 1;
+  mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 45%, rgba(0, 0, 0, 0.3) 65%, transparent 70%);
+}
+
+.pokemon-variant-container .brightness-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 70%);
+  z-index: 2;
+}
+
+.pokemon-variant-image-error {
+  color: red;
+  font-size: 14px;
+}
+
+/* Styling for the Pokémon image */
+.pokemon-image {
+  max-width: 100%;
+  z-index: 3;
 }
 
 /* Moves and Gender section styling */
@@ -47,6 +81,7 @@
   border-radius: 8px;
   justify-content: flex-end;
   margin-bottom: 5px;
+  margin-left: 10px;
 }
 
 .gender-search-container {
@@ -142,6 +177,35 @@
 .pokemon-variant-image img {
   width: 200px;
   height: 200px;
+}
+
+.gender-background-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Aligns the row items to the left */
+  width: 100%; /* Full width of the container */
+  position: relative; /* Allows for centering with absolute positioning */
+  height: 40px
+}
+
+.gender-search-container {
+  flex: 0 0 auto; /* Prevents it from growing or shrinking */
+  margin-right: auto; /* Pushes the next element to the right */
+}
+
+.background-button-container {
+  position: absolute; /* Allows centering within the parent div */
+  left: 50%; /* Center horizontally relative to the parent */
+  transform: translateX(-50%); /* Offset by half its own width to achieve true center */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.background-button {
+  cursor: pointer;
+  width: 40px; /* Adjust as needed */
+  height: 40px; /* Adjust as needed */
 }
 
 /* Responsive layout adjustments */

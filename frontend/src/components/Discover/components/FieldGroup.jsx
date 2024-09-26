@@ -6,13 +6,10 @@ const FieldGroup = ({
   setIsLucky, 
   prefLucky, 
   setPrefLucky, 
-  background, 
-  setBackground, 
   height, 
   setHeight, 
   weight, 
   setWeight, 
-  backgroundOptions, 
   showLucky = true, 
   showPrefLucky = true 
 }) => {
@@ -38,20 +35,6 @@ const FieldGroup = ({
           />
         </div>
       )}
-      <div className="field">
-        <label>Background</label>
-        <select
-          value={background}
-          onChange={(e) => setBackground(e.target.value)}
-        >
-          <option value="">Select Background</option>
-          {backgroundOptions.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </div>
       <div className="field">
         <label>Height</label>
         <input

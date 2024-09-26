@@ -10,7 +10,6 @@ const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
   // States for additional fields when "owned", "trade", or "wanted" is selected
   const [isLucky, setIsLucky] = useState(false);
   const [prefLucky, setPrefLucky] = useState(false);
-  const [background, setBackground] = useState('');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   
@@ -18,9 +17,7 @@ const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
   const [stats, setStats] = useState({ attack: '', defense: '', stamina: '' });
   const [onlyMatchingTrades, setOnlyMatchingTrades] = useState(false);
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
-
-  // List of background options as a placeholder
-  const backgroundOptions = ['Forest', 'Desert', 'Mountain', 'Urban'];
+  const [tradeInWantedList, setTradeInWantedList] = useState(false); // New state for the additional filter
 
   const handleStatChange = (statName, value) => {
     setStats((prevStats) => ({
@@ -54,13 +51,10 @@ const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
             <FieldGroup
               isLucky={isLucky}
               setIsLucky={setIsLucky}
-              background={background}
-              setBackground={setBackground}
               height={height}
               setHeight={setHeight}
               weight={weight}
               setWeight={setWeight}
-              backgroundOptions={backgroundOptions}
               showPrefLucky={false} // Do not show Preferred Lucky for "owned"
             />
           </div>
@@ -74,19 +68,16 @@ const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
             isLucky={false}
             prefLucky={prefLucky}
             setPrefLucky={setPrefLucky}
-            background={background}
-            setBackground={setBackground}
             height={height}
             setHeight={setHeight}
             weight={weight}
             setWeight={setWeight}
-            backgroundOptions={backgroundOptions}
             showLucky={false} // Do not show Lucky for "trade"
             showPrefLucky={true} // Show Preferred Lucky for "trade"
           />
           <div className="field">
             <label>
-              Include Only Matches Who Want a Pokémon from Your Trade List
+              Include Only Matches who want a Pokémon in your Trade List
             </label>
             <input
               type="checkbox"
@@ -104,13 +95,10 @@ const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
             isLucky={false}
             prefLucky={prefLucky}
             setPrefLucky={setPrefLucky}
-            background={background}
-            setBackground={setBackground}
             height={height}
             setHeight={setHeight}
             weight={weight}
             setWeight={setWeight}
-            backgroundOptions={backgroundOptions}
             showLucky={false} // Do not show Lucky for "wanted"
             showPrefLucky={true} // Show Preferred Lucky for "wanted"
           />
@@ -120,6 +108,16 @@ const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
               type="checkbox"
               checked={alreadyRegistered}
               onChange={(e) => setAlreadyRegistered(e.target.checked)}
+            />
+          </div>
+          <div className="field">
+            <label>
+              Include Only Matches who offer a Pokémon in your Wanted List
+            </label>
+            <input
+              type="checkbox"
+              checked={tradeInWantedList}
+              onChange={(e) => setTradeInWantedList(e.target.checked)}
             />
           </div>
         </div>

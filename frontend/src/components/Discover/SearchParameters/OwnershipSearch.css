@@ -12,7 +12,7 @@
 }
 
 .ownership-header {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   font-size: 18px;
 }
 
@@ -70,7 +70,7 @@
   justify-content: space-around;
   align-items: flex-start;
   width: 100%;
-  margin-top: 20px;
+  margin-top: 5px;
 }
 
 .ownership-status .column {

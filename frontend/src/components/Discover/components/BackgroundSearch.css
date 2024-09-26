@@ -1,0 +1,138 @@
+/* BackgroundSearch.css */
+
+.background-search-component {
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    max-width: 600px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+    text-align: center; /* Center content */
+}
+
+.background-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center; /* Center the background items */
+}
+
+.background-item {
+    border: 2px solid #ddd;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    width: 120px; /* Adjust width as needed */
+    text-align: center;
+}
+
+.background-item:hover {
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    border-color: #007bff;
+}
+
+.background-item img {
+    width: 80px;
+    height: 80px;
+    border-radius: 4px;
+}
+
+.background-info {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.background-item.selected {
+    border: 2px solid #007bff;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+}
+
+.none-option {
+    font-size: 16px;
+    color: #555;
+    padding: 20px;
+    text-align: center;
+}
+
+.selectable {
+    border-color: green;
+}
+
+.non-selectable {
+    border-color: red;
+}
+
+.selected-background {
+    margin-top: 20px;
+    padding: 15px;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.selected-background img {
+    width: 120px;
+    height: auto;
+    display: block;
+    margin: 10px auto;
+}
+
+.background-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.background-overlay-content {
+    background: #333;
+    padding: 20px;
+    border-radius: 10px;
+    position: relative;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #f44336;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.background-button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.background-button {
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    transition: transform 0.3s ease;
+}
+
+.background-button:hover {
+    transform: scale(1.1);
+}

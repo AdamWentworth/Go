@@ -7,6 +7,7 @@ import { formatCostumeName } from '../utils/formatCostumeName';
 import Dropdown from '../components/Dropdown';
 import MovesSearch from '../components/MovesSearch';
 import GenderSearch from '../components/GenderSearch';
+import BackgroundSearch from '../components/BackgroundSearch'; // Import BackgroundSearch
 import useErrorHandler from '../hooks/useErrorHandler';
 import './VariantSearch.css';
 
@@ -34,6 +35,8 @@ const VariantSearch = ({
   const [imageUrl, setImageUrl] = useState(null);
   const [imageError, setImageError] = useState(false);
   const [showCostumeDropdown, setShowCostumeDropdown] = useState(false);
+  const [selectedBackground, setSelectedBackground] = useState(null); // State for selected background
+  const [showBackgroundOverlay, setShowBackgroundOverlay] = useState(false); // State for overlay visibility
 
   useEffect(() => {
     const storedData = localStorage.getItem('pokemonData');
@@ -86,6 +89,11 @@ const VariantSearch = ({
 
   const handleGenderChange = (gender) => {
     setSelectedGender(gender); // Update the selectedGender state
+  };
+
+  const handleBackgroundChange = (background) => {
+    setSelectedBackground(background);
+    setShowBackgroundOverlay(false); // Hide the overlay when a background is selected
   };
 
   const handleImageError = () => {
@@ -212,12 +220,15 @@ const VariantSearch = ({
   
         {/* Fixed Width Column for Image */}
         <div className="pokemon-variant-image">
+          {selectedBackground && (
+            <div className="background-image" style={{ backgroundImage: `url(${selectedBackground.image_url})` }}></div>
+          )}
           {imageUrl && !imageError ? (
             <img
               src={imageUrl}
               alt={pokemon}
               onError={handleImageError}
-              style={{ width: '200px', height: '200px' }}
+              className="pokemon-image"
             />
           ) : imageError ? (
             <div className="pokemon-variant-image-error">
@@ -226,7 +237,7 @@ const VariantSearch = ({
           ) : null}
         </div>
   
-        {/* Fixed Width Column for Moves and Gender */}
+        {/* Fixed Width Column for Moves, Gender, and Background */}
         {pokemon && pokemonData.length > 0 && (
           <div className="pokemon-moves-gender-section">
             <MovesSearch
@@ -234,16 +245,42 @@ const VariantSearch = ({
               selectedMoves={selectedMoves}
               onMovesChange={handleMovesChange}
             />
-            {/* Always reserve space for GenderSearch */}
-            <div className="gender-search-container">
+            {/* Container for Gender and Background Search */}
+            <div className="gender-background-row">
+              {/* Gender Search Component */}
               <GenderSearch
                 genderRate={currentPokemonData ? currentPokemonData.gender_rate : null}
                 onGenderChange={handleGenderChange} // Pass handleGenderChange to GenderSearch
               />
+              {/* Background Button to Open Overlay */}
+              {currentPokemonData?.backgrounds?.length > 0 && (
+                <div className="background-button-container">
+                  <img
+                    src="/images/location.png" // Use location.png for the background button
+                    alt="Background Selector"
+                    className="background-button"
+                    onClick={() => setShowBackgroundOverlay(true)}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
+
       </div>
+
+      {/* Background Overlay */}
+      {showBackgroundOverlay && (
+        <div className="background-overlay" onClick={() => setShowBackgroundOverlay(false)}>
+          <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-button" onClick={() => setShowBackgroundOverlay(false)}>Close</button>
+            <BackgroundSearch
+              pokemon={currentPokemonData}
+              onSelectBackground={handleBackgroundChange}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );  
 };
