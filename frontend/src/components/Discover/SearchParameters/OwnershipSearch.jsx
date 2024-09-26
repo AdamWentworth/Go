@@ -1,8 +1,8 @@
 // OwnershipSearch.jsx
 import React, { useState } from 'react';
 import './OwnershipSearch.css'; // Import the CSS file for OwnershipSearch styling
-import StatsInput from '../components/StatsInput'; // Import StatsInput component
-import FieldGroup from '../components/FieldGroup'; // Import FieldGroup component
+import StatsInput from '../OwnershipComponents/StatsInput'; // Import StatsInput component
+import FieldGroup from '../OwnershipComponents/FieldGroup'; // Import FieldGroup component
 
 const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
   const options = ['owned', 'trade', 'wanted']; // Define the options
