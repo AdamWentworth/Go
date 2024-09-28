@@ -1,15 +1,28 @@
 import { validateUUID } from '../utils/PokemonIDUtils';
 
-export function getFilteredPokemonsByOwnership(variants, ownershipData, filter) {
+export function getFilteredPokemonsByOwnership(variants, ownershipData, filter, lists) {
     // Adjust the filter if necessary to handle special cases
-    const adjustedFilter = filter === 'Trade' ? 'for_trade' : filter;
-    const filterKey = `is_${adjustedFilter.toLowerCase()}`;
-    console.log(`Filtering for status: ${filterKey}`);
+    let filterKey;
 
-    // Get all keys that match the filter criteria, including their UUIDs
-    const filteredKeys = Object.entries(ownershipData)
-        .filter(([key, data]) => data[filterKey])
-        .map(([key]) => key);  // Maintain the full key with UUID
+    switch (filter.toLowerCase()) {
+        case 'trade':
+            filterKey = 'trade';
+            break;
+        case 'wanted':
+            filterKey = 'wanted';
+            break;
+        case 'owned':
+            filterKey = 'owned';
+            break;
+        case 'unowned':
+            filterKey = 'unowned';
+            break;
+        default:
+            return []; // Return empty array if filter doesn't match any expected values
+    }
+
+    // Get the keys from the corresponding list based on the filter
+    const filteredKeys = Object.keys(lists[filterKey] || {});
 
     // Map the filtered keys to their corresponding variant data
     const filteredPokemons = filteredKeys.map(key => {
@@ -25,7 +38,10 @@ export function getFilteredPokemonsByOwnership(variants, ownershipData, filter) 
         } else {
             baseKey = key; // Use the full key if no UUID is present
         }
+
+        // Find the corresponding variant using the baseKey
         const variant = variants.find(v => v.pokemonKey === baseKey);
+
         if (variant) {
             return {
                 ...variant,
@@ -35,6 +51,5 @@ export function getFilteredPokemonsByOwnership(variants, ownershipData, filter) 
         }
     }).filter(pokemon => pokemon !== undefined);  // Filter out any undefined results due to missing variants
 
-    // console.log(`Pokémons after applying filter:`, filteredPokemons);
     return filteredPokemons;
 }

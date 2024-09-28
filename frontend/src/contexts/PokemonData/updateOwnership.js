@@ -2,7 +2,7 @@
 
 import { updatePokemonOwnership } from '../../components/Collect/PokemonOwnership/PokemonOwnershipUpdateService';
 
-export const updateOwnership = (data, setData, ownershipDataRef, updateLists) => (pokemonKeys, newStatus) => {
+export const updateOwnership = (data, setData, ownershipDataRef, lists) => (pokemonKeys, newStatus) => {
     const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
     const tempOwnershipData = { ...ownershipDataRef.current };
     let processedKeys = 0;
@@ -10,7 +10,7 @@ export const updateOwnership = (data, setData, ownershipDataRef, updateLists) =>
     const updates = new Map();
     console.log("Current Ownership Data as retrieved by updateOwnership:", ownershipDataRef.current);
     keys.forEach(key => {
-        updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, (fullKey) => {
+        updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, lists, (fullKey) => {
             processedKeys++;
             const currentTimestamp = Date.now();
             if (fullKey) {
@@ -23,9 +23,12 @@ export const updateOwnership = (data, setData, ownershipDataRef, updateLists) =>
             }
             if (processedKeys === keys.length) { // Only update state and SW when all keys are processed
                 console.log(`All keys processed. Updating state and service worker.`);
+
+                // Update state with new ownership data and lists
                 setData(prevData => ({
                     ...prevData,
-                    ownershipData: tempOwnershipData
+                    ownershipData: tempOwnershipData,
+                    lists: { ...lists }  // Include updated lists in state
                 }));
 
                 // Update the ref
@@ -58,6 +61,7 @@ export const updateOwnership = (data, setData, ownershipDataRef, updateLists) =>
                     }
                 });
 
+                // Update the service worker and cache
                 navigator.serviceWorker.ready.then(async registration => {
                     registration.active.postMessage({
                         action: 'syncData',

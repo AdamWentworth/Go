@@ -71,7 +71,7 @@ export const PokemonDataProvider = ({ children }) => {
     }, [isLoggedIn, periodicUpdates]);   
 
     const updateOwnership = useCallback((...args) => {
-        importedUpdateOwnership(data, setData, ownershipDataRef, updateLists)(...args);
+        importedUpdateOwnership(data, setData, ownershipDataRef, data.lists)(...args);
         if (isLoggedIn) {
             periodicUpdates();
         }
