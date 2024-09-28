@@ -1,13 +1,13 @@
 // VariantSearch.jsx
 
 import React, { useState, useEffect } from 'react';
-import validatePokemon from '../utils/ValidatePokemon';
+import validatePokemon from '../utils/validatePokemon';
 import { updateImage } from '../utils/updateImage';
 import { formatCostumeName } from '../utils/formatCostumeName';
 import Dropdown from '../components/Dropdown';
-import MovesSearch from '../VariantComponents/MovesSearch';
-import GenderSearch from '../VariantComponents/GenderSearch';
-import BackgroundSearch from '../VariantComponents/BackgroundSearch'; // Import BackgroundSearch
+import MovesSearch from './VariantComponents/MovesSearch';
+import GenderSearch from './VariantComponents/GenderSearch';
+import BackgroundSearch from './VariantComponents/BackgroundSearch'; // Import BackgroundSearch
 import useErrorHandler from '../hooks/useErrorHandler';
 import './VariantSearch.css';
 

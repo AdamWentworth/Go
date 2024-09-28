@@ -3,7 +3,7 @@ import React from 'react';
 import IVSearch from '../OwnershipComponents/IVSearch';
 import './OwnedSearch.css'; // Import the specific CSS for OwnedSearch
 
-const OwnedSearch = ({ stats, onStatChange, isHundo, setIsHundo, isLucky, setIsLucky }) => {
+const OwnedSearch = ({ stats, onStatChange, isHundo, setIsHundo }) => { // Removed isLucky and setIsLucky props
   const handleHundoChange = () => {
     setIsHundo(!isHundo);
     if (!isHundo) {
@@ -20,7 +20,7 @@ const OwnedSearch = ({ stats, onStatChange, isHundo, setIsHundo, isLucky, setIsL
       <div className="options-column">
         {/* Checkboxes Row */}
         <div className="checkbox-row">
-          <div className="field">
+          <div className="field hundo-field">
             <label>
               <input
                 type="checkbox"
@@ -28,16 +28,6 @@ const OwnedSearch = ({ stats, onStatChange, isHundo, setIsHundo, isLucky, setIsL
                 onChange={handleHundoChange}
               />
               Hundo
-            </label>
-          </div>
-          <div className="field">
-            <label>
-              <input
-                type="checkbox"
-                checked={isLucky}
-                onChange={(e) => setIsLucky(e.target.checked)}
-              />
-              Lucky
             </label>
           </div>
         </div>

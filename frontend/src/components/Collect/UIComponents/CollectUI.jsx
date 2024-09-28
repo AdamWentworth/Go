@@ -19,7 +19,7 @@ const CollectUI = ({
 
   useEffect(() => {
     setSelectedFilter(statusFilter); // Ensure this runs correctly
-    console.log("Status Filter updated in CollectUI: ", statusFilter);
+    // console.log("Status Filter updated in CollectUI: ", statusFilter);
   }, [statusFilter]);
 
   useEffect(() => {

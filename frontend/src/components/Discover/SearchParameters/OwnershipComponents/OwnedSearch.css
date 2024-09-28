@@ -1,0 +1,41 @@
+/* OwnedSearch.css */
+
+/* Container styles for the options */
+.owned-options-container {
+  display: flex;
+  flex-direction: column; /* Arrange in a single column */
+  align-items: flex-end; /* Align the items to the right */
+  height: 100%; /* Ensure it takes the full height of its container */
+  justify-content: center;
+  margin-top: 10px;
+}
+
+/* Column for checkboxes and IVSearch */
+.options-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 250px;
+}
+
+/* Row for the checkboxes */
+.checkbox-row {
+  display: flex;
+  justify-content: center; /* Center the Hundo checkbox */
+  width: 100%; /* Full width of the column */
+  align-items: center; /* Center checkboxes vertically */
+}
+
+/* Individual fields for each checkbox */
+.field {
+  display: flex; /* Set flex layout for individual fields */
+  align-items: center; /* Center items vertically */
+  justify-content: center; /* Center the Hundo checkbox within the field */
+}
+
+/* Full-width row for IVSearch component */
+.iv-search-row {
+  width: 100%; /* Takes full width of the column */
+  display: flex;
+  justify-content: center; /* Center the IVSearch component */
+}

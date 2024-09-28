@@ -15,7 +15,6 @@
 
 /* Left Column: Dynamic content */
 .ownership-content {
-  align-items: right;
   flex: 1; /* Take up remaining space */
   max-width: 350px; /* Optional max width for the content area */
   height: 100%

@@ -1,9 +1,9 @@
 // OwnershipSearch.jsx
 import React, { useState } from 'react';
 import './OwnershipSearch.css'; // Import the CSS file for OwnershipSearch styling
-import OwnedSearch from '../OwnershipComponents/OwnedSearch';
-import TradeSearch from '../OwnershipComponents/TradeSearch';
-import WantedSearch from '../OwnershipComponents/WantedSearch';
+import OwnedSearch from './OwnershipComponents/OwnedSearch';
+import TradeSearch from './OwnershipComponents/TradeSearch';
+import WantedSearch from './OwnershipComponents/WantedSearch';
 
 const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
   const options = ['owned', 'trade', 'wanted']; // Define the options
