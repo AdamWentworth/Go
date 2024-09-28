@@ -16,33 +16,36 @@ const OwnedSearch = ({ stats, onStatChange, isHundo, setIsHundo, isLucky, setIsL
 
   return (
     <div className="owned-options-container">
-      {/* First Column: Checkboxes for Hundo and Lucky */}
-      <div className="checkbox-column">
-        <div className="field">
-          <label>
-            <input
-              type="checkbox"
-              checked={isHundo}
-              onChange={handleHundoChange}
-            />
-            Hundo
-          </label>
+      {/* Single Column with Checkboxes and IVSearch */}
+      <div className="options-column">
+        {/* Checkboxes Row */}
+        <div className="checkbox-row">
+          <div className="field">
+            <label>
+              <input
+                type="checkbox"
+                checked={isHundo}
+                onChange={handleHundoChange}
+              />
+              Hundo
+            </label>
+          </div>
+          <div className="field">
+            <label>
+              <input
+                type="checkbox"
+                checked={isLucky}
+                onChange={(e) => setIsLucky(e.target.checked)}
+              />
+              Lucky
+            </label>
+          </div>
         </div>
-        <div className="field">
-          <label>
-            <input
-              type="checkbox"
-              checked={isLucky}
-              onChange={(e) => setIsLucky(e.target.checked)}
-            />
-            Lucky
-          </label>
-        </div>
-      </div>
 
-      {/* Second Column: IV Search */}
-      <div className="stats-column">
-        <IVSearch stats={stats} onStatChange={onStatChange} />
+        {/* IVSearch takes the full width below the checkboxes */}
+        <div className="iv-search-row">
+          <IVSearch stats={stats} onStatChange={onStatChange} />
+        </div>
       </div>
     </div>
   );

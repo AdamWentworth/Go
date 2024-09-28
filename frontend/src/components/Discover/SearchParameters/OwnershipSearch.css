@@ -29,11 +29,6 @@
   max-width: 200px; /* Set a max width for the button column */
 }
 
-.ownership-header {
-  margin-bottom: 8px;
-  font-size: 18px;
-}
-
 .ownership-options {
   display: flex;
   flex-direction: column; /* Arrange buttons in a column */
