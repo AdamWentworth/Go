@@ -1,25 +1,28 @@
 // OwnershipSearch.jsx
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import './OwnershipSearch.css'; // Import the CSS file for OwnershipSearch styling
 import OwnedSearch from './OwnershipComponents/OwnedSearch';
 import TradeSearch from './OwnershipComponents/TradeSearch';
 import WantedSearch from './OwnershipComponents/WantedSearch';
 
-const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
+const OwnershipSearch = ({
+  ownershipStatus,
+  setOwnershipStatus,
+  stats,
+  setStats,
+  isHundo,
+  setIsHundo,
+  onlyMatchingTrades,
+  setOnlyMatchingTrades,
+  prefLucky,
+  setPrefLucky,
+  alreadyRegistered,
+  setAlreadyRegistered,
+  tradeInWantedList,
+  setTradeInWantedList,
+}) => {
   const options = ['owned', 'trade', 'wanted']; // Define the options
-
-  // States for additional fields when "owned", "trade", or "wanted" is selected
-  const [isLucky, setIsLucky] = useState(false);
-  const [prefLucky, setPrefLucky] = useState(false);
-  const [height, setHeight] = useState('');
-  const [weight, setWeight] = useState('');
-  
-  // Set initial stats to empty strings instead of zeros
-  const [stats, setStats] = useState({ attack: '', defense: '', stamina: '' });
-  const [onlyMatchingTrades, setOnlyMatchingTrades] = useState(false);
-  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
-  const [tradeInWantedList, setTradeInWantedList] = useState(false); // New state for the additional filter
-  const [isHundo, setIsHundo] = useState(false); // State for the Hundo checkbox
 
   const handleStatChange = (statName, value) => {
     setStats((prevStats) => ({
@@ -28,9 +31,32 @@ const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
     }));
   };
 
+  // Reset IVs and isHundo when ownershipStatus changes away from 'owned'
+  useEffect(() => {
+    if (ownershipStatus !== 'owned') {
+      setStats({ attack: null, defense: null, stamina: null });
+      setIsHundo(false);
+    }
+  }, [ownershipStatus, setStats, setIsHundo]);
+
+  // Reset onlyMatchingTrades when ownershipStatus changes away from 'trade'
+  useEffect(() => {
+    if (ownershipStatus !== 'trade') {
+      setOnlyMatchingTrades(false);
+    }
+  }, [ownershipStatus, setOnlyMatchingTrades]);
+
+  // Reset 'wanted' specific states when ownershipStatus changes away from 'wanted'
+  useEffect(() => {
+    if (ownershipStatus !== 'wanted') {
+      setPrefLucky(false);
+      setAlreadyRegistered(false);
+      setTradeInWantedList(false);
+    }
+  }, [ownershipStatus, setPrefLucky, setAlreadyRegistered, setTradeInWantedList]);
+
   return (
     <div className="ownership-status-container">
-      {/* Left Column: Dynamic Content Based on Selection */}
       <div className="ownership-content">
         {ownershipStatus === 'owned' && (
           <OwnedSearch
@@ -38,15 +64,11 @@ const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
             onStatChange={handleStatChange}
             isHundo={isHundo}
             setIsHundo={setIsHundo}
-            isLucky={isLucky}
-            setIsLucky={setIsLucky}
           />
         )}
 
         {ownershipStatus === 'trade' && (
           <TradeSearch
-            prefLucky={prefLucky}
-            setPrefLucky={setPrefLucky}
             onlyMatchingTrades={onlyMatchingTrades}
             setOnlyMatchingTrades={setOnlyMatchingTrades}
           />
@@ -71,10 +93,12 @@ const OwnershipSearch = ({ ownershipStatus, setOwnershipStatus }) => {
           {options.map((option) => (
             <button
               key={option}
-              className={`ownership-button ${ownershipStatus === option ? 'active ' + option : 'inactive ' + option}`}
+              className={`ownership-button ${
+                ownershipStatus === option ? 'active ' + option : 'inactive ' + option
+              }`}
               onClick={() => setOwnershipStatus(option)}
             >
-              {option.charAt(0).toUpperCase() + option.slice(1)} {/* Capitalize first letter */}
+              {option.charAt(0).toUpperCase() + option.slice(1)}
             </button>
           ))}
         </div>

@@ -14,8 +14,13 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
   const [isShadow, setIsShadow] = useState(false);
   const [costume, setCostume] = useState('');
   const [selectedForm, setSelectedForm] = useState('');
-  const [selectedMoves, setSelectedMoves] = useState({ fastMove: null, chargedMove1: null, chargedMove2: null });
-  const [selectedGender, setSelectedGender] = useState('Any'); // Add selectedGender state
+  const [selectedMoves, setSelectedMoves] = useState({
+    fastMove: null,
+    chargedMove1: null,
+    chargedMove2: null,
+  });
+  const [selectedGender, setSelectedGender] = useState('Any');
+  const [selectedBackgroundId, setSelectedBackgroundId] = useState(null);
   const [city, setCity] = useState('');
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
   const [ownershipStatus, setOwnershipStatus] = useState('owned');
@@ -23,8 +28,18 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
   const [range, setRange] = useState(5);
   const [resultsLimit, setResultsLimit] = useState(5);
 
+  const [stats, setStats] = useState({ attack: null, defense: null, stamina: null });
+  const [isHundo, setIsHundo] = useState(false);
+
+  const [onlyMatchingTrades, setOnlyMatchingTrades] = useState(false);
+
+  // Add states for 'wanted' parameters
+  const [prefLucky, setPrefLucky] = useState(false);
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+  const [tradeInWantedList, setTradeInWantedList] = useState(false);
+
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(''); // State to hold error message
+  const [errorMessage, setErrorMessage] = useState('');
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -74,9 +89,10 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
 
     const pokemonData = JSON.parse(storedData).data;
 
-    const matchingPokemon = pokemonData.find((p) => 
-      p.name?.toLowerCase() === pokemon.toLowerCase() && 
-      (!selectedForm || p.form?.toLowerCase() === selectedForm.toLowerCase())
+    const matchingPokemon = pokemonData.find(
+      (p) =>
+        p.name?.toLowerCase() === pokemon.toLowerCase() &&
+        (!selectedForm || p.form?.toLowerCase() === selectedForm.toLowerCase())
     );
 
     if (!matchingPokemon) {
@@ -86,7 +102,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
 
     const { pokemon_id } = matchingPokemon;
 
-    const matchingCostume = matchingPokemon.costumes?.find(c => c.name === costume);
+    const matchingCostume = matchingPokemon.costumes?.find((c) => c.name === costume);
     const costume_id = matchingCostume ? matchingCostume.costume_id : null;
 
     const queryParams = {
@@ -94,16 +110,41 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
       shiny: isShiny,
       shadow: isShadow,
       costume_id,
-      fast_move_id: selectedMoves.fastMove,  
-      charged_move_1_id: selectedMoves.chargedMove1,  
-      charged_move_2_id: selectedMoves.chargedMove2,  
-      gender: selectedGender === 'Any' ? null : selectedGender, // Don't send gender if 'Any'
+      fast_move_id: selectedMoves.fastMove,
+      charged_move_1_id: selectedMoves.chargedMove1,
+      charged_move_2_id: selectedMoves.chargedMove2,
+      gender: selectedGender === 'Any' ? null : selectedGender,
+      background_id: selectedBackgroundId,
+      attack_iv: stats.attack !== null ? stats.attack : null,
+      defense_iv: stats.defense !== null ? stats.defense : null,
+      stamina_iv: stats.stamina !== null ? stats.stamina : null,
+      only_matching_trades: onlyMatchingTrades ? true : null,
+      pref_lucky: prefLucky ? true : null,
+      already_registered: alreadyRegistered ? true : null,
+      trade_in_wanted_list: tradeInWantedList ? true : null,
       latitude: locationCoordinates.latitude,
       longitude: locationCoordinates.longitude,
       ownership: ownershipStatus,
       range_km: range,
       limit: resultsLimit,
-    };    
+    };
+
+    // Set irrelevant parameters to null based on ownershipStatus
+    if (ownershipStatus !== 'owned') {
+      queryParams.attack_iv = null;
+      queryParams.defense_iv = null;
+      queryParams.stamina_iv = null;
+    }
+
+    if (ownershipStatus !== 'trade') {
+      queryParams.only_matching_trades = null;
+    }
+
+    if (ownershipStatus !== 'wanted') {
+      queryParams.pref_lucky = null;
+      queryParams.already_registered = null;
+      queryParams.trade_in_wanted_list = null;
+    }
 
     console.log('Search Query Parameters:', queryParams);
 
@@ -129,7 +170,8 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
               selectedMoves={selectedMoves}
               setSelectedMoves={setSelectedMoves}
               selectedGender={selectedGender}
-              setSelectedGender={setSelectedGender} // Pass setter for selectedGender
+              setSelectedGender={setSelectedGender}
+              setSelectedBackgroundId={setSelectedBackgroundId}
               setErrorMessage={setErrorMessage}
             />
           </div>
@@ -156,16 +198,25 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
             <OwnershipSearch
               ownershipStatus={ownershipStatus}
               setOwnershipStatus={setOwnershipStatus}
+              stats={stats}
+              setStats={setStats}
+              isHundo={isHundo}
+              setIsHundo={setIsHundo}
+              onlyMatchingTrades={onlyMatchingTrades}
+              setOnlyMatchingTrades={setOnlyMatchingTrades}
+              prefLucky={prefLucky}
+              setPrefLucky={setPrefLucky}
+              alreadyRegistered={alreadyRegistered}
+              setAlreadyRegistered={setAlreadyRegistered}
+              tradeInWantedList={tradeInWantedList}
+              setTradeInWantedList={setTradeInWantedList}
             />
           </div>
         </div>
       </div>
 
-      {/* Combined error message and view controls container */}
       <div className="controls-container">
-        <div className="error-message">
-          {errorMessage}
-        </div>
+        <div className="error-message">{errorMessage}</div>
         <div className="view-controls">
           <button className="view-button" onClick={() => setView('list')}>
             <FaList />

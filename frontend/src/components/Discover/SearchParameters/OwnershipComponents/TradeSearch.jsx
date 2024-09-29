@@ -1,4 +1,6 @@
 // TradeSearch.jsx
+// TradeSearch.jsx
+
 import React from 'react';
 import './TradeSearch.css'; // Import the specific CSS for TradeSearch
 
@@ -12,7 +14,7 @@ const TradeSearch = ({ onlyMatchingTrades, setOnlyMatchingTrades }) => {
           onChange={(e) => setOnlyMatchingTrades(e.target.checked)}
         />
         <label>
-          Include Only Results who want a Pokémon in your Trade List
+          Include Only Results Who Want a Pokémon in Your Trade List
         </label>
       </div>
     </div>

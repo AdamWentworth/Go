@@ -1,0 +1,55 @@
+frontend/
+│
+├── .env.development       
+├── .env.production        
+├── .env.test
+├── .gitignore
+├── package-lock.json      
+├── package.json
+├── README.md
+│
+├── /web                    # Web-specific frontend code
+│   ├── build/
+│   ├── public/             # Web-specific public folder
+│   │   ├── favicon.ico
+│   │   ├── index.html      # Web-specific HTML template
+│   │   ├── manifest.json   # Web-specific manifest for PWAs
+│   │   ├── robots.txt
+│   │   ├── sw.js           # Service worker, only needed for web
+│   │   └── images/         # Web-specific images, if any
+│   ├── src/
+│   │   ├── index.js        # Web-specific entry point
+│   │   ├── App.js
+│   │   └── components/     
+│   └── package.json
+│
+├── /mobile                 # Mobile-specific frontend code (React Native)
+│   ├── android/
+│   ├── ios/
+│   ├── src/
+│   │   ├── index.js        # Mobile-specific entry point
+│   │   ├── App.js
+│   │   └── components/     
+│   └── package.json
+│
+├── /desktop                # Desktop-specific frontend code (Electron or similar)
+│   ├── src/
+│   │   ├── index.js        # Desktop-specific entry point
+│   │   ├── App.js
+│   │   └── components/     
+│   └── package.json
+│
+├── /shared                 # Shared code and assets for all platforms
+│   ├── /components         # Shared React components
+│   ├── /contexts           # Shared context providers and hooks
+│   ├── /hooks              # Shared hooks
+│   ├── /services           # Shared services (e.g., API calls)
+│   ├── /utils              # Shared utility functions
+│   ├── /assets             # Shared assets (images, CSS, etc.)
+│   │   ├── logo.svg
+│   │   ├── theme.css       # Shared styles like brand colors
+│   │   └── ...
+│   └── /styles             # Shared styles that are not platform-specific
+│       ├── light-mode.css  # Shared CSS for light mode, used across platforms
+│       └── dark-mode.css
+│

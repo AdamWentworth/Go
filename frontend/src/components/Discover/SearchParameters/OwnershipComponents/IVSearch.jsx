@@ -1,50 +1,14 @@
 // IVSearch.jsx
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import './IVSearch.css';
 
-const IVSearch = ({ stats, onStatChange = () => {} }) => {
-  const [localStats, setLocalStats] = useState({
-    Attack: stats.attack !== undefined ? stats.attack : '',
-    Defense: stats.defense !== undefined ? stats.defense : '',
-    Stamina: stats.stamina !== undefined ? stats.stamina : '',
-  });
-
-  const [isHundo, setIsHundo] = useState(false);
-
-  useEffect(() => {
-    // Initialize local stats based on props
-    setLocalStats({
-      Attack: stats.attack !== undefined ? stats.attack : '',
-      Defense: stats.defense !== undefined ? stats.defense : '',
-      Stamina: stats.stamina !== undefined ? stats.stamina : '',
-    });
-  }, [stats.attack, stats.defense, stats.stamina]);
-
-  useEffect(() => {
-    if (isHundo) {
-      // If Hundo is checked, set all stats to 15
-      const hundoStats = {
-        Attack: 15,
-        Defense: 15,
-        Stamina: 15,
-      };
-      setLocalStats(hundoStats);
-      onStatChange(hundoStats);
-    }
-    // If Hundo is unchecked, stats should remain as is (no changes)
-  }, [isHundo, onStatChange]);
-
+const IVSearch = ({ stats = {}, onStatChange = () => {}, isHundo }) => {
   const handleStatChange = (event, type) => {
-    let value = event.target.value;
-    if (value === '') {
-      setLocalStats({ ...localStats, [type]: '' });
-      onStatChange({ ...localStats, [type]: null });
-    } else {
-      value = parseInt(value, 10);
-      const updatedStats = { ...localStats, [type]: isNaN(value) ? '' : Math.max(0, Math.min(15, value)) };
-      setLocalStats(updatedStats);
-      onStatChange(updatedStats);
-    }
+    const value =
+      event.target.value === ''
+        ? ''
+        : Math.max(0, Math.min(15, parseInt(event.target.value, 10)));
+    onStatChange(type, value);
   };
 
   const renderStatField = (type, label) => (
@@ -53,20 +17,20 @@ const IVSearch = ({ stats, onStatChange = () => {} }) => {
       <div className="stat-content">
         <input
           type="number"
-          value={localStats[type]}
+          value={stats[type] !== undefined && stats[type] !== null ? stats[type] : ''}
           onChange={(event) => handleStatChange(event, type)}
           min="0"
           max="15"
           className="stat-input"
           placeholder=""
-          disabled={isHundo} // Disable input if Hundo is checked
+          disabled={isHundo} // Disable input when Hundo is on
         />
       </div>
       <div className="stat-bar-bg"></div>
-      {localStats[type] !== '' && (
+      {stats[type] !== '' && stats[type] !== null && (
         <div
-          className={`stat-bar ${localStats[type] === 15 ? 'full' : ''}`}
-          style={{ width: `${(localStats[type] / 15) * 75}%` }}
+          className={`stat-bar ${stats[type] === 15 ? 'full' : ''}`}
+          style={{ width: `${(stats[type] / 15) * 75}%` }}
         ></div>
       )}
     </div>
@@ -74,9 +38,9 @@ const IVSearch = ({ stats, onStatChange = () => {} }) => {
 
   return (
     <div className="stat-container">
-      {renderStatField('Attack', 'Attack')}
-      {renderStatField('Defense', 'Defense')}
-      {renderStatField('Stamina', 'HP')}
+      {renderStatField('attack', 'Attack')}
+      {renderStatField('defense', 'Defense')}
+      {renderStatField('stamina', 'HP')}
     </div>
   );
 };

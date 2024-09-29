@@ -27,6 +27,7 @@ const VariantSearch = ({
   selectedGender, 
   setSelectedGender,
   setErrorMessage,
+  setSelectedBackgroundId,
 }) => {
   const { error, handleError, clearError } = useErrorHandler();
   const [availableForms, setAvailableForms] = useState([]);
@@ -93,6 +94,7 @@ const VariantSearch = ({
 
   const handleBackgroundChange = (background) => {
     setSelectedBackground(background);
+    setSelectedBackgroundId(background ? background.background_id : null); // Pass the background_id or null to the parent
     setShowBackgroundOverlay(false); // Hide the overlay when a background is selected
   };
 
