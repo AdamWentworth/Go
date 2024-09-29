@@ -19,6 +19,7 @@ function MainButtons({ navbar }) {
             <Link to="/discover"> 
                 <button className="mainButton discover-btn">Discover</button>
             </Link>
+                {/* <button className="mainButton leaderboards-btn">Leaderboards</button> */}
         </div>
     );
 }

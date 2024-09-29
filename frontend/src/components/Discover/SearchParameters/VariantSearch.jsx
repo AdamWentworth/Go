@@ -1,5 +1,7 @@
 // VariantSearch.jsx
 
+// VariantSearch.jsx
+
 import React, { useState, useEffect } from 'react';
 import validatePokemon from '../utils/validatePokemon';
 import { updateImage } from '../utils/updateImage';
@@ -53,7 +55,7 @@ const VariantSearch = ({
     }
   }, []);
 
-  const handleValidation = (name, shinyChecked, shadowChecked, selectedCostume, form) => {
+  const handleValidation = (name, shinyChecked, shadowChecked, selectedCostume, form, selectedGender) => {
     const { error, availableCostumes, availableForms } = validatePokemon(
       pokemonData,
       name,
@@ -74,15 +76,16 @@ const VariantSearch = ({
       (a, b) => new Date(a.date_available) - new Date(b.date_available)
     );
     setAvailableCostumes(sortedCostumes);
-
+  
     const filteredForms = availableForms
       .filter((form) => form && form.trim().toLowerCase() !== '')
       .map((form) => (form.toLowerCase() === 'none' ? 'None' : form));
-
+  
     setAvailableForms(filteredForms.length > 0 ? filteredForms : []);
-
+  
     if (!error) {
-      const url = updateImage(pokemonData, name, shinyChecked, shadowChecked, selectedCostume, form);
+      // Update image with selectedGender as a parameter
+      const url = updateImage(pokemonData, name, shinyChecked, shadowChecked, selectedCostume, form, selectedGender);
       setImageUrl(url);
       setImageError(false); // Reset the image error when updating the image URL
     }
@@ -91,6 +94,14 @@ const VariantSearch = ({
   const handleGenderChange = (gender) => {
     setSelectedGender(gender); // Update the selectedGender state
   };
+
+  // Use effect to trigger validation when selectedGender changes
+  useEffect(() => {
+    // Only call handleValidation if a Pokémon is selected
+    if (pokemon) {
+      handleValidation(pokemon, isShiny, isShadow, costume, selectedForm, selectedGender);
+    }
+  }, [selectedGender, isShiny, isShadow, costume, selectedForm]);
 
   const handleBackgroundChange = (background) => {
     setSelectedBackground(background);
@@ -117,7 +128,7 @@ const VariantSearch = ({
         setCostume(null); // Reset costume to null
         setSelectedBackground(null); // Reset background to null
       } else {
-        handleValidation(newPokemon, isShiny, isShadow, costume, '');
+        handleValidation(newPokemon, isShiny, isShadow, costume, '', selectedGender); // Pass selectedGender
       }
     }
   };
@@ -125,13 +136,13 @@ const VariantSearch = ({
   const handleShinyChange = () => {
     const shinyChecked = !isShiny;
     setIsShiny(shinyChecked);
-    handleValidation(pokemon, shinyChecked, isShadow, costume, selectedForm);
-  };
+    handleValidation(pokemon, shinyChecked, isShadow, costume, selectedForm, selectedGender); // Pass selectedGender
+  };  
 
   const handleShadowChange = () => {
     const shadowChecked = !isShadow;
     setIsShadow(shadowChecked);
-    handleValidation(pokemon, isShiny, shadowChecked, costume, selectedForm);
+    handleValidation(pokemon, isShiny, shadowChecked, costume, selectedForm, selectedGender); // Pass selectedGender
   };
 
   const handleCostumeToggle = () => {
@@ -151,12 +162,12 @@ const VariantSearch = ({
   const handleCostumeChange = (e) => {
     const selectedCostume = e.target.value;
     setCostume(selectedCostume);
-    handleValidation(pokemon, isShiny, isShadow, selectedCostume, selectedForm);
+    handleValidation(pokemon, isShiny, isShadow, selectedCostume, selectedForm, selectedGender); // Pass selectedGender
   };
 
   const handleFormChange = (e) => {
     setSelectedForm(e.target.value);
-    handleValidation(pokemon, isShiny, isShadow, costume, e.target.value);
+    handleValidation(pokemon, isShiny, isShadow, costume, e.target.value, selectedGender); // Pass selectedGender
   };
 
   const handleMovesChange = (moves) => {
@@ -272,6 +283,7 @@ const VariantSearch = ({
               {/* Gender Search Component */}
               <GenderSearch
                 genderRate={currentPokemonData ? currentPokemonData.gender_rate : null}
+                selectedGender={selectedGender} // Pass the current selectedGender state
                 onGenderChange={handleGenderChange} // Pass handleGenderChange to GenderSearch
               />
               {/* Background Button to Open Overlay */}

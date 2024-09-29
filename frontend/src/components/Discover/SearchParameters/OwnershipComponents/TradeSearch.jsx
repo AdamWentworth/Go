@@ -1,5 +1,4 @@
 // TradeSearch.jsx
-// TradeSearch.jsx
 
 import React from 'react';
 import './TradeSearch.css'; // Import the specific CSS for TradeSearch

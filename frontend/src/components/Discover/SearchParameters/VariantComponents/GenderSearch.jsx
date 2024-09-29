@@ -2,18 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import './GenderSearch.css';
 
-const GenderSearch = ({ genderRate, onGenderChange }) => {
+const GenderSearch = ({ genderRate, selectedGender, onGenderChange }) => {
   const [availableGenders, setAvailableGenders] = useState([]);
-  const [selectedGender, setSelectedGender] = useState('Neutral');
 
   useEffect(() => {
     if (!genderRate) {
-      // If genderRate is null or undefined, set empty genders
       setAvailableGenders([]);
       return;
     }
 
-    // Remove letters and extract only numeric values
+    // Parse genderRate and set available genders
     const parseGenderRate = (rate) => {
       const match = rate.match(/(\d+)/);
       return match ? parseInt(match[0], 10) : NaN;
@@ -27,27 +25,21 @@ const GenderSearch = ({ genderRate, onGenderChange }) => {
     const genders = [];
 
     if (genderlessRate === 100) {
-      setAvailableGenders([]); // If genderless, don't show the component
+      setAvailableGenders([]);
     } else {
       if (maleRate > 0) genders.push('Male');
       if (femaleRate > 0) genders.push('Female');
       setAvailableGenders(genders);
     }
-
-    // Default to 'Neutral' if both genders are available
-    setSelectedGender(genders.length === 2 ? 'Neutral' : genders[0]);
   }, [genderRate]);
 
   const toggleGender = () => {
     if (availableGenders.length === 2) {
-      if (selectedGender === 'Neutral') {
-        setSelectedGender('Male');
+      if (selectedGender === 'Any') {
         onGenderChange('Male');
       } else if (selectedGender === 'Male') {
-        setSelectedGender('Female');
         onGenderChange('Female');
       } else {
-        setSelectedGender('Neutral');
         onGenderChange('Any');
       }
     }
@@ -63,14 +55,13 @@ const GenderSearch = ({ genderRate, onGenderChange }) => {
     }
   };
 
-  // Render the component even if there are no genders, to reserve space
   return (
-    <div 
-      className="gender-toggle-container" 
-      onClick={toggleGender} 
-      style={{ 
-        cursor: availableGenders.length === 2 ? 'pointer' : 'default', 
-        minHeight: '40px' // Ensure the space is always reserved
+    <div
+      className="gender-toggle-container"
+      onClick={toggleGender}
+      style={{
+        cursor: availableGenders.length === 2 ? 'pointer' : 'default',
+        minHeight: '40px'
       }}
     >
       {availableGenders.length > 0 ? (
