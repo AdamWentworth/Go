@@ -8,12 +8,6 @@ export const updateImage = (pokemonData, name, shinyChecked, shadowChecked, sele
   if (matchedPokemon) {
     let url = matchedPokemon.image_url;
     
-    // Debugging Statements
-    console.log("Matched Pokemon:", matchedPokemon);
-    console.log("Selected Gender:", selectedGender);
-    console.log("Shiny Checked:", shinyChecked);
-    console.log("Shadow Checked:", shadowChecked);
-    
     // Determine if we need to use female data
     const isFemale = selectedGender === "Female";
     const hasFemaleData = matchedPokemon.female_data !== undefined;
