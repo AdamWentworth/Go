@@ -119,9 +119,15 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 	chargedMove1IDStr := c.Query("charged_move_1_id")
 	chargedMove2IDStr := c.Query("charged_move_2_id")
 	genderStr := c.Query("gender")
+	alreadyRegisteredStr := c.Query("already_registered")
+	attackIVStr := c.Query("attack_iv")
+	defenseIVStr := c.Query("defense_iv")
+	staminaIVStr := c.Query("stamina_iv")
+	backgroundIDStr := c.Query("background_id")
+	prefLuckyStr := c.Query("pref_lucky")
 
-	logrus.Infof("Received search query with params: pokemon_id=%s, shiny=%s, shadow=%s, costume_id=%s, ownership=%s, limit=%s, range_km=%s, latitude=%s, longitude=%s, fast_move_id=%s, charged_move_1_id=%s, charged_move_2_id=%s, gender=%s",
-		pokemonIDStr, shinyStr, shadowStr, costumeIDStr, ownership, limitStr, rangeKMStr, latitudeStr, longitudeStr, fastMoveIDStr, chargedMove1IDStr, chargedMove2IDStr, genderStr)
+	logrus.Infof("Received search query with params: pokemon_id=%s, shiny=%s, shadow=%s, costume_id=%s, ownership=%s, limit=%s, range_km=%s, latitude=%s, longitude=%s, fast_move_id=%s, charged_move_1_id=%s, charged_move_2_id=%s, gender=%s, already_registered=%s, attack_iv=%s, defense_iv=%s, stamina_iv=%s, background_id=%s, pref_lucky=%s",
+		pokemonIDStr, shinyStr, shadowStr, costumeIDStr, ownership, limitStr, rangeKMStr, latitudeStr, longitudeStr, fastMoveIDStr, chargedMove1IDStr, chargedMove2IDStr, genderStr, alreadyRegisteredStr, attackIVStr, defenseIVStr, staminaIVStr, backgroundIDStr, prefLuckyStr)
 
 	// Parse parameters into appropriate types
 	var pokemonID, fastMoveID, chargedMove1ID, chargedMove2ID int
@@ -177,6 +183,35 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		}
 	}
 
+	// Handle attack_iv, defense_iv, and stamina_iv parameters
+	var attackIV, defenseIV, staminaIV *int
+	if attackIVStr != "" {
+		iv, err := strconv.Atoi(attackIVStr)
+		if err != nil {
+			logrus.Error("Invalid attack_iv value: ", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid attack_iv value"})
+		}
+		attackIV = &iv
+	}
+
+	if defenseIVStr != "" {
+		iv, err := strconv.Atoi(defenseIVStr)
+		if err != nil {
+			logrus.Error("Invalid defense_iv value: ", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid defense_iv value"})
+		}
+		defenseIV = &iv
+	}
+
+	if staminaIVStr != "" {
+		iv, err := strconv.Atoi(staminaIVStr)
+		if err != nil {
+			logrus.Error("Invalid stamina_iv value: ", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid stamina_iv value"})
+		}
+		staminaIV = &iv
+	}
+
 	// Determine the value of costumeID based on the input
 	var costumeID *int
 	if costumeIDStr != "" && costumeIDStr != "null" {
@@ -208,6 +243,39 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		if genderStr != "Any" {
 			gender = &genderStr
 		}
+	}
+
+	// Parse already_registered parameter
+	var alreadyRegistered *bool
+	if alreadyRegisteredStr != "" {
+		ar, err := strconv.ParseBool(alreadyRegisteredStr)
+		if err != nil {
+			logrus.Error("Invalid already_registered value: ", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid already_registered value"})
+		}
+		alreadyRegistered = &ar
+	}
+
+	// Parse background_id
+	var backgroundID *int
+	if backgroundIDStr != "" {
+		bid, err := strconv.Atoi(backgroundIDStr)
+		if err != nil {
+			logrus.Error("Invalid background_id value: ", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid background_id value"})
+		}
+		backgroundID = &bid
+	}
+
+	// Parse pref_lucky parameter
+	var prefLucky *bool
+	if prefLuckyStr != "" {
+		pl, err := strconv.ParseBool(prefLuckyStr)
+		if err != nil {
+			logrus.Error("Invalid pref_lucky value: ", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid pref_lucky value"})
+		}
+		prefLucky = &pl
 	}
 
 	var limit int = 25 // Default limit
@@ -270,7 +338,35 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		query = query.Where("gender = ?", *gender)
 	}
 
-	// Ownership status
+	// Apply already_registered logic
+	if alreadyRegistered != nil {
+		query = query.Where("registered = ?", *alreadyRegistered)
+	}
+
+	// Apply attack_iv, defense_iv, and stamina_iv filters
+	if attackIV != nil {
+		query = query.Where("attack_iv = ?", *attackIV)
+	}
+
+	if defenseIV != nil {
+		query = query.Where("defense_iv = ?", *defenseIV)
+	}
+
+	if staminaIV != nil {
+		query = query.Where("stamina_iv = ?", *staminaIV)
+	}
+
+	// Apply background_id filter
+	if backgroundID != nil {
+		query = query.Where("location_card = ?", *backgroundID)
+	}
+
+	// Apply pref_lucky logic
+	if prefLucky != nil {
+		query = query.Where("pref_lucky = ?", *prefLucky)
+	}
+
+	// Apply ownership status
 	if ownership != "" {
 		switch ownership {
 		case "trade":
@@ -296,20 +392,16 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		var chargedMoveArgs []interface{}
 
 		if chargedMove1IDStr != "" && chargedMove2IDStr != "" {
-			// Both charged moves are present, add OR logic to match any order
 			chargedMoveQuery = "(charged_move1_id = ? AND charged_move2_id = ?) OR (charged_move1_id = ? AND charged_move2_id = ?)"
 			chargedMoveArgs = append(chargedMoveArgs, chargedMove1ID, chargedMove2ID, chargedMove2ID, chargedMove1ID)
 		} else if chargedMove1IDStr != "" {
-			// Only charged_move1_id is present, match against either move slot
 			chargedMoveQuery = "charged_move1_id = ? OR charged_move2_id = ?"
 			chargedMoveArgs = append(chargedMoveArgs, chargedMove1ID, chargedMove1ID)
 		} else if chargedMove2IDStr != "" {
-			// Only charged_move2_id is present, match against either move slot
 			chargedMoveQuery = "charged_move1_id = ? OR charged_move2_id = ?"
 			chargedMoveArgs = append(chargedMoveArgs, chargedMove2ID, chargedMove2ID)
 		}
 
-		// Apply the constructed query and arguments
 		query = query.Where(chargedMoveQuery, chargedMoveArgs...)
 	}
 
@@ -318,13 +410,13 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		query = query.Joins("User").
 			Where("User.latitude IS NOT NULL AND User.longitude IS NOT NULL").
 			Where(`
-            6371 * 2 * ASIN(
-                SQRT(
-                    POWER(SIN(RADIANS(User.latitude - ?) / 2), 2) +
-                    COS(RADIANS(?)) * COS(RADIANS(User.latitude)) *
-                    POWER(SIN(RADIANS(User.longitude - ?) / 2), 2)
-                )
-            ) < ?`, latitude, latitude, longitude, rangeKM)
+                6371 * 2 * ASIN(
+                    SQRT(
+                        POWER(SIN(RADIANS(User.latitude - ?) / 2), 2) +
+                        COS(RADIANS(?)) * COS(RADIANS(User.latitude)) *
+                        POWER(SIN(RADIANS(User.longitude - ?) / 2), 2)
+                    )
+                ) < ?`, latitude, latitude, longitude, rangeKM)
 	}
 
 	// Apply the limit
