@@ -27,16 +27,15 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
   const [coordinates, setCoordinates] = useState({ latitude: null, longitude: null });
   const [range, setRange] = useState(5);
   const [resultsLimit, setResultsLimit] = useState(5);
-
   const [stats, setStats] = useState({ attack: null, defense: null, stamina: null });
   const [isHundo, setIsHundo] = useState(false);
-
   const [onlyMatchingTrades, setOnlyMatchingTrades] = useState(false);
 
   // Add states for 'wanted' parameters
   const [prefLucky, setPrefLucky] = useState(false);
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const [tradeInWantedList, setTradeInWantedList] = useState(false);
+  const [friendshipLevel, setFriendshipLevel] = useState(0);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -47,19 +46,19 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
 
   const handleSearch = async () => {
     setErrorMessage('');
-
+  
     if (!pokemon) {
       setErrorMessage('Please provide a Pokémon name.');
       return;
     }
-
+  
     if (!useCurrentLocation && !city) {
       setErrorMessage('Please provide a location or use your current location.');
       return;
     }
-
+  
     let locationCoordinates = coordinates;
-
+  
     if (!useCurrentLocation) {
       try {
         const query = city;
@@ -67,7 +66,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
           `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1`,
           { withCredentials: false }
         );
-
+  
         if (response.data?.features?.length > 0) {
           const [lon, lat] = response.data.features[0].geometry.coordinates;
           locationCoordinates = { latitude: lat, longitude: lon };
@@ -80,31 +79,31 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
         return;
       }
     }
-
+  
     const storedData = localStorage.getItem('pokemonData');
     if (!storedData) {
       setErrorMessage('No Pokémon data found in local storage.');
       return;
     }
-
+  
     const pokemonData = JSON.parse(storedData).data;
-
+  
     const matchingPokemon = pokemonData.find(
       (p) =>
         p.name?.toLowerCase() === pokemon.toLowerCase() &&
         (!selectedForm || p.form?.toLowerCase() === selectedForm.toLowerCase())
     );
-
+  
     if (!matchingPokemon) {
       setErrorMessage('No matching Pokémon found.');
       return;
     }
-
+  
     const { pokemon_id } = matchingPokemon;
-
+  
     const matchingCostume = matchingPokemon.costumes?.find((c) => c.name === costume);
     const costume_id = matchingCostume ? matchingCostume.costume_id : null;
-
+  
     const queryParams = {
       pokemon_id,
       shiny: isShiny,
@@ -120,6 +119,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
       stamina_iv: stats.stamina !== null ? stats.stamina : null,
       only_matching_trades: onlyMatchingTrades ? true : null,
       pref_lucky: prefLucky ? true : null,
+      friendship_level: friendshipLevel,
       already_registered: alreadyRegistered ? true : null,
       trade_in_wanted_list: tradeInWantedList ? true : null,
       latitude: locationCoordinates.latitude,
@@ -128,28 +128,30 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
       range_km: range,
       limit: resultsLimit,
     };
-
+  
     // Set irrelevant parameters to null based on ownershipStatus
     if (ownershipStatus !== 'owned') {
       queryParams.attack_iv = null;
       queryParams.defense_iv = null;
       queryParams.stamina_iv = null;
     }
-
+  
     if (ownershipStatus !== 'trade') {
       queryParams.only_matching_trades = null;
     }
-
+  
     if (ownershipStatus !== 'wanted') {
       queryParams.pref_lucky = null;
+      queryParams.friendship_level = null; 
       queryParams.already_registered = null;
       queryParams.trade_in_wanted_list = null;
     }
-
+  
     console.log('Search Query Parameters:', queryParams);
-
+  
     onSearch(queryParams);
   };
+  
 
   return (
     <div className="pokemon-search-bar sticky">
@@ -210,6 +212,8 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
               setAlreadyRegistered={setAlreadyRegistered}
               tradeInWantedList={tradeInWantedList}
               setTradeInWantedList={setTradeInWantedList}
+              friendshipLevel={friendshipLevel}
+              setFriendshipLevel={setFriendshipLevel}
             />
           </div>
         </div>

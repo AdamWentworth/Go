@@ -1,18 +1,29 @@
 // WantedSearch.jsx
 import React from 'react';
-import './WantedSearch.css'; // Import the specific CSS for WantedSearch
+import './WantedSearch.css'; 
+import FriendshipSearch from './FriendshipSearch';
 
-const WantedSearch = ({ prefLucky, setPrefLucky, alreadyRegistered, setAlreadyRegistered, tradeInWantedList, setTradeInWantedList }) => {
+const WantedSearch = ({ 
+  prefLucky, 
+  setPrefLucky, 
+  alreadyRegistered, 
+  setAlreadyRegistered, 
+  tradeInWantedList, 
+  setTradeInWantedList,
+  friendshipLevel, 
+  setFriendshipLevel 
+}) => {
   return (
     <div className="wanted-search-options">
-      <div className="field field-lucky">
-        <input
-          type="checkbox"
-          checked={prefLucky}
-          onChange={(e) => setPrefLucky(e.target.checked)}
+      <div className="search-row">
+        <FriendshipSearch 
+          friendshipLevel={friendshipLevel}
+          setFriendshipLevel={setFriendshipLevel}
+          prefLucky={prefLucky}
+          setPrefLucky={setPrefLucky}
         />
-        <label>Preferred Lucky</label>
       </div>
+
       <div className="field field-registered">
         <input
           type="checkbox"
@@ -21,6 +32,7 @@ const WantedSearch = ({ prefLucky, setPrefLucky, alreadyRegistered, setAlreadyRe
         />
         <label>Already Registered?</label>
       </div>
+
       <div className="field field-wanted">
         <input
           type="checkbox"

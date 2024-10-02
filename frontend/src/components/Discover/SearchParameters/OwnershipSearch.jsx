@@ -1,7 +1,7 @@
 // OwnershipSearch.jsx
 
-import React, { useState, useEffect } from 'react';
-import './OwnershipSearch.css'; // Import the CSS file for OwnershipSearch styling
+import React, { useEffect } from 'react';
+import './OwnershipSearch.css'; 
 import OwnedSearch from './OwnershipComponents/OwnedSearch';
 import TradeSearch from './OwnershipComponents/TradeSearch';
 import WantedSearch from './OwnershipComponents/WantedSearch';
@@ -21,8 +21,10 @@ const OwnershipSearch = ({
   setAlreadyRegistered,
   tradeInWantedList,
   setTradeInWantedList,
+  friendshipLevel,
+  setFriendshipLevel,
 }) => {
-  const options = ['owned', 'trade', 'wanted']; // Define the options
+  const options = ['owned', 'trade', 'wanted'];
 
   const handleStatChange = (statName, value) => {
     setStats((prevStats) => ({
@@ -31,7 +33,6 @@ const OwnershipSearch = ({
     }));
   };
 
-  // Reset IVs and isHundo when ownershipStatus changes away from 'owned'
   useEffect(() => {
     if (ownershipStatus !== 'owned') {
       setStats({ attack: null, defense: null, stamina: null });
@@ -39,21 +40,20 @@ const OwnershipSearch = ({
     }
   }, [ownershipStatus, setStats, setIsHundo]);
 
-  // Reset onlyMatchingTrades when ownershipStatus changes away from 'trade'
   useEffect(() => {
     if (ownershipStatus !== 'trade') {
       setOnlyMatchingTrades(false);
     }
   }, [ownershipStatus, setOnlyMatchingTrades]);
 
-  // Reset 'wanted' specific states when ownershipStatus changes away from 'wanted'
   useEffect(() => {
     if (ownershipStatus !== 'wanted') {
       setPrefLucky(false);
       setAlreadyRegistered(false);
       setTradeInWantedList(false);
+      setFriendshipLevel(0);  // Reset friendship level when not wanted
     }
-  }, [ownershipStatus, setPrefLucky, setAlreadyRegistered, setTradeInWantedList]);
+  }, [ownershipStatus, setPrefLucky, setAlreadyRegistered, setTradeInWantedList, setFriendshipLevel]);
 
   return (
     <div className="ownership-status-container">
@@ -82,20 +82,19 @@ const OwnershipSearch = ({
             setAlreadyRegistered={setAlreadyRegistered}
             tradeInWantedList={tradeInWantedList}
             setTradeInWantedList={setTradeInWantedList}
+            friendshipLevel={friendshipLevel}
+            setFriendshipLevel={setFriendshipLevel}
           />
         )}
       </div>
 
-      {/* Right Column: Static Ownership Options Buttons */}
       <div className="ownership-options-container">
         <h3 className="ownership-header">Ownership Status</h3>
         <div className="ownership-options">
           {options.map((option) => (
             <button
               key={option}
-              className={`ownership-button ${
-                ownershipStatus === option ? 'active ' + option : 'inactive ' + option
-              }`}
+              className={`ownership-button ${ownershipStatus === option ? 'active ' + option : 'inactive ' + option}`}
               onClick={() => setOwnershipStatus(option)}
             >
               {option.charAt(0).toUpperCase() + option.slice(1)}

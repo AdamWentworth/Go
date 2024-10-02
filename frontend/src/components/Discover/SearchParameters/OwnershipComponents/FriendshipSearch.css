@@ -1,0 +1,42 @@
+/* FriendshipSearch.css */
+
+.friendship-search-options {
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center items horizontally */
+    transform: scale(0.85);
+}
+
+.friendship-search-options .hearts-lucky-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.friendship-search-options .hearts img {
+    width: 32px;
+    height: 32px;
+    align-items: center;
+}
+
+.friendship-search-options .hearts {
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Center items vertically */
+}
+
+.friendship-search-options .friendship-slider {
+    width: 100%;
+}
+
+.friendship-search-options .lucky-icon {
+    width: 60px;
+    height: 60px;
+    margin-left: 10px; /* Add some space between the hearts and the icon */
+}
+
+.friendship-search-options .grey-out {
+    filter: grayscale(100%);
+    opacity: 0.5;
+}
