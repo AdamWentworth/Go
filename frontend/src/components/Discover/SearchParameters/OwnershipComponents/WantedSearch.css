@@ -9,7 +9,7 @@
     height: 100%; /* Set container height */
     position: relative; /* Use relative position for easier adjustment */
     text-align: center; /* Center text within the label */
-    margin-top: 20px;
+    margin-top: 5px;
     margin-right: -50px
   }
   
@@ -34,4 +34,8 @@
   
   .wanted-search-options .field-wanted {
     margin-bottom: 0px;
+  }
+
+  .wanted-search-options .search-row {
+    margin-top: -10px;
   }
