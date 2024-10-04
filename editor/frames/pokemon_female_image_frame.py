@@ -151,9 +151,14 @@ class PokemonFemaleImageFrame:
             # Add shadow background if it's a shadow or shiny shadow image
             if is_shadow:
                 shadow_background = Image.open(self.shadow_background_path).convert("RGBA")
-                shadow_background = shadow_background.resize((240, 240))  # Resize shadow background to fit the base image
-                # Paste shadow background behind the Pokémon image
-                base_image.paste(shadow_background, (0, 0), shadow_background)
+                target_width = 240
+                shadow_background = shadow_background.resize((target_width, int((target_width / shadow_background.width) * shadow_background.height)))
+
+                # Place shadow effect on the base image with a downward offset
+                se_width, se_height = shadow_background.size
+                vertical_offset = 20
+                se_position = ((base_image.width - se_width) // 2, (base_image.height - se_height) // 2 + vertical_offset)
+                base_image.paste(shadow_background, se_position, shadow_background)
 
             # Now place the Pokémon image on top of the shadow background
             pokemon_image = pokemon_image.convert("RGBA")  # Ensure Pokémon image has an alpha channel
@@ -162,13 +167,15 @@ class PokemonFemaleImageFrame:
             # Add shadow icon if it's a shadow or shiny shadow image
             if is_shadow:
                 shadow_icon = Image.open(self.shadow_icon_path).convert("RGBA")
-                shadow_icon = shadow_icon.resize((60, 60))  # Resize shadow icon
-                base_image.paste(shadow_icon, (0, base_image.height - 60), shadow_icon)  # Paste shadow icon at bottom left
+
+                # Get shadow icon size and place it at the bottom left of the base image
+                si_width, si_height = shadow_icon.size
+                si_position = (0, base_image.height - si_height)
+                base_image.paste(shadow_icon, si_position, shadow_icon)
 
             # Add shiny icon if it's a shiny or shiny shadow image
             if is_shiny:
                 shiny_icon = Image.open(self.shiny_icon_path).convert("RGBA")
-                shiny_icon = shiny_icon.resize((60, 60))  # Resize shiny icon
                 base_image.paste(shiny_icon, (0, 0), shiny_icon)  # Paste shiny icon at top left
 
             return base_image  # Return the combined image

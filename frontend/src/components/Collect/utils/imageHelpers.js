@@ -25,7 +25,12 @@ export function determineImageUrl(isFemale, pokemon) {
         }
     }
 
-    // Handle other cases (shadow, shiny, default)
+    // Ensure that shiny and shadow are both handled correctly
+    if (variantType.includes('shadow') && variantType.includes('shiny')) {
+        return pokemon.female_data.shiny_shadow_image_url || pokemon.image_url_shiny_shadow;
+    }
+
+    // Handle shadow or shiny separately
     if (variantType.includes('shadow')) {
         return pokemon.shiny
             ? pokemon.female_data.shiny_shadow_image_url || pokemon.image_url_shiny_shadow
