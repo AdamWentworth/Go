@@ -70,13 +70,15 @@
     .mainButtonsContainer {
         flex-direction: column; 
         height: auto; /* Let height adjust based on content */
-        margin-top: 0px;
+        margin-top: -10px;
+    }
+    .mainButtonsContainerNavbar {
+        padding:0; 
     }
     .mainButtonsContainerNavbar .mainButton {
-        font-size: 1rem;  /* Smaller font size for compact appearance */
+        font-size: 0.7rem;  /* Smaller font size for compact appearance */
         padding: 0.5rem 1rem;  /* Reduce padding to make buttons smaller */
         border-radius: 5px;
-        margin-bottom: -10px;  /* Optionally adjust border-radius for aesthetic consistency */
     }
     .mainButton {
         font-size: 2rem; /* Adjust font size for smaller screens */
@@ -96,6 +98,9 @@
         border-radius: 5px;
         margin-bottom: -10px;  /* Optionally adjust border-radius for aesthetic consistency */
     }
+    .mainButtonsContainerNavbar {
+        padding-top: 0px; 
+    }
     .mainButton {
         font-size: 3rem; /* Adjust font size for smaller screens */
     }
@@ -112,11 +117,18 @@
     .mainButtonsContainerNavbar .mainButton {
         border-radius: 5px;
         margin-bottom: -10px;  /* Optionally adjust border-radius for aesthetic consistency */
+        font-size: 2.5rem;
+    }
+
+    .mainButtonsContainerNavbar {
+        padding-top: 0px; 
     }
     .mainButton {
-        font-size: 2rem;  /* Increase font size */
+        font-size: 5rem;  /* Increase font size */
         padding: 2.25rem 2.5rem;
     }
+
+    
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {

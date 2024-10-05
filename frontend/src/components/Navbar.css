@@ -1,38 +1,47 @@
 /* Navbar.css */
+/* General navbar styling */
 .logo-container img {
     width: 80px;
     height: 80px;
     margin-left: 20px;
     margin-top: -15px;
     margin-bottom: -15px;
-
 }
+
 .navbar {
     display: flex;
     align-items: center;
     background-color: #111;
     padding-top: 10px;
-    justify-content: center;
-    min-height: 68px
+    justify-content: space-between;
+    min-height: 68px;
+}
+
+/* Navbar main: align title and buttons to the left */
+.navbar-main {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-grow: 1; /* Make sure it takes the left side */
 }
 
 .navbar h1 {
     color: white;
-    margin: 0; /* Set default margin to 0 */
+    margin: 0;
 }
 
 .title-container {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    margin-right: 20px; /* Add space between title and buttons */
 }
 
 .navbar-buttons {
     display: flex;
     gap: 10px;
-    align-items: center; /* Align items centrally */
+    align-items: center;
     margin-left: auto;
     margin-right: 20px;
+    min-width: 400px; /* Ensure buttons do not wrap */
+    justify-content: flex-end;
 }
 
 .navbar-buttons button {
@@ -45,58 +54,116 @@
     font-size: 16px;
     cursor: pointer;
     border-radius: 12px;
+    white-space: nowrap; /* Prevent word wrapping */
 }
 
 .navbar-buttons button:hover {
     background-color: #0056b3;
 }
 
+/* Search container is separate from navbar buttons */
+.search-container {
+    flex-grow: 2;
+    display: flex;
+    justify-content: center;
+    max-width: 50%; /* Make sure it extends to the middle */
+}
+
+.search-form {
+    display: flex;
+    width: 100%;
+    position: relative;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 15px;
+    border-radius: 30px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    padding-right: 40px; /* Leave space for the button */
+    box-sizing: border-box;
+}
+
+.search-button {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    color: #007BFF;
+}
+
+.search-button:hover {
+    color: #0056b3;
+}
+
+/* Responsive adjustments */
 @media (max-width: 480px) {
     .navbar {
-        display: flex; /* Continue using flexbox */
-        flex-direction: column; /* Stack items vertically */
-        align-items: center; /* Center items horizontally in the container */
-        justify-content: center; /* Center items vertically */
-        text-align: center; /* Center text for all child elements */
-        width: 100%; /* Ensure navbar takes full width */
-        padding: 10px 0; /* Adjust padding to ensure spacing is uniform */
-    }
-    .logo-container {
-        align-self: center; /* Center logo specifically */
-        margin: 0px 0; /* Adjust margins to provide space around the logo */
-        width: 100%; /* Full width to ensure no horizontal scrolling */
-        display: flex; /* Use flex to help center the image */
-        justify-content: center; /* Center the image horizontally */
-    }
-
-    .logo-container img {
-        margin: 0 auto; /* Center the image within the logo container */
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+        padding-top: 10px;
+        width: 100%; /* Ensure the navbar takes full width */
     }
 
     .navbar h1 {
-       font-size: smaller; /* Adjust font size for smaller screens */
+        font-size: 14px; /* Set header text to 14px */
+    }
+    
+    .logo-container {
+        width: 100%;
+        display: flex;
+        justify-content: center;
     }
 
+    /* Render the header in its own row */
     .title-container {
-        position: static; /* Resets any specific positioning */
-        transform: none; /* Removes any transforms */
+        width: 100%;
+        text-align: center;
+        margin: 10px 0;
+    }
+
+    /* Main buttons appear below the header */
+    .navbar-main {
+        flex-direction: column;
+        width: 100%;
+        align-items: center;
     }
 
     .navbar-buttons {
-        display: flex; /* Use flexbox for button container */
-        flex-direction: row; /* Align buttons in a row */
-        justify-content: center; /* Center buttons horizontally */
-        width: 100%; /* Optional: Ensure buttons container takes full width */
-        margin-top: 10px; /* Space above the buttons */
-    }
+        flex-direction: row;
+        justify-content: center;
+        width: 100%;
+        margin-top: 10px;
+        min-width: unset; /* Remove the min-width on small screens */
+    }    
 
     .navbar-buttons button {
-        padding: 6px 10px; /* Adjust padding for buttons */
-        font-size: 12px; /* Adjust font size for buttons */
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .search-container {
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .search-form {
+        max-width: 100%;
+    }
+
+    .search-input {
+        max-width: 100%; /* Ensure the input takes full width on small screens */
+        font-size: 10px;
     }
 
     .App h1 {
-        padding: 0px !important; /* Override padding for h1 in .App */
+        padding: 0px !important;
     }
 }
 
@@ -105,119 +172,237 @@
         flex-direction: column;
     }
 
-    .logo-container {
-        align-self: center; /* Center logo specifically */
-        margin: 0px 0; /* Adjust margins to provide space around the logo */
-        width: 100%; /* Full width to ensure no horizontal scrolling */
-        display: flex; /* Use flex to help center the image */
-        justify-content: center; /* Center the image horizontally */
+    .title-container {
+        width: 100%;
+        text-align: center;
+        margin: 10px 0;
     }
 
-    .logo-container img {
-        margin: 0 auto; /* Center the image within the logo container */
+    .logo-container {
+        width: 100%;
+        display: flex;
+        justify-content: center;
     }
 
     .navbar h1 {
-       font-size: smaller;
+        font-size: 16px; /* Slightly larger than 480px screens */
     }
 
-    .title-container {
-        position: static;
-        transform: none;
+    .App h1 {
+        padding-bottom: 0px !important;
+        font-size: 22px;
+    }
+
+    .navbar-main {
+        flex-direction: column;
+        width: 100%;
+        align-items: center;
     }
 
     .navbar-buttons {
+        flex-direction: row;
+        justify-content: center;
+        width: 100%;
         margin-top: 10px;
-        margin-left: auto;
-        margin-right: auto;
+        min-width: unset; /* Remove min-width on medium screens */
     }
 
     .navbar-buttons button {
-        padding: 6px 10px;
-        font-size: 12px;
+        padding: 8px 12px;
+        font-size: 14px;
     }
-    .App h1 {
-        padding: 0px !important;
+
+    .search-container {
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .search-form {
+        max-width: 100%;
+    }
+
+    .search-input {
+        max-width: 100%; /* Ensure input takes full width */
+        font-size: 12px; /* Slightly larger than 480px screens */
     }
 }
-@media (min-width: 768px) and (max-width: 1023px){
+
+@media (min-width: 768px) and (max-width: 1023px) {
     .navbar {
         flex-direction: column;
     }
 
     .logo-container {
-        align-self: center; /* Center logo specifically */
-        margin: 0px 0; /* Adjust margins to provide space around the logo */
-        width: 100%; /* Full width to ensure no horizontal scrolling */
-        display: flex; /* Use flex to help center the image */
-        justify-content: center; /* Center the image horizontally */
-    }
-
-    .logo-container img {
-        margin: 0 auto; /* Center the image within the logo container */
+        width: 100%;
+        display: flex;
+        justify-content: center;
     }
 
     .navbar h1 {
-       font-size: smaller;
+        font-size: 18px; /* Slightly larger font size for larger screens */
+    }
+
+    .App h1 {
+        padding-bottom: 0px !important;
+        font-size: 28px;
     }
 
     .title-container {
-        position: static;
-        transform: none;
+        width: 100%;
+        text-align: center;
+        margin: 10px 0;
+    }
+
+    .navbar-main {
+        flex-direction: column;
+        width: 100%;
+        align-items: center;
     }
 
     .navbar-buttons {
+        flex-direction: row;
+        justify-content: center;
+        width: 100%;
         margin-top: 10px;
-        margin-left: auto;
-        margin-right: auto;
+        min-width: unset; /* Remove min-width on larger screens */
     }
 
     .navbar-buttons button {
-        padding: 6px 10px;
-        font-size: 12px;
+        padding: 10px 15px;
+        font-size: 16px;
     }
-    .App h1 {
-        padding: 0px !important;
+
+    .search-container {
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .search-form {
+        max-width: 100%;
+    }
+
+    .search-input {
+        max-width: 100%;
+        font-size: 14px; /* Larger font size for larger screens */
     }
 }
 
-/* For min-width: 767px and above */
 @media (min-width: 1024px) {
+    .navbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 10px;
+        margin-bottom: -10px;
+    }
 
+    /* Allow the title to take as much space as possible */
+    .navbar-main {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        flex-grow: 1; /* Allow the title to grow */
+    }
+
+    /* Adjust title size */
     .navbar h1 {
-        font-size: larger;
-     }
+        font-size: 24px; /* Adjusted for larger screens */
+        white-space: nowrap; /* Prevent wrapping */
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .App h1 {
+        padding-bottom: 0px !important;
+        font-size: 17px;
+    }
+
+    /* Search container with a min-width and centered */
+    .search-container {
+        display: flex;
+        justify-content: center;
+        /* min-width: 300px; Minimum width for the search bar */
+        /* margin: 0 20px; Add some space around the search bar */
+        /* flex-grow: 2; Allow it to take up the middle space */
+    }
+
+    /* Navbar buttons aligned to the right */
+    .navbar-buttons {
+        min-width: unset;
+        margin-left: 10px;
+    }
 
     .navbar-buttons button {
-        padding: 8px 15px;
-        font-size: 14px;
+        font-size: 10px;
+        padding: 10px 10px;
+    }
+
+    .navbar-buttons button:hover {
+        background-color: #0056b3;
+    }
+
+    /* Search form styling */
+    .search-form {
+        display: flex;
+        width: 100%;
+        /* max-width: 600px; */
+        position: relative;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 9px 10px;
+        border-radius: 30px;
+        border: 1px solid #ccc;
+        font-size: 12px;
+        padding-right: 40px; /* Leave space for the search button */
+    }
+
+    .search-button {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 20px;
+        color: #007BFF;
+    }
+
+    .search-button:hover {
+        color: #0056b3;
     }
 }
 
-/* For min-width: 767px and above */
 @media (min-width: 1440px) {
-
     .navbar h1 {
         font-size: 28px;
-     }
+    }
 
     .navbar-buttons button {
         padding: 10px 20px;
         font-size: 16px;
     }
+    .search-input {
+        font-size: 14px;
+
+    }
 }
 
-/* For min-width: 767px and above */
 @media (min-width: 2560px) {
-
     .navbar h1 {
         font-size: 42px;
-     }
+    }
+    .App h1 {
+       padding-left: 10px;
+    }
 
     .navbar-buttons button {
         padding: 10px 20px;
         font-size: 28px;
     }
+    .search-input {
+        font-size: 24px;
+    }
 }
-
-

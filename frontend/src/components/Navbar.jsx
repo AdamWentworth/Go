@@ -1,6 +1,6 @@
 // Navbar.jsx
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Navbar.css';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,7 +12,8 @@ function Navbar() {
     const logoUrl = process.env.PUBLIC_URL + '/images/logo/logo.png';
     const { isLoggedIn } = useAuth();
     const { isLightMode, toggleTheme } = useTheme(); // Use theme context
-    
+    const [searchQuery, setSearchQuery] = useState('');
+
     const showMainButtons = location.pathname !== '/';
 
     useEffect(() => {
@@ -22,7 +23,7 @@ function Navbar() {
                 const link = document.createElement('link');
                 link.id = 'light-mode-stylesheet';
                 link.rel = 'stylesheet';
-                link.href = `${process.env.PUBLIC_URL}/Light-Mode.css`; // Adjusted the path
+                link.href = `${process.env.PUBLIC_URL}/Light-Mode.css`;
                 document.head.appendChild(link);
             }
         } else {
@@ -31,18 +32,43 @@ function Navbar() {
             }
         }
     }, [isLightMode]);
-  
+
+    const handleSearch = (event) => {
+        event.preventDefault();
+        console.log('Searching for:', searchQuery);
+    };
+
     return (
         <div className="navbar">
             <div className="logo-container">
                 <img src={logoUrl} alt="Logo" />
             </div>
-            <div className="title-container">
-                <h1>Welcome to Pokémon Go Nexus</h1>
+
+            {/* Main title and buttons aligned left */}
+            <div className="navbar-main">
+                <div className="title-container">
+                    <h1>Welcome to Pokémon Go Nexus</h1>
+                </div>
+                {showMainButtons && <MainButtons navbar={true} />}
             </div>
-            {showMainButtons && <MainButtons navbar={true} />}
+
+            {/* Search bar container */}
+            <div className="search-container">
+                <form onSubmit={handleSearch} className="search-form">
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Username..."
+                        className="search-input"
+                    />
+                    <button type="submit" className="search-button">🔍</button>
+                </form>
+            </div>
+
+            {/* Navbar buttons with large min-width */}
             <div className="navbar-buttons">
-                <button onClick={toggleTheme}>  {/* Updated to use toggleTheme from context */}
+                <button onClick={toggleTheme}>
                     {isLightMode ? 'Dark Mode' : 'Light Mode'}
                 </button>
                 {isLoggedIn ? (
