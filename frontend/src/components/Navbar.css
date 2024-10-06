@@ -22,12 +22,11 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    flex-grow: 1; /* Make sure it takes the left side */
 }
 
 .navbar h1 {
     color: white;
-    margin: 0;
+    margin: 0;;
 }
 
 .title-container {
@@ -296,14 +295,6 @@
         margin-bottom: -10px;
     }
 
-    /* Allow the title to take as much space as possible */
-    .navbar-main {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        flex-grow: 1; /* Allow the title to grow */
-    }
-
     /* Adjust title size */
     .navbar h1 {
         font-size: 24px; /* Adjusted for larger screens */
@@ -380,6 +371,10 @@
         font-size: 28px;
     }
 
+    .navbar-main {
+        justify-content: center;
+    }
+
     .navbar-buttons button {
         padding: 10px 20px;
         font-size: 16px;
@@ -396,6 +391,7 @@
     }
     .App h1 {
        padding-left: 10px;
+
     }
 
     .navbar-buttons button {
