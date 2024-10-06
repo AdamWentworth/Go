@@ -36,7 +36,7 @@
 }
 
 .title-container {
-    margin-right: 20px; /* Add space between title and buttons */
+    margin-right: 8px; /* Add space between title and buttons */
 }
 
 .navbar-buttons {
@@ -138,17 +138,6 @@
     font-size: 16px;
     padding-right: 40px; /* Leave space for the button */
     box-sizing: border-box;
-}
-
-/* Adjust input and button colors based on theme */
-.navbar.light-mode .search-input {
-    background-color: #f9f9f9;
-    color: black;
-}
-
-.navbar.dark-mode .search-input {
-    background-color: #333;
-    color: white;
 }
 
 .search-button {

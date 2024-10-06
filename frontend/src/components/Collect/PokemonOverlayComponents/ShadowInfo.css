@@ -13,6 +13,11 @@
 .images-container img {
     max-width: 180px; /* Set a specific max-width for the images, or use a percentage */
     height: auto; /* Maintain aspect ratio */
-    margin-top: -15px;
+    /* margin-top: -15px; */
     filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3)); /* Adds a more prominent shadow to the non-transparent parts */
+}
+
+.shadow-info-column p {
+    margin-block-start: 0px;
+    margin-block-end: 0px;
 }
