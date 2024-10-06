@@ -5,7 +5,7 @@ import { Link, useLocation } from 'react-router-dom';
 import './Navbar.css';
 import { useAuth } from '../contexts/AuthContext';
 import MainButtons from './MainButtons';
-import { useTheme } from '../contexts/ThemeContext';  // Import useTheme
+import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
 
 function Navbar() {
     const location = useLocation();
@@ -39,7 +39,7 @@ function Navbar() {
     };
 
     return (
-        <div className="navbar">
+        <div className={`navbar ${isLightMode ? 'light-mode' : 'dark-mode'}`}>
             <div className="logo-container">
                 <img src={logoUrl} alt="Logo" />
             </div>
@@ -66,11 +66,17 @@ function Navbar() {
                 </form>
             </div>
 
-            {/* Navbar buttons with large min-width */}
+            {/* Navbar buttons with the theme toggle */}
             <div className="navbar-buttons">
-                <button onClick={toggleTheme}>
-                    {isLightMode ? 'Dark Mode' : 'Light Mode'}
-                </button>
+                {/* Simplified Light/Dark mode toggle button */}
+                <div className="theme-toggle" onClick={toggleTheme}>
+                    <div className="icon-background">
+                        <img
+                            src={`${process.env.PUBLIC_URL}/images/${isLightMode ? 'dark-mode.png' : 'light-mode.png'}`}
+                            alt={isLightMode ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+                        />
+                    </div>
+                </div>
                 {isLoggedIn ? (
                     <Link to="/account"><button>Account</button></Link>
                 ) : (

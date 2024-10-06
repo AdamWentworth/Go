@@ -1,4 +1,5 @@
 /* Navbar.css */
+
 /* General navbar styling */
 .logo-container img {
     width: 80px;
@@ -8,13 +9,14 @@
     margin-bottom: -15px;
 }
 
+/* Navbar background color based on theme */
 .navbar {
     display: flex;
     align-items: center;
-    background-color: #111;
     padding-top: 10px;
     justify-content: space-between;
     min-height: 68px;
+    background-color: #111;
 }
 
 /* Navbar main: align title and buttons to the left */
@@ -24,9 +26,13 @@
     justify-content: flex-start;
 }
 
-.navbar h1 {
+/* Title color based on theme */
+.navbar.light-mode h1 {
+    color: black;
+}
+
+.navbar.dark-mode h1 {
     color: white;
-    margin: 0;;
 }
 
 .title-container {
@@ -37,9 +43,7 @@
     display: flex;
     gap: 10px;
     align-items: center;
-    margin-left: auto;
     margin-right: 20px;
-    min-width: 400px; /* Ensure buttons do not wrap */
     justify-content: flex-end;
 }
 
@@ -49,7 +53,6 @@
     color: white;
     padding: 10px 20px;
     text-align: center;
-    text-decoration: none;
     font-size: 16px;
     cursor: pointer;
     border-radius: 12px;
@@ -58,6 +61,59 @@
 
 .navbar-buttons button:hover {
     background-color: #0056b3;
+}
+
+/* Theme Toggle Styling */
+.theme-toggle {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+}
+
+.icon-background {
+    width: 34px;
+    height: 34px;
+    background-color: transparent;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.4s ease;
+}
+
+.navbar.light-mode .icon-background {
+    background-color: #222; /* Dark grey background in dark mode */
+}
+
+.navbar.dark-mode .icon-background {
+    background-color: #f0f0f0; /* Light grey background in light mode */
+}
+
+.theme-toggle img {
+    width: 24px;
+    height: 24px;
+    transition: filter 0.4s ease;
+}
+
+/* Invert icon color in light mode */
+.navbar.light-mode .theme-toggle img {
+    filter: invert(1);
+}
+
+/* Invert icon color in dark mode */
+.navbar.dark-mode .theme-toggle img {
+    filter: invert(0);
+}
+
+/* Button text color based on theme */
+.navbar.light-mode .navbar-buttons button {
+    color: white;
+}
+
+.navbar.dark-mode .navbar-buttons button {
+    color: white;
 }
 
 /* Search container is separate from navbar buttons */
@@ -84,6 +140,17 @@
     box-sizing: border-box;
 }
 
+/* Adjust input and button colors based on theme */
+.navbar.light-mode .search-input {
+    background-color: #f9f9f9;
+    color: black;
+}
+
+.navbar.dark-mode .search-input {
+    background-color: #333;
+    color: white;
+}
+
 .search-button {
     position: absolute;
     right: 10px;
@@ -93,7 +160,14 @@
     border: none;
     cursor: pointer;
     font-size: 20px;
+}
+
+.navbar.light-mode .search-button {
     color: #007BFF;
+}
+
+.navbar.dark-mode .search-button {
+    color: #66b3ff;
 }
 
 .search-button:hover {
@@ -140,7 +214,18 @@
         width: 100%;
         margin-top: 10px;
         min-width: unset; /* Remove the min-width on small screens */
+        margin-bottom: 10px;
     }    
+
+    .navbar-buttons .icon-background {
+        height: 26px;
+        width: 26px;
+    }
+
+    .navbar-buttons .icon-background img {
+        height: 18px;
+        width: 18px;
+    }
 
     .navbar-buttons button {
         padding: 6px 10px;
@@ -206,6 +291,16 @@
         min-width: unset; /* Remove min-width on medium screens */
     }
 
+    .navbar-buttons .icon-background {
+        height: 32px;
+        width: 32px;
+    }
+
+    .navbar-buttons .icon-background img {
+        height: 24px;
+        width: 24px;
+    }
+
     .navbar-buttons button {
         padding: 8px 12px;
         font-size: 14px;
@@ -266,6 +361,16 @@
         min-width: unset; /* Remove min-width on larger screens */
     }
 
+    .navbar-buttons .icon-background {
+        height: 38px;
+        width: 38px;
+    }
+
+    .navbar-buttons .icon-background img {
+        height: 30px;
+        width: 30px;
+    }
+
     .navbar-buttons button {
         padding: 10px 15px;
         font-size: 16px;
@@ -292,7 +397,6 @@
         align-items: center;
         justify-content: space-between;
         padding-top: 10px;
-        margin-bottom: -10px;
     }
 
     /* Adjust title size */
@@ -312,15 +416,21 @@
     .search-container {
         display: flex;
         justify-content: center;
-        /* min-width: 300px; Minimum width for the search bar */
-        /* margin: 0 20px; Add some space around the search bar */
-        /* flex-grow: 2; Allow it to take up the middle space */
     }
 
     /* Navbar buttons aligned to the right */
     .navbar-buttons {
         min-width: unset;
-        margin-left: 10px;
+    }
+
+    .navbar-buttons .icon-background {
+        height: 31px;
+        width: 31px;
+    }
+
+    .navbar-buttons .icon-background img {
+        height: 22px;
+        width: 22px;
     }
 
     .navbar-buttons button {
@@ -373,6 +483,16 @@
 
     .navbar-main {
         justify-content: center;
+    }
+
+    .navbar-buttons .icon-background {
+        height: 38px;
+        width: 38px;
+    }
+
+    .navbar-buttons .icon-background img {
+        height: 30px;
+        width: 30px;
     }
 
     .navbar-buttons button {
