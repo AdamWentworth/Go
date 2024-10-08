@@ -284,6 +284,18 @@ function generatePokemonInstance(pokemonKey, userId) {
             registered = 1;
         }
 
+        let friendship_level = null;
+        let pref_lucky = 0;
+
+        // For wanted Pokémon, set friendship_level and pref_lucky
+        if (isWanted === 1) {
+            const friendshipLevels = [null, 1, 2, 3, 4];
+            friendship_level = faker.helpers.arrayElement(friendshipLevels);
+            if (friendship_level === 4) {
+                pref_lucky = faker.datatype.boolean() ? 1 : 0;
+            }
+        }
+
         const instance = {
             instance_id: `${pokemonKey}_${faker.string.uuid()}`, // Generate instance_id based on pokemonKey and UUID
             pokemon_id: pokemon_id,
@@ -304,7 +316,9 @@ function generatePokemonInstance(pokemonKey, userId) {
             not_trade_list: '{}', // Default empty
             not_wanted_list: '{}', // Default empty
             date_added: new Date(),
-            last_update: Date.now()
+            last_update: Date.now(),
+            friendship_level: friendship_level,
+            pref_lucky: pref_lucky
         };
 
         return instance;

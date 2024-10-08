@@ -125,9 +125,10 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 	staminaIVStr := c.Query("stamina_iv")
 	backgroundIDStr := c.Query("background_id")
 	prefLuckyStr := c.Query("pref_lucky")
+	friendshipLevelStr := c.Query("friendship_level")
 
-	logrus.Infof("Received search query with params: pokemon_id=%s, shiny=%s, shadow=%s, costume_id=%s, ownership=%s, limit=%s, range_km=%s, latitude=%s, longitude=%s, fast_move_id=%s, charged_move_1_id=%s, charged_move_2_id=%s, gender=%s, already_registered=%s, attack_iv=%s, defense_iv=%s, stamina_iv=%s, background_id=%s, pref_lucky=%s",
-		pokemonIDStr, shinyStr, shadowStr, costumeIDStr, ownership, limitStr, rangeKMStr, latitudeStr, longitudeStr, fastMoveIDStr, chargedMove1IDStr, chargedMove2IDStr, genderStr, alreadyRegisteredStr, attackIVStr, defenseIVStr, staminaIVStr, backgroundIDStr, prefLuckyStr)
+	logrus.Infof("Received search query with params: pokemon_id=%s, shiny=%s, shadow=%s, costume_id=%s, ownership=%s, limit=%s, range_km=%s, latitude=%s, longitude=%s, fast_move_id=%s, charged_move_1_id=%s, charged_move_2_id=%s, gender=%s, already_registered=%s, attack_iv=%s, defense_iv=%s, stamina_iv=%s, background_id=%s, pref_lucky=%s, friendship_level=%s",
+		pokemonIDStr, shinyStr, shadowStr, costumeIDStr, ownership, limitStr, rangeKMStr, latitudeStr, longitudeStr, fastMoveIDStr, chargedMove1IDStr, chargedMove2IDStr, genderStr, alreadyRegisteredStr, attackIVStr, defenseIVStr, staminaIVStr, backgroundIDStr, prefLuckyStr, friendshipLevelStr)
 
 	// Parse parameters into appropriate types
 	var pokemonID, fastMoveID, chargedMove1ID, chargedMove2ID int
@@ -310,6 +311,24 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		}
 	}
 
+	var friendshipLevel *int
+	if friendshipLevelStr != "" {
+		fl, err := strconv.Atoi(friendshipLevelStr)
+		if err != nil {
+			logrus.Error("Invalid friendship_level value: ", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid friendship_level value"})
+		}
+		if fl >= 1 && fl <= 4 {
+			friendshipLevel = &fl
+		} else if fl == 0 {
+			// Treat as null (do not filter)
+			friendshipLevel = nil
+		} else {
+			logrus.Error("Invalid friendship_level value: ", fl)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid friendship_level value"})
+		}
+	}
+
 	// Start building the query
 	query := db.Preload("User").Model(&PokemonInstance{})
 
@@ -417,6 +436,10 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
                         POWER(SIN(RADIANS(User.longitude - ?) / 2), 2)
                     )
                 ) < ?`, latitude, latitude, longitude, rangeKM)
+	}
+
+	if friendshipLevel != nil {
+		query = query.Where("friendship_level = ?", *friendshipLevel)
 	}
 
 	// Apply the limit
