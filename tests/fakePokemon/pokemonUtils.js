@@ -5,7 +5,7 @@ const fs = require('fs');
 
 // Load Pokémon data and keys from JSON files
 const pokemonData = JSON.parse(fs.readFileSync('./pokemon.json', 'utf8'));
-const pokemonKeys = JSON.parse(fs.readFileSync('./pokemonKeys.json', 'utf8')); // Now using pokemonKeys
+const pokemonKeys = JSON.parse(fs.readFileSync('./pokemonKeys.json', 'utf8'));
 
 // Helper function to generate random coordinates within Vancouver
 function getRandomVancouverCoordinates() {
@@ -86,7 +86,6 @@ function parsePokemonKey(pokemonKey) {
     if (costumeName) {
         // Ensure pokemon.costumes is an array
         if (Array.isArray(pokemon.costumes)) {
-            // Since costume names in the data might have underscores, we need to replace them with spaces or match accordingly
             const costume = pokemon.costumes.find(
                 c =>
                     c.name &&
@@ -111,42 +110,43 @@ function parsePokemonKey(pokemonKey) {
     if (formName) {
         form = formName;
 
-        if (formName.startsWith('mega')) {
-            // For mega forms
+        if (formName.startsWith('mega') || formName === 'primal') {
+            // For mega and primal forms
             if (pokemon.megaEvolutions && pokemon.megaEvolutions.length > 0) {
                 if (formName === 'mega') {
                     // Mega evolution exists; accept it
                     // No further validation needed
-                } else {
+                } else if (formName.startsWith('mega_')) {
                     // For mega_x and mega_y
+                    const formSuffix = formName.replace('mega_', '').toLowerCase(); // 'x' or 'y'
                     const matchingMega = pokemon.megaEvolutions.find(mega => {
                         return (
                             mega.form &&
-                            mega.form.replace(/ /g, '_').toLowerCase() === formName.toLowerCase()
+                            mega.form.toLowerCase() === formSuffix &&
+                            !mega.primal // Ensure it's not a primal form
                         );
                     });
                     if (!matchingMega) {
                         console.warn(
                             `Warning: Mega form '${formName}' not found for pokemon id ${pokemon_id}`
                         );
-                        // You might want to handle this differently, e.g., throw an error or set form to null
+                        // Handle accordingly
+                    }
+                } else if (formName === 'primal') {
+                    // Check for primal evolution
+                    const primalEvolution = pokemon.megaEvolutions.find(mega => mega.primal === 1);
+                    if (!primalEvolution) {
+                        console.warn(
+                            `Warning: No primal evolutions available for pokemon id ${pokemon_id}`
+                        );
+                        return null; // Return null or handle accordingly
                     }
                 }
             } else {
                 console.warn(
-                    `Warning: No mega evolutions available for pokemon id ${pokemon_id}`
+                    `Warning: No mega or primal evolutions available for pokemon id ${pokemon_id}`
                 );
-                // You might want to handle this differently, e.g., throw an error or set form to null
-            }
-        } else if (formName === 'primal') {
-            // Handle primal forms if applicable
-            if (pokemon.primalEvolutions && pokemon.primalEvolutions.length > 0) {
-                // Primal evolution exists; accept it
-            } else {
-                console.warn(
-                    `Warning: No primal evolutions available for pokemon id ${pokemon_id}`
-                );
-                // You might want to handle this differently
+                return null; // Return null or handle accordingly
             }
         } else {
             // Handle other forms
@@ -160,7 +160,7 @@ function parsePokemonKey(pokemonKey) {
                     console.warn(
                         `Warning: Form '${formName}' not found for pokemon id ${pokemon_id}`
                     );
-                    // You might want to handle this differently
+                    // Handle accordingly
                 }
             } else {
                 console.warn(
@@ -197,26 +197,31 @@ function generatePokemonInstance(pokemonKey, userId) {
         const { pokemon_id, isShiny, isShadow, costumeId, form, genderRate, moves, name } = parsedData;
 
         // Determine gender
-        let gender = 'genderless';
+        let gender = 'Genderless';
 
-        if (genderRate && !genderRate.includes('GL')) {
+        if (genderRate) {
             let maleRate = 0;
             let femaleRate = 0;
+            let genderlessRate = 0;
             const rates = genderRate.split('_');
             rates.forEach(rate => {
                 if (rate.endsWith('M')) {
                     maleRate = parseInt(rate.replace('M', ''), 10);
                 } else if (rate.endsWith('F')) {
                     femaleRate = parseInt(rate.replace('F', ''), 10);
+                } else if (rate.endsWith('GL')) {
+                    genderlessRate = parseInt(rate.replace('GL', ''), 10);
                 }
             });
-            const totalRate = maleRate + femaleRate;
-            const randomValue = faker.number.int({ min: 0, max: totalRate - 1 });
+            const totalRate = maleRate + femaleRate + genderlessRate;
+            const randomValue = faker.number.int({ min: 1, max: totalRate });
 
-            if (randomValue < maleRate) {
-                gender = 'male';
+            if (randomValue <= maleRate) {
+                gender = 'Male';
+            } else if (randomValue <= maleRate + femaleRate) {
+                gender = 'Female';
             } else {
-                gender = 'female';
+                gender = 'Genderless';
             }
         }
 
