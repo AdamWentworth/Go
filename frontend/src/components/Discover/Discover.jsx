@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import PokemonSearchBar from './PokemonSearchBar';
 import ListView from './views/ListView';
 import MapView from './views/MapView';
+import LoadingSpinner from '../LoadingSpinner';  // Import the LoadingSpinner component
 import axios from 'axios';
 
 const Discover = () => {
@@ -12,41 +13,9 @@ const Discover = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Utility function to create a delay
-  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-  const getLocationName = async (latitude, longitude) => {
-    try {
-      const response = await axios.get(
-        'https://nominatim.openstreetmap.org/reverse',
-        {
-          params: {
-            lat: latitude,
-            lon: longitude,
-            format: 'json',
-          },
-          withCredentials: false,
-        }
-      );
-
-      if (response.status === 200 && response.data) {
-        const { city, country } = response.data.address || {};
-        return `${city || 'Unknown City'}, ${country || 'Unknown Country'}`;
-      } else {
-        return 'Unknown Location';
-      }
-    } catch (error) {
-      console.error('Error fetching location name:', error);
-      return 'Unknown Location';
-    }
-  };
-
   const handleSearch = async (queryParams) => {
     setErrorMessage('');
     setIsLoading(true);
-
-    // Log the query parameters being sent to the API
-    console.log('API Request - Query Parameters:', queryParams);
 
     try {
       const response = await axios.get(
@@ -57,9 +26,6 @@ const Discover = () => {
         }
       );
 
-      // Log the raw API response for troubleshooting
-      console.log('API Response:', response);
-
       if (response.status === 200) {
         let data = response.data;
 
@@ -69,56 +35,31 @@ const Discover = () => {
         if (dataArray && dataArray.length > 0) {
           const enrichedData = [];
 
-          // Retrieve the local Pokémon data from localStorage
           const pokemonDataStored = JSON.parse(localStorage.getItem('pokemonData'));
 
-          // Ensure we are working with the data array inside the pokemonData object
           if (pokemonDataStored && pokemonDataStored.data) {
             const pokemonDataArray = pokemonDataStored.data;
-
-            // Assuming all items have the same pokemon_id, we look up the Pokémon once
             const firstItem = dataArray[0];
             const pokemonId = firstItem.pokemon_id;
-
-            // Find the matching Pokémon data from localStorage
             const pokemonInfo = pokemonDataArray.find(
               (p) => p.pokemon_id === pokemonId
             );
 
-            // Check if we found the Pokémon info
             if (!pokemonInfo) {
               throw new Error(`Pokémon with ID ${pokemonId} not found in localStorage.`);
             }
 
-            // Prepare location names for all items
             for (const item of dataArray) {
-              // Log each item's coordinates for debugging
-              console.log('Item Coordinates:', item.latitude, item.longitude);
+              const latitude = item.latitude ? parseFloat(item.latitude) : 49.2608724;
+              const longitude = item.longitude ? parseFloat(item.longitude) : -123.113952;
 
-              const latitude = item.latitude
-                ? parseFloat(item.latitude)
-                : 49.2608724; // Default latitude
-              const longitude = item.longitude
-                ? parseFloat(item.longitude)
-                : -123.113952; // Default longitude
-
-              const locationName = await getLocationName(latitude, longitude);
-
-              // Attach the Pokémon info and fetched location name to the item
               enrichedData.push({
                 ...item,
-                location: locationName,
                 pokemonInfo,
               });
-
-              // Delay for 1000ms before making the next API call to avoid spamming
-              await delay(1000);
             }
 
-            // Sort the results by distance (ascending order)
             enrichedData.sort((a, b) => a.distance - b.distance);
-
-            // Set the sorted enriched data (with full objects) in the state
             setSearchResults(enrichedData);
           } else {
             throw new Error('pokemonData is not properly formatted in localStorage.');
@@ -134,7 +75,7 @@ const Discover = () => {
       console.error('Error during API request:', error);
       setErrorMessage('An error occurred while searching. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsLoading(false);  // End the loading state
     }
   };
 
@@ -148,8 +89,10 @@ const Discover = () => {
         setView={setView}
       />
 
-      {/* Conditionally render the views based on the current selection */}
-      {view === 'list' ? (
+      {/* Conditionally render the LoadingSpinner or the ListView/MapView */}
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : view === 'list' ? (
         <ListView data={searchResults} />
       ) : (
         <MapView data={searchResults} />

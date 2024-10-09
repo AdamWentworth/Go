@@ -26,10 +26,13 @@ const ListView = ({ data }) => {
           return (
             <div key={index} className="card">
               <h3>{item.username}</h3>
-              <p>Location: {item.location}</p>
               {item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
-              {/* Render friendship level */}
-              <FriendshipLevel level={friendshipLevel} prefLucky={prefLucky} />
+
+              {/* Render friendship level only if the Pokémon is wanted */}
+              {item.is_wanted && (
+                <FriendshipLevel level={friendshipLevel} prefLucky={prefLucky} />
+              )}
+
               {item.pokemonInfo && (
                 <div className="pokemon-image-container">
                   {/* Render lucky background if prefLucky is true */}

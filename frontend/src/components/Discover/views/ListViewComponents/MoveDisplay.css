@@ -2,13 +2,20 @@
 
 /* Styles for the moves display */
 .list-view .moves-container {
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centers the container itself */
+    width: 100%;
   }
   
   .list-view .moves-container .move {
     display: flex;
     align-items: center;
-    margin-bottom: 0.5rem;
+    justify-content: flex-start; /* Aligns content to the left inside the move block */
+    max-width: 180px; /* Controls the width of the move block */
+    width: 100%; /* Allows the block to take the full width */
+    margin-bottom: 2px;
+    margin-left: 22px;
   }
   
   .list-view .moves-container .move p {

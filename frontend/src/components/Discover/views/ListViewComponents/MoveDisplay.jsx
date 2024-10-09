@@ -8,6 +8,15 @@ const MoveDisplay = ({ fastMoveId, chargedMove1Id, chargedMove2Id, moves }) => {
   const chargedMove1 = moves.find((move) => move.move_id === chargedMove1Id);
   const chargedMove2 = moves.find((move) => move.move_id === chargedMove2Id);
 
+  const renderMoveName = (move) => {
+    const isLegacy = move.legacy;
+    return (
+      <p>
+        {isLegacy ? <strong>{`${move.name}*`}</strong> : move.name}
+      </p>
+    );
+  };
+
   return (
     <div className="moves-container">
       {fastMove && (
@@ -17,7 +26,7 @@ const MoveDisplay = ({ fastMoveId, chargedMove1Id, chargedMove2Id, moves }) => {
             alt={fastMove.type_name}
             className="move-type-icon"
           />
-          <p>{`${fastMove.name}`}</p>
+          {renderMoveName(fastMove)}
         </div>
       )}
       {chargedMove1 && (
@@ -27,7 +36,7 @@ const MoveDisplay = ({ fastMoveId, chargedMove1Id, chargedMove2Id, moves }) => {
             alt={chargedMove1.type_name}
             className="move-type-icon"
           />
-          <p>{`${chargedMove1.name}`}</p>
+          {renderMoveName(chargedMove1)}
         </div>
       )}
       {chargedMove2 && (
@@ -37,7 +46,7 @@ const MoveDisplay = ({ fastMoveId, chargedMove1Id, chargedMove2Id, moves }) => {
             alt={chargedMove2.type_name}
             className="move-type-icon"
           />
-          <p>{`${chargedMove2.name}`}</p>
+          {renderMoveName(chargedMove2)}
         </div>
       )}
     </div>
