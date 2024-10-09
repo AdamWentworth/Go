@@ -7,6 +7,11 @@
     color: white;
   }
 
+  .list-view-container p {
+    margin-block-start: 10px;
+    margin-block-end: 0px;
+  }
+
   /* Only the first list-view-row will have margin-top */
 .list-view-row:first-child {
     margin-top: 1rem;
@@ -15,13 +20,14 @@
   .list-view-row {
     display: flex;
     justify-content: center;
-    width: 99%; /* Reduce width to add margin on the right */
+    width: 98%; /* Reduce width to add margin on the right */
     margin-bottom: 1rem;
     background-color: #333;
     margin-left: 10px;
     margin-right: 10px; /* Added more right margin */
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    align-items: center; /* Add this to vertically align content in the row */
 }
   
   .list-view-row .left-column,
@@ -35,7 +41,7 @@
   
   .list-view-row .left-column,
   .list-view-row .right-column {
-    flex: 1; /* Flex 1 for the side columns */
+    flex: 1;
   }
   
   .list-view-row .center-column {
@@ -52,6 +58,7 @@
   
   .list-view-row .center-column .card h3 {
     margin: 0 0 0.1rem 0;
+    margin-block-end: 0px;
   }
   
   .list-view-row .center-column .card p {
@@ -68,7 +75,7 @@
     max-width: 100%;
     z-index: 2;
     position: relative;
-    height: 180px;
+    height: 200px;
   }
   
   .list-view-row .center-column .pokemon-image-container .lucky-backdrop {
@@ -111,3 +118,14 @@
     justify-content: center;
   }
   
+  @media (min-width: 1024px) and (max-width: 1439px) {
+    .list-view-row {
+        width: 98%; 
+    }
+  }
+
+  @media (min-width: 1440px) {
+    .list-view-row {
+        width: 99%; 
+    }
+  }

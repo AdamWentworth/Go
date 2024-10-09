@@ -2,11 +2,11 @@
 
 .mini-map-wrapper {
     width: 90%;
-    height: 300px; /* Increased height */
+    height: 250px; /* Increased height */
     border-radius: 20px; /* Increased border-radius for rounded corners */
     overflow: hidden; /* Ensures the map does not overflow the border radius */
     position: relative;
-    margin-left: 10px; /* Add margin to the left */
+    margin-bottom: 10px;
   }
   
   .mini-map-container {

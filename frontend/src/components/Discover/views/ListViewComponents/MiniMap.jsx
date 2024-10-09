@@ -15,7 +15,7 @@ import { Style, Circle, Fill } from 'ol/style';
 import Zoom from 'ol/control/Zoom'; // Import Zoom control from OpenLayers
 import { useTheme } from '../../../../contexts/ThemeContext';  // Import useTheme
 
-const MiniMap = ({ latitude, longitude }) => {
+const MiniMap = ({ latitude, longitude, ownershipStatus }) => {
   const mapContainerRef = useRef(null);
   const { isLightMode } = useTheme();  // Use theme context to get isLightMode
 
@@ -29,6 +29,16 @@ const MiniMap = ({ latitude, longitude }) => {
           : 'https://{1-4}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       }),
     });
+
+    // Set the color based on ownershipStatus
+    let pointColor;
+    if (ownershipStatus === 'owned') {
+      pointColor = '#00AAFF'; // Blue for owned
+    } else if (ownershipStatus === 'trade') {
+      pointColor = '#00FF00'; // Green for trade
+    } else {
+      pointColor = '#FF0000'; // Red for wanted (default)
+    }
 
     // Create a vector source and layer for the point feature
     const vectorSource = new VectorSource({
@@ -44,7 +54,7 @@ const MiniMap = ({ latitude, longitude }) => {
       style: new Style({
         image: new Circle({
           radius: 5,
-          fill: new Fill({ color: '#FF0000' }), // Red point to mark the location
+          fill: new Fill({ color: pointColor }), // Set color based on ownershipStatus
         }),
       }),
     });
@@ -67,7 +77,7 @@ const MiniMap = ({ latitude, longitude }) => {
     return () => {
       map.setTarget(null); // Clean up the map instance on unmount
     };
-  }, [latitude, longitude, isLightMode]);
+  }, [latitude, longitude, isLightMode, ownershipStatus]);
 
   return (
     <div className="mini-map-wrapper">

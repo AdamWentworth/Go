@@ -36,14 +36,14 @@ const ListView = ({ data, ownershipStatus }) => {
             <div key={index} className="list-view-row">
               {/* Left Column: MiniMap */}
               <div className="left-column">
-                <MiniMap latitude={latitude} longitude={longitude} />
+              {item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
+                <MiniMap latitude={latitude} longitude={longitude} ownershipStatus={ownershipStatus} />
               </div>
 
               {/* Center Column: Current Content */}
               <div className="center-column">
                 <div className="card">
                   <h3>{item.username}</h3>
-                  {item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
 
                   {/* Render friendship level only if the Pokémon is wanted */}
                   {ownershipStatus === 'wanted' && (
@@ -72,18 +72,17 @@ const ListView = ({ data, ownershipStatus }) => {
                       </p>
                     </div>
                   )}
+                </div>
+              </div>
 
+              {/* Right Column: Dynamic Content */}
+              <div className="right-column">
                   <MoveDisplay
                     fastMoveId={item.fast_move_id}
                     chargedMove1Id={item.charged_move1_id}
                     chargedMove2Id={item.charged_move2_id}
                     moves={item.pokemonInfo.moves}
                   />
-                </div>
-              </div>
-
-              {/* Right Column: Dynamic Content */}
-              <div className="right-column">
                 {ownershipStatus === 'owned' && (
                   <IVDisplay item={item} />
                 )}
