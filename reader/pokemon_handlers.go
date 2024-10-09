@@ -3,6 +3,7 @@
 package main
 
 import (
+	"encoding/json"
 	"math"
 	"strconv"
 
@@ -471,7 +472,7 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 			username = instance.User.Username
 			userLatitude = instance.User.Latitude
 			userLongitude = instance.User.Longitude
-			if instance.User.Latitude != nil && instance.User.Longitude != nil {
+			if instance.User.Latitude != nil && instance.User.Longitude != nil && latitudeStr != "" && longitudeStr != "" {
 				userDistance = haversine(latitude, longitude, *instance.User.Latitude, *instance.User.Longitude)
 			} else {
 				logrus.Warnf("User %s has missing latitude/longitude data, skipping distance calculation", instance.User.UserID)
@@ -481,6 +482,7 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		}
 
 		instanceData := map[string]interface{}{
+			"instance_id":      instance.InstanceID,
 			"pokemon_id":       instance.PokemonID,
 			"nickname":         instance.Nickname,
 			"cp":               instance.CP,
@@ -523,6 +525,157 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 			if userLatitude != nil && userLongitude != nil {
 				instanceData["latitude"] = *userLatitude
 				instanceData["longitude"] = *userLongitude
+			}
+		}
+
+		// New logic to add trade_list when ownership is "wanted"
+		if ownership == "wanted" {
+			if userID != "" {
+				// Retrieve all 'for trade' instances for this user
+				var tradeInstances []PokemonInstance
+				err := db.Model(&PokemonInstance{}).
+					Where("user_id = ? AND is_for_trade = ?", userID, true).
+					Find(&tradeInstances).Error
+				if err != nil {
+					logrus.Error("Error retrieving trade instances for user ", userID, ": ", err)
+					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve trade instances"})
+				}
+
+				// Parse the not_trade_list
+				notTradeList := make(map[string]bool)
+				if len(instance.NotTradeList) > 0 {
+					err := json.Unmarshal(instance.NotTradeList, &notTradeList)
+					if err != nil {
+						logrus.Warnf("Failed to parse not_trade_list for instance %s: %v", instance.InstanceID, err)
+					}
+				}
+
+				// Exclude instances in the not_trade_list
+				filteredTradeInstances := []PokemonInstance{}
+				for _, tradeInstance := range tradeInstances {
+					if _, exists := notTradeList[tradeInstance.InstanceID]; !exists {
+						filteredTradeInstances = append(filteredTradeInstances, tradeInstance)
+					}
+				}
+
+				// Build the trade_list
+				tradeListData := make(map[string]interface{})
+				for _, tradeInstance := range filteredTradeInstances {
+					tradeInstanceData := map[string]interface{}{
+						"instance_id":      tradeInstance.InstanceID,
+						"pokemon_id":       tradeInstance.PokemonID,
+						"nickname":         tradeInstance.Nickname,
+						"cp":               tradeInstance.CP,
+						"attack_iv":        tradeInstance.AttackIV,
+						"defense_iv":       tradeInstance.DefenseIV,
+						"stamina_iv":       tradeInstance.StaminaIV,
+						"shiny":            tradeInstance.Shiny,
+						"costume_id":       tradeInstance.CostumeID,
+						"lucky":            tradeInstance.Lucky,
+						"shadow":           tradeInstance.Shadow,
+						"purified":         tradeInstance.Purified,
+						"fast_move_id":     tradeInstance.FastMoveID,
+						"charged_move1_id": tradeInstance.ChargedMove1ID,
+						"charged_move2_id": tradeInstance.ChargedMove2ID,
+						"weight":           tradeInstance.Weight,
+						"height":           tradeInstance.Height,
+						"gender":           tradeInstance.Gender,
+						"mirror":           tradeInstance.Mirror,
+						"pref_lucky":       tradeInstance.PrefLucky,
+						"registered":       tradeInstance.Registered,
+						"favorite":         tradeInstance.Favorite,
+						"is_unowned":       tradeInstance.IsUnowned,
+						"is_owned":         tradeInstance.IsOwned,
+						"is_for_trade":     tradeInstance.IsForTrade,
+						"is_wanted":        tradeInstance.IsWanted,
+						"location_caught":  tradeInstance.LocationCaught,
+						"location_card":    tradeInstance.LocationCard,
+						"friendship_level": tradeInstance.FriendshipLevel,
+						"last_update":      tradeInstance.LastUpdate,
+						"date_caught":      tradeInstance.DateCaught,
+						"date_added":       tradeInstance.DateAdded,
+						"wanted_filters":   tradeInstance.WantedFilters,
+						"trade_filters":    tradeInstance.TradeFilters,
+					}
+					tradeListData[tradeInstance.InstanceID] = tradeInstanceData
+				}
+
+				instanceData["trade_list"] = tradeListData
+			}
+		}
+
+		// New logic for ownership == "trade"
+		if ownership == "trade" {
+			if userID != "" {
+				// Retrieve all 'wanted' instances for this user
+				var wantedInstances []PokemonInstance
+				err := db.Model(&PokemonInstance{}).
+					Where("user_id = ? AND is_wanted = ?", userID, true).
+					Find(&wantedInstances).Error
+				if err != nil {
+					logrus.Error("Error retrieving wanted instances for user ", userID, ": ", err)
+					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve wanted instances"})
+				}
+
+				// Parse the not_trade_list
+				notWantedList := make(map[string]bool)
+				if len(instance.NotWantedList) > 0 {
+					err := json.Unmarshal(instance.NotWantedList, &notWantedList)
+					if err != nil {
+						logrus.Warnf("Failed to parse not_wanted_list for instance %s: %v", instance.InstanceID, err)
+					}
+				}
+
+				// Exclude instances in the not_wanted_list
+				filteredWantedInstances := []PokemonInstance{}
+				for _, wantedInstance := range wantedInstances {
+					if _, exists := notWantedList[wantedInstance.InstanceID]; !exists {
+						filteredWantedInstances = append(filteredWantedInstances, wantedInstance)
+					}
+				}
+
+				// Build the wanted_list
+				wantedListData := make(map[string]interface{})
+				for _, wantedInstance := range filteredWantedInstances {
+					wantedInstanceData := map[string]interface{}{
+						"instance_id":      wantedInstance.InstanceID,
+						"pokemon_id":       wantedInstance.PokemonID,
+						"nickname":         wantedInstance.Nickname,
+						"cp":               wantedInstance.CP,
+						"attack_iv":        wantedInstance.AttackIV,
+						"defense_iv":       wantedInstance.DefenseIV,
+						"stamina_iv":       wantedInstance.StaminaIV,
+						"shiny":            wantedInstance.Shiny,
+						"costume_id":       wantedInstance.CostumeID,
+						"lucky":            wantedInstance.Lucky,
+						"shadow":           wantedInstance.Shadow,
+						"purified":         wantedInstance.Purified,
+						"fast_move_id":     wantedInstance.FastMoveID,
+						"charged_move1_id": wantedInstance.ChargedMove1ID,
+						"charged_move2_id": wantedInstance.ChargedMove2ID,
+						"weight":           wantedInstance.Weight,
+						"height":           wantedInstance.Height,
+						"gender":           wantedInstance.Gender,
+						"mirror":           wantedInstance.Mirror,
+						"pref_lucky":       wantedInstance.PrefLucky,
+						"registered":       wantedInstance.Registered,
+						"favorite":         wantedInstance.Favorite,
+						"is_unowned":       wantedInstance.IsUnowned,
+						"is_owned":         wantedInstance.IsOwned,
+						"is_for_trade":     wantedInstance.IsForTrade,
+						"is_wanted":        wantedInstance.IsWanted,
+						"location_caught":  wantedInstance.LocationCaught,
+						"location_card":    wantedInstance.LocationCard,
+						"friendship_level": wantedInstance.FriendshipLevel,
+						"last_update":      wantedInstance.LastUpdate,
+						"date_added":       wantedInstance.DateAdded,
+						"wanted_filters":   wantedInstance.WantedFilters,
+						"trade_filters":    wantedInstance.TradeFilters,
+					}
+					wantedListData[wantedInstance.InstanceID] = wantedInstanceData
+				}
+
+				instanceData["wanted_list"] = wantedListData
 			}
 		}
 
