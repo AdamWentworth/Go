@@ -50,9 +50,6 @@ const Discover = () => {
             }
 
             for (const item of dataArray) {
-              const latitude = item.latitude ? parseFloat(item.latitude) : 49.2608724;
-              const longitude = item.longitude ? parseFloat(item.longitude) : -123.113952;
-
               enrichedData.push({
                 ...item,
                 pokemonInfo,

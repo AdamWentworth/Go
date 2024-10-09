@@ -46,19 +46,25 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
 
   const handleSearch = async () => {
     setErrorMessage('');
-  
+
+    // Check if shadow Pokémon are selected for trade or wanted
+    if (isShadow && (ownershipStatus === 'trade' || ownershipStatus === 'wanted')) {
+      setErrorMessage('Shadow Pokémon cannot be listed for trade or wanted');
+      return;
+    }
+
     if (!pokemon) {
       setErrorMessage('Please provide a Pokémon name.');
       return;
     }
-  
+
     if (!useCurrentLocation && !city) {
       setErrorMessage('Please provide a location or use your current location.');
       return;
     }
-  
+
     let locationCoordinates = coordinates;
-  
+
     if (!useCurrentLocation) {
       try {
         const query = city;
@@ -66,7 +72,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
           `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1`,
           { withCredentials: false }
         );
-  
+
         if (response.data?.features?.length > 0) {
           const [lon, lat] = response.data.features[0].geometry.coordinates;
           locationCoordinates = { latitude: lat, longitude: lon };
@@ -79,31 +85,31 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
         return;
       }
     }
-  
+
     const storedData = localStorage.getItem('pokemonData');
     if (!storedData) {
       setErrorMessage('No Pokémon data found in local storage.');
       return;
     }
-  
+
     const pokemonData = JSON.parse(storedData).data;
-  
+
     const matchingPokemon = pokemonData.find(
       (p) =>
         p.name?.toLowerCase() === pokemon.toLowerCase() &&
         (!selectedForm || p.form?.toLowerCase() === selectedForm.toLowerCase())
     );
-  
+
     if (!matchingPokemon) {
       setErrorMessage('No matching Pokémon found.');
       return;
     }
-  
+
     const { pokemon_id } = matchingPokemon;
-  
+
     const matchingCostume = matchingPokemon.costumes?.find((c) => c.name === costume);
     const costume_id = matchingCostume ? matchingCostume.costume_id : null;
-  
+
     const queryParams = {
       pokemon_id,
       shiny: isShiny,
@@ -128,30 +134,29 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
       range_km: range,
       limit: resultsLimit,
     };
-  
+
     // Set irrelevant parameters to null based on ownershipStatus
     if (ownershipStatus !== 'owned') {
       queryParams.attack_iv = null;
       queryParams.defense_iv = null;
       queryParams.stamina_iv = null;
     }
-  
+
     if (ownershipStatus !== 'trade') {
       queryParams.only_matching_trades = null;
     }
-  
+
     if (ownershipStatus !== 'wanted') {
       queryParams.pref_lucky = null;
-      queryParams.friendship_level = null; 
+      queryParams.friendship_level = null;
       queryParams.already_registered = null;
       queryParams.trade_in_wanted_list = null;
     }
-  
+
     console.log('Search Query Parameters:', queryParams);
-  
+
     onSearch(queryParams);
   };
-  
 
   return (
     <div className="pokemon-search-bar sticky">

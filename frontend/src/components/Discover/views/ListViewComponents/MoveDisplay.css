@@ -1,28 +1,28 @@
 /* MoveDisplay.css */
 
-/* Styles for the moves display */
-.list-view .moves-container {
+.list-view-row .moves-container {
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centers the container itself */
+    align-items: center; /* Aligns all move containers to the left */
     width: 100%;
-  }
-  
-  .list-view .moves-container .move {
+}
+
+.list-view-row .moves-container .move {
     display: flex;
     align-items: center;
-    justify-content: flex-start; /* Aligns content to the left inside the move block */
-    max-width: 180px; /* Controls the width of the move block */
-    width: 100%; /* Allows the block to take the full width */
-    margin-bottom: 2px;
-    margin-left: 22px;
-  }
-  
-  .list-view .moves-container .move p {
-    margin-left: 8px;
-  }
-  
-  .list-view .moves-container .move-type-icon {
+    justify-content: flex-start; /* Ensures the move content aligns to the left */
+    max-width: 220px; /* Controls the width of the move block */
+    width: 100%; /* Allows the move block to take up the full width */
+    margin-bottom: 4px; /* Adds some space between moves */
+}
+
+.list-view-row .moves-container .move p {
+    margin-left: 15px; /* Adds space between the icon and the text */
+    text-align: left; /* Aligns the text to the left */
+    flex: 1; /* Allows the text to stretch and fill the available space */
+}
+
+.list-view-row .moves-container .move-type-icon {
     width: 24px;
     height: 24px;
-  }
+}
