@@ -35,7 +35,7 @@ const MiniMap = ({ latitude, longitude, ownershipStatus }) => {
     if (ownershipStatus === 'owned') {
       pointColor = '#00AAFF'; // Blue for owned
     } else if (ownershipStatus === 'trade') {
-      pointColor = '#00FF00'; // Green for trade
+      pointColor = '#4cae4f'; // Green for trade
     } else {
       pointColor = '#FF0000'; // Red for wanted (default)
     }
@@ -53,7 +53,7 @@ const MiniMap = ({ latitude, longitude, ownershipStatus }) => {
       source: vectorSource,
       style: new Style({
         image: new Circle({
-          radius: 5,
+          radius: 6,
           fill: new Fill({ color: pointColor }), // Set color based on ownershipStatus
         }),
       }),

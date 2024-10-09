@@ -57,7 +57,7 @@
 }
 
 .ownership-button.active.trade {
-  background-color: #4CAF50; /* Green for 'Trade' */
+  background-color: #2e8631; /* Green for 'Trade' */
 }
 
 .ownership-button.active.wanted {

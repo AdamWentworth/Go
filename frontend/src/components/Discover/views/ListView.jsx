@@ -3,12 +3,13 @@
 import React from 'react';
 import './ListView.css';
 import { URLSelect } from '../utils/URLSelect';
-import getPokemonDisplayName from '../utils/getPokemonDisplayName'; // Import the new utility
+import getPokemonDisplayName from '../utils/getPokemonDisplayName';
 import FriendshipLevel from './ListViewComponents/FriendshipLevel';
 import GenderIcon from './ListViewComponents/GenderIcon';
 import MoveDisplay from './ListViewComponents/MoveDisplay';
 import MiniMap from './ListViewComponents/MiniMap';
-import IVDisplay from './ListViewComponents/IVDisplay'; // Import IVDisplay
+import IVDisplay from './ListViewComponents/IVDisplay';
+import CPDisplay from './ListViewComponents/CPDisplay'; // Import CPDisplay
 
 const ListView = ({ data, ownershipStatus }) => {
   if (!Array.isArray(data)) {
@@ -26,17 +27,16 @@ const ListView = ({ data, ownershipStatus }) => {
           const imageUrl = URLSelect(item.pokemonInfo, item);
           const friendshipLevel = item.friendship_level || 0;
           const prefLucky = item.pref_lucky || false;
-          const latitude = item.latitude ? parseFloat(item.latitude) : 49.2608724; // Default latitude
-          const longitude = item.longitude ? parseFloat(item.longitude) : -123.113952; // Default longitude
+          const latitude = item.latitude ? parseFloat(item.latitude) : 49.2608724;
+          const longitude = item.longitude ? parseFloat(item.longitude) : -123.113952;
 
-          // Get the Pokémon's formatted display name
           const pokemonDisplayName = getPokemonDisplayName(item);
 
           return (
             <div key={index} className="list-view-row">
               {/* Left Column: MiniMap */}
               <div className="left-column">
-              {item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
+                {item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
                 <MiniMap latitude={latitude} longitude={longitude} ownershipStatus={ownershipStatus} />
               </div>
 
@@ -48,6 +48,12 @@ const ListView = ({ data, ownershipStatus }) => {
                   {/* Render friendship level only if the Pokémon is wanted */}
                   {ownershipStatus === 'wanted' && (
                     <FriendshipLevel level={friendshipLevel} prefLucky={prefLucky} />
+                  )}
+
+                  {ownershipStatus === 'owned' && (
+                    <>
+                      <CPDisplay cp={item.cp} />
+                    </>
                   )}
 
                   {item.pokemonInfo && (
@@ -77,18 +83,18 @@ const ListView = ({ data, ownershipStatus }) => {
 
               {/* Right Column: Dynamic Content */}
               <div className="right-column">
-                  <MoveDisplay
-                    fastMoveId={item.fast_move_id}
-                    chargedMove1Id={item.charged_move1_id}
-                    chargedMove2Id={item.charged_move2_id}
-                    moves={item.pokemonInfo.moves}
-                  />
+                <MoveDisplay
+                  fastMoveId={item.fast_move_id}
+                  chargedMove1Id={item.charged_move1_id}
+                  chargedMove2Id={item.charged_move2_id}
+                  moves={item.pokemonInfo.moves}
+                />
                 {ownershipStatus === 'owned' && (
-                  <IVDisplay item={item} />
+                  <>
+                    <IVDisplay item={item} />
+                  </>
                 )}
-                {ownershipStatus !== 'owned' && (
-                  <p>{ownershipStatus}</p>
-                )}
+                {ownershipStatus !== 'owned' && <p>{ownershipStatus}</p>}
               </div>
             </div>
           );
