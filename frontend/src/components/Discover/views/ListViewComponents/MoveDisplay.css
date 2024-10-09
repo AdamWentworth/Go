@@ -1,0 +1,21 @@
+/* MoveDisplay.css */
+
+/* Styles for the moves display */
+.list-view .moves-container {
+    align-items: center;
+  }
+  
+  .list-view .moves-container .move {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .list-view .moves-container .move p {
+    margin-left: 8px;
+  }
+  
+  .list-view .moves-container .move-type-icon {
+    width: 24px;
+    height: 24px;
+  }

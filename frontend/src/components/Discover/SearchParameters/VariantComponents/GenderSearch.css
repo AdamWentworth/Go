@@ -7,7 +7,7 @@
   width: 100%; /* Make sure the container takes full width */
 }
 
-.gender-icon {
+.gender-toggle-container .gender-icon {
   width: 40px;
   height: 40px;
   transition: transform 0.2s ease;

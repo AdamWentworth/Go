@@ -3,38 +3,15 @@
 import React from 'react';
 import './ListView.css';
 import { URLSelect } from '../utils/URLSelect'; // Adjust the path as necessary
+import FriendshipLevel from './ListViewComponents/FriendshipLevel';
+import GenderIcon from './ListViewComponents/GenderIcon';
+import MoveDisplay from './ListViewComponents/MoveDisplay';
 
 const ListView = ({ data }) => {
   if (!Array.isArray(data)) {
     return <div>No data available.</div>;
   }
   console.log(data);
-
-  // Helper function to render friendship level hearts
-  const renderFriendshipLevel = (level, prefLucky) => {
-    const hearts = [];
-    for (let i = 0; i < 4; i++) {
-      hearts.push(
-        <img
-          key={`heart-${i}`}
-          src={`${process.env.PUBLIC_URL}/images/${i < level ? 'heart-filled' : 'heart-unfilled'}.png`}
-          alt={`Friendship Level ${i < level ? 'Filled' : 'Unfilled'}`}
-          className="heart"
-        />
-      );
-    }
-
-    return (
-      <div className="hearts-lucky-container">
-        <div className="hearts">{hearts}</div>
-        <img
-          src={`${process.env.PUBLIC_URL}/images/lucky_friend_icon.png`}
-          alt="Lucky Friend"
-          className={`lucky-icon ${prefLucky ? '' : 'grey-out'}`}
-        />
-      </div>
-    );
-  };
 
   return (
     <div className="list-view">
@@ -50,9 +27,9 @@ const ListView = ({ data }) => {
             <div key={index} className="card">
               <h3>{item.username}</h3>
               <p>Location: {item.location}</p>
-              {item.distance && (
-                <p>Distance: {item.distance.toFixed(2)} km</p>
-              )}
+              {item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
+              {/* Render friendship level */}
+              <FriendshipLevel level={friendshipLevel} prefLucky={prefLucky} />
               {item.pokemonInfo && (
                 <div className="pokemon-image-container">
                   {/* Render lucky background if prefLucky is true */}
@@ -71,13 +48,20 @@ const ListView = ({ data }) => {
                       className="pokemon-image"
                     />
                   )}
-                  <p>Pokémon: {item.pokemonInfo.name}</p>
+                  <p className="pokemon-name">
+                    {item.pokemonInfo.name}
+                    {/* Render gender icon */}
+                    <GenderIcon gender={item.gender} />
+                  </p>
                 </div>
               )}
-              {/* Render friendship level */}
-              <div className="friendship-level">
-                {renderFriendshipLevel(friendshipLevel, prefLucky)}
-              </div>
+              {/* Render moves */}
+              <MoveDisplay
+                fastMoveId={item.fast_move_id}
+                chargedMove1Id={item.charged_move1_id}
+                chargedMove2Id={item.charged_move2_id}
+                moves={item.pokemonInfo.moves}
+              />
             </div>
           );
         })
