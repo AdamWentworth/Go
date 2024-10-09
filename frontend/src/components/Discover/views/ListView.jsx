@@ -2,13 +2,14 @@
 
 import React from 'react';
 import './ListView.css';
-import { URLSelect } from '../utils/URLSelect'; // Adjust the path as necessary
+import { URLSelect } from '../utils/URLSelect';
 import FriendshipLevel from './ListViewComponents/FriendshipLevel';
 import GenderIcon from './ListViewComponents/GenderIcon';
 import MoveDisplay from './ListViewComponents/MoveDisplay';
-import MiniMap from './ListViewComponents/MiniMap'; // Import the MiniMap component
+import MiniMap from './ListViewComponents/MiniMap';
+import IVDisplay from './ListViewComponents/IVDisplay'; // Import IVDisplay
 
-const ListView = ({ data }) => {
+const ListView = ({ data, ownershipStatus }) => {
   if (!Array.isArray(data)) {
     return <div>No data available.</div>;
   }
@@ -45,7 +46,6 @@ const ListView = ({ data }) => {
 
                   {item.pokemonInfo && (
                     <div className="pokemon-image-container">
-                      {/* Render lucky background if prefLucky is true */}
                       {prefLucky && (
                         <img
                           src={`${process.env.PUBLIC_URL}/images/lucky.png`}
@@ -53,7 +53,6 @@ const ListView = ({ data }) => {
                           className="lucky-backdrop"
                         />
                       )}
-                      {/* Render Pokémon image */}
                       {imageUrl && (
                         <img
                           src={imageUrl}
@@ -63,13 +62,11 @@ const ListView = ({ data }) => {
                       )}
                       <p className="pokemon-name">
                         {item.pokemonInfo.name}
-                        {/* Render gender icon */}
                         <GenderIcon gender={item.gender} />
                       </p>
                     </div>
                   )}
 
-                  {/* Render moves */}
                   <MoveDisplay
                     fastMoveId={item.fast_move_id}
                     chargedMove1Id={item.charged_move1_id}
@@ -79,11 +76,14 @@ const ListView = ({ data }) => {
                 </div>
               </div>
 
-              {/* Right Column: Dynamic Content Placeholder */}
+              {/* Right Column: Dynamic Content */}
               <div className="right-column">
-                <div className="dynamic-content">
-                  <p>Dynamic Content</p>
-                </div>
+                {ownershipStatus === 'owned' && (
+                  <IVDisplay item={item} />
+                )}
+                {ownershipStatus !== 'owned' && (
+                  <p>{ownershipStatus}</p>
+                )}
               </div>
             </div>
           );

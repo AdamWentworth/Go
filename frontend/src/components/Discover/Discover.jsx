@@ -10,12 +10,14 @@ import axios from 'axios';
 const Discover = () => {
   const [view, setView] = useState('list');
   const [searchResults, setSearchResults] = useState([]);
+  const [ownershipStatus, setOwnershipStatus] = useState('owned'); // Track ownership status
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSearch = async (queryParams) => {
     setErrorMessage('');
     setIsLoading(true);
+    setOwnershipStatus(queryParams.ownership); // Update ownership status based on search parameters
 
     try {
       const response = await axios.get(
@@ -90,7 +92,7 @@ const Discover = () => {
       {isLoading ? (
         <LoadingSpinner />
       ) : view === 'list' ? (
-        <ListView data={searchResults} />
+        <ListView data={searchResults} ownershipStatus={ownershipStatus} />
       ) : (
         <MapView data={searchResults} />
       )}

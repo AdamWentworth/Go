@@ -1,7 +1,7 @@
 // GenderIcon.jsx
 
 import React from 'react';
-import './GenderIcon.css'
+import './GenderIcon.css';
 
 const GenderIcon = ({ gender }) => {
   const getGenderIconUrl = () => {
@@ -16,7 +16,7 @@ const GenderIcon = ({ gender }) => {
 
   const iconUrl = getGenderIconUrl();
 
-  return iconUrl ? <img src={iconUrl} alt={gender} className="gender-icon" /> : null;
+  return iconUrl ? <img src={iconUrl} alt={gender} className="list-view-gender-icon" /> : null;
 };
 
 export default GenderIcon;

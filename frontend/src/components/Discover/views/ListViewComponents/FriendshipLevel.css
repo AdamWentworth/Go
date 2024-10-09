@@ -1,33 +1,34 @@
 /* FriendshipLevel.css */
 
-/* Styles for friendship level display */
-.list-view .friendship-level {
-    margin-top: 0.5rem;
-  }
-  
-  .list-view .hearts-lucky-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .list-view .hearts {
-    display: flex;
-  }
-  
-  .list-view .heart {
-    width: 24px;
-    height: 24px;
-    margin-right: 4px;
-  }
-  
-  .list-view .lucky-icon {
-    width: 32px;
-    height: 32px;
-    margin-left: 8px;
-  }
-  
-  .list-view .grey-out {
-    filter: grayscale(100%);
-    opacity: 0.5;
-  }
+/* Styles for friendship level display specific to ListView */
+.list-view-row .friendship-level {
+  margin-top: 0.5rem;
+}
+
+.list-view-row .hearts-lucky-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.list-view-row .hearts {
+  display: flex;
+}
+
+.list-view-row .heart {
+  width: 24px;
+  height: 24px;
+  margin-right: 4px;
+}
+
+.list-view-row .lucky-icon {
+  width: 32px;
+  height: 32px;
+  margin-left: 8px;
+}
+
+.list-view-row .grey-out {
+  filter: grayscale(100%);
+  opacity: 0.5;
+}
