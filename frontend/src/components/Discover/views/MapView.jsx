@@ -27,15 +27,19 @@ const MapView = ({ data }) => {
 
     const vectorSource = new VectorSource();
     const coordinatesArray = [];
+
     data.forEach((item) => {
-      const coordinates = fromLonLat([item.coordinates.longitude, item.coordinates.latitude]);
+      const longitude = item.longitude ? parseFloat(item.longitude) : -123.113952;
+      const latitude = item.latitude ? parseFloat(item.latitude) : 49.2608724;
+
+      const coordinates = fromLonLat([longitude, latitude]);
       coordinatesArray.push(coordinates);
 
       const feature = new Feature({
         geometry: new Point(coordinates),
-        name: item.name,
+        name: item.username, // Using username or any appropriate property
         location: item.location,
-        isShiny: item.isShiny,
+        isShiny: item.shiny,
       });
 
       feature.setStyle(
@@ -51,13 +55,16 @@ const MapView = ({ data }) => {
     });
 
     const extent = vectorSource.getExtent();
-    const paddedExtent = bufferExtent(extent, Math.max(extent[2] - extent[0], extent[3] - extent[1]) * 0.25);
+    const paddedExtent = bufferExtent(
+      extent,
+      Math.max(extent[2] - extent[0], extent[3] - extent[1]) * 0.25
+    );
 
     const baseTileLayer = new TileLayer({
       source: new XYZ({
-        url: isLightMode ? 
-          'https://{1-4}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png' :
-          'https://{1-4}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        url: isLightMode
+          ? 'https://{1-4}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+          : 'https://{1-4}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       }),
     });
 

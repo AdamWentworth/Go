@@ -9,6 +9,7 @@
     "autolinker": "^4.0.0",
     "axios": "^1.5.1",
     "bootstrap": "^5.3.2",
+    "bottleneck": "^2.19.5",
     "cesium": "^1.121.1",
     "date-fns": "^3.6.0",
     "js-cookie": "^3.0.5",
