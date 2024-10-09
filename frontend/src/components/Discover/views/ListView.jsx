@@ -3,6 +3,7 @@
 import React from 'react';
 import './ListView.css';
 import { URLSelect } from '../utils/URLSelect';
+import getPokemonDisplayName from '../utils/getPokemonDisplayName'; // Import the new utility
 import FriendshipLevel from './ListViewComponents/FriendshipLevel';
 import GenderIcon from './ListViewComponents/GenderIcon';
 import MoveDisplay from './ListViewComponents/MoveDisplay';
@@ -13,6 +14,8 @@ const ListView = ({ data, ownershipStatus }) => {
   if (!Array.isArray(data)) {
     return <div>No data available.</div>;
   }
+
+  console.log(data)
 
   return (
     <div className="list-view-container">
@@ -25,6 +28,9 @@ const ListView = ({ data, ownershipStatus }) => {
           const prefLucky = item.pref_lucky || false;
           const latitude = item.latitude ? parseFloat(item.latitude) : 49.2608724; // Default latitude
           const longitude = item.longitude ? parseFloat(item.longitude) : -123.113952; // Default longitude
+
+          // Get the Pokémon's formatted display name
+          const pokemonDisplayName = getPokemonDisplayName(item);
 
           return (
             <div key={index} className="list-view-row">
@@ -40,7 +46,7 @@ const ListView = ({ data, ownershipStatus }) => {
                   {item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
 
                   {/* Render friendship level only if the Pokémon is wanted */}
-                  {item.is_wanted && (
+                  {ownershipStatus === 'wanted' && (
                     <FriendshipLevel level={friendshipLevel} prefLucky={prefLucky} />
                   )}
 
@@ -56,12 +62,12 @@ const ListView = ({ data, ownershipStatus }) => {
                       {imageUrl && (
                         <img
                           src={imageUrl}
-                          alt={item.pokemonInfo.name}
+                          alt={pokemonDisplayName}
                           className="pokemon-image"
                         />
                       )}
                       <p className="pokemon-name">
-                        {item.pokemonInfo.name}
+                        {pokemonDisplayName}
                         <GenderIcon gender={item.gender} />
                       </p>
                     </div>

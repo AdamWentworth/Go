@@ -23,7 +23,6 @@
 .iv-display-label {
     text-align: left; /* Align label text to the left */
     justify-self: start; /* Align the label to the start of the column */
-    color: white;
 }
 
 .iv-display-content {

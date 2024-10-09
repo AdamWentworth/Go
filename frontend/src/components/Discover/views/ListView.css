@@ -6,18 +6,23 @@
     width: 100%;
     color: white;
   }
+
+  /* Only the first list-view-row will have margin-top */
+.list-view-row:first-child {
+    margin-top: 1rem;
+}
   
   .list-view-row {
     display: flex;
     justify-content: center;
-    width: 100%;
-    margin-top: 1rem;
+    width: 99%; /* Reduce width to add margin on the right */
+    margin-bottom: 1rem;
     background-color: #333;
     margin-left: 10px;
-    margin-right: 20px;
+    margin-right: 10px; /* Added more right margin */
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
+}
   
   .list-view-row .left-column,
   .list-view-row .center-column,
@@ -50,7 +55,7 @@
   }
   
   .list-view-row .center-column .card p {
-    margin: 0.15rem 0;
+    margin: 0;
   }
   
   /* Styles for the Pokémon image container */
