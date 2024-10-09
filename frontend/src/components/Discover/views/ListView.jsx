@@ -6,12 +6,12 @@ import { URLSelect } from '../utils/URLSelect'; // Adjust the path as necessary
 import FriendshipLevel from './ListViewComponents/FriendshipLevel';
 import GenderIcon from './ListViewComponents/GenderIcon';
 import MoveDisplay from './ListViewComponents/MoveDisplay';
+import MiniMap from './ListViewComponents/MiniMap'; // Import the MiniMap component
 
 const ListView = ({ data }) => {
   if (!Array.isArray(data)) {
     return <div>No data available.</div>;
   }
-  console.log(data);
 
   return (
     <div className="list-view-container">
@@ -20,17 +20,16 @@ const ListView = ({ data }) => {
       ) : (
         data.map((item, index) => {
           const imageUrl = URLSelect(item.pokemonInfo, item);
-          const friendshipLevel = item.friendship_level || 0; // Default to 0 if undefined
-          const prefLucky = item.pref_lucky || false; // Default to false if undefined
+          const friendshipLevel = item.friendship_level || 0;
+          const prefLucky = item.pref_lucky || false;
+          const latitude = item.latitude ? parseFloat(item.latitude) : 49.2608724; // Default latitude
+          const longitude = item.longitude ? parseFloat(item.longitude) : -123.113952; // Default longitude
 
           return (
             <div key={index} className="list-view-row">
-              {/* Left Column: Map Preview Placeholder */}
+              {/* Left Column: MiniMap */}
               <div className="left-column">
-                <div className="map-preview">
-                  {/* Placeholder for the map preview, can dial in later */}
-                  <p>Map Preview</p>
-                </div>
+                <MiniMap latitude={latitude} longitude={longitude} />
               </div>
 
               {/* Center Column: Current Content */}
@@ -83,7 +82,6 @@ const ListView = ({ data }) => {
               {/* Right Column: Dynamic Content Placeholder */}
               <div className="right-column">
                 <div className="dynamic-content">
-                  {/* Placeholder for dynamic content based on ownership */}
                   <p>Dynamic Content</p>
                 </div>
               </div>

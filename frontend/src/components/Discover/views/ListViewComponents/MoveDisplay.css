@@ -11,9 +11,8 @@
     display: flex;
     align-items: center;
     justify-content: flex-start; /* Ensures the move content aligns to the left */
-    max-width: 220px; /* Controls the width of the move block */
+    max-width: 150px; /* Controls the width of the move block */
     width: 100%; /* Allows the move block to take up the full width */
-    margin-bottom: 4px; /* Adds some space between moves */
 }
 
 .list-view-row .moves-container .move p {
@@ -23,6 +22,6 @@
 }
 
 .list-view-row .moves-container .move-type-icon {
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
 }

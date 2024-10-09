@@ -1,0 +1,24 @@
+/* MiniMap.css */
+
+.mini-map-wrapper {
+    width: 90%;
+    height: 300px; /* Increased height */
+    border-radius: 20px; /* Increased border-radius for rounded corners */
+    overflow: hidden; /* Ensures the map does not overflow the border radius */
+    position: relative;
+    margin-left: 10px; /* Add margin to the left */
+  }
+  
+  .mini-map-container {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit; /* Inherit the border-radius from the parent wrapper */
+  }
+  
+  /* Custom zoom control positioning */
+  .mini-map-zoom.ol-control {
+    top: 10px !important; /* Position at the top */
+    left: 10px !important; /* Align to the left */
+    z-index: 1;
+  }
+  
