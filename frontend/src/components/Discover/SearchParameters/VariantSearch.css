@@ -67,7 +67,7 @@
 }
 
 /* Styling for the Pokémon image */
-.pokemon-image {
+.pokemon-variant-container .pokemon-image {
   max-width: 100%;
   z-index: 3;
 }

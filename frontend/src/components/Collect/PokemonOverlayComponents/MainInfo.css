@@ -12,7 +12,7 @@
     margin: 0px;
 }
 
-.pokemon-image {
+.main-info-column .pokemon-image {
     margin-top: -20px;
     margin-bottom: -15px;
     max-width: 240px;

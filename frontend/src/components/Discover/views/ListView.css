@@ -1,3 +1,5 @@
+/* ListView.css */
+
 .list-view {
     width: 100%;
     display: flex;
@@ -6,22 +8,74 @@
     color: white;
   }
   
-  .card {
-    width: 100%; /* Ensures the card expands to full width */
+  .list-view .card {
+    width: 100%;
     background-color: #333;
-    padding: 1rem; /* Padding inside the card */
-    border-radius: 8px; /* Optional: gives the card rounded corners */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Adds shadow for card effect */
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
     justify-content: center;
   }
   
-  .card h3 {
-    margin: 0 0 0.5rem 0; /* Add margin below heading */
+  .list-view .card h3 {
+    margin: 0 0 0.5rem 0;
   }
   
-  .card p {
-    margin: 0.25rem 0; /* Adds some spacing between paragraphs */
+  .list-view .card p {
+    margin: 0.25rem 0;
   }
   
+  /* Styles for the Pokémon image container */
+  .list-view .pokemon-image-container {
+    position: relative;
+    margin: 0 auto;
+  }
+  
+  .list-view .pokemon-image-container .pokemon-image {
+    max-width: 100%;
+    z-index: 2;
+    position: relative;
+  }
+  
+  .list-view .pokemon-image-container .lucky-backdrop {
+    position: absolute;
+    top: 18%;
+    left: 15%;
+    width: 180px;
+    height: auto;
+    z-index: 1;
+  }
+  
+  /* Styles for friendship level display */
+  .list-view .friendship-level {
+    margin-top: 0.5rem;
+  }
+  
+  .list-view .hearts-lucky-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .list-view .hearts {
+    display: flex;
+  }
+  
+  .list-view .heart {
+    width: 24px;
+    height: 24px;
+    margin-right: 4px;
+  }
+  
+  .list-view .lucky-icon {
+    width: 32px;
+    height: 32px;
+    margin-left: 8px;
+  }
+  
+  .list-view .grey-out {
+    filter: grayscale(100%);
+    opacity: 0.5;
+  }  
