@@ -1,7 +1,5 @@
 // VariantSearch.jsx
 
-// VariantSearch.jsx
-
 import React, { useState, useEffect } from 'react';
 import validatePokemon from '../utils/validatePokemon';
 import { updateImage } from '../utils/updateImage';
@@ -120,7 +118,14 @@ const VariantSearch = ({
       setPokemon(newPokemon);
       setSelectedForm('');
       setSelectedGender('Any'); // Reset gender only if new Pokémon is selected.
-  
+      
+      // Reset selected moves when a new Pokémon is selected
+      setSelectedMoves({
+        fastMove: null,
+        chargedMove1: null,
+        chargedMove2: null,
+      });
+      
       // Generate suggestions if input is 3 or more characters
       if (newPokemon.length >= 3) {
         const filteredSuggestions = pokemonData

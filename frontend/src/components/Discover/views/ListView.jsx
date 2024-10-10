@@ -44,7 +44,7 @@ const ListView = ({ data, ownershipStatus, hasSearched, pokemonCache }) => {
         } else if (ownershipStatus === 'trade') {
           return <TradeListView key={index} item={item} findPokemonByKey={findPokemonByKey} />;
         } else if (ownershipStatus === 'wanted') {
-          return <WantedListView key={index} item={item} />;
+          return <WantedListView key={index} item={item} findPokemonByKey={findPokemonByKey} />;
         }
         return null;
       })}

@@ -83,8 +83,7 @@
   .list-view-row .center-column .pokemon-image-container .lucky-backdrop {
     position: absolute;
     top: 18%;
-    left: 15%;
-    width: 180px;
+    width: 200px;
     height: auto;
     z-index: 1;
   }
