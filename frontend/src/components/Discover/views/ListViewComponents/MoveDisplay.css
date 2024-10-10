@@ -21,7 +21,7 @@
     flex: 1; /* Allows the text to stretch and fill the available space */
     margin-block-start: 3px;
     margin-block-end: 3px;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .list-view-row .moves-container .move-type-icon {
