@@ -1,6 +1,6 @@
 // PokemonSearchBar.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import VariantSearch from './SearchParameters/VariantSearch';
 import LocationSearch from './SearchParameters/LocationSearch';
 import OwnershipSearch from './SearchParameters/OwnershipSearch';
@@ -8,7 +8,7 @@ import './PokemonSearchBar.css';
 import { FaChevronUp, FaChevronDown, FaList, FaGlobe } from 'react-icons/fa';
 import axios from 'axios';
 
-const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
+const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, setIsCollapsed }) => {
   const [pokemon, setPokemon] = useState('');
   const [isShiny, setIsShiny] = useState(false);
   const [isShadow, setIsShadow] = useState(false);
@@ -37,8 +37,36 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
   const [tradeInWantedList, setTradeInWantedList] = useState(false);
   const [friendshipLevel, setFriendshipLevel] = useState(0);
 
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const collapsibleRef = useRef(null); // Add a ref for the collapsible container
+
+  useEffect(() => {
+    if (!isCollapsed && collapsibleRef.current) {
+      // Set the max-height to the scrollHeight when expanded
+      collapsibleRef.current.style.maxHeight = `${collapsibleRef.current.scrollHeight}px`;
+    } else if (isCollapsed && collapsibleRef.current) {
+      // Set max-height to 0 when collapsed
+      collapsibleRef.current.style.maxHeight = '0px';
+    }
+  }, [isCollapsed]);  
+
+   // Function to handle scroll event
+   const handleScroll = () => {
+    if (window.scrollY === 0) {
+      setIsCollapsed(false); // Expand the search bar when scrolled to the top
+    }
+  };
+
+  // useEffect to add and clean up the scroll event listener
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+
+    // Cleanup listener on component unmount
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -102,6 +130,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
 
     if (!matchingPokemon) {
       setErrorMessage('No matching Pokémon found.');
+      setIsCollapsed(false);
       return;
     }
 
@@ -154,13 +183,15 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView }) => {
     }
 
     console.log('Search Query Parameters:', queryParams);
-
+  
+    // Call onSearch and collapse the search bar upon success
     onSearch(queryParams);
+    setIsCollapsed(true); // Collapse after a successful search
   };
 
   return (
     <div className="pokemon-search-bar sticky">
-      <div className={`collapsible-container ${isCollapsed ? 'collapsed' : ''}`}>
+      <div ref={collapsibleRef} className={`collapsible-container ${isCollapsed ? 'collapsed' : ''}`}>
         <div className="search-bar-container content">
           <div className="pokemon-variant">
             <VariantSearch

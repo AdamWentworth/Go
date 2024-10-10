@@ -40,7 +40,7 @@ function App() {
                                                 <Route path="/login" element={<Login />} />
                                                 <Route path="/register" element={<Register />} />
                                                 <Route path="/account" element={<Account />} />
-                                                <Route path="/raid" element={<Raid />} />
+                                                {/* <Route path="/raid" element={<Raid />} /> */}
                                                 <Route path="/discover" element={<Discover />} />
                                             </Routes>
                                         </main>

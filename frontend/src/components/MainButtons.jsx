@@ -9,13 +9,13 @@ function MainButtons({ navbar }) {
 
     return (
         <div className={containerClass}>
-            <button className="mainButton pvp-btn">PVP</button>
+            {/* <button className="mainButton pvp-btn">PVP</button> */}
             <Link to="/collect">
                 <button className="mainButton collect-btn">Collect</button>
             </Link>
-            <Link to="/raid">
+            {/* <Link to="/raid">
                 <button className="mainButton raid-btn">Raid</button>
-            </Link>
+            </Link> */}
             <Link to="/discover"> 
                 <button className="mainButton discover-btn">Discover</button>
             </Link>

@@ -208,6 +208,28 @@
   height: 40px; /* Adjust as needed */
 }
 
+.autocomplete-suggestions {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ccc;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 1000;
+  color: black;
+}
+
+.autocomplete-suggestions li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.autocomplete-suggestions li:hover {
+  background-color: #f0f0f0;
+}
+
 /* Responsive layout adjustments */
 @media (max-width: 480px) {
   .main-content {

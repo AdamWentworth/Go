@@ -23,7 +23,7 @@ const ListView = ({ data, ownershipStatus, hasSearched, pokemonCache }) => {
   if (!hasSearched && data.length === 0) {
     return (
       <div className="no-data-container">
-        <p>Use the Toolbar above to Discover Pokémon near you and Around the World.</p>
+        <p>Use the Toolbar above to Discover Pokémon near you and Around the World!</p>
       </div>
     );
   }

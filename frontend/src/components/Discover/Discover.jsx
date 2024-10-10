@@ -15,6 +15,7 @@ const Discover = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false); // Track if a search has been made
   const [pokemonCache, setPokemonCache] = useState(null); // Store the pokemonCache (pokemonVariants)
+  const [isCollapsed, setIsCollapsed] = useState(false); // Move isCollapsed state here
 
   // This function retrieves pokemonCache from Cache Storage (or could be another API)
   const fetchPokemonVariantsCache = async () => {
@@ -88,24 +89,30 @@ const Discover = () => {
             if (enrichedData.length > 0) {
               enrichedData.sort((a, b) => a.distance - b.distance);
               setSearchResults(enrichedData);
+              setIsCollapsed(true); // Collapse search bar if results are found
             } else {
               // Handle case where no valid Pokémon were enriched
               setSearchResults([]);
+              setIsCollapsed(false); // Expand search bar if no results
             }
           } else {
             // Handle missing or invalid localStorage data
             setErrorMessage('pokemonData is not properly formatted in localStorage.');
+            setIsCollapsed(false); // Expand search bar if there's an error
           }
         } else {
           // Handle case where API returns an empty data array
           setSearchResults([]);
+          setIsCollapsed(false); // Expand search bar if no results
         }
       } else {
         setErrorMessage('Failed to retrieve search results.');
+        setIsCollapsed(false); // Expand search bar if there's an error
       }
     } catch (error) {
       console.error('Error during API request:', error);
       setErrorMessage('An error occurred while searching. Please try again.');
+      setIsCollapsed(false); // Expand search bar if there's an error
     } finally {
       setIsLoading(false);
     }
@@ -119,6 +126,8 @@ const Discover = () => {
         setErrorMessage={setErrorMessage}
         view={view}
         setView={setView}
+        isCollapsed={isCollapsed} // Pass down the isCollapsed state
+        setIsCollapsed={setIsCollapsed} // Pass the function to toggle collapse/expand
       />
 
       {/* Conditionally render the LoadingSpinner or the ListView/MapView */}

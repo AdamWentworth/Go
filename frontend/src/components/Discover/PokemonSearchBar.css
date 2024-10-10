@@ -11,7 +11,6 @@
   top: 0;
   z-index: 1000;
   box-shadow: 0px 4px 2px -2px rgb(168, 168, 168);
-  transition: height 0.3s ease;
 }
 
 /* Combined container for both error message and view controls */
@@ -108,23 +107,50 @@
 .collapsible-container {
   width: 100%;
   overflow: hidden;
-  transition: height 0.3s ease;
+  max-height: 1000px; /* Set a high value for expanded state */
+  transition: max-height 0.6s ease-in-out;
 }
 
 .collapsible-container.collapsed {
-  min-height: 0;
-}
-
-.collapsible-container.collapsed .content {
-  height: 0;
-  visibility: hidden;
-  opacity: 0;
-  transition: visibility 0s 0.3s, opacity 0.3s ease;
+  max-height: 0; /* Collapse the container smoothly */
+  transition: max-height 0.6s ease-in-out; /* Smooth height transition */
 }
 
 .collapsible-container .content {
-  height: auto;
   visibility: visible;
-  opacity: 1;
-  transition: opacity 0.3s ease;
+  height: auto;
+}
+
+/* Additional CSS for the controls and buttons */
+.pokemon-search-bar .toggle-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #444;
+  color: white;
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.pokemon-search-bar .toggle-button:hover {
+  background-color: #666;
+}
+
+.pokemon-search-bar .toggle-button svg {
+  width: 12px;
+  height: 12px;
+}
+
+.pokemon-search-bar.collapsed {
+  height: 0;
+  overflow: hidden;
+}
+
+/* Adjust the sticky header bar itself */
+.pokemon-search-bar {
+  transition: height 0.6s ease-in-out, padding 0.6s ease-in-out;
 }

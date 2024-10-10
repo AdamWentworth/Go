@@ -40,6 +40,7 @@ const VariantSearch = ({
   const [showCostumeDropdown, setShowCostumeDropdown] = useState(false);
   const [selectedBackground, setSelectedBackground] = useState(null); // State for selected background
   const [showBackgroundOverlay, setShowBackgroundOverlay] = useState(false); // State for overlay visibility
+  const [suggestions, setSuggestions] = useState([]);
 
   useEffect(() => {
     const storedData = localStorage.getItem('pokemonData');
@@ -120,10 +121,20 @@ const VariantSearch = ({
       setSelectedForm('');
       setSelectedGender('Any'); // Reset gender only if new Pokémon is selected.
   
+      // Generate suggestions if input is 3 or more characters
+      if (newPokemon.length >= 3) {
+        const filteredSuggestions = pokemonData
+          .filter(pokemon => pokemon.name.toLowerCase().startsWith(newPokemon.toLowerCase()))
+          .map(pokemon => pokemon.name);
+        setSuggestions(filteredSuggestions);
+      } else {
+        setSuggestions([]); // Clear suggestions if fewer than 3 characters
+      }
+  
       if (newPokemon.trim() === "") {
         // Clear the image, costume, background, and any other states when the input is empty
-        setImageUrl(null); 
-        setAvailableForms([]); 
+        setImageUrl(null);
+        setAvailableForms([]);
         setAvailableCostumes([]);
         setCostume(null); // Reset costume to null
         setSelectedBackground(null); // Reset background to null
@@ -131,7 +142,7 @@ const VariantSearch = ({
         handleValidation(newPokemon, isShiny, isShadow, costume, '', selectedGender); // Pass selectedGender
       }
     }
-  };
+  };  
 
   const handleShinyChange = () => {
     const shinyChecked = !isShiny;
@@ -174,6 +185,12 @@ const VariantSearch = ({
     setSelectedMoves(moves);
   };
 
+  const handleSuggestionClick = (suggestion) => {
+    setPokemon(suggestion);
+    setSuggestions([]); // Clear suggestions after selection
+    handleValidation(suggestion, isShiny, isShadow, costume, selectedForm, selectedGender);
+  };  
+
   // Get the current Pokémon data based on the entered name
   const currentPokemonData = pokemonData.find(
     (p) => p.name.toLowerCase() === pokemon.toLowerCase()
@@ -209,6 +226,15 @@ const VariantSearch = ({
               onChange={handlePokemonChange}
               placeholder="Enter Pokémon name"
             />
+            {suggestions.length > 0 && (
+              <ul className="autocomplete-suggestions">
+                {suggestions.map((suggestion, index) => (
+                  <li key={index} onClick={() => handleSuggestionClick(suggestion)}>
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <div className="button-container">
             <button
