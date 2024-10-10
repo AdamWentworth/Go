@@ -151,6 +151,15 @@
     margin-block-end: 10px;
   }
   
+  .list-view-container .right-column {
+    gap: 0px
+  }
+
+  .list-view-container .location-caught {
+    margin-top: 5px;
+    margin-bottom: 5px;
+  }
+
   @media (min-width: 1024px) and (max-width: 1439px) {
     .list-view-row {
       width: 98%;
