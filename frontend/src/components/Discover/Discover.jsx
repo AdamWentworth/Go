@@ -4,21 +4,23 @@ import React, { useState } from 'react';
 import PokemonSearchBar from './PokemonSearchBar';
 import ListView from './views/ListView';
 import MapView from './views/MapView';
-import LoadingSpinner from '../LoadingSpinner';  // Import the LoadingSpinner component
+import LoadingSpinner from '../LoadingSpinner';
 import axios from 'axios';
 
 const Discover = () => {
   const [view, setView] = useState('list');
   const [searchResults, setSearchResults] = useState([]);
-  const [ownershipStatus, setOwnershipStatus] = useState('owned'); // Track ownership status
+  const [ownershipStatus, setOwnershipStatus] = useState('owned');
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false); // New state to track if a search was made
 
   const handleSearch = async (queryParams) => {
     setErrorMessage('');
     setIsLoading(true);
-    setOwnershipStatus(queryParams.ownership); // Update ownership status based on search parameters
-
+    setHasSearched(true); // Mark as true when a search is made
+    setOwnershipStatus(queryParams.ownership);
+  
     try {
       const response = await axios.get(
         'http://localhost:3005/api/discoverPokemon',
@@ -27,45 +29,52 @@ const Discover = () => {
           withCredentials: true,
         }
       );
-
+  
       if (response.status === 200) {
         let data = response.data;
-
-        // Convert data to an array if it's an object
+  
+        // Ensure data is in array format
         const dataArray = Array.isArray(data) ? data : Object.values(data);
-
+  
         if (dataArray && dataArray.length > 0) {
           const enrichedData = [];
-
+  
           const pokemonDataStored = JSON.parse(localStorage.getItem('pokemonData'));
-
+  
           if (pokemonDataStored && pokemonDataStored.data) {
             const pokemonDataArray = pokemonDataStored.data;
-            const firstItem = dataArray[0];
-            const pokemonId = firstItem.pokemon_id;
-            const pokemonInfo = pokemonDataArray.find(
-              (p) => p.pokemon_id === pokemonId
-            );
-
-            if (!pokemonInfo) {
-              throw new Error(`Pokémon with ID ${pokemonId} not found in localStorage.`);
-            }
-
+  
             for (const item of dataArray) {
-              enrichedData.push({
-                ...item,
-                pokemonInfo,
-              });
+              if (item.pokemon_id) {
+                const pokemonInfo = pokemonDataArray.find(
+                  (p) => p.pokemon_id === item.pokemon_id
+                );
+  
+                // If valid pokemonInfo found in localStorage, enrich data
+                if (pokemonInfo) {
+                  enrichedData.push({
+                    ...item,
+                    pokemonInfo,
+                  });
+                }
+              }
             }
-
-            enrichedData.sort((a, b) => a.distance - b.distance);
-            setSearchResults(enrichedData);
+  
+            // Sort by distance if data is enriched
+            if (enrichedData.length > 0) {
+              enrichedData.sort((a, b) => a.distance - b.distance);
+              setSearchResults(enrichedData);
+            } else {
+              // Handle case where no valid Pokémon were enriched
+              setSearchResults([]);
+            }
           } else {
-            throw new Error('pokemonData is not properly formatted in localStorage.');
+            // Handle missing or invalid localStorage data
+            setErrorMessage('pokemonData is not properly formatted in localStorage.');
           }
         } else {
+          // Handle case where API returns an empty data array
           setSearchResults([]);
-          setErrorMessage('No Pokémon found matching your criteria.');
         }
       } else {
         setErrorMessage('Failed to retrieve search results.');
@@ -74,9 +83,9 @@ const Discover = () => {
       console.error('Error during API request:', error);
       setErrorMessage('An error occurred while searching. Please try again.');
     } finally {
-      setIsLoading(false);  // End the loading state
+      setIsLoading(false);
     }
-  };
+  };  
 
   return (
     <div>
@@ -92,7 +101,7 @@ const Discover = () => {
       {isLoading ? (
         <LoadingSpinner />
       ) : view === 'list' ? (
-        <ListView data={searchResults} ownershipStatus={ownershipStatus} />
+        <ListView data={searchResults} ownershipStatus={ownershipStatus} hasSearched={hasSearched} />
       ) : (
         <MapView data={searchResults} />
       )}

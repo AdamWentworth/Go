@@ -117,6 +117,37 @@
     align-items: center;
     justify-content: center;
   }
+
+  .weight-height-move-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 75%;
+  }
+  
+  .weight-height {
+    margin: 0 10px; /* Space around the weight and height */
+    text-align: center;
+    color: white;
+  }
+
+  /* Centering styles for the no-data-container */
+.no-data-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 400px; /* Adjust this to fit the page layout */
+    text-align: center;
+    font-size: 1.2rem;
+    color: #fff; /* Or any color that fits your design */
+  }
+
+  .list-view-container .location-caught p, .list-view-container .date-caught p{
+    margin-block-start: 0px;
+  }
+  .list-view-container .date-caught p {
+    margin-block-end: 10px;
+  }
   
   @media (min-width: 1024px) and (max-width: 1439px) {
     .list-view-row {

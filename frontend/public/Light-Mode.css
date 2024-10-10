@@ -18,7 +18,7 @@
     color: black
 }
 
-.favorite-component img {
+.favorite-component img, .background-button {
     filter: invert(1); /* Apply a black overlay effect */
 }
 

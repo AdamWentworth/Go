@@ -5,7 +5,7 @@
     flex-direction: column;
     height: 100%; /* Take full height of the parent container */
     width: 70%;
-    padding: 10px;
+    padding-bottom: 10px;
 }
 
 .iv-display-stat {
@@ -34,7 +34,6 @@
     height: 20px;
     font-size: 14px;
     padding: 0;
-    color: white;
     background-color: transparent;
     text-align: center;
     border-radius: 2px;
