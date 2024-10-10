@@ -1,5 +1,5 @@
 /* Light-Mode.css */
-.navbar, .header, .overlay-content, .pokemon-search-bar, .list-view-row {
+.navbar, .header, .pokemon-search-bar, .list-view-row {
     background-color: #e2ead5;
 }
 
@@ -10,7 +10,7 @@
 .evo-line-custom-checkbox, .add-move-button, .moves-search-add-move-button {
     border: 2px solid black
 }
-.pokemon-container, .move-select, .move-select option, .App, .moves-search-select  {
+.pokemon-container, .move-select, .move-select option, .App, .moves-search-select, .overlay-content {
     background-color: #f8fff9;
 }
 

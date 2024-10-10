@@ -11,6 +11,17 @@ const IVDisplay = ({ item }) => {
     stamina: item.stamina_iv,
   };
 
+  // Check if all three stats are null or undefined
+  const allStatsAreNull = 
+    stats.attack === null && 
+    stats.defense === null && 
+    stats.stamina === null;
+
+  // If all stats are null, return null to skip rendering
+  if (allStatsAreNull) {
+    return null;
+  }
+
   const renderStatField = (type, label) => (
     <div className="iv-display-stat" key={type}>
       <span className="iv-display-label">{label}:</span>

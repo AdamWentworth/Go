@@ -99,7 +99,6 @@
   .list-view-row .left-column .map-preview,
   .list-view-row .right-column .dynamic-content {
     width: 100%;
-    background-color: #222;
     padding: 1rem;
     border-radius: 8px;
     color: white;
