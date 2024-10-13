@@ -129,9 +129,10 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 	prefLuckyStr := c.Query("pref_lucky")
 	friendshipLevelStr := c.Query("friendship_level")
 	onlyMatchingTradesStr := c.Query("only_matching_trades")
+	tradeInWantedListStr := c.Query("trade_in_wanted_list")
 
-	logrus.Infof("Received search query with params: pokemon_id=%s, shiny=%s, shadow=%s, costume_id=%s, ownership=%s, limit=%s, range_km=%s, latitude=%s, longitude=%s, fast_move_id=%s, charged_move_1_id=%s, charged_move_2_id=%s, gender=%s, already_registered=%s, attack_iv=%s, defense_iv=%s, stamina_iv=%s, background_id=%s, pref_lucky=%s, friendship_level=%s, only_matching_trades=%s",
-		pokemonIDStr, shinyStr, shadowStr, costumeIDStr, ownership, limitStr, rangeKMStr, latitudeStr, longitudeStr, fastMoveIDStr, chargedMove1IDStr, chargedMove2IDStr, genderStr, alreadyRegisteredStr, attackIVStr, defenseIVStr, staminaIVStr, backgroundIDStr, prefLuckyStr, friendshipLevelStr, onlyMatchingTradesStr)
+	logrus.Infof("Received search query with params: pokemon_id=%s, shiny=%s, shadow=%s, costume_id=%s, ownership=%s, limit=%s, range_km=%s, latitude=%s, longitude=%s, fast_move_id=%s, charged_move_1_id=%s, charged_move_2_id=%s, gender=%s, already_registered=%s, attack_iv=%s, defense_iv=%s, stamina_iv=%s, background_id=%s, pref_lucky=%s, friendship_level=%s, only_matching_trades=%s, trade_in_wanted_list=%s",
+		pokemonIDStr, shinyStr, shadowStr, costumeIDStr, ownership, limitStr, rangeKMStr, latitudeStr, longitudeStr, fastMoveIDStr, chargedMove1IDStr, chargedMove2IDStr, genderStr, alreadyRegisteredStr, attackIVStr, defenseIVStr, staminaIVStr, backgroundIDStr, prefLuckyStr, friendshipLevelStr, onlyMatchingTradesStr, tradeInWantedListStr)
 
 	// Parse parameters into appropriate types
 	var pokemonID, fastMoveID, chargedMove1ID, chargedMove2ID int
@@ -332,7 +333,7 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		}
 	}
 
-	// Parse the new only_matching_trades parameter
+	// Parse the only_matching_trades parameter
 	var onlyMatchingTrades bool
 	if onlyMatchingTradesStr != "" {
 		onlyMatchingTrades, err = strconv.ParseBool(onlyMatchingTradesStr)
@@ -342,6 +343,18 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		}
 	} else {
 		onlyMatchingTrades = false // Default value
+	}
+
+	// Parse the trade_in_wanted_list parameter
+	var tradeInWantedList bool
+	if tradeInWantedListStr != "" {
+		tradeInWantedList, err = strconv.ParseBool(tradeInWantedListStr)
+		if err != nil {
+			logrus.Error("Invalid trade_in_wanted_list value: ", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid trade_in_wanted_list value"})
+		}
+	} else {
+		tradeInWantedList = false // Default value
 	}
 
 	// Extract the user_id from the context (from the JWT token)
@@ -358,6 +371,11 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 
 	// Exclude current user's own instances if ownership is "trade" and only_matching_trades is true
 	if ownership == "trade" && onlyMatchingTrades {
+		query = query.Where("instances.user_id != ?", userID)
+	}
+
+	// Exclude current user's own instances if ownership is "wanted" and trade_in_wanted_list is true
+	if ownership == "wanted" && tradeInWantedList {
 		query = query.Where("instances.user_id != ?", userID)
 	}
 
@@ -501,6 +519,18 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		}
 	}
 
+	// Retrieve current user's 'wanted' instances if needed
+	var currentUserWantedInstances []PokemonInstance
+	if ownership == "wanted" && tradeInWantedList && userID != "" {
+		err := db.Model(&PokemonInstance{}).
+			Where("user_id = ? AND is_wanted = ?", userID, true).
+			Find(&currentUserWantedInstances).Error
+		if err != nil {
+			logrus.Error("Error retrieving current user's wanted instances: ", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve current user's wanted instances"})
+		}
+	}
+
 	// Prepare the response data
 	responseData := make(map[string]interface{})
 	for _, instance := range instances {
@@ -540,6 +570,23 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 				for _, wantedInstance := range wantedInstances {
 					matched, reason := instancesMatch(currentTradeInstance, wantedInstance)
 					if matched {
+						// Check if the wantedInstance is in the instance's not_wanted_list
+						var notWantedList map[string]bool
+						if len(instance.NotWantedList) > 0 {
+							err := json.Unmarshal(instance.NotWantedList, &notWantedList)
+							if err != nil {
+								logrus.Warnf("Failed to parse not_wanted_list for instance %s: %v", instance.InstanceID, err)
+							}
+						}
+
+						if notWantedList != nil {
+							if _, exists := notWantedList[wantedInstance.InstanceID]; exists {
+								logrus.Infof("Matched wanted instance %s is in instance %s's not_wanted_list; skipping this match.", wantedInstance.InstanceID, instance.InstanceID)
+								continue
+							}
+						}
+
+						logrus.Infof("Match found: Current user's trade instance %s matches user's wanted instance %s", currentTradeInstance.InstanceID, wantedInstance.InstanceID)
 						matchFound = true
 						break
 					} else if reason != "" {
@@ -556,6 +603,65 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 			// If no match is found, skip this instance
 			if !matchFound {
 				logrus.Infof("No matching trade found for instance %s owned by user %s; skipping instance.", instance.InstanceID, instanceUserID)
+				for _, reason := range mismatchReasons {
+					logrus.Infof(reason)
+				}
+				continue
+			}
+		}
+
+		// New logic for ownership == "wanted" and trade_in_wanted_list == true
+		if ownership == "wanted" && tradeInWantedList && userID != "" {
+			// Retrieve the 'for trade' instances for the user associated with this instance
+			var tradeInstances []PokemonInstance
+			err := db.Model(&PokemonInstance{}).
+				Where("instances.user_id = ? AND is_for_trade = ?", instanceUserID, true).
+				Find(&tradeInstances).Error
+			if err != nil {
+				logrus.Error("Error retrieving trade instances for user ", instanceUserID, ": ", err)
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve trade instances"})
+			}
+
+			// Compare current user's 'wanted' instances with the trade instances
+			matchFound := false
+			mismatchReasons := []string{}
+			for _, currentWantedInstance := range currentUserWantedInstances {
+				for _, tradeInstance := range tradeInstances {
+					matched, reason := instancesMatch(currentWantedInstance, tradeInstance)
+					if matched {
+						// Check if the tradeInstance is in the instance's not_trade_list
+						var notTradeList map[string]bool
+						if len(instance.NotTradeList) > 0 {
+							err := json.Unmarshal(instance.NotTradeList, &notTradeList)
+							if err != nil {
+								logrus.Warnf("Failed to parse not_trade_list for instance %s: %v", instance.InstanceID, err)
+							}
+						}
+
+						if notTradeList != nil {
+							if _, exists := notTradeList[tradeInstance.InstanceID]; exists {
+								logrus.Infof("Matched trade instance %s is in instance %s's not_trade_list; skipping this match.", tradeInstance.InstanceID, instance.InstanceID)
+								continue
+							}
+						}
+
+						logrus.Infof("Match found: Current user's wanted instance %s matches user's trade instance %s", currentWantedInstance.InstanceID, tradeInstance.InstanceID)
+						matchFound = true
+						break
+					} else if reason != "" {
+						mismatchReasons = append(mismatchReasons, fmt.Sprintf(
+							"Wanted instance %s and trade instance %s do not match: %s",
+							currentWantedInstance.InstanceID, tradeInstance.InstanceID, reason))
+					}
+				}
+				if matchFound {
+					break
+				}
+			}
+
+			// If no match is found, skip this instance
+			if !matchFound {
+				logrus.Infof("No matching trade found in trade_list for instance %s owned by user %s; skipping instance.", instance.InstanceID, instanceUserID)
 				for _, reason := range mismatchReasons {
 					logrus.Infof(reason)
 				}
@@ -679,6 +785,23 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 						"wanted_filters":   tradeInstance.WantedFilters,
 						"trade_filters":    tradeInstance.TradeFilters,
 					}
+					// Add 'match' field based on tradeInWantedList
+					if tradeInWantedList && userID != "" {
+						// Determine if any of the user's 'wanted' instances match this tradeInstance
+						matchFound := false
+						for _, currentWantedInstance := range currentUserWantedInstances {
+							matched, _ := instancesMatch(currentWantedInstance, tradeInstance)
+							if matched {
+								matchFound = true
+								break
+							}
+						}
+						tradeInstanceData["match"] = matchFound
+					} else {
+						// Set match to null (nil in Go)
+						tradeInstanceData["match"] = nil
+					}
+
 					tradeListData[tradeInstance.InstanceID] = tradeInstanceData
 				}
 
@@ -803,30 +926,30 @@ func instancesMatch(a, b PokemonInstance) (bool, string) {
 		return false, ""
 	}
 	if a.Shiny != b.Shiny {
-		return false, fmt.Sprintf("Shiny mismatch: %v != %v", a.Shiny, b.Shiny)
+		return false, ""
 	}
 	if a.Shadow != b.Shadow {
-		return false, fmt.Sprintf("Shadow mismatch: %v != %v", a.Shadow, b.Shadow)
+		return false, ""
 	}
 	if a.CostumeID != b.CostumeID {
-		return false, fmt.Sprintf("CostumeID mismatch: %v != %v", a.CostumeID, b.CostumeID)
+		return false, ""
 	}
 
 	// Updated gender comparison
 	if a.Gender != nil && b.Gender != nil {
 		if *a.Gender != *b.Gender {
-			return false, fmt.Sprintf("Gender mismatch: %v != %v", *a.Gender, *b.Gender)
+			return false, ""
 		}
 	}
 
 	if a.LocationCard != b.LocationCard {
-		return false, fmt.Sprintf("LocationCard mismatch: %v != %v", a.LocationCard, b.LocationCard)
+		return false, ""
 	}
 
 	// Updated FastMoveID comparison
 	if a.FastMoveID != nil && b.FastMoveID != nil {
 		if *a.FastMoveID != *b.FastMoveID {
-			return false, fmt.Sprintf("FastMoveID mismatch: %v != %v", *a.FastMoveID, *b.FastMoveID)
+			return false, ""
 		}
 	}
 
@@ -841,8 +964,7 @@ func instancesMatch(a, b PokemonInstance) (bool, string) {
 	}
 
 	if !chargedMovesMatch {
-		return false, fmt.Sprintf("Charged moves mismatch: (%v, %v) != (%v, %v)",
-			a.ChargedMove1ID, a.ChargedMove2ID, b.ChargedMove1ID, b.ChargedMove2ID)
+		return false, ""
 	}
 
 	return true, ""

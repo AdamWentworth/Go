@@ -125,6 +125,24 @@
   margin: 0 auto;
 }
 
-.wanted-list-view .hearts-lucky-container {
+.wanted-list-view .hearts-lucky-container, .wanted-list-view .pokemon-weight-height {
   margin-right: -20px;
+}
+
+.wanted-list-view .glowing-pokemon {
+  position: relative;
+  box-shadow: 0 0 15px 8px rgba(255, 215, 0, 0.75);
+  border-radius: 50%;
+}
+
+.wanted-list-view .glowing-pokemon::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  z-index: -1;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.8), rgba(255, 215, 0, 0));
+  border-radius: 50%;
 }

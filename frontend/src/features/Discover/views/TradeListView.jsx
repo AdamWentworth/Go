@@ -161,6 +161,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
             <div className="wanted-list">
               {Object.keys(item.wanted_list).map((pokemonKeyWithUUID) => {
                 const { baseKey } = parsePokemonKey(pokemonKeyWithUUID);
+                const wantedListPokemon = item.wanted_list[pokemonKeyWithUUID]; // Access each trade list Pokémon
                 const matchedPokemon = findPokemonByKey(baseKey);
 
                 return matchedPokemon ? (
@@ -168,7 +169,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
                     key={pokemonKeyWithUUID}
                     src={matchedPokemon.currentImage}
                     alt={matchedPokemon.name}
-                    className="wanted-pokemon-image"
+                    className={`wanted-pokemon-image ${wantedListPokemon.match ? 'glowing-pokemon' : ''}`}
                   />
                 ) : null;
               })}
