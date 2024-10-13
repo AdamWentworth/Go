@@ -9,6 +9,8 @@ import WantedListView from './WantedListView';
 const ListView = ({ data, ownershipStatus, hasSearched, pokemonCache }) => {
   const [pokemonVariants, setPokemonVariants] = useState([]);
 
+  console.log(data)
+
   useEffect(() => {
     if (pokemonCache && pokemonCache.data) {
       setPokemonVariants(pokemonCache.data);
