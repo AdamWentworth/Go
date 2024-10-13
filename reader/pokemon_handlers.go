@@ -550,10 +550,10 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 					}
 				}
 
-				// Exclude instances in the not_trade_list
+				// Exclude instances in the not_trade_list and where Mirror is true
 				filteredTradeInstances := []PokemonInstance{}
 				for _, tradeInstance := range tradeInstances {
-					if _, exists := notTradeList[tradeInstance.InstanceID]; !exists {
+					if _, exists := notTradeList[tradeInstance.InstanceID]; !exists && !tradeInstance.Mirror {
 						filteredTradeInstances = append(filteredTradeInstances, tradeInstance)
 					}
 				}
@@ -632,6 +632,17 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 					if _, exists := notWantedList[wantedInstance.InstanceID]; !exists {
 						filteredWantedInstances = append(filteredWantedInstances, wantedInstance)
 					}
+				}
+
+				// If instance.Mirror is true, filter wantedInstances to only include those with the same pokemon_id
+				if instance.Mirror {
+					tempFilteredWantedInstances := []PokemonInstance{}
+					for _, wantedInstance := range filteredWantedInstances {
+						if wantedInstance.PokemonID == instance.PokemonID {
+							tempFilteredWantedInstances = append(tempFilteredWantedInstances, wantedInstance)
+						}
+					}
+					filteredWantedInstances = tempFilteredWantedInstances
 				}
 
 				// Build the wanted_list
