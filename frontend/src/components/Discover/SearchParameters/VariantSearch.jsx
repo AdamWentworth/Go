@@ -7,9 +7,10 @@ import { formatCostumeName } from '../utils/formatCostumeName';
 import Dropdown from '../components/Dropdown';
 import MovesSearch from './VariantComponents/MovesSearch';
 import GenderSearch from './VariantComponents/GenderSearch';
-import BackgroundSearch from './VariantComponents/BackgroundSearch'; // Import BackgroundSearch
+import BackgroundSearch from './VariantComponents/BackgroundSearch';
 import useErrorHandler from '../hooks/useErrorHandler';
 import './VariantSearch.css';
+import { formatForm } from '../../Collect/utils/formattingHelpers'
 
 const VariantSearch = ({
   pokemon,
@@ -267,6 +268,7 @@ const VariantSearch = ({
               value={selectedForm}
               options={availableForms}
               handleChange={handleFormChange}
+              formatLabel={formatForm}
               className="form-dropdown"
             />
           )}

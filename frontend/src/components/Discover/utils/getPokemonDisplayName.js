@@ -1,6 +1,6 @@
 // getPokemonDisplayName.js
 
-import { formatCostumeName } from "../../Collect/utils/formattingHelpers";
+import { formatCostumeName, formatForm } from "../../Collect/utils/formattingHelpers";
 
 // Utility function to capitalize the first letter of each word
 const capitalizeFirstLetter = (string) => {
@@ -19,16 +19,16 @@ const getPokemonDisplayName = (item) => {
     displayName += 'Shadow ';
   }
 
-  // Include form if it exists (e.g., "Alolan") and capitalize it
+  // Include form if it exists (e.g., "Alolan") and use formatForm to format it
   if (item.pokemonInfo.form) {
-    displayName += `${capitalizeFirstLetter(item.pokemonInfo.form)} `;
+    displayName += `${formatForm(item.pokemonInfo.form)} `; // Use formatForm for the form name
   }
 
   // Include costume if it exists (e.g., "Party Hat") and capitalize it
   if (item.costume_id) {
     const costumeName = item.pokemonInfo.costumes?.find(costume => costume.costume_id === item.costume_id)?.name;
     if (costumeName) {
-      displayName += `${formatCostumeName(costumeName)} `;
+      displayName += `${formatCostumeName(costumeName)} `; // Use formatCostumeName for the costume
     }
   }
 
