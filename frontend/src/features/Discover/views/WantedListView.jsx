@@ -5,6 +5,7 @@ import MiniMap from './ListViewComponents/MiniMap';
 import MoveDisplay from './ListViewComponents/MoveDisplay';
 import GenderIcon from './ListViewComponents/GenderIcon';
 import CPDisplay from './ListViewComponents/CPDisplay';
+import FriendshipLevel from './ListViewComponents/FriendshipLevel'; // Import the component
 import { URLSelect } from '../utils/URLSelect';
 import getPokemonDisplayName from '../utils/getPokemonDisplayName';
 import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
@@ -75,8 +76,17 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                 </p>
               </div>
 
-              {/* Second Column: Weight, Height, Moves, Location, and Date */}
+              {/* Second Column: Weight, Height, Moves, Friendship, Location, and Date */}
               <div className="pokemon-second-column">
+                {/* Add the FriendshipLevel component */}
+                {item.friendship_level && (
+                  <div className="pokemon-friendship">
+                    <FriendshipLevel
+                      level={item.friendship_level}
+                      prefLucky={item.pref_lucky}
+                    />
+                  </div>
+                )}
                 <div className="pokemon-weight-height">
                   {item.weight && (
                     <div className="pokemon-weight">
