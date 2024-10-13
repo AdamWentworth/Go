@@ -1,6 +1,6 @@
 // updateDetails.js
 
-import { updatePokemonDetails } from '../../components/Collect/PokemonOwnership/pokemonOwnershipManager';
+import { updatePokemonDetails } from '../../features/Collect/PokemonOwnership/pokemonOwnershipManager';
 
 export const updateDetails = (
     data,

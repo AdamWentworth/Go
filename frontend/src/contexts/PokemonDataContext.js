@@ -1,7 +1,7 @@
 // PokemonDataContext.js
 
 import React, { useContext, createContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { initializePokemonLists } from '../components/Collect/PokemonOwnership/PokemonTradeListOperations';
+import { initializePokemonLists } from '../features/Collect/PokemonOwnership/PokemonTradeListOperations';
 import { fetchData } from './PokemonData/fetchData';
 import { updateOwnership as importedUpdateOwnership } from './PokemonData/updateOwnership';
 import { updateLists as importedUpdateLists } from './PokemonData/updateLists';

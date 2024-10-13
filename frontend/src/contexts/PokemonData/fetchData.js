@@ -1,12 +1,13 @@
 // fetchData.js
 
-import { getPokemons } from '../../components/Collect/utils/api';
-import createPokemonVariants from '../../components/Collect/utils/createPokemonVariants';
-import { determinePokemonKey, preloadImage } from '../../components/Collect/utils/imageHelpers';
-import { isDataFresh } from '../../components/Collect/utils/cacheHelpers';
-import { formatTimeAgo } from '../../components/Collect/utils/formattingHelpers';
-import { initializePokemonLists } from '../../components/Collect/PokemonOwnership/PokemonTradeListOperations';
-import { initializeOrUpdateOwnershipData, initializeOrUpdateOwnershipDataAsync } from '../../components/Collect/PokemonOwnership/pokemonOwnershipStorage';
+import { getPokemons } from '../../services/api';
+import createPokemonVariants from '../../services/createPokemonVariants';
+import { preloadImage } from '../../utils/imageHelpers';
+import { determinePokemonKey } from '../../services/determinePokemonKey'
+import { isDataFresh } from '../../utils/cacheHelpers';
+import { formatTimeAgo } from '../../utils/formattingHelpers';
+import { initializePokemonLists } from '../../features/Collect/PokemonOwnership/PokemonTradeListOperations';
+import { initializeOrUpdateOwnershipData, initializeOrUpdateOwnershipDataAsync } from '../../features/Collect/PokemonOwnership/pokemonOwnershipStorage';
 
 export const fetchData = async (setData, ownershipDataRef, updateOwnership, updateLists) => {
     console.log("Fetching data from API or cache...");

@@ -1,6 +1,6 @@
 // updateOwnership.js
 
-import { updatePokemonOwnership } from '../../components/Collect/PokemonOwnership/PokemonOwnershipUpdateService';
+import { updatePokemonOwnership } from '../../features/Collect/PokemonOwnership/PokemonOwnershipUpdateService';
 
 export const updateOwnership = (data, setData, ownershipDataRef, lists) => (pokemonKeys, newStatus) => {
     const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];

@@ -1,8 +1,8 @@
 // AuthContext.js
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService, refreshTokenService } from '../components/Authentication/services/authService';
-import { formatTimeUntil } from '../components/Collect/utils/formattingHelpers';
+import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService, refreshTokenService } from '../features/Authentication/services/authService';
+import { formatTimeUntil } from '../utils/formattingHelpers';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { usePokemonData } from './PokemonDataContext';
