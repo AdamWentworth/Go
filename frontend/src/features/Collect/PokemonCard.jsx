@@ -10,7 +10,7 @@ const PokemonCard = ({
     onSelect,
     isShiny,
     showShadow,
-    singleFormPokedexNumbers,
+    multiFormPokedexNumbers,
     ownershipFilter,
     isFastSelectEnabled,
     isHighlighted,
@@ -59,7 +59,7 @@ const PokemonCard = ({
 
         let nameText;
         const isMegaVariant = pokemon.variantType && pokemon.variantType.includes('mega');
-        const shouldIncludeForm = !isMegaVariant && pokemon.form && pokemon.form !== 'Average' && (!singleFormPokedexNumbers.includes(pokemon.pokedex_number) || showAll);
+        const shouldIncludeForm = !isMegaVariant && pokemon.form && pokemon.form !== 'Average' && (!multiFormPokedexNumbers.includes(pokemon.pokedex_number) || showAll);
 
         if (shouldIncludeForm) {
             nameText = formatPokemonName(pokemon.name, pokemon.form);

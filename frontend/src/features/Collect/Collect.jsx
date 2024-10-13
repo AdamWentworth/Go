@@ -12,6 +12,7 @@ import useFilterPokemons from '../../hooks/filtering/useFilterPokemons';
 import { confirmMoveToFilter } from './PokemonOwnership/pokemonOwnershipManager';
 import { getFilteredPokemonsByOwnership } from './PokemonOwnership/PokemonOwnershipFilter';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { multiFormPokedexNumbers } from '../../utils/constants';
 
 const PokemonListMemo = React.memo(PokemonList);
 const HeaderUIMemo = React.memo(HeaderUI);
@@ -28,9 +29,6 @@ function Collect() {
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const [ownershipFilter, setOwnershipFilter] = useState("");
     const [showAll, setShowAll] = useState(false);
-
-    // Pokemon who by default will only show 1 of many forms
-    const singleFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];
 
     // UI Controls
     const {
@@ -72,8 +70,8 @@ function Collect() {
     // Search Filters Memo
     const filters = useMemo(() => ({
         selectedGeneration, isShiny, searchTerm, showCostume, showShadow,
-        singleFormPokedexNumbers, pokemonTypes, generations
-    }), [selectedGeneration, isShiny, searchTerm, showCostume, showShadow, singleFormPokedexNumbers, pokemonTypes, generations]);
+        multiFormPokedexNumbers, pokemonTypes, generations
+    }), [selectedGeneration, isShiny, searchTerm, showCostume, showShadow, multiFormPokedexNumbers, pokemonTypes, generations]);
 
     // Filter Pokemon
     const displayedPokemons = useFilterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
@@ -209,7 +207,7 @@ function Collect() {
                 highlightedCards={highlightedCards}
                 isShiny={isShiny}
                 showShadow={showShadow}
-                singleFormPokedexNumbers={[201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741]}
+                multiFormPokedexNumbers={multiFormPokedexNumbers}
                 ownershipFilter={ownershipFilter}
                 lists={lists}
                 ownershipData={ownershipData}

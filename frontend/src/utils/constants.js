@@ -20,3 +20,5 @@ export const generationMap = {
             "hisui": 9,
             "paldea": 10
         };
+
+export const multiFormPokedexNumbers = [201, 649, 664, 665, 666, 669, 670, 671, 676, 710, 711, 741];

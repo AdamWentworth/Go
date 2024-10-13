@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { getEvolutionaryFamily, shouldAddPokemon } from '../../services/filterFunctions';
 
 const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine, showAll) => {
-    const { selectedGeneration, isShiny, searchTerm, showCostume, showShadow, pokemonTypes, generations, singleFormPokedexNumbers } = filters;
+    const { selectedGeneration, isShiny, searchTerm, showCostume, showShadow, pokemonTypes, generations, multiFormPokedexNumbers } = filters;
 
     const displayedPokemons = useMemo(() => {
         const evolutionaryFamily = showEvolutionaryLine ? getEvolutionaryFamily(searchTerm, allPokemons) : [];
@@ -18,7 +18,7 @@ const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine, showAll) 
             }
 
             // When showAll is false, check if Pokémon's Pokédex number is already added; if showAll is true, this check is bypassed
-            if (!showAll && singleFormPokedexNumbers.includes(pokemon.pokedex_number) && addedSingleFormNumbers.has(pokemon.pokedex_number)) {
+            if (!showAll && multiFormPokedexNumbers.includes(pokemon.pokedex_number) && addedSingleFormNumbers.has(pokemon.pokedex_number)) {
                 return false; // Skip this Pokémon
             }
 
@@ -27,7 +27,7 @@ const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine, showAll) 
             if (!matchesSearchTerm && !isInEvolutionaryFamily) return false; // Skip Pokémon if it doesn't match the search term criteria unless it's in the evolutionary family
 
             // If showAll is false, add Pokémon's Pokédex number to the set to ensure it's only included once
-            if (!showAll && singleFormPokedexNumbers.includes(pokemon.pokedex_number)) {
+            if (!showAll && multiFormPokedexNumbers.includes(pokemon.pokedex_number)) {
                 addedSingleFormNumbers.add(pokemon.pokedex_number);
             }
 
@@ -79,7 +79,7 @@ const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine, showAll) 
             // Fallback to false for all other cases
             return false;
         });
-    }, [allPokemons, showEvolutionaryLine, showAll, isShiny, showShadow, showCostume, searchTerm, selectedGeneration, pokemonTypes, generations, singleFormPokedexNumbers]);
+    }, [allPokemons, showEvolutionaryLine, showAll, isShiny, showShadow, showCostume, searchTerm, selectedGeneration, pokemonTypes, generations, multiFormPokedexNumbers]);
 
     // console.log(`Displayed Pokemons: ${displayedPokemons.length}`);
 

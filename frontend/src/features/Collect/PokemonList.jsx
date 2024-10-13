@@ -18,7 +18,7 @@ function PokemonList({
     highlightedCards,
     isShiny,
     showShadow,
-    singleFormPokedexNumbers,
+    multiFormPokedexNumbers,
     ownershipFilter,
     lists,
     ownershipData,
@@ -57,7 +57,7 @@ function PokemonList({
                             isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
                             isShiny={isShiny}
                             showShadow={showShadow}
-                            singleFormPokedexNumbers={singleFormPokedexNumbers}
+                            multiFormPokedexNumbers={multiFormPokedexNumbers}
                             ownershipFilter={ownershipFilter}
                             showAll={showAll}
                             sortType={sortType}
