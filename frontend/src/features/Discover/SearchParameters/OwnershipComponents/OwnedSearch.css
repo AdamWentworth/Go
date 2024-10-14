@@ -50,7 +50,11 @@
 }
 
 @media (min-width: 481px) and (max-width: 767px) {
-
+  .owned-options-container {
+    width: 100%;
+    align-items: flex-start;
+    height: 150px;
+  }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
