@@ -183,8 +183,12 @@
         width: 100%;
         display: flex;
         justify-content: center;
+        margin-top: 10px;
+        margin-bottom: 5px;
     }
-
+    .search-container {
+        max-width: 75%
+    }
     /* Render the header in its own row */
     .title-container {
         width: 100%;

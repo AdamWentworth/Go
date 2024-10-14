@@ -1,3 +1,5 @@
+/* index.css */
+
 body {
   background-color: #111;
   margin: 0;
@@ -8,6 +10,22 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
+
+/* body::-webkit-scrollbar {
+  width: 16px;
+}
+
+body::-webkit-scrollbar-track {
+  background-color: #747474;
+}
+
+body::-webkit-scrollbar-thumb {
+  background-color: #222;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background-color: #111;
+} */
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',

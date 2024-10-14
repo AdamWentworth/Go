@@ -13,7 +13,7 @@
 }
 
 /* Main content area with flexible columns */
-.main-content {
+.pokemon-variant-container .main-content {
   display: flex;
   justify-content: space-between;
   width: 100%;
@@ -103,7 +103,7 @@
 }
 
 /* Button container styling */
-.button-container {
+.pokemon-variant-container .button-container {
   display: flex;
   gap: 10px;
   margin-bottom: 10px;
@@ -130,51 +130,51 @@
 }
 
 /* Icon styles */
-.button-container img {
+.pokemon-variant-container .button-container img {
   width: 24px;
   height: 24px;
 }
 
 /* Active button styles */
-.button-container .shiny-button.active {
+.pokemon-variant-container .button-container .shiny-button.active {
   background-color: gold;
 }
-.button-container .costume-button.active {
+.pokemon-variant-container .button-container .costume-button.active {
   background-color: cyan;
 }
 
-.button-container .shadow-button.active {
+.pokemon-variant-container .button-container .shadow-button.active {
   background-color: rgb(182, 92, 182);
 }
 
 /* Hover styles */
-.button-container .shiny-button:hover {
+.pokemon-variant-container .button-container .shiny-button:hover {
   background-color: #ffcc00;
 }
 
-.button-container .costume-button:hover {
+.pokemon-variant-container .button-container .costume-button:hover {
   background-color: rgb(58, 216, 216);
 }
 
-.button-container .shadow-button:hover {
+.pokemon-variant-container .button-container .shadow-button:hover {
   background-color: rgb(152, 0, 152);
 }
 
 /* Hover states for active buttons */
-.button-container .shiny-button.active:hover {
+.pokemon-variant-container .button-container .shiny-button.active:hover {
   background-color: #ffcc00;
 }
 
-.button-container .costume-button.active:hover {
+.pokemon-variant-container .button-container .costume-button.active:hover {
   background-color: rgb(58, 216, 216);
 }
 
-.button-container .shadow-button.active:hover {
+.pokemon-variant-container .button-container .shadow-button.active:hover {
   background-color: rgb(152, 0, 152);
 }
 
 /* Image styling */
-.pokemon-variant-image img {
+.pokemon-variant-container .pokemon-variant-image img {
   width: 200px;
   height: 200px;
 }
@@ -202,7 +202,7 @@
   align-items: center;
 }
 
-.background-button {
+.pokemon-variant-container .background-button {
   cursor: pointer;
   width: 40px; /* Adjust as needed */
   height: 40px; /* Adjust as needed */
@@ -232,13 +232,42 @@
 
 /* Responsive layout adjustments */
 @media (max-width: 480px) {
-  .main-content {
+  .pokemon-variant-container .main-content {
     flex-direction: column;
+    min-width: 100%;
     align-items: center;
   }
   .button-container img {
     width: 20px;
     height: 20px;
+  }
+  .pokemon-variant-container {
+    padding-left: 0px
+  }
+  .pokemon-variant-details {
+    align-items: center;
+    width: 100%;
+  }
+  .pokemon-search-row {
+    width: 65%;
+  }
+  .pokemon-search-row input[type="text"] {
+    width: 100%;
+  }
+  .pokemon-variant-container .button-container button {
+    width: 40px;
+    height: 40px;
+  }
+  .pokemon-variant-container .button-container {
+    margin-bottom: 0px;
+  }
+  .pokemon-moves-gender-section {
+    margin-bottom: 0px;
+    margin-left: 0px;
+  }
+  .pokemon-variant-container h3 {
+    margin-block-end: 10px;
+    margin-block-start: 0px;
   }
 }
 

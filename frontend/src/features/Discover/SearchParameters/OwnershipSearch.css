@@ -2,9 +2,8 @@
 
 .ownership-status-container {
   display: flex;
-  flex-direction: row; /* Arrange items side by side */
-  align-items: flex-start; /* Align items at the top */
-  justify-content: right;
+  flex-direction: column; /* Stack header and content section vertically */
+  align-items: flex-end;
   width: 100%;
   padding-right: 20px;
 }
@@ -13,19 +12,30 @@
   margin-block-start: 10px;
 }
 
-/* Left Column: Dynamic content */
-.ownership-content {
-  flex: 1; /* Take up remaining space */
-  max-width: 350px; /* Optional max width for the content area */
-  height: 100%
+/* Ownership content and options in the same row */
+.ownership-row {
+  display: flex;
+  flex-direction: row; /* Place content and options side by side */
+  width: 100%;
+  align-items: center;
+  justify-content: space-between; /* Space between the content and options */
+  height: 100%;
+  margin-top: -5px;
 }
 
-/* Right Column: Ownership buttons */
+/* Dynamic content area (e.g., Owned, Trade, Wanted components) */
+.ownership-content {
+  flex: 1; /* Take up remaining space */
+}
+
+/* Ownership buttons container */
 .ownership-options-container {
   display: flex;
   flex-direction: column; /* Arrange buttons in a column */
-  align-items: flex-end;
+  align-items: flex-start; /* Align buttons to the left */
   max-width: 200px; /* Set a max width for the button column */
+  margin-left: 20px; /* Add space between content and options */
+  height: 100%;
 }
 
 .ownership-options {
@@ -77,4 +87,45 @@
 .ownership-button.inactive.wanted:hover, 
 .ownership-button.active.wanted:hover {
   background-color: #be2c2c; /* Darker Red */
+}
+
+@media (max-width: 480px) {
+.ownership-status-container {
+  justify-content: center;
+  align-items: center;
+}
+.ownership-options-container {
+  align-items: flex-end;
+  margin-right: 10px;
+  margin-left: 0px;
+  max-width: unset;
+}
+.ownership-row {
+  margin-top: 0px;
+  align-items: center;
+}
+.ownership-content{
+  width: 100%;
+  flex: unset;
+  height: 100%;
+  justify-content: center
+}
+.ownership-button {
+  font-size: 12px;
+}
+.ownership-options {
+  padding-bottom: 5px;
+}
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+
+}
+
+@media (min-width: 1024px) {
+
 }

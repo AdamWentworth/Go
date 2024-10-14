@@ -9,7 +9,7 @@
     height: 100%; /* Set container height */
     position: relative; /* Use relative position for easier adjustment */
     text-align: center; /* Center text within the label */
-    margin-top: 5px;
+    margin-top: -35px;
     margin-right: -50px
   }
   
@@ -39,3 +39,33 @@
   .wanted-search-options .search-row {
     margin-top: -10px;
   }
+
+  @media (max-width: 480px) {
+    .wanted-search-options .field label {
+      font-size: 12px;
+    }
+    .wanted-search-options {
+      margin-right: unset;
+      margin-top: -15px;
+    }
+    .wanted-search-options .search-row {
+      margin-bottom: -10px;
+    }
+    .wanted-search-options .field input[type='checkbox'] {
+      transform: scale(1);
+      margin: unset;
+    }
+  }
+    
+  @media (min-width: 481px) and (max-width: 767px) {
+  
+  }
+  
+  @media (min-width: 768px) and (max-width: 1023px) {
+  
+  }
+  
+  @media (min-width: 1024px) {
+  
+  }
+     

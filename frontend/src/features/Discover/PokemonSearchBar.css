@@ -154,3 +154,40 @@
 .pokemon-search-bar {
   transition: height 0.6s ease-in-out, padding 0.6s ease-in-out;
 }
+
+@media (max-width: 480px) {
+.search-bar-container {
+  flex-direction: column;
+}
+.pokemon-variant, .location-search, .ownership-status {
+  flex-direction: column;
+}
+.controls-container {
+  flex-direction: column;
+  padding-top: 0px;
+}
+.error-message {
+  height: auto;
+  margin-left: 0px;
+  text-align: center;
+}
+.view-controls {
+  position: relative;
+  left: unset;
+  transform: unset;
+}
+.pokemon-search-bar {
+  top:unset;
+}
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+
+}
+
+@media (min-width: 1024px) {
+
+}

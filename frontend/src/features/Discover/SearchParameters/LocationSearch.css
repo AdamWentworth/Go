@@ -139,3 +139,29 @@
     padding: 10px 20px;
     cursor: pointer;
 }
+
+@media (max-width: 480px) {
+ .location-container {
+    flex-direction: column;
+    gap: 5px;
+ }
+ .location-field {
+    align-items: center;
+    max-width: 100%;
+ }
+ .location-input input {
+    width: 200px;
+ }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+
+}
+
+@media (min-width: 1024px) {
+
+}

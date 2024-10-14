@@ -8,7 +8,7 @@
     justify-content: center; /* Center items vertically */
     height: 100%; /* Ensure the container takes full height of the parent */
     text-align: center; /* Center text within the label */
-    margin-top: 20px;
+    margin-top: -30px;
     margin-right: -40px
   }
   
@@ -29,4 +29,31 @@
     margin-bottom: 5px; /* Space between checkbox and label */
     transform: scale(1.25); /* Optional: Scale up the checkbox */
   }
+
+
+@media (max-width: 480px) {
+  .trade-search-options .field label {
+    font-size: 12px;
+  }
+  .trade-search-options {
+    margin-right: unset;
+    margin-top: 20px;
+  }
+  .trade-search-options .field input[type='checkbox'] {
+    margin-bottom: unset;
+    transform: scale(1)
+  }
+}
   
+@media (min-width: 481px) and (max-width: 767px) {
+
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+
+}
+
+@media (min-width: 1024px) {
+
+}
+    
