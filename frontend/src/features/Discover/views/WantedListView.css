@@ -114,8 +114,8 @@
 }
 
 .wanted-list-view .trade-list-section .trade-pokemon-image {
-  width: 75px;
-  height: 75px;
+  width: 72px;
+  height: 72px;
   object-fit: cover;
   border-radius: 8px;
 }
@@ -126,23 +126,24 @@
 }
 
 .wanted-list-view .hearts-lucky-container, .wanted-list-view .pokemon-weight-height {
-  margin-right: -20px;
+  margin-right: -25px;
 }
 
 .wanted-list-view .glowing-pokemon {
   position: relative;
-  box-shadow: 0 0 15px 8px rgba(255, 215, 0, 0.75);
-  border-radius: 50%;
+  padding: 3px;
+  box-shadow: inset 0 0 3px 2px rgba(255, 215, 0, 1);
 }
 
-.wanted-list-view .glowing-pokemon::before {
-  content: '';
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  right: -5px;
-  bottom: -5px;
-  z-index: -1;
-  background: radial-gradient(circle, rgba(255, 215, 0, 0.8), rgba(255, 215, 0, 0));
-  border-radius: 50%;
+.wanted-list-view .trade-list-section .trade-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.wanted-list-view .trade-list-section .trade-list::-webkit-scrollbar-thumb {
+  background-color: #222;
+  border-radius: 10px;
+}
+
+.wanted-list-view .trade-list-section .trade-list::-webkit-scrollbar-thumb:hover {
+  background-color: #111;
 }
