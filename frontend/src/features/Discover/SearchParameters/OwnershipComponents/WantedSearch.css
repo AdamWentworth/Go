@@ -72,7 +72,17 @@
   }
   
   @media (min-width: 768px) and (max-width: 1023px) {
-  
+    .wanted-search-options {
+      margin-right: unset;
+      margin-top: -10px;
+    }
+    .wanted-search-options .search-row {
+      margin-bottom: -10px;
+    }
+    .wanted-search-options .field input[type='checkbox'] {
+      transform: scale(1);
+      margin: unset;
+    }
   }
   
   @media (min-width: 1024px) {

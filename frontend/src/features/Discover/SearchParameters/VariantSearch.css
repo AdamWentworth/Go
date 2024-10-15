@@ -285,14 +285,12 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 240px;
   }
 
   .pokemon-variant-container .main-content {
     min-width: 480px;
     justify-content: center;
   }
-
   .pokemon-search-row input[type="text"] {
     width: 200px;;
   }
@@ -312,7 +310,47 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) and (max-width: 1023px) {
+  .pokemon-variant-container {
+    padding-left: unset;
+    padding-right: 10px;
+  }
+  .pokemon-variant-container .main-content {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  /* Put details and image in the same row */
+  .pokemon-variant-details,
+  .pokemon-variant-image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pokemon-variant-container .main-content {
+    min-width: 480px;
+    justify-content: center;
+    gap: 40px;
+  }
+  .pokemon-search-row input[type="text"] {
+    width: 200px;;
+  }
+
+  .pokemon-variant-container .button-container button {
+    width: 45px;
+    height: 45px;
+  }
+
+  /* Move moves and gender section to a new row */
+  .pokemon-moves-gender-section {
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    margin-top: 10px;
+    margin-left: unset;
+  }
+
   .pokemon-variant-container .button-container img {
     width: 32px;
     height: 32px;

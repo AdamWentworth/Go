@@ -122,21 +122,40 @@
   .ownership-status-container {
     width: 100%;
     align-items: center;
+    height: 200px;
   }
   .ownership-options-container {
     margin-right: 10px;
   }
   .ownership-row {
     width: unset;
+    height: 200px;
   }
   .ownership-content{ 
     width: 250px;
-    height: 150px;
+    margin-right: 35px;
+    height: 160px;
 }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
-
+  .ownership-status-container {
+    width: 100%;
+    align-items: center;
+    height: 200px;
+  }
+  .ownership-options-container {
+    margin-right: 10px;
+  }
+  .ownership-row {
+    width: unset;
+    height: 200px;
+  }
+  .ownership-content{ 
+    width: 250px;
+    margin-right: 35px;
+    height: 160px;
+}
 }
 
 @media (min-width: 1024px) {

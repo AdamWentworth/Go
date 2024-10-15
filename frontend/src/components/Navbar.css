@@ -251,6 +251,11 @@
         flex-direction: column;
     }
 
+    .logo-container img {
+        margin-top: -5px;
+        margin-bottom: -10px;
+    }
+
     .title-container {
         width: 100%;
         text-align: center;
@@ -276,6 +281,10 @@
         flex-direction: column;
         width: 100%;
         align-items: center;
+    }
+
+    .search-container {
+        max-width: 75%
     }
 
     .navbar-buttons {
@@ -334,6 +343,10 @@
     .App h1 {
         padding-bottom: 0px !important;
         font-size: 28px;
+    }
+
+    .search-container {
+        max-width: 75%
     }
 
     .title-container {

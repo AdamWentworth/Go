@@ -49,11 +49,21 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
       // Set max-height to 0 when collapsed
       collapsibleRef.current.style.maxHeight = '0px';
     }
-  }, [isCollapsed]);  
+  }, [isCollapsed]);
 
-   // Function to handle scroll event
-   const handleScroll = () => {
-    if (window.scrollY === 0) {
+  // Function to handle scroll event
+  const handleScroll = () => {
+    const searchBar = collapsibleRef.current;
+    const searchBarHeight = searchBar ? searchBar.offsetHeight : 0;
+    const searchBarBottom = searchBar ? searchBar.offsetTop + searchBarHeight : 0;
+
+    // Adjust collapse point by 25% of the search bar height
+    const adjustedCollapsePoint = searchBarBottom - (searchBarHeight * 0.15);
+
+    // Collapse the search bar when the user scrolls past the adjusted point
+    if (window.scrollY > adjustedCollapsePoint) {
+      setIsCollapsed(true); // Collapse the search bar
+    } else if (window.scrollY === 0) {
       setIsCollapsed(false); // Expand the search bar when scrolled to the top
     }
   };
@@ -71,6 +81,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
+
 
   const handleSearch = async () => {
     setErrorMessage('');
