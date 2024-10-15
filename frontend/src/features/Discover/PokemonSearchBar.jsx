@@ -38,8 +38,26 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
   const [friendshipLevel, setFriendshipLevel] = useState(0);
 
   const [errorMessage, setErrorMessage] = useState('');
+  const [isMidWidth, setIsMidWidth] = useState(false); // Add this to track window width
 
   const collapsibleRef = useRef(null); // Add a ref for the collapsible container
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMidWidth(window.innerWidth >= 1024 && window.innerWidth <= 1439);
+    };
+
+    // Set initial state
+    handleResize();
+
+    // Add event listener to track resizing
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup the event listener
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isCollapsed && collapsibleRef.current) {
@@ -225,44 +243,89 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
             />
           </div>
 
-          <div className="location-search">
-            <LocationSearch
-              city={city}
-              setCity={setCity}
-              useCurrentLocation={useCurrentLocation}
-              setUseCurrentLocation={setUseCurrentLocation}
-              setCoordinates={setCoordinates}
-              range={range}
-              setRange={setRange}
-              resultsLimit={resultsLimit}
-              setResultsLimit={setResultsLimit}
-              handleSearch={handleSearch}
-              isLoading={isLoading}
-              view={view}
-              setView={setView}
-            />
-          </div>
+          {isMidWidth ? (
+            <div className="location-ownership-row">
+              <div className="location-search">
+                <LocationSearch
+                  city={city}
+                  setCity={setCity}
+                  useCurrentLocation={useCurrentLocation}
+                  setUseCurrentLocation={setUseCurrentLocation}
+                  setCoordinates={setCoordinates}
+                  range={range}
+                  setRange={setRange}
+                  resultsLimit={resultsLimit}
+                  setResultsLimit={setResultsLimit}
+                  handleSearch={handleSearch}
+                  isLoading={isLoading}
+                  view={view}
+                  setView={setView}
+                />
+              </div>
 
-          <div className="ownership-status">
-            <OwnershipSearch
-              ownershipStatus={ownershipStatus}
-              setOwnershipStatus={setOwnershipStatus}
-              stats={stats}
-              setStats={setStats}
-              isHundo={isHundo}
-              setIsHundo={setIsHundo}
-              onlyMatchingTrades={onlyMatchingTrades}
-              setOnlyMatchingTrades={setOnlyMatchingTrades}
-              prefLucky={prefLucky}
-              setPrefLucky={setPrefLucky}
-              alreadyRegistered={alreadyRegistered}
-              setAlreadyRegistered={setAlreadyRegistered}
-              tradeInWantedList={tradeInWantedList}
-              setTradeInWantedList={setTradeInWantedList}
-              friendshipLevel={friendshipLevel}
-              setFriendshipLevel={setFriendshipLevel}
-            />
-          </div>
+              <div className="ownership-status">
+                <OwnershipSearch
+                  ownershipStatus={ownershipStatus}
+                  setOwnershipStatus={setOwnershipStatus}
+                  stats={stats}
+                  setStats={setStats}
+                  isHundo={isHundo}
+                  setIsHundo={setIsHundo}
+                  onlyMatchingTrades={onlyMatchingTrades}
+                  setOnlyMatchingTrades={setOnlyMatchingTrades}
+                  prefLucky={prefLucky}
+                  setPrefLucky={setPrefLucky}
+                  alreadyRegistered={alreadyRegistered}
+                  setAlreadyRegistered={setAlreadyRegistered}
+                  tradeInWantedList={tradeInWantedList}
+                  setTradeInWantedList={setTradeInWantedList}
+                  friendshipLevel={friendshipLevel}
+                  setFriendshipLevel={setFriendshipLevel}
+                />
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="location-search">
+                <LocationSearch
+                  city={city}
+                  setCity={setCity}
+                  useCurrentLocation={useCurrentLocation}
+                  setUseCurrentLocation={setUseCurrentLocation}
+                  setCoordinates={setCoordinates}
+                  range={range}
+                  setRange={setRange}
+                  resultsLimit={resultsLimit}
+                  setResultsLimit={setResultsLimit}
+                  handleSearch={handleSearch}
+                  isLoading={isLoading}
+                  view={view}
+                  setView={setView}
+                />
+              </div>
+
+              <div className="ownership-status">
+                <OwnershipSearch
+                  ownershipStatus={ownershipStatus}
+                  setOwnershipStatus={setOwnershipStatus}
+                  stats={stats}
+                  setStats={setStats}
+                  isHundo={isHundo}
+                  setIsHundo={setIsHundo}
+                  onlyMatchingTrades={onlyMatchingTrades}
+                  setOnlyMatchingTrades={setOnlyMatchingTrades}
+                  prefLucky={prefLucky}
+                  setPrefLucky={setPrefLucky}
+                  alreadyRegistered={alreadyRegistered}
+                  setAlreadyRegistered={setAlreadyRegistered}
+                  tradeInWantedList={tradeInWantedList}
+                  setTradeInWantedList={setTradeInWantedList}
+                  friendshipLevel={friendshipLevel}
+                  setFriendshipLevel={setFriendshipLevel}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
 

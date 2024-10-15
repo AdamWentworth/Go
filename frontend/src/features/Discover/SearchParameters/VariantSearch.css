@@ -300,6 +300,11 @@
     height: 45px;
   }
 
+  .pokemon-variant-container .button-container img {
+    width: 28px;
+    height: 28px;
+  }
+
   /* Move moves and gender section to a new row */
   .pokemon-moves-gender-section {
     display: flex;
@@ -334,7 +339,7 @@
     gap: 40px;
   }
   .pokemon-search-row input[type="text"] {
-    width: 200px;;
+    width: 200px;
   }
 
   .pokemon-variant-container .button-container button {
@@ -357,5 +362,62 @@
   }
   .pokemon-variant-container .button-container button {
     padding: 8px;
+  }
+}
+
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .pokemon-variant-container {
+    padding-left: unset;
+    padding-right: 10px;
+  }
+  .pokemon-variant-container .main-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+  }
+
+  /* Put details and image in the same row */
+  .pokemon-variant-details,
+  .pokemon-variant-image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pokemon-variant-container .main-content {
+    min-width: 480px;
+  }
+  .pokemon-search-row input[type="text"] {
+    width: 240px;
+  }
+
+  .pokemon-variant-container .button-container button {
+    width: 50px;
+    height: 50px;
+  }
+
+  /* Move moves and gender section to a new row */
+  .pokemon-moves-gender-section {
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    margin-top: 10px;
+    margin-left: unset;
+  }
+
+  .pokemon-variant-container .button-container img {
+    width: 32px;
+    height: 32px;
+  }
+  .pokemon-variant-container .button-container button {
+    padding: 8px;
+  }
+}
+
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .pokemon-variant-container .button-container img {
+    width: 28px;
+    height: 28px;
   }
 }

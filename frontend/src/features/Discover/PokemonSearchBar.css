@@ -232,46 +232,32 @@
 }
 
 
-@media (min-width: 1024px) and (max-width: 1439px) {
+@media (min-width: 1024px) and (max-width: 1439px){
   .search-bar-container {
-    display: flex;
+    flex-direction: column;
+  }
+  .pokemon-variant, .location-search, .ownership-status {
     flex-direction: column;
   }
 
-  .pokemon-variant {
-    width: 100%; /* Full width for the first row */
-    margin-bottom: 10px; /* Space between the rows */
-  }
-
-  .location-ownership-container {
+  .location-ownership-row {
     display: flex;
+    justify-content: space-between;
     width: 100%;
-    justify-content: space-between; /* Spread location and ownership side by side */
-    gap: 20px; /* Add spacing between location and ownership */
+    margin-right: 20px;
   }
-
-  .location-search, .ownership-status {
-    flex: 1; /* Ensure both take equal space */
-    display: flex;
-    flex-direction: column;
-  }
-
   .controls-container {
     flex-direction: column;
     padding-top: 0px;
   }
-
   .error-message {
     height: auto;
     margin-left: 0px;
     text-align: center;
   }
-
   .view-controls {
     position: relative;
     left: unset;
     transform: unset;
   }
 }
-
-

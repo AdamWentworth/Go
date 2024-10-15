@@ -67,7 +67,25 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .trade-search-options {
+    margin-top: unset;
+    margin-right: 0px;
+  }
+  .trade-search-options .field input[type='checkbox'] {
+    margin-bottom: unset;
+    transform: scale(1)
+  }
+}
 
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .trade-search-options {
+    margin-top: unset;
+    margin-right: 0px;
+  }
+  .trade-search-options .field input[type='checkbox'] {
+    margin-bottom: unset;
+    transform: scale(1)
+  }
 }
     
