@@ -116,7 +116,8 @@
 
 /* Button styles */
 .pokemon-variant-container .button-container button {
-  width: 50px;
+  width: 52px;
+  height: 46px;
   background-color: #ccc;
   border: none;
   outline: none;
@@ -131,8 +132,8 @@
 
 /* Icon styles */
 .pokemon-variant-container .button-container img {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
 }
 
 /* Active button styles */

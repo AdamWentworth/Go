@@ -1,3 +1,5 @@
+/* Register.css */
+
 .register-page {
     background-color: #333;
     height: calc(100vh - 80px);
@@ -9,36 +11,69 @@
     padding: 0;
 }
 
-/* Register.css */
-@media (min-width: 1024px) and (max-width: 1440px) {
-    .register-form {
-        max-width: 60%; /* Reduce the maximum width for more compact form */
-        margin: auto; /* Center the form horizontally */
-        padding: 15px; /* Compact overall padding */
-        font-size: 0.8em; /* Slightly smaller font size for all text */
+@media (max-width: 480px) {
+    .register-page {
+        height: calc(83vh - 74px);
     }
-    .register-form .user-details {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr); /* Grid layout for user details */
-        gap: 10px; /* Narrower gaps between grid columns */
+    .register-page .register-form {
+        transform: scale(.75);
+        font-size: 0.8em;
     }
-    .register-form input,
-    .register-form button {
-        padding: 6px; /* Reduced padding in inputs and buttons */
-        height: 30px; /* Decrease height for a more compact appearance */
+    .register-form input {
+        font-size: 0.65rem;
     }
-    .register-form label {
-        margin-bottom: 5px; /* Tighter spacing below labels */
+    .register-form input[type="checkbox"] {
+        margin-top: 10px; 
+        display: block;
     }
-    .register-form .error {
-        margin-top: 2px; /* Reduce spacing for error messages */
-        font-size: 0.65em; /* Smaller error message text */
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+    .register-page {
+        height: calc(80vh - 70px);
     }
-    .register-form .social-login-buttons button,
-    .register-form .social-login-buttons .discord-button {
-        height: 40px; /* Standardizing social button heights */
-        font-size: 0.8em; /* Smaller font size for social buttons */
-        padding: 6px 12px; /* Reduced padding in social buttons */
+    .register-page .register-form {
+        transform: scale(.85);
+        font-size: 0.8em;
+    }
+    .register-form input {
+        font-size: 0.75rem;
+    }
+    .register-form input[type="checkbox"] {
+        margin-top: 10px; 
+        display: block;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .register-page {
+        height: calc(80vh - 101px);
+    }
+    .register-page .register-form {
+        transform: scale(.85);
+        font-size: 0.9em;
+    }
+    .register-form input {
+        font-size: 0.85rem;
+    }
+    .register-form input[type="checkbox"] {
+        display: block;
+    }
+}
+
+@media (min-width: 1024px) {
+    .register-page {
+        height: calc(100vh - 86px);
+    }
+    .register-page .register-form {
+        transform: scale(1);
+        font-size: 1em;
+    }
+    .register-form input {
+        font-size: 0.85rem;
+    }
+    .register-form input[type="checkbox"] {
+        display: block;
     }
 }
 

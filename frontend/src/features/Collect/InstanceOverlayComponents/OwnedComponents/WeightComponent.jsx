@@ -49,6 +49,11 @@ const WeightComponent = ({ pokemon, editMode, onWeightChange }) => {
     }
   }, [editMode]);
 
+  // New behavior: If weight is null or empty and editMode is off, render nothing
+  if (!editMode && !weight) {
+    return null;
+  }
+
   return (
     <div className="weight-container">
       <div className="weight-display">

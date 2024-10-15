@@ -119,19 +119,24 @@ const VariantSearch = ({
       setPokemon(newPokemon);
       setSelectedForm('');
       setSelectedGender('Any'); // Reset gender only if new Pokémon is selected.
-      
+  
       // Reset selected moves when a new Pokémon is selected
       setSelectedMoves({
         fastMove: null,
         chargedMove1: null,
         chargedMove2: null,
       });
-      
+  
       // Generate suggestions if input is 3 or more characters
       if (newPokemon.length >= 3) {
-        const filteredSuggestions = pokemonData
-          .filter(pokemon => pokemon.name.toLowerCase().startsWith(newPokemon.toLowerCase()))
-          .map(pokemon => pokemon.name);
+        // Use a Set to ensure unique suggestions
+        const filteredSuggestions = Array.from(
+          new Set(
+            pokemonData
+              .filter(pokemon => pokemon.name.toLowerCase().startsWith(newPokemon.toLowerCase()))
+              .map(pokemon => pokemon.name)
+          )
+        );
         setSuggestions(filteredSuggestions);
       } else {
         setSuggestions([]); // Clear suggestions if fewer than 3 characters
@@ -148,7 +153,27 @@ const VariantSearch = ({
         handleValidation(newPokemon, isShiny, isShadow, costume, '', selectedGender); // Pass selectedGender
       }
     }
+  };
+  
+  const handleInputFocus = () => {
+    // Show suggestions again if any exist
+    if (pokemon && pokemon.length >= 3) {
+      const filteredSuggestions = Array.from(
+        new Set(
+          pokemonData
+            .filter(pokemonItem => pokemonItem.name.toLowerCase().startsWith(pokemon.toLowerCase()))
+            .map(pokemonItem => pokemonItem.name)
+        )
+      );
+      setSuggestions(filteredSuggestions);
+    }
   };  
+  
+  const handleInputBlur = () => {
+    // Hide suggestions when the input loses focus
+    setSuggestions([]);
+  };
+   
 
   const handleShinyChange = () => {
     const shinyChecked = !isShiny;
@@ -199,7 +224,7 @@ const VariantSearch = ({
 
   // Get the current Pokémon data based on the entered name
   const currentPokemonData = pokemonData.find(
-    (p) => p.name.toLowerCase() === pokemon.toLowerCase()
+    (p) => p.name.toLowerCase() === (pokemon || '').toLowerCase()
   );
 
   // Check if the selected costume allows backgrounds or if the backgrounds have null costume_id
@@ -226,21 +251,26 @@ const VariantSearch = ({
         <div className="pokemon-variant-details">
           <h3>Pokémon Variant</h3>
           <div className="pokemon-search-row">
-            <input
-              type="text"
-              value={pokemon}
-              onChange={handlePokemonChange}
-              placeholder="Enter Pokémon name"
-            />
+          <input
+            type="text"
+            value={pokemon}
+            onChange={handlePokemonChange}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+            placeholder="Enter Pokémon name"
+          />
             {suggestions.length > 0 && (
-              <ul className="autocomplete-suggestions">
-                {suggestions.map((suggestion, index) => (
-                  <li key={index} onClick={() => handleSuggestionClick(suggestion)}>
-                    {suggestion}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <ul
+              className="autocomplete-suggestions"
+              onMouseDown={(e) => e.preventDefault()} // Prevent blur when clicking a suggestion
+            >
+              {suggestions.map((suggestion, index) => (
+                <li key={index} onClick={() => handleSuggestionClick(suggestion)}>
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
+          )}
           </div>
           <div className="button-container">
             <button

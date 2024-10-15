@@ -49,6 +49,11 @@ const HeightComponent = ({ pokemon, editMode, onHeightChange }) => {
     }
   }, [editMode]);
 
+  // New behavior: If height is null or empty and editMode is off, render nothing
+  if (!editMode && !height) {
+    return null;
+  }
+
   return (
     <div className="height-container">
       <div className="height-display">

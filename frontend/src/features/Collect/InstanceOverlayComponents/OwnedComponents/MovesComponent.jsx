@@ -7,18 +7,15 @@ const MovesComponent = ({ pokemon, editMode, onMovesChange }) => {
   const fastMoves = allMoves.filter(move => move.is_fast);
   const chargedMoves = allMoves.filter(move => !move.is_fast);
 
-  const getDefaultMoveId = (moves, currentId) => (
-    moves.length > 0 ? (moves.find(move => move.move_id === currentId) || moves[0]).move_id : null
-  );
-
-  const [fastMove, setFastMove] = useState(getDefaultMoveId(fastMoves, pokemon.ownershipStatus.fast_move_id));
-  const [chargedMove1, setChargedMove1] = useState(getDefaultMoveId(chargedMoves, pokemon.ownershipStatus.charged_move1_id));
-  const [chargedMove2, setChargedMove2] = useState(pokemon.ownershipStatus.charged_move2_id ? getDefaultMoveId(chargedMoves, pokemon.ownershipStatus.charged_move2_id) : null);
+  // Updated to allow "unselected move" as default
+  const [fastMove, setFastMove] = useState(pokemon.ownershipStatus.fast_move_id || null);
+  const [chargedMove1, setChargedMove1] = useState(pokemon.ownershipStatus.charged_move1_id || null);
+  const [chargedMove2, setChargedMove2] = useState(pokemon.ownershipStatus.charged_move2_id || null);
 
   const getMoveById = (id) => allMoves.find(move => move.move_id === id);
 
   const handleMoveChange = (event, moveType) => {
-    const selectedMoveId = Number(event.target.value);
+    const selectedMoveId = Number(event.target.value) || null;
     if (moveType === 'fast') {
       setFastMove(selectedMoveId);
       onMovesChange({ fastMove: selectedMoveId, chargedMove1, chargedMove2 });
@@ -32,26 +29,34 @@ const MovesComponent = ({ pokemon, editMode, onMovesChange }) => {
   };
 
   const addSecondChargedMove = () => {
-    // Find the first different move that is not already set as the first charged move
     const firstAvailableMove = chargedMoves.find(move => move.move_id !== chargedMove1);
-    if (firstAvailableMove) { // Check if there is a move available to add
-        const newChargedMove2 = firstAvailableMove.move_id;
-        setChargedMove2(newChargedMove2);
-        onMovesChange({ fastMove, chargedMove1, chargedMove2: newChargedMove2 });
-    } // If no available move is found, do nothing (ignoring the click)
+    if (firstAvailableMove) {
+      const newChargedMove2 = firstAvailableMove.move_id;
+      setChargedMove2(newChargedMove2);
+      onMovesChange({ fastMove, chargedMove1, chargedMove2: newChargedMove2 });
+    }
   };
 
+  // Updated renderMoveOptions to allow "unselected move", bold legacy moves, and no image for unselected moves
   const renderMoveOptions = (moves, selectedMove, moveType) => {
-    // Exclude already selected move for charged moves
     const filteredMoves = moves.filter(move => !(moveType.includes('charged') && ((moveType === 'charged1' && move.move_id === chargedMove2) || (moveType === 'charged2' && move.move_id === chargedMove1))));
-    
+
     const move = getMoveById(selectedMove);
+
     return (
       <div className="move-option-container">
-        <img src={`/images/types/${move?.type.toLowerCase()}.png`} alt={move?.type_name} className="type-icon" />
-        <select value={selectedMove} onChange={(event) => handleMoveChange(event, moveType)} className="move-select">
+        {/* Only show type icon if a valid move is selected */}
+        {move && selectedMove ? (
+          <img src={`/images/types/${move.type.toLowerCase()}.png`} alt={move.type_name} className="type-icon" />
+        ) : (
+          <span className="no-type-icon"></span>
+        )}
+        <select value={selectedMove || ''} onChange={(event) => handleMoveChange(event, moveType)} className="move-select">
+          <option value="">Unselected move</option>
           {filteredMoves.map(move => (
-            <option key={move.move_id} value={move.move_id}>{move.name}</option>
+            <option key={move.move_id} value={move.move_id} style={move.legacy ? { fontWeight: 'bold' } : {}}>
+              {move.name}{move.legacy ? '*' : ''}
+            </option>
           ))}
         </select>
         <div className="spacer"></div>
@@ -59,17 +64,28 @@ const MovesComponent = ({ pokemon, editMode, onMovesChange }) => {
     );
   };
 
+  // Updated renderMoveInfo to bold legacy moves with an asterisk
   const renderMoveInfo = (moveId, moveType) => {
+    if (!moveId) return <span className="unselected-move">Unselected move</span>;
+    
     const move = getMoveById(moveId);
     if (!move) return 'No moves available';
+    
     return (
       <div className="move-info">
         <img src={`/images/types/${move.type.toLowerCase()}.png`} alt={move.type_name} className="type-icon" />
-        <span className="move-name">{move.name}</span>
+        <span className="move-name" style={move.legacy ? { fontWeight: 'bold' } : {}}>
+          {move.name}{move.legacy ? '*' : ''}
+        </span>
         <div className="spacer"></div>
       </div>
     );
   };
+
+  // New check: If all moves are null and edit mode is off, render nothing
+  if (!editMode && !fastMove && !chargedMove1 && !chargedMove2) {
+    return null;
+  }
 
   return (
     <div className={`moves-container ${editMode ? 'editable' : ''}`}>
@@ -81,11 +97,11 @@ const MovesComponent = ({ pokemon, editMode, onMovesChange }) => {
       </div>
       <div className="move-section">
         {chargedMove2 ? (
-            editMode ? renderMoveOptions(chargedMoves, chargedMove2, 'charged2') : renderMoveInfo(chargedMove2, 'charged2')
+          editMode ? renderMoveOptions(chargedMoves, chargedMove2, 'charged2') : renderMoveInfo(chargedMove2, 'charged2')
         ) : (
-            <button onClick={editMode ? addSecondChargedMove : undefined} className="icon-button add-move-button">
-                <span className="move-add-icon">+</span>
-            </button>
+          <button onClick={editMode ? addSecondChargedMove : undefined} className="icon-button add-move-button">
+            <span className="move-add-icon">+</span>
+          </button>
         )}
       </div>
     </div>
@@ -93,4 +109,3 @@ const MovesComponent = ({ pokemon, editMode, onMovesChange }) => {
 };
 
 export default MovesComponent;
-

@@ -8,3 +8,51 @@
     align-items: center;
     padding: 0;
 }
+
+@media (max-width: 480px) {
+    .login-page {
+        height: calc(83vh - 74px);
+    }
+    .login-page .login-form {
+        transform: scale(.85);
+    }
+    .login-form input {
+        font-size: .9rem;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+    .login-page {
+        height: calc(80vh - 70px);
+    }
+    .login-page .login-form {
+        transform: scale(.85);
+    }
+    .login-form input {
+        font-size: 1rem;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .login-page {
+        height: calc(80vh - 101px);
+    }
+    .login-page .login-form {
+        transform: scale(1);
+    }
+    .login-form input {
+        font-size: 1rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .login-page {
+        height: calc(100vh - 86px);
+    }
+    .login-page .login-form {
+        transform: scale(1);
+    }
+    .login-form input {
+        font-size: 1rem;
+    }
+}

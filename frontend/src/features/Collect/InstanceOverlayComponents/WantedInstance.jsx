@@ -17,6 +17,7 @@ import BackgroundComponent from './OwnedComponents/BackgroundComponent';
 import { determineImageUrl } from '../../../utils/imageHelpers';  // Import the image helper
 
 const WantedInstance = ({ pokemon }) => {
+  console.log(pokemon)
   const { updateDetails } = useContext(PokemonDataContext);
 
   const [editMode, setEditMode] = useState(false);
