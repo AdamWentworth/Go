@@ -419,8 +419,42 @@
 }
 
 @media (min-width: 1440px) and (max-width: 1919px) {
+  .pokemon-variant-details {
+    width: 160px;
+  }
   .pokemon-variant-container .button-container img {
     width: 28px;
     height: 28px;
+  }
+  .pokemon-variant-image {
+    width: 150px;
+    height: 200px;
+  }
+  .pokemon-variant-container .pokemon-variant-image img {
+    width: 150px;
+    height: 150px;
+  }
+  .pokemon-variant-container .main-content {
+    min-width: unset;
+  }
+  .pokemon-moves-gender-section {
+    width: 120px;
+    margin-left: unset;
+  }
+
+  .pokemon-search-row input[type="text"] {
+    width: 140px;
+  }
+
+  .pokemon-variant-container .button-container button {
+    width: 42px;
+    height: 38px;
+  }
+  .pokemon-variant-container .button-container img {
+    width: 24px;
+    height: 24px;
+  }
+  .pokemon-variant-container .button-container button {
+    padding: 8px;
   }
 }
