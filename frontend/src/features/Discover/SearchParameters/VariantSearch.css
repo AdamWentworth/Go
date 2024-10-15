@@ -426,19 +426,30 @@
     width: 28px;
     height: 28px;
   }
-  .pokemon-variant-image {
-    width: 150px;
+  .main-content {
     height: 200px;
   }
+  .main-content .pokemon-variant-image {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin-top: 25px;
+    margin-right: 10px;
+  }
+
   .pokemon-variant-container .pokemon-variant-image img {
     width: 150px;
     height: 150px;
+    position: absolute;
+    top: 0;
+    left: 0;
   }
   .pokemon-variant-container .main-content {
     min-width: unset;
   }
   .pokemon-moves-gender-section {
     width: 120px;
+    height: 200px;
     margin-left: unset;
   }
 
@@ -457,7 +468,6 @@
   .pokemon-variant-container .button-container button {
     padding: 8px;
   }
-  /* Ensure the label and dropdown are on the same row */
   .form-dropdown,
   .costume-dropdown {
     display: flex;
