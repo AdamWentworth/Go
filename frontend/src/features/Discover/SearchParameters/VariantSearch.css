@@ -450,7 +450,7 @@
   .pokemon-moves-gender-section {
     width: 120px;
     height: 200px;
-    margin-left: unset;
+    margin-bottom: unset;
   }
 
   .pokemon-search-row input[type="text"] {

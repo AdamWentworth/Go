@@ -115,5 +115,10 @@
 @media (min-width: 1440px) and (max-width: 1919px) {
   .moves-search-container {
     width: unset;
+    height: unset;
+  }
+  .moves-search-select {
+    font-size: 12px;
+    min-width: 120px;
   }
 }
