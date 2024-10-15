@@ -246,18 +246,4 @@
     width: 100%;
     margin-right: 20px;
   }
-  .controls-container {
-    flex-direction: column;
-    padding-top: 0px;
-  }
-  .error-message {
-    height: auto;
-    margin-left: 0px;
-    text-align: center;
-  }
-  .view-controls {
-    position: relative;
-    left: unset;
-    transform: unset;
-  }
 }

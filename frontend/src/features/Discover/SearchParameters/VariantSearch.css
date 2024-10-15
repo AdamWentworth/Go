@@ -337,7 +337,7 @@
   .pokemon-variant-container .main-content {
     min-width: 480px;
     justify-content: center;
-    gap: 10%;
+    gap: 5%;
   }
   .pokemon-search-row input[type="text"] {
     width: 200px;

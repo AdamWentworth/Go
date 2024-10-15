@@ -4,9 +4,9 @@ import React from 'react';
 
 const Dropdown = ({ label, value, options, handleChange, formatLabel = (x) => x, className }) => {
   return (
-    <div className={className}> {/* Use the className prop here */}
+    <div className={className}>
       <label>{label}: </label>
-      <select value={value} onChange={handleChange}>
+      <select value={value || ""} onChange={handleChange}> {/* Ensure value is never null */}
         <option value="">None</option>
         {options.map((option) => (
           <option key={option} value={option}>
@@ -19,4 +19,3 @@ const Dropdown = ({ label, value, options, handleChange, formatLabel = (x) => x,
 };
 
 export default Dropdown;
-
