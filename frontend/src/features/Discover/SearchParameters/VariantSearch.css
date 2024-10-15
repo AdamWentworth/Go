@@ -457,4 +457,21 @@
   .pokemon-variant-container .button-container button {
     padding: 8px;
   }
+  /* Ensure the label and dropdown are on the same row */
+  .form-dropdown,
+  .costume-dropdown {
+    display: flex;
+    align-items: center;
+  }
+
+  .form-dropdown label,
+  .costume-dropdown label {
+    margin-right: 8px;
+    white-space: nowrap;
+  }
+
+  .form-dropdown select,
+  .costume-dropdown select {
+    width: auto; /* Adjust width as needed */
+  }
 }
