@@ -277,6 +277,7 @@
   .pokemon-variant-container .main-content {
     display: flex;
     flex-wrap: wrap;
+    gap: 20px;
   }
 
   /* Put details and image in the same row */
@@ -336,7 +337,7 @@
   .pokemon-variant-container .main-content {
     min-width: 480px;
     justify-content: center;
-    gap: 40px;
+    gap: 10%;
   }
   .pokemon-search-row input[type="text"] {
     width: 200px;
@@ -374,7 +375,8 @@
   .pokemon-variant-container .main-content {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-around;
+    justify-content: center;
+    gap: 10%;
   }
 
   /* Put details and image in the same row */

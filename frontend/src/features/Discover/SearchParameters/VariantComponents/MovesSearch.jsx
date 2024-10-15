@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import './MovesSearch.css'; // Import any specific CSS for MovesComponent
 
 const MovesSearch = ({ pokemon, selectedMoves, onMovesChange }) => {
-  const allMoves = pokemon?.moves || [];
+  const allMoves = pokemon?.moves?.length ? pokemon.moves : [{ name: 'Any Move', move_id: 0 }];
   const fastMoves = allMoves.filter(move => move.is_fast);
   const chargedMoves = allMoves.filter(move => !move.is_fast);
 

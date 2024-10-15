@@ -139,7 +139,7 @@
     }
 
     .mainButtonsContainerNavbar .mainButton {
-        font-size: .75rem;  /* Smaller font size for compact appearance */
+        font-size: 1.25rem;  /* Smaller font size for compact appearance */
         padding: 0.4rem .7rem;  /* Reduce padding to make buttons smaller */
         border-radius: 5px;
     }

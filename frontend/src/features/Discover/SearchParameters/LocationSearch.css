@@ -162,6 +162,14 @@
 
 }
 
-@media (min-width: 1024px) {
-
+@media (min-width: 1439px) and (max-width: 1919px) {
+    .location-container {
+        gap: 5px;
+     }
+     .location-button-centered button {
+        width: 80%;
+     }
+     .location-input input {
+        width: 80%;
+     }
 }

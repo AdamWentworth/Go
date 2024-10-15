@@ -304,13 +304,13 @@ const VariantSearch = ({
         </div>
   
         {/* Fixed Width Column for Moves, Gender, and Background */}
-        {pokemon && pokemonData.length > 0 && (
-          <div className="pokemon-moves-gender-section">
-            <MovesSearch
-              pokemon={currentPokemonData}
-              selectedMoves={selectedMoves}
-              onMovesChange={handleMovesChange}
-            />
+        <div className="pokemon-moves-gender-section">
+          <MovesSearch
+            pokemon={currentPokemonData || { moves: [{ name: 'Any Move', move_id: 0 }] }} // Always pass default moves even if no Pokémon is selected
+            selectedMoves={selectedMoves}
+            onMovesChange={handleMovesChange}
+          />
+
             {/* Container for Gender and Background Search */}
             <div className="gender-background-row">
               {/* Gender Search Component */}
@@ -332,7 +332,6 @@ const VariantSearch = ({
               )}
             </div>
           </div>
-        )}
       </div>
 
       {/* Background Overlay */}
