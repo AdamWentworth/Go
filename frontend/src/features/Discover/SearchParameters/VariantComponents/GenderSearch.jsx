@@ -25,13 +25,19 @@ const GenderSearch = ({ genderRate, selectedGender, onGenderChange }) => {
     const genders = [];
 
     if (genderlessRate === 100) {
-      setAvailableGenders([]);
+      setAvailableGenders([]);  // Genderless Pokémon, no gender to display
     } else {
       if (maleRate > 0) genders.push('Male');
       if (femaleRate > 0) genders.push('Female');
+
       setAvailableGenders(genders);
+
+      // If only one gender is available, set it automatically
+      if (genders.length === 1) {
+        onGenderChange(genders[0]);
+      }
     }
-  }, [genderRate]);
+  }, [genderRate, onGenderChange]);
 
   const toggleGender = () => {
     if (availableGenders.length === 2) {
