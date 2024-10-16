@@ -184,6 +184,7 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                     src={matchedPokemon.currentImage}
                     alt={matchedPokemon.name}
                     className={`trade-pokemon-image ${tradeListPokemon.match ? 'glowing-pokemon' : ''}`}
+                    title={`${matchedPokemon.form ? `${matchedPokemon.form} ` : ''}${matchedPokemon.name}`}
                   />
                 ) : null;
               })}
