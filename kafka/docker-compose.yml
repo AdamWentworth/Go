@@ -20,6 +20,8 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
       KAFKA_BROKER_ID: 1
+      KAFKA_MESSAGE_MAX_BYTES: 3145728          # Set to 3 MB (3,145,728 bytes)
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 3145728    # Match the value of message.max.bytes
     volumes:
       - ./data/kafka:/kafka
     env_file:

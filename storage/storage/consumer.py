@@ -1,5 +1,6 @@
 # storage/consumer.py
-import os
+import gzip
+from io import BytesIO
 import json
 import time
 import logging
@@ -23,6 +24,17 @@ class TraceIDLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
         trace_id = self.extra.get('trace_id', 'N/A')
         return f'trace_id {trace_id} - {msg}', kwargs
+    
+def decompress_message(compressed_data):
+    """Decompress the gzip data and return the decompressed message."""
+    try:
+        buf = BytesIO(compressed_data)
+        with gzip.GzipFile(fileobj=buf) as f:
+            decompressed_data = f.read()
+        return decompressed_data
+    except Exception as e:
+        logger.error(f"Failed to decompress message: {e}")
+        raise
 
 def consume_messages():
     kafka_config = settings.KAFKA_CONFIG
@@ -71,10 +83,21 @@ def consume_messages():
                         continue
 
                 logger.debug(f"Message received: {msg.value()}")
-                data = json.loads(msg.value().decode('utf-8'))
+
+                # Decompress the message
+                try:
+                    decompressed_data = decompress_message(msg.value())
+                except Exception as e:
+                    logger.error(f"Failed to decompress message: {e}")
+                    continue  # Skip this message and continue polling
+
+                # Decode JSON from the decompressed data
+                data = json.loads(decompressed_data.decode('utf-8'))
                 trace_id = data.get('trace_id', 'N/A')
                 trace_logger = TraceIDLoggerAdapter(file_logger, {'trace_id': trace_id})
                 trace_logger.info(f"Consumed message for user {data.get('user_id', 'unknown')}")
+                
+                # Handle the message
                 handle_message(data, trace_logger)
                 consumer.commit()  # Commit only after successful processing
             except KafkaException as ke:
