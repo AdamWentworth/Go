@@ -17,6 +17,7 @@ import { useTheme } from '../../../../contexts/ThemeContext';  // Import useThem
 
 const MiniMap = ({ latitude, longitude, ownershipStatus }) => {
   const mapContainerRef = useRef(null);
+  const mapRef = useRef(null); // To reference the OpenLayers map instance
   const { isLightMode } = useTheme();  // Use theme context to get isLightMode
 
   useEffect(() => {
@@ -30,7 +31,6 @@ const MiniMap = ({ latitude, longitude, ownershipStatus }) => {
       }),
     });
 
-    // Set the color based on ownershipStatus
     let pointColor;
     if (ownershipStatus === 'owned') {
       pointColor = '#00AAFF'; // Blue for owned
@@ -40,7 +40,6 @@ const MiniMap = ({ latitude, longitude, ownershipStatus }) => {
       pointColor = '#FF0000'; // Red for wanted (default)
     }
 
-    // Create a vector source and layer for the point feature
     const vectorSource = new VectorSource({
       features: [
         new Feature({
@@ -54,7 +53,7 @@ const MiniMap = ({ latitude, longitude, ownershipStatus }) => {
       style: new Style({
         image: new Circle({
           radius: 6,
-          fill: new Fill({ color: pointColor }), // Set color based on ownershipStatus
+          fill: new Fill({ color: pointColor }),
         }),
       }),
     });
@@ -64,17 +63,31 @@ const MiniMap = ({ latitude, longitude, ownershipStatus }) => {
       layers: [baseTileLayer, vectorLayer],
       view: new View({
         center: coordinates,
-        zoom: 14, // Increased zoom level for a closer view
+        zoom: 14,
       }),
       controls: [
         new Zoom({
-          className: 'mini-map-zoom', // Add a custom class to the zoom control
+          className: 'mini-map-zoom',
           target: mapContainerRef.current,
         }),
       ],
     });
 
+    mapRef.current = map; // Store map reference
+
+    // Resize observer to update OpenLayers map size when the container changes
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapRef.current) {
+        mapRef.current.updateSize(); // Update map size when container size changes
+      }
+    });
+
+    if (mapContainerRef.current) {
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
     return () => {
+      resizeObserver.disconnect(); // Clean up observer
       map.setTarget(null); // Clean up the map instance on unmount
     };
   }, [latitude, longitude, isLightMode, ownershipStatus]);

@@ -1,46 +1,56 @@
 /* MiniMap.css */
 
 .mini-map-wrapper {
-    width: 90%;
-    height: 250px; /* Increased height */
-    border-radius: 20px; /* Increased border-radius for rounded corners */
-    overflow: hidden; /* Ensures the map does not overflow the border radius */
-    position: relative;
-    margin-bottom: 10px;
+  display: flex;
+  flex-grow: 1; /* The map can grow to fill available space */
+  flex-shrink: 1; /* Allows the map to shrink when necessary */
+  position: relative;
+  margin-bottom: 10px;
+  width: 100%;
+  height: 100%;
+}
+
+.mini-map-container {
+  width: 100%;
+  height: 100%; /* Ensure the map container takes up the full available space */
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.mini-map-zoom.ol-control {
+  top: 10px !important;
+  left: 10px !important;
+  z-index: 1;
+}
+
+/* Optional: For very small screens */
+@media (max-width: 480px) {
+  .mini-map-wrapper {
+    height: 200px; /* Minimum height for smaller devices */
   }
+}
   
-  .mini-map-container {
-    width: 100%;
-    height: 100%;
-    border-radius: inherit; /* Inherit the border-radius from the parent wrapper */
+@media (min-width: 481px) and (max-width: 767px) {
+  .mini-map-wrapper {
+    height: 225px;
   }
-  
-  /* Custom zoom control positioning */
-  .mini-map-zoom.ol-control {
-    top: 10px !important; /* Position at the top */
-    left: 10px !important; /* Align to the left */
-    z-index: 1;
-  }
-  
-  @media (max-width: 480px) {
-    .mini-map-wrapper {
-      width: 250px;
-      height: 200px;
-    }
-    }
-  
-  @media (min-width: 481px) and (max-width: 767px) {
-    .mini-map-wrapper {
-      width: 400px;
-      height: 225px;
-    }
-    }
+}
   
   @media (min-width: 768px) and (max-width: 1023px) {
-
+  .mini-map-wrapper {
+    height: 300px;
   }
+}
   
     
   @media (min-width: 1024px) and (max-width: 1439px){
-
+    .mini-map-wrapper {
+      height: 250px;
+    }
+  }
+  @media (min-width: 1440px) {
+    .mini-map-wrapper {
+      height: 280px;
+    }
   }
