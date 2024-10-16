@@ -76,7 +76,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
     const searchBarBottom = searchBar ? searchBar.offsetTop + searchBarHeight : 0;
 
     // Adjust collapse point by 25% of the search bar height
-    const adjustedCollapsePoint = searchBarBottom - (searchBarHeight * 0.15);
+    const adjustedCollapsePoint = searchBarBottom - (searchBarHeight * .15);
 
     // Collapse the search bar when the user scrolls past the adjusted point
     if (window.scrollY > adjustedCollapsePoint) {

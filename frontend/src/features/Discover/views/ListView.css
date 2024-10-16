@@ -161,6 +161,34 @@
     margin-bottom: 5px;
   }
 
+  @media (max-width: 480px) {
+    .list-view-row {
+      flex-direction: column;
+        width: 93%;
+      }
+    .list-view-row .center-column .pokemon-image-container .pokemon-image {
+      height: 120px;
+      width: 120px;
+    }
+    .list-view-row .center-column .card {
+      height: unset;
+    }
+    }
+  
+  @media (min-width: 481px) and (max-width: 767px) {
+
+    }
+  
+  @media (min-width: 768px) and (max-width: 1023px) {
+
+  }
+  
+    
+  @media (min-width: 1024px) and (max-width: 1439px){
+
+  }
+    
+
   @media (min-width: 1024px) and (max-width: 1439px) {
     .list-view-row {
       width: 98%;

@@ -22,3 +22,22 @@
     z-index: 1;
   }
   
+  @media (max-width: 480px) {
+    .mini-map-wrapper {
+      width: 250px;
+      height: 200px;
+    }
+    }
+  
+  @media (min-width: 481px) and (max-width: 767px) {
+
+    }
+  
+  @media (min-width: 768px) and (max-width: 1023px) {
+
+  }
+  
+    
+  @media (min-width: 1024px) and (max-width: 1439px){
+
+  }
