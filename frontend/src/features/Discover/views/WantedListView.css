@@ -182,7 +182,34 @@
   }
 
 @media (min-width: 481px) and (max-width: 767px) {
-
+  .wanted-list-view .pokemon-first-column {
+    margin-left: 10px;
+  }
+  .wanted-list-view .pokemon-second-column {
+    margin-right: unset;
+  }
+  .wanted-list-view .hearts-lucky-container, .wanted-list-view .pokemon-weight-height {
+    transform: scale(.85);
+    margin-right: unset;
+  }
+  .wanted-list-view .pokemon-moves {
+    transform: scale(.85);
+    margin-left: 10px;
+    margin-right: unset;
+    margin-bottom: unset;
+    width: 100%;
+  }
+  .wanted-list-view .trade-list-section h1{
+    font-size: 18px;
+  }
+  .wanted-list-view .trade-list-section .trade-pokemon-image {
+    height: 60px; 
+    width: 60px;
+  }
+  .wanted-list-view .trade-list-section .trade-list {
+    margin-bottom: 10px;
+    margin-top: 5px;
+  }
   }
 
 @media (min-width: 768px) and (max-width: 1023px) {
