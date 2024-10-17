@@ -226,7 +226,8 @@
     height: unset;
   }
   .list-view-row .center-column .pokemon-image-container .lucky-backdrop {
-    width: 165px;
+    width: 175px;
+    left: 7%;
   }
 }
   
@@ -239,7 +240,8 @@
       width: 145px;
     }
     .list-view-row .center-column .pokemon-image-container .lucky-backdrop {
-      width: 105px;
+      width: 120px;
+      left: 8%;
     }
     .list-view-row .left-column {
       margin-left: 10px;
@@ -252,5 +254,18 @@
     }
     .list-view-row .left-column {
       margin-left: 10px;
+    }
+    .list-view-row .center-column .pokemon-image-container .pokemon-image, .list-view-row .center-column .pokemon-single-column .pokemon-image, .list-view-row .center-column .pokemon-columns .pokemon-image {
+      max-width: 100%;
+      z-index: 2;
+      position: relative;
+      height: 200px;
+      width: 200px;
+    }
+    .list-view-row .center-column .pokemon-image-container .lucky-backdrop {
+      position: absolute;
+      top: 13%;
+      left: 6%;
+      width: 190px;
     }
   }  
