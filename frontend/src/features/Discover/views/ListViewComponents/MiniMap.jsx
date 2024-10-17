@@ -63,7 +63,7 @@ const MiniMap = ({ latitude, longitude, ownershipStatus }) => {
       layers: [baseTileLayer, vectorLayer],
       view: new View({
         center: coordinates,
-        zoom: 14,
+        zoom: 11,
       }),
       controls: [
         new Zoom({
