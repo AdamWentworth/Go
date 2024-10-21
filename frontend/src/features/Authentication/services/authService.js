@@ -9,7 +9,7 @@ const authApi = axios.create({
 });
 
 const readApi = axios.create({
-  baseURL: process.env.REACT_APP_READ_API_URL,
+  baseURL: process.env.REACT_APP_EVENTS_API_URL,
 });
 
 export const registerUser = async (userData) => {

@@ -59,13 +59,13 @@ function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData, v
 function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey, variants) {
     const instance = ownershipData[pokemonKey];
 
-    if (newStatus === 'Trade') {
+    if (newStatus === 'Trade' || newStatus === 'Wanted') {
         if (instance.lucky || instance.shadow || (instance.pokemon_id === 2270 || instance.pokemon_id === 2271)) {
-            alert(`Cannot move ${baseKey} to Trade as it is ${instance.lucky ? 'lucky' : instance.shadow ? 'shadow' : 'a fusion Pokemon'}.`);
-            console.log(`Move to Trade blocked due to status: ${instance.lucky ? 'lucky' : 'shadow'}`);
+            alert(`Cannot move ${pokemonKey} to ${newStatus} as it is ${instance.lucky ? 'lucky' : instance.shadow ? 'shadow' : 'a fusion Pokemon'}.`);
+            console.log(`Move to ${newStatus} blocked due to status: ${instance.lucky ? 'lucky' : 'shadow'}`);
             return;
         }
-    }
+    } 
 
     // Initial setup for statuses based on the newStatus
     instance.is_unowned = newStatus === 'Unowned';
@@ -130,13 +130,13 @@ function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey, var
 function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, variants) {
     const instance = ownershipData[pokemonKey];
 
-    if (newStatus === 'Trade') {
+    if (newStatus === 'Trade' || newStatus === 'Wanted') {
         if (instance.lucky || instance.shadow || (instance.pokemon_id === 2270 || instance.pokemon_id === 2271)) {
-            alert(`Cannot move ${pokemonKey} to Trade as it is ${instance.lucky ? 'lucky' : instance.shadow ? 'shadow' : 'a fusion Pokemon'}.`);
-            console.log(`Move to Trade blocked due to status: ${instance.lucky ? 'lucky' : 'shadow'}`);
+            alert(`Cannot move ${pokemonKey} to ${newStatus} as it is ${instance.lucky ? 'lucky' : instance.shadow ? 'shadow' : 'a fusion Pokemon'}.`);
+            console.log(`Move to ${newStatus} blocked due to status: ${instance.lucky ? 'lucky' : 'shadow'}`);
             return;
         }
-    }
+    }    
     
     switch (newStatus) {
         case 'Owned':

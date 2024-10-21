@@ -12,7 +12,7 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
     // Bypass the service worker for specific API requests
-    if (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/ownershipData/')) {
+    if (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/ownershipData/') && url.origin === 'http://localhost:3006') {
         return; // Do not intercept this request
     }
 
