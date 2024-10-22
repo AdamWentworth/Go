@@ -1,6 +1,7 @@
 // authService.js
 
 import axios from 'axios';
+import { getDeviceId } from '../../../utils/deviceID';
 
 axios.defaults.withCredentials = true;
 
@@ -14,7 +15,8 @@ const readApi = axios.create({
 
 export const registerUser = async (userData) => {
   try {
-    const response = await authApi.post('/register', userData);
+    const deviceId = getDeviceId();
+    const response = await authApi.post('/register', { ...userData, device_id: deviceId });
     return response.data;
   } catch (error) {
     console.error('Error registering user:', error.response || error);
@@ -24,7 +26,8 @@ export const registerUser = async (userData) => {
 
 export const loginUser = async (loginData) => {
   try {
-    const response = await authApi.post('/login', loginData);
+    const deviceId = getDeviceId();
+    const response = await authApi.post('/login', { ...loginData, device_id: deviceId });
     return response.data;
   } catch (error) {
     console.error('Error logging in user:', error.response || error);
@@ -77,12 +80,15 @@ export const refreshTokenService = async () => {
 
 export const fetchOwnershipData = async (userId) => {
   try {
+      const deviceId = getDeviceId();
       const response = await readApi.get(`/ownershipData/${userId}`, {
-          method: 'GET',
+          params: {
+              device_id: deviceId,
+          },
           headers: {
               'Content-Type': 'application/json'
           },
-          credentials: 'include'  // Include credentials in the request
+          withCredentials: true  // Include credentials in the request
       });
       return response.data;
   } catch (error) {

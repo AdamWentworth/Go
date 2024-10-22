@@ -50,8 +50,19 @@ router.post('/register', async (req, res, next) => {
         const savedUser = await newUser.save({ writeConcern: { w: "majority" } });
         logger.debug(`User ${req.body.username} saved successfully, attempting to create token.`);
 
-        const tokens = tokenService.createTokens(savedUser);
+        const device_id = req.body.device_id;  // Get device_id from the request body
+
+        const tokens = tokenService.createTokens(savedUser, device_id);
         handleTokenResponse(req, res, savedUser, tokens);
+
+        // Store the refresh token along with device_id
+        await User.findByIdAndUpdate(savedUser._id, {
+            $push: {'refreshToken': {
+                token: tokens.refreshToken,
+                expires: tokens.refreshTokenExpiry,
+                device_id: device_id
+            }}
+        });
         next();
     } catch (err) {
         if (err.code === 11000) {
@@ -94,18 +105,21 @@ router.post('/login', async (req, res, next) => {
             return res.status(401).json({ message: 'Invalid password' });
         }
 
+        const device_id = req.body.device_id;  // Get device_id from the request body
+
         // Clean up expired refresh tokens before adding a new one
         await User.findByIdAndUpdate(user._id, {
             $pull: { 'refreshToken': { expires: { $lte: new Date() } } } // Remove expired tokens
         });
 
-        const tokens = tokenService.createTokens(user);
+        const tokens = tokenService.createTokens(user, device_id);
 
         // Update user with new refresh token details by adding to the array
         await User.findByIdAndUpdate(user._id, {
             $push: {'refreshToken': {
                 token: tokens.refreshToken,
-                expires: tokens.refreshTokenExpiry
+                expires: tokens.refreshTokenExpiry,
+                device_id: device_id
             }}
         });
 
@@ -139,15 +153,18 @@ router.post('/refresh', async (req, res, next) => {
         logger.error('Refresh failed: No refresh token provided');
         return res.status(401).json({ message: 'Refresh token required' });
     }
+
     try {
         // Clean up expired refresh tokens
-        await User.findOneAndUpdate(
+        await User.updateOne(
             { 'refreshToken.token': refreshToken },
             { $pull: { 'refreshToken': { expires: { $lte: new Date() } } } }
         );
+
         const user = await User.findOne({
-            'refreshToken': { $elemMatch: { token: refreshToken, expires: { $gt: new Date() }}}
+            'refreshToken': { $elemMatch: { token: refreshToken, expires: { $gt: new Date() } } }
         }).exec();
+
         if (!user) {
             logger.error('Refresh failed: Invalid or expired refresh token');
             return res.status(401).json({ message: 'Invalid or expired refresh token' });
@@ -159,9 +176,12 @@ router.post('/refresh', async (req, res, next) => {
             return res.status(401).json({ message: 'Invalid or expired refresh token' });
         }
 
+        const device_id = user.refreshToken[req.tokenIndex].device_id;  // Retrieve device_id from the stored refresh token
+
         logger.debug(`User ${user.username} found with valid refresh token. Proceeding to create new access token.`);
 
-        const tokens = tokenService.createAccessToken(user);
+        const tokens = tokenService.createAccessToken(user, device_id);  // Include device_id in access token
+
         handleTokenResponse(req, res, user, tokens);
         next();
     } catch (err) {

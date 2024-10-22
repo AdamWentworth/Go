@@ -10,13 +10,23 @@ import (
 // GetPokemonInstances handles the GET requests to retrieve Pokémon instances for a user
 func GetPokemonInstances(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
-	tokenUserID := c.Locals("user_id").(string) // Extract user_id from context
+	tokenUserID, ok := c.Locals("user_id").(string) // Extract user_id from context
 
 	// Check if user_id from the token matches the requested user_id
-	if tokenUserID != userID {
+	if !ok || tokenUserID != userID {
 		logrus.Error("Authentication failed: User mismatch")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "User mismatch"})
 	}
+
+	// Extract device_id from query parameters
+	deviceID := c.Query("device_id")
+	if deviceID == "" {
+		logrus.Error("device_id is missing in request")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Missing device_id"})
+	}
+
+	// Log the device_id for tracing
+	logrus.Infof("Fetching ownership data for user %s from device %s", userID, deviceID)
 
 	// Retrieve the user from the database
 	var user User
@@ -81,6 +91,6 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 	instanceCount := len(responseData)
 
 	// Log and return the response data, even if empty
-	logrus.Infof("User %s retrieved %d Pokemon instances", user.Username, instanceCount)
+	logrus.Infof("User %s retrieved %d Pokemon instances from device %s", user.Username, instanceCount, deviceID)
 	return c.Status(fiber.StatusOK).JSON(responseData)
 }

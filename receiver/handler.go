@@ -1,4 +1,3 @@
-// handler.go
 package main
 
 import (
@@ -18,8 +17,8 @@ func handleBatchedUpdates(c *fiber.Ctx) error {
 		return c.SendStatus(http.StatusOK)
 	}
 
-	// Verify JWT token
-	userID, username, err := verifyAccessToken(c)
+	// Verify JWT token and extract user details
+	userID, username, deviceID, err := verifyAccessToken(c)
 	if err != nil {
 		logger.Warnf("Unauthorized access attempt: %v", err)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "Unauthorized"})
@@ -52,11 +51,12 @@ func handleBatchedUpdates(c *fiber.Ctx) error {
 
 	// Prepare data to send to Kafka
 	data := map[string]interface{}{
-		"user_id":  userID,
-		"username": username,
-		"trace_id": traceID,
-		"pokemon":  pokemonUpdates,
-		"location": location,
+		"user_id":   userID,
+		"username":  username,
+		"device_id": deviceID,
+		"trace_id":  traceID,
+		"pokemon":   pokemonUpdates,
+		"location":  location,
 	}
 
 	message, err := json.Marshal(data)
@@ -74,6 +74,6 @@ func handleBatchedUpdates(c *fiber.Ctx) error {
 	// Respond to the client
 	c.Set("Access-Control-Allow-Origin", "http://localhost:3000")
 	c.Set("Access-Control-Allow-Credentials", "true")
-	logger.Infof("User %s loaded %d Pokémon into Kafka", username, len(pokemonUpdates))
+	logger.Infof("User %s (device_id: %s) loaded %d Pokémon into Kafka", username, deviceID, len(pokemonUpdates))
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Batched updates successfully processed"})
 }

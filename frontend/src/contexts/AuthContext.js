@@ -1,5 +1,7 @@
 // AuthContext.js
+
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import { getDeviceId } from '../utils/deviceID';
 import { useNavigate } from 'react-router-dom';
 import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService, refreshTokenService } from '../features/Authentication/services/authService';
 import { formatTimeUntil } from '../utils/formattingHelpers';
@@ -7,6 +9,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { usePokemonData } from './PokemonDataContext';
 import { useGlobalState } from './GlobalStateContext'
+import { initiateSSEConnection, closeSSEConnection } from '../services/sseService'; // Import SSE functions
 
 const AuthContext = createContext();
 
@@ -20,14 +23,31 @@ export const AuthProvider = ({ children }) => {
   const refreshTimeoutRef = useRef(null); // Ref to store the refresh token timeout
   const { isLoggedIn, setIsLoggedIn } = useGlobalState(); 
   const [isLoading, setIsLoading] = useState(true);  // Add loading state
+  const deviceIdRef = useRef(getDeviceId()); 
+
+  const { setOwnershipData, resetData } = usePokemonData(); // Import updatePokemonData
+
+  // Function to handle incoming SSE updates
+  const handleIncomingUpdate = (data) => {
+    console.log('handleIncomingUpdate called with data:', data);
+    if (data.pokemon) {
+      setOwnershipData(data.pokemon);
+    }
+  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
+    const deviceId = getDeviceId();
+    deviceIdRef.current = deviceId;
+    console.log('Device ID:', deviceId);
     if (storedUser) {
       const userData = JSON.parse(storedUser);
       userRef.current = userData;
       setUser(userData);
       setIsLoggedIn(true);
+
+      // Initiate SSE connection if user is already logged in
+      initiateSSEConnection(userData.user_id, handleIncomingUpdate);
     }
     setIsLoading(false);  // Ensure loading is set to false after the user data has been checked
   }, [setIsLoggedIn]);  
@@ -66,6 +86,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       clearInterval(intervalRef.current);
       clearTimeout(refreshTimeoutRef.current);
+      closeSSEConnection(); // Close SSE connection on unmount
     };
   }, [setIsLoggedIn]);
 
@@ -161,6 +182,9 @@ export const AuthProvider = ({ children }) => {
 
     startTokenExpirationCheck();
     scheduleTokenRefresh(userData.accessTokenExpiry); // Pass the correct expiry time
+
+    // Initiate SSE connection
+    initiateSSEConnection(userData.user_id, handleIncomingUpdate);
   };
 
   const logout = async () => {
@@ -174,15 +198,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Inside your AuthProvider component
-  const { resetData  } = usePokemonData(); // Destructure setData from the context
-
   const clearSession = async (isForcedLogout) => {
     localStorage.removeItem('user');
     localStorage.removeItem('pokemonOwnership');
     setIsLoggedIn(false);
     setUser(null);
     userRef.current = null;
+
+    // Close SSE connection
+    closeSSEConnection();
 
     // Clear relevant caches
     if ('caches' in window) {
@@ -240,6 +264,15 @@ export const AuthProvider = ({ children }) => {
       throw error;
     }
   };
+
+  useEffect(() => {
+    return () => {
+      // Component will unmount
+      clearInterval(intervalRef.current);
+      clearTimeout(refreshTimeoutRef.current);
+      closeSSEConnection();
+    };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, isLoggedIn, isLoading, login, logout, updateUserDetails, deleteAccount }}>

@@ -45,6 +45,13 @@ func verifyJWT(c *fiber.Ctx) error {
 			logrus.Error("Authentication failed: user_id claim missing")
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Authentication failed"})
 		}
+
+		// Optionally extract device_id if present in JWT
+		if deviceID, ok := claims["device_id"].(string); ok {
+			c.Locals("device_id", deviceID)
+		} else {
+			logrus.Warn("device_id not found in JWT claims")
+		}
 	} else {
 		logrus.Error("Authentication failed: JWT token is invalid")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Authentication failed"})

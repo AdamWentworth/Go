@@ -18,7 +18,8 @@ const userSchema = new mongoose.Schema({
     discordId: { type: String, default: "" },
     refreshToken: [{
         token: String,
-        expires: Date
+        expires: Date,
+        device_id: String
     }]
 });
 

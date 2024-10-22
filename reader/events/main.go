@@ -17,6 +17,7 @@ func main() {
 	// Initialize configuration, environment, and logging
 	initLogging()   // Initialize logging early
 	initEnv()       // Load environment variables
+	loadConfig()    // Load app_conf.yml configuration
 	initJWTSecret() // Load the JWT_SECRET environment variable
 	initDB()        // Connect to the database
 
@@ -34,6 +35,10 @@ func main() {
 	// Protected routes
 	protected := app.Group("/", verifyJWT) // JWT middleware to protect routes
 	protected.Get("/api/ownershipData/:user_id", GetPokemonInstances)
+	protected.Get("/api/sse", sseHandler) // Include sseHandler here
+
+	// Start the Kafka consumer
+	startKafkaConsumer()
 
 	// Use fmt.Println for startup messages without time and log level
 	fmt.Println("Starting GetPokemonInstances server at http://127.0.0.1:3005/")

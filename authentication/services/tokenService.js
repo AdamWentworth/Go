@@ -1,13 +1,21 @@
 // tokenService.js
+
 const jwt = require('jsonwebtoken');
 const secretKey = process.env.JWT_SECRET;
 
 const calculateExpiryTime = (seconds) => new Date(new Date().getTime() + seconds * 1000);
 
-const createTokens = (user) => {
-    const accessToken = jwt.sign({ user_id: user._id, username: user.username }, secretKey, {
+const createTokens = (user, device_id) => {
+    const payload = {
+        user_id: user._id,
+        username: user.username,
+        device_id: device_id  // Include device_id in the payload
+    };
+
+    const accessToken = jwt.sign(payload, secretKey, {
         expiresIn: '1h'  // 1 hour
     });
+
     const refreshToken = jwt.sign({ user_id: user._id, username: user.username }, secretKey, {
         expiresIn: '7d'  // 7 days
     });
@@ -20,8 +28,14 @@ const createTokens = (user) => {
     };
 };
 
-const createAccessToken = (user) => {
-    const accessToken = jwt.sign({ user_id: user._id, username: user.username }, secretKey, {
+const createAccessToken = (user, device_id) => {
+    const payload = {
+        user_id: user._id,
+        username: user.username,
+        device_id: device_id  // Include device_id in the payload
+    };
+
+    const accessToken = jwt.sign(payload, secretKey, {
         expiresIn: '1h'  // 1 hour
     });
 

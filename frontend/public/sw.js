@@ -12,9 +12,13 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
     // Bypass the service worker for specific API requests
-    if (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/ownershipData/') && url.origin === 'http://localhost:3006') {
+    if (
+        (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/ownershipData/')) ||
+        url.origin === 'http://localhost:3006' ||
+        (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/sse'))
+    ) {
         return; // Do not intercept this request
-    }
+    }    
 
     if (url.origin === 'https://photon.komoot.io') {
         return;
