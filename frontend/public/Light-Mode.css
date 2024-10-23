@@ -2,7 +2,9 @@
 .list-view-row, .overlay-content {
     background-color: #e0f0e5;
 }
-
+.pokemon-card.highlighted {
+    background-color: #e3f7dc;
+}
 .navbar h1, .evo-line-checkbox, .overlay-content, .iv-input, .iv-value, .pokemon-search-bar, .list-view, .moves-search-select, .moves-search-move-add-icon, .moves-search-move-add-icon, .list-view-container {
     color:black
 }
