@@ -2,7 +2,7 @@
 
 .App {
   text-align: center;
-  background-color: #222; /* This ensures the background color fills the whole App */
+  /* background-color: #222; */
   min-height: 100vh; /* This ensures the App fills the whole viewport height */
   display: flex;
   flex-direction: column;
