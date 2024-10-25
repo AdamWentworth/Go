@@ -55,6 +55,18 @@ router.post('/register', async (req, res, next) => {
         const tokens = tokenService.createTokens(savedUser, device_id);
         handleTokenResponse(req, res, savedUser, tokens);
 
+        // Clean up expired refresh tokens and tokens with the same device_id before adding a new one
+        await User.findByIdAndUpdate(savedUser._id, {
+            $pull: {
+                'refreshToken': {
+                    $or: [
+                        { expires: { $lte: new Date() } },  // Remove expired tokens
+                        { device_id: device_id }            // Remove tokens with the same device_id
+                    ]
+                }
+            }
+        });
+
         // Store the refresh token along with device_id
         await User.findByIdAndUpdate(savedUser._id, {
             $push: {'refreshToken': {
@@ -107,9 +119,16 @@ router.post('/login', async (req, res, next) => {
 
         const device_id = req.body.device_id;  // Get device_id from the request body
 
-        // Clean up expired refresh tokens before adding a new one
+        // Clean up expired refresh tokens and tokens with the same device_id before adding a new one
         await User.findByIdAndUpdate(user._id, {
-            $pull: { 'refreshToken': { expires: { $lte: new Date() } } } // Remove expired tokens
+            $pull: {
+                'refreshToken': {
+                    $or: [
+                        { expires: { $lte: new Date() } },  // Remove expired tokens
+                        { device_id: device_id }            // Remove tokens with the same device_id
+                    ]
+                }
+            }
         });
 
         const tokens = tokenService.createTokens(user, device_id);

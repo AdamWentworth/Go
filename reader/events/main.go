@@ -35,7 +35,8 @@ func main() {
 	// Protected routes
 	protected := app.Group("/", verifyJWT) // JWT middleware to protect routes
 	protected.Get("/api/ownershipData/:user_id", GetPokemonInstances)
-	protected.Get("/api/sse", sseHandler) // Include sseHandler here
+	protected.Get("/api/sse", sseHandler)        // Include sseHandler here
+	protected.Get("/api/getUpdates", GetUpdates) // Add the new endpoint here
 
 	// Start the Kafka consumer
 	startKafkaConsumer()
