@@ -24,52 +24,53 @@ export const initiateSSEConnection = (userId, handleIncomingUpdate, lastUpdateTi
   try {
     // Instantiate the EventSource
     eventSource = new EventSource(sseUrl, { withCredentials: true });
-    console.log('EventSource created:', eventSource);
+    console.log('EventSource created.');
 
     eventSource.onopen = async () => {
       console.log('SSE connection opened.');
       if (isReconnecting) {
-        console.log('Reconnected to SSE stream.');
-
+        isReconnecting = false; // Reset reconnection flag
+    
         // Fetch updates upon reconnection
         if (lastUpdateTimestamp) {
-          console.log('Fetching missed updates upon reconnection...');
+          // Convert lastUpdateTimestamp to milliseconds since epoch
+          const timestamp = lastUpdateTimestamp.getTime().toString();
+    
           try {
-            const updates = await fetchUpdates(userId, deviceId, lastUpdateTimestamp.toISOString());
-            console.log('Fetched updates upon reconnection:', updates);
-            if (updates && updates.pokemon && updates.pokemon.length > 0) {
-              console.log('Missed updates received upon reconnection:', updates.pokemon.length);
+            const updates = await fetchUpdates(userId, deviceId, timestamp);
+            if (updates && updates.pokemon && Object.keys(updates.pokemon).length > 0) {
               handleIncomingUpdate(updates);
             } else {
               console.log('No missed updates found upon reconnection.');
             }
           } catch (error) {
-            console.error('Error fetching updates upon reconnection:', error);
+            console.log('Failed to fetch updates upon reconnection.');
+            // Do not log the full error to keep console clean
           }
-        } else {
-          console.warn('No timestamp found, unable to fetch updates upon reconnection.');
         }
-        isReconnecting = false;
+      } else {
+        console.log('Initial SSE connection established.');
       }
     };
 
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('Received SSE message:', data);
       handleIncomingUpdate(data);
     };
 
-    eventSource.onerror = (err) => {
-      console.error('SSE connection error:', err);
-      // Implement reconnection logic
-      isReconnecting = true;
-      // Retry connection after a delay
-      setTimeout(() => {
-        initiateSSEConnection(userId, handleIncomingUpdate, lastUpdateTimestamp);
-      }, 5000);
+    eventSource.onerror = () => {
+      if (!isReconnecting) {
+        isReconnecting = true;
+        console.log('Connection failed. Will attempt to reconnect in 30 seconds.');
+        // Attempt to reconnect after 30 seconds
+        setTimeout(() => {
+          initiateSSEConnection(userId, handleIncomingUpdate, lastUpdateTimestamp);
+        }, 30000);
+      }
     };
   } catch (error) {
-    console.error('Error creating EventSource:', error);
+    console.log('Failed to create SSE connection.');
+    // Do not log the full error to keep console clean
   }
 };
 
@@ -77,29 +78,33 @@ export const closeSSEConnection = () => {
   if (eventSource) {
     eventSource.close();
     eventSource = null;
-    console.log('SSE connection closed.');
   }
 };
 
 // Helper function to fetch updates
 export const fetchUpdates = async (userId, deviceId, timestamp) => {
   try {
-    console.log('Calling fetchUpdates with:', {
-      userId,
-      deviceId,
-      timestamp,
-    });
     const response = await axios.get(`${process.env.REACT_APP_EVENTS_API_URL}/getUpdates`, {
       params: {
         device_id: deviceId,
         timestamp: timestamp,
       },
       withCredentials: true,
+      validateStatus: (status) => {
+        // Accept any status code to prevent Axios from throwing
+        return true;
+      },
     });
-    console.log('fetchUpdates response:', response.data);
-    return response.data;
+    if (response.status >= 200 && response.status < 300) {
+      return response.data;
+    } else {
+      // Handle non-2xx responses
+      console.log('Failed to fetch updates.');
+      return null;
+    }
   } catch (error) {
-    console.error('Error fetching updates:', error);
-    throw error;
+    // Suppress Axios error logs
+    console.log('Failed to fetch updates.');
+    return null;
   }
 };

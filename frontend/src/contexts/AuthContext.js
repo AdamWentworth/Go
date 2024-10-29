@@ -115,9 +115,7 @@ export const AuthProvider = ({ children }) => {
   
         fetchUpdates(user.user_id, deviceId, timestamp)
           .then((updates) => {
-            console.log('Fetched missed updates:', updates);
             if (updates && updates.pokemon && Object.keys(updates.pokemon).length > 0) {
-              console.log('Missed updates received:', Object.keys(updates.pokemon).length);
               handleIncomingUpdate(updates);
             } else {
               console.log('No missed updates found.');
@@ -127,7 +125,8 @@ export const AuthProvider = ({ children }) => {
             }
           })
           .catch((error) => {
-            console.error('Error fetching missed updates:', error);
+            console.log('Failed to fetch missed updates.');
+            // Do not log the full error to keep console clean
           });
       } else {
         console.log('Session is not new or lastUpdateTimestamp is null, not fetching missed updates.');
@@ -136,7 +135,7 @@ export const AuthProvider = ({ children }) => {
       // Initiate SSE connection
       initiateSSEConnection(user.user_id, handleIncomingUpdate, lastUpdateTimestamp);
     }
-  }, [user, isLoading, isSessionReady]);  
+  }, [user, isLoading, isSessionReady]); 
 
   const startTokenExpirationCheck = () => {
     clearInterval(intervalRef.current); // Clear any existing interval

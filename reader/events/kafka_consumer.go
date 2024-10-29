@@ -88,7 +88,6 @@ func startKafkaConsumer() {
 			// Send the message to all connected clients for the user except the originating device
 			clientsMutex.Lock()
 			for _, client := range clients {
-				logrus.Infof("Checking client: UserID=%s, DeviceID=%s, Connected=%v", client.UserID, client.DeviceID, client.Connected)
 				if client.UserID == userID && client.DeviceID != deviceID && client.Connected {
 					select {
 					case client.Channel <- messageBytes:
@@ -96,8 +95,6 @@ func startKafkaConsumer() {
 					default:
 						logrus.Warnf("Client channel full for user %s device %s", userID, client.DeviceID)
 					}
-				} else {
-					logrus.Infof("Skipped client: UserID=%s, DeviceID=%s", client.UserID, client.DeviceID)
 				}
 			}
 			clientsMutex.Unlock()

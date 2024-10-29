@@ -10,41 +10,43 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
-
+  
     // Bypass the service worker for specific API requests
     if (
-        (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/ownershipData/')) ||
-        url.origin === 'http://localhost:3006' ||
-        (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/sse'))
+      (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/ownershipData/')) ||
+      url.origin === 'http://localhost:3006' ||
+      (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/sse'))
     ) {
-        return; // Do not intercept this request
-    }    
-
+      return; // Do not intercept this request
+    }
+  
     if (url.origin === 'https://photon.komoot.io') {
-        return;
+      return;
     }
-
+  
     if (url.origin === self.location.origin) {
-        event.respondWith(
-            caches.match(event.request).then((cachedResponse) => {
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
-                return fetch(event.request, { credentials: 'include' }).catch((error) => {
-                    console.error('Fetch failed:', error);
-                    throw error;
-                });
-            })
-        );
+      event.respondWith(
+        caches.match(event.request).then(async (cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          try {
+            return await fetch(event.request, { credentials: 'include' });
+          } catch (error) {
+            // Return a fallback response or an empty response to prevent errors
+            return new Response('', { status: 200, statusText: 'OK' });
+          }
+        })
+      );
     } else {
-        event.respondWith(
-            fetch(event.request).catch((error) => {
-                console.error('Fetch failed:', error);
-                throw error;
-            })
-        );
+      event.respondWith(
+        fetch(event.request).catch((error) => {
+          // Return a fallback response or an empty response to prevent errors
+          return new Response('', { status: 200, statusText: 'OK' });
+        })
+      );
     }
-});
+  });
 
 // Event handler for messages
 self.addEventListener('message', async (event) => {
