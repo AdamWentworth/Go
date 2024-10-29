@@ -1,13 +1,12 @@
 // sseService.js
 
 import { getDeviceId } from '../utils/deviceID';
-import axios from 'axios'; // Import axios for making HTTP requests
-import { readTimestampFromCache } from '../utils/cacheHelpers'; // We'll create this helper function
+import axios from 'axios';
 
 let eventSource = null;
 let isReconnecting = false; // Keep track of reconnection state
 
-export const initiateSSEConnection = (userId, handleIncomingUpdate) => {
+export const initiateSSEConnection = (userId, handleIncomingUpdate, lastUpdateTimestamp) => {
   if (!userId) {
     console.warn('No userId provided, cannot initiate SSE connection.');
     return;
@@ -23,6 +22,7 @@ export const initiateSSEConnection = (userId, handleIncomingUpdate) => {
   console.log('Attempting to initiate SSE connection to:', sseUrl);
 
   try {
+    // Instantiate the EventSource
     eventSource = new EventSource(sseUrl, { withCredentials: true });
     console.log('EventSource created:', eventSource);
 
@@ -30,20 +30,26 @@ export const initiateSSEConnection = (userId, handleIncomingUpdate) => {
       console.log('SSE connection opened.');
       if (isReconnecting) {
         console.log('Reconnected to SSE stream.');
+
         // Fetch updates upon reconnection
-        try {
-          const timestamp = await readTimestampFromCache(); // Get timestamp from cache
-          if (timestamp) {
-            const updates = await fetchUpdates(userId, deviceId, timestamp);
+        if (lastUpdateTimestamp) {
+          console.log('Fetching missed updates upon reconnection...');
+          try {
+            const updates = await fetchUpdates(userId, deviceId, lastUpdateTimestamp.toISOString());
             console.log('Fetched updates upon reconnection:', updates);
-            handleIncomingUpdate(updates);
-          } else {
-            console.warn('No timestamp found in cache, unable to fetch updates.');
+            if (updates && updates.pokemon && updates.pokemon.length > 0) {
+              console.log('Missed updates received upon reconnection:', updates.pokemon.length);
+              handleIncomingUpdate(updates);
+            } else {
+              console.log('No missed updates found upon reconnection.');
+            }
+          } catch (error) {
+            console.error('Error fetching updates upon reconnection:', error);
           }
-        } catch (error) {
-          console.error('Error fetching updates upon reconnection:', error);
+        } else {
+          console.warn('No timestamp found, unable to fetch updates upon reconnection.');
         }
-        isReconnecting = false; // Reset reconnection state
+        isReconnecting = false;
       }
     };
 
@@ -59,7 +65,7 @@ export const initiateSSEConnection = (userId, handleIncomingUpdate) => {
       isReconnecting = true;
       // Retry connection after a delay
       setTimeout(() => {
-        initiateSSEConnection(userId, handleIncomingUpdate);
+        initiateSSEConnection(userId, handleIncomingUpdate, lastUpdateTimestamp);
       }, 5000);
     };
   } catch (error) {
@@ -75,16 +81,22 @@ export const closeSSEConnection = () => {
   }
 };
 
-// Helper function to fetch updates from the new endpoint
-const fetchUpdates = async (userId, deviceId, timestamp) => {
+// Helper function to fetch updates
+export const fetchUpdates = async (userId, deviceId, timestamp) => {
   try {
+    console.log('Calling fetchUpdates with:', {
+      userId,
+      deviceId,
+      timestamp,
+    });
     const response = await axios.get(`${process.env.REACT_APP_EVENTS_API_URL}/getUpdates`, {
       params: {
         device_id: deviceId,
         timestamp: timestamp,
       },
-      withCredentials: true, // Include credentials in the request
+      withCredentials: true,
     });
+    console.log('fetchUpdates response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching updates:', error);

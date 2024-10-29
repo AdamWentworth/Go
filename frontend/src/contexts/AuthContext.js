@@ -3,13 +3,19 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { getDeviceId } from '../utils/deviceID';
 import { useNavigate } from 'react-router-dom';
-import { logoutUser, updateUserDetails as updateUserService, deleteAccount as deleteAccountService, refreshTokenService } from '../features/Authentication/services/authService';
+import {
+  logoutUser,
+  updateUserDetails as updateUserService,
+  deleteAccount as deleteAccountService,
+  refreshTokenService,
+} from '../features/Authentication/services/authService';
 import { formatTimeUntil } from '../utils/formattingHelpers';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { usePokemonData } from './PokemonDataContext';
-import { useGlobalState } from './GlobalStateContext'
-import { initiateSSEConnection, closeSSEConnection } from '../services/sseService'; // Import SSE functions
+import { useGlobalState } from './GlobalStateContext';
+import { initiateSSEConnection, closeSSEConnection, fetchUpdates } from '../services/sseService'; // Import SSE functions
+import { useSession } from './SessionContext';
 
 const AuthContext = createContext();
 
@@ -17,49 +23,48 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const userRef = useRef(null);  // Create a ref to store the user state
-  const navigate = useNavigate();  // Initialize the useNavigate hook
+  const userRef = useRef(null); // Create a ref to store the user state
+  const navigate = useNavigate(); // Initialize the useNavigate hook
   const intervalRef = useRef(null); // Ref to store the interval ID
   const refreshTimeoutRef = useRef(null); // Ref to store the refresh token timeout
-  const { isLoggedIn, setIsLoggedIn } = useGlobalState(); 
-  const [isLoading, setIsLoading] = useState(true);  // Add loading state
-  const deviceIdRef = useRef(getDeviceId()); 
+  const { isLoggedIn, setIsLoggedIn } = useGlobalState();
+  const [isLoading, setIsLoading] = useState(true); // Add loading state
+  const deviceIdRef = useRef(getDeviceId());
+  const { lastUpdateTimestamp, updateTimestamp, isSessionNew } = useSession();
+  const [isSessionReady, setIsSessionReady] = useState(false);
 
   const { setOwnershipData, resetData } = usePokemonData(); // Import updatePokemonData
+
+  useEffect(() => {
+    // console.log('Checking if lastUpdateTimestamp is set:', lastUpdateTimestamp);
+    if (lastUpdateTimestamp !== null) {
+      // console.log('Session is ready');
+      setIsSessionReady(true);
+    }
+  }, [lastUpdateTimestamp]);
 
   // Function to handle incoming SSE updates
   const handleIncomingUpdate = (data) => {
     console.log('handleIncomingUpdate called with data:', data);
     if (data.pokemon) {
       setOwnershipData(data.pokemon);
+
+      // Update the last update timestamp
+      const newTimestamp = new Date();
+      updateTimestamp(newTimestamp);
     }
   };
 
   useEffect(() => {
+    // console.log('Initialization useEffect in AuthContext');
     const storedUser = localStorage.getItem('user');
-    const deviceId = getDeviceId();
-    deviceIdRef.current = deviceId;
-    console.log('Device ID:', deviceId);
     if (storedUser) {
+      // console.log('Stored user found in localStorage:', storedUser);
       const userData = JSON.parse(storedUser);
       userRef.current = userData;
       setUser(userData);
       setIsLoggedIn(true);
 
-      // Initiate SSE connection if user is already logged in
-      initiateSSEConnection(userData.user_id, handleIncomingUpdate);
-    }
-    setIsLoading(false);  // Ensure loading is set to false after the user data has been checked
-  }, [setIsLoggedIn]);  
-
-  // Initialize from local storage
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      userRef.current = userData;  // Set the ref to the initial user data
-      setUser(userData); // Set the user state
-      setIsLoggedIn(true); // Set the logged-in state to true
       const currentTime = new Date().getTime();
       const accessTokenExpiryTime = new Date(userData.accessTokenExpiry).getTime();
       const refreshTokenExpiryTime = new Date(userData.refreshTokenExpiry).getTime();
@@ -70,25 +75,68 @@ export const AuthProvider = ({ children }) => {
 
       if (refreshTokenExpiryTime > currentTime) {
         if (refreshTiming > 0) {
+          console.log(`Scheduling token refresh in ${refreshTiming} ms`);
           refreshTimeoutRef.current = setTimeout(() => {
             checkAndRefreshToken();
           }, refreshTiming);
         } else {
-          checkAndRefreshToken(); // Immediately check and refresh token if timing is <= 0
+          console.log('Access token expired or about to expire, refreshing token immediately');
+          checkAndRefreshToken();
         }
 
         startTokenExpirationCheck();
       } else {
-        clearSession(true);  // Force logout due to token expiration
+        console.log('Refresh token expired, clearing session');
+        clearSession(true); // Force logout due to token expiration
       }
+    } else {
+      console.log('No stored user found in localStorage');
     }
+
+    // Set isLoading to false after processing
+    setIsLoading(false);
 
     return () => {
       clearInterval(intervalRef.current);
       clearTimeout(refreshTimeoutRef.current);
-      closeSSEConnection(); // Close SSE connection on unmount
+      closeSSEConnection();
     };
   }, [setIsLoggedIn]);
+
+  useEffect(() => {
+    if (user && !isLoading && isSessionReady) {
+      const deviceId = deviceIdRef.current;
+  
+      if (isSessionNew && lastUpdateTimestamp) {
+        console.log('Fetching missed updates...');
+  
+        // Convert lastUpdateTimestamp to milliseconds
+        const timestamp = lastUpdateTimestamp.getTime().toString();
+  
+        fetchUpdates(user.user_id, deviceId, timestamp)
+          .then((updates) => {
+            console.log('Fetched missed updates:', updates);
+            if (updates && updates.pokemon && Object.keys(updates.pokemon).length > 0) {
+              console.log('Missed updates received:', Object.keys(updates.pokemon).length);
+              handleIncomingUpdate(updates);
+            } else {
+              console.log('No missed updates found.');
+              // Update the timestamp even if no updates
+              const newTimestamp = new Date();
+              updateTimestamp(newTimestamp);
+            }
+          })
+          .catch((error) => {
+            console.error('Error fetching missed updates:', error);
+          });
+      } else {
+        console.log('Session is not new or lastUpdateTimestamp is null, not fetching missed updates.');
+      }
+  
+      // Initiate SSE connection
+      initiateSSEConnection(user.user_id, handleIncomingUpdate, lastUpdateTimestamp);
+    }
+  }, [user, isLoading, isSessionReady]);  
 
   const startTokenExpirationCheck = () => {
     clearInterval(intervalRef.current); // Clear any existing interval
@@ -275,11 +323,21 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn, isLoading, login, logout, updateUserDetails, deleteAccount }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoggedIn,
+        isLoading,
+        login,
+        logout,
+        updateUserDetails,
+        deleteAccount,
+      }}
+    >
       {children}
       <ToastContainer />
     </AuthContext.Provider>
-  );  
+  );
 };
 
 export default AuthProvider;

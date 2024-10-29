@@ -3,13 +3,12 @@
 package main
 
 import (
-	"time"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 )
 
-// GetUpdates handles the GET requests to retrieve updates since a given timestamp
 func GetUpdates(c *fiber.Ctx) error {
 	// Get user_id from JWT context
 	userID, ok := c.Locals("user_id").(string)
@@ -31,19 +30,18 @@ func GetUpdates(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Missing timestamp"})
 	}
 
-	// Parse the timestamp
-	timestamp, err := time.Parse(time.RFC3339, timestampStr)
+	// Parse the timestamp as an integer (milliseconds since epoch)
+	timestampInt, err := strconv.ParseInt(timestampStr, 10, 64)
 	if err != nil {
 		logrus.Errorf("Invalid timestamp format: %v", err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid timestamp format"})
 	}
 
-	// Log the request
-	logrus.Infof("Fetching updates for user %s since %s", userID, timestampStr)
+	logrus.Infof("Fetching updates for user %s since %d", userID, timestampInt)
 
 	// Retrieve Pokémon instances for the user updated after the timestamp
 	var instances []PokemonInstance
-	if err := db.Where("user_id = ? AND last_update > ?", userID, timestamp).Find(&instances).Error; err != nil {
+	if err := db.Where("user_id = ? AND last_update > ?", userID, timestampInt).Find(&instances).Error; err != nil {
 		logrus.Errorf("Error retrieving updates: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve updates"})
 	}
@@ -95,9 +93,14 @@ func GetUpdates(c *fiber.Ctx) error {
 
 	instanceCount := len(responseData)
 
+	// Wrap the responseData in a 'pokemon' property
+	response := map[string]interface{}{
+		"pokemon": responseData,
+	}
+
 	// Log and return the response data
 	logrus.Infof("User %s retrieved %d updates", userID, instanceCount)
-	return c.Status(fiber.StatusOK).JSON(responseData)
+	return c.Status(fiber.StatusOK).JSON(response)
 }
 
 // GetPokemonInstances handles the GET requests to retrieve Pokémon instances for a user
