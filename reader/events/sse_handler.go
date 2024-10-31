@@ -63,23 +63,22 @@ func sseHandler(c *fiber.Ctx) error {
 			return
 		}
 
-		// Listen for messages
-		for {
-			select {
-			case msg := <-client.Channel:
-				// Write message to the client
-				if _, err := fmt.Fprintf(w, "data: %s\n\n", msg); err != nil {
-					// Handle error, possibly client disconnected
-					handleClientDisconnect(clientID, client)
-					return
-				}
-				if err := w.Flush(); err != nil {
-					// Handle error, possibly client disconnected
-					handleClientDisconnect(clientID, client)
-					return
-				}
+		// Listen for messages using for-range loop
+		for msg := range client.Channel {
+			// Write message to the client
+			if _, err := fmt.Fprintf(w, "data: %s\n\n", msg); err != nil {
+				// Handle error, possibly client disconnected
+				handleClientDisconnect(clientID, client)
+				return
+			}
+			if err := w.Flush(); err != nil {
+				// Handle error, possibly client disconnected
+				handleClientDisconnect(clientID, client)
+				return
 			}
 		}
+
+		// When the channel is closed, exit the function
 	})
 
 	// Return nil to keep the connection open
@@ -91,5 +90,9 @@ func handleClientDisconnect(clientID string, client *Client) {
 	client.Connected = false
 	delete(clients, clientID)
 	clientsMutex.Unlock()
+
+	// Close the channel to signal the for-range loop to exit
+	close(client.Channel)
+
 	logrus.Infof("Client disconnected: UserID=%s, DeviceID=%s", client.UserID, client.DeviceID)
 }
