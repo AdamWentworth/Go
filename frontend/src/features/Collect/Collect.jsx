@@ -1,7 +1,7 @@
 // Collect.jsx
 
 import React, { useState, useMemo, useCallback, useEffect, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom'; 
 import { useAuth } from '../../contexts/AuthContext';
 import { useUIControls } from './hooks/useUIControls';
 import PokemonList from './PokemonList';
@@ -24,27 +24,46 @@ const SortOverlayMemo = React.memo(SortOverlay);
 
 function Collect({ isOwnCollection }) {
     const { username } = useParams();
+    const location = useLocation();
     const { currentUser } = useAuth();
 
-    const { viewedOwnershipData, userExists, viewedLoading } = useContext(UserSearchContext);
-    const { variants, ownershipData: contextOwnershipData, lists: defaultLists, loading, updateOwnership, updateLists } = usePokemonData();
+    // Determine if path is /:username
+    const isUsernamePath = location.pathname !== '/collect';
 
-    // console.log("Logged in user's ownershipData:", contextOwnershipData)
+    // Destructure based on path
+    const {
+        viewedOwnershipData,
+        userExists,
+        viewedLoading,
+        fetchUserOwnershipData,
+    } = useContext(UserSearchContext);
 
-    const ownershipData = isOwnCollection ? contextOwnershipData : viewedOwnershipData;
-    console.log("Selected Ownership Data:", ownershipData);
+    const {
+        variants,
+        ownershipData: contextOwnershipData,
+        lists: defaultLists,
+        loading,
+        updateOwnership,
+        updateLists,
+    } = usePokemonData();
 
-    // Conditionally initialize lists based on viewedOwnershipData
+    // Conditionally set ownership data and fetch data if on /:username path
+    const ownershipData = isOwnCollection || !isUsernamePath ? contextOwnershipData : viewedOwnershipData;
+
+    // Fetch if on /:username path and no existing data in context
+    useEffect(() => {
+        if (isUsernamePath && !viewedOwnershipData && username) {
+            fetchUserOwnershipData(username);
+        }
+    }, [isUsernamePath, username, viewedOwnershipData, fetchUserOwnershipData]);
+
     const activeLists = useMemo(() => {
-        if (viewedOwnershipData) {
-            const searchedLists = initializePokemonLists(viewedOwnershipData, variants);
-            console.log("Searched User's Lists:", searchedLists);
-            return searchedLists;
+        if (isUsernamePath && viewedOwnershipData) {
+            return initializePokemonLists(viewedOwnershipData, variants);
         } else {
-            console.log("Default Lists for Logged-in User:", defaultLists);
             return defaultLists;
         }
-    }, [viewedOwnershipData, variants, defaultLists]);
+    }, [isUsernamePath, viewedOwnershipData, variants, defaultLists]);
 
     const isEditable = isOwnCollection && currentUser?.username;
 
@@ -81,10 +100,10 @@ function Collect({ isOwnCollection }) {
     const filteredVariants = useMemo(() => {
         if (ownershipFilter) {
             const filtered = getFilteredPokemonsByOwnership(variants, ownershipData, ownershipFilter, activeLists);
-            console.log("Filtered Variants:", filtered); // Log to confirm filtering with the correct ownership data
+            // console.log("Filtered Variants:", filtered); // Log to confirm filtering with the correct ownership data
             return filtered;
         }
-        console.log("Variants without filtering:", variants);
+        // console.log("Variants without filtering:", variants);
         return variants;
     }, [variants, ownershipData, ownershipFilter, activeLists]);
 
@@ -94,10 +113,10 @@ function Collect({ isOwnCollection }) {
     }), [selectedGeneration, isShiny, searchTerm, showCostume, showShadow, multiFormPokedexNumbers, pokemonTypes, generations]);
 
     const displayedPokemons = useFilterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
-    console.log("Displayed Pokemons after filtering:", displayedPokemons); // Log to confirm filtered results
+    // console.log("Displayed Pokemons after filtering:", displayedPokemons); // Log to confirm filtered results
 
     const sortedPokemons = useSortManager(displayedPokemons, sortType, sortMode, { isShiny, showShadow, showCostume, showAll });
-    console.log("Sorted Pokemons:", sortedPokemons); // Log to confirm sorting on the correct list
+    // console.log("Sorted Pokemons:", sortedPokemons); // Log to confirm sorting on the correct list
 
     const toggleCardHighlight = useCallback((pokemonId) => {
         setHighlightedCards(prev => {
