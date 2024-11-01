@@ -47,7 +47,7 @@ const Discover = () => {
 
     try {
       const response = await axios.get(
-        'http://localhost:3006/api/discoverPokemon',
+        `${process.env.REACT_APP_DISCOVER_API_URL}/discoverPokemon`,
         {
           params: queryParams,
           withCredentials: true,

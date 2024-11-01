@@ -148,7 +148,7 @@
 
 @media (min-width: 1024px) and (max-width: 1439px) {
   .wanted-instance-overlay {
-    transform: scale(1);
+    transform: scale(.75);
     transform-origin: center;
     overflow-y: visible;
     display: flex;

@@ -95,6 +95,7 @@
 @media (min-width: 1024px) and (max-width: 1439px) {
     .wanted-list-container.xxlarge-list {
         grid-template-columns: repeat(6, 1fr); /* Force max 6 columns per row */
+        max-height: 450px;
     }
 
     .wanted-list-container.xlarge-list,
