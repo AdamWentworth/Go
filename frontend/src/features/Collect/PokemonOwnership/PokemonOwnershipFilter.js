@@ -1,6 +1,10 @@
 import { validateUUID } from '../../../utils/PokemonIDUtils';
 
 export function getFilteredPokemonsByOwnership(variants, ownershipData, filter, lists) {
+
+    console.log("ownershipData in ownershipFilter:", ownershipData)
+    console.log("lists in ownershipFilter:", lists)
+    
     // Adjust the filter if necessary to handle special cases
     let filterKey;
 

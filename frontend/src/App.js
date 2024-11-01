@@ -17,6 +17,7 @@ import { LocationProvider } from './contexts/LocationContext';
 import { GlobalStateProvider } from './contexts/GlobalStateContext';
 import { SessionProvider } from './contexts/SessionContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { UserSearchProvider } from './contexts/UserSearchContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -32,30 +33,33 @@ function App() {
                             <AuthProvider>
                                 <LocationProvider>
                                     <ThemeProvider>
-                                        <div className="App">
-                                            <Navbar />
-                                            <main>
-                                                <Routes>
-                                                    <Route path="/" element={<MainButtons />} />
-                                                    <Route path="/collect" element={<Collect />} />
-                                                    <Route path="/login" element={<Login />} />
-                                                    <Route path="/register" element={<Register />} />
-                                                    <Route path="/account" element={<Account />} />
-                                                    <Route path="/discover" element={<Discover />} />
-                                                </Routes>
-                                            </main>
-                                            <ToastContainer
-                                                position="top-center"
-                                                autoClose={5000}
-                                                hideProgressBar={false}
-                                                newestOnTop={false}
-                                                closeOnClick
-                                                rtl={false}
-                                                pauseOnFocusLoss
-                                                draggable
-                                                pauseOnHover
-                                            />
-                                        </div>
+                                        <UserSearchProvider>
+                                            <div className="App">
+                                                <Navbar />
+                                                <main>
+                                                    <Routes>
+                                                        <Route path="/" element={<MainButtons />} />
+                                                        <Route path="/collect" element={<Collect isOwnCollection={true} />} />
+                                                        <Route path="/:username" element={<Collect isOwnCollection={false} />} />
+                                                        <Route path="/login" element={<Login />} />
+                                                        <Route path="/register" element={<Register />} />
+                                                        <Route path="/account" element={<Account />} />
+                                                        <Route path="/discover" element={<Discover />} />
+                                                    </Routes>
+                                                </main>
+                                                <ToastContainer
+                                                    position="top-center"
+                                                    autoClose={5000}
+                                                    hideProgressBar={false}
+                                                    newestOnTop={false}
+                                                    closeOnClick
+                                                    rtl={false}
+                                                    pauseOnFocusLoss
+                                                    draggable
+                                                    pauseOnHover
+                                                />
+                                            </div>
+                                        </UserSearchProvider>
                                     </ThemeProvider>
                                 </LocationProvider>
                             </AuthProvider>

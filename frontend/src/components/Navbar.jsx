@@ -1,20 +1,32 @@
 // Navbar.jsx
 
-import React, { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState, useContext } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 import { useAuth } from '../contexts/AuthContext';
 import MainButtons from './MainButtons';
-import { useTheme } from '../contexts/ThemeContext'; // Import useTheme
+import { useTheme } from '../contexts/ThemeContext';
+import UserSearchContext from '../contexts/UserSearchContext';
 
 function Navbar() {
+    const navigate = useNavigate();
     const location = useLocation();
     const logoUrl = process.env.PUBLIC_URL + '/images/logo/logo.png';
     const { isLoggedIn } = useAuth();
-    const { isLightMode, toggleTheme } = useTheme(); // Use theme context
+    const { isLightMode, toggleTheme } = useTheme();
     const [searchQuery, setSearchQuery] = useState('');
 
+    const { fetchUserOwnershipData } = useContext(UserSearchContext); // Access fetch function
+
     const showMainButtons = location.pathname !== '/';
+
+    const handleSearch = (event) => {
+        event.preventDefault();
+        if (searchQuery.trim()) {
+            fetchUserOwnershipData(searchQuery); // Trigger fetch
+            navigate(`/${searchQuery}`);
+        }
+    };
 
     useEffect(() => {
         const lightModeStylesheet = document.getElementById('light-mode-stylesheet');
@@ -33,26 +45,17 @@ function Navbar() {
         }
     }, [isLightMode]);
 
-    const handleSearch = (event) => {
-        event.preventDefault();
-        console.log('Searching for:', searchQuery);
-    };
-
     return (
         <div className={`navbar ${isLightMode ? 'light-mode' : 'dark-mode'}`}>
             <div className="logo-container">
                 <img src={logoUrl} alt="Logo" />
             </div>
-
-            {/* Main title and buttons aligned left */}
             <div className="navbar-main">
                 <div className="title-container">
                     <h1>Welcome to Pokémon Go Nexus</h1>
                 </div>
                 {showMainButtons && <MainButtons navbar={true} />}
             </div>
-
-            {/* Search bar container */}
             <div className="search-container">
                 <form onSubmit={handleSearch} className="search-form">
                     <input
@@ -65,10 +68,7 @@ function Navbar() {
                     <button type="submit" className="search-button">🔍</button>
                 </form>
             </div>
-
-            {/* Navbar buttons with the theme toggle */}
             <div className="navbar-buttons">
-                {/* Simplified Light/Dark mode toggle button */}
                 <div className="theme-toggle" onClick={toggleTheme}>
                     <div className="icon-background">
                         <img

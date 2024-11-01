@@ -1,28 +1,52 @@
-//Collect.jsx
+// Collect.jsx
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useUIControls } from './hooks/useUIControls'; // Import the new hook
+import React, { useState, useMemo, useCallback, useEffect, useContext } from 'react';
+import { useParams } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useUIControls } from './hooks/useUIControls';
 import PokemonList from './PokemonList';
-import useSearchFilters from '../../hooks/search/useSearchFilters'; // Import the search filters hook
+import useSearchFilters from '../../hooks/search/useSearchFilters';
 import HeaderUI from './HeaderUI';
 import SortOverlay from './SortOverlay';
-import { usePokemonData } from '../../contexts/PokemonDataContext'; // Import the context hook
+import { usePokemonData } from '../../contexts/PokemonDataContext';
 import useSortManager from '../../hooks/sort/useSortManager';
 import useFilterPokemons from '../../hooks/filtering/useFilterPokemons';
 import { confirmMoveToFilter } from './PokemonOwnership/pokemonOwnershipManager';
 import { getFilteredPokemonsByOwnership } from './PokemonOwnership/PokemonOwnershipFilter';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { multiFormPokedexNumbers } from '../../utils/constants';
+import UserSearchContext from '../../contexts/UserSearchContext';
+import { initializePokemonLists } from './PokemonOwnership/PokemonTradeListOperations';
 
 const PokemonListMemo = React.memo(PokemonList);
 const HeaderUIMemo = React.memo(HeaderUI);
 const SortOverlayMemo = React.memo(SortOverlay);
 
-function Collect() {
-    // console.log('Collect component mounting');
+function Collect({ isOwnCollection }) {
+    const { username } = useParams();
+    const { currentUser } = useAuth();
 
-    //States
-    const { variants, ownershipData, lists, loading, updateOwnership, updateLists } = usePokemonData();
+    const { viewedOwnershipData, userExists, viewedLoading } = useContext(UserSearchContext);
+    const { variants, ownershipData: contextOwnershipData, lists: defaultLists, loading, updateOwnership, updateLists } = usePokemonData();
+
+    // console.log("Logged in user's ownershipData:", contextOwnershipData)
+
+    const ownershipData = isOwnCollection ? contextOwnershipData : viewedOwnershipData;
+    console.log("Selected Ownership Data:", ownershipData);
+
+    // Conditionally initialize lists based on viewedOwnershipData
+    const activeLists = useMemo(() => {
+        if (viewedOwnershipData) {
+            const searchedLists = initializePokemonLists(viewedOwnershipData, variants);
+            console.log("Searched User's Lists:", searchedLists);
+            return searchedLists;
+        } else {
+            console.log("Default Lists for Logged-in User:", defaultLists);
+            return defaultLists;
+        }
+    }, [viewedOwnershipData, variants, defaultLists]);
+
+    const isEditable = isOwnCollection && currentUser?.username;
 
     const [selectedPokemon, setSelectedPokemon] = useState(null);
     const [highlightedCards, setHighlightedCards] = useState(new Set());
@@ -30,12 +54,11 @@ function Collect() {
     const [ownershipFilter, setOwnershipFilter] = useState("");
     const [showAll, setShowAll] = useState(false);
 
-    // UI Controls
     const {
-        showFilterUI, setShowFilterUI, toggleFilterUI, 
-        showCollectUI, setShowCollectUI, toggleCollectUI,
+        showFilterUI, setShowFilterUI,
+        showCollectUI, setShowCollectUI,
         showEvolutionaryLine, toggleEvolutionaryLine,
-        isFastSelectEnabled, setIsFastSelectEnabled, toggleFastSelect,
+        isFastSelectEnabled, setIsFastSelectEnabled,
         sortType, setSortType, sortMode, toggleSortMode
     } = useUIControls({
         showFilterUI: false,
@@ -46,40 +69,36 @@ function Collect() {
         sortMode: 'ascending'
     });
 
-    // Search Filters
     const {
-        isShiny, setIsShiny, 
-        showShadow, setShowShadow, 
-        selectedGeneration, setSelectedGeneration, 
+        isShiny, setIsShiny,
+        showShadow, setShowShadow,
+        selectedGeneration, setSelectedGeneration,
         searchTerm, setSearchTerm,
-        showCostume, setShowCostume, 
-        generations, isGenerationSearch,
-        pokemonTypes, isTypeSearch
+        showCostume, setShowCostume,
+        generations, pokemonTypes
     } = useSearchFilters(variants);
 
-    // Handle filtered and sorted pokemon display
     const filteredVariants = useMemo(() => {
-        // console.log('Ownership Data before filtering:', ownershipData);
         if (ownershipFilter) {
-            console.log("Filtering variants based on ownership:", ownershipFilter);
-            return getFilteredPokemonsByOwnership(variants, ownershipData, ownershipFilter, lists);
+            const filtered = getFilteredPokemonsByOwnership(variants, ownershipData, ownershipFilter, activeLists);
+            console.log("Filtered Variants:", filtered); // Log to confirm filtering with the correct ownership data
+            return filtered;
         }
-        return variants; // No filter: use original variants data
-    }, [variants, ownershipData, ownershipFilter]);
+        console.log("Variants without filtering:", variants);
+        return variants;
+    }, [variants, ownershipData, ownershipFilter, activeLists]);
 
-    // Search Filters Memo
     const filters = useMemo(() => ({
         selectedGeneration, isShiny, searchTerm, showCostume, showShadow,
         multiFormPokedexNumbers, pokemonTypes, generations
     }), [selectedGeneration, isShiny, searchTerm, showCostume, showShadow, multiFormPokedexNumbers, pokemonTypes, generations]);
 
-    // Filter Pokemon
     const displayedPokemons = useFilterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
-    
-    // Sort Pokemon
-    const sortedPokemons = useSortManager(displayedPokemons, sortType, sortMode, { isShiny, showShadow, showCostume, showAll });
+    console.log("Displayed Pokemons after filtering:", displayedPokemons); // Log to confirm filtered results
 
-    // Toggle Selecting cards with Highlight
+    const sortedPokemons = useSortManager(displayedPokemons, sortType, sortMode, { isShiny, showShadow, showCostume, showAll });
+    console.log("Sorted Pokemons:", sortedPokemons); // Log to confirm sorting on the correct list
+
     const toggleCardHighlight = useCallback((pokemonId) => {
         setHighlightedCards(prev => {
             const newHighlights = new Set(prev);
@@ -92,60 +111,49 @@ function Collect() {
         });
     }, []);
 
-    // Handle Updating ownership Filter
     const handleUpdateOwnershipFilter = useCallback((filterType) => {
         setOwnershipFilter(prev => prev === filterType ? "" : filterType);
     }, [setOwnershipFilter]);
 
-    // Toggle Show All State interacting with common Filter States
     const toggleShowAll = useCallback(() => {
         setShowAll(prevShowAll => !prevShowAll);
-
     }, [showAll]);
-    
-    // Toggle Shiny State
+
     const toggleShiny = useCallback(() => {
         setIsShiny(prevState => !prevState);
     }, []);
-    
-    // Toggle Costume State
+
     const toggleCostume = useCallback(() => {
         setShowCostume(prevState => !prevState);
     }, []);
 
-    // Toggle Shadow State
     const toggleShadow = useCallback(() => {
         setShowShadow(prevState => !prevState);
     }, []);
 
-    // Handler to toggle fast select mode from CollectUI
     const handleFastSelectToggle = useCallback((enabled) => {
         setIsFastSelectEnabled(enabled);
     }, []);
 
-    // Toggle Select All from CollectUI
     const selectAllToggle = useCallback(() => {
         if (highlightedCards.size === sortedPokemons.length) {
-            setHighlightedCards(new Set()); // Clears all highlights if all are currently selected
+            setHighlightedCards(new Set());
         } else {
             const allPokemonIds = new Set(sortedPokemons.map(pokemon => pokemon.pokemonKey));
-            setHighlightedCards(allPokemonIds); // Selects all IDs
+            setHighlightedCards(allPokemonIds);
         }
-    }, [sortedPokemons, highlightedCards]);    
+    }, [sortedPokemons, highlightedCards]);
 
-    // Updating highlighted pokemon to new Ownership filter: now using updateOwnership
     const handleMoveHighlightedToFilter = useCallback(filter => {
         updateOwnership([...highlightedCards], filter);
         setHighlightedCards(new Set());
-        setOwnershipFilter(filter);  // Assuming this sets the current filter state
-    }, [highlightedCards, updateOwnership, updateLists]);    
+        setOwnershipFilter(filter);
+    }, [highlightedCards, updateOwnership, updateLists]);
 
-    // // Handler for confirming the move to new Ownership filter
     const handleConfirmMoveToFilter = useCallback((filter) => {
         confirmMoveToFilter(() => handleMoveHighlightedToFilter(filter), filter, highlightedCards, variants, ownershipData);
-    }, [handleMoveHighlightedToFilter, highlightedCards, variants, ownershipData]);    
+    }, [handleMoveHighlightedToFilter, highlightedCards, variants, ownershipData]);
 
-    // Effect to handle window resizing
     useEffect(() => {
         const handleResize = () => {
             setWindowWidth(window.innerWidth);
@@ -156,72 +164,72 @@ function Collect() {
         };
     }, []);
 
-    // Automatically set UI visibility based on window width
     useEffect(() => {
-        // console.log("Window width changed:", windowWidth);
         const isWide = windowWidth >= 1024;
-        setShowFilterUI(isWide); // Always show filters on wide screens
-        setShowCollectUI(isWide); // Always show collect UI on wide screens
-    }, [windowWidth]);  
-    
-    if (loading) {
-        return <LoadingSpinner />; // Use the LoadingIndicator component when loading
-    }   
+        setShowFilterUI(isWide);
+        setShowCollectUI(isWide);
+    }, [windowWidth]);
 
     return (
         <div>
-            <HeaderUIMemo
-                showFilterUI={showFilterUI}
-                toggleFilterUI={() => setShowFilterUI(prev => !prev)}
-                isShiny={isShiny}
-                toggleShiny={toggleShiny}
-                showCostume={showCostume}
-                toggleCostume={toggleCostume}
-                showShadow={showShadow}
-                toggleShadow={toggleShadow}
-                toggleShowAll={toggleShowAll}
-                showAll={showAll}
-
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                showEvolutionaryLine={showEvolutionaryLine}
-                toggleEvolutionaryLine={toggleEvolutionaryLine}
-                
-                showCollectUI={showCollectUI}
-                toggleCollectUI={() => setShowCollectUI(prev => !prev)}
-                ownershipFilter={ownershipFilter}
-                updateOwnershipFilter={handleUpdateOwnershipFilter}
-                handleFastSelectToggle={handleFastSelectToggle}
-                selectAllToggle={selectAllToggle}
-                highlightedCards={highlightedCards}
-                confirmMoveToFilter={handleConfirmMoveToFilter}
-            />
-            <PokemonListMemo
-                sortedPokemons={sortedPokemons}
-                allPokemons={variants}
-                loading={loading}
-                selectedPokemon={selectedPokemon}
-                setSelectedPokemon={setSelectedPokemon}
-                isFastSelectEnabled={isFastSelectEnabled}
-                toggleCardHighlight={toggleCardHighlight}
-                highlightedCards={highlightedCards}
-                isShiny={isShiny}
-                showShadow={showShadow}
-                multiFormPokedexNumbers={multiFormPokedexNumbers}
-                ownershipFilter={ownershipFilter}
-                lists={lists}
-                ownershipData={ownershipData}
-                showAll={showAll}
-                sortType={sortType}
-                sortMode={sortMode}
-                variants={variants}
-            />
-            <SortOverlayMemo
-                sortType={sortType}
-                setSortType={setSortType}
-                sortMode={sortMode}
-                setSortMode={toggleSortMode}
-            />
+            {!userExists && <h1>User not found</h1>}
+            {(loading || viewedLoading) && <LoadingSpinner />}
+            {userExists && !loading && !viewedLoading && (
+                <>
+                    <HeaderUIMemo
+                        isEditable={isEditable}
+                        showFilterUI={showFilterUI}
+                        toggleFilterUI={() => setShowFilterUI(prev => !prev)}
+                        isShiny={isShiny}
+                        toggleShiny={toggleShiny}
+                        showCostume={showCostume}
+                        toggleCostume={toggleCostume}
+                        showShadow={showShadow}
+                        toggleShadow={toggleShadow}
+                        toggleShowAll={toggleShowAll}
+                        showAll={showAll}
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        showEvolutionaryLine={showEvolutionaryLine}
+                        toggleEvolutionaryLine={toggleEvolutionaryLine}
+                        showCollectUI={showCollectUI}
+                        toggleCollectUI={() => setShowCollectUI(prev => !prev)}
+                        ownershipFilter={ownershipFilter}
+                        updateOwnershipFilter={handleUpdateOwnershipFilter}
+                        handleFastSelectToggle={handleFastSelectToggle}
+                        selectAllToggle={selectAllToggle}
+                        highlightedCards={highlightedCards}
+                        confirmMoveToFilter={handleConfirmMoveToFilter}
+                    />
+                    <PokemonListMemo
+                        isEditable={isEditable}
+                        sortedPokemons={sortedPokemons}
+                        allPokemons={variants}
+                        loading={loading}
+                        selectedPokemon={selectedPokemon}
+                        setSelectedPokemon={setSelectedPokemon}
+                        isFastSelectEnabled={isFastSelectEnabled}
+                        toggleCardHighlight={toggleCardHighlight}
+                        highlightedCards={highlightedCards}
+                        isShiny={isShiny}
+                        showShadow={showShadow}
+                        multiFormPokedexNumbers={multiFormPokedexNumbers}
+                        ownershipFilter={ownershipFilter}
+                        lists={activeLists}
+                        ownershipData={isOwnCollection ? contextOwnershipData : viewedOwnershipData}
+                        showAll={showAll}
+                        sortType={sortType}
+                        sortMode={sortMode}
+                        variants={variants}
+                    />
+                    <SortOverlayMemo
+                        sortType={sortType}
+                        setSortType={setSortType}
+                        sortMode={sortMode}
+                        setSortMode={toggleSortMode}
+                    />
+                </>
+            )}
         </div>
     );
 }
