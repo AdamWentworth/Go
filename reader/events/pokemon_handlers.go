@@ -190,3 +190,79 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 	logrus.Infof("User %s retrieved %d Pokemon instances from device %s", user.Username, instanceCount, deviceID)
 	return c.Status(fiber.StatusOK).JSON(responseData)
 }
+
+func GetPokemonInstancesByUsername(c *fiber.Ctx) error {
+	// Retrieve the username from the route parameters
+	username := c.Params("username")
+
+	// Retrieve the user_id from the token for logging purposes
+	tokenUserID, _ := c.Locals("user_id").(string)
+
+	// Log the access for tracing
+	logrus.Infof("User %s is fetching ownership data for username %s", tokenUserID, username)
+
+	// Retrieve the user_id corresponding to the provided username
+	var user User
+	if err := db.Where("username = ?", username).First(&user).Error; err != nil {
+		logrus.Errorf("User %s not found: %v", username, err)
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+	}
+
+	// Retrieve Pokémon instances for the user with the found user_id
+	var instances []PokemonInstance
+	if err := db.Where("user_id = ?", user.UserID).Find(&instances).Error; err != nil {
+		logrus.Errorf("Error retrieving instances for user_id %s: %v", user.UserID, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve instances"})
+	}
+
+	// Prepare the response data
+	responseData := make(map[string]interface{})
+	for _, instance := range instances {
+		// Create a map representation of the instance
+		instanceMap := map[string]interface{}{
+			"pokemon_id":       instance.PokemonID,
+			"nickname":         instance.Nickname,
+			"cp":               instance.CP,
+			"attack_iv":        instance.AttackIV,
+			"defense_iv":       instance.DefenseIV,
+			"stamina_iv":       instance.StaminaIV,
+			"shiny":            instance.Shiny,
+			"costume_id":       instance.CostumeID,
+			"lucky":            instance.Lucky,
+			"shadow":           instance.Shadow,
+			"purified":         instance.Purified,
+			"fast_move_id":     instance.FastMoveID,
+			"charged_move1_id": instance.ChargedMove1ID,
+			"charged_move2_id": instance.ChargedMove2ID,
+			"weight":           instance.Weight,
+			"height":           instance.Height,
+			"gender":           instance.Gender,
+			"mirror":           instance.Mirror,
+			"pref_lucky":       instance.PrefLucky,
+			"registered":       instance.Registered,
+			"favorite":         instance.Favorite,
+			"is_unowned":       instance.IsUnowned,
+			"is_owned":         instance.IsOwned,
+			"is_for_trade":     instance.IsForTrade,
+			"is_wanted":        instance.IsWanted,
+			"not_trade_list":   instance.NotTradeList,
+			"not_wanted_list":  instance.NotWantedList,
+			"location_caught":  instance.LocationCaught,
+			"date_added":       instance.DateAdded,
+			"date_caught":      instance.DateCaught,
+			"friendship_level": instance.FriendshipLevel,
+			"last_update":      instance.LastUpdate,
+			"wanted_filters":   instance.WantedFilters,
+			"trade_filters":    instance.TradeFilters,
+		}
+
+		// Add the instance to the response data using its `InstanceID`
+		responseData[instance.InstanceID] = instanceMap
+	}
+
+	instanceCount := len(responseData)
+
+	// Log and return the response data
+	logrus.Infof("User %s retrieved %d Pokemon instances for username %s", tokenUserID, instanceCount, username)
+	return c.Status(fiber.StatusOK).JSON(responseData)
+}
