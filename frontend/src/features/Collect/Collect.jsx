@@ -23,33 +23,24 @@ const SortOverlayMemo = React.memo(SortOverlay);
 
 function Collect({ isOwnCollection }) {
     const { username } = useParams();
-    const location = useLocation();
     const isUsernamePath = !isOwnCollection;
 
     const { viewedOwnershipData, userExists, viewedLoading, fetchUserOwnershipData } = useContext(UserSearchContext);
     const { variants, ownershipData: contextOwnershipData, lists: defaultLists, loading, updateOwnership, updateLists } = usePokemonData();
     const ownershipData = isOwnCollection ? contextOwnershipData : viewedOwnershipData;
-    const [ownershipFilter, setOwnershipFilter] = useState(isUsernamePath ? "Owned" : "");
+    const [ownershipFilter, setOwnershipFilter] = useState("");
 
-    // Reset ownership filter to "Owned" when switching to a new /:username search
+    // Perform search and update UI only when search results are confirmed
     useEffect(() => {
-        if (isUsernamePath) {
-            setOwnershipFilter("Owned");
-            setShowAll(true)
+        if (isUsernamePath && username) {
+            fetchUserOwnershipData(username, setOwnershipFilter, setShowAll);
         }
-    }, [username, isUsernamePath]);
+    }, [isUsernamePath, username, fetchUserOwnershipData]);
 
-    // Fetch user ownership data for the /:username path if it hasn’t already been loaded
-    useEffect(() => {
-        if (isUsernamePath && !viewedOwnershipData && username) {
-            fetchUserOwnershipData(username);
-        }
-    }, [isUsernamePath, username, viewedOwnershipData, fetchUserOwnershipData]);
-
-    // Initialize lists based on data context
+    // Initialize lists based on context data
     const activeLists = useMemo(() => {
         return isUsernamePath && viewedOwnershipData
-            ? initializePokemonLists(viewedOwnershipData, variants)
+            ? initializePokemonLists(viewedOwnershipData, variants, true)
             : defaultLists;
     }, [isUsernamePath, viewedOwnershipData, variants, defaultLists]);
 

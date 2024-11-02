@@ -2,6 +2,7 @@
 
 import { parsePokemonKey } from "../../../utils/PokemonIDUtils";
 import { determineImageUrl } from "../../../utils/imageHelpers"; 
+import { createNewDataForVariant } from "./pokemonOwnershipManager"
 
 export const updatePokemonLists = (ownershipData, variants, callback) => {
     const lists = {
@@ -64,13 +65,18 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
     callback(lists);
 };
 
-export const initializePokemonLists = (ownershipData, variants) => {
+import { v4 as generateUUID } from 'uuid'; // Import UUID function if needed
+
+export const initializePokemonLists = (ownershipData, variants, search) => {
     const lists = {
         unowned: {},
         owned: {},
         trade: {},
         wanted: {}
     };
+
+    // Track all existing base keys from ownershipData to later check for unassigned variants
+    const assignedKeys = new Set(Object.keys(ownershipData));
 
     Object.entries(ownershipData).forEach(([key, value]) => {
         const { baseKey } = parsePokemonKey(key); // Extract the base key from the key
@@ -109,12 +115,31 @@ export const initializePokemonLists = (ownershipData, variants) => {
             gender: value.gender
         };
 
-        // Assigning the listItem under the corresponding pokemonKey in each list
+        // Assign the listItem under the corresponding pokemonKey in each list
         if (value.is_unowned) lists.unowned[key] = listItem;
         if (value.is_owned) lists.owned[key] = listItem;
         if (value.is_for_trade) lists.trade[key] = listItem;
         if (value.is_wanted) lists.wanted[key] = listItem;
     });
+    // Uncomment this code below if we want to add all missing unowned pokemon
+    // // If search is true, ensure all variants are represented, defaulting remaining ones to unowned
+    // if (search) {
+    //     variants.forEach(variant => {
+    //         const variantKey = variant.pokemonKey;
+
+    //         // Check if the variant is already categorized under owned, trade, or wanted
+    //         const isVariantAssigned = Object.keys(lists.owned).some(existingKey => existingKey.startsWith(variantKey)) ||
+    //                                   Object.keys(lists.trade).some(existingKey => existingKey.startsWith(variantKey)) ||
+    //                                   Object.keys(lists.wanted).some(existingKey => existingKey.startsWith(variantKey));
+
+    //         // If the variant is not assigned in any list, create a new unowned entry with a unique key
+    //         if (!isVariantAssigned) {
+    //             const fullKey = `${variantKey}_${generateUUID()}`; // Append UUID to create a unique key
+    //             const newVariantData = createNewDataForVariant(variant);
+    //             lists.unowned[fullKey] = newVariantData;
+    //         }
+    //     });
+    // }
 
     return lists;
 };

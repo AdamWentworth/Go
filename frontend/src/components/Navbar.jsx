@@ -1,12 +1,11 @@
 // Navbar.jsx
 
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 import { useAuth } from '../contexts/AuthContext';
 import MainButtons from './MainButtons';
 import { useTheme } from '../contexts/ThemeContext';
-import UserSearchContext from '../contexts/UserSearchContext';
 
 function Navbar() {
     const navigate = useNavigate();
@@ -16,15 +15,14 @@ function Navbar() {
     const { isLightMode, toggleTheme } = useTheme();
     const [searchQuery, setSearchQuery] = useState('');
 
-    const { fetchUserOwnershipData } = useContext(UserSearchContext); // Access fetch function
-
     const showMainButtons = location.pathname !== '/';
 
     const handleSearch = (event) => {
         event.preventDefault();
-        if (searchQuery.trim()) {
-            fetchUserOwnershipData(searchQuery); // Trigger fetch
-            navigate(`/${searchQuery}`);
+        const trimmedQuery = searchQuery.trim();
+        if (trimmedQuery) {
+            navigate(`/${trimmedQuery}`); // Navigate to the user-specific route
+            setSearchQuery(''); // Clear the search input after navigation
         }
     };
 
