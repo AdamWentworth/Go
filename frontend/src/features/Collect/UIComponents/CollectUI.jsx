@@ -2,91 +2,93 @@
 import React, { useState, useEffect } from 'react';
 import './CollectUI.css';
 
-// Utility function to preload images
-const preloadImage = (url) => {
-  const img = new Image();
-  img.src = url;
-};
-
 const CollectUI = ({
-  statusFilter, setStatusFilter, onFastSelectToggle,
-  onSelectAll, highlightedCards, confirmMoveToFilter, showAll, toggleShowAll, isShiny, showCostume, showShadow
+    isEditable,
+    statusFilter,
+    setStatusFilter,
+    onFastSelectToggle,
+    onSelectAll,
+    highlightedCards,
+    confirmMoveToFilter,
+    showAll,
+    toggleShowAll,
+    isShiny,
+    showCostume,
+    showShadow,
+    contextText // Add contextText prop
 }) => {
-  const filters = ['Owned', 'Trade', 'Unowned', 'Wanted'];
-  const [selectedFilter, setSelectedFilter] = useState("");
-  const [fastSelectEnabled, setFastSelectEnabled] = useState(false);
-  const [SelectAllEnabled, setSelectAllEnabled] = useState(false);
+    const filters = ['Owned', 'Trade', 'Unowned', 'Wanted'];
+    const [selectedFilter, setSelectedFilter] = useState("");
+    const [fastSelectEnabled, setFastSelectEnabled] = useState(false);
+    const [selectAllEnabled, setSelectAllEnabled] = useState(false);
 
-  useEffect(() => {
-    setSelectedFilter(statusFilter); // Ensure this runs correctly
-    // console.log("Status Filter updated in CollectUI: ", statusFilter);
-  }, [statusFilter]);
+    useEffect(() => {
+        setSelectedFilter(statusFilter);
+    }, [statusFilter]);
 
-  useEffect(() => {
-    // Preload fast select icon
-    preloadImage("/images/fast_select.png");
-    // Preload other images if necessary
-    // Add preloads for dynamically determined images if they depend on statusFilter
-  }, []);
-  
-  const handleFilterClick = (filter) => {
-    if (highlightedCards.size > 0) {
-      confirmMoveToFilter(filter); // Pass filter as lowercase
-    } else {
-      const newFilter = statusFilter === filter ? "" : filter; // Toggle filter on or off
-      setStatusFilter(newFilter); // Update the filter state
+    const handleFilterClick = (filter) => {
+        if (highlightedCards.size > 0) {
+            confirmMoveToFilter(filter);
+        } else {
+            const newFilter = statusFilter === filter ? "" : filter;
+            setStatusFilter(newFilter);
+        }
+        setSelectAllEnabled(false);
+    };
 
-      // Update `showAll` state based on the filter toggling logic
-      if (statusFilter === "" && !showAll && newFilter !== "" && !isShiny && !showCostume && !showShadow) {
-        // If no filter is active and `showAll` is false, set `showAll` to true when a new filter is selected
-        toggleShowAll(true);
-      } else if (newFilter === "" && !isShiny && !showCostume && !showShadow) {
-        // If no filter is active, set `showAll` to false
-        toggleShowAll(false);
-      }
-    }
-  setSelectAllEnabled(false);
-};
+    const handleSelectAll = () => {
+        const newSelectAllState = !selectAllEnabled;
+        setSelectAllEnabled(newSelectAllState);
+        onSelectAll(newSelectAllState);
+    };
 
-  const handleSelectAll = () => {
-    const newSelectAllState = !SelectAllEnabled;
-    setSelectAllEnabled(newSelectAllState);
-    onSelectAll(newSelectAllState); // Notify parent component
-  };
+    const handleToggleFastSelect = () => {
+        const newFastSelectState = !fastSelectEnabled;
+        setFastSelectEnabled(newFastSelectState);
+        onFastSelectToggle(newFastSelectState);
+    };
 
-  const handleToggleFastSelect = () => {
-    const newFastSelectState = !fastSelectEnabled;
-    setFastSelectEnabled(newFastSelectState);
-    onFastSelectToggle(newFastSelectState); // Notify parent component
-  };
-
-  return (
-    <div className="header-section collect-section">
-      <div className="collect-header">
-      </div>
-      <div className="button-container">
-      <button
-        className={`select-all-button ${SelectAllEnabled ? 'active' : ''}`}
-        onClick={handleSelectAll}
-      >
-        Select All
-      </button>
-        <button onClick={handleToggleFastSelect} className={`fast-select-button ${fastSelectEnabled ? 'active' : ''}`}>
-          <img src="/images/fast_select.png" alt="Toggle Fast Select" />
-        </button>
-        {filters.map((filter) => (
-          <button
-            key={filter}
-            className={`filter-button ${filter} ${selectedFilter === filter ? 'active' : ''} ${selectedFilter !== "" && selectedFilter !== filter ? 'non-selected' : ''}`}
-            onClick={() => handleFilterClick(filter)}
-          >
-            {filter}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+    return (
+        <div className="header-section collect-section">
+            <div className="collect-header"></div>
+            <div className="button-container">
+                {isEditable ? (
+                    <>
+                        <button
+                            className={`select-all-button ${selectAllEnabled ? 'active' : ''}`}
+                            onClick={handleSelectAll}
+                        >
+                            Select All
+                        </button>
+                        <button
+                            onClick={handleToggleFastSelect}
+                            className={`fast-select-button ${fastSelectEnabled ? 'active' : ''}`}
+                        >
+                            <img src="/images/fast_select.png" alt="Toggle Fast Select" />
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <div className="placeholder select-all-placeholder"></div>
+                        <div className="placeholder fast-select-placeholder"></div>
+                    </>
+                )}
+                {filters.map((filter) => (
+                    <button
+                        key={filter}
+                        className={`filter-button ${filter} ${selectedFilter === filter ? 'active' : ''} ${selectedFilter !== "" && selectedFilter !== filter ? 'non-selected' : ''}`}
+                        onClick={() => handleFilterClick(filter)}
+                    >
+                        {filter}
+                    </button>
+                ))}
+                {/* Dynamically set context mode */}
+                <div className={`context-text-container ${isEditable ? 'editing' : 'viewing'}`}>
+                    <p className="context-text">{contextText}</p>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default CollectUI;
-

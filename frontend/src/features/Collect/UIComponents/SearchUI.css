@@ -1,17 +1,19 @@
-/*searchUi.css*/
+/* SearchUI.css */
+
 .header-section.search-section {
-    flex-grow: 5;  /* Inherit this to maintain layout consistency */
+    position: relative; /* Ensure child elements can be absolutely positioned */
+    flex-grow: 5;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 100%; /* Ensures it takes the full width of its container */
+    width: 100%;
 }
 
-/* Ensure input and buttons are displayed inline */
+/* Other styles for input and checkbox */
 .header-section.search-section input,
 .header-section.search-section button {
-    width: 80%; /* Adjust based on your design preference */
+    width: 80%;
 }
 
 .header input {
@@ -20,138 +22,118 @@
 }
 
 .header-section.search-section button {
-    background-color: #ccc; /* Non-shiny color */
+    background-color: #ccc;
     border: none;
     outline: none;
     padding: 10px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    border-radius: 15px; /* Adjust as per requirement */
-    transition: background-color 0.3s ease; /* Optional: for a smooth color transition */
+    border-radius: 15px;
+    transition: background-color 0.3s ease;
 }
 
 .checkbox-container {
     display: flex;
-    align-items: center; /* Align items vertically */
-    justify-content: flex-start; /* Start the alignment from the left */
-    width: 100%; /* Full width of its container */
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
 }
 
 .evo-line-checkbox {
     display: flex;
-    align-items: center; /* Align checkbox and text vertically */
+    align-items: center;
     cursor: pointer;
     color: #ffffff;
-    font-size: 1em; /* Adjusted for balance */
+    font-size: 1em;
     flex-grow: 1;
     white-space: nowrap;
     margin-top: 5px;
 }
 
 .evo-checkbox {
-    /* Regular input styling but hidden */
     appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
     position: absolute;
     opacity: 0;
-    z-index: -1; /* Keep it behind the visual representation */
+    z-index: -1;
 }
 
 .evo-line-custom-checkbox {
-    width: 2.5em; /* Reduced from 3em */
-    height: 2.5em; /* Reduced from 3em */
-    border: 2px solid #ffffff; /* Slightly thinner border for smaller size */
-    border-radius: 50%; /* Maintain circular shape */
+    width: 2.5em;
+    height: 2.5em;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-right: 8px; /* Ensure some space between checkbox and label */
+    margin-right: 8px;
     cursor: pointer;
-    pointer-events: all;
 }
 
-/* Style for when the checkbox is checked */
 .evo-checkbox:checked + .evo-line-custom-checkbox::after {
     content: '✓';
     color: #ffffff;
-    font-size: 1.2em; /* Adjust font size to fit the new checkbox size */
-    line-height: 1; /* Center the checkmark vertically */
+    font-size: 1.2em;
+    line-height: 1;
 }
 
 @media (max-width: 480px) {
     .header-section.search-section {
-        font-size: 8px; /* Adjust font size as necessary */
+        font-size: 8px;
     }
     .evo-line-custom-checkbox {
-        width: 2em; /* Reduced from 3em */
-        height: 2em; /* Reduced from 3em */
+        width: 2em;
+        height: 2em;
     }
-  }
+}
 
 @media (min-width: 481px) {
     .header-section.search-section {
-        font-size: 12px; /* Adjust font size as necessary */
+        font-size: 12px;
     }
     .evo-line-custom-checkbox {
-        width: 2em; /* Reduced from 3em */
-        height: 2em; /* Reduced from 3em */
+        width: 2em;
+        height: 2em;
     }
-  }
+}
 
 @media (min-width: 768px) and (max-width: 1023px) {
     .evo-line-custom-checkbox {
-        width: 2em; /* Reduced from 3em */
-        height: 2em; /* Reduced from 3em */
+        width: 2em;
+        height: 2em;
     }
     .header-section.search-section {
-        font-size: 12px; /* Adjust font size as necessary */
+        font-size: 12px;
     }
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {
     .header-section.search-section {
-        font-size: 14px; /* Adjust font size as necessary */
+        font-size: 14px;
     }
     .evo-line-custom-checkbox {
-        width: 2em; /* Reduced from 3em */
-        height: 2em; /* Reduced from 3em */
+        width: 2em;
+        height: 2em;
     }
     .header-section.search-section input,
     .header-section.search-section button {
-        width: 70%; /* Adjust based on your design preference */
+        width: 70%;
         margin-top: 3px;
     }
 }
 
-@media (min-width: 1024px) and (max-width: 1439px) {
+@media (min-width: 1440px) {
     .header-section.search-section {
-        font-size: 14px; /* Adjust font size as necessary */
-    }
-    .evo-line-custom-checkbox {
-        width: 2em; /* Reduced from 3em */
-        height: 2em; /* Reduced from 3em */
-    }
-    .header-section.search-section input,
-    .header-section.search-section button {
-        width: 80%; /* Adjust based on your design preference */
-        margin-top: 3px;
-    }
-  }
-
-  @media (min-width: 1440px) {
-    .header-section.search-section {
-        font-size: 20px; /* Adjust font size as necessary */
+        font-size: 20px;
     }
     .evo-line-custom-checkbox {
         margin-top: 2px;
-        width: 1.75em; /* Reduced from 3em */
-        height: 1.75em; /* Reduced from 3em */
+        width: 1.75em;
+        height: 1.75em;
     }
     .header-section.search-section input,
     .header-section.search-section button {
-        width: 80%; /* Adjust based on your design preference */
+        width: 80%;
         margin-top: 3px;
     }
-  }
+}

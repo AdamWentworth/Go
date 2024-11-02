@@ -1,227 +1,179 @@
 /* collectUI.css */
+
+/* Base Section Styling */
 .header-section.collect-section {
-  flex-grow: 3;
   display: flex;
   flex-direction: column;
   align-items: center;
+  flex-grow: 3;
 }
 
 .collect-section .button-container {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* Creates three columns */
-  grid-template-rows: repeat(2, 1fr); /* Two rows */
-  gap: 5px; /* Space between buttons */
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 5px;
   align-items: center;
   justify-items: stretch;
 }
 
+/* Button Styling */
 .header-section.collect-section button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
   border: none;
   outline: none;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center; /* Center content within buttons */
   border-radius: 15px;
   transition: background-color 0.3s ease;
-  width: 100%; /* Ensure buttons fill the cell */
-  height: 100%; /* Ensure buttons fill the cell */
 }
 
-.select-all-button {
-  grid-column: 1; /* Place in the first column */
-  grid-row: 1; /* First row */
+/* Filter Button Colors */
+.filter-button {
+  &.Unowned { background-color: #ccc; }
+  &.Wanted { background-color: #F44336; }
+  &.Owned { background-color: #2196F3; }
+  &.Trade { background-color: #4CAF50; }
+}
+
+/* Hover and Active States */
+.filter-button {
+  &.Unowned:hover, &.Unowned.active { background-color: #858585; }
+  &.Wanted:hover, &.Wanted.active { background-color: #be2c2c; }
+  &.Owned:hover, &.Owned.active { background-color: #176bbe; }
+  &.Trade:hover, &.Trade.active { background-color: #327e36; }
+  &.non-selected { background-color: #ccc; color: black; }
+}
+
+/* Special Buttons */
+.fast-select-button, .select-all-button {
+  background-color: #ccc;
 }
 
 .fast-select-button {
-  grid-column: 1; /* Place in the first column */
-  grid-row: 2; /* Second row */
+  &.active { background-color: rgb(255, 246, 123); }
+  &:hover { background-color: rgb(255, 223, 40); }
 }
 
-.filter-button.Unowned {
-  grid-row: 2; /* Second row */
-  grid-column: 2; /* Second column */
+.select-all-button {
+  &.active { background-color: #47bbb7; }
+  &:hover { background-color: #3ea5a2; }
 }
 
-.filter-button.Wanted {
-  grid-column: 3; /* Second column */
-  grid-row: 2; /* Second row */
-}
+/* Button Grid Positioning */
+.select-all-button { grid-column: 1; grid-row: 1; }
+.fast-select-button { grid-column: 1; grid-row: 2; }
+.filter-button.Unowned { grid-column: 2; grid-row: 2; }
+.filter-button.Wanted { grid-column: 3; grid-row: 2; }
+.filter-button.Owned { grid-column: 2; grid-row: 1; }
+.filter-button.Trade { grid-column: 3; grid-row: 1; }
 
-.filter-button.Owned {
-  grid-row: 1; /* Second row */
-  grid-column: 2; /* Third column */
-}
-
-.filter-button.Trade {
-  grid-column: 3; /* Third column */
-  grid-row: 1; /* Second row */
-}
-
+/* Image Styling */
 .header-section.collect-section img {
-    width: 24px;
-    height: 24px;
-}
-  
-/* Remove span for fast-select-button and select-all-button */
-.fast-select-button, .select-all-button {
-  background-color: #ccc; /* Default non-active color */
-}
-  
-/* Original colors */
-.filter-button.Unowned {
-  background-color: #ccc; /* Grey */
+  width: 24px;
+  height: 24px;
 }
 
-.filter-button.Wanted {
-  background-color: #F44336; /* Red */
+/* Context Text Styling */
+.context-text-container.editing .context-text {
+  color: #d4f8d4; /* Light green */
 }
 
-.filter-button.Owned {
-  background-color: #2196F3; /* Blue */
+.context-text-container.viewing .context-text {
+  color: #d4e6f8; /* Light blue */
 }
 
-.filter-button.Trade {
-  background-color: #4CAF50; /* Green */
+/* Bold username inside viewing mode context text */
+.context-text-container.viewing .username {
+  font-weight: bold;
 }
 
-/* Hover states */
-.filter-button.Unowned:hover,
-.filter-button.Unowned.active {
-  background-color: #858585; /* Darker Grey */
-}
-
-.filter-button.Wanted:hover,
-.filter-button.Wanted.active {
-  background-color: #be2c2c; /* Darker Red */
-}
-
-.filter-button.Owned:hover,
-.filter-button.Owned.active {
-  background-color: #176bbe; /* Darker Blue */
-}
-
-.filter-button.Trade:hover,
-.filter-button.Trade.active {
-  background-color: #327e36; /* Darker Green */
-}
-
-/* Non-selected state */
-.filter-button.non-selected {
-  background-color: #ccc; /* Stale Grey */
-  color: black;
-}
-
-.fast-select-button.active {
-  background-color: rgb(255, 246, 123); /* Neon yellow */
-}
-
-.fast-select-button:hover {
-  background-color: rgb(255, 223, 40); /* Neon yellow */
-}
-
-.select-all-button.active {
-  background-color: #47bbb7; /* Active green, or choose your preferred color */
-}
-
-.select-all-button:hover {
-  background-color: #3ea5a2; /* Darker green on hover */
-}
-
+/* Responsive Styles */
 @media (max-width: 480px) {
-    .header-section.collect-section .select-all-button {
-      font-size: 10px; /* Adjust font size as necessary */
-    }
-    .collect-section .filter-button {
-      font-size: 10px; /* Adjust font size as necessary */
-      padding: 3px; /* Adjust padding */
-    }
-    .header-section.collect-section {
-      margin-right: 5px;
-      margin-left: 5px;
+  .header-section.collect-section {
+    margin: 0 5px;
+  }
+  .collect-section .filter-button,
+  .header-section.collect-section .select-all-button {
+    font-size: 10px;
+    padding: 3px;
   }
 }
 
 @media (min-width: 481px) {
   .header-section.collect-section {
-    flex-grow: 0;  /* Prevent it from taking unnecessary extra space */
-  }  
-  .header-section.collect-section .select-all-button {
-    font-size: 12px; /* Adjust font size as necessary */
-    padding: 2px;
-    padding-left: 8px;
-    padding-right: 8px
-  }
-  .collect-section .filter-button {
-    font-size: 12px; /* Adjust font size as necessary */
-  }
-  .header-section.collect-section {
+    flex-grow: 0;
     margin-right: 10px;
-    margin-left: 0px;
+    margin-left: 0;
+  }
+  .collect-section .filter-button,
+  .header-section.collect-section .select-all-button {
+    font-size: 12px;
+    padding: 2px 8px;
   }
   .header-section.collect-section img {
     width: 28px;
     height: 28px;
+  }
 }
-}
+
 @media (min-width: 1024px) {
-  
-.select-all-button {
-  grid-column: 2; /* Place in the first column */
-  grid-row: 2/6; /* First row */
-}
+  .collect-section .button-container {
+    column-gap: 10px;
+    grid-template-rows: 0;
+    margin-bottom: -5px;
+  }
 
-.fast-select-button {
-  grid-column: 1; /* Place in the first column */
-  grid-row: 2/6; /* Second row */
-}
+  .header-section.collect-section img {
+    width: 40px;
+    height: 40px;
+    padding: 5px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
 
-.filter-button.Unowned {
-  grid-row: 4/8; /* Second row */
-  grid-column: 3; /* Second column */
-}
+  .collect-section .filter-button {
+    font-size: 14px;
+    padding: 10px;
+  }
 
-.filter-button.Wanted {
-  grid-column: 4; /* Second column */
-  grid-row: 4/8; /* Second row */
-}
+  .header-section.collect-section .select-all-button {
+    font-size: 14px;
+    padding: 10px 15px;
+  }
 
-.filter-button.Owned {
-  grid-row: 1/4; /* Second row */
-  grid-column: 3; /* Third column */
-}
+  .header-section.collect-section button {
+    height: unset;
+  }
 
-.filter-button.Trade {
-  grid-column: 4; /* Third column */
-  grid-row: 1/4; /* Second row */
-}
-.header-section.collect-section img {
-  width: 40px;
-  height: 40px;
-  padding: 5px;
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-.collect-section .filter-button {
-  font-size: 14px;
-  padding: 10px;
-}
-.collect-section .button-container {
-  column-gap: 10px; /* Sets the horizontal gap between grid items */
-  grid-template-rows: 0;
-  margin-bottom: -5px;
-}
-.header-section.collect-section .select-all-button {
- padding: 10px;
- padding-left: 15px;
- padding-right: 15px;
- margin-top: 10px;
- font-size: 14px;
-}
-.header-section.collect-section .fast-select-button {
-  margin-top: 10px;
-}
-.header-section.collect-section button {
-  height: auto;
-}
+  /* Adjust grid layout for larger screens */
+  .select-all-button { grid-column: 2; grid-row: 2 / 5; }
+  .fast-select-button { grid-column: 1; grid-row: 2 / 5; }
+  .filter-button.Unowned { grid-column: 3; grid-row: 4 / 6; }
+  .filter-button.Wanted { grid-column: 4; grid-row: 4 / 6; }
+  .filter-button.Owned { grid-column: 3; grid-row: 1 / 4; }
+  .filter-button.Trade { grid-column: 4; grid-row: 1 / 4; }
+
+  /* Position context-text-container for viewing mode */
+  .context-text-container.viewing {
+    grid-column: 1 / 2; /* Span across columns 1 and 2 */
+    grid-row: 1 / span 5; /* Place in rows 2 through 6 */
+    text-align: center;
+  }
+
+  /* Position context-text-container across columns 1 and 2, in the last row */
+  .context-text-container.editing {
+    grid-column: 1 / span 2;
+    grid-row: 5; /* Adjust to the last row as needed */
+    text-align: center; /* Center align text if needed */
+    margin-top: -5px;
+  }
+  .context-text-container p {
+    margin-block-start: 0px;
+    margin-block-end: 0px;
+    font-size: 14px;
+  }
 }

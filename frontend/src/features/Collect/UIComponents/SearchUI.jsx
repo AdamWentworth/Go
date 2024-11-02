@@ -1,8 +1,8 @@
-/*searchUI.jsx*/
+// searchUI.jsx
 
 import React, { useCallback } from 'react';
 import { debounce } from 'lodash';
-import './SearchUI.css'; // Your CSS file should include the styles for the evolutionary line checkbox
+import './SearchUI.css';
 
 function SearchUI({
     searchTerm,
@@ -10,7 +10,6 @@ function SearchUI({
     showEvolutionaryLine,
     toggleEvolutionaryLine,
 }) {
-    // Use useCallback to memoize the debounced function
     const debouncedSearchChange = useCallback(
         debounce((value) => onSearchChange(value), 250),
         []
