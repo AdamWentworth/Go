@@ -27,7 +27,7 @@ function Collect({ isOwnCollection }) {
 
     const { viewedOwnershipData, userExists, viewedLoading, fetchUserOwnershipData } = useContext(UserSearchContext);
     const { variants, ownershipData: contextOwnershipData, lists: defaultLists, loading, updateOwnership, updateLists } = usePokemonData();
-    const ownershipData = isOwnCollection ? contextOwnershipData : viewedOwnershipData;
+    const ownershipData = isOwnCollection ? contextOwnershipData : (viewedOwnershipData || contextOwnershipData);
     const [ownershipFilter, setOwnershipFilter] = useState("");
 
     // Show all state and toggle function
@@ -134,9 +134,14 @@ function Collect({ isOwnCollection }) {
 
     return (
         <div>
-            {!userExists && <h1>User not found</h1>}
+            {/* Render "User not found" only if `isUsernamePath` is true and `userExists` is explicitly false */}
+            {isUsernamePath && userExists === false && <h1>User not found</h1>}
+            
+            {/* Show loading spinner if data is still loading */}
             {(loading || viewedLoading) && <LoadingSpinner />}
-            {userExists && !loading && !viewedLoading && (
+            
+            {/* Render content if user exists, if no search has been made, or if viewing own collection */}
+            {(isOwnCollection || userExists || (userExists === null && ownershipData)) && !loading && !viewedLoading && (
                 <>
                     <HeaderUIMemo
                         isEditable={isEditable}
@@ -194,7 +199,7 @@ function Collect({ isOwnCollection }) {
                 </>
             )}
         </div>
-    );
+    );         
 }
 
 export default Collect;
