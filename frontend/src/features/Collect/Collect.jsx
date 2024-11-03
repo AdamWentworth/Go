@@ -1,7 +1,7 @@
 // Collect.jsx
 
-import React, { useState, useMemo, useCallback, useEffect, useContext } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import React, { useState, useMemo, useCallback, useEffect, useContext, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import { useUIControls } from './hooks/useUIControls';
 import PokemonList from './PokemonList';
 import useSearchFilters from '../../hooks/search/useSearchFilters';
@@ -30,6 +30,10 @@ function Collect({ isOwnCollection }) {
     const ownershipData = isOwnCollection ? contextOwnershipData : viewedOwnershipData;
     const [ownershipFilter, setOwnershipFilter] = useState("");
 
+    // Show all state and toggle function
+    const [showAll, setShowAll] = useState(false);
+    const toggleShowAll = useCallback(() => setShowAll(prevShowAll => !prevShowAll), []);
+
     // Perform search and update UI only when search results are confirmed
     useEffect(() => {
         if (isUsernamePath && username) {
@@ -51,7 +55,6 @@ function Collect({ isOwnCollection }) {
     const [selectedPokemon, setSelectedPokemon] = useState(null);
     const [highlightedCards, setHighlightedCards] = useState(new Set());
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-    const [showAll, setShowAll] = useState(false);
 
     const { showFilterUI, setShowFilterUI, showCollectUI, setShowCollectUI, showEvolutionaryLine, toggleEvolutionaryLine, isFastSelectEnabled, setIsFastSelectEnabled, sortType, setSortType, sortMode, toggleSortMode } = useUIControls({
         showFilterUI: false,
@@ -79,17 +82,11 @@ function Collect({ isOwnCollection }) {
     const displayedPokemons = useFilterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
     const sortedPokemons = useSortManager(displayedPokemons, sortType, sortMode, { isShiny, showShadow, showCostume, showAll });
 
-    // Filter and select controls
+    // Handle Updating ownership Filter
     const handleUpdateOwnershipFilter = useCallback((filterType) => {
-        const allowedFilters = ["Owned", "Unowned", "Trade", "Wanted"];
-        if (isUsernamePath && allowedFilters.includes(filterType)) {
-            setOwnershipFilter(filterType);
-        } else if (!isUsernamePath) {
-            setOwnershipFilter(prev => prev === filterType ? "" : filterType);
-        }
-    }, [isUsernamePath]);
+        setOwnershipFilter(prev => prev === filterType ? "" : filterType);
+    }, [setOwnershipFilter]);
 
-    const toggleShowAll = useCallback(() => setShowAll(prevShowAll => !prevShowAll), [showAll]);
     const toggleShiny = useCallback(() => setIsShiny(prevState => !prevState), []);
     const toggleCostume = useCallback(() => setShowCostume(prevState => !prevState), []);
     const toggleShadow = useCallback(() => setShowShadow(prevState => !prevState), []);

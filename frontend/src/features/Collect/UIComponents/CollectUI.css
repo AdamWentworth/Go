@@ -91,6 +91,10 @@
   font-weight: bold;
 }
 
+.context-text-container.viewing-all .context-text {
+  color: #f8d4d4; /* Light red */
+}
+
 /* Responsive Styles */
 @media (max-width: 480px) {
   .header-section.collect-section {
