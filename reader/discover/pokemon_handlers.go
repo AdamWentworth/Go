@@ -844,49 +844,46 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 
 // Helper function to compare two PokemonInstances based on specified criteria
 func instancesMatch(a, b PokemonInstance) (bool, string) {
-	if a.PokemonID != b.PokemonID {
-		return false, ""
-	}
-	if a.Shiny != b.Shiny {
-		return false, ""
-	}
-	if a.Shadow != b.Shadow {
-		return false, ""
-	}
-	if a.CostumeID != b.CostumeID {
+	// PokemonID, Shiny, and Shadow checks
+	if a.PokemonID != b.PokemonID || a.Shiny != b.Shiny || a.Shadow != b.Shadow {
 		return false, ""
 	}
 
-	// Updated gender comparison
-	if a.Gender != nil && b.Gender != nil {
-		if *a.Gender != *b.Gender {
-			return false, ""
-		}
+	// CostumeID check with detailed logging
+	if (a.CostumeID == nil && b.CostumeID != nil) || (a.CostumeID != nil && b.CostumeID == nil) {
+		return false, "CostumeID presence mismatch"
+	}
+	if a.CostumeID != nil && b.CostumeID != nil && *a.CostumeID != *b.CostumeID {
+		return false, "CostumeID value mismatch"
 	}
 
+	// Gender check
+	if a.Gender != nil && b.Gender != nil && *a.Gender != *b.Gender {
+		return false, "Gender mismatch"
+	}
+
+	// LocationCard check
 	if a.LocationCard != b.LocationCard {
-		return false, ""
+		return false, "LocationCard mismatch"
 	}
 
-	// Updated FastMoveID comparison
-	if a.FastMoveID != nil && b.FastMoveID != nil {
-		if *a.FastMoveID != *b.FastMoveID {
-			return false, ""
-		}
+	// FastMoveID check
+	if a.FastMoveID != nil && b.FastMoveID != nil && *a.FastMoveID != *b.FastMoveID {
+		return false, "FastMoveID mismatch"
 	}
 
-	// Updated ChargedMoveID comparison
+	// ChargedMoveID check
 	chargedMovesMatch := false
 	if a.ChargedMove1ID != nil && a.ChargedMove2ID != nil && b.ChargedMove1ID != nil && b.ChargedMove2ID != nil {
 		chargedMovesMatch = (*a.ChargedMove1ID == *b.ChargedMove1ID && *a.ChargedMove2ID == *b.ChargedMove2ID) ||
 			(*a.ChargedMove1ID == *b.ChargedMove2ID && *a.ChargedMove2ID == *b.ChargedMove1ID)
 	} else {
-		// If any of the ChargedMoveIDs are nil, we consider them matching
+		// If any of the ChargedMoveIDs are nil, consider them matching
 		chargedMovesMatch = true
 	}
 
 	if !chargedMovesMatch {
-		return false, ""
+		return false, "ChargedMoveID mismatch"
 	}
 
 	return true, ""
