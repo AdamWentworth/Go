@@ -9,6 +9,7 @@ import WantedDetails from './InstanceOverlayComponents/WantedComponents/WantedDe
 import WindowOverlay from './WindowOverlay';
 
 const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, ownershipData, sortType, sortMode }) => {
+  console.log("Rendering InstanceOverlay for pokemon:", pokemon);
   const [currentOverlay, setCurrentOverlay] = useState(ownershipFilter);
   const [selectedPokemon, setSelectedPokemon] = useState(pokemon);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 686);

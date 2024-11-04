@@ -1,9 +1,8 @@
 // MapView.jsx
 
-// MapView.jsx
-
 import React, { useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
+import { useNavigate } from 'react-router-dom';
 import 'ol/ol.css'; // OpenLayers default styles
 import Map from 'ol/Map';
 import View from 'ol/View';
@@ -31,6 +30,12 @@ const MapView = ({ data, ownershipStatus }) => {
   const popupRef = useRef(null);
   const popupRootRef = useRef(null);
   const { isLightMode } = useTheme();
+  const navigate = useNavigate();  // Ensure useNavigate is within Router context
+
+  // Define the navigation function to pass to OwnedPopup
+  const navigateToUserCatalog = (username, instanceId) => {
+    navigate(`/${username}`, { state: { instanceId } });
+  };
 
   useEffect(() => {
     if (!data.length) return;
@@ -104,7 +109,7 @@ const MapView = ({ data, ownershipStatus }) => {
 
     const popupOverlay = new Overlay({
       element: popupRef.current,
-      stopEvent: false,
+      stopEvent: true,
     });
     map.addOverlay(popupOverlay);
 
@@ -119,6 +124,7 @@ const MapView = ({ data, ownershipStatus }) => {
         featureFound = true;
         const { item } = feature.getProperties();
 
+        // Determine which popup component to show
         let PopupComponent;
         if (ownershipStatus === 'trade') {
           PopupComponent = TradePopup;
@@ -128,7 +134,10 @@ const MapView = ({ data, ownershipStatus }) => {
           PopupComponent = OwnedPopup;
         }
 
-        popupRootRef.current.render(<PopupComponent item={item} />);
+        // Render the popup component and pass the navigate function
+        popupRootRef.current.render(
+          <PopupComponent item={item} navigateToUserCatalog={navigateToUserCatalog} />
+        );
 
         const featureCoordinate = feature.getGeometry().getCoordinates();
         const viewportCenterY = map.getSize()[1] / 2;

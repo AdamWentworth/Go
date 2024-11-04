@@ -1,7 +1,5 @@
-// Collect.jsx
-
-import React, { useState, useMemo, useCallback, useEffect, useContext, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useMemo, useCallback, useEffect, useContext } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useUIControls } from './hooks/useUIControls';
 import PokemonList from './PokemonList';
 import useSearchFilters from '../../hooks/search/useSearchFilters';
@@ -23,6 +21,8 @@ const SortOverlayMemo = React.memo(SortOverlay);
 
 function Collect({ isOwnCollection }) {
     const { username } = useParams();
+    const location = useLocation(); // To check for state data (instanceId)
+    const navigate = useNavigate();
     const isUsernamePath = !isOwnCollection;
 
     const { viewedOwnershipData, userExists, viewedLoading, fetchUserOwnershipData } = useContext(UserSearchContext);
@@ -34,25 +34,12 @@ function Collect({ isOwnCollection }) {
     const [showAll, setShowAll] = useState(false);
     const toggleShowAll = useCallback(() => setShowAll(prevShowAll => !prevShowAll), []);
 
-    // Perform search and update UI only when search results are confirmed
-    useEffect(() => {
-        if (isUsernamePath && username) {
-            fetchUserOwnershipData(username, setOwnershipFilter, setShowAll);
-        }
-    }, [isUsernamePath, username, fetchUserOwnershipData]);
-
-    // Initialize lists based on context data
-    const activeLists = useMemo(() => {
-        return isUsernamePath && viewedOwnershipData
-            ? initializePokemonLists(viewedOwnershipData, variants, true)
-            : defaultLists;
-    }, [isUsernamePath, viewedOwnershipData, variants, defaultLists]);
-
     // Set `isEditable` based solely on the `isOwnCollection` prop
     const isEditable = isOwnCollection;
 
     // Component state and UI controls
     const [selectedPokemon, setSelectedPokemon] = useState(null);
+    const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState(false); // Track if useEffect has executed once
     const [highlightedCards, setHighlightedCards] = useState(new Set());
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
@@ -67,6 +54,20 @@ function Collect({ isOwnCollection }) {
 
     const { isShiny, setIsShiny, showShadow, setShowShadow, selectedGeneration, setSelectedGeneration, searchTerm, setSearchTerm, showCostume, setShowCostume, generations, pokemonTypes } = useSearchFilters(variants);
 
+    // Load user data on mount if on a username path
+    useEffect(() => {
+        if (isUsernamePath && username) {
+            fetchUserOwnershipData(username, setOwnershipFilter, setShowAll);
+        }
+    }, [isUsernamePath, username, fetchUserOwnershipData]);
+
+    // Initialize lists based on context data
+    const activeLists = useMemo(() => {
+        return isUsernamePath && viewedOwnershipData
+            ? initializePokemonLists(viewedOwnershipData, variants, true)
+            : defaultLists;
+    }, [isUsernamePath, viewedOwnershipData, variants, defaultLists]);        
+
     // Filtering and sorting functions
     const filteredVariants = useMemo(() => {
         if (ownershipFilter) {
@@ -75,6 +76,28 @@ function Collect({ isOwnCollection }) {
         return variants;
     }, [variants, ownershipData, ownershipFilter, activeLists]);
 
+    useEffect(() => {
+        if (viewedLoading || !viewedOwnershipData || !filteredVariants.length || isOwnCollection || hasProcessedInstanceId) {
+            return;
+        }
+        
+        const instanceId = location.state?.instanceId;
+
+        if (instanceId && !selectedPokemon) {
+            const enrichedPokemonData = filteredVariants.find(pokemon => pokemon.pokemonKey === instanceId);
+            const pokemonData = enrichedPokemonData || viewedOwnershipData[instanceId];
+            
+            if (pokemonData) {
+                setSelectedPokemon({ pokemon: { ...pokemonData, pokemonKey: instanceId }, overlayType: 'instance' });
+
+                setHasProcessedInstanceId(true);
+
+                // Clear instanceId from location state to prevent re-trigger
+                navigate(location.pathname, { replace: true, state: { ...location.state, instanceId: null } });
+            }
+        }
+    }, [viewedOwnershipData, viewedLoading, filteredVariants, location.state, selectedPokemon, location.key, isOwnCollection, hasProcessedInstanceId, navigate, location]);
+
     const filters = useMemo(() => ({
         selectedGeneration, isShiny, searchTerm, showCostume, showShadow, multiFormPokedexNumbers, pokemonTypes, generations
     }), [selectedGeneration, isShiny, searchTerm, showCostume, showShadow, multiFormPokedexNumbers, pokemonTypes, generations]);
@@ -82,7 +105,7 @@ function Collect({ isOwnCollection }) {
     const displayedPokemons = useFilterPokemons(filteredVariants, filters, showEvolutionaryLine, showAll);
     const sortedPokemons = useSortManager(displayedPokemons, sortType, sortMode, { isShiny, showShadow, showCostume, showAll });
 
-    // Handle Updating ownership Filter
+    // UI and interaction handlers
     const handleUpdateOwnershipFilter = useCallback((filterType) => {
         setOwnershipFilter(prev => prev === filterType ? "" : filterType);
     }, [setOwnershipFilter]);
@@ -92,7 +115,6 @@ function Collect({ isOwnCollection }) {
     const toggleShadow = useCallback(() => setShowShadow(prevState => !prevState), []);
     const handleFastSelectToggle = useCallback((enabled) => setIsFastSelectEnabled(enabled), []);
     
-    // User interaction functions
     const toggleCardHighlight = useCallback((pokemonId) => {
         setHighlightedCards(prev => {
             const newHighlights = new Set(prev);

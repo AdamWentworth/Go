@@ -29,7 +29,8 @@ function PokemonList({
 }) {
 
     const handleSelect = (pokemon) => {
-        console.log(pokemon.pokemonKey);
+        console.log("Pokemon selected:", pokemon.pokemonKey);
+        console.log("Pokemon's data:", pokemon)
         const keyParts = pokemon.pokemonKey.split('_');
         const possibleUUID = keyParts[keyParts.length - 1];
         const hasUUID = uuidValidate(possibleUUID);
@@ -39,11 +40,11 @@ function PokemonList({
         } else {
             setSelectedPokemon(pokemon); // Directly set the Pokémon as in the stable version
             if (hasUUID) {
-                // Store additional state for instance overlay if needed
+                console.log("Setting selectedPokemon with overlayType 'instance':", pokemon);
                 setSelectedPokemon({ pokemon: pokemon, overlayType: 'instance' });
             }
         }
-    };        
+    };       
     
     return (
         <div className="pokemon-container">
