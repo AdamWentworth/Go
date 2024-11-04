@@ -1,4 +1,9 @@
+// MapView.jsx
+
+// MapView.jsx
+
 import React, { useEffect, useRef } from 'react';
+import { createRoot } from 'react-dom/client';
 import 'ol/ol.css'; // OpenLayers default styles
 import Map from 'ol/Map';
 import View from 'ol/View';
@@ -13,14 +18,19 @@ import Overlay from 'ol/Overlay';
 import { Style, Circle, Fill } from 'ol/style';
 import { getCenter } from 'ol/extent';
 import { buffer as bufferExtent } from 'ol/extent';
-import './MapView.css'; // Custom styles for pop-up
-import { useTheme } from '../../../contexts/ThemeContext';  // Import useTheme
+import './MapView.css';
+import { useTheme } from '../../../contexts/ThemeContext';
 
-const MapView = ({ data }) => {
+import OwnedPopup from './MapViewComponents/OwnedPopup';
+import TradePopup from './MapViewComponents/TradePopup';
+import WantedPopup from './MapViewComponents/WantedPopup';
+
+const MapView = ({ data, ownershipStatus }) => {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const popupRef = useRef(null);
-  const { isLightMode } = useTheme();  // Use theme context to get isLightMode
+  const popupRootRef = useRef(null);
+  const { isLightMode } = useTheme();
 
   useEffect(() => {
     if (!data.length) return;
@@ -29,24 +39,27 @@ const MapView = ({ data }) => {
     const coordinatesArray = [];
 
     data.forEach((item) => {
-      const longitude = item.longitude ? parseFloat(item.longitude) : -123.113952;
-      const latitude = item.latitude ? parseFloat(item.latitude) : 49.2608724;
-
-      const coordinates = fromLonLat([longitude, latitude]);
+      const { longitude, latitude, username, pokemonInfo } = item;
+      const coordinates = fromLonLat([
+        longitude ? parseFloat(longitude) : -123.113952,
+        latitude ? parseFloat(latitude) : 49.2608724,
+      ]);
       coordinatesArray.push(coordinates);
+
+      let pointColor = '#00AAFF';
+      if (ownershipStatus === 'trade') pointColor = '#4cae4f';
+      else if (ownershipStatus === 'wanted') pointColor = '#FF0000';
 
       const feature = new Feature({
         geometry: new Point(coordinates),
-        name: item.username, // Using username or any appropriate property
-        location: item.location,
-        isShiny: item.shiny,
+        item, // Pass the entire item as a property of the feature
       });
 
       feature.setStyle(
         new Style({
           image: new Circle({
             radius: 7,
-            fill: new Fill({ color: '#00AAFF' }),
+            fill: new Fill({ color: pointColor }),
           }),
         })
       );
@@ -91,21 +104,46 @@ const MapView = ({ data }) => {
 
     const popupOverlay = new Overlay({
       element: popupRef.current,
-      positioning: 'bottom-center',
       stopEvent: false,
     });
     map.addOverlay(popupOverlay);
 
-    map.on('click', (event) => {
-      map.forEachFeatureAtPixel(event.pixel, (feature) => {
-        const coordinates = feature.getGeometry().getCoordinates();
-        const name = feature.get('name');
-        const location = feature.get('location');
-        const isShiny = feature.get('isShiny') ? 'Yes' : 'No';
+    if (!popupRootRef.current) {
+      popupRootRef.current = createRoot(popupRef.current);
+    }
 
-        popupOverlay.setPosition(coordinates);
-        popupRef.current.innerHTML = `<div><strong>${name}</strong><br/>Location: ${location}<br/>Shiny: ${isShiny}</div>`;
+    map.on('click', (event) => {
+      let featureFound = false;
+
+      map.forEachFeatureAtPixel(event.pixel, (feature) => {
+        featureFound = true;
+        const { item } = feature.getProperties();
+
+        let PopupComponent;
+        if (ownershipStatus === 'trade') {
+          PopupComponent = TradePopup;
+        } else if (ownershipStatus === 'wanted') {
+          PopupComponent = WantedPopup;
+        } else {
+          PopupComponent = OwnedPopup;
+        }
+
+        popupRootRef.current.render(<PopupComponent item={item} />);
+
+        const featureCoordinate = feature.getGeometry().getCoordinates();
+        const viewportCenterY = map.getSize()[1] / 2;
+
+        const positioning =
+          event.pixel[1] > viewportCenterY ? 'bottom-center' : 'top-center';
+
+        popupOverlay.setPositioning(positioning);
+        popupOverlay.setPosition(featureCoordinate);
       });
+
+      if (!featureFound) {
+        popupOverlay.setPosition(undefined);
+        popupRootRef.current.render(null);
+      }
     });
 
     mapRef.current = map;
@@ -115,7 +153,7 @@ const MapView = ({ data }) => {
         mapRef.current.setTarget(null);
       }
     };
-  }, [data, isLightMode]); // Re-run this effect when isLightMode changes
+  }, [data, isLightMode, ownershipStatus]);
 
   return (
     <div>

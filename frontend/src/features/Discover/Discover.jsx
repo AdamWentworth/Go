@@ -141,7 +141,7 @@ const Discover = () => {
           pokemonCache={pokemonCache} // Pass the pokemonCache to ListView
         />
       ) : (
-        <MapView data={searchResults} />
+        <MapView data={searchResults} ownershipStatus={ownershipStatus} pokemonCache={pokemonCache} />
       )}
 
       {/* Error message display */}

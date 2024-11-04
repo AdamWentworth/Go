@@ -1,28 +1,14 @@
 /* MapView.css */
 
-.map-view {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 90vw;  /* Full width of the viewport */
-    height: 100vh; /* Full height of the viewport */
-    margin: 0;
-    padding: 0;
-    overflow: hidden;  /* Prevent scrollbars */
-    background-color: #333;  /* Adjust background as needed */
-  }
-  
-  .ol-popup {
-    background-color: #333; /* Dark background */
-    color: #fff; /* Light text */
-    border: 1px solid #666; /* Lighter border */
-    padding: 10px;
-    border-radius: 5px;
-    font-size: 14px;
-  }
-
-  .ol-zoom {
-    top: 70px !important; /* Adjusts the top position of the zoom controls */
+.ol-popup {
+  background-color: #333; /* Dark background */
+  color: #fff; /* Light text */
+  border: 1px solid #666; /* Lighter border */
+  padding: 8px; /* Reduced padding for compactness */
+  border-radius: 5px;
+  font-size: 12px; /* Smaller font size */
+  max-width: 225px; /* Set maximum width to control popup size */
+  box-sizing: border-box; /* Ensures padding is included within width */
+  width: auto; /* Allow natural width */
+  text-align: center; /* Center align text within */
 }
-
-  
