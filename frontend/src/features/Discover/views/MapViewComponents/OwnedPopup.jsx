@@ -5,7 +5,7 @@ import IVDisplay from '../ListViewComponents/IVDisplay';
 import MoveDisplay from '../ListViewComponents/MoveDisplay';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
-import ConfirmationOverlay from './ConfirmationOverlay';
+import ConfirmationOverlay from '../ConfirmationOverlay';
 import './OwnedPopup.css';
 
 const OwnedPopup = ({ item, navigateToUserCatalog }) => {
@@ -15,12 +15,12 @@ const OwnedPopup = ({ item, navigateToUserCatalog }) => {
 
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  const handlePopupClick = () => {
+  const handlePopupClick = (e) => {
+    e.stopPropagation();  // Prevent propagation to underlying map
     setShowConfirmation(true);
   };
 
   const handleConfirm = () => {
-    console.log("Navigating to user's catalog", { username, instanceId: instance_id });
     navigateToUserCatalog(username, instance_id);
     setShowConfirmation(false);
   };
@@ -59,7 +59,7 @@ const OwnedPopup = ({ item, navigateToUserCatalog }) => {
           username={username}
           pokemonDisplayName={pokemonDisplayName}
           instanceId={instance_id}
-          onConfirm={handleConfirm} // Pass handleConfirm to trigger navigation
+          onConfirm={handleConfirm}
           onClose={handleCloseConfirmation}
         />
       )}

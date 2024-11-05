@@ -33,8 +33,8 @@ const MapView = ({ data, ownershipStatus }) => {
   const navigate = useNavigate();  // Ensure useNavigate is within Router context
 
   // Define the navigation function to pass to OwnedPopup
-  const navigateToUserCatalog = (username, instanceId) => {
-    navigate(`/${username}`, { state: { instanceId } });
+  const navigateToUserCatalog = (username, instanceId, ownershipStatus) => {
+    navigate(`/${username}`, { state: { instanceId, ownershipStatus } });
   };
 
   useEffect(() => {
@@ -136,7 +136,7 @@ const MapView = ({ data, ownershipStatus }) => {
 
         // Render the popup component and pass the navigate function
         popupRootRef.current.render(
-          <PopupComponent item={item} navigateToUserCatalog={navigateToUserCatalog} />
+          <TradePopup item={item} navigateToUserCatalog={navigateToUserCatalog} />
         );
 
         const featureCoordinate = feature.getGeometry().getCoordinates();

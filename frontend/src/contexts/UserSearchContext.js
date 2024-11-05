@@ -16,7 +16,8 @@ export function UserSearchProvider({ children }) {
 
     // Determine if the current path matches /:username
     const isUsernamePath = /^\/[^/]+$/.test(location.pathname);
-    const fetchUserOwnershipData = useCallback(async (searchedUsername, setOwnershipFilter, setShowAll) => {
+    const fetchUserOwnershipData = useCallback(async (searchedUsername, setOwnershipFilter, setShowAll, defaultFilter = "Owned") => {
+        
         const cache = await caches.open(CACHE_NAME);
         const cachedResponse = await cache.match(CACHE_KEY);
     
@@ -24,21 +25,22 @@ export function UserSearchProvider({ children }) {
         setViewedLoading(true);
         setUserExists(null);
     
-        // Check if cached data matches the searched username
         if (cachedResponse) {
             const cachedData = await cachedResponse.json();
+            
             if (cachedData.username === searchedUsername) {
                 setViewedOwnershipData(cachedData.ownershipData);
                 setUserExists(true);
                 setViewedLoading(false);
     
-                if (setOwnershipFilter) setOwnershipFilter("Owned");
+                if (setOwnershipFilter) setOwnershipFilter(defaultFilter);
                 if (setShowAll) setShowAll(true);
     
                 return;
             }
         }
     
+        // Fetch from API if no cache
         try {
             const response = await fetch(`${EVENTS_API_URL}/ownershipData/username/${searchedUsername}`, {
                 method: 'GET',
@@ -50,36 +52,21 @@ export function UserSearchProvider({ children }) {
                 setViewedOwnershipData(data);
                 setUserExists(true);
     
-                if (setOwnershipFilter) setOwnershipFilter("Owned");
+                if (setOwnershipFilter) setOwnershipFilter(defaultFilter);
                 if (setShowAll) setShowAll(true);
     
-                if (isUsernamePath) {
-                    const cacheResponse = new Response(
-                        JSON.stringify({ username: searchedUsername, ownershipData: data })
-                    );
-                    await cache.put(CACHE_KEY, cacheResponse);
-                }
-            } else if (response.status === 404) {
-                // User not found
-                setViewedOwnershipData(null);
-                setUserExists(false);
-                if (setOwnershipFilter) setOwnershipFilter("");
-                if (setShowAll) setShowAll(false);
-            } else if (response.status === 403) {
-                // Handle Forbidden without affecting `userExists`
-                console.warn("Access to user data is forbidden. Falling back to default data.");
-                setViewedOwnershipData(null); // Avoid blocking the default data
+                const cacheResponse = new Response(JSON.stringify({ username: searchedUsername, ownershipData: data }));
+                await cache.put(CACHE_KEY, cacheResponse);
             } else {
-                console.error("Error fetching user ownership data:", response.statusText);
-                setViewedOwnershipData(null);
+                handleFetchErrors(response, searchedUsername, setOwnershipFilter, setShowAll);
             }
         } catch (error) {
-            console.error("Error fetching user ownership data:", error);
+            console.error(`Fetch error for username ${searchedUsername}:`, error);
             setViewedOwnershipData(null);
         } finally {
             setViewedLoading(false);
         }
-    }, [isUsernamePath, EVENTS_API_URL]);    
+    }, [EVENTS_API_URL]);      
 
     useEffect(() => {
         const loadFromCache = async () => {
@@ -112,7 +99,7 @@ export function UserSearchProvider({ children }) {
             }
         };
         loadFromCache();
-    }, [isUsernamePath, location.pathname, fetchUserOwnershipData]);    
+    }, [location.pathname, isUsernamePath, fetchUserOwnershipData]);      
 
     return (
         <UserSearchContext.Provider

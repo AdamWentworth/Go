@@ -1,19 +1,71 @@
-import React from 'react';
+// TradePopup.jsx
 
-const TradePopup = ({ name, location, isShiny, pokemonName, pokemonType }) => (
-  <div>
-    <strong>{name}</strong>
-    <br />
-    Location: {location}
-    <br />
-    Shiny: {isShiny}
-    <br />
-    Pokémon: {pokemonName}
-    <br />
-    Type: {pokemonType}
-    <br />
-    <em>Available for Trade</em>
-  </div>
-);
+import React, { useState } from 'react';
+import IVDisplay from '../ListViewComponents/IVDisplay';
+import MoveDisplay from '../ListViewComponents/MoveDisplay';
+import { URLSelect } from '../../utils/URLSelect';
+import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
+import ConfirmationOverlay from '../ConfirmationOverlay';
+import './TradePopup.css';
+
+const TradePopup = ({ item, navigateToUserCatalog }) => {
+  const { username, fast_move_id, charged_move1Id, charged_move2_id, pokemonInfo, instance_id } = item;
+  const pokemonDisplayName = getPokemonDisplayName(item);
+  const imageUrl = URLSelect(pokemonInfo, item);
+
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const handlePopupClick = (e) => {
+    e.stopPropagation();  // Prevent propagation to the underlying map
+    setShowConfirmation(true);
+  };
+
+  const handleConfirm = () => {
+    navigateToUserCatalog(username, instance_id, "Trade");
+    setShowConfirmation(false);
+  };  
+
+  const handleCloseConfirmation = () => {
+    setShowConfirmation(false);
+  };
+
+  return (
+    <div className="trade-popup-container" onClick={handlePopupClick}>
+      <div className="trade-popup-header">
+        <strong>{username}</strong>
+      </div>
+      <div className="trade-popup-content">
+        {imageUrl && (
+          <img 
+            src={imageUrl} 
+            alt={`${pokemonDisplayName} Image`} 
+            className="pokemon-image" 
+          />
+        )}
+        <div className="pokemon-details">
+          <p>{pokemonDisplayName}</p>
+          <MoveDisplay
+            fastMoveId={fast_move_id}
+            chargedMove1Id={charged_move1Id}
+            chargedMove2Id={charged_move2_id}
+            moves={pokemonInfo?.moves || []}
+          />
+        </div>
+        <p><em>Available for Trade</em></p>
+      </div>
+      <IVDisplay item={item} />
+
+      {showConfirmation && (
+        <ConfirmationOverlay
+          username={username}
+          pokemonDisplayName={pokemonDisplayName}
+          instanceId={instance_id}
+          onConfirm={handleConfirm}
+          onClose={handleCloseConfirmation}
+        />
+      )}
+    </div>
+  );
+};
 
 export default TradePopup;

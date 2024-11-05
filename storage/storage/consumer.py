@@ -150,7 +150,7 @@ def handle_message(data, trace_logger):
             user_id = data.get('user_id')
             username = data.get('username')
             pokemon_data = data.get('pokemon', {})
-            
+
             # Extract the location data (latitude and longitude)
             location = data.get('location', {})
             latitude = location.get('latitude') if location else None
@@ -210,14 +210,24 @@ def handle_message(data, trace_logger):
                         trace_logger.info(f"Instance deleted for user {user_id}: {instance_id}")
                 else:
                     try:
+                        # Fetch the existing instance if it exists
                         existing_instance = PokemonInstance.objects.get(instance_id=instance_id)
+
+                        # Verify that the user owns the instance before updating
+                        if existing_instance.user.user_id != user_id:
+                            trace_logger.warning(f"Unauthorized attempt by user {user_id} to modify instance {instance_id}")
+                            continue  # Skip this instance as the user is unauthorized to modify it
+
+                        # Check if the incoming update is more recent
                         trace_logger.info(f"Existing instance last_update: {existing_instance.last_update}, incoming last_update: {pokemon.get('last_update', 0)}")
                         if existing_instance.last_update >= pokemon.get('last_update', 0):
                             trace_logger.info(f"Ignored older or same update for instance {instance_id}")
                             continue
+
                     except PokemonInstance.DoesNotExist:
                         trace_logger.info(f"Instance {instance_id} does not exist, will create a new one.")
 
+                    # Define the default fields for update or create
                     defaults = {
                         'pokemon_id': pokemon.get('pokemon_id'),
                         'nickname': pokemon.get('nickname'),

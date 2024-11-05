@@ -1,3 +1,5 @@
+// Collect.jsx
+
 import React, { useState, useMemo, useCallback, useEffect, useContext } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useUIControls } from './hooks/useUIControls';
@@ -56,10 +58,15 @@ function Collect({ isOwnCollection }) {
 
     // Load user data on mount if on a username path
     useEffect(() => {
-        if (isUsernamePath && username) {
+        const ownershipStatus = location.state?.ownershipStatus;
+
+        if (ownershipStatus) {
+            setOwnershipFilter(ownershipStatus);
+            fetchUserOwnershipData(username, setOwnershipFilter, setShowAll, ownershipStatus);
+        } else {
             fetchUserOwnershipData(username, setOwnershipFilter, setShowAll);
         }
-    }, [isUsernamePath, username, fetchUserOwnershipData]);
+    }, [isUsernamePath, username, location.state, fetchUserOwnershipData]);
 
     // Initialize lists based on context data
     const activeLists = useMemo(() => {

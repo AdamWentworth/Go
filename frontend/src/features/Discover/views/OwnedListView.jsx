@@ -1,6 +1,7 @@
 // OwnedListView.jsx
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CPDisplay from './ListViewComponents/CPDisplay';
 import MiniMap from './ListViewComponents/MiniMap';
 import IVDisplay from './ListViewComponents/IVDisplay';
@@ -8,6 +9,7 @@ import MoveDisplay from './ListViewComponents/MoveDisplay';
 import GenderIcon from './ListViewComponents/GenderIcon';
 import { URLSelect } from '../utils/URLSelect';
 import getPokemonDisplayName from '../utils/getPokemonDisplayName';
+import ConfirmationOverlay from './ConfirmationOverlay'; // Import ConfirmationOverlay
 import './OwnedListView.css';
 
 // Helper function to format date to YYYY-MM-DD
@@ -18,19 +20,37 @@ const formatDate = (dateString) => {
 };
 
 const OwnedListView = ({ item }) => {
+  const navigate = useNavigate();
   const imageUrl = URLSelect(item.pokemonInfo, item);
   const pokemonDisplayName = getPokemonDisplayName(item);
+  const [showConfirmation, setShowConfirmation] = useState(false); // State to show the confirmation overlay
+
+  // Show the confirmation overlay on center-column click
+  const handleOpenConfirmation = () => {
+    setShowConfirmation(true);
+  };
+
+  // Confirm navigation to the user's catalog
+  const handleConfirmNavigation = () => {
+    navigate(`/${item.username}`, { state: { instanceId: item.instance_id } });
+    setShowConfirmation(false);
+  };
+
+  // Close the confirmation overlay without navigating
+  const handleCloseConfirmation = () => {
+    setShowConfirmation(false);
+  };
 
   return (
     <div className="list-view-row">
       {/* Left Column: MiniMap */}
-      <div className="left-column">
+      <div className="left-column" onClick={(e) => e.stopPropagation()}>
         {item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
         <MiniMap latitude={item.latitude} longitude={item.longitude} ownershipStatus="owned" />
       </div>
 
       {/* Center Column: Pokémon Image and Info */}
-      <div className="center-column">
+      <div className="center-column" onClick={handleOpenConfirmation}>
         <div className="card">
           <h3>{item.username}</h3>
           <CPDisplay cp={item.cp} />
@@ -89,6 +109,17 @@ const OwnedListView = ({ item }) => {
           </div>
         )}
       </div>
+
+      {/* Confirmation Overlay */}
+      {showConfirmation && (
+        <ConfirmationOverlay
+          username={item.username}
+          pokemonDisplayName={pokemonDisplayName}
+          instanceId={item.instance_id}
+          onConfirm={handleConfirmNavigation}
+          onClose={handleCloseConfirmation}
+        />
+      )}
     </div>
   );
 };
