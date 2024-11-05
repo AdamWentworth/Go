@@ -94,6 +94,8 @@ export function UserSearchProvider({ children }) {
         userExists,
         viewedLoading,
         fetchUserOwnershipData,
+        setUserExists, // Expose setter
+        setViewedOwnershipData, // Expose setter
       }}
     >
       {children}
