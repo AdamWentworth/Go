@@ -14,7 +14,7 @@ import { TOOLTIP_TEXTS } from '../utils/tooltipTexts.js';
 
 import useTradeFiltering from '../hooks/useTradeFiltering.js';
 
-const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, openTradeOverlay, variants }) => {
+const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, openTradeOverlay, variants, isEditable }) => {
     const { not_trade_list, trade_filters } = pokemon.ownershipStatus;
     const [editMode, setEditMode] = useState(false);
     const [localNotTradeList, setLocalNotTradeList] = useState({ ...not_trade_list });
@@ -129,7 +129,9 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, open
         <div className="wanted-details-container">
             <div className="top-row">
                 <div className={shouldShowFewLayout ? "centered" : "left-side"}>
-                    <EditSaveComponent editMode={editMode} toggleEditMode={handleToggleEditMode} />
+                {isEditable && (
+                    <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+                )}
                     <div className={`reset-container ${editMode ? 'editable' : ''}`}>
                         <img
                             src={`${process.env.PUBLIC_URL}/images/reset.png`}

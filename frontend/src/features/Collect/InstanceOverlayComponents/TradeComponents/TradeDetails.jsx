@@ -17,7 +17,7 @@ import { TOOLTIP_TEXTS } from '../utils/tooltipTexts.js';
 import useWantedFiltering from '../hooks/useWantedFiltering.js';
 import useToggleEditModeTrade from '../hooks/useToggleEditModeTrade.js'; 
 
-const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClose, openWantedOverlay, variants }) => {
+const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClose, openWantedOverlay, variants, isEditable }) => {
     const { not_wanted_list, wanted_filters } = pokemon.ownershipStatus;
     const [localNotWantedList, setLocalNotWantedList] = useState({ ...not_wanted_list });
     const [localWantedFilters, setLocalWantedFilters] = useState({ ...wanted_filters });
@@ -146,7 +146,9 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
         <div className="trade-details-container">
             <div className={`top-row ${isMirror ? 'few-wanted' : ''}`}>
                 <div className="edit-save-container">
+                {isEditable && (
                     <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+                )}
                     {!isMirror && (
                     <div className={`reset-container ${editMode ? 'editable' : ''}`}>
                         <img

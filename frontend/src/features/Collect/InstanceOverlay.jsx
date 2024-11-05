@@ -65,7 +65,7 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
               <WindowOverlay onClose={handleCloseOverlay} className="trade-instance-window">
                 <TradeInstance pokemon={selectedPokemon} isEditable={isEditable} />
               </WindowOverlay>
-              <WindowOverlay onClose={handleCloseOverlay} className="wanted-details-window">
+              <WindowOverlay onClose={handleCloseOverlay} className="trade-details-window">
                 <TradeDetails
                   pokemon={selectedPokemon}
                   lists={lists}
@@ -75,6 +75,7 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
                   onClose={handleCloseOverlay}
                   openWantedOverlay={handleOpenWantedOverlay}
                   variants={variants}
+                  isEditable={isEditable}
                 />
               </WindowOverlay>
             </div>
@@ -84,7 +85,7 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
         return (
           <div className="wanted-instance-overlay">
             <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
-              <WindowOverlay onClose={handleCloseOverlay} className="trade-details-window">
+              <WindowOverlay onClose={handleCloseOverlay} className="wanted-details-window">
                 <WantedDetails
                   pokemon={selectedPokemon}
                   lists={lists}
@@ -93,6 +94,7 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
                   sortMode={sortMode}
                   openTradeOverlay={handleOpenTradeOverlay}
                   variants={variants}
+                  isEditable={isEditable}
                 />
               </WindowOverlay>
               <WindowOverlay onClose={handleCloseOverlay} className="wanted-instance-window">
