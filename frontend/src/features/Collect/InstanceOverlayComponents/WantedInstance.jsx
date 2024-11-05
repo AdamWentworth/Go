@@ -16,8 +16,8 @@ import FriendshipManager from './WantedComponents/FriendshipManager';
 import BackgroundComponent from './OwnedComponents/BackgroundComponent'; 
 import { determineImageUrl } from '../../../utils/imageHelpers';  // Import the image helper
 
-const WantedInstance = ({ pokemon }) => {
-  console.log(pokemon)
+const WantedInstance = ({ pokemon, isEditable }) => {
+  // console.log(pokemon)
   const { updateDetails } = useContext(PokemonDataContext);
 
   const [editMode, setEditMode] = useState(false);
@@ -102,7 +102,9 @@ const WantedInstance = ({ pokemon }) => {
     <div className="wanted-instance">
       <div className="top-row">
         <div className="edit-save-container">
-          <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+          {isEditable && (
+            <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+          )}
         </div>
         <h2>Wanted</h2>
         <div className="favorite-container">

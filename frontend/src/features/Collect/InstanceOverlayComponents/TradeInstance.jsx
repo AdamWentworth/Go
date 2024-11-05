@@ -16,7 +16,7 @@ import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
 import BackgroundComponent from './OwnedComponents/BackgroundComponent';
 import { determineImageUrl } from '../../../utils/imageHelpers'; // Import image helper
 
-const TradeInstance = ({ pokemon }) => {
+const TradeInstance = ({ pokemon, isEditable }) => {
   const { updateDetails } = useContext(PokemonDataContext);
   
   const [isFemale, setIsFemale] = useState(pokemon.ownershipStatus.gender === 'Female');
@@ -125,7 +125,9 @@ const TradeInstance = ({ pokemon }) => {
       <div className="trade-title"></div>
       <div className="top-row">
         <div className="edit-save-container">
-          <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+          {isEditable && (
+            <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+          )}
         </div>
         <h2>Trade</h2>
       </div>

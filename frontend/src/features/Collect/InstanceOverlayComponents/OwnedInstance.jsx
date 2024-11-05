@@ -19,7 +19,7 @@ import BackgroundComponent from './OwnedComponents/BackgroundComponent';
 
 import { determineImageUrl } from '../../../utils/imageHelpers';
 
-const OwnedInstance = ({ pokemon }) => {
+const OwnedInstance = ({ pokemon, isEditable }) => {
   // console.log(pokemon)
   const { updateDetails } = useContext(PokemonDataContext);
 
@@ -149,7 +149,9 @@ const OwnedInstance = ({ pokemon }) => {
   return (
     <div className="owned-instance">
       <div className="top-row">
-        <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+        {isEditable && (
+          <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+        )}
         <CPComponent pokemon={pokemon} editMode={editMode} toggleEditMode={toggleEditMode} onCPChange={handleCPChange} />
         <FavoriteComponent pokemon={pokemon} editMode={editMode} onFavoriteChange={handleFavoriteChange} />
       </div>

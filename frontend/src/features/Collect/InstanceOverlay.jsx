@@ -8,8 +8,8 @@ import WantedInstance from './InstanceOverlayComponents/WantedInstance';
 import WantedDetails from './InstanceOverlayComponents/WantedComponents/WantedDetails';
 import WindowOverlay from './WindowOverlay';
 
-const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, ownershipData, sortType, sortMode }) => {
-  console.log("Rendering InstanceOverlay for pokemon:", pokemon);
+const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, ownershipData, sortType, sortMode, isEditable }) => {
+  // console.log("Rendering InstanceOverlay for pokemon:", pokemon);
   const [currentOverlay, setCurrentOverlay] = useState(ownershipFilter);
   const [selectedPokemon, setSelectedPokemon] = useState(pokemon);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 686);
@@ -53,7 +53,7 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
       case 'Owned':
         return (
           <WindowOverlay onClose={handleCloseOverlay} className="owned-instance-window">
-            <OwnedInstance pokemon={selectedPokemon} />
+            <OwnedInstance pokemon={selectedPokemon} isEditable={isEditable} />
           </WindowOverlay>
         );
       case 'Unowned':
@@ -63,7 +63,7 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
           <div className={`trade-instance-overlay ${isSmallScreen ? 'small-screen' : ''}`}>
             <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
               <WindowOverlay onClose={handleCloseOverlay} className="trade-instance-window">
-                <TradeInstance pokemon={selectedPokemon} />
+                <TradeInstance pokemon={selectedPokemon} isEditable={isEditable} />
               </WindowOverlay>
               <WindowOverlay onClose={handleCloseOverlay} className="wanted-details-window">
                 <TradeDetails
@@ -96,7 +96,7 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
                 />
               </WindowOverlay>
               <WindowOverlay onClose={handleCloseOverlay} className="wanted-instance-window">
-                <WantedInstance pokemon={selectedPokemon} />
+                <WantedInstance pokemon={selectedPokemon} isEditable={isEditable} />
               </WindowOverlay>
             </div>
           </div>

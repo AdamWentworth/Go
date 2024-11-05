@@ -30,7 +30,7 @@
 }
 
 /* Shiny indicator size */
-.shiny-indicator {
+.owned-popup-container .shiny-indicator {
     font-size: 1em;
 }
 
@@ -46,14 +46,14 @@
 }
 
 /* Adjust font size and spacing in details */
-.pokemon-details {
+.owned-popup-container .pokemon-details {
     font-size: 12px;
     line-height: 1.2;
     text-align: center;
 }
 
 /* MoveDisplay styling within OwnedPopup */
-.moves-container {
+.owned-popup-container .moves-container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -61,7 +61,7 @@
     margin-top: 0px;
 }
 
-.moves-container .move {
+.owned-popup-container .moves-container .move {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -69,7 +69,7 @@
     margin-bottom: 5px;
 }
 
-.moves-container .move p {
+.owned-popup-container .moves-container .move p {
     margin-left: 5px;
     font-size: 10px;
     margin-block-start: 0px;
