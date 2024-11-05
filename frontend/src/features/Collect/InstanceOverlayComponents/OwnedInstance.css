@@ -173,18 +173,18 @@
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {
-  /* Ensures .owned-instance-window itself is a flex container */
   .owned-instance-window {
     transform: scale(0.75);
-    transform-origin: center; /* Scales from the center */
-    overflow-y: visible; /* Allows content to show without scrollbar */
+    transform-origin: center;
+    overflow-y: clip; /* Hides scrollbar while allowing visible overflow */
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
   }
-  
-  /* Ensure the .owned-instance uses all the available space in its container */
+
+  /* Ensure child width does not exceed scaled container space */
   .owned-instance-window .overlay-content .owned-instance {
-    width: 100%; /* Full width to take up scaled container space */
+    width: 100%;
   }
 }

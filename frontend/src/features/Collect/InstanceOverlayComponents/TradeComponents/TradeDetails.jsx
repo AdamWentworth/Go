@@ -145,25 +145,25 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
     return (
         <div className="trade-details-container">
             <div className={`top-row ${isMirror ? 'few-wanted' : ''}`}>
-                <div className="edit-save-container">
                 {isEditable && (
-                    <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
-                )}
-                    {!isMirror && (
-                    <div className={`reset-container ${editMode ? 'editable' : ''}`}>
-                        <img
-                            src={`${process.env.PUBLIC_URL}/images/reset.png`}
-                            alt="Reset Filters"
-                            style={{
-                                cursor: editMode ? 'pointer' : 'default',
-                                width: '25px',
-                                height: 'auto'
-                            }}
-                            onClick={editMode ? handleResetFilters : null}
-                        />
+                    <div className="edit-save-container">
+                        <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+                        {!isMirror && (
+                            <div className={`reset-container ${editMode ? 'editable' : ''}`}>
+                                <img
+                                    src={`${process.env.PUBLIC_URL}/images/reset.png`}
+                                    alt="Reset Filters"
+                                    style={{
+                                        cursor: editMode ? 'pointer' : 'default',
+                                        width: '25px',
+                                        height: 'auto'
+                                    }}
+                                    onClick={editMode ? handleResetFilters : null}
+                                />
+                            </div>
+                        )}
                     </div>
-                    )}
-                </div>
+                )}
                 {!isMirror ? (
                     !shouldShowFewLayout ? (
                         <>

@@ -129,21 +129,23 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, open
         <div className="wanted-details-container">
             <div className="top-row">
                 <div className={shouldShowFewLayout ? "centered" : "left-side"}>
-                {isEditable && (
-                    <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
-                )}
-                    <div className={`reset-container ${editMode ? 'editable' : ''}`}>
-                        <img
-                            src={`${process.env.PUBLIC_URL}/images/reset.png`}
-                            alt="Reset Filters"
-                            style={{
-                                cursor: editMode ? 'pointer' : 'default',
-                                width: '25px',
-                                height: 'auto'
-                            }}
-                            onClick={editMode ? handleResetFilters : null}
-                        />
-                    </div>
+                    {isEditable && (
+                        <>
+                            <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
+                            <div className={`reset-container ${editMode ? 'editable' : ''}`}>
+                                <img
+                                    src={`${process.env.PUBLIC_URL}/images/reset.png`}
+                                    alt="Reset Filters"
+                                    style={{
+                                        cursor: editMode ? 'pointer' : 'default',
+                                        width: '25px',
+                                        height: 'auto'
+                                    }}
+                                    onClick={editMode ? handleResetFilters : null}
+                                />
+                            </div>
+                        </>
+                    )}
                     <div className="header-group exclude-header">
                         <h3>Exclude</h3>
                     </div>

@@ -1,10 +1,11 @@
 // UserSearchContext.js
 
 import React, { createContext, useState } from 'react';
+import { openDB } from 'idb'; // Added import for IndexedDB
 
 const UserSearchContext = createContext();
 const EVENTS_API_URL = process.env.REACT_APP_EVENTS_API_URL;
-const CACHE_NAME = 'SearchCache';
+const CACHE_NAME = 'SearchCache'; // Keeping this for consistency
 const CACHE_PREFIX = '';
 
 export function UserSearchProvider({ children }) {
@@ -24,12 +25,19 @@ export function UserSearchProvider({ children }) {
     setUserExists(null);
 
     try {
-      const cache = await caches.open(CACHE_NAME);
-      const cacheKey = CACHE_PREFIX + searchedUsername;
-      const cachedResponse = await cache.match(cacheKey);
+      // Open IndexedDB database
+      const db = await openDB(CACHE_NAME, 1, {
+        upgrade(db) {
+          if (!db.objectStoreNames.contains(CACHE_NAME)) {
+            db.createObjectStore(CACHE_NAME, { keyPath: 'username' });
+          }
+        },
+      });
 
-      if (cachedResponse) {
-        const cachedData = await cachedResponse.json();
+      const cacheKey = CACHE_PREFIX + searchedUsername;
+      const cachedData = await db.get(CACHE_NAME, cacheKey);
+
+      if (cachedData) {
         const now = Date.now();
         const cacheAge = now - (cachedData.timestamp || 0);
 
@@ -42,7 +50,7 @@ export function UserSearchProvider({ children }) {
           return;
         } else {
           // Cache is old, delete it
-          await cache.delete(cacheKey);
+          await db.delete(CACHE_NAME, cacheKey);
         }
       }
 
@@ -62,14 +70,12 @@ export function UserSearchProvider({ children }) {
         if (setOwnershipFilter) setOwnershipFilter(defaultFilter);
         if (setShowAll) setShowAll(true);
 
-        const cacheResponse = new Response(
-          JSON.stringify({
-            username: searchedUsername,
-            ownershipData: data,
-            timestamp: Date.now(),
-          })
-        );
-        await cache.put(cacheKey, cacheResponse);
+        const cacheEntry = {
+          username: cacheKey,
+          ownershipData: data,
+          timestamp: Date.now(),
+        };
+        await db.put(CACHE_NAME, cacheEntry);
       } else if (response.status === 404) {
         // User not found
         setUserExists(false);
