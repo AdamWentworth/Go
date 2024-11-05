@@ -25,7 +25,7 @@ function Collect({ isOwnCollection }) {
     const { username } = useParams();
     const location = useLocation(); // To check for state data (instanceId)
     const navigate = useNavigate();
-    const isUsernamePath = !isOwnCollection;
+    const isUsernamePath = !isOwnCollection && Boolean(username);
 
     const { viewedOwnershipData, userExists, viewedLoading, fetchUserOwnershipData } = useContext(UserSearchContext);
     const { variants, ownershipData: contextOwnershipData, lists: defaultLists, loading, updateOwnership, updateLists } = usePokemonData();
@@ -56,24 +56,39 @@ function Collect({ isOwnCollection }) {
 
     const { isShiny, setIsShiny, showShadow, setShowShadow, selectedGeneration, setSelectedGeneration, searchTerm, setSearchTerm, showCostume, setShowCostume, generations, pokemonTypes } = useSearchFilters(variants);
 
-    // Load user data on mount if on a username path
+    // Load user data when component mounts or when username changes
     useEffect(() => {
-        const ownershipStatus = location.state?.ownershipStatus;
+        if (isUsernamePath && username) {
+            // Prevent API call for non-username paths
+            if (['collect', 'discover', 'login', 'register', 'account'].includes(username.toLowerCase())) {
+                // Invalid username, do not fetch
+                setUserExists(false);
+                setViewedOwnershipData(null);
+                return;
+            }
 
-        if (ownershipStatus) {
-            setOwnershipFilter(ownershipStatus);
-            fetchUserOwnershipData(username, setOwnershipFilter, setShowAll, ownershipStatus);
-        } else {
-            fetchUserOwnershipData(username, setOwnershipFilter, setShowAll);
+            const ownershipStatus = location.state?.ownershipStatus;
+
+            if (ownershipStatus) {
+                setOwnershipFilter(ownershipStatus);
+                fetchUserOwnershipData(username, setOwnershipFilter, setShowAll, ownershipStatus);
+            } else {
+                fetchUserOwnershipData(username, setOwnershipFilter, setShowAll);
+            }
+        } else if (!isUsernamePath) {
+            // Viewing own collection
+            setOwnershipFilter('');
+            setShowAll(false);
+            // No need to fetch data
         }
-    }, [isUsernamePath, username, location.state, fetchUserOwnershipData]);
+    }, [isUsernamePath, username]);
 
     // Initialize lists based on context data
     const activeLists = useMemo(() => {
         return isUsernamePath && viewedOwnershipData
             ? initializePokemonLists(viewedOwnershipData, variants, true)
             : defaultLists;
-    }, [isUsernamePath, viewedOwnershipData, variants, defaultLists]);        
+    }, [isUsernamePath, viewedOwnershipData, variants, defaultLists]);
 
     // Filtering and sorting functions
     const filteredVariants = useMemo(() => {
@@ -83,17 +98,24 @@ function Collect({ isOwnCollection }) {
         return variants;
     }, [variants, ownershipData, ownershipFilter, activeLists]);
 
+    // Process instanceId from location state to show a specific Pokémon
     useEffect(() => {
-        if (viewedLoading || !viewedOwnershipData || !filteredVariants.length || isOwnCollection || hasProcessedInstanceId) {
+        if (
+            viewedLoading ||                // Wait if data is loading
+            !viewedOwnershipData ||         // Wait until data is available
+            !filteredVariants.length ||     // Ensure there are variants
+            isOwnCollection ||              // Skip if viewing own collection
+            hasProcessedInstanceId          // Skip if already processed
+        ) {
             return;
         }
-        
+
         const instanceId = location.state?.instanceId;
 
         if (instanceId && !selectedPokemon) {
             const enrichedPokemonData = filteredVariants.find(pokemon => pokemon.pokemonKey === instanceId);
             const pokemonData = enrichedPokemonData || viewedOwnershipData[instanceId];
-            
+
             if (pokemonData) {
                 setSelectedPokemon({ pokemon: { ...pokemonData, pokemonKey: instanceId }, overlayType: 'instance' });
 
@@ -103,7 +125,17 @@ function Collect({ isOwnCollection }) {
                 navigate(location.pathname, { replace: true, state: { ...location.state, instanceId: null } });
             }
         }
-    }, [viewedOwnershipData, viewedLoading, filteredVariants, location.state, selectedPokemon, location.key, isOwnCollection, hasProcessedInstanceId, navigate, location]);
+    }, [
+        viewedOwnershipData,
+        viewedLoading,
+        filteredVariants,
+        location.state,
+        selectedPokemon,
+        isOwnCollection,
+        hasProcessedInstanceId,
+        navigate,
+        location.pathname
+    ]);
 
     const filters = useMemo(() => ({
         selectedGeneration, isShiny, searchTerm, showCostume, showShadow, multiFormPokedexNumbers, pokemonTypes, generations
@@ -115,13 +147,13 @@ function Collect({ isOwnCollection }) {
     // UI and interaction handlers
     const handleUpdateOwnershipFilter = useCallback((filterType) => {
         setOwnershipFilter(prev => prev === filterType ? "" : filterType);
-    }, [setOwnershipFilter]);
+    }, []);
 
     const toggleShiny = useCallback(() => setIsShiny(prevState => !prevState), []);
     const toggleCostume = useCallback(() => setShowCostume(prevState => !prevState), []);
     const toggleShadow = useCallback(() => setShowShadow(prevState => !prevState), []);
     const handleFastSelectToggle = useCallback((enabled) => setIsFastSelectEnabled(enabled), []);
-    
+
     const toggleCardHighlight = useCallback((pokemonId) => {
         setHighlightedCards(prev => {
             const newHighlights = new Set(prev);
@@ -142,7 +174,7 @@ function Collect({ isOwnCollection }) {
         updateOwnership([...highlightedCards], filter);
         setHighlightedCards(new Set());
         setOwnershipFilter(filter);
-    }, [highlightedCards, updateOwnership, updateLists]);
+    }, [highlightedCards, updateOwnership]);
 
     const handleConfirmMoveToFilter = useCallback((filter) => {
         confirmMoveToFilter(() => handleMoveHighlightedToFilter(filter), filter, highlightedCards, variants, ownershipData);
@@ -165,12 +197,12 @@ function Collect({ isOwnCollection }) {
         <div>
             {/* Render "User not found" only if `isUsernamePath` is true and `userExists` is explicitly false */}
             {isUsernamePath && userExists === false && <h1>User not found</h1>}
-            
+
             {/* Show loading spinner if data is still loading */}
             {(loading || viewedLoading) && <LoadingSpinner />}
-            
-            {/* Render content if user exists, if no search has been made, or if viewing own collection */}
-            {(isOwnCollection || userExists || (userExists === null && ownershipData)) && !loading && !viewedLoading && (
+
+            {/* Render content if user exists, or if viewing own collection */}
+            {(isOwnCollection || userExists) && !loading && !viewedLoading && (
                 <>
                     <HeaderUIMemo
                         isEditable={isEditable}
@@ -228,7 +260,7 @@ function Collect({ isOwnCollection }) {
                 </>
             )}
         </div>
-    );         
+    );
 }
 
 export default Collect;
