@@ -6,6 +6,7 @@ import ListView from './views/ListView';
 import MapView from './views/MapView';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import axios from 'axios';
+import { getAllFromDB } from '../../services/indexedDBConfig';
 
 const Discover = () => {
   const [view, setView] = useState('list');
@@ -20,17 +21,17 @@ const Discover = () => {
   // This function retrieves pokemonCache from Cache Storage (or could be another API)
   const fetchPokemonVariantsCache = async () => {
     try {
-      const cache = await caches.open('pokemonCache');
-      const cachedResponse = await cache.match('/pokemonVariants');
-      if (cachedResponse) {
-        const data = await cachedResponse.json();
-        setPokemonCache(data); // Store pokemonCache
-        console.log('Fetched pokemonCache from Cache Storage:', data);
-      } else {
-        console.warn('No pokemonVariants cache found.');
-      }
+        // Retrieve all variants from the IndexedDB store
+        const variants = await getAllFromDB('pokemonVariants');
+        
+        if (variants && variants.length > 0) {
+            setPokemonCache(variants); // Store pokemonCache with the retrieved data
+            console.log('Fetched pokemonVariants from IndexedDB:', variants);
+        } else {
+            console.warn('No pokemonVariants found in IndexedDB.');
+        }
     } catch (error) {
-      console.error('Error fetching pokemonCache from Cache Storage:', error);
+        console.error('Error fetching pokemonVariants from IndexedDB:', error);
     }
   };
 

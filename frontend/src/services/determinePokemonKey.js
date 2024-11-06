@@ -47,8 +47,22 @@ export function determinePokemonKey(pokemon) {
         });
     }
 
-    // Construct the final pokemonKey with the determined suffix
-    const pokemonKey = `${pokemon.pokemon_id}${suffix}`;
+    // Pad pokemon_id with leading zeros based on its digit count
+    let paddedPokemonId;
+    const id = String(pokemon.pokemon_id);
+    if (id.length === 1) {
+        paddedPokemonId = `000${id}`;
+    } else if (id.length === 2) {
+        paddedPokemonId = `00${id}`;
+    } else if (id.length === 3) {
+        paddedPokemonId = `0${id}`;
+    } else {
+        // No padding needed for 4 or more digits
+        paddedPokemonId = id;
+    }
+
+    // Construct the final pokemonKey with the padded pokemon_id and the determined suffix
+    const pokemonKey = `${paddedPokemonId}${suffix}`;
 
     return pokemonKey;
 }
