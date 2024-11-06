@@ -12,8 +12,8 @@ const ListView = ({ data, ownershipStatus, hasSearched, pokemonCache }) => {
   console.log(data)
 
   useEffect(() => {
-    if (pokemonCache && pokemonCache.data) {
-      setPokemonVariants(pokemonCache.data);
+    if (pokemonCache) {
+      setPokemonVariants(pokemonCache);
     }
   }, [pokemonCache]);
 

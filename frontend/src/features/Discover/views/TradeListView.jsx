@@ -1,10 +1,12 @@
 // TradeListView.jsx
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MiniMap from './ListViewComponents/MiniMap';
 import MoveDisplay from './ListViewComponents/MoveDisplay';
 import GenderIcon from './ListViewComponents/GenderIcon';
 import CPDisplay from './ListViewComponents/CPDisplay';
+import ConfirmationOverlay from './ConfirmationOverlay'; // Import ConfirmationOverlay
 import { URLSelect } from '../utils/URLSelect';
 import getPokemonDisplayName from '../utils/getPokemonDisplayName';
 import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
@@ -17,10 +19,11 @@ const formatDate = (dateString) => {
 };
 
 const TradeListView = ({ item, findPokemonByKey }) => {
+  const navigate = useNavigate();
+  const [showConfirmation, setShowConfirmation] = useState(false); // State for confirmation overlay
   const imageUrl = URLSelect(item.pokemonInfo, item);
   const pokemonDisplayName = getPokemonDisplayName(item);
 
-  // Check if any additional details are present
   const hasAdditionalDetails =
     item.weight ||
     item.height ||
@@ -30,8 +33,24 @@ const TradeListView = ({ item, findPokemonByKey }) => {
     item.location_caught ||
     item.date_caught;
 
+  // Open confirmation overlay
+  const handleOpenConfirmation = () => {
+    setShowConfirmation(true);
+  };
+
+  // Confirm and navigate to user's catalog with "Trade" ownershipStatus
+  const handleConfirmNavigation = () => {
+    navigate(`/${item.username}`, { state: { instanceId: item.instance_id, ownershipStatus: "Trade" } });
+    setShowConfirmation(false);
+  };
+
+  // Close the confirmation overlay without navigating
+  const handleCloseConfirmation = () => {
+    setShowConfirmation(false);
+  };
+
   return (
-    <div className="list-view-row trade-list-view">
+    <div className="list-view-row trade-list-view" onClick={handleOpenConfirmation}>
       {/* Left Column: MiniMap */}
       <div className="left-column">
         {item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
@@ -48,7 +67,6 @@ const TradeListView = ({ item, findPokemonByKey }) => {
           <h3>{item.username}</h3>
 
           {hasAdditionalDetails ? (
-            // Two-column layout
             <div className="pokemon-columns">
               {/* First Column: CP and Pokémon Image */}
               <div className="pokemon-first-column">
@@ -127,7 +145,6 @@ const TradeListView = ({ item, findPokemonByKey }) => {
               </div>
             </div>
           ) : (
-            // Single-column layout
             <div className="pokemon-single-column">
               {item.cp && <CPDisplay cp={item.cp} />}
               {item.lucky && (
@@ -157,27 +174,37 @@ const TradeListView = ({ item, findPokemonByKey }) => {
       <div className="right-column">
         {item.wanted_list && (
           <div className="wanted-list-section">
-          <h1>Wanted Pokémon:</h1>
-          <div className="wanted-list">
-            {Object.keys(item.wanted_list).map((pokemonKeyWithUUID) => {
-              const { baseKey } = parsePokemonKey(pokemonKeyWithUUID);
-              const wantedListPokemon = item.wanted_list[pokemonKeyWithUUID]; // Access each trade list Pokémon
-              const matchedPokemon = findPokemonByKey(baseKey);
-        
-              return matchedPokemon ? (
-                <img
-                  key={pokemonKeyWithUUID}
-                  src={matchedPokemon.currentImage}
-                  alt={matchedPokemon.name}
-                  className={`wanted-pokemon-image ${wantedListPokemon.match ? 'glowing-pokemon' : ''}`}
-                  title={`${matchedPokemon.form ? `${matchedPokemon.form} ` : ''}${matchedPokemon.name}`}
-                />
-              ) : null;
-            })}
+            <h1>Wanted Pokémon:</h1>
+            <div className="wanted-list">
+              {Object.keys(item.wanted_list).map((pokemonKeyWithUUID) => {
+                const { baseKey } = parsePokemonKey(pokemonKeyWithUUID);
+                const wantedListPokemon = item.wanted_list[pokemonKeyWithUUID];
+                const matchedPokemon = findPokemonByKey(baseKey);
+                return matchedPokemon ? (
+                  <img
+                    key={pokemonKeyWithUUID}
+                    src={matchedPokemon.currentImage}
+                    alt={matchedPokemon.name}
+                    className={`wanted-pokemon-image ${wantedListPokemon.match ? 'glowing-pokemon' : ''}`}
+                    title={`${matchedPokemon.form ? `${matchedPokemon.form} ` : ''}${matchedPokemon.name}`}
+                  />
+                ) : null;
+              })}
+            </div>
           </div>
-        </div>        
         )}
       </div>
+
+      {/* Confirmation Overlay */}
+      {showConfirmation && (
+        <ConfirmationOverlay
+          username={item.username}
+          pokemonDisplayName={pokemonDisplayName}
+          instanceId={item.instance_id}
+          onConfirm={handleConfirmNavigation}
+          onClose={handleCloseConfirmation}
+        />
+      )}
     </div>
   );
 };
