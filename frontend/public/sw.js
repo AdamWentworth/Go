@@ -138,17 +138,23 @@ async function clearBatchedUpdates() {
 async function sendBatchedUpdatesToBackend(location) {
   const batchedUpdates = await getBatchedUpdates();
 
-  if (!batchedUpdates || Object.keys(batchedUpdates).length === 0) {
+  if (!batchedUpdates || batchedUpdates.length === 0) {
       console.log(`No batched updates found.`);
       return;
   }
 
-  console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, batchedUpdates);
+  // Transform the array of updates into an object with keys
+  const formattedBatchedUpdates = batchedUpdates.reduce((acc, update) => {
+      acc[update.key] = { ...update };
+      delete acc[update.key].key; // Remove the key property from the individual data objects
+      return acc;
+  }, {});
 
-  // Match payload format exactly as the first function
+  console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, formattedBatchedUpdates);
+
   const payload = {
-      ...batchedUpdates,  // Spread batched updates directly, to match format exactly
-      location: location || null  // Add location if available, otherwise null
+      ...formattedBatchedUpdates,  // Include the formatted updates as key-value pairs
+      location: location || null   // Add location if available, otherwise null
   };
 
   try {
