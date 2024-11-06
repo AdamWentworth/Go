@@ -1,6 +1,7 @@
 // updateDetails.js
 
 import { updatePokemonDetails } from '../../features/Collect/PokemonOwnership/pokemonOwnershipManager';
+import { putBatchedUpdates } from '../../services/indexedDBConfig';
 
 export const updateDetails = (
     data,
@@ -17,7 +18,6 @@ export const updateDetails = (
 
     // Update details for each Pokémon key
     keysArray.forEach((pokemonKey) => {
-        // If details is an object keyed by pokemonKey, use the specific details for that key
         const specificDetails = Array.isArray(pokemonKeys) && typeof details === 'object' && !Array.isArray(details) 
             ? details[pokemonKey] || {} 
             : details;
@@ -39,19 +39,10 @@ export const updateDetails = (
         data: { data: newData, timestamp: currentTimestamp }
     });
 
-    // Cache the updates once
-    const cache = await caches.open('pokemonCache');
-    const cachedUpdatesResponse = await cache.match('/batchedUpdates');
-    let updatesData = cachedUpdatesResponse ? await cachedUpdatesResponse.json() : {};
-
-    // Add each updated Pokémon key to the cache
-    keysArray.forEach((pokemonKey) => {
-        updatesData[pokemonKey] = newData[pokemonKey];
-    });
-
-    await cache.put('/batchedUpdates', new Response(JSON.stringify(updatesData), {
-        headers: { 'Content-Type': 'application/json' }
-    }));
+    // Use IndexedDB to cache the batched updates
+    for (const pokemonKey of keysArray) {
+        await putBatchedUpdates(pokemonKey, newData[pokemonKey]);
+    }
 
     // Optionally, call updateLists if needed
     // updateLists();

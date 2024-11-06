@@ -98,49 +98,78 @@ async function syncLists(data) {
     }
 }
 
+// Direct IndexedDB Functions
+function openDB() {
+  return new Promise((resolve, reject) => {
+      const request = indexedDB.open('pokemonDB', 1);
+      request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains('batchedUpdates')) {
+              db.createObjectStore('batchedUpdates', { keyPath: 'key' });
+          }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+  });
+}
+
+async function getBatchedUpdates() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+      const transaction = db.transaction('batchedUpdates', 'readonly');
+      const store = transaction.objectStore('batchedUpdates');
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+  });
+}
+
+async function clearBatchedUpdates() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+      const transaction = db.transaction('batchedUpdates', 'readwrite');
+      const store = transaction.objectStore('batchedUpdates');
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+  });
+}
+
 async function sendBatchedUpdatesToBackend(location) {
-    const cache = await caches.open('pokemonCache');
-    const cachedResponse = await cache.match('/batchedUpdates');
-    if (!cachedResponse) {
-        console.log(`No batched updates found.`);
-        return;
-    }
+  const batchedUpdates = await getBatchedUpdates();
 
-    const batchedUpdates = await cachedResponse.json();
+  if (!batchedUpdates || Object.keys(batchedUpdates).length === 0) {
+      console.log(`No batched updates found.`);
+      return;
+  }
 
-    if (Object.keys(batchedUpdates).length === 0) {
-        console.log(`Batched updates are empty.`);
-        return;
-    }
+  console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, batchedUpdates);
 
-    console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, batchedUpdates);
-    
-    // Send the batched updates along with location to your backend API
-    const payload = {
-        ...batchedUpdates,   // Include the batched updates
-        location: location || null  // Add location if available, otherwise null
-    };
+  // Match payload format exactly as the first function
+  const payload = {
+      ...batchedUpdates,  // Spread batched updates directly, to match format exactly
+      location: location || null  // Add location if available, otherwise null
+  };
 
-    try {
-        const response = await fetch('http://localhost:3003/api/batchedUpdates', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',  // Include cookies in the request
-            body: JSON.stringify(payload),  // Send batched updates and location as payload
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        console.log('Updates successfully sent to backend');
-        const cache = await caches.open('pokemonCache');
-        await cache.delete('/batchedUpdates');  // Clear the batched updates after successful sync
-    } catch (error) {
-        console.error('Failed to send updates to backend:', error);
-    }
+  try {
+      const response = await fetch('http://localhost:3003/api/batchedUpdates', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      console.log('Updates successfully sent to backend');
+      await clearBatchedUpdates();  // Clear the batched updates after successful sync
+  } catch (error) {
+      console.error('Failed to send updates to backend:', error);
+  }
 }
 
 function sendMessageToClients(msg) {

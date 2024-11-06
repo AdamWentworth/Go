@@ -1,6 +1,7 @@
 // updateOwnership.js
 
 import { updatePokemonOwnership } from '../../features/Collect/PokemonOwnership/PokemonOwnershipUpdateService';
+import { putBatchedUpdates } from '../../services/indexedDBConfig';
 
 export const updateOwnership = (data, setData, ownershipDataRef, lists) => (pokemonKeys, newStatus) => {
     const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
@@ -9,6 +10,7 @@ export const updateOwnership = (data, setData, ownershipDataRef, lists) => (poke
 
     const updates = new Map();
     console.log("Current Ownership Data as retrieved by updateOwnership:", ownershipDataRef.current);
+
     keys.forEach(key => {
         updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, lists, (fullKey) => {
             processedKeys++;
@@ -21,6 +23,7 @@ export const updateOwnership = (data, setData, ownershipDataRef, lists) => (poke
                     updates.set(fullKey, { last_update: currentTimestamp });
                 }
             }
+
             if (processedKeys === keys.length) { // Only update state and SW when all keys are processed
                 console.log(`All keys processed. Updating state and service worker.`);
 
@@ -34,6 +37,7 @@ export const updateOwnership = (data, setData, ownershipDataRef, lists) => (poke
                 // Update the ref
                 ownershipDataRef.current = tempOwnershipData;
 
+                // Clean up any unnecessary instances in the ownership data
                 keys.forEach(key => {
                     if (tempOwnershipData[key] &&
                         tempOwnershipData[key].is_unowned === true &&
@@ -55,31 +59,22 @@ export const updateOwnership = (data, setData, ownershipDataRef, lists) => (poke
                         let isOnlyInstance = relatedInstances.length === 0; // Check if there are no other related instances
 
                         if (!isOnlyInstance) {
-                            // If there are other instances, confirm deletion
                             delete tempOwnershipData[key]; // Delete the instance from temp ownership data
                         }
                     }
                 });
 
-                // Update the service worker and cache
+                // Sync updated data with service worker
                 navigator.serviceWorker.ready.then(async registration => {
                     registration.active.postMessage({
                         action: 'syncData',
                         data: { data: tempOwnershipData, timestamp: Date.now() }
                     });
 
-                    // Cache the updates for the service worker to pick up
-                    const cache = await caches.open('pokemonCache');
-                    const cachedUpdates = await cache.match('/batchedUpdates');
-                    let updatesData = cachedUpdates ? await cachedUpdates.json() : {};
-
-                    updates.forEach((value, key) => {
-                        updatesData[key] = value;
+                    // Store each update in IndexedDB
+                    updates.forEach(async (value, key) => {
+                        await putBatchedUpdates(key, value);
                     });
-
-                    await cache.put('/batchedUpdates', new Response(JSON.stringify(updatesData), {
-                        headers: { 'Content-Type': 'application/json' }
-                    }));
                 });
             }
         });
