@@ -1,7 +1,7 @@
 import { validateUUID } from '../../../utils/PokemonIDUtils';
 
 export function getFilteredPokemonsByOwnership(variants, ownershipData, filter, lists) {
-    
+
     // Adjust the filter if necessary to handle special cases
     let filterKey;
 
@@ -19,6 +19,7 @@ export function getFilteredPokemonsByOwnership(variants, ownershipData, filter, 
             filterKey = 'unowned';
             break;
         default:
+            console.warn(`Unknown filter: ${filter}. Returning empty array.`);
             return []; // Return empty array if filter doesn't match any expected values
     }
 
@@ -31,8 +32,8 @@ export function getFilteredPokemonsByOwnership(variants, ownershipData, filter, 
         const keyParts = key.split('_');
         const possibleUUID = keyParts[keyParts.length - 1];
         const hasUUID = validateUUID(possibleUUID);
-        let baseKey;
 
+        let baseKey;
         if (hasUUID) {
             keyParts.pop(); // Remove the UUID part for matching in variants
             baseKey = keyParts.join('_');
@@ -42,13 +43,13 @@ export function getFilteredPokemonsByOwnership(variants, ownershipData, filter, 
 
         // Find the corresponding variant using the baseKey
         const variant = variants.find(v => v.pokemonKey === baseKey);
-
         if (variant) {
-            return {
+            const returnObject = {
                 ...variant,
                 pokemonKey: key,  // Use the full key to maintain uniqueness
                 ownershipStatus: ownershipData[key]  // Optional: include ownership data if needed
             };
+            return returnObject;
         }
     }).filter(pokemon => pokemon !== undefined);  // Filter out any undefined results due to missing variants
 

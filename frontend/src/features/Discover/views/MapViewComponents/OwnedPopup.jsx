@@ -21,7 +21,7 @@ const OwnedPopup = ({ item, navigateToUserCatalog }) => {
   };
 
   const handleConfirm = () => {
-    navigateToUserCatalog(username, instance_id);
+    navigateToUserCatalog(username, instance_id, "Owned");
     setShowConfirmation(false);
   };
 
