@@ -50,7 +50,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
   };
 
   return (
-    <div className="list-view-row trade-list-view" onClick={handleOpenConfirmation}>
+    <div className="list-view-row trade-list-view">
       {/* Left Column: MiniMap */}
       <div className="left-column">
         {item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
@@ -62,7 +62,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
       </div>
 
       {/* Center Column */}
-      <div className="center-column">
+      <div className="center-column" onClick={handleOpenConfirmation}>
         <div className="card">
           <h3>{item.username}</h3>
 

@@ -1,9 +1,9 @@
 // MapView.jsx
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useNavigate } from 'react-router-dom';
-import 'ol/ol.css'; // OpenLayers default styles
+import 'ol/ol.css';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import { fromLonLat } from 'ol/proj';
@@ -24,15 +24,29 @@ import OwnedPopup from './MapViewComponents/OwnedPopup';
 import TradePopup from './MapViewComponents/TradePopup';
 import WantedPopup from './MapViewComponents/WantedPopup';
 
-const MapView = ({ data, ownershipStatus }) => {
+const MapView = ({ data, ownershipStatus, pokemonCache }) => {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const popupRef = useRef(null);
   const popupRootRef = useRef(null);
   const { isLightMode } = useTheme();
-  const navigate = useNavigate();  // Ensure useNavigate is within Router context
+  const navigate = useNavigate();
+  const [pokemonVariants, setPokemonVariants] = useState([]);
 
-  // Define the navigation function to pass to OwnedPopup
+  // Populate pokemonVariants when pokemonCache is available
+  useEffect(() => {
+    if (pokemonCache) {
+      setPokemonVariants(pokemonCache);
+    }
+  }, [pokemonCache]);
+
+  // Helper to find a Pokemon by key
+  const findPokemonByKey = (baseKey) => {
+    const matchedPokemon = pokemonVariants.find((pokemon) => pokemon.pokemonKey === baseKey);
+    return matchedPokemon;
+  };
+
+  // Function to navigate based on selected Pokemon
   const navigateToUserCatalog = (username, instanceId, ownershipStatus) => {
     navigate(`/${username}`, { state: { instanceId, ownershipStatus } });
   };
@@ -41,15 +55,13 @@ const MapView = ({ data, ownershipStatus }) => {
     if (!data.length) return;
 
     const vectorSource = new VectorSource();
-    const coordinatesArray = [];
 
     data.forEach((item) => {
-      const { longitude, latitude, username, pokemonInfo } = item;
+      const { longitude, latitude } = item;
       const coordinates = fromLonLat([
         longitude ? parseFloat(longitude) : -123.113952,
         latitude ? parseFloat(latitude) : 49.2608724,
       ]);
-      coordinatesArray.push(coordinates);
 
       let pointColor = '#00AAFF';
       if (ownershipStatus === 'trade') pointColor = '#4cae4f';
@@ -57,7 +69,7 @@ const MapView = ({ data, ownershipStatus }) => {
 
       const feature = new Feature({
         geometry: new Point(coordinates),
-        item, // Pass the entire item as a property of the feature
+        item,
       });
 
       feature.setStyle(
@@ -124,7 +136,6 @@ const MapView = ({ data, ownershipStatus }) => {
         featureFound = true;
         const { item } = feature.getProperties();
 
-        // Determine which popup component to show
         let PopupComponent;
         if (ownershipStatus === 'trade') {
           PopupComponent = TradePopup;
@@ -134,10 +145,17 @@ const MapView = ({ data, ownershipStatus }) => {
           PopupComponent = OwnedPopup;
         }
 
-        // Render the popup component and pass the navigate function
-        popupRootRef.current.render(
-          <TradePopup item={item} navigateToUserCatalog={navigateToUserCatalog} />
-        );
+        if (pokemonVariants.length > 0) {
+          popupRootRef.current.render(
+            <PopupComponent
+              item={item}
+              navigateToUserCatalog={navigateToUserCatalog}
+              findPokemonByKey={findPokemonByKey} // Pass down findPokemonByKey
+            />
+          );
+        } else {
+          console.warn("pokemonVariants not yet populated, skipping popup render");
+        }
 
         const featureCoordinate = feature.getGeometry().getCoordinates();
         const viewportCenterY = map.getSize()[1] / 2;
@@ -162,7 +180,7 @@ const MapView = ({ data, ownershipStatus }) => {
         mapRef.current.setTarget(null);
       }
     };
-  }, [data, isLightMode, ownershipStatus]);
+  }, [data, isLightMode, ownershipStatus, pokemonVariants]);
 
   return (
     <div>
