@@ -35,7 +35,7 @@ export const PokemonDataProvider = ({ children }) => {
 
     useEffect(() => {
         if (data.loading) {
-            fetchData(setData, ownershipDataRef, updateOwnership, updateLists).catch(error => {
+            fetchData(setData, updateOwnership, updateLists).catch(error => {
                 console.error("Failed to load Pokemon data:", error);
                 setData(prev => ({ ...prev, loading: false }));
             });
