@@ -8,42 +8,33 @@ import { isDataFresh } from '../../utils/cacheHelpers';
 import { formatTimeAgo } from '../../utils/formattingHelpers';
 import { initializePokemonLists } from '../../features/Collect/PokemonOwnership/PokemonTradeListOperations';
 import {
-    initializeOrUpdateOwnershipDataAsync,
-} from '../../features/Collect/PokemonOwnership/pokemonOwnershipStorage';
-import {
-    putIntoDB,
     getAllFromDB,
     getMetadata,
     updateMetadata,
     getListFromDB,
-    storeListsInIndexedDB
+    storeListsInIndexedDB,
+    putIntoDB
 } from '../../services/indexedDBConfig';
+import {
+    initializeOrUpdateOwnershipDataAsync, getOwnershipDataAsync, setOwnershipDataAsync
+} from '../../features/Collect/PokemonOwnership/pokemonOwnershipStorage';
 
 export const fetchData = async (setData, updateOwnership, updateLists) => {
     console.log("Fetching data from API or cache...");
-    const pokemonDataCacheKey = "pokemonData"; // LocalStorage key for Pokémon data
-    const variantsStoreName = "pokemonVariants"; // IndexedDB store for Pokémon variants
-    const ownershipDataCacheKey = "pokemonOwnership";
-    const cacheStorageName = 'pokemonCache';
-
-    // Open the cache storage
-    const cacheStorage = await caches.open(cacheStorageName);
-
-    // Try to retrieve the cached ownership data
-    const cachedOwnershipResponse = await cacheStorage.match(ownershipDataCacheKey);
 
     let variants, ownershipData, lists;
 
-    // Deserialize responses if available
-    const cachedOwnership = cachedOwnershipResponse ? await cachedOwnershipResponse.json() : null;
-
-    // Retrieve variants metadata to check freshness
+    // Retrieve ownershipData, variants and lists metadata to check freshness
+    const ownershipMetadata = await getMetadata('ownershipTimestamp');
+    const ownershipTimestamp = ownershipMetadata ? ownershipMetadata.timestamp : 0;
     const variantsMetadata = await getMetadata('variantsTimestamp');
     const variantsTimestamp = variantsMetadata ? variantsMetadata.timestamp : 0;
-
-    // Retrieve lists metadata to check freshness
     const listsMetadata = await getMetadata('listsTimestamp');
     const listsTimestamp = listsMetadata ? listsMetadata.timestamp : 0;
+
+    // Retrieve ownershipData from IndexedDB
+    const { data: ownershipDataData, timestamp: ownershipDataTimestamp } = await getOwnershipDataAsync();
+    const cachedOwnership = ownershipDataTimestamp ? { data: ownershipDataData, timestamp: ownershipDataTimestamp } : null;
 
     // Log cached data freshness and details
     if (variantsTimestamp) {
@@ -52,8 +43,10 @@ export const fetchData = async (setData, updateOwnership, updateLists) => {
         console.log("Variants data is missing.");
     }
 
-    if (cachedOwnership) {
-        console.log(`Cached Ownership Data Age: ${formatTimeAgo(cachedOwnership.timestamp)}`);
+    if (ownershipTimestamp) {
+        console.log(`Cached Ownership Data Age: ${formatTimeAgo(ownershipTimestamp)}`);
+    } else {
+        console.log("Ownership data is missing.");
     }
 
     if (listsTimestamp) {
@@ -68,7 +61,7 @@ export const fetchData = async (setData, updateOwnership, updateLists) => {
         cachedOwnership &&
         listsTimestamp &&
         isDataFresh(variantsTimestamp) &&
-        isDataFresh(cachedOwnership.timestamp) &&
+        isDataFresh(ownershipTimestamp) &&
         isDataFresh(listsTimestamp)
     ) {
         console.log("Using cached variants, ownership data, and lists");
@@ -91,7 +84,7 @@ export const fetchData = async (setData, updateOwnership, updateLists) => {
 
         // Retrieve Pokémon data from localStorage or fetch from API
         let pokemons;
-        const cachedData = localStorage.getItem(pokemonDataCacheKey);
+        const cachedData = localStorage.getItem('pokemonData');
         const pokemonTimestamp = cachedData ? JSON.parse(cachedData).timestamp : 0;
 
         if (cachedData && isDataFresh(pokemonTimestamp)) {
@@ -102,7 +95,7 @@ export const fetchData = async (setData, updateOwnership, updateLists) => {
             pokemons = await getPokemons();
 
             // Store Pokémon data in localStorage
-            localStorage.setItem(pokemonDataCacheKey, JSON.stringify({
+            localStorage.setItem('pokemonData', JSON.stringify({
                 data: pokemons,
                 timestamp: Date.now()
             }));
@@ -121,7 +114,7 @@ export const fetchData = async (setData, updateOwnership, updateLists) => {
         // Store each variant individually in IndexedDB
         for (const variant of variants) {
             try {
-                await putIntoDB(variantsStoreName, variant);
+                await putIntoDB('pokemonVariants', variant);
             } catch (error) {
                 console.error(`Failed to store variant with key ${variant.pokemonKey}:`, error);
             }
@@ -136,13 +129,11 @@ export const fetchData = async (setData, updateOwnership, updateLists) => {
         ownershipData = await initializeOrUpdateOwnershipDataAsync(keys, variants);
         lists = initializePokemonLists(ownershipData, variants);
 
-        // Update cache with new ownership data
-        await cacheStorage.put(ownershipDataCacheKey, new Response(JSON.stringify({
-            data: ownershipData,
-            timestamp: Date.now()
-        }), {
-            headers: { 'Content-Type': 'application/json' }
-        }));
+        // Save updated ownershipData to IndexedDB
+        await setOwnershipDataAsync({ data: ownershipData, timestamp: Date.now() });
+        // Update timestamp for ownershipData
+        await updateMetadata('ownershipTimestamp', Date.now());
+        console.log("Stored updated ownership data in IndexedDB");
 
         // Store lists into IndexedDB
         await storeListsInIndexedDB(lists);

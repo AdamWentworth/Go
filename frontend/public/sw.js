@@ -69,17 +69,35 @@ self.addEventListener('message', async (event) => {
 async function syncData(data) {
   console.log(`Sync data called:`, data);
   try {
-    const cache = await caches.open('pokemonCache');
-    const response = new Response(JSON.stringify({ data: data.data, timestamp: data.timestamp }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
-    await cache.put('/pokemonOwnership', response);
-    console.log(`Pokemon ownership data has been updated and cached.`);
-    sendMessageToClients({ status: 'success', message: 'Data synced successfully.' });
+      await storeOwnershipDataInIndexedDB(data);
+      console.log(`Pokemon ownership data has been updated and stored in IndexedDB.`);
+      sendMessageToClients({ status: 'success', message: 'Data synced successfully.' });
   } catch (error) {
-    console.error(`Failed to update pokemon ownership:`, error);
-    sendMessageToClients({ status: 'failed', message: 'Failed to update pokemon ownership.', error });
+      console.error(`Failed to update pokemon ownership:`, error);
+      sendMessageToClients({ status: 'failed', message: 'Failed to update pokemon ownership.', error });
   }
+}
+
+async function storeOwnershipDataInIndexedDB(data) {
+  const db = await openDB();
+  const transaction = db.transaction(['pokemonOwnership', 'metadata'], 'readwrite');
+  const ownershipStore = transaction.objectStore('pokemonOwnership');
+  const metadataStore = transaction.objectStore('metadata');
+
+  // Clear the 'pokemonOwnership' store
+  await ownershipStore.clear();
+
+  // Write ownershipData into IndexedDB
+  const ownershipData = data.data;
+  for (const instance_id in ownershipData) {
+      const item = { ...ownershipData[instance_id], instance_id };
+      ownershipStore.put(item);
+  }
+
+  // Update timestamp in 'metadata' store
+  metadataStore.put({ key: 'ownershipTimestamp', timestamp: data.timestamp });
+
+  await transaction.done;
 }
 
 async function syncLists(data) {
@@ -106,13 +124,15 @@ function openDB() {
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
       // Create stores if they don't exist
-      const stores = ['pokemonVariants', 'batchedUpdates', 'metadata'];
+      const stores = ['pokemonVariants', 'pokemonOwnership', 'batchedUpdates', 'metadata'];
       stores.forEach((storeName) => {
         if (!db.objectStoreNames.contains(storeName)) {
           if (storeName === 'metadata') {
             db.createObjectStore(storeName, { keyPath: 'key' });
           } else if (storeName === 'pokemonVariants') {
             db.createObjectStore(storeName, { keyPath: 'pokemonKey' });
+          } else if (storeName === 'pokemonOwnership') {
+            db.createObjectStore(storeName, { keyPath: 'instance_id' });
           } else {
             db.createObjectStore(storeName, { keyPath: 'key' });
           }
