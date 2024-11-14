@@ -57,26 +57,26 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // console.log('Initialization useEffect in AuthContext');
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      // console.log('Stored user found in localStorage:', storedUser);
       const userData = JSON.parse(storedUser);
       userRef.current = userData;
       setUser(userData);
       setIsLoggedIn(true);
-
+  
       const currentTime = new Date().getTime();
       const accessTokenExpiryTime = new Date(userData.accessTokenExpiry).getTime();
       const refreshTokenExpiryTime = new Date(userData.refreshTokenExpiry).getTime();
       const refreshTiming = accessTokenExpiryTime - currentTime - (1 * 60 * 1000);
-
+  
       console.log(`Access Token expires in: ${formatTimeUntil(accessTokenExpiryTime)}`);
       console.log(`Refresh Token expires in: ${formatTimeUntil(refreshTokenExpiryTime)}`);
-
+  
       if (refreshTokenExpiryTime > currentTime) {
         if (refreshTiming > 0) {
-          console.log(`Scheduling token refresh in ${refreshTiming} ms`);
+          // Use formatTimeUntil to display refresh timing in a readable format
+          console.log(`Scheduling token refresh in ${formatTimeUntil(currentTime + refreshTiming)}`);
+          
           refreshTimeoutRef.current = setTimeout(() => {
             checkAndRefreshToken();
           }, refreshTiming);
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
           console.log('Access token expired or about to expire, refreshing token immediately');
           checkAndRefreshToken();
         }
-
+  
         startTokenExpirationCheck();
       } else {
         console.log('Refresh token expired, clearing session');
@@ -93,16 +93,16 @@ export const AuthProvider = ({ children }) => {
     } else {
       console.log('No stored user found in localStorage');
     }
-
+  
     // Set isLoading to false after processing
     setIsLoading(false);
-
+  
     return () => {
       clearInterval(intervalRef.current);
       clearTimeout(refreshTimeoutRef.current);
       closeSSEConnection();
     };
-  }, [setIsLoggedIn]);
+  }, [setIsLoggedIn]);  
 
   const startTokenExpirationCheck = () => {
     clearInterval(intervalRef.current); // Clear any existing interval
