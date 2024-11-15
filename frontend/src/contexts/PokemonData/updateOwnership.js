@@ -1,7 +1,7 @@
 // updateOwnership.js
 
 import { updatePokemonOwnership } from '../../features/Collect/PokemonOwnership/PokemonOwnershipUpdateService';
-import { putBatchedUpdates } from '../../services/indexedDBConfig';
+import { putBatchedUpdates } from '../../services/indexedDB';
 
 export const updateOwnership = (data, setData, ownershipDataRef, lists) => (pokemonKeys, newStatus) => {
     const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];

@@ -14,7 +14,7 @@ import {
     getListFromDB,
     storeListsInIndexedDB,
     putIntoDB
-} from '../../services/indexedDBConfig';
+} from '../../services/indexedDB';
 import {
     initializeOrUpdateOwnershipDataAsync, getOwnershipDataAsync, setOwnershipDataAsync
 } from '../../features/Collect/PokemonOwnership/pokemonOwnershipStorage';

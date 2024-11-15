@@ -1,6 +1,6 @@
 // pokemonStorageManager.js
 
-import { getAllFromDB, putIntoDB, clearStore, getMetadata, updateMetadata } from '../../../services/indexedDBConfig';
+import { getAllFromDB, putIntoDB, clearStore, getMetadata, updateMetadata } from '../../../services/indexedDB';
 import { generateUUID, validateUUID } from '../../../utils/PokemonIDUtils';
 import { createNewDataForVariant } from './pokemonOwnershipManager';
 

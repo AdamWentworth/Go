@@ -1,7 +1,7 @@
 // updateDetails.js
 
 import { updatePokemonDetails } from '../../features/Collect/PokemonOwnership/pokemonOwnershipManager';
-import { putBatchedUpdates } from '../../services/indexedDBConfig';
+import { putBatchedUpdates } from '../../services/indexedDB';
 
 export const updateDetails = (
     data,

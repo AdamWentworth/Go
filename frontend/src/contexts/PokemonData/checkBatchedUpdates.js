@@ -1,6 +1,6 @@
 // checkBatchedUpdates.js
 
-import { getBatchedUpdates } from '../../services/indexedDBConfig';
+import { getBatchedUpdates } from '../../services/indexedDB';
 
 export const checkBatchedUpdates = async (periodicUpdates) => {
     try {

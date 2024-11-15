@@ -1,6 +1,6 @@
 // periodicUpdates.js
 
-import { getBatchedUpdates } from '../../services/indexedDBConfig';
+import { getBatchedUpdates } from '../../services/indexedDB';
 
 export const periodicUpdates = (scheduledSyncRef, timerRef) => {
     return () => {
