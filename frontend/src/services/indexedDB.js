@@ -1,4 +1,4 @@
-// indexedDBConfig.js
+// indexedDB.js
 
 import { openDB } from 'idb';
 
@@ -84,6 +84,13 @@ export async function updateMetadata(key, timestamp) {
 export async function getMetadata(key) {
     const db = await initDB();
     return db.get(METADATA_STORE, key);
+}
+
+export async function deleteMetadata(key) {
+    const db = await initDB();
+    const tx = db.transaction(METADATA_STORE, 'readwrite');
+    tx.store.delete(key);
+    await tx.done;
 }
 
 // Helper functions for the lists database

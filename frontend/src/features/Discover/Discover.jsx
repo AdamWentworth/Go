@@ -6,7 +6,7 @@ import ListView from './views/ListView';
 import MapView from './views/MapView';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import axios from 'axios';
-import { getAllFromDB } from '../../services/indexedDBConfig';
+import { getAllFromDB } from '../../services/indexedDB';
 
 const Discover = () => {
   const [view, setView] = useState('list');

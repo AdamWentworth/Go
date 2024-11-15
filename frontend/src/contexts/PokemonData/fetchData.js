@@ -67,7 +67,7 @@ export const fetchData = async (setData, updateOwnership, updateLists) => {
         console.log("Using cached variants, ownership data, and lists");
 
         // Retrieve all variants from IndexedDB
-        variants = await getAllFromDB(variantsStoreName);
+        variants = await getAllFromDB('pokemonVariants');
         variants.sort((a, b) => a.pokemonKey.localeCompare(b.pokemonKey));
 
         ownershipData = cachedOwnership.data;

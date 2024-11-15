@@ -16,6 +16,7 @@ import { usePokemonData } from './PokemonDataContext';
 import { useGlobalState } from './GlobalStateContext';
 import { fetchUpdates } from '../services/sseService';
 import { useSession } from './SessionContext';
+import { clearStore, clearListsStore, deleteMetadata } from '../services/indexedDB';
 
 const AuthContext = createContext();
 
@@ -227,23 +228,32 @@ export const AuthProvider = ({ children }) => {
     setIsLoggedIn(false);
     setUser(null);
     userRef.current = null;
-
+  
     // Call closeSSEConnection to clean up the SSE connection
     closeSSEConnection();
-
-    // Clear relevant caches and reset data
-    if ('caches' in window) {
-      try {
-        const cache = await caches.open('pokemonCache');
-        await cache.delete('/pokemonOwnership');
-        await cache.delete('/pokemonLists');
-      } catch (error) {
-        console.error('Error clearing cache storage:', error);
-      }
-    }
-
+  
+    // Reset in-memory data structures or state variables
     resetData();
+  
+    // **Clear IndexedDB data**
+    try {
+      // **Clear timestamps from metadata**
+      await deleteMetadata('ownershipTimestamp');
+      await deleteMetadata('listsTimestamp');
 
+      // Clear 'pokemonOwnership' store from 'pokemonDB'
+      await clearStore('pokemonOwnership');
+  
+      // Clear lists from 'pokemonListsDB'
+      for (const listName of ['owned', 'unowned', 'wanted', 'trade']) {
+        await clearListsStore(listName);
+      }
+  
+      console.log('Cleared IndexedDB data and metadata.');
+    } catch (error) {
+      console.error('Error clearing IndexedDB data:', error);
+    }
+  
     if (isForcedLogout) {
       navigate('/login', { replace: true });
       setTimeout(() => alert('Your session has expired, please log in again.'), 1000);
