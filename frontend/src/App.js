@@ -9,6 +9,7 @@ import Login from './features/Authentication/Login';
 import Register from './features/Authentication/Register';
 import Account from './features/Authentication/Account';
 import Discover from './features/Discover/Discover';
+import Trades from './features/Trades/Trades';
 import './App.css';
 import CacheContext from './contexts/CacheContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -40,11 +41,12 @@ function App() {
                                                     <Routes>
                                                         <Route path="/" element={<MainButtons />} />
                                                         <Route path="/collect" element={<Collect isOwnCollection={true} />} />
-                                                        <Route path="/:username" element={<Collect isOwnCollection={false} />} />
+                                                        <Route path="/trades" element={<Trades />} /> {/* Explicit route for trades */}
                                                         <Route path="/login" element={<Login />} />
                                                         <Route path="/register" element={<Register />} />
                                                         <Route path="/account" element={<Account />} />
                                                         <Route path="/discover" element={<Discover />} />
+                                                        <Route path="/:username" element={<Collect isOwnCollection={false} />} /> {/* Dynamic username route */}
                                                     </Routes>
                                                 </main>
                                                 <ToastContainer

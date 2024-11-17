@@ -65,6 +65,15 @@
     background-color: #0056b3;
 }
 
+/* Specific Styling for Trades Button */
+.navbar-buttons a[href="/trades"] button {
+    background-color: #28a745; /* Green color for Trades button */
+}
+
+.navbar-buttons a[href="/trades"] button:hover {
+    background-color: #1e7e34; /* Darker green on hover */
+}
+
 /* Theme Toggle Styling */
 .theme-toggle {
     cursor: pointer;

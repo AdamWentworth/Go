@@ -76,7 +76,10 @@ function Navbar() {
                     </div>
                 </div>
                 {isLoggedIn ? (
-                    <Link to="/account"><button>Account</button></Link>
+                    <>  
+                        <Link to="/trades"><button>Trades</button></Link>
+                        <Link to="/account"><button>Account</button></Link>
+                    </>
                 ) : (
                     <>
                         <Link to="/login"><button>Login</button></Link>
