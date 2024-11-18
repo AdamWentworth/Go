@@ -21,10 +21,10 @@ function Navbar() {
         event.preventDefault();
         const trimmedQuery = searchQuery.trim();
         if (trimmedQuery) {
-            navigate(`/${trimmedQuery}`); // Navigate to the user-specific route
-            setSearchQuery(''); // Clear the search input after navigation
+          navigate(`/collection/${trimmedQuery}`); // Updated route
+          setSearchQuery(''); // Clear the search input after navigation
         }
-    };
+      };      
 
     useEffect(() => {
         const lightModeStylesheet = document.getElementById('light-mode-stylesheet');

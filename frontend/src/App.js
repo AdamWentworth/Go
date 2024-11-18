@@ -41,12 +41,12 @@ function App() {
                                                     <Routes>
                                                         <Route path="/" element={<MainButtons />} />
                                                         <Route path="/collect" element={<Collect isOwnCollection={true} />} />
-                                                        <Route path="/trades" element={<Trades />} /> {/* Explicit route for trades */}
+                                                        <Route path="/trades" element={<Trades />} />
                                                         <Route path="/login" element={<Login />} />
                                                         <Route path="/register" element={<Register />} />
                                                         <Route path="/account" element={<Account />} />
                                                         <Route path="/discover" element={<Discover />} />
-                                                        <Route path="/:username" element={<Collect isOwnCollection={false} />} /> {/* Dynamic username route */}
+                                                        <Route path="/collection/:username" element={<Collect isOwnCollection={false} />} />
                                                     </Routes>
                                                 </main>
                                                 <ToastContainer
