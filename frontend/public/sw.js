@@ -69,8 +69,10 @@ self.addEventListener('message', async (event) => {
 async function syncData(data) {
   console.log(`Sync data called:`, data);
   try {
+      const startStoreOwnership = Date.now();
       await storeOwnershipDataInIndexedDB(data);
-      console.log(`Pokemon ownership data has been updated and stored in IndexedDB.`);
+      const endStoreOwnership = Date.now();
+      console.log(`Pokemon ownership data has been updated and stored in IndexedDB in ${(endStoreOwnership - startStoreOwnership)} ms.`);
       sendMessageToClients({ status: 'success', message: 'Data synced successfully.' });
   } catch (error) {
       console.error(`Failed to update pokemon ownership:`, error);
@@ -80,9 +82,8 @@ async function syncData(data) {
 
 async function storeOwnershipDataInIndexedDB(data) {
   const db = await openDB();
-  const transaction = db.transaction(['pokemonOwnership', 'metadata'], 'readwrite');
+  const transaction = db.transaction(['pokemonOwnership'], 'readwrite');
   const ownershipStore = transaction.objectStore('pokemonOwnership');
-  const metadataStore = transaction.objectStore('metadata');
 
   // Clear the 'pokemonOwnership' store
   await ownershipStore.clear();
@@ -94,23 +95,20 @@ async function storeOwnershipDataInIndexedDB(data) {
       ownershipStore.put(item);
   }
 
-  // Update timestamp in 'metadata' store
-  metadataStore.put({ key: 'ownershipTimestamp', timestamp: data.timestamp });
-
   await transaction.done;
 }
 
 async function syncLists(data) {
   console.log(`Sync lists called:`, data);
   try {
-    const { data: lists, timestamp } = data;
+    const { data: lists } = data;
 
+    const startStoreLists = Date.now();
     // Store lists into IndexedDB
     await storeListsInIndexedDB(lists);
+    const endStoreLists = Date.now();
 
-    // Update timestamp for lists in pokemonDB
-    await updateMetadata('listsTimestamp', timestamp);
-    console.log(`Pokemon lists have been updated and stored in IndexedDB.`);
+    console.log(`Pokemon lists have been updated and stored in IndexedDB in ${(endStoreLists - startStoreLists)} ms.`);
     sendMessageToClients({ status: 'success', message: 'Lists updated successfully.' });
   } catch (error) {
     console.error(`Failed to update pokemon lists:`, error);
@@ -124,12 +122,10 @@ function openDB() {
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
       // Create stores if they don't exist
-      const stores = ['pokemonVariants', 'pokemonOwnership', 'batchedUpdates', 'metadata'];
+      const stores = ['pokemonVariants', 'pokemonOwnership', 'batchedUpdates'];
       stores.forEach((storeName) => {
         if (!db.objectStoreNames.contains(storeName)) {
-          if (storeName === 'metadata') {
-            db.createObjectStore(storeName, { keyPath: 'key' });
-          } else if (storeName === 'pokemonVariants') {
+          if (storeName === 'pokemonVariants') {
             db.createObjectStore(storeName, { keyPath: 'pokemonKey' });
           } else if (storeName === 'pokemonOwnership') {
             db.createObjectStore(storeName, { keyPath: 'instance_id' });
@@ -184,14 +180,6 @@ async function storeListsInIndexedDB(lists) {
       store.put(data);
     }
   }
-  await transaction.done;
-}
-
-async function updateMetadata(key, timestamp) {
-  const db = await openDB(); // Use pokemonDB where 'metadata' exists
-  const transaction = db.transaction('metadata', 'readwrite');
-  const store = transaction.objectStore('metadata');
-  store.put({ key, timestamp });
   await transaction.done;
 }
 

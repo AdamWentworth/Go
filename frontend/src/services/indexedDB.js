@@ -10,7 +10,6 @@ const DB_VERSION = 1;  // Keeping version at 1 as per your request
 // Store names
 const VARIANTS_STORE = 'pokemonVariants';
 const OWNERSHIP_DATA_STORE = 'pokemonOwnership';
-const METADATA_STORE = 'metadata';
 const BATCHED_UPDATES_STORE = 'batchedUpdates';
 
 // New stores for lists
@@ -25,9 +24,6 @@ export async function initDB() {
             }
             if (!db.objectStoreNames.contains(OWNERSHIP_DATA_STORE)) {
                 db.createObjectStore(OWNERSHIP_DATA_STORE, { keyPath: 'instance_id' });
-            }
-            if (!db.objectStoreNames.contains(METADATA_STORE)) {
-                db.createObjectStore(METADATA_STORE, { keyPath: 'key' });
             }
             if (!db.objectStoreNames.contains(BATCHED_UPDATES_STORE)) {
                 db.createObjectStore(BATCHED_UPDATES_STORE, { keyPath: 'key' });
@@ -61,6 +57,16 @@ export async function putIntoDB(storeName, data) {
     return db.put(storeName, data);
 }
 
+export async function putBulkIntoDB(storeName, dataArray) {
+    const db = await initDB();
+    const tx = db.transaction(storeName, 'readwrite');
+    const store = tx.objectStore(storeName);
+    for (const data of dataArray) {
+        store.put(data);
+    }
+    await tx.done;
+}
+
 export async function getAllFromDB(storeName) {
     const db = await initDB();
     return db.getAll(storeName);
@@ -74,23 +80,6 @@ export async function clearStore(storeName) {
 export async function deleteFromDB(storeName, key) {
     const db = await initDB();
     return db.delete(storeName, key);
-}
-
-export async function updateMetadata(key, timestamp) {
-    const db = await initDB();
-    return db.put(METADATA_STORE, { key, timestamp });
-}
-
-export async function getMetadata(key) {
-    const db = await initDB();
-    return db.get(METADATA_STORE, key);
-}
-
-export async function deleteMetadata(key) {
-    const db = await initDB();
-    const tx = db.transaction(METADATA_STORE, 'readwrite');
-    tx.store.delete(key);
-    await tx.done;
 }
 
 // Helper functions for the lists database
@@ -146,16 +135,24 @@ export async function getListFromDB(storeName) {
 
 // Helper function to store lists into IndexedDB
 export async function storeListsInIndexedDB(lists) {
+    const db = await initListsDB();
+
     for (const listName of LIST_STORES) {
+        const tx = db.transaction(listName, 'readwrite');
+        const store = tx.objectStore(listName);
+
         // Clear the store before adding new data
-        await clearListsStore(listName);
+        store.clear();
 
         const list = lists[listName];
-        for (const instance_id in list) {
-            const item = list[instance_id];
-            // Ensure item includes 'instance_id'
-            const data = { ...item, instance_id };
-            await putIntoListsDB(listName, data);
+        const itemsArray = Object.keys(list).map(instance_id => {
+            return { ...list[instance_id], instance_id };
+        });
+
+        for (const item of itemsArray) {
+            store.put(item);
         }
+
+        await tx.done;
     }
 }

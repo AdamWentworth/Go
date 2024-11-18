@@ -225,6 +225,8 @@ export const AuthProvider = ({ children }) => {
   const clearSession = async (isForcedLogout) => {
     localStorage.removeItem('user');
     localStorage.removeItem('pokemonOwnership');
+    localStorage.removeItem('ownershipTimestamp'); // Remove ownership timestamp
+    localStorage.removeItem('listsTimestamp');     // Remove lists timestamp
     setIsLoggedIn(false);
     setUser(null);
     userRef.current = null;
@@ -237,10 +239,6 @@ export const AuthProvider = ({ children }) => {
   
     // **Clear IndexedDB data**
     try {
-      // **Clear timestamps from metadata**
-      await deleteMetadata('ownershipTimestamp');
-      await deleteMetadata('listsTimestamp');
-
       // Clear 'pokemonOwnership' store from 'pokemonDB'
       await clearStore('pokemonOwnership');
   
@@ -249,7 +247,7 @@ export const AuthProvider = ({ children }) => {
         await clearListsStore(listName);
       }
   
-      console.log('Cleared IndexedDB data and metadata.');
+      console.log('Cleared IndexedDB data.');
     } catch (error) {
       console.error('Error clearing IndexedDB data:', error);
     }
@@ -260,7 +258,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       navigate('/login', { replace: true });
     }
-  };
+  };  
 
   const updateUserDetails = async (userId, userData) => {
     try {
