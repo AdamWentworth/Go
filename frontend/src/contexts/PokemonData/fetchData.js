@@ -9,12 +9,12 @@ import { formatTimeAgo } from '../../utils/formattingHelpers';
 import { initializePokemonLists } from '../../features/Collect/PokemonOwnership/PokemonTradeListOperations';
 import {
     getAllFromDB,
-    getAllListsFromDB, // New function to retrieve all lists
+    getAllListsFromDB,
     storeListsInIndexedDB,
     putBulkIntoDB
 } from '../../services/indexedDB';
 import {
-    initializeOrUpdateOwnershipDataAsync, getOwnershipDataAsync, setOwnershipDataAsync
+    initializeOrUpdateOwnershipDataAsync, getOwnershipDataAsync
 } from '../../features/Collect/PokemonOwnership/pokemonOwnershipStorage';
 
 export const fetchData = async (setData, updateOwnership, updateLists) => {
