@@ -6,10 +6,10 @@ import { createNewDataForVariant } from './pokemonOwnershipManager';
 
 export async function getOwnershipDataAsync() {
     // Get all ownership data from IndexedDB
-    const startGetOwnership = Date.now();
+    // const startGetOwnership = Date.now();
     const data = await getAllFromDB('pokemonOwnership');
-    const endGetOwnership = Date.now();
-    console.log(`Retrieved ownership data from IndexedDB in ${(endGetOwnership - startGetOwnership)} ms`);
+    // const endGetOwnership = Date.now();
+    // console.log(`Retrieved ownership data from IndexedDB in ${(endGetOwnership - startGetOwnership)} ms`);
 
     // Convert array to object with instance_id as keys
     const ownershipData = {};
@@ -25,10 +25,7 @@ export async function getOwnershipDataAsync() {
 
 export async function setOwnershipDataAsync(data) {
     // First, clear the 'pokemonOwnership' store
-    const startClearStore = Date.now();
     await clearStore('pokemonOwnership');
-    const endClearStore = Date.now();
-    console.log(`Cleared 'pokemonOwnership' store in ${(endClearStore - startClearStore)} ms`);
 
     // Then, write all ownershipData items into 'pokemonOwnership' store using a single transaction
     const startStoreOwnership = Date.now();
@@ -77,7 +74,7 @@ export async function initializeOrUpdateOwnershipDataAsync(keys, variants) {
         console.log(`Initialized or updated ownership data in ${(endOwnershipUpdate - startOwnershipUpdate)} ms`);
 
         if (shouldUpdateStorage) {
-            console.log('Added new ownership data for keys:', updates);
+            // console.log('Added new ownership data for keys:', updates);
             await setOwnershipDataAsync({ data: storedData, timestamp: Date.now() });
         } else {
             console.log('No ownership updates required.');

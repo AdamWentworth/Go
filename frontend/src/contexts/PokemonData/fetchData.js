@@ -91,19 +91,11 @@ export const fetchData = async (setData, updateOwnership, updateLists) => {
             console.log(`Retrieved variants from IndexedDB in ${(endVariantsRetrieval - startVariantsRetrieval)} ms`);
         }
 
-        // Handle ownershipData
         if (!ownershipFresh || variantsUpdated) {
             console.log("Ownership data is stale or variants updated, updating ownership data...");
             const keys = variants.map(variant => variant.pokemonKey);
             ownershipData = await initializeOrUpdateOwnershipDataAsync(keys, variants);
             ownershipUpdated = true;
-
-            // Save updated ownershipData to IndexedDB
-            const startStoreOwnership = Date.now();
-            await setOwnershipDataAsync({ data: ownershipData, timestamp: Date.now() });
-            localStorage.setItem('ownershipTimestamp', Date.now().toString());
-            const endStoreOwnership = Date.now();
-            console.log(`Stored updated ownership data in IndexedDB in ${(endStoreOwnership - startStoreOwnership)} ms`);
         } else {
             ownershipData = cachedOwnership;
         }

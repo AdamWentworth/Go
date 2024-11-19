@@ -35,12 +35,18 @@ export const PokemonDataProvider = ({ children }) => {
 
     useEffect(() => {
         if (data.loading) {
-            fetchData(setData, updateOwnership, updateLists).catch(error => {
-                console.error("Failed to load Pokemon data:", error);
-                setData(prev => ({ ...prev, loading: false }));
-            });
+            console.time("fetchData Duration"); // Start the timer
+            fetchData(setData, updateOwnership, updateLists)
+                .then(() => {
+                    console.timeEnd("fetchData Duration"); // End the timer on success
+                })
+                .catch(error => {
+                    console.error("Failed to load Pokemon data:", error);
+                    setData(prev => ({ ...prev, loading: false }));
+                    console.timeEnd("fetchData Duration"); // End the timer on error
+                });
         }
-    }, [data.loading]);
+    }, [data.loading]);    
 
     const updateLists = useCallback(importedUpdateLists(data, setData), [data.ownershipData, data.variants]);
 
