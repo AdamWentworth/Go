@@ -17,5 +17,9 @@ export const updateLists = (data, setData) => () => {
                 data: { data: sortedLists, timestamp: Date.now() }
             });
         });
+
+        // Update listsTimestamp in localStorage
+        const currentTimestamp = Date.now();
+        localStorage.setItem('listsTimestamp', currentTimestamp.toString());
     });
 };

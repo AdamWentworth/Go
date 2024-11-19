@@ -44,25 +44,19 @@ export const PokemonDataProvider = ({ children }) => {
 
     const updateLists = useCallback(importedUpdateLists(data, setData), [data.ownershipData, data.variants]);
 
-    const relevantOwnershipData = useMemo(() => 
-        Object.fromEntries(
-            Object.entries(data.ownershipData).map(([key, pokemon]) => [
-                key,
-                {
-                    is_for_trade: pokemon.is_for_trade,
-                    is_wanted: pokemon.is_wanted,
-                    is_owned: pokemon.is_owned,
-                    is_unowned: pokemon.is_unowned,
-                },
-            ])
-        ), [data.ownershipData]
-    );
-    
+    const ownershipTimestamp = useMemo(() => {
+        return parseInt(localStorage.getItem('ownershipTimestamp'), 10) || 0;
+    }, [data.ownershipData]);
+
+    const listsTimestamp = useMemo(() => {
+        return parseInt(localStorage.getItem('listsTimestamp'), 10) || 0;
+    }, [data.lists]);
+
     useEffect(() => {
-        if (!data.loading) {
+        if (!data.loading && ownershipTimestamp > listsTimestamp) {
             updateLists();
         }
-    }, [relevantOwnershipData, data.variants]);    
+    }, [data.loading, ownershipTimestamp, listsTimestamp, updateLists]);   
 
     useEffect(() => {
         if (isLoggedIn) {
@@ -102,7 +96,9 @@ export const PokemonDataProvider = ({ children }) => {
             const updatedOwnershipData = importedMergeOwnershipData(prevData.ownershipData, newOwnershipData);
             ownershipDataRef.current = updatedOwnershipData;
 
+            const currentTimestamp = Date.now();
             localStorage.setItem('pokemonOwnership', JSON.stringify({ data: updatedOwnershipData, timestamp: Date.now() }));
+            localStorage.setItem('ownershipTimestamp', currentTimestamp.toString());
 
             return {
                 ...prevData,

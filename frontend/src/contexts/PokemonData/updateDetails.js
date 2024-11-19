@@ -36,14 +36,14 @@ export const updateDetails = (
     const registration = await navigator.serviceWorker.ready;
     registration.active.postMessage({
         action: 'syncData',
-        data: { data: newData, timestamp: currentTimestamp }
+        data: { data: newData, timestamp: Date.now() }
     });
+
+    // Update ownershipTimestamp in localStorage
+    localStorage.setItem('ownershipTimestamp', currentTimestamp.toString());
 
     // Use IndexedDB to cache the batched updates
     for (const pokemonKey of keysArray) {
         await putBatchedUpdates(pokemonKey, newData[pokemonKey]);
     }
-
-    // Optionally, call updateLists if needed
-    // updateLists();
 };

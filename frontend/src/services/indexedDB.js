@@ -5,7 +5,7 @@ import { openDB } from 'idb';
 // Define database constants
 const DB_NAME = 'pokemonDB';
 const LISTS_DB_NAME = 'pokemonListsDB'; // New database for lists
-const DB_VERSION = 1;  // Keeping version at 1 as per your request
+const DB_VERSION = 1;
 
 // Store names
 const VARIANTS_STORE = 'pokemonVariants';
@@ -15,9 +15,11 @@ const BATCHED_UPDATES_STORE = 'batchedUpdates';
 // New stores for lists
 const LIST_STORES = ['owned', 'unowned', 'wanted', 'trade'];
 
-// Initialize and upgrade the main IndexedDB database
+// Cache database instances
+let dbInstance = null;
 export async function initDB() {
-    return openDB(DB_NAME, DB_VERSION, {
+    if (dbInstance) return dbInstance;
+    dbInstance = await openDB(DB_NAME, DB_VERSION, {
         upgrade(db) {
             if (!db.objectStoreNames.contains(VARIANTS_STORE)) {
                 db.createObjectStore(VARIANTS_STORE, { keyPath: 'pokemonKey' });
@@ -30,11 +32,13 @@ export async function initDB() {
             }
         },
     });
+    return dbInstance;
 }
 
-// Initialize and upgrade the lists IndexedDB database
+let listsDBInstance = null;
 export async function initListsDB() {
-    return openDB(LISTS_DB_NAME, DB_VERSION, {
+    if (listsDBInstance) return listsDBInstance;
+    listsDBInstance = await openDB(LISTS_DB_NAME, DB_VERSION, {
         upgrade(db) {
             // Create new stores for lists
             LIST_STORES.forEach(storeName => {
@@ -44,6 +48,7 @@ export async function initListsDB() {
             });
         },
     });
+    return listsDBInstance;
 }
 
 // Helper functions for the main database
@@ -69,7 +74,11 @@ export async function putBulkIntoDB(storeName, dataArray) {
 
 export async function getAllFromDB(storeName) {
     const db = await initDB();
-    return db.getAll(storeName);
+    const tx = db.transaction(storeName, 'readonly');
+    const store = tx.objectStore(storeName);
+    const allData = await store.getAll();
+    await tx.done;
+    return allData;
 }
 
 export async function clearStore(storeName) {
@@ -95,7 +104,11 @@ export async function putIntoListsDB(storeName, data) {
 
 export async function getAllFromListsDB(storeName) {
     const db = await initListsDB();
-    return db.getAll(storeName);
+    const tx = db.transaction(storeName, 'readonly');
+    const store = tx.objectStore(storeName);
+    const allData = await store.getAll();
+    await tx.done;
+    return allData;
 }
 
 export async function clearListsStore(storeName) {
@@ -105,54 +118,62 @@ export async function clearListsStore(storeName) {
 
 // Batched Updates Functions for periodic updates
 
-// Retrieve all batched updates from IndexedDB
 export async function getBatchedUpdates() {
     const db = await initDB();
     return await db.getAll(BATCHED_UPDATES_STORE);
 }
 
-// Add or update a single batched update in IndexedDB
 export async function putBatchedUpdates(key, updateData) {
     const db = await initDB();
     await db.put(BATCHED_UPDATES_STORE, { key, ...updateData });
 }
 
-// Clear all batched updates from IndexedDB
 export async function clearBatchedUpdates() {
     const db = await initDB();
     return db.clear(BATCHED_UPDATES_STORE);
 }
 
-// Helper function to get list from IndexedDB and convert to object
-export async function getListFromDB(storeName) {
-    const itemsArray = await getAllFromListsDB(storeName);
-    const itemsObject = {};
-    for (const item of itemsArray) {
-        itemsObject[item.instance_id] = item;
-    }
-    return itemsObject;
+// Helper function to get all lists from IndexedDB and convert to object
+export async function getAllListsFromDB() {
+    const db = await initListsDB();
+    const tx = db.transaction(LIST_STORES, 'readonly');
+    const lists = {};
+
+    await Promise.all(
+        LIST_STORES.map(async (storeName) => {
+            const store = tx.objectStore(storeName);
+            const itemsArray = await store.getAll();
+            const itemsObject = {};
+            for (const item of itemsArray) {
+                itemsObject[item.instance_id] = item;
+            }
+            lists[storeName] = itemsObject;
+        })
+    );
+
+    await tx.done;
+    return lists;
 }
 
 // Helper function to store lists into IndexedDB
 export async function storeListsInIndexedDB(lists) {
     const db = await initListsDB();
+    const tx = db.transaction(LIST_STORES, 'readwrite');
 
-    for (const listName of LIST_STORES) {
-        const tx = db.transaction(listName, 'readwrite');
-        const store = tx.objectStore(listName);
+    await Promise.all(
+        LIST_STORES.map(async (listName) => {
+            const store = tx.objectStore(listName);
+            // Clear the store before adding new data
+            await store.clear();
+            const list = lists[listName];
+            const itemsArray = Object.keys(list).map(instance_id => {
+                return { ...list[instance_id], instance_id };
+            });
+            for (const item of itemsArray) {
+                await store.put(item);
+            }
+        })
+    );
 
-        // Clear the store before adding new data
-        store.clear();
-
-        const list = lists[listName];
-        const itemsArray = Object.keys(list).map(instance_id => {
-            return { ...list[instance_id], instance_id };
-        });
-
-        for (const item of itemsArray) {
-            store.put(item);
-        }
-
-        await tx.done;
-    }
+    await tx.done;
 }

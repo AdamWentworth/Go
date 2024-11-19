@@ -9,7 +9,7 @@ export const updateOwnership = (data, setData, ownershipDataRef, lists) => (poke
     let processedKeys = 0;
 
     const updates = new Map();
-    console.log("Current Ownership Data as retrieved by updateOwnership:", ownershipDataRef.current);
+    // console.log("Current Ownership Data as retrieved by updateOwnership:", ownershipDataRef.current);
 
     keys.forEach(key => {
         updatePokemonOwnership(key, newStatus, data.variants, tempOwnershipData, lists, (fullKey) => {
@@ -70,6 +70,9 @@ export const updateOwnership = (data, setData, ownershipDataRef, lists) => (poke
                         action: 'syncData',
                         data: { data: tempOwnershipData, timestamp: Date.now() }
                     });
+
+                    // Update ownershipTimestamp in localStorage
+                    localStorage.setItem('ownershipTimestamp', currentTimestamp.toString());
 
                     // Store each update in IndexedDB
                     updates.forEach(async (value, key) => {
