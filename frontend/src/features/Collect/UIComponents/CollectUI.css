@@ -1,72 +1,147 @@
 /* CollectUI.css */
 
-/* Base Section Styling */
-.header-section.collect-section {
+/* Common styles */
+.collect-ui {
+  flex-grow: 3;
+}
+
+/* Overlay styles for small screens when isEditable is true */
+.collect-overlay {
+  position: absolute;
+  top: 100%; /* Position below the Collect button */
+  left: 0;
+  right: 0;
+  background-color: #333;
+  color: white;
+  z-index: 1000;
+  padding: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+}
+
+/* Button container */
+.collect-ui .button-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.collect-section .button-container {
-  display: grid;
-  grid-template-columns: repeat(3, 60px);
-  grid-template-rows: 48px auto;
-  gap: 5px;
-  align-items: center;
-  justify-items: center;
   width: 100%;
 }
 
-/* Button Styling */
-.header-section.collect-section button {
-  width: 60px;
-  height: 48px;
+/* Non-editable collect */
+.non-editable-collect {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.non-editable-collect .context-text {
+  margin-right: 10px;
+}
+
+/* Adjust layout for non-editable state */
+.collect-ui .button-container.non-editable {
+  align-items: center;
+}
+
+.collect-ui .button-container.non-editable button {
+  width: auto;
+}
+
+/* Buttons inside button-container */
+.collect-ui .button-container button {
+  width: 100%;
+  justify-content: center;
+  background-color: #ccc;
   border: none;
   outline: none;
+  padding: 10px;
   cursor: pointer;
-  border-radius: 15px;
-  transition: background-color 0.3s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
+  border-radius: 15px;
+  transition: background-color 0.3s ease;
+  margin-bottom: 5px;
+  font-size: 14px;
 }
 
-/* Special Buttons */
-.fast-select-button,
-.select-all-button,
-.lists-button {
-  background-color: #ccc;
+/* Updated selector to target buttons inside button-container */
+.collect-ui .button-container button:last-child {
+  margin-bottom: 0;
 }
 
-.fast-select-button.active {
-  background-color: rgb(255, 246, 123);
-}
-
-.fast-select-button:hover {
-  background-color: rgb(255, 223, 40);
-}
-
-.select-all-button.active,
-.lists-button.active {
-  background-color: #47bbb7;
-}
-
-.select-all-button:hover,
-.lists-button:hover {
-  background-color: #3ea5a2;
-}
-
-/* Image Styling */
-.header-section.collect-section img {
+/* Updated selector to target images inside button-container */
+.collect-ui .button-container img {
   width: 24px;
   height: 24px;
 }
 
+/* Increase button size in overlay mode */
+.collect-overlay .button-container button {
+  padding: 15px;
+  font-size: 16px;
+}
+
+.collect-overlay .button-container img {
+  width: 28px;
+  height: 28px;
+}
+
+/* Active state styles for buttons inside button-container */
+.collect-ui .button-container .select-all-button.active,
+.collect-ui .button-container .lists-button.active {
+  background-color: #47bbb7;
+}
+
+.collect-ui .button-container .fast-select-button.active {
+  background-color: rgb(255, 246, 123);
+}
+
+/* Hover states for buttons inside button-container */
+.collect-ui .button-container button:hover {
+  background-color: #bbb;
+}
+
+.collect-ui .button-container .select-all-button:hover,
+.collect-ui .button-container .lists-button:hover {
+  background-color: #3ea5a2;
+}
+
+.collect-ui .button-container .fast-select-button:hover {
+  background-color: rgb(255, 223, 40);
+}
+
+/* Styles for the Lists button in non-editable state */
+.non-editable-collect .lists-button {
+  background-color: #ccc;
+  border: none;
+  outline: none;
+  padding: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 15px;
+  transition: background-color 0.3s ease;
+  font-size: 14px;
+  margin-left: 10px; /* Adjust spacing as needed */
+}
+
+/* Hover state for the Lists button in non-editable state */
+.non-editable-collect .lists-button:hover {
+  background-color: #bbb;
+}
+
 /* Context Text Styling */
+
 .context-text-container {
-  grid-column: 1 / -1;
-  grid-row: 2;
   text-align: center;
+  margin-right: 10px;
+  margin-left: -10px;
+}
+
+.collect-overlay .context-text-container {
+  text-align: center;
+  margin-left: unset;
+  margin-right: unset;
 }
 
 .context-text-container.editing .context-text {
@@ -77,67 +152,86 @@
   color: #d4e6f8; /* Light blue */
 }
 
-.context-text-container.viewing .username {
-  font-weight: bold;
-}
-
 .context-text-container.viewing-all .context-text {
   color: #f8d4d4; /* Light red */
 }
 
-/* Responsive Styles */
-
-/* Mobile Screens (max-width: 480px) */
-@media (max-width: 480px) {
-  .collect-section .button-container {
-    grid-template-columns: repeat(3, 30px);
-    grid-template-rows: 40px auto;
-  }
-
-  .header-section.collect-section button {
-    width: 32px;
-    height: 28px;
-    font-size: 10px;
-  }
-
-  .header-section.collect-section img {
-    width: 20px;
-    height: 20px;
-  }
-
-  .context-text-container p {
-    font-size: 12px;
-    margin-block-start: 0px;
-    margin-block-end: 0px;
-  }
+.context-text-container .username {
+  font-weight: bold;
 }
 
-/* Tablet Screens (481px to 1023px) */
-@media (min-width: 481px) and (max-width: 1023px) {
-  .collect-section .button-container {
-    grid-template-columns: repeat(3, 60px);
-    grid-template-rows: 48px auto;
-  }
+.collect-overlay p {
+  margin-block-start: 0px;
+  margin-block-end: 0px;
+  margin-bottom: 5px;
+  font-size: 12px;
+}
 
-  .header-section.collect-section button {
-    width: 60px;
-    height: 48px;
-    font-size: 12px;
-  }
+/* Responsive Styles */
 
-  .header-section.collect-section img {
+/* Small screens */
+@media (max-width: 480px) {
+  .collect-ui .button-container img {
+    width: 24px;
+    height: 24px;
+  }
+  .collect-ui .button-container button {
+    padding: 8px;
+    height: 40px;
+    font-size: 10px;
+  }
+  .collect-overlay .button-container button {
+    padding: 10px;
+    font-size: 10px;
+  }
+  .collect-overlay .button-container img {
     width: 28px;
     height: 28px;
   }
-
-  .context-text-container p {
-    font-size: 13px;
+  .collect-overlay p {
+    font-size: 10px;
+  }
+  .non-editable-collect .context-text {
+    font-size: 10px;
   }
 }
 
-/* Desktop Screens (min-width: 1024px) */
+/* Medium screens */
+@media (min-width: 481px) and (max-width: 1023px) {
+  .collect-ui .button-container button {
+    padding: 8px;
+    width: 44px;
+    height: 44px;
+    font-size: 12px;
+  }
+  .collect-ui .button-container img {
+    width: 28px;
+    height: 28px;
+  }
+  .collect-overlay .button-container button {
+    padding: 12px;
+    font-size: 12px;
+  }
+  .collect-overlay .button-container img {
+    width: 32px;
+    height: 32px;
+  }
+  .collect-overlay p {
+    font-size: 12px;
+  }
+  .non-editable-collect .context-text {
+    font-size: 12px;
+  }
+}
+
+/* Extra large screens */
 @media (min-width: 1024px) {
-  .collect-section .button-container {
+  .collect-ui {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .collect-ui .button-container {
     display: grid;
     grid-template-columns: auto 60px 60px 60px;
     grid-template-rows: 48px;
@@ -145,54 +239,34 @@
     align-items: center;
     justify-items: start;
   }
-
-  /* Adjust positions for editable state */
-  .button-container.editable .context-text-container {
-    grid-column: 1;
-    grid-row: 1;
-    text-align: center;
-    justify-self: start;
-    align-self: center;
-    padding-right: 10px;
+  .collect-ui .button-container img {
+    width: 32px;
+    height: 32px;
   }
-
-  .button-container.editable .select-all-button {
-    grid-column: 2;
+  .collect-ui .button-container button {
+    padding: 8px 14px;
+    margin-bottom: 0;
+    font-size: 14px;
+    width: 60px;
+    height: 48px;
   }
-
-  .button-container.editable .fast-select-button {
-    grid-column: 3;
-  }
-
-  .button-container.editable .lists-button {
-    grid-column: 4;
-  }
-
-  /* Adjust positions for non-editable state */
-  .button-container.non-editable .context-text-container {
-    grid-column: 1 / span 3;
-    grid-row: 1;
-    text-align: left;
-    justify-self: start;
-    align-self: center;
-    padding-right: 10px;
-  }
-
-  .button-container.non-editable .lists-button {
-    grid-column: 4;
-  }
-
-  .header-section.collect-section button {
+  .non-editable-collect .context-text {
     font-size: 14px;
   }
-
-  .header-section.collect-section img {
-    width: 40px;
-    height: 40px;
-  }
-
-  .context-text-container p {
-    margin: 0;
+  .non-editable-collect .context-text {
+    margin-block-start: 0px;
+    margin-block-end: 0px;
     font-size: 14px;
+    margin-right: 10px;
+  }
+  .collect-ui-toggle {
+    display: unset;
+  } 
+  .non-editable-collect .lists-button {
+    background-color: #ccc !important;
+    color: black !important;
+    height: 48px;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
   }
 }

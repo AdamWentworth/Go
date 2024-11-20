@@ -146,27 +146,7 @@
 }
 
 /* Medium screens */
-@media (min-width: 481px) and (max-width: 767px) {
-    .filter-ui button {
-        padding: 8px;
-    }
-    .filter-ui img {
-        width: 28px;
-        height: 28px;
-    }
-    /* Adjust sizes in overlay */
-    .filter-overlay .button-container button {
-        padding: 8px 22px;
-        font-size: 12px;
-    }
-    .filter-overlay img {
-        width: 28px;
-        height: 28px;
-    }
-}
-
-/* Larger screens */
-@media (min-width: 768px) and (max-width: 1023px) {
+@media (min-width: 481px) and (max-width: 1023px) {
     .filter-ui button {
         padding: 8px;
     }

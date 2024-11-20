@@ -40,7 +40,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
 
   // Confirm and navigate to user's catalog with "Trade" ownershipStatus
   const handleConfirmNavigation = () => {
-    navigate(`/${item.username}`, { state: { instanceId: item.instance_id, ownershipStatus: "Trade" } });
+    navigate(`/collection/${item.username}`, { state: { instanceId: item.instance_id, ownershipStatus: "Trade" } });
     setShowConfirmation(false);
   };
 

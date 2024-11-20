@@ -14,8 +14,9 @@
     flex-wrap: nowrap; /* Keep header in one row */
 }
 
-.filters-container {
-    position: relative; /* Positioning context for FilterUI overlay */
+.filters-container,
+.collect-container {
+    position: relative; /* Positioning context for overlays */
 }
 
 .header.expand-collect {

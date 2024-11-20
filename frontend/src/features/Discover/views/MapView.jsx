@@ -48,7 +48,7 @@ const MapView = ({ data, ownershipStatus, pokemonCache }) => {
 
   // Function to navigate based on selected Pokemon
   const navigateToUserCatalog = (username, instanceId, ownershipStatus) => {
-    navigate(`/${username}`, { state: { instanceId, ownershipStatus } });
+    navigate(`/collection/${username}`, { state: { instanceId, ownershipStatus } });
   };
 
   useEffect(() => {

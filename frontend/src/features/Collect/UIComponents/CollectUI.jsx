@@ -1,4 +1,5 @@
 // CollectUI.jsx
+
 import React, { useState } from 'react';
 import './CollectUI.css';
 
@@ -16,6 +17,7 @@ const CollectUI = ({
   contextText,
   onListsButtonClick,
   ownershipFilter,
+  isWide,
 }) => {
   const [fastSelectEnabled, setFastSelectEnabled] = useState(false);
   const [selectAllEnabled, setSelectAllEnabled] = useState(false);
@@ -33,37 +35,44 @@ const CollectUI = ({
   };
 
   return (
-    <div className="header-section collect-section">
-      <div className="collect-header"></div>
+    <div className={`collect-ui ${!isWide && isEditable ? 'collect-overlay' : ''}`}>
       <div className={`button-container ${isEditable ? 'editable' : 'non-editable'}`}>
-        {/* Context Text */}
-        <div
-          className={`context-text-container ${isEditable ? 'editing' : 'viewing'} ${
-            !ownershipFilter ? 'viewing-all' : ''
-          }`}
-        >
-          <p className="context-text">{contextText}</p>
-        </div>
-        {/* Buttons */}
-        {isEditable && (
+        {isEditable ? (
           <>
-            <button
-              className={`select-all-button ${selectAllEnabled ? 'active' : ''}`}
-              onClick={handleSelectAll}
+            {/* Context Text */}
+            <div
+              className={`context-text-container editing ${
+                !ownershipFilter ? 'viewing-all' : ''
+              }`}
             >
-              Select All
-            </button>
+              <p className="context-text">{contextText}</p>
+            </div>
+            {/* Buttons */}
             <button
               onClick={handleToggleFastSelect}
               className={`fast-select-button ${fastSelectEnabled ? 'active' : ''}`}
             >
               <img src="/images/fast_select.png" alt="Toggle Fast Select" />
             </button>
+            <button
+              className={`select-all-button ${selectAllEnabled ? 'active' : ''}`}
+              onClick={handleSelectAll}
+            >
+              Select All
+            </button>
+            <button className="lists-button" onClick={onListsButtonClick}>
+              Lists
+            </button>
           </>
+        ) : (
+          // Render context-text and lists button side by side in all cases when isEditable is false
+          <div className="non-editable-collect">
+            <p className="context-text">{contextText}</p>
+            <button className="lists-button" onClick={onListsButtonClick}>
+              Lists
+            </button>
+          </div>
         )}
-        <button className="lists-button" onClick={onListsButtonClick}>
-          Lists
-        </button>
       </div>
     </div>
   );

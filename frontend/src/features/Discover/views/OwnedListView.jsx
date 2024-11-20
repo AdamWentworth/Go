@@ -32,7 +32,7 @@ const OwnedListView = ({ item }) => {
 
   // Confirm navigation to the user's catalog
   const handleConfirmNavigation = () => {
-    navigate(`/${item.username}`, { state: { instanceId: item.instance_id, ownershipStatus: "Owned" } });
+    navigate(`/collection/${item.username}`, { state: { instanceId: item.instance_id, ownershipStatus: "Owned" } });
     setShowConfirmation(false);
   };
 
