@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useContext } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import PokemonList from './PokemonList';
+import ListsMenu from './ListsMenu';
 import HeaderUI from './HeaderUI';
 import SortOverlay from './SortOverlay';
 import { usePokemonData } from '../../contexts/PokemonDataContext';
@@ -191,6 +192,51 @@ function Collect({ isOwnCollection }) {
     ownershipData,
   });
 
+  const [isShowingLists, setIsShowingLists] = useState(false); // New state variable
+
+  // Handler for "Lists" button click
+  const handleListsButtonClick = () => {
+    setIsShowingLists(true);
+  };
+
+  // Handler for selecting a list in ListsMenu
+  const handleSelectList = (filter) => {
+    // If highlighted cards exist, confirm moving to the selected filter
+    if (highlightedCards.size > 0) {
+      handleConfirmMoveToFilter(filter);
+      return;
+    }
+
+    // Prevent setting the same filter repeatedly if isEditable is false
+    if (!isEditable && ownershipFilter === filter) {
+      return;
+    }
+
+    // Determine the new filter state based on toggling logic
+    const newFilter = ownershipFilter === filter ? '' : filter;
+
+    // Set the new filter
+    setOwnershipFilter(newFilter);
+
+    // Adjust showAll based on the filter state and conditions
+    if (newFilter === '' && !isShiny && !showCostume && !showShadow) {
+      setShowAll(false);
+    } else if (!showAll && newFilter !== '' && !isShiny && !showCostume && !showShadow) {
+      setShowAll(true);
+    }
+
+    // Hide the ListsMenu and show the PokemonList
+    setIsShowingLists(false);
+  };
+
+  const contextText = ownershipFilter === ''
+    ? 'Pokédex View'
+    : isEditable
+      ? 'Editing your Collection'
+      : (
+        <>Viewing <span className="username">{username}</span>'s Collection</>
+      );
+
   return (
     <div>
       {/* Render "User not found" only if `isUsernamePath` is true and `userExists` is explicitly false */}
@@ -227,28 +273,34 @@ function Collect({ isOwnCollection }) {
             selectAllToggle={selectAllToggle}
             highlightedCards={highlightedCards}
             confirmMoveToFilter={handleConfirmMoveToFilter}
+            onListsButtonClick={handleListsButtonClick} // Pass down the handler
+            contextText={contextText} // Ensure contextText is defined
           />
-          <PokemonListMemo
-            isEditable={isEditable}
-            sortedPokemons={sortedPokemons}
-            allPokemons={variants}
-            loading={loading}
-            selectedPokemon={selectedPokemon}
-            setSelectedPokemon={setSelectedPokemon}
-            isFastSelectEnabled={isFastSelectEnabled}
-            toggleCardHighlight={toggleCardHighlight}
-            highlightedCards={highlightedCards}
-            isShiny={isShiny}
-            showShadow={showShadow}
-            multiFormPokedexNumbers={multiFormPokedexNumbers}
-            ownershipFilter={ownershipFilter}
-            lists={activeLists}
-            ownershipData={ownershipData}
-            showAll={showAll}
-            sortType={sortType}
-            sortMode={sortMode}
-            variants={variants}
-          />
+          {!isShowingLists ? (
+            <PokemonListMemo
+              isEditable={isEditable}
+              sortedPokemons={sortedPokemons}
+              allPokemons={variants}
+              loading={loading}
+              selectedPokemon={selectedPokemon}
+              setSelectedPokemon={setSelectedPokemon}
+              isFastSelectEnabled={isFastSelectEnabled}
+              toggleCardHighlight={toggleCardHighlight}
+              highlightedCards={highlightedCards}
+              isShiny={isShiny}
+              showShadow={showShadow}
+              multiFormPokedexNumbers={multiFormPokedexNumbers}
+              ownershipFilter={ownershipFilter}
+              lists={activeLists}
+              ownershipData={ownershipData}
+              showAll={showAll}
+              sortType={sortType}
+              sortMode={sortMode}
+              variants={variants}
+            />
+          ) : (
+            <ListsMenu onSelectList={handleSelectList} /> // Render the new component
+          )}
           <SortOverlayMemo
             sortType={sortType}
             setSortType={setSortType}

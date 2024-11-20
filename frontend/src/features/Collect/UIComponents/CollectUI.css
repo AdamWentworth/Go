@@ -1,75 +1,62 @@
-/* collectUI.css */
+/* CollectUI.css */
+
+/* CollectUI.css */
 
 /* Base Section Styling */
 .header-section.collect-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex-grow: 3;
 }
 
 .collect-section .button-container {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 60px);
+  grid-template-rows: 48px auto;
   gap: 5px;
   align-items: center;
-  justify-items: stretch;
+  justify-items: center;
+  width: 100%;
 }
 
 /* Button Styling */
 .header-section.collect-section button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
+  width: 60px;
+  height: 48px;
   border: none;
   outline: none;
   cursor: pointer;
   border-radius: 15px;
   transition: background-color 0.3s ease;
-}
-
-/* Filter Button Colors */
-.filter-button {
-  &.Unowned { background-color: #ccc; }
-  &.Wanted { background-color: #F44336; }
-  &.Owned { background-color: #2196F3; }
-  &.Trade { background-color: #4CAF50; }
-}
-
-/* Hover and Active States */
-.filter-button {
-  &.Unowned:hover, &.Unowned.active { background-color: #858585; }
-  &.Wanted:hover, &.Wanted.active { background-color: #be2c2c; }
-  &.Owned:hover, &.Owned.active { background-color: #176bbe; }
-  &.Trade:hover, &.Trade.active { background-color: #327e36; }
-  &.non-selected { background-color: #ccc; color: black; }
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Special Buttons */
-.fast-select-button, .select-all-button {
+.fast-select-button,
+.select-all-button,
+.lists-button {
   background-color: #ccc;
 }
 
-.fast-select-button {
-  &.active { background-color: rgb(255, 246, 123); }
-  &:hover { background-color: rgb(255, 223, 40); }
+.fast-select-button.active {
+  background-color: rgb(255, 246, 123);
 }
 
-.select-all-button {
-  &.active { background-color: #47bbb7; }
-  &:hover { background-color: #3ea5a2; }
+.fast-select-button:hover {
+  background-color: rgb(255, 223, 40);
 }
 
-/* Button Grid Positioning */
-.select-all-button { grid-column: 1; grid-row: 1; }
-.fast-select-button { grid-column: 1; grid-row: 2; }
-.filter-button.Unowned { grid-column: 2; grid-row: 2; }
-.filter-button.Wanted { grid-column: 3; grid-row: 2; }
-.filter-button.Owned { grid-column: 2; grid-row: 1; }
-.filter-button.Trade { grid-column: 3; grid-row: 1; }
+.select-all-button.active,
+.lists-button.active {
+  background-color: #47bbb7;
+}
+
+.select-all-button:hover,
+.lists-button:hover {
+  background-color: #3ea5a2;
+}
 
 /* Image Styling */
 .header-section.collect-section img {
@@ -78,6 +65,12 @@
 }
 
 /* Context Text Styling */
+.context-text-container {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  text-align: center;
+}
+
 .context-text-container.editing .context-text {
   color: #d4f8d4; /* Light green */
 }
@@ -86,7 +79,6 @@
   color: #d4e6f8; /* Light blue */
 }
 
-/* Bold username inside viewing mode context text */
 .context-text-container.viewing .username {
   font-weight: bold;
 }
@@ -96,88 +88,113 @@
 }
 
 /* Responsive Styles */
+
+/* Mobile Screens (max-width: 480px) */
 @media (max-width: 480px) {
-  .header-section.collect-section {
-    margin: 0 5px;
+  .collect-section .button-container {
+    grid-template-columns: repeat(3, 30px);
+    grid-template-rows: 40px auto;
   }
-  .collect-section .filter-button,
-  .header-section.collect-section .select-all-button {
+
+  .header-section.collect-section button {
+    width: 32px;
+    height: 28px;
     font-size: 10px;
-    padding: 3px;
+  }
+
+  .header-section.collect-section img {
+    width: 20px;
+    height: 20px;
+  }
+
+  .context-text-container p {
+    font-size: 12px;
+    margin-block-start: 0px;
+    margin-block-end: 0px;
   }
 }
 
-@media (min-width: 481px) {
-  .header-section.collect-section {
-    flex-grow: 0;
-    margin-right: 10px;
-    margin-left: 0;
+/* Tablet Screens (481px to 1023px) */
+@media (min-width: 481px) and (max-width: 1023px) {
+  .collect-section .button-container {
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: 48px auto;
   }
-  .collect-section .filter-button,
-  .header-section.collect-section .select-all-button {
+
+  .header-section.collect-section button {
+    width: 60px;
+    height: 48px;
     font-size: 12px;
-    padding: 2px 8px;
   }
+
   .header-section.collect-section img {
     width: 28px;
     height: 28px;
   }
+
+  .context-text-container p {
+    font-size: 13px;
+  }
 }
 
+/* Desktop Screens (min-width: 1024px) */
 @media (min-width: 1024px) {
   .collect-section .button-container {
-    column-gap: 10px;
-    grid-template-rows: 0;
-    margin-bottom: -5px;
+    display: grid;
+    grid-template-columns: auto 60px 60px 60px;
+    grid-template-rows: 48px;
+    gap: 10px;
+    align-items: center;
+    justify-items: start;
+  }
+
+  /* Adjust positions for editable state */
+  .button-container.editable .context-text-container {
+    grid-column: 1;
+    grid-row: 1;
+    text-align: center;
+    justify-self: start;
+    align-self: center;
+    padding-right: 10px;
+  }
+
+  .button-container.editable .select-all-button {
+    grid-column: 2;
+  }
+
+  .button-container.editable .fast-select-button {
+    grid-column: 3;
+  }
+
+  .button-container.editable .lists-button {
+    grid-column: 4;
+  }
+
+  /* Adjust positions for non-editable state */
+  .button-container.non-editable .context-text-container {
+    grid-column: 1 / span 3;
+    grid-row: 1;
+    text-align: left;
+    justify-self: start;
+    align-self: center;
+    padding-right: 10px;
+  }
+
+  .button-container.non-editable .lists-button {
+    grid-column: 4;
+  }
+
+  .header-section.collect-section button {
+    font-size: 14px;
   }
 
   .header-section.collect-section img {
     width: 40px;
     height: 40px;
-    padding: 5px;
-    padding-top: 4px;
-    padding-bottom: 4px;
   }
 
-  .collect-section .filter-button {
-    font-size: 14px;
-    padding: 10px;
-  }
-
-  .header-section.collect-section .select-all-button {
-    font-size: 14px;
-    padding: 10px 15px;
-  }
-
-  .header-section.collect-section button {
-    height: unset;
-  }
-
-  /* Adjust grid layout for larger screens */
-  .select-all-button { grid-column: 2; grid-row: 2 / 5; }
-  .fast-select-button { grid-column: 1; grid-row: 2 / 5; }
-  .filter-button.Unowned { grid-column: 3; grid-row: 4 / 6; }
-  .filter-button.Wanted { grid-column: 4; grid-row: 4 / 6; }
-  .filter-button.Owned { grid-column: 3; grid-row: 1 / 4; }
-  .filter-button.Trade { grid-column: 4; grid-row: 1 / 4; }
-
-  /* Position context-text-container for viewing mode */
-  .context-text-container.viewing {
-    grid-column: 1 / 2; /* Span across columns 1 and 2 */
-    grid-row: 1 / span 5; /* Place in rows 2 through 6 */
-    text-align: center;
-  }
-
-  /* Position context-text-container across columns 1 and 2, in the last row */
-  .context-text-container.editing {
-    grid-column: 1 / span 2;
-    grid-row: 5; /* Adjust to the last row as needed */
-    text-align: center; /* Center align text if needed */
-    margin-top: -5px;
-  }
   .context-text-container p {
-    margin-block-start: 0px;
-    margin-block-end: 0px;
+    margin: 0;
     font-size: 14px;
   }
 }

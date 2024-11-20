@@ -19,14 +19,10 @@ const HeaderUI = ({
     ownershipFilter, updateOwnershipFilter,
     handleFastSelectToggle, selectAllToggle,
     highlightedCards,
-    confirmMoveToFilter
+    confirmMoveToFilter,
+    onListsButtonClick,
+    contextText
 }) => {
-    const contextText = ownershipFilter === ""
-        ? "Pokédex View"
-        : isEditable
-            ? "Editing your Collection"
-            : <>Viewing <span className="username">{username}</span>'s Collection</>;
-
     return (
         <div className={`header ${showCollectUI ? 'expand-collect' : ''}`}>
             <button className="toggle-button" onClick={toggleFilterUI}>
@@ -51,11 +47,10 @@ const HeaderUI = ({
                 toggleEvolutionaryLine={toggleEvolutionaryLine}
             />
             {showCollectUI && (
-                <CollectUI 
+                <CollectUI
                     isEditable={isEditable}
-                    statusFilter={ownershipFilter} 
-                    setStatusFilter={updateOwnershipFilter} 
-                    onFastSelectToggle={handleFastSelectToggle} 
+                    ownershipFilter={ownershipFilter}
+                    onFastSelectToggle={handleFastSelectToggle}
                     onSelectAll={selectAllToggle}
                     highlightedCards={highlightedCards}
                     confirmMoveToFilter={confirmMoveToFilter}
@@ -65,6 +60,7 @@ const HeaderUI = ({
                     showCostume={showCostume}
                     showShadow={showShadow}
                     contextText={contextText}
+                    onListsButtonClick={onListsButtonClick}
                 />
             )}
             <button className="toggle-button collect-ui-toggle" onClick={toggleCollectUI}>

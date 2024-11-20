@@ -1,0 +1,62 @@
+/* ListsMenu.css */
+
+/* Base styling for the lists menu */
+.lists-menu {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    margin: 20px; /* Adjust as needed */
+  }
+  
+  /* Button Styling */
+  .lists-menu .filter-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 100px; /* Adjust as needed */
+    margin: 10px;
+    padding: 10px 20px;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    border-radius: 15px;
+    transition: background-color 0.3s ease;
+    color: white; /* Default text color */
+  }
+  
+  /* Filter Button Colors */
+  .filter-button.Unowned {
+    background-color: #ccc;
+    color: black;
+  }
+  
+  .filter-button.Wanted {
+    background-color: #F44336;
+  }
+  
+  .filter-button.Owned {
+    background-color: #2196F3;
+  }
+  
+  .filter-button.Trade {
+    background-color: #4CAF50;
+  }
+  
+  /* Hover and Active States */
+  .filter-button.Unowned:hover {
+    background-color: #858585;
+  }
+  
+  .filter-button.Wanted:hover {
+    background-color: #be2c2c;
+  }
+  
+  .filter-button.Owned:hover {
+    background-color: #176bbe;
+  }
+  
+  .filter-button.Trade:hover {
+    background-color: #327e36;
+  }
+  
