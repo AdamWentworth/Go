@@ -1,172 +1,208 @@
-/*FilterUI.css*/
+/* FilterUI.css */
 
-.header-section.filter-section {
-    flex-grow: 3;  /* Inherit this to maintain layout consistency */
+/* Common styles */
+.filter-ui {
+    flex-grow: 3;
+}
+
+/* Overlay styles for small screens */
+.filter-overlay {
+    position: absolute;
+    top: 100%; /* Position below the Filters button */
+    left: 0;
+    right: 0;
+    background-color: #333; /* Match header background */
+    color: white;
+    z-index: 1000;
+    padding: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    border-radius: 10px; /* Add rounded corners */
+}
+
+/* Button container */
+.filter-ui .button-container {
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
 }
 
-.header-section.filter-section .button-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Creates two columns */
-    gap: 5px; /* Space between buttons */
-    width: 100%; /* Ensure the container takes full width */
-}
-
-.header-section.filter-section button {
-    width: 100%; /* Buttons take full width of their grid cell */
-    justify-content: center; /* Center content inside the button */
-}
-
-.header-section.filter-section button {
-    background-color: #ccc; /* Non-shiny color */
+/* Buttons */
+.filter-ui button {
+    width: 100%;
+    justify-content: center;
+    background-color: #ccc;
     border: none;
     outline: none;
     padding: 10px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    border-radius: 15px; /* Adjust as per requirement */
-    transition: background-color 0.3s ease; /* Optional: for a smooth color transition */
+    border-radius: 15px;
+    transition: background-color 0.3s ease;
+    margin-bottom: 5px;
+    font-size: 14px; /* Default font size */
 }
 
-.header-section.filter-section img {
+.filter-ui button:last-child {
+    margin-bottom: 0;
+}
+
+.filter-ui img {
     width: 24px;
     height: 24px;
 }
 
-.header-section.filter-section .shiny-button.active,
-.header-section.filter-section .shiny-button.active:hover, /* For hover state as well */
-.header-section.filter-section .costume-button.active,
-.header-section.filter-section .costume-button.active:hover, /* For hover state as well */
-.header-section.filter-section .shadow-button.active,
-.header-section.filter-section .shadow-button.active:hover /* For hover state as well */ {
-    transition: background-color 0.3s ease; /* Ensure smooth color transition for all states */
+/* Increase button size in overlay mode */
+.filter-overlay .button-container button {
+    padding: 15px;
+    font-size: 16px; /* Increase font size */
 }
 
-/* Specific hover colors for active buttons */
-
-.header-section.filter-section .show-all-button.active {
-    background-color: #51d4a2; /* Gold for active state */
+.filter-overlay img {
+    width: 28px;
+    height: 28px;
 }
 
-.header-section.filter-section .shiny-button.active {
+/* Active state styles */
+.filter-ui .show-all-button.active {
+    background-color: #51d4a2;
+}
+
+.filter-ui .shiny-button.active {
     background-color: gold;
 }
 
-.header-section.filter-section .costume-button.active {
+.filter-ui .costume-button.active {
     background-color: cyan;
 }
 
-.header-section.filter-section .shadow-button.active {
+.filter-ui .shadow-button.active {
     background-color: rgb(182, 92, 182);
 }
 
-/* Hover state for the show-all button to match shiny-button */
-.header-section.filter-section .show-all-button:hover {
+/* Hover states */
+.filter-ui .button-container button:hover {
+    background-color: #bbb;
+}
+
+/* Specific hover colors */
+.filter-ui .show-all-button:hover {
     background-color: #42ac83;
 }
 
-.header-section.filter-section .shiny-button:hover {
-    background-color: #ffcc00; /* Slightly darker shiny color */
+.filter-ui .shiny-button:hover {
+    background-color: #ffcc00;
 }
 
-.header-section.filter-section .costume-button:hover {
-    background-color: rgb(58, 216, 216); /* Slightly darker shiny color */
+.filter-ui .costume-button:hover {
+    background-color: rgb(58, 216, 216);
 }
 
-.header-section.filter-section .shadow-button:hover {
-    background-color: rgb(152, 0, 152); /* Slightly darker shiny color */
+.filter-ui .shadow-button:hover {
+    background-color: rgb(152, 0, 152);
 }
 
-/* Specific hover colors for active buttons */
-
-.header-section.filter-section .show-all-button.active:hover {
+/* Hover states for active buttons */
+.filter-ui .show-all-button.active:hover {
     background-color: #42ac83;
 }
 
-.header-section.filter-section .shiny-button.active:hover {
-    background-color: #ffcc00; /* Slightly darker shiny color */
+.filter-ui .shiny-button.active:hover {
+    background-color: #ffcc00;
 }
 
-.header-section.filter-section .costume-button.active:hover {
-    background-color: rgb(58, 216, 216); /* Slightly darker shiny color */
+.filter-ui .costume-button.active:hover {
+    background-color: rgb(58, 216, 216);
 }
 
-.header-section.filter-section .shadow-button.active:hover {
-    background-color: rgb(152, 0, 152); /* Slightly darker shiny color */
+.filter-ui .shadow-button.active:hover {
+    background-color: rgb(152, 0, 152);
 }
 
+/* Media queries for responsiveness */
 
+/* Small screens */
 @media (max-width: 480px) {
-    .header-section.filter-section img {
-        width: 20px;
-        height: 20px;
+    .filter-ui img {
+        width: 24px;
+        height: 24px;
     }
-    .header-section.filter-section .show-all-button{
+    .filter-ui .show-all-button {
+        font-size: 12px;
+    }
+    .filter-ui button {
+        padding: 5px;
+    }
+    /* Adjust sizes in overlay */
+    .filter-overlay .button-container button {
+        padding: 8px 20px;
         font-size: 10px;
     }
-    
-    .header-section.filter-section button {
-        padding: 3px; /* Adjust padding */
-    }
-    .header-section.filter-section {
-        margin-right: 5px;
-        margin-left: 5px;
+    .filter-overlay img {
+        width: 26px;
+        height: 26px;
     }
 }
 
-@media (min-width: 481px) {
-
-    .header-section.filter-section {
-        flex-grow: 0;  /* Prevent it from taking unnecessary extra space */
-    }    
-    .header-section.filter-section .show-all-button{
-        font-size: 11px;
+/* Medium screens */
+@media (min-width: 481px) and (max-width: 767px) {
+    .filter-ui button {
+        padding: 8px;
     }
-    .header-section.filter-section button {
-        padding: 2px; /* Adjust padding */
-        padding-left: 8px;
-        padding-right: 8px
+    .filter-ui img {
+        width: 28px;
+        height: 28px;
     }
-    .header-section.filter-section {
-        margin-right: 0px;
-        margin-left: 10px;
+    /* Adjust sizes in overlay */
+    .filter-overlay .button-container button {
+        padding: 8px 22px;
+        font-size: 12px;
     }
-    .header-section.filter-section img {
+    .filter-overlay img {
         width: 28px;
         height: 28px;
     }
 }
 
+/* Larger screens */
 @media (min-width: 768px) and (max-width: 1023px) {
-    .header-section.filter-section {
-        margin-right: 0px;
-        margin-left: 10px;
+    .filter-ui button {
+        padding: 8px;
+    }
+    .filter-ui img {
+        width: 28px;
+        height: 28px;
+    }
+    /* Adjust sizes in overlay */
+    .filter-overlay .button-container button {
+        padding: 8px 22px;
+        font-size: 12px;
+    }
+    .filter-overlay img {
+        width: 28px;
+        height: 28px;
     }
 }
 
+/* Extra large screens */
 @media (min-width: 1024px) {
-    .header-section.filter-section img {
+    .filter-ui {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .filter-ui .button-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr); /* Four columns */
+        gap: 10px;
+    }
+    .filter-ui img {
         width: 32px;
         height: 32px;
     }
-    .header-section.filter-section {
-        margin-right: 0px;
-        margin-left: 10px;
-    }
-
-    .header-section.filter-section button {
-        padding: 8px; /* Adjust padding */
-        padding-left: 14px;
-        padding-right: 14px
-    }
-    .header-section.filter-section .button-container {
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-        gap: 10px; /* Space between buttons */
-    }
-    .header-section.filter-section .show-all-button{
-        font-size: 14px;
+    .filter-ui button {
+        padding: 8px 14px;
+        margin-bottom: 0;
     }
 }

@@ -1,6 +1,6 @@
 // Collect.jsx
 
-import React, { useState, useMemo, useCallback, useEffect, useContext } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import PokemonList from './PokemonList';
 import ListsMenu from './ListsMenu';
@@ -19,7 +19,7 @@ import { useUIControls } from './hooks/useUIControls';
 import useUIHandlers from './hooks/useUIHandlers';
 import usePokemonProcessing from './hooks/usePokemonProcessing';
 
-import LoadingSpinner from '../../components/LoadingSpinner'; // Added import
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 const PokemonListMemo = React.memo(PokemonList);
 const HeaderUIMemo = React.memo(HeaderUI);
@@ -97,7 +97,7 @@ function Collect({ isOwnCollection }) {
   } = useSearchFilters(variants);
 
   // Use custom hook to handle responsive UI
-  useResponsiveUI(setShowFilterUI, setShowCollectUI);
+  const isWide = useResponsiveUI(setShowFilterUI, setShowCollectUI);
 
   // Use custom hook to load user data
   useUserDataLoader({
@@ -192,7 +192,7 @@ function Collect({ isOwnCollection }) {
     ownershipData,
   });
 
-  const [isShowingLists, setIsShowingLists] = useState(false); // New state variable
+  const [isShowingLists, setIsShowingLists] = useState(false);
 
   // Handler for "Lists" button click
   const handleListsButtonClick = () => {
@@ -201,51 +201,45 @@ function Collect({ isOwnCollection }) {
 
   // Handler for selecting a list in ListsMenu
   const handleSelectList = (filter) => {
-    // If highlighted cards exist, confirm moving to the selected filter
     if (highlightedCards.size > 0) {
       handleConfirmMoveToFilter(filter);
       return;
     }
 
-    // Prevent setting the same filter repeatedly if isEditable is false
     if (!isEditable && ownershipFilter === filter) {
       return;
     }
 
-    // Determine the new filter state based on toggling logic
     const newFilter = ownershipFilter === filter ? '' : filter;
 
-    // Set the new filter
     setOwnershipFilter(newFilter);
 
-    // Adjust showAll based on the filter state and conditions
     if (newFilter === '' && !isShiny && !showCostume && !showShadow) {
       setShowAll(false);
     } else if (!showAll && newFilter !== '' && !isShiny && !showCostume && !showShadow) {
       setShowAll(true);
     }
 
-    // Hide the ListsMenu and show the PokemonList
     setIsShowingLists(false);
   };
 
-  const contextText = ownershipFilter === ''
-    ? 'Pokédex View'
-    : isEditable
+  const contextText =
+    ownershipFilter === ''
+      ? 'Pokédex View'
+      : isEditable
       ? 'Editing your Collection'
       : (
-        <>Viewing <span className="username">{username}</span>'s Collection</>
-      );
+          <>
+            Viewing <span className="username">{username}</span>'s Collection
+          </>
+        );
 
   return (
     <div>
-      {/* Render "User not found" only if `isUsernamePath` is true and `userExists` is explicitly false */}
       {isUsernamePath && userExists === false && <h1>User not found</h1>}
 
-      {/* Show loading spinner if data is still loading */}
       {(loading || viewedLoading) && <LoadingSpinner />}
 
-      {/* Render content if user exists, or if viewing own collection */}
       {(isOwnCollection || userExists) && !loading && !viewedLoading && (
         <>
           <HeaderUIMemo
@@ -267,14 +261,15 @@ function Collect({ isOwnCollection }) {
             toggleEvolutionaryLine={toggleEvolutionaryLine}
             showCollectUI={showCollectUI}
             toggleCollectUI={() => setShowCollectUI((prev) => !prev)}
+            isWide={isWide}
             ownershipFilter={ownershipFilter}
             updateOwnershipFilter={handleUpdateOwnershipFilter}
             handleFastSelectToggle={handleFastSelectToggle}
             selectAllToggle={selectAllToggle}
             highlightedCards={highlightedCards}
             confirmMoveToFilter={handleConfirmMoveToFilter}
-            onListsButtonClick={handleListsButtonClick} // Pass down the handler
-            contextText={contextText} // Ensure contextText is defined
+            onListsButtonClick={handleListsButtonClick}
+            contextText={contextText}
           />
           {!isShowingLists ? (
             <PokemonListMemo
@@ -299,7 +294,7 @@ function Collect({ isOwnCollection }) {
               variants={variants}
             />
           ) : (
-            <ListsMenu onSelectList={handleSelectList} /> // Render the new component
+            <ListsMenu onSelectList={handleSelectList} />
           )}
           <SortOverlayMemo
             sortType={sortType}

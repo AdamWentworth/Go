@@ -238,7 +238,7 @@
     min-width: 100%;
     align-items: center;
   }
-  .button-container img {
+  .pokemon-variant-container .button-container img {
     width: 20px;
     height: 20px;
   }

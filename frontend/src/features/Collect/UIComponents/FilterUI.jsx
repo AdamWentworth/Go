@@ -3,36 +3,53 @@
 import React, { useEffect } from 'react';
 import './FilterUI.css';
 
-// Utility function to preload images
 const preloadImage = (url) => {
     const img = new Image();
     img.src = url;
 };
 
 function FilterUI({
-    isShiny, toggleShiny, showCostume, toggleCostume, showShadow, toggleShadow,
-    toggleShowAll, showAll  
+    isShiny,
+    toggleShiny,
+    showCostume,
+    toggleCostume,
+    showShadow,
+    toggleShadow,
+    toggleShowAll,
+    showAll,
+    isWide,
 }) {
     useEffect(() => {
-        // Preload icons
-        preloadImage("/images/shiny_icon.png");
-        preloadImage("/images/costume_icon.png");
-        preloadImage("/images/shadow_icon.png");
+        preloadImage('/images/shiny_icon.png');
+        preloadImage('/images/costume_icon.png');
+        preloadImage('/images/shadow_icon.png');
     }, []);
 
     return (
-        <div className="header-section filter-section">
+        <div className={`filter-ui ${!isWide ? 'filter-overlay' : ''}`}>
             <div className="button-container">
-                <button onClick={toggleShowAll} className={`show-all-button ${showAll ? 'active' : ''}`}>
+                <button
+                    onClick={toggleShowAll}
+                    className={`show-all-button ${showAll ? 'active' : ''}`}
+                >
                     Show All
                 </button>
-                <button onClick={toggleShiny} className={`shiny-button ${isShiny ? 'active' : ''}`}>
+                <button
+                    onClick={toggleShiny}
+                    className={`shiny-button ${isShiny ? 'active' : ''}`}
+                >
                     <img src="/images/shiny_icon.png" alt="Toggle Shiny" />
                 </button>
-                <button onClick={toggleCostume} className={`costume-button ${showCostume ? 'active' : ''}`}>
+                <button
+                    onClick={toggleCostume}
+                    className={`costume-button ${showCostume ? 'active' : ''}`}
+                >
                     <img src="/images/costume_icon.png" alt="Toggle Costume" />
                 </button>
-                <button onClick={toggleShadow} className={`shadow-button ${showShadow ? 'active' : ''}`}>
+                <button
+                    onClick={toggleShadow}
+                    className={`shadow-button ${showShadow ? 'active' : ''}`}
+                >
                     <img src="/images/shadow_icon.png" alt="Toggle Shadow" />
                 </button>
             </div>
@@ -41,4 +58,3 @@ function FilterUI({
 }
 
 export default FilterUI;
-
