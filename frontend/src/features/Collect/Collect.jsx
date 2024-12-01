@@ -294,7 +294,12 @@ function Collect({ isOwnCollection }) {
               variants={variants}
             />
           ) : (
-            <ListsMenu onSelectList={handleSelectList} />
+            <ListsMenu 
+              onSelectList={handleSelectList}
+              activeLists={activeLists}
+              variants={variants}
+              ownershipData={ownershipData}
+            />
           )}
           <SortOverlayMemo
             sortType={sortType}
