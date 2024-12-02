@@ -26,6 +26,7 @@ const HeaderUI = ({
   showCollectUI,
   toggleCollectUI,
   ownershipFilter,
+  handleClearOwnershipFilter,
   updateOwnershipFilter,
   handleFastSelectToggle,
   selectAllToggle,
@@ -71,6 +72,7 @@ const HeaderUI = ({
             <CollectUI
               isEditable={isEditable}
               ownershipFilter={ownershipFilter}
+              onClearOwnershipFilter={handleClearOwnershipFilter}
               onFastSelectToggle={handleFastSelectToggle}
               onSelectAll={selectAllToggle}
               highlightedCards={highlightedCards}

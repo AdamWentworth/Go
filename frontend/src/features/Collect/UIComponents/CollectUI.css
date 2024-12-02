@@ -51,7 +51,7 @@
 .collect-ui .button-container button {
   width: 100%;
   justify-content: center;
-  background-color: #ccc;
+  background-color: #ccc; /* Default background color */
   border: none;
   outline: none;
   padding: 10px;
@@ -64,12 +64,12 @@
   font-size: 14px;
 }
 
-/* Updated selector to target buttons inside button-container */
+/* Remove margin-bottom from the last button */
 .collect-ui .button-container button:last-child {
   margin-bottom: 0;
 }
 
-/* Updated selector to target images inside button-container */
+/* Images inside button-container */
 .collect-ui .button-container img {
   width: 24px;
   height: 24px;
@@ -86,9 +86,8 @@
   height: 28px;
 }
 
-/* Active state styles for buttons inside button-container */
-.collect-ui .button-container .select-all-button.active,
-.collect-ui .button-container .lists-button.active {
+/* Active state styles for buttons */
+.collect-ui .button-container .select-all-button.active {
   background-color: #47bbb7;
 }
 
@@ -96,13 +95,17 @@
   background-color: rgb(255, 246, 123);
 }
 
-/* Hover states for buttons inside button-container */
+/* Active state for pokedex-button */
+.collect-ui .button-container .pokedex-button.pokedex-active {
+  background-color: #ef4d4d; /* Light red background when active */
+}
+
+/* Hover states for buttons */
 .collect-ui .button-container button:hover {
   background-color: #bbb;
 }
 
-.collect-ui .button-container .select-all-button:hover,
-.collect-ui .button-container .lists-button:hover {
+.collect-ui .button-container .select-all-button:hover {
   background-color: #3ea5a2;
 }
 
@@ -110,9 +113,68 @@
   background-color: rgb(255, 223, 40);
 }
 
+/* Hover state for pokedex-button */
+.collect-ui .button-container .pokedex-button:hover {
+  background-color: rgb(201, 44, 44); /* Slightly darker red on hover */
+}
+
+/* Default Lists button styles */
+.collect-ui .button-container .lists-button {
+  background-color: #ccc; /* Grey background when ownershipFilter is '' */
+  color: black;
+}
+
+/* Hover state for the default Lists button */
+.collect-ui .button-container .lists-button:hover {
+  background-color: #bbb;
+}
+
+/* Styles for the Lists button when ownershipFilter is set */
+.collect-ui .button-container .lists-button.owned {
+  background-color: #2196F3; /* Blue for Owned */
+  color: white;
+}
+
+.collect-ui .button-container .lists-button.trade {
+  background-color: #4CAF50; /* Green for Trade */
+  color: white;
+}
+
+.collect-ui .button-container .lists-button.wanted {
+  background-color: #F44336; /* Red for Wanted */
+  color: white;
+}
+
+.collect-ui .button-container .lists-button.unowned {
+  background-color: #9E9E9E; /* Grey for Unowned */
+  color: white;
+}
+
+/* Hover states for the Lists button when ownershipFilter is set */
+.collect-ui .button-container .lists-button.owned:hover {
+  background-color: #1976D2; /* Darker blue on hover */
+}
+
+.collect-ui .button-container .lists-button.trade:hover {
+  background-color: #388E3C; /* Darker green on hover */
+}
+
+.collect-ui .button-container .lists-button.wanted:hover {
+  background-color: #D32F2F; /* Darker red on hover */
+}
+
+.collect-ui .button-container .lists-button.unowned:hover {
+  background-color: #757575; /* Darker grey on hover */
+}
+
+/* Adjust font size for Lists button when it's "Unowned" */
+.collect-ui .button-container .lists-button.unowned {
+  font-size: 12px; /* Decrease font size by 2px from default (14px) */
+}
+
 /* Styles for the Lists button in non-editable state */
 .non-editable-collect .lists-button {
-  background-color: #ccc;
+  /* Apply the same dynamic classes */
   border: none;
   outline: none;
   padding: 10px;
@@ -123,15 +185,59 @@
   transition: background-color 0.3s ease;
   font-size: 14px;
   margin-left: 10px; /* Adjust spacing as needed */
+  background-color: #ccc; /* Default background color */
+  color: black;
 }
 
 /* Hover state for the Lists button in non-editable state */
 .non-editable-collect .lists-button:hover {
-  background-color: #bbb;
+  background-color: #bbb; /* Default hover color */
+}
+
+/* Adjust font size for Lists button in non-editable state when it's "Unowned" */
+.non-editable-collect .lists-button.unowned {
+  font-size: 12px; /* Decrease font size by 2px from default (14px) */
+}
+
+/* Hover states for the Lists button in non-editable state when ownershipFilter is set */
+.non-editable-collect .lists-button.owned {
+  background-color: #2196F3; /* Blue for Owned */
+  color: white;
+}
+
+.non-editable-collect .lists-button.owned:hover {
+  background-color: #1976D2;
+}
+
+.non-editable-collect .lists-button.trade {
+  background-color: #4CAF50; /* Green for Trade */
+  color: white;
+}
+
+.non-editable-collect .lists-button.trade:hover {
+  background-color: #388E3C;
+}
+
+.non-editable-collect .lists-button.wanted {
+  background-color: #F44336; /* Red for Wanted */
+  color: white;
+}
+
+.non-editable-collect .lists-button.wanted:hover {
+  background-color: #D32F2F;
+}
+
+.non-editable-collect .lists-button.unowned {
+  background-color: #9E9E9E; /* Grey for Unowned */
+  color: white;
+}
+
+.non-editable-collect .lists-button.unowned:hover {
+  background-color: #757575;
+  font-size: 12px; /* Decrease font size by 2px from default (14px) */
 }
 
 /* Context Text Styling */
-
 .context-text-container {
   text-align: center;
   margin-right: 10px;
@@ -180,6 +286,13 @@
     height: 40px;
     font-size: 10px;
   }
+  /* Adjust font size for Lists button when it's "Unowned" */
+  .collect-ui .button-container .lists-button.unowned {
+    font-size: 8px; /* Decrease font size by 2px from 10px */
+  }
+  .non-editable-collect .lists-button.unowned {
+    font-size: 8px; /* Decrease font size by 2px from 10px */
+  }
   .collect-overlay .button-container button {
     padding: 10px;
     font-size: 10px;
@@ -203,6 +316,13 @@
     width: 44px;
     height: 44px;
     font-size: 12px;
+  }
+  /* Adjust font size for Lists button when it's "Unowned" */
+  .collect-ui .button-container .lists-button.unowned {
+    font-size: 10px; /* Decrease font size by 2px from 12px */
+  }
+  .non-editable-collect .lists-button.unowned {
+    font-size: 10px; /* Decrease font size by 2px from 12px */
   }
   .collect-ui .button-container img {
     width: 28px;
@@ -250,8 +370,12 @@
     width: 60px;
     height: 48px;
   }
-  .non-editable-collect .context-text {
-    font-size: 14px;
+  /* Adjust font size for Lists button when it's "Unowned" */
+  .collect-ui .button-container .lists-button.unowned {
+    font-size: 12px; /* Decrease font size by 2px from 14px */
+  }
+  .non-editable-collect .lists-button.unowned {
+    font-size: 12px; /* Decrease font size by 2px from 14px */
   }
   .non-editable-collect .context-text {
     margin-block-start: 0px;
@@ -263,8 +387,6 @@
     display: unset;
   } 
   .non-editable-collect .lists-button {
-    background-color: #ccc !important;
-    color: black !important;
     height: 48px;
     padding-left: 15px !important;
     padding-right: 15px !important;

@@ -17,6 +17,7 @@ const CollectUI = ({
   contextText,
   onListsButtonClick,
   ownershipFilter,
+  onClearOwnershipFilter,
   isWide,
 }) => {
   const [fastSelectEnabled, setFastSelectEnabled] = useState(false);
@@ -34,19 +35,29 @@ const CollectUI = ({
     onFastSelectToggle(newFastSelectState);
   };
 
+  // Determine the text and class for the Lists button based on ownershipFilter
+  let listsButtonText = 'Lists';
+  let listsButtonClass = '';
+
+  if (ownershipFilter === 'Owned') {
+    listsButtonText = 'Owned';
+    listsButtonClass = 'owned';
+  } else if (ownershipFilter === 'Trade') {
+    listsButtonText = 'Trade';
+    listsButtonClass = 'trade';
+  } else if (ownershipFilter === 'Wanted') {
+    listsButtonText = 'Wanted';
+    listsButtonClass = 'wanted';
+  } else if (ownershipFilter === 'Unowned') {
+    listsButtonText = 'Unowned';
+    listsButtonClass = 'unowned';
+  }
+
   return (
     <div className={`collect-ui ${!isWide && isEditable ? 'collect-overlay' : ''}`}>
       <div className={`button-container ${isEditable ? 'editable' : 'non-editable'}`}>
         {isEditable ? (
           <>
-            {/* Context Text */}
-            <div
-              className={`context-text-container editing ${
-                !ownershipFilter ? 'viewing-all' : ''
-              }`}
-            >
-              <p className="context-text">{contextText}</p>
-            </div>
             {/* Buttons */}
             <button
               onClick={handleToggleFastSelect}
@@ -60,16 +71,28 @@ const CollectUI = ({
             >
               Select All
             </button>
-            <button className="lists-button" onClick={onListsButtonClick}>
-              Lists
+            <button
+              className={`pokedex-button ${ownershipFilter === '' ? 'pokedex-active' : ''}`}
+              onClick={onClearOwnershipFilter}
+            >
+              <img src="/images/pokedex-icon.png" alt="Pokédex View" />
+            </button>
+            <button
+              className={`lists-button ${listsButtonClass}`}
+              onClick={onListsButtonClick}
+            >
+              {listsButtonText}
             </button>
           </>
         ) : (
-          // Render context-text and lists button side by side in all cases when isEditable is false
+          // Render context-text and lists button side by side when not editable
           <div className="non-editable-collect">
             <p className="context-text">{contextText}</p>
-            <button className="lists-button" onClick={onListsButtonClick}>
-              Lists
+            <button
+              className={`lists-button ${listsButtonClass}`}
+              onClick={onListsButtonClick}
+            >
+              {listsButtonText}
             </button>
           </div>
         )}

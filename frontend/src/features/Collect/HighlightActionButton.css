@@ -1,0 +1,89 @@
+/* HighlightActionButton.css */
+
+.highlight-action-container {
+    position: fixed;
+    bottom: 20px; /* Keep aligned with sort-overlay */
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 1000; /* Ensure it overlays other content */
+  }
+  
+  .action-buttons {
+    display: flex;
+    flex-direction: column; /* Keep as column */
+    align-items: center;
+  }
+  
+  .main-button {
+    background-color: #34807d;
+    color: white;
+    padding: 15px 30px;
+    font-size: 18px;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px; /* Add margin-top for spacing */
+    width: 300px;
+  }
+  
+  .main-button:hover, .transfer-button:hover {
+    background-color: #3da395;
+  }
+  
+  .transfer-button {
+    background-color: #34807d; /* Choose a distinct color */
+    color: white;
+    padding: 15px 30px;
+    font-size: 18px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    margin-top: 10px; /* Spacing above the button */
+    transition: background-color 0.3s ease;
+    width: 300px;
+  }
+  
+  .filter-buttons {
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.3s ease, max-height 0.3s ease;
+  }
+  
+  .action-buttons.expanded .filter-buttons {
+    opacity: 1;
+    max-height: 300px; /* Adjust as needed */
+  }
+  
+  .filter-button {
+    background-color: #f1f1f1;
+    color: black;
+    padding: 10px 20px;
+    margin: 5px 0;
+    font-size: 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    width: 200px;
+  }
+  
+  .filter-button.Owned {
+    background-color: #2196F3;
+    color: white;
+  }
+  
+  .filter-button.Trade {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  .filter-button.Wanted {
+    background-color: #F44336;
+    color: white;
+  }
+  

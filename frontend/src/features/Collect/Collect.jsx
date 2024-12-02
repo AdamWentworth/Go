@@ -6,6 +6,7 @@ import PokemonList from './PokemonList';
 import ListsMenu from './ListsMenu';
 import HeaderUI from './HeaderUI';
 import SortOverlay from './SortOverlay';
+import HighlightActionButton from './HighlightActionButton';
 import { usePokemonData } from '../../contexts/PokemonDataContext';
 import { multiFormPokedexNumbers } from '../../utils/constants';
 import UserSearchContext from '../../contexts/UserSearchContext';
@@ -199,27 +200,36 @@ function Collect({ isOwnCollection }) {
     setIsShowingLists(true);
   };
 
+  // Handler function to clear the ownership filter
+  const handleClearOwnershipFilter = () => {
+    setOwnershipFilter('');
+
+    if (!isShiny && !showCostume && !showShadow) {
+      setShowAll(false);
+    }
+
+    // Clear all highlighted cards
+    setHighlightedCards(new Set());
+
+    setIsShowingLists(false);
+  };
+
   // Handler for selecting a list in ListsMenu
   const handleSelectList = (filter) => {
-    if (highlightedCards.size > 0) {
-      handleConfirmMoveToFilter(filter);
-      return;
-    }
+    // Clear all highlighted cards
+    setHighlightedCards(new Set());
 
-    if (!isEditable && ownershipFilter === filter) {
-      return;
-    }
+    // Set the ownershipFilter to the selected filter
+    setOwnershipFilter(filter);
 
-    const newFilter = ownershipFilter === filter ? '' : filter;
-
-    setOwnershipFilter(newFilter);
-
-    if (newFilter === '' && !isShiny && !showCostume && !showShadow) {
+    // Update showAll based on the new filter
+    if (filter === '' && !isShiny && !showCostume && !showShadow) {
       setShowAll(false);
-    } else if (!showAll && newFilter !== '' && !isShiny && !showCostume && !showShadow) {
+    } else if (!showAll && filter !== '' && !isShiny && !showCostume && !showShadow) {
       setShowAll(true);
     }
 
+    // Close the ListsMenu
     setIsShowingLists(false);
   };
 
@@ -263,6 +273,7 @@ function Collect({ isOwnCollection }) {
             toggleCollectUI={() => setShowCollectUI((prev) => !prev)}
             isWide={isWide}
             ownershipFilter={ownershipFilter}
+            handleClearOwnershipFilter={handleClearOwnershipFilter}
             updateOwnershipFilter={handleUpdateOwnershipFilter}
             handleFastSelectToggle={handleFastSelectToggle}
             selectAllToggle={selectAllToggle}
@@ -308,6 +319,13 @@ function Collect({ isOwnCollection }) {
             setSortMode={toggleSortMode}
           />
         </>
+      )}
+      {isEditable && highlightedCards.size > 0 && (
+        <HighlightActionButton
+          highlightedCards={highlightedCards}
+          handleConfirmMoveToFilter={handleConfirmMoveToFilter}
+          ownershipFilter={ownershipFilter}
+        />
       )}
     </div>
   );
