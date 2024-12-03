@@ -62,41 +62,31 @@ const HeaderUI = ({
         showEvolutionaryLine={showEvolutionaryLine}
         toggleEvolutionaryLine={toggleEvolutionaryLine}
       />
-      {/* Conditionally render the Collect button and CollectUI based on isEditable */}
-      {isEditable ? (
-        <div className="collect-container">
-          <button className="toggle-button collect-ui-toggle" onClick={toggleCollectUI}>
-            Collect
-          </button>
-          {showCollectUI && (
-            <CollectUI
-              isEditable={isEditable}
-              ownershipFilter={ownershipFilter}
-              onClearOwnershipFilter={handleClearOwnershipFilter}
-              onFastSelectToggle={handleFastSelectToggle}
-              onSelectAll={selectAllToggle}
-              highlightedCards={highlightedCards}
-              confirmMoveToFilter={confirmMoveToFilter}
-              showAll={showAll}
-              toggleShowAll={toggleShowAll}
-              isShiny={isShiny}
-              showCostume={showCostume}
-              showShadow={showShadow}
-              contextText={contextText}
-              onListsButtonClick={onListsButtonClick}
-              isWide={isWide}
-            />
-          )}
-        </div>
-      ) : (
-        // When not editable, display context text and Lists button directly
-        <div className="non-editable-collect">
-          <p className="context-text">{contextText}</p>
-          <button className="toggle-button lists-button" onClick={onListsButtonClick}>
-            Lists
-          </button>
-        </div>
-      )}
+      {/* Always render CollectUI */}
+      <div className="collect-container">
+        <button className="toggle-button collect-ui-toggle" onClick={toggleCollectUI}>
+          Collect
+        </button>
+        {showCollectUI && (
+          <CollectUI
+            isEditable={isEditable}
+            ownershipFilter={ownershipFilter}
+            onClearOwnershipFilter={handleClearOwnershipFilter}
+            onFastSelectToggle={handleFastSelectToggle}
+            onSelectAll={selectAllToggle}
+            highlightedCards={highlightedCards}
+            confirmMoveToFilter={confirmMoveToFilter}
+            showAll={showAll}
+            toggleShowAll={toggleShowAll}
+            isShiny={isShiny}
+            showCostume={showCostume}
+            showShadow={showShadow}
+            contextText={contextText}
+            onListsButtonClick={onListsButtonClick}
+            isWide={isWide}
+          />
+        )}
+      </div>
     </div>
   );
 };

@@ -43,10 +43,6 @@
   align-items: center;
 }
 
-.collect-ui .button-container.non-editable button {
-  width: auto;
-}
-
 /* Buttons inside button-container */
 .collect-ui .button-container button {
   width: 100%;
@@ -234,7 +230,6 @@
 
 .non-editable-collect .lists-button.unowned:hover {
   background-color: #757575;
-  font-size: 12px; /* Decrease font size by 2px from default (14px) */
 }
 
 /* Context Text Styling */
@@ -270,6 +265,12 @@
   margin-block-start: 0px;
   margin-block-end: 0px;
   margin-bottom: 5px;
+  font-size: 12px;
+}
+
+.non-editable-collect p {
+  margin-block-start: 0px;
+  margin-block-end: 0px;
   font-size: 12px;
 }
 
@@ -351,13 +352,22 @@
     flex-direction: column;
     align-items: center;
   }
-  .collect-ui .button-container {
+  /* Editable state grid layout */
+  .collect-ui .button-container.editable {
     display: grid;
     grid-template-columns: auto 60px 60px 60px;
     grid-template-rows: 48px;
     gap: 10px;
     align-items: center;
     justify-items: start;
+  }
+  /* Non-editable state grid layout */
+  .collect-ui .button-container.non-editable {
+    display: grid;
+    gap: 10px;
+    align-items: center;
+    justify-items: start;
+    width: 100%; /* Ensure full width */
   }
   .collect-ui .button-container img {
     width: 32px;
@@ -374,21 +384,20 @@
   .collect-ui .button-container .lists-button.unowned {
     font-size: 12px; /* Decrease font size by 2px from 14px */
   }
-  .non-editable-collect .lists-button.unowned {
-    font-size: 12px; /* Decrease font size by 2px from 14px */
-  }
   .non-editable-collect .context-text {
-    margin-block-start: 0px;
-    margin-block-end: 0px;
+    grid-column: 1 / span 1; /* Place in the first column */
     font-size: 14px;
-    margin-right: 10px;
+    margin-right: 0; /* Remove margin, grid handles spacing */
+    align-self: center; /* Center vertically */
   }
-  .collect-ui-toggle {
-    display: unset;
-  } 
   .non-editable-collect .lists-button {
+    grid-column: 2 / span 1; /* Place in the second column */
     height: 48px;
     padding-left: 15px !important;
     padding-right: 15px !important;
+    justify-self: end; /* Align to the end of the grid cell */
+  }
+  .collect-ui-toggle {
+    display: unset;
   }
 }

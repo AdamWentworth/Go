@@ -82,9 +82,6 @@
 }
 
 /* Hover states */
-.filter-ui .button-container button:hover {
-    background-color: #bbb;
-}
 
 /* Specific hover colors */
 .filter-ui .show-all-button:hover {
