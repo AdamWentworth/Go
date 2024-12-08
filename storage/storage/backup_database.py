@@ -1,19 +1,28 @@
-# storage/backup_database.py
-
 import os
 import subprocess
 import datetime
 from pathlib import Path
 import logging
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 
 logger = logging.getLogger('backupLogger')
 
-# Load environment variables from .env.development
-load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env.development")
+# Explicitly set the path to .env.development in the second storage folder
+env_path = Path(__file__).resolve().parent / ".env.development"
 
-# Configuration
-DB_NAME = os.getenv('DB_NAME')
+# Check if the file exists
+if not env_path.exists():
+    raise FileNotFoundError(f".env.development file not found at: {env_path}")
+
+# Load environment variables from the .env file
+config = dotenv_values(env_path)
+
+# Access variables from the dictionary
+DB_NAME = config.get("DB_NAME")
+if not DB_NAME:
+    raise ValueError("DB_NAME is not defined in .env.development")
+
+print(f"DB_NAME: {DB_NAME}")
 
 # Determine the backup directory relative to this script
 BASE_DIR = Path(__file__).resolve().parent
@@ -36,8 +45,10 @@ def create_backup():
     try:
         subprocess.run(dump_command, shell=True, check=True)
         logger.info(f"Backup created successfully: {backup_filepath}")
+        print(f"Backup created successfully: {backup_filepath}")
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to create backup: {e}")
+        print(f"Failed to create backup: {e}")
 
 def manage_retention():
     today = datetime.datetime.now()
@@ -64,14 +75,16 @@ def manage_retention():
                             logger.info(f"Deleting backup older than yearly cutoff: {file.name}")
                             file.unlink()
                             logger.info(f"Deleted backup: {file.name}")
+                            print(f"Deleted backup: {file.name}")
                 else:
                     logger.info(f"Retained backup: {file.name}")
             except ValueError as e:
                 logger.error(f"Error parsing date from file {file}: {e}")
+                print(f"Error parsing date from file {file}: {e}")
 
     logger.info("Finished managing backup retention.")
+    print("Finished managing backup retention.")
 
 if __name__ == "__main__":
     create_backup()
     manage_retention()
-
