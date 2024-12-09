@@ -41,34 +41,37 @@ const createBackup = () => {
     exec(command, (error, stdout, stderr) => {
         if (error) {
             logger.error(`Backup failed: ${error.message}`);
-            return;
         }
         if (stderr) {
             logger.error(`Backup stderr: ${stderr}`);
-            return;
         }
-        logger.info(`Backup successful: ${stdout}`);
 
-        // Verify the file exists
+        // Always log and verify the result, even if there was an error
         if (fs.existsSync(backupPath)) {
             logger.info(`Backup created successfully at: ${backupPath}`);
         } else {
             logger.error(`Backup file not found: ${backupPath}`);
         }
 
-        // Run retention management after backup
+        // Ensure retention management is called no matter what
+        logger.info('Starting retention management...');
         manageRetention();
     });
 };
 
 /**
- * Manage backup retention by removing old files based on defined policies.
+ * Manage backup retention by following a Grandfather-Father-Son scheme.
+ * - Daily (Son): Keep daily backups for the last 30 days
+ * - Monthly (Father): Keep monthly backups (1st of each month) for 12 months
+ * - Yearly (Grandfather): Keep yearly backups (1st Jan) for 5 years
  */
 const manageRetention = () => {
-    const today = new Date();
-    const dailyCutoff = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
-    const monthlyCutoff = new Date(today.getFullYear() - 1, today.getMonth(), 1);
-    const yearlyCutoff = new Date(today.getFullYear() - 5, 0, 1);
+    // Retention periods
+    const dailyRetentionDays = 30;      // Keep daily backups for 30 days
+    const monthlyRetentionMonths = 12;  // Keep monthly backups for 12 months
+    const yearlyRetentionYears = 5;     // Keep yearly backups for 5 years
+
+    const now = new Date();
 
     fs.readdir(BACKUP_DIRECTORY, (err, files) => {
         if (err) {
@@ -76,32 +79,57 @@ const manageRetention = () => {
             return;
         }
 
-        files.forEach(file => {
-            const filePath = path.join(BACKUP_DIRECTORY, file);
+        files.forEach((file) => {
+            if (path.extname(file) !== '.gz') return; // Only consider .gz backups
 
-            // Check if the file is a gzipped backup
-            if (path.extname(file) === '.gz') {
-                // Parse the date from the filename using regex
-                const match = file.match(/(\d{4})_(\d{2})_(\d{2})/);
-                if (!match) {
-                    logger.error(`Unable to parse date from file: ${file}`);
-                    return;
-                }
+            const match = file.match(/(\d{4})_(\d{2})_(\d{2})/);
+            if (!match) {
+                logger.error(`Filename does not match expected format: ${file}`);
+                return;
+            }
 
-                const [_, year, month, day] = match;
-                const fileDate = new Date(`${year}-${month}-${day}`);
+            const [_, yearStr, monthStr, dayStr] = match;
+            const year = parseInt(yearStr, 10);
+            const month = parseInt(monthStr, 10) - 1; // zero-based for JS months
+            const day = parseInt(dayStr, 10);
 
-                // Log retention checks
-                logger.debug(`Checking retention for file: ${file}, FileDate=${fileDate}, DailyCutoff=${dailyCutoff}, MonthlyCutoff=${monthlyCutoff}, YearlyCutoff=${yearlyCutoff}`);
+            const fileDate = new Date(year, month, day);
+            if (isNaN(fileDate)) {
+                logger.error(`Invalid date parsed for file: ${file}`);
+                return;
+            }
 
-                // Retention logic
-                if (fileDate < dailyCutoff && fileDate.getDate() !== 1) {
-                    deleteFile(filePath);
-                } else if (fileDate < monthlyCutoff && fileDate.getMonth() !== 0) {
-                    deleteFile(filePath);
-                } else if (fileDate < yearlyCutoff) {
-                    deleteFile(filePath);
-                }
+            // Determine backup type based on date
+            const isYearlyBackup = (month === 0 && day === 1);    // January 1st
+            const isMonthlyBackup = (!isYearlyBackup && day === 1); 
+            const isDailyBackup   = (!isYearlyBackup && !isMonthlyBackup);
+
+            // Calculate ages
+            const ageInDays = Math.floor((now - fileDate) / (1000 * 60 * 60 * 24));
+            const ageInMonths = (now.getFullYear() - year) * 12 + (now.getMonth() - month);
+            const ageInYears = now.getFullYear() - year;
+
+            logger.debug(`Evaluating file: ${file}`);
+            logger.debug(`Type: ${isYearlyBackup ? 'Yearly' : isMonthlyBackup ? 'Monthly' : 'Daily'}`);
+            logger.debug(`Age: ${ageInDays} days, ${ageInMonths} months, ${ageInYears} years`);
+
+            let shouldDelete = false;
+
+            if (isDailyBackup && ageInDays > dailyRetentionDays) {
+                logger.info(`Daily backup ${file} is older than ${dailyRetentionDays} days. Deleting.`);
+                shouldDelete = true;
+            } else if (isMonthlyBackup && ageInMonths > monthlyRetentionMonths) {
+                logger.info(`Monthly backup ${file} is older than ${monthlyRetentionMonths} months. Deleting.`);
+                shouldDelete = true;
+            } else if (isYearlyBackup && ageInYears > yearlyRetentionYears) {
+                logger.info(`Yearly backup ${file} is older than ${yearlyRetentionYears} years. Deleting.`);
+                shouldDelete = true;
+            } else {
+                logger.info(`Backup ${file} does not meet deletion criteria.`);
+            }
+
+            if (shouldDelete) {
+                deleteFile(path.join(BACKUP_DIRECTORY, file));
             }
         });
     });
@@ -112,7 +140,7 @@ const manageRetention = () => {
  * @param {string} filePath - The path to the file to delete.
  */
 const deleteFile = (filePath) => {
-    fs.unlink(filePath, err => {
+    fs.unlink(filePath, (err) => {
         if (err) {
             logger.error(`Failed to delete file: ${filePath}, Error: ${err.message}`);
         } else {
