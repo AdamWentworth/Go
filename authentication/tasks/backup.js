@@ -4,7 +4,7 @@ const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
-const logger = require('../middlewares/logger'); // Use the same logger configuration as the rest of the server
+const logger = require('../middlewares/logger'); // Ensure logger is properly configured
 
 // Load environment variables from .env file
 dotenv.config();
@@ -14,6 +14,9 @@ const COLLECTION_NAME = 'users'; // The collection you want to back up
 const DATABASE_URL = process.env.DATABASE_URL || 'mongodb://localhost:27017';
 const BACKUP_DIRECTORY = process.env.BACKUP_DIRECTORY || path.join(__dirname, '../backups'); // Ensure this directory exists
 
+/**
+ * Create a database backup.
+ */
 const createBackup = () => {
     // Ensure the backup directory exists
     if (!fs.existsSync(BACKUP_DIRECTORY)) {
@@ -58,6 +61,9 @@ const createBackup = () => {
     });
 };
 
+/**
+ * Manage backup retention by removing old files based on defined policies.
+ */
 const manageRetention = () => {
     const today = new Date();
     const dailyCutoff = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
@@ -72,31 +78,46 @@ const manageRetention = () => {
 
         files.forEach(file => {
             const filePath = path.join(BACKUP_DIRECTORY, file);
-            if (path.extname(file) === '.gz') {
-                const fileDateStr = file.split('_').slice(-3).join('-').replace('.gz', '');
-                const fileDate = new Date(fileDateStr);
 
-                if (isNaN(fileDate)) {
-                    logger.error(`Error parsing date from file: ${file}`);
+            // Check if the file is a gzipped backup
+            if (path.extname(file) === '.gz') {
+                // Parse the date from the filename using regex
+                const match = file.match(/(\d{4})_(\d{2})_(\d{2})/);
+                if (!match) {
+                    logger.error(`Unable to parse date from file: ${file}`);
                     return;
                 }
 
+                const [_, year, month, day] = match;
+                const fileDate = new Date(`${year}-${month}-${day}`);
+
+                // Log retention checks
+                logger.debug(`Checking retention for file: ${file}, FileDate=${fileDate}, DailyCutoff=${dailyCutoff}, MonthlyCutoff=${monthlyCutoff}, YearlyCutoff=${yearlyCutoff}`);
+
                 // Retention logic
                 if (fileDate < dailyCutoff && fileDate.getDate() !== 1) {
-                    if (fileDate < monthlyCutoff && fileDate.getMonth() !== 0) {
-                        if (fileDate < yearlyCutoff) {
-                            fs.unlink(filePath, err => {
-                                if (err) {
-                                    logger.error(`Failed to delete old backup: ${file}`);
-                                } else {
-                                    logger.info(`Deleted old backup: ${file}`);
-                                }
-                            });
-                        }
-                    }
+                    deleteFile(filePath);
+                } else if (fileDate < monthlyCutoff && fileDate.getMonth() !== 0) {
+                    deleteFile(filePath);
+                } else if (fileDate < yearlyCutoff) {
+                    deleteFile(filePath);
                 }
             }
         });
+    });
+};
+
+/**
+ * Delete a file and log the result.
+ * @param {string} filePath - The path to the file to delete.
+ */
+const deleteFile = (filePath) => {
+    fs.unlink(filePath, err => {
+        if (err) {
+            logger.error(`Failed to delete file: ${filePath}, Error: ${err.message}`);
+        } else {
+            logger.info(`Deleted old backup: ${filePath}`);
+        }
     });
 };
 
@@ -105,5 +126,6 @@ module.exports = createBackup;
 
 // If this script is run directly, execute the backup
 if (require.main === module) {
+    logger.info('Running backup manually...');
     createBackup();
 }
