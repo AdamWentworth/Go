@@ -1,3 +1,5 @@
+# backup_database.py
+
 import os
 import subprocess
 import datetime
@@ -6,6 +8,12 @@ import logging
 from dotenv import dotenv_values
 
 logger = logging.getLogger('backupLogger')
+logger.setLevel(logging.INFO)  # Set log level as needed
+
+# Stream handler for demonstration (you can customize as needed)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+logger.addHandler(console_handler)
 
 # Explicitly set the path to .env.development in the second storage folder
 env_path = Path(__file__).resolve().parent / ".env.development"
@@ -50,41 +58,79 @@ def create_backup():
         logger.error(f"Failed to create backup: {e}")
         print(f"Failed to create backup: {e}")
 
-def manage_retention():
-    today = datetime.datetime.now()
-    daily_cutoff = today - datetime.timedelta(days=30)
-    monthly_cutoff = today - datetime.timedelta(days=365)
-    yearly_cutoff = today - datetime.timedelta(days=365*5)
+    # After creation, manage retention
+    manage_retention()
 
+def manage_retention():
+    # Define retention policy
+    dailyRetentionDays = 30      # Keep daily backups for 30 days
+    monthlyRetentionMonths = 12  # Keep monthly backups for 12 months
+    yearlyRetentionYears = 5     # Keep yearly backups for 5 years
+
+    now = datetime.datetime.now()
     logger.info("Starting to manage backup retention...")
-    
+
     for file in BACKUP_DIR.iterdir():
         if file.suffix == ".sql":
-            try:
-                # Extract the date part from the filename
-                file_date_str = file.stem.split('_')[-1]
-                file_date = datetime.datetime.strptime(file_date_str, "%Y-%m-%d")
-                logger.info(f"Processing backup: {file.name}, Date: {file_date}")
+            # Filename format: user_pokemon_backup_YYYY-MM-DD.sql
+            # Extract the date from the filename
+            parts = file.stem.split('_')
+            if len(parts) < 4:
+                logger.error(f"Filename does not match expected format: {file.name}")
+                print(f"Filename does not match expected format: {file.name}")
+                continue
 
-                # Determine retention policy
-                if file_date < daily_cutoff and file_date.day != 1:
-                    logger.info(f"Backup older than daily cutoff: {file.name}")
-                    if file_date < monthly_cutoff and file_date.month != 1:
-                        logger.info(f"Backup older than monthly cutoff: {file.name}")
-                        if file_date < yearly_cutoff:
-                            logger.info(f"Deleting backup older than yearly cutoff: {file.name}")
-                            file.unlink()
-                            logger.info(f"Deleted backup: {file.name}")
-                            print(f"Deleted backup: {file.name}")
-                else:
-                    logger.info(f"Retained backup: {file.name}")
+            file_date_str = parts[-1]  # The last part should be YYYY-MM-DD
+            try:
+                file_date = datetime.datetime.strptime(file_date_str, "%Y-%m-%d")
             except ValueError as e:
-                logger.error(f"Error parsing date from file {file}: {e}")
-                print(f"Error parsing date from file {file}: {e}")
+                logger.error(f"Error parsing date from file {file.name}: {e}")
+                print(f"Error parsing date from file {file.name}: {e}")
+                continue
+
+            logger.info(f"Processing backup: {file.name}, Date: {file_date}")
+
+            # Determine backup type (yearly, monthly, daily)
+            # Yearly: Jan 1st, Monthly: 1st of month (but not Jan 1), Daily: everything else
+            is_yearly = (file_date.month == 1 and file_date.day == 1)
+            is_monthly = (file_date.day == 1 and not is_yearly)
+            is_daily = (not is_yearly and not is_monthly)
+
+            # Calculate ages
+            age_in_days = (now - file_date).days
+            # For months: approximate by year/month differences (ignoring days)
+            age_in_months = (now.year - file_date.year) * 12 + (now.month - file_date.month)
+            age_in_years = now.year - file_date.year
+
+            logger.info(f"Type: {'Yearly' if is_yearly else 'Monthly' if is_monthly else 'Daily'}")
+            logger.info(f"Age: {age_in_days} days, {age_in_months} months, {age_in_years} years")
+
+            should_delete = False
+
+            if is_daily and age_in_days > dailyRetentionDays:
+                logger.info(f"Daily backup {file.name} is older than {dailyRetentionDays} days. Deleting.")
+                should_delete = True
+            elif is_monthly and age_in_months > monthlyRetentionMonths:
+                logger.info(f"Monthly backup {file.name} is older than {monthlyRetentionMonths} months. Deleting.")
+                should_delete = True
+            elif is_yearly and age_in_years > yearlyRetentionYears:
+                logger.info(f"Yearly backup {file.name} is older than {yearlyRetentionYears} years. Deleting.")
+                should_delete = True
+            else:
+                logger.info(f"Retained backup: {file.name}")
+
+            if should_delete:
+                try:
+                    file.unlink()
+                    logger.info(f"Deleted old backup: {file.name}")
+                    print(f"Deleted old backup: {file.name}")
+                except Exception as e:
+                    logger.error(f"Failed to delete file {file.name}: {e}")
+                    print(f"Failed to delete file {file.name}: {e}")
 
     logger.info("Finished managing backup retention.")
     print("Finished managing backup retention.")
 
 if __name__ == "__main__":
+    # If run directly, create a backup and manage retention
     create_backup()
-    manage_retention()
