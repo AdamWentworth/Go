@@ -6,7 +6,7 @@ from fiona.crs import from_epsg
 DB_NAME = "locations"
 DB_USER = "postgres"
 DB_HOST = "localhost"
-DB_PORT = "5433"
+DB_PORT = "5432"
 DB_PASSWORD = "REMOVED_PASSWORD"
 
 # SQL query to fetch data

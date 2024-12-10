@@ -14,7 +14,7 @@ const dbConfig = {
     host: 'localhost',
     database: 'locations',
     password: 'REMOVED_PASSWORD',
-    port: 5433
+    port: 5432
 };
 
 // Connect to PostgreSQL
