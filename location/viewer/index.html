@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Polygon Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <style>
+        #map {
+            width: 100%;
+            height: 600px;
+        }
+        /* Optional: Add some styling for the input form */
+        .input-group {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>City Polygon Map</h1>
+
+    <div class="input-group">
+        <label for="city">City Name:</label>
+        <input type="text" id="city" placeholder="Enter city name">
+    </div>
+    
+    <div class="input-group">
+        <label for="state">State:</label>
+        <input type="text" id="state" placeholder="Enter state name">
+    </div>
+
+    <div class="input-group">
+        <label for="country">Country:</label>
+        <input type="text" id="country" placeholder="Enter country name">
+    </div>
+
+    <button id="loadMap">Load Map</button>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([0, 0], 2); // Default global view
+
+        // Add a tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        document.getElementById('loadMap').addEventListener('click', () => {
+        const cityName = document.getElementById('city').value.trim();
+        const stateName = document.getElementById('state').value.trim();
+        const countryName = document.getElementById('country').value.trim();
+
+        if (!countryName) {
+            alert('Please enter a country name.');
+            return;
+        }
+
+        const encodedCity = encodeURIComponent(cityName);
+        const encodedState = encodeURIComponent(stateName);
+        const encodedCountry = encodeURIComponent(countryName);
+
+        const url = `http://localhost:4000/city/${encodedCountry}${stateName ? `/${encodedState}` : ''}${cityName ? `/${encodedCity}` : ''}`;
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch data: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.geometry) {
+                    map.eachLayer(layer => {
+                        if (layer instanceof L.GeoJSON) {
+                            map.removeLayer(layer);
+                        }
+                    });
+
+                    const geoJsonLayer = L.geoJSON(data, {
+                        style: {
+                            color: 'blue',
+                            weight: 2
+                        }
+                    }).addTo(map);
+
+                    map.fitBounds(geoJsonLayer.getBounds());
+                } else {
+                    alert('Boundary not found. Please check the input values.');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                alert(`Error: ${error.message}`);
+            });
+    });
+    </script>
+</body>
+</html>
