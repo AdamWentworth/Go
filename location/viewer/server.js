@@ -42,41 +42,41 @@ app.get('/city/:country/:state?/:name?', async (req, res) => {
     const stateName = req.params.state || null;
     const cityName = req.params.name || null;
 
+    console.log('Received params:', { countryName, stateName, cityName });
+
     try {
         let query;
         let params;
 
         if (cityName && stateName) {
-            // Query for city, state, and country
             query = `
                 SELECT ST_AsGeoJSON(cities.boundary) AS geojson
                 FROM cities
                 INNER JOIN countries ON cities.country_id = countries.id
-                WHERE cities.name ILIKE $1 
-                  AND cities.state_or_province ILIKE $2
-                  AND countries.name ILIKE $3
+                WHERE LOWER(cities.name) = LOWER($1)
+                  AND LOWER(cities.state_or_province) = LOWER($2)
+                  AND LOWER(countries.name) = LOWER($3)
             `;
             params = [cityName, stateName, countryName];
         } else if (cityName) {
-            // Query for city and country
             query = `
                 SELECT ST_AsGeoJSON(cities.boundary) AS geojson
                 FROM cities
                 INNER JOIN countries ON cities.country_id = countries.id
-                WHERE cities.name ILIKE $1 
-                  AND countries.name ILIKE $2
+                WHERE LOWER(cities.name) = LOWER($1)
+                  AND LOWER(countries.name) = LOWER($2)
             `;
             params = [cityName, countryName];
         } else {
-            // Query for country only
             query = `
                 SELECT ST_AsGeoJSON(countries.boundary) AS geojson
                 FROM countries
-                WHERE countries.name ILIKE $1
+                WHERE LOWER(countries.name) = LOWER($1)
             `;
             params = [countryName];
         }
 
+        console.log('Executing query:', query, 'with params:', params);
         const result = await client.query(query, params);
 
         if (result.rows.length > 0) {

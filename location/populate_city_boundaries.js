@@ -2,6 +2,11 @@ import pkg from 'pg';
 const { Client } = pkg;
 import fetch from 'node-fetch';
 
+function logToFile(content, filename = 'debug_output.log') {
+    const formattedContent = typeof content === 'object' ? JSON.stringify(content, null, 2) : content;
+    fs.appendFileSync(filename, formattedContent + '\n');
+}
+
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -17,192 +22,176 @@ const dbConfig = {
 
 const client = new Client(dbConfig);
 
-async function getCitiesWithoutBoundary(limit = 20) {
+// Fetch places using Overpass Turbo
+async function fetchPlacesFromOverpass() {
     const query = `
-        SELECT c.id AS city_id, c.name AS city_name, co.name AS country_name
-        FROM cities c
-        JOIN countries co ON c.country_id = co.id
-        WHERE c.boundary IS NULL
-          AND co.name = 'United States'
-        ORDER BY co.name, c.name
-        LIMIT $1
+[out:json][timeout:180];
+area["ISO3166-1"="CA"]->.searchArea;
+relation["boundary"="administrative"]["admin_level"="8"](area.searchArea);
+out center geom;
     `;
-    const res = await client.query(query, [limit]);
-    return res.rows;
-}
+    const url = "https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(query);
 
-function buildOverpassQuery(countryName, cityName, type = 'default') {
-    if (type === 'default') {
-        return `
-[out:json];
-area["name"="${countryName}"]->.searchArea;
-relation["boundary"="administrative"]["name"="${cityName}"]["admin_level"="8"](area.searchArea);
-out body;
->;
-out skel qt;
-        `;
-    }
-    if (type === 'alternative1') {
-        return `
-[out:json];
-relation["name"="${cityName}"]["boundary"="administrative"];
-out body;
->;
-out skel qt;
-        `;
-    }
-    if (type === 'alternative2') {
-        return `
-[out:json];
-node["name"="${cityName}"];
-out body;
->;
-out skel qt;
-        `;
-    }
-    throw new Error(`Unknown query type: ${type}`);
-}
-
-async function fetchCityPolygon(countryName, cityName) {
-    const queryTypes = ['default', 'alternative1', 'alternative2'];
-
-    for (const type of queryTypes) {
-        console.log(`[INFO] Attempting Overpass query (${type}) for ${cityName}, ${countryName}`);
-        const query = buildOverpassQuery(countryName, cityName, type);
-        const url = "https://overpass-api.de/api/interpreter?data=" + encodeURIComponent(query);
-
-        try {
-            const response = await fetch(url, { timeout: 60000 });
-            if (response.ok) {
-                const data = await response.json();
-                if (data && data.elements.length > 0) {
-                    return data; // Return successfully fetched data
-                }
-            }
-        } catch (error) {
-            console.error(`[ERROR] Overpass query (${type}) failed for ${cityName}, ${countryName}: ${error.message}`);
+    try {
+        const response = await fetch(url, { timeout: 60000 });
+        if (response.ok) {
+            const data = await response.json();
+            return data.elements || [];
+        } else {
+            console.error(`[ERROR] Failed to fetch data from Overpass API: ${response.statusText}`);
+            return [];
         }
-
-        await sleep(2000); // Add a delay before trying the next query
+    } catch (err) {
+        console.error(`[ERROR] Exception during Overpass API call: ${err.message}`);
+        return [];
     }
-
-    return null; // Return null if all query types fail
 }
 
+// Parse polygon from Overpass data
 function parsePolygon(data) {
-    const relation = data.elements.find(el => el.type === 'relation');
-    if (!relation) return null;
-
-    const ways = {};
-    const nodes = {};
-
-    for (const el of data.elements) {
-        if (el.type === 'way') {
-            ways[el.id] = el;
-        } else if (el.type === 'node') {
-            nodes[el.id] = el;
-        }
-    }
-
-    const outerWays = relation.members
-        .filter(m => m.type === 'way' && m.role === 'outer')
-        .map(m => ways[m.ref])
-        .filter(Boolean);
-
-    if (outerWays.length === 0) return null;
-
-    function wayToCoords(way) {
-        return way.nodes.map(nodeId => {
-            const n = nodes[nodeId];
-            return [n.lon, n.lat];
-        });
-    }
+    const outerWays = data.find(el => el.type === 'relation')?.members.filter(m => m.type === 'way' && m.role === 'outer') || [];
+    if (!outerWays.length) return null;
 
     let outerCoords = [];
-    for (const way of outerWays) {
-        const coords = wayToCoords(way);
-        outerCoords = outerCoords.concat(coords);
-    }
-
-    const first = outerCoords[0];
-    const last = outerCoords[outerCoords.length - 1];
-    if (first && (first[0] !== last[0] || first[1] !== last[1])) {
-        outerCoords.push(first);
+    for (const member of outerWays) {
+        if (!member.geometry) continue;
+        const coords = member.geometry.map(point => [point.lon, point.lat]);
+        outerCoords.push(...coords);
     }
 
     if (outerCoords.length < 4) return null;
 
-    const wktPolygon = `POLYGON((${outerCoords.map(c => c.join(' ')).join(',')}))`;
-    return wktPolygon;
+    const first = outerCoords[0];
+    const last = outerCoords[outerCoords.length - 1];
+    if (first[0] !== last[0] || first[1] !== last[1]) outerCoords.push(first);
+
+    return `POLYGON((${outerCoords.map(c => c.join(' ')).join(',')}))`;
 }
 
-async function updateCityBoundary(cityId, wktPolygon) {
+// Calculate centroid
+function calculateCentroid(wktPolygon) {
+    const matches = wktPolygon.match(/\(\(([^)]+)\)\)/);
+    if (!matches) return null;
+
+    const coordinates = matches[1]
+        .split(',')
+        .map(pair => pair.trim().split(' ').map(Number));
+
+    let area = 0, cx = 0, cy = 0;
+    for (let i = 0, j = coordinates.length - 1; i < coordinates.length; j = i++) {
+        const [x0, y0] = coordinates[j];
+        const [x1, y1] = coordinates[i];
+        const a = x0 * y1 - x1 * y0;
+        area += a;
+        cx += (x0 + x1) * a;
+        cy += (y0 + y1) * a;
+    }
+    area *= 0.5;
+    if (area === 0) return null;
+
+    cx /= (6 * area);
+    cy /= (6 * area);
+    return { lon: cx, lat: cy };
+}
+
+// Fetch state/province from Nominatim API
+async function fetchProvinceFromNominatim(lat, lon) {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
+    try {
+        const response = await fetch(url);
+        if (response.ok) {
+            const data = await response.json();
+            // console.log('[DEBUG] Nominatim API Response:', JSON.stringify(data, null, 2));
+
+            // Prioritize `province`, fallback to `state`, or use "Unknown"
+            const province = data.address?.province || data.address?.state || "Unknown";
+            // console.log(`[INFO] Resolved province/state for coordinates (${lat}, ${lon}): ${province}`);
+            return province;
+        } else {
+            console.error(`[ERROR] Failed to fetch data from Nominatim API: ${response.statusText}`);
+            return "Unknown";
+        }
+    } catch (err) {
+        console.error(`[ERROR] Nominatim API call failed: ${err.message}`);
+        return "Unknown";
+    }
+}
+
+// Check if city exists in the database
+async function findCityByName(cityName) {
+    const query = `
+        SELECT id FROM cities WHERE name = $1 AND country_id = (SELECT id FROM countries WHERE name = 'Canada')
+    `;
+    const res = await client.query(query, [cityName]);
+    return res.rows[0]?.id || null;
+}
+
+// Add a new city
+async function addCity(cityName, countryId, latitude, longitude, stateOrProvince) {
+    const insertQuery = `
+        INSERT INTO cities (name, country_id, latitude, longitude, state_or_province) 
+        VALUES ($1, $2, $3, $4, $5) RETURNING id
+    `;
+    const res = await client.query(insertQuery, [cityName, countryId, latitude, longitude, stateOrProvince]);
+    return res.rows[0].id;
+}
+
+// Update an existing city's data
+async function updateCityBoundary(cityId, wktPolygon, latitude, longitude, stateOrProvince) {
     const updateQuery = `
         UPDATE cities
-        SET boundary = ST_GeomFromText($1, 4326)
-        WHERE id = $2
+        SET boundary = ST_GeomFromText($1, 4326), 
+            latitude = $2, 
+            longitude = $3, 
+            state_or_province = $4
+        WHERE id = $5
     `;
-    await client.query(updateQuery, [wktPolygon, cityId]);
+    await client.query(updateQuery, [wktPolygon, latitude, longitude, stateOrProvince, cityId]);
 }
 
+// Main processing loop
 (async function main() {
     try {
         console.log('Connecting to the database...');
         await client.connect();
         console.log('Connected.');
 
-        while (true) {
-            const cities = await getCitiesWithoutBoundary(20);
-            if (cities.length === 0) {
-                console.log('No more cities without boundaries found in the United States. Exiting.');
-                break;
+        const places = await fetchPlacesFromOverpass();
+        if (!places.length) {
+            console.log('No places found in Overpass data.');
+            return;
+        }
+
+        for (const place of places) {
+            const cityName = place.tags?.name || 'Unknown';
+            if (cityName === 'Unknown') continue;
+
+            const wktPolygon = parsePolygon([place]);
+            if (!wktPolygon) continue;
+
+            const centroid = calculateCentroid(wktPolygon);
+            if (!centroid) continue;
+
+            let stateOrProvince = place.tags?.["addr:state"] || place.tags?.["is_in:province"];
+            if (!stateOrProvince || stateOrProvince === "Unknown") {
+                stateOrProvince = await fetchProvinceFromNominatim(centroid.lat, centroid.lon);
             }
 
-            console.log(`Processing ${cities.length} cities...`);
-            let updatedCount = 0;
+            const countryId = 264; // Canada
+            let cityId = await findCityByName(cityName);
 
-            for (const city of cities) {
-                const { city_id, city_name, country_name } = city;
-                console.log(`\n[INFO] Fetching boundary for city: ${city_name}, Country: ${country_name}`);
-
-                await sleep(5000);
-
-                let data;
-                try {
-                    data = await fetchCityPolygon(country_name, city_name);
-                    if (!data) {
-                        console.log(`[WARN] No polygon found for ${city_name}, ${country_name} after multiple attempts. Skipping.`);
-                        continue;
-                    }
-                } catch (err) {
-                    console.error(`[ERROR] Failed to fetch data from Overpass for ${city_name}, ${country_name}: ${err.message}`);
-                    continue;
-                }
-
-                const wktPolygon = parsePolygon(data);
-                if (!wktPolygon) {
-                    console.log(`[WARN] Parsed polygon is invalid for ${city_name}, ${country_name}. Skipping.`);
-                    continue;
-                }
-
-                try {
-                    await updateCityBoundary(city_id, wktPolygon);
-                    console.log(`[SUCCESS] Updated boundary for ${city_name}, ${country_name}.`);
-                    updatedCount++;
-                } catch (err) {
-                    console.error(`[ERROR] Failed to update boundary in DB for ${city_name}, ${country_name}: ${err.message}`);
-                }
-            }
-
-            if (updatedCount === 0) {
-                console.log('No boundaries updated this iteration. Stopping.');
-                break;
+            if (cityId) {
+                console.log(`[INFO] Updating city: ${cityName}`);
+                await updateCityBoundary(cityId, wktPolygon, centroid.lat, centroid.lon, stateOrProvince);
+            } else {
+                console.log(`[INFO] Adding new city: ${cityName}`);
+                cityId = await addCity(cityName, countryId, centroid.lat, centroid.lon, stateOrProvince);
             }
         }
 
-        console.log('\nCompleted processing all possible cities in the United States.');
+        console.log('Processing completed.');
     } catch (error) {
-        console.error('Error during execution:', error.message);
+        console.error(`[ERROR] Execution failed: ${error.message}`);
     } finally {
         console.log('Closing database connection.');
         await client.end();
