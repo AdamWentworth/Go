@@ -1,0 +1,22 @@
+{
+  "type": "Feature",
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          139.1802347,
+          34.6629268
+        ],
+        [
+          139.17431,
+          34.6589088
+        ]
+      ]
+    ]
+  },
+  "properties": {
+    "id": 355233085,
+    "role": "outer"
+  }
+}
