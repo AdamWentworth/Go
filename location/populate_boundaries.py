@@ -163,7 +163,7 @@ def fetch_places_from_overpass(admin_level):
     """
     query = f"""
     [out:json][timeout:180];
-    area["ISO3166-1"="JP"]->.searchArea;
+    area["ISO3166-1"="DE"]->.searchArea;
     (
       relation["boundary"="administrative"]["admin_level"={admin_level}](area.searchArea);
     );
@@ -365,7 +365,7 @@ def process_places(session, admin_level):
         except ValueError:
             admin_level_tag = None
 
-        country_id = 298  # Japan
+        country_id = 158  # Germany
 
         # Check if the city exists
         existing_city = find_city_by_name(session, city_name, state_or_province, admin_level_tag, country_id)
