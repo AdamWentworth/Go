@@ -42,7 +42,7 @@ app.get('/city/:country/:state?/:name?', async (req, res) => {
     const stateName = req.params.state || null;
     const cityName = req.params.name || null;
 
-    console.log('Received params:', { countryName, stateName, cityName });
+    // console.log('Received params:', { countryName, stateName, cityName });
 
     try {
         let query;
@@ -50,20 +50,20 @@ app.get('/city/:country/:state?/:name?', async (req, res) => {
 
         if (cityName && stateName) {
             query = `
-                SELECT ST_AsGeoJSON(cities.boundary) AS geojson
-                FROM cities
-                INNER JOIN countries ON cities.country_id = countries.id
-                WHERE LOWER(cities.name) = LOWER($1)
-                  AND LOWER(cities.state_or_province) = LOWER($2)
+                SELECT ST_AsGeoJSON(places.boundary) AS geojson
+                FROM places
+                INNER JOIN countries ON places.country_id = countries.id
+                WHERE LOWER(places.name) = LOWER($1)
+                  AND LOWER(places.state_or_province) = LOWER($2)
                   AND LOWER(countries.name) = LOWER($3)
             `;
             params = [cityName, stateName, countryName];
         } else if (cityName) {
             query = `
-                SELECT ST_AsGeoJSON(cities.boundary) AS geojson
-                FROM cities
-                INNER JOIN countries ON cities.country_id = countries.id
-                WHERE LOWER(cities.name) = LOWER($1)
+                SELECT ST_AsGeoJSON(places.boundary) AS geojson
+                FROM places
+                INNER JOIN countries ON places.country_id = countries.id
+                WHERE LOWER(places.name) = LOWER($1)
                   AND LOWER(countries.name) = LOWER($2)
             `;
             params = [cityName, countryName];
@@ -76,7 +76,7 @@ app.get('/city/:country/:state?/:name?', async (req, res) => {
             params = [countryName];
         }
 
-        console.log('Executing query:', query, 'with params:', params);
+        // console.log('Executing query:', query, 'with params:', params);
         const result = await client.query(query, params);
 
         if (result.rows.length > 0) {
