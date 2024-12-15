@@ -163,7 +163,7 @@ def fetch_places_from_overpass(admin_level):
     """
     query = f"""
     [out:json][timeout:180];
-    area["ISO3166-1"="DE"]->.searchArea;
+    area["ISO3166-1"="GB"]->.searchArea;
     (
       relation["boundary"="administrative"]["admin_level"={admin_level}](area.searchArea);
     );
@@ -218,9 +218,9 @@ def fetch_province_from_nominatim(lat, lon):
         print(f"[ERROR] Nominatim API call failed: {e}", file=sys.stderr)
         return "Unknown"
 
-def find_city_by_name(session, city_name, state_or_province, admin_level, country_id):
+def find_city_by_osm_id_or_name(session, city_name, state_or_province, admin_level, country_id, osm_id):
     """
-    Check if a city exists in the database.
+    Check if a city exists in the database by either its osm_id or a combination of other attributes.
 
     Args:
         session (Session): SQLAlchemy session.
@@ -228,15 +228,19 @@ def find_city_by_name(session, city_name, state_or_province, admin_level, countr
         state_or_province (str): State or province name.
         admin_level (int): Administrative level.
         country_id (int): Country ID.
+        osm_id (int): OSM ID of the place.
 
     Returns:
         Place or None: The existing Place object or None.
     """
-    return session.query(Place).filter_by(
-        name=city_name,
-        state_or_province=state_or_province,
-        admin_level=admin_level,
-        country_id=country_id
+    return session.query(Place).filter(
+        (Place.osm_id == osm_id) |
+        (
+            Place.name == city_name,
+            Place.state_or_province == state_or_province,
+            Place.admin_level == admin_level,
+            Place.country_id == country_id
+        )
     ).first()
 
 def add_city(session, city_name, country_id, latitude, longitude, state_or_province, wkt_polygon, osm_id, population, admin_level):
@@ -365,10 +369,12 @@ def process_places(session, admin_level):
         except ValueError:
             admin_level_tag = None
 
-        country_id = 158  # Germany
+        country_id = 187  # United Kingdom
 
         # Check if the city exists
-        existing_city = find_city_by_name(session, city_name, state_or_province, admin_level_tag, country_id)
+        existing_city = find_city_by_osm_id_or_name(
+            session, city_name, state_or_province, admin_level_tag, country_id, osm_id
+        )
 
         if existing_city:
             print(f"[INFO] Updating {city_name} (osm_id {osm_id}, Admin Level {admin_level})")
