@@ -8,6 +8,8 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
   const [suggestions, setSuggestions] = useState([]);
   const locationRef = useRef(null);
 
+  const BASE_URL = process.env.REACT_APP_LOCATION_SERVICE_URL;
+
   useEffect(() => {
     setLocation(pokemon.ownershipStatus.location_caught);
   }, [pokemon]);
@@ -21,19 +23,25 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
 
   const fetchSuggestions = async (userInput) => {
     try {
-      const response = await axios.get(`https://photon.komoot.io/api/?q=${encodeURIComponent(userInput)}`, {
-        withCredentials: false // Ensure credentials are not included in the request
+      const normalizedInput = userInput.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const response = await axios.get(`${BASE_URL}/autocomplete?query=${encodeURIComponent(normalizedInput)}`, {
+        withCredentials: false,
       });
-      const formattedSuggestions = response.data.features.slice(0, 4).map(feature => {
-        const { name, state, country } = feature.properties;
+      const data = response.data;
+
+      const formattedSuggestions = data.slice(0, 5).map(item => {
+        const name = item.name || '';
+        const state = item.state_or_province || '';
+        const country = item.country || '';
         let displayName = `${name}`;
         if (state) displayName += `, ${state}`;
-        displayName += `, ${country}`;
+        if (country) displayName += `, ${country}`;
         return {
-          ...feature,
-          displayName
+          displayName,
+          ...item,
         };
       });
+
       setSuggestions(formattedSuggestions);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
@@ -45,6 +53,7 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
     const userInput = event.target.textContent;
     setLocation(userInput);
     onLocationChange(userInput);
+
     if (userInput.length > 2) {
       fetchSuggestions(userInput);
     } else {
@@ -78,39 +87,36 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
     sel.addRange(range);
   };
 
-  useEffect(() => {
-    if (editMode && suggestions.length > 0 && locationRef.current) {
-      const { bottom, left, width } = locationRef.current.getBoundingClientRect();
-      const suggestionsElement = document.querySelector('.suggestions');
-      suggestionsElement.style.top = `${bottom + window.scrollY}px`;
-      suggestionsElement.style.left = `${left}px`;
-      suggestionsElement.style.width = `${width}px`;
-    }
-  }, [suggestions, editMode]);
-
   return (
     <div className="location-caught-container">
       <div className="location-field">
         <label id="location-label">Location Caught:</label>
-        <span aria-labelledby="location-label" contentEditable={editMode}
-              ref={locationRef}
-              onInput={handleLocationInput}
-              onKeyDown={handleKeyDown}
-              role="textbox"
-              suppressContentEditableWarning={true}
-              className={editMode ? 'editable' : 'text'}>
+        <span
+          aria-labelledby="location-label"
+          contentEditable={editMode}
+          ref={locationRef}
+          onInput={handleLocationInput}
+          onKeyDown={handleKeyDown}
+          role="textbox"
+          suppressContentEditableWarning={true}
+          className={editMode ? 'editable' : 'text'}
+        >
           {location}
         </span>
+        {editMode && suggestions.length > 0 && (
+          <div className="suggestions">
+            {suggestions.map((suggestion, index) => (
+              <div
+                key={index}
+                onClick={() => selectSuggestion(suggestion)}
+                className="suggestion-item"
+              >
+                {suggestion.displayName}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-      {editMode && suggestions.length > 0 && (
-        <div className="suggestions">
-          {suggestions.map((suggestion, index) => (
-            <div key={index} onClick={() => selectSuggestion(suggestion)} className="suggestion-item">
-              {suggestion.displayName}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 };

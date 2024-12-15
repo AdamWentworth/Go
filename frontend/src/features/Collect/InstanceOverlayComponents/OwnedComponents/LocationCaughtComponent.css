@@ -4,54 +4,53 @@
     flex-direction: column;
     margin-top: 10px;
     position: relative;
-    width: 100%;
-    max-width: 100%;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    box-sizing: border-box;
+    width: 100%; /* Ensures the container spans the full width */
+    max-width: 100%; /* Prevents overflow */
+    overflow-wrap: break-word; /* Handles long words */
+    word-wrap: break-word; /* Handles word wrapping for older browsers */
+    box-sizing: border-box; /* Includes padding/border in width */
 }
 
 .location-caught-container .location-field {
     display: flex;
     flex-direction: column;
     position: relative;
-    max-width: 100%;
-    box-sizing: border-box;
-  }
+    width: 100%; /* Ensures the field spans the full width of the container */
+    max-width: 100%; /* Prevents overflow */
+    box-sizing: border-box; /* Includes padding/border in width */
+}
 
-  .location-field span {
+.location-field span {
     background-color: transparent;
     display: block;
-    width: 100%;
-    max-width: 100%;
+    width: 100%; /* Editable field spans the full width */
+    max-width: 100%; /* Prevents overflow */
     min-height: 24px;
-    word-break: normal; /* changed from break-all to normal */
-    white-space: pre-wrap;
+    word-break: normal; /* Changed from break-all to preserve normal word breaks */
+    white-space: pre-wrap; /* Preserves line breaks and spaces */
     border: 1px solid transparent;
-    /* padding: 5px; */
-    box-sizing: border-box;
-    height: auto;
+    box-sizing: border-box; /* Includes padding/border in width */
     overflow: hidden;
     overflow-x: hidden;
+    height: auto;
 }
 
 .location-field span.editable {
     cursor: text;
     border: 1px solid white;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    overflow-wrap: break-word;
-    word-break: normal; /* changed from break-all to normal */
-    white-space: pre-wrap;
-    display: inline-block;
+    width: 100%; /* Spans full width */
+    max-width: 100%; /* Prevents overflow */
+    overflow-wrap: break-word; /* Ensures words wrap correctly */
+    word-break: normal; /* Retains normal word-breaking behavior */
+    white-space: pre-wrap; /* Preserves line breaks and spaces */
+    display: inline-block; /* Makes it editable */
 }
 
 .location-field span.text {
     border: 1px solid transparent;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
+    width: 100%; /* Full width for non-editable text */
+    max-width: 100%; /* Prevents overflow */
+    box-sizing: border-box; /* Includes padding/border in width */
 }
 
 .location-field span:focus {
@@ -61,33 +60,32 @@
 .location-caught-container .location-field label {
     display: block;
     margin-bottom: 5px;
-    font-size: 12px
+    font-size: 12px;
 }
 
 .location-caught-container .suggestions {
-    position: fixed;
+    position: absolute; /* Position relative to .location-field */
+    top: 100%; /* Directly below the field */
+    left: 0;
     z-index: 1500;
     background-color: #fff;
     color: black;
-    box-shadow: 0px 4px 8px rgba(0,0,0,0.25);
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.25);
     border: 1px solid #ccc;
-    max-height: 200px;
+    max-height: 150px;
     overflow-y: auto;
     overflow-x: hidden;
-    width: auto;
-    box-sizing: border-box;
-}
-
-.location-caught-container .suggestion-item {
-    padding: 8px 10px;
-    border-bottom: 1px solid #ccc;
-    box-sizing: border-box;
-}
-
-.location-caught-container .suggestion-item:hover {
-    background-color: #f0f0f0;
+    width: 100%; /* Matches the width of the field/container */
+    box-sizing: border-box; /* Prevents padding from breaking layout */
 }
 
 .suggestion-item {
+    padding: 8px 10px;
     cursor: pointer;
+    border-bottom: 1px solid #ccc;
+    box-sizing: border-box; /* Includes padding in sizing */
+}
+
+.suggestion-item:hover {
+    background-color: #f0f0f0;
 }

@@ -23,11 +23,11 @@ func AutocompleteHandler(db *pgxpool.Pool) fiber.Handler {
 		}
 
 		sql := `
-			SELECT p.name, p.state_or_province, c.name AS country
+			SELECT p.name, p.state_or_province, c.name AS country, p.population
 			FROM places p
 			LEFT JOIN countries c ON p.country_id = c.id
 			WHERE p.name ILIKE $1
-			ORDER BY p.admin_level ASC
+			ORDER BY p.name ILIKE $1 || '%' DESC, p.population DESC NULLS LAST, p.admin_level ASC
 			LIMIT 10;
 		`
 
@@ -42,7 +42,8 @@ func AutocompleteHandler(db *pgxpool.Pool) fiber.Handler {
 
 		for rows.Next() {
 			var name, state, country *string
-			if err := rows.Scan(&name, &state, &country); err != nil {
+			var population *int
+			if err := rows.Scan(&name, &state, &country, &population); err != nil {
 				logrus.Errorf("Error scanning row: %v", err)
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 			}
@@ -50,8 +51,14 @@ func AutocompleteHandler(db *pgxpool.Pool) fiber.Handler {
 				"name":              name,
 				"state_or_province": state,
 				"country":           country,
+				"population":        population,
 			}
 			results = append(results, result)
+		}
+
+		if err := rows.Err(); err != nil {
+			logrus.Errorf("Error iterating over rows: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
 
 		logrus.Infof("Autocomplete found %d results for query '%s'", len(results), queryParam)

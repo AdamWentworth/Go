@@ -28,3 +28,762 @@
 2024-12-14 21:55:17 - INFO - Viewer request: country=Canada (canada), state=British%20Columbia (british%20columbia), city=Vancouver (vancouver)
 2024-12-14 21:55:17 - warning - No boundary found for the specified location: country=canada, name=vancouver, state=british%20columbia
 2024-12-14 21:55:17 - INFO - 127.0.0.1 - GET /city/Canada/British%!C(MISSING)olumbia/Vancouver - 404 - 274ms
+2024-12-14 21:56:57 - INFO - Loading configuration...
+2024-12-14 21:56:57 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-14 21:56:57 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-14 21:56:57 - INFO - Connecting to database...
+2024-12-14 21:56:57 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-14 21:56:57 - INFO - Attempting to connect to the database...
+2024-12-14 21:56:57 - INFO - Successfully connected to the database.
+2024-12-14 21:56:57 - INFO - Initializing Fiber app...
+2024-12-14 21:56:57 - INFO - Serving static files from ./static
+2024-12-14 21:56:57 - INFO - Registering routes...
+2024-12-14 21:56:57 - INFO - Server running on http://localhost:3007
+2024-12-14 21:57:12 - INFO - 127.0.0.1 - GET /viewer.html - 304 - 88ms
+2024-12-14 21:57:19 - INFO - Viewer request: country="Canada" ("canada"), state="British%20Columbia" ("british columbia"), city="Vancouver" ("vancouver")
+2024-12-14 21:57:19 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 21:57:19 - INFO - 127.0.0.1 - GET /city/Canada/British%!C(MISSING)olumbia/Vancouver - 200 - 254ms
+2024-12-14 21:57:35 - INFO - Viewer request: country="Singapore" ("singapore"), state="Singapore" ("singapore"), city="Singapore" ("singapore")
+2024-12-14 21:57:35 - warning - No boundary found for: country="singapore", state="singapore", city="singapore"
+2024-12-14 21:57:35 - INFO - 127.0.0.1 - GET /city/Singapore/Singapore/Singapore - 404 - 250ms
+2024-12-14 21:57:42 - INFO - Viewer request: country="Singapore" ("singapore"), state="Unknown" ("unknown"), city="Singapore" ("singapore")
+2024-12-14 21:57:43 - warning - No boundary found for: country="singapore", state="unknown", city="singapore"
+2024-12-14 21:57:43 - INFO - 127.0.0.1 - GET /city/Singapore/Unknown/Singapore - 404 - 235ms
+2024-12-14 21:58:03 - INFO - Viewer request: country="Singapore" ("singapore"), state="Southeast" ("southeast"), city="Singapore" ("singapore")
+2024-12-14 21:58:04 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 21:58:04 - INFO - 127.0.0.1 - GET /city/Singapore/Southeast/Singapore - 200 - 234ms
+2024-12-14 21:58:26 - INFO - Viewer request: country="Singapore" ("singapore"), state="Singapore" ("singapore"), city="Singapore" ("singapore")
+2024-12-14 21:58:26 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 21:58:26 - INFO - 127.0.0.1 - GET /city/Singapore/Singapore/Singapore - 200 - 264ms
+2024-12-14 21:58:38 - INFO - Viewer request: country="Japan" ("japan"), state="Tokyo" ("tokyo"), city="Tokyo" ("tokyo")
+2024-12-14 21:58:39 - warning - No boundary found for: country="japan", state="tokyo", city="tokyo"
+2024-12-14 21:58:39 - INFO - 127.0.0.1 - GET /city/Japan/Tokyo/Tokyo - 404 - 255ms
+2024-12-14 21:58:59 - INFO - Viewer request: country="Japan" ("japan"), state="Tokyo" ("tokyo"), city="Tokyo" ("tokyo")
+2024-12-14 21:58:59 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 21:58:59 - INFO - 127.0.0.1 - GET /city/Japan/Tokyo/Tokyo - 200 - 232ms
+2024-12-14 21:59:13 - INFO - Viewer request: country="Japan" ("japan"), state="" (""), city="" ("")
+2024-12-14 21:59:13 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 21:59:13 - INFO - 127.0.0.1 - GET /city/Japan - 200 - 105ms
+2024-12-14 21:59:20 - INFO - Viewer request: country="Japan" ("japan"), state="Tokyo" ("tokyo"), city="" ("")
+2024-12-14 21:59:20 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 21:59:20 - INFO - 127.0.0.1 - GET /city/Japan/Tokyo - 200 - 250ms
+2024-12-14 21:59:26 - INFO - Viewer request: country="Canada" ("canada"), state="Vancouver" ("vancouver"), city="" ("")
+2024-12-14 21:59:27 - warning - No boundary found for: country="canada", state="vancouver", city=""
+2024-12-14 21:59:27 - INFO - 127.0.0.1 - GET /city/Canada/Vancouver - 404 - 244ms
+2024-12-14 22:00:04 - INFO - Viewer request: country="Canada" ("canada"), state="British%20Columbia" ("british columbia"), city="Surrey" ("surrey")
+2024-12-14 22:00:04 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:00:04 - INFO - 127.0.0.1 - GET /city/Canada/British%!C(MISSING)olumbia/Surrey - 200 - 229ms
+2024-12-14 22:28:49 - INFO - Viewer request: country="Brazil" ("brazil"), state="Rio%20Grande%20Do%20Sul" ("rio grande do sul"), city="Bote" ("bote")
+2024-12-14 22:28:50 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:28:50 - INFO - 127.0.0.1 - GET /city/Brazil/Rio%!G(MISSING)rande%!D(MISSING)o%!S(MISSING)ul/Bote - 200 - 230ms
+2024-12-14 22:34:45 - INFO - Viewer request: country="Brazil" ("brazil"), state="Rio%20De%20janeiro" ("rio de janeiro"), city="Rio%20De%20janeiro" ("rio de janeiro")
+2024-12-14 22:34:45 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:34:45 - INFO - 127.0.0.1 - GET /city/Brazil/Rio%!D(MISSING)e%!j(MISSING)aneiro/Rio%!D(MISSING)e%!j(MISSING)aneiro - 200 - 258ms
+2024-12-14 22:35:01 - INFO - Viewer request: country="Brazil" ("brazil"), state="Rio%20De%20janeiro" ("rio de janeiro"), city="" ("")
+2024-12-14 22:35:02 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:35:02 - INFO - 127.0.0.1 - GET /city/Brazil/Rio%!D(MISSING)e%!j(MISSING)aneiro - 200 - 536ms
+2024-12-14 22:35:02 - INFO - Viewer request: country="Brazil" ("brazil"), state="Rio%20De%20janeiro" ("rio de janeiro"), city="" ("")
+2024-12-14 22:35:02 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:35:02 - INFO - 127.0.0.1 - GET /city/Brazil/Rio%!D(MISSING)e%!j(MISSING)aneiro - 200 - 429ms
+2024-12-14 22:35:06 - INFO - Viewer request: country="Brazil" ("brazil"), state="Rio%20De%20janeiro" ("rio de janeiro"), city="" ("")
+2024-12-14 22:35:07 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:35:07 - INFO - 127.0.0.1 - GET /city/Brazil/Rio%!D(MISSING)e%!j(MISSING)aneiro - 200 - 487ms
+2024-12-14 22:35:10 - INFO - Viewer request: country="Brazil" ("brazil"), state="Rio%20De%20janeiro" ("rio de janeiro"), city="" ("")
+2024-12-14 22:35:11 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:35:11 - INFO - 127.0.0.1 - GET /city/Brazil/Rio%!D(MISSING)e%!j(MISSING)aneiro - 200 - 497ms
+2024-12-14 22:36:03 - INFO - Viewer request: country="Brazil" ("brazil"), state="S%C3%A3o%20Paulo" ("são paulo"), city="" ("")
+2024-12-14 22:36:04 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:36:04 - INFO - 127.0.0.1 - GET /city/Brazil/S%!C(MISSING)3%!A(MISSING)3o%!P(MISSING)aulo - 200 - 573ms
+2024-12-14 22:36:24 - INFO - Viewer request: country="Brazil" ("brazil"), state="S%C3%A3o%20Paulo" ("são paulo"), city="S%C3%A3o%20Paulo" ("são paulo")
+2024-12-14 22:36:24 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:36:24 - INFO - 127.0.0.1 - GET /city/Brazil/S%!C(MISSING)3%!A(MISSING)3o%!P(MISSING)aulo/S%!C(MISSING)3%!A(MISSING)3o%!P(MISSING)aulo - 200 - 273ms
+2024-12-14 22:37:05 - INFO - Viewer request: country="Brazil" ("brazil"), state="" (""), city="" ("")
+2024-12-14 22:37:05 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:37:05 - INFO - 127.0.0.1 - GET /city/Brazil - 200 - 105ms
+2024-12-14 22:43:22 - INFO - Viewer request: country="South%20Africa" ("south africa"), state="" (""), city="" ("")
+2024-12-14 22:43:22 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:43:22 - INFO - 127.0.0.1 - GET /city/South%!A(MISSING)frica - 200 - 103ms
+2024-12-14 22:43:29 - INFO - Viewer request: country="Madagascar" ("madagascar"), state="" (""), city="" ("")
+2024-12-14 22:43:29 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:43:29 - INFO - 127.0.0.1 - GET /city/Madagascar - 200 - 102ms
+2024-12-14 22:43:36 - INFO - Viewer request: country="Australia" ("australia"), state="" (""), city="" ("")
+2024-12-14 22:43:36 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:43:36 - INFO - 127.0.0.1 - GET /city/Australia - 200 - 107ms
+2024-12-14 22:44:13 - INFO - Viewer request: country="New%20Zealand" ("new zealand"), state="" (""), city="" ("")
+2024-12-14 22:44:13 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:44:13 - INFO - 127.0.0.1 - GET /city/New%!Z(MISSING)ealand - 200 - 104ms
+2024-12-14 22:44:30 - INFO - Viewer request: country="New%20Zealand" ("new zealand"), state="Auckland" ("auckland"), city="Auckland" ("auckland")
+2024-12-14 22:44:30 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:44:30 - INFO - 127.0.0.1 - GET /city/New%!Z(MISSING)ealand/Auckland/Auckland - 200 - 233ms
+2024-12-14 22:45:48 - INFO - Viewer request: country="Egypt" ("egypt"), state="" (""), city="" ("")
+2024-12-14 22:45:48 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:45:48 - INFO - 127.0.0.1 - GET /city/Egypt - 200 - 102ms
+2024-12-14 22:45:58 - INFO - Viewer request: country="Saudi%20Arabia" ("saudi arabia"), state="" (""), city="" ("")
+2024-12-14 22:45:58 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:45:58 - INFO - 127.0.0.1 - GET /city/Saudi%!A(MISSING)rabia - 200 - 102ms
+2024-12-14 22:46:09 - INFO - Viewer request: country="China" ("china"), state="" (""), city="" ("")
+2024-12-14 22:46:09 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:46:09 - INFO - 127.0.0.1 - GET /city/China - 200 - 106ms
+2024-12-14 22:46:20 - INFO - Viewer request: country="Iceland" ("iceland"), state="" (""), city="" ("")
+2024-12-14 22:46:20 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:46:20 - INFO - 127.0.0.1 - GET /city/Iceland - 200 - 103ms
+2024-12-14 22:47:01 - INFO - Viewer request: country="Sweden" ("sweden"), state="" (""), city="" ("")
+2024-12-14 22:47:01 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:47:01 - INFO - 127.0.0.1 - GET /city/Sweden - 200 - 104ms
+2024-12-14 22:47:09 - INFO - Viewer request: country="Norway" ("norway"), state="" (""), city="" ("")
+2024-12-14 22:47:09 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:47:09 - INFO - 127.0.0.1 - GET /city/Norway - 200 - 108ms
+2024-12-14 22:47:29 - INFO - Viewer request: country="Denmark" ("denmark"), state="" (""), city="" ("")
+2024-12-14 22:47:29 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:47:29 - INFO - 127.0.0.1 - GET /city/Denmark - 200 - 101ms
+2024-12-14 22:48:09 - INFO - Viewer request: country="Poland" ("poland"), state="" (""), city="" ("")
+2024-12-14 22:48:09 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:48:09 - INFO - 127.0.0.1 - GET /city/Poland - 200 - 102ms
+2024-12-14 22:48:16 - INFO - Viewer request: country="Poland" ("poland"), state="Warsaw" ("warsaw"), city="" ("")
+2024-12-14 22:48:16 - warning - No boundary found for: country="poland", state="warsaw", city=""
+2024-12-14 22:48:16 - INFO - 127.0.0.1 - GET /city/Poland/Warsaw - 404 - 252ms
+2024-12-14 22:48:35 - INFO - Viewer request: country="United%20States" ("united states"), state="New%20York" ("new york"), city="Manhattan" ("manhattan")
+2024-12-14 22:48:35 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:48:35 - INFO - 127.0.0.1 - GET /city/United%!S(MISSING)tates/New%!Y(MISSING)ork/Manhattan - 200 - 234ms
+2024-12-14 22:48:57 - INFO - Viewer request: country="United%20States" ("united states"), state="New%20York" ("new york"), city="New%20Jersey" ("new jersey")
+2024-12-14 22:48:57 - warning - No boundary found for: country="united states", state="new york", city="new jersey"
+2024-12-14 22:48:57 - INFO - 127.0.0.1 - GET /city/United%!S(MISSING)tates/New%!Y(MISSING)ork/New%!J(MISSING)ersey - 404 - 265ms
+2024-12-14 22:49:00 - INFO - Viewer request: country="United%20States" ("united states"), state="New%20Jersey" ("new jersey"), city="New%20Jersey" ("new jersey")
+2024-12-14 22:49:00 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:49:00 - INFO - 127.0.0.1 - GET /city/United%!S(MISSING)tates/New%!J(MISSING)ersey/New%!J(MISSING)ersey - 200 - 237ms
+2024-12-14 22:49:17 - INFO - Viewer request: country="United%20States" ("united states"), state="New%20York" ("new york"), city="New%20York" ("new york")
+2024-12-14 22:49:17 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:49:17 - INFO - 127.0.0.1 - GET /city/United%!S(MISSING)tates/New%!Y(MISSING)ork/New%!Y(MISSING)ork - 200 - 290ms
+2024-12-14 22:49:56 - INFO - Viewer request: country="United%20States" ("united states"), state="New%20Hampshire" ("new hampshire"), city="New%20Hampshire" ("new hampshire")
+2024-12-14 22:49:57 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:49:57 - INFO - 127.0.0.1 - GET /city/United%!S(MISSING)tates/New%!H(MISSING)ampshire/New%!H(MISSING)ampshire - 200 - 256ms
+2024-12-14 22:50:05 - INFO - Viewer request: country="United%20States" ("united states"), state="Maine" ("maine"), city="Maine" ("maine")
+2024-12-14 22:50:05 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:50:05 - INFO - 127.0.0.1 - GET /city/United%!S(MISSING)tates/Maine/Maine - 200 - 244ms
+2024-12-14 22:51:47 - INFO - Viewer request: country="Canada" ("canada"), state="British%20Columbia" ("british columbia"), city="Metro%20Vancouver%20Regional%20District" ("metro vancouver regional district")
+2024-12-14 22:51:47 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:51:47 - INFO - 127.0.0.1 - GET /city/Canada/British%!C(MISSING)olumbia/Metro%!V(MISSING)ancouver%!R(MISSING)egional%!D(MISSING)istrict - 200 - 243ms
+2024-12-14 22:54:22 - INFO - Viewer request: country="Brazil" ("brazil"), state="Rio%20Grande%20do%20Norte" ("rio grande do norte"), city="Santa%20Cruz" ("santa cruz")
+2024-12-14 22:54:22 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-14 22:54:22 - INFO - 127.0.0.1 - GET /city/Brazil/Rio%!G(MISSING)rande%!d(MISSING)o%!N(MISSING)orte/Santa%!C(MISSING)ruz - 200 - 224ms
+2024-12-15 00:24:02 - INFO - Viewer request: country="Brazil" ("brazil"), state="Rio%20Grande%20do%20Sul" ("rio grande do sul"), city="Divisa" ("divisa")
+2024-12-15 00:24:02 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-15 00:24:02 - INFO - 127.0.0.1 - GET /city/Brazil/Rio%!G(MISSING)rande%!d(MISSING)o%!S(MISSING)ul/Divisa - 200 - 267ms
+2024-12-15 01:02:44 - INFO - Viewer request: country="Indonesia" ("indonesia"), state="Uttarakhand" ("uttarakhand"), city="Haridwar" ("haridwar")
+2024-12-15 01:02:45 - warning - No boundary found for: country="indonesia", state="uttarakhand", city="haridwar"
+2024-12-15 01:02:45 - INFO - 127.0.0.1 - GET /city/Indonesia/Uttarakhand/Haridwar - 404 - 341ms
+2024-12-15 01:03:34 - INFO - Viewer request: country="India" ("india"), state="Uttarakhand" ("uttarakhand"), city="Haridwar" ("haridwar")
+2024-12-15 01:03:34 - INFO - Boundary found for request. Returning GeoJSON feature.
+2024-12-15 01:03:34 - INFO - 127.0.0.1 - GET /city/India/Uttarakhand/Haridwar - 200 - 240ms
+2024-12-15 12:34:34 - INFO - Autocomplete request received with query: Van
+2024-12-15 12:34:34 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 12:34:34 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 12:34:34 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 12:34:34 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 12:34:34 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 12:34:35 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 12:34:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 603ms
+2024-12-15 12:34:35 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 12:34:35 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 12:34:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 709ms
+2024-12-15 12:34:35 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 12:34:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 832ms
+2024-12-15 12:34:35 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-15 12:34:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 495ms
+2024-12-15 12:34:35 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 12:34:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 895ms
+2024-12-15 12:34:36 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 12:34:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 1200ms
+2024-12-15 12:34:36 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-15 12:34:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 1139ms
+2024-12-15 12:35:20 - INFO - Autocomplete request received with query: Syn
+2024-12-15 12:35:21 - INFO - Autocomplete request received with query: Synd
+2024-12-15 12:35:21 - INFO - Autocomplete found 1 results for query 'Syn'
+2024-12-15 12:35:21 - INFO - 127.0.0.1 - GET /autocomplete?query=Syn - 200 - 376ms
+2024-12-15 12:35:21 - INFO - Autocomplete found 1 results for query 'Synd'
+2024-12-15 12:35:21 - INFO - 127.0.0.1 - GET /autocomplete?query=Synd - 200 - 346ms
+2024-12-15 12:35:38 - INFO - Autocomplete request received with query: Syn
+2024-12-15 12:35:38 - INFO - Autocomplete request received with query: Syd
+2024-12-15 12:35:38 - INFO - Autocomplete found 1 results for query 'Syn'
+2024-12-15 12:35:38 - INFO - 127.0.0.1 - GET /autocomplete?query=Syn - 200 - 319ms
+2024-12-15 12:35:39 - INFO - Autocomplete request received with query: Sydn
+2024-12-15 12:35:39 - INFO - Autocomplete found 10 results for query 'Syd'
+2024-12-15 12:35:39 - INFO - 127.0.0.1 - GET /autocomplete?query=Syd - 200 - 425ms
+2024-12-15 12:35:39 - INFO - Autocomplete found 10 results for query 'Sydn'
+2024-12-15 12:35:39 - INFO - 127.0.0.1 - GET /autocomplete?query=Sydn - 200 - 254ms
+2024-12-15 12:35:47 - INFO - Autocomplete request received with query: Syd
+2024-12-15 12:35:47 - INFO - Autocomplete request received with query: Syde
+2024-12-15 12:35:47 - INFO - Autocomplete found 10 results for query 'Syd'
+2024-12-15 12:35:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Syd - 200 - 345ms
+2024-12-15 12:35:47 - INFO - Autocomplete found 7 results for query 'Syde'
+2024-12-15 12:35:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Syde - 200 - 311ms
+2024-12-15 12:35:49 - INFO - Autocomplete request received with query: Syd
+2024-12-15 12:35:50 - INFO - Autocomplete found 10 results for query 'Syd'
+2024-12-15 12:35:50 - INFO - 127.0.0.1 - GET /autocomplete?query=Syd - 200 - 281ms
+2024-12-15 12:35:51 - INFO - Autocomplete request received with query: Lom
+2024-12-15 12:35:52 - INFO - Autocomplete request received with query: Lomd
+2024-12-15 12:35:52 - INFO - Autocomplete found 10 results for query 'Lom'
+2024-12-15 12:35:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Lom - 200 - 330ms
+2024-12-15 12:35:52 - INFO - Autocomplete request received with query: Lom
+2024-12-15 12:35:52 - INFO - Autocomplete found 0 results for query 'Lomd'
+2024-12-15 12:35:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Lomd - 200 - 417ms
+2024-12-15 12:35:52 - INFO - Autocomplete found 10 results for query 'Lom'
+2024-12-15 12:35:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Lom - 200 - 295ms
+2024-12-15 12:35:52 - INFO - Autocomplete request received with query: Lon
+2024-12-15 12:35:52 - INFO - Autocomplete request received with query: Lond
+2024-12-15 12:35:52 - INFO - Autocomplete request received with query: Londo
+2024-12-15 12:35:52 - INFO - Autocomplete request received with query: London
+2024-12-15 12:35:52 - INFO - Autocomplete found 10 results for query 'Lon'
+2024-12-15 12:35:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Lon - 200 - 293ms
+2024-12-15 12:35:52 - INFO - Autocomplete found 10 results for query 'Lond'
+2024-12-15 12:35:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Lond - 200 - 307ms
+2024-12-15 12:35:53 - INFO - Autocomplete found 10 results for query 'Londo'
+2024-12-15 12:35:53 - INFO - 127.0.0.1 - GET /autocomplete?query=Londo - 200 - 428ms
+2024-12-15 12:35:53 - INFO - Autocomplete found 10 results for query 'London'
+2024-12-15 12:35:53 - INFO - 127.0.0.1 - GET /autocomplete?query=London - 200 - 481ms
+2024-12-15 12:35:55 - INFO - Autocomplete request received with query: Londo
+2024-12-15 12:35:55 - INFO - Autocomplete request received with query: Lond
+2024-12-15 12:35:55 - INFO - Autocomplete request received with query: Lon
+2024-12-15 12:35:55 - INFO - Autocomplete found 10 results for query 'Londo'
+2024-12-15 12:35:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Londo - 200 - 342ms
+2024-12-15 12:35:55 - INFO - Autocomplete found 10 results for query 'Lond'
+2024-12-15 12:35:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Lond - 200 - 324ms
+2024-12-15 12:35:55 - INFO - Autocomplete found 10 results for query 'Lon'
+2024-12-15 12:35:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Lon - 200 - 345ms
+2024-12-15 12:41:27 - INFO - Autocomplete request received with query: Lon
+2024-12-15 12:41:28 - INFO - Autocomplete request received with query: Lond
+2024-12-15 12:41:28 - INFO - Autocomplete request received with query: Londo
+2024-12-15 12:41:28 - INFO - Autocomplete request received with query: London
+2024-12-15 12:41:28 - INFO - Autocomplete found 10 results for query 'Lon'
+2024-12-15 12:41:28 - INFO - 127.0.0.1 - GET /autocomplete?query=Lon - 200 - 464ms
+2024-12-15 12:41:28 - INFO - Autocomplete found 10 results for query 'Lond'
+2024-12-15 12:41:28 - INFO - 127.0.0.1 - GET /autocomplete?query=Lond - 200 - 512ms
+2024-12-15 12:41:28 - INFO - Autocomplete found 10 results for query 'Londo'
+2024-12-15 12:41:28 - INFO - 127.0.0.1 - GET /autocomplete?query=Londo - 200 - 542ms
+2024-12-15 12:41:28 - INFO - Autocomplete found 10 results for query 'London'
+2024-12-15 12:41:28 - INFO - 127.0.0.1 - GET /autocomplete?query=London - 200 - 749ms
+2024-12-15 12:41:31 - INFO - Autocomplete request received with query: Londo
+2024-12-15 12:41:32 - INFO - Autocomplete found 10 results for query 'Londo'
+2024-12-15 12:41:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Londo - 200 - 290ms
+2024-12-15 12:41:32 - INFO - Autocomplete request received with query: Lond
+2024-12-15 12:41:32 - INFO - Autocomplete request received with query: Lon
+2024-12-15 12:41:32 - INFO - Autocomplete found 10 results for query 'Lond'
+2024-12-15 12:41:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Lond - 200 - 268ms
+2024-12-15 12:41:32 - INFO - Autocomplete found 10 results for query 'Lon'
+2024-12-15 12:41:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Lon - 200 - 319ms
+2024-12-15 12:41:40 - INFO - Autocomplete request received with query: Chi
+2024-12-15 12:41:40 - INFO - Autocomplete request received with query: Chic
+2024-12-15 12:41:40 - INFO - Autocomplete request received with query: Chica
+2024-12-15 12:41:40 - INFO - Autocomplete found 10 results for query 'Chi'
+2024-12-15 12:41:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Chi - 200 - 312ms
+2024-12-15 12:41:40 - INFO - Autocomplete found 10 results for query 'Chic'
+2024-12-15 12:41:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Chic - 200 - 345ms
+2024-12-15 12:41:40 - INFO - Autocomplete found 5 results for query 'Chica'
+2024-12-15 12:41:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Chica - 200 - 339ms
+2024-12-15 12:41:47 - INFO - Autocomplete request received with query: Chicag
+2024-12-15 12:41:47 - INFO - Autocomplete request received with query: Chicago
+2024-12-15 12:41:47 - INFO - Autocomplete found 5 results for query 'Chicag'
+2024-12-15 12:41:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Chicag - 200 - 410ms
+2024-12-15 12:41:48 - INFO - Autocomplete found 5 results for query 'Chicago'
+2024-12-15 12:41:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Chicago - 200 - 340ms
+2024-12-15 12:42:37 - INFO - Autocomplete request received with query: Chicag
+2024-12-15 12:42:38 - INFO - Autocomplete found 5 results for query 'Chicag'
+2024-12-15 12:42:38 - INFO - 127.0.0.1 - GET /autocomplete?query=Chicag - 200 - 314ms
+2024-12-15 12:42:38 - INFO - Autocomplete request received with query: Chicago
+2024-12-15 12:42:38 - INFO - Autocomplete found 5 results for query 'Chicago'
+2024-12-15 12:42:38 - INFO - 127.0.0.1 - GET /autocomplete?query=Chicago - 200 - 213ms
+2024-12-15 12:43:54 - INFO - Autocomplete request received with query: Lon
+2024-12-15 12:43:54 - INFO - Autocomplete request received with query: Lond
+2024-12-15 12:43:54 - INFO - Autocomplete request received with query: Londo
+2024-12-15 12:43:54 - INFO - Autocomplete request received with query: London
+2024-12-15 12:43:54 - INFO - Autocomplete found 10 results for query 'Lon'
+2024-12-15 12:43:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Lon - 200 - 452ms
+2024-12-15 12:43:54 - INFO - Autocomplete found 10 results for query 'Lond'
+2024-12-15 12:43:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Lond - 200 - 454ms
+2024-12-15 12:43:54 - INFO - Autocomplete found 10 results for query 'London'
+2024-12-15 12:43:54 - INFO - 127.0.0.1 - GET /autocomplete?query=London - 200 - 419ms
+2024-12-15 12:43:54 - INFO - Autocomplete found 10 results for query 'Londo'
+2024-12-15 12:43:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Londo - 200 - 505ms
+2024-12-15 12:46:33 - INFO - Autocomplete request received with query: Van
+2024-12-15 12:46:33 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 12:46:33 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 12:46:33 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 12:46:33 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 12:46:33 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 306ms
+2024-12-15 12:46:33 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 12:46:34 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 12:46:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 513ms
+2024-12-15 12:46:34 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 12:46:34 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 12:46:34 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 12:46:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 568ms
+2024-12-15 12:46:34 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 12:46:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 496ms
+2024-12-15 12:46:34 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-15 12:46:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 356ms
+2024-12-15 12:46:34 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-15 12:46:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 345ms
+2024-12-15 12:46:34 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 12:46:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 937ms
+2024-12-15 12:48:15 - INFO - Autocomplete request received with query: Chi
+2024-12-15 12:48:15 - INFO - Autocomplete request received with query: Chic
+2024-12-15 12:48:15 - INFO - Autocomplete request received with query: Chica
+2024-12-15 12:48:15 - INFO - Autocomplete found 10 results for query 'Chi'
+2024-12-15 12:48:15 - INFO - 127.0.0.1 - GET /autocomplete?query=Chi - 200 - 381ms
+2024-12-15 12:48:15 - INFO - Autocomplete found 10 results for query 'Chic'
+2024-12-15 12:48:15 - INFO - 127.0.0.1 - GET /autocomplete?query=Chic - 200 - 372ms
+2024-12-15 12:48:15 - INFO - Autocomplete found 5 results for query 'Chica'
+2024-12-15 12:48:15 - INFO - 127.0.0.1 - GET /autocomplete?query=Chica - 200 - 366ms
+2024-12-15 12:49:52 - INFO - Autocomplete request received with query: Van
+2024-12-15 12:49:52 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 12:49:52 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 12:49:52 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 12:49:52 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 12:49:52 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 12:49:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 435ms
+2024-12-15 12:49:52 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 12:49:52 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 12:49:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 526ms
+2024-12-15 12:49:52 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 12:49:52 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 12:49:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 634ms
+2024-12-15 12:49:53 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-15 12:49:53 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 493ms
+2024-12-15 12:49:53 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-15 12:49:53 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 446ms
+2024-12-15 12:49:53 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 12:49:53 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 828ms
+2024-12-15 12:49:53 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 12:49:53 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 955ms
+2024-12-15 12:52:17 - INFO - Autocomplete request received with query: Syd
+2024-12-15 12:52:17 - INFO - Autocomplete request received with query: Sydn
+2024-12-15 12:52:17 - INFO - Autocomplete found 10 results for query 'Syd'
+2024-12-15 12:52:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Syd - 200 - 279ms
+2024-12-15 12:52:17 - INFO - Autocomplete found 10 results for query 'Sydn'
+2024-12-15 12:52:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Sydn - 200 - 330ms
+2024-12-15 12:56:07 - INFO - Autocomplete request received with query: Van
+2024-12-15 12:56:07 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 12:56:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 280ms
+2024-12-15 12:56:12 - INFO - Autocomplete request received with query: Van
+2024-12-15 12:56:12 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 12:56:12 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 12:56:12 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 363ms
+2024-12-15 12:56:12 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 12:56:13 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 12:56:13 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 373ms
+2024-12-15 12:56:13 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 12:56:13 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 12:56:13 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 12:56:13 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 12:56:13 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 12:56:13 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 379ms
+2024-12-15 12:56:13 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 12:56:13 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 405ms
+2024-12-15 12:56:13 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 12:56:13 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 452ms
+2024-12-15 12:56:13 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-15 12:56:13 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 748ms
+2024-12-15 12:56:13 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-15 12:56:13 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 852ms
+2024-12-15 12:59:33 - INFO - Autocomplete request received with query: Vna
+2024-12-15 12:59:33 - INFO - Autocomplete found 0 results for query 'Vna'
+2024-12-15 12:59:33 - INFO - 127.0.0.1 - GET /autocomplete?query=Vna - 200 - 289ms
+2024-12-15 12:59:34 - INFO - Autocomplete request received with query: Van
+2024-12-15 12:59:34 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 12:59:35 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 12:59:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 276ms
+2024-12-15 12:59:35 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 12:59:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 302ms
+2024-12-15 12:59:41 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 12:59:42 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 12:59:42 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 321ms
+2024-12-15 12:59:43 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 12:59:43 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 12:59:43 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 290ms
+2024-12-15 12:59:47 - INFO - Autocomplete request received with query: Van
+2024-12-15 12:59:47 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 12:59:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 337ms
+2024-12-15 12:59:50 - INFO - Autocomplete request received with query: Van
+2024-12-15 12:59:50 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 12:59:50 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 12:59:50 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 12:59:50 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 12:59:51 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 12:59:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 460ms
+2024-12-15 12:59:51 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 12:59:51 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 12:59:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 587ms
+2024-12-15 12:59:51 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 12:59:51 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 12:59:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 627ms
+2024-12-15 12:59:51 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-15 12:59:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 490ms
+2024-12-15 12:59:51 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-15 12:59:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 417ms
+2024-12-15 12:59:51 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 12:59:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 1050ms
+2024-12-15 12:59:51 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 12:59:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 1031ms
+2024-12-15 12:59:53 - INFO - Autocomplete request received with query: Syd
+2024-12-15 12:59:54 - INFO - Autocomplete request received with query: Sydn
+2024-12-15 12:59:54 - INFO - Autocomplete found 10 results for query 'Syd'
+2024-12-15 12:59:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Syd - 200 - 351ms
+2024-12-15 12:59:54 - INFO - Autocomplete found 10 results for query 'Sydn'
+2024-12-15 12:59:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Sydn - 200 - 354ms
+2024-12-15 12:59:55 - INFO - Autocomplete request received with query: Syd
+2024-12-15 12:59:55 - INFO - Autocomplete found 10 results for query 'Syd'
+2024-12-15 12:59:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Syd - 200 - 362ms
+2024-12-15 12:59:56 - INFO - Autocomplete request received with query: Chi
+2024-12-15 12:59:57 - INFO - Autocomplete request received with query: Chic
+2024-12-15 12:59:57 - INFO - Autocomplete found 10 results for query 'Chi'
+2024-12-15 12:59:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Chi - 200 - 342ms
+2024-12-15 12:59:57 - INFO - Autocomplete request received with query: Chica
+2024-12-15 12:59:57 - INFO - Autocomplete found 5 results for query 'Chica'
+2024-12-15 12:59:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Chica - 200 - 271ms
+2024-12-15 12:59:57 - INFO - Autocomplete found 10 results for query 'Chic'
+2024-12-15 12:59:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Chic - 200 - 383ms
+2024-12-15 12:59:57 - INFO - Autocomplete request received with query: Chicao
+2024-12-15 12:59:57 - INFO - Autocomplete found 0 results for query 'Chicao'
+2024-12-15 12:59:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Chicao - 200 - 192ms
+2024-12-15 12:59:58 - INFO - Autocomplete request received with query: Chica
+2024-12-15 12:59:58 - INFO - Autocomplete request received with query: Chicag
+2024-12-15 12:59:58 - INFO - Autocomplete found 5 results for query 'Chica'
+2024-12-15 12:59:58 - INFO - 127.0.0.1 - GET /autocomplete?query=Chica - 200 - 246ms
+2024-12-15 12:59:58 - INFO - Autocomplete request received with query: Chicago
+2024-12-15 12:59:58 - INFO - Autocomplete found 5 results for query 'Chicag'
+2024-12-15 12:59:58 - INFO - 127.0.0.1 - GET /autocomplete?query=Chicag - 200 - 360ms
+2024-12-15 12:59:58 - INFO - Autocomplete found 5 results for query 'Chicago'
+2024-12-15 12:59:58 - INFO - 127.0.0.1 - GET /autocomplete?query=Chicago - 200 - 279ms
+2024-12-15 13:00:04 - INFO - Autocomplete request received with query: Chicag
+2024-12-15 13:00:04 - INFO - Autocomplete found 5 results for query 'Chicag'
+2024-12-15 13:00:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Chicag - 200 - 279ms
+2024-12-15 13:00:04 - INFO - Autocomplete request received with query: Chica
+2024-12-15 13:00:04 - INFO - Autocomplete request received with query: Chic
+2024-12-15 13:00:04 - INFO - Autocomplete found 5 results for query 'Chica'
+2024-12-15 13:00:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Chica - 200 - 217ms
+2024-12-15 13:00:04 - INFO - Autocomplete request received with query: Chi
+2024-12-15 13:00:05 - INFO - Autocomplete found 10 results for query 'Chic'
+2024-12-15 13:00:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Chic - 200 - 351ms
+2024-12-15 13:00:05 - INFO - Autocomplete found 10 results for query 'Chi'
+2024-12-15 13:00:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Chi - 200 - 242ms
+2024-12-15 13:14:12 - INFO - Autocomplete request received with query: Van
+2024-12-15 13:14:13 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 13:14:13 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 294ms
+2024-12-15 13:14:13 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 13:14:13 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 13:14:14 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 13:14:14 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 275ms
+2024-12-15 13:14:14 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 13:14:14 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 13:14:14 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 13:14:14 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 388ms
+2024-12-15 13:14:14 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 13:14:14 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 254ms
+2024-12-15 13:14:14 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 13:14:14 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 330ms
+2024-12-15 13:15:26 - INFO - Autocomplete request received with query: Van
+2024-12-15 13:15:27 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 13:15:27 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 13:15:27 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 377ms
+2024-12-15 13:15:27 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 13:15:27 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 344ms
+2024-12-15 13:20:28 - INFO - Autocomplete request received with query: Van
+2024-12-15 13:20:28 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 13:20:28 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 13:20:28 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 13:20:28 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 13:20:28 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 13:20:28 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 13:20:28 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 435ms
+2024-12-15 13:20:28 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 13:20:28 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 13:20:28 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 558ms
+2024-12-15 13:20:29 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-15 13:20:29 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 566ms
+2024-12-15 13:20:29 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-15 13:20:29 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 442ms
+2024-12-15 13:20:29 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 13:20:29 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 745ms
+2024-12-15 13:20:29 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 13:20:29 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 933ms
+2024-12-15 13:20:29 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 13:20:29 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 927ms
+2024-12-15 13:29:03 - INFO - Autocomplete request received with query: Van
+2024-12-15 13:29:03 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 13:29:03 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 13:29:03 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 13:29:03 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 13:29:03 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 13:29:03 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 13:29:03 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 392ms
+2024-12-15 13:29:03 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 13:29:03 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 13:29:03 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 506ms
+2024-12-15 13:29:04 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-15 13:29:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 397ms
+2024-12-15 13:29:04 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 13:29:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 677ms
+2024-12-15 13:29:04 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 13:29:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 875ms
+2024-12-15 13:29:04 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 13:29:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 917ms
+2024-12-15 13:29:04 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-15 13:29:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 860ms
+2024-12-15 13:30:59 - INFO - Autocomplete request received with query: Van
+2024-12-15 13:31:00 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 13:31:00 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 314ms
+2024-12-15 13:34:13 - INFO - Autocomplete request received with query: Van
+2024-12-15 13:34:13 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 13:34:13 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 282ms
+2024-12-15 13:34:13 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 13:34:13 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 13:34:13 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 13:34:13 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 215ms
+2024-12-15 13:34:13 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 13:34:13 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 13:34:13 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 13:34:13 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 319ms
+2024-12-15 13:34:13 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 13:34:13 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 220ms
+2024-12-15 13:34:14 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 13:34:14 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 302ms
+2024-12-15 13:36:35 - INFO - Autocomplete request received with query: Van
+2024-12-15 13:36:35 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 13:36:35 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 13:36:35 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 13:36:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 473ms
+2024-12-15 13:36:35 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 13:36:35 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 13:36:36 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 13:36:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 477ms
+2024-12-15 13:36:36 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 13:36:36 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 13:36:36 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 13:36:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 910ms
+2024-12-15 13:36:36 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 13:36:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 604ms
+2024-12-15 13:36:36 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 13:36:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 653ms
+2024-12-15 13:36:36 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-15 13:36:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 603ms
+2024-12-15 13:36:37 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-15 13:36:37 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 942ms
+2024-12-15 13:40:51 - INFO - Autocomplete request received with query: Van
+2024-12-15 13:40:51 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 13:40:51 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 13:40:51 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 13:40:51 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 13:40:51 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 13:40:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 421ms
+2024-12-15 13:40:51 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 13:40:51 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 13:40:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 526ms
+2024-12-15 13:40:51 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 13:40:52 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-15 13:40:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 550ms
+2024-12-15 13:40:52 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 13:40:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 816ms
+2024-12-15 13:40:52 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-15 13:40:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 467ms
+2024-12-15 13:40:52 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 13:40:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 1056ms
+2024-12-15 13:40:52 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 13:40:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 1079ms
+2024-12-15 13:41:28 - INFO - Autocomplete request received with query: van
+2024-12-15 13:41:28 - INFO - Autocomplete request received with query: vanc
+2024-12-15 13:41:28 - INFO - Autocomplete request received with query: vanco
+2024-12-15 13:41:28 - INFO - Autocomplete request received with query: vancou
+2024-12-15 13:41:28 - INFO - Autocomplete request received with query: vancouv
+2024-12-15 13:41:28 - INFO - Autocomplete found 10 results for query 'van'
+2024-12-15 13:41:28 - INFO - 127.0.0.1 - GET /autocomplete?query=van - 200 - 430ms
+2024-12-15 13:41:28 - INFO - Autocomplete request received with query: vancouve
+2024-12-15 13:41:28 - INFO - Autocomplete request received with query: vancouver
+2024-12-15 13:41:28 - INFO - Autocomplete found 10 results for query 'vanc'
+2024-12-15 13:41:28 - INFO - 127.0.0.1 - GET /autocomplete?query=vanc - 200 - 533ms
+2024-12-15 13:41:28 - INFO - Autocomplete found 5 results for query 'vanco'
+2024-12-15 13:41:28 - INFO - 127.0.0.1 - GET /autocomplete?query=vanco - 200 - 559ms
+2024-12-15 13:41:29 - INFO - Autocomplete found 5 results for query 'vancou'
+2024-12-15 13:41:29 - INFO - 127.0.0.1 - GET /autocomplete?query=vancou - 200 - 672ms
+2024-12-15 13:41:29 - INFO - Autocomplete found 5 results for query 'vancouv'
+2024-12-15 13:41:29 - INFO - 127.0.0.1 - GET /autocomplete?query=vancouv - 200 - 617ms
+2024-12-15 13:41:29 - INFO - Autocomplete found 5 results for query 'vancouver'
+2024-12-15 13:41:29 - INFO - 127.0.0.1 - GET /autocomplete?query=vancouver - 200 - 486ms
+2024-12-15 13:41:29 - INFO - Autocomplete found 5 results for query 'vancouve'
+2024-12-15 13:41:29 - INFO - 127.0.0.1 - GET /autocomplete?query=vancouve - 200 - 825ms
+2024-12-15 13:44:05 - INFO - Autocomplete request received with query: Van
+2024-12-15 13:44:05 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 13:44:05 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 13:44:05 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 13:44:05 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 13:44:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 397ms
+2024-12-15 13:44:05 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 13:44:05 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 13:44:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 414ms
+2024-12-15 13:44:06 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 13:44:06 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 13:44:06 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 13:44:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 581ms
+2024-12-15 13:44:06 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 13:44:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 564ms
+2024-12-15 13:44:06 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 13:44:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 628ms
+2024-12-15 13:44:06 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-15 13:44:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 450ms
+2024-12-15 13:44:06 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-15 13:44:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 787ms
+2024-12-15 13:45:02 - INFO - Autocomplete request received with query: Syd
+2024-12-15 13:45:02 - INFO - Autocomplete request received with query: Sydn
+2024-12-15 13:45:02 - INFO - Autocomplete request received with query: Sydne
+2024-12-15 13:45:02 - INFO - Autocomplete request received with query: Sydney
+2024-12-15 13:45:02 - INFO - Autocomplete found 10 results for query 'Syd'
+2024-12-15 13:45:02 - INFO - 127.0.0.1 - GET /autocomplete?query=Syd - 200 - 446ms
+2024-12-15 13:45:02 - INFO - Autocomplete found 10 results for query 'Sydn'
+2024-12-15 13:45:02 - INFO - 127.0.0.1 - GET /autocomplete?query=Sydn - 200 - 436ms
+2024-12-15 13:45:02 - INFO - Autocomplete found 9 results for query 'Sydne'
+2024-12-15 13:45:02 - INFO - 127.0.0.1 - GET /autocomplete?query=Sydne - 200 - 426ms
+2024-12-15 13:45:03 - INFO - Autocomplete found 9 results for query 'Sydney'
+2024-12-15 13:45:03 - INFO - 127.0.0.1 - GET /autocomplete?query=Sydney - 200 - 485ms
+2024-12-15 13:45:14 - INFO - Autocomplete request received with query: Mel
+2024-12-15 13:45:15 - INFO - Autocomplete request received with query: Melb
+2024-12-15 13:45:15 - INFO - Autocomplete found 10 results for query 'Mel'
+2024-12-15 13:45:15 - INFO - 127.0.0.1 - GET /autocomplete?query=Mel - 200 - 310ms
+2024-12-15 13:45:15 - INFO - Autocomplete request received with query: Melbo
+2024-12-15 13:45:15 - INFO - Autocomplete request received with query: Melbou
+2024-12-15 13:45:15 - INFO - Autocomplete request received with query: Melbour
+2024-12-15 13:45:15 - INFO - Autocomplete found 10 results for query 'Melb'
+2024-12-15 13:45:15 - INFO - 127.0.0.1 - GET /autocomplete?query=Melb - 200 - 428ms
+2024-12-15 13:45:15 - INFO - Autocomplete request received with query: Melbourn
+2024-12-15 13:45:15 - INFO - Autocomplete found 10 results for query 'Melbo'
+2024-12-15 13:45:15 - INFO - 127.0.0.1 - GET /autocomplete?query=Melbo - 200 - 360ms
+2024-12-15 13:45:15 - INFO - Autocomplete request received with query: Melbourne
+2024-12-15 13:45:15 - INFO - Autocomplete found 10 results for query 'Melbou'
+2024-12-15 13:45:15 - INFO - 127.0.0.1 - GET /autocomplete?query=Melbou - 200 - 610ms
+2024-12-15 13:45:15 - INFO - Autocomplete found 10 results for query 'Melbourn'
+2024-12-15 13:45:15 - INFO - 127.0.0.1 - GET /autocomplete?query=Melbourn - 200 - 364ms
+2024-12-15 13:45:16 - INFO - Autocomplete found 10 results for query 'Melbourne'
+2024-12-15 13:45:16 - INFO - 127.0.0.1 - GET /autocomplete?query=Melbourne - 200 - 320ms
+2024-12-15 13:45:16 - INFO - Autocomplete found 10 results for query 'Melbour'
+2024-12-15 13:45:16 - INFO - 127.0.0.1 - GET /autocomplete?query=Melbour - 200 - 850ms
+2024-12-15 13:45:16 - INFO - Autocomplete request received with query: Melbourn
+2024-12-15 13:45:16 - INFO - Autocomplete request received with query: Melbour
+2024-12-15 13:45:16 - INFO - Autocomplete request received with query: Melbou
+2024-12-15 13:45:16 - INFO - Autocomplete found 10 results for query 'Melbourn'
+2024-12-15 13:45:16 - INFO - 127.0.0.1 - GET /autocomplete?query=Melbourn - 200 - 320ms
+2024-12-15 13:45:17 - INFO - Autocomplete request received with query: Melbo
+2024-12-15 13:45:17 - INFO - Autocomplete found 10 results for query 'Melbour'
+2024-12-15 13:45:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Melbour - 200 - 357ms
+2024-12-15 13:45:17 - INFO - Autocomplete request received with query: Melb
+2024-12-15 13:45:17 - INFO - Autocomplete request received with query: Mel
+2024-12-15 13:45:17 - INFO - Autocomplete found 10 results for query 'Melbou'
+2024-12-15 13:45:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Melbou - 200 - 465ms
+2024-12-15 13:45:17 - INFO - Autocomplete found 10 results for query 'Melbo'
+2024-12-15 13:45:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Melbo - 200 - 350ms
+2024-12-15 13:45:17 - INFO - Autocomplete found 10 results for query 'Melb'
+2024-12-15 13:45:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Melb - 200 - 409ms
+2024-12-15 13:45:17 - INFO - Autocomplete found 10 results for query 'Mel'
+2024-12-15 13:45:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Mel - 200 - 403ms
+2024-12-15 13:45:25 - INFO - Autocomplete request received with query: Van
+2024-12-15 13:45:25 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 13:45:25 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 13:45:25 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 13:45:25 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 13:45:25 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 13:45:25 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 13:45:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 532ms
+2024-12-15 13:45:25 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 13:45:25 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 13:45:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 662ms
+2024-12-15 13:45:26 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 13:45:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 647ms
+2024-12-15 13:45:26 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 13:45:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 866ms
+2024-12-15 13:45:26 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-15 13:45:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 498ms
+2024-12-15 13:45:26 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-15 13:45:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 916ms
+2024-12-15 13:45:26 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 13:45:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 1149ms
+2024-12-15 13:45:30 - INFO - Autocomplete request received with query: Lon
+2024-12-15 13:45:30 - INFO - Autocomplete request received with query: Lond
+2024-12-15 13:45:30 - INFO - Autocomplete request received with query: Londo
+2024-12-15 13:45:31 - INFO - Autocomplete request received with query: London
+2024-12-15 13:45:31 - INFO - Autocomplete found 10 results for query 'Lon'
+2024-12-15 13:45:31 - INFO - 127.0.0.1 - GET /autocomplete?query=Lon - 200 - 475ms
+2024-12-15 13:45:31 - INFO - Autocomplete found 10 results for query 'Lond'
+2024-12-15 13:45:31 - INFO - 127.0.0.1 - GET /autocomplete?query=Lond - 200 - 457ms
+2024-12-15 13:45:31 - INFO - Autocomplete found 10 results for query 'Londo'
+2024-12-15 13:45:31 - INFO - 127.0.0.1 - GET /autocomplete?query=Londo - 200 - 527ms
+2024-12-15 13:45:31 - INFO - Autocomplete found 10 results for query 'London'
+2024-12-15 13:45:31 - INFO - 127.0.0.1 - GET /autocomplete?query=London - 200 - 663ms
+2024-12-15 13:45:33 - INFO - Autocomplete request received with query: Londo
+2024-12-15 13:45:33 - INFO - Autocomplete request received with query: Lond
+2024-12-15 13:45:33 - INFO - Autocomplete request received with query: Lon
+2024-12-15 13:45:33 - INFO - Autocomplete found 10 results for query 'Londo'
+2024-12-15 13:45:33 - INFO - 127.0.0.1 - GET /autocomplete?query=Londo - 200 - 323ms
+2024-12-15 13:45:34 - INFO - Autocomplete found 10 results for query 'Lond'
+2024-12-15 13:45:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Lond - 200 - 475ms
+2024-12-15 13:45:34 - INFO - Autocomplete found 10 results for query 'Lon'
+2024-12-15 13:45:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Lon - 200 - 402ms
+2024-12-15 13:46:07 - INFO - Autocomplete request received with query: Jap
+2024-12-15 13:46:07 - INFO - Autocomplete request received with query: Japa
+2024-12-15 13:46:07 - INFO - Autocomplete request received with query: Japan
+2024-12-15 13:46:07 - INFO - Autocomplete found 10 results for query 'Jap'
+2024-12-15 13:46:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Jap - 200 - 380ms
+2024-12-15 13:46:07 - INFO - Autocomplete found 6 results for query 'Japa'
+2024-12-15 13:46:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Japa - 200 - 410ms
+2024-12-15 13:46:07 - INFO - Autocomplete found 1 results for query 'Japan'
+2024-12-15 13:46:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Japan - 200 - 437ms
+2024-12-15 13:46:09 - INFO - Autocomplete request received with query: Japa
+2024-12-15 13:46:10 - INFO - Autocomplete found 6 results for query 'Japa'
+2024-12-15 13:46:10 - INFO - 127.0.0.1 - GET /autocomplete?query=Japa - 200 - 353ms
+2024-12-15 13:46:14 - INFO - Autocomplete request received with query: Jap
+2024-12-15 13:46:14 - INFO - Autocomplete found 10 results for query 'Jap'
+2024-12-15 13:46:14 - INFO - 127.0.0.1 - GET /autocomplete?query=Jap - 200 - 407ms
+2024-12-15 13:46:16 - INFO - Autocomplete request received with query: Jap
+2024-12-15 13:46:16 - INFO - Autocomplete found 10 results for query 'Jap'
+2024-12-15 13:46:16 - INFO - 127.0.0.1 - GET /autocomplete?query=Jap - 200 - 325ms
+2024-12-15 13:47:43 - INFO - Autocomplete request received with query: Tok
+2024-12-15 13:47:43 - INFO - Autocomplete request received with query: Toky
+2024-12-15 13:47:43 - INFO - Autocomplete request received with query: Tokyo
+2024-12-15 13:47:43 - INFO - Autocomplete found 10 results for query 'Tok'
+2024-12-15 13:47:43 - INFO - 127.0.0.1 - GET /autocomplete?query=Tok - 200 - 331ms
+2024-12-15 13:47:43 - INFO - Autocomplete found 1 results for query 'Toky'
+2024-12-15 13:47:43 - INFO - 127.0.0.1 - GET /autocomplete?query=Toky - 200 - 368ms
+2024-12-15 13:47:43 - INFO - Autocomplete found 1 results for query 'Tokyo'
+2024-12-15 13:47:43 - INFO - 127.0.0.1 - GET /autocomplete?query=Tokyo - 200 - 455ms
+2024-12-15 13:48:08 - INFO - Autocomplete request received with query: Chi
+2024-12-15 13:48:08 - INFO - Autocomplete request received with query: Chic
+2024-12-15 13:48:08 - INFO - Autocomplete request received with query: Chica
+2024-12-15 13:48:08 - INFO - Autocomplete found 10 results for query 'Chi'
+2024-12-15 13:48:08 - INFO - 127.0.0.1 - GET /autocomplete?query=Chi - 200 - 390ms
+2024-12-15 13:48:08 - INFO - Autocomplete found 10 results for query 'Chic'
+2024-12-15 13:48:08 - INFO - 127.0.0.1 - GET /autocomplete?query=Chic - 200 - 392ms
+2024-12-15 13:48:08 - INFO - Autocomplete request received with query: Chicag
+2024-12-15 13:48:08 - INFO - Autocomplete found 5 results for query 'Chica'
+2024-12-15 13:48:08 - INFO - 127.0.0.1 - GET /autocomplete?query=Chica - 200 - 485ms
+2024-12-15 13:48:08 - INFO - Autocomplete found 5 results for query 'Chicag'
+2024-12-15 13:48:08 - INFO - 127.0.0.1 - GET /autocomplete?query=Chicag - 200 - 239ms
+2024-12-15 13:48:08 - INFO - Autocomplete request received with query: Chicago
+2024-12-15 13:48:09 - INFO - Autocomplete found 5 results for query 'Chicago'
+2024-12-15 13:48:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Chicago - 200 - 208ms
+2024-12-15 13:49:54 - INFO - Autocomplete request received with query: Van
+2024-12-15 13:49:54 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 13:49:54 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 13:49:54 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 13:49:54 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 13:49:55 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 13:49:55 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 13:49:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 665ms
+2024-12-15 13:49:55 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 13:49:55 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 13:49:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 778ms
+2024-12-15 13:49:55 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 13:49:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 699ms
+2024-12-15 13:49:55 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 13:49:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 926ms
+2024-12-15 13:49:55 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-15 13:49:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 472ms
+2024-12-15 13:49:56 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 13:49:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 1162ms
+2024-12-15 13:49:56 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-15 13:49:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 963ms

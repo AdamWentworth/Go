@@ -7,7 +7,6 @@
     border-radius: 10px;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
     margin: 0px;
     flex: 0 1 auto;
     /* Hide scrollbar for Chrome, Safari, and Opera */
