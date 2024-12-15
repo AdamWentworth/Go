@@ -7,8 +7,8 @@ from shapely.geometry import LineString, Polygon, MultiPolygon
 from shapely.ops import unary_union, polygonize
 from shapely.validation import make_valid
 from shapely import wkt
-from sqlalchemy import create_engine, Column, Integer, String, Float
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import create_engine, Column, Integer, String, Text, Float, ForeignKey
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 import os
 
 # ---------------------------
@@ -27,13 +27,25 @@ DB_CONFIG = {
 # Base declarative class for SQLAlchemy
 Base = declarative_base()
 
+# Define the Countries model
+class Country(Base):
+    __tablename__ = 'countries'
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    country_code = Column(String(2), unique=True, nullable=False)
+    centroid = Column(Text, nullable=True)  # Assuming WKT representation
+    boundary = Column(Text, nullable=True)  # Assuming WKT representation
+    places = relationship("Place", back_populates="country")
+
 # Define the Places model
 class Place(Base):
     __tablename__ = 'places'
     
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    country_id = Column(Integer, nullable=False)
+    country_id = Column(Integer, ForeignKey('countries.id'), nullable=False)
+    country = relationship("Country", back_populates="places")
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     state_or_province = Column(String, nullable=False)
@@ -41,6 +53,13 @@ class Place(Base):
     osm_id = Column(Integer, unique=True, nullable=False)
     population = Column(Integer, nullable=True)
     admin_level = Column(Integer, nullable=True)
+
+# List of countries to process
+COUNTRIES_TO_PROCESS = [
+    "NZ", "BR", "IN", "AU", "TW", "KR", 
+    "FR", "MX", "IT", "ES", "PH", "MY", "TH", "ID", "VN", 
+    "AR", "CL", "CO", "TR", "NL", "SE", "RU", "PL", "ZA"
+]
 
 # ---------------------------
 # Database Setup
@@ -151,11 +170,12 @@ class PolygonProcessor:
 # Helper Functions
 # ---------------------------
 
-def fetch_places_from_overpass(admin_level):
+def fetch_places_from_overpass(country_code, admin_level):
     """
-    Fetch administrative boundaries from Overpass API for a given admin level in Japan.
+    Fetch administrative boundaries from Overpass API for a given country and admin level.
     
     Args:
+        country_code (str): 2-letter country code.
         admin_level (int): The administrative level to fetch.
         
     Returns:
@@ -163,7 +183,7 @@ def fetch_places_from_overpass(admin_level):
     """
     query = f"""
     [out:json][timeout:180];
-    area["ISO3166-1"="GB"]->.searchArea;
+    area["ISO3166-1"="{country_code}"]->.searchArea;
     (
       relation["boundary"="administrative"]["admin_level"={admin_level}](area.searchArea);
     );
@@ -180,7 +200,7 @@ def fetch_places_from_overpass(admin_level):
         data = response.json()
         return data.get('elements', [])
     except requests.exceptions.RequestException as e:
-        print(f"[ERROR] Exception during Overpass API call for admin level {admin_level}: {e}", file=sys.stderr)
+        print(f"[ERROR] Exception during Overpass API call for {country_code} at admin level {admin_level}: {e}", file=sys.stderr)
         return []
 
 def fetch_province_from_nominatim(lat, lon):
@@ -221,25 +241,14 @@ def fetch_province_from_nominatim(lat, lon):
 def find_city_by_osm_id_or_name(session, city_name, state_or_province, admin_level, country_id, osm_id):
     """
     Check if a city exists in the database by either its osm_id or a combination of other attributes.
-
-    Args:
-        session (Session): SQLAlchemy session.
-        city_name (str): Name of the city.
-        state_or_province (str): State or province name.
-        admin_level (int): Administrative level.
-        country_id (int): Country ID.
-        osm_id (int): OSM ID of the place.
-
-    Returns:
-        Place or None: The existing Place object or None.
     """
     return session.query(Place).filter(
-        (Place.osm_id == osm_id) |
+        (Place.osm_id == str(osm_id)) | 
         (
-            Place.name == city_name,
-            Place.state_or_province == state_or_province,
-            Place.admin_level == admin_level,
-            Place.country_id == country_id
+            (Place.name == city_name) & 
+            (Place.state_or_province == state_or_province) & 
+            (Place.admin_level == admin_level) & 
+            (Place.country_id == country_id)
         )
     ).first()
 
@@ -301,17 +310,24 @@ def update_city_partial(session, city, updates):
 # Main Processing Function
 # ---------------------------
 
-def process_places(session, admin_level):
+def process_places(session, country_code, admin_level):
     """
-    Process places for a specific admin level: fetch, parse, calculate, and store.
+    Process places for a specific country, admin level: fetch, parse, calculate, and store.
 
     Args:
         session (Session): SQLAlchemy session.
+        country_code (str): 2-letter country code.
         admin_level (int): Administrative level to process.
     """
-    places = fetch_places_from_overpass(admin_level)
+    # Find the country ID based on the country code
+    country = session.query(Country).filter(Country.country_code == country_code).first()
+    if not country:
+        print(f"[ERROR] Country with code {country_code} not found in database.")
+        return
+
+    places = fetch_places_from_overpass(country_code, admin_level)
     if not places:
-        print(f"No places found for admin level {admin_level}.")
+        print(f"No places found for {country_code} at admin level {admin_level}.")
         return
 
     processor = PolygonProcessor()
@@ -369,11 +385,9 @@ def process_places(session, admin_level):
         except ValueError:
             admin_level_tag = None
 
-        country_id = 187  # United Kingdom
-
         # Check if the city exists
         existing_city = find_city_by_osm_id_or_name(
-            session, city_name, state_or_province, admin_level_tag, country_id, osm_id
+            session, city_name, state_or_province, admin_level_tag, country.id, osm_id
         )
 
         if existing_city:
@@ -393,7 +407,7 @@ def process_places(session, admin_level):
             add_city(
                 session,
                 city_name,
-                country_id,
+                country.id,
                 centroid_lat,
                 centroid_lon,
                 state_or_province,
@@ -409,7 +423,7 @@ def process_places(session, admin_level):
 
 def main():
     """
-    Main function to execute the processing loop.
+    Main function to execute the processing loop across multiple countries.
     """
     engine = get_db_engine()
     create_tables(engine)
@@ -423,9 +437,13 @@ def main():
         # Define admin levels to process
         admin_levels = [4, 5, 6, 7, 8, 9, 10]
         
-        for admin_level in admin_levels:
-            print(f"\n--- Processing Admin Level {admin_level} ---")
-            process_places(session, admin_level)
+        # Process each country
+        for country_code in COUNTRIES_TO_PROCESS:
+            print(f"\n--- Processing Country: {country_code} ---")
+            
+            for admin_level in admin_levels:
+                print(f"\n----- Processing Admin Level {admin_level} -----")
+                process_places(session, country_code, admin_level)
         
         print('Processing completed.')
     except Exception as e:

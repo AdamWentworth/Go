@@ -62,7 +62,7 @@
         const encodedState = encodeURIComponent(stateName);
         const encodedCountry = encodeURIComponent(countryName);
 
-        const url = `http://localhost:4000/city/${encodedCountry}${stateName ? `/${encodedState}` : ''}${cityName ? `/${encodedCity}` : ''}`;
+        const url = `http://localhost:3007/city/${encodedCountry}${stateName ? `/${encodedState}` : ''}${cityName ? `/${encodedCity}` : ''}`;
 
         fetch(url)
             .then(response => {
