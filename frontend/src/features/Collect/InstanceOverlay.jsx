@@ -109,7 +109,10 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
   };
 
   return (
-    <div className="instance-overlay" onClick={handleOverlayClick}>
+    <div 
+      className={`instance-overlay ${currentOverlay === 'Owned' ? 'owned-overlay' : ''}`} 
+      onClick={handleOverlayClick}
+    >
       {isSmallScreen && (
         <button className="close-overlay-button" onClick={handleCloseOverlay}>
           &times;

@@ -56,7 +56,6 @@ class Place(Base):
 
 # List of countries to process
 COUNTRIES_TO_PROCESS = [
-    "NZ", "BR", "IN", "AU", "TW", "KR", 
     "FR", "MX", "IT", "ES", "PH", "MY", "TH", "ID", "VN", 
     "AR", "CL", "CO", "TR", "NL", "SE", "RU", "PL", "ZA"
 ]

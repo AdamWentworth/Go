@@ -8,11 +8,22 @@
     bottom: 0;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
     background-color: rgba(0, 0, 0, 0.7);
+    overflow-y: auto;
     z-index: 1001;
     padding: 10px;
-}
+    /* Hide scrollbar but enable scrolling */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .instance-overlay.owned-overlay {
+    align-items: center !important;
+  }
+  
+  .instance-overlay::-webkit-scrollbar {
+    display: none; /* For Chrome, Safari, and Opera */
+  }  
 
 .close-overlay-button {
     position: absolute;
