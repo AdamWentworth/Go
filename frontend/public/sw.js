@@ -15,7 +15,9 @@ self.addEventListener('fetch', (event) => {
   if (
     (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/ownershipData/')) ||
     url.origin === 'http://localhost:3006' ||
-    (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/sse'))
+    (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/sse' ||
+      url.origin === 'http://localhost:3007'
+    ))
   ) {
     return; // Do not intercept this request
   }

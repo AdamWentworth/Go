@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"time"
 
@@ -32,7 +33,7 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		levelUpper = "WARN"
 	default:
 		// For debug, trace, etc. just keep uppercase
-		levelUpper = levelUpper
+		levelUpper = level
 	}
 
 	message := fmt.Sprintf("%s - %s - %s\n", timestamp, levelUpper, entry.Message)
@@ -69,16 +70,27 @@ func errorHandler(c *fiber.Ctx, err error) error {
 // Custom request logging middleware
 func requestLogger(c *fiber.Ctx) error {
 	start := time.Now()
-	err := c.Next()
+	err := c.Next() // Capture the error from c.Next()
 	stop := time.Now()
 	latency := stop.Sub(start)
 
 	ip := c.IP()
 	method := c.Method()
-	path := c.OriginalURL()
+	rawPath := c.OriginalURL() // Includes the raw query string
+
+	// Decode the URL for human-readable logging
+	decodedPath, decodeErr := url.QueryUnescape(rawPath)
+	if decodeErr != nil {
+		logrus.Warnf("Failed to decode URL path: %s, using raw path instead", rawPath)
+		decodedPath = rawPath // Fallback to the original raw path
+	}
+
 	status := c.Response().StatusCode()
 
-	logMessage := fmt.Sprintf("%s - %s %s - %d - %dms", ip, method, path, status, latency.Milliseconds())
-	logrus.Infof(logMessage)
+	// Log the decoded URL
+	logMessage := fmt.Sprintf("%s - %s %s - %d - %dms", ip, method, decodedPath, status, latency.Milliseconds())
+	logrus.Info(logMessage)
+
+	// Return the error captured from c.Next()
 	return err
 }

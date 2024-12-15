@@ -26,7 +26,7 @@ func AutocompleteHandler(db *pgxpool.Pool) fiber.Handler {
 			SELECT p.name, p.state_or_province, c.name AS country, p.population
 			FROM places p
 			LEFT JOIN countries c ON p.country_id = c.id
-			WHERE p.name ILIKE $1
+			WHERE unaccent(p.name) ILIKE unaccent($1)
 			ORDER BY p.name ILIKE $1 || '%' DESC, p.population DESC NULLS LAST, p.admin_level ASC
 			LIMIT 10;
 		`

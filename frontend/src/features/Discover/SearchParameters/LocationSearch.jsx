@@ -4,59 +4,70 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './LocationSearch.css';
 
-const breakpoints = [1, 2, 3, 4, 5, 10, 15, 20, 25];
-const resultsLimits = [5, 25, 50, 100]; // Define available results limits
-
 const LocationSearch = ({
-  city, 
-  setCity, 
+  city,
+  setCity,
   useCurrentLocation,
   setUseCurrentLocation,
   setCoordinates,
   range,
   setRange,
-  resultsLimit, 
-  setResultsLimit, 
-  handleSearch,  
-  isLoading,     
-  view,          
-  setView        
+  resultsLimit,
+  setResultsLimit,
+  handleSearch,
+  isLoading,
+  view,
+  setView,
 }) => {
-  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const inputRef = useRef(null);
+  const wrapperRef = useRef(null); // Ref for the component wrapper
 
-  const fetchSuggestions = async (query) => {
+  const BASE_URL = process.env.REACT_APP_LOCATION_SERVICE_URL;
+
+  const fetchSuggestions = async (userInput) => {
     try {
-      const response = await axios.get(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`, {
-        withCredentials: false
+      const normalizedInput = userInput.normalize('NFD').replace(/[̀-\u036f]/g, '');
+      const response = await axios.get(`${BASE_URL}/autocomplete?query=${encodeURIComponent(normalizedInput)}`, {
+        withCredentials: false,
       });
-      const suggestions = response.data.features.map((feature) => {
-        const { name, state, country } = feature.properties;
+      const data = response.data;
+
+      const formattedSuggestions = data.slice(0, 5).map((item) => {
+        const name = item.name || '';
+        const state = item.state_or_province || '';
+        const country = item.country || '';
         let displayName = `${name}`;
         if (state) displayName += `, ${state}`;
-        displayName += `, ${country}`;
-        return { name, country, displayName };
+        if (country) displayName += `, ${country}`;
+        return {
+          displayName,
+          ...item,
+        };
       });
 
-      setLocationSuggestions(suggestions);
+      setSuggestions(formattedSuggestions);
     } catch (error) {
       console.error('Error fetching suggestions:', error);
+      setSuggestions([]);
     }
   };
 
   const handleLocationChange = (e) => {
-    const newLocation = e.target.value;
-    setCity(newLocation);
-    if (newLocation.length > 2) {
-      fetchSuggestions(newLocation);
+    const userInput = e.target.value;
+    setCity(userInput);
+
+    if (userInput.length > 2) {
+      fetchSuggestions(userInput);
     } else {
-      setLocationSuggestions([]);
+      setSuggestions([]);
     }
   };
 
-  const selectLocation = (suggestion) => {
-    setCity(suggestion.displayName);
-    setLocationSuggestions([]);
+  const selectSuggestion = (suggestion) => {
+    const formattedLocation = suggestion.displayName;
+    setCity(formattedLocation);
+    setSuggestions([]);
   };
 
   const toggleUseCurrentLocation = () => {
@@ -78,48 +89,57 @@ const LocationSearch = ({
     }
   };
 
+  const handleClickOutside = (event) => {
+    if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+      setSuggestions([]);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleRangeChange = (e) => {
     const newValue = parseFloat(e.target.value);
-    const closest = breakpoints.reduce((prev, curr) => (Math.abs(curr - newValue) < Math.abs(prev - newValue) ? curr : prev));
-    setRange(closest);
+    setRange(newValue);
   };
 
   const handleResultsLimitChange = (e) => {
     const newValue = parseInt(e.target.value, 10);
-    const closest = resultsLimits.reduce((prev, curr) => (Math.abs(curr - newValue) < Math.abs(prev - newValue) ? curr : prev));
-    setResultsLimit(closest);
+    setResultsLimit(newValue);
   };
 
   return (
-    <div className="location-search">
+    <div className="location-search" ref={wrapperRef}>
       <h3 className="location-header">Location</h3>
 
       <div className="location-container">
-        {/* Column 1: Toggle Button Centered */}
         <div className="location-button-centered">
           <button onClick={toggleUseCurrentLocation}>
             {useCurrentLocation ? 'Disable Current Location' : 'Use Current Location'}
           </button>
         </div>
 
-        {/* Column 2: Location Field */}
         <div className="location-field">
           <div className="location-input">
             <input
               ref={inputRef}
               type="text"
-              value={city} 
+              value={city}
               onChange={handleLocationChange}
               disabled={useCurrentLocation}
               placeholder="Enter location"
             />
-            {locationSuggestions.length > 0 && (
-              <div className="suggestions" style={{ position: 'absolute', top: `${inputRef.current?.offsetHeight || 40}px` }}>
-                {locationSuggestions.map((suggestion, index) => (
+            {suggestions.length > 0 && (
+              <div className="suggestions">
+                {suggestions.map((suggestion, index) => (
                   <div
                     key={index}
                     className="suggestion-item"
-                    onClick={() => selectLocation(suggestion)}
+                    onClick={() => selectSuggestion(suggestion)}
                   >
                     {suggestion.displayName}
                   </div>
@@ -130,7 +150,6 @@ const LocationSearch = ({
         </div>
       </div>
 
-      {/* Sliders Row: Range and Results Limit */}
       <div className="sliders-container">
         <div className="range-field">
           <label>Range (km): {range}</label>
@@ -157,7 +176,6 @@ const LocationSearch = ({
         </div>
       </div>
 
-      {/* Search Button Row */}
       <div className="location-search-button">
         <button onClick={handleSearch} disabled={isLoading}>
           {isLoading ? 'Searching...' : 'Search'}
