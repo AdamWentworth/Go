@@ -4676,3 +4676,455 @@
 2024-12-16 13:48:55 - INFO - Autocomplete request received with query: Vancouver
 2024-12-16 13:48:55 - INFO - Autocomplete found 5 results for query 'Vancouver'
 2024-12-16 13:48:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 2ms
+2024-12-16 15:21:06 - INFO - Autocomplete request received with query: Mos
+2024-12-16 15:21:06 - INFO - Autocomplete found 5 results for query 'Mos'
+2024-12-16 15:21:06 - INFO - Autocomplete request received with query: Mosc
+2024-12-16 15:21:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Mos - 200 - 198ms
+2024-12-16 15:21:06 - INFO - Autocomplete request received with query: Mosco
+2024-12-16 15:21:06 - warning - Ignoring results for outdated query: Mosc
+2024-12-16 15:21:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Mosc - 200 - 23ms
+2024-12-16 15:21:06 - INFO - Autocomplete request received with query: Moscow
+2024-12-16 15:21:06 - INFO - Autocomplete found 5 results for query 'Moscow'
+2024-12-16 15:21:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Moscow - 200 - 15ms
+2024-12-16 15:21:06 - warning - Ignoring results for outdated query: Mosco
+2024-12-16 15:21:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Mosco - 200 - 134ms
+2024-12-16 15:21:17 - INFO - Autocomplete request received with query: Moscow 
+2024-12-16 15:21:17 - INFO - Autocomplete found 5 results for query 'Moscow '
+2024-12-16 15:21:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Moscow  - 200 - 115ms
+2024-12-16 15:21:24 - INFO - Autocomplete request received with query: Moscow
+2024-12-16 15:21:24 - INFO - Autocomplete found 5 results for query 'Moscow'
+2024-12-16 15:21:24 - INFO - 127.0.0.1 - GET /autocomplete?query=Moscow - 200 - 116ms
+2024-12-16 15:21:25 - INFO - Autocomplete request received with query: Mosco
+2024-12-16 15:21:25 - INFO - Autocomplete found 5 results for query 'Mosco'
+2024-12-16 15:21:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Mosco - 200 - 113ms
+2024-12-16 15:21:26 - INFO - Autocomplete request received with query: Mosc
+2024-12-16 15:21:26 - INFO - Autocomplete found 5 results for query 'Mosc'
+2024-12-16 15:21:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Mosc - 200 - 12ms
+2024-12-16 15:21:26 - INFO - Autocomplete request received with query: Mos
+2024-12-16 15:21:26 - INFO - Autocomplete found 5 results for query 'Mos'
+2024-12-16 15:21:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Mos - 200 - 27ms
+2024-12-16 15:21:39 - INFO - Autocomplete request received with query: Bue
+2024-12-16 15:21:40 - INFO - Autocomplete request received with query: Buen
+2024-12-16 15:21:40 - warning - Ignoring results for outdated query: Bue
+2024-12-16 15:21:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Bue - 200 - 189ms
+2024-12-16 15:21:40 - INFO - Autocomplete request received with query: Buena
+2024-12-16 15:21:40 - INFO - Autocomplete found 5 results for query 'Buena'
+2024-12-16 15:21:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Buena - 200 - 4ms
+2024-12-16 15:21:40 - warning - Ignoring results for outdated query: Buen
+2024-12-16 15:21:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Buen - 200 - 150ms
+2024-12-16 15:21:41 - INFO - Autocomplete request received with query: Buenas
+2024-12-16 15:21:41 - INFO - Autocomplete found 5 results for query 'Buenas'
+2024-12-16 15:21:41 - INFO - 127.0.0.1 - GET /autocomplete?query=Buenas - 200 - 105ms
+2024-12-16 15:21:42 - INFO - Autocomplete request received with query: Buena
+2024-12-16 15:21:42 - INFO - Autocomplete found 5 results for query 'Buena'
+2024-12-16 15:21:42 - INFO - 127.0.0.1 - GET /autocomplete?query=Buena - 200 - 103ms
+2024-12-16 15:21:43 - INFO - Autocomplete request received with query: Buen
+2024-12-16 15:21:44 - INFO - Autocomplete found 5 results for query 'Buen'
+2024-12-16 15:21:44 - INFO - 127.0.0.1 - GET /autocomplete?query=Buen - 200 - 137ms
+2024-12-16 15:21:44 - INFO - Autocomplete request received with query: Bue
+2024-12-16 15:21:44 - INFO - Autocomplete found 5 results for query 'Bue'
+2024-12-16 15:21:44 - INFO - 127.0.0.1 - GET /autocomplete?query=Bue - 200 - 46ms
+2024-12-16 15:21:59 - INFO - Autocomplete request received with query: NEw
+2024-12-16 15:21:59 - INFO - Autocomplete request received with query: NEw 
+2024-12-16 15:22:00 - warning - Ignoring results for outdated query: NEw
+2024-12-16 15:22:00 - INFO - 127.0.0.1 - GET /autocomplete?query=NEw - 200 - 407ms
+2024-12-16 15:22:00 - INFO - Autocomplete found 5 results for query 'NEw '
+2024-12-16 15:22:00 - INFO - 127.0.0.1 - GET /autocomplete?query=NEw  - 200 - 210ms
+2024-12-16 15:22:00 - INFO - Autocomplete request received with query: NEw
+2024-12-16 15:22:00 - INFO - Autocomplete found 5 results for query 'NEw'
+2024-12-16 15:22:00 - INFO - 127.0.0.1 - GET /autocomplete?query=NEw - 200 - 115ms
+2024-12-16 15:22:00 - INFO - Autocomplete request received with query: New
+2024-12-16 15:22:00 - INFO - Autocomplete request received with query: New 
+2024-12-16 15:22:00 - warning - Ignoring results for outdated query: New
+2024-12-16 15:22:00 - INFO - 127.0.0.1 - GET /autocomplete?query=New - 200 - 113ms
+2024-12-16 15:22:00 - INFO - Autocomplete found 5 results for query 'New '
+2024-12-16 15:22:00 - INFO - 127.0.0.1 - GET /autocomplete?query=New  - 200 - 88ms
+2024-12-16 15:22:01 - INFO - Autocomplete request received with query: New Y
+2024-12-16 15:22:01 - INFO - Autocomplete request received with query: New YT
+2024-12-16 15:22:01 - INFO - Autocomplete found 0 results for query 'New YT'
+2024-12-16 15:22:01 - INFO - 127.0.0.1 - GET /autocomplete?query=New YT - 200 - 4ms
+2024-12-16 15:22:01 - warning - Ignoring results for outdated query: New Y
+2024-12-16 15:22:01 - INFO - 127.0.0.1 - GET /autocomplete?query=New Y - 200 - 40ms
+2024-12-16 15:22:01 - INFO - Autocomplete request received with query: New Y
+2024-12-16 15:22:01 - INFO - Autocomplete found 5 results for query 'New Y'
+2024-12-16 15:22:01 - INFO - 127.0.0.1 - GET /autocomplete?query=New Y - 200 - 39ms
+2024-12-16 15:22:01 - INFO - Autocomplete request received with query: New Yo
+2024-12-16 15:22:01 - INFO - Autocomplete found 5 results for query 'New Yo'
+2024-12-16 15:22:01 - INFO - 127.0.0.1 - GET /autocomplete?query=New Yo - 200 - 36ms
+2024-12-16 15:22:01 - INFO - Autocomplete request received with query: New Yor
+2024-12-16 15:22:01 - INFO - Autocomplete found 5 results for query 'New Yor'
+2024-12-16 15:22:01 - INFO - 127.0.0.1 - GET /autocomplete?query=New Yor - 200 - 36ms
+2024-12-16 15:22:02 - INFO - Autocomplete request received with query: New York
+2024-12-16 15:22:02 - INFO - Autocomplete found 5 results for query 'New York'
+2024-12-16 15:22:02 - INFO - 127.0.0.1 - GET /autocomplete?query=New York - 200 - 35ms
+2024-12-16 15:22:12 - INFO - Autocomplete request received with query: New Yor
+2024-12-16 15:22:12 - INFO - Autocomplete found 5 results for query 'New Yor'
+2024-12-16 15:22:12 - INFO - 127.0.0.1 - GET /autocomplete?query=New Yor - 200 - 137ms
+2024-12-16 15:22:12 - INFO - Autocomplete request received with query: New Yo
+2024-12-16 15:22:12 - INFO - Autocomplete request received with query: New Y
+2024-12-16 15:22:12 - warning - Ignoring results for outdated query: New Yo
+2024-12-16 15:22:12 - INFO - 127.0.0.1 - GET /autocomplete?query=New Yo - 200 - 44ms
+2024-12-16 15:22:12 - INFO - Autocomplete request received with query: New 
+2024-12-16 15:22:12 - warning - Ignoring results for outdated query: New Y
+2024-12-16 15:22:12 - INFO - 127.0.0.1 - GET /autocomplete?query=New Y - 200 - 149ms
+2024-12-16 15:22:12 - INFO - Autocomplete request received with query: New
+2024-12-16 15:22:12 - warning - Ignoring results for outdated query: New 
+2024-12-16 15:22:12 - INFO - 127.0.0.1 - GET /autocomplete?query=New  - 200 - 179ms
+2024-12-16 15:22:12 - INFO - Autocomplete found 5 results for query 'New'
+2024-12-16 15:22:12 - INFO - 127.0.0.1 - GET /autocomplete?query=New - 200 - 106ms
+2024-12-16 15:22:35 - INFO - Autocomplete request received with query: Van
+2024-12-16 15:22:35 - INFO - Autocomplete found 5 results for query 'Van'
+2024-12-16 15:22:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 123ms
+2024-12-16 15:22:35 - INFO - Autocomplete request received with query: Vanc
+2024-12-16 15:22:35 - INFO - Autocomplete found 5 results for query 'Vanc'
+2024-12-16 15:22:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 3ms
+2024-12-16 15:22:35 - INFO - Autocomplete request received with query: Vanc 
+2024-12-16 15:22:35 - INFO - Autocomplete found 5 results for query 'Vanc '
+2024-12-16 15:22:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc  - 200 - 2ms
+2024-12-16 15:22:36 - INFO - Autocomplete request received with query: Vanc
+2024-12-16 15:22:36 - INFO - Autocomplete found 5 results for query 'Vanc'
+2024-12-16 15:22:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 3ms
+2024-12-16 15:22:36 - INFO - Autocomplete request received with query: Vanco
+2024-12-16 15:22:36 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-16 15:22:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 4ms
+2024-12-16 15:22:36 - INFO - Autocomplete request received with query: Vancou
+2024-12-16 15:22:36 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-16 15:22:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 3ms
+2024-12-16 15:22:36 - INFO - Autocomplete request received with query: Vancouv
+2024-12-16 15:22:36 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-16 15:22:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 2ms
+2024-12-16 15:22:36 - INFO - Autocomplete request received with query: Vancouve
+2024-12-16 15:22:36 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-16 15:22:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 2ms
+2024-12-16 15:22:36 - INFO - Autocomplete request received with query: Vancouver
+2024-12-16 15:22:36 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-16 15:22:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 3ms
+2024-12-16 15:23:29 - INFO - Autocomplete request received with query: Nag
+2024-12-16 15:23:29 - INFO - Autocomplete request received with query: Naga
+2024-12-16 15:23:29 - warning - Ignoring results for outdated query: Nag
+2024-12-16 15:23:29 - INFO - 127.0.0.1 - GET /autocomplete?query=Nag - 200 - 143ms
+2024-12-16 15:23:29 - INFO - Autocomplete found 5 results for query 'Naga'
+2024-12-16 15:23:29 - INFO - 127.0.0.1 - GET /autocomplete?query=Naga - 200 - 113ms
+2024-12-16 15:23:29 - INFO - Autocomplete request received with query: Nagaa
+2024-12-16 15:23:29 - INFO - Autocomplete found 0 results for query 'Nagaa'
+2024-12-16 15:23:29 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagaa - 200 - 1ms
+2024-12-16 15:23:29 - INFO - Autocomplete request received with query: Nagaak
+2024-12-16 15:23:29 - INFO - Autocomplete found 0 results for query 'Nagaak'
+2024-12-16 15:23:29 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagaak - 200 - 2ms
+2024-12-16 15:23:30 - INFO - Autocomplete request received with query: Nagaaki
+2024-12-16 15:23:30 - INFO - Autocomplete found 0 results for query 'Nagaaki'
+2024-12-16 15:23:30 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagaaki - 200 - 1ms
+2024-12-16 15:23:31 - INFO - Autocomplete request received with query: Nagaak
+2024-12-16 15:23:31 - INFO - Autocomplete found 0 results for query 'Nagaak'
+2024-12-16 15:23:31 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagaak - 200 - 101ms
+2024-12-16 15:23:31 - INFO - Autocomplete request received with query: Nagaa
+2024-12-16 15:23:31 - INFO - Autocomplete found 0 results for query 'Nagaa'
+2024-12-16 15:23:31 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagaa - 200 - 1ms
+2024-12-16 15:23:32 - INFO - Autocomplete request received with query: Naga
+2024-12-16 15:23:32 - INFO - Autocomplete found 5 results for query 'Naga'
+2024-12-16 15:23:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Naga - 200 - 12ms
+2024-12-16 15:23:32 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:23:32 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:23:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 9ms
+2024-12-16 15:23:32 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:23:32 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:23:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 4ms
+2024-12-16 15:23:32 - ERROR - Error 500: json: unsupported value: NaN
+2024-12-16 15:23:39 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:23:40 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:23:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 118ms
+2024-12-16 15:23:43 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:23:44 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:23:44 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 104ms
+2024-12-16 15:23:44 - ERROR - Error 500: json: unsupported value: NaN
+2024-12-16 15:23:46 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:23:47 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:23:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 109ms
+2024-12-16 15:23:50 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:23:50 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:23:50 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 105ms
+2024-12-16 15:23:50 - ERROR - Error 500: json: unsupported value: NaN
+2024-12-16 15:26:13 - INFO - Loading configuration...
+2024-12-16 15:26:13 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 15:26:13 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 15:26:13 - INFO - Connecting to database...
+2024-12-16 15:26:13 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 15:26:13 - INFO - Attempting to connect to the database...
+2024-12-16 15:26:13 - INFO - Successfully connected to the database.
+2024-12-16 15:26:13 - INFO - Initializing Fiber app...
+2024-12-16 15:26:13 - INFO - Serving static files from ./static
+2024-12-16 15:26:13 - INFO - Registering routes...
+2024-12-16 15:26:13 - INFO - Server running on http://localhost:3007
+2024-12-16 15:26:21 - INFO - Autocomplete request received with query: Nag
+2024-12-16 15:26:21 - INFO - Autocomplete request received with query: Naga
+2024-12-16 15:26:21 - INFO - Autocomplete found 5 results for query 'Naga'
+2024-12-16 15:26:21 - INFO - 127.0.0.1 - GET /autocomplete?query=Naga - 200 - 132ms
+2024-12-16 15:26:21 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:26:21 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:26:21 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 10ms
+2024-12-16 15:26:21 - warning - Ignoring results for outdated query: Nag
+2024-12-16 15:26:21 - INFO - 127.0.0.1 - GET /autocomplete?query=Nag - 200 - 234ms
+2024-12-16 15:26:24 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:26:24 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:26:24 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 104ms
+2024-12-16 15:26:24 - ERROR - Error 500: json: unsupported value: NaN
+2024-12-16 15:28:22 - INFO - Loading configuration...
+2024-12-16 15:28:22 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 15:28:22 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 15:28:22 - INFO - Connecting to database...
+2024-12-16 15:28:22 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 15:28:22 - INFO - Attempting to connect to the database...
+2024-12-16 15:28:22 - INFO - Successfully connected to the database.
+2024-12-16 15:28:22 - INFO - Initializing Fiber app...
+2024-12-16 15:28:22 - INFO - Serving static files from ./static
+2024-12-16 15:28:22 - INFO - Registering routes...
+2024-12-16 15:28:22 - INFO - Server running on http://localhost:3007
+2024-12-16 15:28:25 - INFO - Autocomplete request received with query: Nag
+2024-12-16 15:28:25 - INFO - Autocomplete request received with query: Naga
+2024-12-16 15:28:25 - warning - Ignoring results for outdated query: Nag
+2024-12-16 15:28:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Nag - 200 - 188ms
+2024-12-16 15:28:25 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:28:25 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:28:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 14ms
+2024-12-16 15:28:26 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:28:26 - warning - Ignoring results for outdated query: Naga
+2024-12-16 15:28:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Naga - 200 - 143ms
+2024-12-16 15:28:26 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:28:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 5ms
+2024-12-16 15:28:26 - ERROR - Error 500: json: unsupported value: NaN
+2024-12-16 15:28:27 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:28:27 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:28:27 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 108ms
+2024-12-16 15:28:30 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:28:30 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:28:30 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 104ms
+2024-12-16 15:28:30 - ERROR - Error 500: json: unsupported value: NaN
+2024-12-16 15:30:02 - INFO - Loading configuration...
+2024-12-16 15:30:02 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 15:30:02 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 15:30:02 - INFO - Connecting to database...
+2024-12-16 15:30:02 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 15:30:02 - INFO - Attempting to connect to the database...
+2024-12-16 15:30:02 - INFO - Successfully connected to the database.
+2024-12-16 15:30:02 - INFO - Initializing Fiber app...
+2024-12-16 15:30:02 - INFO - Serving static files from ./static
+2024-12-16 15:30:02 - INFO - Registering routes...
+2024-12-16 15:30:02 - INFO - Server running on http://localhost:3007
+2024-12-16 15:30:07 - INFO - Autocomplete request received with query: Nag
+2024-12-16 15:30:07 - INFO - Autocomplete request received with query: Naga
+2024-12-16 15:30:07 - warning - Ignoring results for outdated query: Nag
+2024-12-16 15:30:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Nag - 200 - 139ms
+2024-12-16 15:30:07 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:30:07 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:30:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 14ms
+2024-12-16 15:30:07 - INFO - Autocomplete request received with query: Nagass
+2024-12-16 15:30:07 - INFO - Autocomplete found 0 results for query 'Nagass'
+2024-12-16 15:30:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagass - 200 - 1ms
+2024-12-16 15:30:07 - warning - Ignoring results for outdated query: Naga
+2024-12-16 15:30:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Naga - 200 - 127ms
+2024-12-16 15:30:07 - INFO - Autocomplete request received with query: Nagassa
+2024-12-16 15:30:07 - INFO - Autocomplete found 0 results for query 'Nagassa'
+2024-12-16 15:30:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagassa - 200 - 3ms
+2024-12-16 15:30:10 - INFO - Autocomplete request received with query: Nagass
+2024-12-16 15:30:10 - INFO - Autocomplete found 0 results for query 'Nagass'
+2024-12-16 15:30:10 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagass - 200 - 102ms
+2024-12-16 15:30:10 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:30:10 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:30:10 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 9ms
+2024-12-16 15:30:10 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:30:10 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:30:10 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 7ms
+2024-12-16 15:30:10 - ERROR - Error 500: json: unsupported value: NaN
+2024-12-16 15:31:52 - INFO - Loading configuration...
+2024-12-16 15:31:52 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 15:31:52 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 15:31:52 - INFO - Connecting to database...
+2024-12-16 15:31:52 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 15:31:52 - INFO - Attempting to connect to the database...
+2024-12-16 15:31:52 - INFO - Successfully connected to the database.
+2024-12-16 15:31:52 - INFO - Initializing Fiber app...
+2024-12-16 15:31:52 - INFO - Serving static files from ./static
+2024-12-16 15:31:52 - INFO - Registering routes...
+2024-12-16 15:31:52 - INFO - Server running on http://localhost:3007
+2024-12-16 15:31:57 - INFO - Autocomplete request received with query: Nag
+2024-12-16 15:31:57 - INFO - Autocomplete request received with query: Naga
+2024-12-16 15:31:57 - warning - Ignoring results for outdated query: Nag
+2024-12-16 15:31:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Nag - 200 - 167ms
+2024-12-16 15:31:57 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:31:57 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:31:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 15ms
+2024-12-16 15:31:57 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:31:57 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:31:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 5ms
+2024-12-16 15:31:57 - ERROR - Error 500: json: unsupported value: NaN
+2024-12-16 15:31:57 - warning - Ignoring results for outdated query: Naga
+2024-12-16 15:31:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Naga - 200 - 124ms
+2024-12-16 15:32:03 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:32:03 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:32:03 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 118ms
+2024-12-16 15:32:03 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:32:03 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:32:03 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 4ms
+2024-12-16 15:32:03 - ERROR - Error 500: json: unsupported value: NaN
+2024-12-16 15:33:12 - INFO - Loading configuration...
+2024-12-16 15:33:12 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 15:33:12 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 15:33:12 - INFO - Connecting to database...
+2024-12-16 15:33:12 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 15:33:12 - INFO - Attempting to connect to the database...
+2024-12-16 15:33:12 - INFO - Successfully connected to the database.
+2024-12-16 15:33:12 - INFO - Initializing Fiber app...
+2024-12-16 15:33:12 - INFO - Serving static files from ./static
+2024-12-16 15:33:12 - INFO - Registering routes...
+2024-12-16 15:33:12 - INFO - Server running on http://localhost:3007
+2024-12-16 15:33:16 - INFO - Autocomplete request received with query: Nag
+2024-12-16 15:33:16 - ERROR - Error querying database for autocomplete: ERROR: function round(double precision, integer) does not exist (SQLSTATE 42883)
+2024-12-16 15:33:16 - INFO - 127.0.0.1 - GET /autocomplete?query=Nag - 500 - 106ms
+2024-12-16 15:33:16 - INFO - Autocomplete request received with query: Naga
+2024-12-16 15:33:16 - ERROR - Error querying database for autocomplete: ERROR: function round(double precision, integer) does not exist (SQLSTATE 42883)
+2024-12-16 15:33:16 - INFO - 127.0.0.1 - GET /autocomplete?query=Naga - 500 - 0ms
+2024-12-16 15:33:16 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:33:16 - ERROR - Error querying database for autocomplete: ERROR: function round(double precision, integer) does not exist (SQLSTATE 42883)
+2024-12-16 15:33:16 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 500 - 1ms
+2024-12-16 15:33:17 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:33:17 - ERROR - Error querying database for autocomplete: ERROR: function round(double precision, integer) does not exist (SQLSTATE 42883)
+2024-12-16 15:33:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 500 - 1ms
+2024-12-16 15:33:25 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:33:25 - ERROR - Error querying database for autocomplete: ERROR: function round(double precision, integer) does not exist (SQLSTATE 42883)
+2024-12-16 15:33:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 500 - 100ms
+2024-12-16 15:33:26 - INFO - Autocomplete request received with query: Naga
+2024-12-16 15:33:26 - ERROR - Error querying database for autocomplete: ERROR: function round(double precision, integer) does not exist (SQLSTATE 42883)
+2024-12-16 15:33:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Naga - 500 - 0ms
+2024-12-16 15:33:26 - INFO - Autocomplete request received with query: Nag
+2024-12-16 15:33:26 - ERROR - Error querying database for autocomplete: ERROR: function round(double precision, integer) does not exist (SQLSTATE 42883)
+2024-12-16 15:33:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Nag - 500 - 1ms
+2024-12-16 15:33:27 - INFO - Autocomplete request received with query: Naga
+2024-12-16 15:33:28 - ERROR - Error querying database for autocomplete: ERROR: function round(double precision, integer) does not exist (SQLSTATE 42883)
+2024-12-16 15:33:28 - INFO - 127.0.0.1 - GET /autocomplete?query=Naga - 500 - 101ms
+2024-12-16 15:33:28 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:33:28 - ERROR - Error querying database for autocomplete: ERROR: function round(double precision, integer) does not exist (SQLSTATE 42883)
+2024-12-16 15:33:28 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 500 - 0ms
+2024-12-16 15:33:28 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:33:28 - ERROR - Error querying database for autocomplete: ERROR: function round(double precision, integer) does not exist (SQLSTATE 42883)
+2024-12-16 15:33:28 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 500 - 1ms
+2024-12-16 15:36:03 - INFO - Loading configuration...
+2024-12-16 15:36:03 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 15:36:03 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 15:36:03 - INFO - Connecting to database...
+2024-12-16 15:36:03 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 15:36:03 - INFO - Attempting to connect to the database...
+2024-12-16 15:36:03 - INFO - Successfully connected to the database.
+2024-12-16 15:36:03 - INFO - Initializing Fiber app...
+2024-12-16 15:36:03 - INFO - Serving static files from ./static
+2024-12-16 15:36:03 - INFO - Registering routes...
+2024-12-16 15:36:03 - INFO - Server running on http://localhost:3007
+2024-12-16 15:36:08 - INFO - Autocomplete request received with query: Nag
+2024-12-16 15:36:09 - INFO - Autocomplete request received with query: Naga
+2024-12-16 15:36:09 - warning - Ignoring results for outdated query: Nag
+2024-12-16 15:36:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Nag - 200 - 167ms
+2024-12-16 15:36:09 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:36:09 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:36:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 10ms
+2024-12-16 15:36:09 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:36:09 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:36:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 6ms
+2024-12-16 15:36:09 - warning - Ignoring results for outdated query: Naga
+2024-12-16 15:36:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Naga - 200 - 140ms
+2024-12-16 15:36:14 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:36:14 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:36:14 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 112ms
+2024-12-16 15:36:15 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:36:15 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:36:15 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 4ms
+2024-12-16 15:36:17 - INFO - Autocomplete request received with query: Nagasak
+2024-12-16 15:36:17 - INFO - Autocomplete found 5 results for query 'Nagasak'
+2024-12-16 15:36:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasak - 200 - 104ms
+2024-12-16 15:36:17 - INFO - Autocomplete request received with query: Nagasaki
+2024-12-16 15:36:17 - INFO - Autocomplete found 5 results for query 'Nagasaki'
+2024-12-16 15:36:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasaki - 200 - 4ms
+2024-12-16 15:36:19 - INFO - Autocomplete request received with query: Nagasak
+2024-12-16 15:36:19 - INFO - Autocomplete found 5 results for query 'Nagasak'
+2024-12-16 15:36:19 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasak - 200 - 104ms
+2024-12-16 15:36:19 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:36:19 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:36:19 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 4ms
+2024-12-16 15:39:31 - INFO - Loading configuration...
+2024-12-16 15:39:31 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 15:39:31 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 15:39:31 - INFO - Connecting to database...
+2024-12-16 15:39:31 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 15:39:31 - INFO - Attempting to connect to the database...
+2024-12-16 15:39:31 - INFO - Successfully connected to the database.
+2024-12-16 15:39:31 - INFO - Initializing Fiber app...
+2024-12-16 15:39:31 - INFO - Serving static files from ./static
+2024-12-16 15:39:31 - INFO - Registering routes...
+2024-12-16 15:39:31 - INFO - Server running on http://localhost:3007
+2024-12-16 15:39:35 - INFO - Autocomplete request received with query: Nag
+2024-12-16 15:39:35 - INFO - Autocomplete request received with query: Naga
+2024-12-16 15:39:35 - warning - Ignoring results for outdated query: Nag, sending latest results instead
+2024-12-16 15:39:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Nag - 200 - 163ms
+2024-12-16 15:39:35 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:39:35 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:39:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 10ms
+2024-12-16 15:39:35 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:39:35 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:39:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 6ms
+2024-12-16 15:39:35 - warning - Ignoring results for outdated query: Naga, sending latest results instead
+2024-12-16 15:39:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Naga - 200 - 127ms
+2024-12-16 15:39:37 - INFO - Autocomplete request received with query: Nagasak
+2024-12-16 15:39:37 - INFO - Autocomplete request received with query: Nagasakk
+2024-12-16 15:39:37 - warning - Ignoring results for outdated query: Nagasak, sending latest results instead
+2024-12-16 15:39:37 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasak - 200 - 106ms
+2024-12-16 15:39:37 - INFO - Autocomplete found 0 results for query 'Nagasakk'
+2024-12-16 15:39:37 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasakk - 200 - 102ms
+2024-12-16 15:39:37 - INFO - Autocomplete request received with query: Nagasak
+2024-12-16 15:39:37 - INFO - Autocomplete found 5 results for query 'Nagasak'
+2024-12-16 15:39:37 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasak - 200 - 3ms
+2024-12-16 15:39:41 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:39:41 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:39:41 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 105ms
+2024-12-16 15:39:41 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:39:41 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:39:41 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 11ms
+2024-12-16 15:39:42 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:39:42 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:39:42 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 3ms
+2024-12-16 15:39:43 - INFO - Autocomplete request received with query: Nagasak
+2024-12-16 15:39:43 - INFO - Autocomplete found 5 results for query 'Nagasak'
+2024-12-16 15:39:43 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasak - 200 - 3ms
+2024-12-16 15:39:43 - INFO - Autocomplete request received with query: Nagasakk
+2024-12-16 15:39:43 - INFO - Autocomplete found 0 results for query 'Nagasakk'
+2024-12-16 15:39:43 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasakk - 200 - 1ms
+2024-12-16 15:39:43 - INFO - Autocomplete request received with query: Nagasakki
+2024-12-16 15:39:43 - INFO - Autocomplete found 0 results for query 'Nagasakki'
+2024-12-16 15:39:43 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasakki - 200 - 2ms
+2024-12-16 15:39:43 - INFO - Autocomplete request received with query: Nagasakk
+2024-12-16 15:39:43 - INFO - Autocomplete found 0 results for query 'Nagasakk'
+2024-12-16 15:39:43 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasakk - 200 - 2ms
+2024-12-16 15:39:43 - INFO - Autocomplete request received with query: Nagasak
+2024-12-16 15:39:43 - INFO - Autocomplete found 5 results for query 'Nagasak'
+2024-12-16 15:39:43 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasak - 200 - 3ms
+2024-12-16 15:39:44 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:39:44 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:39:44 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 4ms
+2024-12-16 15:39:44 - INFO - Autocomplete request received with query: Nagasak
+2024-12-16 15:39:44 - INFO - Autocomplete found 5 results for query 'Nagasak'
+2024-12-16 15:39:44 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasak - 200 - 4ms
+2024-12-16 15:39:44 - INFO - Autocomplete request received with query: Nagasaki
+2024-12-16 15:39:44 - INFO - Autocomplete found 5 results for query 'Nagasaki'
+2024-12-16 15:39:44 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasaki - 200 - 5ms
+2024-12-16 15:39:45 - INFO - Autocomplete request received with query: Nagasak
+2024-12-16 15:39:45 - INFO - Autocomplete found 5 results for query 'Nagasak'
+2024-12-16 15:39:45 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasak - 200 - 103ms
+2024-12-16 15:39:45 - INFO - Autocomplete request received with query: Nagasa
+2024-12-16 15:39:45 - INFO - Autocomplete found 5 results for query 'Nagasa'
+2024-12-16 15:39:45 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagasa - 200 - 3ms
+2024-12-16 15:39:45 - INFO - Autocomplete request received with query: Nagas
+2024-12-16 15:39:45 - INFO - Autocomplete found 5 results for query 'Nagas'
+2024-12-16 15:39:45 - INFO - 127.0.0.1 - GET /autocomplete?query=Nagas - 200 - 13ms
+2024-12-16 15:39:46 - INFO - Autocomplete request received with query: Naga
+2024-12-16 15:39:46 - INFO - Autocomplete found 5 results for query 'Naga'
+2024-12-16 15:39:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Naga - 200 - 9ms
+2024-12-16 15:39:46 - INFO - Autocomplete request received with query: Nag
+2024-12-16 15:39:46 - INFO - Autocomplete found 5 results for query 'Nag'
+2024-12-16 15:39:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Nag - 200 - 16ms

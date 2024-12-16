@@ -60,7 +60,7 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
         });
   
         setSuggestions(formattedSuggestions);
-        console.log('Fetched suggestions:', formattedSuggestions); // Log the suggestions
+        // console.log('Fetched suggestions:', formattedSuggestions); // Log the suggestions
       } else {
         if (process.env.REACT_APP_LOG_WARNINGS === 'true') {
           console.warn('Unexpected data format:', data); // Log if data is not as expected

@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"math"
 	"strings"
 	"sync"
 
@@ -12,7 +13,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var activeQuery sync.Map // Track the most specific query
+// Define the shared state
+type AutocompleteState struct {
+	latestQuery   string
+	latestResults []map[string]interface{}
+	mu            sync.RWMutex
+}
+
+var state = AutocompleteState{}
 
 func AutocompleteHandler(db *pgxpool.Pool) fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -26,8 +34,10 @@ func AutocompleteHandler(db *pgxpool.Pool) fiber.Handler {
 			})
 		}
 
-		// Register this query as the most recent
-		activeQuery.Store("latestQuery", queryParam)
+		// Update the latest query
+		state.mu.Lock()
+		state.latestQuery = queryParam
+		state.mu.Unlock()
 
 		// Convert the query to a full-text search format
 		tokens := strings.Fields(queryParam)
@@ -57,14 +67,14 @@ func AutocompleteHandler(db *pgxpool.Pool) fiber.Handler {
                        WHEN lower(p.name) LIKE lower($3) THEN 2.0 -- Boost for partial match
                        ELSE -1.0 -- Penalize mismatched results
                    END +
-                   COALESCE(p.population / 1000000.0, 0) AS rank -- Normalize population contribution
+                   COALESCE(p.population / 1000000.0, 0) AS rank
             FROM places p
             LEFT JOIN countries c ON p.country_id = c.id
             WHERE p.search_tsv @@ to_tsquery($1)
             ORDER BY rank DESC, 
                      p.population DESC NULLS LAST, 
                      p.admin_level ASC,
-                     p.osm_id ASC -- Final tie breaker
+                     p.osm_id ASC
             LIMIT 5;
         `
 
@@ -89,6 +99,17 @@ func AutocompleteHandler(db *pgxpool.Pool) fiber.Handler {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 			}
 
+			// Handle NaN values
+			if math.IsNaN(rank) {
+				rank = 0 // or any default value
+			}
+			if latitude != nil && math.IsNaN(*latitude) {
+				*latitude = 0 // or any default value
+			}
+			if longitude != nil && math.IsNaN(*longitude) {
+				*longitude = 0 // or any default value
+			}
+
 			result := map[string]interface{}{
 				"id":                id,
 				"name":              name,
@@ -109,14 +130,27 @@ func AutocompleteHandler(db *pgxpool.Pool) fiber.Handler {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
 
-		// Ensure we only return results for the most specific query
-		latestQuery, _ := activeQuery.Load("latestQuery")
-		if latestQuery != queryParam {
-			logrus.Warnf("Ignoring results for outdated query: %s", queryParam)
-			return nil // Ignore outdated results
-		}
+		// Determine if this query is the latest
+		state.mu.RLock()
+		isLatest := queryParam == state.latestQuery
+		state.mu.RUnlock()
 
-		logrus.Infof("Autocomplete found %d results for query '%s'", len(results), queryParam)
-		return c.JSON(results)
+		if isLatest {
+			// Update the latest results
+			state.mu.Lock()
+			state.latestResults = results
+			state.mu.Unlock()
+
+			logrus.Infof("Autocomplete found %d results for query '%s'", len(results), queryParam)
+			return c.JSON(results)
+		} else {
+			// Respond with the latest results instead of the outdated query's results
+			state.mu.RLock()
+			latestResults := state.latestResults
+			state.mu.RUnlock()
+
+			logrus.Warnf("Ignoring results for outdated query: %s, sending latest results instead", queryParam)
+			return c.JSON(latestResults)
+		}
 	}
 }
