@@ -1,3 +1,5 @@
+// pokemon_handler.go
+
 package main
 
 import (
@@ -6,6 +8,15 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 )
+
+func getUsernameByUserID(userID string) (string, error) {
+	var username string
+	// Assuming there is a "users" table with "user_id" and "username" columns
+	if err := db.Table("users").Where("user_id = ?", userID).Select("username").Scan(&username).Error; err != nil {
+		return "", err
+	}
+	return username, nil
+}
 
 func GetUpdates(c *fiber.Ctx) error {
 	// Get user_id from JWT context
@@ -35,7 +46,7 @@ func GetUpdates(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid timestamp format"})
 	}
 
-	logrus.Infof("Fetching updates for user %s since %d", userID, timestampInt)
+	logrus.Infof("Fetching updates for username %s since %d", c.Locals("username"), timestampInt)
 
 	// Retrieve Pokémon instances for the user updated after the timestamp
 	var instances []PokemonInstance
@@ -97,6 +108,6 @@ func GetUpdates(c *fiber.Ctx) error {
 	}
 
 	// Log and return the response data
-	logrus.Infof("User %s retrieved %d updates", userID, instanceCount)
+	logrus.Infof("User %s retrieved %d updates", c.Locals("username"), instanceCount)
 	return c.Status(fiber.StatusOK).JSON(response)
 }

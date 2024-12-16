@@ -11,7 +11,7 @@ import (
 )
 
 func sseHandler(c *fiber.Ctx) error {
-	logrus.Infof("SSE handler invoked for userID=%v", c.Locals("user_id"))
+	logrus.Infof("SSE handler invoked for username %v", c.Locals("username"))
 	// Get user_id from context
 	userID, ok := c.Locals("user_id").(string)
 	if !ok || userID == "" {

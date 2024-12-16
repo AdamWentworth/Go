@@ -76,7 +76,13 @@ func startKafkaConsumer() {
 				logrus.Warnf("device_id was not a string, converted to %s", deviceID)
 			}
 
-			logrus.Infof("Kafka message: userID=%s, deviceID=%s", userID, deviceID)
+			username, err := getUsernameByUserID(userID)
+			if err != nil {
+				logrus.Errorf("Failed to fetch username for user_id %s: %v", userID, err)
+				continue
+			}
+
+			logrus.Infof("Kafka message: username=%s, deviceID=%s", username, deviceID)
 
 			// Prepare the message to send to clients
 			messageBytes, err := json.Marshal(data)
