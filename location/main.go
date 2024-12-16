@@ -3,8 +3,6 @@
 package main
 
 import (
-	"location/handlers"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/sirupsen/logrus"
@@ -38,10 +36,10 @@ func main() {
 
 	// Register handlers with logging
 	logrus.Info("Registering routes...")
-	app.Get("/autocomplete", handlers.AutocompleteHandler(pool))
-	app.Get("/geocode", handlers.GeocodeHandler(pool))
-	app.Get("/reverse", handlers.ReverseGeocodeHandler(pool))
-	app.Get("/city/:country/:state?/:name?", handlers.ViewerHandler(pool))
+	app.Get("/autocomplete", AutocompleteHandler(pool))
+	app.Get("/geocode", GeocodeHandler(pool))
+	app.Get("/reverse", ReverseGeocodeHandler(pool))
+	app.Get("/city/:country/:state?/:name?", ViewerHandler(pool))
 
 	logrus.Infof("Server running on http://localhost:%s", config.ServerPort)
 	if err := app.Listen(":" + config.ServerPort); err != nil {

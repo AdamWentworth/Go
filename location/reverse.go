@@ -1,6 +1,6 @@
 // reverse.go
 
-package handlers
+package main
 
 import (
 	"context"

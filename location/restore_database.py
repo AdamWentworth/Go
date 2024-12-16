@@ -9,7 +9,7 @@ load_dotenv()
 def restore_latest_backup(database_name, backup_directory=".", host="localhost", port=5432, username="postgres"):
     try:
         # Set the password from the .env file
-        os.environ["PGPASSWORD"] = os.getenv("DB_PASSWORD")
+        os.environ["PGPASSWORD"] = os.getenv("POST_PASSSWORD")
         if not os.environ["PGPASSWORD"]:
             raise ValueError("DB_PASSWORD is not set in the .env file.")
 

@@ -18,6 +18,7 @@ const LocationSearch = ({
   isLoading,
   view,
   setView,
+  setSelectedBoundary
 }) => {
   const [suggestions, setSuggestions] = useState([]);
   const inputRef = useRef(null);
@@ -31,27 +32,34 @@ const LocationSearch = ({
       const response = await axios.get(`${BASE_URL}/autocomplete?query=${encodeURIComponent(normalizedInput)}`, {
         withCredentials: false,
       });
+  
       const data = response.data;
-
-      const formattedSuggestions = data.slice(0, 5).map((item) => {
-        const name = item.name || '';
-        const state = item.state_or_province || '';
-        const country = item.country || '';
-        let displayName = `${name}`;
-        if (state) displayName += `, ${state}`;
-        if (country) displayName += `, ${country}`;
-        return {
-          displayName,
-          ...item,
-        };
-      });
-
-      setSuggestions(formattedSuggestions);
+  
+      // Ensure `data` is an array
+      if (Array.isArray(data)) {
+        const formattedSuggestions = data.slice(0, 5).map((item) => {
+          const name = item.name || '';
+          const state = item.state_or_province || '';
+          const country = item.country || '';
+          let displayName = `${name}`;
+          if (state) displayName += `, ${state}`;
+          if (country) displayName += `, ${country}`;
+          return {
+            displayName,
+            ...item,
+          };
+        });
+  
+        setSuggestions(formattedSuggestions);
+      } else {
+        // Silently handle unexpected responses
+        setSuggestions([]);
+      }
     } catch (error) {
-      console.error('Error fetching suggestions:', error);
+      // Suppress the error and clear suggestions
       setSuggestions([]);
     }
-  };
+  };  
 
   const handleLocationChange = (e) => {
     const userInput = e.target.value;
@@ -67,8 +75,24 @@ const LocationSearch = ({
   const selectSuggestion = (suggestion) => {
     const formattedLocation = suggestion.displayName;
     setCity(formattedLocation);
+  
+    // Set coordinates as before
+    if (suggestion.latitude && suggestion.longitude) {
+      setCoordinates({ latitude: suggestion.latitude, longitude: suggestion.longitude });
+    } else {
+      setCoordinates({ latitude: null, longitude: null });
+    }
+  
+    // Update local boundary
+    setSelectedBoundary(suggestion.boundary);
+  
+    // Also update the parent boundary state:
+    if (typeof setSelectedBoundary === 'function') {
+      setSelectedBoundary(suggestion.boundary);
+    }
+  
     setSuggestions([]);
-  };
+  };  
 
   const toggleUseCurrentLocation = () => {
     const newUseCurrentLocation = !useCurrentLocation;

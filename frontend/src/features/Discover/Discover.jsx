@@ -40,13 +40,14 @@ const Discover = () => {
     fetchPokemonVariantsCache();
   }, []);
 
-  const handleSearch = async (queryParams) => {
+  const handleSearch = async (queryParams, boundaryWKT) => {
     setErrorMessage('');
     setIsLoading(true);
-    setHasSearched(true); // Mark as true when a search is made
+    setHasSearched(true);
     setOwnershipStatus(queryParams.ownership);
-
+  
     try {
+      // Make the request without boundary in query params
       const response = await axios.get(
         `${process.env.REACT_APP_DISCOVER_API_URL}/discoverPokemon`,
         {
@@ -54,52 +55,46 @@ const Discover = () => {
           withCredentials: true,
         }
       );
-
+  
       if (response.status === 200) {
         let data = response.data;
-
-        // Ensure data is in array format
         const dataArray = Array.isArray(data) ? data : Object.values(data);
 
         if (dataArray && dataArray.length > 0) {
           const enrichedData = [];
-
-          // Use `pokemonData` from localStorage for additional general Pokémon info (if needed)
           const pokemonDataStored = JSON.parse(localStorage.getItem('pokemonData'));
-
+  
           if (pokemonDataStored && pokemonDataStored.data) {
             const pokemonDataArray = pokemonDataStored.data;
-
+  
             for (const item of dataArray) {
               if (item.pokemon_id) {
                 const pokemonInfo = pokemonDataArray.find(
                   (p) => p.pokemon_id === item.pokemon_id
                 );
-
-                // If valid pokemonInfo found in localStorage, enrich data
+  
                 if (pokemonInfo) {
+                  // Attach boundaryWKT to each item or just once as needed
                   enrichedData.push({
                     ...item,
                     pokemonInfo,
+                    boundary: boundaryWKT
                   });
                 }
               }
             }
-
-            // Sort by distance if data is enriched
+  
             if (enrichedData.length > 0) {
               enrichedData.sort((a, b) => a.distance - b.distance);
               setSearchResults(enrichedData);
-              setIsCollapsed(true); // Collapse search bar if results are found
+              setIsCollapsed(true);
             } else {
-              // Handle case where no valid Pokémon were enriched
               setSearchResults([]);
               setIsCollapsed(false); // Expand search bar if no results
             }
           } else {
-            // Handle missing or invalid localStorage data
             setErrorMessage('pokemonData is not properly formatted in localStorage.');
-            setIsCollapsed(false); // Expand search bar if there's an error
+            setIsCollapsed(false);
           }
         } else {
           // Handle case where API returns an empty data array
@@ -117,7 +112,7 @@ const Discover = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  };  
 
   return (
     <div>

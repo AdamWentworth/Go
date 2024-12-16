@@ -42,6 +42,8 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
 
   const collapsibleRef = useRef(null); // Add a ref for the collapsible container
 
+  const [boundary, setBoundary] = useState(null);
+
   useEffect(() => {
     const handleResize = () => {
       setIsMidWidth(window.innerWidth >= 1024 && window.innerWidth <= 1439);
@@ -103,71 +105,50 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
 
   const handleSearch = async () => {
     setErrorMessage('');
-
+  
     // Check if shadow Pokémon are selected for trade or wanted
     if (isShadow && (ownershipStatus === 'trade' || ownershipStatus === 'wanted')) {
       setErrorMessage('Shadow Pokémon cannot be listed for trade or wanted');
       return;
     }
-
+  
     if (!pokemon) {
       setErrorMessage('Please provide a Pokémon name.');
       return;
     }
-
-    if (!useCurrentLocation && !city) {
+  
+    if (!useCurrentLocation && (!city || !coordinates.latitude || !coordinates.longitude)) {
       setErrorMessage('Please provide a location or use your current location.');
       return;
     }
-
-    let locationCoordinates = coordinates;
-
-    if (!useCurrentLocation) {
-      try {
-        const query = city;
-        const response = await axios.get(
-          `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1`,
-          { withCredentials: false }
-        );
-
-        if (response.data?.features?.length > 0) {
-          const [lon, lat] = response.data.features[0].geometry.coordinates;
-          locationCoordinates = { latitude: lat, longitude: lon };
-        } else {
-          setErrorMessage('No results found for the location.');
-          return;
-        }
-      } catch (error) {
-        setErrorMessage('Error fetching GPS coordinates. Please try again.');
-        return;
-      }
-    }
-
+  
+    let locationCoordinates = coordinates; // Now directly from LocationSearch
+  
     const storedData = localStorage.getItem('pokemonData');
     if (!storedData) {
       setErrorMessage('No Pokémon data found in local storage.');
       return;
     }
-
+  
     const pokemonData = JSON.parse(storedData).data;
-
+  
     const matchingPokemon = pokemonData.find(
       (p) =>
         p.name?.toLowerCase() === pokemon.toLowerCase() &&
         (!selectedForm || p.form?.toLowerCase() === selectedForm.toLowerCase())
     );
-
+  
     if (!matchingPokemon) {
       setErrorMessage('No matching Pokémon found.');
       setIsCollapsed(false);
       return;
     }
-
+  
     const { pokemon_id } = matchingPokemon;
-
+  
     const matchingCostume = matchingPokemon.costumes?.find((c) => c.name === costume);
     const costume_id = matchingCostume ? matchingCostume.costume_id : null;
-
+  
     const queryParams = {
       pokemon_id,
       shiny: isShiny,
@@ -192,29 +173,29 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
       range_km: range,
       limit: resultsLimit,
     };
-
+  
     // Set irrelevant parameters to null based on ownershipStatus
     if (ownershipStatus !== 'owned') {
       queryParams.attack_iv = null;
       queryParams.defense_iv = null;
       queryParams.stamina_iv = null;
     }
-
+  
     if (ownershipStatus !== 'trade') {
       queryParams.only_matching_trades = null;
     }
-
+  
     if (ownershipStatus !== 'wanted') {
       queryParams.pref_lucky = null;
       queryParams.friendship_level = null;
       queryParams.already_registered = null;
       queryParams.trade_in_wanted_list = null;
     }
-
+  
     console.log('Search Query Parameters:', queryParams);
   
     // Call onSearch and collapse the search bar upon success
-    onSearch(queryParams);
+    onSearch(queryParams, boundary);
     setIsCollapsed(true); // Collapse after a successful search
   };
 
@@ -260,6 +241,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
                   isLoading={isLoading}
                   view={view}
                   setView={setView}
+                  setSelectedBoundary={setBoundary}
                 />
               </div>
 
@@ -301,6 +283,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
                   isLoading={isLoading}
                   view={view}
                   setView={setView}
+                  setSelectedBoundary={setBoundary}
                 />
               </div>
 

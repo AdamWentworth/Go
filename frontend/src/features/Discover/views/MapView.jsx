@@ -14,9 +14,10 @@ import VectorSource from 'ol/source/Vector';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import Overlay from 'ol/Overlay';
-import { Style, Circle, Fill } from 'ol/style';
+import { Style, Circle, Fill, Stroke } from 'ol/style';
 import { getCenter } from 'ol/extent';
 import { buffer as bufferExtent } from 'ol/extent';
+import { WKT } from 'ol/format'; // Add the WKT format parser
 import './MapView.css';
 import { useTheme } from '../../../contexts/ThemeContext';
 
@@ -33,20 +34,16 @@ const MapView = ({ data, ownershipStatus, pokemonCache }) => {
   const navigate = useNavigate();
   const [pokemonVariants, setPokemonVariants] = useState([]);
 
-  // Populate pokemonVariants when pokemonCache is available
   useEffect(() => {
     if (pokemonCache) {
       setPokemonVariants(pokemonCache);
     }
   }, [pokemonCache]);
 
-  // Helper to find a Pokemon by key
   const findPokemonByKey = (baseKey) => {
-    const matchedPokemon = pokemonVariants.find((pokemon) => pokemon.pokemonKey === baseKey);
-    return matchedPokemon;
+    return pokemonVariants.find((pokemon) => pokemon.pokemonKey === baseKey);
   };
 
-  // Function to navigate based on selected Pokemon
   const navigateToUserCatalog = (username, instanceId, ownershipStatus) => {
     navigate(`/collection/${username}`, { state: { instanceId, ownershipStatus } });
   };
@@ -55,33 +52,59 @@ const MapView = ({ data, ownershipStatus, pokemonCache }) => {
     if (!data.length) return;
 
     const vectorSource = new VectorSource();
+    const wktFormat = new WKT(); // WKT parser instance
 
     data.forEach((item) => {
-      const { longitude, latitude } = item;
-      const coordinates = fromLonLat([
-        longitude ? parseFloat(longitude) : -123.113952,
-        latitude ? parseFloat(latitude) : 49.2608724,
-      ]);
+      const { longitude, latitude, boundary } = item;
 
-      let pointColor = '#00AAFF';
-      if (ownershipStatus === 'trade') pointColor = '#4cae4f';
-      else if (ownershipStatus === 'wanted') pointColor = '#FF0000';
+      // Add point feature as before
+      if (longitude && latitude) {
+        const coordinates = fromLonLat([parseFloat(longitude), parseFloat(latitude)]);
+        let pointColor = '#00AAFF';
+        if (ownershipStatus === 'trade') pointColor = '#4cae4f';
+        else if (ownershipStatus === 'wanted') pointColor = '#FF0000';
 
-      const feature = new Feature({
-        geometry: new Point(coordinates),
-        item,
-      });
+        const pointFeature = new Feature({
+          geometry: new Point(coordinates),
+          item,
+        });
 
-      feature.setStyle(
-        new Style({
-          image: new Circle({
-            radius: 7,
-            fill: new Fill({ color: pointColor }),
-          }),
-        })
-      );
+        pointFeature.setStyle(
+          new Style({
+            image: new Circle({
+              radius: 7,
+              fill: new Fill({ color: pointColor }),
+            }),
+          })
+        );
+        vectorSource.addFeature(pointFeature);
+      }
 
-      vectorSource.addFeature(feature);
+      if (boundary) {
+        const polygonFeature = wktFormat.readFeature(boundary, {
+          dataProjection: 'EPSG:4326',
+          featureProjection: 'EPSG:3857'
+        });
+      
+        // Set the color for the boundary based on ownershipStatus
+        let boundaryColor = '#00AAFF'; // Default blue
+        if (ownershipStatus === 'trade') boundaryColor = '#4cae4f'; // Green for trade
+        else if (ownershipStatus === 'wanted') boundaryColor = '#FF0000'; // Red for wanted
+      
+        polygonFeature.setStyle(
+          new Style({
+            stroke: new Stroke({
+              color: boundaryColor, // Use the same color as the point
+              width: 2, // Adjust width as needed
+            }),
+            fill: new Fill({
+              color: 'rgba(0, 0, 0, 0)' // Transparent fill
+            }),
+          })
+        );
+      
+        vectorSource.addFeature(polygonFeature);
+      }            
     });
 
     const extent = vectorSource.getExtent();
@@ -136,35 +159,38 @@ const MapView = ({ data, ownershipStatus, pokemonCache }) => {
         featureFound = true;
         const { item } = feature.getProperties();
 
-        let PopupComponent;
-        if (ownershipStatus === 'trade') {
-          PopupComponent = TradePopup;
-        } else if (ownershipStatus === 'wanted') {
-          PopupComponent = WantedPopup;
-        } else {
-          PopupComponent = OwnedPopup;
+        // Only show popup for point features (if item exists)
+        if (item) {
+          let PopupComponent;
+          if (ownershipStatus === 'trade') {
+            PopupComponent = TradePopup;
+          } else if (ownershipStatus === 'wanted') {
+            PopupComponent = WantedPopup;
+          } else {
+            PopupComponent = OwnedPopup;
+          }
+
+          if (pokemonVariants.length > 0) {
+            popupRootRef.current.render(
+              <PopupComponent
+                item={item}
+                navigateToUserCatalog={navigateToUserCatalog}
+                findPokemonByKey={findPokemonByKey}
+              />
+            );
+          } else {
+            console.warn("pokemonVariants not yet populated, skipping popup render");
+          }
+
+          const featureCoordinate = feature.getGeometry().getCoordinates();
+          const viewportCenterY = map.getSize()[1] / 2;
+
+          const positioning =
+            event.pixel[1] > viewportCenterY ? 'bottom-center' : 'top-center';
+
+          popupOverlay.setPositioning(positioning);
+          popupOverlay.setPosition(featureCoordinate);
         }
-
-        if (pokemonVariants.length > 0) {
-          popupRootRef.current.render(
-            <PopupComponent
-              item={item}
-              navigateToUserCatalog={navigateToUserCatalog}
-              findPokemonByKey={findPokemonByKey} // Pass down findPokemonByKey
-            />
-          );
-        } else {
-          console.warn("pokemonVariants not yet populated, skipping popup render");
-        }
-
-        const featureCoordinate = feature.getGeometry().getCoordinates();
-        const viewportCenterY = map.getSize()[1] / 2;
-
-        const positioning =
-          event.pixel[1] > viewportCenterY ? 'bottom-center' : 'top-center';
-
-        popupOverlay.setPositioning(positioning);
-        popupOverlay.setPosition(featureCoordinate);
       });
 
       if (!featureFound) {

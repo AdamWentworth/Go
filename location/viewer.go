@@ -1,6 +1,6 @@
 // viewer.go
 
-package handlers
+package main
 
 import (
 	"context"
