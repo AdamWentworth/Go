@@ -102,7 +102,7 @@ const authRoute = require('./routes/authRoute');
 app.use('/auth', authRoute);
 
 // Define port from configuration file or use a default value
-const port = appConfig.app.port || 3003;
+const port = appConfig.app.port || 3002;
 
 // Start the server
 app.listen(port, () => {

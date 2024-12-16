@@ -4,7 +4,7 @@ import React, { createContext, useState } from 'react';
 import { openDB } from 'idb'; // Added import for IndexedDB
 
 const UserSearchContext = createContext();
-const EVENTS_API_URL = process.env.REACT_APP_EVENTS_API_URL;
+const USERS_API_URL = process.env.REACT_APP_USERS_API_URL;
 const CACHE_NAME = 'SearchCache'; // Keeping this for consistency
 const CACHE_PREFIX = '';
 
@@ -56,7 +56,7 @@ export function UserSearchProvider({ children }) {
 
       // Fetch from API if no cache or cache is expired
       const response = await fetch(
-        `${EVENTS_API_URL}/ownershipData/username/${searchedUsername}`,
+        `${USERS_API_URL}/ownershipData/username/${searchedUsername}`,
         {
           method: 'GET',
           credentials: 'include',

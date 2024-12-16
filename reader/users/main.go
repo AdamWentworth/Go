@@ -15,7 +15,6 @@ func main() {
 	// Initialize configuration, environment, and logging
 	initLogging()   // Initialize logging early
 	initEnv()       // Load environment variables
-	loadConfig()    // Load app_conf.yml configuration
 	initJWTSecret() // Load the JWT_SECRET environment variable
 	initDB()        // Connect to the database
 
@@ -32,18 +31,15 @@ func main() {
 
 	// Protected routes
 	protected := app.Group("/", verifyJWT) // JWT middleware to protect routes
-	protected.Get("/api/sse", sseHandler)
-	protected.Get("/api/getUpdates", GetUpdates)
-
-	// Start the Kafka consumer
-	startKafkaConsumer()
+	protected.Get("/api/ownershipData/:user_id", GetPokemonInstances)
+	protected.Get("/api/ownershipData/username/:username", GetPokemonInstancesByUsername)
 
 	// Use fmt.Println for startup messages without time and log level
-	fmt.Println("Starting Events Service at http://127.0.0.1:3008/")
+	fmt.Println("Starting User Service at http://127.0.0.1:3005/")
 	fmt.Println("Quit the server with CTRL-C")
 
 	// Start server
-	if err := app.Listen(":3008"); err != nil {
-		log.Fatal("Events Service failed to start", err)
+	if err := app.Listen(":3005"); err != nil {
+		log.Fatal("User Service failed to start", err)
 	}
 }
