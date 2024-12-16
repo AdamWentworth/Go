@@ -197,9 +197,6 @@ export const AuthProvider = ({ children }) => {
 
     startTokenExpirationCheck();
     scheduleTokenRefresh(userData.accessTokenExpiry); // Pass the correct expiry time
-
-    // Initiate SSE connection
-    initiateSSEConnection(userData.user_id, handleIncomingUpdate);
   };
 
   const logout = async () => {
@@ -308,9 +305,12 @@ export const AuthProvider = ({ children }) => {
     const deviceId = deviceIdRef.current;
     const sseUrl = `${process.env.REACT_APP_EVENTS_API_URL}/sse?device_id=${deviceId}`;
     
+    // Close any existing connection before creating a new one
+    closeSSEConnection();
+    
     try {
       const eventSource = new EventSource(sseUrl, { withCredentials: true });
-      sseRef.current = eventSource; // Store the EventSource instance in the ref
+      sseRef.current = eventSource;
 
       eventSource.onopen = () => {
         console.log('SSE connection opened.');
@@ -321,10 +321,10 @@ export const AuthProvider = ({ children }) => {
         handleIncomingUpdate(data);
       };
       
-      eventSource.onerror = () => {
+      eventSource.onerror = (error) => {
+        console.error('SSE connection encountered an error, closing...', error);
         eventSource.close();
-        console.log('SSE connection lost. Reconnecting in 30 seconds...');
-        setTimeout(() => initiateSSEConnection(userId, handleIncomingUpdate, lastUpdateTimestamp), 30000);
+        sseRef.current = null;
       };
     } catch (error) {
       console.error('Failed to create SSE connection:', error);
@@ -355,10 +355,36 @@ export const AuthProvider = ({ children }) => {
         console.log('Session is not new or lastUpdateTimestamp is null, not fetching missed updates.');
       }
   
-      // Initiate SSE connection
+      console.log('Attempting to establish SSE connection...');
       initiateSSEConnection(user.user_id, handleIncomingUpdate, lastUpdateTimestamp);
     }
   }, [user, isLoading, isSessionReady]);  
+
+  useEffect(() => {
+    let reconnectTimer;
+
+    const checkAndReconnect = () => {
+      if (user && !isLoading && isSessionReady && !sseRef.current) {
+        console.log('No active SSE connection, attempting to reconnect...');
+        initiateSSEConnection(user.user_id, handleIncomingUpdate, lastUpdateTimestamp);
+      }
+    };
+
+    // Set up periodic reconnection check
+    reconnectTimer = setInterval(checkAndReconnect, 30000);
+
+    return () => {
+      if (reconnectTimer) {
+        clearInterval(reconnectTimer);
+      }
+    };
+  }, [
+    user, 
+    isLoading, 
+    isSessionReady, 
+    handleIncomingUpdate, 
+    lastUpdateTimestamp
+  ]);  
 
   return (
     <AuthContext.Provider
