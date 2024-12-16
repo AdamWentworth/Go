@@ -35,19 +35,45 @@ func ReverseGeocodeHandler(db *pgxpool.Pool) fiber.Handler {
 		}
 
 		sql := `
-			SELECT p.name, p.state_or_province, c.name AS country
+			SELECT p.name, p.state_or_province, c.name AS country, p.admin_level
 			FROM places p
 			LEFT JOIN countries c ON p.country_id = c.id
 			WHERE ST_Contains(p.boundary, ST_SetSRID(ST_MakePoint($1, $2), 4326))
-			ORDER BY p.admin_level DESC
-			LIMIT 1;
+			ORDER BY p.admin_level DESC;
 		`
 
-		var name, state, country *string
-		err := db.QueryRow(context.Background(), sql, lon, lat).Scan(&name, &state, &country)
+		rows, err := db.Query(context.Background(), sql, lon, lat)
 		if err != nil {
-			logrus.Warnf("No place found for lat=%f, lon=%f. Trying country...", lat, lon)
-			// Try countries
+			logrus.Errorf("Error querying places for lat=%f, lon=%f: %v", lat, lon, err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to query location data",
+			})
+		}
+		defer rows.Close()
+
+		var locations []fiber.Map
+
+		for rows.Next() {
+			var name, state, country *string
+			var adminLevel *int64
+
+			err := rows.Scan(&name, &state, &country, &adminLevel)
+			if err != nil {
+				logrus.Errorf("Error scanning location row: %v", err)
+				continue
+			}
+
+			locations = append(locations, fiber.Map{
+				"name":              name,
+				"state_or_province": state,
+				"country":           country,
+				"admin_level":       adminLevel,
+			})
+		}
+
+		if len(locations) == 0 {
+			// If no places found, try to match a country
+			logrus.Warnf("No places found for lat=%f, lon=%f. Trying country...", lat, lon)
 			sqlCountries := `
 				SELECT name, country_code 
 				FROM countries
@@ -63,21 +89,22 @@ func ReverseGeocodeHandler(db *pgxpool.Pool) fiber.Handler {
 				})
 			}
 
-			logrus.Infof("Found a country match (no place) for lat=%f, lon=%f: %s", lat, lon, *cName)
+			logrus.Infof("Found a country match for lat=%f, lon=%f: %s", lat, lon, *cName)
 			return c.JSON(fiber.Map{
-				"name":              nil,
-				"state_or_province": nil,
-				"country":           cName,
-				"country_code":      cCode,
+				"locations": []fiber.Map{
+					{
+						"name":              nil,
+						"state_or_province": nil,
+						"country":           cName,
+						"admin_level":       0,
+					},
+				},
 			})
 		}
 
-		logrus.Infof("Reverse geocode result for lat=%f, lon=%f: name=%v, state=%v, country=%v",
-			lat, lon, name, state, country)
+		logrus.Infof("Reverse geocode result for lat=%f, lon=%f: %d locations found", lat, lon, len(locations))
 		return c.JSON(fiber.Map{
-			"name":              name,
-			"state_or_province": state,
-			"country":           country,
+			"locations": locations,
 		})
 	}
 }

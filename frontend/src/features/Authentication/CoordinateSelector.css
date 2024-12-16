@@ -1,0 +1,102 @@
+/* CoordinateSelector.css */
+
+/* Ensure proper overlay stacking */
+.coordinate-selector-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000; /* Ensure it sits above the RegisterForm */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    align-items: center;
+  }
+  
+  /* Map container */
+  .coordinate-selector-map {
+    width: 80%;
+    height: 80%;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    z-index: 1001; /* Ensure map is above the base overlay */
+  }
+  
+  /* Loading text and no location message styling */
+  .loading-text,
+  .no-locations-text {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #ffffff;
+    z-index: 1001;
+  }
+  
+  /* Location Options Overlay */
+  .location-options-overlay {
+    position: absolute;
+    top: 5%; /* Adjust for your desired overlay position */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%; /* Adjust overlay width */
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #ddd;
+    padding: 1rem;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1003; /* Ensure it sits above the map */
+    max-height: 50%;
+    overflow-y: auto;
+  }
+  
+  /* Location options header */
+  .location-options-overlay h4 {
+    margin-top: 0;
+    font-size: 16px;
+    color: #333;
+  }
+  
+  /* Dismiss button */
+  .dismiss-options-button {
+    display: block;
+    margin: 0.5rem auto 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #ff5555;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+  }
+  
+  .dismiss-options-button:hover {
+    background-color: #ff0000;
+  }
+  
+  /* Location buttons */
+  .location-button {
+    display: block;
+    width: 100%;
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.3s ease;
+  }
+  
+  .location-button:hover {
+    background-color: #0056b3;
+  }
+  
+  .location-button.selected {
+    background-color: #28a745;
+    color: white;
+  }  
+  

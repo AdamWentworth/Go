@@ -26,6 +26,10 @@
         margin-top: 10px; 
         display: block;
     }
+
+    .register-form button[type="button"] {
+        font-size: 0.6rem;
+    }
 }
 
 @media (min-width: 481px) and (max-width: 767px) {
@@ -43,6 +47,9 @@
         margin-top: 10px; 
         display: block;
     }
+    .register-form button[type="button"] {
+        font-size: 0.7rem;
+    }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
@@ -59,6 +66,9 @@
     .register-form input[type="checkbox"] {
         display: block;
     }
+    .register-form button[type="button"] {
+        font-size: 0.8rem;
+    }
 }
 
 @media (min-width: 1024px) {
@@ -74,6 +84,9 @@
     }
     .register-form input[type="checkbox"] {
         display: block;
+    }
+    .register-form button[type="button"] {
+        font-size: 0.8rem;
     }
 }
 

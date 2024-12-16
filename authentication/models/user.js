@@ -20,7 +20,11 @@ const userSchema = new mongoose.Schema({
         token: String,
         expires: Date,
         device_id: String
-    }]
+    }],
+    coordinates: {
+        latitude: { type: Number, default: null, min: -90, max: 90 },
+        longitude: { type: Number, default: null, min: -180, max: 180 }
+    }
 });
 
 // Apply a unique index with a correct partial filter expression

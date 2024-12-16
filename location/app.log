@@ -2932,3 +2932,34 @@
 2024-12-15 18:16:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Metr - 200 - 625ms
 2024-12-15 18:16:32 - INFO - Autocomplete found 8 results for query 'Metro'
 2024-12-15 18:16:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Metro - 200 - 590ms
+2024-12-15 19:10:05 - INFO - Autocomplete request received with query: Van
+2024-12-15 19:10:05 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 19:10:05 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 19:10:05 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 19:10:05 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 19:10:05 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 19:10:05 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 19:10:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 656ms
+2024-12-15 19:10:05 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 19:10:05 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 19:10:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 797ms
+2024-12-15 19:10:06 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-15 19:10:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 989ms
+2024-12-15 19:10:06 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-15 19:10:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 557ms
+2024-12-15 19:10:06 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-15 19:10:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 1314ms
+2024-12-15 19:10:06 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-15 19:10:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 1399ms
+2024-12-15 19:10:06 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-15 19:10:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 1413ms
+2024-12-15 20:19:12 - INFO - Reverse geocode request received for lat=19.637774162584066, lon=14.765624999999998
+2024-12-15 20:19:12 - warning - No place found for lat=19.637774, lon=14.765625. Trying country...
+2024-12-15 20:19:12 - INFO - Found a country match (no place) for lat=19.637774, lon=14.765625: Niger
+2024-12-15 20:19:12 - INFO - 127.0.0.1 - GET /reverse?lat=19.637774162584066&lon=14.765624999999998 - 200 - 137ms
+2024-12-15 20:19:24 - INFO - Reverse geocode request received for lat=42.80264147954236, lon=-114.37500000000001
+2024-12-15 20:19:24 - INFO - Reverse geocode result for lat=42.802641, lon=-114.375000: name=0xc0002a41c0, state=0xc0002a41d0, country=0xc0002a41e0
+2024-12-15 20:19:24 - INFO - 127.0.0.1 - GET /reverse?lat=42.80264147954236&lon=-114.37500000000001 - 200 - 107ms
+2024-12-15 20:19:43 - INFO - Reverse geocode request received for lat=49.23779716079767, lon=-123.118629591199
+2024-12-15 20:19:43 - INFO - Reverse geocode result for lat=49.237797, lon=-123.118630: name=0xc0002a4390, state=0xc0002a43a0, country=0xc0002a43b0
+2024-12-15 20:19:43 - INFO - 127.0.0.1 - GET /reverse?lat=49.23779716079767&lon=-123.118629591199 - 200 - 106ms

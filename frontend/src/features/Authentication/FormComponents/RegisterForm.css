@@ -1,3 +1,5 @@
+/* RegisterForm.css */
+
 .register-form {
     width: calc(100% - 40px);
     max-width: 800px;
@@ -33,6 +35,30 @@
     margin: 5px 0;
     box-sizing: border-box;
 }
+
+.set-coordinates-button {
+    width: 100%; /* Match the input field width */
+    padding: 10px; /* Match input padding */
+    background-color: #28a745; /* Green color */
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px; /* Consistent with other buttons */
+    font-size: 16px;
+    height: 39px; /* Match the height of input fields */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin: 5px 0;
+}
+
+.set-coordinates-button:hover:not(:disabled) {
+    background-color: #218838; /* Darker green for hover */
+}
+  
+.set-coordinates-button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}  
 
 .register-form button[type="submit"] {
     grid-area: button;
