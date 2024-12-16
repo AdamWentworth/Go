@@ -2963,3 +2963,1579 @@
 2024-12-15 20:19:43 - INFO - Reverse geocode request received for lat=49.23779716079767, lon=-123.118629591199
 2024-12-15 20:19:43 - INFO - Reverse geocode result for lat=49.237797, lon=-123.118630: name=0xc0002a4390, state=0xc0002a43a0, country=0xc0002a43b0
 2024-12-15 20:19:43 - INFO - 127.0.0.1 - GET /reverse?lat=49.23779716079767&lon=-123.118629591199 - 200 - 106ms
+2024-12-15 20:25:00 - INFO - Loading configuration...
+2024-12-15 20:25:00 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-15 20:25:00 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-15 20:25:00 - INFO - Connecting to database...
+2024-12-15 20:25:00 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-15 20:25:00 - INFO - Attempting to connect to the database...
+2024-12-15 20:25:00 - INFO - Successfully connected to the database.
+2024-12-15 20:25:00 - INFO - Initializing Fiber app...
+2024-12-15 20:25:00 - INFO - Serving static files from ./static
+2024-12-15 20:25:00 - INFO - Registering routes...
+2024-12-15 20:25:00 - INFO - Server running on http://localhost:3007
+2024-12-15 20:25:07 - INFO - Reverse geocode request received for lat=49.26174338510444, lon=-123.24548346332259
+2024-12-15 20:25:07 - INFO - Reverse geocode result for lat=49.261743, lon=-123.245483: 5 locations found
+2024-12-15 20:25:07 - INFO - 127.0.0.1 - GET /reverse?lat=49.26174338510444&lon=-123.24548346332259 - 200 - 126ms
+2024-12-15 20:27:37 - INFO - Reverse geocode request received for lat=49.2662056800919, lon=-123.250420190275
+2024-12-15 20:27:37 - INFO - Reverse geocode result for lat=49.266206, lon=-123.250420: 5 locations found
+2024-12-15 20:27:37 - INFO - 127.0.0.1 - GET /reverse?lat=49.2662056800919&lon=-123.250420190275 - 200 - 104ms
+2024-12-15 20:30:46 - INFO - Reverse geocode request received for lat=49.26490684277769, lon=-123.25014988303971
+2024-12-15 20:30:46 - INFO - Reverse geocode result for lat=49.264907, lon=-123.250150: 5 locations found
+2024-12-15 20:30:46 - INFO - 127.0.0.1 - GET /reverse?lat=49.26490684277769&lon=-123.25014988303971 - 200 - 105ms
+2024-12-15 20:32:57 - INFO - Reverse geocode request received for lat=49.26176503884665, lon=-123.24803896959908
+2024-12-15 20:32:57 - INFO - Reverse geocode result for lat=49.261765, lon=-123.248039: 4 locations found
+2024-12-15 20:32:57 - INFO - 127.0.0.1 - GET /reverse?lat=49.26176503884665&lon=-123.24803896959908 - 200 - 103ms
+2024-12-15 20:36:40 - INFO - Reverse geocode request received for lat=-41.76255106376371, lon=-11.42576830658745
+2024-12-15 20:36:40 - warning - No places found for lat=-41.762551, lon=-11.425768. Trying country...
+2024-12-15 20:36:40 - warning - No location found at all for lat=-41.762551, lon=-11.425768
+2024-12-15 20:36:40 - INFO - 127.0.0.1 - GET /reverse?lat=-41.76255106376371&lon=-11.42576830658745 - 404 - 105ms
+2024-12-15 20:37:24 - INFO - Reverse geocode request received for lat=45.81961444748114, lon=-106.01871236343261
+2024-12-15 20:37:24 - INFO - Reverse geocode result for lat=45.819614, lon=-106.018712: 2 locations found
+2024-12-15 20:37:24 - INFO - 127.0.0.1 - GET /reverse?lat=45.81961444748114&lon=-106.01871236343261 - 200 - 104ms
+2024-12-15 20:37:33 - INFO - Reverse geocode request received for lat=49.23078749899551, lon=-123.11212014309666
+2024-12-15 20:37:33 - INFO - Reverse geocode result for lat=49.230787, lon=-123.112120: 4 locations found
+2024-12-15 20:37:33 - INFO - 127.0.0.1 - GET /reverse?lat=49.23078749899551&lon=-123.11212014309666 - 200 - 103ms
+2024-12-15 20:39:22 - INFO - Reverse geocode request received for lat=49.263103730937985, lon=-123.24534604007853
+2024-12-15 20:39:23 - INFO - Reverse geocode result for lat=49.263104, lon=-123.245346: 4 locations found
+2024-12-15 20:39:23 - INFO - 127.0.0.1 - GET /reverse?lat=49.263103730937985&lon=-123.24534604007853 - 200 - 103ms
+2024-12-15 20:39:44 - INFO - Reverse geocode request received for lat=49.25076615547735, lon=-123.13854404297493
+2024-12-15 20:39:44 - INFO - Reverse geocode result for lat=49.250766, lon=-123.138544: 4 locations found
+2024-12-15 20:39:44 - INFO - 127.0.0.1 - GET /reverse?lat=49.25076615547735&lon=-123.13854404297493 - 200 - 103ms
+2024-12-15 20:42:25 - INFO - Reverse geocode request received for lat=49.15702450747918, lon=-122.90906941852555
+2024-12-15 20:42:25 - INFO - Reverse geocode result for lat=49.157025, lon=-122.909069: 4 locations found
+2024-12-15 20:42:25 - INFO - 127.0.0.1 - GET /reverse?lat=49.15702450747918&lon=-122.90906941852555 - 200 - 104ms
+2024-12-15 20:45:26 - INFO - Reverse geocode request received for lat=49.252907952359095, lon=-123.23712396766098
+2024-12-15 20:45:27 - INFO - Reverse geocode result for lat=49.252908, lon=-123.237124: 4 locations found
+2024-12-15 20:45:27 - INFO - 127.0.0.1 - GET /reverse?lat=49.252907952359095&lon=-123.23712396766098 - 200 - 103ms
+2024-12-15 20:46:01 - INFO - Reverse geocode request received for lat=43.70655647005964, lon=-79.57928120628003
+2024-12-15 20:46:01 - INFO - Reverse geocode result for lat=43.706556, lon=-79.579281: 6 locations found
+2024-12-15 20:46:01 - INFO - 127.0.0.1 - GET /reverse?lat=43.70655647005964&lon=-79.57928120628003 - 200 - 109ms
+2024-12-15 20:46:49 - INFO - Reverse geocode request received for lat=-33.81305635855392, lon=151.17714139372035
+2024-12-15 20:46:49 - INFO - Reverse geocode result for lat=-33.813056, lon=151.177141: 4 locations found
+2024-12-15 20:46:49 - INFO - 127.0.0.1 - GET /reverse?lat=-33.81305635855392&lon=151.17714139372035 - 200 - 109ms
+2024-12-15 20:49:10 - INFO - Reverse geocode request received for lat=49.049543113714435, lon=-122.32431224603333
+2024-12-15 20:49:10 - INFO - Reverse geocode result for lat=49.049543, lon=-122.324312: 3 locations found
+2024-12-15 20:49:10 - INFO - 127.0.0.1 - GET /reverse?lat=49.049543113714435&lon=-122.32431224603333 - 200 - 105ms
+2024-12-15 20:49:34 - INFO - Reverse geocode request received for lat=-37.83717360491188, lon=145.1380423640243
+2024-12-15 20:49:34 - INFO - Reverse geocode result for lat=-37.837174, lon=145.138042: 4 locations found
+2024-12-15 20:49:34 - INFO - 127.0.0.1 - GET /reverse?lat=-37.83717360491188&lon=145.1380423640243 - 200 - 106ms
+2024-12-15 20:51:17 - INFO - Reverse geocode request received for lat=46.88095534864601, lon=-108.34837130163562
+2024-12-15 20:51:17 - INFO - Reverse geocode result for lat=46.880955, lon=-108.348371: 2 locations found
+2024-12-15 20:51:17 - INFO - 127.0.0.1 - GET /reverse?lat=46.88095534864601&lon=-108.34837130163562 - 200 - 104ms
+2024-12-15 20:53:14 - INFO - Reverse geocode request received for lat=-37.59005695226389, lon=144.8012905753521
+2024-12-15 20:53:14 - INFO - Reverse geocode result for lat=-37.590057, lon=144.801291: 4 locations found
+2024-12-15 20:53:14 - INFO - 127.0.0.1 - GET /reverse?lat=-37.59005695226389&lon=144.8012905753521 - 200 - 106ms
+2024-12-15 20:54:53 - INFO - Reverse geocode request received for lat=-37.65920954757455, lon=144.91537265358681
+2024-12-15 20:54:54 - INFO - Reverse geocode result for lat=-37.659210, lon=144.915373: 4 locations found
+2024-12-15 20:54:54 - INFO - 127.0.0.1 - GET /reverse?lat=-37.65920954757455&lon=144.91537265358681 - 200 - 106ms
+2024-12-15 20:58:22 - INFO - Reverse geocode request received for lat=45.81961444748114, lon=-106.72200562779577
+2024-12-15 20:58:22 - INFO - Reverse geocode result for lat=45.819614, lon=-106.722006: 2 locations found
+2024-12-15 20:58:22 - INFO - 127.0.0.1 - GET /reverse?lat=45.81961444748114&lon=-106.72200562779577 - 200 - 104ms
+2024-12-15 20:59:08 - INFO - Reverse geocode request received for lat=-22.88647727159116, lon=-43.2485262172073
+2024-12-15 20:59:08 - INFO - Reverse geocode result for lat=-22.886477, lon=-43.248526: 6 locations found
+2024-12-15 20:59:08 - INFO - 127.0.0.1 - GET /reverse?lat=-22.88647727159116&lon=-43.2485262172073 - 200 - 117ms
+2024-12-15 21:00:11 - INFO - Reverse geocode request received for lat=-41.94457571625607, lon=147.27896360549346
+2024-12-15 21:00:11 - INFO - Reverse geocode result for lat=-41.944576, lon=147.278964: 3 locations found
+2024-12-15 21:00:11 - INFO - 127.0.0.1 - GET /reverse?lat=-41.94457571625607&lon=147.27896360549346 - 200 - 104ms
+2024-12-15 21:05:47 - INFO - Reverse geocode request received for lat=43.74844476153038, lon=-79.60314943889827
+2024-12-15 21:05:47 - INFO - Reverse geocode result for lat=43.748445, lon=-79.603149: 6 locations found
+2024-12-15 21:05:47 - INFO - 127.0.0.1 - GET /reverse?lat=43.74844476153038&lon=-79.60314943889827 - 200 - 104ms
+2024-12-15 21:07:02 - INFO - Reverse geocode request received for lat=16.48848116783435, lon=74.60280968974656
+2024-12-15 21:07:02 - INFO - Reverse geocode result for lat=16.488481, lon=74.602810: 3 locations found
+2024-12-15 21:07:02 - INFO - 127.0.0.1 - GET /reverse?lat=16.48848116783435&lon=74.60280968974656 - 200 - 108ms
+2024-12-15 21:07:05 - INFO - Reverse geocode request received for lat=-15.05575203691349, lon=-0.9436876843139893
+2024-12-15 21:07:06 - warning - No places found for lat=-15.055752, lon=-0.943688. Trying country...
+2024-12-15 21:07:06 - warning - No location found at all for lat=-15.055752, lon=-0.943688
+2024-12-15 21:07:06 - INFO - 127.0.0.1 - GET /reverse?lat=-15.05575203691349&lon=-0.9436876843139893 - 404 - 105ms
+2024-12-15 21:07:20 - INFO - Reverse geocode request received for lat=19.22488631465295, lon=72.8998736132566
+2024-12-15 21:07:20 - INFO - Reverse geocode result for lat=19.224886, lon=72.899874: 4 locations found
+2024-12-15 21:07:20 - INFO - 127.0.0.1 - GET /reverse?lat=19.22488631465295&lon=72.8998736132566 - 200 - 105ms
+2024-12-15 21:07:37 - INFO - Reverse geocode request received for lat=19.067597986961275, lon=72.880759628174
+2024-12-15 21:07:37 - INFO - Reverse geocode result for lat=19.067598, lon=72.880760: 4 locations found
+2024-12-15 21:07:37 - INFO - 127.0.0.1 - GET /reverse?lat=19.067597986961275&lon=72.880759628174 - 200 - 106ms
+2024-12-15 22:48:10 - INFO - Autocomplete request received with query: Son
+2024-12-15 22:48:10 - INFO - Autocomplete request received with query: Son 
+2024-12-15 22:48:10 - INFO - Autocomplete request received with query: Son L
+2024-12-15 22:48:10 - INFO - Autocomplete request received with query: Son La
+2024-12-15 22:48:11 - INFO - Autocomplete found 10 results for query 'Son'
+2024-12-15 22:48:11 - INFO - 127.0.0.1 - GET /autocomplete?query=Son - 200 - 848ms
+2024-12-15 22:48:11 - INFO - Autocomplete found 10 results for query 'Son '
+2024-12-15 22:48:11 - INFO - 127.0.0.1 - GET /autocomplete?query=Son  - 200 - 893ms
+2024-12-15 22:48:11 - INFO - Autocomplete found 9 results for query 'Son L'
+2024-12-15 22:48:11 - INFO - 127.0.0.1 - GET /autocomplete?query=Son L - 200 - 871ms
+2024-12-15 22:48:11 - INFO - Autocomplete found 1 results for query 'Son La'
+2024-12-15 22:48:11 - INFO - 127.0.0.1 - GET /autocomplete?query=Son La - 200 - 883ms
+2024-12-15 22:48:17 - INFO - Autocomplete request received with query: Son La 
+2024-12-15 22:48:17 - INFO - Autocomplete found 1 results for query 'Son La '
+2024-12-15 22:48:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Son La  - 200 - 371ms
+2024-12-15 22:48:18 - INFO - Autocomplete request received with query: Son La P
+2024-12-15 22:48:18 - INFO - Autocomplete request received with query: Son La Pr
+2024-12-15 22:48:18 - INFO - Autocomplete request received with query: Son La Pro
+2024-12-15 22:48:19 - INFO - Autocomplete found 0 results for query 'Son La P'
+2024-12-15 22:48:19 - INFO - 127.0.0.1 - GET /autocomplete?query=Son La P - 200 - 497ms
+2024-12-15 22:48:19 - INFO - Autocomplete found 0 results for query 'Son La Pr'
+2024-12-15 22:48:19 - INFO - 127.0.0.1 - GET /autocomplete?query=Son La Pr - 200 - 607ms
+2024-12-15 22:48:19 - INFO - Autocomplete found 0 results for query 'Son La Pro'
+2024-12-15 22:48:19 - INFO - 127.0.0.1 - GET /autocomplete?query=Son La Pro - 200 - 517ms
+2024-12-15 22:48:24 - INFO - Autocomplete request received with query: Son La Pr
+2024-12-15 22:48:24 - INFO - Autocomplete request received with query: Son La P
+2024-12-15 22:48:24 - INFO - Autocomplete request received with query: Son La 
+2024-12-15 22:48:24 - INFO - Autocomplete found 0 results for query 'Son La Pr'
+2024-12-15 22:48:24 - INFO - 127.0.0.1 - GET /autocomplete?query=Son La Pr - 200 - 423ms
+2024-12-15 22:48:24 - INFO - Autocomplete request received with query: Son La
+2024-12-15 22:48:24 - INFO - Autocomplete found 0 results for query 'Son La P'
+2024-12-15 22:48:24 - INFO - 127.0.0.1 - GET /autocomplete?query=Son La P - 200 - 554ms
+2024-12-15 22:48:24 - INFO - Autocomplete found 1 results for query 'Son La '
+2024-12-15 22:48:24 - INFO - 127.0.0.1 - GET /autocomplete?query=Son La  - 200 - 543ms
+2024-12-15 22:48:25 - INFO - Autocomplete found 1 results for query 'Son La'
+2024-12-15 22:48:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Son La - 200 - 525ms
+2024-12-15 22:48:25 - INFO - Autocomplete request received with query: Son L
+2024-12-15 22:48:25 - INFO - Autocomplete request received with query: Son 
+2024-12-15 22:48:25 - INFO - Autocomplete request received with query: Son
+2024-12-15 22:48:26 - INFO - Autocomplete found 9 results for query 'Son L'
+2024-12-15 22:48:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Son L - 200 - 407ms
+2024-12-15 22:48:26 - INFO - Autocomplete found 10 results for query 'Son '
+2024-12-15 22:48:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Son  - 200 - 495ms
+2024-12-15 22:48:26 - INFO - Autocomplete found 10 results for query 'Son'
+2024-12-15 22:48:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Son - 200 - 522ms
+2024-12-15 22:48:26 - INFO - Autocomplete request received with query: Son 
+2024-12-15 22:48:27 - INFO - Autocomplete found 10 results for query 'Son '
+2024-12-15 22:48:27 - INFO - 127.0.0.1 - GET /autocomplete?query=Son  - 200 - 262ms
+2024-12-15 22:48:27 - INFO - Autocomplete request received with query: Son L
+2024-12-15 22:48:28 - INFO - Autocomplete request received with query: Son LA
+2024-12-15 22:48:28 - INFO - Autocomplete found 9 results for query 'Son L'
+2024-12-15 22:48:28 - INFO - 127.0.0.1 - GET /autocomplete?query=Son L - 200 - 339ms
+2024-12-15 22:48:28 - INFO - Autocomplete found 1 results for query 'Son LA'
+2024-12-15 22:48:28 - INFO - 127.0.0.1 - GET /autocomplete?query=Son LA - 200 - 393ms
+2024-12-15 22:48:28 - INFO - Autocomplete request received with query: Son L
+2024-12-15 22:48:29 - INFO - Autocomplete request received with query: Son La
+2024-12-15 22:48:29 - INFO - Autocomplete found 9 results for query 'Son L'
+2024-12-15 22:48:29 - INFO - 127.0.0.1 - GET /autocomplete?query=Son L - 200 - 419ms
+2024-12-15 22:48:29 - INFO - Autocomplete found 1 results for query 'Son La'
+2024-12-15 22:48:29 - INFO - 127.0.0.1 - GET /autocomplete?query=Son La - 200 - 438ms
+2024-12-15 22:53:38 - INFO - Loading configuration...
+2024-12-15 22:53:38 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-15 22:53:38 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-15 22:53:38 - INFO - Connecting to database...
+2024-12-15 22:53:38 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-15 22:53:38 - INFO - Attempting to connect to the database...
+2024-12-15 22:53:38 - INFO - Successfully connected to the database.
+2024-12-15 22:53:38 - INFO - Initializing Fiber app...
+2024-12-15 22:53:38 - INFO - Serving static files from ./static
+2024-12-15 22:53:38 - INFO - Registering routes...
+2024-12-15 22:53:38 - INFO - Server running on http://localhost:3007
+2024-12-15 22:53:44 - INFO - Autocomplete request received with query: Son
+2024-12-15 22:53:44 - INFO - Autocomplete request received with query: Son 
+2024-12-15 22:53:44 - INFO - Autocomplete request received with query: Son A
+2024-12-15 22:53:44 - INFO - Autocomplete request received with query: Son AL
+2024-12-15 22:53:45 - INFO - Autocomplete request received with query: Son L
+2024-12-15 22:53:45 - INFO - Autocomplete found 10 results for query 'Son'
+2024-12-15 22:53:45 - INFO - 127.0.0.1 - GET /autocomplete?query=Son - 200 - 1414ms
+2024-12-15 22:53:45 - INFO - Autocomplete request received with query: Son La
+2024-12-15 22:53:46 - INFO - Autocomplete found 10 results for query 'Son '
+2024-12-15 22:53:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Son  - 200 - 1625ms
+2024-12-15 22:53:46 - INFO - Autocomplete request received with query: Son 
+2024-12-15 22:53:46 - INFO - Autocomplete found 10 results for query 'Son A'
+2024-12-15 22:53:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Son A - 200 - 1780ms
+2024-12-15 22:53:46 - INFO - Autocomplete request received with query: Son A
+2024-12-15 22:53:47 - INFO - Autocomplete found 10 results for query 'Son AL'
+2024-12-15 22:53:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Son AL - 200 - 2396ms
+2024-12-15 22:53:47 - INFO - Autocomplete found 10 results for query 'Son La'
+2024-12-15 22:53:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Son La - 200 - 1649ms
+2024-12-15 22:53:47 - INFO - Autocomplete found 10 results for query 'Son '
+2024-12-15 22:53:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Son  - 200 - 1508ms
+2024-12-15 22:53:47 - INFO - Autocomplete found 10 results for query 'Son A'
+2024-12-15 22:53:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Son A - 200 - 1352ms
+2024-12-15 22:53:48 - INFO - Autocomplete found 10 results for query 'Son L'
+2024-12-15 22:53:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Son L - 200 - 3169ms
+2024-12-15 22:54:02 - INFO - Autocomplete request received with query: Van
+2024-12-15 22:54:02 - INFO - Autocomplete request received with query: Vanc
+2024-12-15 22:54:03 - INFO - Autocomplete request received with query: Vanco
+2024-12-15 22:54:03 - INFO - Autocomplete request received with query: Vancou
+2024-12-15 22:54:03 - INFO - Autocomplete request received with query: Vancouv
+2024-12-15 22:54:03 - INFO - Autocomplete request received with query: Vancouve
+2024-12-15 22:54:04 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-15 22:54:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 1526ms
+2024-12-15 22:54:04 - INFO - Autocomplete request received with query: Vancouver
+2024-12-15 22:54:04 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-15 22:54:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 1649ms
+2024-12-15 22:54:04 - INFO - Autocomplete request received with query: Vancouver 
+2024-12-15 22:54:04 - INFO - Autocomplete found 10 results for query 'Vanco'
+2024-12-15 22:54:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 1797ms
+2024-12-15 22:54:05 - INFO - Autocomplete found 9 results for query 'Vancou'
+2024-12-15 22:54:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 2348ms
+2024-12-15 22:54:05 - INFO - Autocomplete found 9 results for query 'Vancouver'
+2024-12-15 22:54:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 1328ms
+2024-12-15 22:54:05 - INFO - Autocomplete found 9 results for query 'Vancouver '
+2024-12-15 22:54:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver  - 200 - 1201ms
+2024-12-15 22:54:06 - INFO - Autocomplete found 9 results for query 'Vancouv'
+2024-12-15 22:54:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 3300ms
+2024-12-15 22:54:06 - INFO - Autocomplete found 9 results for query 'Vancouve'
+2024-12-15 22:54:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 3248ms
+2024-12-15 22:56:25 - INFO - Autocomplete request received with query: Syd
+2024-12-15 22:56:25 - INFO - Autocomplete request received with query: Sydn
+2024-12-15 22:56:25 - INFO - Autocomplete request received with query: Sydne
+2024-12-15 22:56:26 - INFO - Autocomplete request received with query: Sydney
+2024-12-15 22:56:27 - INFO - Autocomplete found 10 results for query 'Syd'
+2024-12-15 22:56:27 - INFO - 127.0.0.1 - GET /autocomplete?query=Syd - 200 - 1287ms
+2024-12-15 22:56:27 - INFO - Autocomplete found 10 results for query 'Sydn'
+2024-12-15 22:56:27 - INFO - 127.0.0.1 - GET /autocomplete?query=Sydn - 200 - 1325ms
+2024-12-15 22:56:27 - INFO - Autocomplete found 10 results for query 'Sydney'
+2024-12-15 22:56:27 - INFO - 127.0.0.1 - GET /autocomplete?query=Sydney - 200 - 1250ms
+2024-12-15 22:56:27 - INFO - Autocomplete found 10 results for query 'Sydne'
+2024-12-15 22:56:27 - INFO - 127.0.0.1 - GET /autocomplete?query=Sydne - 200 - 1557ms
+2024-12-15 22:56:55 - INFO - Autocomplete request received with query: Kij
+2024-12-15 22:56:55 - INFO - Autocomplete request received with query: Kijm
+2024-12-15 22:56:55 - INFO - Autocomplete request received with query: Kijm 
+2024-12-15 22:56:56 - INFO - Autocomplete found 10 results for query 'Kij'
+2024-12-15 22:56:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Kij - 200 - 1116ms
+2024-12-15 22:56:56 - INFO - Autocomplete request received with query: Kij
+2024-12-15 22:56:56 - INFO - Autocomplete found 0 results for query 'Kijm'
+2024-12-15 22:56:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Kijm - 200 - 1105ms
+2024-12-15 22:56:56 - INFO - Autocomplete request received with query: Kijm
+2024-12-15 22:56:56 - INFO - Autocomplete request received with query: Kim
+2024-12-15 22:56:56 - INFO - Autocomplete request received with query: Kim 
+2024-12-15 22:56:56 - INFO - Autocomplete found 0 results for query 'Kijm '
+2024-12-15 22:56:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Kijm  - 200 - 1219ms
+2024-12-15 22:56:57 - INFO - Autocomplete request received with query: Kim S
+2024-12-15 22:56:57 - INFO - Autocomplete request received with query: Kim So
+2024-12-15 22:56:58 - INFO - Autocomplete found 10 results for query 'Kij'
+2024-12-15 22:56:58 - INFO - 127.0.0.1 - GET /autocomplete?query=Kij - 200 - 1447ms
+2024-12-15 22:56:58 - INFO - Autocomplete request received with query: Kim Son
+2024-12-15 22:56:58 - INFO - Autocomplete found 0 results for query 'Kijm'
+2024-12-15 22:56:58 - INFO - 127.0.0.1 - GET /autocomplete?query=Kijm - 200 - 1453ms
+2024-12-15 22:56:58 - INFO - Autocomplete found 10 results for query 'Kim '
+2024-12-15 22:56:58 - INFO - 127.0.0.1 - GET /autocomplete?query=Kim  - 200 - 2053ms
+2024-12-15 22:56:59 - INFO - Autocomplete found 1 results for query 'Kim Son'
+2024-12-15 22:56:59 - INFO - 127.0.0.1 - GET /autocomplete?query=Kim Son - 200 - 1033ms
+2024-12-15 22:56:59 - INFO - Autocomplete found 10 results for query 'Kim'
+2024-12-15 22:56:59 - INFO - 127.0.0.1 - GET /autocomplete?query=Kim - 200 - 3032ms
+2024-12-15 22:56:59 - INFO - Autocomplete found 10 results for query 'Kim S'
+2024-12-15 22:56:59 - INFO - 127.0.0.1 - GET /autocomplete?query=Kim S - 200 - 2787ms
+2024-12-15 22:57:00 - INFO - Autocomplete found 10 results for query 'Kim So'
+2024-12-15 22:57:00 - INFO - 127.0.0.1 - GET /autocomplete?query=Kim So - 200 - 2729ms
+2024-12-16 10:48:25 - INFO - Reverse geocode request lat=49.074063667531874, lon=-123.06763368631043
+2024-12-16 10:48:25 - INFO - Reverse geocode result for lat=49.074064, lon=-123.067634: 3 locations found
+2024-12-16 10:48:25 - INFO - 127.0.0.1 - GET /reverse?lat=49.074063667531874&lon=-123.06763368631043 - 200 - 137ms
+2024-12-16 11:22:34 - INFO - Loading configuration...
+2024-12-16 11:22:34 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 11:22:34 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 11:22:34 - INFO - Connecting to database...
+2024-12-16 11:22:34 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 11:22:34 - INFO - Attempting to connect to the database...
+2024-12-16 11:22:34 - INFO - Successfully connected to the database.
+2024-12-16 11:22:34 - INFO - Initializing Fiber app...
+2024-12-16 11:22:34 - INFO - Serving static files from ./static
+2024-12-16 11:22:34 - INFO - Registering routes...
+2024-12-16 11:22:34 - INFO - Server running on http://localhost:3007
+2024-12-16 11:23:56 - INFO - Autocomplete request received with query: Van
+2024-12-16 11:23:56 - INFO - Autocomplete request received with query: Vanc
+2024-12-16 11:23:56 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-16 11:23:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 206ms
+2024-12-16 11:23:56 - INFO - Autocomplete found 0 results for query 'Vanc'
+2024-12-16 11:23:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 149ms
+2024-12-16 11:24:02 - INFO - Autocomplete request received with query: Van
+2024-12-16 11:24:02 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-16 11:24:02 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 105ms
+2024-12-16 11:24:04 - INFO - Autocomplete request received with query: Van
+2024-12-16 11:24:04 - INFO - Autocomplete request received with query: Vanc
+2024-12-16 11:24:04 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-16 11:24:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 103ms
+2024-12-16 11:24:04 - INFO - Autocomplete request received with query: Vanco
+2024-12-16 11:24:04 - INFO - Autocomplete found 0 results for query 'Vanco'
+2024-12-16 11:24:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 1ms
+2024-12-16 11:24:04 - INFO - Autocomplete request received with query: Vancou
+2024-12-16 11:24:04 - INFO - Autocomplete found 0 results for query 'Vancou'
+2024-12-16 11:24:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 1ms
+2024-12-16 11:24:04 - INFO - Autocomplete found 0 results for query 'Vanc'
+2024-12-16 11:24:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 102ms
+2024-12-16 11:24:04 - INFO - Autocomplete request received with query: Vancouv
+2024-12-16 11:24:04 - INFO - Autocomplete found 0 results for query 'Vancouv'
+2024-12-16 11:24:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 1ms
+2024-12-16 11:24:04 - INFO - Autocomplete request received with query: Vancouve
+2024-12-16 11:24:04 - INFO - Autocomplete found 0 results for query 'Vancouve'
+2024-12-16 11:24:04 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 1ms
+2024-12-16 11:24:10 - INFO - Autocomplete request received with query: van
+2024-12-16 11:24:10 - INFO - Autocomplete found 10 results for query 'van'
+2024-12-16 11:24:10 - INFO - 127.0.0.1 - GET /autocomplete?query=van - 200 - 104ms
+2024-12-16 11:24:11 - INFO - Autocomplete request received with query: vanc
+2024-12-16 11:24:11 - INFO - Autocomplete found 0 results for query 'vanc'
+2024-12-16 11:24:11 - INFO - 127.0.0.1 - GET /autocomplete?query=vanc - 200 - 101ms
+2024-12-16 11:24:12 - INFO - Autocomplete request received with query: van
+2024-12-16 11:24:12 - INFO - Autocomplete found 10 results for query 'van'
+2024-12-16 11:24:12 - INFO - 127.0.0.1 - GET /autocomplete?query=van - 200 - 3ms
+2024-12-16 11:24:16 - INFO - Autocomplete request received with query: vanc
+2024-12-16 11:24:16 - INFO - Autocomplete found 0 results for query 'vanc'
+2024-12-16 11:24:16 - INFO - 127.0.0.1 - GET /autocomplete?query=vanc - 200 - 101ms
+2024-12-16 11:24:17 - INFO - Autocomplete request received with query: vanco
+2024-12-16 11:24:17 - INFO - Autocomplete found 0 results for query 'vanco'
+2024-12-16 11:24:17 - INFO - 127.0.0.1 - GET /autocomplete?query=vanco - 200 - 2ms
+2024-12-16 11:24:17 - INFO - Autocomplete request received with query: vancou
+2024-12-16 11:24:17 - INFO - Autocomplete found 0 results for query 'vancou'
+2024-12-16 11:24:17 - INFO - 127.0.0.1 - GET /autocomplete?query=vancou - 200 - 1ms
+2024-12-16 11:24:17 - INFO - Autocomplete request received with query: vancouv
+2024-12-16 11:24:17 - INFO - Autocomplete found 0 results for query 'vancouv'
+2024-12-16 11:24:17 - INFO - 127.0.0.1 - GET /autocomplete?query=vancouv - 200 - 1ms
+2024-12-16 11:24:17 - INFO - Autocomplete request received with query: vancouve
+2024-12-16 11:24:17 - INFO - Autocomplete found 0 results for query 'vancouve'
+2024-12-16 11:24:17 - INFO - 127.0.0.1 - GET /autocomplete?query=vancouve - 200 - 1ms
+2024-12-16 11:24:17 - INFO - Autocomplete request received with query: vancouver
+2024-12-16 11:24:17 - INFO - Autocomplete found 0 results for query 'vancouver'
+2024-12-16 11:24:17 - INFO - 127.0.0.1 - GET /autocomplete?query=vancouver - 200 - 1ms
+2024-12-16 11:24:34 - INFO - Autocomplete request received with query: Van
+2024-12-16 11:24:34 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-16 11:24:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 105ms
+2024-12-16 11:26:30 - INFO - Loading configuration...
+2024-12-16 11:26:30 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 11:26:30 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 11:26:30 - INFO - Connecting to database...
+2024-12-16 11:26:30 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 11:26:30 - INFO - Attempting to connect to the database...
+2024-12-16 11:26:30 - INFO - Successfully connected to the database.
+2024-12-16 11:26:30 - INFO - Initializing Fiber app...
+2024-12-16 11:26:30 - INFO - Serving static files from ./static
+2024-12-16 11:26:30 - INFO - Registering routes...
+2024-12-16 11:26:30 - INFO - Server running on http://localhost:3007
+2024-12-16 11:26:35 - INFO - Autocomplete request received with query: Van
+2024-12-16 11:26:35 - INFO - Autocomplete found 10 results for query 'Van'
+2024-12-16 11:26:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 249ms
+2024-12-16 11:26:39 - INFO - Autocomplete request received with query: Vanc
+2024-12-16 11:26:39 - INFO - Autocomplete found 10 results for query 'Vanc'
+2024-12-16 11:26:39 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 103ms
+2024-12-16 11:26:47 - INFO - Autocomplete request received with query: Syn
+2024-12-16 11:26:47 - INFO - Autocomplete found 3 results for query 'Syn'
+2024-12-16 11:26:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Syn - 200 - 102ms
+2024-12-16 11:26:48 - INFO - Autocomplete request received with query: Syd
+2024-12-16 11:26:48 - INFO - Autocomplete found 10 results for query 'Syd'
+2024-12-16 11:26:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Syd - 200 - 5ms
+2024-12-16 11:26:48 - INFO - Autocomplete request received with query: Sydn
+2024-12-16 11:26:48 - INFO - Autocomplete found 10 results for query 'Sydn'
+2024-12-16 11:26:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Sydn - 200 - 4ms
+2024-12-16 11:26:48 - INFO - Autocomplete request received with query: Sydne
+2024-12-16 11:26:48 - INFO - Autocomplete found 10 results for query 'Sydne'
+2024-12-16 11:26:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Sydne - 200 - 4ms
+2024-12-16 11:26:48 - INFO - Autocomplete request received with query: Sydney
+2024-12-16 11:26:48 - INFO - Autocomplete found 10 results for query 'Sydney'
+2024-12-16 11:26:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Sydney - 200 - 5ms
+2024-12-16 11:28:13 - INFO - Autocomplete request received with query: Sao
+2024-12-16 11:28:13 - INFO - Autocomplete found 10 results for query 'Sao'
+2024-12-16 11:28:13 - INFO - 127.0.0.1 - GET /autocomplete?query=Sao - 200 - 165ms
+2024-12-16 11:28:25 - INFO - Autocomplete request received with query: Par
+2024-12-16 11:28:25 - INFO - Autocomplete found 10 results for query 'Par'
+2024-12-16 11:28:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Par - 200 - 156ms
+2024-12-16 11:28:25 - INFO - Autocomplete request received with query: Pari
+2024-12-16 11:28:25 - INFO - Autocomplete found 10 results for query 'Pari'
+2024-12-16 11:28:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Pari - 200 - 15ms
+2024-12-16 11:28:32 - INFO - Autocomplete request received with query: Par
+2024-12-16 11:28:32 - INFO - Autocomplete found 10 results for query 'Par'
+2024-12-16 11:28:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Par - 200 - 116ms
+2024-12-16 11:28:36 - INFO - Autocomplete request received with query: Lon
+2024-12-16 11:28:36 - INFO - Autocomplete request received with query: Lond
+2024-12-16 11:28:36 - INFO - Autocomplete found 10 results for query 'Lon'
+2024-12-16 11:28:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Lon - 200 - 121ms
+2024-12-16 11:28:36 - INFO - Autocomplete request received with query: Londo
+2024-12-16 11:28:36 - INFO - Autocomplete found 10 results for query 'Londo'
+2024-12-16 11:28:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Londo - 200 - 10ms
+2024-12-16 11:28:36 - INFO - Autocomplete request received with query: London
+2024-12-16 11:28:36 - INFO - Autocomplete found 10 results for query 'London'
+2024-12-16 11:28:36 - INFO - 127.0.0.1 - GET /autocomplete?query=London - 200 - 10ms
+2024-12-16 11:28:36 - INFO - Autocomplete found 10 results for query 'Lond'
+2024-12-16 11:28:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Lond - 200 - 173ms
+2024-12-16 11:28:50 - INFO - Autocomplete request received with query: Londo
+2024-12-16 11:28:50 - INFO - Autocomplete found 10 results for query 'Londo'
+2024-12-16 11:28:50 - INFO - 127.0.0.1 - GET /autocomplete?query=Londo - 200 - 108ms
+2024-12-16 11:28:50 - INFO - Autocomplete request received with query: Lond
+2024-12-16 11:28:50 - INFO - Autocomplete found 10 results for query 'Lond'
+2024-12-16 11:28:50 - INFO - 127.0.0.1 - GET /autocomplete?query=Lond - 200 - 14ms
+2024-12-16 11:28:51 - INFO - Autocomplete request received with query: Londo
+2024-12-16 11:28:51 - INFO - Autocomplete found 10 results for query 'Londo'
+2024-12-16 11:28:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Londo - 200 - 10ms
+2024-12-16 11:28:51 - INFO - Autocomplete request received with query: London
+2024-12-16 11:28:51 - INFO - Autocomplete found 10 results for query 'London'
+2024-12-16 11:28:51 - INFO - 127.0.0.1 - GET /autocomplete?query=London - 200 - 7ms
+2024-12-16 11:28:52 - INFO - Autocomplete request received with query: Londo
+2024-12-16 11:28:53 - INFO - Autocomplete found 10 results for query 'Londo'
+2024-12-16 11:28:53 - INFO - 127.0.0.1 - GET /autocomplete?query=Londo - 200 - 106ms
+2024-12-16 11:28:53 - INFO - Autocomplete request received with query: Lond
+2024-12-16 11:28:53 - INFO - Autocomplete found 10 results for query 'Lond'
+2024-12-16 11:28:53 - INFO - 127.0.0.1 - GET /autocomplete?query=Lond - 200 - 14ms
+2024-12-16 11:28:54 - INFO - Autocomplete request received with query: Londo
+2024-12-16 11:28:54 - INFO - Autocomplete request received with query: London
+2024-12-16 11:28:54 - INFO - Autocomplete found 10 results for query 'Londo'
+2024-12-16 11:28:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Londo - 200 - 107ms
+2024-12-16 11:28:54 - INFO - Autocomplete found 10 results for query 'London'
+2024-12-16 11:28:54 - INFO - 127.0.0.1 - GET /autocomplete?query=London - 200 - 107ms
+2024-12-16 11:28:56 - INFO - Autocomplete request received with query: Londo
+2024-12-16 11:28:56 - INFO - Autocomplete found 10 results for query 'Londo'
+2024-12-16 11:28:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Londo - 200 - 107ms
+2024-12-16 11:28:56 - INFO - Autocomplete request received with query: Lond
+2024-12-16 11:28:56 - INFO - Autocomplete found 10 results for query 'Lond'
+2024-12-16 11:28:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Lond - 200 - 16ms
+2024-12-16 11:28:56 - INFO - Autocomplete request received with query: Lon
+2024-12-16 11:28:56 - INFO - Autocomplete found 10 results for query 'Lon'
+2024-12-16 11:28:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Lon - 200 - 9ms
+2024-12-16 11:29:09 - INFO - Autocomplete request received with query: Tok
+2024-12-16 11:29:09 - INFO - Autocomplete found 10 results for query 'Tok'
+2024-12-16 11:29:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Tok - 200 - 108ms
+2024-12-16 11:29:09 - INFO - Autocomplete request received with query: Toky
+2024-12-16 11:29:09 - INFO - Autocomplete found 10 results for query 'Toky'
+2024-12-16 11:29:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Toky - 200 - 3ms
+2024-12-16 11:29:09 - INFO - Autocomplete request received with query: Tokyo
+2024-12-16 11:29:09 - INFO - Autocomplete found 3 results for query 'Tokyo'
+2024-12-16 11:29:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Tokyo - 200 - 6ms
+2024-12-16 11:29:16 - INFO - Autocomplete request received with query: Toky
+2024-12-16 11:29:16 - INFO - Autocomplete found 10 results for query 'Toky'
+2024-12-16 11:29:16 - INFO - 127.0.0.1 - GET /autocomplete?query=Toky - 200 - 103ms
+2024-12-16 11:29:16 - INFO - Autocomplete request received with query: Tok
+2024-12-16 11:29:16 - INFO - Autocomplete found 10 results for query 'Tok'
+2024-12-16 11:29:16 - INFO - 127.0.0.1 - GET /autocomplete?query=Tok - 200 - 11ms
+2024-12-16 11:29:22 - INFO - Autocomplete request received with query: Toky
+2024-12-16 11:29:23 - INFO - Autocomplete found 10 results for query 'Toky'
+2024-12-16 11:29:23 - INFO - 127.0.0.1 - GET /autocomplete?query=Toky - 200 - 103ms
+2024-12-16 11:29:25 - INFO - Autocomplete request received with query: Tok
+2024-12-16 11:29:25 - INFO - Autocomplete found 10 results for query 'Tok'
+2024-12-16 11:29:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Tok - 200 - 106ms
+2024-12-16 11:29:25 - INFO - Autocomplete request received with query: Toky
+2024-12-16 11:29:25 - INFO - Autocomplete found 10 results for query 'Toky'
+2024-12-16 11:29:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Toky - 200 - 3ms
+2024-12-16 11:29:31 - INFO - Autocomplete request received with query: Tokyo
+2024-12-16 11:29:31 - INFO - Autocomplete found 3 results for query 'Tokyo'
+2024-12-16 11:29:31 - INFO - 127.0.0.1 - GET /autocomplete?query=Tokyo - 200 - 105ms
+2024-12-16 11:30:17 - INFO - Autocomplete request received with query: Man
+2024-12-16 11:30:18 - INFO - Autocomplete found 10 results for query 'Man'
+2024-12-16 11:30:18 - INFO - 127.0.0.1 - GET /autocomplete?query=Man - 200 - 154ms
+2024-12-16 11:30:18 - INFO - Autocomplete request received with query: Manc
+2024-12-16 11:30:18 - INFO - Autocomplete found 10 results for query 'Manc'
+2024-12-16 11:30:18 - INFO - 127.0.0.1 - GET /autocomplete?query=Manc - 200 - 17ms
+2024-12-16 11:30:18 - INFO - Autocomplete request received with query: Manch
+2024-12-16 11:30:18 - INFO - Autocomplete found 10 results for query 'Manch'
+2024-12-16 11:30:18 - INFO - 127.0.0.1 - GET /autocomplete?query=Manch - 200 - 15ms
+2024-12-16 11:30:18 - INFO - Autocomplete request received with query: Manche
+2024-12-16 11:30:18 - INFO - Autocomplete found 10 results for query 'Manche'
+2024-12-16 11:30:18 - INFO - 127.0.0.1 - GET /autocomplete?query=Manche - 200 - 15ms
+2024-12-16 11:30:18 - INFO - Autocomplete request received with query: Manches
+2024-12-16 11:30:18 - INFO - Autocomplete found 10 results for query 'Manches'
+2024-12-16 11:30:18 - INFO - 127.0.0.1 - GET /autocomplete?query=Manches - 200 - 15ms
+2024-12-16 11:30:20 - INFO - Autocomplete request received with query: Manchest
+2024-12-16 11:30:20 - INFO - Autocomplete found 10 results for query 'Manchest'
+2024-12-16 11:30:20 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchest - 200 - 104ms
+2024-12-16 11:30:20 - INFO - Autocomplete request received with query: Mancheste
+2024-12-16 11:30:20 - INFO - Autocomplete found 10 results for query 'Mancheste'
+2024-12-16 11:30:20 - INFO - 127.0.0.1 - GET /autocomplete?query=Mancheste - 200 - 4ms
+2024-12-16 11:30:20 - INFO - Autocomplete request received with query: Manchester
+2024-12-16 11:30:20 - INFO - Autocomplete found 10 results for query 'Manchester'
+2024-12-16 11:30:20 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchester - 200 - 5ms
+2024-12-16 11:30:33 - INFO - Autocomplete request received with query: Manchester 
+2024-12-16 11:30:33 - INFO - Autocomplete found 10 results for query 'Manchester '
+2024-12-16 11:30:33 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchester  - 200 - 105ms
+2024-12-16 11:30:39 - INFO - Autocomplete request received with query: Manchester E
+2024-12-16 11:30:40 - INFO - Autocomplete request received with query: Manchester En
+2024-12-16 11:30:40 - INFO - Autocomplete found 3 results for query 'Manchester E'
+2024-12-16 11:30:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchester E - 200 - 111ms
+2024-12-16 11:30:40 - INFO - Autocomplete found 2 results for query 'Manchester En'
+2024-12-16 11:30:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchester En - 200 - 106ms
+2024-12-16 11:30:40 - INFO - Autocomplete request received with query: Manchester Eng
+2024-12-16 11:30:40 - INFO - Autocomplete found 2 results for query 'Manchester Eng'
+2024-12-16 11:30:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchester Eng - 200 - 7ms
+2024-12-16 11:30:40 - INFO - Autocomplete request received with query: Manchester Engl
+2024-12-16 11:30:40 - INFO - Autocomplete found 2 results for query 'Manchester Engl'
+2024-12-16 11:30:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchester Engl - 200 - 8ms
+2024-12-16 11:30:40 - INFO - Autocomplete request received with query: Manchester Engla
+2024-12-16 11:30:40 - INFO - Autocomplete found 2 results for query 'Manchester Engla'
+2024-12-16 11:30:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchester Engla - 200 - 7ms
+2024-12-16 11:30:40 - INFO - Autocomplete request received with query: Manchester Englan
+2024-12-16 11:30:40 - INFO - Autocomplete found 2 results for query 'Manchester Englan'
+2024-12-16 11:30:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchester Englan - 200 - 7ms
+2024-12-16 11:30:40 - INFO - Autocomplete request received with query: Manchester England
+2024-12-16 11:30:40 - INFO - Autocomplete found 2 results for query 'Manchester England'
+2024-12-16 11:30:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchester England - 200 - 6ms
+2024-12-16 11:30:57 - INFO - Loading configuration...
+2024-12-16 11:30:57 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 11:30:57 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 11:30:57 - INFO - Connecting to database...
+2024-12-16 11:30:57 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 11:30:57 - INFO - Attempting to connect to the database...
+2024-12-16 11:30:57 - INFO - Successfully connected to the database.
+2024-12-16 11:30:57 - INFO - Initializing Fiber app...
+2024-12-16 11:30:57 - INFO - Serving static files from ./static
+2024-12-16 11:30:57 - INFO - Registering routes...
+2024-12-16 11:30:57 - INFO - Server running on http://localhost:3007
+2024-12-16 11:31:00 - INFO - Autocomplete request received with query: Man
+2024-12-16 11:31:00 - INFO - Autocomplete request received with query: Manc
+2024-12-16 11:31:00 - INFO - Autocomplete found 5 results for query 'Man'
+2024-12-16 11:31:00 - INFO - 127.0.0.1 - GET /autocomplete?query=Man - 200 - 186ms
+2024-12-16 11:31:00 - INFO - Autocomplete request received with query: Manch
+2024-12-16 11:31:00 - INFO - Autocomplete request received with query: Manche
+2024-12-16 11:31:00 - INFO - Autocomplete found 5 results for query 'Manch'
+2024-12-16 11:31:00 - INFO - 127.0.0.1 - GET /autocomplete?query=Manch - 200 - 26ms
+2024-12-16 11:31:00 - INFO - Autocomplete request received with query: Manches
+2024-12-16 11:31:00 - INFO - Autocomplete found 5 results for query 'Manches'
+2024-12-16 11:31:00 - INFO - 127.0.0.1 - GET /autocomplete?query=Manches - 200 - 52ms
+2024-12-16 11:31:00 - INFO - Autocomplete found 5 results for query 'Manc'
+2024-12-16 11:31:00 - INFO - 127.0.0.1 - GET /autocomplete?query=Manc - 200 - 257ms
+2024-12-16 11:31:00 - INFO - Autocomplete found 5 results for query 'Manche'
+2024-12-16 11:31:00 - INFO - 127.0.0.1 - GET /autocomplete?query=Manche - 200 - 269ms
+2024-12-16 11:31:09 - INFO - Autocomplete request received with query: Manche
+2024-12-16 11:31:09 - INFO - Autocomplete request received with query: Manches
+2024-12-16 11:31:09 - INFO - Autocomplete found 5 results for query 'Manche'
+2024-12-16 11:31:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Manche - 200 - 118ms
+2024-12-16 11:31:09 - INFO - Autocomplete found 5 results for query 'Manches'
+2024-12-16 11:31:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Manches - 200 - 114ms
+2024-12-16 11:31:15 - INFO - Autocomplete request received with query: Manche
+2024-12-16 11:31:15 - INFO - Autocomplete request received with query: Manches
+2024-12-16 11:31:15 - INFO - Autocomplete found 5 results for query 'Manche'
+2024-12-16 11:31:15 - INFO - 127.0.0.1 - GET /autocomplete?query=Manche - 200 - 116ms
+2024-12-16 11:31:15 - INFO - Autocomplete found 5 results for query 'Manches'
+2024-12-16 11:31:15 - INFO - 127.0.0.1 - GET /autocomplete?query=Manches - 200 - 114ms
+2024-12-16 11:31:16 - INFO - Autocomplete request received with query: Manche
+2024-12-16 11:31:16 - INFO - Autocomplete found 5 results for query 'Manche'
+2024-12-16 11:31:16 - INFO - 127.0.0.1 - GET /autocomplete?query=Manche - 200 - 16ms
+2024-12-16 11:31:25 - INFO - Autocomplete request received with query: Man
+2024-12-16 11:31:25 - INFO - Autocomplete found 5 results for query 'Man'
+2024-12-16 11:31:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Man - 200 - 129ms
+2024-12-16 11:31:25 - INFO - Autocomplete request received with query: Manc
+2024-12-16 11:31:25 - INFO - Autocomplete found 5 results for query 'Manc'
+2024-12-16 11:31:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Manc - 200 - 23ms
+2024-12-16 11:31:26 - INFO - Autocomplete request received with query: Manch
+2024-12-16 11:31:26 - INFO - Autocomplete found 5 results for query 'Manch'
+2024-12-16 11:31:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Manch - 200 - 15ms
+2024-12-16 11:31:26 - INFO - Autocomplete request received with query: Manche
+2024-12-16 11:31:26 - INFO - Autocomplete found 5 results for query 'Manche'
+2024-12-16 11:31:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Manche - 200 - 16ms
+2024-12-16 11:31:26 - INFO - Autocomplete request received with query: Manches
+2024-12-16 11:31:26 - INFO - Autocomplete found 5 results for query 'Manches'
+2024-12-16 11:31:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Manches - 200 - 17ms
+2024-12-16 11:31:26 - INFO - Autocomplete request received with query: Manchest
+2024-12-16 11:31:26 - INFO - Autocomplete found 5 results for query 'Manchest'
+2024-12-16 11:31:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchest - 200 - 2ms
+2024-12-16 11:31:26 - INFO - Autocomplete request received with query: Mancheste
+2024-12-16 11:31:26 - INFO - Autocomplete found 5 results for query 'Mancheste'
+2024-12-16 11:31:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Mancheste - 200 - 1ms
+2024-12-16 11:31:27 - INFO - Autocomplete request received with query: Manchest
+2024-12-16 11:31:28 - INFO - Autocomplete found 5 results for query 'Manchest'
+2024-12-16 11:31:28 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchest - 200 - 102ms
+2024-12-16 11:31:28 - INFO - Autocomplete request received with query: Manches
+2024-12-16 11:31:28 - INFO - Autocomplete found 5 results for query 'Manches'
+2024-12-16 11:31:28 - INFO - 127.0.0.1 - GET /autocomplete?query=Manches - 200 - 12ms
+2024-12-16 11:31:30 - INFO - Autocomplete request received with query: Manchest
+2024-12-16 11:31:30 - INFO - Autocomplete found 5 results for query 'Manchest'
+2024-12-16 11:31:30 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchest - 200 - 102ms
+2024-12-16 11:32:14 - INFO - Loading configuration...
+2024-12-16 11:32:14 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 11:32:14 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 11:32:14 - INFO - Connecting to database...
+2024-12-16 11:32:14 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 11:32:14 - INFO - Attempting to connect to the database...
+2024-12-16 11:32:14 - INFO - Successfully connected to the database.
+2024-12-16 11:32:14 - INFO - Initializing Fiber app...
+2024-12-16 11:32:14 - INFO - Serving static files from ./static
+2024-12-16 11:32:14 - INFO - Registering routes...
+2024-12-16 11:32:14 - INFO - Server running on http://localhost:3007
+2024-12-16 11:32:16 - INFO - Autocomplete request received with query: Mah
+2024-12-16 11:32:16 - INFO - Autocomplete request received with query: Mahc
+2024-12-16 11:32:17 - INFO - Autocomplete request received with query: Mahcn
+2024-12-16 11:32:17 - INFO - Autocomplete found 0 results for query 'Mahc'
+2024-12-16 11:32:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Mahc - 200 - 124ms
+2024-12-16 11:32:17 - INFO - Autocomplete request received with query: Mahcn=
+2024-12-16 11:32:17 - INFO - Autocomplete found 0 results for query 'Mahcn='
+2024-12-16 11:32:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Mahcn= - 200 - 3ms
+2024-12-16 11:32:17 - INFO - Autocomplete found 0 results for query 'Mahcn'
+2024-12-16 11:32:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Mahcn - 200 - 148ms
+2024-12-16 11:32:17 - INFO - Autocomplete request received with query: Mahcn
+2024-12-16 11:32:17 - INFO - Autocomplete found 0 results for query 'Mahcn'
+2024-12-16 11:32:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Mahcn - 200 - 1ms
+2024-12-16 11:32:17 - INFO - Autocomplete request received with query: Mahc
+2024-12-16 11:32:17 - INFO - Autocomplete found 0 results for query 'Mahc'
+2024-12-16 11:32:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Mahc - 200 - 1ms
+2024-12-16 11:32:17 - INFO - Autocomplete found 5 results for query 'Mah'
+2024-12-16 11:32:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Mah - 200 - 487ms
+2024-12-16 11:32:17 - INFO - Autocomplete request received with query: Mah
+2024-12-16 11:32:17 - INFO - Autocomplete found 5 results for query 'Mah'
+2024-12-16 11:32:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Mah - 200 - 68ms
+2024-12-16 11:32:17 - INFO - Autocomplete request received with query: Man
+2024-12-16 11:32:17 - INFO - Autocomplete found 5 results for query 'Man'
+2024-12-16 11:32:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Man - 200 - 45ms
+2024-12-16 11:32:17 - INFO - Autocomplete request received with query: Manc
+2024-12-16 11:32:17 - INFO - Autocomplete found 5 results for query 'Manc'
+2024-12-16 11:32:17 - INFO - 127.0.0.1 - GET /autocomplete?query=Manc - 200 - 12ms
+2024-12-16 11:32:18 - INFO - Autocomplete request received with query: Manch
+2024-12-16 11:32:18 - INFO - Autocomplete found 5 results for query 'Manch'
+2024-12-16 11:32:18 - INFO - 127.0.0.1 - GET /autocomplete?query=Manch - 200 - 14ms
+2024-12-16 11:32:18 - INFO - Autocomplete request received with query: Manche
+2024-12-16 11:32:18 - INFO - Autocomplete found 5 results for query 'Manche'
+2024-12-16 11:32:18 - INFO - 127.0.0.1 - GET /autocomplete?query=Manche - 200 - 14ms
+2024-12-16 11:32:18 - INFO - Autocomplete request received with query: Manches
+2024-12-16 11:32:18 - INFO - Autocomplete found 5 results for query 'Manches'
+2024-12-16 11:32:18 - INFO - 127.0.0.1 - GET /autocomplete?query=Manches - 200 - 13ms
+2024-12-16 11:32:20 - INFO - Autocomplete request received with query: Manchest
+2024-12-16 11:32:20 - INFO - Autocomplete found 5 results for query 'Manchest'
+2024-12-16 11:32:20 - INFO - 127.0.0.1 - GET /autocomplete?query=Manchest - 200 - 104ms
+2024-12-16 11:32:33 - INFO - Autocomplete request received with query: Los
+2024-12-16 11:32:33 - INFO - Autocomplete found 5 results for query 'Los'
+2024-12-16 11:32:33 - INFO - 127.0.0.1 - GET /autocomplete?query=Los - 200 - 124ms
+2024-12-16 11:32:33 - INFO - Autocomplete request received with query: Los 
+2024-12-16 11:32:33 - INFO - Autocomplete found 5 results for query 'Los '
+2024-12-16 11:32:33 - INFO - 127.0.0.1 - GET /autocomplete?query=Los  - 200 - 15ms
+2024-12-16 11:32:33 - INFO - Autocomplete request received with query: Los a
+2024-12-16 11:32:33 - INFO - Autocomplete found 5 results for query 'Los a'
+2024-12-16 11:32:33 - INFO - 127.0.0.1 - GET /autocomplete?query=Los a - 200 - 14ms
+2024-12-16 11:32:34 - INFO - Autocomplete request received with query: Los 
+2024-12-16 11:32:34 - INFO - Autocomplete found 5 results for query 'Los '
+2024-12-16 11:32:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Los  - 200 - 16ms
+2024-12-16 11:32:34 - INFO - Autocomplete request received with query: Los A
+2024-12-16 11:32:34 - INFO - Autocomplete found 5 results for query 'Los A'
+2024-12-16 11:32:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Los A - 200 - 16ms
+2024-12-16 11:32:34 - INFO - Autocomplete request received with query: Los An
+2024-12-16 11:32:34 - INFO - Autocomplete found 5 results for query 'Los An'
+2024-12-16 11:32:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Los An - 200 - 17ms
+2024-12-16 11:32:34 - INFO - Autocomplete request received with query: Los Ang
+2024-12-16 11:32:34 - INFO - Autocomplete found 5 results for query 'Los Ang'
+2024-12-16 11:32:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Los Ang - 200 - 3ms
+2024-12-16 11:34:05 - INFO - Autocomplete request received with query: Los
+2024-12-16 11:34:05 - INFO - Autocomplete found 5 results for query 'Los'
+2024-12-16 11:34:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Los - 200 - 124ms
+2024-12-16 11:34:05 - INFO - Autocomplete request received with query: Los 
+2024-12-16 11:34:05 - INFO - Autocomplete found 5 results for query 'Los '
+2024-12-16 11:34:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Los  - 200 - 16ms
+2024-12-16 11:36:52 - INFO - Loading configuration...
+2024-12-16 11:36:52 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 11:36:52 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 11:36:52 - INFO - Connecting to database...
+2024-12-16 11:36:52 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 11:36:52 - INFO - Attempting to connect to the database...
+2024-12-16 11:36:52 - INFO - Successfully connected to the database.
+2024-12-16 11:36:52 - INFO - Initializing Fiber app...
+2024-12-16 11:36:52 - INFO - Serving static files from ./static
+2024-12-16 11:36:52 - INFO - Registering routes...
+2024-12-16 11:36:52 - INFO - Server running on http://localhost:3007
+2024-12-16 11:36:55 - INFO - Autocomplete request received with query: Los
+2024-12-16 11:36:55 - INFO - Autocomplete found 5 results for query 'Los'
+2024-12-16 11:36:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Los - 200 - 151ms
+2024-12-16 11:36:55 - INFO - Autocomplete request received with query: Los 
+2024-12-16 11:36:55 - INFO - Autocomplete found 5 results for query 'Los '
+2024-12-16 11:36:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Los  - 200 - 22ms
+2024-12-16 11:37:57 - INFO - Loading configuration...
+2024-12-16 11:37:57 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 11:37:57 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 11:37:57 - INFO - Connecting to database...
+2024-12-16 11:37:57 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 11:37:57 - INFO - Attempting to connect to the database...
+2024-12-16 11:37:57 - INFO - Successfully connected to the database.
+2024-12-16 11:37:57 - INFO - Initializing Fiber app...
+2024-12-16 11:37:57 - INFO - Serving static files from ./static
+2024-12-16 11:37:57 - INFO - Registering routes...
+2024-12-16 11:37:57 - INFO - Server running on http://localhost:3007
+2024-12-16 11:38:02 - INFO - Autocomplete request received with query: Los
+2024-12-16 11:38:02 - INFO - Autocomplete found 5 results for query 'Los'
+2024-12-16 11:38:02 - INFO - 127.0.0.1 - GET /autocomplete?query=Los - 200 - 154ms
+2024-12-16 11:38:05 - INFO - Autocomplete request received with query: Los 
+2024-12-16 11:38:05 - INFO - Autocomplete found 5 results for query 'Los '
+2024-12-16 11:38:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Los  - 200 - 118ms
+2024-12-16 11:38:16 - INFO - Autocomplete request received with query:  Lo
+2024-12-16 11:38:17 - INFO - Autocomplete request received with query:  Lon
+2024-12-16 11:38:17 - INFO - Autocomplete found 5 results for query ' Lo'
+2024-12-16 11:38:17 - INFO - 127.0.0.1 - GET /autocomplete?query= Lo - 200 - 240ms
+2024-12-16 11:38:17 - INFO - Autocomplete request received with query:  Lond
+2024-12-16 11:38:17 - INFO - Autocomplete found 5 results for query ' Lond'
+2024-12-16 11:38:17 - INFO - 127.0.0.1 - GET /autocomplete?query= Lond - 200 - 3ms
+2024-12-16 11:38:17 - INFO - Autocomplete found 5 results for query ' Lon'
+2024-12-16 11:38:17 - INFO - 127.0.0.1 - GET /autocomplete?query= Lon - 200 - 250ms
+2024-12-16 11:38:19 - INFO - Autocomplete request received with query:  Londo
+2024-12-16 11:38:19 - INFO - Autocomplete found 5 results for query ' Londo'
+2024-12-16 11:38:19 - INFO - 127.0.0.1 - GET /autocomplete?query= Londo - 200 - 108ms
+2024-12-16 11:38:20 - INFO - Autocomplete request received with query:  London
+2024-12-16 11:38:20 - INFO - Autocomplete found 5 results for query ' London'
+2024-12-16 11:38:20 - INFO - 127.0.0.1 - GET /autocomplete?query= London - 200 - 7ms
+2024-12-16 11:38:20 - INFO - Autocomplete request received with query:  Londo
+2024-12-16 11:38:20 - INFO - Autocomplete found 5 results for query ' Londo'
+2024-12-16 11:38:20 - INFO - 127.0.0.1 - GET /autocomplete?query= Londo - 200 - 8ms
+2024-12-16 11:38:21 - INFO - Autocomplete request received with query:  Lond
+2024-12-16 11:38:21 - INFO - Autocomplete found 5 results for query ' Lond'
+2024-12-16 11:38:21 - INFO - 127.0.0.1 - GET /autocomplete?query= Lond - 200 - 2ms
+2024-12-16 11:38:23 - INFO - Autocomplete request received with query:  Lon
+2024-12-16 11:38:23 - INFO - Autocomplete found 5 results for query ' Lon'
+2024-12-16 11:38:23 - INFO - 127.0.0.1 - GET /autocomplete?query= Lon - 200 - 106ms
+2024-12-16 11:38:52 - INFO - Autocomplete request received with query:  Lond
+2024-12-16 11:38:52 - INFO - Autocomplete found 5 results for query ' Lond'
+2024-12-16 11:38:52 - INFO - 127.0.0.1 - GET /autocomplete?query= Lond - 200 - 103ms
+2024-12-16 11:38:53 - INFO - Autocomplete request received with query:  Londo
+2024-12-16 11:38:53 - INFO - Autocomplete found 5 results for query ' Londo'
+2024-12-16 11:38:53 - INFO - 127.0.0.1 - GET /autocomplete?query= Londo - 200 - 8ms
+2024-12-16 11:38:53 - INFO - Autocomplete request received with query:  London
+2024-12-16 11:38:53 - INFO - Autocomplete found 5 results for query ' London'
+2024-12-16 11:38:53 - INFO - 127.0.0.1 - GET /autocomplete?query= London - 200 - 8ms
+2024-12-16 11:40:09 - INFO - Autocomplete request received with query: Van
+2024-12-16 11:40:09 - INFO - Autocomplete found 5 results for query 'Van'
+2024-12-16 11:40:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 106ms
+2024-12-16 11:40:09 - INFO - Autocomplete request received with query: Vanc
+2024-12-16 11:40:09 - INFO - Autocomplete found 5 results for query 'Vanc'
+2024-12-16 11:40:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 2ms
+2024-12-16 11:40:09 - INFO - Autocomplete request received with query: Vanco
+2024-12-16 11:40:09 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-16 11:40:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 2ms
+2024-12-16 11:40:09 - INFO - Autocomplete request received with query: Vancou
+2024-12-16 11:40:09 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-16 11:40:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 1ms
+2024-12-16 11:40:47 - INFO - Autocomplete request received with query: Vic
+2024-12-16 11:40:48 - INFO - Autocomplete found 5 results for query 'Vic'
+2024-12-16 11:40:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 200 - 149ms
+2024-12-16 11:40:48 - INFO - Autocomplete request received with query: Vict
+2024-12-16 11:40:48 - INFO - Autocomplete found 5 results for query 'Vict'
+2024-12-16 11:40:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 200 - 21ms
+2024-12-16 11:40:48 - INFO - Autocomplete request received with query: Victo
+2024-12-16 11:40:48 - INFO - Autocomplete found 5 results for query 'Victo'
+2024-12-16 11:40:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Victo - 200 - 22ms
+2024-12-16 11:40:48 - INFO - Autocomplete request received with query: Victor
+2024-12-16 11:40:48 - INFO - Autocomplete found 5 results for query 'Victor'
+2024-12-16 11:40:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Victor - 200 - 21ms
+2024-12-16 11:40:48 - INFO - Autocomplete request received with query: Victori
+2024-12-16 11:40:48 - INFO - Autocomplete found 5 results for query 'Victori'
+2024-12-16 11:40:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Victori - 200 - 20ms
+2024-12-16 11:40:48 - INFO - Autocomplete request received with query: Victoria
+2024-12-16 11:40:48 - INFO - Autocomplete found 5 results for query 'Victoria'
+2024-12-16 11:40:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Victoria - 200 - 25ms
+2024-12-16 11:44:27 - INFO - Loading configuration...
+2024-12-16 11:44:27 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 11:44:27 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 11:44:27 - INFO - Connecting to database...
+2024-12-16 11:44:27 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 11:44:27 - INFO - Attempting to connect to the database...
+2024-12-16 11:44:27 - INFO - Successfully connected to the database.
+2024-12-16 11:44:27 - INFO - Initializing Fiber app...
+2024-12-16 11:44:27 - INFO - Serving static files from ./static
+2024-12-16 11:44:27 - INFO - Registering routes...
+2024-12-16 11:44:27 - INFO - Server running on http://localhost:3007
+2024-12-16 11:44:32 - INFO - Autocomplete request received with query: Vic
+2024-12-16 11:44:32 - INFO - Autocomplete found 5 results for query 'Vic'
+2024-12-16 11:44:32 - INFO - Autocomplete request received with query: Vict
+2024-12-16 11:44:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 200 - 208ms
+2024-12-16 11:44:32 - INFO - Autocomplete request received with query: Victo
+2024-12-16 11:44:32 - INFO - Autocomplete found 5 results for query 'Vict'
+2024-12-16 11:44:32 - INFO - Autocomplete request received with query: Victor
+2024-12-16 11:44:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 200 - 53ms
+2024-12-16 11:44:32 - INFO - Autocomplete request received with query: Victori
+2024-12-16 11:44:32 - INFO - Autocomplete found 5 results for query 'Victor'
+2024-12-16 11:44:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Victor - 200 - 106ms
+2024-12-16 11:44:32 - INFO - Autocomplete request received with query: Victoria
+2024-12-16 11:44:32 - INFO - Autocomplete found 5 results for query 'Victoria'
+2024-12-16 11:44:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Victoria - 200 - 51ms
+2024-12-16 11:44:32 - INFO - Autocomplete found 5 results for query 'Victo'
+2024-12-16 11:44:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Victo - 200 - 273ms
+2024-12-16 11:44:32 - INFO - Autocomplete found 5 results for query 'Victori'
+2024-12-16 11:44:32 - INFO - 127.0.0.1 - GET /autocomplete?query=Victori - 200 - 236ms
+2024-12-16 11:44:49 - INFO - Autocomplete request received with query: Victoria 
+2024-12-16 11:44:49 - INFO - Autocomplete found 5 results for query 'Victoria '
+2024-12-16 11:44:49 - INFO - 127.0.0.1 - GET /autocomplete?query=Victoria  - 200 - 148ms
+2024-12-16 11:44:52 - INFO - Autocomplete request received with query: Victoria
+2024-12-16 11:44:52 - INFO - Autocomplete found 5 results for query 'Victoria'
+2024-12-16 11:44:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Victoria - 200 - 140ms
+2024-12-16 11:44:52 - INFO - Autocomplete request received with query: Victori
+2024-12-16 11:44:52 - INFO - Autocomplete found 5 results for query 'Victori'
+2024-12-16 11:44:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Victori - 200 - 41ms
+2024-12-16 11:44:54 - INFO - Autocomplete request received with query: Victoria
+2024-12-16 11:44:54 - INFO - Autocomplete found 5 results for query 'Victoria'
+2024-12-16 11:44:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Victoria - 200 - 130ms
+2024-12-16 11:44:56 - INFO - Autocomplete request received with query: Victoria 
+2024-12-16 11:44:56 - INFO - Autocomplete found 5 results for query 'Victoria '
+2024-12-16 11:44:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Victoria  - 200 - 132ms
+2024-12-16 11:49:52 - INFO - Loading configuration...
+2024-12-16 11:49:52 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 11:49:52 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 11:49:52 - INFO - Connecting to database...
+2024-12-16 11:49:52 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 11:49:52 - INFO - Attempting to connect to the database...
+2024-12-16 11:49:52 - INFO - Successfully connected to the database.
+2024-12-16 11:49:52 - INFO - Initializing Fiber app...
+2024-12-16 11:49:52 - INFO - Serving static files from ./static
+2024-12-16 11:49:52 - INFO - Registering routes...
+2024-12-16 11:49:52 - INFO - Server running on http://localhost:3007
+2024-12-16 11:49:57 - INFO - Autocomplete request received with query: Vic
+2024-12-16 11:49:57 - ERROR - Error querying database for autocomplete: expected 2 arguments, got 1
+2024-12-16 11:49:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 500 - 137ms
+2024-12-16 11:49:57 - INFO - Autocomplete request received with query: Vico
+2024-12-16 11:49:57 - ERROR - Error querying database for autocomplete: expected 2 arguments, got 1
+2024-12-16 11:49:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Vico - 500 - 1ms
+2024-12-16 11:49:57 - INFO - Autocomplete request received with query: Vic
+2024-12-16 11:49:57 - ERROR - Error querying database for autocomplete: expected 2 arguments, got 1
+2024-12-16 11:49:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 500 - 0ms
+2024-12-16 11:49:57 - INFO - Autocomplete request received with query: Vict
+2024-12-16 11:49:57 - ERROR - Error querying database for autocomplete: expected 2 arguments, got 1
+2024-12-16 11:49:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 500 - 0ms
+2024-12-16 11:49:57 - INFO - Autocomplete request received with query: Victo
+2024-12-16 11:49:57 - ERROR - Error querying database for autocomplete: expected 2 arguments, got 1
+2024-12-16 11:49:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Victo - 500 - 0ms
+2024-12-16 11:49:57 - INFO - Autocomplete request received with query: Victor
+2024-12-16 11:49:57 - ERROR - Error querying database for autocomplete: expected 2 arguments, got 1
+2024-12-16 11:49:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Victor - 500 - 1ms
+2024-12-16 11:49:57 - INFO - Autocomplete request received with query: Victori
+2024-12-16 11:49:57 - ERROR - Error querying database for autocomplete: expected 2 arguments, got 1
+2024-12-16 11:49:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Victori - 500 - 0ms
+2024-12-16 11:49:57 - INFO - Autocomplete request received with query: Victoria
+2024-12-16 11:49:57 - ERROR - Error querying database for autocomplete: expected 2 arguments, got 1
+2024-12-16 11:49:57 - INFO - 127.0.0.1 - GET /autocomplete?query=Victoria - 500 - 0ms
+2024-12-16 11:51:26 - INFO - Loading configuration...
+2024-12-16 11:51:26 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 11:51:26 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 11:51:26 - INFO - Connecting to database...
+2024-12-16 11:51:26 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 11:51:26 - INFO - Attempting to connect to the database...
+2024-12-16 11:51:26 - INFO - Successfully connected to the database.
+2024-12-16 11:51:26 - INFO - Initializing Fiber app...
+2024-12-16 11:51:26 - INFO - Serving static files from ./static
+2024-12-16 11:51:26 - INFO - Registering routes...
+2024-12-16 11:51:26 - INFO - Server running on http://localhost:3007
+2024-12-16 11:51:35 - INFO - Autocomplete request received with query: Vic
+2024-12-16 11:51:35 - INFO - Autocomplete found 5 results for query 'Vic'
+2024-12-16 11:51:35 - INFO - Autocomplete request received with query: Vict
+2024-12-16 11:51:35 - INFO - Autocomplete request received with query: Victr
+2024-12-16 11:51:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 200 - 230ms
+2024-12-16 11:51:35 - INFO - Autocomplete request received with query: Victro
+2024-12-16 11:51:35 - INFO - Autocomplete found 5 results for query 'Vict'
+2024-12-16 11:51:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 200 - 57ms
+2024-12-16 11:51:35 - INFO - Autocomplete found 0 results for query 'Victr'
+2024-12-16 11:51:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Victr - 200 - 177ms
+2024-12-16 11:51:36 - INFO - Autocomplete found 0 results for query 'Victro'
+2024-12-16 11:51:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Victro - 200 - 189ms
+2024-12-16 11:51:36 - INFO - Autocomplete request received with query: Victr
+2024-12-16 11:51:36 - INFO - Autocomplete found 0 results for query 'Victr'
+2024-12-16 11:51:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Victr - 200 - 1ms
+2024-12-16 11:51:36 - INFO - Autocomplete request received with query: Vict
+2024-12-16 11:51:36 - INFO - Autocomplete found 5 results for query 'Vict'
+2024-12-16 11:51:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 200 - 59ms
+2024-12-16 11:51:36 - INFO - Autocomplete request received with query: Victo
+2024-12-16 11:51:36 - INFO - Autocomplete request received with query: Victop
+2024-12-16 11:51:36 - INFO - Autocomplete found 0 results for query 'Victop'
+2024-12-16 11:51:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Victop - 200 - 2ms
+2024-12-16 11:51:36 - INFO - Autocomplete found 5 results for query 'Victo'
+2024-12-16 11:51:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Victo - 200 - 80ms
+2024-12-16 11:51:36 - INFO - Autocomplete request received with query: Victopr
+2024-12-16 11:51:36 - INFO - Autocomplete found 0 results for query 'Victopr'
+2024-12-16 11:51:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Victopr - 200 - 1ms
+2024-12-16 11:51:36 - INFO - Autocomplete request received with query: Victopri
+2024-12-16 11:51:36 - INFO - Autocomplete found 0 results for query 'Victopri'
+2024-12-16 11:51:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Victopri - 200 - 1ms
+2024-12-16 11:51:36 - INFO - Autocomplete request received with query: Victopria
+2024-12-16 11:51:36 - INFO - Autocomplete found 0 results for query 'Victopria'
+2024-12-16 11:51:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Victopria - 200 - 1ms
+2024-12-16 11:51:37 - INFO - Autocomplete request received with query: Victopri
+2024-12-16 11:51:37 - INFO - Autocomplete found 0 results for query 'Victopri'
+2024-12-16 11:51:37 - INFO - 127.0.0.1 - GET /autocomplete?query=Victopri - 200 - 1ms
+2024-12-16 11:51:37 - INFO - Autocomplete request received with query: Victopr
+2024-12-16 11:51:37 - INFO - Autocomplete found 0 results for query 'Victopr'
+2024-12-16 11:51:37 - INFO - 127.0.0.1 - GET /autocomplete?query=Victopr - 200 - 1ms
+2024-12-16 11:51:37 - INFO - Autocomplete request received with query: Victop
+2024-12-16 11:51:37 - INFO - Autocomplete found 0 results for query 'Victop'
+2024-12-16 11:51:37 - INFO - 127.0.0.1 - GET /autocomplete?query=Victop - 200 - 1ms
+2024-12-16 11:51:37 - INFO - Autocomplete request received with query: Victo
+2024-12-16 11:51:37 - INFO - Autocomplete found 5 results for query 'Victo'
+2024-12-16 11:51:37 - INFO - 127.0.0.1 - GET /autocomplete?query=Victo - 200 - 45ms
+2024-12-16 11:51:37 - INFO - Autocomplete request received with query: Victor
+2024-12-16 11:51:37 - INFO - Autocomplete found 5 results for query 'Victor'
+2024-12-16 11:51:37 - INFO - 127.0.0.1 - GET /autocomplete?query=Victor - 200 - 58ms
+2024-12-16 11:51:37 - INFO - Autocomplete request received with query: Victori
+2024-12-16 11:51:37 - INFO - Autocomplete found 5 results for query 'Victori'
+2024-12-16 11:51:37 - INFO - 127.0.0.1 - GET /autocomplete?query=Victori - 200 - 38ms
+2024-12-16 11:51:37 - INFO - Autocomplete request received with query: Victoria
+2024-12-16 11:51:37 - INFO - Autocomplete found 5 results for query 'Victoria'
+2024-12-16 11:51:37 - INFO - 127.0.0.1 - GET /autocomplete?query=Victoria - 200 - 48ms
+2024-12-16 11:57:41 - INFO - Loading configuration...
+2024-12-16 11:57:41 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 11:57:41 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 11:57:41 - INFO - Connecting to database...
+2024-12-16 11:57:41 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 11:57:41 - INFO - Attempting to connect to the database...
+2024-12-16 11:57:41 - INFO - Successfully connected to the database.
+2024-12-16 11:57:41 - INFO - Initializing Fiber app...
+2024-12-16 11:57:41 - INFO - Serving static files from ./static
+2024-12-16 11:57:41 - INFO - Registering routes...
+2024-12-16 11:57:41 - INFO - Server running on http://localhost:3007
+2024-12-16 11:57:48 - INFO - Autocomplete request received with query: Vic
+2024-12-16 11:57:48 - INFO - Autocomplete request received with query: Vict
+2024-12-16 11:57:48 - ERROR - Error querying database for autocomplete: expected 3 arguments, got 2
+2024-12-16 11:57:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 500 - 235ms
+2024-12-16 11:57:48 - INFO - Autocomplete request received with query: Victo
+2024-12-16 11:57:48 - ERROR - Error querying database for autocomplete: expected 3 arguments, got 2
+2024-12-16 11:57:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Victo - 500 - 0ms
+2024-12-16 11:57:48 - INFO - Autocomplete request received with query: Victor
+2024-12-16 11:57:48 - ERROR - Error querying database for autocomplete: expected 3 arguments, got 2
+2024-12-16 11:57:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Victor - 500 - 0ms
+2024-12-16 11:57:48 - ERROR - Error querying database for autocomplete: expected 3 arguments, got 2
+2024-12-16 11:57:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 500 - 96ms
+2024-12-16 11:57:48 - INFO - Autocomplete request received with query: Victori
+2024-12-16 11:57:48 - ERROR - Error querying database for autocomplete: expected 3 arguments, got 2
+2024-12-16 11:57:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Victori - 500 - 0ms
+2024-12-16 11:57:48 - INFO - Autocomplete request received with query: Victoria
+2024-12-16 11:57:48 - ERROR - Error querying database for autocomplete: expected 3 arguments, got 2
+2024-12-16 11:57:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Victoria - 500 - 0ms
+2024-12-16 11:58:25 - INFO - Loading configuration...
+2024-12-16 11:58:25 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 11:58:25 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 11:58:25 - INFO - Connecting to database...
+2024-12-16 11:58:25 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 11:58:25 - INFO - Attempting to connect to the database...
+2024-12-16 11:58:25 - INFO - Successfully connected to the database.
+2024-12-16 11:58:25 - INFO - Initializing Fiber app...
+2024-12-16 11:58:25 - INFO - Serving static files from ./static
+2024-12-16 11:58:25 - INFO - Registering routes...
+2024-12-16 11:58:25 - INFO - Server running on http://localhost:3007
+2024-12-16 11:58:30 - INFO - Autocomplete request received with query: Vic
+2024-12-16 11:58:30 - INFO - Autocomplete request received with query: Vict
+2024-12-16 11:58:30 - INFO - Autocomplete request received with query: Victo
+2024-12-16 11:58:30 - INFO - Autocomplete request received with query: Victor
+2024-12-16 11:58:30 - INFO - Autocomplete found 5 results for query 'Vict'
+2024-12-16 11:58:30 - INFO - Autocomplete found 5 results for query 'Vic'
+2024-12-16 11:58:30 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 200 - 185ms
+2024-12-16 11:58:30 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 200 - 385ms
+2024-12-16 11:58:30 - INFO - Autocomplete request received with query: Victori
+2024-12-16 11:58:30 - INFO - Autocomplete request received with query: Victoria
+2024-12-16 11:58:31 - INFO - Autocomplete found 5 results for query 'Victori'
+2024-12-16 11:58:31 - INFO - 127.0.0.1 - GET /autocomplete?query=Victori - 200 - 78ms
+2024-12-16 11:58:31 - INFO - Autocomplete found 5 results for query 'Victoria'
+2024-12-16 11:58:31 - INFO - 127.0.0.1 - GET /autocomplete?query=Victoria - 200 - 82ms
+2024-12-16 11:58:31 - INFO - Autocomplete found 5 results for query 'Victo'
+2024-12-16 11:58:31 - INFO - 127.0.0.1 - GET /autocomplete?query=Victo - 200 - 310ms
+2024-12-16 11:58:31 - INFO - Autocomplete found 5 results for query 'Victor'
+2024-12-16 11:58:31 - INFO - 127.0.0.1 - GET /autocomplete?query=Victor - 200 - 300ms
+2024-12-16 12:01:29 - INFO - Loading configuration...
+2024-12-16 12:01:29 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 12:01:29 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 12:01:29 - INFO - Connecting to database...
+2024-12-16 12:01:29 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 12:01:29 - INFO - Attempting to connect to the database...
+2024-12-16 12:01:29 - INFO - Successfully connected to the database.
+2024-12-16 12:01:29 - INFO - Initializing Fiber app...
+2024-12-16 12:01:29 - INFO - Serving static files from ./static
+2024-12-16 12:01:29 - INFO - Registering routes...
+2024-12-16 12:01:29 - INFO - Server running on http://localhost:3007
+2024-12-16 12:01:33 - INFO - Autocomplete request received with query: Vic
+2024-12-16 12:01:33 - INFO - Autocomplete request received with query: Vico
+2024-12-16 12:01:33 - INFO - Autocomplete request received with query: Vicor
+2024-12-16 12:01:33 - INFO - Autocomplete request received with query: Vicori
+2024-12-16 12:01:33 - warning - Ignoring results for outdated query: Vicor
+2024-12-16 12:01:33 - INFO - 127.0.0.1 - GET /autocomplete?query=Vicor - 200 - 128ms
+2024-12-16 12:01:33 - warning - Ignoring results for outdated query: Vic
+2024-12-16 12:01:33 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 200 - 399ms
+2024-12-16 12:01:33 - warning - Ignoring results for outdated query: Vico
+2024-12-16 12:01:33 - INFO - 127.0.0.1 - GET /autocomplete?query=Vico - 200 - 247ms
+2024-12-16 12:01:33 - INFO - Autocomplete found 0 results for query 'Vicori'
+2024-12-16 12:01:33 - INFO - 127.0.0.1 - GET /autocomplete?query=Vicori - 200 - 227ms
+2024-12-16 12:01:33 - INFO - Autocomplete request received with query: Vicor
+2024-12-16 12:01:33 - INFO - Autocomplete found 1 results for query 'Vicor'
+2024-12-16 12:01:33 - INFO - 127.0.0.1 - GET /autocomplete?query=Vicor - 200 - 1ms
+2024-12-16 12:01:34 - INFO - Autocomplete request received with query: Vicort
+2024-12-16 12:01:34 - INFO - Autocomplete found 0 results for query 'Vicort'
+2024-12-16 12:01:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Vicort - 200 - 1ms
+2024-12-16 12:01:34 - INFO - Autocomplete request received with query: Vicorto
+2024-12-16 12:01:34 - INFO - Autocomplete found 0 results for query 'Vicorto'
+2024-12-16 12:01:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Vicorto - 200 - 14ms
+2024-12-16 12:01:34 - INFO - Autocomplete request received with query: Vicort
+2024-12-16 12:01:34 - INFO - Autocomplete found 0 results for query 'Vicort'
+2024-12-16 12:01:34 - INFO - 127.0.0.1 - GET /autocomplete?query=Vicort - 200 - 1ms
+2024-12-16 12:01:35 - INFO - Autocomplete request received with query: Vicor
+2024-12-16 12:01:35 - INFO - Autocomplete found 1 results for query 'Vicor'
+2024-12-16 12:01:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Vicor - 200 - 2ms
+2024-12-16 12:01:35 - INFO - Autocomplete request received with query: Vico
+2024-12-16 12:01:35 - INFO - Autocomplete found 5 results for query 'Vico'
+2024-12-16 12:01:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Vico - 200 - 2ms
+2024-12-16 12:01:35 - INFO - Autocomplete request received with query: Vic
+2024-12-16 12:01:35 - INFO - Autocomplete found 5 results for query 'Vic'
+2024-12-16 12:01:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 200 - 54ms
+2024-12-16 12:01:35 - INFO - Autocomplete request received with query: Vict
+2024-12-16 12:01:35 - INFO - Autocomplete found 5 results for query 'Vict'
+2024-12-16 12:01:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 200 - 44ms
+2024-12-16 12:01:35 - INFO - Autocomplete request received with query: Victo
+2024-12-16 12:01:35 - INFO - Autocomplete found 5 results for query 'Victo'
+2024-12-16 12:01:35 - INFO - 127.0.0.1 - GET /autocomplete?query=Victo - 200 - 40ms
+2024-12-16 12:01:35 - INFO - Autocomplete request received with query: Victor
+2024-12-16 12:01:36 - INFO - Autocomplete found 5 results for query 'Victor'
+2024-12-16 12:01:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Victor - 200 - 47ms
+2024-12-16 12:01:36 - INFO - Autocomplete request received with query: Victori
+2024-12-16 12:01:36 - INFO - Autocomplete found 5 results for query 'Victori'
+2024-12-16 12:01:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Victori - 200 - 49ms
+2024-12-16 12:01:36 - INFO - Autocomplete request received with query: Victoria
+2024-12-16 12:01:36 - INFO - Autocomplete found 5 results for query 'Victoria'
+2024-12-16 12:01:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Victoria - 200 - 48ms
+2024-12-16 12:01:50 - INFO - Autocomplete request received with query: Victori
+2024-12-16 12:01:50 - INFO - Autocomplete found 5 results for query 'Victori'
+2024-12-16 12:01:50 - INFO - 127.0.0.1 - GET /autocomplete?query=Victori - 200 - 171ms
+2024-12-16 12:01:53 - INFO - Autocomplete request received with query: Victor
+2024-12-16 12:01:53 - INFO - Autocomplete request received with query: Victo
+2024-12-16 12:01:53 - warning - Ignoring results for outdated query: Victor
+2024-12-16 12:01:53 - INFO - 127.0.0.1 - GET /autocomplete?query=Victor - 200 - 150ms
+2024-12-16 12:01:53 - INFO - Autocomplete found 5 results for query 'Victo'
+2024-12-16 12:01:53 - INFO - 127.0.0.1 - GET /autocomplete?query=Victo - 200 - 146ms
+2024-12-16 12:01:53 - INFO - Autocomplete request received with query: Vict
+2024-12-16 12:01:53 - INFO - Autocomplete found 5 results for query 'Vict'
+2024-12-16 12:01:53 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 200 - 50ms
+2024-12-16 12:01:54 - INFO - Autocomplete request received with query: Vic
+2024-12-16 12:01:54 - INFO - Autocomplete found 5 results for query 'Vic'
+2024-12-16 12:01:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 200 - 64ms
+2024-12-16 12:01:54 - INFO - Autocomplete request received with query: Vam
+2024-12-16 12:01:54 - INFO - Autocomplete found 3 results for query 'Vam'
+2024-12-16 12:01:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Vam - 200 - 2ms
+2024-12-16 12:01:55 - INFO - Autocomplete request received with query: Vamc
+2024-12-16 12:01:55 - INFO - Autocomplete found 0 results for query 'Vamc'
+2024-12-16 12:01:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamc - 200 - 1ms
+2024-12-16 12:01:55 - INFO - Autocomplete request received with query: Vamcp
+2024-12-16 12:01:55 - INFO - Autocomplete found 0 results for query 'Vamcp'
+2024-12-16 12:01:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamcp - 200 - 0ms
+2024-12-16 12:01:55 - INFO - Autocomplete request received with query: Vamc
+2024-12-16 12:01:55 - INFO - Autocomplete found 0 results for query 'Vamc'
+2024-12-16 12:01:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamc - 200 - 1ms
+2024-12-16 12:01:55 - INFO - Autocomplete request received with query: Vam
+2024-12-16 12:01:55 - INFO - Autocomplete found 3 results for query 'Vam'
+2024-12-16 12:01:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vam - 200 - 1ms
+2024-12-16 12:01:55 - INFO - Autocomplete request received with query: Van
+2024-12-16 12:01:55 - INFO - Autocomplete found 5 results for query 'Van'
+2024-12-16 12:01:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 15ms
+2024-12-16 12:01:56 - INFO - Autocomplete request received with query: Vanc
+2024-12-16 12:01:56 - INFO - Autocomplete found 5 results for query 'Vanc'
+2024-12-16 12:01:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 3ms
+2024-12-16 12:01:56 - INFO - Autocomplete request received with query: Vanco
+2024-12-16 12:01:56 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-16 12:01:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 1ms
+2024-12-16 12:01:56 - INFO - Autocomplete request received with query: Vancou
+2024-12-16 12:01:56 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-16 12:01:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 2ms
+2024-12-16 12:01:56 - INFO - Autocomplete request received with query: Vancouv
+2024-12-16 12:01:56 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-16 12:01:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 2ms
+2024-12-16 12:01:56 - INFO - Autocomplete request received with query: Vancouve
+2024-12-16 12:01:56 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-16 12:01:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 1ms
+2024-12-16 12:01:56 - INFO - Autocomplete request received with query: Vancouver
+2024-12-16 12:01:56 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-16 12:01:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 2ms
+2024-12-16 12:05:19 - INFO - Loading configuration...
+2024-12-16 12:05:19 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 12:05:19 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 12:05:19 - INFO - Connecting to database...
+2024-12-16 12:05:19 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 12:05:19 - INFO - Attempting to connect to the database...
+2024-12-16 12:05:19 - INFO - Successfully connected to the database.
+2024-12-16 12:05:19 - INFO - Initializing Fiber app...
+2024-12-16 12:05:19 - INFO - Serving static files from ./static
+2024-12-16 12:05:19 - INFO - Registering routes...
+2024-12-16 12:05:19 - INFO - Server running on http://localhost:3007
+2024-12-16 12:05:24 - INFO - Autocomplete request received with query: Van
+2024-12-16 12:05:25 - INFO - Autocomplete request received with query: Vanc
+2024-12-16 12:05:25 - INFO - Autocomplete request received with query: Vanco
+2024-12-16 12:05:25 - warning - Ignoring results for outdated query: Van
+2024-12-16 12:05:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 279ms
+2024-12-16 12:05:25 - INFO - Autocomplete request received with query: Vancou
+2024-12-16 12:05:25 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-16 12:05:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 3ms
+2024-12-16 12:05:25 - INFO - Autocomplete request received with query: Vancouv
+2024-12-16 12:05:25 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-16 12:05:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 5ms
+2024-12-16 12:05:25 - warning - Ignoring results for outdated query: Vanc
+2024-12-16 12:05:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 203ms
+2024-12-16 12:05:25 - warning - Ignoring results for outdated query: Vanco
+2024-12-16 12:05:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 224ms
+2024-12-16 12:05:25 - INFO - Autocomplete request received with query: Vancouve
+2024-12-16 12:05:25 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-16 12:05:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 2ms
+2024-12-16 12:05:25 - INFO - Autocomplete request received with query: Vancouver
+2024-12-16 12:05:25 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-16 12:05:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 4ms
+2024-12-16 12:06:06 - INFO - Autocomplete request received with query: Vic
+2024-12-16 12:06:06 - INFO - Autocomplete request received with query: Vict
+2024-12-16 12:06:06 - warning - Ignoring results for outdated query: Vic
+2024-12-16 12:06:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 200 - 216ms
+2024-12-16 12:06:06 - INFO - Autocomplete request received with query: Victo
+2024-12-16 12:06:06 - warning - Ignoring results for outdated query: Vict
+2024-12-16 12:06:06 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 200 - 168ms
+2024-12-16 12:06:07 - INFO - Autocomplete found 5 results for query 'Victo'
+2024-12-16 12:06:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Victo - 200 - 68ms
+2024-12-16 12:06:07 - INFO - Autocomplete request received with query: Victor
+2024-12-16 12:06:07 - INFO - Autocomplete found 5 results for query 'Victor'
+2024-12-16 12:06:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Victor - 200 - 58ms
+2024-12-16 12:06:07 - INFO - Autocomplete request received with query: Victori
+2024-12-16 12:06:07 - INFO - Autocomplete request received with query: Victoria
+2024-12-16 12:06:07 - warning - Ignoring results for outdated query: Victori
+2024-12-16 12:06:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Victori - 200 - 63ms
+2024-12-16 12:06:07 - INFO - Autocomplete found 5 results for query 'Victoria'
+2024-12-16 12:06:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Victoria - 200 - 57ms
+2024-12-16 12:09:33 - INFO - Loading configuration...
+2024-12-16 12:09:33 - INFO - No SERVER_PORT set, defaulting to 3007
+2024-12-16 12:09:33 - INFO - Configuration loaded: DBUser=postgres DBHost=localhost DBName=locations DBPort=5432 ServerPort=3007
+2024-12-16 12:09:33 - INFO - Connecting to database...
+2024-12-16 12:09:33 - INFO - Constructed DSN (password masked): postgres://postgres:*****@localhost:5432/locations
+2024-12-16 12:09:33 - INFO - Attempting to connect to the database...
+2024-12-16 12:09:33 - INFO - Successfully connected to the database.
+2024-12-16 12:09:33 - INFO - Initializing Fiber app...
+2024-12-16 12:09:33 - INFO - Serving static files from ./static
+2024-12-16 12:09:33 - INFO - Registering routes...
+2024-12-16 12:09:33 - INFO - Server running on http://localhost:3007
+2024-12-16 12:09:36 - INFO - Autocomplete request received with query: Van
+2024-12-16 12:09:36 - INFO - Autocomplete request received with query: Vanc
+2024-12-16 12:09:36 - INFO - Autocomplete request received with query: Vanco
+2024-12-16 12:09:36 - INFO - Autocomplete request received with query: Vancou
+2024-12-16 12:09:36 - INFO - Autocomplete request received with query: Vancouv
+2024-12-16 12:09:36 - warning - Ignoring results for outdated query: Van
+2024-12-16 12:09:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 282ms
+2024-12-16 12:09:36 - INFO - Autocomplete request received with query: Vancouve
+2024-12-16 12:09:36 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-16 12:09:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 3ms
+2024-12-16 12:09:36 - INFO - Autocomplete request received with query: Vancouver
+2024-12-16 12:09:36 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-16 12:09:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 4ms
+2024-12-16 12:09:36 - warning - Ignoring results for outdated query: Vanco
+2024-12-16 12:09:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 176ms
+2024-12-16 12:09:36 - warning - Ignoring results for outdated query: Vanc
+2024-12-16 12:09:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 287ms
+2024-12-16 12:09:36 - warning - Ignoring results for outdated query: Vancou
+2024-12-16 12:09:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 184ms
+2024-12-16 12:09:36 - warning - Ignoring results for outdated query: Vancouv
+2024-12-16 12:09:36 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 327ms
+2024-12-16 12:09:43 - INFO - Autocomplete request received with query: Vancouve
+2024-12-16 12:09:44 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-16 12:09:44 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 104ms
+2024-12-16 12:09:44 - INFO - Autocomplete request received with query: Vancouver
+2024-12-16 12:09:44 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-16 12:09:44 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 4ms
+2024-12-16 12:09:46 - INFO - Autocomplete request received with query: Vancouve
+2024-12-16 12:09:46 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-16 12:09:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 102ms
+2024-12-16 12:09:46 - INFO - Autocomplete request received with query: Vancouv
+2024-12-16 12:09:46 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-16 12:09:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 2ms
+2024-12-16 12:09:46 - INFO - Autocomplete request received with query: Vancou
+2024-12-16 12:09:46 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-16 12:09:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 1ms
+2024-12-16 12:09:46 - INFO - Autocomplete request received with query: Vanco
+2024-12-16 12:09:46 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-16 12:09:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 2ms
+2024-12-16 12:09:46 - INFO - Autocomplete request received with query: Vanc
+2024-12-16 12:09:46 - INFO - Autocomplete found 5 results for query 'Vanc'
+2024-12-16 12:09:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 2ms
+2024-12-16 12:09:46 - INFO - Autocomplete request received with query: Van
+2024-12-16 12:09:46 - INFO - Autocomplete found 5 results for query 'Van'
+2024-12-16 12:09:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 15ms
+2024-12-16 12:09:47 - INFO - Autocomplete request received with query: Vam
+2024-12-16 12:09:47 - INFO - Autocomplete found 3 results for query 'Vam'
+2024-12-16 12:09:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Vam - 200 - 1ms
+2024-12-16 12:09:47 - INFO - Autocomplete request received with query: Vamn
+2024-12-16 12:09:47 - INFO - Autocomplete found 0 results for query 'Vamn'
+2024-12-16 12:09:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamn - 200 - 1ms
+2024-12-16 12:09:47 - INFO - Autocomplete request received with query: Vamnc
+2024-12-16 12:09:47 - INFO - Autocomplete found 0 results for query 'Vamnc'
+2024-12-16 12:09:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamnc - 200 - 1ms
+2024-12-16 12:09:47 - INFO - Autocomplete request received with query: Vamncpo
+2024-12-16 12:09:47 - INFO - Autocomplete request received with query: Vamncp
+2024-12-16 12:09:48 - warning - Ignoring results for outdated query: Vamncpo
+2024-12-16 12:09:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamncpo - 200 - 39ms
+2024-12-16 12:09:48 - INFO - Autocomplete request received with query: Vamncpoi
+2024-12-16 12:09:48 - INFO - Autocomplete found 0 results for query 'Vamncpoi'
+2024-12-16 12:09:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamncpoi - 200 - 5ms
+2024-12-16 12:09:48 - INFO - Autocomplete request received with query: Vamncpoiv
+2024-12-16 12:09:48 - INFO - Autocomplete found 0 results for query 'Vamncpoiv'
+2024-12-16 12:09:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamncpoiv - 200 - 6ms
+2024-12-16 12:09:48 - warning - Ignoring results for outdated query: Vamncp
+2024-12-16 12:09:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamncp - 200 - 102ms
+2024-12-16 12:09:48 - INFO - Autocomplete request received with query: Vamncpoi
+2024-12-16 12:09:48 - INFO - Autocomplete found 0 results for query 'Vamncpoi'
+2024-12-16 12:09:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamncpoi - 200 - 1ms
+2024-12-16 12:09:48 - INFO - Autocomplete request received with query: Vamncpo
+2024-12-16 12:09:48 - INFO - Autocomplete found 0 results for query 'Vamncpo'
+2024-12-16 12:09:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamncpo - 200 - 1ms
+2024-12-16 12:09:48 - INFO - Autocomplete request received with query: Vamncp
+2024-12-16 12:09:48 - INFO - Autocomplete found 0 results for query 'Vamncp'
+2024-12-16 12:09:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamncp - 200 - 1ms
+2024-12-16 12:09:48 - INFO - Autocomplete request received with query: Vamnc
+2024-12-16 12:09:48 - INFO - Autocomplete found 0 results for query 'Vamnc'
+2024-12-16 12:09:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamnc - 200 - 1ms
+2024-12-16 12:09:48 - INFO - Autocomplete request received with query: Vamn
+2024-12-16 12:09:48 - INFO - Autocomplete found 0 results for query 'Vamn'
+2024-12-16 12:09:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vamn - 200 - 1ms
+2024-12-16 12:09:48 - INFO - Autocomplete request received with query: Vam
+2024-12-16 12:09:48 - INFO - Autocomplete found 3 results for query 'Vam'
+2024-12-16 12:09:48 - INFO - 127.0.0.1 - GET /autocomplete?query=Vam - 200 - 2ms
+2024-12-16 12:09:49 - INFO - Autocomplete request received with query: Vac
+2024-12-16 12:09:50 - INFO - Autocomplete found 5 results for query 'Vac'
+2024-12-16 12:09:50 - INFO - 127.0.0.1 - GET /autocomplete?query=Vac - 200 - 107ms
+2024-12-16 12:09:50 - INFO - Autocomplete request received with query: Van
+2024-12-16 12:09:50 - INFO - Autocomplete found 5 results for query 'Van'
+2024-12-16 12:09:50 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 10ms
+2024-12-16 12:09:50 - INFO - Autocomplete request received with query: Vanc
+2024-12-16 12:09:50 - INFO - Autocomplete found 5 results for query 'Vanc'
+2024-12-16 12:09:50 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 2ms
+2024-12-16 12:09:50 - INFO - Autocomplete request received with query: Vanco
+2024-12-16 12:09:50 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-16 12:09:50 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 2ms
+2024-12-16 12:09:50 - INFO - Autocomplete request received with query: Vancou
+2024-12-16 12:09:50 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-16 12:09:50 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 46ms
+2024-12-16 12:09:50 - INFO - Autocomplete request received with query: Vancouv
+2024-12-16 12:09:50 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-16 12:09:50 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 10ms
+2024-12-16 12:09:51 - INFO - Autocomplete request received with query: Vancouve
+2024-12-16 12:09:51 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-16 12:09:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 2ms
+2024-12-16 12:09:51 - INFO - Autocomplete request received with query: Vancouver
+2024-12-16 12:09:51 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-16 12:09:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 2ms
+2024-12-16 12:11:21 - INFO - Autocomplete request received with query: Vancouve
+2024-12-16 12:11:21 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-16 12:11:21 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 102ms
+2024-12-16 12:11:22 - INFO - Autocomplete request received with query: Vancouv
+2024-12-16 12:11:22 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-16 12:11:22 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 3ms
+2024-12-16 12:11:22 - INFO - Autocomplete request received with query: Vancou
+2024-12-16 12:11:22 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-16 12:11:22 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 4ms
+2024-12-16 12:11:22 - INFO - Autocomplete request received with query: Vanco
+2024-12-16 12:11:22 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-16 12:11:22 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 3ms
+2024-12-16 12:11:22 - INFO - Autocomplete request received with query: Vanc
+2024-12-16 12:11:22 - INFO - Autocomplete found 5 results for query 'Vanc'
+2024-12-16 12:11:22 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 2ms
+2024-12-16 12:11:22 - INFO - Autocomplete request received with query: Van
+2024-12-16 12:11:22 - INFO - Autocomplete found 5 results for query 'Van'
+2024-12-16 12:11:22 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 17ms
+2024-12-16 12:11:22 - INFO - Autocomplete request received with query: Vic
+2024-12-16 12:11:23 - INFO - Autocomplete found 5 results for query 'Vic'
+2024-12-16 12:11:23 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 200 - 94ms
+2024-12-16 12:11:23 - INFO - Autocomplete request received with query: Vicr
+2024-12-16 12:11:23 - INFO - Autocomplete found 0 results for query 'Vicr'
+2024-12-16 12:11:23 - INFO - 127.0.0.1 - GET /autocomplete?query=Vicr - 200 - 1ms
+2024-12-16 12:11:23 - INFO - Autocomplete request received with query: Vicrt
+2024-12-16 12:11:23 - INFO - Autocomplete found 0 results for query 'Vicrt'
+2024-12-16 12:11:23 - INFO - 127.0.0.1 - GET /autocomplete?query=Vicrt - 200 - 1ms
+2024-12-16 12:11:23 - INFO - Autocomplete request received with query: Vicr
+2024-12-16 12:11:23 - INFO - Autocomplete found 0 results for query 'Vicr'
+2024-12-16 12:11:23 - INFO - 127.0.0.1 - GET /autocomplete?query=Vicr - 200 - 1ms
+2024-12-16 12:11:23 - INFO - Autocomplete request received with query: Vic
+2024-12-16 12:11:23 - INFO - Autocomplete found 5 results for query 'Vic'
+2024-12-16 12:11:23 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 200 - 67ms
+2024-12-16 12:11:24 - INFO - Autocomplete request received with query: Vict
+2024-12-16 12:11:24 - INFO - Autocomplete found 5 results for query 'Vict'
+2024-12-16 12:11:24 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 200 - 53ms
+2024-12-16 12:11:24 - INFO - Autocomplete request received with query: Victr
+2024-12-16 12:11:24 - INFO - Autocomplete found 0 results for query 'Victr'
+2024-12-16 12:11:24 - INFO - 127.0.0.1 - GET /autocomplete?query=Victr - 200 - 2ms
+2024-12-16 12:11:24 - INFO - Autocomplete request received with query: Vict
+2024-12-16 12:11:24 - INFO - Autocomplete found 5 results for query 'Vict'
+2024-12-16 12:11:24 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 200 - 49ms
+2024-12-16 12:11:24 - INFO - Autocomplete request received with query: Victp
+2024-12-16 12:11:24 - INFO - Autocomplete found 0 results for query 'Victp'
+2024-12-16 12:11:24 - INFO - 127.0.0.1 - GET /autocomplete?query=Victp - 200 - 1ms
+2024-12-16 12:11:24 - INFO - Autocomplete request received with query: Victpr
+2024-12-16 12:11:24 - INFO - Autocomplete found 0 results for query 'Victpr'
+2024-12-16 12:11:24 - INFO - 127.0.0.1 - GET /autocomplete?query=Victpr - 200 - 1ms
+2024-12-16 12:11:24 - INFO - Autocomplete request received with query: Victpro
+2024-12-16 12:11:24 - INFO - Autocomplete found 0 results for query 'Victpro'
+2024-12-16 12:11:24 - INFO - 127.0.0.1 - GET /autocomplete?query=Victpro - 200 - 1ms
+2024-12-16 12:11:25 - INFO - Autocomplete request received with query: Victpr
+2024-12-16 12:11:25 - INFO - Autocomplete found 0 results for query 'Victpr'
+2024-12-16 12:11:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Victpr - 200 - 2ms
+2024-12-16 12:11:25 - INFO - Autocomplete request received with query: Victp
+2024-12-16 12:11:25 - INFO - Autocomplete found 0 results for query 'Victp'
+2024-12-16 12:11:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Victp - 200 - 1ms
+2024-12-16 12:11:25 - INFO - Autocomplete request received with query: Vict
+2024-12-16 12:11:25 - INFO - Autocomplete found 5 results for query 'Vict'
+2024-12-16 12:11:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 200 - 51ms
+2024-12-16 12:11:25 - INFO - Autocomplete request received with query: Vic
+2024-12-16 12:11:25 - INFO - Autocomplete found 5 results for query 'Vic'
+2024-12-16 12:11:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 200 - 51ms
+2024-12-16 12:11:25 - INFO - Autocomplete request received with query: Vico
+2024-12-16 12:11:25 - INFO - Autocomplete found 5 results for query 'Vico'
+2024-12-16 12:11:25 - INFO - 127.0.0.1 - GET /autocomplete?query=Vico - 200 - 3ms
+2024-12-16 12:11:25 - INFO - Autocomplete request received with query: Vic
+2024-12-16 12:11:26 - INFO - Autocomplete found 5 results for query 'Vic'
+2024-12-16 12:11:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Vic - 200 - 63ms
+2024-12-16 12:11:26 - INFO - Autocomplete request received with query: Vict
+2024-12-16 12:11:26 - INFO - Autocomplete found 5 results for query 'Vict'
+2024-12-16 12:11:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Vict - 200 - 53ms
+2024-12-16 12:11:26 - INFO - Autocomplete request received with query: Victo
+2024-12-16 12:11:26 - INFO - Autocomplete found 5 results for query 'Victo'
+2024-12-16 12:11:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Victo - 200 - 66ms
+2024-12-16 12:11:26 - INFO - Autocomplete request received with query: Victor
+2024-12-16 12:11:26 - INFO - Autocomplete found 5 results for query 'Victor'
+2024-12-16 12:11:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Victor - 200 - 48ms
+2024-12-16 12:11:26 - INFO - Autocomplete request received with query: Victori
+2024-12-16 12:11:26 - INFO - Autocomplete found 5 results for query 'Victori'
+2024-12-16 12:11:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Victori - 200 - 71ms
+2024-12-16 12:11:26 - INFO - Autocomplete request received with query: Victoria
+2024-12-16 12:11:26 - INFO - Autocomplete found 5 results for query 'Victoria'
+2024-12-16 12:11:26 - INFO - 127.0.0.1 - GET /autocomplete?query=Victoria - 200 - 78ms
+2024-12-16 12:11:39 - INFO - Autocomplete request received with query: Van
+2024-12-16 12:11:39 - INFO - Autocomplete request received with query: Vanm
+2024-12-16 12:11:40 - INFO - Autocomplete request received with query: Vanmc
+2024-12-16 12:11:40 - warning - Ignoring results for outdated query: Van
+2024-12-16 12:11:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 114ms
+2024-12-16 12:11:40 - warning - Ignoring results for outdated query: Vanm
+2024-12-16 12:11:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanm - 200 - 101ms
+2024-12-16 12:11:40 - INFO - Autocomplete found 0 results for query 'Vanmc'
+2024-12-16 12:11:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanmc - 200 - 101ms
+2024-12-16 12:11:40 - INFO - Autocomplete request received with query: Vanmco
+2024-12-16 12:11:40 - INFO - Autocomplete found 0 results for query 'Vanmco'
+2024-12-16 12:11:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanmco - 200 - 1ms
+2024-12-16 12:11:40 - INFO - Autocomplete request received with query: Vanmc
+2024-12-16 12:11:40 - INFO - Autocomplete found 0 results for query 'Vanmc'
+2024-12-16 12:11:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanmc - 200 - 2ms
+2024-12-16 12:11:40 - INFO - Autocomplete request received with query: Vanm
+2024-12-16 12:11:40 - INFO - Autocomplete found 0 results for query 'Vanm'
+2024-12-16 12:11:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanm - 200 - 1ms
+2024-12-16 12:11:40 - INFO - Autocomplete request received with query: Van
+2024-12-16 12:11:40 - INFO - Autocomplete found 5 results for query 'Van'
+2024-12-16 12:11:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 7ms
+2024-12-16 12:11:40 - INFO - Autocomplete request received with query: Vann
+2024-12-16 12:11:40 - INFO - Autocomplete found 5 results for query 'Vann'
+2024-12-16 12:11:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Vann - 200 - 12ms
+2024-12-16 12:11:40 - INFO - Autocomplete request received with query: Vannc
+2024-12-16 12:11:40 - INFO - Autocomplete found 0 results for query 'Vannc'
+2024-12-16 12:11:40 - INFO - 127.0.0.1 - GET /autocomplete?query=Vannc - 200 - 1ms
+2024-12-16 12:11:41 - INFO - Autocomplete request received with query: Vannco
+2024-12-16 12:11:41 - INFO - Autocomplete found 0 results for query 'Vannco'
+2024-12-16 12:11:41 - INFO - 127.0.0.1 - GET /autocomplete?query=Vannco - 200 - 1ms
+2024-12-16 12:11:41 - INFO - Autocomplete request received with query: Vannc
+2024-12-16 12:11:41 - INFO - Autocomplete found 0 results for query 'Vannc'
+2024-12-16 12:11:41 - INFO - 127.0.0.1 - GET /autocomplete?query=Vannc - 200 - 8ms
+2024-12-16 12:11:41 - INFO - Autocomplete request received with query: Vann
+2024-12-16 12:11:41 - INFO - Autocomplete found 5 results for query 'Vann'
+2024-12-16 12:11:41 - INFO - 127.0.0.1 - GET /autocomplete?query=Vann - 200 - 12ms
+2024-12-16 12:11:41 - INFO - Autocomplete request received with query: Van
+2024-12-16 12:11:41 - INFO - Autocomplete found 5 results for query 'Van'
+2024-12-16 12:11:41 - INFO - 127.0.0.1 - GET /autocomplete?query=Van - 200 - 5ms
+2024-12-16 12:11:41 - INFO - Autocomplete request received with query: Vanc
+2024-12-16 12:11:41 - INFO - Autocomplete found 5 results for query 'Vanc'
+2024-12-16 12:11:41 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanc - 200 - 2ms
+2024-12-16 12:11:41 - INFO - Autocomplete request received with query: Vanco
+2024-12-16 12:11:41 - INFO - Autocomplete found 5 results for query 'Vanco'
+2024-12-16 12:11:41 - INFO - 127.0.0.1 - GET /autocomplete?query=Vanco - 200 - 2ms
+2024-12-16 12:11:41 - INFO - Autocomplete request received with query: Vancou
+2024-12-16 12:11:41 - INFO - Autocomplete found 5 results for query 'Vancou'
+2024-12-16 12:11:41 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancou - 200 - 1ms
+2024-12-16 12:11:41 - INFO - Autocomplete request received with query: Vancouv
+2024-12-16 12:11:41 - INFO - Autocomplete found 5 results for query 'Vancouv'
+2024-12-16 12:11:41 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouv - 200 - 2ms
+2024-12-16 12:11:42 - INFO - Autocomplete request received with query: Vancouve
+2024-12-16 12:11:42 - INFO - Autocomplete found 5 results for query 'Vancouve'
+2024-12-16 12:11:42 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouve - 200 - 3ms
+2024-12-16 12:11:42 - INFO - Autocomplete request received with query: Vancouver
+2024-12-16 12:11:42 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-16 12:11:42 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 3ms
+2024-12-16 12:20:44 - INFO - Autocomplete request received with query: Vancouver 
+2024-12-16 12:20:44 - INFO - Autocomplete found 5 results for query 'Vancouver '
+2024-12-16 12:20:44 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver  - 200 - 104ms
+2024-12-16 12:20:44 - INFO - Autocomplete request received with query: Vancouver C
+2024-12-16 12:20:44 - INFO - Autocomplete found 5 results for query 'Vancouver C'
+2024-12-16 12:20:44 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver C - 200 - 19ms
+2024-12-16 12:20:44 - INFO - Autocomplete request received with query: Vancouver Co
+2024-12-16 12:20:44 - INFO - Autocomplete found 5 results for query 'Vancouver Co'
+2024-12-16 12:20:44 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Co - 200 - 8ms
+2024-12-16 12:20:45 - INFO - Autocomplete request received with query: Vancouver Col
+2024-12-16 12:20:45 - INFO - Autocomplete found 5 results for query 'Vancouver Col'
+2024-12-16 12:20:45 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Col - 200 - 3ms
+2024-12-16 12:20:45 - INFO - Autocomplete request received with query: Vancouver Colm
+2024-12-16 12:20:45 - INFO - Autocomplete found 0 results for query 'Vancouver Colm'
+2024-12-16 12:20:45 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Colm - 200 - 2ms
+2024-12-16 12:20:45 - INFO - Autocomplete request received with query: Vancouver Colmb
+2024-12-16 12:20:45 - INFO - Autocomplete found 0 results for query 'Vancouver Colmb'
+2024-12-16 12:20:45 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Colmb - 200 - 1ms
+2024-12-16 12:20:45 - INFO - Autocomplete request received with query: Vancouver Colmbi
+2024-12-16 12:20:45 - INFO - Autocomplete found 0 results for query 'Vancouver Colmbi'
+2024-12-16 12:20:45 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Colmbi - 200 - 1ms
+2024-12-16 12:20:46 - INFO - Autocomplete request received with query: Vancouver Colmb
+2024-12-16 12:20:46 - INFO - Autocomplete found 0 results for query 'Vancouver Colmb'
+2024-12-16 12:20:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Colmb - 200 - 2ms
+2024-12-16 12:20:46 - INFO - Autocomplete request received with query: Vancouver Colm
+2024-12-16 12:20:46 - INFO - Autocomplete found 0 results for query 'Vancouver Colm'
+2024-12-16 12:20:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Colm - 200 - 2ms
+2024-12-16 12:20:46 - INFO - Autocomplete request received with query: Vancouver Col
+2024-12-16 12:20:46 - INFO - Autocomplete found 5 results for query 'Vancouver Col'
+2024-12-16 12:20:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Col - 200 - 5ms
+2024-12-16 12:20:46 - INFO - Autocomplete request received with query: Vancouver Colu
+2024-12-16 12:20:46 - INFO - Autocomplete found 5 results for query 'Vancouver Colu'
+2024-12-16 12:20:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Colu - 200 - 3ms
+2024-12-16 12:20:46 - INFO - Autocomplete request received with query: Vancouver Colum
+2024-12-16 12:20:46 - INFO - Autocomplete found 5 results for query 'Vancouver Colum'
+2024-12-16 12:20:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Colum - 200 - 2ms
+2024-12-16 12:20:46 - INFO - Autocomplete request received with query: Vancouver Columb
+2024-12-16 12:20:46 - INFO - Autocomplete found 5 results for query 'Vancouver Columb'
+2024-12-16 12:20:46 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columb - 200 - 3ms
+2024-12-16 12:20:47 - INFO - Autocomplete request received with query: Vancouver Columbi
+2024-12-16 12:20:47 - INFO - Autocomplete found 5 results for query 'Vancouver Columbi'
+2024-12-16 12:20:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columbi - 200 - 2ms
+2024-12-16 12:20:47 - INFO - Autocomplete request received with query: Vancouver Columbia
+2024-12-16 12:20:47 - INFO - Autocomplete found 5 results for query 'Vancouver Columbia'
+2024-12-16 12:20:47 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columbia - 200 - 3ms
+2024-12-16 12:20:49 - INFO - Autocomplete request received with query: Vancouver Columbi
+2024-12-16 12:20:49 - INFO - Autocomplete found 5 results for query 'Vancouver Columbi'
+2024-12-16 12:20:49 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columbi - 200 - 102ms
+2024-12-16 12:20:50 - INFO - Autocomplete request received with query: Vancouver Columb
+2024-12-16 12:20:50 - INFO - Autocomplete found 5 results for query 'Vancouver Columb'
+2024-12-16 12:20:50 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columb - 200 - 3ms
+2024-12-16 12:20:50 - INFO - Autocomplete request received with query: Vancouver Colum
+2024-12-16 12:20:50 - INFO - Autocomplete found 5 results for query 'Vancouver Colum'
+2024-12-16 12:20:50 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Colum - 200 - 2ms
+2024-12-16 12:20:51 - INFO - Autocomplete request received with query: Vancouver Colu
+2024-12-16 12:20:51 - INFO - Autocomplete found 5 results for query 'Vancouver Colu'
+2024-12-16 12:20:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Colu - 200 - 3ms
+2024-12-16 12:20:51 - INFO - Autocomplete request received with query: Vancouver Col
+2024-12-16 12:20:51 - INFO - Autocomplete found 5 results for query 'Vancouver Col'
+2024-12-16 12:20:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Col - 200 - 3ms
+2024-12-16 12:20:51 - INFO - Autocomplete request received with query: Vancouver Co
+2024-12-16 12:20:51 - INFO - Autocomplete found 5 results for query 'Vancouver Co'
+2024-12-16 12:20:51 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Co - 200 - 6ms
+2024-12-16 12:20:52 - INFO - Autocomplete request received with query: Vancouver C
+2024-12-16 12:20:52 - INFO - Autocomplete found 5 results for query 'Vancouver C'
+2024-12-16 12:20:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver C - 200 - 17ms
+2024-12-16 12:20:52 - INFO - Autocomplete request received with query: Vancouver 
+2024-12-16 12:20:52 - INFO - Autocomplete found 5 results for query 'Vancouver '
+2024-12-16 12:20:52 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver  - 200 - 2ms
+2024-12-16 12:20:53 - INFO - Autocomplete request received with query: Vancouver
+2024-12-16 12:20:53 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-16 12:20:53 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 18ms
+2024-12-16 12:20:53 - INFO - Autocomplete request received with query: Vancouver 
+2024-12-16 12:20:53 - INFO - Autocomplete found 5 results for query 'Vancouver '
+2024-12-16 12:20:53 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver  - 200 - 2ms
+2024-12-16 12:20:54 - INFO - Autocomplete request received with query: Vancouver C
+2024-12-16 12:20:54 - INFO - Autocomplete found 5 results for query 'Vancouver C'
+2024-12-16 12:20:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver C - 200 - 22ms
+2024-12-16 12:20:54 - INFO - Autocomplete request received with query: Vancouver Co
+2024-12-16 12:20:54 - INFO - Autocomplete found 5 results for query 'Vancouver Co'
+2024-12-16 12:20:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Co - 200 - 8ms
+2024-12-16 12:20:54 - INFO - Autocomplete request received with query: Vancouver Col
+2024-12-16 12:20:54 - INFO - Autocomplete found 5 results for query 'Vancouver Col'
+2024-12-16 12:20:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Col - 200 - 3ms
+2024-12-16 12:20:54 - INFO - Autocomplete request received with query: Vancouver Colu
+2024-12-16 12:20:54 - INFO - Autocomplete found 5 results for query 'Vancouver Colu'
+2024-12-16 12:20:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Colu - 200 - 2ms
+2024-12-16 12:20:54 - INFO - Autocomplete request received with query: Vancouver Colum
+2024-12-16 12:20:54 - INFO - Autocomplete found 5 results for query 'Vancouver Colum'
+2024-12-16 12:20:54 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Colum - 200 - 1ms
+2024-12-16 12:20:55 - INFO - Autocomplete request received with query: Vancouver Columb
+2024-12-16 12:20:55 - INFO - Autocomplete found 5 results for query 'Vancouver Columb'
+2024-12-16 12:20:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columb - 200 - 2ms
+2024-12-16 12:20:55 - INFO - Autocomplete request received with query: Vancouver Columbn
+2024-12-16 12:20:55 - INFO - Autocomplete found 0 results for query 'Vancouver Columbn'
+2024-12-16 12:20:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columbn - 200 - 2ms
+2024-12-16 12:20:55 - INFO - Autocomplete request received with query: Vancouver Columbni
+2024-12-16 12:20:55 - INFO - Autocomplete found 0 results for query 'Vancouver Columbni'
+2024-12-16 12:20:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columbni - 200 - 2ms
+2024-12-16 12:20:55 - INFO - Autocomplete request received with query: Vancouver Columbnia
+2024-12-16 12:20:55 - INFO - Autocomplete found 0 results for query 'Vancouver Columbnia'
+2024-12-16 12:20:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columbnia - 200 - 2ms
+2024-12-16 12:20:55 - INFO - Autocomplete request received with query: Vancouver Columbni
+2024-12-16 12:20:55 - INFO - Autocomplete found 0 results for query 'Vancouver Columbni'
+2024-12-16 12:20:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columbni - 200 - 1ms
+2024-12-16 12:20:55 - INFO - Autocomplete request received with query: Vancouver Columbn
+2024-12-16 12:20:55 - INFO - Autocomplete found 0 results for query 'Vancouver Columbn'
+2024-12-16 12:20:55 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columbn - 200 - 1ms
+2024-12-16 12:20:56 - INFO - Autocomplete request received with query: Vancouver Columb
+2024-12-16 12:20:56 - INFO - Autocomplete found 5 results for query 'Vancouver Columb'
+2024-12-16 12:20:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columb - 200 - 3ms
+2024-12-16 12:20:56 - INFO - Autocomplete request received with query: Vancouver Columbi
+2024-12-16 12:20:56 - INFO - Autocomplete found 5 results for query 'Vancouver Columbi'
+2024-12-16 12:20:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columbi - 200 - 3ms
+2024-12-16 12:20:56 - INFO - Autocomplete request received with query: Vancouver Columbia
+2024-12-16 12:20:56 - INFO - Autocomplete found 5 results for query 'Vancouver Columbia'
+2024-12-16 12:20:56 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columbia - 200 - 2ms
+2024-12-16 12:21:04 - INFO - Autocomplete request received with query: Vancouver Columbi
+2024-12-16 12:21:05 - INFO - Autocomplete found 5 results for query 'Vancouver Columbi'
+2024-12-16 12:21:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columbi - 200 - 102ms
+2024-12-16 12:21:05 - INFO - Autocomplete request received with query: Vancouver Columb
+2024-12-16 12:21:05 - INFO - Autocomplete found 5 results for query 'Vancouver Columb'
+2024-12-16 12:21:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Columb - 200 - 4ms
+2024-12-16 12:21:05 - INFO - Autocomplete request received with query: Vancouver Colum
+2024-12-16 12:21:05 - INFO - Autocomplete found 5 results for query 'Vancouver Colum'
+2024-12-16 12:21:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Colum - 200 - 1ms
+2024-12-16 12:21:05 - INFO - Autocomplete request received with query: Vancouver Colu
+2024-12-16 12:21:05 - INFO - Autocomplete found 5 results for query 'Vancouver Colu'
+2024-12-16 12:21:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Colu - 200 - 4ms
+2024-12-16 12:21:05 - INFO - Autocomplete request received with query: Vancouver Col
+2024-12-16 12:21:05 - INFO - Autocomplete found 5 results for query 'Vancouver Col'
+2024-12-16 12:21:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Col - 200 - 4ms
+2024-12-16 12:21:05 - INFO - Autocomplete request received with query: Vancouver Co
+2024-12-16 12:21:05 - INFO - Autocomplete found 5 results for query 'Vancouver Co'
+2024-12-16 12:21:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Co - 200 - 9ms
+2024-12-16 12:21:05 - INFO - Autocomplete request received with query: Vancouver C
+2024-12-16 12:21:05 - INFO - Autocomplete found 5 results for query 'Vancouver C'
+2024-12-16 12:21:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver C - 200 - 20ms
+2024-12-16 12:21:05 - INFO - Autocomplete request received with query: Vancouver 
+2024-12-16 12:21:05 - INFO - Autocomplete found 5 results for query 'Vancouver '
+2024-12-16 12:21:05 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver  - 200 - 3ms
+2024-12-16 12:21:07 - INFO - Autocomplete request received with query: Vancouver U
+2024-12-16 12:21:07 - INFO - Autocomplete found 4 results for query 'Vancouver U'
+2024-12-16 12:21:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver U - 200 - 116ms
+2024-12-16 12:21:07 - INFO - Autocomplete request received with query: Vancouver Un
+2024-12-16 12:21:07 - INFO - Autocomplete found 4 results for query 'Vancouver Un'
+2024-12-16 12:21:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Un - 200 - 20ms
+2024-12-16 12:21:07 - INFO - Autocomplete request received with query: Vancouver Unk
+2024-12-16 12:21:07 - INFO - Autocomplete found 1 results for query 'Vancouver Unk'
+2024-12-16 12:21:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Unk - 200 - 4ms
+2024-12-16 12:21:07 - INFO - Autocomplete request received with query: Vancouver Unkn
+2024-12-16 12:21:07 - INFO - Autocomplete found 1 results for query 'Vancouver Unkn'
+2024-12-16 12:21:07 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Unkn - 200 - 4ms
+2024-12-16 12:21:08 - INFO - Autocomplete request received with query: Vancouver Unkno
+2024-12-16 12:21:08 - INFO - Autocomplete found 1 results for query 'Vancouver Unkno'
+2024-12-16 12:21:08 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Unkno - 200 - 5ms
+2024-12-16 12:21:08 - INFO - Autocomplete request received with query: Vancouver Unknow
+2024-12-16 12:21:08 - INFO - Autocomplete found 1 results for query 'Vancouver Unknow'
+2024-12-16 12:21:08 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Unknow - 200 - 6ms
+2024-12-16 12:21:08 - INFO - Autocomplete request received with query: Vancouver Unknown
+2024-12-16 12:21:08 - INFO - Autocomplete found 1 results for query 'Vancouver Unknown'
+2024-12-16 12:21:08 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Unknown - 200 - 7ms
+2024-12-16 12:21:08 - INFO - Autocomplete request received with query: Vancouver Unknow
+2024-12-16 12:21:08 - INFO - Autocomplete found 1 results for query 'Vancouver Unknow'
+2024-12-16 12:21:08 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Unknow - 200 - 4ms
+2024-12-16 12:21:08 - INFO - Autocomplete request received with query: Vancouver Unkno
+2024-12-16 12:21:08 - INFO - Autocomplete found 1 results for query 'Vancouver Unkno'
+2024-12-16 12:21:08 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Unkno - 200 - 4ms
+2024-12-16 12:21:08 - INFO - Autocomplete request received with query: Vancouver Unkn
+2024-12-16 12:21:08 - INFO - Autocomplete found 1 results for query 'Vancouver Unkn'
+2024-12-16 12:21:08 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Unkn - 200 - 5ms
+2024-12-16 12:21:09 - INFO - Autocomplete request received with query: Vancouver Unk
+2024-12-16 12:21:09 - INFO - Autocomplete found 1 results for query 'Vancouver Unk'
+2024-12-16 12:21:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Unk - 200 - 4ms
+2024-12-16 12:21:09 - INFO - Autocomplete request received with query: Vancouver Un
+2024-12-16 12:21:09 - INFO - Autocomplete found 4 results for query 'Vancouver Un'
+2024-12-16 12:21:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Un - 200 - 25ms
+2024-12-16 12:21:09 - INFO - Autocomplete request received with query: Vancouver U
+2024-12-16 12:21:09 - INFO - Autocomplete found 4 results for query 'Vancouver U'
+2024-12-16 12:21:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver U - 200 - 23ms
+2024-12-16 12:21:09 - INFO - Autocomplete request received with query: Vancouver 
+2024-12-16 12:21:09 - INFO - Autocomplete found 5 results for query 'Vancouver '
+2024-12-16 12:21:09 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver  - 200 - 2ms
+2024-12-16 12:21:11 - INFO - Autocomplete request received with query: Vancouver C
+2024-12-16 12:21:11 - INFO - Autocomplete found 5 results for query 'Vancouver C'
+2024-12-16 12:21:11 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver C - 200 - 116ms
+2024-12-16 12:21:11 - INFO - Autocomplete request received with query: Vancouver Ca
+2024-12-16 12:21:11 - INFO - Autocomplete found 5 results for query 'Vancouver Ca'
+2024-12-16 12:21:11 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Ca - 200 - 12ms
+2024-12-16 12:21:11 - INFO - Autocomplete request received with query: Vancouver Can
+2024-12-16 12:21:12 - INFO - Autocomplete found 5 results for query 'Vancouver Can'
+2024-12-16 12:21:12 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Can - 200 - 4ms
+2024-12-16 12:21:12 - INFO - Autocomplete request received with query: Vancouver Cana
+2024-12-16 12:21:12 - INFO - Autocomplete found 5 results for query 'Vancouver Cana'
+2024-12-16 12:21:12 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Cana - 200 - 6ms
+2024-12-16 12:21:12 - INFO - Autocomplete request received with query: Vancouver Canad
+2024-12-16 12:21:12 - INFO - Autocomplete found 5 results for query 'Vancouver Canad'
+2024-12-16 12:21:12 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Canad - 200 - 5ms
+2024-12-16 12:21:12 - INFO - Autocomplete request received with query: Vancouver Canada
+2024-12-16 12:21:12 - INFO - Autocomplete found 5 results for query 'Vancouver Canada'
+2024-12-16 12:21:12 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Canada - 200 - 4ms
+2024-12-16 12:21:13 - INFO - Autocomplete request received with query: Vancouver Canad
+2024-12-16 12:21:13 - INFO - Autocomplete found 5 results for query 'Vancouver Canad'
+2024-12-16 12:21:13 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Canad - 200 - 105ms
+2024-12-16 12:21:13 - INFO - Autocomplete request received with query: Vancouver Cana
+2024-12-16 12:21:14 - INFO - Autocomplete found 5 results for query 'Vancouver Cana'
+2024-12-16 12:21:14 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Cana - 200 - 5ms
+2024-12-16 12:21:14 - INFO - Autocomplete request received with query: Vancouver Can
+2024-12-16 12:21:14 - INFO - Autocomplete found 5 results for query 'Vancouver Can'
+2024-12-16 12:21:14 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Can - 200 - 2ms
+2024-12-16 12:21:14 - INFO - Autocomplete request received with query: Vancouver Ca
+2024-12-16 12:21:14 - INFO - Autocomplete found 5 results for query 'Vancouver Ca'
+2024-12-16 12:21:14 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver Ca - 200 - 11ms
+2024-12-16 12:21:14 - INFO - Autocomplete request received with query: Vancouver C
+2024-12-16 12:21:14 - INFO - Autocomplete found 5 results for query 'Vancouver C'
+2024-12-16 12:21:14 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver C - 200 - 50ms
+2024-12-16 12:21:14 - INFO - Autocomplete request received with query: Vancouver 
+2024-12-16 12:21:14 - INFO - Autocomplete found 5 results for query 'Vancouver '
+2024-12-16 12:21:14 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver  - 200 - 3ms
+2024-12-16 12:21:14 - INFO - Autocomplete request received with query: Vancouver
+2024-12-16 12:21:14 - INFO - Autocomplete found 5 results for query 'Vancouver'
+2024-12-16 12:21:14 - INFO - 127.0.0.1 - GET /autocomplete?query=Vancouver - 200 - 3ms

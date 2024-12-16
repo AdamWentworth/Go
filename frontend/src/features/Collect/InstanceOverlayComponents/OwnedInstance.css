@@ -177,7 +177,6 @@
   .owned-instance-window {
     transform: scale(0.75);
     transform-origin: center;
-    overflow-y: clip; /* Hides scrollbar while allowing visible overflow */
     display: flex;
     justify-content: center;
     align-items: center;

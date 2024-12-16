@@ -16,7 +16,7 @@ func ReverseGeocodeHandler(db *pgxpool.Pool) fiber.Handler {
 		latStr := c.Query("lat", "")
 		lonStr := c.Query("lon", "")
 
-		logrus.Infof("Reverse geocode request received for lat=%s, lon=%s", latStr, lonStr)
+		logrus.Infof("Reverse geocode request lat=%s, lon=%s", latStr, lonStr)
 
 		if latStr == "" || lonStr == "" {
 			logrus.Warn("lat and lon query parameters are required")

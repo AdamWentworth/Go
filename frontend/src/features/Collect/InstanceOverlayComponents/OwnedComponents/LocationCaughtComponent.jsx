@@ -43,26 +43,35 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
         withCredentials: false,
       });
       const data = response.data;
-
-      const formattedSuggestions = data.slice(0, 5).map(item => {
-        const name = item.name || '';
-        const state = item.state_or_province || '';
-        const country = item.country || '';
-        let displayName = `${name}`;
-        if (state) displayName += `, ${state}`;
-        if (country) displayName += `, ${country}`;
-        return {
-          displayName,
-          ...item,
-        };
-      });
-
-      setSuggestions(formattedSuggestions);
+  
+      // Guard against null or undefined data
+      if (Array.isArray(data)) {
+        const formattedSuggestions = data.slice(0, 5).map(item => {
+          const name = item.name || '';
+          const state = item.state_or_province || '';
+          const country = item.country || '';
+          let displayName = `${name}`;
+          if (state) displayName += `, ${state}`;
+          if (country) displayName += `, ${country}`;
+          return {
+            displayName,
+            ...item,
+          };
+        });
+  
+        setSuggestions(formattedSuggestions);
+        console.log('Fetched suggestions:', formattedSuggestions); // Log the suggestions
+      } else {
+        if (process.env.REACT_APP_LOG_WARNINGS === 'true') {
+          console.warn('Unexpected data format:', data); // Log if data is not as expected
+        }
+        setSuggestions([]);
+      }
     } catch (error) {
       console.error('Error fetching suggestions:', error);
-      setSuggestions([]);
+      setSuggestions([]); // Silently handle the error by resetting suggestions
     }
-  };
+  };  
 
   const handleLocationInput = (event) => {
     const userInput = event.target.textContent;
