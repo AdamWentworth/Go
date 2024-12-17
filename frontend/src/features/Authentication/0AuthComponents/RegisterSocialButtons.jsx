@@ -1,0 +1,23 @@
+// RegisterSocialButtons.jsx
+import React from 'react';
+import {
+  GoogleLoginButton,
+  FacebookLoginButton,
+  TwitterLoginButton,
+} from 'react-social-login-buttons';
+
+const RegisterSocialButtons = () => (
+  <div className="form-social">
+    <GoogleLoginButton onClick={() => alert('Google login is not yet implemented.')}>
+      Register with Google
+    </GoogleLoginButton>
+    <FacebookLoginButton onClick={() => alert('Facebook login is not yet implemented.')}>
+      Register with Facebook
+    </FacebookLoginButton>
+    <TwitterLoginButton onClick={() => alert('Twitter login is not yet implemented.')}>
+      Register with Twitter
+    </TwitterLoginButton>
+  </div>
+);
+
+export default RegisterSocialButtons;

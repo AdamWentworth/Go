@@ -1,124 +1,28 @@
 // RegisterForm.jsx
 
-import React, { useState } from 'react';
-import { GoogleLoginButton, FacebookLoginButton, TwitterLoginButton } from 'react-social-login-buttons';
+import React from 'react';
+import RegisterSocialButtons from '../0AuthComponents/RegisterSocialButtons';
 import CoordinateSelector from '../CoordinateSelector';
-import { fetchSuggestions } from '../../../services/locationSuggestions'; // Import the service
 import './RegisterForm.css';
+import useRegisterForm from '../hooks/useRegisterForm';
 
 const RegisterForm = ({ onSubmit, errors }) => {
-  const [values, setValues] = useState({
-    username: '',
-    email: '',
-    password: '',
-    trainerCode: '',
-    pokemonGoName: '',
-    coordinates: null,
-    allowLocation: false,
-    pokemonGoNameDisabled: false,
-    locationInput: '', // Combined input for City/Place, State/Province/Region, Country
-  });
-  const [isMapVisible, setIsMapVisible] = useState(false);
-  const [selectedCoordinates, setSelectedCoordinates] = useState(null);
-  const [showLocationWarning, setShowLocationWarning] = useState(false);
-  const [suggestions, setSuggestions] = useState([]); // State for location suggestions
-
-  const handleCoordinatesSelect = (coordinates) => {
-    console.log('Coordinates received:', coordinates);
-    setSelectedCoordinates(coordinates);
-    setValues((prevValues) => ({
-      ...prevValues,
-      coordinates,
-    }));
-  };
-
-  const handleAllowLocationChange = (e) => {
-    const allowLocation = e.target.checked;
-    setValues((prevValues) => ({
-      ...prevValues,
-      allowLocation,
-      coordinates: allowLocation ? null : prevValues.coordinates,
-    }));
-    if (allowLocation) {
-      setSelectedCoordinates(null);
-    }
-  };
-
-  const handleCheckboxChange = (event) => {
-    const { name, checked } = event.target;
-
-    setValues((prevValues) => ({
-      ...prevValues,
-      [name]: checked,
-    }));
-  };
-
-  const handleInputChange = async (event) => {
-    const { name, value } = event.target;
-  
-    // Reset coordinates if locationInput is modified
-    if (name === 'locationInput') {
-      setSelectedCoordinates(null);
-      setValues((prevValues) => ({
-        ...prevValues,
-        coordinates: null, // Clear coordinates when manually editing location input
-      }));
-  
-      // Fetch location suggestions if input length > 2
-      if (value.length > 2) {
-        const fetchedSuggestions = await fetchSuggestions(value);
-        setSuggestions(fetchedSuggestions);
-      } else {
-        setSuggestions([]);
-      }
-    }
-  
-    setValues((prevValues) => ({
-      ...prevValues,
-      [name]: value,
-    }));
-  };  
-
-  // Show warning when the user focuses on the location input
-  const handleLocationInputFocus = () => {
-    if (selectedCoordinates) {
-      setShowLocationWarning(true);
-    }
-  };
-
-  // Hide warning on blur
-  const handleLocationInputBlur = () => {
-    setShowLocationWarning(false);
-  };
-
-  const handleLocationUpdate = (location) => {
-    const { name, city, state_or_province, country } = location;
-
-    const locationParts = [
-      name || city,
-      state_or_province,
-      country,
-    ];
-
-    const formattedLocation = locationParts.filter(Boolean).join(', ');
-
-    setValues((prevValues) => ({
-      ...prevValues,
-      locationInput: formattedLocation,
-    }));
-  };
-
-  const selectSuggestion = (suggestion) => {
-    const { displayName, latitude, longitude } = suggestion;
-  
-    // Update location input field
-    setValues((prevValues) => ({
-      ...prevValues,
-      locationInput: displayName,
-    }));
-  
-    setSuggestions([]); // Clear suggestions
-  };  
+  const {
+    values,
+    isMapVisible,
+    setIsMapVisible,
+    selectedCoordinates,
+    showLocationWarning,
+    suggestions,
+    handleInputChange,
+    handleAllowLocationChange,
+    handleCoordinatesSelect,
+    handleCheckboxChange,
+    handleLocationInputFocus,
+    handleLocationInputBlur,
+    selectSuggestion,
+    handleLocationUpdate,
+  } = useRegisterForm();
 
   return (
     <div className="register-page">
@@ -129,6 +33,7 @@ const RegisterForm = ({ onSubmit, errors }) => {
             onSubmit(values);
           }}
         >
+          {/* Left Form Section */}
           <div className="form-left">
             <input
               type="text"
@@ -166,6 +71,7 @@ const RegisterForm = ({ onSubmit, errors }) => {
             {errors.password && <div style={{ color: 'red' }}>{errors.password}</div>}
           </div>
 
+          {/* Right Form Section */}
           <div className="form-right">
             <input
               type="text"
@@ -200,10 +106,11 @@ const RegisterForm = ({ onSubmit, errors }) => {
             >
               {selectedCoordinates
                 ? `Coordinates Set: (${selectedCoordinates.latitude}, ${selectedCoordinates.longitude})`
-                : 'Set Coordinates (optional)'}
+                : 'Set Coordinates'}
             </button>
           </div>
 
+          {/* Location Input Section */}
           <div className="form-location" style={{ position: 'relative' }}>
             <input
               type="text"
@@ -212,7 +119,7 @@ const RegisterForm = ({ onSubmit, errors }) => {
               onFocus={handleLocationInputFocus}
               onBlur={handleLocationInputBlur}
               onChange={handleInputChange}
-              placeholder="City, State / Province / Region, Country (optional)"
+              placeholder="City / Place, State / Province / Region, Country (optional)"
             />
             {showLocationWarning && (
               <div
@@ -229,7 +136,6 @@ const RegisterForm = ({ onSubmit, errors }) => {
                 Modifying this resets coordinates.
               </div>
             )}
-
             {suggestions.length > 0 && (
               <div className="suggestions-dropdown">
                 {suggestions.map((suggestion, index) => (
@@ -245,25 +151,19 @@ const RegisterForm = ({ onSubmit, errors }) => {
             )}
           </div>
 
+          {/* Submit Button */}
           <div className="form-submit">
             <button type="submit" className="submit-button">
               Register
             </button>
           </div>
 
-          <div className="form-social">
-            <GoogleLoginButton onClick={() => alert('Google login is not yet implemented.')}>
-              Register with Google
-            </GoogleLoginButton>
-            <FacebookLoginButton onClick={() => alert('Facebook login is not yet implemented.')}>
-              Register with Facebook
-            </FacebookLoginButton>
-            <TwitterLoginButton onClick={() => alert('Twitter login is not yet implemented.')}>
-              Register with Twitter
-            </TwitterLoginButton>
-          </div>
+          {/* Social Buttons */}
+          <RegisterSocialButtons />
         </form>
-        </div>
+      </div>
+
+      {/* Coordinate Selector */}
       {isMapVisible && (
         <CoordinateSelector
           onCoordinatesSelect={handleCoordinatesSelect}
