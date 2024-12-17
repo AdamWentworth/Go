@@ -32,14 +32,15 @@ const RegisterForm = ({ onSubmit, errors }) => {
   return (
     <div className="register-page">
       <div className="register-form">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSubmit(values);
-          }}
-        >
-          {/* Left Form Section */}
-          <div className="form-left">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault(); // Prevent default form submission
+          onSubmit(e); // Pass the event to the onSubmit handler
+        }}
+      >
+        {/* Left Form Section */}
+        <div className="form-left">
+          <div className="form-group">
             <input
               type="text"
               name="username"
@@ -48,15 +49,20 @@ const RegisterForm = ({ onSubmit, errors }) => {
               placeholder="Username (must be unique)"
               required
             />
-            <div className="checkbox-inline">
-              <input
-                type="checkbox"
-                name="pokemonGoNameDisabled"
-                checked={values.pokemonGoNameDisabled}
-                onChange={handleCheckboxChange}
-              />
-              <label>Username matches my Pokémon GO account name</label>
-            </div>
+            {errors.username && <div style={{ color: 'red', marginTop: '4px' }}>{errors.username}</div>}
+          </div>
+
+          <div className="checkbox-inline">
+            <input
+              type="checkbox"
+              name="pokemonGoNameDisabled"
+              checked={values.pokemonGoNameDisabled}
+              onChange={handleCheckboxChange}
+            />
+            <label>Username matches my Pokémon GO account name</label>
+          </div>
+
+          <div className="form-group">
             <input
               type="email"
               name="email"
@@ -65,6 +71,10 @@ const RegisterForm = ({ onSubmit, errors }) => {
               placeholder="Email (must be unique)"
               required
             />
+            {errors.email && <div style={{ color: 'red', marginTop: '4px' }}>{errors.email}</div>}
+          </div>
+
+          <div className="form-group">
             <input
               type="password"
               name="password"
@@ -73,11 +83,13 @@ const RegisterForm = ({ onSubmit, errors }) => {
               placeholder="Password"
               required
             />
-            {errors.password && <div style={{ color: 'red' }}>{errors.password}</div>}
+            {errors.password && <div style={{ color: 'red', marginTop: '4px' }}>{errors.password}</div>}
           </div>
+        </div>
 
-          {/* Right Form Section */}
-          <div className="form-right">
+        {/* Right Form Section */}
+        <div className="form-right">
+          <div className="form-group">
             <input
               type="text"
               name="pokemonGoName"
@@ -86,6 +98,9 @@ const RegisterForm = ({ onSubmit, errors }) => {
               placeholder="Pokémon GO name (optional)"
               disabled={values.pokemonGoNameDisabled}
             />
+          </div>
+
+          <div className="form-group">
             <input
               type="text"
               name="trainerCode"
@@ -93,79 +108,73 @@ const RegisterForm = ({ onSubmit, errors }) => {
               onChange={handleInputChange}
               placeholder="Trainer Code (optional)"
             />
-            {errors.trainerCode && <div style={{ color: 'red' }}>{errors.trainerCode}</div>}
-            <div className="checkbox-inline">
-              <input
-                type="checkbox"
-                name="allowLocation"
-                checked={values.allowLocation}
-                onChange={handleAllowLocationChange}
-              />
-              <label>Enable collection of your device's GPS location data</label>
-            </div>
-            <button
-              type="button"
-              className="set-coordinates-button"
-              onClick={() => setIsMapVisible(true)}
-              disabled={values.allowLocation}
-            >
-              {selectedCoordinates
-                ? `Coordinates Set: (${selectedCoordinates.latitude}, ${selectedCoordinates.longitude})`
-                : 'Set Coordinates'}
-            </button>
+            {errors.trainerCode && <div style={{ color: 'red', marginTop: '4px' }}>{errors.trainerCode}</div>}
           </div>
 
-          {/* Location Input Section */}
-          <div className="form-location" style={{ position: 'relative' }}>
+          <div className="checkbox-inline">
             <input
-              type="text"
-              name="locationInput"
-              value={values.locationInput}
-              onFocus={handleLocationInputFocus}
-              onBlur={handleLocationInputBlur}
-              onChange={handleInputChange}
-              placeholder="City / Place, State / Province / Region, Country (optional)"
+              type="checkbox"
+              name="allowLocation"
+              checked={values.allowLocation}
+              onChange={handleAllowLocationChange}
             />
-            {showLocationWarning && (
-              <div
-                className="location-warning"
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'orange',
-                  fontSize: '12px',
-                }}
-              >
-                Modifying this resets coordinates and permissions.
-              </div>
-            )}
-            {suggestions.length > 0 && (
-              <div className="suggestions-dropdown">
-                {suggestions.map((suggestion, index) => (
-                  <div
-                    key={index}
-                    className="suggestion-item"
-                    onClick={() => selectSuggestion(suggestion)}
-                  >
-                    {suggestion.displayName}
-                  </div>
-                ))}
-              </div>
-            )}
+            <label>Enable collection of your device's GPS location data</label>
           </div>
 
-          {/* Submit Button */}
-          <div className="form-submit">
-            <button type="submit" className="submit-button">
-              Register
-            </button>
-          </div>
+          <button
+            type="button"
+            className="set-coordinates-button"
+            onClick={() => setIsMapVisible(true)}
+            disabled={values.allowLocation}
+          >
+            {selectedCoordinates
+              ? `Coordinates Set: (${selectedCoordinates.latitude}, ${selectedCoordinates.longitude})`
+              : 'Set Coordinates'}
+          </button>
+        </div>
 
-          {/* Social Buttons */}
-          <RegisterSocialButtons />
-        </form>
+        {/* Location Input Section */}
+        <div className="form-location" style={{ position: 'relative' }}>
+          <input
+            type="text"
+            name="locationInput"
+            value={values.locationInput}
+            onFocus={handleLocationInputFocus}
+            onBlur={handleLocationInputBlur}
+            onChange={handleInputChange}
+            placeholder="City / Place, State / Province / Region, Country (optional)"
+          />
+          {showLocationWarning && (
+            <div className="location-warning">
+              Modifying this resets coordinates and permissions.
+            </div>
+          )}
+          {suggestions.length > 0 && (
+            <div className="suggestions-dropdown">
+              {suggestions.map((suggestion, index) => (
+                <div
+                  key={index}
+                  className="suggestion-item"
+                  onClick={() => selectSuggestion(suggestion)}
+                >
+                  {suggestion.displayName}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Submit Button */}
+        <div className="form-submit">
+          <button type="submit" className="submit-button">
+            Register
+          </button>
+        </div>
+
+        {/* Social Buttons */}
+        <RegisterSocialButtons />
+      </form>
+
       </div>
 
       {/* Coordinate Selector */}

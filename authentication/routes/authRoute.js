@@ -19,70 +19,86 @@ function handleTokenResponse(req, res, user, tokens) {
 
 router.post('/register', async (req, res, next) => {
     try {
+        const { username, email, pokemonGoName, trainerCode, password, device_id } = req.body;
 
-        if (await User.findOne({ username: req.body.username })) {
-            logger.error(`Registration failed: Username already exists with status ${409}`);
+        // Check for existing unique fields
+        if (await User.findOne({ username })) {
+            logger.error(`Registration failed: Username "${username}" already exists with status 409`);
             return res.status(409).json({ message: 'Username already exists' });
         }
 
-        if (await User.findOne({ email: req.body.email })) {
-            logger.error(`Registration failed: Email already exists with status ${409}`);
+        if (await User.findOne({ email })) {
+            logger.error(`Registration failed: Email "${email}" already exists with status 409`);
             return res.status(409).json({ message: 'Email already exists' });
         }
 
-        if (req.body.pokemonGoName && await User.findOne({ pokemonGoName: req.body.pokemonGoName })) {
-            logger.error(`Registration failed: Pokémon Go name already exists with status ${409}`);
+        if (pokemonGoName && await User.findOne({ pokemonGoName })) {
+            logger.error(`Registration failed: Pokémon Go Name "${pokemonGoName}" already exists with status 409`);
             return res.status(409).json({ message: 'Pokémon Go name already exists' });
         }
 
-        if (req.body.trainerCode && await User.findOne({ trainerCode: req.body.trainerCode })) {
-            logger.error(`Registration failed: Trainer Code already exists with status ${409}`);
+        if (trainerCode && await User.findOne({ trainerCode })) {
+            logger.error(`Registration failed: Trainer Code "${trainerCode}" already exists with status 409`);
             return res.status(409).json({ message: 'Trainer Code already exists' });
         }
 
-        const hashedPassword = await bcrypt.hash(req.body.password, 10);
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Create new user instance
         const newUser = new User({
-            ...req.body,
-            password: hashedPassword
+            username,
+            email,
+            pokemonGoName: pokemonGoName || null, // Ensure null for empty string
+            trainerCode: trainerCode || null,    // Ensure null for empty string
+            password: hashedPassword,
+            ...req.body.coordinates && { coordinates: req.body.coordinates }, // Add coordinates if present
+            allowLocation: req.body.allowLocation || false
         });
 
+        // Save user with writeConcern for reliability
         const savedUser = await newUser.save({ writeConcern: { w: "majority" } });
-        logger.debug(`User ${req.body.username} saved successfully, attempting to create token.`);
 
-        const device_id = req.body.device_id;  // Get device_id from the request body
+        logger.debug(`User "${username}" saved successfully, attempting to create tokens.`);
 
+        // Create tokens
         const tokens = tokenService.createTokens(savedUser, device_id);
-        handleTokenResponse(req, res, savedUser, tokens);
 
-        // Clean up expired refresh tokens and tokens with the same device_id before adding a new one
+        // Clean up expired tokens or duplicate device_id entries
         await User.findByIdAndUpdate(savedUser._id, {
             $pull: {
                 'refreshToken': {
                     $or: [
-                        { expires: { $lte: new Date() } },  // Remove expired tokens
-                        { device_id: device_id }            // Remove tokens with the same device_id
+                        { expires: { $lte: new Date() } },
+                        { device_id }
                     ]
                 }
             }
         });
 
-        // Store the refresh token along with device_id
+        // Add the new refresh token
         await User.findByIdAndUpdate(savedUser._id, {
-            $push: {'refreshToken': {
-                token: tokens.refreshToken,
-                expires: tokens.refreshTokenExpiry,
-                device_id: device_id
-            }}
+            $push: {
+                refreshToken: {
+                    token: tokens.refreshToken,
+                    expires: tokens.refreshTokenExpiry,
+                    device_id
+                }
+            }
         });
+
+        // Pass user and tokens to response middleware
+        res.locals.user = savedUser;
+        res.locals.tokens = tokens;
         next();
     } catch (err) {
         if (err.code === 11000) {
+            // Handle duplicate key error
             const field = Object.keys(err.keyPattern)[0];
-            logger.error(`Registration failed: Duplicate key error on field ${field} with status ${409}`);
+            logger.error(`Registration failed: Duplicate key error on field "${field}" with status 409`);
             return res.status(409).json({ message: `${field} already exists` });
         }
-        logger.error(`Registration error: ${err.message} with status ${500}`);
+        logger.error(`Registration error: ${err.message} with status 500`);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 }, setCookies, (req, res) => {
@@ -94,7 +110,7 @@ router.post('/register', async (req, res, next) => {
         },
         message: 'Account created successfully.'
     });
-    logger.info(`User ${user.username} registered successfully with status ${201}`);
+    logger.info(`User "${user.username}" registered successfully with status 201`);
 });
 
 router.post('/login', async (req, res, next) => {

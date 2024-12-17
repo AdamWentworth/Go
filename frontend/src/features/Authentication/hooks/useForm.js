@@ -9,28 +9,34 @@ const useForm = (initialValues, onSubmit, formType) => {
     // Function to validate inputs
     const validate = (values) => {
         let tempErrors = {};
-
-        if ('username' in values) {
-            tempErrors.username = values.username ? "" : "Username is required.";
-        }
-
-        if ('email' in values) {
-            tempErrors.email = (/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$/.test(values.email)) ? "" : "Email is not valid.";
-        }
-
-        if (formType === 'register' || (formType === 'edit' && values.password)) {
-            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])[A-Za-z\d@#$%^&*!?.]{8,}$/;
-            tempErrors.password = passwordRegex.test(values.password) ? "" : "Password must be 8 characters long. 1 Uppercase, 1 lowercase, 1 number and 1 special character minimum";
-        }
-
-        if ('trainerCode' in values) {
-            const cleanTrainerCode = values.trainerCode.replace(/\s+/g, ''); // Remove any spaces for validation
-            tempErrors.trainerCode = (cleanTrainerCode.length === 12 && /^\d{12}$/.test(cleanTrainerCode)) || cleanTrainerCode === "" ? "" : "Trainer code must be exactly 12 digits long.";
-        }
-
+    
+        // Validate Username
+        tempErrors.username = values.username ? "" : "Username is required.";
+    
+        // Validate Email
+        tempErrors.email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)
+            ? ""
+            : "Email is not valid.";
+    
+        // Validate Password
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])[A-Za-z\d@#$%^&*!?.]{8,}$/;
+        tempErrors.password = passwordRegex.test(values.password)
+            ? ""
+            : "Password must be 8 characters long. 1 Uppercase, 1 lowercase, 1 number and 1 special character minimum";
+    
+        // Validate Trainer Code
+        const cleanTrainerCode = values.trainerCode.replace(/\s+/g, '');
+        tempErrors.trainerCode =
+            cleanTrainerCode.length === 12 && /^\d{12}$/.test(cleanTrainerCode) 
+                ? "" 
+                : "Trainer code must be exactly 12 digits long.";
+    
+        // Update Errors State
         setErrors(tempErrors);
-        return Object.values(tempErrors).every(x => x === "");
-    };
+    
+        // Return true only if all errors are cleared
+        return Object.values(tempErrors).every((error) => error === "");
+    };    
 
     // Handles field value changes
     const handleChange = e => {
@@ -63,13 +69,18 @@ const useForm = (initialValues, onSubmit, formType) => {
 
     // Handles form submission
     const handleSubmit = (event) => {
-        event.preventDefault();
+        if (event && event.preventDefault) {
+            event.preventDefault();
+        }
+    
         if (validate(values)) {
-            onSubmit(values);
+            setErrors({}); // Clear all errors
+            onSubmit(values); // Submit valid form values
         } else {
-            console.log("Validation errors:", errors);
+            console.error("Validation failed:", errors); // Log validation errors
         }
     };
+    
 
     return {
         values,

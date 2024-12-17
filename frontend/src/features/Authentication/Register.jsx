@@ -17,8 +17,8 @@ function Register() {
     trainerCode: '',
     email: '',
     password: '',
-    country: '',
-    city: '',
+    locationInput: '',
+    coordinates: '',
     allowLocation: false
   }, onSubmit, 'register');
   const [feedback, setFeedback] = useState('');
@@ -82,7 +82,12 @@ function Register() {
       <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
       {isRegistered ? 
         <SuccessMessage mainMessage={feedback} detailMessage="You are now successfully registered and logged in!" /> :
-        <RegisterForm values={values} errors={errors} onChange={handleChange} onSubmit={handleSubmit} />
+        <RegisterForm
+          values={values} // Pass values
+          errors={errors} // Pass errors
+          onChange={handleChange} // Ensure changes update state
+          onSubmit={handleSubmit} // Pass centralized submit handler
+        />
       }
     </div>
   );

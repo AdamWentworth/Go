@@ -5,17 +5,17 @@ import { fetchSuggestions } from '../../../services/locationSuggestions';
 import { fetchLocationOptions } from '../services/locationService';
 
 const useRegisterForm = () => {
-  const [values, setValues] = useState({
-    username: '',
-    email: '',
-    password: '',
-    trainerCode: '',
-    pokemonGoName: '',
-    coordinates: null,
-    allowLocation: false,
-    pokemonGoNameDisabled: false,
-    locationInput: '',
-  });
+    const [values, setValues] = useState({
+        username: '',
+        email: '',
+        password: '',
+        trainerCode: '',
+        pokemonGoName: '',
+        locationInput: '',
+        coordinates: null,
+        allowLocation: false,
+        pokemonGoNameDisabled: false,
+    });      
   const [isMapVisible, setIsMapVisible] = useState(false);
   const [selectedCoordinates, setSelectedCoordinates] = useState(null);
   const [showLocationWarning, setShowLocationWarning] = useState(false);

@@ -121,4 +121,13 @@ button.submit-button:hover {
     background-color: #f0f0f0;
   }
   
+  .location-warning {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: orange;
+    font-size: 12px;
+    font-weight: bold;
+}
 

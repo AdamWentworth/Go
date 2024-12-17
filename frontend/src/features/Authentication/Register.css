@@ -19,7 +19,7 @@
         transform: scale(.75);
         font-size: 0.6em;
     }
-    .register-form input {
+    .register-form input, .location-warning {
         font-size: 0.6rem;
     }
     .register-form input[type="checkbox"] {
@@ -41,7 +41,7 @@
         transform: scale(.85);
         font-size: 0.8em;
     }
-    .register-form input {
+    .register-form input, .location-warning {
         font-size: 0.75rem;
     }
     .register-form input[type="checkbox"] {
@@ -62,7 +62,7 @@
         transform: scale(.85);
         font-size: 0.9em;
     }
-    .register-form input {
+    .register-form input, .location-warning {
         font-size: 0.85rem;
     }
     .register-form input[type="checkbox"] {
@@ -81,7 +81,7 @@
         transform: scale(1);
         font-size: 1em;
     }
-    .register-form input {
+    .register-form input, .location-warning {
         font-size: 0.85rem;
     }
     .register-form input[type="checkbox"] {
