@@ -3,6 +3,7 @@
 import React from 'react';
 import RegisterSocialButtons from '../0AuthComponents/RegisterSocialButtons';
 import CoordinateSelector from '../CoordinateSelector';
+import LocationOptionsOverlay from '../LocationOptionsOverlay';
 import './RegisterForm.css';
 import useRegisterForm from '../hooks/useRegisterForm';
 
@@ -22,6 +23,10 @@ const RegisterForm = ({ onSubmit, errors }) => {
     handleLocationInputBlur,
     selectSuggestion,
     handleLocationUpdate,
+    showOptionsOverlay,       
+    locationOptions,           
+    handleOverlayLocationSelect,
+    setShowOptionsOverlay
   } = useRegisterForm();
 
   return (
@@ -133,7 +138,7 @@ const RegisterForm = ({ onSubmit, errors }) => {
                   fontSize: '12px',
                 }}
               >
-                Modifying this resets coordinates.
+                Modifying this resets coordinates and permissions.
               </div>
             )}
             {suggestions.length > 0 && (
@@ -169,6 +174,13 @@ const RegisterForm = ({ onSubmit, errors }) => {
           onCoordinatesSelect={handleCoordinatesSelect}
           onLocationSelect={handleLocationUpdate}
           onClose={() => setIsMapVisible(false)}
+        />
+      )}
+      {showOptionsOverlay && (
+        <LocationOptionsOverlay
+          locations={locationOptions}
+          onLocationSelect={handleOverlayLocationSelect}
+          onDismiss={() => setShowOptionsOverlay(false)} // Corrected to use returned function
         />
       )}
     </div>

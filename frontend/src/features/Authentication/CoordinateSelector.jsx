@@ -16,6 +16,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import './CoordinateSelector.css';
 import CloseButton from '../../components/CloseButton';
 import LocationOptionsOverlay from './LocationOptionsOverlay';
+import { fetchLocationOptions } from './services/locationService';
 
 const CoordinateSelector = ({ onCoordinatesSelect, onClose, onLocationSelect }) => {
   const mapContainer = useRef(null);
@@ -68,7 +69,7 @@ const CoordinateSelector = ({ onCoordinatesSelect, onClose, onLocationSelect }) 
       );
       markerSource.addFeature(marker);
 
-      await fetchLocationOptions(latitude, longitude);
+      await fetchLocationOptionsWrapper(latitude, longitude);
 
       if (onCoordinatesSelect) {
         onCoordinatesSelect({ latitude, longitude });
@@ -80,21 +81,16 @@ const CoordinateSelector = ({ onCoordinatesSelect, onClose, onLocationSelect }) 
     };
   }, [isLightMode, markerSource, onCoordinatesSelect]);
 
-  const fetchLocationOptions = async (latitude, longitude) => {
+  // Inside fetchLocationOptions function:
+  const fetchLocationOptionsWrapper = async (latitude, longitude) => {
     setLoading(true);
     setLocationOptions([]);
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_LOCATION_SERVICE_URL}/reverse?lat=${latitude}&lon=${longitude}`
-      );
-      if (!response.ok) {
-        throw new Error(`Failed to fetch location options: ${response.statusText}`);
-      }
-      const data = await response.json();
-      setLocationOptions(data.locations || []);
+      const options = await fetchLocationOptions(latitude, longitude);
+      setLocationOptions(options);
       setShowOptionsOverlay(true);
     } catch (error) {
-      console.error('Error fetching location options:', error.message);
+      alert('Unable to fetch location options. Please try again.');
     } finally {
       setLoading(false);
     }
