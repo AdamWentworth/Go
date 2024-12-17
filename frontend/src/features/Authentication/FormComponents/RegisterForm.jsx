@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { GoogleLoginButton, FacebookLoginButton, TwitterLoginButton } from 'react-social-login-buttons';
 import CoordinateSelector from '../CoordinateSelector';
+import { fetchSuggestions } from '../../../services/locationSuggestions'; // Import the service
 import './RegisterForm.css';
 
 const RegisterForm = ({ onSubmit, errors }) => {
@@ -20,6 +21,7 @@ const RegisterForm = ({ onSubmit, errors }) => {
   const [isMapVisible, setIsMapVisible] = useState(false);
   const [selectedCoordinates, setSelectedCoordinates] = useState(null);
   const [showLocationWarning, setShowLocationWarning] = useState(false);
+  const [suggestions, setSuggestions] = useState([]); // State for location suggestions
 
   const handleCoordinatesSelect = (coordinates) => {
     console.log('Coordinates received:', coordinates);
@@ -51,9 +53,9 @@ const RegisterForm = ({ onSubmit, errors }) => {
     }));
   };
 
-  const handleInputChange = (event) => {
+  const handleInputChange = async (event) => {
     const { name, value } = event.target;
-
+  
     // Reset coordinates if locationInput is modified
     if (name === 'locationInput') {
       setSelectedCoordinates(null);
@@ -61,13 +63,21 @@ const RegisterForm = ({ onSubmit, errors }) => {
         ...prevValues,
         coordinates: null, // Clear coordinates when manually editing location input
       }));
+  
+      // Fetch location suggestions if input length > 2
+      if (value.length > 2) {
+        const fetchedSuggestions = await fetchSuggestions(value);
+        setSuggestions(fetchedSuggestions);
+      } else {
+        setSuggestions([]);
+      }
     }
-
+  
     setValues((prevValues) => ({
       ...prevValues,
       [name]: value,
     }));
-  };
+  };  
 
   // Show warning when the user focuses on the location input
   const handleLocationInputFocus = () => {
@@ -97,6 +107,18 @@ const RegisterForm = ({ onSubmit, errors }) => {
       locationInput: formattedLocation,
     }));
   };
+
+  const selectSuggestion = (suggestion) => {
+    const { displayName, latitude, longitude } = suggestion;
+  
+    // Update location input field
+    setValues((prevValues) => ({
+      ...prevValues,
+      locationInput: displayName,
+    }));
+  
+    setSuggestions([]); // Clear suggestions
+  };  
 
   return (
     <div className="register-page">
@@ -193,15 +215,32 @@ const RegisterForm = ({ onSubmit, errors }) => {
               placeholder="City, State / Province / Region, Country (optional)"
             />
             {showLocationWarning && (
-              <div className="location-warning" style={{
-                position: 'absolute',
-                right: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'orange',
-                fontSize: '12px',
-              }}>
+              <div
+                className="location-warning"
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'orange',
+                  fontSize: '12px',
+                }}
+              >
                 Modifying this resets coordinates.
+              </div>
+            )}
+
+            {suggestions.length > 0 && (
+              <div className="suggestions-dropdown">
+                {suggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    className="suggestion-item"
+                    onClick={() => selectSuggestion(suggestion)}
+                  >
+                    {suggestion.displayName}
+                  </div>
+                ))}
               </div>
             )}
           </div>

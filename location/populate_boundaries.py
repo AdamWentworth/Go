@@ -54,11 +54,29 @@ class Place(Base):
     population = Column(Integer, nullable=True)
     admin_level = Column(Integer, nullable=True)
 
-# List of countries to process
-COUNTRIES_TO_PROCESS = [
-    "FR", "MX", "IT", "ES", "PH", "MY", "TH", "ID", "VN", 
-    "AR", "CL", "CO", "TR", "NL", "SE", "RU", "PL", "ZA"
-]
+def get_countries_without_places(session):
+    """
+    Fetch countries that do not yet have places populated.
+
+    Args:
+        session: SQLAlchemy session
+
+    Returns:
+        list: List of country objects with no corresponding places.
+    """
+    from sqlalchemy.sql import exists
+    
+    # Subquery to find country IDs present in places
+    country_ids_with_places = session.query(Place.country_id).distinct()
+    
+    # Query countries where no places exist
+    countries_without_places = (
+        session.query(Country)
+        .filter(~Country.id.in_(country_ids_with_places))
+        .all()
+    )
+    
+    return countries_without_places
 
 # ---------------------------
 # Database Setup
@@ -422,34 +440,43 @@ def process_places(session, country_code, admin_level):
 
 def main():
     """
-    Main function to execute the processing loop across multiple countries.
+    Main function to execute the processing loop across countries missing places.
     """
     engine = get_db_engine()
     create_tables(engine)
-    
+
     Session = sessionmaker(bind=engine)
     session = Session()
-    
+
     try:
         print('Connected to the database.')
         
         # Define admin levels to process
-        admin_levels = [4, 5, 6, 7, 8, 9, 10]
+        admin_levels = [6, 8]
         
-        # Process each country
-        for country_code in COUNTRIES_TO_PROCESS:
-            print(f"\n--- Processing Country: {country_code} ---")
-            
+        # Fetch countries without places
+        countries_to_process = get_countries_without_places(session)
+        
+        if not countries_to_process:
+            print("No countries found that need places processing.")
+            return
+
+        print(f"Found {len(countries_to_process)} countries to process.")
+
+        # Process each country dynamically
+        for country in countries_to_process:
+            print(f"\n--- Processing Country: {country.name} ({country.country_code}) ---")
             for admin_level in admin_levels:
                 print(f"\n----- Processing Admin Level {admin_level} -----")
-                process_places(session, country_code, admin_level)
-        
+                process_places(session, country.country_code, admin_level)
+
         print('Processing completed.')
     except Exception as e:
         print(f"[ERROR] Execution failed: {e}", file=sys.stderr)
     finally:
         session.close()
         print('Database connection closed.')
+
 
 if __name__ == "__main__":
     main()

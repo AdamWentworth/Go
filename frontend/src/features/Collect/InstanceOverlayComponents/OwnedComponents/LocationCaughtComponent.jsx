@@ -1,16 +1,14 @@
 // LocationCaughtComponent.jsx
 
 import React, { useRef, useState, useEffect } from 'react';
-import axios from 'axios';
+import { fetchSuggestions } from '../../../../services/locationSuggestions';
 import './LocationCaughtComponent.css';
 
 const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
   const [location, setLocation] = useState(pokemon.ownershipStatus.location_caught);
   const [suggestions, setSuggestions] = useState([]);
   const locationRef = useRef(null);
-  const wrapperRef = useRef(null); // Define wrapperRef
-
-  const BASE_URL = process.env.REACT_APP_LOCATION_SERVICE_URL;
+  const wrapperRef = useRef(null);
 
   useEffect(() => {
     setLocation(pokemon.ownershipStatus.location_caught);
@@ -36,50 +34,14 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
     }
   }, [editMode, location]);
 
-  const fetchSuggestions = async (userInput) => {
-    try {
-      const normalizedInput = userInput.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      const response = await axios.get(`${BASE_URL}/autocomplete?query=${encodeURIComponent(normalizedInput)}`, {
-        withCredentials: false,
-      });
-      const data = response.data;
-  
-      // Guard against null or undefined data
-      if (Array.isArray(data)) {
-        const formattedSuggestions = data.slice(0, 5).map(item => {
-          const name = item.name || '';
-          const state = item.state_or_province || '';
-          const country = item.country || '';
-          let displayName = `${name}`;
-          if (state) displayName += `, ${state}`;
-          if (country) displayName += `, ${country}`;
-          return {
-            displayName,
-            ...item,
-          };
-        });
-  
-        setSuggestions(formattedSuggestions);
-        // console.log('Fetched suggestions:', formattedSuggestions); // Log the suggestions
-      } else {
-        if (process.env.REACT_APP_LOG_WARNINGS === 'true') {
-          console.warn('Unexpected data format:', data); // Log if data is not as expected
-        }
-        setSuggestions([]);
-      }
-    } catch (error) {
-      console.error('Error fetching suggestions:', error);
-      setSuggestions([]); // Silently handle the error by resetting suggestions
-    }
-  };  
-
-  const handleLocationInput = (event) => {
+  const handleLocationInput = async (event) => {
     const userInput = event.target.textContent;
     setLocation(userInput);
     onLocationChange(userInput);
 
     if (userInput.length > 2) {
-      fetchSuggestions(userInput);
+      const fetchedSuggestions = await fetchSuggestions(userInput); // Use the imported function
+      setSuggestions(fetchedSuggestions);
     } else {
       setSuggestions([]);
     }
@@ -113,7 +75,6 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
 
   return (
     <div className="location-caught-container" ref={wrapperRef}>
-      {/* Attach wrapperRef here */}
       <div className="location-field">
         <label id="location-label">Location Caught:</label>
         <span
