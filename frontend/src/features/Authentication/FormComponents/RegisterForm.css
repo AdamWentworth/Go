@@ -6,136 +6,108 @@
     padding: 20px;
     background: #222;
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    position: relative;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    color: white;
 }
 
 .register-form form {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    grid-template-areas: 
+    gap: 10px;
+    grid-template-areas:
         "left right"
-        "button button"
+        "location location"
+        "submit submit"
         "social social";
-    color: white;
 }
 
-.left-column, .right-column {
+.form-left {
+    grid-area: left;
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-.register-form input[type="text"],
-.register-form input[type="email"],
-.register-form input[type="password"] {
-    width: 100%;
-    padding: 10px;
-    margin: 5px 0;
-    box-sizing: border-box;
+.form-right {
+    grid-area: right;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
-.set-coordinates-button {
-    width: 100%; /* Match the input field width */
-    padding: 10px; /* Match input padding */
-    background-color: #28a745; /* Green color */
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px; /* Consistent with other buttons */
-    font-size: 16px;
-    height: 39px; /* Match the height of input fields */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    margin: 5px 0;
+.form-location {
+    grid-area: location;
+    position: relative;
+    overflow: visible;
 }
 
-.set-coordinates-button:hover:not(:disabled) {
-    background-color: #218838; /* Darker green for hover */
-}
-  
-.set-coordinates-button:disabled {
-    background-color: #6c757d;
-    cursor: not-allowed;
-}  
-
-.register-form button[type="submit"] {
-    grid-area: button;
-    width: 50%;
-    margin: 0 auto;
-    padding: 12px 20px;
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-    font-size: 16px;
+.form-submit {
+    grid-area: submit;
+    text-align: center;
 }
 
-.register-form button[type="submit"]:hover {
-    background-color: #0056b3;
-}
-
-.social-login-buttons {
+.form-social {
     grid-area: social;
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+.register-form input,
+.set-coordinates-button {
     width: 100%;
-    gap: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.set-coordinates-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    height: 39px;
+    transition: background-color 0.3s ease;
+}
+
+.set-coordinates-button:hover:not(:disabled) {
+    background-color: #218838;
+}
+.set-coordinates-button:disabled {
+    background-color: #777777;
+    cursor: not-allowed;
+}
+
+button.submit-button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button.submit-button:hover {
+    background-color: #0056b3;
 }
 
 .social-login-buttons button {
     width: 50%;
-    background-color: #555;
-    color: white;
-    padding: 10px;
-    border-radius: 4px;
 }
 
-.social-login-buttons .discord-button {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 10px 10px;
-    color: white;
-    border-radius: 4px;
-    border: 1px;
-    cursor: pointer;
-    width: 99%;
-    height: 19%;
-    border-radius: 4px;
-    font-size: 19px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    gap: 6px;
+.register-form .suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    z-index: 1001; /* Ensure it's above other elements */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 150px;
+    overflow-y: auto;
+    color: black;
+    text-align: left;
 }
 
-.social-login-buttons .discord-button {
-    background-color: #7289da;
-}
- 
-.social-login-buttons .discord-button img {
-    width: 38px;
-    height: 38px;
-    margin-left: -5px;
-    margin-right: -3px;
-}
-
-.social-login-buttons button:hover {
-    opacity: 0.8;
-}
-
-.multi-line-checkbox {
-    display: flex;
-    align-items: center;
-    flex-direction: row;
-}
-  
-.multi-line-checkbox input[type="checkbox"] {
-    align-self: center;
-}
-
-.checkbox-inline label {
-    color: white;
-}

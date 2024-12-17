@@ -15,6 +15,7 @@ import VectorSource from 'ol/source/Vector';
 import { useTheme } from '../../contexts/ThemeContext';
 import './CoordinateSelector.css';
 import CloseButton from '../../components/CloseButton';
+import LocationOptionsOverlay from './LocationOptionsOverlay';
 
 const CoordinateSelector = ({ onCoordinatesSelect, onClose, onLocationSelect }) => {
   const mapContainer = useRef(null);
@@ -23,7 +24,7 @@ const CoordinateSelector = ({ onCoordinatesSelect, onClose, onLocationSelect }) 
 
   const [locationOptions, setLocationOptions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showOptionsOverlay, setShowOptionsOverlay] = useState(false); // Control visibility of options overlay
+  const [showOptionsOverlay, setShowOptionsOverlay] = useState(false);
 
   useEffect(() => {
     const baseLayer = new TileLayer({
@@ -53,7 +54,6 @@ const CoordinateSelector = ({ onCoordinatesSelect, onClose, onLocationSelect }) 
 
       console.log(`Map clicked. Coordinates: latitude=${latitude}, longitude=${longitude}`);
 
-      // Add marker to the map
       markerSource.clear();
       const marker = new Feature({
         geometry: new Point(event.coordinate),
@@ -68,10 +68,8 @@ const CoordinateSelector = ({ onCoordinatesSelect, onClose, onLocationSelect }) 
       );
       markerSource.addFeature(marker);
 
-      // Fetch location options
       await fetchLocationOptions(latitude, longitude);
 
-      // Notify parent of selected coordinates, but do not close overlay
       if (onCoordinatesSelect) {
         onCoordinatesSelect({ latitude, longitude });
       }
@@ -84,7 +82,7 @@ const CoordinateSelector = ({ onCoordinatesSelect, onClose, onLocationSelect }) 
 
   const fetchLocationOptions = async (latitude, longitude) => {
     setLoading(true);
-    setLocationOptions([]); // Clear previous options
+    setLocationOptions([]);
     try {
       const response = await fetch(
         `${process.env.REACT_APP_LOCATION_SERVICE_URL}/reverse?lat=${latitude}&lon=${longitude}`
@@ -94,9 +92,6 @@ const CoordinateSelector = ({ onCoordinatesSelect, onClose, onLocationSelect }) 
       }
       const data = await response.json();
       setLocationOptions(data.locations || []);
-      console.log('API Response:', data);
-
-      // Show the options overlay
       setShowOptionsOverlay(true);
     } catch (error) {
       console.error('Error fetching location options:', error.message);
@@ -106,17 +101,13 @@ const CoordinateSelector = ({ onCoordinatesSelect, onClose, onLocationSelect }) 
   };
 
   const handleLocationSelect = (location) => {
-    // Notify parent about the selected location
     if (onLocationSelect) {
       onLocationSelect(location);
     }
-
-    // Close the overlay
     onClose();
   };
 
   const handleDismissOptions = () => {
-    // Hide the options overlay and allow the user to click the map again
     setShowOptionsOverlay(false);
     setLocationOptions([]);
   };
@@ -129,25 +120,11 @@ const CoordinateSelector = ({ onCoordinatesSelect, onClose, onLocationSelect }) 
       {loading && <p className="loading-text">Loading location options...</p>}
 
       {showOptionsOverlay && (
-        <div className="location-options-overlay">
-          <h4>Select a location:</h4>
-          <button className="dismiss-options-button" onClick={handleDismissOptions}>
-            Dismiss Options
-          </button>
-          <ul>
-            {locationOptions.map((location, index) => (
-              <li key={index}>
-                <button
-                  className="location-button"
-                  onClick={() => handleLocationSelect(location)}
-                >
-                  {location.name || 'Unnamed Location'}{' '}
-                  {location.country ? `, ${location.country}` : ''}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <LocationOptionsOverlay
+          locations={locationOptions}
+          onLocationSelect={handleLocationSelect}
+          onDismiss={handleDismissOptions}
+        />
       )}
 
       {!loading && locationOptions.length === 0 && !showOptionsOverlay && (

@@ -17,10 +17,10 @@
     }
     .register-page .register-form {
         transform: scale(.75);
-        font-size: 0.8em;
+        font-size: 0.6em;
     }
     .register-form input {
-        font-size: 0.65rem;
+        font-size: 0.6rem;
     }
     .register-form input[type="checkbox"] {
         margin-top: 10px; 
@@ -29,6 +29,7 @@
 
     .register-form button[type="button"] {
         font-size: 0.6rem;
+        height: 35px;
     }
 }
 
@@ -49,6 +50,7 @@
     }
     .register-form button[type="button"] {
         font-size: 0.7rem;
+        height: 37px;
     }
 }
 
