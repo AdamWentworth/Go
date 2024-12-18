@@ -19,7 +19,7 @@ function handleTokenResponse(req, res, user, tokens) {
 
 router.post('/register', async (req, res, next) => {
     try {
-        const { username, email, pokemonGoName, trainerCode, password, device_id } = req.body;
+        const { username, email, pokemonGoName, trainerCode, password, device_id, location } = req.body;
 
         // Check for existing unique fields
         if (await User.findOne({ username })) {
@@ -53,7 +53,8 @@ router.post('/register', async (req, res, next) => {
             trainerCode: trainerCode || null,    // Ensure null for empty string
             password: hashedPassword,
             ...req.body.coordinates && { coordinates: req.body.coordinates }, // Add coordinates if present
-            allowLocation: req.body.allowLocation || false
+            allowLocation: req.body.allowLocation || false,
+            location: location || null // Add location field
         });
 
         // Save user with writeConcern for reliability
@@ -106,7 +107,8 @@ router.post('/register', async (req, res, next) => {
     res.status(201).json({
         user: {
             username: user.username,
-            email: user.email
+            email: user.email,
+            location: user.location // Optionally include location in the response
         },
         message: 'Account created successfully.'
     });
@@ -173,8 +175,8 @@ router.post('/login', async (req, res, next) => {
         pokemonGoName: user.pokemonGoName,
         trainerCode: user.trainerCode,
         allowLocation: user.allowLocation,
-        country: user.country,
-        city: user.city,
+        location: user.location,
+        coordinates: user.coordinates,
         accessTokenExpiry: tokens.accessTokenExpiry.toISOString(),
         refreshTokenExpiry: tokens.refreshTokenExpiry.toISOString(),
         message: 'Logged in successfully'
