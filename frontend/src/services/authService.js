@@ -1,7 +1,7 @@
 // authService.js
 
 import axios from 'axios';
-import { getDeviceId } from '../../../utils/deviceID';
+import { getDeviceId } from '../utils/deviceID';
 
 axios.defaults.withCredentials = true;
 

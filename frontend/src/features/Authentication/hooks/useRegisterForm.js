@@ -1,8 +1,8 @@
 // useRegisterForm.js
 
 import { useState, useCallback } from 'react';
-import { fetchSuggestions } from '../../../services/locationSuggestions';
-import { fetchLocationOptions } from '../services/locationService';
+import { fetchSuggestions } from '../../../services/locationServices';
+import { fetchLocationOptions } from '../../../services/locationServices';
 
 const useRegisterForm = (onSubmit) => {
     const [values, setValues] = useState({

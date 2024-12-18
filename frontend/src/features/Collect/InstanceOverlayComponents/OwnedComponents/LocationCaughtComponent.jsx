@@ -1,7 +1,7 @@
 // LocationCaughtComponent.jsx
 
 import React, { useRef, useState, useEffect } from 'react';
-import { fetchSuggestions } from '../../../../services/locationSuggestions';
+import { fetchSuggestions } from '../../../../services/locationServices';
 import './LocationCaughtComponent.css';
 
 const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {

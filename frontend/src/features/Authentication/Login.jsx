@@ -4,7 +4,7 @@ import LoginForm from './FormComponents/LoginForm';
 import SuccessMessage from './SuccessMessage';
 import LoadingSpinner from '../../components/LoadingSpinner'; // Ensure this is imported
 import useForm from './hooks/useForm';
-import { loginUser, fetchOwnershipData } from './services/authService';
+import { loginUser, fetchOwnershipData } from '../../services/authService';
 import './Login.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePokemonData } from '../../contexts/PokemonDataContext';

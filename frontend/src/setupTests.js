@@ -6,6 +6,15 @@ import { server } from './mocks/server.js';
 import { TextEncoder, TextDecoder } from 'node:util';
 import { TransformStream } from 'web-streams-polyfill';
 
+import 'jest-localstorage-mock';
+import 'fake-indexeddb/auto';
+
+// Reset all mocks before each test to prevent state leakage
+beforeEach(() => {
+  jest.resetAllMocks();
+  localStorage.clear();
+});
+
 // Globally define polyfills
 globalThis.TextEncoder = TextEncoder;
 globalThis.TextDecoder = TextDecoder;

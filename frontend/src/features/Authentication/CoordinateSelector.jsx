@@ -16,7 +16,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import './CoordinateSelector.css';
 import CloseButton from '../../components/CloseButton';
 import LocationOptionsOverlay from './LocationOptionsOverlay';
-import { fetchLocationOptions } from './services/locationService';
+import { fetchLocationOptions } from '../../services/locationServices';
 
 const CoordinateSelector = ({ onCoordinatesSelect, onClose, onLocationSelect }) => {
   const mapContainer = useRef(null);

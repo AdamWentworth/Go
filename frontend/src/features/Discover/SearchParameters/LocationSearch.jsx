@@ -1,7 +1,7 @@
 // LocationSearch.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
-import { fetchSuggestions } from '../../../services/locationSuggestions'; // Import the service
+import { fetchSuggestions } from '../../../services/locationServices'; // Import the service
 import './LocationSearch.css';
 
 const LocationSearch = ({

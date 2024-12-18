@@ -52,12 +52,13 @@ const RegisterForm = ({
 
             <div className="checkbox-inline">
               <input
+                id="pokemonGoNameDisabled"
                 type="checkbox"
                 name="pokemonGoNameDisabled"
                 checked={values.pokemonGoNameDisabled}
                 onChange={handleCheckboxChange}
               />
-              <label>Username matches my Pokémon GO account name</label>
+              <label htmlFor="pokemonGoNameDisabled">Username matches my Pokémon GO account name</label>
             </div>
 
             <div className="form-group">
@@ -111,12 +112,13 @@ const RegisterForm = ({
 
             <div className="checkbox-inline">
               <input
+                id="allowLocation"
                 type="checkbox"
                 name="allowLocation"
                 checked={values.allowLocation}
                 onChange={handleAllowLocationChange}
               />
-              <label>Enable collection of your device's GPS location data</label>
+              <label htmlFor="allowLocation">Enable collection of your device's GPS location data</label>
             </div>
 
             <button

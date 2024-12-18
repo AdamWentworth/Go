@@ -8,7 +8,7 @@ import {
   updateUserDetails as updateUserService,
   deleteAccount as deleteAccountService,
   refreshTokenService,
-} from '../features/Authentication/services/authService';
+} from '../services/authService';
 import { formatTimeUntil } from '../utils/formattingHelpers';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';

@@ -106,7 +106,7 @@
 
 .collapsible-container {
   width: 100%;
-  /* overflow: hidden; */
+  overflow: hidden;
   max-height: 1000px; /* Set a high value for expanded state */
   transition: max-height 0.6s ease-in-out;
 }

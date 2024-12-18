@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import RegisterForm from './FormComponents/RegisterForm';
 import SuccessMessage from './SuccessMessage';
 import useRegisterForm from './hooks/useRegisterForm';
-import { registerUser, loginUser } from './services/authService';
+import { registerUser, loginUser } from '../../services/authService';
 import './Register.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
