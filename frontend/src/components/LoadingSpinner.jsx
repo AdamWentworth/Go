@@ -1,21 +1,22 @@
+// LoadingSpinner.jsx
 import React, { useState, useEffect } from 'react';
-import './LoadingSpinner.css';  // Assuming the styles are defined here
+import './LoadingSpinner.css';
 
 function LoadingSpinner() {
     const [dotState, setDotState] = useState(0);
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setDotState(prev => (prev + 1) % 3); // Cycles through 0, 1, 2
-        }, 500); // Changes state every 500ms
+            setDotState(prev => (prev + 1) % 3);
+        }, 500);
 
-        return () => clearInterval(interval); // Clean up the interval on component unmount
+        return () => clearInterval(interval);
     }, []);
 
-    const dotText = ".".repeat(dotState + 1); // Creates the text "Loading.", "Loading..", or "Loading..."
+    const dotText = ".".repeat(dotState + 1);
 
     return (
-        <div className="loading-container">
+        <div className="loading-container" role="status" aria-label="Loading">
             <div className="spinner"></div>
             <div className="loading-text">Loading{dotText}</div>
         </div>

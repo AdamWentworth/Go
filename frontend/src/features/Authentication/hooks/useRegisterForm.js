@@ -28,34 +28,32 @@ const useRegisterForm = (onSubmit) => {
     // Function to validate inputs
     const validate = (values) => {
         let tempErrors = {};
-    
+      
         // Validate Username
-        tempErrors.username = values.username ? "" : "Username is required.";
-    
+        tempErrors.username = values.username.trim() ? "" : "Username is required";
+      
         // Validate Email
         tempErrors.email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)
-            ? ""
-            : "Email is not valid.";
-    
+          ? ""
+          : "Email is not valid";
+      
         // Validate Password
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])[A-Za-z\d@#$%^&*!?.]{8,}$/;
         tempErrors.password = passwordRegex.test(values.password)
-            ? ""
-            : "Password must be 8 characters long. 1 Uppercase, 1 lowercase, 1 number and 1 special character minimum";
-    
+          ? ""
+          : "Password must be 8 characters, with 1 uppercase, 1 lowercase, 1 number, and 1 special character.";
+      
         // Validate Trainer Code
         const cleanTrainerCode = values.trainerCode.replace(/\s+/g, '');
         tempErrors.trainerCode =
-            cleanTrainerCode.length === 12 && /^\d{12}$/.test(cleanTrainerCode) 
-                ? "" 
-                : "Trainer code must be exactly 12 digits long.";
-    
-        // Update Errors State
+          cleanTrainerCode.length === 12 && /^\d{12}$/.test(cleanTrainerCode)
+            ? ""
+            : "Trainer code must be exactly 12 digits";
+      
         setErrors(tempErrors);
-    
-        // Return true only if all errors are cleared
+      
         return Object.values(tempErrors).every((error) => error === "");
-    }; 
+    };            
 
     // Input change handler
     const handleInputChange = async (event) => {
@@ -100,6 +98,9 @@ const useRegisterForm = (onSubmit) => {
                 setSuggestions([]); // Clear suggestions if input is too short
             }
         }
+
+        // Re-run validation on input change
+        validate(updatedValues);
 
         setValues(updatedValues);
     };

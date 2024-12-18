@@ -35,6 +35,7 @@ const RegisterForm = ({
             e.preventDefault(); // Prevent default form submission
             onSubmit(); // Trigger the centralized handleSubmit
           }}
+          noValidate // Disable built-in browser validation
         >
           {/* Left Form Section */}
           <div className="form-left">
@@ -45,7 +46,6 @@ const RegisterForm = ({
                 value={values.username}
                 onChange={handleInputChange}
                 placeholder="Username (must be unique)"
-                required
               />
               {errors.username && <div style={{ color: 'red', marginTop: '4px' }}>{errors.username}</div>}
             </div>
@@ -166,8 +166,8 @@ const RegisterForm = ({
 
           {/* Submit Button */}
           <div className="form-submit">
-            <button type="submit" className="submit-button">
-              Register
+            <button className="submit-button" type="submit" data-testid="register-button">
+                Register
             </button>
           </div>
 

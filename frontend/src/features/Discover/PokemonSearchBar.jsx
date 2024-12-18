@@ -62,14 +62,22 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
   }, []);
 
   useEffect(() => {
-    if (!isCollapsed && collapsibleRef.current) {
-      // Set the max-height to the scrollHeight when expanded
-      collapsibleRef.current.style.maxHeight = `${collapsibleRef.current.scrollHeight}px`;
-    } else if (isCollapsed && collapsibleRef.current) {
-      // Set max-height to 0 when collapsed
-      collapsibleRef.current.style.maxHeight = '0px';
+    if (collapsibleRef.current) {
+      if (!isCollapsed) {
+        // Expand the container
+        collapsibleRef.current.style.maxHeight = `${collapsibleRef.current.scrollHeight}px`;
+        setTimeout(() => {
+          if (!isCollapsed) {
+            collapsibleRef.current.style.overflow = 'visible'; 
+          }
+        }, 600); // Match transition duration (0.6s)
+      } else {
+        // Collapse the container
+        collapsibleRef.current.style.maxHeight = '0px';
+        collapsibleRef.current.style.overflow = 'hidden'; // Hide content during collapse
+      }
     }
-  }, [isCollapsed]);
+  }, [isCollapsed]);  
 
   // Function to handle scroll event
   const handleScroll = () => {

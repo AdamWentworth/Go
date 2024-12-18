@@ -8,7 +8,7 @@ export const handlers = [
   }),
 
   // User Registration Handler
-  rest.post('/api/register', async (req, res, ctx) => {
+  rest.post(`${process.env.REACT_APP_AUTH_API_URL}/register`, async (req, res, ctx) => {
     const { username, email, password, trainerCode, pokemonGoName } = await req.json();
 
     // Simulate conflict errors
@@ -33,7 +33,7 @@ export const handlers = [
   }),
 
   // User Login Handler
-  rest.post('/api/login', async (req, res, ctx) => {
+  rest.post('/login', async (req, res, ctx) => {
     const { username, password } = await req.json();
 
     if (username === 'validUser' && password === 'Valid@1234') {
@@ -56,7 +56,13 @@ export const handlers = [
 
     return res(ctx.status(401), ctx.json({ message: 'Invalid credentials.' }));
   }),
-  rest.get('http://localhost:3000/pokemons', (req, res, ctx) => {
-    return res(ctx.status(200), ctx.json({ data: [] })); // Mock response
+  rest.get(`${process.env.REACT_APP_POKEMON_API_URL}/pokemons`, (req, res, ctx) => {
+    return res(
+        ctx.status(200),
+        ctx.json([
+            { id: 1, name: 'Pikachu' },
+            { id: 2, name: 'Bulbasaur' }
+        ])
+    );
   }),
 ];
