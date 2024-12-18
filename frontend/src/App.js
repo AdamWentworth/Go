@@ -27,7 +27,7 @@ function App() {
 
     return (
         <CacheContext.Provider value={cache}>
-            <Router>
+            <Router future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
                 <GlobalStateProvider>
                     <SessionProvider>
                         <PokemonDataProvider>
