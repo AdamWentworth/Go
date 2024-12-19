@@ -201,12 +201,20 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await logoutUser();
+        await logoutUser();
     } catch (error) {
-      console.error('Error during logout:', error);
+        // Specifically handle the case where the user is not found
+        if (error.response && error.response.status === 404) {
+            console.warn('User not found during logout. Proceeding to clear session.');
+        } else {
+            console.error('Error during logout:', error);
+            // Optionally, notify the user about the logout failure
+            toast.error('An error occurred during logout. Please try again.');
+            return; // Exit early to prevent clearing the session if logout fails for other reasons
+        }
     } finally {
-      clearSession(false);  // Manual logout
-      setIsLoggedIn(false);
+        clearSession(false);  // Ensure session is cleared regardless of logoutUser outcome
+        setIsLoggedIn(false);
     }
   };
 
@@ -285,10 +293,10 @@ export const AuthProvider = ({ children }) => {
 
   const deleteAccount = async (userId) => {
     try {
-      await deleteAccountService(userId);
-      clearSession(false); // Clear session after deleting the account
+        await deleteAccountService(userId);
+        clearSession(false); // This navigates to '/login'
     } catch (error) {
-      throw error;
+        throw error;
     }
   };
 
@@ -399,7 +407,6 @@ export const AuthProvider = ({ children }) => {
       }}
     >
       {children}
-      <ToastContainer />
     </AuthContext.Provider>
   );
 };

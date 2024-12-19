@@ -1,13 +1,14 @@
 // Account.jsx
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext'; // ensure path is correct
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import AccountForm from './FormComponents/AccountForm';
 import './Account.css';
 import { toast } from 'react-toastify';
 
 const Account = () => {
-    const { user, updateUserDetails, logout, deleteAccount } = useAuth(); // Ensure you destruct `logout` from useAuth
+    const { user, updateUserDetails, logout, deleteAccount } = useAuth(); // Removed clearSession and setIsLoggedIn
+
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
 
@@ -45,20 +46,17 @@ const Account = () => {
     };
 
     const handleDeleteAccount = async () => {
-        // Confirm before deleting the account
         if (window.confirm("Are you sure you want to delete your account and all its data?")) {
             try {
                 await deleteAccount(user.user_id);
-                logout();
-                navigate('/login', { replace: true });
-                setTimeout(() => {
-                    toast.success('Account deleted successfully');
-                }, 250); // Delay the toast until after the navigation
+                // Trigger toast once after successful deletion
+                toast.success('Account deleted successfully');
+                // Navigation and session clearing are handled in AuthContext
             } catch (error) {
                 toast.error('Failed to delete account: ' + error.message);
+                console.error('Delete account failed:', error);
             }
         } else {
-            // If user cancels, you might want to handle it optionally
             toast.info('Account deletion canceled');
         }
     };

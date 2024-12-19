@@ -71,8 +71,8 @@ function Register() {
             pokemonGoName: loginResponse.pokemonGoName,
             trainerCode: loginResponse.trainerCode,
             allowLocation: loginResponse.allowLocation,
-            country: loginResponse.country,
-            city: loginResponse.city,
+            location: loginResponse.location,
+            coordinates: loginResponse.coordinates,
             accessTokenExpiry: loginResponse.accessTokenExpiry,
             refreshTokenExpiry: loginResponse.refreshTokenExpiry
           };
@@ -112,7 +112,6 @@ function Register() {
 
   return (
     <div>
-      <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
       {isLoading ? (
         <LoadingSpinner /> // Show spinner while loading
       ) : isRegistered ? (
