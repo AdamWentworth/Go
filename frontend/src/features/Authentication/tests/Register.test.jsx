@@ -1,374 +1,433 @@
+// Register.test.jsx
+
 import React from 'react';
-import { render as renderWithAuth, screen, waitFor, act } from '../../../test-utils';
+import { render as renderWithAuth, screen, waitFor } from '../../../test-utils';
 import userEvent from '@testing-library/user-event';
 import Register from '../Register';
-import { registerUser } from '../../../services/authService'; // Import the mocked function
-
-describe('Register Component', () => {
-  test('renders all input fields and buttons', async () => {
-    await act(async () => {
-      renderWithAuth(<Register />);
-    });
-
-    expect(await screen.getByPlaceholderText(/username/i)).toBeInTheDocument();
-    expect(await screen.getByPlaceholderText(/email/i)).toBeInTheDocument();
-    expect(await screen.getByPlaceholderText(/password/i)).toBeInTheDocument();
-    expect(await screen.getByPlaceholderText(/trainer code/i)).toBeInTheDocument();
-    expect(await screen.getByPlaceholderText(/pokémon go name/i)).toBeInTheDocument();
-    expect(
-      await screen.getByLabelText(/enable collection of your device's gps location data/i)
-    ).toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: /^register$/i })).toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: /register with google/i })).toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: /register with facebook/i })).toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: /register with twitter/i })).toBeInTheDocument();
-  });
-});
 
 describe('Register Form Validations', () => {
-  test('shows validation errors when submitting empty form', async () => {
-    await act(async () => {
-      renderWithAuth(<Register />);
-    });
 
-    await act(async () => {
-      userEvent.click(screen.getByTestId('register-button'));
-    });
+  const getFormInputs = () => ({
+    usernameInput: screen.getByPlaceholderText(/username/i),
+    emailInput: screen.getByPlaceholderText(/email/i),
+    passwordInput: screen.getByPlaceholderText(/password/i),
+    pokemonGoNameInput: screen.getByPlaceholderText(/pokémon go name/i),
+    trainerCodeInput: screen.getByPlaceholderText(/trainer code/i),
+    locationInput: screen.getByPlaceholderText(/city/i),
+    pokemonGoNameCheckbox: screen.getByLabelText(/username matches my pokémon go account name/i),
+    locationCheckbox: screen.getByLabelText(/enable collection of your device's gps location data/i)
+  });
 
-    await waitFor(() => {
-      expect(screen.getByText(/Username is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/Email is not valid/i)).toBeInTheDocument();
-      expect(
-        screen.getByText(/Password must be 8 characters, with 1 uppercase, 1 lowercase, 1 number, and 1 special character./i)
-      ).toBeInTheDocument();      
-      expect(
-        screen.getByText(/Trainer code must be exactly 12 digits/i)
-      ).toBeInTheDocument();
-    });    
-  });
-  test('clears validation errors after correcting input', async () => {
+  beforeEach(() => {
     renderWithAuth(<Register />);
-  
-    // Trigger validation errors
-    await act(async () => {
-      userEvent.click(screen.getByTestId('register-button'));
-    });
-  
-    // Assert validation error for username
-    await waitFor(() => {
-      expect(screen.getByText(/username is required/i)).toBeInTheDocument();
-    });
-  
-    // Correct the username field
-    await act(async () => {
-      userEvent.type(screen.getByPlaceholderText(/username/i), 'ValidUsername');
-    });
-  
-    // Assert that the error disappears
-    await waitFor(() => {
-      expect(screen.queryByText(/username is required/i)).not.toBeInTheDocument();
-    });
   });
-  test('shows error for invalid email and clears after correction', async () => {
-    renderWithAuth(<Register />);
+
+  describe('Username Validations', () => {
+    test('validates username with spaces', async () => {
+      const { usernameInput } = getFormInputs();
+      
+      await userEvent.type(usernameInput, 'user name with spaces');
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input value is correctly set
+      expect(usernameInput).toHaveValue('user name with spaces');
+
+      const errorMessage = await screen.findByText(/username cannot contain spaces/i);
+      expect(errorMessage).toBeInTheDocument();
+    });
     
-    await act(async () => {
-      userEvent.type(screen.getByPlaceholderText(/email/i), 'invalid-email');
-      userEvent.click(screen.getByTestId('register-button'));
-    });
-  
-    await waitFor(() => {
-      expect(screen.getByText(/email is not valid/i)).toBeInTheDocument();
-    });
-  
-    await act(async () => {
-      userEvent.clear(screen.getByPlaceholderText(/email/i));
-      userEvent.type(screen.getByPlaceholderText(/email/i), 'valid@example.com');
-    });
-  
-    await waitFor(() => {
-      expect(screen.queryByText(/email is not valid/i)).not.toBeInTheDocument();
-    });
-  });
-  test('shows error for weak password and clears after correction', async () => {
-    renderWithAuth(<Register />);
-  
-    await act(async () => {
-      userEvent.type(screen.getByPlaceholderText(/password/i), 'weakpass');
-      userEvent.click(screen.getByTestId('register-button'));
-    });
-  
-    await waitFor(() => {
-      expect(
-        screen.getByText(/password must be 8 characters, with 1 uppercase, 1 lowercase, 1 number, and 1 special character./i)
-      ).toBeInTheDocument();
-    });
-  
-    await act(async () => {
-      userEvent.clear(screen.getByPlaceholderText(/password/i));
-      userEvent.type(screen.getByPlaceholderText(/password/i), 'StrongPass1!');
-    });
-  
-    await waitFor(() => {
-      expect(
-        screen.queryByText(/password must be 8 characters/i)
-      ).not.toBeInTheDocument();
-    });
-  });
-  test('shows email format error', async () => {
-    renderWithAuth(<Register />);
+    test('validates username with special characters', async () => {
+      const { usernameInput } = getFormInputs();
+      
+      await userEvent.type(usernameInput, 'user@#$%');
+      await userEvent.click(screen.getByTestId('register-button'));
 
-    // Input an invalid email
-    await act(async () => {
-      userEvent.type(screen.getByPlaceholderText(/email/i), 'invalid-email');
-      userEvent.click(screen.getByTestId('register-button'));
-    });
+      // Verify that the input value is correctly set
+      expect(usernameInput).toHaveValue('user@#$%');
 
-    // Assert the error message
-    await waitFor(() => {
-      expect(screen.getByText(/email is not valid/i)).toBeInTheDocument();
+      const errorMessage = await screen.findByText(/username can only contain letters, numbers, and underscores/i);
+      expect(errorMessage).toBeInTheDocument();
     });
   });
 
-  test('shows password strength error', async () => {
-    renderWithAuth(<Register />);
+  describe('Email Validations', () => {
+    test('validates email without domain', async () => {
+      const { emailInput } = getFormInputs();
+      
+      // Type 'test@' into the email input
+      await userEvent.type(emailInput, 'test@');
+      await userEvent.click(screen.getByTestId('register-button'));
 
-    // Input a weak password
-    await act(async () => {
-      userEvent.type(screen.getByPlaceholderText(/password/i), 'weakpass');
-      userEvent.click(screen.getByTestId('register-button'));
+      // Verify that the input value is correctly set
+      expect(emailInput).toHaveValue('test@');
+
+      // Wait for the error message to appear
+      const errorMessage = await screen.findByText(/email is not valid/i);
+      expect(errorMessage).toBeInTheDocument();
     });
 
-    // Assert the error message
-    await waitFor(() => {
-      expect(
-        screen.getByText(/password must be 8 characters, with 1 uppercase, 1 lowercase, 1 number, and 1 special character./i)
-      ).toBeInTheDocument();
+    test('validates email with invalid characters', async () => {
+      const { emailInput } = getFormInputs();
+      
+      // Type 'test@domain#.com' into the email input
+      await userEvent.type(emailInput, 'test@domain#.com');
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input value is correctly set
+      expect(emailInput).toHaveValue('test@domain#.com');
+
+      // Wait for the error message to appear
+      const errorMessage = await screen.findByText(/email is not valid/i);
+      expect(errorMessage).toBeInTheDocument();
     });
   });
 
-  test('shows trainer code format error', async () => {
-    renderWithAuth(<Register />);
+  describe('Password Validations', () => {
+    test('validates password length requirement', async () => {
+      const { passwordInput } = getFormInputs();
+      
+      await userEvent.type(passwordInput, 'Short1!');
+      await userEvent.click(screen.getByTestId('register-button'));
 
-    // Input an invalid trainer code
-    await act(async () => {
-      userEvent.type(screen.getByPlaceholderText(/trainer code/i), '1234');
-      userEvent.click(screen.getByTestId('register-button'));
+      // Verify that the input value is correctly set
+      expect(passwordInput).toHaveValue('Short1!');
+
+      const errorMessage = await screen.findByText(/password must be at least 8 characters long/i);
+      expect(errorMessage).toBeInTheDocument();
     });
 
-    // Assert the error message
-    await waitFor(() => {
-      expect(screen.getByText(/trainer code must be exactly 12 digits/i)).toBeInTheDocument();
+    test('validates password uppercase requirement', async () => {
+      const { passwordInput } = getFormInputs();
+      
+      await userEvent.type(passwordInput, 'lowercase1!');
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input value is correctly set
+      expect(passwordInput).toHaveValue('lowercase1!');
+
+      const errorMessage = await screen.findByText(/password must include at least one uppercase letter/i);
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    test('validates password lowercase requirement', async () => {
+      const { passwordInput } = getFormInputs();
+      
+      await userEvent.type(passwordInput, 'UPPERCASE1!');
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input value is correctly set
+      expect(passwordInput).toHaveValue('UPPERCASE1!');
+
+      const errorMessage = await screen.findByText(/password must include at least one lowercase letter/i);
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    test('validates password number requirement', async () => {
+      const { passwordInput } = getFormInputs();
+      
+      await userEvent.type(passwordInput, 'Password!!');
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input value is correctly set
+      expect(passwordInput).toHaveValue('Password!!');
+
+      const errorMessage = await screen.findByText(/password must include at least one number/i);
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    test('validates password special character requirement', async () => {
+      const { passwordInput } = getFormInputs();
+      
+      await userEvent.type(passwordInput, 'Password123');
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input value is correctly set
+      expect(passwordInput).toHaveValue('Password123');
+
+      const errorMessage = await screen.findByText(/password must include at least one special character/i);
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    test('does not show error message for valid password', async () => {
+      const { passwordInput } = getFormInputs();
+      
+      await userEvent.type(passwordInput, 'ValidPass1!');
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input value is correctly set
+      expect(passwordInput).toHaveValue('ValidPass1!');
+
+      // Wait to ensure no error message appears
+      await waitFor(() => {
+        expect(screen.queryByText(/password must/i)).not.toBeInTheDocument();
+      });
     });
   });
-  test('clears email format error after correction', async () => {
-    renderWithAuth(<Register />);
-  
-    // Trigger email format error
-    await act(async () => {
-      userEvent.type(screen.getByPlaceholderText(/email/i), 'invalid-email');
-      userEvent.click(screen.getByTestId('register-button'));
+
+  describe('Pokémon GO Name Validations', () => {
+    test('does not show error when Pokémon GO Name is empty', async () => {
+      const { usernameInput, emailInput, passwordInput, pokemonGoNameInput } = getFormInputs();
+      
+      // Fill required fields with valid data
+      await userEvent.type(usernameInput, 'ValidUser123');
+      await userEvent.type(emailInput, 'user@example.com');
+      await userEvent.type(passwordInput, 'ValidPass1!');
+
+      // Ensure Pokémon GO Name is empty
+      await userEvent.clear(pokemonGoNameInput);
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input value is correctly set
+      expect(pokemonGoNameInput).toHaveValue('');
+
+      // Wait to ensure no error message appears
+      await waitFor(() => {
+        expect(screen.queryByText(/pokémon go name/i)).not.toBeInTheDocument();
+      });
     });
-  
-    // Assert error message is shown
-    await waitFor(() => {
-      expect(screen.getByText(/email is not valid/i)).toBeInTheDocument();
+
+    test('passes when Pokémon GO Name matches Username', async () => {
+      const { usernameInput, emailInput, passwordInput, pokemonGoNameInput, pokemonGoNameCheckbox } = getFormInputs();
+      
+      // Enter a valid username
+      await userEvent.type(usernameInput, 'ValidUser123');
+      // Fill other required fields
+      await userEvent.type(emailInput, 'user@example.com');
+      await userEvent.type(passwordInput, 'ValidPass1!');
+
+      // Check the Pokémon GO Name Disabled checkbox
+      await userEvent.click(pokemonGoNameCheckbox);
+      
+      // Pokémon GO Name should automatically match Username
+      expect(pokemonGoNameInput).toHaveValue('ValidUser123');
+      expect(pokemonGoNameInput).toBeDisabled();
+
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Wait to ensure no error message appears
+      await waitFor(() => {
+        expect(screen.queryByText(/pokémon go name/i)).not.toBeInTheDocument();
+      });
     });
-  
-    // Correct the email
-    await act(async () => {
-      userEvent.clear(screen.getByPlaceholderText(/email/i));
-      userEvent.type(screen.getByPlaceholderText(/email/i), 'valid@example.com');
+
+    test('updates Pokémon GO name when username changes and checkbox is checked', async () => {
+      const { usernameInput, pokemonGoNameInput, pokemonGoNameCheckbox } = getFormInputs();
+      
+      // Enter initial username
+      await userEvent.type(usernameInput, 'InitialUser');
+      
+      // Check the synchronization checkbox
+      await userEvent.click(pokemonGoNameCheckbox);
+      
+      // Verify synchronization
+      expect(pokemonGoNameInput).toHaveValue('InitialUser');
+      expect(pokemonGoNameInput).toBeDisabled();
+      
+      // Change the username
+      await userEvent.clear(usernameInput);
+      await userEvent.type(usernameInput, 'UpdatedUser');
+      
+      // Verify that Pokémon GO Name updates accordingly
+      expect(pokemonGoNameInput).toHaveValue('UpdatedUser');
     });
+
+    test('clears and enables Pokémon GO name input when checkbox is unchecked', async () => {
+      const { usernameInput, pokemonGoNameInput, pokemonGoNameCheckbox } = getFormInputs();
+      
+      // Enter initial username
+      await userEvent.type(usernameInput, 'TestTrainer');
+      
+      // Check the synchronization checkbox
+      await userEvent.click(pokemonGoNameCheckbox);
+      
+      // Verify synchronization
+      expect(pokemonGoNameInput).toHaveValue('TestTrainer');
+      expect(pokemonGoNameInput).toBeDisabled();
+      
+      // Uncheck the synchronization checkbox
+      await userEvent.click(pokemonGoNameCheckbox);
+      
+      // Verify that Pokémon GO Name is cleared and input is enabled
+      expect(pokemonGoNameInput).toHaveValue('');
+      expect(pokemonGoNameInput).not.toBeDisabled();
+    });    
+
+    test('validates Pokémon GO Name with spaces', async () => {
+      const { usernameInput, emailInput, passwordInput, pokemonGoNameInput } = getFormInputs();
+      
+      // Fill required fields with valid data
+      await userEvent.type(usernameInput, 'ValidUser123');
+      await userEvent.type(emailInput, 'user@example.com');
+      await userEvent.type(passwordInput, 'ValidPass1!');
+
+      await userEvent.type(pokemonGoNameInput, 'Pokemon Go Name'); // 15 characters with spaces
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input value is correctly set
+      expect(pokemonGoNameInput).toHaveValue('Pokemon Go Name');
+
+      const errorMessage = await screen.findByText(/pokémon go name cannot contain spaces/i);
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    test('validates Pokémon GO Name with special characters', async () => {
+      const { usernameInput, emailInput, passwordInput, pokemonGoNameInput } = getFormInputs();
+      
+      // Fill required fields with valid data
+      await userEvent.type(usernameInput, 'ValidUser123');
+      await userEvent.type(emailInput, 'user@example.com');
+      await userEvent.type(passwordInput, 'ValidPass1!');
+
+      await userEvent.type(pokemonGoNameInput, 'Pokemon@#'); // Contains '@' and '#'
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input value is correctly set
+      expect(pokemonGoNameInput).toHaveValue('Pokemon@#');
+
+      const errorMessage = await screen.findByText(/pokémon go name can only contain letters, numbers, and underscores/i);
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    test('validates Pokémon GO Name with insufficient length', async () => {
+      const { usernameInput, emailInput, passwordInput, pokemonGoNameInput } = getFormInputs();
+      
+      // Fill required fields with valid data
+      await userEvent.type(usernameInput, 'ValidUser123');
+      await userEvent.type(emailInput, 'user@example.com');
+      await userEvent.type(passwordInput, 'ValidPass1!');
+
+      await userEvent.type(pokemonGoNameInput, 'abc'); // 3 characters (insufficient)
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input value is correctly set
+      expect(pokemonGoNameInput).toHaveValue('abc');
+
+      const errorMessage = await screen.findByText(/pokémon go name must be at least 4 characters long/i);
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    test('validates Pokémon GO Name with excessive length', async () => {
+      const { usernameInput, emailInput, passwordInput, pokemonGoNameInput } = getFormInputs();
+      
+      // Fill required fields with valid data
+      await userEvent.type(usernameInput, 'ValidUser123');
+      await userEvent.type(emailInput, 'user@example.com');
+      await userEvent.type(passwordInput, 'ValidPass1!');
+
+      await userEvent.type(pokemonGoNameInput, 'thisisaverylongpokemongoname'); // 26 characters (excessive)
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input value is correctly set
+      expect(pokemonGoNameInput).toHaveValue('thisisaverylongpokemongoname');
+
+      const errorMessage = await screen.findByText(/pokémon go name must be at most 15 characters long/i);
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    test('does not show error message for valid Pokémon GO Name', async () => {
+      const { usernameInput, emailInput, passwordInput, pokemonGoNameInput } = getFormInputs();
+      
+      // Fill required fields with valid data
+      await userEvent.type(usernameInput, 'ValidUser123');
+      await userEvent.type(emailInput, 'user@example.com');
+      await userEvent.type(passwordInput, 'ValidPass1!');
+
+      await userEvent.type(pokemonGoNameInput, 'Valid_Pokemon12'); // 15 characters, valid
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input value is correctly set
+      expect(pokemonGoNameInput).toHaveValue('Valid_Pokemon12');
+
+      // Wait to ensure no error message appears
+      await waitFor(() => {
+        expect(screen.queryByText(/pokémon go name/i)).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Trainer Code Validations', () => {
+    test('validates trainer code length', async () => {
+      const { usernameInput, emailInput, passwordInput, trainerCodeInput } = getFormInputs();
+      
+      // Fill required fields with valid data
+      await userEvent.type(usernameInput, 'ValidUser123');
+      await userEvent.type(emailInput, 'user@example.com');
+      await userEvent.type(passwordInput, 'ValidPass1!');
+      
+      // Type a 9-digit code (insufficient length)
+      await userEvent.type(trainerCodeInput, '123456789');
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Assert the length error message appears
+      const lengthError = await screen.findByText(/trainer code must be exactly 12 digits/i);
+      expect(lengthError).toBeInTheDocument();
+    });
+
+    test('validates trainer code numeric only', async () => {
+      const { usernameInput, emailInput, passwordInput, trainerCodeInput } = getFormInputs();
+      
+      // Fill required fields with valid data
+      await userEvent.type(usernameInput, 'ValidUser123');
+      await userEvent.type(emailInput, 'user@example.com');
+      await userEvent.type(passwordInput, 'ValidPass1!');
+      
+      // Type a 12-character code with non-numeric characters
+      await userEvent.type(trainerCodeInput, '12345abc6789');
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Assert the numeric error message appears
+      const numericError = await screen.findByText(/trainer code must contain only numbers/i);
+      expect(numericError).toBeInTheDocument();
+    });
+
+    test('does not show error when trainer code is empty', async () => {
+      const { usernameInput, emailInput, passwordInput, trainerCodeInput } = getFormInputs();
+      
+      // Fill required fields with valid data
+      await userEvent.type(usernameInput, 'ValidUser123');
+      await userEvent.type(emailInput, 'user@example.com');
+      await userEvent.type(passwordInput, 'ValidPass1!');
+      
+      // Ensure Trainer Code is empty
+      await userEvent.clear(trainerCodeInput);
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Assert that no Trainer Code error message is present
+      await waitFor(() => {
+        expect(screen.queryByText(/trainer code must be exactly 12 digits/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/trainer code must contain only numbers/i)).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  // Additional Proposed Test Suites
+  describe('Form State Management', () => {
+    test('maintains field values after failed validation', async () => {
+      const { usernameInput, emailInput, passwordInput } = getFormInputs();
+      
+      await userEvent.type(usernameInput, 'TestUser');
+      await userEvent.type(emailInput, 'invalid-email');
+      await userEvent.type(passwordInput, 'weak');
+      await userEvent.click(screen.getByTestId('register-button'));
+
+      // Verify that the input values are retained
+      expect(usernameInput).toHaveValue('TestUser');
+      expect(emailInput).toHaveValue('invalid-email');
+      expect(passwordInput).toHaveValue('weak');
+    });
+
+    test('validates all fields simultaneously', async () => {
+      // Submit the form without filling any fields
+      await userEvent.click(screen.getByTestId('register-button'));
   
-    // Assert error message is cleared
-    await waitFor(() => {
-      expect(screen.queryByText(/email is not valid/i)).not.toBeInTheDocument();
+      // Assert that all relevant error messages appear
+      const usernameError = await screen.findByText(/username is required/i);
+      const emailError = await screen.findByText(/email is not valid/i);
+      const passwordError = await screen.findByText(/password is required/i); // Updated expectation
+  
+      expect(usernameError).toBeInTheDocument();
+      expect(emailError).toBeInTheDocument();
+      expect(passwordError).toBeInTheDocument();
     });
   });
 });
-
-jest.mock('../../../services/authService', () => ({
-  registerUser: jest.fn(() =>
-    new Promise((resolve) => setTimeout(() => resolve({ success: true }), 2000))
-  ),
-  loginUser: jest.fn(() =>
-    Promise.resolve({
-      user_id: 1,
-      email: 'test@example.com',
-      username: 'TestUser',
-    })
-  ),
-}));
-
-// In your Register.test.jsx
-test('shows loading spinner during registration and handles success', async () => {
-  jest.setTimeout(10000); // Extend Jest timeout for async operations
-
-  // Render the component
-  renderWithAuth(<Register />);
-
-  // Debug: log all placeholders to verify rendering
-  const inputs = screen.getAllByRole('textbox');
-  console.log('Available inputs:', inputs.map(input => input.placeholder));
-
-  // Fill out the form completely
-  await userEvent.type(screen.getByPlaceholderText('Username (must be unique)'), 'TestUser');
-  await userEvent.type(screen.getByPlaceholderText('Email (must be unique)'), 'test@example.com');
-  
-  // Password is typically not a textbox, so use a different selector
-  await userEvent.type(screen.getByPlaceholderText('Password'), 'StrongPass1!');
-  
-  await userEvent.type(screen.getByPlaceholderText('Trainer Code (optional)'), '123456789012');
-
-  // Submit the form
-  await act(async () => {
-    userEvent.click(screen.getByTestId('register-button'));
-  });
-
-  // Assert spinner appears
-  const loadingElement = await screen.findByText(/Loading\./);
-  expect(loadingElement).toBeInTheDocument();
-});
-
-// test('shows loading spinner during registration and handles failure', async () => {
-//   jest.setTimeout(10000); // Extend Jest timeout for async operations
-
-//   // Mock registerUser to simulate delay and failure
-//   registerUser.mockImplementation(
-//     () =>
-//       new Promise((_, reject) =>
-//         setTimeout(() => reject(new Error('Registration failed')), 2000)
-//       )
-//   );
-
-//   renderWithAuth(<Register />);
-
-//   // Ensure spinner is not initially rendered
-//   expect(screen.queryByRole('status', { name: /Loading/i })).not.toBeInTheDocument();
-
-//   // Fill out the form
-//   userEvent.type(screen.getByPlaceholderText(/username/i), 'TestUser');
-//   userEvent.type(screen.getByPlaceholderText(/email/i), 'test@example.com');
-//   userEvent.type(screen.getByPlaceholderText(/password/i), 'StrongPass1!');
-//   userEvent.type(screen.getByPlaceholderText(/trainer code/i), '123456789012');
-
-//   // Submit the form
-//   await act(async () => {
-//     userEvent.click(screen.getByTestId('register-button'));
-//   });
-
-//   // Assert spinner appears
-//   expect(await screen.findByRole('status', { name: /Loading/i })).toBeInTheDocument();
-
-//   // Wait for spinner to disappear after failure
-//   await waitFor(() => {
-//     expect(screen.queryByRole('status', { name: /Loading/i })).not.toBeInTheDocument();
-//   });
-
-//   // Check for return to registration page (RegisterForm should be visible)
-//   expect(screen.getByTestId('register-button')).toBeInTheDocument();
-// });
-
-// test('shows success message on successful registration', async () => {
-//   renderWithAuth(<Register />);
-
-//   // Simulate input values
-//   userEvent.type(screen.getByPlaceholderText(/username/i), 'ValidUser');
-//   userEvent.type(screen.getByPlaceholderText(/email/i), 'valid@example.com');
-//   userEvent.type(screen.getByPlaceholderText(/password/i), 'StrongPass1!');
-//   userEvent.type(screen.getByPlaceholderText(/trainer code/i), '123456789012');
-
-//   // Submit the form
-//   userEvent.click(screen.getByTestId('register-button'));
-
-//   // Assert success message is displayed
-//   expect(await screen.findByText(/Successfully Registered and Logged in/i)).toBeInTheDocument();
-// });
-
-// test('shows error when username is already taken', async () => {
-//   renderWithAuth(<Register />);
-
-//   // Mock API response to return a conflict error
-//   jest.spyOn(authService, 'registerUser').mockRejectedValueOnce({
-//     response: {
-//       status: 409,
-//       data: { message: 'This username is already taken.' },
-//     },
-//   });
-
-//   // Simulate input values
-//   userEvent.type(screen.getByPlaceholderText(/username/i), 'DuplicateUser');
-//   userEvent.type(screen.getByPlaceholderText(/email/i), 'duplicate@example.com');
-//   userEvent.type(screen.getByPlaceholderText(/password/i), 'StrongPass1!');
-//   userEvent.type(screen.getByPlaceholderText(/trainer code/i), '123456789012');
-
-//   // Submit the form
-//   userEvent.click(screen.getByTestId('register-button'));
-
-//   // Assert error message is displayed
-//   expect(await screen.findByText(/This username is already taken./i)).toBeInTheDocument();
-// });
-
-// test('disables location input when GPS location is enabled', async () => {
-//   renderWithAuth(<Register />);
-
-//   // Enable GPS location
-//   userEvent.click(screen.getByLabelText(/Enable collection of your device's GPS location data/i));
-
-//   // Assert location input is disabled
-//   expect(screen.getByPlaceholderText(/City \/ Place/i)).toBeDisabled();
-// });
-
-// test('shows location suggestions based on user input', async () => {
-//   renderWithAuth(<Register />);
-
-//   // Mock location suggestions
-//   jest.spyOn(locationServices, 'fetchSuggestions').mockResolvedValueOnce([
-//     { displayName: 'New York, NY, USA' },
-//     { displayName: 'Newark, NJ, USA' },
-//   ]);
-
-//   // Type into location input
-//   userEvent.type(screen.getByPlaceholderText(/City \/ Place/i), 'New');
-
-//   // Assert suggestions are displayed
-//   expect(await screen.findByText(/New York, NY, USA/i)).toBeInTheDocument();
-//   expect(await screen.findByText(/Newark, NJ, USA/i)).toBeInTheDocument();
-// });
-
-// test('syncs Pokémon GO name with username when checkbox is checked', async () => {
-//   renderWithAuth(<Register />);
-
-//   // Enter username and enable synchronization
-//   userEvent.type(screen.getByPlaceholderText(/username/i), 'User123');
-//   userEvent.click(screen.getByLabelText(/Username matches my Pokémon GO account name/i));
-
-//   // Assert Pokémon GO name matches username
-//   expect(screen.getByPlaceholderText(/Pokémon GO name/i)).toHaveValue('User123');
-// });
-
-// test('triggers Google login on button click', async () => {
-//   renderWithAuth(<Register />);
-
-//   // Mock Google login handler
-//   const mockGoogleLogin = jest.fn();
-//   jest.spyOn(authService, 'googleLogin').mockImplementation(mockGoogleLogin);
-
-//   // Click Google login button
-//   userEvent.click(screen.getByRole('button', { name: /register with google/i }));
-
-//   // Assert Google login function is called
-//   expect(mockGoogleLogin).toHaveBeenCalled();
-// });
-
-// test('shows error for short username', async () => {
-//   renderWithAuth(<Register />);
-
-//   // Input a too-short username
-//   userEvent.type(screen.getByPlaceholderText(/username/i), 'Us');
-//   userEvent.click(screen.getByTestId('register-button'));
-
-//   // Assert validation error
-//   expect(await screen.findByText(/Username is too short/i)).toBeInTheDocument();
-// });

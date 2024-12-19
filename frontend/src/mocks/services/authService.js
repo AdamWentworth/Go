@@ -14,9 +14,16 @@ export const refreshTokenService = jest.fn(() => Promise.resolve({
   refreshTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
 }));
 
-export const registerUser = jest.fn(() => 
-  new Promise((resolve) => setTimeout(() => resolve({ success: true }), 3000)) // Simulates a 3-second delay
-);
+export const registerUser = async (userData) => {
+  const response = await fetch(`${process.env.REACT_APP_AUTH_API_URL}/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(userData),
+  });
+  return response.json();
+};
 
 export const loginUser = jest.fn(() => Promise.resolve({
   user_id: 1,

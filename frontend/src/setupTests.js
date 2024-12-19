@@ -26,6 +26,10 @@ beforeEach(() => {
   jest.spyOn(console, 'error').mockImplementation(() => {}); // Suppress errors
 });
 
+beforeAll(() => {
+  process.env.REACT_APP_AUTH_API_URL = 'http://localhost:3002/auth';
+});
+
 afterEach(() => {
   jest.restoreAllMocks(); // Restore original console behavior after each test
 });

@@ -1,6 +1,6 @@
 // RegisterForm.jsx
 import React from 'react';
-import RegisterSocialButtons from '../0AuthComponents/RegisterSocialButtons';
+import RegisterSocialButtons from '../Auth0Components/RegisterSocialButtons';
 import CoordinateSelector from '../CoordinateSelector';
 import LocationOptionsOverlay from '../LocationOptionsOverlay';
 import './RegisterForm.css';
@@ -33,7 +33,7 @@ const RegisterForm = ({
         <form
           onSubmit={(e) => {
             e.preventDefault(); // Prevent default form submission
-            onSubmit(); // Trigger the centralized handleSubmit
+            onSubmit(e); // Trigger the centralized handleSubmit
           }}
           noValidate // Disable built-in browser validation
         >
@@ -96,7 +96,9 @@ const RegisterForm = ({
                 onChange={handleInputChange}
                 placeholder="Pokémon GO name (optional)"
                 disabled={values.pokemonGoNameDisabled}
+                aria-label="Pokémon GO Name"
               />
+              {errors.pokemonGoName && <div style={{ color: 'red', marginTop: '4px' }}>{errors.pokemonGoName}</div>}
             </div>
 
             <div className="form-group">
@@ -106,6 +108,7 @@ const RegisterForm = ({
                 value={values.trainerCode}
                 onChange={handleInputChange}
                 placeholder="Trainer Code (optional)"
+                data-testid="trainer-code-input" 
               />
               {errors.trainerCode && <div style={{ color: 'red', marginTop: '4px' }}>{errors.trainerCode}</div>}
             </div>

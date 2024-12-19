@@ -4,6 +4,7 @@ import {
   GoogleLoginButton,
   FacebookLoginButton,
   TwitterLoginButton,
+  DiscordLoginButton,
 } from 'react-social-login-buttons';
 
 const RegisterSocialButtons = () => (
@@ -17,6 +18,9 @@ const RegisterSocialButtons = () => (
     <TwitterLoginButton onClick={() => alert('Twitter login is not yet implemented.')}>
       Register with Twitter
     </TwitterLoginButton>
+    <DiscordLoginButton onClick={() => alert('Discord login is not yet implemented.')}>
+      Register with Discord
+    </DiscordLoginButton>
   </div>
 );
 

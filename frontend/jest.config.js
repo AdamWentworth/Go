@@ -42,6 +42,8 @@ module.exports = {
     '^services/authService$': '<rootDir>/src/mocks/services/authService.js',
     '^services/sseService$': '<rootDir>/src/mocks/services/sseService.js',
     '^services/indexedDB$': '<rootDir>/src/mocks/services/indexedDB.js',
+
+    '^features/Register$': '<rootDir>/src/mocks/features/Register.js',
   },
 
   moduleDirectories: ['node_modules', 'src'],

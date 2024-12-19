@@ -8,7 +8,7 @@ export const handlers = [
   }),
 
   // User Registration Handler
-  rest.post(`${process.env.REACT_APP_AUTH_API_URL}/register`, async (req, res, ctx) => {
+  rest.post(`${process.env.REACT_APP_AUTH_API_URL || 'http://localhost:3002/auth'}/register`, async (req, res, ctx) => {
     const { username, email, password, trainerCode, pokemonGoName } = await req.json();
 
     // Simulate conflict errors

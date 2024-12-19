@@ -1,20 +1,21 @@
 // useRegisterForm.js
 
+// useRegisterForm.js
+
 import { useState, useCallback } from 'react';
-import { fetchSuggestions } from '../../../services/locationServices';
-import { fetchLocationOptions } from '../../../services/locationServices';
+import { fetchSuggestions, fetchLocationOptions } from '../../../services/locationServices';
 
 const useRegisterForm = (onSubmit) => {
     const [values, setValues] = useState({
-      username: '',
-      email: '',
-      password: '',
-      trainerCode: '',
-      pokemonGoName: '',
-      locationInput: '',
-      coordinates: null,
-      allowLocation: false,
-      pokemonGoNameDisabled: false,
+        username: '',
+        email: '',
+        password: '',
+        trainerCode: '',
+        pokemonGoName: '',
+        locationInput: '',
+        coordinates: null,
+        allowLocation: false,
+        pokemonGoNameDisabled: false,
     });
   
     const [errors, setErrors] = useState({});
@@ -24,35 +25,86 @@ const useRegisterForm = (onSubmit) => {
     const [suggestions, setSuggestions] = useState([]);
     const [showOptionsOverlay, setShowOptionsOverlay] = useState(false);
     const [locationOptions, setLocationOptions] = useState([]);
+    const [hasSubmitted, setHasSubmitted] = useState(false); // Tracks submission attempts
 
     // Function to validate inputs
     const validate = (values) => {
         let tempErrors = {};
       
         // Validate Username
-        tempErrors.username = values.username.trim() ? "" : "Username is required";
+        const username = values.username.trim();
+    
+        if (!username) {
+            tempErrors.username = "Username is required";
+        } else if (/\s/.test(username)) {
+            tempErrors.username = "Username cannot contain spaces";
+        } else if (!/^[A-Za-z0-9_]{4,15}$/.test(username)) { // Allowing underscores
+            tempErrors.username = "Username can only contain letters, numbers, and underscores";
+        } else {
+            tempErrors.username = "";
+        }
       
         // Validate Email
-        tempErrors.email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)
+        const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+        tempErrors.email = emailRegex.test(values.email)
           ? ""
           : "Email is not valid";
       
         // Validate Password
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])[A-Za-z\d@#$%^&*!?.]{8,}$/;
-        tempErrors.password = passwordRegex.test(values.password)
-          ? ""
-          : "Password must be 8 characters, with 1 uppercase, 1 lowercase, 1 number, and 1 special character.";
+        const password = values.password;
+        if (!password) {
+            tempErrors.password = "Password is required";
+        } else if (password.length < 8) {
+            tempErrors.password = "Password must be at least 8 characters long";
+        } else if (!/[A-Z]/.test(password)) {
+            tempErrors.password = "Password must include at least one uppercase letter";
+        } else if (!/[a-z]/.test(password)) {
+            tempErrors.password = "Password must include at least one lowercase letter";
+        } else if (!/\d/.test(password)) {
+            tempErrors.password = "Password must include at least one number";
+        } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+            tempErrors.password = "Password must include at least one special character";
+        } else {
+            tempErrors.password = "";
+        }
+      
+        // Validate Pokémon GO Name
+        const pokemonGoName = values.pokemonGoName.trim();
+        if (!values.pokemonGoNameDisabled) { // Only validate if not disabled
+            if (pokemonGoName) { // If provided, validate like username
+                if (pokemonGoName.length < 4) {
+                    tempErrors.pokemonGoName = "Pokémon GO Name must be at least 4 characters long";
+                } else if (pokemonGoName.length > 15) {
+                    tempErrors.pokemonGoName = "Pokémon GO Name must be at most 15 characters long";
+                } else if (/\s/.test(pokemonGoName)) {
+                    tempErrors.pokemonGoName = "Pokémon GO Name cannot contain spaces";
+                } else if (!/^[A-Za-z0-9_]{4,15}$/.test(pokemonGoName)) { // Allowing underscores
+                    tempErrors.pokemonGoName = "Pokémon GO Name can only contain letters, numbers, and underscores";
+                } else {
+                    tempErrors.pokemonGoName = "";
+                }
+            } else {
+                // Pokémon GO Name is optional; no error if empty
+                tempErrors.pokemonGoName = "";
+            }
+        } else {
+            // If disabled, ensure it matches the username (already validated)
+            tempErrors.pokemonGoName = "";
+        }
       
         // Validate Trainer Code
         const cleanTrainerCode = values.trainerCode.replace(/\s+/g, '');
-        tempErrors.trainerCode =
-          cleanTrainerCode.length === 12 && /^\d{12}$/.test(cleanTrainerCode)
-            ? ""
-            : "Trainer code must be exactly 12 digits";
+        if (cleanTrainerCode) { // Only validate if trainer code is provided
+            if (cleanTrainerCode.length !== 12) {
+                tempErrors.trainerCode = "Trainer code must be exactly 12 digits";
+            } else if (!/^\d{12}$/.test(cleanTrainerCode)) {
+                tempErrors.trainerCode = "Trainer code must contain only numbers";
+            } else {
+                tempErrors.trainerCode = "";
+            }
+        }
       
-        setErrors(tempErrors);
-      
-        return Object.values(tempErrors).every((error) => error === "");
+        return tempErrors;
     };            
 
     // Input change handler
@@ -63,44 +115,39 @@ const useRegisterForm = (onSubmit) => {
             [name]: type === 'checkbox' ? checked : value
         };
     
-        // Sync Pokémon GO name with username if checkbox is checked
         if (name === 'pokemonGoNameDisabled') {
             if (checked) {
                 updatedValues.pokemonGoName = updatedValues.username;
             } else {
-                updatedValues.pokemonGoName = ''; // Clear or allow user input
+                updatedValues.pokemonGoName = '';
             }
         } else if (name === 'username' && values.pokemonGoNameDisabled) {
-            // If username changes and pokemonGoNameDisabled is true, update pokemonGoName
             updatedValues.pokemonGoName = value;
         }
     
-        // Format trainer code to display in XXXX XXXX XXXX format as user types
         if (name === 'trainerCode' && value.replace(/\s+/g, '').length <= 12) {
             updatedValues.trainerCode = value.replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim();
         }
 
-        // Special handling for location input
         if (name === 'locationInput') {
-            // Show the warning when the location input is modified
             setShowLocationWarning(true);
-    
-            // Clear selected coordinates and uncheck the "allowLocation" checkbox
             setSelectedCoordinates(null);
             updatedValues.coordinates = null;
             updatedValues.allowLocation = false;
     
-            // Fetch location suggestions if the input value length > 2
             if (value.length > 2) {
                 const fetchedSuggestions = await fetchSuggestions(value);
                 setSuggestions(fetchedSuggestions);
             } else {
-                setSuggestions([]); // Clear suggestions if input is too short
+                setSuggestions([]);
             }
         }
 
-        // Re-run validation on input change
-        validate(updatedValues);
+        // Only validate and show errors if user has already attempted to submit
+        if (hasSubmitted) {
+            const validationErrors = validate(updatedValues);
+            setErrors(validationErrors);
+        }
 
         setValues(updatedValues);
     };
@@ -108,27 +155,32 @@ const useRegisterForm = (onSubmit) => {
     // Form submission handler
     const handleSubmit = (event) => {
         if (event && event.preventDefault) {
-            event.preventDefault();
+          event.preventDefault();
         }
-    
-        if (validate(values)) {
-            setErrors({});
-            
-            // Enforce pokemonGoName synchronization
-            const submitValues = {
-                ...values,
-                pokemonGoName: values.pokemonGoNameDisabled ? values.username : values.pokemonGoName,
-                location: values.locationInput // Map locationInput to location
-            };
-    
-            onSubmit(submitValues); // Pass the modified values to onSubmit
+      
+        setHasSubmitted(true); // Mark that user has attempted to submit
+        const validationErrors = validate(values);
+        setErrors(validationErrors);
+        
+        // Check if there are any non-empty error messages
+        const hasErrors = Object.values(validationErrors).some(error => error !== "");
+      
+        if (!hasErrors) {
+          const submitValues = {
+            ...values,
+            pokemonGoName: values.pokemonGoNameDisabled ? values.username : values.pokemonGoName,
+            location: values.locationInput
+          };
+      
+          onSubmit(submitValues);
         } else {
-            console.error("Validation failed:", errors);
+          console.error("Validation failed:", validationErrors);
         }
     };
 
     // Expose a method to manually set errors from outside
     const setFormErrors = useCallback((newErrors) => {
+        setHasSubmitted(true); // Also set hasSubmitted when external errors are set
         setErrors(prevErrors => ({
             ...prevErrors,
             ...newErrors
