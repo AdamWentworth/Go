@@ -1,7 +1,5 @@
 // useRegisterForm.js
 
-// useRegisterForm.js
-
 import { useState, useCallback } from 'react';
 import { fetchSuggestions, fetchLocationOptions } from '../../../services/locationServices';
 
@@ -125,8 +123,10 @@ const useRegisterForm = (onSubmit) => {
             updatedValues.pokemonGoName = value;
         }
     
-        if (name === 'trainerCode' && value.replace(/\s+/g, '').length <= 12) {
-            updatedValues.trainerCode = value.replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim();
+        // Format trainer code to display in XXXX XXXX XXXX format as user types
+        if (name === 'trainerCode') {
+            const cleanValue = value.replace(/\s+/g, '').slice(0, 12);
+            updatedValues.trainerCode = cleanValue.replace(/(.{4})/g, '$1 ').trim();
         }
 
         if (name === 'locationInput') {

@@ -1,5 +1,6 @@
 /* AccountForm.css */
 
+/* Parent Container */
 .account-form {
     background-color: #111; /* Dark background for the page */
     border-radius: 8px;
@@ -12,91 +13,142 @@
     align-items: center;
 }
 
-.account-form h1 {
+/* Heading */
+.account-form > h1 {
     color: #ffffff;
     text-align: center;
     margin-bottom: 20px;
     width: 100%;
 }
 
-.user-details {
+/* User Details Section */
+.account-form .user-details {
     background-color: #222; /* Darker background for the user details section */
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     padding: 20px;
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Fixed two equal columns */
+    gap: 20px; /* Consistent spacing between grid items */
     width: 100%; /* Full width to use space efficiently */
 }
 
-.user-details .left-column,
-.user-details .right-column {
-    flex: 1; /* Equal flex to divide the space equally */
-    margin: 0 10px; /* Spacing between columns */
+/* Grid Items */
+.account-form .user-details .grid-item {
     display: flex;
     flex-direction: column;
-}
-
-.user-details label {
-    display: block;
-    margin-bottom: 10px;
     color: #ffffff;
     font-weight: 500;
+    margin-top: 10px;
 }
 
-.user-details input,
-.user-details select,
-.user-details checkbox {
-    width: 90%; /* Reduce the width of inputs to not stretch fully */
+/* Assigning Grid Columns Based on Item Class */
+
+/* Left Column Items */
+.account-form .user-details .grid-item.username,
+.account-form .user-details .grid-item.pokemon-go-name-checkbox,
+.account-form .user-details .grid-item.email,
+.account-form .user-details .grid-item.password,
+.account-form .user-details .grid-item.confirm-password {
+    grid-column: 1 / 2; /* Assign to first column */
+}
+
+/* Right Column Items */
+.account-form .user-details .grid-item.pokemon-go-name,
+.account-form .user-details .grid-item.trainer-code,
+.account-form .user-details .grid-item.allow-location,
+.account-form .user-details .grid-item.coordinates,
+.account-form .user-details .grid-item.location {
+    grid-column: 2 / 3; /* Assign to second column */
+}
+
+/* Inputs, Selects, and Textareas within Grid Items */
+.account-form .user-details .grid-item input,
+.account-form .user-details .grid-item select,
+.account-form .user-details .grid-item textarea {
     padding: 8px;
-    margin-top: 2px;
     border: 1px solid #ccc;
     border-radius: 4px;
     color: #111;
     background-color: #fff;
-    text-align: center; /* Center text inside inputs */
+    text-align: center;
 }
 
-.user-details input[type="checkbox"] {
-    width: auto; /* Default width for checkboxes */
-    margin-left: auto; /* Align checkbox to the right */
-    margin-right: auto; /* Center checkbox horizontally */
+/* Checkbox Inline Styling */
+.account-form .user-details .grid-item.checkbox-inline {
+    align-items: center;
 }
 
-.buttons {
+/* Checkbox Input Specific Styling */
+.account-form .user-details .grid-item.checkbox-inline input[type="checkbox"] {
+    margin-left: 10px;
+    margin-right: 0;
+}
+
+/* Set Coordinates Button */
+.account-form .user-details .grid-item .set-coordinates-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    height: 32px;
+    padding: 0 10px;
+    transition: background-color 0.3s ease;
+}
+
+.account-form .user-details .grid-item .set-coordinates-button:hover {
+    background-color: #218838;
+}
+
+/* Error Messages */
+.account-form .user-details .grid-item .error {
+    color: #ff4d4f;
+    font-size: 0.875em;
+    margin-top: 5px;
+}
+
+/* Buttons Container */
+.account-form .buttons {
     margin-top: 20px;
     width: 100%;
     display: flex;
     justify-content: space-around; /* Even spacing around buttons */
 }
 
-.account-form button {
+/* Buttons Styling */
+.account-form .buttons > button {
     padding: 10px 15px;
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
     flex-grow: 1;
     margin: 0 10px; /* Space between buttons */
+    border: none;
+    color: #fff;
+    transition: opacity 0.3s ease;
 }
 
-.edit-btn {
+/* Specific Button Colors */
+.account-form .buttons > .edit-btn {
     background-color: #28a745; /* Green for edit */
 }
 
-.logout-btn {
+.account-form .buttons > .logout-btn {
     background-color: #007bff; /* Blue for logout */
 }
 
-.delete-btn {
+.account-form .buttons > .delete-btn {
     background-color: #dc3545; /* Red for delete */
 }
 
-.account-form button:hover {
+/* Button Hover Effects */
+.account-form .buttons > button:hover {
     opacity: 0.85; /* Slight opacity change on hover */
 }
 
-.account-form button:disabled {
+/* Disabled Button Styling */
+.account-form .buttons > button:disabled {
     background-color: #cccccc;
     cursor: not-allowed;
 }
-

@@ -324,8 +324,8 @@ router.put('/update/:id', async (req, res) => {
             pokemonGoName: updatedUser.pokemonGoName || '',
             trainerCode: updatedUser.trainerCode || '',
             allowLocation: updatedUser.allowLocation || false,
-            country: updatedUser.country || '',
-            city: updatedUser.city || '',
+            location: updatedUser.location || '',
+            coordinates: updatedUser.coordinates || '',
             accessTokenExpiry: accessTokenExpiry,
             refreshTokenExpiry: refreshTokenExpiry,
             message: 'Updated account details successfully'

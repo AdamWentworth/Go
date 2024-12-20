@@ -1,120 +1,223 @@
 // AccountForm.jsx
-import React, { useState, useEffect } from 'react';
-import useForm from '../hooks/useForm'; // Ensure the path to useForm is correct
+
+import React from 'react';
+import useAccountForm from '../hooks/useAccountForm'; // Custom hook
+import CoordinateSelector from '../CoordinateSelector';
+import LocationOptionsOverlay from '../LocationOptionsOverlay';
 import './AccountForm.css';
 
 const AccountForm = ({ user, handleUpdateUserDetails, onLogout, onDeleteAccount }) => {
-    const [isEditable, setIsEditable] = useState(false);
-
-    useEffect(() => {
-        if (!user) {
-            alert("No user data available, please log in.");
-            console.error("No user data available, please log in.");
-        }
-    }, [user]);
-
-    const onSubmit = values => {
-        if (isEditable) {
-            // Ensure trainerCode is submitted without spaces
-            const submissionValues = {
-                ...values,
-                trainerCode: values.trainerCode.replace(/\s+/g, ''),
-            };
-            console.log("Submitting values:", submissionValues);
-            
-            // Delete location from local storage if allowLocation is false
-            if (!submissionValues.allowLocation) {
-                localStorage.removeItem('location');
-            }
-
-            handleUpdateUserDetails(user.user_id, submissionValues, setIsEditable)
-        }
-    };    
+    const {
+        values,
+        errors,
+        handleChange,
+        handleSubmit,
+        isEditable,
+        handleEditToggle,
+        isMapVisible,
+        setIsMapVisible,
+        showOptionsOverlay,
+        setShowOptionsOverlay,
+        selectedCoordinates,
+        prevCoordinates,
+        handleCoordinatesSelect,
+        handleLocationUpdate,
+        handleOverlayLocationSelect,
+        handleAllowLocationChange,
+        suggestions,
+        selectSuggestion,
+        locationOptions
+    } = useAccountForm(user, handleUpdateUserDetails);
 
     if (!user) {
         return <div>Please log in to view and edit account details.</div>;
     }
 
-    const { values, errors, handleChange, handleSubmit } = useForm({
-        userId: user.user_id,
-        username: user.username,
-        email: user.email,
-        password: '',
-        pokemonGoName: user.pokemonGoName || '',
-        trainerCode: user.trainerCode ? user.trainerCode.replace(/(\d{4})(?=\d)/g, "$1 ") : '', // Format with spaces for display
-        country: user.country || '',
-        city: user.city || '',
-        allowLocation: user.allowLocation || false,
-        pokemonGoNameDisabled: user.pokemonGoName === user.username,
-        accessTokenExpiry: user.accessTokenExpiry,
-        refreshTokenExpiry: user.refreshTokenExpiry
-    }, onSubmit, 'edit');
-
-    const handleEditToggle = (e) => {
-        e.preventDefault();
-        setIsEditable(!isEditable);
-    };
-
     return (
-        <form onSubmit={handleSubmit} className="account-form">
-            <h1>Account Details</h1>
-            <div className="user-details">
-                <div className="left-column">
-                    <label>Username:
-                        <input type="text" name="username" value={values.username} onChange={handleChange} disabled={!isEditable} />
-                        {errors.username && <div className="error">{errors.username}</div>}
-                    </label>
-                    <label className="checkbox-inline">Username matches my Pokémon GO account name
-                        <input type="checkbox" name="pokemonGoNameDisabled" checked={values.pokemonGoNameDisabled} onChange={handleChange} disabled={!isEditable} />
-                    </label>
-                    <label>Email:
-                        <input type="email" name="email" value={values.email} onChange={handleChange} disabled={!isEditable} />
-                        {errors.email && <div className="error">{errors.email}</div>}
-                    </label>
-                    <label>Change Password:
-                        <input type="password" name="password" value={values.password} onChange={handleChange} placeholder="New Password" disabled={!isEditable} />
-                        {errors.password && <div className="error">{errors.password}</div>}
-                    </label>
-                    <label>Confirm Change Password:
-                        <input type="password" name="confirmPassword" value={values.confirmPassword} onChange={handleChange} placeholder="Confirm New Password" disabled={!isEditable} />
-                        {errors.confirmPassword && <div className="error">{errors.confirmPassword}</div>}
-                    </label>
+        <div className="account-page">
+            <form onSubmit={handleSubmit} className="account-form">
+                <h1>Account Details</h1>
+                <div className="user-details">
+                    {/* Left Column Items */}
+                    <div className="left-column">
+                        <label className="grid-item username">
+                            Username:
+                            <input 
+                                type="text" 
+                                name="username" 
+                                value={values.username} 
+                                onChange={handleChange} 
+                                disabled={!isEditable} 
+                            />
+                            {errors.username && <div className="error">{errors.username}</div>}
+                        </label>
+
+                        <div className="grid-item checkbox-inline">
+                            <input 
+                                type="checkbox" 
+                                id="pokemonGoNameDisabled" // Added id for accessibility
+                                name="pokemonGoNameDisabled" 
+                                checked={values.pokemonGoNameDisabled} 
+                                onChange={handleChange} 
+                                disabled={!isEditable} 
+                            />
+                            <label htmlFor="pokemonGoNameDisabled">Username matches my Pokémon GO account name</label>
+                        </div>
+
+                        <label className="grid-item email">
+                            Email:
+                            <input 
+                                type="email" 
+                                name="email" 
+                                value={values.email} 
+                                onChange={handleChange} 
+                                disabled={!isEditable} 
+                            />
+                            {errors.email && <div className="error">{errors.email}</div>}
+                        </label>
+
+                        <label className="grid-item password">
+                            Change Password:
+                            <input 
+                                type="password" 
+                                name="password" 
+                                value={values.password} 
+                                onChange={handleChange} 
+                                placeholder="New Password" 
+                                disabled={!isEditable} 
+                            />
+                            {errors.password && <div className="error">{errors.password}</div>}
+                        </label>
+
+                        <label className="grid-item confirm-password">
+                            Confirm Change Password:
+                            <input 
+                                type="password" 
+                                name="confirmPassword" 
+                                value={values.confirmPassword} 
+                                onChange={handleChange} 
+                                placeholder="Confirm New Password" 
+                                disabled={!isEditable} 
+                            />
+                            {errors.confirmPassword && <div className="error">{errors.confirmPassword}</div>}
+                        </label>
+                    </div>
+
+                    {/* Right Column Items */}
+                    <div className="right-column">
+                        <label className="grid-item pokemon-go-name">
+                            Pokémon Go Name:
+                            <input 
+                                type="text" 
+                                name="pokemonGoName" 
+                                value={values.pokemonGoName} 
+                                onChange={handleChange} 
+                                disabled={!isEditable || values.pokemonGoNameDisabled} 
+                            />
+                            {errors.pokemonGoName && <div className="error">{errors.pokemonGoName}</div>}
+                        </label>
+
+                        <label className="grid-item trainer-code">
+                            Trainer Code:
+                            <input 
+                                type="text" 
+                                name="trainerCode" 
+                                value={values.trainerCode} 
+                                onChange={handleChange} 
+                                disabled={!isEditable} 
+                            />
+                            {errors.trainerCode && <div className="error">{errors.trainerCode}</div>}
+                        </label>
+
+                        <div className="grid-item checkbox-inline">
+                            <input 
+                                type="checkbox" 
+                                id="allowLocation" // Added id for accessibility
+                                name="allowLocation" 
+                                checked={values.allowLocation} 
+                                onChange={handleAllowLocationChange} 
+                                disabled={!isEditable} 
+                            />
+                            <label htmlFor="allowLocation">Enable collection of your device's GPS location data</label>
+                        </div>
+                        
+                        <label className="grid-item coordinates">
+                            Coordinates:
+                            {isEditable ? (
+                                <button 
+                                    type="button" 
+                                    onClick={() => setIsMapVisible(true)} 
+                                    className="set-coordinates-button"
+                                >
+                                    {selectedCoordinates && selectedCoordinates.latitude && selectedCoordinates.longitude
+                                        ? `(${selectedCoordinates.latitude}, ${selectedCoordinates.longitude})`
+                                        : 'Set Coordinates'}
+                                </button>
+                            ) : (
+                                <input
+                                    type="text"
+                                    name="coordinates"
+                                    value={
+                                        selectedCoordinates && selectedCoordinates.latitude && selectedCoordinates.longitude
+                                            ? `(${selectedCoordinates.latitude}, ${selectedCoordinates.longitude})`
+                                            : prevCoordinates && prevCoordinates.latitude && prevCoordinates.longitude
+                                            ? `(${prevCoordinates.latitude}, ${prevCoordinates.longitude})`
+                                            : ''
+                                    }
+                                    readOnly
+                                    placeholder="Coordinates not set"
+                                    disabled={!isEditable}
+                                />
+                            )}
+                            {errors.coordinates && <div className="error">{errors.coordinates}</div>}
+                        </label>
+
+                        <label className="grid-item location">
+                            Location:
+                            <input 
+                                type="text" 
+                                name="location" 
+                                value={values.location} 
+                                onChange={handleChange} 
+                                placeholder="City / Place, State / Province, Country (optional)" 
+                                disabled={!isEditable} 
+                            />
+                            {errors.location && <div className="error">{errors.location}</div>}
+                        </label>
+                    </div>
                 </div>
-                <div className="right-column">
-                    <label>Pokémon Go Name:
-                        <input type="text" name="pokemonGoName" value={values.pokemonGoName} onChange={handleChange} disabled={!isEditable || values.pokemonGoNameDisabled} />
-                        {errors.pokemonGoName && <div className="error">{errors.pokemonGoName}</div>}
-                    </label>
-                    <label>Trainer Code:
-                        <input type="text" name="trainerCode" value={values.trainerCode} onChange={handleChange} disabled={!isEditable} />
-                        {errors.trainerCode && <div className="error">{errors.trainerCode}</div>}
-                    </label>
-                    <label className="checkbox-inline">Enable collection of your device's GPS location data
-                        <input type="checkbox" name="allowLocation" checked={values.allowLocation} onChange={handleChange} disabled={!isEditable} />
-                    </label>
-                    <label>Country:
-                        <input type="text" name="country" value={values.country} onChange={handleChange} />
-                        {errors.country && <div className="error">{errors.country}</div>}
-                    </label>
-                    <label>City:
-                        <input type="text" name="city" value={values.city} onChange={handleChange} />
-                        {errors.city && <div className="error">{errors.city}</div>}
-                    </label>
+                <div className="buttons">
+                    <button
+                        type="button"
+                        onClick={(e) => isEditable ? handleSubmit(e) : handleEditToggle(e)}
+                        className="edit-btn"
+                    >
+                        {isEditable ? 'Save Changes' : 'Edit Details'}
+                    </button>
+                    <button type="button" className="logout-btn" onClick={onLogout}>Logout</button>
+                    <button type="button" className="delete-btn" onClick={onDeleteAccount}>Delete Account and Data</button>
                 </div>
-            </div>
-            <div className="buttons">
-                <button
-                    type="button"
-                    onClick={(e) => isEditable ? handleSubmit(e) : handleEditToggle(e)}
-                    className="edit-btn"
-                >
-                    {isEditable ? 'Save Changes' : 'Edit Details'}
-                </button>
-                <button type="button" className="logout-btn" onClick={onLogout}>Logout</button>
-                <button type="button" className="delete-btn" onClick={onDeleteAccount}>Delete Account and Data</button>
-            </div>
-        </form>
+            </form>
+
+            {/* Coordinate Selector Modal */}
+            {isMapVisible && (
+                <CoordinateSelector
+                    onCoordinatesSelect={handleCoordinatesSelect}
+                    onLocationSelect={handleLocationUpdate}
+                    onClose={() => setIsMapVisible(false)}
+                />
+            )}
+
+            {/* Location Options Overlay */}
+            {showOptionsOverlay && (
+                <LocationOptionsOverlay
+                    locations={locationOptions}
+                    onLocationSelect={handleOverlayLocationSelect} // Use the correct handler
+                    onDismiss={() => setShowOptionsOverlay(false)}
+                />
+            )}
+        </div>
     );
-};
+    }
 
 export default AccountForm;

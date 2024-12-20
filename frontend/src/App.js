@@ -21,7 +21,6 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { UserSearchProvider } from './contexts/UserSearchContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import ErrorBoundary from './components/ErrorBoundary'; // Import the ErrorBoundary
 
 function App() {
     const cache = new Map();
@@ -39,18 +38,16 @@ function App() {
                                             <div className="App">
                                                 <Navbar />
                                                 <main>
-                                                    <ErrorBoundary>
-                                                        <Routes>
-                                                            <Route path="/" element={<MainButtons />} />
-                                                            <Route path="/collect" element={<Collect isOwnCollection={true} />} />
-                                                            <Route path="/trades" element={<Trades />} />
-                                                            <Route path="/login" element={<Login />} />
-                                                            <Route path="/register" element={<Register />} />
-                                                            <Route path="/account" element={<Account />} />
-                                                            <Route path="/discover" element={<Discover />} />
-                                                            <Route path="/collection/:username" element={<Collect isOwnCollection={false} />} />
-                                                        </Routes>
-                                                    </ErrorBoundary>
+                                                    <Routes>
+                                                        <Route path="/" element={<MainButtons />} />
+                                                        <Route path="/collect" element={<Collect isOwnCollection={true} />} />
+                                                        <Route path="/trades" element={<Trades />} />
+                                                        <Route path="/login" element={<Login />} />
+                                                        <Route path="/register" element={<Register />} />
+                                                        <Route path="/account" element={<Account />} />
+                                                        <Route path="/discover" element={<Discover />} />
+                                                        <Route path="/collection/:username" element={<Collect isOwnCollection={false} />} />
+                                                    </Routes>
                                                 </main>
                                                 <ToastContainer
                                                     position="top-center"

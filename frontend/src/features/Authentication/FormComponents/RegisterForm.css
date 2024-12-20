@@ -54,13 +54,13 @@
 }
 
 .register-form input,
-.set-coordinates-button {
+.register-form .set-coordinates-button {
     width: 100%;
     padding: 10px;
     box-sizing: border-box;
 }
 
-.set-coordinates-button {
+.register-form .set-coordinates-button {
     background-color: #28a745;
     color: white;
     border: none;
@@ -70,10 +70,10 @@
     transition: background-color 0.3s ease;
 }
 
-.set-coordinates-button:hover:not(:disabled) {
+.register-form .set-coordinates-button:hover:not(:disabled) {
     background-color: #218838;
 }
-.set-coordinates-button:disabled {
+.register-form .set-coordinates-button:disabled {
     background-color: #777777;
     cursor: not-allowed;
 }

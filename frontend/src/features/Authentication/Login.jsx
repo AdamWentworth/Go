@@ -26,7 +26,7 @@ function Login() {
     setIsLoading(true); // Start loading before the login attempt
     try {
       const response = await loginUser(formValues);
-      const { email, username, pokemonGoName, trainerCode, user_id, token, allowLocation, country, city, accessTokenExpiry, refreshTokenExpiry } = response;
+      const { email, username, pokemonGoName, trainerCode, user_id, token, allowLocation, location, coordinates, accessTokenExpiry, refreshTokenExpiry } = response;
       const user = {
         email,
         username,
@@ -34,8 +34,8 @@ function Login() {
         trainerCode,
         user_id,
         allowLocation,
-        country,
-        city,
+        location,
+        coordinates,
         accessTokenExpiry,
         refreshTokenExpiry
       };

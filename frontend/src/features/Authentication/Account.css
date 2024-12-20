@@ -29,14 +29,16 @@
         padding: 2px 15px;
     }
     .account-form label {
-        display: flex;
         flex-direction: column; /* Stack label and checkbox vertically */
-        align-items: center; /* Center them horizontally */
         text-align: center;
+        font-size: 0.65rem;
     }
     .account-form input[type="checkbox"] {
         margin-top: 10px; /* Add some space between the text and checkbox */
         display: block;
+    }
+    .account-form .set-coordinates-button {
+        font-size: .65rem;
     }
 }
 
@@ -58,9 +60,7 @@
         padding: 5px 15px;
     }
     .account-form label {
-        display: flex;
         flex-direction: column; /* Stack label and checkbox vertically */
-        align-items: center; /* Center them horizontally */
         text-align: center;
     }
     .account-form input[type="checkbox"] {
@@ -87,9 +87,7 @@
         padding: 5px 15px;
     }
     .account-form label {
-        display: flex;
         flex-direction: column; /* Stack label and checkbox vertically */
-        align-items: center; /* Center them horizontally */
         text-align: center;
     }
     .account-form input[type="checkbox"] {
@@ -116,9 +114,7 @@
         padding: 5px 15px;
     }
     .account-form label {
-        display: flex;
         flex-direction: column; /* Stack label and checkbox vertically */
-        align-items: center; /* Center them horizontally */
         text-align: center;
     }
     .account-form input[type="checkbox"] {
