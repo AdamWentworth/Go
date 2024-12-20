@@ -1,32 +1,56 @@
-// Login.jsx
+// src/components/Login.jsx
+
 import React, { useState } from 'react';
 import LoginForm from './FormComponents/LoginForm';
 import SuccessMessage from './SuccessMessage';
-import LoadingSpinner from '../../components/LoadingSpinner'; // Ensure this is imported
-import useForm from './hooks/useForm';
-import { loginUser, fetchOwnershipData } from '../../services/authService';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import useLoginForm from './hooks/useLoginForm';
+import {
+  loginUser,
+  fetchOwnershipData,
+  resetPassword,
+} from '../../services/authService';
 import './Login.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePokemonData } from '../../contexts/PokemonDataContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ResetPasswordOverlay from './ResetPasswordOverlay'; // Import the overlay component
 
 function Login() {
-  const { values, errors, handleChange, handleSubmit } = useForm({
+  const initialFormValues = {
     username: '',
-    password: ''
-  }, onSubmit, 'login');
+    password: '',
+  };
+
+  const { values, errors, handleChange, handleSubmit } = useLoginForm(initialFormValues, onSubmit);
   const [feedback, setFeedback] = useState('');
   const [isSuccessful, setIsSuccessful] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // New state to handle loading
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const { setOwnershipData } = usePokemonData();
 
+  // State for managing the visibility of the reset password overlay
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+
   async function onSubmit(formValues) {
-    setIsLoading(true); // Start loading before the login attempt
+    setIsLoading(true);
     try {
       const response = await loginUser(formValues);
-      const { email, username, pokemonGoName, trainerCode, user_id, token, allowLocation, location, coordinates, accessTokenExpiry, refreshTokenExpiry } = response;
+      const {
+        email,
+        username,
+        pokemonGoName,
+        trainerCode,
+        user_id,
+        token,
+        allowLocation,
+        location,
+        coordinates,
+        accessTokenExpiry,
+        refreshTokenExpiry,
+      } = response;
+
       const user = {
         email,
         username,
@@ -37,7 +61,7 @@ function Login() {
         location,
         coordinates,
         accessTokenExpiry,
-        refreshTokenExpiry
+        refreshTokenExpiry,
       };
 
       login(user, token);
@@ -50,23 +74,45 @@ function Login() {
       setIsSuccessful(true);
       setFeedback('Successfully Logged in');
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Please check your username and password and try again.';
+      const errorMessage =
+        error.response?.data?.message ||
+        'Please check your username/email and password and try again.';
       toast.error('Login failed: ' + errorMessage);
       setIsSuccessful(false);
     } finally {
-      setIsLoading(false); // Stop loading regardless of the outcome
+      setIsLoading(false);
     }
   }
 
+  // Handler to open the reset password overlay
+  const handleResetPassword = () => {
+    setIsResetPasswordOpen(true);
+  };
+
+  // Handler to close the reset password overlay
+  const closeResetPassword = () => {
+    setIsResetPasswordOpen(false);
+  };
+
   return (
-    <div>
+    <div className="login-container">
       {isLoading ? (
         <LoadingSpinner />
       ) : isSuccessful ? (
-        <SuccessMessage mainMessage={feedback} detailMessage="You are now successfully logged in!" />
+        <SuccessMessage
+          mainMessage={feedback}
+          detailMessage="You are now successfully logged in!"
+        />
       ) : (
-        <LoginForm values={values} errors={errors} onChange={handleChange} onSubmit={handleSubmit} />
+        <LoginForm
+          values={values}
+          errors={errors}
+          onChange={handleChange}
+          onSubmit={handleSubmit}
+          onResetPassword={handleResetPassword} // Pass the handler to LoginForm
+        />
       )}
+      {isResetPasswordOpen && <ResetPasswordOverlay onClose={closeResetPassword} />}
     </div>
   );
 }

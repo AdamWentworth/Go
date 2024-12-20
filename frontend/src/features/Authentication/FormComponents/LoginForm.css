@@ -39,6 +39,23 @@
     background-color: #0056b3;
 }
 
+.login-form button.reset-password-button {
+    width: 50%;
+    margin: 0 auto; /* This centers the button horizontally */
+    padding: 12px 20px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 16px;
+    display: block; /* Ensures the margin auto works correctly for centering */
+}
+
+.login-form button.reset-password-button:hover {
+    background-color: #5a6268;
+}
+
 .social-login-buttons {
     display: flex;
     flex-direction: column;

@@ -96,3 +96,13 @@ export const fetchOwnershipData = async (userId) => {
       throw error;
   }
 };
+
+export const resetPassword = async ({ identifier }) => {
+  try {
+    const response = await authApi.post('/reset-password', { identifier });
+    return response.data;
+  } catch (error) {
+    console.error('Error resetting password:', error.response || error);
+    throw error;
+  }
+};

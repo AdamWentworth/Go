@@ -23,7 +23,9 @@ const userSchema = new mongoose.Schema({
     coordinates: {
         latitude: { type: Number, default: null, min: -90, max: 90 },
         longitude: { type: Number, default: null, min: -180, max: 180 }
-    }
+    },
+    resetPasswordToken: { type: String, default: null },
+    resetPasswordExpires: { type: Date, default: null },
 });
 
 // Apply a unique index with a correct partial filter expression

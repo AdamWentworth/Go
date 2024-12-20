@@ -9,6 +9,11 @@ const tokenService = require('../services/tokenService'); // Adjust the path as 
 const setCookies = require('../middlewares/setCookies'); // Adjust the path as necessary
 const setAccessTokenCookie = require('../middlewares/setAccessTokenCookie');
 const sanitizeForLogging= require ('../utils/sanitizeLogging');
+// Import the token utility
+const { generateResetToken } = require('../utils/tokenUtils');
+
+// Import the email sending function (to be created in the next section)
+const { sendResetPasswordEmail } = require('../services/emailService');
 
 // Function to handle token response more dynamically
 function handleTokenResponse(req, res, user, tokens) {
@@ -387,6 +392,55 @@ router.post('/logout', async (req, res) => {
         res.status(200).json({ message: 'Logged out successfully' });
     } catch (err) {
         logger.error(`Logout error: ${err.message} with status ${500}`);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+// POST /reset-password/:token
+router.post('/reset-password/', async (req, res) => {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+
+    if (!token) {
+        logger.error('Reset Password Confirmation failed: No token provided');
+        return res.status(400).json({ message: 'Reset token is required' });
+    }
+
+    if (!newPassword) {
+        logger.error('Reset Password Confirmation failed: No new password provided');
+        return res.status(400).json({ message: 'New password is required' });
+    }
+
+    try {
+        // Find the user by reset token and ensure token is not expired
+        const user = await User.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() }, // Token is not expired
+        });
+
+        if (!user) {
+            logger.warn(`Reset Password Confirmation failed: Invalid or expired token`);
+            return res.status(400).json({ message: 'Invalid or expired reset token' });
+        }
+
+        // Hash the new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update user's password and remove reset token fields
+        user.password = hashedPassword;
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+
+        await user.save();
+
+        // Optionally, send a confirmation email
+        // await sendPasswordResetConfirmationEmail(user.email);
+
+        logger.info(`Password updated successfully for user ${user.email}`);
+
+        res.status(200).json({ message: 'Password has been reset successfully.' });
+    } catch (error) {
+        logger.error(`Reset Password Confirmation error: ${error.message}`);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
