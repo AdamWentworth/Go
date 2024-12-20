@@ -10,6 +10,7 @@ from shapely import wkt
 from sqlalchemy import create_engine, Column, Integer, String, Text, Float, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 import os
+from sqlalchemy import func
 
 # ---------------------------
 # Configuration
@@ -77,6 +78,41 @@ def get_countries_without_places(session):
     )
     
     return countries_without_places
+
+def get_countries_with_low_place_count(session, threshold=30):
+    """
+    Fetch countries with total place count across all admin levels less than the threshold.
+
+    Args:
+        session: SQLAlchemy session
+        threshold (int): The maximum number of places a country can have to be considered underrepresented.
+
+    Returns:
+        list: List of Country objects with total place count less than the threshold.
+    """
+    # Subquery to count places per country
+    place_counts = (
+        session.query(
+            Place.country_id,
+            func.count(Place.id).label('count')
+        )
+        .group_by(Place.country_id)
+        .subquery()
+    )
+
+    # Query countries with counts less than the threshold
+    countries_low_count = (
+        session.query(Country)
+        .join(place_counts, Country.id == place_counts.c.country_id)
+        .filter(place_counts.c.count < threshold)
+        .all()
+    )
+
+    # Additionally, include countries with zero places (if they exist)
+    countries_with_no_places = get_countries_without_places(session)
+    
+    # Combine both lists
+    return countries_low_count + countries_with_no_places
 
 # ---------------------------
 # Database Setup
@@ -440,7 +476,7 @@ def process_places(session, country_code, admin_level):
 
 def main():
     """
-    Main function to execute the processing loop across countries missing places.
+    Main function to execute the processing loop across countries with low place counts.
     """
     engine = get_db_engine()
     create_tables(engine)
@@ -452,16 +488,17 @@ def main():
         print('Connected to the database.')
         
         # Define admin levels to process
-        admin_levels = [6, 8]
+        admin_levels = [4, 5, 6, 7, 8, 9, 10]
         
-        # Fetch countries without places
-        countries_to_process = get_countries_without_places(session)
+        # Fetch countries with low place counts
+        threshold = 30  # You can adjust this threshold as needed
+        countries_to_process = get_countries_with_low_place_count(session, threshold)
         
         if not countries_to_process:
             print("No countries found that need places processing.")
             return
 
-        print(f"Found {len(countries_to_process)} countries to process.")
+        print(f"Found {len(countries_to_process)} countries to process with less than {threshold} places.")
 
         # Process each country dynamically
         for country in countries_to_process:
@@ -476,7 +513,6 @@ def main():
     finally:
         session.close()
         print('Database connection closed.')
-
 
 if __name__ == "__main__":
     main()

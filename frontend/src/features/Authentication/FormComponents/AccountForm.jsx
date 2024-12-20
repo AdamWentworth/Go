@@ -24,9 +24,12 @@ const AccountForm = ({ user, handleUpdateUserDetails, onLogout, onDeleteAccount 
         handleLocationUpdate,
         handleOverlayLocationSelect,
         handleAllowLocationChange,
+        handleLocationInputFocus,
+        handleLocationInputBlur,
         suggestions,
         selectSuggestion,
-        locationOptions
+        locationOptions,
+        showLocationWarning // Destructured state
     } = useAccountForm(user, handleUpdateUserDetails);
 
     if (!user) {
@@ -174,14 +177,37 @@ const AccountForm = ({ user, handleUpdateUserDetails, onLogout, onDeleteAccount 
 
                         <label className="grid-item location">
                             Location:
-                            <input 
-                                type="text" 
-                                name="location" 
-                                value={values.location} 
-                                onChange={handleChange} 
-                                placeholder="City / Place, State / Province, Country (optional)" 
-                                disabled={!isEditable} 
-                            />
+                            <div className="location-input-wrapper">
+                                <input 
+                                    type="text" 
+                                    name="location" 
+                                    value={values.location} 
+                                    onChange={handleChange} 
+                                    onFocus={handleLocationInputFocus} 
+                                    onBlur={handleLocationInputBlur} 
+                                    placeholder="City / Place, State / Province, Country (optional)" 
+                                    disabled={!isEditable} 
+                                />
+                                {showLocationWarning && (
+                                    <span className="warning-message">
+                                        Modifying location will reset GPS data collection and coordinates.
+                                    </span>
+                                )}
+                                {/* Suggestions Dropdown */}
+                                {suggestions.length > 0 && (
+                                    <div className="suggestions-dropdown">
+                                        {suggestions.map((suggestion, index) => (
+                                            <div
+                                                key={index}
+                                                className="suggestion-item"
+                                                onClick={() => selectSuggestion(suggestion)}
+                                            >
+                                                {suggestion.displayName}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                             {errors.location && <div className="error">{errors.location}</div>}
                         </label>
                     </div>
@@ -217,7 +243,7 @@ const AccountForm = ({ user, handleUpdateUserDetails, onLogout, onDeleteAccount 
                 />
             )}
         </div>
-    );
-    }
+    )
+}
 
 export default AccountForm;

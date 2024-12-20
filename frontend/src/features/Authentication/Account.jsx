@@ -17,22 +17,36 @@ const Account = () => {
     }
 
     const handleUpdateUserDetails = async (userId, userData, setIsEditable) => {
-        const result = await updateUserDetails(userId, userData);
-        console.log("Update result:", result);
+        try {
+            const result = await updateUserDetails(userId, userData);
+            console.log("Update result:", result);
 
-        if (result.success) {
-            console.log('Account details updated successfully!');
-            setIsEditable(false); // Reset form to non-editable state
-        } else {
-            setErrors(prevErrors => ({
-                ...prevErrors,
-                username: result.error.includes('Username') ? 'This username is already taken.' : '',
-                email: result.error.includes('Email') ? 'This email is already in use.' : '',
-                pokemonGoName: result.error.includes('Pokémon Go name') ? 'This Pokémon Go name is already taken.' : '',
-                trainerCode: result.error.includes('Trainer Code') ? 'This Trainer Code is already in use.' : ''
-            }));
-            toast.error('Update failed: ' + result.error);
-            console.error('Update failed:', result.error);
+            if (result.success) {
+                console.log('Account details updated successfully!');
+                setIsEditable(false); // Reset form to non-editable state
+
+                if (!result.passwordUpdated) {
+                    // Notify the user that the password was not changed
+                    toast.info('Password was not updated as it is identical to your previous password.');
+                } else {
+                    toast.success('Account details and password updated successfully!');
+                }
+            } else {
+                // Handle validation errors
+                setErrors(prevErrors => ({
+                    ...prevErrors,
+                    username: result.message.includes('Username') ? 'This username is already taken.' : '',
+                    email: result.message.includes('Email') ? 'This email is already in use.' : '',
+                    pokemonGoName: result.message.includes('Pokémon Go name') ? 'This Pokémon Go name is already taken.' : '',
+                    trainerCode: result.message.includes('Trainer Code') ? 'This Trainer Code is already in use.' : ''
+                }));
+                toast.error('Update failed: ' + result.message);
+                console.error('Update failed:', result.message);
+            }
+        } catch (error) {
+            // Handle unexpected errors
+            toast.error('An unexpected error occurred while updating your details.');
+            console.error('Unexpected error during update:', error);
         }
     };
 

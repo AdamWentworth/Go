@@ -152,3 +152,73 @@
     background-color: #cccccc;
     cursor: not-allowed;
 }
+
+.account-form .location-input-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column; /* Stack input and warning vertically */
+    align-items: center;    /* Center items horizontally */
+    width: 100%;            /* Ensure it takes full width */
+}
+
+/* Style for the location input field */
+.account-form .location-input-wrapper input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    outline: none; /* Remove default outline */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.account-form .location-input-wrapper input:focus {
+    border-color: orange;
+    box-shadow: 0 0 5px rgba(255, 165, 0, 0.5);
+}
+
+/* Warning message positioned below the input field */
+.account-form .warning-message {
+    position: absolute;
+    top: 100%; /* Position right below the input */
+    left: 50%;
+    transform: translateX(-50%); /* Center horizontally */
+    color: orange;
+    font-size: 0.7em;
+    margin-top: 2px; /* Space between input and warning */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%; /* Prevent overflow on small screens */
+}
+
+/* Error Messages */
+.account-form .error {
+    color: red;
+    font-size: 0.9em;
+    margin-top: 4px;
+}
+
+.account-form .suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    z-index: 1001;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 150px;
+    overflow-y: auto;
+    color: black;
+  }
+  
+  .account-form .suggestion-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .account-form .suggestion-item:hover {
+    background-color: #f0f0f0;
+  }

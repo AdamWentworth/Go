@@ -8,6 +8,7 @@ const logger = require('../middlewares/logger'); // Ensure logger is imported co
 const tokenService = require('../services/tokenService'); // Adjust the path as necessary
 const setCookies = require('../middlewares/setCookies'); // Adjust the path as necessary
 const setAccessTokenCookie = require('../middlewares/setAccessTokenCookie');
+const sanitizeForLogging= require ('../utils/sanitizeLogging');
 
 // Function to handle token response more dynamically
 function handleTokenResponse(req, res, user, tokens) {
@@ -244,13 +245,20 @@ router.post('/refresh', async (req, res, next) => {
 
 // Update user details
 router.put('/update/:id', async (req, res) => {
-    const { id } = req.params; // Ensure id is fetched at the start of the function
+    const { id } = req.params;
     if (!id) {
         logger.error('No ID provided in the request parameters');
-        return res.status(400).json({ message: 'Request must include an ID' });
+        return res.status(400).json({ success: false, message: 'Request must include an ID' });
     }
 
     try {
+        // Fetch the current user
+        const currentUser = await User.findById(id);
+        if (!currentUser) {
+            logger.error(`Update failed: User not found with ID: ${id} with status 404`);
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
         const updates = { ...req.body };
 
         // Remove token expiry fields from updates to prevent them from being modified
@@ -258,82 +266,82 @@ router.put('/update/:id', async (req, res) => {
         delete updates.accessTokenExpiry;
         delete updates.refreshTokenExpiry;
 
-        // Check if the username is already taken by another user
-        const existingUserWithUsername = await User.findOne({
-            username: updates.username, 
-            _id: { $ne: id }
-        });
-        if (existingUserWithUsername) {
-            logger.error(`Update failed: Username already exists with status 409`);
-            return res.status(409).json({ message: 'Username already exists' });
-        }
+        // Initialize password update flag
+        let passwordUpdated = false;
 
-        // Check if the email is already taken by another user
-        const existingUserWithEmail = await User.findOne({
-            email: updates.email, 
-            _id: { $ne: id }
-        });
-        if (existingUserWithEmail) {
-            logger.error(`Update failed: Email already exists with status 409`);
-            return res.status(409).json({ message: 'Email already exists' });
-        }
-
-        // Check if the Pokémon Go name is already taken by another user
-        if (updates.pokemonGoName) {
-            const existingUserWithPokemonGoName = await User.findOne({
-                pokemonGoName: updates.pokemonGoName, 
-                _id: { $ne: id }
-            });
-            if (existingUserWithPokemonGoName) {
-                logger.error(`Update failed: Pokémon Go name already exists with status 409`);
-                return res.status(409).json({ message: 'Pokémon Go name already exists' });
-            }
-        }
-
-        // Check if the trainer code is already taken by another user
-        if (updates.trainerCode) {
-            const existingUserWithTrainerCode = await User.findOne({
-                trainerCode: updates.trainerCode, 
-                _id: { $ne: id }
-            });
-            if (existingUserWithTrainerCode) {
-                logger.error(`Update failed: Trainer Code already exists with status 409`);
-                return res.status(409).json({ message: 'Trainer Code already exists' });
-            }
-        }
-
-        // Hash new password if provided
+        // Handle password update
         if (updates.password && updates.password.trim() !== "") {
-            updates.password = await bcrypt.hash(updates.password, 10);
+            const isSamePassword = await bcrypt.compare(updates.password, currentUser.password);
+            if (isSamePassword) {
+                // Password is identical; do not update
+                logger.info('New password is identical to the current password. Skipping password update.');
+                delete updates.password;
+            } else {
+                // Hash the new password
+                updates.password = await bcrypt.hash(updates.password, 10);
+                passwordUpdated = true;
+            }
         } else {
             delete updates.password;
         }
 
-        logger.info(`Updating user details for User ID: ${id} with data: ${JSON.stringify(updates)}`);
+        // Validation checks for unique fields
+        const uniqueFields = [
+            { field: 'username', message: 'Username already exists' },
+            { field: 'email', message: 'Email already exists' },
+            { field: 'pokemonGoName', message: 'Pokémon Go name already exists' },
+            { field: 'trainerCode', message: 'Trainer Code already exists' }
+        ];
+
+        for (let { field, message } of uniqueFields) {
+            if (updates[field]) {
+                const query = { [field]: updates[field], _id: { $ne: id } };
+                const existingUser = await User.findOne(query);
+                if (existingUser) {
+                    logger.error(`Update failed: ${message} with status 409`);
+                    return res.status(409).json({ success: false, message });
+                }
+            }
+        }
+
+        // Sanitize updates before logging
+        const sanitizedUpdates = sanitizeForLogging(updates, ['password', 'confirmPassword']);
+        logger.info(`Updating user details for User ID: ${id} with data: ${JSON.stringify(sanitizedUpdates)}`);
+
+        // Perform the update
         const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true });
         if (!updatedUser) {
             logger.error(`Update failed: User not found with ID: ${id} with status 404`);
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ success: false, message: 'User not found' });
         }
 
         logger.info(`User ${updatedUser.username} updated successfully with status 200`);
+
+        // Prepare the response payload
         const responsePayload = {
-            user_id: updatedUser._id.toString(),
-            username: updatedUser.username,
-            email: updatedUser.email,
-            pokemonGoName: updatedUser.pokemonGoName || '',
-            trainerCode: updatedUser.trainerCode || '',
-            allowLocation: updatedUser.allowLocation || false,
-            location: updatedUser.location || '',
-            coordinates: updatedUser.coordinates || '',
-            accessTokenExpiry: accessTokenExpiry,
-            refreshTokenExpiry: refreshTokenExpiry,
-            message: 'Updated account details successfully'
+            success: true,
+            user: {
+                user_id: updatedUser._id.toString(),
+                username: updatedUser.username,
+                email: updatedUser.email,
+                pokemonGoName: updatedUser.pokemonGoName || '',
+                trainerCode: updatedUser.trainerCode || '',
+                allowLocation: updatedUser.allowLocation || false,
+                location: updatedUser.location || '',
+                coordinates: updatedUser.coordinates || '',
+                accessTokenExpiry: accessTokenExpiry,
+                refreshTokenExpiry: refreshTokenExpiry
+            },
+            passwordUpdated, // Indicates if the password was changed
+            message: passwordUpdated
+                ? 'Updated account details successfully'
+                : 'Account details updated. Password was not changed as it is identical to the previous one.'
         };
+
         res.status(200).json(responsePayload);
     } catch (err) {
         logger.error(`Unhandled exception on user update for ID: ${id}: ${err} with status 500`);
-        res.status(500).json({ message: 'Internal Server Error' });
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 });
 

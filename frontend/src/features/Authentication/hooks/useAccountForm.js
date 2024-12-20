@@ -1,6 +1,6 @@
 // useAccountForm.js
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchSuggestions, fetchLocationOptions } from '../../../services/locationServices'; // Ensure correct path
 
 const useAccountForm = (user, handleUpdateUserDetails) => {
@@ -9,6 +9,7 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
     const [isMapVisible, setIsMapVisible] = useState(false);
     const [showOptionsOverlay, setShowOptionsOverlay] = useState(false);
     const [selectedCoordinates, setSelectedCoordinates] = useState(null);
+    const [showLocationWarning, setShowLocationWarning] = useState(false); // Controlled by focus
 
     // Form state variables
     const [values, setValues] = useState({
@@ -47,7 +48,7 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
             console.log('Coordinates updated:', selectedCoordinates);
         }
     }, [selectedCoordinates, prevCoordinates]);    
-
+ 
     // Effect to alert if no user data is available
     useEffect(() => {
         if (!user) {
@@ -86,20 +87,28 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
         }
 
         // Location Validation
-        if ('location' in vals && vals.allowLocation) {
+        if ('location' in vals && vals.allowLocation) { // Updated from 'locationInput' to 'location'
             tempErrors.location = vals.location ? "" : "Location is required when location tracking is enabled.";
         }
 
         // Coordinates Validation
         if ('coordinates' in vals && vals.allowLocation) {
-            const { latitude, longitude } = selectedCoordinates;
-            tempErrors.coordinates = (latitude && longitude) ? "" : "Both latitude and longitude are required.";
+            // Use selectedCoordinates or fallback to prevCoordinates
+            const currentCoordinates = selectedCoordinates || prevCoordinates;
+
+            // Check if currentCoordinates exist and are valid
+            if (currentCoordinates) {
+                const { latitude, longitude } = currentCoordinates;
+                tempErrors.coordinates = (latitude && longitude) ? "" : "Both latitude and longitude are required.";
+            } else {
+                tempErrors.coordinates = ""; // No error if coordinates are not provided
+            }
         }
 
         setErrors(tempErrors);
         return Object.values(tempErrors).every(x => x === "");
     };    
-
+ 
     // Handle input changes
     const handleChange = async (event) => {
         const { name, value, type, checked } = event.target;
@@ -123,11 +132,11 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
             updatedValues.trainerCode = cleanValue.replace(/(.{4})/g, '$1 ').trim();
         }
 
-        if (name === 'locationInput') {
+        if (name === 'location') { // Updated from 'locationInput' to 'location'
             setShowLocationWarning(true);
             setSelectedCoordinates(null);
-            updatedValues.coordinates = null;
-            updatedValues.allowLocation = false;
+            updatedValues.coordinates = { latitude: '', longitude: '' }; // Reset coordinates
+            updatedValues.allowLocation = false; // Reset allowLocation
 
             if (value.length > 2) {
                 const fetchedSuggestions = await fetchSuggestions(value);
@@ -155,7 +164,7 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
             console.log("Validation errors:", errors);
         }
     };    
-
+ 
     // onSubmit function defined inside the hook
     const onSubmit = (vals) => {
         if (isEditable) {
@@ -163,7 +172,7 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
             let submissionValues = {
                 ...vals,
                 trainerCode: vals.trainerCode.replace(/\s+/g, ''),
-                coordinates: selectedCoordinates, // Include coordinates in submission
+                coordinates: selectedCoordinates ?? prevCoordinates,
             };
 
             // Conditionally include password fields if they are filled
@@ -186,15 +195,29 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
             handleUpdateUserDetails(user.user_id, submissionValues, setIsEditable);
         }
     };    
-
-    // Toggle edit mode
+ 
+    // Toggle edit mode and clear password fields when disabling edit mode
     const handleEditToggle = (e) => {
         e.preventDefault();
+        if (isEditable) {
+            // If currently editable and about to toggle to non-editable, clear password fields
+            setValues(prevValues => ({
+                ...prevValues,
+                password: '',
+                confirmPassword: ''
+            }));
+            setErrors(prevErrors => ({
+                ...prevErrors,
+                password: '',
+                confirmPassword: ''
+            }));
+        }
         setIsEditable(!isEditable);
     };
 
+    // Updated to show warning on focus
     const handleLocationInputFocus = () => {
-        if (selectedCoordinates) setShowLocationWarning(true);
+        setShowLocationWarning(true);
     };
 
     const handleLocationInputBlur = () => setShowLocationWarning(false);
@@ -204,7 +227,7 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
         const locationParts = [name || city, state_or_province, country].filter(Boolean);
         const formattedLocation = locationParts.join(', ');
 
-        setValues((prev) => ({ ...prev, locationInput: formattedLocation }));
+        setValues((prev) => ({ ...prev, location: formattedLocation }));
         setSuggestions([]);
     };
 
@@ -214,7 +237,7 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
         setValues((prev) => ({
             ...prev,
             allowLocation,
-            coordinates: allowLocation ? null : prev.coordinates,
+            coordinates: allowLocation ? prev.coordinates : { latitude: '', longitude: '' }, // Clear coordinates if disabling location
         }));
     
         if (allowLocation) {
@@ -253,11 +276,13 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
         }
     };
 
+    // Modified to disable allowLocation when manually selecting coordinates
     const handleCoordinatesSelect = (coordinates) => {
         setSelectedCoordinates(coordinates);
         setValues((prev) => ({
             ...prev,
-            coordinates
+            coordinates,
+            allowLocation: false, // Disable automatic location collection
         }));
     };
 
@@ -286,6 +311,32 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
         setLocationOptions([]);
     };
 
+    // Optional: Function to clear manually set coordinates
+    const clearManualCoordinates = () => {
+        setSelectedCoordinates(null);
+        setValues((prev) => ({
+            ...prev,
+            coordinates: { latitude: '', longitude: '' },
+            allowLocation: false,
+        }));
+    };
+
+    // Effect to clear password fields after successful update or toggling out of edit mode
+    useEffect(() => {
+        if (!isEditable) {
+            setValues(prevValues => ({
+                ...prevValues,
+                password: '',
+                confirmPassword: ''
+            }));
+            setErrors(prevErrors => ({
+                ...prevErrors,
+                password: '',
+                confirmPassword: ''
+            }));
+        }
+    }, [isEditable]);
+
     return {
         values,
         errors,
@@ -308,7 +359,9 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
         suggestions,
         selectSuggestion,
         locationOptions,
-        setErrors
+        showLocationWarning, // Exposed state
+        setErrors,
+        clearManualCoordinates // Expose the optional function if needed
     };
 };
 
