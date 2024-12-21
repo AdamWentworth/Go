@@ -34,6 +34,25 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
     const [hasSubmitted, setHasSubmitted] = useState(false); // Tracks submission attempts
     const [prevCoordinates, setPrevCoordinates] = useState(user?.coordinates || { latitude: '', longitude: '' });
 
+    const resetForm = () => {
+        setValues({
+            userId: user.user_id,
+            username: user.username,
+            email: user.email,
+            password: '',
+            confirmPassword: '',
+            pokemonGoName: user.pokemonGoName || '',
+            trainerCode: user.trainerCode ? user.trainerCode.replace(/(\d{4})(?=\d)/g, "$1 ") : '',
+            location: user.location || '',
+            allowLocation: user.allowLocation || false,
+            coordinates: user.coordinates || { latitude: '', longitude: '' },
+            pokemonGoNameDisabled: user.pokemonGoName === user.username,
+            accessTokenExpiry: user.accessTokenExpiry,
+            refreshTokenExpiry: user.refreshTokenExpiry
+        });
+        setErrors({});
+    };
+
     useEffect(() => {
         if (
             selectedCoordinates &&
@@ -361,7 +380,8 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
         locationOptions,
         showLocationWarning, // Exposed state
         setErrors,
-        clearManualCoordinates // Expose the optional function if needed
+        clearManualCoordinates,
+        resetForm 
     };
 };
 

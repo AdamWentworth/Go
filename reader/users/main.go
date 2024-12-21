@@ -1,3 +1,5 @@
+// main.go
+
 package main
 
 import (
@@ -31,8 +33,13 @@ func main() {
 
 	// Protected routes
 	protected := app.Group("/", verifyJWT) // JWT middleware to protect routes
+
+	// Existing protected routes
 	protected.Get("/api/ownershipData/:user_id", GetPokemonInstances)
 	protected.Get("/api/ownershipData/username/:username", GetPokemonInstancesByUsername)
+
+	// New protected route for updating username
+	protected.Put("/api/update-username/:user_id", UpdateUsernameHandler)
 
 	// Use fmt.Println for startup messages without time and log level
 	fmt.Println("Starting User Service at http://127.0.0.1:3005/")

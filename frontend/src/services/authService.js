@@ -58,6 +58,32 @@ export const updateUserDetails = async (userId, userData) => {
   }
 };
 
+// Function to update username in the pokemon users management database
+export const updateUsernameInSecondaryDB = async (userId, newUsername) => {
+  try {
+    // Use readApi to target the users database
+    const response = await readApi.put(
+      `/update-username/${userId}`,
+      { username: newUsername }, // Request payload
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        withCredentials: true, // Include credentials in the request
+      }
+    );
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error updating username in secondary DB:', error.response || error);
+    return {
+      success: false,
+      error:
+        error.response?.data?.message ||
+        'Failed to update username in secondary DB',
+    };
+  }
+};
+
 export const deleteAccount = async (userId) => {
   try {
     const response = await authApi.delete(`/delete/${userId}`);

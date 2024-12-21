@@ -7,7 +7,7 @@ import {
   logoutUser,
   updateUserDetails as updateUserService,
   deleteAccount as deleteAccountService,
-  refreshTokenService,
+  refreshTokenService, updateUsernameInSecondaryDB
 } from '../services/authService';
 import { formatTimeUntil } from '../utils/formattingHelpers';
 import { toast, ToastContainer } from 'react-toastify';
@@ -272,17 +272,36 @@ export const AuthProvider = ({ children }) => {
   
       if (!response.success) {
         console.error('Update failed:', response);
-        toast.error(`Failed to update account details: ${response.error}`);
+        // toast.error(`Failed to update account details: ${response.error}`);
         return { success: false, error: response.error };
       }
   
-      const updatedData = { ...userRef.current, ...response.data };
+      // **Detect if the username has changed**
+      const previousUsername = userRef.current.username;
+      const newUsername = response.data.data.username; // Assuming response.data.data contains the updated user data
+      const usernameChanged = previousUsername !== newUsername;
+  
+      // **Merge the updated user data correctly**
+      const updatedData = { ...userRef.current, ...response.data.data }; // response.data.data contains the 'user' object
       console.log("Updated user data after merge:", updatedData); // Log after merging
   
       setUser(updatedData); // Update the user state with the new data
+      userRef.current = updatedData; // Update the ref with the new user data
       localStorage.setItem('user', JSON.stringify(updatedData)); // Optionally update local storage
   
-      toast.success('Account details updated successfully!');
+      // **If username has changed, update it in the secondary DB**
+      if (usernameChanged) {
+        const secondaryUpdateResponse = await updateUsernameInSecondaryDB(userId, newUsername);
+  
+        if (!secondaryUpdateResponse.success) {
+          console.error('Failed to update username in secondary DB:', secondaryUpdateResponse.error);
+          toast.error('Username was updated in the main database, but failed to update in the secondary database.');
+        } else {
+          console.log('Username updated successfully in the secondary database.');
+          toast.success('Username updated successfully in all systems.');
+        }
+      }
+  
       return { success: true, data: updatedData };
     } catch (error) {
       console.error('Error updating user details:', error);

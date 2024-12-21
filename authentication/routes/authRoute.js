@@ -325,7 +325,7 @@ router.put('/update/:id', async (req, res) => {
         // Prepare the response payload
         const responsePayload = {
             success: true,
-            user: {
+            data: { // Changed from 'user' to 'data'
                 user_id: updatedUser._id.toString(),
                 username: updatedUser.username,
                 email: updatedUser.email,
@@ -341,7 +341,7 @@ router.put('/update/:id', async (req, res) => {
             message: passwordUpdated
                 ? 'Updated account details successfully'
                 : 'Account details updated. Password was not changed as it is identical to the previous one.'
-        };
+        };        
 
         res.status(200).json(responsePayload);
     } catch (err) {

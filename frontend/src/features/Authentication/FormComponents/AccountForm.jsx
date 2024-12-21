@@ -1,12 +1,14 @@
 // AccountForm.jsx
 
-import React from 'react';
-import useAccountForm from '../hooks/useAccountForm'; // Custom hook
+import React, { forwardRef, useImperativeHandle } from 'react';
+import useAccountForm from '../hooks/useAccountForm'; // Adjust the import path as needed
 import CoordinateSelector from '../CoordinateSelector';
 import LocationOptionsOverlay from '../LocationOptionsOverlay';
 import './AccountForm.css';
 
-const AccountForm = ({ user, handleUpdateUserDetails, onLogout, onDeleteAccount }) => {
+const AccountForm = forwardRef((props, ref) => {
+    const { user, handleUpdateUserDetails, onLogout, onDeleteAccount, errors: externalErrors } = props;
+
     const {
         values,
         errors,
@@ -29,12 +31,18 @@ const AccountForm = ({ user, handleUpdateUserDetails, onLogout, onDeleteAccount 
         suggestions,
         selectSuggestion,
         locationOptions,
-        showLocationWarning // Destructured state
+        showLocationWarning,
+        resetForm
     } = useAccountForm(user, handleUpdateUserDetails);
 
     if (!user) {
         return <div>Please log in to view and edit account details.</div>;
     }
+
+    // Expose the resetForm function to the parent via ref
+    useImperativeHandle(ref, () => ({
+        resetForm
+    }));
 
     return (
         <div className="account-page">
@@ -243,7 +251,7 @@ const AccountForm = ({ user, handleUpdateUserDetails, onLogout, onDeleteAccount 
                 />
             )}
         </div>
-    )
-}
+    );
+});
 
 export default AccountForm;

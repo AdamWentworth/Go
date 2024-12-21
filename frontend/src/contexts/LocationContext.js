@@ -13,62 +13,87 @@ export const LocationProvider = ({ children }) => {
   const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const checkLocationPermissionAndFetch = async () => {
+    let intervalId;
+
+    // Function to fetch and set location based on user preferences
+    const fetchLocation = () => {
       if (isLoading) {
         console.log("Still loading user info, skipping location fetching.");
-        return;  // Wait until loading is finished
+        return; // Wait until loading is finished
       }
-  
+
       if (!user) {
         console.log("User not logged in. Skipping location fetching.");
         setLocationStatus('unavailable');
+        setLocation(null);
+        localStorage.removeItem('location'); // Clear stored location if any
         return;
       }
-  
-      // If user is logged in but hasn't allowed location
-      if (!user.allowLocation) {
-        console.log("User has not allowed location. Skipping location fetching.");
-        setLocationStatus('unavailable');
-        return;
-      }
-  
-      // Check if location is already stored in localStorage
-      const storedLocation = localStorage.getItem('location');
-      if (storedLocation) {
-        const parsedLocation = JSON.parse(storedLocation);
-        console.log(`Location already stored. Latitude: ${parsedLocation.latitude}, Longitude: ${parsedLocation.longitude}`);
-        setLocation(parsedLocation);
-        setLocationStatus('available');
-        return;
-      }
-  
-      // If no location is stored, request it
-      try {
-        console.log("Requesting location...");
+
+      if (user.allowLocation) {
+        // User allows automatic location acquisition
+        console.log("User has allowed automatic location acquisition.");
+
+        // Attempt to get location from browser
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            const coords = position.coords;
-            localStorage.setItem('location', JSON.stringify(coords));
+            const coords = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            };
             setLocation(coords);
             setLocationStatus('available');
+            localStorage.setItem('location', JSON.stringify(coords));
             console.log(`Location acquired and stored. Latitude: ${coords.latitude}, Longitude: ${coords.longitude}`);
           },
           (error) => {
             console.error("Error acquiring location:", error);
             toast.error('Location services are disabled in your browser. Please enable location services in your browser settings to use location-based features.');
             setLocationStatus('unavailable');
+            setLocation(null);
+            localStorage.removeItem('location'); // Clear stored location if any
           }
         );
-      } catch (error) {
-        console.error("Error accessing geolocation:", error);
-        setLocationStatus('unavailable');
+      } else {
+        // User has disabled automatic location acquisition
+        console.log("User has disabled automatic location acquisition. Using manual coordinates.");
+
+        if (user.coordinates && typeof user.coordinates.latitude === 'number' && typeof user.coordinates.longitude === 'number') {
+          const manualCoords = {
+            latitude: user.coordinates.latitude,
+            longitude: user.coordinates.longitude,
+          };
+          setLocation(manualCoords);
+          setLocationStatus('available');
+          localStorage.setItem('location', JSON.stringify(manualCoords));
+          console.log(`Manual location set. Latitude: ${manualCoords.latitude}, Longitude: ${manualCoords.longitude}`);
+        } else {
+          console.log("No manual coordinates provided by user.");
+          setLocationStatus('unavailable');
+          setLocation(null);
+          localStorage.removeItem('location'); // Clear stored location if any
+        }
       }
     };
-  
+
     if (!isLoading && user) {
-      checkLocationPermissionAndFetch(); // Call the function after user status and loading state is resolved
+      // Initial fetch
+      fetchLocation();
+
+      // Set interval to refresh location every hour (3600000 milliseconds)
+      intervalId = setInterval(() => {
+        console.log("Refreshing location...");
+        fetchLocation();
+      }, 60 * 60 * 1000); // 1 hour in milliseconds
     }
-  }, [user, isLoading]);  
+
+    // Cleanup interval on unmount or when dependencies change
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [user, isLoading]);
 
   return (
     <LocationContext.Provider value={{ location, locationStatus }}>
