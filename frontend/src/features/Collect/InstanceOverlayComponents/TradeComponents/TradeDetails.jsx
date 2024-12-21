@@ -17,6 +17,8 @@ import { TOOLTIP_TEXTS } from '../utils/tooltipTexts.js';
 import useWantedFiltering from '../hooks/useWantedFiltering.js';
 import useToggleEditModeTrade from '../hooks/useToggleEditModeTrade.js'; 
 
+import PokemonActionOverlay from './PokemonActionOverlay.jsx'; // Import the new component
+
 const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClose, openWantedOverlay, variants, isEditable }) => {
     const { not_wanted_list, wanted_filters } = pokemon.ownershipStatus;
     const [localNotWantedList, setLocalNotWantedList] = useState({ ...not_wanted_list });
@@ -30,6 +32,9 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
 
     const { selectedImages: selectedExcludeImages, toggleImageSelection: toggleExcludeImageSelection, setSelectedImages: setSelectedExcludeImages } = useImageSelection(EXCLUDE_IMAGES_wanted);
     const { selectedImages: selectedIncludeOnlyImages, toggleImageSelection: toggleIncludeOnlyImageSelection, setSelectedImages: setSelectedIncludeOnlyImages } = useImageSelection(INCLUDE_IMAGES_wanted);
+
+    const [isOverlayOpen, setIsOverlayOpen] = useState(false);
+    const [selectedPokemon, setSelectedPokemon] = useState(null);
 
     const initializeSelection = (filterNames, filters) => {
         return filterNames.map(name => !!filters[name]);
@@ -89,7 +94,39 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
         let keyParts = String(pokemonKey).split('_');
         keyParts.pop(); // Remove the UUID part if present
         return keyParts.join('_');
-    };    
+    };
+
+    const handleViewWantedList = () => {
+        if (selectedPokemon) {
+            handlePokemonClick(selectedPokemon.key); // Proceed with original click handler
+            closeOverlay();
+        }
+    };
+
+    const handleProposeTrade = () => {
+        if (selectedPokemon) {
+            // Implement your propose trade logic here
+            // For example, you might open a trade proposal modal or navigate to a trade page
+            console.log(`Propose trade for ${selectedPokemon.name}`);
+            closeOverlay();
+        }
+    };
+
+    const closeOverlay = () => {
+        setIsOverlayOpen(false);
+        setSelectedPokemon(null);
+    };
+    
+    const handlePokemonClickModified = (pokemonKey, pokemonData) => {
+        if (isEditable) {
+            // If editable, proceed with the original click handler
+            handlePokemonClick(pokemonKey);
+        } else {
+            // If not editable, open the overlay
+            setSelectedPokemon(pokemonData);
+            setIsOverlayOpen(true);
+        }
+    };
 
     const handlePokemonClick = (pokemonKey) => {
         // Extract the base key using the existing function
@@ -143,6 +180,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
     };    
 
     return (
+        <div>
         <div className="trade-details-container">
             <div className={`top-row ${isMirror ? 'few-wanted' : ''}`}>
                 {isEditable && (
@@ -183,17 +221,19 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                     <div className="spacer"></div>
                 )}
                 <div className="mirror">
-                    <MirrorManager
-                        pokemon={pokemon}
-                        ownershipData={ownershipData}
-                        lists={lists}
-                        isMirror={isMirror}
-                        setIsMirror={setIsMirror}
-                        setMirrorKey={setMirrorKey}
-                        editMode={editMode}
-                        updateDisplayedList={(newData) => updateDisplayedList(newData, listsState, setListsState)}
-                        updateDetails={updateDetails}
-                    />
+                    {isEditable && (
+                        <MirrorManager
+                            pokemon={pokemon}
+                            ownershipData={ownershipData}
+                            lists={lists}
+                            isMirror={isMirror}
+                            setIsMirror={setIsMirror}
+                            setMirrorKey={setMirrorKey}
+                            editMode={editMode}
+                            updateDisplayedList={(newData) => updateDisplayedList(newData, listsState, setListsState)}
+                            updateDetails={updateDetails}
+                        />
+                    )}
                 </div>
             </div>
     
@@ -258,10 +298,22 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                     toggleReciprocalUpdates={toggleReciprocalUpdates}
                     sortType={sortType}
                     sortMode={sortMode}
-                    onPokemonClick={handlePokemonClick}
+                    onPokemonClick={(key) => {
+                        // Pass the entire Pokémon data if needed
+                        const pokemonData = filteredWantedList[key];
+                        handlePokemonClickModified(key, pokemonData);
+                    }}
                     variants={variants}
                 />
             </div>
+        </div>
+        <PokemonActionOverlay
+            isOpen={isOverlayOpen}
+            onClose={closeOverlay}
+            onViewWantedList={handleViewWantedList}
+            onProposeTrade={handleProposeTrade}
+            pokemon={selectedPokemon}
+        />
         </div>
     );        
 };

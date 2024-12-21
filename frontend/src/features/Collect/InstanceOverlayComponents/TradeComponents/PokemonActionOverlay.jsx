@@ -1,0 +1,32 @@
+// PokemonActionOverlay.jsx
+import React from 'react';
+import ReactDOM from 'react-dom';
+import './PokemonActionOverlay.css';
+
+const PokemonActionOverlay = ({ isOpen, onClose, onViewWantedList, onProposeTrade, pokemon }) => {
+  if (!isOpen) return null;
+
+  const handleActionClick = (action) => (e) => {
+    e.stopPropagation(); // Prevent propagation of click events
+    action();
+    onClose(); // Close the overlay after the action
+  };
+
+  // Create a portal to render the overlay at the end of the body
+  return ReactDOM.createPortal(
+    <div className="pokemon-action-overlay" onClick={onClose}>
+      <div className="overlay-content" onClick={(e) => e.stopPropagation()}>
+        <button className="close-button" onClick={onClose}>×</button>
+        <h2>{pokemon?.name}</h2>
+        <p>What would you like to do with this Pokémon?</p>
+        <div className="button-group">
+          <button onClick={handleActionClick(onViewWantedList)}>View in Wanted List</button>
+          <button onClick={handleActionClick(onProposeTrade)}>Propose a Trade</button>
+        </div>
+      </div>
+    </div>,
+    document.body // Render the overlay at the end of the body
+  );
+};
+
+export default PokemonActionOverlay;
