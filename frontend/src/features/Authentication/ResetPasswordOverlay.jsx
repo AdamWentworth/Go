@@ -35,7 +35,7 @@ const ResetPasswordOverlay = ({ onClose }) => {
   };
 
   return (
-    <div className="overlay">
+    <div className="reset-password-overlay">
       <div className="overlay-content">
         <button className="close-button" onClick={onClose}>
           &times;
