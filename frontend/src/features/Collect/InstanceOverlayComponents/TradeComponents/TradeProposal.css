@@ -1,0 +1,127 @@
+/* TradeProposal.css */
+
+.trade-proposal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6); /* Retain existing background color */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.trade-proposal-container {
+    position: relative;
+    width: 65%;
+    background-color: #333; /* Retain your overlay background color */
+    border-radius: 10px;
+    padding: 20px;
+    display: grid;
+    grid-template-rows: repeat(3, auto);
+    gap: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Close Button */
+.trade-proposal-close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: white; /* Ensure visibility against dark background */
+}
+
+/* Rows Styling */
+.trade-proposal-row {
+    display: grid;
+    align-items: center;
+}
+
+.trade-proposal-row-first,
+.trade-proposal-row-bottom {
+    grid-template-columns: 1fr 1fr;
+}
+
+.trade-proposal-row-middle {
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: center;
+    justify-items: center;
+}
+
+/* Pokémon Details */
+.trade-proposal-details {
+    padding: 10px;
+    color: white; /* Text color for contrast */
+}
+
+.trade-proposal-name {
+    margin: 0 0 10px 0;
+    font-size: 1.5em;
+}
+
+.trade-proposal-type,
+.trade-proposal-level {
+    margin: 5px 0;
+    font-size: 1em;
+}
+
+/* Pokémon Image */
+.trade-proposal-image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.trade-proposal-pokemon-img {
+    width: 300px;
+    height: 300px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+/* Propose Button */
+.trade-proposal-propose-button {
+    padding: 10px 20px;
+    font-size: 1em;
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
+
+.trade-proposal-propose-button:hover {
+    background-color: #45a049;
+}
+
+/* Stardust Count */
+.trade-proposal-stardust {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: white; /* Text color for contrast */
+}
+
+/* Diagonal Arrow */
+.trade-proposal-arrow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.trade-proposal-diagonal-arrow {
+    width: 100px;
+    height: 100px;
+}
+
+/* Error Message Styling */
+.trade-proposal-error {
+    color: red;
+    font-size: 1.2em;
+    text-align: center;
+}

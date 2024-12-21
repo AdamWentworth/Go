@@ -18,6 +18,7 @@ import useWantedFiltering from '../hooks/useWantedFiltering.js';
 import useToggleEditModeTrade from '../hooks/useToggleEditModeTrade.js'; 
 
 import PokemonActionOverlay from './PokemonActionOverlay.jsx'; // Import the new component
+import TradeProposal from './TradeProposal.jsx'; // Adjust the path as necessary
 
 const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClose, openWantedOverlay, variants, isEditable }) => {
     const { not_wanted_list, wanted_filters } = pokemon.ownershipStatus;
@@ -35,6 +36,8 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
 
     const [isOverlayOpen, setIsOverlayOpen] = useState(false);
     const [selectedPokemon, setSelectedPokemon] = useState(null);
+    const [isTradeProposalOpen, setIsTradeProposalOpen] = useState(false);
+    const [tradeClickedPokemon, setTradeClickedPokemon] = useState(null);
 
     const initializeSelection = (filterNames, filters) => {
         return filterNames.map(name => !!filters[name]);
@@ -105,12 +108,16 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
 
     const handleProposeTrade = () => {
         if (selectedPokemon) {
-            // Implement your propose trade logic here
-            // For example, you might open a trade proposal modal or navigate to a trade page
-            console.log(`Propose trade for ${selectedPokemon.name}`);
+            // Store the clicked Pokémon for TradeProposal
+            setTradeClickedPokemon(selectedPokemon);
+            
+            // Close the PokemonActionOverlay
             closeOverlay();
+            
+            // Open the TradeProposal component
+            setIsTradeProposalOpen(true);
         }
-    };
+    };      
 
     const closeOverlay = () => {
         setIsOverlayOpen(false);
@@ -178,7 +185,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
         setLocalWantedFilters({});
         setLocalNotWantedList({});
     };    
-
+    console.log(selectedPokemon)
     return (
         <div>
         <div className="trade-details-container">
@@ -314,6 +321,16 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
             onProposeTrade={handleProposeTrade}
             pokemon={selectedPokemon}
         />
+        {isTradeProposalOpen && (
+            <TradeProposal
+                passedInPokemon={pokemon} // The Pokémon passed into TradeDetails
+                clickedPokemon={tradeClickedPokemon} // The Pokémon clicked by the user
+                onClose={() => {
+                    setIsTradeProposalOpen(false);
+                    setTradeClickedPokemon(null); // Reset after closing
+                }}
+            />
+        )}
         </div>
     );        
 };
