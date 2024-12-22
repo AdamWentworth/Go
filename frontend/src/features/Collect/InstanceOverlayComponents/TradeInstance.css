@@ -13,6 +13,7 @@
   justify-content: center;
   width: 100%;
   position: relative;
+  min-height: 20px; /* Adjust this value based on the EditSaveComponent's height */
 }
 
 .trade-instance .top-row h2 {

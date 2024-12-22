@@ -1,4 +1,5 @@
 // DateCaughtComponent.jsx
+
 import React, { useRef, useState, useEffect } from 'react';
 import { parse, format, isValid } from 'date-fns';
 import DatePicker, { registerLocale } from 'react-datepicker';
@@ -39,6 +40,8 @@ const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
   useEffect(() => {
     if (editMode && dateRef.current && date) {
       dateRef.current.textContent = format(date, 'yyyy-MM-dd');
+      setCaretToEnd(dateRef.current);
+      dateRef.current.focus(); // Automatically focus when entering edit mode
     }
   }, [editMode, date]);
 
@@ -63,6 +66,10 @@ const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
         console.error(error); // Log the error for debugging
         setShowCalendar(true);
       }
+    } else {
+      // If input is cleared, reset the date
+      setDate(null);
+      onDateChange('');
     }
     setCaretToEnd(event.target);
   };
@@ -71,6 +78,7 @@ const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
     if (event.key === 'Enter') {
       event.preventDefault();
       setShowCalendar(false);
+      dateRef.current.blur(); // Remove focus to stop editing
     }
   };
 
@@ -88,11 +96,17 @@ const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
     setDate(selectedDate);
     onDateChange(format(selectedDate, 'yyyy-MM-dd'));
     setShowCalendar(false);
+    dateRef.current.blur(); // Remove focus after selecting a date
   };
 
   const handleFocus = () => {
     setShowCalendar(true); // Show calendar on focus
   };
+
+  // Conditional Rendering Logic
+  if ((!date || !isValid(date)) && !editMode) {
+    return null; // Do not render the component if date is null/invalid and not in edit mode
+  }
 
   return (
     <div className="date-container">
@@ -109,7 +123,7 @@ const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
           suppressContentEditableWarning={true}
           className={editMode ? 'editable' : 'text'}
         >
-          {date ? format(date, 'yyyy-MM-dd') : ''}
+          {date && isValid(date) ? format(date, 'yyyy-MM-dd') : ''}
         </span>
         {showCalendar && (
           <DatePicker

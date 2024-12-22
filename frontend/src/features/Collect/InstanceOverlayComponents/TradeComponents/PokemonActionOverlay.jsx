@@ -16,7 +16,12 @@ const PokemonActionOverlay = ({ isOpen, onClose, onViewWantedList, onProposeTrad
   return ReactDOM.createPortal(
     <div className="pokemon-action-overlay" onClick={onClose}>
       <div className="overlay-content" onClick={(e) => e.stopPropagation()}>
-        <button className="close-button" onClick={onClose}>×</button>
+        <button className="close-button" onClick={onClose}>×</button> 
+        <img
+        src={pokemon.currentImage}
+        alt={pokemon.name}
+        className="pokemon-action-image"
+        />
         <h2>{pokemon?.name}</h2>
         <p>What would you like to do with this Pokémon?</p>
         <div className="button-group">

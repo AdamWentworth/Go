@@ -54,6 +54,11 @@ const CPComponent = ({ pokemon, editMode, toggleEditMode, onCPChange }) => {
     }
   };
 
+  // Conditional Rendering Logic
+  if ((!cp || cp.trim() === '') && !editMode) {
+    return null;  // Do not render the component if cp is null/empty and not in edit mode
+  }
+
   return (
     <div className="cp-container" onClick={handleContainerClick}>
       <div className="cp-display">

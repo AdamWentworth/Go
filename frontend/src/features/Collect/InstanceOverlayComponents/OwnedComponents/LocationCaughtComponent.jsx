@@ -5,13 +5,13 @@ import { fetchSuggestions } from '../../../../services/locationServices';
 import './LocationCaughtComponent.css';
 
 const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
-  const [location, setLocation] = useState(pokemon.ownershipStatus.location_caught);
+  const [location, setLocation] = useState(pokemon.ownershipStatus.location_caught || '');
   const [suggestions, setSuggestions] = useState([]);
   const locationRef = useRef(null);
   const wrapperRef = useRef(null);
 
   useEffect(() => {
-    setLocation(pokemon.ownershipStatus.location_caught);
+    setLocation(pokemon.ownershipStatus.location_caught || '');
   }, [pokemon]);
 
   useEffect(() => {
@@ -29,8 +29,9 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
 
   useEffect(() => {
     if (editMode && locationRef.current) {
-      locationRef.current.textContent = location || '';
+      locationRef.current.textContent = location;
       setCaretToEnd(locationRef.current);
+      locationRef.current.focus(); // Automatically focus when entering edit mode
     }
   }, [editMode, location]);
 
@@ -40,8 +41,13 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
     onLocationChange(userInput);
 
     if (userInput.length > 2) {
-      const fetchedSuggestions = await fetchSuggestions(userInput); // Use the imported function
-      setSuggestions(fetchedSuggestions);
+      try {
+        const fetchedSuggestions = await fetchSuggestions(userInput); // Use the imported function
+        setSuggestions(fetchedSuggestions);
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+        setSuggestions([]);
+      }
     } else {
       setSuggestions([]);
     }
@@ -61,6 +67,7 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
+      locationRef.current.blur(); // Remove focus to stop editing
     }
   };
 
@@ -72,6 +79,11 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
     sel.removeAllRanges();
     sel.addRange(range);
   };
+
+  // Conditional Rendering Logic
+  if ((!location || location.trim() === '') && !editMode) {
+    return null; // Do not render the component if location is null/empty and not in edit mode
+  }
 
   return (
     <div className="location-caught-container" ref={wrapperRef}>
