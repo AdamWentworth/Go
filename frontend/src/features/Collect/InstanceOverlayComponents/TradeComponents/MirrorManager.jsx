@@ -84,8 +84,10 @@ const MirrorManager = ({
     };
 
     const toggleMirror = () => {
-        setIsMirror(prevIsMirror => !prevIsMirror);
-    };
+        if (editMode) {
+          setIsMirror(prevIsMirror => !prevIsMirror);
+        }
+      };
 
     const findExistingMirrorKey = () => {
         const basePrefix = pokemon.pokemonKey.split('_').slice(0, -1).join('_');
@@ -147,7 +149,7 @@ const MirrorManager = ({
                 alt="Mirror"
                 className={isMirror ? '' : 'grey-out'}
                 onClick={toggleMirror}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: editMode ? 'pointer' : 'default' }}
             />
             {renderTooltip()}
         </div>

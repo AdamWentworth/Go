@@ -10,7 +10,7 @@
      MANY-LAYOUT: 3 columns x 3 rows
      ────────────────────────────────────────────────────────── */
   .wanted-details-grid.many-layout {
-    grid-template-columns: 0fr 15fr 15fr;
+    grid-template-columns: 0fr 5fr 5fr;
     grid-template-rows: auto auto auto;
     grid-template-areas:
       /* row 1 */

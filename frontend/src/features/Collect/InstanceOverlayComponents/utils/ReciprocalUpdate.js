@@ -9,12 +9,12 @@ export const updateNotTradeList = (ownershipData, currentPokemonKey, otherPokemo
     // console.log(`updateNotTradeList called for ${otherPokemonKey} with add=${add}`);
 
     // Fetch the current not_trade_list from the ownership data
-    const notTradeList = ownershipData[otherPokemonKey].not_trade_list || {};
+    const notTradeList = ownershipData[otherPokemonKey].not_trade_list || {};    
 
     if (isMirror) {
         // When mirroring, ensure the original instance is excluded
         Object.keys(ownershipData).forEach(key => {
-            if (key !== currentPokemonKey && !ownershipData[key].mirror) {
+            if (key == currentPokemonKey) {
                 notTradeList[key] = add;
             }
         });

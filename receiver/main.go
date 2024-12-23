@@ -30,7 +30,8 @@ func main() {
 
 	// Initialize Fiber app
 	app := fiber.New(fiber.Config{
-		ErrorHandler: errorHandler, // Custom error handler
+		ErrorHandler: errorHandler,     // keep your custom error handler
+		BodyLimit:    50 * 1024 * 1024, // 50 MB
 	})
 
 	// Use custom logger middleware

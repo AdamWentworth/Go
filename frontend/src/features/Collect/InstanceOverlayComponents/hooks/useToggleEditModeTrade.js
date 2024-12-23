@@ -23,30 +23,50 @@ const useToggleEditModeTrade = (
     const [editMode, setEditMode] = useState(false);
 
     const toggleEditMode = () => {
-        // console.log('Toggle Edit Mode Triggered');
-        // console.log('Edit Mode:', editMode);
-        // console.log('Original not_wanted_list:', pokemon.ownershipStatus.not_wanted_list);
-        // console.log('Local not_wanted_list before update:', localNotWantedList);
+        console.log('--- toggleEditMode TRIGGERED ---');
+        console.log('Current editMode value:', editMode);
+        console.log('pokemonKey:', pokemon.pokemonKey);
+        console.log('OwnershipStatus.not_wanted_list BEFORE all changes:', pokemon.ownershipStatus.not_wanted_list);
+        console.log('localNotWantedList BEFORE all changes:', localNotWantedList);    
 
         if (editMode) {
             const updatedNotWantedList = { ...localNotWantedList };
+
+            // Make sure to log right here:
+            console.log('updatedNotWantedList AFTER copy from localNotWantedList:', updatedNotWantedList);
+
             filteredOutPokemon.forEach(key => {
                 updatedNotWantedList[key] = true;
             });
 
-            const removedKeys = Object.keys(pokemon.ownershipStatus.not_wanted_list).filter(key => !updatedNotWantedList[key]);
-            const addedKeys = Object.keys(updatedNotWantedList).filter(key => !pokemon.ownershipStatus.not_wanted_list[key]);
+            console.log('updatedNotWantedList AFTER setting filteredOutPokemon to true:', updatedNotWantedList);
+    
+
+            const removedKeys = Object.keys(pokemon.ownershipStatus.not_wanted_list).filter(
+                key => !updatedNotWantedList[key]
+              );
+              const addedKeys = Object.keys(updatedNotWantedList).filter(
+                key => !pokemon.ownershipStatus.not_wanted_list[key]
+              );
+              
+              console.log('removedKeys:', removedKeys);
+              console.log('addedKeys:', addedKeys);              
 
             const updatesToApply = {};
 
             removedKeys.forEach(key => {
-                const updatedNotTradeList = updateNotTradeList(
-                    ownershipData,
-                    pokemon.pokemonKey,
-                    key,
-                    false,
-                    isMirror
+                console.log(
+                  'Removing Key from notWantedList -> updateNotTradeList with false:',
+                  { key, pokemonKey: pokemon.pokemonKey }
                 );
+                const updatedNotTradeList = updateNotTradeList(
+                  ownershipData,
+                  pokemon.pokemonKey,
+                  key,
+                  false,
+                  isMirror
+                );
+                console.log('updatedNotTradeList (REMOVAL) returned:', updatedNotTradeList);
 
                 if (updatedNotTradeList) {
                     updatesToApply[key] = {
@@ -56,13 +76,18 @@ const useToggleEditModeTrade = (
             });
 
             addedKeys.forEach(key => {
-                const updatedNotTradeList = updateNotTradeList(
-                    ownershipData,
-                    pokemon.pokemonKey,
-                    key,
-                    true,
-                    isMirror
+                console.log(
+                  'Adding Key to notWantedList -> updateNotTradeList with true:',
+                  { key, pokemonKey: pokemon.pokemonKey }
                 );
+                const updatedNotTradeList = updateNotTradeList(
+                  ownershipData,
+                  pokemon.pokemonKey,
+                  key,
+                  true,
+                  isMirror
+                );
+                console.log('updatedNotTradeList (ADDITION) returned:', updatedNotTradeList);
 
                 if (updatedNotTradeList) {
                     updatesToApply[key] = {
@@ -85,7 +110,10 @@ const useToggleEditModeTrade = (
                 setMirrorKey(null);
             }
 
+            console.log('Final updatesToApply:', updatesToApply);
+
             updateDetails([...removedKeys, ...addedKeys, pokemon.pokemonKey], updatesToApply);
+            console.log('Called updateDetails with these keys:', [...removedKeys, ...addedKeys, pokemon.pokemonKey]);
             setLocalNotWantedList(updatedNotWantedList);
         } else {
             if (!isMirror && pokemon.ownershipStatus.mirror) {
@@ -98,8 +126,11 @@ const useToggleEditModeTrade = (
 
         console.log('Local not_wanted_list after toggleEditMode:', localNotWantedList);
         setEditMode(!editMode);
-
         pokemon.ownershipStatus.not_wanted_list = localNotWantedList;
+        console.log(
+            'pokemon.ownershipStatus.not_wanted_list AFTER assignment:',
+            pokemon.ownershipStatus.not_wanted_list
+          );          
     };
 
     return { editMode, toggleEditMode };
