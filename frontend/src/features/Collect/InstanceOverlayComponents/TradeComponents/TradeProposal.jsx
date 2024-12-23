@@ -77,38 +77,16 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, onClose }) => {
                     >
                         Propose Trade
                     </button>
+
                     <div className="trade-proposal-arrow">
-                        {/* Diagonal Arrow */}
-                        <svg
-                            width="100"
-                            height="100"
-                            className="trade-proposal-diagonal-arrow"
-                        >
-                            <defs>
-                                <marker
-                                    id="arrowhead"
-                                    markerWidth="10"
-                                    markerHeight="7"
-                                    refX="0"
-                                    refY="3.5"
-                                    orient="auto"
-                                >
-                                    <polygon points="0 0, 10 3.5, 0 7" />
-                                </marker>
-                            </defs>
-                            <line
-                                x1="0"
-                                y1="100"
-                                x2="100"
-                                y2="0"
-                                stroke="black"
-                                strokeWidth="2"
-                                markerEnd="url(#arrowhead)"
-                            />
-                        </svg>
+                        <img
+                            src="/images/trade_arrow.png" /* Correct path to your trade arrow image */
+                            alt="Trade arrow"
+                            className="trade-proposal-arrow-image"
+                        />
                     </div>
+
                     <div className="trade-proposal-stardust">
-                        {/* Placeholder for Stardust Count */}
                         <p>Stardust: 0</p>
                     </div>
                 </div>
@@ -139,25 +117,6 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, onClose }) => {
             </div>
         </div>
     )
-    };
-
-    TradeProposal.propTypes = {
-        passedInPokemon: PropTypes.shape({
-            name: PropTypes.string.isRequired,
-            type: PropTypes.string.isRequired,
-            level: PropTypes.number.isRequired,
-            currentImage: PropTypes.string.isRequired,
-            stardust: PropTypes.number,
-            // Add other relevant properties
-        }).isRequired,
-        clickedPokemon: PropTypes.shape({
-            name: PropTypes.string.isRequired,
-            type: PropTypes.string.isRequired,
-            level: PropTypes.number.isRequired,
-            currentImage: PropTypes.string.isRequired,
-            // Add other relevant properties
-        }).isRequired,
-        onClose: PropTypes.func.isRequired,
     };
 
     export default TradeProposal;

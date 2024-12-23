@@ -20,6 +20,9 @@ import useToggleEditModeTrade from '../hooks/useToggleEditModeTrade.js';
 import PokemonActionOverlay from './PokemonActionOverlay.jsx'; // Import the new component
 import TradeProposal from './TradeProposal.jsx'; // Adjust the path as necessary
 
+import { parsePokemonKey } from '../../../../utils/PokemonIDUtils.js'; 
+import { getAllFromDB, OWNERSHIP_DATA_STORE } from '../../../../services/indexedDB.js';
+
 const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClose, openWantedOverlay, variants, isEditable }) => {
     const { not_wanted_list, wanted_filters } = pokemon.ownershipStatus;
     const [localNotWantedList, setLocalNotWantedList] = useState({ ...not_wanted_list });
@@ -106,19 +109,63 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
         }
     };
 
-    const handleProposeTrade = () => {
-        if (selectedPokemon) {
-            // Store the clicked Pokémon for TradeProposal
-            setTradeClickedPokemon(selectedPokemon);
-            
-            // Close the PokemonActionOverlay
-            closeOverlay();
-            
-            // Open the TradeProposal component
-            setIsTradeProposalOpen(true);
+    const handleProposeTrade = async () => {
+        // 1) Check if a Pokémon is actually selected
+        if (!selectedPokemon) {
+            console.log("[TradeDetails] No selectedPokemon. Aborting trade proposal.");
+            return;
         }
-    };      
 
+        // 2) Parse the selected Pokémon's key to extract the baseKey
+        const parsedSelected = parsePokemonKey(selectedPokemon.key);
+        const { baseKey: selectedBaseKey } = parsedSelected;
+
+        // 3) Retrieve *my* ownership data from IndexedDB
+        let userOwnershipData = [];
+        try {
+            // getAllFromDB returns an array of all records in the store
+            userOwnershipData = await getAllFromDB(OWNERSHIP_DATA_STORE);
+        } catch (error) {
+            console.error("Failed to fetch userOwnershipData from IndexedDB:", error);
+            alert("Could not fetch your ownership data. Aborting trade proposal.");
+            return;
+        }
+
+        // 4) Filter to find all instances where the baseKey matches and is_owned === true
+        const matchedInstances = userOwnershipData.filter((item) => {
+            // We assume that each item has `instance_id` that looks like "0055-default_uuidHere..."
+            // Use parsePokemonKey on the instance_id to get the baseKey of this record
+            const parsedOwned = parsePokemonKey(item.instance_id);
+            const { baseKey } = parsedOwned;
+
+            return baseKey === selectedBaseKey && item.is_owned === true;
+        });
+        console.log("matchedInstances after filter =>", matchedInstances);
+
+        // 5) If there are no matches, the user does not own this Pokémon
+        if (matchedInstances.length === 0) {
+            alert("You cannot offer this trade, you do not own this Pokémon.");
+            return;
+        }
+
+        // 6) The user owns at least one instance of this Pokémon.
+        //    Attach info about these matched instances so TradeProposal can see them
+        const selectedPokemonWithMatches = {
+            ...selectedPokemon,
+            matchedInstances
+        };
+        console.log("[TradeDetails] Constructed selectedPokemonWithMatches:", selectedPokemonWithMatches);
+
+        // 7) Proceed with your existing flow to open the trade proposal
+        setTradeClickedPokemon(selectedPokemonWithMatches);
+
+        // Close the PokemonActionOverlay
+        closeOverlay();
+
+        // Open the TradeProposal component
+        setIsTradeProposalOpen(true);
+    };
+    
     const closeOverlay = () => {
         setIsOverlayOpen(false);
         setSelectedPokemon(null);
@@ -185,7 +232,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
         setLocalWantedFilters({});
         setLocalNotWantedList({});
     };    
-    console.log(selectedPokemon)
+
     return (
         <div>
         <div className="trade-details-container">
@@ -320,17 +367,18 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
             onViewWantedList={handleViewWantedList}
             onProposeTrade={handleProposeTrade}
             pokemon={selectedPokemon}
+            ownershipData={ownershipData}
         />
         {isTradeProposalOpen && (
             <TradeProposal
-                passedInPokemon={pokemon} // The Pokémon passed into TradeDetails
-                clickedPokemon={tradeClickedPokemon} // The Pokémon clicked by the user
+                passedInPokemon={pokemon} 
+                clickedPokemon={tradeClickedPokemon} 
                 onClose={() => {
-                    setIsTradeProposalOpen(false);
-                    setTradeClickedPokemon(null); // Reset after closing
+                setIsTradeProposalOpen(false);
+                setTradeClickedPokemon(null); 
                 }}
             />
-        )}
+            )}
         </div>
     );        
 };

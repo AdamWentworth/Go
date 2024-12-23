@@ -22,7 +22,6 @@
     border: 1px solid #666; /* Lighter border */
     display: grid;
     grid-template-rows: repeat(3, auto);
-    gap: 20px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -109,15 +108,13 @@
 }
 
 /* Diagonal Arrow */
-.trade-proposal-arrow {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.trade-proposal-diagonal-arrow {
-    width: 100px;
-    height: 100px;
+.trade-proposal-arrow-image {
+    width: 160px; /* Adjust the size as needed */
+    height: auto; /* Keep the aspect ratio */
+    display: block;
+    margin: 0 auto; /* Center the image */
+    transform: rotate(-50deg); /* Rotate 45 degrees counterclockwise */
+    transform-origin: center; /* Rotate around the center of the image */
 }
 
 /* Error Message Styling */

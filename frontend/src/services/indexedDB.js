@@ -9,7 +9,7 @@ const DB_VERSION = 1;
 
 // Store names
 const VARIANTS_STORE = 'pokemonVariants';
-const OWNERSHIP_DATA_STORE = 'pokemonOwnership';
+export const OWNERSHIP_DATA_STORE = 'pokemonOwnership';
 const BATCHED_UPDATES_STORE = 'batchedUpdates';
 
 // New stores for lists

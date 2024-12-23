@@ -3,7 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './PokemonActionOverlay.css';
 
-const PokemonActionOverlay = ({ isOpen, onClose, onViewWantedList, onProposeTrade, pokemon }) => {
+const PokemonActionOverlay = ({ isOpen, onClose, onViewWantedList, onProposeTrade, pokemon, ownershipData }) => {
   if (!isOpen) return null;
 
   const handleActionClick = (action) => (e) => {
@@ -11,6 +11,8 @@ const PokemonActionOverlay = ({ isOpen, onClose, onViewWantedList, onProposeTrad
     action();
     onClose(); // Close the overlay after the action
   };
+
+  console.log(pokemon)
 
   // Create a portal to render the overlay at the end of the body
   return ReactDOM.createPortal(
