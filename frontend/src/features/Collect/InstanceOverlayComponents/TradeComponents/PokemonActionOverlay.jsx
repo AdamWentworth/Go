@@ -25,8 +25,8 @@ const PokemonActionOverlay = ({ isOpen, onClose, onViewWantedList, onProposeTrad
         <h2>{pokemon?.name}</h2>
         <p>What would you like to do with this Pokémon?</p>
         <div className="button-group">
-          <button onClick={handleActionClick(onViewWantedList)}>View in Wanted List</button>
-          <button onClick={handleActionClick(onProposeTrade)}>Propose a Trade</button>
+          <button className='view-in-wanted' onClick={handleActionClick(onViewWantedList)}>View in Wanted List</button>
+          <button className='propose-trade' onClick={handleActionClick(onProposeTrade)}>Propose a Trade</button>
         </div>
       </div>
     </div>,

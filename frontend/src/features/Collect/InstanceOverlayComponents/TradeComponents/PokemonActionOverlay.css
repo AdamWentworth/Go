@@ -32,6 +32,31 @@
     margin-top: 10px;
 }
 
+.pokemon-action-overlay .button-group button {
+    width: 100%;
+    justify-content: center;
+    border: none;
+    outline: none;
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    border-radius: 15px;
+    transition: background-color 0.3s ease;
+    margin-bottom: 5px;
+    font-size: 14px;
+  }
+
+  .view-in-wanted {
+    background-color: #F44336;
+    color: white;
+  }
+
+  .propose-trade {
+    background-color: #4CAF50;
+    color: white;
+  }
+
 .pokemon-action-overlay .close-button {
     position: absolute;
     top: 10px;
