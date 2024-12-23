@@ -1,4 +1,3 @@
-// WantedDetails.jsx
 import React, { useState, useContext, useEffect } from 'react';
 import './WantedDetails.css';
 import EditSaveComponent from '../EditSaveComponent.jsx';
@@ -24,8 +23,17 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, open
     const [pendingUpdates, setPendingUpdates] = useState({});
     const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
 
-    const { selectedImages: selectedExcludeImages, toggleImageSelection: toggleExcludeImageSelection, setSelectedImages: setSelectedExcludeImages } = useImageSelection(EXCLUDE_IMAGES_trade);
-    const { selectedImages: selectedIncludeOnlyImages, toggleImageSelection: toggleIncludeOnlyImageSelection, setSelectedImages: setSelectedIncludeOnlyImages } = useImageSelection(INCLUDE_IMAGES_trade);
+    const {
+        selectedImages: selectedExcludeImages,
+        toggleImageSelection: toggleExcludeImageSelection,
+        setSelectedImages: setSelectedExcludeImages
+    } = useImageSelection(EXCLUDE_IMAGES_trade);
+
+    const {
+        selectedImages: selectedIncludeOnlyImages,
+        toggleImageSelection: toggleIncludeOnlyImageSelection,
+        setSelectedImages: setSelectedIncludeOnlyImages
+    } = useImageSelection(INCLUDE_IMAGES_trade);
 
     const initializeSelection = (filterNames, filters) => {
         return filterNames.map(name => !!filters[name]);
@@ -86,6 +94,7 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, open
     const shouldShowFewLayout = isSmallScreen || filteredTradeListCount <= 15;
 
     const handleResetFilters = () => {
+        if (!editMode) return;
         setSelectedExcludeImages(EXCLUDE_IMAGES_trade.map(() => false));
         setSelectedIncludeOnlyImages(INCLUDE_IMAGES_trade.map(() => false));
         setLocalTradeFilters({});
@@ -99,21 +108,17 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, open
     };
 
     const handlePokemonClick = (pokemonKey) => {
-
         const baseKey = extractBaseKey(pokemonKey);
-
         const variantData = variants.find(variant => variant.pokemonKey === baseKey);
         if (!variantData) {
             console.error(`Variant not found for pokemonKey: ${pokemonKey}`);
             return;
         }
-
         const ownershipDataEntry = ownershipData[pokemonKey];
         if (!ownershipDataEntry) {
             console.error(`Pokemon not found in ownershipData for key: ${pokemonKey}`);
             return;
         }
-
         const mergedPokemonData = {
             ...variantData,
             ownershipStatus: {
@@ -121,103 +126,85 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, open
                 ...ownershipDataEntry,
             },
         };
-
         openTradeOverlay(mergedPokemonData);
     };
 
     return (
-        <div className="wanted-details-container">
-            <div className="top-row">
-                <div className={shouldShowFewLayout ? "centered" : "left-side"}>
-                    {isEditable && (
-                        <>
-                            <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
-                            <div className={`reset-container ${editMode ? 'editable' : ''}`}>
-                                <img
-                                    src={`${process.env.PUBLIC_URL}/images/reset.png`}
-                                    alt="Reset Filters"
-                                    style={{
-                                        cursor: editMode ? 'pointer' : 'default',
-                                        width: '25px',
-                                        height: 'auto'
-                                    }}
-                                    onClick={editMode ? handleResetFilters : null}
-                                />
-                            </div>
-                        </>
-                    )}
-                    <div className="header-group exclude-header">
-                        <h3>Exclude</h3>
-                    </div>
-                </div>
-                {!shouldShowFewLayout && (
-                    <div className="header-group include-header">
-                        <h3>Include</h3>
-                    </div>
+        <div>
+        <div
+            className={
+                `wanted-details-grid ${shouldShowFewLayout ? 'few-layout' : 'many-layout'}`
+            }
+        >
+            {/* -- EDIT/SAVE (top-left or top-left in both layouts) -- */}
+            <div className="edit-save">
+                {isEditable && (
+                    <EditSaveComponent
+                        editMode={editMode}
+                        toggleEditMode={handleToggleEditMode}
+                    />
                 )}
             </div>
-    
-            {shouldShowFewLayout ? (
-                <>
-                    <div className="image-group exclude-few">
-                        <FilterImages
-                            images={EXCLUDE_IMAGES_trade}
-                            selectedImages={selectedExcludeImages}
-                            toggleImageSelection={toggleExcludeImageSelection}
-                            editMode={editMode}
-                            tooltipTexts={FILTER_NAMES.slice(6).map(name => TOOLTIP_TEXTS[name])}
-                        />
-                    </div>
-    
-                    <div className="include-only-header-group">
-                        <h3>Include</h3>
-                    </div>
-                    <div className="image-group include-few">
-                        <FilterImages
-                            images={INCLUDE_IMAGES_trade}
-                            selectedImages={selectedIncludeOnlyImages}
-                            toggleImageSelection={toggleIncludeOnlyImageSelection}
-                            editMode={editMode}
-                            tooltipTexts={FILTER_NAMES.slice(0, 6).map(name => TOOLTIP_TEXTS[name])}
-                        />
-                    </div>
-                </>
-            ) : (
-                <div className="image-row-container">
-                    <div className="exclude-header-group image-group">
-                        <FilterImages
-                            images={EXCLUDE_IMAGES_trade}
-                            selectedImages={selectedExcludeImages}
-                            toggleImageSelection={toggleExcludeImageSelection}
-                            editMode={editMode}
-                            tooltipTexts={FILTER_NAMES.slice(6).map(name => TOOLTIP_TEXTS[name])}
-                        />
-                    </div>
-                    <div className="include-only-header-group image-group">
-                        <FilterImages
-                            images={INCLUDE_IMAGES_trade}
-                            selectedImages={selectedIncludeOnlyImages}
-                            toggleImageSelection={toggleIncludeOnlyImageSelection}
-                            editMode={editMode}
-                            tooltipTexts={FILTER_NAMES.slice(0, 6).map(name => TOOLTIP_TEXTS[name])}
-                        />
-                    </div>
+
+            {/* -- EXCLUDE HEADER -- */}
+            <div className="exclude-header">
+                <h3>Exclude</h3>
+            </div>
+
+            {/* -- INCLUDE HEADER (only visually present in the many-layout's top row) -- */}
+            <div className="include-header">
+                <h3>Include</h3>
+            </div>
+
+            {/* -- EXCLUDE IMAGES -- */}
+            <div className="exclude-images">
+                <FilterImages
+                    images={EXCLUDE_IMAGES_trade}
+                    selectedImages={selectedExcludeImages}
+                    toggleImageSelection={toggleExcludeImageSelection}
+                    editMode={editMode}
+                    tooltipTexts={FILTER_NAMES.slice(6).map(name => TOOLTIP_TEXTS[name])}
+                />
+            </div>
+
+            {/* -- INCLUDE IMAGES -- */}
+            <div className="include-images">
+                <FilterImages
+                    images={INCLUDE_IMAGES_trade}
+                    selectedImages={selectedIncludeOnlyImages}
+                    toggleImageSelection={toggleIncludeOnlyImageSelection}
+                    editMode={editMode}
+                    tooltipTexts={FILTER_NAMES.slice(0, 6).map(name => TOOLTIP_TEXTS[name])}
+                />
+            </div>
+
+            {/* -- RESET BUTTON -- */}
+            {isEditable && (
+                <div className="reset">
+                    <img
+                        src={`${process.env.PUBLIC_URL}/images/reset.png`}
+                        alt="Reset Filters"
+                        onClick={handleResetFilters}
+                    />
                 </div>
             )}
-    
-            <h2>For Trade List:</h2>
-            <TradeListDisplay
-                pokemon={pokemon}
-                lists={{ trade: filteredTradeList }}
-                localNotTradeList={localNotTradeList}
-                setLocalNotTradeList={setLocalNotTradeList}
-                editMode={editMode}
-                toggleReciprocalUpdates={toggleReciprocalUpdates}
-                ownershipData={ownershipData}
-                sortType={sortType}
-                sortMode={sortMode}
-                onPokemonClick={handlePokemonClick}
-            />
+            </div>
+            {/* -- FOR TRADE (includes the header text and the actual TradeListDisplay) -- */}
+            <div className="for-trade">
+                <h2>For Trade List:</h2>
+                <TradeListDisplay
+                    pokemon={pokemon}
+                    lists={{ trade: filteredTradeList }}
+                    localNotTradeList={localNotTradeList}
+                    setLocalNotTradeList={setLocalNotTradeList}
+                    editMode={editMode}
+                    toggleReciprocalUpdates={toggleReciprocalUpdates}
+                    ownershipData={ownershipData}
+                    sortType={sortType}
+                    sortMode={sortMode}
+                    onPokemonClick={handlePokemonClick}
+                />
+            </div>
         </div>
     );
 };

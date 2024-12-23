@@ -1,186 +1,129 @@
-/* WantedTradeDetails.css */
-.wanted-details-container {
+.wanted-details-grid {
+    /* Shared container styles */
+    display: grid;
+    gap: 0px; /* space between grid items */
     padding: 10px;
     border-radius: 8px;
+  }
+  
+  /* ──────────────────────────────────────────────────────────
+     MANY-LAYOUT: 3 columns x 3 rows
+     ────────────────────────────────────────────────────────── */
+  .wanted-details-grid.many-layout {
+    grid-template-columns: 0fr 15fr 15fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      /* row 1 */
+      "edit-save exclude-header include-header"
+      /* row 2 */
+      ".          exclude-images include-images"
+      /* row 3 */
+      "reset      for-trade      for-trade";
+  }
+  
+  /* ──────────────────────────────────────────────────────────
+     FEW-LAYOUT: 3 columns x 5 rows
+     ────────────────────────────────────────────────────────── */
+  .wanted-details-grid.few-layout {
+    grid-template-columns: 0px 5fr 5fr;
+    grid-template-rows: auto auto auto auto auto;
+    grid-template-areas:
+      /* row 1 */
+      "edit-save exclude-header exclude-header"
+      /* row 2 */
+      "exclude-images exclude-images exclude-images"
+      /* row 3 */
+      "reset include-header include-header"
+      /* row 4 */
+      "include-images include-images include-images"
+      /* row 5 */
+      "for-trade for-trade for-trade";
+  }
+  .wanted-details-grid h3 {
+    margin-block-start: 0px;
+    margin-block-end: 5px;
+  }
+  
+  /* ───────────── Named grid-areas ───────────── */
+  .edit-save {
+    grid-area: edit-save;
+  }
+  .reset {
+    filter: invert(1);
+    cursor: pointer;
+  }
+  .reset img {
+    width: 28px;
+    height: auto;
+  }
+  
+  .exclude-header {
+    grid-area: exclude-header;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .include-header {
+    grid-area: include-header;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .exclude-images {
+    grid-area: exclude-images;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .include-images {
+    grid-area: include-images;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .reset {
+    grid-area: reset;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* left-aligned */
+  }
+  
+  .for-trade {
+    grid-area: for-trade;
     display: flex;
     flex-direction: column;
-}
+    align-items: center; /* centers the content horizontally */
+  }
 
-.wanted-details-container .top-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    position: relative; /* Allows for absolute positioning */
-}
-
-.wanted-details-container .left-side {
-    display: flex;
-    align-items: flex-end;
-    width: 50%; /* Take up the first half of the top row */
-    position: relative;
-    margin-top: -20px;
-}
-
-.wanted-details-container .image-group.include-few {
-    margin-bottom: 20px;
-}
-
-.wanted-details-container .image-row-container {
-    margin-bottom: 10px;
-}
-
-.wanted-details-container .centered {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    position: relative;
-    margin-top: 0px;
-    margin-bottom: 15px;
-}
-
-.wanted-details-container .include-only-header-group {
-    margin-top: -10px;
-    margin-bottom: -10px;
-}
-
-.wanted-details-container .edit-save-container {
-    flex-shrink: 0;
-    margin-right: auto; /* Align to the far left */
-    margin-top: 20px;
-}
-
-.wanted-details-container .header-group {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 50%;
-}
-
-.wanted-details-container .header-group.exclude-header {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.wanted-details-container .header-group h3 {
-    margin-block-end: 0px;
-    margin-block-start: 0px;
-}
-
-.wanted-details-container h2 {
-    margin-bottom: 0;
-    margin-top: -20px;
-}
-
-.wanted-details-container .grey-out {
-    filter: grayscale(100%);
-    opacity: 0.5;
-}
-
-.wanted-details-container .friendship-slider {
-    width: 100%;
-}
-
-.wanted-details-container .trade-list-container {
+  .wanted-details-grid.many-layout ~ .for-trade {
+    margin-top: -30px;
+  }
+  
+  /* Example: stylize the <h2> within .for-trade */
+  .for-trade h2 {
+    margin: 0 0 10px 0;
+  }
+  
+  .trade-list-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    margin-top: 10px;
     overflow-y: auto;
-    max-height: 650px; /* Adjust based on your layout */
+    max-height: 650px;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* Internet Explorer 10+ */
-}
-
-.wanted-details-container .trade-list-container::-webkit-scrollbar {
+  }
+  
+  .trade-list-container::-webkit-scrollbar {
     display: none; /* Chrome, Safari, and Opera */
-}
-
-.wanted-details-container .trade-item img {
-    width: 120px; /* Adjusts width */
-    height: auto; /* Maintains aspect ratio */
-    border-radius: 8px; /* Rounds corners */
-}
-
-.wanted-details-container .toggle-not-trade {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 30px;
-    height: 30px;
-    background-color: white;
-    border: 1px solid black;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    z-index: 10; /* Ensure it is on top of the image */
-}
-
-.wanted-details-container .toggle-not-trade:focus {
-    outline: none;
-}
-
-.wanted-details-container .toggle-not-trade:hover {
-    background-color: lightgray;
-}
-
-.wanted-details-container .image-row-container {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-}
-
-.wanted-details-container .image-group {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.wanted-details-container .image-row img {
-    width: 35px;
-    height: 35px;
-    margin-right: 5px;
-    object-fit: contain;
-    padding: 0;
-    border: none;
-}
-
-.wanted-details-container .centered .edit-save-container {
-    position: absolute;
-    left: 0;
-}
-
-@media (max-width: 480px) {
-    .wanted-details-container .trade-item img.trade-item-img {
-        width: 80px;
-        height: auto;
-        border-radius: 8px;
-    }
-}
-
-.wanted-details-container .reset-container {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
-    margin-left: -2px;
-    filter: invert(1);
-    margin-top: 60px;
-}
-
-.wanted-details-container .reset-container img {
-    transition: filter 0.3s ease, cursor 0.3s ease;
-    cursor: default;
-    width: 25px;
+  }
+  
+  .trade-item img {
+    width: 120px;
     height: auto;
-}
-
-.wanted-details-container .reset-container.editable img {
-    cursor: pointer;
-}
+    border-radius: 8px;
+  }
+  

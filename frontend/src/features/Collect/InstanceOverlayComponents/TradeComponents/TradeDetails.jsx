@@ -291,7 +291,7 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
                 )
             )}
         
-            <div>
+            <div className='wanted'>
                 <h2>Wanted List:</h2>
                 <WantedListDisplay
                     pokemon={pokemon}

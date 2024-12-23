@@ -28,3 +28,12 @@
     margin: 0; /* Ensure no margins are causing movement */
     padding: 0; /* Ensure no padding is causing movement */
 }
+
+.image-row img {
+    width: 35px;
+    height: 35px;
+    margin-right: 5px;
+    object-fit: contain;
+    padding: 0;
+    border: none;
+}
