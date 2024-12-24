@@ -91,8 +91,13 @@
     margin: 10px 0px -10px;
 }
 
+.for-trade h2 {
+    font-size: 16px;
+}
+
 .trade-details-container.include-few ~ h2 {
     margin: -20px 0 -10px;
+    font-size: 18px;
 }
 
 .trade-details-container .mirror img {

@@ -115,11 +115,11 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
             console.log("[TradeDetails] No selectedPokemon. Aborting trade proposal.");
             return;
         }
-
+    
         // 2) Parse the selected Pokémon's key to extract the baseKey
         const parsedSelected = parsePokemonKey(selectedPokemon.key);
         const { baseKey: selectedBaseKey } = parsedSelected;
-
+    
         // 3) Retrieve *my* ownership data from IndexedDB
         let userOwnershipData = [];
         try {
@@ -130,41 +130,46 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
             alert("Could not fetch your ownership data. Aborting trade proposal.");
             return;
         }
-
+    
         // 4) Filter to find all instances where the baseKey matches and is_owned === true
-        const matchedInstances = userOwnershipData.filter((item) => {
-            // We assume that each item has `instance_id` that looks like "0055-default_uuidHere..."
-            // Use parsePokemonKey on the instance_id to get the baseKey of this record
+        const ownedInstances = userOwnershipData.filter((item) => {
             const parsedOwned = parsePokemonKey(item.instance_id);
             const { baseKey } = parsedOwned;
-
             return baseKey === selectedBaseKey && item.is_owned === true;
         });
-        console.log("matchedInstances after filter =>", matchedInstances);
-
+        console.log("ownedInstances after filter =>", ownedInstances);
+    
         // 5) If there are no matches, the user does not own this Pokémon
-        if (matchedInstances.length === 0) {
+        if (ownedInstances.length === 0) {
             alert("You cannot offer this trade, you do not own this Pokémon.");
             return;
         }
-
-        // 6) The user owns at least one instance of this Pokémon.
-        //    Attach info about these matched instances so TradeProposal can see them
-        const selectedPokemonWithMatches = {
-            ...selectedPokemon,
-            matchedInstances
-        };
-        console.log("[TradeDetails] Constructed selectedPokemonWithMatches:", selectedPokemonWithMatches);
-
-        // 7) Proceed with your existing flow to open the trade proposal
-        setTradeClickedPokemon(selectedPokemonWithMatches);
-
-        // Close the PokemonActionOverlay
-        closeOverlay();
-
-        // Open the TradeProposal component
-        setIsTradeProposalOpen(true);
-    };
+    
+        // 6) Check for instances that are also marked as is_for_trade
+        const tradeableInstances = ownedInstances.filter(item => item.is_for_trade === true);
+    
+        if (tradeableInstances.length > 0) {
+            // User owns and has tradeable instances of this Pokémon
+            const selectedPokemonWithMatches = {
+                ...selectedPokemon,
+                matchedInstances: tradeableInstances
+            };
+    
+            console.log("[TradeDetails] Constructed selectedPokemonWithMatches:", selectedPokemonWithMatches);
+    
+            // Proceed with the existing trade proposal flow
+            setTradeClickedPokemon(selectedPokemonWithMatches);
+    
+            // Close the PokemonActionOverlay
+            closeOverlay();
+    
+            // Open the TradeProposal component
+            setIsTradeProposalOpen(true);
+        } else {
+            // User owns the Pokémon but does not have it listed for trade
+            alert("You own this Pokémon but you do not have it listed for Trade.");
+        }
+    };    
     
     const closeOverlay = () => {
         setIsOverlayOpen(false);
