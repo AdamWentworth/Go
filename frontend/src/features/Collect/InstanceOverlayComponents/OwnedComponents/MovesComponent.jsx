@@ -4,13 +4,23 @@ import './MovesComponent.css';
 
 const MovesComponent = ({ pokemon, editMode, onMovesChange }) => {
   const allMoves = pokemon.moves;
-  const fastMoves = allMoves.filter(move => move.is_fast);
-  const chargedMoves = allMoves.filter(move => !move.is_fast);
-
+  
   // Updated to allow "unselected move" as default
   const [fastMove, setFastMove] = useState(pokemon.ownershipStatus.fast_move_id || null);
   const [chargedMove1, setChargedMove1] = useState(pokemon.ownershipStatus.charged_move1_id || null);
   const [chargedMove2, setChargedMove2] = useState(pokemon.ownershipStatus.charged_move2_id || null);
+
+  // Whenever the parent updates 'pokemon', reset local states
+  useEffect(() => {
+    if (pokemon?.ownershipStatus) {
+      setFastMove(pokemon.ownershipStatus.fast_move_id || null);
+      setChargedMove1(pokemon.ownershipStatus.charged_move1_id || null);
+      setChargedMove2(pokemon.ownershipStatus.charged_move2_id || null);
+    }
+  }, [pokemon]);
+  
+  const fastMoves = allMoves.filter(move => move.is_fast);
+  const chargedMoves = allMoves.filter(move => !move.is_fast);
 
   const getMoveById = (id) => allMoves.find(move => move.move_id === id);
 

@@ -52,7 +52,8 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
             location_card: value.location_card,
             key: key,
             gender: value.gender,
-            registered: value.registered
+            registered: value.registered,
+            moves: variantDetail?.moves
         };
 
         // Assigning the listItem under the corresponding pokemonKey in each list
@@ -114,7 +115,8 @@ export const initializePokemonLists = (ownershipData, variants, search) => {
             location_card: value.location_card,
             key: key,
             gender: value.gender,
-            registered: value.registered
+            registered: value.registered,
+            moves: variantDetail?.moves
         };
 
         // Assign the listItem under the corresponding pokemonKey in each list

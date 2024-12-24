@@ -1,182 +1,181 @@
 // TradeProposal.jsx
 import React, { useEffect, useRef, useState } from 'react';
-import PropTypes from 'prop-types';
 import './TradeProposal.css';
+import MovesComponent from '../OwnedComponents/MovesComponent'; 
 
 const TradeProposal = ({ passedInPokemon, clickedPokemon, onClose }) => {
     const closeButtonRef = useRef(null);
-
-    // New local state to hold the selected matched instance
+  
+    // Track which matched instance is selected
     const [selectedMatchedInstance, setSelectedMatchedInstance] = useState(null);
-
+  
+    // Grab the matchedInstances array
+    const { matchedInstances = [] } = clickedPokemon || {};
+  
+    // Default to the first matched instance when loaded
     useEffect(() => {
-        if (closeButtonRef.current) {
-            closeButtonRef.current.focus();
-        }
-    }, []);
-
-    // If data is missing, show error
-    if (!passedInPokemon || !clickedPokemon) {
-        return (
-            <div className="trade-proposal-overlay">
-                <div className="trade-proposal-container">
-                    <button
-                        className="trade-proposal-close-button"
-                        onClick={onClose}
-                        aria-label="Close Trade Proposal"
-                        ref={closeButtonRef}
-                    >
-                        X
-                    </button>
-                    <div className="trade-proposal-row">
-                        <p className="trade-proposal-error">Missing Pokémon data. Please try again.</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // Pull out the matchedInstances (if any) from clickedPokemon
-    const { matchedInstances = [] } = clickedPokemon;
-
-    // If we haven’t picked an instance yet, pick the first one by default
-    useEffect(() => {
-        if (matchedInstances.length > 0) {
-            setSelectedMatchedInstance(matchedInstances[0]);
-        }
+      if (matchedInstances.length > 0) {
+        setSelectedMatchedInstance(matchedInstances[0]);
+      }
     }, [matchedInstances]);
-
-    // Handler for changing the selected matched instance
+  
+    // When user changes the <select> dropdown
     const handleInstanceChange = (e) => {
-        const instanceId = e.target.value;
-        const foundInstance = matchedInstances.find(inst => inst.instance_id === instanceId);
-        setSelectedMatchedInstance(foundInstance);
+      const chosenId = e.target.value;
+      const found = matchedInstances.find(
+        (inst) => inst.ownershipStatus.instance_id === chosenId
+      );
+      setSelectedMatchedInstance(found || null);
     };
-
+  
     // This is the button the user clicks to confirm the trade
     const handleProposeTrade = () => {
-        if (!selectedMatchedInstance) {
-            alert("Please select which instance to trade.");
-            return;
-        }
-        //  If you eventually handle the final trade logic, you can pass
-        //  `selectedMatchedInstance` to your API or store for further processing.
-        console.log("Propose trade with instance: ", selectedMatchedInstance);
-        
-        // For now, just close. You’ll want to expand this to do actual trade logic.
-        onClose();
+      if (!selectedMatchedInstance) {
+        alert("Please select which instance to trade.");
+        return;
+      }
+      // ...any further logic, e.g. calling an API...
+      console.log("Propose trade with instance:", selectedMatchedInstance);
+      onClose();
     };
+  
+    if (!passedInPokemon || !clickedPokemon) {
+      return <p>Missing Pokémon data. Please try again.</p>;
+    }
 
+    console.log(selectedMatchedInstance)
+  
     return (
-        <div className="trade-proposal-overlay">
-            <div className="trade-proposal-container">
-                {/* Close Button */}
-                <button
-                    className="trade-proposal-close-button"
-                    onClick={onClose}
-                    aria-label="Close Trade Proposal"
-                    ref={closeButtonRef}
-                >
-                    X
-                </button>
-
-                {/* First Row: Passed-in Pokémon (the one the other person might give you) */}
-                <div className="trade-proposal-row trade-proposal-row-first">
-                    <div className="trade-proposal-details">
-                        <h3 className="trade-proposal-name">
-                            {passedInPokemon.name || 'Passed-in Pokémon'}
-                        </h3>
-                        <p className="trade-proposal-type">
-                            Type: {passedInPokemon.type || 'Type Details'}
-                        </p>
-                        <p className="trade-proposal-level">
-                            Level: {passedInPokemon.level || 'Level Details'}
-                        </p>
-                        {/* Add more details as needed */}
-                    </div>
-                    <div className="trade-proposal-image">
-                        <img
-                            src={passedInPokemon.currentImage || '/images/default/placeholder.png'}
-                            alt={passedInPokemon.name}
-                            className="trade-proposal-pokemon-img"
-                        />
-                    </div>
-                </div>
-
-                {/* Middle Row: Propose Trade and Stardust */}
-                <div className="trade-proposal-row trade-proposal-row-middle">
-                    <button
-                        className="trade-proposal-propose-button"
-                        onClick={handleProposeTrade}
-                    >
-                        Propose Trade
-                    </button>
-
-                    <div className="trade-proposal-arrow">
-                        <img
-                            src="/images/trade_arrow.png"
-                            alt="Trade arrow"
-                            className="trade-proposal-arrow-image"
-                        />
-                    </div>
-
-                    <div className="trade-proposal-stardust">
-                        <p>Stardust: 0</p>
-                    </div>
-                </div>
-
-                {/* Bottom Row: The Pokémon we are offering (clickedPokemon) */}
-                <div className="trade-proposal-row trade-proposal-row-bottom">
-                    <div className="trade-proposal-image">
-                        <img
-                            src={clickedPokemon.currentImage || '/images/default/placeholder.png'}
-                            alt={clickedPokemon.name}
-                            className="trade-proposal-pokemon-img"
-                        />
-                    </div>
-                    <div className="trade-proposal-details">
-                        <h3 className="trade-proposal-name">
-                            {clickedPokemon.name || 'Clicked Pokémon'}
-                        </h3>
-                        <p className="trade-proposal-type">
-                            Type: {clickedPokemon.type || 'Type Details'}
-                        </p>
-                        <p className="trade-proposal-level">
-                            Level: {clickedPokemon.level || 'Level Details'}
-                        </p>
-                        
-                        {/* ---- Trade Instance Picker ---- */}
-                        {matchedInstances.length > 1 ? (
-                            <div className="trade-instance-picker">
-                                <label htmlFor="instance-selector" style={{ marginRight: '8px' }}>
-                                    Choose the instance to trade:
-                                </label>
-                                <select
-                                    id="instance-selector"
-                                    value={selectedMatchedInstance?.instance_id || ''}
-                                    onChange={handleInstanceChange}
-                                >
-                                    {matchedInstances.map(inst => (
-                                        <option key={inst.instance_id} value={inst.instance_id}>
-                                            {inst.nickname
-                                                ? `${inst.nickname} (Lv. ${inst.level || '?'})`
-                                                : `${clickedPokemon.name} (Lv. ${inst.level || '?'})`}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        ) : (
-                            <p style={{ marginTop: '10px', color: 'white' }}>
-                                {matchedInstances.length === 1
-                                    ? `Instance: ${matchedInstances[0].instance_id}`
-                                    : 'No tradeable instances found.'}
-                            </p>
-                        )}
-                    </div>
-                </div>
+      <div className="trade-proposal-overlay">
+        <div className="trade-proposal-container">
+          
+          {/* Close Button */}
+          <button
+            className="trade-proposal-close-button"
+            onClick={onClose}
+            ref={closeButtonRef}
+          >
+            X
+          </button>
+  
+          {/*
+            ===========  TOP ROW (Passed-in Pokemon)  ===========
+          */}
+          <div className="trade-proposal-row trade-proposal-row-first">
+            <div className="trade-proposal-details">
+              <h3 className="trade-proposal-name">
+                {passedInPokemon.name || 'Passed-in Pokémon'}
+              </h3>
+              <p className="trade-proposal-type">
+                Type: {passedInPokemon.type || 'Type Details'}
+              </p>
+              <p className="trade-proposal-level">
+                Level: {passedInPokemon.level || 'Level Details'}
+              </p>
+              {/* Add more details or MovesComponent, if desired */}
             </div>
+            <div className="trade-proposal-image">
+              <img
+                src={passedInPokemon.currentImage || '/images/default/placeholder.png'}
+                alt={passedInPokemon.name}
+                className="trade-proposal-pokemon-img"
+              />
+            </div>
+          </div>
+  
+          {/*
+            ===========  MIDDLE ROW (Propose button / arrow / stardust)  ===========
+          */}
+          <div className="trade-proposal-row trade-proposal-row-middle">
+            <button className="trade-proposal-propose-button" onClick={handleProposeTrade}>
+              Propose Trade
+            </button>
+  
+            <div className="trade-proposal-arrow">
+              <img
+                src="/images/trade_arrow.png"
+                alt="Trade arrow"
+                className="trade-proposal-arrow-image"
+              />
+            </div>
+  
+            <div className="trade-proposal-stardust">
+              <p>Stardust: 0</p>
+            </div>
+          </div>
+  
+          {/*
+            ===========  BOTTOM ROW (Our matchedInstances)  ===========
+          */}
+          <div className="trade-proposal-row trade-proposal-row-bottom">
+            {/* If we have a selectedMatchedInstance, use its data for display */}
+            <div className="trade-proposal-image">
+              <img
+                src={
+                  selectedMatchedInstance?.currentImage ||
+                  '/images/default/placeholder.png'
+                }
+                alt={selectedMatchedInstance?.name || 'Clicked Pokémon'}
+                className="trade-proposal-pokemon-img"
+              />
+            </div>
+            <div className="trade-proposal-details">
+              <h3 className="trade-proposal-name">
+                {selectedMatchedInstance?.name || 'Clicked Pokémon'}
+              </h3>
+              <p className="trade-proposal-type">
+                Type: {selectedMatchedInstance?.type || 'Type Details'}
+              </p>
+  
+              {/* 
+                ===========  INSTANCE PICKER  ===========
+                If more than 1 matchedInstance, show a <select>.
+              */}
+              {matchedInstances.length > 1 ? (
+                <div className="trade-instance-picker" style={{ marginTop: '1rem' }}>
+                    <label htmlFor="instance-selector" style={{ marginRight: '8px' }}>
+                    Choose the instance to trade:
+                    </label>
+                    <select
+                    id="instance-selector"
+                    value={selectedMatchedInstance?.ownershipStatus?.instance_id || ''}
+                    onChange={handleInstanceChange}
+                    >
+                    {matchedInstances.map((inst, index) => (
+                        <option
+                        key={inst.ownershipStatus.instance_id}
+                        value={inst.ownershipStatus.instance_id}
+                        >
+                        {inst.ownershipStatus.nickname
+                            ? inst.ownershipStatus.nickname
+                            : `${inst.name} ${index + 1}`}
+                        </option>
+                    ))}
+                    </select>
+                </div>
+                ) : (
+                <p style={{ marginTop: '10px', color: 'white' }}>
+                    {matchedInstances.length === 1
+                    ? matchedInstances[0].ownershipStatus.nickname
+                        ? `Nickname: ${matchedInstances[0].ownershipStatus.nickname}`
+                        : `Name: ${matchedInstances[0].name}`
+                    : 'No tradeable instances found.'}
+                </p>
+                )}
+  
+              {/* Optional: show more details about the selected instance */}
+                {selectedMatchedInstance && (
+                <div style={{ marginTop: '1rem' }}>
+                    <strong>Selected Instance:</strong>
+                    {/* Render the MovesComponent with selectedMatchedInstance passed as a prop */}
+                    <MovesComponent pokemon={selectedMatchedInstance} />
+                </div>
+                )}
+            </div>
+          </div>
         </div>
+      </div>
     );
-};
-
-export default TradeProposal;
+  };
+  
+  export default TradeProposal;

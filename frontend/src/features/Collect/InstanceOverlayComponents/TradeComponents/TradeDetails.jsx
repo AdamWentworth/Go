@@ -123,7 +123,6 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
         // 3) Retrieve *my* ownership data from IndexedDB
         let userOwnershipData = [];
         try {
-            // getAllFromDB returns an array of all records in the store
             userOwnershipData = await getAllFromDB(OWNERSHIP_DATA_STORE);
         } catch (error) {
             console.error("Failed to fetch userOwnershipData from IndexedDB:", error);
@@ -134,9 +133,9 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
         // 4) Filter to find all instances where the baseKey matches and is_owned === true
         const ownedInstances = userOwnershipData.filter((item) => {
             const parsedOwned = parsePokemonKey(item.instance_id);
-            const { baseKey } = parsedOwned;
-            return baseKey === selectedBaseKey && item.is_owned === true;
+            return parsedOwned.baseKey === selectedBaseKey && item.is_owned === true;
         });
+    
         console.log("ownedInstances after filter =>", ownedInstances);
     
         // 5) If there are no matches, the user does not own this Pokémon
@@ -149,15 +148,33 @@ const TradeDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, onClo
         const tradeableInstances = ownedInstances.filter(item => item.is_for_trade === true);
     
         if (tradeableInstances.length > 0) {
-            // User owns and has tradeable instances of this Pokémon
+            // Here’s where we build the "matchedInstances" array.
+    
+            // We can remove certain leftover ownership fields from selectedPokemon 
+            // if they conflict with new ones. But typically, just keep your base data:
+            const {
+              ownershipStatus,  // We'll ignore or remove existing ownership data
+              ...baseData
+            } = selectedPokemon;
+    
+            // 7) Construct a new array of "full Pokémon objects"
+            //    Each element has the same base data but a unique ownershipStatus
+            const matchedInstances = tradeableInstances.map((instance) => ({
+              ...baseData,               // all the species/base data from the selected Pokemon
+              ownershipStatus: { ...instance }, // instance-specific data
+            }));
+    
+            // 8) Build our final clickedPokemon object:
             const selectedPokemonWithMatches = {
-                ...selectedPokemon,
-                matchedInstances: tradeableInstances
+                matchedInstances, // array of fully merged objects
             };
     
-            console.log("[TradeDetails] Constructed selectedPokemonWithMatches:", selectedPokemonWithMatches);
+            console.log(
+              "[TradeDetails] Constructed selectedPokemonWithMatches:",
+              selectedPokemonWithMatches
+            );
     
-            // Proceed with the existing trade proposal flow
+            // 9) Proceed with the existing trade proposal flow
             setTradeClickedPokemon(selectedPokemonWithMatches);
     
             // Close the PokemonActionOverlay
