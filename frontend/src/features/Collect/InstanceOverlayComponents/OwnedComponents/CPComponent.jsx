@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import './CPComponent.css';
 
 const CPComponent = ({ pokemon, editMode, toggleEditMode, onCPChange }) => {
-  const [cp, setCP] = useState(pokemon.ownershipStatus.cp || '');
+  const [cp, setCP] = useState(pokemon?.ownershipStatus?.cp?.toString() || '');
   const editableRef = useRef(null);
 
   function setCaretToEnd() {
@@ -45,7 +45,11 @@ const CPComponent = ({ pokemon, editMode, toggleEditMode, onCPChange }) => {
   };
 
   const handleBlur = () => {
-    onCPChange(String(cp).trim());  // Ensure to trim and update on blur
+    if (typeof cp === 'string') {
+      onCPChange(cp.trim());  // Only trim if it's a string
+    } else {
+      onCPChange(String(cp || '').trim());  // Convert to string if it's not
+    }
   };
 
   const handleContainerClick = () => {
@@ -55,7 +59,7 @@ const CPComponent = ({ pokemon, editMode, toggleEditMode, onCPChange }) => {
   };
 
   // Conditional Rendering Logic
-  if ((!cp || cp.trim() === '') && !editMode) {
+  if ((!cp || String(cp).trim() === '') && !editMode) {
     return null;  // Do not render the component if cp is null/empty and not in edit mode
   }
 

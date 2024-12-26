@@ -2,7 +2,6 @@
 
 import { parsePokemonKey } from "../../../utils/PokemonIDUtils";
 import { determineImageUrl } from "../../../utils/imageHelpers"; 
-import { createNewDataForVariant } from "./pokemonOwnershipManager"
 
 export const updatePokemonLists = (ownershipData, variants, callback) => {
     const lists = {
@@ -53,7 +52,12 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
             key: key,
             gender: value.gender,
             registered: value.registered,
-            moves: variantDetail?.moves
+            moves: variantDetail?.moves,
+            type1_name: variantDetail?.type1_name,
+            type2_name: variantDetail?.type2_name,
+            type_1_icon: variantDetail?.type_1_icon,
+            type_2_icon: variantDetail?.type_2_icon,
+            form: variantDetail?.form
         };
 
         // Assigning the listItem under the corresponding pokemonKey in each list
@@ -66,8 +70,6 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
     // Callback to use in context for updating via worker or setting state
     callback(lists);
 };
-
-import { v4 as generateUUID } from 'uuid'; // Import UUID function if needed
 
 export const initializePokemonLists = (ownershipData, variants, search) => {
     const lists = {
@@ -116,7 +118,12 @@ export const initializePokemonLists = (ownershipData, variants, search) => {
             key: key,
             gender: value.gender,
             registered: value.registered,
-            moves: variantDetail?.moves
+            moves: variantDetail?.moves,
+            type1_name: variantDetail?.type1_name,
+            type2_name: variantDetail?.type2_name,
+            type_1_icon: variantDetail?.type_1_icon,
+            type_2_icon: variantDetail?.type_2_icon,
+            form: variantDetail?.form
         };
 
         // Assign the listItem under the corresponding pokemonKey in each list

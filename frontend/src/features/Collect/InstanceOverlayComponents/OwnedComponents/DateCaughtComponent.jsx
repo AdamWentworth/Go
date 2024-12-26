@@ -10,23 +10,19 @@ import './DateCaughtComponent.css';
 registerLocale('en-US', enUS);
 
 const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
-  // Function to parse date from both "yyyy-MM-dd" and ISO 8601 formats
   const parseInitialDate = () => {
     const dateString = pokemon.ownershipStatus.date_caught;
     if (dateString) {
-      // First try parsing "yyyy-MM-dd"
       let parsedDate = parse(dateString, 'yyyy-MM-dd', new Date());
       if (isValid(parsedDate)) {
         return parsedDate;
       }
-
-      // If that fails, try parsing ISO 8601
       parsedDate = new Date(dateString);
       if (isValid(parsedDate)) {
         return parsedDate;
       }
     }
-    return null; // No valid date found, return null
+    return null;
   };
 
   const [date, setDate] = useState(parseInitialDate());
@@ -41,7 +37,6 @@ const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
     if (editMode && dateRef.current && date) {
       dateRef.current.textContent = format(date, 'yyyy-MM-dd');
       setCaretToEnd(dateRef.current);
-      dateRef.current.focus(); // Automatically focus when entering edit mode
     }
   }, [editMode, date]);
 
@@ -49,25 +44,21 @@ const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
     const userInput = event.target.textContent.trim();
     if (userInput) {
       try {
-        // First try parsing "yyyy-MM-dd"
         let parsedDate = parse(userInput, 'yyyy-MM-dd', new Date());
         if (!isValid(parsedDate)) {
-          // If that fails, try parsing ISO 8601
           parsedDate = new Date(userInput);
         }
         if (isValid(parsedDate)) {
           setDate(parsedDate);
           onDateChange(format(parsedDate, 'yyyy-MM-dd'));
-          setShowCalendar(false);
         } else {
           throw new Error('Invalid date');
         }
       } catch (error) {
-        console.error(error); // Log the error for debugging
+        console.error(error);
         setShowCalendar(true);
       }
     } else {
-      // If input is cleared, reset the date
       setDate(null);
       onDateChange('');
     }
@@ -78,7 +69,7 @@ const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
     if (event.key === 'Enter') {
       event.preventDefault();
       setShowCalendar(false);
-      dateRef.current.blur(); // Remove focus to stop editing
+      dateRef.current.blur();
     }
   };
 
@@ -94,18 +85,21 @@ const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
 
   const handleDateSelect = (selectedDate) => {
     setDate(selectedDate);
+    if (dateRef.current) {
+      dateRef.current.textContent = format(selectedDate, 'yyyy-MM-dd');
+    }
     onDateChange(format(selectedDate, 'yyyy-MM-dd'));
     setShowCalendar(false);
-    dateRef.current.blur(); // Remove focus after selecting a date
   };
 
-  const handleFocus = () => {
-    setShowCalendar(true); // Show calendar on focus
+  const handleClick = () => {
+    if (editMode) {
+      setShowCalendar(true);
+    }
   };
 
-  // Conditional Rendering Logic
   if ((!date || !isValid(date)) && !editMode) {
-    return null; // Do not render the component if date is null/invalid and not in edit mode
+    return null;
   }
 
   return (
@@ -118,16 +112,16 @@ const DateCaughtComponent = ({ pokemon, editMode, onDateChange }) => {
           ref={dateRef}
           onInput={handleDateInput}
           onKeyDown={handleKeyDown}
-          onFocus={handleFocus}
+          onClick={handleClick}
           role="textbox"
           suppressContentEditableWarning={true}
           className={editMode ? 'editable' : 'text'}
         >
           {date && isValid(date) ? format(date, 'yyyy-MM-dd') : ''}
         </span>
-        {showCalendar && (
+        {showCalendar && editMode && (
           <DatePicker
-            selected={date || new Date()} // If no date is set, default to today's date
+            selected={date || new Date()}
             onChange={handleDateSelect}
             inline
             showMonthDropdown

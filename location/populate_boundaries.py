@@ -470,6 +470,135 @@ def process_places(session, country_code, admin_level):
                 admin_level_tag
             )
 
+def update_osm_place_by_id(session, osm_id):
+    """
+    Fetch a single relation by osm_id from Overpass and update (or insert) its boundary details in the DB.
+    
+    Example usage to specifically update osm_id = 1377803:
+        update_osm_place_by_id(session, 1377803)
+    """
+    # Fetch relation by ID from Overpass
+    query = f"""
+    [out:json][timeout:180];
+    relation({osm_id});
+    out center geom;
+    """
+    url = "https://overpass-api.de/api/interpreter"
+    params = {'data': query}
+
+    try:
+        response = requests.get(url, params=params, timeout=120)
+        response.raise_for_status()
+        data = response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Overpass API call for osm_id={osm_id} failed: {e}", file=sys.stderr)
+        return
+
+    elements = data.get('elements', [])
+    if not elements:
+        print(f"[INFO] No relation found for osm_id={osm_id}.")
+        return
+    
+    # We assume only one element for that osm_id
+    place = elements[0]
+    tags = place.get('tags', {})
+    city_name = tags.get('name:en') or tags.get('name') or 'Unknown'
+    
+    if city_name == 'Unknown':
+        print(f"[INFO] Skipping place with osm_id={osm_id} due to missing name.")
+        return
+    
+    # Attempt to find country if there's an ISO3166-1 alpha2 code
+    # But many times the Overpass relation won't include that directly on a boundary relation.
+    # You may need to adapt this logic to find or guess the country from a lat/lon or known data.
+    country_code = tags.get('ISO3166-1') or None
+    
+    # If we don't know the country_code from tags, we might try to guess from the centroid
+    # But let's parse geometry first.
+    processor = PolygonProcessor()
+    line_strings = processor.parse_line_strings(place)
+    new_polygons = processor.add_line_strings(line_strings)
+    if not new_polygons:
+        print(f"[INFO] No polygons formed for {city_name} (osm_id={osm_id}).")
+        return
+    
+    # Merge to single (Multi)Polygon if needed
+    if len(new_polygons) == 1:
+        merged_boundary = new_polygons[0]
+    else:
+        merged_boundary = MultiPolygon(new_polygons)
+
+    wkt_polygon = merged_boundary.wkt
+    centroid = merged_boundary.centroid
+    centroid_lat = centroid.y
+    centroid_lon = centroid.x
+
+    # Attempt to get province from Nominatim
+    state_or_province = fetch_province_from_nominatim(centroid_lat, centroid_lon)
+
+    # Attempt to parse population, admin_level
+    population = tags.get('population')
+    try:
+        population = int(population) if population else None
+    except ValueError:
+        population = None
+    
+    admin_level_tag = tags.get('admin_level')
+    try:
+        admin_level_tag = int(admin_level_tag) if admin_level_tag else None
+    except ValueError:
+        admin_level_tag = None
+
+    # If we do not have a country_code but we rely on the DB to have something,
+    # you might need a fallback. For this example, we'll just search for a Country
+    # that might match the place's bounding box or custom logic.
+    # For simplicity, let's assume we find it by direct matching:
+    country = None
+    if country_code:
+        country = session.query(Country).filter(Country.country_code == country_code).first()
+    else:
+        # Fallback: if your DB has a single or known country you want to default to, do it here.
+        # (This fallback is purely for demonstration. Adjust as needed.)
+        # E.g., if you only have one country in the DB, you can pick that:
+        country = session.query(Country).first()
+    
+    if not country:
+        print(f"[ERROR] Could not find a matching country. Provide a fallback or logic to identify country.")
+        return
+
+    # Check if it already exists
+    existing_city = find_city_by_osm_id_or_name(
+        session, city_name, state_or_province, admin_level_tag, country.id, osm_id
+    )
+
+    if existing_city:
+        print(f"[INFO] Updating {city_name} (osm_id={osm_id}, AL={admin_level_tag}).")
+        updates = {
+            'latitude': centroid_lat,
+            'longitude': centroid_lon,
+            'state_or_province': state_or_province,
+            'osm_id': osm_id,
+            'population': population,
+            'admin_level': admin_level_tag,
+            'boundary': wkt_polygon,
+        }
+        update_city_partial(session, existing_city, updates)
+    else:
+        print(f"[INFO] Adding new {city_name} (osm_id={osm_id}, AL={admin_level_tag}).")
+        add_city(
+            session,
+            city_name,
+            country.id,
+            centroid_lat,
+            centroid_lon,
+            state_or_province,
+            wkt_polygon,
+            osm_id,
+            population,
+            admin_level_tag
+        )
+
+
 # ---------------------------
 # Main Execution
 # ---------------------------
@@ -487,25 +616,29 @@ def main():
     try:
         print('Connected to the database.')
         
-        # Define admin levels to process
-        admin_levels = [4, 5, 6, 7, 8, 9, 10]
+        # # Define admin levels to process
+        # admin_levels = [4, 5, 6, 7, 8, 9, 10]
         
-        # Fetch countries with low place counts
-        threshold = 30  # You can adjust this threshold as needed
-        countries_to_process = get_countries_with_low_place_count(session, threshold)
+        # # Fetch countries with low place counts
+        # threshold = 30  # You can adjust this threshold as needed
+        # countries_to_process = get_countries_with_low_place_count(session, threshold)
         
-        if not countries_to_process:
-            print("No countries found that need places processing.")
-            return
+        # if not countries_to_process:
+        #     print("No countries found that need places processing.")
+        #     return
 
-        print(f"Found {len(countries_to_process)} countries to process with less than {threshold} places.")
+        # print(f"Found {len(countries_to_process)} countries to process with less than {threshold} places.")
 
-        # Process each country dynamically
-        for country in countries_to_process:
-            print(f"\n--- Processing Country: {country.name} ({country.country_code}) ---")
-            for admin_level in admin_levels:
-                print(f"\n----- Processing Admin Level {admin_level} -----")
-                process_places(session, country.country_code, admin_level)
+        # # Process each country dynamically
+        # for country in countries_to_process:
+        #     print(f"\n--- Processing Country: {country.name} ({country.country_code}) ---")
+        #     for admin_level in admin_levels:
+        #         print(f"\n----- Processing Admin Level {admin_level} -----")
+        #         process_places(session, country.country_code, admin_level)
+
+         # 2) Specifically update the place with osm_id=1377803
+        print("\n--- Updating OSM ID 1377803 ---")
+        update_osm_place_by_id(session, 1377803)
 
         print('Processing completed.')
     except Exception as e:

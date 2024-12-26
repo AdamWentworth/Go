@@ -1,7 +1,12 @@
 // TradeProposal.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import './TradeProposal.css';
+import TypeComponent from '../OwnedComponents/TypeComponent'; 
 import MovesComponent from '../OwnedComponents/MovesComponent'; 
+import CPComponent from '../OwnedComponents/CPComponent'; 
+import LocationCaughtComponent from '../OwnedComponents/LocationCaughtComponent'
+import DateCaughtComponent from '../OwnedComponents/DateCaughtComponent'
+import { generateH2Content } from '../../../../utils/formattingHelpers'
 
 const TradeProposal = ({ passedInPokemon, clickedPokemon, onClose }) => {
     const closeButtonRef = useRef(null);
@@ -63,23 +68,35 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, onClose }) => {
           */}
           <div className="trade-proposal-row trade-proposal-row-first">
             <div className="trade-proposal-details">
-              <h3 className="trade-proposal-name">
-                {passedInPokemon.name || 'Passed-in Pokémon'}
-              </h3>
-              <p className="trade-proposal-type">
-                Type: {passedInPokemon.type || 'Type Details'}
-              </p>
-              <p className="trade-proposal-level">
-                Level: {passedInPokemon.level || 'Level Details'}
-              </p>
-              {/* Add more details or MovesComponent, if desired */}
+            {passedInPokemon && (
+                  <TypeComponent pokemon={passedInPokemon} />
+                )}
+                {/* Optional: show more details about the selected instance */}
+                  {passedInPokemon && (
+                  <div style={{ marginTop: '1rem' }}>
+                      <p style={{ marginTop: '10px', color: 'white' }}>
+                      {passedInPokemon.ownershipStatus.nickname
+                        ? `Nickname: ${passedInPokemon.ownershipStatus.nickname}`
+                        : null}
+                      </p>
+                      <CPComponent pokemon={passedInPokemon} />
+                      <MovesComponent pokemon={passedInPokemon} />
+                      <LocationCaughtComponent pokemon={passedInPokemon} />
+                      <DateCaughtComponent pokemon={passedInPokemon} />
+                  </div>
+                  )}
             </div>
             <div className="trade-proposal-image">
               <img
                 src={passedInPokemon.currentImage || '/images/default/placeholder.png'}
                 alt={passedInPokemon.name}
                 className="trade-proposal-pokemon-img"
-              />
+                />
+                {passedInPokemon &&
+                <h3 className="trade-proposal-name">
+                                {generateH2Content(passedInPokemon)}
+                </h3>
+                  }
             </div>
           </div>
   
@@ -118,15 +135,25 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, onClose }) => {
                 alt={selectedMatchedInstance?.name || 'Clicked Pokémon'}
                 className="trade-proposal-pokemon-img"
               />
+              {selectedMatchedInstance &&
+              <h3 className="trade-proposal-name">
+                              {generateH2Content(selectedMatchedInstance)}
+              </h3>
+                }
             </div>
             <div className="trade-proposal-details">
-              <h3 className="trade-proposal-name">
-                {selectedMatchedInstance?.name || 'Clicked Pokémon'}
-              </h3>
-              <p className="trade-proposal-type">
-                Type: {selectedMatchedInstance?.type || 'Type Details'}
-              </p>
-  
+            {selectedMatchedInstance && (
+                  <TypeComponent pokemon={selectedMatchedInstance} />
+                )}
+                {/* Optional: show more details about the selected instance */}
+                  {selectedMatchedInstance && (
+                  <div style={{ marginTop: '1rem' }}>
+                      <CPComponent pokemon={selectedMatchedInstance} />
+                      <MovesComponent pokemon={selectedMatchedInstance} />
+                      <LocationCaughtComponent pokemon={selectedMatchedInstance} />
+                      <DateCaughtComponent pokemon={selectedMatchedInstance} />
+                  </div>
+                  )}
               {/* 
                 ===========  INSTANCE PICKER  ===========
                 If more than 1 matchedInstance, show a <select>.
@@ -155,22 +182,12 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, onClose }) => {
                 </div>
                 ) : (
                 <p style={{ marginTop: '10px', color: 'white' }}>
-                    {matchedInstances.length === 1
-                    ? matchedInstances[0].ownershipStatus.nickname
-                        ? `Nickname: ${matchedInstances[0].ownershipStatus.nickname}`
-                        : `Name: ${matchedInstances[0].name}`
-                    : 'No tradeable instances found.'}
+                {selectedMatchedInstance.ownershipStatus.nickname
+                    ? `Nickname: ${selectedMatchedInstance.ownershipStatus.nickname}`
+                    : null}
                 </p>
                 )}
   
-              {/* Optional: show more details about the selected instance */}
-                {selectedMatchedInstance && (
-                <div style={{ marginTop: '1rem' }}>
-                    <strong>Selected Instance:</strong>
-                    {/* Render the MovesComponent with selectedMatchedInstance passed as a prop */}
-                    <MovesComponent pokemon={selectedMatchedInstance} />
-                </div>
-                )}
             </div>
           </div>
         </div>

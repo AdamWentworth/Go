@@ -133,3 +133,40 @@ export function formatTimeUntil(timestamp) {
         return `${seconds} second${seconds > 1 ? 's' : ''}`;
     }
 }
+
+export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => {
+    const nickname = pokemon.ownershipStatus?.nickname;
+    if (nickname && nickname.trim()) {
+        return nickname;
+    }
+
+    let contentParts = [];
+
+    if (pokemon.currentCostumeName) {
+        contentParts.push(formatCostumeName(pokemon.currentCostumeName));
+    }
+
+    let nameText;
+    const isMegaVariant = pokemon.variantType && pokemon.variantType.includes('mega');
+
+    // Check if multiFormPokedexNumbers is null or undefined, and set a default value
+    const hasMultiFormPokedexNumbers = Array.isArray(multiFormPokedexNumbers) && multiFormPokedexNumbers.length > 0;
+    const shouldIncludeForm = !isMegaVariant && pokemon.form && pokemon.form !== 'Average' && 
+        (!hasMultiFormPokedexNumbers || !multiFormPokedexNumbers.includes(pokemon.pokedex_number) || showAll);
+
+    if (shouldIncludeForm) {
+        nameText = formatPokemonName(pokemon.name, pokemon.form);
+    } else {
+        nameText = pokemon.name;
+    }
+
+    contentParts.push(nameText);
+
+    return (
+        <>
+            {contentParts.map((part, index) => (
+                <span key={index} className="pokemon-detail">{part} </span>
+            ))}
+        </>
+    );
+};

@@ -1,8 +1,8 @@
 // PokemonCard.jsx
 
 import React, { useEffect, useState, memo } from 'react';
-import { formatPokemonName, formatCostumeName } from '../../utils/formattingHelpers';
-import { determineImageUrl } from "../../utils/imageHelpers"
+import { determineImageUrl } from "../../utils/imageHelpers";
+import { generateH2Content } from '../../utils/formattingHelpers';
 import './PokemonCard.css';
 
 const PokemonCard = ({
@@ -25,10 +25,10 @@ const PokemonCard = ({
         if (isFemale && pokemon.female_data) {
             const updatedImage = determineImageUrl(isFemale, pokemon);
             if (updatedImage) {
-                setCurrentImage(updatedImage);  // Update local state, not pokemon directly
+                setCurrentImage(updatedImage);
             }
         } else {
-            setCurrentImage(pokemon.currentImage);  // Use the default currentImage
+            setCurrentImage(pokemon.currentImage);
         }
     }, [isFemale, pokemon]);
 
@@ -43,39 +43,6 @@ const PokemonCard = ({
             default: ownershipClass = ''; break;
         }
         return ownershipClass;
-    };
-
-    const generateH2Content = () => {
-        const nickname = pokemon.ownershipStatus?.nickname;
-        if (nickname && nickname.trim()) {
-            return nickname;
-        }
-
-        let contentParts = [];
-
-        if (pokemon.currentCostumeName) {
-            contentParts.push(formatCostumeName(pokemon.currentCostumeName));
-        }
-
-        let nameText;
-        const isMegaVariant = pokemon.variantType && pokemon.variantType.includes('mega');
-        const shouldIncludeForm = !isMegaVariant && pokemon.form && pokemon.form !== 'Average' && (!multiFormPokedexNumbers.includes(pokemon.pokedex_number) || showAll);
-
-        if (shouldIncludeForm) {
-            nameText = formatPokemonName(pokemon.name, pokemon.form);
-        } else {
-            nameText = pokemon.name;
-        }
-
-        contentParts.push(nameText);
-
-        return (
-            <>
-                {contentParts.map((part, index) => (
-                    <span key={index} className="pokemon-detail">{part} </span>
-                ))}
-            </>
-        );
     };
 
     if (isShiny && showShadow && (!pokemon.image_url_shiny_shadow || pokemon.shadow_shiny_available !== 1)) {
@@ -127,7 +94,7 @@ const PokemonCard = ({
                     </div>
                 )}
                 <img 
-                    src={currentImage}  // Use local state for image
+                    src={currentImage}
                     alt={pokemon.name} 
                     loading="lazy" 
                     className="pokemon-image"
@@ -144,7 +111,7 @@ const PokemonCard = ({
                 )}
             </div>
             <h2 className="pokemon-name-display">
-                {generateH2Content()}
+                {generateH2Content(pokemon, multiFormPokedexNumbers, showAll)}
             </h2>
         </div>
     );

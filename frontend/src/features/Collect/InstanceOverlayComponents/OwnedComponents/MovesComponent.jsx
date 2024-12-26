@@ -108,11 +108,11 @@ const MovesComponent = ({ pokemon, editMode, onMovesChange }) => {
       <div className="move-section">
         {chargedMove2 ? (
           editMode ? renderMoveOptions(chargedMoves, chargedMove2, 'charged2') : renderMoveInfo(chargedMove2, 'charged2')
-        ) : (
-          <button onClick={editMode ? addSecondChargedMove : undefined} className="icon-button add-move-button">
+        ) : editMode ? (
+          <button onClick={addSecondChargedMove} className="icon-button add-move-button">
             <span className="move-add-icon">+</span>
           </button>
-        )}
+        ) : null}
       </div>
     </div>
   );
