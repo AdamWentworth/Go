@@ -27,6 +27,8 @@ import TradeProposal from './TradeProposal.jsx';
 import { parsePokemonKey } from '../../../../utils/PokemonIDUtils.js';
 import { getAllFromDB, OWNERSHIP_DATA_STORE } from '../../../../services/indexedDB.js';
 
+import UpdateForTradeModal from './UpdateForTradeModal.jsx';
+
 const TradeDetails = ({
   pokemon,
   lists,
@@ -51,6 +53,11 @@ const TradeDetails = ({
   const [listsState, setListsState] = useState(lists);
   const [pendingUpdates, setPendingUpdates] = useState({});
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
+
+  // New state variables for UpdateForTradeModal
+  const [isUpdateForTradeModalOpen, setIsUpdateForTradeModalOpen] = useState(false);
+  const [ownedInstancesToTrade, setOwnedInstancesToTrade] = useState([]);
+  const [currentBaseKey, setCurrentBaseKey] = useState(null); // New state for baseKey
 
   const {
     selectedImages: selectedExcludeImages,
@@ -215,15 +222,46 @@ const TradeDetails = ({
       // Finally open the TradeProposal
       setIsTradeProposalOpen(true);
     } else {
-      // User owns it but it isn't listed for trade
-      alert(
-        "You own this Pokémon but do not have it listed for Trade in your collection."
-      );
-    }
+        // User owns it but it isn't listed for trade
+        // Instead of alert, open the UpdateForTradeModal
+        setOwnedInstancesToTrade(ownedInstances);
+        setCurrentBaseKey(selectedBaseKey); // Set the current baseKey
+        setIsUpdateForTradeModalOpen(true);
+      }
   };
 
   const closeOverlay = () => {
     setIsOverlayOpen(false);
+  };
+
+  const handleConfirmTradeUpdate = async (selectedInstanceIds) => {
+    try {
+      // Update each selected instance to be for trade
+      const updatePromises = selectedInstanceIds.map((instanceId) =>
+        updateDBEntry(OWNERSHIP_DATA_STORE, instanceId, { is_for_trade: true })
+      );
+      await Promise.all(updatePromises);
+
+      // Optionally, you can refetch or update your local state to reflect changes
+      // For example:
+      // const updatedOwnershipData = await getAllFromDB(OWNERSHIP_DATA_STORE);
+      // setOwnershipData(updatedOwnershipData);
+
+      // Close the modal
+      setIsUpdateForTradeModalOpen(false);
+
+      // Proceed with the trade proposal
+      // Re-run handleProposeTrade or implement the logic here
+      handleProposeTrade(); // Be cautious to avoid infinite loops
+    } catch (error) {
+      console.error("Failed to update instances for trade:", error);
+      alert("There was an error updating your instances for trade. Please try again.");
+    }
+  };
+
+  const handleCancelTradeUpdate = () => {
+    // Simply close the modal without making any changes
+    setIsUpdateForTradeModalOpen(false);
   };
 
   // When not in edit mode, clicking a Pokémon's thumbnail
@@ -451,6 +489,16 @@ const TradeDetails = ({
             setIsTradeProposalOpen(false);
             setTradeClickedPokemon(null);
           }}
+        />
+      )}
+
+      {/* Render the UpdateForTradeModal when needed */}
+      {isUpdateForTradeModalOpen && (
+        <UpdateForTradeModal
+          ownedInstances={ownedInstancesToTrade}
+          baseKey={currentBaseKey} // Pass the baseKey here
+          onClose={handleCancelTradeUpdate}
+          onConfirm={handleConfirmTradeUpdate}
         />
       )}
     </div>

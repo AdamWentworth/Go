@@ -1,0 +1,124 @@
+/* UpdateForTradeModal.css */
+
+.update-for-trade-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .update-for-trade-modal-overlay .modal-content {
+    background-color: #333;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 900px; /* Increased max-width to accommodate multiple OwnedInstances */
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .update-for-trade-modal-overlay .modal-content h2#modal-title {
+    margin-top: 0;
+    text-align: center;
+    color: #fff; /* White text for better contrast on dark background */
+  }
+  
+  .update-for-trade-modal-overlay .base-key-display {
+    text-align: center;
+    font-size: 1em;
+    margin-bottom: 10px;
+    color: #ddd;
+  }
+  
+  .update-for-trade-modal-overlay .error {
+    color: red;
+    text-align: center;
+  }
+  
+  .update-for-trade-modal-overlay .instances-list {
+    display: flex;
+    flex-wrap: wrap; /* Allows wrapping to new lines on smaller screens */
+    gap: 15px; /* Space between OwnedInstance components */
+    justify-content: center; /* Center the instances horizontally */
+  }
+  
+  .update-for-trade-modal-overlay .instance-item {
+    display: flex;
+    flex-direction: column; /* Stack OwnedInstance and button vertically */
+    align-items: center; /* Center the contents horizontally */
+    background-color: #444; /* Slightly lighter background for individual items */
+    padding: 10px;
+    border-radius: 8px;
+  }
+  
+  .update-for-trade-modal-overlay .instance-item .update-button {
+    margin-top: 10px;
+    padding: 8px 16px;
+    background-color: #28a745; /* Green background */
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+  }
+  
+  .update-for-trade-modal-overlay .instance-item .update-button:disabled {
+    background-color: #6c757d; /* Gray background when disabled */
+    cursor: not-allowed;
+  }
+  
+  .update-for-trade-modal-overlay .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .update-for-trade-modal-overlay .modal-actions button {
+    margin-left: 10px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+  }
+  
+  .update-for-trade-modal-overlay .modal-actions .confirm-button {
+    background-color: #1890ff;
+    color: #fff;
+  }
+  
+  .update-for-trade-modal-overlay .modal-actions .confirm-button:disabled {
+    background-color: #a0cfff;
+    cursor: not-allowed;
+  }
+  
+  .update-for-trade-modal-overlay .modal-actions .cancel-button {
+    background-color: #f0f0f0;
+  }
+  
+  .update-for-trade-modal-overlay .modal-actions .cancel-button:hover {
+    background-color: #d9d9d9;
+  }
+  
+  /* Responsive Layout */
+  @media (max-width: 768px) {
+    .update-for-trade-modal-overlay .instances-list {
+      justify-content: center; /* Center the instances on smaller screens */
+    }
+  
+    .update-for-trade-modal-overlay .modal-content {
+      max-width: 600px; /* Reduce max-width for smaller screens */
+    }
+  }
+  
+  /* Optional: Add transition effects for better UX */
+  .update-for-trade-modal-overlay,
+  .update-for-trade-modal-overlay .modal-content {
+    transition: all 0.3s ease-in-out;
+  }
+  

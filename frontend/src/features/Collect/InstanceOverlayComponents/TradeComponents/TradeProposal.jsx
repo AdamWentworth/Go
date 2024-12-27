@@ -10,6 +10,7 @@ import { generateH2Content } from '../../../../utils/formattingHelpers'
 import FriendshipManager from '../WantedComponents/FriendshipManager';
 
 const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose }) => {
+    const containerRef = useRef(null);
     const closeButtonRef = useRef(null);
   
     // Track which matched instance is selected
@@ -39,6 +40,19 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
         setSelectedMatchedInstance(matchedInstances[0]);
       }
     }, [matchedInstances]);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            // If the click is outside of containerRef => close
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                onClose();
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+            return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            };
+    }, [onClose]);
   
     // When user changes the <select> dropdown
     const handleInstanceChange = (e) => {
@@ -68,7 +82,7 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
   
     return (
       <div className="trade-proposal-overlay">
-        <div className="trade-proposal-container">
+        <div className="trade-proposal-container" ref={containerRef}>
           
           {/* Close Button */}
           <button
