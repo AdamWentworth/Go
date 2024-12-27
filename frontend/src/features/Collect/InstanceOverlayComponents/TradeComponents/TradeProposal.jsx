@@ -1,18 +1,34 @@
 // TradeProposal.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import './TradeProposal.css';
-import TypeComponent from '../OwnedComponents/TypeComponent'; 
 import MovesComponent from '../OwnedComponents/MovesComponent'; 
 import CPComponent from '../OwnedComponents/CPComponent'; 
 import LocationCaughtComponent from '../OwnedComponents/LocationCaughtComponent'
 import DateCaughtComponent from '../OwnedComponents/DateCaughtComponent'
 import { generateH2Content } from '../../../../utils/formattingHelpers'
 
-const TradeProposal = ({ passedInPokemon, clickedPokemon, onClose }) => {
+import FriendshipManager from '../WantedComponents/FriendshipManager';
+
+const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose }) => {
     const closeButtonRef = useRef(null);
   
     // Track which matched instance is selected
     const [selectedMatchedInstance, setSelectedMatchedInstance] = useState(null);
+
+    const [friendship_level, setFriendshipLevel] = useState(0);
+    const [pref_lucky, setPrefLucky] = useState(false);
+
+    useEffect(() => {
+        if (wantedPokemon) {
+          // Adjust property names based on your data
+          setFriendshipLevel(wantedPokemon.friendship_level || 0);
+          setPrefLucky(wantedPokemon.pref_lucky || false);
+        }
+      }, [wantedPokemon]);     
+      
+    // console.log(`friendship_level`, friendship_level)
+    // console.log('pref_lucky', pref_lucky)
+    // console.log('wantedPokemon', wantedPokemon)
   
     // Grab the matchedInstances array
     const { matchedInstances = [] } = clickedPokemon || {};
@@ -48,7 +64,7 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, onClose }) => {
       return <p>Missing Pokémon data. Please try again.</p>;
     }
 
-    console.log(selectedMatchedInstance)
+    // console.log(selectedMatchedInstance)
   
     return (
       <div className="trade-proposal-overlay">
@@ -62,43 +78,63 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, onClose }) => {
           >
             X
           </button>
-  
-          {/*
-            ===========  TOP ROW (Passed-in Pokemon)  ===========
-          */}
-          <div className="trade-proposal-row trade-proposal-row-first">
+
+           {/* 
+          ===========  FRIENDSHIP MANAGER ABOVE ROW 1  ===========
+        */}
+        <div className='friendship-manager'>
+          <FriendshipManager
+            friendship_level={friendship_level}
+            setFriendshipLevel={setFriendshipLevel}
+            editMode={true}
+            pref_lucky={pref_lucky}
+            setPrefLucky={setPrefLucky}
+          />
+        </div>
+
+          {/* TOP ROW (Passed-in Pokemon) */}
+        <div className="trade-proposal-row trade-proposal-row-first">
             <div className="trade-proposal-details">
-            {passedInPokemon && (
-                  <TypeComponent pokemon={passedInPokemon} />
-                )}
-                {/* Optional: show more details about the selected instance */}
-                  {passedInPokemon && (
-                  <div style={{ marginTop: '1rem' }}>
-                      <p style={{ marginTop: '10px', color: 'white' }}>
-                      {passedInPokemon.ownershipStatus.nickname
+                {passedInPokemon && (
+                <div style={{ marginTop: '1rem' }}>
+                    <p style={{ marginTop: '10px', color: 'white' }}>
+                    {passedInPokemon.ownershipStatus.nickname
                         ? `Nickname: ${passedInPokemon.ownershipStatus.nickname}`
                         : null}
-                      </p>
-                      <CPComponent pokemon={passedInPokemon} />
-                      <MovesComponent pokemon={passedInPokemon} />
-                      <LocationCaughtComponent pokemon={passedInPokemon} />
-                      <DateCaughtComponent pokemon={passedInPokemon} />
-                  </div>
-                  )}
+                    </p>
+                    <CPComponent pokemon={passedInPokemon} />
+                    <MovesComponent pokemon={passedInPokemon} />
+                    <LocationCaughtComponent pokemon={passedInPokemon} />
+                    <DateCaughtComponent pokemon={passedInPokemon} />
+                </div>
+                )}
             </div>
-            <div className="trade-proposal-image">
-              <img
+
+            {/* 
+                Replace the plain <div className="trade-proposal-image"> with 
+                a container that can hold the lucky backdrop as well
+            */}
+            <div className="trade-proposal-image-container">
+                {pref_lucky && (
+                <img
+                    src={process.env.PUBLIC_URL + '/images/lucky.png'}
+                    alt="Lucky Backdrop"
+                    className="lucky-backdrop"
+                />
+                )}
+                <img
                 src={passedInPokemon.currentImage || '/images/default/placeholder.png'}
                 alt={passedInPokemon.name}
                 className="trade-proposal-pokemon-img"
                 />
-                {passedInPokemon &&
+                {passedInPokemon && (
                 <h3 className="trade-proposal-name">
-                                {generateH2Content(passedInPokemon)}
+                    {generateH2Content(passedInPokemon)}
                 </h3>
-                  }
+                )}
             </div>
-          </div>
+            </div>
+
   
           {/*
             ===========  MIDDLE ROW (Propose button / arrow / stardust)  ===========
@@ -121,39 +157,41 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, onClose }) => {
             </div>
           </div>
   
-          {/*
-            ===========  BOTTOM ROW (Our matchedInstances)  ===========
-          */}
-          <div className="trade-proposal-row trade-proposal-row-bottom">
-            {/* If we have a selectedMatchedInstance, use its data for display */}
-            <div className="trade-proposal-image">
-              <img
+          {/* BOTTOM ROW (Our matchedInstances) */}
+            <div className="trade-proposal-row trade-proposal-row-bottom">
+            <div className="trade-proposal-image-container">
+                {pref_lucky && (
+                <img
+                    src={process.env.PUBLIC_URL + '/images/lucky.png'}
+                    alt="Lucky Backdrop"
+                    className="lucky-backdrop"
+                />
+                )}
+                <img
                 src={
-                  selectedMatchedInstance?.currentImage ||
-                  '/images/default/placeholder.png'
+                    selectedMatchedInstance?.currentImage ||
+                    '/images/default/placeholder.png'
                 }
                 alt={selectedMatchedInstance?.name || 'Clicked Pokémon'}
                 className="trade-proposal-pokemon-img"
-              />
-              {selectedMatchedInstance &&
-              <h3 className="trade-proposal-name">
-                              {generateH2Content(selectedMatchedInstance)}
-              </h3>
-                }
+                />
+                {selectedMatchedInstance && (
+                <h3 className="trade-proposal-name">
+                    {generateH2Content(selectedMatchedInstance)}
+                </h3>
+                )}
             </div>
             <div className="trade-proposal-details">
-            {selectedMatchedInstance && (
-                  <TypeComponent pokemon={selectedMatchedInstance} />
-                )}
                 {/* Optional: show more details about the selected instance */}
-                  {selectedMatchedInstance && (
-                  <div style={{ marginTop: '1rem' }}>
-                      <CPComponent pokemon={selectedMatchedInstance} />
-                      <MovesComponent pokemon={selectedMatchedInstance} />
-                      <LocationCaughtComponent pokemon={selectedMatchedInstance} />
-                      <DateCaughtComponent pokemon={selectedMatchedInstance} />
-                  </div>
-                  )}
+                {selectedMatchedInstance && (
+                <div style={{ marginTop: '1rem' }}>
+                    <CPComponent pokemon={selectedMatchedInstance} />
+                    <MovesComponent pokemon={selectedMatchedInstance} />
+                    <LocationCaughtComponent pokemon={selectedMatchedInstance} />
+                    <DateCaughtComponent pokemon={selectedMatchedInstance} />
+                </div>
+                )}
+
               {/* 
                 ===========  INSTANCE PICKER  ===========
                 If more than 1 matchedInstance, show a <select>.
@@ -181,13 +219,12 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, onClose }) => {
                     </select>
                 </div>
                 ) : (
-                <p style={{ marginTop: '10px', color: 'white' }}>
-                {selectedMatchedInstance.ownershipStatus.nickname
-                    ? `Nickname: ${selectedMatchedInstance.ownershipStatus.nickname}`
-                    : null}
-                </p>
-                )}
-  
+                    <p style={{ marginTop: '10px', color: 'white' }}>
+                    {selectedMatchedInstance?.ownershipStatus?.nickname
+                        ? `Nickname: ${selectedMatchedInstance.ownershipStatus.nickname}`
+                        : null}
+                    </p>                  
+                )}  
             </div>
           </div>
         </div>

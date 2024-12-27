@@ -25,6 +25,12 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+.friendship-manager {
+    width: 50%; /* Set the width to half of the parent container */
+    margin: 0 auto; /* Center horizontally */
+    text-align: center; /* Center the content inside */
+}
+
 /* Close Button */
 .trade-proposal-close-button {
     position: absolute;
@@ -79,12 +85,28 @@
     flex-direction: column;
 }
 
-.trade-proposal-pokemon-img {
+.trade-proposal-image-container {
+    position: relative;
+    display: inline-block; /* or whatever suits your layout */
+  }
+  
+  .lucky-backdrop {
+    position: absolute;
+    top: 18%;
+    left: 15%;
+    width: 180px;
+    height: auto;
+    z-index: 0; /* behind the Pokémon */
+  }
+  
+  .trade-proposal-pokemon-img {
+    position: relative;
+    z-index: 1; /* above the lucky backdrop */
     width: 240px;
     height: 240px;
     object-fit: contain;
     border-radius: 8px;
-}
+  }  
 
 /* Propose Button */
 .trade-proposal-propose-button {
