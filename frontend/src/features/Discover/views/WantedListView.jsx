@@ -1,11 +1,13 @@
 // WantedListView.jsx
 
-import React from 'react';
+import React, { useState } from 'react'; // Import useState
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import MiniMap from './ListViewComponents/MiniMap';
 import MoveDisplay from './ListViewComponents/MoveDisplay';
 import GenderIcon from './ListViewComponents/GenderIcon';
 import CPDisplay from './ListViewComponents/CPDisplay';
-import FriendshipLevel from './ListViewComponents/FriendshipLevel'; // Import the component
+import FriendshipLevel from './ListViewComponents/FriendshipLevel';
+import ConfirmationOverlay from './ConfirmationOverlay'; // Import ConfirmationOverlay
 import { URLSelect } from '../utils/URLSelect';
 import getPokemonDisplayName from '../utils/getPokemonDisplayName';
 import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
@@ -18,6 +20,8 @@ const formatDate = (dateString) => {
 };
 
 const WantedListView = ({ item, findPokemonByKey }) => {
+  const navigate = useNavigate();
+  const [showConfirmation, setShowConfirmation] = useState(false); // State for confirmation overlay
   const imageUrl = URLSelect(item.pokemonInfo, item);
   const pokemonDisplayName = getPokemonDisplayName(item);
 
@@ -30,6 +34,22 @@ const WantedListView = ({ item, findPokemonByKey }) => {
     item.charged_move2_id ||
     item.location_caught ||
     item.date_caught;
+
+  // Open confirmation overlay
+  const handleOpenConfirmation = () => {
+    setShowConfirmation(true);
+  };
+
+  // Confirm and navigate to user's catalog with "Wanted" ownershipStatus
+  const handleConfirmNavigation = () => {
+    navigate(`/collection/${item.username}`, { state: { instanceId: item.instance_id, ownershipStatus: "Wanted" } });
+    setShowConfirmation(false);
+  };
+
+  // Close the confirmation overlay without navigating
+  const handleCloseConfirmation = () => {
+    setShowConfirmation(false);
+  };
 
   return (
     <div className="list-view-row wanted-list-view">
@@ -44,7 +64,7 @@ const WantedListView = ({ item, findPokemonByKey }) => {
       </div>
 
       {/* Center Column */}
-      <div className="center-column">
+      <div className="center-column" onClick={handleOpenConfirmation}>
         <div className="card">
           <h3>{item.username}</h3>
 
@@ -192,6 +212,17 @@ const WantedListView = ({ item, findPokemonByKey }) => {
           </div>
         )}
       </div>
+
+      {/* Confirmation Overlay */}
+      {showConfirmation && (
+        <ConfirmationOverlay
+          username={item.username}
+          pokemonDisplayName={pokemonDisplayName}
+          instanceId={item.instance_id}
+          onConfirm={handleConfirmNavigation}
+          onClose={handleCloseConfirmation}
+        />
+      )}
     </div>
   );
 };

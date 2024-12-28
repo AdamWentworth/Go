@@ -1,6 +1,6 @@
 // Collect.jsx
 
-import React, { useState, useMemo, useContext } from 'react';
+import React, { useState, useMemo, useContext, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import PokemonList from './PokemonList';
 import ListsMenu from './ListsMenu';
@@ -31,6 +31,12 @@ function Collect({ isOwnCollection }) {
   const location = useLocation();
   const navigate = useNavigate();
   const isUsernamePath = !isOwnCollection && Boolean(username);
+
+  useEffect(() => {
+    if (isUsernamePath) {
+      setHighlightedCards(new Set());
+    }
+  }, [isUsernamePath, username]);  
 
   const {
     viewedOwnershipData,

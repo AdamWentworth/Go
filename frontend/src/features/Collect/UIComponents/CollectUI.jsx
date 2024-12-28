@@ -1,6 +1,6 @@
 // CollectUI.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './CollectUI.css';
 
 const CollectUI = ({
@@ -22,6 +22,19 @@ const CollectUI = ({
 }) => {
   const [fastSelectEnabled, setFastSelectEnabled] = useState(false);
   const [selectAllEnabled, setSelectAllEnabled] = useState(false);
+
+  useEffect(() => {
+    if (!isEditable) {
+      if (fastSelectEnabled) {
+        setFastSelectEnabled(false);
+        onFastSelectToggle(false);
+      }
+      if (selectAllEnabled) {
+        setSelectAllEnabled(false);
+        onSelectAll(false);
+      }
+    }
+  }, [isEditable, fastSelectEnabled, selectAllEnabled, onFastSelectToggle, onSelectAll]);
 
   const handleSelectAll = () => {
     const newSelectAllState = !selectAllEnabled;
@@ -62,24 +75,28 @@ const CollectUI = ({
             <button
               onClick={handleToggleFastSelect}
               className={`fast-select-button ${fastSelectEnabled ? 'active' : ''}`}
+              disabled={!isEditable}
             >
               <img src="/images/fast_select.png" alt="Toggle Fast Select" />
             </button>
             <button
               className={`select-all-button ${selectAllEnabled ? 'active' : ''}`}
               onClick={handleSelectAll}
+              disabled={!isEditable}
             >
               Select All
             </button>
             <button
               className={`pokedex-button ${ownershipFilter === '' ? 'pokedex-active' : ''}`}
               onClick={onClearOwnershipFilter}
+              disabled={!isEditable}
             >
               <img src="/images/pokedex-icon.png" alt="Pokédex View" />
             </button>
             <button
               className={`lists-button ${listsButtonClass}`}
               onClick={onListsButtonClick}
+              disabled={!isEditable}
             >
               {listsButtonText}
             </button>
