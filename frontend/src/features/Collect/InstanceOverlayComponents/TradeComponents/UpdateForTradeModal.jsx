@@ -1,8 +1,9 @@
 // UpdateForTradeModal.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import './UpdateForTradeModal.css'; // Ensure this file exists and is correctly imported
 import PropTypes from 'prop-types';
+import { PokemonDataContext } from '../../../../contexts/PokemonDataContext';
 
 // Import the getFromDB function
 import { getFromDB } from '../../../../services/indexedDB.js'; // Adjust the path based on your project structure
@@ -12,14 +13,17 @@ import OwnedInstance from '../OwnedInstance.jsx'; // Adjust the path as necessar
 
 const UpdateForTradeModal = ({
   ownedInstances,
-  baseKey, // New prop for baseKey
+  baseKey = null, // Set default value directly in destructuring
   onClose,
   onConfirm,
 }) => {
+  const { updateDetails, updateLists } = useContext(PokemonDataContext);
   const [loading, setLoading] = useState(false); // State to handle loading
   const [error, setError] = useState(null); // State to handle errors
   const [variantData, setVariantData] = useState(null); // State to hold fetched variant data
   const [restructuredData, setRestructuredData] = useState([]); // State to hold restructured data
+
+  const modalContentRef = useRef(null); // Ref to the modal content
 
   // Fetch variant data based on baseKey
   useEffect(() => {
@@ -67,22 +71,33 @@ const UpdateForTradeModal = ({
   }, [variantData, ownedInstances]);
 
   // Handler to update a specific instance to be for trade
-  const handleUpdateToTrade = (instanceId) => {
-    const updatedData = restructuredData.map((pokemon) => {
-      if (pokemon.ownershipStatus.instance_id === instanceId) {
-        return {
-          ...pokemon,
-          ownershipStatus: {
-            ...pokemon.ownershipStatus,
-            is_for_trade: true,
-          },
-        };
-      }
-      return pokemon;
-    });
+  const handleUpdateToTrade = async (instanceId) => {
+    try {
+      // Call updateDetails with instanceId and is_for_trade: true
+      await updateDetails(instanceId, { is_for_trade: true });
 
-    setRestructuredData(updatedData);
-    console.log(`Instance ${instanceId} marked for trade.`);
+      await updateLists();
+
+      // Update local state to reflect the change
+      const updatedData = restructuredData.map((pokemon) => {
+        if (pokemon.ownershipStatus.instance_id === instanceId) {
+          return {
+            ...pokemon,
+            ownershipStatus: {
+              ...pokemon.ownershipStatus,
+              is_for_trade: true,
+            },
+          };
+        }
+        return pokemon;
+      });
+
+      setRestructuredData(updatedData);
+      console.log(`Instance ${instanceId} marked for trade.`);
+    } catch (err) {
+      console.error(`Error updating instance ${instanceId} for trade:`, err);
+      setError(`Failed to update instance ${instanceId} for trade.`);
+    }
   };
 
   const handleConfirm = () => {
@@ -93,6 +108,22 @@ const UpdateForTradeModal = ({
     onConfirm(restructuredData);
   };
 
+  // Close modal when clicking outside the modal content
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modalContentRef.current && !modalContentRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    // Cleanup the event listener on component unmount
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose]);
+
   return (
     <div
       className="update-for-trade-modal-overlay"
@@ -100,7 +131,7 @@ const UpdateForTradeModal = ({
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      <div className="modal-content">
+      <div className="modal-content" ref={modalContentRef}>
         <h2 id="modal-title">Update Instances for Trade</h2>
 
         {/* Loading Indicator */}
@@ -120,7 +151,7 @@ const UpdateForTradeModal = ({
                   className="update-button"
                   disabled={pokemon.ownershipStatus.is_for_trade}
                 >
-                  {pokemon.ownershipStatus.is_for_trade ? 'For Trade' : 'Update to For Trade'}
+                  {pokemon.ownershipStatus.is_for_trade ? 'For Trade' : 'Update to Trade'}
                 </button>
               </div>
             ))}
@@ -147,8 +178,6 @@ UpdateForTradeModal.propTypes = {
   onConfirm: PropTypes.func.isRequired,
 };
 
-UpdateForTradeModal.defaultProps = {
-  baseKey: null, // Provide a default value
-};
+// Removed defaultProps as we've set default values in the function parameters
 
 export default UpdateForTradeModal;
