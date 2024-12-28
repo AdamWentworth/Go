@@ -150,7 +150,7 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
           </button>
           <div className="trade-proposal-arrow">
             <img
-              src="/images/trade_arrow.png"
+              src="/images/pogo_trade_icon.png"
               alt="Trade arrow"
               className="trade-proposal-arrow-image"
             />

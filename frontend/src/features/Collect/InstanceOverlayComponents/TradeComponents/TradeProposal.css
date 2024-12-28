@@ -132,11 +132,10 @@
 
 /* Diagonal Arrow */
 .trade-proposal-arrow-image {
-    width: 160px; /* Adjust the size as needed */
+    width: 100px; /* Adjust the size as needed */
     height: auto; /* Keep the aspect ratio */
     display: block;
     margin: 0 auto; /* Center the image */
-    transform: rotate(-50deg); /* Rotate 45 degrees counterclockwise */
     transform-origin: center; /* Rotate around the center of the image */
 }
 

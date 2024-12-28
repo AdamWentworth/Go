@@ -47,15 +47,14 @@ const useCalculateStardustCost = (
       // 2) Check if either Pokémon is shiny or legendary => special trade
       if (passedInPokemon.ownershipStatus.shiny || passedInPokemon.rarity === 'Legendary') {
         specialTrade = true;
-        console.log('[useCalculateStardustCost] Passed-in Pokémon is shiny or legendary. Setting specialTrade = true.');
       }
 
       if (selectedMatchedInstance.shiny || selectedMatchedInstance.rarity === 'Legendary') {
         specialTrade = true;
-        console.log('[useCalculateStardustCost] Selected matched instance is shiny or legendary. Setting specialTrade = true.');
       }
 
       setIsSpecialTrade(specialTrade);
+      console.log(`is Special Trade?`, specialTrade)
 
       // 3) Check registration statuses
       const passedInInstanceId = passedInPokemon.pokemonKey;
@@ -80,22 +79,18 @@ const useCalculateStardustCost = (
         if (passedInIsRegistered && selectedIsRegistered) {
           // Special trade where both are registered
           cost = REG_COST_SPECIAL[friendshipLevel] || MAX_COST;
-          console.log(`[useCalculateStardustCost] Special trade and both Pokémon are registered. Setting cost to ${cost}.`);
         } else {
           // Special trade where one or both are unregistered
           cost = UNREG_COST_SPECIAL[friendshipLevel] || MAX_COST;
-          console.log(`[useCalculateStardustCost] Special trade and one or both Pokémon are unregistered. Setting cost to ${cost}.`);
         }
       } else {
         // Non-special trade costs
         if (!passedInIsRegistered || !selectedIsRegistered) {
           // At least one Pokémon is unregistered
           cost = UNREG_COST_NOT_SPECIAL[friendshipLevel] || 100;
-          console.log(`[useCalculateStardustCost] Not special trade and one or both Pokémon are unregistered. Setting cost to ${cost}.`);
         } else {
           // Both Pokémon are registered
           cost = REG_COST;
-          console.log(`[useCalculateStardustCost] Not special trade and both Pokémon are registered. Setting cost to ${cost}.`);
         }
       }
 
