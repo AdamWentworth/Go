@@ -59,6 +59,8 @@ const TradeDetails = ({
   const [ownedInstancesToTrade, setOwnedInstancesToTrade] = useState([]);
   const [currentBaseKey, setCurrentBaseKey] = useState(null); // New state for baseKey
 
+  const [myOwnershipData, setMyOwnershipData] = useState();
+
   const {
     selectedImages: selectedExcludeImages,
     toggleImageSelection: toggleExcludeImageSelection,
@@ -182,6 +184,15 @@ const TradeDetails = ({
       return;
     }
 
+    // Convert the array into a keyed object using instance_id as key
+    const hashedOwnershipData = userOwnershipData.reduce((acc, item) => {
+      acc[item.instance_id] = item;
+      return acc;
+    }, {});
+
+    // Store that object in state for passing to TradeProposal
+    setMyOwnershipData(hashedOwnershipData);
+
     // 4) Filter to find all instances where the baseKey matches and is_owned === true
     const ownedInstances = userOwnershipData.filter((item) => {
       const parsedOwned = parsePokemonKey(item.instance_id);
@@ -241,11 +252,6 @@ const TradeDetails = ({
         updateDBEntry(OWNERSHIP_DATA_STORE, instanceId, { is_for_trade: true })
       );
       await Promise.all(updatePromises);
-
-      // Optionally, you can refetch or update your local state to reflect changes
-      // For example:
-      // const updatedOwnershipData = await getAllFromDB(OWNERSHIP_DATA_STORE);
-      // setOwnershipData(updatedOwnershipData);
 
       // Close the modal
       setIsUpdateForTradeModalOpen(false);
@@ -489,6 +495,8 @@ const TradeDetails = ({
             setIsTradeProposalOpen(false);
             setTradeClickedPokemon(null);
           }}
+          myOwnershipData={myOwnershipData}
+          ownershipData={ownershipData}
         />
       )}
 

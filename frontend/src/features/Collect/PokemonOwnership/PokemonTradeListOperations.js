@@ -57,7 +57,8 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
             type2_name: variantDetail?.type2_name,
             type_1_icon: variantDetail?.type_1_icon,
             type_2_icon: variantDetail?.type_2_icon,
-            form: variantDetail?.form
+            form: variantDetail?.form,
+            shiny: value.shiny,
         };
 
         // Assigning the listItem under the corresponding pokemonKey in each list
@@ -123,7 +124,8 @@ export const initializePokemonLists = (ownershipData, variants, search) => {
             type2_name: variantDetail?.type2_name,
             type_1_icon: variantDetail?.type_1_icon,
             type_2_icon: variantDetail?.type_2_icon,
-            form: variantDetail?.form
+            form: variantDetail?.form,
+            shiny: value.shiny,
         };
 
         // Assign the listItem under the corresponding pokemonKey in each list

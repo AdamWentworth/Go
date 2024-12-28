@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import './UpdateForTradeModal.css'; // Ensure this file exists and is correctly imported
-import PropTypes from 'prop-types';
 import { PokemonDataContext } from '../../../../contexts/PokemonDataContext';
 
 // Import the getFromDB function
@@ -100,14 +99,6 @@ const UpdateForTradeModal = ({
     }
   };
 
-  const handleConfirm = () => {
-    // Log the restructured data
-    console.log('Confirm clicked. Restructured Data:', restructuredData);
-
-    // Pass the restructured data to the onConfirm callback
-    onConfirm(restructuredData);
-  };
-
   // Close modal when clicking outside the modal content
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -151,7 +142,7 @@ const UpdateForTradeModal = ({
                   className="update-button"
                   disabled={pokemon.ownershipStatus.is_for_trade}
                 >
-                  {pokemon.ownershipStatus.is_for_trade ? 'For Trade' : 'Update to Trade'}
+                  {pokemon.ownershipStatus.is_for_trade ? 'For Trade' : 'Add to For Trade'}
                 </button>
               </div>
             ))}
@@ -160,22 +151,6 @@ const UpdateForTradeModal = ({
       </div>
     </div>
   );
-};
-
-UpdateForTradeModal.propTypes = {
-  ownedInstances: PropTypes.arrayOf(
-    PropTypes.shape({
-      instance_id: PropTypes.string.isRequired,
-      name: PropTypes.string,
-      image_url: PropTypes.string,
-      is_owned: PropTypes.bool,
-      is_for_trade: PropTypes.bool,
-      // Add other relevant properties as needed
-    })
-  ).isRequired,
-  baseKey: PropTypes.string, // Define baseKey as a string (adjust type if different)
-  onClose: PropTypes.func.isRequired,
-  onConfirm: PropTypes.func.isRequired,
 };
 
 // Removed defaultProps as we've set default values in the function parameters
