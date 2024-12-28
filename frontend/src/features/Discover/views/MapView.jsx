@@ -154,13 +154,14 @@ const MapView = ({ data, ownershipStatus, pokemonCache }) => {
 
     map.on('click', (event) => {
       let featureFound = false;
-
+    
       map.forEachFeatureAtPixel(event.pixel, (feature) => {
-        featureFound = true;
-        const { item } = feature.getProperties();
-
-        // Only show popup for point features (if item exists)
-        if (item) {
+        const { item, geometry } = feature.getProperties();
+    
+        // Check if the feature is a point (ignore boundaries)
+        if (geometry && geometry.getType() === 'Point' && item) {
+          featureFound = true;
+    
           let PopupComponent;
           if (ownershipStatus === 'trade') {
             PopupComponent = TradePopup;
@@ -169,35 +170,39 @@ const MapView = ({ data, ownershipStatus, pokemonCache }) => {
           } else {
             PopupComponent = OwnedPopup;
           }
-
+    
           if (pokemonVariants.length > 0) {
             popupRootRef.current.render(
               <PopupComponent
                 item={item}
                 navigateToUserCatalog={navigateToUserCatalog}
                 findPokemonByKey={findPokemonByKey}
+                onClose={() => {
+                  popupOverlay.setPosition(undefined); // Close the popup
+                  popupRootRef.current.render(null);   // Clear the popup content
+                }}
               />
             );
           } else {
             console.warn("pokemonVariants not yet populated, skipping popup render");
           }
-
+    
           const featureCoordinate = feature.getGeometry().getCoordinates();
           const viewportCenterY = map.getSize()[1] / 2;
-
+    
           const positioning =
             event.pixel[1] > viewportCenterY ? 'bottom-center' : 'top-center';
-
+    
           popupOverlay.setPositioning(positioning);
           popupOverlay.setPosition(featureCoordinate);
         }
       });
-
+    
       if (!featureFound) {
-        popupOverlay.setPosition(undefined);
-        popupRootRef.current.render(null);
+        popupOverlay.setPosition(undefined); // Close the popup
+        popupRootRef.current.render(null);   // Clear the popup content
       }
-    });
+    });      
 
     mapRef.current = map;
 
