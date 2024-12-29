@@ -26,7 +26,8 @@ function PokemonList({
     showAll,
     sortType,
     sortMode,
-    variants
+    variants,
+    username,
 }) {
 
     const handleSelect = (pokemon) => {
@@ -78,6 +79,7 @@ function PokemonList({
                             sortMode={sortMode}
                             variants={variants}
                             isEditable={isEditable}
+                            username={username}
                         /> :
                         <PokemonOverlay
                             pokemon={selectedPokemon.overlayType ? selectedPokemon.pokemon : selectedPokemon}

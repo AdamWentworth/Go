@@ -11,6 +11,7 @@ const useCalculateStardustCost = (
 ) => {
   const [stardustCost, setStardustCost] = useState(0);
   const [isSpecialTrade, setIsSpecialTrade] = useState(false);
+  const [isRegisteredTrade, setIsRegisteredTrade] = useState(false); // New state variable
 
   // Define Stardust cost mappings
   const REG_COST = 100; // Cost when both Pokémon are registered (non-special)
@@ -72,6 +73,9 @@ const useCalculateStardustCost = (
       console.log(`[useCalculateStardustCost] Passed-in Pokémon isRegistered: ${passedInIsRegistered}`);
       console.log(`[useCalculateStardustCost] Selected Instance isRegistered: ${selectedIsRegistered}`);
 
+      // 4a) Update isRegisteredTrade based on both registrations
+      setIsRegisteredTrade(passedInIsRegistered && selectedIsRegistered);
+
       // 4) Determine cost based on trade type and registration
       let cost;
 
@@ -108,7 +112,7 @@ const useCalculateStardustCost = (
     ownershipData,
   ]);
 
-  return { stardustCost, isSpecialTrade };
+  return { stardustCost, isSpecialTrade, isRegisteredTrade }; // Include isRegisteredTrade
 };
 
 function isPokemonRegistered(instanceId, ownershipObj) {

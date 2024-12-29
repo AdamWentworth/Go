@@ -8,7 +8,7 @@ import WantedInstance from './InstanceOverlayComponents/WantedInstance';
 import WantedDetails from './InstanceOverlayComponents/WantedComponents/WantedDetails';
 import WindowOverlay from './WindowOverlay';
 
-const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, ownershipData, sortType, sortMode, isEditable }) => {
+const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, ownershipData, sortType, sortMode, isEditable, username }) => {
   // console.log("Rendering InstanceOverlay for pokemon:", pokemon);
   const [currentOverlay, setCurrentOverlay] = useState(ownershipFilter);
   const [selectedPokemon, setSelectedPokemon] = useState(pokemon);
@@ -76,6 +76,7 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
                   openWantedOverlay={handleOpenWantedOverlay}
                   variants={variants}
                   isEditable={isEditable}
+                  username={username}
                 />
               </WindowOverlay>
             </div>

@@ -39,6 +39,7 @@ const TradeDetails = ({
   openWantedOverlay,
   variants,
   isEditable,
+  username
 }) => {
   const { not_wanted_list, wanted_filters } = pokemon.ownershipStatus;
   const [localNotWantedList, setLocalNotWantedList] = useState({
@@ -497,6 +498,7 @@ const TradeDetails = ({
           }}
           myOwnershipData={myOwnershipData}
           ownershipData={ownershipData}
+          username={username}
         />
       )}
 

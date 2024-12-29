@@ -10,7 +10,10 @@ import { generateH2Content } from '../../../../utils/formattingHelpers';
 import FriendshipManager from '../WantedComponents/FriendshipManager';
 import useCalculateStardustCost from '../hooks/useCalculateStardustCost';
 
-const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose, myOwnershipData, ownershipData }) => {
+import { proposeTrade } from '../../../../services/tradeService';
+
+const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose, myOwnershipData, ownershipData, username }) => {
+  console.log(username)
   const containerRef = useRef(null);
   const closeButtonRef = useRef(null);
 
@@ -53,22 +56,74 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
     setSelectedMatchedInstance(found || null);
   };
 
-  const handleProposeTrade = () => {
+  const handleProposeTrade = async () => {
     if (!selectedMatchedInstance) {
       alert("Please select which instance to trade.");
       return;
     }
-    console.log("Propose trade with instance:", selectedMatchedInstance);
-    onClose();
+
+    // Validate friendship level
+    if (friendship_level < 1 || friendship_level > 4) {
+      alert("Please select a valid friendship level (1-4).");
+      return;
+    }
+
+    // Retrieve the 'user' object from localStorage
+    const userString = localStorage.getItem('user');
+
+    // Initialize username_proposed as null
+    let username_proposed = null;
+
+    // Attempt to parse the 'user' object
+    if (userString) {
+        try {
+            const user = JSON.parse(userString);
+            username_proposed = user.username || null;
+        } catch (error) {
+            console.error("Error parsing 'user' from localStorage:", error);
+            // Optionally, handle the error (e.g., redirect to login)
+        }
+    }
+
+    // Prepare trade data
+    const tradeData = {
+      username_proposed: username_proposed, // Using username instead of user_id_proposed
+      username_accepting: username, // Using username instead of user_id_accepting
+      pokemon_instance_id_user_proposed: selectedMatchedInstance.ownershipStatus.instance_id, // Your Pokémon
+      pokemon_instance_id_user_accepting: passedInPokemon.pokemonKey, // Their Pokémon
+      is_special_trade: isSpecialTrade, // From your stardust calculation hook or other sources
+      is_registered_trade: isRegisteredTrade, // From your sources
+      trade_dust_cost: stardustCost, // Calculated Stardust cost
+      is_lucky_trade: pref_lucky, // From your component state
+      trade_friendship_level: friendship_level, // Numeric value (1-4)
+      // Optionally, include trade satisfaction if available
+      user_1_trade_satisfaction: null, // To be filled after trade
+      user_2_trade_satisfaction: null, // To be filled after trade
+    };
+
+    try {
+      // Use the proposeTrade function from tradeService.js
+      const tradeId = await proposeTrade(tradeData);
+      console.log(`Trade created with ID: ${tradeId}`);
+
+      // Optionally, you can update the UI or notify the user
+      alert("Trade proposal successfully created!");
+
+      // Close the proposal modal
+      onClose();
+    } catch (error) {
+      console.error("Error creating trade:", error);
+      alert("Failed to create trade proposal. Please try again.");
+    }
   };
 
-  const { stardustCost, isSpecialTrade } = useCalculateStardustCost(
+  const { stardustCost, isSpecialTrade, isRegisteredTrade } = useCalculateStardustCost(
     friendship_level,
     passedInPokemon,
     selectedMatchedInstance,
     myOwnershipData,
     ownershipData
-  );
+  );  
 
   const formattedStardustCost = stardustCost.toLocaleString();
 

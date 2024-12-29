@@ -309,6 +309,7 @@ function Collect({ isOwnCollection }) {
               sortType={sortType}
               sortMode={sortMode}
               variants={variants}
+              username={username}
             />
           ) : (
             <ListsMenu 
