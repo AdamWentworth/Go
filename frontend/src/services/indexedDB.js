@@ -4,7 +4,8 @@ import { openDB } from 'idb';
 
 // Define database constants
 const DB_NAME = 'pokemonDB';
-const LISTS_DB_NAME = 'pokemonListsDB'; // New database for lists
+const LISTS_DB_NAME = 'pokemonListsDB';
+const TRADES_DB_NAME = 'tradesDB';
 const DB_VERSION = 1;
 
 // Store names
@@ -15,6 +16,10 @@ const TRADES_STORE = 'pokemonTrades';
 
 // New stores for lists
 const LIST_STORES = ['owned', 'unowned', 'wanted', 'trade'];
+
+// Store names for tradesDB
+const POKEMON_TRADES_STORE = 'pokemonTrades';
+const RELATED_INSTANCES_STORE = 'relatedInstances';
 
 // Enumerate trade statuses and friendship levels
 export const TRADE_STATUSES = {
@@ -48,9 +53,6 @@ export async function initDB() {
             if (!db.objectStoreNames.contains(BATCHED_UPDATES_STORE)) {
                 db.createObjectStore(BATCHED_UPDATES_STORE, { keyPath: 'key' });
             }
-            if (!db.objectStoreNames.contains(TRADES_STORE)) {
-                db.createObjectStore(TRADES_STORE, {keyPath: 'trade_id'});
-            }
         },
     });
     return dbInstance;
@@ -70,6 +72,23 @@ export async function initListsDB() {
         },
     });
     return listsDBInstance;
+}
+
+// Initialize Trades DB
+let tradesDBInstance = null;
+export async function initTradesDB() {
+    if (tradesDBInstance) return tradesDBInstance;
+    tradesDBInstance = await openDB(TRADES_DB_NAME, DB_VERSION, {
+        upgrade(db) {
+            if (!db.objectStoreNames.contains(POKEMON_TRADES_STORE)) {
+                db.createObjectStore(POKEMON_TRADES_STORE, { keyPath: 'trade_id',});
+            }
+            if (!db.objectStoreNames.contains(RELATED_INSTANCES_STORE)) {
+                db.createObjectStore(RELATED_INSTANCES_STORE, { keyPath: 'instance_id',});
+            }
+        },
+    });
+    return tradesDBInstance;
 }
 
 // Helper functions for the main database
@@ -200,9 +219,9 @@ export async function storeListsInIndexedDB(lists) {
 
 // Create a new trade proposal
 export async function createTrade(tradeData) {
-    const db = await initDB();
-    const tx = db.transaction(TRADES_STORE, 'readwrite');
-    const store = tx.objectStore(TRADES_STORE);
+    const db = await initTradesDB();
+    const tx = db.transaction(POKEMON_TRADES_STORE, 'readwrite');
+    const store = tx.objectStore(POKEMON_TRADES_STORE);
     // Ensure tradeData includes required fields
     const trade = {
         ...tradeData,
@@ -211,7 +230,7 @@ export async function createTrade(tradeData) {
         is_special_trade: tradeData.is_special_trade || 0,
         is_registered_trade: tradeData.is_registered_trade || 0,
         is_lucky_trade: tradeData.is_lucky_trade || 0,
-        trade_friendship_level: tradeData.trade_friendship_level || TRADE_FRIENDSHIP_LEVELS.GOOD,
+        trade_friendship_level: tradeData.trade_friendship_level || TRADE_FRIENDSHIP_LEVELS[1], // Assuming 1 corresponds to 'Good'
     };
     const tradeId = await store.add(trade);
     await tx.done;
@@ -223,15 +242,15 @@ export async function updateTradeStatus(tradeId, newStatus) {
     if (!Object.values(TRADE_STATUSES).includes(newStatus)) {
         throw new Error('Invalid trade status');
     }
-    const db = await initDB();
-    const tx = db.transaction(TRADES_STORE, 'readwrite');
-    const store = tx.objectStore(TRADES_STORE);
+    const db = await initTradesDB();
+    const tx = db.transaction(POKEMON_TRADES_STORE, 'readwrite');
+    const store = tx.objectStore(POKEMON_TRADES_STORE);
     const trade = await store.get(tradeId);
     if (!trade) {
         throw new Error('Trade not found');
     }
     trade.trade_status = newStatus;
-    const currentDate = new Date();
+    const currentDate = new Date().toISOString();
 
     // Update relevant date fields based on status
     switch (newStatus) {
@@ -259,25 +278,25 @@ export async function getTradesByStatus(status) {
     if (!Object.values(TRADE_STATUSES).includes(status)) {
         throw new Error('Invalid trade status');
     }
-    const db = await initDB();
-    const store = db.transaction(TRADES_STORE).objectStore(TRADES_STORE);
+    const db = await initTradesDB();
+    const store = db.transaction(POKEMON_TRADES_STORE).objectStore(POKEMON_TRADES_STORE);
     const index = store.index('trade_status_idx');
     return index.getAll(status);
 }
 
 // Get trades by username (proposed or accepting)
 export async function getTradesByUsername(username) {
-    const db = await initDB();
-    const store = db.transaction(TRADES_STORE).objectStore(TRADES_STORE);
+    const db = await initTradesDB();
+    const store = db.transaction(POKEMON_TRADES_STORE).objectStore(POKEMON_TRADES_STORE);
 
     // Using indexes to query trades where username_proposed or username_accepting matches
-    const proposedTrades = store.index('username_proposed_idx').getAll(IDBKeyRange.only(username));
-    const acceptingTrades = store.index('username_accepting_idx').getAll(IDBKeyRange.only(username));
+    const proposedTradesPromise = store.index('username_proposed_idx').getAll(IDBKeyRange.only(username));
+    const acceptingTradesPromise = store.index('username_accepting_idx').getAll(IDBKeyRange.only(username));
 
-    const [proposed, accepting] = await Promise.all([proposedTrades, acceptingTrades]);
+    const [proposedTrades, acceptingTrades] = await Promise.all([proposedTradesPromise, acceptingTradesPromise]);
 
     // Combine and remove duplicates if any
-    const combined = [...proposed, ...accepting];
+    const combined = [...proposedTrades, ...acceptingTrades];
     const uniqueTrades = combined.filter((trade, index, self) =>
         index === self.findIndex(t => t.trade_id === trade.trade_id)
     );
@@ -287,20 +306,20 @@ export async function getTradesByUsername(username) {
 
 // Get trades by Pokémon instance ID (proposed or accepting)
 export async function getTradesByPokemonInstanceId(pokemonInstanceId) {
-    const db = await initDB();
-    const store = db.transaction(TRADES_STORE).objectStore(TRADES_STORE);
+    const db = await initTradesDB();
+    const store = db.transaction(POKEMON_TRADES_STORE).objectStore(POKEMON_TRADES_STORE);
 
     // Create two promises to get trades where Pokémon is proposed or accepting
     const proposedIndex = store.index('pokemon_instance_id_user_proposed_idx');
     const acceptingIndex = store.index('pokemon_instance_id_user_accepting_idx');
 
-    const proposedTrades = proposedIndex.getAll(pokemonInstanceId);
-    const acceptingTrades = acceptingIndex.getAll(pokemonInstanceId);
+    const proposedTradesPromise = proposedIndex.getAll(IDBKeyRange.only(pokemonInstanceId));
+    const acceptingTradesPromise = acceptingIndex.getAll(IDBKeyRange.only(pokemonInstanceId));
 
-    const [proposed, accepting] = await Promise.all([proposedTrades, acceptingTrades]);
+    const [proposedTrades, acceptingTrades] = await Promise.all([proposedTradesPromise, acceptingTradesPromise]);
 
     // Combine and remove duplicates if any
-    const combined = [...proposed, ...accepting];
+    const combined = [...proposedTrades, ...acceptingTrades];
     const uniqueTrades = combined.filter((trade, index, self) =>
         index === self.findIndex(t => t.trade_id === trade.trade_id)
     );
@@ -309,11 +328,53 @@ export async function getTradesByPokemonInstanceId(pokemonInstanceId) {
 }
 
 // Get all trades
-export async function getAllTrades() {
-    return getAllFromDB(TRADES_STORE);
+export async function getAllFromTradesDB(storeName) {
+    const db = await initTradesDB();
+    const tx = db.transaction(storeName, 'readonly');
+    const store = tx.objectStore(storeName);
+    const allData = await store.getAll();
+    await tx.done;
+    return allData;
 }
 
 // Delete a trade
-export async function deleteTrade(tradeId) {
-    return deleteFromDB(TRADES_STORE, tradeId);
+export async function deleteFromTradesDB(storeName, key) {
+    const db = await initTradesDB();
+    return db.delete(storeName, key);
+}
+
+// Related Instances Functions (if needed)
+// Example: Add related instance
+export async function addRelatedInstance(instanceData, tradeId) {
+    const db = await initTradesDB();
+    const tx = db.transaction(RELATED_INSTANCES_STORE, 'readwrite');
+    const store = tx.objectStore(RELATED_INSTANCES_STORE);
+    
+    // Ensure instanceData includes 'instance_id'
+    if (!instanceData.instance_id) {
+        throw new Error('Missing "instance_id" in instanceData.');
+    }
+    
+    // Optionally associate with trade_id
+    const relatedEntry = {
+        ...instanceData,
+        trade_id: tradeId, // Link to the trade
+    };
+    
+    try {
+        await store.add(relatedEntry);
+        await tx.done;
+        return relatedEntry.instance_id;
+    } catch (error) {
+        console.error('Failed to add related instance:', error);
+        throw new Error('Adding related instance failed.');
+    }
+}
+
+// Example: Get related instances by trade_id
+export async function getRelatedInstancesByTradeId(tradeId) {
+    const db = await initTradesDB();
+    const store = db.transaction(RELATED_INSTANCES_STORE).objectStore(RELATED_INSTANCES_STORE);
+    const index = store.index('trade_id_idx'); // Ensure you have an index on trade_id
+    return index.getAll(tradeId);
 }

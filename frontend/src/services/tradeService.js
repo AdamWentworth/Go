@@ -1,6 +1,6 @@
 // src/services/tradeService.js
 
-import { createTrade, TRADE_FRIENDSHIP_LEVELS } from './indexedDB';
+import { createTrade, TRADE_FRIENDSHIP_LEVELS, TRADE_STATUSES, addRelatedInstance } from './indexedDB';
 import { generateUUID } from '../utils/PokemonIDUtils';
 
 /**
@@ -33,6 +33,7 @@ export async function proposeTrade(tradeData) {
         trade_dust_cost = 0,
         is_lucky_trade = false,
         trade_friendship_level = 1, // Default to 'Good'
+        pokemon,
     } = tradeData;
 
     // Basic Validation
@@ -56,6 +57,10 @@ export async function proposeTrade(tradeData) {
         throw new Error('"trade_friendship_level" must be an integer between 1 and 4.');
     }
 
+    if (!pokemon || typeof pokemon !== 'object') {
+        throw new Error('Invalid or missing "pokemon" data.');
+    }
+
     // Generate a unique trade_id with "trade_" prefix
     const trade_id = `trade_${generateUUID()}`;
 
@@ -66,7 +71,7 @@ export async function proposeTrade(tradeData) {
         username_accepting,
         pokemon_instance_id_user_proposed,
         pokemon_instance_id_user_accepting,
-        trade_status: 'proposed', // Using TRADE_STATUSES.PROPOSED if imported
+        trade_status: TRADE_STATUSES.PROPOSED, // Using TRADE_STATUSES.PROPOSED if imported
         trade_proposal_date: new Date().toISOString(), // ISO 8601 format
         trade_accepted_date: null,
         trade_completed_date: null,
@@ -84,7 +89,19 @@ export async function proposeTrade(tradeData) {
     console.log(tradeEntry.trade_proposal_date);
 
     try {
+        // Create the trade
         const tradeId = await createTrade(tradeEntry);
+        
+        // Prepare Pokémon instance data
+        const relatedInstanceData = {
+            instance_id: pokemon.pokemonKey, // Using pokemonKey as instance_id
+            ...pokemon, // Spread all other Pokémon data
+            // Optionally, add more fields if necessary
+        };
+
+        // Add the related Pokémon instance
+        await addRelatedInstance(relatedInstanceData, tradeId);
+
         return tradeId;
     } catch (error) {
         console.error('Failed to propose trade:', error);

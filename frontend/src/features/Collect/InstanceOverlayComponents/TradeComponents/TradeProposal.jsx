@@ -13,7 +13,7 @@ import useCalculateStardustCost from '../hooks/useCalculateStardustCost';
 import { proposeTrade } from '../../../../services/tradeService';
 
 const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose, myOwnershipData, ownershipData, username }) => {
-  console.log(username)
+  console.log(passedInPokemon)
   const containerRef = useRef(null);
   const closeButtonRef = useRef(null);
 
@@ -99,6 +99,7 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
       // Optionally, include trade satisfaction if available
       user_1_trade_satisfaction: null, // To be filled after trade
       user_2_trade_satisfaction: null, // To be filled after trade
+      pokemon: passedInPokemon,
     };
 
     try {
