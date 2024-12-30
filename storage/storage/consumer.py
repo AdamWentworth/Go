@@ -136,12 +136,24 @@ def filter_json_fields(data):
     return {k: v for k, v in data.items() if v is True}
 
 def handle_message(data, trace_logger):
+    """
+    data = {
+      "user_id": <string/int>,
+      "username": <string>,
+      "device_id": <string>,
+      "trace_id": <string>,
+      "location": {"latitude": ..., "longitude": ...},
+      "pokemonUpdates": [ {...}, {...} ],
+      "tradeUpdates": [ {...}, {...} ]  # Not used for now
+    }
+    """
     max_retries = 5
     retry_interval = 5
     retries = 0
 
     while retries < max_retries:
         try:
+            # Ensure DB connection
             if not ensure_db_connection():
                 retries += 1
                 time.sleep(retry_interval)
@@ -149,29 +161,40 @@ def handle_message(data, trace_logger):
 
             user_id = data.get('user_id')
             username = data.get('username')
-            pokemon_data = data.get('pokemon', {})
-
-            # Extract the location data (latitude and longitude)
             location = data.get('location', {})
-            latitude = location.get('latitude') if location else None
-            longitude = location.get('longitude') if location else None
+            latitude = location.get('latitude')
+            longitude = location.get('longitude')
 
-            trace_logger.info(f"Handling message for user_id: {user_id}, username: {username}, location: {latitude}, {longitude}")
+            # We’ll skip tradeUpdates for now
+            pokemon_updates = data.get('pokemonUpdates', [])
+            # trade_updates = data.get('tradeUpdates', [])  # commented out
 
-            # Update or create the user record, including location
-            user, created = User.objects.update_or_create(
-                user_id=user_id,
-                defaults={'username': username, 'latitude': latitude, 'longitude': longitude}
+            trace_logger.info(
+                f"Handling message for user_id: {user_id}, username: {username}, "
+                f"location: {latitude}, {longitude}"
             )
 
+            # Upsert the user with location
+            user, created = User.objects.update_or_create(
+                user_id=user_id,
+                defaults={
+                    'username': username,
+                    'latitude': latitude,
+                    'longitude': longitude,
+                }
+            )
             trace_logger.info(f"User processed: {user_id}, created: {created}")
 
+            # -----------------------------------------------------------------
+            # PROCESS POKEMON UPDATES
+            # -----------------------------------------------------------------
             created_count = 0
             updated_count = 0
             deleted_count = 0
 
             # Process each Pokemon instance
-            for instance_id, pokemon in pokemon_data.items():
+            for pokemon in pokemon_updates:
+                instance_id = pokemon.get('instance_id')
                 trace_logger.info(f"Processing instance {instance_id} for user {user_id} with data: {pokemon}")
 
                 cp = pokemon.get('cp') if pokemon.get('cp') != "" else None
@@ -277,6 +300,32 @@ def handle_message(data, trace_logger):
                         updated_count += 1
                         trace_logger.info(f"Instance updated for user {user_id}: {instance_id}")
 
+            # -----------------------------------------------------------------
+            # COMMENTED OUT: TRADE UPDATES
+            # -----------------------------------------------------------------
+            # trade_processed_count = 0
+            # for tradeObj in trade_updates:
+            #     trade_id = tradeObj.get('trade_id')
+            #     if not trade_id:
+            #         trace_logger.warning("Skipping a Trade update with no trade_id.")
+            #         continue
+            #
+            #     trace_logger.info(f"Processing Trade ID {trade_id} for user {user_id}: {tradeObj}")
+            #
+            #     # e.g. upsert your Trade model
+            #     # defaults = { ... }
+            #     # trade, createdTrade = Trade.objects.update_or_create(
+            #     #     trade_id=trade_id,
+            #     #     user=user,
+            #     #     defaults=defaults
+            #     # )
+            #     # if createdTrade:
+            #     #     trace_logger.info(f"Trade {trade_id} created.")
+            #     # else:
+            #     #     trace_logger.info(f"Trade {trade_id} updated.")
+            #     # trade_processed_count += 1
+
+            # Summaries
             actions = []
             if created_count > 0:
                 actions.append(f"created {created_count}")
@@ -284,11 +333,15 @@ def handle_message(data, trace_logger):
                 actions.append(f"updated {updated_count}")
             if deleted_count > 0:
                 actions.append(f"dropped {deleted_count}")
-            action_summary = ", ".join(actions)
+            # if trade_processed_count > 0:
+            #     actions.append(f"tradeProcessed {trade_processed_count}")
 
-            logger.info(f"User {username} {action_summary} instances with status 200")
-            file_logger.debug(f"User {username} {action_summary} instances with status 200")
-            return  # Exit the retry loop if processing is successful
+            action_summary = ", ".join(actions) if actions else "no changes"
+            logger.info(f"User {username} {action_summary} with status 200")
+            file_logger.debug(f"User {username} {action_summary} with status 200")
+
+            return  # success, exit retry loop
+
         except OperationalError as oe:
             trace_logger.error(f"Failed to handle message due to database error: {oe}")
             retries += 1

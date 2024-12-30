@@ -2,26 +2,45 @@
 
 import { openDB } from 'idb';
 
-// Define database constants
+// -----------------------------------------------------------------------------
+// Database Names
+// -----------------------------------------------------------------------------
 const DB_NAME = 'pokemonDB';
 const LISTS_DB_NAME = 'pokemonListsDB';
 const TRADES_DB_NAME = 'tradesDB';
+const UPDATES_DB_NAME = 'batchedUpdatesDB'; 
+
+// -----------------------------------------------------------------------------
+// DB Versions
+// -----------------------------------------------------------------------------
 const DB_VERSION = 1;
 
-// Store names
+// -----------------------------------------------------------------------------
+// Store Names for Main DB (pokemonDB)
+// -----------------------------------------------------------------------------
 const VARIANTS_STORE = 'pokemonVariants';
 export const OWNERSHIP_DATA_STORE = 'pokemonOwnership';
-const BATCHED_UPDATES_STORE = 'batchedUpdates';
-const TRADES_STORE = 'pokemonTrades';
 
-// New stores for lists
+// -----------------------------------------------------------------------------
+// Store Names for the Batched Updates DB
+// -----------------------------------------------------------------------------
+const BATCHED_POKEMON_UPDATES_STORE = 'batchedPokemonUpdates';
+const BATCHED_TRADE_UPDATES_STORE = 'batchedTradeUpdates';
+
+// -----------------------------------------------------------------------------
+// Store names for listsDB
+// -----------------------------------------------------------------------------
 const LIST_STORES = ['owned', 'unowned', 'wanted', 'trade'];
 
-// Store names for tradesDB
+// -----------------------------------------------------------------------------
+// Trades DB Constants
+// -----------------------------------------------------------------------------
 const POKEMON_TRADES_STORE = 'pokemonTrades';
 const RELATED_INSTANCES_STORE = 'relatedInstances';
 
-// Enumerate trade statuses and friendship levels
+// -----------------------------------------------------------------------------
+// Enums for trades
+// -----------------------------------------------------------------------------
 export const TRADE_STATUSES = {
     PROPOSED: 'proposed',
     ACCEPTED: 'accepted',
@@ -38,7 +57,9 @@ export const TRADE_FRIENDSHIP_LEVELS = {
     4: 'Best',
 };
 
-// Cache database instances
+// -----------------------------------------------------------------------------
+// Main DB: pokemonDB
+// -----------------------------------------------------------------------------
 let dbInstance = null;
 export async function initDB() {
     if (dbInstance) return dbInstance;
@@ -50,14 +71,14 @@ export async function initDB() {
             if (!db.objectStoreNames.contains(OWNERSHIP_DATA_STORE)) {
                 db.createObjectStore(OWNERSHIP_DATA_STORE, { keyPath: 'instance_id' });
             }
-            if (!db.objectStoreNames.contains(BATCHED_UPDATES_STORE)) {
-                db.createObjectStore(BATCHED_UPDATES_STORE, { keyPath: 'key' });
-            }
         },
     });
     return dbInstance;
 }
 
+// -----------------------------------------------------------------------------
+// Lists DB: pokemonListsDB
+// -----------------------------------------------------------------------------
 let listsDBInstance = null;
 export async function initListsDB() {
     if (listsDBInstance) return listsDBInstance;
@@ -74,7 +95,9 @@ export async function initListsDB() {
     return listsDBInstance;
 }
 
-// Initialize Trades DB
+// -----------------------------------------------------------------------------
+// Trades DB: tradesDB
+// -----------------------------------------------------------------------------
 let tradesDBInstance = null;
 export async function initTradesDB() {
     if (tradesDBInstance) return tradesDBInstance;
@@ -91,7 +114,31 @@ export async function initTradesDB() {
     return tradesDBInstance;
 }
 
-// Helper functions for the main database
+// -----------------------------------------------------------------------------
+// Batched Updates DB: batchedUpdatesDB
+// -----------------------------------------------------------------------------
+let updatesDBInstance = null;
+export async function initUpdatesDB() {
+    if (updatesDBInstance) return updatesDBInstance;
+    updatesDBInstance = await openDB(UPDATES_DB_NAME, DB_VERSION, {
+        upgrade(db) {
+            // Create store for Pokemon-related batch updates
+            if (!db.objectStoreNames.contains(BATCHED_POKEMON_UPDATES_STORE)) {
+                db.createObjectStore(BATCHED_POKEMON_UPDATES_STORE, { keyPath: 'key' });
+            }
+
+            // Create store for Trade-related batch updates
+            if (!db.objectStoreNames.contains(BATCHED_TRADE_UPDATES_STORE)) {
+                db.createObjectStore(BATCHED_TRADE_UPDATES_STORE, { keyPath: 'key' });
+            }
+        },
+    });
+    return updatesDBInstance;
+}
+
+// -----------------------------------------------------------------------------
+// Helper functions for Main DB (pokemonDB)
+// -----------------------------------------------------------------------------
 export async function getFromDB(storeName, key) {
     const db = await initDB();
     return db.get(storeName, key);
@@ -131,7 +178,9 @@ export async function deleteFromDB(storeName, key) {
     return db.delete(storeName, key);
 }
 
-// Helper functions for the lists database
+// -----------------------------------------------------------------------------
+// Helper functions for the Lists DB (pokemonListsDB)
+// -----------------------------------------------------------------------------
 export async function getFromListsDB(storeName, key) {
     const db = await initListsDB();
     return db.get(storeName, key);
@@ -156,23 +205,45 @@ export async function clearListsStore(storeName) {
     return db.clear(storeName);
 }
 
-// Batched Updates Functions for periodic updates
-export async function getBatchedUpdates() {
-    const db = await initDB();
-    return await db.getAll(BATCHED_UPDATES_STORE);
+// -----------------------------------------------------------------------------
+// Batched Updates in the new Updates DB
+// -----------------------------------------------------------------------------
+
+// 1. Pokemon Updates
+export async function getBatchedPokemonUpdates() {
+    const db = await initUpdatesDB();
+    return db.getAll(BATCHED_POKEMON_UPDATES_STORE);
 }
 
-export async function putBatchedUpdates(key, updateData) {
-    const db = await initDB();
-    await db.put(BATCHED_UPDATES_STORE, { key, ...updateData });
+export async function putBatchedPokemonUpdates(key, updateData) {
+    const db = await initUpdatesDB();
+    return db.put(BATCHED_POKEMON_UPDATES_STORE, { key, ...updateData });
 }
 
-export async function clearBatchedUpdates() {
-    const db = await initDB();
-    return db.clear(BATCHED_UPDATES_STORE);
+export async function clearBatchedPokemonUpdates() {
+    const db = await initUpdatesDB();
+    return db.clear(BATCHED_POKEMON_UPDATES_STORE);
 }
 
+// 2. Trade Updates
+export async function getBatchedTradeUpdates() {
+    const db = await initUpdatesDB();
+    return db.getAll(BATCHED_TRADE_UPDATES_STORE);
+}
+
+export async function putBatchedTradeUpdates(key, updateData) {
+    const db = await initUpdatesDB();
+    return db.put(BATCHED_TRADE_UPDATES_STORE, { key, ...updateData });
+}
+
+export async function clearBatchedTradeUpdates() {
+    const db = await initUpdatesDB();
+    return db.clear(BATCHED_TRADE_UPDATES_STORE);
+}
+
+// -----------------------------------------------------------------------------
 // Helper function to get all lists from IndexedDB and convert to object
+// -----------------------------------------------------------------------------
 export async function getAllListsFromDB() {
     const db = await initListsDB();
     const tx = db.transaction(LIST_STORES, 'readonly');
@@ -194,7 +265,9 @@ export async function getAllListsFromDB() {
     return lists;
 }
 
+// -----------------------------------------------------------------------------
 // Helper function to store lists into IndexedDB
+// -----------------------------------------------------------------------------
 export async function storeListsInIndexedDB(lists) {
     const db = await initListsDB();
     const tx = db.transaction(LIST_STORES, 'readwrite');
@@ -217,7 +290,9 @@ export async function storeListsInIndexedDB(lists) {
     await tx.done;
 }
 
-// Create a new trade proposal
+// -----------------------------------------------------------------------------
+// Trades DB Functions (create, update, etc.)
+// -----------------------------------------------------------------------------
 export async function createTrade(tradeData) {
     const db = await initTradesDB();
     const tx = db.transaction(POKEMON_TRADES_STORE, 'readwrite');

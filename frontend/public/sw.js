@@ -15,17 +15,20 @@ self.addEventListener('fetch', (event) => {
   if (
     (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/ownershipData/')) ||
     url.origin === 'http://localhost:3006' ||
-    (url.origin === 'http://localhost:3008' && url.pathname.startsWith('/api/sse' ||
-      url.origin === 'http://localhost:3007'
-    ))
+    (
+      url.origin === 'http://localhost:3008' && url.pathname.startsWith('/api/sse')
+    ) ||
+    url.origin === 'http://localhost:3007'
   ) {
     return; // Do not intercept this request
   }
 
+  // Bypass for external service
   if (url.origin === 'https://photon.komoot.io') {
     return;
   }
 
+  // If it's same-origin, attempt to serve from cache first, fallback to fetch
   if (url.origin === self.location.origin) {
     event.respondWith(
       caches.match(event.request).then(async (cachedResponse) => {
@@ -35,22 +38,21 @@ self.addEventListener('fetch', (event) => {
         try {
           return await fetch(event.request, { credentials: 'include' });
         } catch (error) {
-          // Return a fallback response or an empty response to prevent errors
+          // Return a fallback or empty response to prevent errors
           return new Response('', { status: 200, statusText: 'OK' });
         }
       })
     );
   } else {
+    // For cross-origin requests, just do a normal fetch with fallback
     event.respondWith(
       fetch(event.request).catch((error) => {
-        // Return a fallback response or an empty response to prevent errors
         return new Response('', { status: 200, statusText: 'OK' });
       })
     );
   }
 });
 
-// Event handler for messages
 self.addEventListener('message', async (event) => {
   const { action, data } = event.data;
   console.log(`Service Worker received message: ${action}`, data);
@@ -68,22 +70,36 @@ self.addEventListener('message', async (event) => {
   }
 });
 
+// -----------------------------------------------------------------------------
+// Sync Ownership Data
+// -----------------------------------------------------------------------------
 async function syncData(data) {
-  console.log(`Sync data called:`, data);
+  console.log('Sync data called:', data);
   try {
-      const startStoreOwnership = Date.now();
-      await storeOwnershipDataInIndexedDB(data);
-      const endStoreOwnership = Date.now();
-      console.log(`Pokemon ownership data has been updated and stored in IndexedDB in ${(endStoreOwnership - startStoreOwnership)} ms.`);
-      sendMessageToClients({ status: 'success', message: 'Data synced successfully.' });
+    const startStoreOwnership = Date.now();
+    await storeOwnershipDataInIndexedDB(data);
+    const endStoreOwnership = Date.now();
+    console.log(
+      `Pokemon ownership data has been updated and stored in IndexedDB in ${
+        endStoreOwnership - startStoreOwnership
+      } ms.`
+    );
+    sendMessageToClients({
+      status: 'success',
+      message: 'Data synced successfully.',
+    });
   } catch (error) {
-      console.error(`Failed to update pokemon ownership:`, error);
-      sendMessageToClients({ status: 'failed', message: 'Failed to update pokemon ownership.', error });
+    console.error('Failed to update pokemon ownership:', error);
+    sendMessageToClients({
+      status: 'failed',
+      message: 'Failed to update pokemon ownership.',
+      error,
+    });
   }
 }
 
 async function storeOwnershipDataInIndexedDB(data) {
-  const db = await openDB();
+  const db = await openDB(); // old function that opens 'pokemonDB'
   const transaction = db.transaction(['pokemonOwnership'], 'readwrite');
   const ownershipStore = transaction.objectStore('pokemonOwnership');
 
@@ -93,15 +109,18 @@ async function storeOwnershipDataInIndexedDB(data) {
   // Write ownershipData into IndexedDB
   const ownershipData = data.data;
   for (const instance_id in ownershipData) {
-      const item = { ...ownershipData[instance_id], instance_id };
-      ownershipStore.put(item);
+    const item = { ...ownershipData[instance_id], instance_id };
+    ownershipStore.put(item);
   }
 
   await transaction.done;
 }
 
+// -----------------------------------------------------------------------------
+// Sync Lists Data
+// -----------------------------------------------------------------------------
 async function syncLists(data) {
-  console.log(`Sync lists called:`, data);
+  console.log('Sync lists called:', data);
   try {
     const { data: lists } = data;
 
@@ -110,11 +129,19 @@ async function syncLists(data) {
     await storeListsInIndexedDB(lists);
     const endStoreLists = Date.now();
 
-    console.log(`Pokemon lists have been updated and stored in IndexedDB in ${(endStoreLists - startStoreLists)} ms.`);
+    console.log(
+      `Pokemon lists have been updated and stored in IndexedDB in ${
+        endStoreLists - startStoreLists
+      } ms.`
+    );
     sendMessageToClients({ status: 'success', message: 'Lists updated successfully.' });
   } catch (error) {
-    console.error(`Failed to update pokemon lists:`, error);
-    sendMessageToClients({ status: 'failed', message: 'Failed to update pokemon lists.', error });
+    console.error('Failed to update pokemon lists:', error);
+    sendMessageToClients({
+      status: 'failed',
+      message: 'Failed to update pokemon lists.',
+      error,
+    });
   }
 }
 
@@ -124,15 +151,13 @@ function openDB() {
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
       // Create stores if they don't exist
-      const stores = ['pokemonVariants', 'pokemonOwnership', 'batchedUpdates'];
+      const stores = ['pokemonVariants', 'pokemonOwnership'];
       stores.forEach((storeName) => {
         if (!db.objectStoreNames.contains(storeName)) {
           if (storeName === 'pokemonVariants') {
             db.createObjectStore(storeName, { keyPath: 'pokemonKey' });
           } else if (storeName === 'pokemonOwnership') {
             db.createObjectStore(storeName, { keyPath: 'instance_id' });
-          } else {
-            db.createObjectStore(storeName, { keyPath: 'key' });
           }
         }
       });
@@ -147,7 +172,6 @@ function openListsDB() {
     const request = indexedDB.open('pokemonListsDB', 1);
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
-      // Create stores if they don't exist
       const stores = ['owned', 'unowned', 'wanted', 'trade'];
       stores.forEach((storeName) => {
         if (!db.objectStoreNames.contains(storeName)) {
@@ -185,73 +209,123 @@ async function storeListsInIndexedDB(lists) {
   await transaction.done;
 }
 
-async function getBatchedUpdates() {
-  const db = await openDB();
+// -----------------------------------------------------------------------------
+// New: Manage Batched Updates in batchedUpdatesDB
+// -----------------------------------------------------------------------------
+function openUpdatesDB() {
   return new Promise((resolve, reject) => {
-      const transaction = db.transaction('batchedUpdates', 'readonly');
-      const store = transaction.objectStore('batchedUpdates');
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-  });
-}
-
-async function clearBatchedUpdates() {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-      const transaction = db.transaction('batchedUpdates', 'readwrite');
-      const store = transaction.objectStore('batchedUpdates');
-      const request = store.clear();
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-  });
-}
-
-async function sendBatchedUpdatesToBackend(location) {
-  const batchedUpdates = await getBatchedUpdates();
-
-  if (!batchedUpdates || batchedUpdates.length === 0) {
-      console.log(`No batched updates found.`);
-      return;
-  }
-
-  // Transform the array of updates into an object with keys
-  const formattedBatchedUpdates = batchedUpdates.reduce((acc, update) => {
-      acc[update.key] = { ...update };
-      delete acc[update.key].key; // Remove the key property from the individual data objects
-      return acc;
-  }, {});
-
-  console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, formattedBatchedUpdates);
-
-  const payload = {
-      ...formattedBatchedUpdates,  // Include the formatted updates as key-value pairs
-      location: location || null   // Add location if available, otherwise null
-  };
-
-  try {
-      const response = await fetch('http://localhost:3003/api/batchedUpdates', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+    const request = indexedDB.open('batchedUpdatesDB', 1);
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      // Create batched updates stores if not exist
+      if (!db.objectStoreNames.contains('batchedPokemonUpdates')) {
+        db.createObjectStore('batchedPokemonUpdates', { keyPath: 'key' });
       }
+      if (!db.objectStoreNames.contains('batchedTradeUpdates')) {
+        db.createObjectStore('batchedTradeUpdates', { keyPath: 'key' });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
 
-      console.log('Updates successfully sent to backend');
-      await clearBatchedUpdates();  // Clear the batched updates after successful sync
+async function getBatchedPokemonUpdates() {
+  const db = await openUpdatesDB();
+  const tx = db.transaction('batchedPokemonUpdates', 'readonly');
+  const store = tx.objectStore('batchedPokemonUpdates');
+  const allRequest = store.getAll();
+  const result = await new Promise((resolve, reject) => {
+    allRequest.onsuccess = () => resolve(allRequest.result);
+    allRequest.onerror = () => reject(allRequest.error);
+  });
+  await tx.done;
+  return result;
+}
+
+async function getBatchedTradeUpdates() {
+  const db = await openUpdatesDB();
+  const tx = db.transaction('batchedTradeUpdates', 'readonly');
+  const store = tx.objectStore('batchedTradeUpdates');
+  const allRequest = store.getAll();
+  const result = await new Promise((resolve, reject) => {
+    allRequest.onsuccess = () => resolve(allRequest.result);
+    allRequest.onerror = () => reject(allRequest.error);
+  });
+  await tx.done;
+  return result;
+}
+
+async function clearBatchedPokemonUpdates() {
+  const db = await openUpdatesDB();
+  const tx = db.transaction('batchedPokemonUpdates', 'readwrite');
+  await tx.objectStore('batchedPokemonUpdates').clear();
+  await tx.done;
+}
+
+async function clearBatchedTradeUpdates() {
+  const db = await openUpdatesDB();
+  const tx = db.transaction('batchedTradeUpdates', 'readwrite');
+  await tx.objectStore('batchedTradeUpdates').clear();
+  await tx.done;
+}
+
+// Optional: Clear both at once (if you prefer):
+async function clearAllBatchedUpdates() {
+  await Promise.all([clearBatchedPokemonUpdates(), clearBatchedTradeUpdates()]);
+}
+
+// -----------------------------------------------------------------------------
+// Send Batched Updates to Backend (Combining Pokémon + Trades)
+// -----------------------------------------------------------------------------
+async function sendBatchedUpdatesToBackend(location) {
+  try {
+    const [pokemonUpdates, tradeUpdates] = await Promise.all([
+      getBatchedPokemonUpdates(),
+      getBatchedTradeUpdates()
+    ]);
+
+    const hasPokemonUpdates = pokemonUpdates && pokemonUpdates.length > 0;
+    const hasTradeUpdates = tradeUpdates && tradeUpdates.length > 0;
+
+    if (!hasPokemonUpdates && !hasTradeUpdates) {
+      console.log(`No batched updates found (Pokémon or Trades).`);
+      return;
+    }
+
+    // Prepare your request payload however you need:
+    const payload = {
+      location: location || null,
+      pokemonUpdates, // array of objects from 'batchedPokemonUpdates'
+      tradeUpdates    // array of objects from 'batchedTradeUpdates'
+    };
+
+    console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, payload);
+
+    const response = await fetch('http://localhost:3003/api/batchedUpdates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    console.log('Updates successfully sent to backend');
+    await clearAllBatchedUpdates(); // Clear both Pokémon + Trade updates
+
   } catch (error) {
-      console.error('Failed to send updates to backend:', error);
+    console.error('Failed to send updates to backend:', error);
   }
 }
 
+// -----------------------------------------------------------------------------
+// Utility: Post a message to all clients
+// -----------------------------------------------------------------------------
 function sendMessageToClients(msg) {
-    self.clients.matchAll().then(clients => {
-        clients.forEach(client => client.postMessage(msg));
-    });
+  self.clients.matchAll().then((clients) => {
+    clients.forEach((client) => client.postMessage(msg));
+  });
 }

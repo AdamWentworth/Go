@@ -1,6 +1,6 @@
 // periodicUpdates.js
 
-import { getBatchedUpdates } from '../../services/indexedDB';
+import { getBatchedPokemonUpdates } from '../../services/indexedDB';
 
 export const periodicUpdates = (scheduledSyncRef, timerRef) => {
     return () => {
@@ -29,7 +29,7 @@ export const periodicUpdates = (scheduledSyncRef, timerRef) => {
             timerRef.current = setTimeout(async function sendUpdates() {
                 console.log("Timer expired: Checking for batched updates in IndexedDB.");
 
-                const batchedUpdates = await getBatchedUpdates();
+                const batchedUpdates = await getBatchedPokemonUpdates();
 
                 if (!batchedUpdates || batchedUpdates.length === 0) {
                     // If IndexedDB is empty, stop periodic updates

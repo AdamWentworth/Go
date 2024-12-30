@@ -31,32 +31,31 @@ func handleBatchedUpdates(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Bad Request"})
 	}
 
-	// Extract location data
+	// Extract the top-level fields from the requestData
 	location, _ := requestData["location"].(map[string]interface{})
-	// Extract Pokémon updates (everything else except "location")
-	pokemonUpdates := make(map[string]interface{})
-	for key, value := range requestData {
-		if key != "location" {
-			pokemonUpdates[key] = value
-		}
-	}
 
-	// Ensure Pokémon data is present
-	if len(pokemonUpdates) == 0 {
-		logger.Warn("No Pokémon data found in request")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Bad Request - No Pokémon data"})
+	// It's up to your client code to ensure these are arrays
+	// If they're missing or empty, default to empty arrays
+	rawPokemonUpdates, okPoke := requestData["pokemonUpdates"].([]interface{})
+	if !okPoke {
+		rawPokemonUpdates = []interface{}{} // default
+	}
+	rawTradeUpdates, okTrade := requestData["tradeUpdates"].([]interface{})
+	if !okTrade {
+		rawTradeUpdates = []interface{}{} // default
 	}
 
 	traceID := uuid.New().String()
 
 	// Prepare data to send to Kafka
 	data := map[string]interface{}{
-		"user_id":   userID,
-		"username":  username,
-		"device_id": deviceID,
-		"trace_id":  traceID,
-		"pokemon":   pokemonUpdates,
-		"location":  location,
+		"user_id":        userID,
+		"username":       username,
+		"device_id":      deviceID,
+		"trace_id":       traceID,
+		"location":       location,
+		"pokemonUpdates": rawPokemonUpdates,
+		"tradeUpdates":   rawTradeUpdates,
 	}
 
 	message, err := json.Marshal(data)
@@ -65,6 +64,7 @@ func handleBatchedUpdates(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Internal Server Error"})
 	}
 
+	// Produce to Kafka
 	err = produceToKafka(message)
 	if err != nil {
 		logger.Errorf("Failed to produce to Kafka: %v", err)
@@ -74,6 +74,9 @@ func handleBatchedUpdates(c *fiber.Ctx) error {
 	// Respond to the client
 	c.Set("Access-Control-Allow-Origin", "http://localhost:3000")
 	c.Set("Access-Control-Allow-Credentials", "true")
-	logger.Infof("User %s (device_id: %s) loaded %d Pokémon into Kafka", username, deviceID, len(pokemonUpdates))
+	logger.Infof(
+		"User %s (device_id: %s) sent %d Pokemon updates + %d Trade updates to Kafka",
+		username, deviceID, len(rawPokemonUpdates), len(rawTradeUpdates),
+	)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Batched updates successfully processed"})
 }

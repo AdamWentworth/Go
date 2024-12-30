@@ -1,10 +1,10 @@
 // checkBatchedUpdates.js
 
-import { getBatchedUpdates } from '../../services/indexedDB';
+import { getBatchedPokemonUpdates } from '../../services/indexedDB';
 
 export const checkBatchedUpdates = async (periodicUpdates) => {
     try {
-        const batchedUpdates = await getBatchedUpdates();
+        const batchedUpdates = await getBatchedPokemonUpdates();
         if (batchedUpdates && batchedUpdates.length > 0) {
             console.log("Batched updates found in IndexedDB: Triggering periodic updates.");
             periodicUpdates();

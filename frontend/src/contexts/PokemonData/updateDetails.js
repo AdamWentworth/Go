@@ -1,7 +1,7 @@
 // updateDetails.js
 
 import { updatePokemonDetails } from '../../features/Collect/PokemonOwnership/pokemonOwnershipManager';
-import { putBatchedUpdates } from '../../services/indexedDB';
+import { putBatchedPokemonUpdates } from '../../services/indexedDB';
 
 export const updateDetails = (
     data,
@@ -44,6 +44,6 @@ export const updateDetails = (
 
     // Use IndexedDB to cache the batched updates
     for (const pokemonKey of keysArray) {
-        await putBatchedUpdates(pokemonKey, newData[pokemonKey]);
+        await putBatchedPokemonUpdates(pokemonKey, newData[pokemonKey]);
     }
 };
