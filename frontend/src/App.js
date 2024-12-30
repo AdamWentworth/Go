@@ -13,6 +13,7 @@ import Trades from './features/Trades/Trades';
 import './App.css';
 import CacheContext from './contexts/CacheContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { EventsProvider } from './contexts/EventsContext';
 import { PokemonDataProvider } from './contexts/PokemonDataContext';
 import { LocationProvider } from './contexts/LocationContext';
 import { GlobalStateProvider } from './contexts/GlobalStateContext';
@@ -32,38 +33,40 @@ function App() {
                     <SessionProvider>
                         <PokemonDataProvider>
                             <AuthProvider>
-                                <LocationProvider>
-                                    <ThemeProvider>
-                                        <UserSearchProvider>
-                                            <div className="App">
-                                                <Navbar />
-                                                <main>
-                                                    <Routes>
-                                                        <Route path="/" element={<MainButtons />} />
-                                                        <Route path="/collect" element={<Collect isOwnCollection={true} />} />
-                                                        <Route path="/trades" element={<Trades />} />
-                                                        <Route path="/login" element={<Login />} />
-                                                        <Route path="/register" element={<Register />} />
-                                                        <Route path="/account" element={<Account />} />
-                                                        <Route path="/discover" element={<Discover />} />
-                                                        <Route path="/collection/:username" element={<Collect isOwnCollection={false} />} />
-                                                    </Routes>
-                                                </main>
-                                                <ToastContainer
-                                                    position="top-center"
-                                                    autoClose={5000}
-                                                    hideProgressBar={false}
-                                                    newestOnTop={false}
-                                                    closeOnClick
-                                                    rtl={false}
-                                                    pauseOnFocusLoss
-                                                    draggable
-                                                    pauseOnHover
-                                                />
-                                            </div>
-                                        </UserSearchProvider>
-                                    </ThemeProvider>
-                                </LocationProvider>
+                                <EventsProvider>
+                                    <LocationProvider>
+                                        <ThemeProvider>
+                                            <UserSearchProvider>
+                                                <div className="App">
+                                                    <Navbar />
+                                                    <main>
+                                                        <Routes>
+                                                            <Route path="/" element={<MainButtons />} />
+                                                            <Route path="/collect" element={<Collect isOwnCollection={true} />} />
+                                                            <Route path="/trades" element={<Trades />} />
+                                                            <Route path="/login" element={<Login />} />
+                                                            <Route path="/register" element={<Register />} />
+                                                            <Route path="/account" element={<Account />} />
+                                                            <Route path="/discover" element={<Discover />} />
+                                                            <Route path="/collection/:username" element={<Collect isOwnCollection={false} />} />
+                                                        </Routes>
+                                                    </main>
+                                                    <ToastContainer
+                                                        position="top-center"
+                                                        autoClose={5000}
+                                                        hideProgressBar={false}
+                                                        newestOnTop={false}
+                                                        closeOnClick
+                                                        rtl={false}
+                                                        pauseOnFocusLoss
+                                                        draggable
+                                                        pauseOnHover
+                                                    />
+                                                </div>
+                                            </UserSearchProvider>
+                                        </ThemeProvider>
+                                    </LocationProvider>
+                                </EventsProvider>
                             </AuthProvider>
                         </PokemonDataProvider>
                     </SessionProvider>

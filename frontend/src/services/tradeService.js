@@ -1,26 +1,8 @@
-// src/services/tradeService.js
+// TradeService.js
 
 import { createTrade, TRADE_FRIENDSHIP_LEVELS, TRADE_STATUSES, addRelatedInstance } from './indexedDB';
 import { generateUUID } from '../utils/PokemonIDUtils';
 
-/**
- * Proposes a new trade by creating a trade entry in IndexedDB.
- *
- * @param {Object} tradeData - The data required to propose a trade.
- * @param {string} tradeData.username_proposed - Username of the user proposing the trade.
- * @param {string} tradeData.username_accepting - Username of the user receiving the trade proposal.
- * @param {string} tradeData.pokemon_instance_id_user_proposed - Instance ID of the user's Pokémon being offered.
- * @param {string|null} tradeData.pokemon_instance_id_user_accepting - Instance ID of the user's Pokémon being requested (optional).
- * @param {boolean} tradeData.is_special_trade - Indicates if the trade is special.
- * @param {boolean} tradeData.is_registered_trade - Indicates if the trade is registered.
- * @param {number} tradeData.trade_dust_cost - Stardust cost of the trade.
- * @param {boolean} tradeData.is_lucky_trade - Indicates if the trade is lucky.
- * @param {number} tradeData.trade_friendship_level - Friendship level (1-4).
- *
- * @returns {Promise<number>} - Returns a promise that resolves to the trade ID.
- *
- * @throws {Error} - Throws an error if trade creation fails or data is invalid.
- */
 export async function proposeTrade(tradeData) {
     // Destructure and validate required fields
     const {
@@ -32,11 +14,10 @@ export async function proposeTrade(tradeData) {
         is_registered_trade = false,
         trade_dust_cost = 0,
         is_lucky_trade = false,
-        trade_friendship_level = 1, // Default to 'Good'
+        trade_friendship_level = 1,
         pokemon,
     } = tradeData;
 
-    // Basic Validation
     if (!username_proposed || typeof username_proposed !== 'string') {
         throw new Error('Invalid or missing "username_proposed".');
     }
@@ -71,8 +52,8 @@ export async function proposeTrade(tradeData) {
         username_accepting,
         pokemon_instance_id_user_proposed,
         pokemon_instance_id_user_accepting,
-        trade_status: TRADE_STATUSES.PROPOSED, // Using TRADE_STATUSES.PROPOSED if imported
-        trade_proposal_date: new Date().toISOString(), // ISO 8601 format
+        trade_status: TRADE_STATUSES.PROPOSED,
+        trade_proposal_date: new Date().toISOString(),
         trade_accepted_date: null,
         trade_completed_date: null,
         trade_cancelled_date: null,
@@ -81,12 +62,10 @@ export async function proposeTrade(tradeData) {
         is_registered_trade: is_registered_trade ? 1 : 0,
         trade_dust_cost,
         is_lucky_trade: is_lucky_trade ? 1 : 0,
-        trade_friendship_level: TRADE_FRIENDSHIP_LEVELS[trade_friendship_level], // Map to string
+        trade_friendship_level: TRADE_FRIENDSHIP_LEVELS[trade_friendship_level],
         user_1_trade_satisfaction: null,
         user_2_trade_satisfaction: null,
     };    
-
-    console.log(tradeEntry.trade_proposal_date);
 
     try {
         // Create the trade
@@ -94,9 +73,8 @@ export async function proposeTrade(tradeData) {
         
         // Prepare Pokémon instance data
         const relatedInstanceData = {
-            instance_id: pokemon.pokemonKey, // Using pokemonKey as instance_id
-            ...pokemon, // Spread all other Pokémon data
-            // Optionally, add more fields if necessary
+            instance_id: pokemon.pokemonKey,
+            ...pokemon, 
         };
 
         // Add the related Pokémon instance
