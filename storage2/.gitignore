@@ -1,0 +1,5 @@
+.env.development
+app.log
+my.cnf
+failed_messages
+backups
