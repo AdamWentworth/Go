@@ -1,11 +1,20 @@
 // checkBatchedUpdates.js
 
-import { getBatchedPokemonUpdates } from '../../services/indexedDB';
+import { getBatchedPokemonUpdates, getBatchedTradeUpdates } from '../../services/indexedDB';
 
 export const checkBatchedUpdates = async (periodicUpdates) => {
     try {
-        const batchedUpdates = await getBatchedPokemonUpdates();
-        if (batchedUpdates && batchedUpdates.length > 0) {
+        // Fetch both the Pokémon and Trade batched updates
+        const [pokemonBatchedUpdates, tradeBatchedUpdates] = await Promise.all([
+            getBatchedPokemonUpdates(),
+            getBatchedTradeUpdates(),
+        ]);
+
+        // Check if either array of updates is non-empty
+        const hasPokemonUpdates = pokemonBatchedUpdates && pokemonBatchedUpdates.length > 0;
+        const hasTradeUpdates   = tradeBatchedUpdates && tradeBatchedUpdates.length > 0;
+
+        if (hasPokemonUpdates || hasTradeUpdates) {
             console.log("Batched updates found in IndexedDB: Triggering periodic updates.");
             periodicUpdates();
         } else {

@@ -53,3 +53,59 @@ class PokemonInstance(models.Model):
 
     class Meta:
         db_table = 'instances'
+
+class Trade(models.Model):
+    trade_id = models.CharField(max_length=255, primary_key=True)
+    user_id_proposed = models.CharField(max_length=255)
+    user_id_accepting = models.CharField(max_length=255)
+    pokemon_instance_id_user_proposed = models.CharField(max_length=255)
+    pokemon_instance_id_user_accepting = models.CharField(max_length=255, null=True, blank=True)
+
+    trace_id = models.CharField(max_length=255, null=True, blank=True)
+    username_proposed = models.CharField(max_length=255, null=True, blank=True)
+    username_accepting = models.CharField(max_length=255, null=True, blank=True)
+
+    # Status field: map enum to a choices tuple
+    TRADE_STATUS_CHOICES = [
+        ('proposed', 'proposed'),
+        ('accepted', 'accepted'),
+        ('denied', 'denied'),
+        ('pending', 'pending'),
+        ('completed', 'completed'),
+        ('cancelled', 'cancelled'),
+    ]
+    trade_status = models.CharField(
+        max_length=9,
+        choices=TRADE_STATUS_CHOICES,
+        default='proposed'
+    )
+    trade_proposal_date = models.DateTimeField(null=True, blank=True)
+    trade_accepted_date = models.DateTimeField(null=True, blank=True)
+    trade_completed_date = models.DateTimeField(null=True, blank=True)
+    trade_cancelled_date = models.DateTimeField(null=True, blank=True)
+    trade_cancelled_by = models.CharField(max_length=255, null=True, blank=True)
+    is_special_trade = models.BooleanField(default=False)
+    is_registered_trade = models.BooleanField(default=False)
+    is_lucky_trade = models.BooleanField(default=False)
+    trade_dust_cost = models.IntegerField(null=True, blank=True)
+
+    # Friendship level (enum in DB)
+    TRADE_FRIENDSHIP_CHOICES = [
+        ('Good', 'Good'),
+        ('Great', 'Great'),
+        ('Ultra', 'Ultra'),
+        ('Best', 'Best'),
+    ]
+    trade_friendship_level = models.CharField(
+        max_length=5,
+        choices=TRADE_FRIENDSHIP_CHOICES,
+        default='Good'
+    )
+    user_1_trade_satisfaction = models.IntegerField(null=True, blank=True)
+    user_2_trade_satisfaction = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'trades' 
+
+    def __str__(self):
+        return f"Trade #{self.trade_id} [{self.trade_status}]"

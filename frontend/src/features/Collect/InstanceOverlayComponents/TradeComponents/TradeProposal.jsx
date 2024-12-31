@@ -10,9 +10,10 @@ import { generateH2Content } from '../../../../utils/formattingHelpers';
 import FriendshipManager from '../WantedComponents/FriendshipManager';
 import useCalculateStardustCost from '../hooks/useCalculateStardustCost';
 
-import { proposeTrade } from '../../../../services/tradeService';
+import { useTradeData } from '../../../../contexts/TradeDataContext';
 
 const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose, myOwnershipData, ownershipData, username }) => {
+  const { proposeTrade } = useTradeData();
   console.log(passedInPokemon)
   const containerRef = useRef(null);
   const closeButtonRef = useRef(null);
