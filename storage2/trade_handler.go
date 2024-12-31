@@ -1,0 +1,159 @@
+// trades_handler.go
+package main
+
+import (
+	"errors"
+	"fmt"
+
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+)
+
+// ---------------------
+// TRADES
+// ---------------------
+
+func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTrades, droppedTrades int, err error) {
+	tradeUpdates, _ := data["tradeUpdates"].([]interface{})
+	// Parse nullable TraceID
+	traceID := parseNullableString(data["trace_id"])
+
+	for _, t := range tradeUpdates {
+		tradeObj, ok := t.(map[string]interface{})
+		if !ok {
+			logrus.Warn("Skipping invalid trade object.")
+			continue
+		}
+		tradeData, _ := tradeObj["tradeData"].(map[string]interface{})
+
+		// Get trade_id or fallback to "key"
+		var tradeID string
+		if tradeData != nil {
+			tradeID = fmt.Sprintf("%v", tradeData["trade_id"])
+		}
+		if tradeID == "" {
+			tradeID = fmt.Sprintf("%v", tradeObj["key"])
+		}
+		if tradeID == "" {
+			logrus.Warn("Skipping a Trade update because no trade_id found.")
+			continue
+		}
+
+		// Proposed / accepting usernames => user IDs
+		proposedUsername := fmt.Sprintf("%v", tradeData["username_proposed"])
+		acceptingUsername := fmt.Sprintf("%v", tradeData["username_accepting"])
+		proposedUserID := getUserIdForUsername(proposedUsername)
+		acceptingUserID := getUserIdForUsername(acceptingUsername)
+
+		// Time fields
+		tradeProposalDate := parseOptionalTime(fmt.Sprintf("%v", tradeData["trade_proposal_date"]))
+		tradeAcceptedDate := parseOptionalTime(fmt.Sprintf("%v", tradeData["trade_accepted_date"]))
+		tradeCompletedDate := parseOptionalTime(fmt.Sprintf("%v", tradeData["trade_completed_date"]))
+		tradeCancelledDate := parseOptionalTime(fmt.Sprintf("%v", tradeData["trade_cancelled_date"]))
+
+		// Nullable fields for cancelled details
+		tradeCancelledBy := parseNullableString(tradeData["trade_cancelled_by"])
+
+		// Boolean and integer fields
+		isSpecialTrade := parseOptionalBool(tradeData["is_special_trade"])
+		isRegisteredTrade := parseOptionalBool(tradeData["is_registered_trade"])
+		isLuckyTrade := parseOptionalBool(tradeData["is_lucky_trade"])
+		tradeDustCost := parseNullableInt(tradeData["trade_dust_cost"])
+
+		// Default trade status
+		tradeStatus := fmt.Sprintf("%v", tradeData["trade_status"])
+		if tradeStatus == "" {
+			tradeStatus = "proposed"
+		}
+
+		// Validate friendship level
+		friendshipLevel := fmt.Sprintf("%v", tradeData["trade_friendship_level"])
+		if friendshipLevel == "" {
+			friendshipLevel = "Good"
+		}
+		validLevels := []string{"Good", "Great", "Ultra", "Best"}
+		isValidLevel := false
+		for _, lvl := range validLevels {
+			if friendshipLevel == lvl {
+				isValidLevel = true
+				break
+			}
+		}
+		if !isValidLevel {
+			logrus.Warnf("Invalid friendship level for trade %s: %s. Defaulting to 'Good'.", tradeID, friendshipLevel)
+			friendshipLevel = "Good"
+		}
+
+		// Satisfaction ratings
+		user1TradeSatisfaction := parseNullableInt(tradeData["user_1_trade_satisfaction"])
+		user2TradeSatisfaction := parseNullableInt(tradeData["user_2_trade_satisfaction"])
+
+		// Additional fields
+		pokemonInstanceIDUserProposed := fmt.Sprintf("%v", tradeData["pokemon_instance_id_user_proposed"])
+		pokemonInstanceIDUserAccepting := fmt.Sprintf("%v", tradeData["pokemon_instance_id_user_accepting"])
+
+		// Build the Trade object
+		updates := Trade{
+			TradeID:                        tradeID,
+			UserIDProposed:                 proposedUserID,
+			UsernameProposed:               proposedUsername,
+			UserIDAccepting:                acceptingUserID,
+			UsernameAccepting:              acceptingUsername,
+			PokemonInstanceIDUserProposed:  pokemonInstanceIDUserProposed,
+			PokemonInstanceIDUserAccepting: pokemonInstanceIDUserAccepting,
+
+			TradeStatus:        tradeStatus,
+			TradeProposalDate:  tradeProposalDate,
+			TradeAcceptedDate:  tradeAcceptedDate,  // nil if not provided
+			TradeCompletedDate: tradeCompletedDate, // nil if not provided
+			TradeCancelledDate: tradeCancelledDate, // nil if not provided
+			TradeCancelledBy:   tradeCancelledBy,   // nil if not provided
+
+			IsSpecialTrade:         isSpecialTrade,
+			IsRegisteredTrade:      isRegisteredTrade,
+			IsLuckyTrade:           isLuckyTrade,
+			TradeDustCost:          tradeDustCost,
+			TradeFriendshipLevel:   friendshipLevel,
+			User1TradeSatisfaction: user1TradeSatisfaction,
+			User2TradeSatisfaction: user2TradeSatisfaction,
+
+			TraceID: traceID, // nil if not provided
+		}
+
+		// Check for existing trade
+		var existingTrade Trade
+		tx := DB.Where("trade_id = ?", tradeID).First(&existingTrade)
+		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+			// Insert new trade
+			if err := DB.Create(&updates).Error; err != nil {
+				logrus.Errorf("Failed to create Trade %s: %v", tradeID, err)
+			} else {
+				createdTrades++
+			}
+		} else if tx.Error == nil {
+			// Update existing trade
+			if err := DB.Model(&existingTrade).Updates(&updates).Error; err != nil {
+				logrus.Errorf("Failed to update Trade %s: %v", tradeID, err)
+			} else {
+				updatedTrades++
+			}
+		} else {
+			logrus.Errorf("Failed to retrieve Trade %s: %v", tradeID, tx.Error)
+		}
+
+		// Handle trade deletion if necessary
+		// If your business logic requires deleting trades based on certain conditions,
+		// implement that logic here and increment `droppedTrades` accordingly.
+		// For example:
+		/*
+		   if shouldDeleteTrade(updates) {
+		       if err := DB.Delete(&Trade{}, "trade_id = ?", tradeID).Error; err != nil {
+		           logrus.Errorf("Failed to delete Trade %s: %v", tradeID, err)
+		       } else {
+		           droppedTrades++
+		       }
+		   }
+		*/
+	}
+	return
+}
