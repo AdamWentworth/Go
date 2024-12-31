@@ -75,8 +75,8 @@ func handleBatchedUpdates(c *fiber.Ctx) error {
 	c.Set("Access-Control-Allow-Origin", "http://localhost:3000")
 	c.Set("Access-Control-Allow-Credentials", "true")
 	logger.Infof(
-		"User %s (device_id: %s) sent %d Pokemon updates + %d Trade updates to Kafka",
-		username, deviceID, len(rawPokemonUpdates), len(rawTradeUpdates),
+		"User %s sent %d Pokemon updates + %d Trade updates to Kafka",
+		username, len(rawPokemonUpdates), len(rawTradeUpdates),
 	)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Batched updates successfully processed"})
 }

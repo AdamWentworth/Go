@@ -2,50 +2,61 @@
 package main
 
 import (
-    "fmt"
-    "os"
-    "path/filepath"
+	"fmt"
+	"os"
+	"time"
 
-    "github.com/joho/godotenv"
-    "gopkg.in/yaml.v2"
+	"github.com/joho/godotenv"
+	"gopkg.in/yaml.v2"
 )
 
-// Existing config structures
-type EventsConfig struct {
-    Port          string `yaml:"port"`
-    Topic         string `yaml:"topic"`
-    MaxRetries    int    `yaml:"max_retries"`
-    RetryInterval int    `yaml:"retry_interval"`
+type KafkaConfig struct {
+	Hostname      string `yaml:"hostname"`
+	Port          string `yaml:"port"`
+	Topic         string `yaml:"topic"`
+	MaxRetries    int    `yaml:"max_retries"`
+	RetryInterval int    `yaml:"retry_interval"` // in seconds
 }
 
-type Config struct {
-    Version string       `yaml:"version"`
-    Events  EventsConfig `yaml:"events"`
+type AppConfig struct {
+	Events KafkaConfig `yaml:"events"`
 }
 
-// Global (application) config
-var (
-    AppConfig Config
-)
+var kafkaConfig KafkaConfig
+var jwtSecret string
 
-// LoadAppConfig loads environment variables (optional .env) and then reads app_conf.yml
-func LoadAppConfig(envPath string) error {
-    // 1) Attempt to load .env (not mandatory)
-    if err := godotenv.Load(envPath); err != nil {
-        fmt.Printf("No .env file found at %s, relying on OS environment\n", envPath)
-    }
+// Load environment variables (JWT_SECRET, HOST_IP)
+func loadEnv() error {
+	err := godotenv.Load(".env.development")
+	if err != nil {
+		logger.Warnf("Error loading .env.development: %v", err)
+	}
 
-    // 2) Load app_conf.yml from config/
-    configPath := filepath.Join("config", "app_conf.yml")
-    file, err := os.ReadFile(configPath)
-    if err != nil {
-        return fmt.Errorf("error reading app config file: %v", err)
-    }
+	// Load JWT Secret from .env
+	jwtSecret = os.Getenv("JWT_SECRET")
+	return nil
+}
 
-    // 3) Parse YAML into AppConfig
-    if err := yaml.Unmarshal(file, &AppConfig); err != nil {
-        return fmt.Errorf("error parsing app config file: %v", err)
-    }
+// Load Kafka configuration from app_conf.yml
+func loadConfigFile(filePath string) error {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read configuration file: %v", err)
+	}
 
-    return nil
+	// Unmarshal YAML into AppConfig struct
+	var appConfig AppConfig
+	err = yaml.Unmarshal(data, &appConfig)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal configuration file: %v", err)
+	}
+
+	kafkaConfig = appConfig.Events
+	hostIP := os.Getenv("HOST_IP")
+	if hostIP != "" {
+		kafkaConfig.Hostname = hostIP
+	}
+
+	kafkaConfig.RetryInterval = kafkaConfig.RetryInterval * int(time.Second)
+	return nil
 }

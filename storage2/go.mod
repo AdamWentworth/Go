@@ -4,7 +4,6 @@ go 1.22.5
 
 require (
 	github.com/joho/godotenv v1.5.1
-	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/segmentio/kafka-go v0.4.47
 	github.com/sirupsen/logrus v1.9.3
