@@ -37,14 +37,14 @@ const IVComponent = ({ pokemon, editMode, onIvChange }) => {
     let value = event.target.value;
     if (value === '') {
       setIvs({ ...ivs, [type]: '' });
-      onIvChange({ ...ivs, [type]: 0 });
+      onIvChange({ ...ivs, [type]: '' }); // Pass empty string instead of 0
     } else {
       value = parseInt(value, 10);
       const updatedIvs = { ...ivs, [type]: isNaN(value) ? 0 : Math.max(0, Math.min(15, value)) };
       setIvs(updatedIvs);
       onIvChange(updatedIvs);
     }
-  };
+  };  
 
   const handleKeyPress = (event, type) => {
     if (event.key === 'Enter') {

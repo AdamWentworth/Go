@@ -67,6 +67,11 @@ def filter_json_fields(data):
     # Return only keys where the value is True
     return {k: v for k, v in data.items() if v is True}
 
+def parse_int_field(value):
+    try:
+        return int(value) if value not in [None, ''] else None
+    except (ValueError, TypeError):
+        return None
 
 def save_failed_message(data):
     try:
@@ -191,6 +196,10 @@ def handle_message(data, trace_logger):
                 weight = pokemon.get('weight') if pokemon.get('weight') != "" else None
                 height = pokemon.get('height') if pokemon.get('height') != "" else None
 
+                attack_iv = parse_int_field(pokemon.get('attack_iv'))
+                defense_iv = parse_int_field(pokemon.get('defense_iv'))
+                stamina_iv = parse_int_field(pokemon.get('stamina_iv'))
+
                 not_trade_list = filter_json_fields(pokemon.get('not_trade_list') or {})
                 not_wanted_list = filter_json_fields(pokemon.get('not_wanted_list') or {})
                 trade_filters = filter_json_fields(pokemon.get('trade_filters') or {})
@@ -245,10 +254,10 @@ def handle_message(data, trace_logger):
                 defaults = {
                     'pokemon_id': pokemon.get('pokemon_id'),
                     'nickname': pokemon.get('nickname'),
-                    'cp': cp,
-                    'attack_iv': pokemon.get('attack_iv'),
-                    'defense_iv': pokemon.get('defense_iv'),
-                    'stamina_iv': pokemon.get('stamina_iv'),
+                    'cp': cp,  # Already handled earlier
+                    'attack_iv': attack_iv,
+                    'defense_iv': defense_iv,
+                    'stamina_iv': stamina_iv,
                     'shiny': pokemon.get('shiny', False),
                     'costume_id': pokemon.get('costume_id'),
                     'lucky': pokemon.get('lucky', False),
@@ -490,3 +499,4 @@ def consume_messages():
 
 # Start the reprocessing scheduler
 start_reprocessing_scheduler()
+
