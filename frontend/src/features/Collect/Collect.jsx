@@ -18,6 +18,7 @@ import useResponsiveUI from './hooks/useResponsiveUI';
 import useSearchFilters from '../../hooks/search/useSearchFilters';
 import { useUIControls } from './hooks/useUIControls';
 import useUIHandlers from './hooks/useUIHandlers';
+import useHandleMoveToFilter from './hooks/useHandleMoveToFilter';
 import usePokemonProcessing from './hooks/usePokemonProcessing';
 
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -181,9 +182,7 @@ function Collect({ isOwnCollection }) {
     handleFastSelectToggle,
     toggleCardHighlight,
     selectAllToggle,
-    handleMoveHighlightedToFilter,
     toggleShowAll,
-    handleConfirmMoveToFilter,
   } = useUIHandlers({
     setOwnershipFilter,
     setIsShiny,
@@ -193,7 +192,15 @@ function Collect({ isOwnCollection }) {
     setHighlightedCards,
     setShowAll,
     highlightedCards,
-    sortedPokemons,
+    sortedPokemons
+  });
+
+  const {
+    handleConfirmMoveToFilter,
+  } = useHandleMoveToFilter({
+    setOwnershipFilter,
+    setHighlightedCards,
+    highlightedCards,
     updateOwnership,
     variants,
     ownershipData,
