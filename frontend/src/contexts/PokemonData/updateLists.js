@@ -1,6 +1,6 @@
 // updateLists.js
 
-import { updatePokemonLists } from '../../features/Collect/PokemonOwnership/PokemonTradeListOperations';
+import { updatePokemonLists } from './PokemonTradeListOperations';
 
 export const updateLists = (data, setData) => () => {
     updatePokemonLists(data.ownershipData, data.variants, sortedLists => {

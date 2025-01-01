@@ -6,7 +6,7 @@ import { preloadImage } from '../../utils/imageHelpers';
 import { determinePokemonKey } from '../../utils/PokemonIDUtils';
 import { isDataFresh } from '../../utils/cacheHelpers';
 import { formatTimeAgo } from '../../utils/formattingHelpers';
-import { initializePokemonLists } from '../../features/Collect/PokemonOwnership/PokemonTradeListOperations';
+import { initializePokemonLists } from './PokemonTradeListOperations';
 import {
     getAllFromDB,
     getAllListsFromDB,

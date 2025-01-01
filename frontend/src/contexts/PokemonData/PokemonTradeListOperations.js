@@ -1,7 +1,7 @@
 // PokemonTradeListOperations.js
 
-import { parsePokemonKey } from "../../../utils/PokemonIDUtils";
-import { determineImageUrl } from "../../../utils/imageHelpers"; 
+import { parsePokemonKey } from "../../utils/PokemonIDUtils";
+import { determineImageUrl } from "../../utils/imageHelpers"; 
 
 export const updatePokemonLists = (ownershipData, variants, callback) => {
     const lists = {

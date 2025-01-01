@@ -1,4 +1,4 @@
-import { validateUUID } from '../../../utils/PokemonIDUtils';
+import { validateUUID } from '../../utils/PokemonIDUtils';
 
 export function getFilteredPokemonsByOwnership(variants, ownershipData, filter, lists) {
 

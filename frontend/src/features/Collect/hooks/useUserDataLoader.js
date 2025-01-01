@@ -16,7 +16,7 @@ function useUserDataLoader({
     if (isUsernamePath && username) {
       // Prevent API call for non-username paths
       if (
-        ['collect', 'discover', 'login', 'register', 'account'].includes(
+        ['collect', 'discover', 'login', 'register', 'account', 'trades'].includes(
           username.toLowerCase()
         )
       ) {

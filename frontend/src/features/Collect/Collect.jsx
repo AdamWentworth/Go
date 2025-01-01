@@ -10,7 +10,7 @@ import HighlightActionButton from './HighlightActionButton';
 import { usePokemonData } from '../../contexts/PokemonDataContext';
 import { multiFormPokedexNumbers } from '../../utils/constants';
 import UserSearchContext from '../../contexts/UserSearchContext';
-import { initializePokemonLists } from './PokemonOwnership/PokemonTradeListOperations';
+import { initializePokemonLists } from '../../contexts/PokemonData/PokemonTradeListOperations';
 
 import useUserDataLoader from './hooks/useUserDataLoader';
 import useInstanceIdProcessor from './hooks/useInstanceIdProcessor';

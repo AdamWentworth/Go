@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import useFilterPokemons from '../../../hooks/filtering/useFilterPokemons';
 import useSortManager from '../../../hooks/sort/useSortManager';
-import { getFilteredPokemonsByOwnership } from '../PokemonOwnership/PokemonOwnershipFilter';
+import { getFilteredPokemonsByOwnership } from '../../../hooks/filtering/usePokemonOwnershipFilter';
 
 function usePokemonProcessing(
   variants,

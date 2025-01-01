@@ -9,7 +9,7 @@ import React, {
   useCallback,
   useRef
 } from 'react';
-import { initializePokemonLists } from '../features/Collect/PokemonOwnership/PokemonTradeListOperations';
+import { initializePokemonLists } from './PokemonData/PokemonTradeListOperations';
 import { fetchData } from './PokemonData/fetchData';
 import { updateOwnership as importedUpdateOwnership } from './PokemonData/updateOwnership';
 import { updateLists as importedUpdateLists } from './PokemonData/updateLists';
