@@ -36,7 +36,7 @@ class PokemonMegaFrame:
 
         # Path to the shiny icon
         script_directory = os.path.dirname(os.path.realpath(__file__))
-        go_directory = os.path.normpath(os.path.join(script_directory, '../'))
+        go_directory = os.path.normpath(os.path.join(script_directory, '../../'))
         self.shiny_icon_path = os.path.normpath(os.path.join(go_directory, 'frontend', 'public', 'images', 'shiny_icon.png'))
 
     def create_editable_fields(self):
