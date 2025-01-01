@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -15,25 +16,57 @@ import (
 // CreateBackup - runs daily backup
 func CreateBackup() {
 	dbName := os.Getenv("DB_NAME")
+	if dbName == "" {
+		logrus.Error("DB_NAME environment variable is not set")
+		return
+	}
 
 	now := time.Now()
 	dateStr := now.Format("2006-01-02")
 	backupFilename := fmt.Sprintf("user_pokemon_backup_%s.sql", dateStr)
 
 	backupFilePath := filepath.Join("backups", backupFilename)
-	_ = os.MkdirAll("backups", os.ModePerm)
-
-	myCnfPath := filepath.Join(".", "my.cnf")
-	dumpCmd := fmt.Sprintf("mysqldump --defaults-extra-file=%s %s > %s", myCnfPath, dbName, backupFilePath)
-
-	logrus.Infof("Executing backup command: %s\n", dumpCmd)
-	if err := runShellCommand(dumpCmd); err != nil {
-		logrus.Infof("Failed to create backup: %v\n", err)
+	err := os.MkdirAll("backups", os.ModePerm)
+	if err != nil {
+		logrus.Errorf("Failed to create backups directory: %v", err)
 		return
 	}
 
-	logrus.Infof("Backup created successfully: %s\n", backupFilePath)
+	myCnfPath := filepath.Join(".", "my.cnf")
+	if _, err := os.Stat(myCnfPath); os.IsNotExist(err) {
+		logrus.Errorf("my.cnf file does not exist at path: %s", myCnfPath)
+		return
+	}
+
+	dumpCmd := fmt.Sprintf("mysqldump --defaults-extra-file=%s %s > %s", myCnfPath, dbName, backupFilePath)
+
+	logrus.Infof("Executing backup command: %s", dumpCmd)
+	if err := runShellCommand(dumpCmd); err != nil {
+		logrus.Errorf("Failed to create backup: %v", err)
+		return
+	}
+
+	logrus.Infof("Backup created successfully: %s", backupFilePath)
 	manageRetention()
+}
+
+// runShellCommand executes the given shell command and logs output
+func runShellCommand(cmd string) error {
+	// Execute the command using /bin/sh
+	parts := strings.Fields(cmd)
+	if len(parts) == 0 {
+		return fmt.Errorf("empty command")
+	}
+
+	execCmd := exec.Command("sh", "-c", cmd)
+	output, err := execCmd.CombinedOutput()
+	if err != nil {
+		logrus.Errorf("Command execution failed: %v\nOutput: %s", err, string(output))
+		return err
+	}
+
+	logrus.Infof("Command output: %s", string(output))
+	return nil
 }
 
 func manageRetention() {
@@ -46,7 +79,7 @@ func manageRetention() {
 
 	files, err := os.ReadDir(backupsDir)
 	if err != nil {
-		logrus.Infof("Failed to read backups dir: %v\n", err)
+		logrus.Errorf("Failed to read backups directory: %v", err)
 		return
 	}
 
@@ -61,14 +94,14 @@ func manageRetention() {
 
 		parts := strings.Split(strings.TrimSuffix(name, ".sql"), "_")
 		if len(parts) < 4 {
-			logrus.Infof("Filename does not match expected format: %s\n", name)
+			logrus.Warnf("Filename does not match expected format: %s", name)
 			continue
 		}
 
 		dateStr := parts[len(parts)-1]
 		fileDate, err := time.Parse("2006-01-02", dateStr)
 		if err != nil {
-			logrus.Infof("Error parsing date from file %s: %v\n", name, err)
+			logrus.Warnf("Error parsing date from file %s: %v", name, err)
 			continue
 		}
 
@@ -77,7 +110,7 @@ func manageRetention() {
 		isDaily := (!isYearly && !isMonthly)
 
 		ageDays := int(now.Sub(fileDate).Hours() / 24)
-		ageMonths := (int(now.Year())-int(fileDate.Year()))*12 + int(now.Month()) - int(fileDate.Month())
+		ageMonths := (now.Year()-fileDate.Year())*12 + int(now.Month()) - int(fileDate.Month())
 		ageYears := now.Year() - fileDate.Year()
 
 		deleteFile := false
@@ -92,19 +125,13 @@ func manageRetention() {
 		if deleteFile {
 			fullPath := filepath.Join(backupsDir, name)
 			if err := os.Remove(fullPath); err != nil {
-				logrus.Infof("Failed to delete old backup %s: %v\n", name, err)
+				logrus.Errorf("Failed to delete old backup %s: %v", name, err)
 			} else {
-				logrus.Infof("Deleted old backup: %s\n", name)
+				logrus.Infof("Deleted old backup: %s", name)
 			}
+		} else {
+			logrus.Debugf("Retained backup: %s", name)
 		}
 	}
-	logrus.Println("Finished managing backup retention.")
-}
-
-func runShellCommand(cmd string) error {
-	// Example shell call (commented out):
-	// out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
-	// logrus.Println(string(out))
-	// return err
-	return nil
+	logrus.Info("Finished managing backup retention.")
 }

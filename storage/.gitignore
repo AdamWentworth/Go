@@ -1,6 +1,5 @@
-storage/__pycache__
-storage/.env.development
-storage/app.log
-storage/my.cnf
-storage/failed_messages
-storage/backups
+.env.development
+app.log
+my.cnf
+failed_messages
+backups
