@@ -1,7 +1,7 @@
 // createPokemonVariants.js
-import { formatCostumeName } from '../utils/formattingHelpers';
-import { determinePokemonKey } from './determinePokemonKey';
-import { matchFormsAndVariantType } from '../utils/formMatcher';
+import { formatCostumeName } from '../../utils/formattingHelpers';
+import { determinePokemonKey } from '../../utils/PokemonIDUtils';
+import { matchFormsAndVariantType } from '../../utils/formMatcher';
 
 const createPokemonVariants = (pokemons) => {
   const generateVariants = (pokemon) => {

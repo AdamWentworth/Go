@@ -1,9 +1,9 @@
 // fetchData.js
 
 import { getPokemons } from '../../services/api';
-import createPokemonVariants from '../../services/createPokemonVariants';
+import createPokemonVariants from './createPokemonVariants';
 import { preloadImage } from '../../utils/imageHelpers';
-import { determinePokemonKey } from '../../services/determinePokemonKey';
+import { determinePokemonKey } from '../../utils/PokemonIDUtils';
 import { isDataFresh } from '../../utils/cacheHelpers';
 import { formatTimeAgo } from '../../utils/formattingHelpers';
 import { initializePokemonLists } from '../../features/Collect/PokemonOwnership/PokemonTradeListOperations';
@@ -15,7 +15,7 @@ import {
 } from '../../services/indexedDB';
 import {
     initializeOrUpdateOwnershipDataAsync, getOwnershipDataAsync
-} from '../../features/Collect/PokemonOwnership/pokemonOwnershipStorage';
+} from './pokemonOwnershipStorage';
 
 export const fetchData = async (setData, updateOwnership, updateLists) => {
     console.log("Fetching data from API or cache...");

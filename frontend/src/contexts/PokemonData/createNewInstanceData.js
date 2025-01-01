@@ -1,8 +1,7 @@
-//pokemonOwnershipManager.js
-import { getKeyParts } from '../../../utils/PokemonIDUtils';
-const ownershipDataCacheKey = "pokemonOwnership";
+// createNewDataForVariant.js
+import { getKeyParts } from '../../utils/PokemonIDUtils';
 
-export function createNewDataForVariant(variant) {
+export function createNewInstanceData(variant) {
 
     const keyParts = getKeyParts(variant.pokemonKey);
     const matchedCostume = variant.costumes.find(c => c.name === keyParts.costumeName);
@@ -48,9 +47,3 @@ export function createNewDataForVariant(variant) {
         gps: null
     };
 }
-
-export const loadOwnershipData = (setOwnershipData) => {
-    const storedData = JSON.parse(localStorage.getItem(ownershipDataCacheKey));
-    setOwnershipData(storedData.data); // Pass only the data part to the state
-    console.log("Ownership data loaded:", storedData.data);
-};

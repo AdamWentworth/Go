@@ -1,8 +1,8 @@
 // pokemonStorageManager.js
 
-import { getAllFromDB, putBulkIntoDB, clearStore } from '../../../services/indexedDB';
-import { generateUUID, validateUUID } from '../../../utils/PokemonIDUtils';
-import { createNewDataForVariant } from './pokemonOwnershipManager';
+import { getAllFromDB, putBulkIntoDB, clearStore } from '../../services/indexedDB';
+import { generateUUID, validateUUID } from '../../utils/PokemonIDUtils';
+import { createNewInstanceData } from './createNewInstanceData';
 
 export async function getOwnershipDataAsync() {
     // Get all ownership data from IndexedDB
@@ -65,7 +65,7 @@ export async function initializeOrUpdateOwnershipDataAsync(keys, variants) {
             if (!existingKeys.has(key)) {
                 const fullKey = `${key}_${generateUUID()}`;
                 const instance_id = fullKey;
-                storedData[instance_id] = createNewDataForVariant(variant);
+                storedData[instance_id] = createNewInstanceData(variant);
                 updates[instance_id] = storedData[instance_id];
                 shouldUpdateStorage = true;
             }

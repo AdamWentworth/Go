@@ -15,8 +15,8 @@ import { updateOwnership as importedUpdateOwnership } from './PokemonData/update
 import { updateLists as importedUpdateLists } from './PokemonData/updateLists';
 import { updateDetails as importedUpdateDetails } from './PokemonData/updateDetails';
 import { mergeOwnershipData as importedMergeOwnershipData } from './PokemonData/mergeOwnershipData';
-import { periodicUpdates as importedPeriodicUpdates } from './PokemonData/periodicUpdates';
-import { checkBatchedUpdates as importedCheckBatchedUpdates } from './PokemonData/checkBatchedUpdates';
+import { periodicUpdates as importedPeriodicUpdates } from './BatchedUpdates/periodicUpdates';
+import { checkBatchedUpdates as importedCheckBatchedUpdates } from './BatchedUpdates/checkBatchedUpdates';
 
 import { useGlobalState } from './GlobalStateContext';
 

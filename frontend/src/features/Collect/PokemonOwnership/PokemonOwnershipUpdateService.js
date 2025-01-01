@@ -1,7 +1,7 @@
 // PokemonOwnershipUpdateService.js
 
 import { generateUUID, parsePokemonKey } from '../../../utils/PokemonIDUtils';
-import { createNewDataForVariant } from './pokemonOwnershipManager';
+import { createNewInstanceData } from '../../../contexts/PokemonData/createNewInstanceData';
 import { updateRegistrationStatus } from './handlers/handleRegistrationStatus';
 import { handleMegaPokemon } from './handlers/handleMegaPokemon';
 
@@ -58,7 +58,7 @@ function handleBaseKeyEntry(pokemonKey, newStatus, ownershipData, variantData, v
     // If no suitable instance is found, create a new one
     if (needNewInstance) {
         const newKey = `${pokemonKey}_${generateUUID()}`;
-        ownershipData[newKey] = createNewDataForVariant(variantData);
+        ownershipData[newKey] = createNewInstanceData(variantData);
         updateInstanceStatus(newKey, newStatus, ownershipData, pokemonKey);
         updatedKey = newKey;
     }
