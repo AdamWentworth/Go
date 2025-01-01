@@ -1,34 +1,44 @@
 // PokemonOwnershipUpdateService.js
 
-import { generateUUID } from '../../../utils/PokemonIDUtils';
+import { generateUUID, parsePokemonKey } from '../../../utils/PokemonIDUtils';
 import { createNewDataForVariant } from './pokemonOwnershipManager';
-import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
-import { oneWaySharedFormPokemonIDs } from '../../../utils/constants'
+import { updateRegistrationStatus } from './handlers/handleRegistrationStatus';
+import { handleMegaPokemon } from './handlers/handleMegaPokemon';
 
-export function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershipData, lists, callback) {
+export async function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershipData, lists) {
     const { baseKey, hasUUID } = parsePokemonKey(pokemonKey);
     const variantData = variants.find(variant => variant.pokemonKey === baseKey);
 
     if (!variantData) {
         console.error("No variant data found for base key:", baseKey);
-        callback(); // Ensuring callback is called even if there's an error
-        return;
+        return null; // Or throw an error if appropriate
     }
+
+    // Check for Mega Pokémon
+    if (baseKey.includes('_mega') || baseKey.includes('-mega')) {
+        try {
+            await handleMegaPokemon(baseKey); // Wait for user interaction
+            return null; // Return null or an appropriate value after handling
+        } catch (error) {
+            console.error("Error handling Mega Pokémon:", error);
+            return null; // Handle the error as needed
+        }
+    }
+
+    console.log('Handling non-Mega Pokémon');
 
     let updatedKey;
     if (hasUUID) {
-        updatedKey = handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, variants);
+        updatedKey = handleInstanceUUIDEntry(pokemonKey, newStatus, ownershipData);
     } else {
-        updatedKey = handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData, variants);
+        updatedKey = handleBaseKeyEntry(pokemonKey, newStatus, ownershipData, variantData, variants);
     }
 
-    // Update the lists immediately after updating ownership data
     updateLists(updatedKey, newStatus, lists);
-
-    callback(updatedKey); // Ensures that callback is always called to update the counter
+    return updatedKey; // Return the updated key
 }
 
-function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData, variants) {
+function handleBaseKeyEntry(pokemonKey, newStatus, ownershipData, variantData, variants) {
     let needNewInstance = true;
     let updatedKey;
 
@@ -49,14 +59,14 @@ function handleDefaultEntry(pokemonKey, newStatus, ownershipData, variantData, v
     if (needNewInstance) {
         const newKey = `${pokemonKey}_${generateUUID()}`;
         ownershipData[newKey] = createNewDataForVariant(variantData);
-        updateInstanceStatus(newKey, newStatus, ownershipData, pokemonKey, variants);
+        updateInstanceStatus(newKey, newStatus, ownershipData, pokemonKey);
         updatedKey = newKey;
     }
 
     return updatedKey;
 }
 
-function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey, variants) {
+function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey) {
     const instance = ownershipData[pokemonKey];
 
     if (newStatus === 'Trade' || newStatus === 'Wanted') {
@@ -127,7 +137,7 @@ function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey, var
     updateRegistrationStatus(instance, ownershipData);
 }
 
-function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, variants) {
+function handleInstanceUUIDEntry(pokemonKey, newStatus, ownershipData) {
     const instance = ownershipData[pokemonKey];
 
     if (newStatus === 'Trade' || newStatus === 'Wanted') {
@@ -204,77 +214,6 @@ function handleSpecificInstanceWithUUID(pokemonKey, newStatus, ownershipData, va
     updateRegistrationStatus(instance, ownershipData);
 
     return pokemonKey; // Return the original key if none of the conditions match
-}
-
-// Updated function to handle shared registrations
-function updateRegistrationStatus(instance, ownershipData) {
-    const originalPokemonID = instance.pokemon_id;
-
-    // Find the shared group that includes this pokemon_id
-    let sharedGroup = null;
-
-    for (const key in oneWaySharedFormPokemonIDs) {
-        const group = oneWaySharedFormPokemonIDs[key];
-        if (group.includes(originalPokemonID)) {
-            sharedGroup = group;
-            break;
-        }
-    }
-
-    if (sharedGroup) {
-        // Check if any instances in the shared group are registered
-        let anyRegistered = instance.registered;
-
-        Object.keys(ownershipData).forEach(key => {
-            const otherInstance = ownershipData[key];
-
-            // Skip the current instance
-            if (otherInstance === instance) {
-                return;
-            }
-
-            // Check if the other instance's pokemon_id is in the shared group
-            if (sharedGroup.includes(otherInstance.pokemon_id)) {
-                // Check if shiny, shadow, and costume_id match
-                const shinyMatch = otherInstance.shiny === instance.shiny;
-                const shadowMatch = otherInstance.shadow === instance.shadow;
-                const costumeMatch = otherInstance.costume_id === instance.costume_id;
-
-                if (shinyMatch && shadowMatch && costumeMatch) {
-                    if (otherInstance.registered) {
-                        anyRegistered = true;
-                    }
-                }
-            }
-        });
-
-        // Set the `registered` status for the instance
-        instance.registered = anyRegistered;
-
-        // Update the `registered` status of other instances in the shared group
-        if (anyRegistered) {
-            Object.keys(ownershipData).forEach(key => {
-                const otherInstance = ownershipData[key];
-
-                // Skip if it's the same instance
-                if (otherInstance === instance) {
-                    return;
-                }
-
-                // Check if the other instance's pokemon_id is in the shared group
-                if (sharedGroup.includes(otherInstance.pokemon_id)) {
-                    // Check if shiny, shadow, and costume_id match
-                    const shinyMatch = otherInstance.shiny === instance.shiny;
-                    const shadowMatch = otherInstance.shadow === instance.shadow;
-                    const costumeMatch = otherInstance.costume_id === instance.costume_id;
-
-                    if (shinyMatch && shadowMatch && costumeMatch) {
-                        otherInstance.registered = true;
-                    }
-                }
-            });
-        }
-    }
 }
 
 // Utility function to update the lists based on the ownership status

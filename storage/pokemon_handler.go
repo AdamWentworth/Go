@@ -23,7 +23,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string) (createdC
 			continue
 		}
 
-		instanceID := fmt.Sprintf("%v", pm["instance_id"])
+		instanceID := fmt.Sprintf("%v", pm["key"])
 		if instanceID == "" {
 			logrus.Warn("Received Pokémon update with empty instance_id; skipping.")
 			continue
