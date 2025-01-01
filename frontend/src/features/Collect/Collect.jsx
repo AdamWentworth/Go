@@ -195,6 +195,8 @@ function Collect({ isOwnCollection }) {
     sortedPokemons
   });
 
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const {
     handleConfirmMoveToFilter,
   } = useHandleMoveToFilter({
@@ -204,6 +206,7 @@ function Collect({ isOwnCollection }) {
     updateOwnership,
     variants,
     ownershipData,
+    setIsUpdating, // Add this
   });
 
   const [isShowingLists, setIsShowingLists] = useState(false);
@@ -261,7 +264,7 @@ function Collect({ isOwnCollection }) {
     <div>
       {isUsernamePath && userExists === false && <h1>User not found</h1>}
 
-      {(loading || viewedLoading) && <LoadingSpinner />}
+      {(loading || viewedLoading || isUpdating) && <LoadingSpinner />}
 
       {(isOwnCollection || userExists) && !loading && !viewedLoading && (
         <>
@@ -339,6 +342,7 @@ function Collect({ isOwnCollection }) {
           highlightedCards={highlightedCards}
           handleConfirmMoveToFilter={handleConfirmMoveToFilter}
           ownershipFilter={ownershipFilter}
+          isUpdating={isUpdating}
         />
       )}
     </div>

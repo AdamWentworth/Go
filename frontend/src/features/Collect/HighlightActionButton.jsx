@@ -7,6 +7,7 @@ function HighlightActionButton({
   highlightedCards,
   handleConfirmMoveToFilter,
   ownershipFilter,
+  isUpdating, // Add this prop
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -22,38 +23,43 @@ function HighlightActionButton({
   return (
     <div className="highlight-action-container">
       <div className={`action-buttons ${isExpanded ? 'expanded' : ''}`}>
-        {/* Filter buttons expand above the main button */}
         {isExpanded && (
           <div className="filter-buttons">
             <button
               className="filter-button Owned"
               onClick={() => handleFilterClick('Owned')}
+              disabled={isUpdating} // Disable during updates
             >
               Owned
             </button>
             <button
               className="filter-button Trade"
               onClick={() => handleFilterClick('Trade')}
+              disabled={isUpdating}
             >
               Trade
             </button>
             <button
               className="filter-button Wanted"
               onClick={() => handleFilterClick('Wanted')}
+              disabled={isUpdating}
             >
               Wanted
             </button>
           </div>
         )}
-        {/* Main button remains at the bottom */}
-        <button className="main-button" onClick={handleMainButtonClick}>
+        <button 
+          className="main-button" 
+          onClick={handleMainButtonClick}
+          disabled={isUpdating}
+        >
           List ({highlightedCards.size})
         </button>
-        {/* Conditionally render the Transfer button if ownershipFilter is not empty */}
         {ownershipFilter !== '' && (
           <button
             className="transfer-button"
             onClick={() => handleFilterClick('Unowned')}
+            disabled={isUpdating}
           >
             Transfer ({highlightedCards.size})
           </button>

@@ -25,8 +25,6 @@ export async function updatePokemonOwnership(pokemonKey, newStatus, variants, ow
         }
     }
 
-    console.log('Handling non-Mega Pokémon');
-
     let updatedKey;
     if (hasUUID) {
         updatedKey = handleInstanceUUIDEntry(pokemonKey, newStatus, ownershipData);

@@ -9,26 +9,31 @@ function useHandleMoveToFilter({
   updateOwnership,
   variants,
   ownershipData,
+  setIsUpdating,
 }) {
   const handleMoveHighlightedToFilter = useCallback(
     async (filter) => {
       try {
-        // Await the completion of updateOwnership
+        // Set loading state and wait for state update to be processed
+        setIsUpdating(true);
+        // Wait for React to process the state update
+        await new Promise(resolve => setTimeout(resolve, 0));
+        
+        // Now proceed with the update
         await updateOwnership([...highlightedCards], filter);
-        // After updateOwnership completes, update the state
         setHighlightedCards(new Set());
         setOwnershipFilter(filter);
       } catch (error) {
         console.error('Error updating ownership:', error);
-        // Optionally, handle errors here (e.g., show a notification to the user)
+      } finally {
+        setIsUpdating(false);
       }
     },
-    [highlightedCards, updateOwnership, setHighlightedCards, setOwnershipFilter]
+    [highlightedCards, updateOwnership, setHighlightedCards, setOwnershipFilter, setIsUpdating]
   );
 
   const handleConfirmMoveToFilter = useCallback(
     (filter) => {
-      // Construct the confirmation message
       const messageDetails = [];
 
       highlightedCards.forEach((pokemonKey) => {
@@ -44,12 +49,11 @@ function useHandleMoveToFilter({
             ? 'Wanted'
             : 'Unknown';
 
-          // Determine display name
           let displayName = instance.nickname;
           if (!displayName) {
             const keyParts = pokemonKey.split('_');
-            keyParts.pop(); // Remove the UUID part
-            const basePrefix = keyParts.join('_'); // Rejoin to form the actual prefix
+            keyParts.pop();
+            const basePrefix = keyParts.join('_');
             const variant = variants.find((v) => v.pokemonKey === basePrefix);
             displayName = variant ? variant.name : 'Unknown Pokémon';
           }
@@ -59,7 +63,6 @@ function useHandleMoveToFilter({
             messageDetails.push(actionDetail);
           }
         } else {
-          // Handle the case where the pokemonKey does not have corresponding ownership data
           const actionDetail = `Move unknown Pokémon from Unknown to ${filter}`;
           messageDetails.push(actionDetail);
         }
@@ -69,14 +72,11 @@ function useHandleMoveToFilter({
         '\n'
       )}`;
 
-      // Display the confirmation dialog
       const userConfirmed = window.confirm(detailedMessage);
 
       if (userConfirmed) {
-        // Execute the ownership update
         handleMoveHighlightedToFilter(filter).catch((error) => {
           console.error('Error during ownership update:', error);
-          // Optionally, inform the user about the error
           window.alert('An error occurred while updating ownership. Please try again.');
         });
       }
