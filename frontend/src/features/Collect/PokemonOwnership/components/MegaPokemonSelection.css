@@ -6,33 +6,91 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
-}
-
-.mega-pokemon-selection-overlay .modal {
-    background-color: #333;
-    color: white;
+    z-index: 1000; /* Ensure it's on top of other elements */
+  }
+  
+  .mega-modal-content {
+    background-color: #333; /* Dark background for contrast */
+    color: white; /* White text for readability */
     padding: 20px;
     border-radius: 10px;
     text-align: center;
+    width: 80%;
+    max-width: 800px; /* Limit the maximum width */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    z-index: 1001;
-}
-
-.mega-pokemon-selection-overlay .modal button {
-    margin: 10px;
+    overflow-y: auto; /* Enable scrolling if content overflows */
+    max-height: 90%; /* Prevent the modal from exceeding viewport height */
+  }
+  
+  .mega-modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+  
+  .mega-modal-content p {
+    margin: 10px 0;
+  }
+  
+  .mega-pokemon-selection-overlay  .error {
+    color: #ff4d4d; /* Red color for errors */
+  }
+  
+  .mega-pokemon-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap; /* Allow wrapping to new lines if necessary */
+    gap: 20px; /* Space between items */
+    justify-content: center; /* Center the items horizontally */
+    margin: 20px 0;
+  }
+  
+  .mega-pokemon-item {
+    background-color: #444; /* Slightly lighter dark background */
+    padding: 15px;
+    border-radius: 8px;
+    width: 200px; /* Fixed width for consistency */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .mega-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+  }
+  
+  .mega-actions button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff; /* Blue background for primary actions */
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .mega-actions button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+  }
+  
+  .mega-pokemon-selection-overlay .close-button {
     padding: 10px 20px;
     border: none;
     border-radius: 5px;
-    background-color: #007bff;
+    background-color: #dc3545; /* Red background for close */
     color: white;
     cursor: pointer;
-}
-
-.mega-pokemon-selection-overlay .modal button:hover {
-    background-color: #0056b3;
-}
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .mega-pokemon-selection-overlay .close-button:hover {
+    background-color: #c82333; /* Darker red on hover */
+  }

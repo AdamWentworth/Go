@@ -2,16 +2,23 @@
 
 import React, { useState, useMemo, useContext, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
+
+// Components for Collect
 import PokemonList from './PokemonList';
 import ListsMenu from './ListsMenu';
 import HeaderUI from './HeaderUI';
 import SortOverlay from './SortOverlay';
 import HighlightActionButton from './HighlightActionButton';
+
+// Contexts
 import { usePokemonData } from '../../contexts/PokemonDataContext';
-import { multiFormPokedexNumbers } from '../../utils/constants';
 import UserSearchContext from '../../contexts/UserSearchContext';
 import { initializePokemonLists } from '../../contexts/PokemonData/PokemonTradeListOperations';
 
+// Utils
+import { multiFormPokedexNumbers } from '../../utils/constants';
+
+// Hooks
 import useUserDataLoader from './hooks/useUserDataLoader';
 import useInstanceIdProcessor from './hooks/useInstanceIdProcessor';
 import useResponsiveUI from './hooks/useResponsiveUI';
@@ -20,7 +27,9 @@ import { useUIControls } from './hooks/useUIControls';
 import useUIHandlers from './hooks/useUIHandlers';
 import useHandleMoveToFilter from './hooks/useHandleMoveToFilter';
 import usePokemonProcessing from './hooks/usePokemonProcessing';
+import useMegaPokemonHandler from './hooks/useMegaPokemonHandler'; 
 
+// Global Component
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 const PokemonListMemo = React.memo(PokemonList);
@@ -197,6 +206,12 @@ function Collect({ isOwnCollection }) {
 
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // Initialize the Mega Pokémon handler
+  const {
+    promptMegaPokemonSelection,
+    MegaPokemonModal,
+  } = useMegaPokemonHandler(); // Use the custom hook
+
   const {
     handleConfirmMoveToFilter,
   } = useHandleMoveToFilter({
@@ -206,7 +221,8 @@ function Collect({ isOwnCollection }) {
     updateOwnership,
     variants,
     ownershipData,
-    setIsUpdating, // Add this
+    setIsUpdating: (value) => setIsUpdating(value), // Assuming setIsUpdating is still needed
+    promptMegaPokemonSelection, // Pass the callback from the custom hook
   });
 
   const [isShowingLists, setIsShowingLists] = useState(false);
@@ -345,6 +361,8 @@ function Collect({ isOwnCollection }) {
           isUpdating={isUpdating}
         />
       )}
+
+      <MegaPokemonModal />
     </div>
   );
 }

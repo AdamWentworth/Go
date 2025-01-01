@@ -3,7 +3,6 @@
 import { generateUUID, parsePokemonKey } from '../../../utils/PokemonIDUtils';
 import { createNewInstanceData } from '../../../contexts/PokemonData/createNewInstanceData';
 import { updateRegistrationStatus } from './handlers/handleRegistrationStatus';
-import { handleMegaPokemon } from './handlers/handleMegaPokemon';
 
 export async function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershipData, lists) {
     const { baseKey, hasUUID } = parsePokemonKey(pokemonKey);
@@ -13,18 +12,7 @@ export async function updatePokemonOwnership(pokemonKey, newStatus, variants, ow
         console.error("No variant data found for base key:", baseKey);
         return null; // Or throw an error if appropriate
     }
-
-    // Check for Mega Pokémon
-    if (baseKey.includes('_mega') || baseKey.includes('-mega')) {
-        try {
-            await handleMegaPokemon(baseKey); // Wait for user interaction
-            return null; // Return null or an appropriate value after handling
-        } catch (error) {
-            console.error("Error handling Mega Pokémon:", error);
-            return null; // Handle the error as needed
-        }
-    }
-
+    console.log('updating in updatePokemonOwnership')
     let updatedKey;
     if (hasUUID) {
         updatedKey = handleInstanceUUIDEntry(pokemonKey, newStatus, ownershipData);

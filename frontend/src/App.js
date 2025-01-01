@@ -21,6 +21,7 @@ import { SessionProvider } from './contexts/SessionContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { UserSearchProvider } from './contexts/UserSearchContext';
 import { TradeDataProvider } from './contexts/TradeDataContext';
+import { ModalProvider } from './contexts/ModalContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -39,32 +40,34 @@ function App() {
                                         <LocationProvider>
                                             <ThemeProvider>
                                                 <UserSearchProvider>
-                                                    <div className="App">
-                                                        <Navbar />
-                                                        <main>
-                                                            <Routes>
-                                                                <Route path="/" element={<MainButtons />} />
-                                                                <Route path="/collect" element={<Collect isOwnCollection={true} />} />
-                                                                <Route path="/trades" element={<Trades />} />
-                                                                <Route path="/login" element={<Login />} />
-                                                                <Route path="/register" element={<Register />} />
-                                                                <Route path="/account" element={<Account />} />
-                                                                <Route path="/discover" element={<Discover />} />
-                                                                <Route path="/collection/:username" element={<Collect isOwnCollection={false} />} />
-                                                            </Routes>
-                                                        </main>
-                                                        <ToastContainer
-                                                            position="top-center"
-                                                            autoClose={5000}
-                                                            hideProgressBar={false}
-                                                            newestOnTop={false}
-                                                            closeOnClick
-                                                            rtl={false}
-                                                            pauseOnFocusLoss
-                                                            draggable
-                                                            pauseOnHover
-                                                            />
-                                                    </div>
+                                                    <ModalProvider>
+                                                        <div className="App">
+                                                            <Navbar />
+                                                            <main>
+                                                                <Routes>
+                                                                    <Route path="/" element={<MainButtons />} />
+                                                                    <Route path="/collect" element={<Collect isOwnCollection={true} />} />
+                                                                    <Route path="/trades" element={<Trades />} />
+                                                                    <Route path="/login" element={<Login />} />
+                                                                    <Route path="/register" element={<Register />} />
+                                                                    <Route path="/account" element={<Account />} />
+                                                                    <Route path="/discover" element={<Discover />} />
+                                                                    <Route path="/collection/:username" element={<Collect isOwnCollection={false} />} />
+                                                                </Routes>
+                                                            </main>
+                                                            <ToastContainer
+                                                                position="top-center"
+                                                                autoClose={5000}
+                                                                hideProgressBar={false}
+                                                                newestOnTop={false}
+                                                                closeOnClick
+                                                                rtl={false}
+                                                                pauseOnFocusLoss
+                                                                draggable
+                                                                pauseOnHover
+                                                                />
+                                                        </div>
+                                                    </ModalProvider>
                                                 </UserSearchProvider>
                                             </ThemeProvider>
                                         </LocationProvider>

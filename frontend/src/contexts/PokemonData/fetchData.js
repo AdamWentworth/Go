@@ -14,13 +14,12 @@ import {
     putBulkIntoDB
 } from '../../services/indexedDB';
 import {
-    initializeOrUpdateOwnershipDataAsync, getOwnershipDataAsync
+    initializeOrUpdateOwnershipDataAsync,
+    getOwnershipDataAsync
 } from './pokemonOwnershipStorage';
 
 export const fetchData = async (setData, updateOwnership, updateLists) => {
     console.log("Fetching data from API or cache...");
-
-    let variants, ownershipData, lists;
 
     // Retrieve timestamps from localStorage
     const ownershipTimestamp = parseInt(localStorage.getItem('ownershipTimestamp'), 10) || 0;
@@ -31,13 +30,6 @@ export const fetchData = async (setData, updateOwnership, updateLists) => {
     const variantsFresh = variantsTimestamp && isDataFresh(variantsTimestamp);
     const ownershipFresh = ownershipTimestamp && isDataFresh(ownershipTimestamp);
     const listsFresh = listsTimestamp && isDataFresh(listsTimestamp);
-
-    let variantsUpdated = false;
-    let ownershipUpdated = false;
-
-    // Retrieve ownershipData from IndexedDB
-    const { data: ownershipDataData } = await getOwnershipDataAsync();
-    const cachedOwnership = ownershipDataData || null;
 
     // Log cached data freshness and details
     if (variantsTimestamp) {
@@ -58,70 +50,102 @@ export const fetchData = async (setData, updateOwnership, updateLists) => {
         console.log("Lists data is missing.");
     }
 
-    if (variantsFresh && ownershipFresh && listsFresh) {
-        console.log("Using cached variants, ownership data, and lists");
-
-        // Retrieve all variants from IndexedDB
+    // First, get variants as quickly as possible
+    let variants;
+    if (variantsFresh) {
+        console.log("Using cached variants");
         const startVariantsRetrieval = Date.now();
         variants = await getAllFromDB('pokemonVariants');
-        // No need to sort as variants are already stored sorted
         const endVariantsRetrieval = Date.now();
         console.log(`Retrieved variants from IndexedDB in ${(endVariantsRetrieval - startVariantsRetrieval)} ms`);
-
-        ownershipData = cachedOwnership;
-
-        // Retrieve lists from IndexedDB in parallel using a single transaction
-        const startListsRetrieval = Date.now();
-        lists = await getAllListsFromDB();
-        const endListsRetrieval = Date.now();
-        console.log(`Retrieved lists from IndexedDB in ${(endListsRetrieval - startListsRetrieval)} ms`);
     } else {
-        console.log("Data is stale or missing, updating...");
+        console.log("Variants are stale or missing, updating...");
+        variants = await fetchAndProcessVariants();
+    }
 
-        // Handle variants
-        if (!variantsFresh) {
-            console.log("Variants are stale or missing, updating...");
-            variants = await fetchAndProcessVariants();
-            variantsUpdated = true;
+    // Immediately set initial data with just variants
+    setData({ 
+        variants, 
+        ownershipData: null, 
+        lists: null, 
+        loading: true,
+        updateOwnership,
+        updateLists 
+    });
+
+    // Process remaining data in the background
+    processRemainingData(variants, setData, updateOwnership, updateLists, { 
+        ownershipFresh, 
+        listsFresh, 
+        variantsFresh 
+    });
+
+    // Return variants immediately
+    return variants;
+};
+
+async function processRemainingData(variants, setData, updateOwnership, updateLists, freshness) {
+    const { ownershipFresh, listsFresh } = freshness;
+    let variantsUpdated = !freshness.variantsFresh;
+    let ownershipUpdated = false;
+
+    try {
+        // Retrieve ownershipData from IndexedDB
+        const { data: ownershipDataData } = await getOwnershipDataAsync();
+        const cachedOwnership = ownershipDataData || null;
+
+        // Get ownership data
+        let ownershipData;
+        if (ownershipFresh && !variantsUpdated) {
+            ownershipData = cachedOwnership;
         } else {
-            const startVariantsRetrieval = Date.now();
-            variants = await getAllFromDB('pokemonVariants');
-            // No need to sort as variants are already stored sorted
-            const endVariantsRetrieval = Date.now();
-            console.log(`Retrieved variants from IndexedDB in ${(endVariantsRetrieval - startVariantsRetrieval)} ms`);
-        }
-
-        if (!ownershipFresh || variantsUpdated) {
             console.log("Ownership data is stale or variants updated, updating ownership data...");
             const keys = variants.map(variant => variant.pokemonKey);
             ownershipData = await initializeOrUpdateOwnershipDataAsync(keys, variants);
             ownershipUpdated = true;
-        } else {
-            ownershipData = cachedOwnership;
         }
 
-        // Handle lists
-        if (!listsFresh || ownershipUpdated || variantsUpdated) {
+        // Update state with ownership data
+        setData(prevData => ({
+            ...prevData,
+            ownershipData,
+            loading: true
+        }));
+
+        // Get lists
+        let lists;
+        if (listsFresh && ownershipFresh && !variantsUpdated) {
+            const startListsRetrieval = Date.now();
+            lists = await getAllListsFromDB();
+            const endListsRetrieval = Date.now();
+            console.log(`Retrieved lists from IndexedDB in ${(endListsRetrieval - startListsRetrieval)} ms`);
+        } else {
             console.log("Lists are stale or ownership data/variants updated, updating lists...");
             lists = initializePokemonLists(ownershipData, variants);
-
-            // Store lists into IndexedDB
+            
             const startStoreLists = Date.now();
             await storeListsInIndexedDB(lists);
             localStorage.setItem('listsTimestamp', Date.now().toString());
             const endStoreLists = Date.now();
             console.log(`Stored updated lists in IndexedDB in ${(endStoreLists - startStoreLists)} ms`);
-        } else {
-            const startListsRetrieval = Date.now();
-            lists = await getAllListsFromDB();
-            const endListsRetrieval = Date.now();
-            console.log(`Retrieved lists from IndexedDB in ${(endListsRetrieval - startListsRetrieval)} ms`);
         }
-    }
 
-    // Final data setting
-    setData({ variants, ownershipData, lists, loading: false, updateOwnership, updateLists });
-};
+        // Final update with all data
+        setData(prevData => ({
+            ...prevData,
+            lists,
+            loading: false
+        }));
+
+    } catch (error) {
+        console.error('Error processing remaining data:', error);
+        setData(prevData => ({
+            ...prevData,
+            loading: false,
+            error: 'Failed to load complete data'
+        }));
+    }
+}
 
 async function fetchAndProcessVariants() {
     // Retrieve Pokémon data from localStorage or fetch from API

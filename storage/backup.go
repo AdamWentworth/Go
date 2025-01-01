@@ -25,12 +25,14 @@ func CreateBackup() {
 	dateStr := now.Format("2006-01-02")
 	backupFilename := fmt.Sprintf("user_pokemon_backup_%s.sql", dateStr)
 
-	backupFilePath := filepath.Join("backups", backupFilename)
-	err := os.MkdirAll("backups", os.ModePerm)
+	backupsDir := "backups"
+	err := os.MkdirAll(backupsDir, os.ModePerm)
 	if err != nil {
 		logrus.Errorf("Failed to create backups directory: %v", err)
 		return
 	}
+
+	backupFilePath := filepath.Join(backupsDir, backupFilename)
 
 	myCnfPath := filepath.Join(".", "my.cnf")
 	if _, err := os.Stat(myCnfPath); os.IsNotExist(err) {
