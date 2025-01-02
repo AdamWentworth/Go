@@ -33,6 +33,7 @@ func CreateBackup() {
 	}
 
 	backupFilePath := filepath.Join(backupsDir, backupFilename)
+	backupFilePath = filepath.ToSlash(backupFilePath) // Ensure forward slashes
 
 	myCnfPath := filepath.Join(".", "my.cnf")
 	if _, err := os.Stat(myCnfPath); os.IsNotExist(err) {
@@ -40,7 +41,11 @@ func CreateBackup() {
 		return
 	}
 
-	dumpCmd := fmt.Sprintf("mysqldump --defaults-extra-file=%s %s > %s", myCnfPath, dbName, backupFilePath)
+	// Use --result-file option instead of shell redirection
+	dumpCmd := fmt.Sprintf("mysqldump --defaults-extra-file=%s %s --result-file=%s",
+		escapeShellArg(myCnfPath),
+		escapeShellArg(dbName),
+		escapeShellArg(backupFilePath))
 
 	logrus.Infof("Executing backup command: %s", dumpCmd)
 	if err := runShellCommand(dumpCmd); err != nil {
@@ -52,14 +57,14 @@ func CreateBackup() {
 	manageRetention()
 }
 
+// escapeShellArg safely escapes shell arguments to prevent injection and parsing issues
+func escapeShellArg(arg string) string {
+	return "'" + strings.ReplaceAll(arg, "'", `'"'"'`) + "'"
+}
+
 // runShellCommand executes the given shell command and logs output
 func runShellCommand(cmd string) error {
 	// Execute the command using /bin/sh
-	parts := strings.Fields(cmd)
-	if len(parts) == 0 {
-		return fmt.Errorf("empty command")
-	}
-
 	execCmd := exec.Command("sh", "-c", cmd)
 	output, err := execCmd.CombinedOutput()
 	if err != nil {
