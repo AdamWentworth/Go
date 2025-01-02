@@ -10,25 +10,30 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000; /* Ensure it's on top of other elements */
+    z-index: 1001; /* Ensure it's on top of other elements */
+    overflow-y: auto;
   }
+
+  .mega-pokemon-selection-overlay ::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for WebKit browsers */
+}
   
   .mega-modal-content {
     background-color: #333; /* Dark background for contrast */
     color: white; /* White text for readability */
-    padding: 20px;
+    padding: 10px;
     border-radius: 10px;
     text-align: center;
-    width: 80%;
-    max-width: 800px; /* Limit the maximum width */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    overflow-y: auto; /* Enable scrolling if content overflows */
-    max-height: 90%; /* Prevent the modal from exceeding viewport height */
+    max-height: 90%; /* Constrain height for scrollability */
+    overflow-y: auto; /* Allow vertical scrolling */
   }
   
   .mega-modal-content h2 {
     margin-top: 0;
-    margin-bottom: 10px;
+    margin-bottom: 0px;
+    margin-block-start: 0px;
+    margin-block-end: 0px;
   }
   
   .mega-modal-content p {
@@ -45,17 +50,21 @@
     flex-wrap: wrap; /* Allow wrapping to new lines if necessary */
     gap: 20px; /* Space between items */
     justify-content: center; /* Center the items horizontally */
-    margin: 20px 0;
+    overflow-y: auto; /* Enable vertical scrolling */
+    scrollbar-width: none; /* Hide scrollbar in Firefox */
   }
+
+  /* Hide scrollbar while allowing scrolling */
+.mega-pokemon-list::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for WebKit browsers */
+}
   
   .mega-pokemon-item {
     background-color: #444; /* Slightly lighter dark background */
     padding: 15px;
     border-radius: 8px;
-    width: 200px; /* Fixed width for consistency */
+    margin-top: 10px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
     align-items: center;
   }
   
@@ -64,8 +73,12 @@
     display: flex;
     gap: 10px;
   }
+
+  .mega-actions {
+    justify-content: center;
+  }
   
-  .mega-actions button {
+  .mega-actions button, .create-new-action button {
     padding: 8px 12px;
     border: none;
     border-radius: 5px;
@@ -76,9 +89,13 @@
     transition: background-color 0.3s ease;
   }
   
-  .mega-actions button:hover {
+  .mega-actions button:hover, .create-new-action button:hover {
     background-color: #0056b3; /* Darker blue on hover */
   }
+
+    .create-new-action button {
+        margin-top: 10px;
+    }
   
   .mega-pokemon-selection-overlay .close-button {
     padding: 10px 20px;

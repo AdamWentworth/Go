@@ -6,15 +6,13 @@ import OwnedInstance from '../../InstanceOverlayComponents/OwnedInstance';
 import { PokemonDataContext } from '../../../../contexts/PokemonDataContext'; // Adjust the path as necessary
 
 const MegaPokemonSelection = ({
-  ownedPokemon, // Updated prop: now an array with variantData per instance
+  ownedPokemon,
   onAssignExisting,
   onCreateNew,
   onCancel,
 }) => {
   const { updateDetails, updateLists } = useContext(PokemonDataContext);
   const [error, setError] = useState(null); // State to handle errors
-
-  // No need for loading state since variantData is pre-fetched
 
   // Handler to assign existing Mega Pokémon
   const handleAssignExisting = async (instanceId) => {
@@ -33,18 +31,18 @@ const MegaPokemonSelection = ({
   };
 
   // Handler to create a new Mega Pokémon
-  const handleCreateNew = async (instanceId) => {
+  const handleCreateNew = async () => {
     try {
       // Example action: Create a new Mega Pokémon instance
-      await updateDetails(instanceId, { is_mega_evolved: true });
+      await updateDetails(null, { is_mega_evolved: true }); // Adjust payload as necessary
 
       await updateLists();
 
-      console.log(`Instance ${instanceId} created as a new Mega Pokémon.`);
-      onCreateNew(instanceId); // Notify parent if necessary
+      console.log(`New Mega Pokémon created.`);
+      onCreateNew(); // Notify parent if necessary
     } catch (err) {
-      console.error(`Error creating new Mega Pokémon for instance ${instanceId}:`, err);
-      setError(`Failed to create Mega Pokémon for instance ${instanceId}.`);
+      console.error(`Error creating new Mega Pokémon:`, err);
+      setError(`Failed to create a new Mega Pokémon.`);
     }
   };
 
@@ -56,7 +54,7 @@ const MegaPokemonSelection = ({
       aria-labelledby="mega-modal-title"
     >
       <div className="mega-modal-content">
-        <h2 id="mega-modal-title">Mega Pokémon Selection</h2>
+        <h2 id="mega-modal-title">Mega Evolve Pokémon</h2>
 
         {/* Error Message */}
         {error && <p className="error">{error}</p>}
@@ -88,10 +86,7 @@ const MegaPokemonSelection = ({
                   <OwnedInstance pokemon={combinedData} />
                   <div className="mega-actions">
                     <button onClick={() => handleAssignExisting(instance_id)}>
-                      Assign to Existing
-                    </button>
-                    <button onClick={() => handleCreateNew(instance_id)}>
-                      Create New
+                      Mega Evolve
                     </button>
                   </div>
                 </div>
@@ -101,6 +96,13 @@ const MegaPokemonSelection = ({
         ) : (
           <p>No owned Mega Pokémon found.</p>
         )}
+
+        {/* Create New Button */}
+        <div className="create-new-action">
+          <button onClick={handleCreateNew}>
+            Generate and Evolve New
+          </button>
+        </div>
 
         {/* Action Buttons */}
         <div className="mega-modal-actions">
