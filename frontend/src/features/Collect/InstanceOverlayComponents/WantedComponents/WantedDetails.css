@@ -128,3 +128,8 @@
     border-radius: 8px;
   }
   
+  @media (max-width: 480px) {
+  .trade-item img {
+    width: 80px;
+}
+  }

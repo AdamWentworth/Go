@@ -139,6 +139,10 @@
 }
 
 @media (max-width: 480px) {
+  .wanted-instance-window {
+    margin-bottom: 70px;
+    overflow-x: hidden;
+  }
 }
 
 @media (min-width: 481px) and (max-width: 767px){
@@ -165,5 +169,17 @@
   }
   .wanted-instance-overlay .overlay-row {
     flex-wrap: nowrap;
+    display: flex;
+    gap: 10px;
+    align-items: center;
   }
 }
+
+@media (min-width: 1440px) {
+  .wanted-instance-overlay .overlay-row {
+    flex-wrap: nowrap;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+} 

@@ -14,11 +14,11 @@
     flex-direction: column; 
 }
 
-.column-layout {
+.pokemon-overlay .column-layout {
     flex-direction: column;
 }
 
-.overlay-row {
+.pokemon-overlay .overlay-row {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -27,7 +27,7 @@
     width: 100%; /* Full width of the container */
 }
 
-.overlay-windows {
+.pokemon-overlay .overlay-windows {
     z-index: 2; /* Above the pseudo-element */
     justify-content: center; /* This ensures that the children (windows) are centered */
     flex-wrap: wrap; /* Allows wrapping if needed */
@@ -38,18 +38,6 @@
     padding-top: 0px;
     box-sizing: border-box;
 }
-
-.universal-close-button {
-    position: fixed; /* or absolute, depending on your layout */
-    top: 10px; /* Adjust the value as needed */
-    right: 10px; /* Adjust the value as needed */
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: white; /* Or any color that makes the button visible against your background */
-    cursor: pointer;
-    z-index: 100; /* Make sure it's above all overlay content */
-  }
 
 @media (max-width: 480px) { /* For mobile devices */
     .pokemon-overlay {
@@ -74,40 +62,40 @@
         display: none; /* For Chrome, Safari, and Opera */
     }
 
-    .overlay-row {
+    .pokemon-overlay .overlay-row {
         display: flex;
         flex-direction: column; /* Stack the rows vertically on smaller screens */
         width: 100%; /* Full width of the container */
         gap: 10px; /* Space between windows */
     }
 
-    .overlay-row.other-overlays-row {
+    .pokemon-overlay .overlay-row.other-overlays-row {
         position: relative;
         top: 0px; /* Eliminate this if it's still causing issues */
         width: 100%; /* Full width of the container */
         flex-direction: column; /* Stack the elements vertically */
     }
 
-    .overlay-content {
+    .pokemon-overlay .overlay-content {
         max-height: none; /* Remove max height to allow full height of content */
         overflow: visible; /* Make sure the content is visible without its own scroll */
     }
 
-    .overlay-evolves-from, .overlay-evolves-to {
+    .pokemon-overlay .overlay-evolves-from, .overlay-evolves-to {
         max-height: 100px;
     }
-    .overlay-all-moves {
+    .pokemon-overlay .overlay-all-moves {
         margin-bottom: 80px !important;
     }
-    .shadow-info-column img {
+    .pokemon-overlay .shadow-info-column img {
         max-width: 140px !important;
         padding-top: 5px;
     }
-    .costume-column img {
+    .pokemon-overlay .costume-column img {
         max-width: 140px !important;
         padding-top: 5px;
     }
-    .overlay-charged-moves {
+    .pokemon-overlay .overlay-charged-moves {
         margin-bottom: 10px !important;
     }
 }
@@ -135,33 +123,33 @@
         display: none; /* For Chrome, Safari, and Opera */
     }
 
-    .overlay-row {
+    .pokemon-overlay .overlay-row {
         display: flex;
         flex-direction: column; /* Stack the rows vertically on smaller screens */
         width: 100%; /* Full width of the container */
         gap: 10px; /* Space between windows */
     }
 
-    .overlay-row.other-overlays-row {
+    .pokemon-overlay .overlay-row.other-overlays-row {
         position: relative;
         top: 0px; /* Eliminate this if it's still causing issues */
         width: 100%; /* Full width of the container */
         /* flex-direction: column; Stack the elements vertically */
     }
 
-    .overlay-content {
+    .pokemon-overlay .overlay-content {
         max-height: none; /* Remove max height to allow full height of content */
         overflow: visible; /* Make sure the content is visible without its own scroll */
     }
 
-    .overlay-evolves-from, .overlay-evolves-to {
+    .pokemon-overlay .overlay-evolves-from, .overlay-evolves-to {
         max-height: 100px;
     }
-    .overlay-all-moves {
+    .pokemon-overlay .overlay-all-moves {
         margin-bottom: 80px !important;
     }
 
-    .overlay-charged-moves {
+    .pokemon-overlay .overlay-charged-moves {
         margin-bottom: 10px !important;
     }
 }
@@ -189,130 +177,128 @@
         display: none; /* For Chrome, Safari, and Opera */
     }
 
-    .overlay-row {
+    .pokemon-overlay .overlay-row {
         display: flex;
         /* flex-direction: column; */
         width: 100%; /* Full width of the container */
         gap: 10px; /* Space between windows */
     }
 
-    .overlay-row .other-overlays-row {
+    .pokemon-overlay .overlay-row .other-overlays-row {
         position: relative;
         top: 0px; /* Eliminate this if it's still causing issues */
         width: 100%; /* Full width of the container */
         flex-direction: column; /* Stack the elements vertically */
     }
 
-    .overlay-content {
+    .pokemon-overlay .overlay-content {
         max-height: none; /* Remove max height to allow full height of content */
         overflow: visible; /* Make sure the content is visible without its own scroll */
     }
 
-    .overlay-evolves-from, .overlay-evolves-to {
+    .pokemon-overlay .overlay-evolves-from, .overlay-evolves-to {
         max-height: 100px;
     }
-    .overlay-all-moves {
+    .pokemon-overlay .overlay-all-moves {
         margin-bottom: 100px !important;
     }
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {
-    @media (min-width: 1024px) and (max-width: 1439px) {
-    }
-    .column {
+    .pokemon-overlay .column {
         padding: 0px;
     }
-    .overlay-row .other-overlays-row {
+    .pokemon-overlay .overlay-row .other-overlays-row {
         display: flex;
         flex-direction: row; /* Align children in a row */
         align-items: flex-start; /* Align items to the start of the flex container */
     }
-    .overlay-content {
+    .pokemon-overlay .overlay-content {
         font-size: 12px !important;
         padding: 10px;
     }
-    .overlay-content h1 {
+    .pokemon-overlay .overlay-content h1 {
         font-size: 16px !important;
     }
     .pokemon-overlay .overlay-content h2 {
         font-size: 14px !important;
     }
-    .moves-column {
+    .pokemon-overlay .moves-column {
         padding: 0px !important;
     }
-    .moves-column img {
+    .pokemon-overlay .moves-column img {
         width: 18px;
         height: 18px;
     }
-    .overlay-charged-moves {
+    .pokemon-overlay .overlay-charged-moves {
         max-height: 560px;
     }
-    .overlay-main-info{
+    .pokemon-overlay .overlay-main-info{
         margin-bottom: 10px !important;
     }
-    .overlay-shiny-info{
+    .pokemon-overlay .overlay-shiny-info{
         margin-bottom: 10px !important;
     }
-    .main-info-column img {
+    .pokemon-overlay .main-info-column img {
         max-width: 160px !important; 
     }
-    .shiny-info-column img {
+    .pokemon-overlay .shiny-info-column img {
         max-width: 160px !important; 
     }
-    .costume-column img {
+    .pokemon-overlay .costume-column img {
         max-width: 120px !important; 
     }
-    .fullscreen-toggle {
+    .pokemon-overlay .fullscreen-toggle {
         font-size: 12px;
     }
-    .shadow-info-column img {
+    .pokemon-overlay .shadow-info-column img {
         max-width: 120px !important;
         padding-bottom: 10px !important;
     }
-    .gender-toggle-icon {
+    .pokemon-overlay .gender-toggle-icon {
         width: 25px !important;
         height: 25px !important;
     }
 }
 
 @media (min-width: 1440px) and (max-width: 1720px) {
-    .overlay-content {
+    .pokemon-overlay .overlay-content {
         font-size: 14px !important;
         padding: 0px;
     }
-    .overlay-content h1 {
+    .pokemon-overlay .overlay-content h1 {
         font-size: 18px !important;
     }
     .pokemon-overlay .overlay-content h2 {
         font-size: 16px !important;
     }
-    .moves-column {
+    .pokemon-overlay .moves-column {
         padding: 0px !important;
     }
-    .moves-column img {
+    .pokemon-overlay .moves-column img {
         width: 20px;
         height: 20px;
     }
-    .overlay-charged-moves {
+    .pokemon-overlay .overlay-charged-moves {
         max-height: 560px;
     }
-    .main-info-column img {
+    .pokemon-overlay .main-info-column img {
         max-width: 180px !important; 
     }
-    .shiny-info-column img {
+    .pokemon-overlay .shiny-info-column img {
         max-width: 180px !important; 
     }
-    .costume-column img {
+    .pokemon-overlay .costume-column img {
         max-width: 140px !important; 
     }
-    .fullscreen-toggle {
+    .pokemon-overlay .fullscreen-toggle {
         font-size: 12px;
     }
-    .shadow-info-column img {
+    .pokemon-overlay .shadow-info-column img {
         max-width: 120px !important;
         padding-bottom: 10px !important;
     }
-    .gender-toggle-icon {
+    .pokemon-overlay .gender-toggle-icon {
         width: 30px !important;
         height: 30px !important;
     }
