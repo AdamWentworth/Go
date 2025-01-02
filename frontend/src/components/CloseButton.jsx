@@ -1,9 +1,14 @@
 // CloseButton.jsx
-
 import React from 'react';
 import './CloseButton.css';
+import { useTheme } from '../contexts/ThemeContext'; // Import ThemeContext
 
 const CloseButton = ({ onClick, style = {} }) => {
+  const { isLightMode } = useTheme(); // Consume theme context
+  const imageSrc = isLightMode 
+    ? '/images/close-button-light.png' 
+    : '/images/close-button.png'; // Select image based on theme
+
   return (
     <button 
       className="close-button" 
@@ -12,7 +17,7 @@ const CloseButton = ({ onClick, style = {} }) => {
       style={style}
     >
       <img
-        src="/images/close-button.png" // Path to the close button image in the public directory
+        src={imageSrc}
         alt="Close"
         className="close-button-image"
       />
@@ -21,4 +26,3 @@ const CloseButton = ({ onClick, style = {} }) => {
 };
 
 export default CloseButton;
-

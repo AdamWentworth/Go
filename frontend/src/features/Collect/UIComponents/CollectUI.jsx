@@ -91,7 +91,7 @@ const CollectUI = ({
               onClick={onClearOwnershipFilter}
               disabled={!isEditable}
             >
-              <img src="/images/pokedex-icon.png" alt="Pokédex View" />
+              <img src="/images/pokedex-icon-red.png" alt="Pokédex View" />
             </button>
             <button
               className={`lists-button ${listsButtonClass}`}

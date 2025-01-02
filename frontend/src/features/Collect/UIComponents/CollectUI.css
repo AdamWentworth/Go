@@ -93,7 +93,7 @@
 
 /* Active state for pokedex-button */
 .collect-ui .button-container .pokedex-button.pokedex-active {
-  background-color: #ef4d4d; /* Light red background when active */
+  background-color: #2191ed; /* Light red background when active */
 }
 
 /* Hover states for buttons */
@@ -111,7 +111,7 @@
 
 /* Hover state for pokedex-button */
 .collect-ui .button-container .pokedex-button:hover {
-  background-color: rgb(201, 44, 44); /* Slightly darker red on hover */
+  background-color: #0982f3; /* Slightly darker red on hover */
 }
 
 /* Default Lists button styles */

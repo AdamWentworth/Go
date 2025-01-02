@@ -7,6 +7,7 @@ import TradeDetails from './InstanceOverlayComponents/TradeComponents/TradeDetai
 import WantedInstance from './InstanceOverlayComponents/WantedInstance';
 import WantedDetails from './InstanceOverlayComponents/WantedComponents/WantedDetails';
 import WindowOverlay from './WindowOverlay';
+import CloseButton from '../../components/CloseButton';
 
 const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, ownershipData, sortType, sortMode, isEditable, username }) => {
   // console.log("Rendering InstanceOverlay for pokemon:", pokemon);
@@ -47,6 +48,12 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
     setCurrentOverlay(ownershipFilter);
     setSelectedPokemon(null);
   };
+
+  const renderCloseButton = () => (
+    <div className="close-button-container">
+      <CloseButton onClick={onClose} />
+    </div>
+  );
 
   const renderContent = () => {
     switch (currentOverlay) {
@@ -120,6 +127,7 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
         </button>
       )}
       {renderContent()}
+      {renderCloseButton()}
     </div>
   );
 };

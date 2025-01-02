@@ -112,7 +112,7 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     overflow-y: auto;
-    max-height: 650px;
+    max-height: 625px;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* Internet Explorer 10+ */
   }
