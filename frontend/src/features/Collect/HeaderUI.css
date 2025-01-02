@@ -60,6 +60,9 @@
     .header{
     padding: 10px 10px;
     }
+    .header .filters-container {
+        margin-right: 5px;
+    }
 }
 
 @media (min-width: 1024px) {

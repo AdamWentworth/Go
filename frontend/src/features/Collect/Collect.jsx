@@ -272,7 +272,7 @@ function Collect({ isOwnCollection }) {
       ? 'Editing your Collection'
       : (
           <>
-            Viewing <span className="username">{username}</span>'s Collection
+            Viewing <span className="username"><strong>{username}</strong></span>'s Collection
           </>
         );
 

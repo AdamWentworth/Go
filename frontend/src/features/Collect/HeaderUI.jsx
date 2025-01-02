@@ -62,12 +62,18 @@ const HeaderUI = ({
         showEvolutionaryLine={showEvolutionaryLine}
         toggleEvolutionaryLine={toggleEvolutionaryLine}
       />
-      {/* Always render CollectUI */}
       <div className="collect-container">
-        <button className="toggle-button collect-ui-toggle" onClick={toggleCollectUI}>
-          Collect
-        </button>
-        {showCollectUI && (
+        {/* Conditionally render the Collect toggle button based on isEditable */}
+        {isEditable && (
+          <button
+            className="toggle-button collect-ui-toggle"
+            onClick={toggleCollectUI}
+          >
+            Collect
+          </button>
+        )}
+        {/* Conditionally render CollectUI based on isEditable and showCollectUI */}
+        {(isEditable ? showCollectUI : true) && (
           <CollectUI
             isEditable={isEditable}
             ownershipFilter={ownershipFilter}
@@ -84,6 +90,7 @@ const HeaderUI = ({
             contextText={contextText}
             onListsButtonClick={onListsButtonClick}
             isWide={isWide}
+            username={username}
           />
         )}
       </div>

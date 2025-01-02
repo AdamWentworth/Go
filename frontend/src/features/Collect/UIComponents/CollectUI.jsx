@@ -7,18 +7,12 @@ const CollectUI = ({
   isEditable,
   onFastSelectToggle,
   onSelectAll,
-  highlightedCards,
-  confirmMoveToFilter,
-  showAll,
-  toggleShowAll,
-  isShiny,
-  showCostume,
-  showShadow,
   contextText,
   onListsButtonClick,
   ownershipFilter,
   onClearOwnershipFilter,
   isWide,
+  username
 }) => {
   const [fastSelectEnabled, setFastSelectEnabled] = useState(false);
   const [selectAllEnabled, setSelectAllEnabled] = useState(false);
@@ -66,6 +60,10 @@ const CollectUI = ({
     listsButtonClass = 'unowned';
   }
 
+  // Conditional class for long usernames
+  const contextTextClass =
+  username?.length > 10 ? 'context-text long-username' : 'context-text';
+
   return (
     <div className={`collect-ui ${!isWide && isEditable ? 'collect-overlay' : ''}`}>
       <div className={`button-container ${isEditable ? 'editable' : 'non-editable'}`}>
@@ -104,7 +102,7 @@ const CollectUI = ({
         ) : (
           // Render context-text and lists button side by side when not editable
           <div className="non-editable-collect">
-            <p className="context-text">{contextText}</p>
+            <p className={contextTextClass}>{contextText}</p>
             <button
               className={`lists-button ${listsButtonClass}`}
               onClick={onListsButtonClick}
@@ -119,3 +117,4 @@ const CollectUI = ({
 };
 
 export default CollectUI;
+
