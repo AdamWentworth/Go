@@ -15,7 +15,12 @@ import (
 // MAIN HANDLER
 // ---------------------
 
+// message_handler.go
+
 func HandleMessage(data map[string]interface{}) error {
+	// Extract message-level trace_id
+	messageTraceID := fmt.Sprintf("%v", data["trace_id"])
+
 	// 1) Upsert / verify user
 	userID, username, lat, lng := parseUserData(data)
 	var existingUser User
@@ -48,8 +53,8 @@ func HandleMessage(data map[string]interface{}) error {
 		}
 	}
 
-	// 2) Process Pokemon updates
-	createdCount, updatedCount, deletedCount, err := parseAndUpsertPokemon(data, userID)
+	// 2) Process Pokemon updates with messageTraceID
+	createdCount, updatedCount, deletedCount, err := parseAndUpsertPokemon(data, userID, messageTraceID)
 	if err != nil {
 		logrus.Errorf("Failed parsing/upserting Pokémon for user %s: %v", userID, err)
 	}

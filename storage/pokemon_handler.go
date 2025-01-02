@@ -14,7 +14,7 @@ import (
 // POKEMON
 // ---------------------
 
-func parseAndUpsertPokemon(data map[string]interface{}, userID string) (createdCount, updatedCount, deletedCount int, err error) {
+func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTraceID string) (createdCount, updatedCount, deletedCount int, err error) {
 	pokemonUpdates, _ := data["pokemonUpdates"].([]interface{})
 	for _, p := range pokemonUpdates {
 		pm, ok := p.(map[string]interface{})
@@ -98,7 +98,8 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string) (createdC
 		gender := parseNullableString(pm["gender"])
 		locationCard := parseNullableString(pm["location_card"])
 		locationCaught := parseNullableString(pm["location_caught"])
-		traceID := parseNullableString(pm["trace_id"])
+		// Remove individual trace_id extraction
+		// traceID := parseNullableString(pm["trace_id"])
 
 		// Date
 		dateCaught := parseOptionalDate(pm["date_caught"])
@@ -109,64 +110,63 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string) (createdC
 		tradeFilters := safeJSON(pm["trade_filters"])
 		wantedFilters := safeJSON(pm["wanted_filters"])
 
-		updates := PokemonInstance{
-			PokemonID:       pokemonID,
-			Nickname:        nickname,
-			CP:              cp,
-			AttackIV:        attackIV,
-			DefenseIV:       defenseIV,
-			StaminaIV:       staminaIV,
-			Shiny:           shiny,
-			CostumeID:       costumeID,
-			Lucky:           lucky,
-			Shadow:          shadow,
-			Purified:        purified,
-			FastMoveID:      fastMoveID,
-			ChargedMove1ID:  chargedMove1ID,
-			ChargedMove2ID:  chargedMove2ID,
-			Weight:          weight,
-			Height:          height,
-			Gender:          gender,
-			Mirror:          mirror,
-			PrefLucky:       prefLucky,
-			Registered:      registered,
-			Favorite:        favorite,
-			LocationCard:    locationCard,
-			LocationCaught:  locationCaught,
-			FriendshipLevel: friendshipLevel,
-			DateCaught:      dateCaught,
-			LastUpdate:      msgLastUpdate,
-			IsUnowned:       isUnowned,
-			IsOwned:         isOwned,
-			IsForTrade:      isForTrade,
-			IsWanted:        isWanted,
-			NotTradeList:    *notTradeList,
-			NotWantedList:   *notWantedList,
-			TradeFilters:    tradeFilters,
-			WantedFilters:   wantedFilters,
-			TraceID:         traceID,
+		// Prepare a map for updates
+		updates := map[string]interface{}{
+			"pokemon_id":       pokemonID,
+			"nickname":         nickname,
+			"cp":               cp,
+			"attack_iv":        attackIV,
+			"defense_iv":       defenseIV,
+			"stamina_iv":       staminaIV,
+			"shiny":            shiny,
+			"costume_id":       costumeID,
+			"lucky":            lucky,
+			"shadow":           shadow,
+			"purified":         purified,
+			"fast_move_id":     fastMoveID,
+			"charged_move1_id": chargedMove1ID,
+			"charged_move2_id": chargedMove2ID,
+			"weight":           weight,
+			"height":           height,
+			"gender":           gender,
+			"mirror":           mirror,
+			"pref_lucky":       prefLucky,
+			"registered":       registered,
+			"favorite":         favorite,
+			"location_card":    locationCard,
+			"location_caught":  locationCaught,
+			"friendship_level": friendshipLevel,
+			"date_caught":      dateCaught,
+			"last_update":      msgLastUpdate,
+			"is_unowned":       isUnowned,
+			"is_owned":         isOwned,
+			"is_for_trade":     isForTrade,
+			"is_wanted":        isWanted,
+			"not_trade_list":   *notTradeList,
+			"not_wanted_list":  *notWantedList,
+			"trade_filters":    tradeFilters,
+			"wanted_filters":   wantedFilters,
+			"trace_id":         messageTraceID, // Use messageTraceID instead of individual traceID
 		}
 
-		// CREATE if not found
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			newInstance := PokemonInstance{
-				InstanceID:    instanceID,
-				UserID:        userID,
-				PokemonID:     pokemonID,
-				Shiny:         shiny,
-				Lucky:         lucky,
-				Shadow:        shadow,
-				Purified:      purified,
-				Mirror:        mirror,
-				PrefLucky:     prefLucky,
-				Registered:    registered,
-				Favorite:      favorite,
-				NotTradeList:  *notTradeList,
-				NotWantedList: *notWantedList,
-				TradeFilters:  tradeFilters,
-				WantedFilters: wantedFilters,
-				LastUpdate:    msgLastUpdate,
-
+				InstanceID:      instanceID,
+				UserID:          userID,
+				PokemonID:       pokemonID,
+				Shiny:           shiny,
+				Lucky:           lucky,
+				Shadow:          shadow,
+				Purified:        purified,
+				Mirror:          mirror,
+				PrefLucky:       prefLucky,
+				Registered:      registered,
+				Favorite:        favorite,
+				NotTradeList:    *notTradeList,
+				NotWantedList:   *notWantedList,
+				TradeFilters:    tradeFilters,
+				WantedFilters:   wantedFilters,
+				LastUpdate:      msgLastUpdate,
 				Nickname:        nickname,
 				CP:              cp,
 				AttackIV:        attackIV,
@@ -183,9 +183,8 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string) (createdC
 				LocationCaught:  locationCaught,
 				FriendshipLevel: friendshipLevel,
 				DateCaught:      dateCaught,
-				TraceID:         traceID,
-
-				DateAdded: time.Now(),
+				TraceID:         &messageTraceID, // Assign messageTraceID
+				DateAdded:       time.Now(),
 			}
 
 			if errCreate := DB.Create(&newInstance).Error; errCreate != nil {
@@ -194,7 +193,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string) (createdC
 			}
 			createdCount++
 		} else if tx.Error == nil {
-			// UPDATE
+			// UPDATE using map to include zero values
 			if errUpdate := DB.Model(&existingInstance).Updates(updates).Error; errUpdate != nil {
 				logrus.Warnf("Failed to update instance %s: %v", instanceID, errUpdate)
 				continue

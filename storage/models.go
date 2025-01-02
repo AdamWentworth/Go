@@ -55,7 +55,7 @@ type PokemonInstance struct {
 	IsWanted        bool       `gorm:"column:is_wanted;default:false"`
 	NotTradeList    string     `gorm:"column:not_trade_list;type:json;default:'{}'"`
 	NotWantedList   string     `gorm:"column:not_wanted_list;type:json;default:'{}'"`
-	TraceID         *string    `gorm:"column:trace_id"` // nullable => empty => NULL
+	TraceID         *string    `gorm:"column:trace_id"`
 	TradeFilters    *string    `gorm:"column:trade_filters;type:json"`
 	WantedFilters   *string    `gorm:"column:wanted_filters;type:json"`
 }
