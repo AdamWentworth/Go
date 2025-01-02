@@ -14,7 +14,7 @@
     overflow-y: auto;
   }
 
-  .mega-pokemon-selection-overlay ::-webkit-scrollbar {
+  .mega-pokemon-selection-overlay::-webkit-scrollbar {
     display: none; /* Hide scrollbar for WebKit browsers */
 }
   
@@ -25,15 +25,21 @@
     border-radius: 10px;
     text-align: center;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    max-height: 90%; /* Constrain height for scrollability */
+    max-height: 100%; /* Constrain height for scrollability */
     overflow-y: auto; /* Allow vertical scrolling */
+    transform: scale(.9);
   }
+
+  .mega-modal-content::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for WebKit browsers */
+}
   
   .mega-modal-content h2 {
     margin-top: 0;
     margin-bottom: 0px;
     margin-block-start: 0px;
     margin-block-end: 0px;
+    width: 100%;
   }
   
   .mega-modal-content p {
@@ -46,12 +52,12 @@
   
   .mega-pokemon-list {
     display: flex;
-    flex-direction: row;
     flex-wrap: wrap; /* Allow wrapping to new lines if necessary */
-    gap: 20px; /* Space between items */
     justify-content: center; /* Center the items horizontally */
-    overflow-y: auto; /* Enable vertical scrolling */
-    scrollbar-width: none; /* Hide scrollbar in Firefox */
+    gap: 10px;
+    max-width: 100%; /* Constrain the width to the parent's width */
+    width: fit-content; /* Shrink or grow based on content */
+    margin: 0 auto; /* Center the list horizontally */
   }
 
   /* Hide scrollbar while allowing scrolling */
@@ -69,7 +75,7 @@
   }
   
   .mega-actions {
-    margin-top: 10px;
+    margin-bottom: 10px;
     display: flex;
     gap: 10px;
   }
@@ -111,3 +117,10 @@
   .mega-pokemon-selection-overlay .close-button:hover {
     background-color: #c82333; /* Darker red on hover */
   }
+
+@media (max-width: 600px) {
+    .mega-pokemon-list {
+        flex-direction: column;
+        align-items: center;
+    }
+}

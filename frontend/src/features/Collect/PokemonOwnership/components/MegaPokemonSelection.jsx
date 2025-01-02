@@ -56,6 +56,13 @@ const MegaPokemonSelection = ({
       <div className="mega-modal-content">
         <h2 id="mega-modal-title">Mega Evolve Pokémon</h2>
 
+        {/* Create New Button */}
+        <div className="create-new-action">
+          <button onClick={handleCreateNew}>
+            Generate and Evolve New
+          </button>
+        </div>
+
         {/* Error Message */}
         {error && <p className="error">{error}</p>}
 
@@ -83,12 +90,12 @@ const MegaPokemonSelection = ({
 
               return (
                 <div key={instance_id} className="mega-pokemon-item">
-                  <OwnedInstance pokemon={combinedData} />
                   <div className="mega-actions">
                     <button onClick={() => handleAssignExisting(instance_id)}>
                       Mega Evolve
                     </button>
                   </div>
+                  <OwnedInstance pokemon={combinedData} />
                 </div>
               );
             })}
@@ -96,13 +103,6 @@ const MegaPokemonSelection = ({
         ) : (
           <p>No owned Mega Pokémon found.</p>
         )}
-
-        {/* Create New Button */}
-        <div className="create-new-action">
-          <button onClick={handleCreateNew}>
-            Generate and Evolve New
-          </button>
-        </div>
 
         {/* Action Buttons */}
         <div className="mega-modal-actions">
