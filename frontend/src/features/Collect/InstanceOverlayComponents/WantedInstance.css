@@ -142,6 +142,9 @@
 }
 
 @media (min-width: 481px) and (max-width: 767px){
+  .wanted-instance-window {
+    margin-bottom: 80px;
+  }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {

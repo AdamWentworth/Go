@@ -115,6 +115,7 @@
     max-height: 625px;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* Internet Explorer 10+ */
+    margin-top: -5px;
   }
   
   .trade-list-container::-webkit-scrollbar {
