@@ -36,7 +36,7 @@
 
 @media (max-width: 480px) {
     .sort-overlay {
-        transform: scale(0.5);
+        transform: scale(0.40);
     }
 }
 

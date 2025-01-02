@@ -84,4 +84,33 @@
     background-color: #F44336;
     color: white;
   }
-  
+
+@media (max-width: 480px) {
+  .main-button {
+    width: 100px;
+    padding: 12px 5px;
+    font-size: 14px;
+  }
+  .filter-button {
+    padding: 10px 5px;
+    font-size: 14px;
+    width: 150px;
+  }
+}
+
+@media (min-width: 480px)and (max-width: 767px) {
+  .main-button {
+    width: 225px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+
+}
+@media (min-width: 1440px) {
+
+}
