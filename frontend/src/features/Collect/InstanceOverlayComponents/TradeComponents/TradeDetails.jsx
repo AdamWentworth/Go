@@ -483,7 +483,6 @@ const TradeDetails = ({
         onViewWantedList={handleViewWantedList}
         onProposeTrade={handleProposeTrade}
         pokemon={selectedPokemon}
-        ownershipData={ownershipData}
       />
 
       {/* If the user actually proposes a trade, open TradeProposal */}

@@ -10,6 +10,8 @@ import { generateH2Content } from '../../../../utils/formattingHelpers';
 import FriendshipManager from '../WantedComponents/FriendshipManager';
 import useCalculateStardustCost from '../hooks/useCalculateStardustCost';
 
+import CloseButton from '../../../../components/CloseButton';
+
 import { useTradeData } from '../../../../contexts/TradeDataContext';
 
 const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose, myOwnershipData, ownershipData, username }) => {
@@ -136,13 +138,6 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
   return (
     <div className="trade-proposal-overlay">
       <div className="trade-proposal-container" ref={containerRef}>
-        <button
-          className="trade-proposal-close-button"
-          onClick={onClose}
-          ref={closeButtonRef}
-        >
-          X
-        </button>
 
         <div className="friendship-manager">
           <FriendshipManager
@@ -285,6 +280,9 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
             )}
           </div>
         </div>
+      </div>
+      <div className="close-button-container">
+        <CloseButton onClick={onClose} />
       </div>
     </div>
   );
