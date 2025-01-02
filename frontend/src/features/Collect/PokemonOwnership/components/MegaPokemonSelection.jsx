@@ -1,9 +1,10 @@
 // MegaPokemonSelection.jsx
 
-import React, { useState, useEffect, useContext } from 'react';
-import './MegaPokemonSelection.css'; // Ensure this file exists and is correctly imported
+import React, { useState, useContext } from 'react';
+import './MegaPokemonSelection.css';
 import OwnedInstance from '../../InstanceOverlayComponents/OwnedInstance';
-import { PokemonDataContext } from '../../../../contexts/PokemonDataContext'; // Adjust the path as necessary
+import { PokemonDataContext } from '../../../../contexts/PokemonDataContext';
+import CloseButton from '../../../../components/CloseButton';
 
 const MegaPokemonSelection = ({
   ownedPokemon,
@@ -12,34 +13,26 @@ const MegaPokemonSelection = ({
   onCancel,
 }) => {
   const { updateDetails, updateLists } = useContext(PokemonDataContext);
-  const [error, setError] = useState(null); // State to handle errors
+  const [error, setError] = useState(null);
 
-  // Handler to assign existing Mega Pokémon
   const handleAssignExisting = async (instanceId) => {
     try {
-      // Example action: Mark the instance as Mega Evolved
       await updateDetails(instanceId, { is_mega_evolved: true });
-
       await updateLists();
-
       console.log(`Instance ${instanceId} assigned to existing Mega Pokémon.`);
-      onAssignExisting(instanceId); // Notify parent if necessary
+      onAssignExisting(instanceId);
     } catch (err) {
       console.error(`Error assigning instance ${instanceId} to existing Mega Pokémon:`, err);
       setError(`Failed to assign instance ${instanceId}.`);
     }
   };
 
-  // Handler to create a new Mega Pokémon
   const handleCreateNew = async () => {
     try {
-      // Example action: Create a new Mega Pokémon instance
-      await updateDetails(null, { is_mega_evolved: true }); // Adjust payload as necessary
-
+      await updateDetails(null, { is_mega_evolved: true });
       await updateLists();
-
       console.log(`New Mega Pokémon created.`);
-      onCreateNew(); // Notify parent if necessary
+      onCreateNew();
     } catch (err) {
       console.error(`Error creating new Mega Pokémon:`, err);
       setError(`Failed to create a new Mega Pokémon.`);
@@ -80,12 +73,9 @@ const MegaPokemonSelection = ({
                 );
               }
 
-              // Combine variant data with ownership data
               const combinedData = {
                 ...variantData,
-                ownershipStatus: {
-                  ...pokemon,
-                },
+                ownershipStatus: { ...pokemon },
               };
 
               return (
@@ -104,13 +94,9 @@ const MegaPokemonSelection = ({
           <p>No owned Mega Pokémon found.</p>
         )}
 
-        {/* Action Buttons */}
-        <div className="mega-modal-actions">
-          <button onClick={onCancel} className="close-button">
-            Close
-          </button>
-        </div>
       </div>
+        {/* Close Button Positioned at Bottom */}
+        <CloseButton onClick={onCancel} />
     </div>
   );
 };

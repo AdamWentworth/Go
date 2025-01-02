@@ -97,7 +97,7 @@
         max-height: 100px;
     }
     .overlay-all-moves {
-        margin-bottom: 10px !important;
+        margin-bottom: 80px !important;
     }
     .shadow-info-column img {
         max-width: 140px !important;
@@ -158,7 +158,7 @@
         max-height: 100px;
     }
     .overlay-all-moves {
-        margin-bottom: 10px !important;
+        margin-bottom: 80px !important;
     }
 
     .overlay-charged-moves {
@@ -212,7 +212,7 @@
         max-height: 100px;
     }
     .overlay-all-moves {
-        margin-bottom: 10px !important;
+        margin-bottom: 100px !important;
     }
 }
 

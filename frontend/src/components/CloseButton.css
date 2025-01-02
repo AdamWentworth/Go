@@ -1,22 +1,32 @@
 /* CloseButton.css */
 
 .close-button {
-    margin-top: 10px;
-    background: #f44336;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+  position: fixed; /* Position relative to the viewport */
+  bottom: 20px; /* 20px from the bottom of the viewport */
+  left: 50%; /* Center horizontally within the viewport */
+  transform: translateX(-50%); /* Adjust for centering */
+  background: none; /* Remove background */
+  border: none; /* Remove border */
+  padding: 0; /* Remove padding */
+  cursor: pointer; /* Pointer cursor for interaction */
+  z-index: 1100; /* Ensure it's above other elements */
+}
+
+.close-button-image {
+  width: 40px; /* Adjust image size */
+  height: 40px;
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+  .close-button-image {
+    width: 50px; /* Adjust image size */
+    height: 50px;
   }
-  
-  .close-button:hover {
-    background: #d32f2f;
+}
+
+@media (min-width: 768px) {
+  .close-button-image {
+    width: 60px; /* Adjust image size */
+    height: 60px;
   }
-  
-  .close-button:active {
-    transform: translateY(1px);
-  }
-  
+}

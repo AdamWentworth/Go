@@ -9,6 +9,7 @@ import ShinyInfo from './PokedexOverlayComponents/ShinyInfo';
 import Costumes from './PokedexOverlayComponents/Costumes';
 import ShadowInfo from './PokedexOverlayComponents/ShadowInfo';
 import EvolutionShortcut from './PokedexOverlayComponents/EvolutionShortcut';
+import CloseButton from '../../components/CloseButton';
 
 const useScreenWidth = () => {
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
@@ -58,6 +59,12 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
     setCurrentPokemon(newPokemonData);
     setSelectedPokemon(newPokemonData);
   };
+
+  const renderCloseButton = () => (
+    <div className="close-button-container">
+      <CloseButton onClick={onClose} />
+    </div>
+  );
 
   const renderMoves = () => (
     totalMoves > 15 ? (
@@ -217,6 +224,8 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
 
   return (
     <div className="pokemon-overlay" onClick={handleOverlayClick}>
+      {renderCloseButton()}
+
       <div className={`overlay-row evolution-shortcuts-row ${isWidescreen ? '' : 'column-layout'}`}>
         {/* Evolution shortcuts */}
         {currentPokemon.evolves_from && (
