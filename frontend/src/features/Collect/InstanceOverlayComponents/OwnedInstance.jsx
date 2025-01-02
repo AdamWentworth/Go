@@ -1,4 +1,5 @@
 // OwnedInstance.jsx
+
 import React, { useState, useEffect, useContext } from 'react';
 import './OwnedInstance.css';
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
@@ -20,12 +21,15 @@ import BackgroundComponent from './OwnedComponents/BackgroundComponent';
 import { determineImageUrl } from '../../../utils/imageHelpers';
 
 const OwnedInstance = ({ pokemon, isEditable }) => {
-  console.log(pokemon)
+  console.log(pokemon);
   const { updateDetails } = useContext(PokemonDataContext);
+
+  // Determine if the Pokémon is Mega Evolved
+  const isMega = pokemon.ownershipStatus.mega === true; // Safely check, defaults to false if undefined
 
   const [isFemale, setIsFemale] = useState(pokemon.ownershipStatus.gender === 'Female');
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
-  const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon));
+  const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, isMega, pokemon));
 
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
@@ -60,9 +64,9 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   }, [pokemon.backgrounds, pokemon.ownershipStatus.location_card]);
 
   useEffect(() => {
-    const updatedImage = determineImageUrl(isFemale, pokemon);
+    const updatedImage = determineImageUrl(isFemale, isMega, pokemon);
     setCurrentImage(updatedImage); 
-  }, [isFemale, pokemon]);
+  }, [isFemale, isMega, pokemon]);
 
   const handleGenderChange = (newGender) => {
     setGender(newGender);
@@ -128,6 +132,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         location_caught: locationCaught,
         date_caught: dateCaught,
         location_card: selectedBackground ? selectedBackground.background_id : null,
+        // Include mega state if necessary
+        mega: isMega,
       });
     }
     setEditMode(!editMode);

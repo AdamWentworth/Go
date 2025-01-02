@@ -16,26 +16,40 @@ const MegaPokemonSelection = ({
   const [error, setError] = useState(null);
 
   const handleAssignExisting = async (instanceId) => {
+    console.log(`Initiating mega evolution for Instance ID: ${instanceId}`);
     try {
-      await updateDetails(instanceId, { is_mega_evolved: true });
+      // Update the specific Pokémon instance with mega: true
+      await updateDetails(instanceId, { mega: true });
+      console.log(`Successfully set mega: true for Instance ID: ${instanceId}`);
+
+      // Refresh the Pokémon lists
       await updateLists();
-      console.log(`Instance ${instanceId} assigned to existing Mega Pokémon.`);
+      console.log(`Updated Pokémon lists after mega evolution for Instance ID: ${instanceId}`);
+
+      // Callback to parent component
       onAssignExisting(instanceId);
     } catch (err) {
-      console.error(`Error assigning instance ${instanceId} to existing Mega Pokémon:`, err);
-      setError(`Failed to assign instance ${instanceId}.`);
+      console.error(`Error assigning Instance ID ${instanceId} to Mega Pokémon:`, err);
+      setError(`Failed to assign Instance ID ${instanceId} to Mega Pokémon.`);
     }
   };
 
   const handleCreateNew = async () => {
+    console.log('Initiating creation of a new Mega Pokémon');
     try {
-      await updateDetails(null, { is_mega_evolved: true });
+      // Create a new Mega Pokémon by setting mega: true without a specific instance ID
+      await updateDetails(null, { mega: true });
+      console.log('Successfully created a new Mega Pokémon');
+
+      // Refresh the Pokémon lists
       await updateLists();
-      console.log(`New Mega Pokémon created.`);
+      console.log('Updated Pokémon lists after creating a new Mega Pokémon');
+
+      // Callback to parent component
       onCreateNew();
     } catch (err) {
-      console.error(`Error creating new Mega Pokémon:`, err);
-      setError(`Failed to create a new Mega Pokémon.`);
+      console.error('Error creating a new Mega Pokémon:', err);
+      setError('Failed to create a new Mega Pokémon.');
     }
   };
 
@@ -95,8 +109,8 @@ const MegaPokemonSelection = ({
         )}
 
       </div>
-        {/* Close Button Positioned at Bottom */}
-        <CloseButton onClick={onCancel} />
+      {/* Close Button Positioned at Bottom */}
+      <CloseButton onClick={onCancel} />
     </div>
   );
 };

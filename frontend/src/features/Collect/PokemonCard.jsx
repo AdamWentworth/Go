@@ -20,17 +20,20 @@ const PokemonCard = ({
     const [currentImage, setCurrentImage] = useState(pokemon.currentImage);
 
     const isFemale = pokemon.ownershipStatus?.gender === "Female";
+    const isMega = pokemon.ownershipStatus.mega === true; // Determine if the Pokémon is Mega Evolved
 
     useEffect(() => {
-        if (isFemale && pokemon.female_data) {
-            const updatedImage = determineImageUrl(isFemale, pokemon);
+        // Ensure that 'pokemon' is defined before calling 'determineImageUrl'
+        if (pokemon) {
+            const updatedImage = determineImageUrl(isFemale, isMega, pokemon);
             if (updatedImage) {
                 setCurrentImage(updatedImage);
+            } else {
+                // Fallback to a default image if 'determineImageUrl' returns undefined
+                setCurrentImage('/images/default_pokemon.png');
             }
-        } else {
-            setCurrentImage(pokemon.currentImage);
         }
-    }, [isFemale, pokemon]);
+    }, [isFemale, isMega, pokemon]);
 
     const getOwnershipClass = () => {
         const filter = ownershipFilter?.toLowerCase() || '';
@@ -66,7 +69,7 @@ const PokemonCard = ({
             } else {
                 onSelect();
             }
-            }}> 
+        }}> 
             <div className="cp-container">
                 <div className="cp-placeholder" style={{ zIndex: 3 }}>
                     {sortType === 'combatPower' && (pokemon.ownershipStatus ? pokemon.ownershipStatus.cp : pokemon.cp50) && (
