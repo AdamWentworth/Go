@@ -23,7 +23,7 @@ type PokemonInstance struct {
 	InstanceID      string     `gorm:"primaryKey;column:instance_id"`
 	UserID          string     `gorm:"column:user_id"`
 	PokemonID       int        `gorm:"column:pokemon_id"`
-	Nickname        *string    `gorm:"column:nickname"` // nullable => empty => NULL
+	Nickname        *string    `gorm:"column:nickname"`
 	CP              *int       `gorm:"column:cp"`
 	AttackIV        *int       `gorm:"column:attack_iv"`
 	DefenseIV       *int       `gorm:"column:defense_iv"`
@@ -58,6 +58,8 @@ type PokemonInstance struct {
 	TraceID         *string    `gorm:"column:trace_id"`
 	TradeFilters    *string    `gorm:"column:trade_filters;type:json"`
 	WantedFilters   *string    `gorm:"column:wanted_filters;type:json"`
+	Mega            bool       `gorm:"column:mega;default:false"`
+	MegaForm        *string    `gorm:"column:mega_form"`
 }
 
 func (PokemonInstance) TableName() string {
@@ -81,7 +83,7 @@ type Trade struct {
 	TradeAcceptedDate      *time.Time `gorm:"column:trade_accepted_date"`
 	TradeCompletedDate     *time.Time `gorm:"column:trade_completed_date"`
 	TradeCancelledDate     *time.Time `gorm:"column:trade_cancelled_date"`
-	TradeCancelledBy       *string    `gorm:"column:trade_cancelled_by"` // Updated to *string
+	TradeCancelledBy       *string    `gorm:"column:trade_cancelled_by"`
 	IsSpecialTrade         bool       `gorm:"column:is_special_trade"`
 	IsRegisteredTrade      bool       `gorm:"column:is_registered_trade"`
 	IsLuckyTrade           bool       `gorm:"column:is_lucky_trade"`

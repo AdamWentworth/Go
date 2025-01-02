@@ -44,6 +44,8 @@ export function createNewInstanceData(variant) {
         not_wanted_list: {},
         trade_filters: {},
         wanted_filters: {},
-        gps: null
+        gps: null,
+        mega: false,
+        mega_form: null,
     };
 }

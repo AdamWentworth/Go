@@ -79,6 +79,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 		prefLucky := parseOptionalBool(pm["pref_lucky"])
 		registered := parseOptionalBool(pm["registered"])
 		favorite := parseOptionalBool(pm["favorite"])
+		mega := parseOptionalBool(pm["mega"])
 
 		// Nullable ints/floats
 		cp := parseNullableInt(pm["cp"])
@@ -98,8 +99,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 		gender := parseNullableString(pm["gender"])
 		locationCard := parseNullableString(pm["location_card"])
 		locationCaught := parseNullableString(pm["location_caught"])
-		// Remove individual trace_id extraction
-		// traceID := parseNullableString(pm["trace_id"])
+		megaForm := parseNullableString(pm["mega_form"])
 
 		// Date
 		dateCaught := parseOptionalDate(pm["date_caught"])
@@ -146,7 +146,9 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			"not_wanted_list":  *notWantedList,
 			"trade_filters":    tradeFilters,
 			"wanted_filters":   wantedFilters,
-			"trace_id":         messageTraceID, // Use messageTraceID instead of individual traceID
+			"trace_id":         messageTraceID,
+			"mega":             mega,
+			"mega_form":        megaForm,
 		}
 
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
@@ -183,8 +185,10 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 				LocationCaught:  locationCaught,
 				FriendshipLevel: friendshipLevel,
 				DateCaught:      dateCaught,
-				TraceID:         &messageTraceID, // Assign messageTraceID
+				TraceID:         &messageTraceID,
 				DateAdded:       time.Now(),
+				Mega:            mega,
+				MegaForm:        megaForm,
 			}
 
 			if errCreate := DB.Create(&newInstance).Error; errCreate != nil {
