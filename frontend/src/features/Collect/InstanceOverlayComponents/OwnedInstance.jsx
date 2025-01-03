@@ -217,14 +217,19 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
       </div>
       <div className="name-mega-container">
         <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
-        <MegaComponent
-          isMega={isMega}
-          onToggleMega={handleMegaToggle}
-          editMode={editMode}
-          megaEvolutions={pokemon.megaEvolutions}
-          currentMegaForm={megaForm}
-          onMegaFormChange={handleMegaFormChange}
-        />
+        {pokemon.megaEvolutions &&
+          pokemon.megaEvolutions.length > 0 &&
+          !pokemon.ownershipStatus.shadow && // Ensure shadow ownership is false
+          !pokemon.name.toLowerCase().includes("clone") && ( // Ensure name does not include "clone"
+            <MegaComponent
+              isMega={isMega}
+              onToggleMega={handleMegaToggle}
+              editMode={editMode}
+              megaEvolutions={pokemon.megaEvolutions}
+              currentMegaForm={megaForm}
+              onMegaFormChange={handleMegaFormChange}
+            />
+        )}
       </div>
       <div className="gender-lucky-row">
         {pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade || pokemon.rarity === "Mythic" ? (

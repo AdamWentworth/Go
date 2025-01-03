@@ -51,7 +51,8 @@ export const mergeOwnershipData = (oldData, newData) => {
     });
 
     // Step 3: Integrate Mega Logic
-    // Drop all 'mega' entries that are 'is_unowned' if newData has matching instances with the same prefix and mega=true
+    // Drop all 'mega', 'shiny_mega', 'mega_x', or 'mega_y' entries that are 'is_unowned' 
+    // if newData has matching instances with the required flags
     Object.keys(mergedData).forEach(key => {
         if (key.includes("mega")) {
             // Extract the leading numbers by removing "mega" from the key
@@ -61,14 +62,53 @@ export const mergeOwnershipData = (oldData, newData) => {
                 // Find all related keys in newData that start with the same leading numbers
                 const relatedNewKeys = Object.keys(newData).filter(newKey => newKey.startsWith(leadingNumbers));
 
-                // Check if any of the related new entries have .mega set to true
-                const hasMegaInNew = relatedNewKeys.some(newKey => {
+                // Determine the type of mega entry
+                const isShinyMega = key.includes("shiny_mega");
+                const isMegaX = key.toLowerCase().includes("mega_x");
+                const isMegaY = key.toLowerCase().includes("mega_y");
+
+                // Determine the required form if it's mega_x or mega_y
+                let requiredForm = null;
+                if (isMegaX) {
+                    requiredForm = "x";
+                } else if (isMegaY) {
+                    requiredForm = "y";
+                }
+
+                // Check if any of the related new entries satisfy the required conditions
+                const hasRelevantMegaInNew = relatedNewKeys.some(newKey => {
                     const entry = newData[newKey];
-                    return entry && entry.mega === true;
+                    if (!entry) return false;
+
+                    // Standardize the form to lowercase for comparison
+                    const entryForm = entry.mega_form ? entry.mega_form.toLowerCase() : null;
+
+                    if (isShinyMega) {
+                        // For 'shiny_mega', both mega and shiny must be true
+                        return entry.mega === true && entry.shiny === true;
+                    } else if (isMegaX || isMegaY) {
+                        // For 'mega_x' or 'mega_y', mega must be true and mega_form must match
+                        if (entry.mega !== true) return false;
+                        if (!requiredForm) return false; // Safety check
+                        return entryForm === requiredForm;
+                    } else {
+                        // For regular 'mega', only mega needs to be true
+                        return entry.mega === true;
+                    }
                 });
 
-                if (hasMegaInNew && mergedData[key].is_unowned === true) {
-                    console.log(`Dropping unowned mega "${key}" because a related new entry with mega=true exists.`);
+                if (hasRelevantMegaInNew && mergedData[key].is_unowned === true) {
+                    let entryType = "mega";
+
+                    if (isShinyMega) {
+                        entryType = "shiny mega";
+                    } else if (isMegaX) {
+                        entryType = "mega_x";
+                    } else if (isMegaY) {
+                        entryType = "mega_y";
+                    }
+
+                    console.log(`Dropping unowned ${entryType} "${key}" because a related new entry with the required flags exists.`);
                     delete mergedData[key]; // Remove the unowned mega entry
                 }
             }

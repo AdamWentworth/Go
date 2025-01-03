@@ -142,14 +142,28 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
 
     let contentParts = [];
 
-    if (pokemon.currentCostumeName) {
-        contentParts.push(formatCostumeName(pokemon.currentCostumeName));
+    const isMegaVariant = pokemon.variantType && pokemon.variantType.includes('mega') || pokemon.ownershipStatus?.mega;
+
+    // Handle Shiny if it's part of the costume name
+    let isShiny = false;
+    let costumeName = '';
+
+    if (pokemon.currentCostumeName && !isMegaVariant) {
+        costumeName = formatCostumeName(pokemon.currentCostumeName);
+        if (costumeName.toLowerCase().includes('shiny')) {
+            isShiny = true;
+            // Remove 'Shiny' from costume name
+            costumeName = costumeName.replace(/shiny/i, '').trim();
+            if (costumeName) {
+                contentParts.push(costumeName);
+            }
+        } else {
+            contentParts.push(costumeName);
+        }
     }
 
+    // Determine the Pokémon name with form if applicable
     let nameText;
-    const isMegaVariant = pokemon.variantType && pokemon.variantType.includes('mega');
-
-    // Check if multiFormPokedexNumbers is null or undefined, and set a default value
     const hasMultiFormPokedexNumbers = Array.isArray(multiFormPokedexNumbers) && multiFormPokedexNumbers.length > 0;
     const shouldIncludeForm = !isMegaVariant && pokemon.form && pokemon.form !== 'Average' && 
         (!hasMultiFormPokedexNumbers || !multiFormPokedexNumbers.includes(pokemon.pokedex_number) || showAll);
@@ -166,9 +180,14 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
     if (pokemon.ownershipStatus?.mega && !contentParts.includes('Mega')) {
         contentParts.unshift('Mega');
     }
-    // Add mega_form at the end if it exists and is not null
-    if (pokemon.ownershipStatus?.mega && pokemon.ownershipStatus.mega_form != null) {
+
+     // Add mega_form at the end if it exists and is not null
+     if (pokemon.ownershipStatus?.mega && pokemon.ownershipStatus.mega_form != null) {
         contentParts.push(pokemon.ownershipStatus.mega_form);
+    }
+
+    if (isShiny) {
+        contentParts.unshift('Shiny');
     }
 
     return (
