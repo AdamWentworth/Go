@@ -73,9 +73,23 @@ const PokemonCard = ({
             }
         }}> 
             <div className="cp-container">
-                <div className="cp-placeholder" style={{ zIndex: 3 }}>
-                    {sortType === 'combatPower' && (pokemon.ownershipStatus ? pokemon.ownershipStatus.cp : pokemon.cp50) && (
-                        <h2 className="cp-display"><span className="cp-text">CP</span>{pokemon.ownershipStatus ? pokemon.ownershipStatus.cp : pokemon.cp50}</h2>
+                <div className="cp-display" style={{ zIndex: 3 }}>
+                    {ownershipFilter !== "" ? (
+                        // First Condition: ownershipFilter is not empty
+                        pokemon.ownershipStatus?.cp && (
+                            <>
+                                <span className="cp-text">CP</span>
+                                {pokemon.ownershipStatus.cp}
+                            </>
+                        )
+                    ) : (
+                        // Second Condition: ownershipFilter is empty and sortType is 'combatPower'
+                        sortType === 'combatPower' && pokemon.cp50 !== undefined && (
+                            <>
+                                <span className="cp-text">CP</span>
+                                {pokemon.cp50}
+                            </>
+                        )
                     )}
                 </div>
             </div>

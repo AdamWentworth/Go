@@ -62,14 +62,6 @@
     margin-top: -5px;
 }
 
-.cp-placeholder {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 15px;
-    position: relative;
-}
-
 .fav-container {
     position: absolute; /* Make the container position absolute */
     top: 0; /* Position it at the top */
