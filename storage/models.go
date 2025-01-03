@@ -49,10 +49,10 @@ type PokemonInstance struct {
 	DateCaught      *time.Time `gorm:"column:date_caught"`
 	DateAdded       time.Time  `gorm:"column:date_added;autoCreateTime"`
 	LastUpdate      int64      `gorm:"column:last_update;default:0"`
-	IsUnowned       bool       `gorm:"column:is_unowned;default:false"`
-	IsOwned         bool       `gorm:"column:is_owned;default:false"`
-	IsForTrade      bool       `gorm:"column:is_for_trade;default:false"`
-	IsWanted        bool       `gorm:"column:is_wanted;default:false"`
+	IsUnowned       bool       `gorm:"column:is_unowned;default:false;not null"`
+	IsOwned         bool       `gorm:"column:is_owned;default:false;not null"`
+	IsForTrade      bool       `gorm:"column:is_for_trade;default:false;not null"`
+	IsWanted        bool       `gorm:"column:is_wanted;default:false;not null"`
 	NotTradeList    string     `gorm:"column:not_trade_list;type:json;default:'{}'"`
 	NotWantedList   string     `gorm:"column:not_wanted_list;type:json;default:'{}'"`
 	TraceID         *string    `gorm:"column:trace_id"`

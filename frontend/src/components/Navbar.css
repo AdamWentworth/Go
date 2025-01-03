@@ -253,6 +253,11 @@
     .App h1 {
         padding: 0px !important;
     }
+
+    .logo-container img {
+        margin-left: 10px;
+        margin-right: 10px;
+    }
 }
 
 @media (min-width: 481px) and (max-width: 767px) {
@@ -332,6 +337,10 @@
         max-width: 100%; /* Ensure input takes full width */
         font-size: 12px; /* Slightly larger than 480px screens */
     }
+    .logo-container img {
+        margin-left: 10px;
+        margin-right: 10px;
+    }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
@@ -407,6 +416,10 @@
     .search-input {
         max-width: 100%;
         font-size: 14px; /* Larger font size for larger screens */
+    }
+    .logo-container img {
+        margin-left: 10px;
+        margin-right: 10px;
     }
 }
 

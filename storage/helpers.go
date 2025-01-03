@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -34,11 +35,28 @@ func parseOptionalBool(value interface{}) bool {
 	if value == nil {
 		return false
 	}
-	boolValue, err := strconv.ParseBool(fmt.Sprintf("%v", value))
-	if err != nil {
+
+	switch v := value.(type) {
+	case bool:
+		return v
+	case string:
+		if v == "" {
+			return false
+		}
+		boolValue, err := strconv.ParseBool(v)
+		if err != nil {
+			return false
+		}
+		return boolValue
+	case int, int32, int64:
+		numericValue := reflect.ValueOf(v).Int()
+		return numericValue != 0
+	case float32, float64:
+		numericValue := reflect.ValueOf(v).Float()
+		return numericValue != 0
+	default:
 		return false
 	}
-	return boolValue
 }
 
 // parseNullableInt returns *int if the value is non-empty and valid; otherwise nil.

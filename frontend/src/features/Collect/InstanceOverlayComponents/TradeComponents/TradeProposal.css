@@ -78,7 +78,7 @@
     display: inline-block; /* or whatever suits your layout */
   }
   
-  .lucky-backdrop {
+.trade-proposal-overlay .lucky-backdrop {
     position: absolute;
     top: 18%;
     left: 15%;

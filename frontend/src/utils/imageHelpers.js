@@ -11,15 +11,6 @@ export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = 
     const isShiny = !!pokemon.ownershipStatus?.shiny;
     const variantType = (pokemon.variantType || '').toLowerCase();
 
-    /**
-     * Retrieves the appropriate costume image URL.
-     *
-     * @param {Array} costumes - Array of costume objects.
-     * @param {string} variantType - The variant type string.
-     * @param {boolean} isFemale - Indicates if the Pokemon is female.
-     * @param {boolean} isShiny - Indicates if the Pokemon is shiny.
-     * @returns {string|null} - The image URL or null if not found.
-     */
     const getCostumeImage = (costumes, variantType, isFemale, isShiny) => {
         const costumeIdMatch = variantType.match(/_(\d+)/);
         if (!costumeIdMatch) return null;
@@ -31,30 +22,27 @@ export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = 
         
         // Handle Shadow Costumes
         if (variantType.includes('shadow_')) {
-
             const shadow = costume.shadow_costume;
             if (shadow) {
-
-                if (isShiny && shadow.image_url_shiny_shadow_costume) {
+                if (isShiny) {
                     return isFemale
                         ? shadow.image_url_female_shiny_shadow_costume || shadow.image_url_shiny_shadow_costume
                         : shadow.image_url_shiny_shadow_costume;
                 }
-
                 return isFemale
                     ? shadow.image_url_female_shadow_costume || shadow.image_url_shadow_costume
                     : shadow.image_url_shadow_costume;
             }
         }
 
-        // Handle Regular Costumes
+        // Handle Regular Costumes - Fixed to properly handle shiny images
         if (variantType.includes('costume')) {
-            if (isShiny) {
+            // Check if the Pokemon is shiny or if the variant type includes shiny
+            if (isShiny || variantType.includes('shiny')) {
                 return isFemale
                     ? costume.image_url_shiny_female || costume.image_url_shiny || DEFAULT_IMAGE_URL
                     : costume.image_url_shiny || DEFAULT_IMAGE_URL;
             }
-
             return isFemale
                 ? costume.image_url_female || costume.image_url || DEFAULT_IMAGE_URL
                 : costume.image_url || DEFAULT_IMAGE_URL;
@@ -63,17 +51,8 @@ export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = 
         return null;
     };
 
-    /**
-     * Retrieves the appropriate variant image URL.
-     *
-     * @param {Object} data - The data object containing image URLs.
-     * @param {string} variantType - The variant type string.
-     * @param {boolean} isShiny - Indicates if the Pokemon is shiny.
-     * @param {string} defaultUrl - The default image URL to fallback.
-     * @returns {string} - The image URL.
-     */
     const getVariantImage = (data, variantType, isShiny, defaultUrl) => {
-        if (variantType.includes('shadow') && variantType.includes('shiny')) {
+        if (variantType.includes('shadow') && (isShiny || variantType.includes('shiny'))) {
             return data.shiny_shadow_image_url || data.image_url_shiny_shadow || defaultUrl;
         }
 
@@ -83,18 +62,13 @@ export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = 
                 : data.shadow_image_url || data.image_url_shadow || defaultUrl;
         }
 
-        if (variantType.includes('shiny')) {
+        if (isShiny || variantType.includes('shiny')) {
             return data.shiny_image_url || data.image_url_shiny || defaultUrl;
         }
 
         return data.image_url || defaultUrl;
     };
 
-    /**
-     * Retrieves the image URL for Mega Evolutions.
-     *
-     * @returns {string} - The image URL for the Mega Evolution.
-     */
     const handleMegaEvolution = () => {
         if (!isMega || !Array.isArray(pokemon.megaEvolutions) || pokemon.megaEvolutions.length === 0) {
             return null;
@@ -151,11 +125,6 @@ export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = 
         return megaImage;
     }
 
-    /**
-     * Retrieves the image URL for non-Mega Evolutions.
-     *
-     * @returns {string} - The image URL for the Pokemon.
-     */
     const handleNonMegaEvolution = () => {
         if (isFemale && pokemon.female_data) {
             if (variantType.includes('costume')) {
@@ -190,19 +159,14 @@ export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = 
             }
         }
 
-        if (variantType.includes('shadow') || variantType.includes('shiny')) {
-            return getVariantImage(
-                pokemon,
-                variantType,
-                isShiny,
-                pokemon.image_url || DEFAULT_IMAGE_URL
-            );
-        }
-
-        return pokemon.image_url || DEFAULT_IMAGE_URL;
+        return getVariantImage(
+            pokemon,
+            variantType,
+            isShiny,
+            pokemon.image_url || DEFAULT_IMAGE_URL
+        );
     };
 
-    // Return the appropriate image URL for non-Mega Evolutions
     return handleNonMegaEvolution();
 }
 
