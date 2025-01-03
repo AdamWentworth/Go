@@ -56,12 +56,12 @@ function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey) {
     const instance = ownershipData[pokemonKey];
 
     if (newStatus === 'Trade' || newStatus === 'Wanted') {
-        if (instance.lucky || instance.shadow || (instance.pokemon_id === 2270 || instance.pokemon_id === 2271)) {
-            alert(`Cannot move ${pokemonKey} to ${newStatus} as it is ${instance.lucky ? 'lucky' : instance.shadow ? 'shadow' : 'a fusion Pokemon'}.`);
-            console.log(`Move to ${newStatus} blocked due to status: ${instance.lucky ? 'lucky' : 'shadow'}`);
+        if (instance.lucky || instance.shadow || instance.mega || (instance.pokemon_id === 2270 || instance.pokemon_id === 2271)) {
+            alert(`Cannot move ${pokemonKey} to ${newStatus} as it is ${instance.lucky ? 'lucky' : instance.shadow ? 'shadow' : instance.mega ? 'mega' : 'a fusion Pokemon'}.`);
+            console.log(`Move to ${newStatus} blocked due to status: ${instance.lucky ? 'lucky' : instance.shadow ? 'shadow' : instance.mega ? 'mega' : 'fusion'}`);
             return;
         }
-    } 
+    }    
 
     // Initial setup for statuses based on the newStatus
     instance.is_unowned = newStatus === 'Unowned';
@@ -127,9 +127,9 @@ function handleInstanceUUIDEntry(pokemonKey, newStatus, ownershipData) {
     const instance = ownershipData[pokemonKey];
 
     if (newStatus === 'Trade' || newStatus === 'Wanted') {
-        if (instance.lucky || instance.shadow || (instance.pokemon_id === 2270 || instance.pokemon_id === 2271)) {
-            alert(`Cannot move ${pokemonKey} to ${newStatus} as it is ${instance.lucky ? 'lucky' : instance.shadow ? 'shadow' : 'a fusion Pokemon'}.`);
-            console.log(`Move to ${newStatus} blocked due to status: ${instance.lucky ? 'lucky' : 'shadow'}`);
+        if (instance.lucky || instance.shadow || instance.mega || (instance.pokemon_id === 2270 || instance.pokemon_id === 2271)) {
+            alert(`Cannot move ${pokemonKey} to ${newStatus} as it is ${instance.lucky ? 'lucky' : instance.shadow ? 'shadow' : instance.mega ? 'mega' : 'a fusion Pokemon'}.`);
+            console.log(`Move to ${newStatus} blocked due to status: ${instance.lucky ? 'lucky' : instance.shadow ? 'shadow' : instance.mega ? 'mega' : 'fusion'}`);
             return;
         }
     }    

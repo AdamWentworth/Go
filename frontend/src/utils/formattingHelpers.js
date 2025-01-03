@@ -166,6 +166,10 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
     if (pokemon.ownershipStatus?.mega && !contentParts.includes('Mega')) {
         contentParts.unshift('Mega');
     }
+    // Add mega_form at the end if it exists and is not null
+    if (pokemon.ownershipStatus?.mega && pokemon.ownershipStatus.mega_form != null) {
+        contentParts.push(pokemon.ownershipStatus.mega_form);
+    }
 
     return (
         <>

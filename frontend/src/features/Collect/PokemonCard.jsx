@@ -16,38 +16,18 @@ const PokemonCard = ({
     isFastSelectEnabled,
     isHighlighted,
     showAll,
-    sortType,
-    lists
+    sortType
 }) => {
     const [currentImage, setCurrentImage] = useState(pokemon.currentImage);
 
-    // Check if ownershipFilter is not an empty string
-    useEffect(() => {
-        if (ownershipFilter !== "") {
-            const lowercasedFilter = ownershipFilter.toLowerCase();
-            if (lists[lowercasedFilter]) {
-                const relevantList = lists[lowercasedFilter];
-
-                // Ensure the relevant list is an object and find the matching key
-                if (relevantList[pokemon.pokemonKey]) {
-                    const matchingItem = relevantList[pokemon.pokemonKey];
-                    setCurrentImage(matchingItem.currentImage);
-                } else {
-                    console.warn(`No matching item found for pokemonKey: ${pokemon.pokemonKey}`);
-                }
-            } else {
-                console.warn(`No list found for ownershipFilter: ${lowercasedFilter}`);
-            }
-        }
-    }, [ownershipFilter, lists, pokemon.pokemonKey]);
-
     const isFemale = pokemon.ownershipStatus?.gender === "Female";
     const isMega = pokemon.ownershipStatus?.mega === true; // Determine if the Pokémon is Mega Evolved
+    const megaForm = pokemon.ownershipStatus?.mega_form;
 
     useEffect(() => {
         // Ensure that 'pokemon' is defined before calling 'determineImageUrl'
         if (pokemon) {
-            const updatedImage = determineImageUrl(isFemale, isMega, pokemon);
+            const updatedImage = determineImageUrl(isFemale, isMega, pokemon, megaForm);
             if (updatedImage) {
                 setCurrentImage(updatedImage);
             } else {

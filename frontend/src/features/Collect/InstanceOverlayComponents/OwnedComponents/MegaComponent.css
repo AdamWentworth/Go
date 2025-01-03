@@ -1,0 +1,27 @@
+.mega-component {
+    display: flex;
+    align-items: center;
+    margin-left: auto; /* Aligns the component to the right within its container */
+    cursor: pointer; /* Indicates that the image is clickable */
+    justify-content: right;
+  }
+  
+  .mega-component .mega-image {
+    width: 40px; /* Adjust size as needed */
+    height: 40px;
+    transition: filter 0.3s ease; /* Smooth transition for filter changes */
+  }
+  
+  .mega-component  .saturated {
+    filter: none; /* Full color */
+}
+  
+  .mega-component  .desaturated {
+    filter: grayscale(100%); /* Grayscale (no saturation) */
+  }
+  
+  /* Optional: Add hover effect */
+  .mega-component  .mega-image:hover {
+    opacity: 0.8;
+  }
+  

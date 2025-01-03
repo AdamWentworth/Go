@@ -17,6 +17,7 @@ import IVComponent from './OwnedComponents/IVComponent';
 import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
 import BackgroundComponent from './OwnedComponents/BackgroundComponent';
+import MegaComponent from './OwnedComponents/MegaComponent';
 
 import { determineImageUrl } from '../../../utils/imageHelpers';
 
@@ -25,7 +26,15 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   const { updateDetails } = useContext(PokemonDataContext);
 
   // Determine if the Pokémon is Mega Evolved
-  const isMega = pokemon.ownershipStatus.mega === true; // Safely check, defaults to false if undefined
+  const [isMega, setIsMega] = useState(pokemon.ownershipStatus.mega === true);
+
+  const [megaForm, setMegaForm] = useState(() => {
+    // Only set initial megaForm if Pokemon is currently mega evolved
+    if (pokemon.ownershipStatus.mega && pokemon.megaEvolutions?.length > 0) {
+        return pokemon.ownershipStatus.mega_form || pokemon.megaEvolutions[0].form;
+    }
+    return null;
+  });
 
   const [isFemale, setIsFemale] = useState(pokemon.ownershipStatus.gender === 'Female');
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
@@ -64,13 +73,36 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   }, [pokemon.backgrounds, pokemon.ownershipStatus.location_card]);
 
   useEffect(() => {
-    const updatedImage = determineImageUrl(isFemale, isMega, pokemon);
+    const updatedImage = determineImageUrl(isFemale, isMega, pokemon, megaForm);
     setCurrentImage(updatedImage); 
-  }, [isFemale, isMega, pokemon]);
+  }, [isFemale, isMega, pokemon, megaForm]);
 
   const handleGenderChange = (newGender) => {
     setGender(newGender);
     setIsFemale(newGender === 'Female'); // Update the gender state and isFemale
+  };
+
+  // Update the handleMegaToggle function
+  const handleMegaToggle = (newMegaStatus, specificForm = null) => {
+    setIsMega(newMegaStatus);
+    if (newMegaStatus) {
+      // If a specific form is provided, use it, otherwise use first form
+      setMegaForm(specificForm || pokemon.megaEvolutions[0].form);
+    } else {
+      // When disabling mega, clear the form
+      setMegaForm(null);
+    }
+  };
+
+  // Update the handleMegaFormChange function
+  const handleMegaFormChange = () => {
+    if (!pokemon.megaEvolutions || pokemon.megaEvolutions.length <= 1) return;
+    
+    const currentIndex = pokemon.megaEvolutions.findIndex(
+        me => me.form.toLowerCase() === megaForm?.toLowerCase()
+    );
+    const nextIndex = (currentIndex + 1) % pokemon.megaEvolutions.length;
+    setMegaForm(pokemon.megaEvolutions[nextIndex].form);
   };
 
   const handleCPChange = (newCP) => {
@@ -132,8 +164,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         location_caught: locationCaught,
         date_caught: dateCaught,
         location_card: selectedBackground ? selectedBackground.background_id : null,
-        // Include mega state if necessary
         mega: isMega,
+        mega_form: isMega ? megaForm : null,
       });
     }
     setEditMode(!editMode);
@@ -183,7 +215,17 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           <img src={currentImage} alt={pokemon.name} className="pokemon-image" />
         </div>
       </div>
-      <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
+      <div className="name-mega-container">
+        <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
+        <MegaComponent
+          isMega={isMega}
+          onToggleMega={handleMegaToggle}
+          editMode={editMode}
+          megaEvolutions={pokemon.megaEvolutions}
+          currentMegaForm={megaForm}
+          onMegaFormChange={handleMegaFormChange}
+        />
+      </div>
       <div className="gender-lucky-row">
         {pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade || pokemon.rarity === "Mythic" ? (
           <div className="lucky-placeholder"></div>

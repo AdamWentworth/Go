@@ -164,6 +164,30 @@
   width: 100%; /* Ensure these containers take up the full width */
 }
 
+.owned-instance .name-mega-container {
+  position: relative;          /* Establishes a new positioning context */
+  display: flex;               /* Enables Flexbox */
+  justify-content: center;     /* Centers the NameComponent horizontally */
+  align-items: center;         /* Centers items vertically */
+  width: 100%;                 /* Ensures the container takes full width */
+}
+
+.owned-instance .name-mega-container .name-container {
+  flex: 1;                   /* Allows it to grow and take available space */
+  display: flex;             /* Enables Flexbox within NameComponent */
+  justify-content: center;   /* Centers the content horizontally */
+  align-items: center;       /* Centers the content vertically */
+}
+
+.owned-instance .name-mega-container .mega-component {
+  position: absolute;  /* Removes it from the normal flow */
+  right: 0;            /* Aligns it to the right */
+  /* Optional: Adjust vertical alignment if needed */
+  top: 0%;
+  transform: translateY(-50%);
+}
+
+
 @media (max-width: 480px) {
 }
 
