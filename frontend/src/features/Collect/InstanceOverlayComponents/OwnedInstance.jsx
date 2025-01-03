@@ -38,7 +38,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
 
   const [isFemale, setIsFemale] = useState(pokemon.ownershipStatus.gender === 'Female');
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
-  const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, isMega, pokemon));
+  const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon, isMega));
 
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
@@ -73,7 +73,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   }, [pokemon.backgrounds, pokemon.ownershipStatus.location_card]);
 
   useEffect(() => {
-    const updatedImage = determineImageUrl(isFemale, isMega, pokemon, megaForm);
+    const updatedImage = determineImageUrl(isFemale, pokemon, isMega, megaForm);
     setCurrentImage(updatedImage); 
   }, [isFemale, isMega, pokemon, megaForm]);
 

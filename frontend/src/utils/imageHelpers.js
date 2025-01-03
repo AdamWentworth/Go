@@ -1,6 +1,6 @@
 //imageHelpers.js
 
-export function determineImageUrl(isFemale, isMega, pokemon, megaForm) {
+export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = undefined) {
     const DEFAULT_IMAGE_URL = '/images/default_pokemon.png';
 
     if (!pokemon) {
@@ -28,34 +28,22 @@ export function determineImageUrl(isFemale, isMega, pokemon, megaForm) {
         const costume = costumes?.find(c => c.costume_id.toString() === costumeId);
 
         if (!costume) return null;
-
-        console.log(`Variant Type: ${variantType}`);
         
         // Handle Shadow Costumes
         if (variantType.includes('shadow_')) {
-            console.log('Shadow costume path detected!');
-            console.log('Shadow costume data:', costume.shadow_costume);
-            console.log('Current variant type:', variantType);
-            console.log('Is female:', isFemale);
-            console.log('Is shiny:', isShiny);
 
             const shadow = costume.shadow_costume;
             if (shadow) {
-                console.log('Shadow costume properties available:', Object.keys(shadow));
 
                 if (isShiny && shadow.image_url_shiny_shadow_costume) {
-                    console.log('Using shiny shadow costume image');
                     return isFemale
                         ? shadow.image_url_female_shiny_shadow_costume || shadow.image_url_shiny_shadow_costume
                         : shadow.image_url_shiny_shadow_costume;
                 }
 
-                console.log('Using regular shadow costume image');
                 return isFemale
                     ? shadow.image_url_female_shadow_costume || shadow.image_url_shadow_costume
                     : shadow.image_url_shadow_costume;
-            } else {
-                console.log('No shadow_costume property found on costume object');
             }
         }
 

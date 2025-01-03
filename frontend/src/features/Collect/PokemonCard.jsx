@@ -27,7 +27,7 @@ const PokemonCard = ({
     useEffect(() => {
         // Ensure that 'pokemon' is defined before calling 'determineImageUrl'
         if (pokemon) {
-            const updatedImage = determineImageUrl(isFemale, isMega, pokemon, megaForm);
+            const updatedImage = determineImageUrl(isFemale, pokemon, isMega, megaForm);
             if (updatedImage) {
                 setCurrentImage(updatedImage);
             } else {

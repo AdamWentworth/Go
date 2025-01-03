@@ -140,7 +140,7 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
                             />
                         )}
                         <img
-                            src={pokemon.image_url}
+                            src={pokemon.currentImage}
                             className={imageClasses}
                             alt={`Wanted Pokémon ${pokemon.name}`}
                             style={{ zIndex: 2 }}

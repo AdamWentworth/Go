@@ -26,7 +26,7 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
         const isMega = value?.mega === true;
 
         if ((isFemale && variantDetail?.female_data) || (isMega && variantDetail?.megaEvolutions)) {
-            currentImage = determineImageUrl(isFemale, isMega, variantDetail);
+            currentImage = determineImageUrl(isFemale, variantDetail, isMega);
         }   
 
         // Prepare the object to be added to the list
@@ -94,7 +94,7 @@ export const initializePokemonLists = (ownershipData, variants, search) => {
         const isMega = value?.mega === true;
 
         if ((isFemale && variantDetail?.female_data) || (isMega && variantDetail?.megaEvolutions)) {
-            currentImage = determineImageUrl(isFemale, isMega, variantDetail);
+            currentImage = determineImageUrl(isFemale, variantDetail, isMega);
         }        
 
         // Prepare the object to be added to the list
