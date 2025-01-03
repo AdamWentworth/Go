@@ -5,6 +5,7 @@ import { determineImageUrl } from "../../utils/imageHelpers";
 import { generateH2Content } from '../../utils/formattingHelpers';
 import './PokemonCard.css';
 
+
 const PokemonCard = ({
     pokemon,
     onSelect,
@@ -15,12 +16,33 @@ const PokemonCard = ({
     isFastSelectEnabled,
     isHighlighted,
     showAll,
-    sortType
+    sortType,
+    lists
 }) => {
     const [currentImage, setCurrentImage] = useState(pokemon.currentImage);
 
+    // Check if ownershipFilter is not an empty string
+    useEffect(() => {
+        if (ownershipFilter !== "") {
+            const lowercasedFilter = ownershipFilter.toLowerCase();
+            if (lists[lowercasedFilter]) {
+                const relevantList = lists[lowercasedFilter];
+
+                // Ensure the relevant list is an object and find the matching key
+                if (relevantList[pokemon.pokemonKey]) {
+                    const matchingItem = relevantList[pokemon.pokemonKey];
+                    setCurrentImage(matchingItem.currentImage);
+                } else {
+                    console.warn(`No matching item found for pokemonKey: ${pokemon.pokemonKey}`);
+                }
+            } else {
+                console.warn(`No list found for ownershipFilter: ${lowercasedFilter}`);
+            }
+        }
+    }, [ownershipFilter, lists, pokemon.pokemonKey]);
+
     const isFemale = pokemon.ownershipStatus?.gender === "Female";
-    const isMega = pokemon.ownershipStatus.mega === true; // Determine if the Pokémon is Mega Evolved
+    const isMega = pokemon.ownershipStatus?.mega === true; // Determine if the Pokémon is Mega Evolved
 
     useEffect(() => {
         // Ensure that 'pokemon' is defined before calling 'determineImageUrl'

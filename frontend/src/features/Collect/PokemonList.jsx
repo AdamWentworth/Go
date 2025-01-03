@@ -63,6 +63,7 @@ function PokemonList({
                             showAll={showAll}
                             sortType={sortType}
                             isEditable={isEditable}
+                            lists={lists}
                         />
                     ))}
                     {selectedPokemon && (

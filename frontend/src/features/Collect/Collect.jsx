@@ -341,7 +341,6 @@ function Collect({ isOwnCollection }) {
             <ListsMenu 
               onSelectList={handleSelectList}
               activeLists={activeLists}
-              variants={variants}
               ownershipData={ownershipData}
             />
           )}

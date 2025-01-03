@@ -3,7 +3,7 @@
 import React from 'react';
 import './ListsMenu.css';
 
-const ListsMenu = ({ onSelectList, activeLists, variants }) => {
+const ListsMenu = ({ onSelectList, activeLists }) => {
   // Define the lists for each column
   const leftColumnLists = ['Owned', 'Unowned'];
   const rightColumnLists = ['Trade', 'Wanted'];
@@ -15,24 +15,20 @@ const ListsMenu = ({ onSelectList, activeLists, variants }) => {
       const listData = activeLists[listName.toLowerCase()] || {};
       const instanceIds = Object.keys(listData);
 
-      // Get up to 20 Pokémon for the preview
+      // Get up to 24 Pokémon for the preview
       const previewPokemon = instanceIds.slice(0, 24).map((instance_id) => {
-        // Extract the pokemonKey using your specific logic
-        const basePrefix = instance_id.substring(0, instance_id.lastIndexOf('_'));
+        const pokemon = listData[instance_id];
 
-        // Find the variant with matching pokemonKey
-        const pokemonData = variants.find((variant) => variant.pokemonKey === basePrefix);
-
-        if (!pokemonData) {
-          console.log('No matching variant found for:', basePrefix);
+        if (!pokemon || !pokemon.currentImage) {
+          console.log('No currentImage found for:', instance_id);
           return null;
         }
 
         return (
           <img
             key={instance_id}
-            src={pokemonData.currentImage}
-            alt={pokemonData.name}
+            src={pokemon.currentImage}
+            alt={pokemon.name || 'Unknown Pokémon'}
             className="preview-image"
           />
         );

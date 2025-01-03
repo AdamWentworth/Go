@@ -20,13 +20,14 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
             console.error(`Key: ${key}, Value:`, value);
         }
 
+        let currentImage = variantDetail?.currentImage;  // Default image
         // Check if the Pokémon is female and has female data, and update the image accordingly
         const isFemale = value.gender === 'Female';
-        let currentImage = variantDetail?.currentImage;  // Default image
+        const isMega = value?.mega === true;
 
-        if (isFemale && variantDetail?.female_data) {
-            currentImage = determineImageUrl(isFemale, variantDetail);  // Update the image for female Pokémon
-        }
+        if ((isFemale && variantDetail?.female_data) || (isMega && variantDetail?.megaEvolutions)) {
+            currentImage = determineImageUrl(isFemale, isMega, variantDetail);
+        }   
 
         // Prepare the object to be added to the list
         const listItem = {
@@ -86,14 +87,15 @@ export const initializePokemonLists = (ownershipData, variants, search) => {
     Object.entries(ownershipData).forEach(([key, value]) => {
         const { baseKey } = parsePokemonKey(key); // Extract the base key from the key
         const variantDetail = variants.find(variant => variant.pokemonKey === baseKey); // Find the corresponding variant
-
+        
+        let currentImage = variantDetail?.currentImage;  // Default image
         // Check if the Pokémon is female and has female data, and update the image accordingly
         const isFemale = value.gender === 'Female';
-        let currentImage = variantDetail?.currentImage;  // Default image
+        const isMega = value?.mega === true;
 
-        if (isFemale && variantDetail?.female_data) {
-            currentImage = determineImageUrl(isFemale, variantDetail);  // Update the image for female Pokémon
-        }
+        if ((isFemale && variantDetail?.female_data) || (isMega && variantDetail?.megaEvolutions)) {
+            currentImage = determineImageUrl(isFemale, isMega, variantDetail);
+        }        
 
         // Prepare the object to be added to the list
         const listItem = {

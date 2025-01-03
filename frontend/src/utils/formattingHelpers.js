@@ -162,6 +162,11 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
 
     contentParts.push(nameText);
 
+    // Add caveat for Mega
+    if (pokemon.ownershipStatus?.mega && !contentParts.includes('Mega')) {
+        contentParts.unshift('Mega');
+    }
+
     return (
         <>
             {contentParts.map((part, index) => (

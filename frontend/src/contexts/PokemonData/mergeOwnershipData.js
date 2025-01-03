@@ -12,7 +12,7 @@ export const mergeOwnershipData = (oldData, newData) => {
 
     console.log("Starting merge process...");
 
-    // Merge new data
+    // Step 1: Merge new data
     Object.keys(newData).forEach(key => {
         const prefix = extractPrefix(key);
         // Check for exact key match in old and new data
@@ -32,7 +32,7 @@ export const mergeOwnershipData = (oldData, newData) => {
         oldDataProcessed[prefix].push(key);
     });
 
-    // Merge old data
+    // Step 2: Merge old data
     Object.keys(oldData).forEach(oldKey => {
         const prefix = extractPrefix(oldKey);
         if (!oldDataProcessed[prefix]) {
@@ -50,7 +50,32 @@ export const mergeOwnershipData = (oldData, newData) => {
         }
     });
 
-    // Ensure at most one instance per prefix has is_unowned: true
+    // Step 3: Integrate Mega Logic
+    // Drop all 'mega' entries that are 'is_unowned' if newData has matching instances with the same prefix and mega=true
+    Object.keys(mergedData).forEach(key => {
+        if (key.includes("mega")) {
+            // Extract the leading numbers by removing "mega" from the key
+            const leadingNumbersMatch = key.match(/^(\d+)/);
+            if (leadingNumbersMatch) {
+                const leadingNumbers = leadingNumbersMatch[1];
+                // Find all related keys in newData that start with the same leading numbers
+                const relatedNewKeys = Object.keys(newData).filter(newKey => newKey.startsWith(leadingNumbers));
+
+                // Check if any of the related new entries have .mega set to true
+                const hasMegaInNew = relatedNewKeys.some(newKey => {
+                    const entry = newData[newKey];
+                    return entry && entry.mega === true;
+                });
+
+                if (hasMegaInNew && mergedData[key].is_unowned === true) {
+                    console.log(`Dropping unowned mega "${key}" because a related new entry with mega=true exists.`);
+                    delete mergedData[key]; // Remove the unowned mega entry
+                }
+            }
+        }
+    });
+
+    // Step 4: Ensure at most one instance per prefix has is_unowned: true
     const finalData = {};
     const unownedTracker = new Set();
 

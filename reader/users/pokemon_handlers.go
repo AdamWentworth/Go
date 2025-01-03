@@ -82,6 +82,8 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 			"last_update":      instance.LastUpdate,
 			"wanted_filters":   instance.WantedFilters,
 			"trade_filters":    instance.TradeFilters,
+			"mega":             instance.Mega,
+			"mega_form":        instance.MegaForm,
 		}
 
 		// Add the instance to the response data using its `InstanceID`
