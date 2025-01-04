@@ -25,20 +25,18 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   console.log(pokemon);
   const { updateDetails } = useContext(PokemonDataContext);
 
-  const [isMega, setIsMega] = useState(pokemon.ownershipStatus.is_mega || false);
-  const [mega, setMega] = useState(pokemon.ownershipStatus.mega || false);
-
-  const [megaForm, setMegaForm] = useState(() => {
-    // Only set initial megaForm if Pokemon is currently mega evolved
-    if (pokemon.ownershipStatus.mega && pokemon.megaEvolutions?.length > 0) {
-        return pokemon.ownershipStatus.mega_form || pokemon.megaEvolutions[0].form;
-    }
-    return null;
+  // Instead, manage mega data via a single state object
+  const [megaData, setMegaData] = useState({
+    isMega: pokemon.ownershipStatus.is_mega || false,
+    mega: pokemon.ownershipStatus.mega || false,
+    megaForm: (pokemon.ownershipStatus.mega && pokemon.megaEvolutions?.length > 0)
+      ? (pokemon.ownershipStatus.mega_form || pokemon.megaEvolutions[0].form)
+      : null,
   });
 
   const [isFemale, setIsFemale] = useState(pokemon.ownershipStatus.gender === 'Female');
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
-  const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon, isMega));
+  const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon, megaData.isMega, megaData.megaForm));
 
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
@@ -73,36 +71,16 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   }, [pokemon.backgrounds, pokemon.ownershipStatus.location_card]);
 
   useEffect(() => {
-    const updatedImage = determineImageUrl(isFemale, pokemon, isMega, megaForm);
+    const updatedImage = determineImageUrl(isFemale, pokemon, megaData.isMega, megaData.megaForm);
     setCurrentImage(updatedImage); 
-  }, [isFemale, isMega, pokemon, megaForm]);
+  }, [isFemale, megaData.isMega, pokemon, megaData.megaForm]);
 
   const handleGenderChange = (newGender) => {
     setGender(newGender);
     setIsFemale(newGender === 'Female'); // Update the gender state and isFemale
   };
 
-  const handleMegaToggle = (newMegaStatus, specificForm = null) => {
-    setIsMega(newMegaStatus);
-    if (newMegaStatus) {
-      setMega(true); // Once mega is activated, the Pokémon is marked as having mega-evolved.
-      setMegaForm(specificForm || pokemon.megaEvolutions[0].form);
-    } else {
-      setMegaForm(null);
-    }
-  };
-
-  // Update the handleMegaFormChange function
-  const handleMegaFormChange = () => {
-    if (!pokemon.megaEvolutions || pokemon.megaEvolutions.length <= 1) return;
-    
-    const currentIndex = pokemon.megaEvolutions.findIndex(
-        me => me.form.toLowerCase() === megaForm?.toLowerCase()
-    );
-    const nextIndex = (currentIndex + 1) % pokemon.megaEvolutions.length;
-    setMegaForm(pokemon.megaEvolutions[nextIndex].form);
-  };
-
+  // Retain existing handlers
   const handleCPChange = (newCP) => {
     setCP(newCP);
   };
@@ -162,9 +140,9 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         location_caught: locationCaught,
         date_caught: dateCaught,
         location_card: selectedBackground ? selectedBackground.background_id : null,
-        mega: mega,
-        is_mega: isMega,
-        mega_form: isMega ? megaForm : null
+        mega: megaData.mega,
+        is_mega: megaData.isMega,
+        mega_form: megaData.isMega ? megaData.megaForm : null
       });
     }
     setEditMode(!editMode);
@@ -189,7 +167,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         {isEditable && (
           <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
         )}
-        <CPComponent pokemon={pokemon} editMode={editMode} toggleEditMode={toggleEditMode} onCPChange={handleCPChange} />
+        <CPComponent pokemon={pokemon} editMode={editMode} onCPChange={handleCPChange} />
         <FavoriteComponent pokemon={pokemon} editMode={editMode} onFavoriteChange={handleFavoriteChange} />
       </div>
       {selectableBackgrounds.length > 0 && (
@@ -221,12 +199,10 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           !pokemon.ownershipStatus.shadow && // Ensure shadow ownership is false
           !pokemon.name.toLowerCase().includes("clone") && ( // Ensure name does not include "clone"
             <MegaComponent
-              isMega={isMega}
-              onToggleMega={handleMegaToggle}
+              megaData={megaData}
+              setMegaData={setMegaData}
               editMode={editMode}
               megaEvolutions={pokemon.megaEvolutions}
-              currentMegaForm={megaForm}
-              onMegaFormChange={handleMegaFormChange}
             />
         )}
       </div>

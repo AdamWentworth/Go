@@ -4,37 +4,62 @@ import React from 'react';
 import './MegaComponent.css';
 
 const MegaComponent = ({
-  isMega,
-  onToggleMega,
+  megaData,
+  setMegaData,
   editMode,
-  megaEvolutions = [],
-  currentMegaForm
+  megaEvolutions = []
 }) => {
   if (!editMode) return null;
 
   const handleClick = () => {
+    const { isMega, mega, megaForm } = megaData;
+
     if (!isMega) {
-      onToggleMega(true);
+      // Activate Mega
+      setMegaData({
+        isMega: true,
+        mega: true,
+        megaForm: megaEvolutions.length > 0 ? megaEvolutions[0].form : null,
+      });
     } else {
       if (megaEvolutions.length === 1) {
-        onToggleMega(false);
+        // Deactivate Mega
+        setMegaData({
+          isMega: false,
+          mega: false,
+          megaForm: null,
+        });
       } else {
-        const currentIndex = currentMegaForm 
-          ? megaEvolutions.findIndex(me => me.form === currentMegaForm)
-          : -1;
-        
-        if (currentIndex === megaEvolutions.length - 1) {
-          onToggleMega(false);
+        // Cycle through Mega Forms
+        const currentIndex = megaEvolutions.findIndex(
+          me => me.form.toLowerCase() === megaForm?.toLowerCase()
+        );
+        const nextIndex = (currentIndex + 1) % megaEvolutions.length;
+        const nextForm = megaEvolutions[nextIndex].form;
+
+        if (nextIndex === 0) {
+          // If cycling back to first form, deactivate Mega
+          setMegaData({
+            isMega: false,
+            mega: false,
+            megaForm: null,
+          });
         } else {
-          const nextForm = megaEvolutions[currentIndex + 1].form;
-          onToggleMega(true, nextForm);
+          // Switch to next Mega form
+          setMegaData({
+            isMega: true,
+            mega: true,
+            megaForm: nextForm,
+          });
         }
       }
     }
   };
 
-  const formLabel = currentMegaForm 
-    ? `Mega ${currentMegaForm}`
+  const { isMega, megaForm } = megaData;
+
+  const formLabel = megaForm 
+    ? `Mega ${megaForm}`
     : isMega 
       ? 'Mega'
       : 'Normal';
