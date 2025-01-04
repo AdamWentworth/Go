@@ -7,7 +7,7 @@ conn = sqlite3.connect('../pokego.db')
 cursor = conn.cursor()
 
 # Retrieve Venusaur's base stats
-cursor.execute("SELECT attack, defense, stamina FROM pokemon WHERE pokemon_id = 149")
+cursor.execute("SELECT attack, defense, stamina FROM pokemon WHERE pokemon_id = 3")
 venusaur_stats = cursor.fetchone()
 conn.close()
 

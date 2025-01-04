@@ -21,7 +21,7 @@ const PokemonCard = ({
     const [currentImage, setCurrentImage] = useState(pokemon.currentImage);
 
     const isFemale = pokemon.ownershipStatus?.gender === "Female";
-    const isMega = pokemon.ownershipStatus?.mega === true; // Determine if the Pokémon is Mega Evolved
+    const isMega = pokemon.ownershipStatus?.is_mega === true; // Determine if the Pokémon is Mega Evolved
     const megaForm = pokemon.ownershipStatus?.mega_form;
 
     useEffect(() => {

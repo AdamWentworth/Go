@@ -99,6 +99,7 @@ type PokemonInstance struct {
 	TradeFilters    JSON           `gorm:"column:trade_filters;type:json" json:"trade_filters"`
 	Mega            bool           `gorm:"column:mega;default:false"`
 	MegaForm        *string        `gorm:"column:mega_form"`
+	IsMega          bool           `gorm:"column:is_mega;default:false"`
 }
 
 // TableName sets the name of the table in the database

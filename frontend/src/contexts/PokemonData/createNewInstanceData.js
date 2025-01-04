@@ -47,5 +47,6 @@ export function createNewInstanceData(variant) {
         gps: null,
         mega: false,
         mega_form: null,
+        is_mega: false,
     };
 }

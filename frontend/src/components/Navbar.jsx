@@ -86,7 +86,7 @@ function Navbar() {
                         <Link to="/register"><button>Register</button></Link>
                     </>
                 )}
-                <button>Language</button>
+                {/* <button>Language</button> */}
             </div>
         </div>
     );

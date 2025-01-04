@@ -25,8 +25,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   console.log(pokemon);
   const { updateDetails } = useContext(PokemonDataContext);
 
-  // Determine if the Pokémon is Mega Evolved
-  const [isMega, setIsMega] = useState(pokemon.ownershipStatus.mega === true);
+  const [isMega, setIsMega] = useState(pokemon.ownershipStatus.is_mega || false);
+  const [mega, setMega] = useState(pokemon.ownershipStatus.mega || false);
 
   const [megaForm, setMegaForm] = useState(() => {
     // Only set initial megaForm if Pokemon is currently mega evolved
@@ -82,14 +82,12 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     setIsFemale(newGender === 'Female'); // Update the gender state and isFemale
   };
 
-  // Update the handleMegaToggle function
   const handleMegaToggle = (newMegaStatus, specificForm = null) => {
     setIsMega(newMegaStatus);
     if (newMegaStatus) {
-      // If a specific form is provided, use it, otherwise use first form
+      setMega(true); // Once mega is activated, the Pokémon is marked as having mega-evolved.
       setMegaForm(specificForm || pokemon.megaEvolutions[0].form);
     } else {
-      // When disabling mega, clear the form
       setMegaForm(null);
     }
   };
@@ -164,8 +162,9 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         location_caught: locationCaught,
         date_caught: dateCaught,
         location_card: selectedBackground ? selectedBackground.background_id : null,
-        mega: isMega,
-        mega_form: isMega ? megaForm : null,
+        mega: mega,
+        is_mega: isMega,
+        mega_form: isMega ? megaForm : null
       });
     }
     setEditMode(!editMode);

@@ -60,6 +60,7 @@ type PokemonInstance struct {
 	WantedFilters   *string    `gorm:"column:wanted_filters;type:json"`
 	Mega            bool       `gorm:"column:mega;default:false"`
 	MegaForm        *string    `gorm:"column:mega_form"`
+	IsMega          bool       `gorm:"column:is_mega;default:false"`
 }
 
 func (PokemonInstance) TableName() string {

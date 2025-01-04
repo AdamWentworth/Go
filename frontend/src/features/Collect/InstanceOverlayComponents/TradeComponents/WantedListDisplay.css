@@ -91,7 +91,6 @@
 }
 
 /* Specific rule for widths between 1024px and 1439px */
-/* Specific rule for widths between 1024px and 1439px */
 @media (min-width: 1024px) and (max-width: 1439px) {
     .wanted-list-container.xxlarge-list {
         grid-template-columns: repeat(6, 1fr); /* Force max 6 columns per row */
@@ -106,6 +105,12 @@
     /* Override to ensure single-item-list still works */
     .wanted-list-container.single-item-list {
         grid-template-columns: repeat(1, 1fr); /* Ensure single-item-list still applies */
+    }
+}
+
+@media (min-width: 1440px) {
+    .wanted-list-container.xxlarge-list {
+        max-height: 615px;
     }
 }
 

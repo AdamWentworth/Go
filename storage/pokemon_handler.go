@@ -79,6 +79,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 		prefLucky := parseOptionalBool(pm["pref_lucky"])
 		registered := parseOptionalBool(pm["registered"])
 		favorite := parseOptionalBool(pm["favorite"])
+		isMega := parseOptionalBool(pm["is_mega"])
 		mega := parseOptionalBool(pm["mega"])
 
 		// Nullable ints/floats
@@ -149,6 +150,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			"trace_id":         messageTraceID,
 			"mega":             mega,
 			"mega_form":        megaForm,
+			"is_mega":          isMega,
 		}
 
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
@@ -193,6 +195,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 				DateAdded:       time.Now(),
 				Mega:            mega,
 				MegaForm:        megaForm,
+				IsMega:          isMega,
 			}
 
 			if errCreate := DB.Create(&newInstance).Error; errCreate != nil {
