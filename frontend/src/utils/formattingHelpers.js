@@ -142,7 +142,7 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
 
     let contentParts = [];
 
-    const isMegaVariant = pokemon.variantType && pokemon.variantType.includes('mega') || pokemon.ownershipStatus?.mega;
+    const isMegaVariant = pokemon.variantType && pokemon.variantType.includes('mega') || pokemon.ownershipStatus?.is_mega;
 
     // Handle Shiny if it's part of the costume name
     let isShiny = false;
@@ -177,12 +177,12 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
     contentParts.push(nameText);
 
     // Add caveat for Mega
-    if (pokemon.ownershipStatus?.mega && !contentParts.includes('Mega')) {
+    if (pokemon.ownershipStatus?.is_mega && !contentParts.includes('Mega')) {
         contentParts.unshift('Mega');
     }
 
      // Add mega_form at the end if it exists and is not null
-     if (pokemon.ownershipStatus?.mega && pokemon.ownershipStatus.mega_form != null) {
+     if (pokemon.ownershipStatus?.is_mega && pokemon.ownershipStatus.mega_form != null) {
         contentParts.push(pokemon.ownershipStatus.mega_form);
     }
 

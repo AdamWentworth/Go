@@ -526,7 +526,7 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 			if !matchFound {
 				logrus.Infof("No matching trade found for instance %s owned by user %s; skipping instance.", instance.InstanceID, instanceUserID)
 				for _, reason := range mismatchReasons {
-					logrus.Infof(reason)
+					logrus.Info(reason)
 				}
 				continue
 			}
@@ -585,7 +585,7 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 			if !matchFound {
 				logrus.Infof("No matching trade found in trade_list for instance %s owned by user %s; skipping instance.", instance.InstanceID, instanceUserID)
 				for _, reason := range mismatchReasons {
-					logrus.Infof(reason)
+					logrus.Info(reason)
 				}
 				continue
 			}

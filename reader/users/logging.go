@@ -96,10 +96,7 @@ func requestLogger(c *fiber.Ctx) error {
 	status := c.Response().StatusCode()
 
 	// Format the log message
-	logMessage := fmt.Sprintf("%s - %s %s - %d - %dms", ip, method, path, status, latency.Milliseconds())
-
-	// Log the message
-	logrus.Infof(logMessage)
+	logrus.Infof("%s - %s %s - %d - %dms", ip, method, path, status, latency.Milliseconds())
 
 	return err
 }
