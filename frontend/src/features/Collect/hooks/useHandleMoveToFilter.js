@@ -1,8 +1,8 @@
+// useHandleMoveToFilter.js
+
 import { useCallback } from 'react';
 import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
 import { useModal } from '../../../contexts/ModalContext';
-
-
 
 function useHandleMoveToFilter({
   setOwnershipFilter,
@@ -39,8 +39,9 @@ function useHandleMoveToFilter({
     async (filter) => {
       const messageDetails = [];
       const megaPokemonKeys = [];
+      const skippedMegaPokemonKeys = [];
       const regularPokemonKeys = [];
-      let remainingHighlightedCards = new Set(highlightedCards);
+      let cardsToMove = new Set();
 
       // First pass: Separate Mega Pokemon from regular Pokemon
       for (const pokemonKey of highlightedCards) {
@@ -55,6 +56,7 @@ function useHandleMoveToFilter({
           megaPokemonKeys.push({ key: pokemonKey, baseKey });
         } else {
           regularPokemonKeys.push({ key: pokemonKey, parsed });
+          cardsToMove.add(pokemonKey); // Add regular Pokemon by default
         }
       }
 
@@ -64,19 +66,24 @@ function useHandleMoveToFilter({
         for (const { key: pokemonKey, baseKey } of megaPokemonKeys) {
           try {
             console.log('Handling Mega Pokémon with baseKey:', baseKey);
-            await promptMegaPokemonSelection(baseKey);
-            // Remove this mega Pokemon from the remaining cards after successful handling
-            remainingHighlightedCards.delete(pokemonKey);
-            console.log(`Successfully handled Mega Pokémon: ${baseKey}`);
+            const result = await promptMegaPokemonSelection(baseKey);
+            // Only add to cardsToMove if mega evolution was successful
+            if (result === 'assignExisting' || result === 'createNew') {
+              cardsToMove.add(pokemonKey);
+              console.log(`Successfully handled Mega Pokémon: ${baseKey}`);
+            } else {
+              skippedMegaPokemonKeys.push(baseKey);
+              console.log(`Skipped Mega Pokémon: ${baseKey}`);
+            }
           } catch (error) {
             console.error(`Error handling Mega Pokémon (${baseKey}):`, error);
-            // Keep the Pokemon in the set if there was an error
+            skippedMegaPokemonKeys.push(baseKey);
             console.log(`Skipped Mega Pokémon: ${baseKey}`);
           }
         }
       }
 
-      // Process regular Pokémon
+      // Process regular Pokémon for message details
       for (const { key: pokemonKey, parsed } of regularPokemonKeys) {
         const { baseKey, hasUUID } = parsed;
 
@@ -110,8 +117,8 @@ function useHandleMoveToFilter({
         }
       }
 
-      // Show confirmation dialog for remaining Pokémon
-      if (messageDetails.length > 0) {
+      // Show confirmation dialog if there are any cards to move
+      if (cardsToMove.size > 0 && messageDetails.length > 0) {
         const maxDetails = 10;
         const hasMore = messageDetails.length > maxDetails;
         const displayedDetails = hasMore
@@ -141,18 +148,23 @@ function useHandleMoveToFilter({
         console.log('User confirmed:', userConfirmed);
 
         if (userConfirmed) {
-          console.log('Proceeding to move highlighted cards to filter.');
-          handleMoveHighlightedToFilter(filter, remainingHighlightedCards).catch((error) => {
+          console.log('Proceeding to move cards to filter:', cardsToMove);
+          handleMoveHighlightedToFilter(filter, cardsToMove).catch((error) => {
             console.error('Error during ownership update:', error);
             alert('An error occurred while updating ownership. Please try again.');
           });
         } else {
           console.log('User canceled the operation.');
-          setHighlightedCards(remainingHighlightedCards);
         }
-      } else {
-        // If no regular Pokemon remain, just call handleMoveHighlightedToFilter with the remaining cards
-        handleMoveHighlightedToFilter(filter, remainingHighlightedCards);
+      }
+
+      // Notify about skipped Mega Pokémon
+      if (skippedMegaPokemonKeys.length > 0) {
+        const skippedMessage = `Skipped handling of Mega Pokémon with baseKey(s): ${skippedMegaPokemonKeys.join(
+          ', '
+        )}`;
+        console.log(skippedMessage);
+        await alert(skippedMessage);
       }
     },
     [
