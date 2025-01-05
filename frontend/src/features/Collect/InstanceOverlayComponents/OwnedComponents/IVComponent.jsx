@@ -1,14 +1,9 @@
-// IVComponent.jsx
-import React, { useState, useRef, useEffect } from 'react';
+// OwnedComponents/IVComponent.jsx
+
+import React, { useRef, useEffect } from 'react';
 import './IVComponent.css';
 
-const IVComponent = ({ pokemon, editMode, onIvChange }) => {
-  const [ivs, setIvs] = useState({
-    Attack: pokemon.ownershipStatus.attack_iv ?? 0,
-    Defense: pokemon.ownershipStatus.defense_iv ?? 0,
-    Stamina: pokemon.ownershipStatus.stamina_iv ?? 0
-  });
-
+const IVComponent = ({ pokemon, editMode, ivs, onIvChange, errors }) => {
   const inputRefs = {
     Attack: useRef(null),
     Defense: useRef(null),
@@ -16,17 +11,10 @@ const IVComponent = ({ pokemon, editMode, onIvChange }) => {
   };
 
   useEffect(() => {
-    setIvs({
-      Attack: pokemon.ownershipStatus.attack_iv ?? 0,
-      Defense: pokemon.ownershipStatus.defense_iv ?? 0,
-      Stamina: pokemon.ownershipStatus.stamina_iv ?? 0
-    });
-  }, [pokemon]);
-
-  useEffect(() => {
     if (editMode) {
-      Object.keys(inputRefs).forEach(type => {
+      Object.keys(inputRefs).forEach((type) => {
         if (inputRefs[type].current) {
+          inputRefs[type].current.focus();
           inputRefs[type].current.select();
         }
       });
@@ -36,25 +24,22 @@ const IVComponent = ({ pokemon, editMode, onIvChange }) => {
   const handleIvChange = (event, type) => {
     let value = event.target.value;
     if (value === '') {
-      setIvs({ ...ivs, [type]: '' });
-      onIvChange({ ...ivs, [type]: '' }); // Pass empty string instead of 0
+      onIvChange({ ...ivs, [type]: '' }); // Allow empty input
     } else {
       value = parseInt(value, 10);
-      const updatedIvs = { ...ivs, [type]: isNaN(value) ? 0 : Math.max(0, Math.min(15, value)) };
-      setIvs(updatedIvs);
+      const updatedIvs = {
+        ...ivs,
+        [type]: isNaN(value) ? '' : Math.max(0, Math.min(15, value)), // Clamp between 0 and 15
+      };
       onIvChange(updatedIvs);
-    }
-  };  
-
-  const handleKeyPress = (event, type) => {
-    if (event.key === 'Enter') {
-      saveValue(type);
     }
   };
 
-  const saveValue = (type) => {
-    const value = ivs[type] === '' ? 0 : ivs[type];
-    setIvs({ ...ivs, [type]: value });
+  const handleKeyPress = (event, type) => {
+    if (event.key === 'Enter') {
+      event.preventDefault(); // Prevent form submission or line breaks
+      inputRefs[type].current.blur(); // Remove focus from the input
+    }
   };
 
   const renderIvField = (type, label) => (
@@ -73,11 +58,14 @@ const IVComponent = ({ pokemon, editMode, onIvChange }) => {
             className="iv-input"
           />
         ) : (
-          <span className="iv-value">{ivs[type]}</span>
+          <span className="iv-value">{ivs[type] !== '' ? ivs[type] : '—'}</span> // Display '—' for missing IVs
         )}
       </div>
       <div className="iv-bar-bg"></div>
-      <div className={`iv-bar ${ivs[type] === 15 ? 'full' : ''}`} style={{ width: `${(ivs[type] / 15) * 75}%` }}></div>
+      <div
+        className={`iv-bar ${ivs[type] === 15 ? 'full' : ''}`}
+        style={{ width: ivs[type] !== '' ? `${(ivs[type] / 15) * 75}%` : '0%' }}
+      ></div>
     </div>
   );
 

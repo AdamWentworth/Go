@@ -26,7 +26,7 @@ const MegaComponent = ({
         // Deactivate Mega
         setMegaData({
           isMega: false,
-          mega: false,
+          mega: true,
           megaForm: null,
         });
       } else {

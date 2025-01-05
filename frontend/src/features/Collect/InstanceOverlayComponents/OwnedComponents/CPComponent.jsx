@@ -1,13 +1,12 @@
-// CPComponent.jsx
+// OwnedComponents/CPComponent.jsx
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import './CPComponent.css';
 
-const CPComponent = ({ pokemon, editMode, toggleEditMode, onCPChange }) => {
-  const [cp, setCP] = useState(pokemon?.ownershipStatus?.cp?.toString() || '');
+const CPComponent = ({ pokemon, editMode, onCPChange, cp, errors, computedCP }) => {
   const editableRef = useRef(null);
 
-  function setCaretToEnd() {
+  const setCaretToEnd = () => {
     const range = document.createRange();
     const sel = window.getSelection();
     if (editableRef.current) {
@@ -16,51 +15,46 @@ const CPComponent = ({ pokemon, editMode, toggleEditMode, onCPChange }) => {
       sel.removeAllRanges();
       sel.addRange(range);
     }
-  }
+  };
 
   useEffect(() => {
     if (editMode && editableRef.current) {
       editableRef.current.innerText = cp;
-      setCaretToEnd();  // Ensure cursor is at end when editing starts
+      setCaretToEnd(); // Ensure cursor is at end when editing starts
     }
   }, [editMode, cp]);
 
   const handleInput = (event) => {
     const newValue = event.target.innerText;
-    if (/^\d{0,4}$/.test(newValue)) {  // Allow only up to 4 digits (customize as necessary)
-      setCP(newValue);
-      onCPChange(newValue);  // Trigger update in parent state
+    if (/^\d{0,5}$/.test(newValue)) { // Allow up to 5 digits
+      onCPChange(newValue); // Trigger update in parent state
     } else {
-      event.target.innerText = cp;  // Reset to last valid value if input is invalid
+      event.target.innerText = cp; // Reset to last valid value if input is invalid
     }
-    setCaretToEnd();  // Ensure cursor is at end after input
+    setCaretToEnd(); // Ensure cursor is at end after input
   };
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
-      event.preventDefault();  // Prevent line break on Enter
-      editableRef.current.blur();  // Blur the editable element to stop editing
-      toggleEditMode();  // Optionally toggle edit mode off if you have a method to manage it
+      event.preventDefault(); // Prevent line break on Enter
+      editableRef.current.blur(); // Remove focus from the input
     }
   };
 
   const handleBlur = () => {
-    if (typeof cp === 'string') {
-      onCPChange(cp.trim());  // Only trim if it's a string
-    } else {
-      onCPChange(String(cp || '').trim());  // Convert to string if it's not
-    }
+    const trimmedCP = cp.toString().trim();
+    onCPChange(trimmedCP); // Ensure CP is trimmed
   };
 
   const handleContainerClick = () => {
     if (editMode && editableRef.current) {
-      editableRef.current.focus();  // Focus the editable element when the container is clicked
+      editableRef.current.focus(); // Focus the editable element when the container is clicked
     }
   };
 
   // Conditional Rendering Logic
   if ((!cp || String(cp).trim() === '') && !editMode) {
-    return null;  // Do not render the component if cp is null/empty and not in edit mode
+    return null; // Do not render the component if cp is null/empty and not in edit mode
   }
 
   return (
@@ -75,7 +69,7 @@ const CPComponent = ({ pokemon, editMode, toggleEditMode, onCPChange }) => {
                 suppressContentEditableWarning={true}
                 onInput={handleInput}
                 onKeyDown={handleKeyDown}
-                onBlur={handleBlur}  // Handle blur to ensure updates are applied
+                onBlur={handleBlur} // Handle blur to ensure updates are applied
                 ref={editableRef}
                 className="cp-editable-content"
               >
@@ -85,6 +79,10 @@ const CPComponent = ({ pokemon, editMode, toggleEditMode, onCPChange }) => {
               <span className="cp-editable-content">{cp}</span>
             )}
           </div>
+          {/* Display computed CP if available and not in edit mode */}
+          {!editMode && computedCP !== undefined && (
+            <span className="computed-cp">Calculated CP: {computedCP}</span>
+          )}
         </div>
       </div>
     </div>

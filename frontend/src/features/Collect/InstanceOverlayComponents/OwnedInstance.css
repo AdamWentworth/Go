@@ -187,6 +187,26 @@
   transform: translateY(-50%);
 }
 
+.level-component {
+  display: flex;
+  flex-direction: column;
+  margin: 10px 0;
+}
+
+.level-component label {
+  font-weight: bold;
+}
+
+.level-component input {
+  padding: 5px;
+  font-size: 1rem;
+}
+
+.level-component .error {
+  color: red;
+  font-size: 0.8rem;
+}
+
 
 @media (max-width: 480px) {
 }

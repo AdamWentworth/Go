@@ -23,7 +23,7 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
         let currentImage = variantDetail?.currentImage;  // Default image
         // Check if the Pokémon is female and has female data, and update the image accordingly
         const isFemale = value.gender === 'Female';
-        const isMega = value?.mega === true;
+        const isMega = value?.is_mega === true;
 
         if ((isFemale && variantDetail?.female_data) || (isMega && variantDetail?.megaEvolutions)) {
             currentImage = determineImageUrl(isFemale, variantDetail, isMega);
@@ -91,10 +91,11 @@ export const initializePokemonLists = (ownershipData, variants, search) => {
         let currentImage = variantDetail?.currentImage;  // Default image
         // Check if the Pokémon is female and has female data, and update the image accordingly
         const isFemale = value.gender === 'Female';
-        const isMega = value?.mega === true;
+        const isMega = value?.is_mega === true;
+        const megaForm = value?.mega_form
 
         if ((isFemale && variantDetail?.female_data) || (isMega && variantDetail?.megaEvolutions)) {
-            currentImage = determineImageUrl(isFemale, variantDetail, isMega);
+            currentImage = determineImageUrl(isFemale, variantDetail, isMega, megaForm);
         }        
 
         // Prepare the object to be added to the list

@@ -48,5 +48,6 @@ export function createNewInstanceData(variant) {
         mega: false,
         mega_form: null,
         is_mega: false,
+        level: null,
     };
 }

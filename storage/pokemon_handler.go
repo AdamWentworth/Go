@@ -94,6 +94,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 		weight := parseNullableFloat(pm["weight"])
 		height := parseNullableFloat(pm["height"])
 		friendshipLevel := parseNullableInt(pm["friendship_level"])
+		level := parseNullableFloat(pm["level"])
 
 		// Nullable strings (empty => nil)
 		nickname := parseNullableString(pm["nickname"])
@@ -151,6 +152,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			"mega":             mega,
 			"mega_form":        megaForm,
 			"is_mega":          isMega,
+			"level":            level,
 		}
 
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
@@ -196,6 +198,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 				Mega:            mega,
 				MegaForm:        megaForm,
 				IsMega:          isMega,
+				Level:           level,
 			}
 
 			if errCreate := DB.Create(&newInstance).Error; errCreate != nil {

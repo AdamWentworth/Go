@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import './OwnedInstance.css';
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
+import { useModal } from '../../../contexts/ModalContext'; // Import useModal
+
 import EditSaveComponent from './EditSaveComponent';
 import CPComponent from './OwnedComponents/CPComponent';
 import FavoriteComponent from './OwnedComponents/FavoriteComponent';
@@ -18,14 +20,22 @@ import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
 import BackgroundComponent from './OwnedComponents/BackgroundComponent';
 import MegaComponent from './OwnedComponents/MegaComponent';
+import LevelComponent from './OwnedComponents/LevelComponent'; // Import LevelComponent
 
 import { determineImageUrl } from '../../../utils/imageHelpers';
+import useValidation from './hooks/useValidation';
 
 const OwnedInstance = ({ pokemon, isEditable }) => {
-  console.log(pokemon);
+  console.log('Pokemon Prop:', pokemon);
   const { updateDetails } = useContext(PokemonDataContext);
 
-  // Instead, manage mega data via a single state object
+  // Use the custom validation hook
+  const { errors: validationErrors, validate, resetErrors, computedValues } = useValidation(); // Updated to handle computed values
+
+  // Use the modal context
+  const { alert } = useModal();
+
+  // Manage mega data via a single state object
   const [megaData, setMegaData] = useState({
     isMega: pokemon.ownershipStatus.is_mega || false,
     mega: pokemon.ownershipStatus.mega || false,
@@ -40,25 +50,30 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
 
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
-  const [cp, setCP] = useState(pokemon.ownershipStatus.cp);
+  const [cp, setCP] = useState(Number(pokemon.ownershipStatus.cp)); // Ensure cp is a number
   const [isFavorite, setIsFavorite] = useState(pokemon.ownershipStatus.favorite);
   const [gender, setGender] = useState(pokemon.ownershipStatus.gender);
-  const [weight, setWeight] = useState(pokemon.ownershipStatus.weight);
-  const [height, setHeight] = useState(pokemon.ownershipStatus.height);
+  const [weight, setWeight] = useState(Number(pokemon.ownershipStatus.weight)); // Ensure weight is a number
+  const [height, setHeight] = useState(Number(pokemon.ownershipStatus.height)); // Ensure height is a number
   const [moves, setMoves] = useState({
     fastMove: pokemon.ownershipStatus.fast_move_id,
     chargedMove1: pokemon.ownershipStatus.charged_move1_id,
     chargedMove2: pokemon.ownershipStatus.charged_move2_id,
   });
   const [ivs, setIvs] = useState({
-    Attack: pokemon.ownershipStatus.attack_iv,
-    Defense: pokemon.ownershipStatus.defense_iv,
-    Stamina: pokemon.ownershipStatus.stamina_iv,
+    Attack: pokemon.ownershipStatus.attack_iv != null ? Number(pokemon.ownershipStatus.attack_iv) : '',
+    Defense: pokemon.ownershipStatus.defense_iv != null ? Number(pokemon.ownershipStatus.defense_iv) : '',
+    Stamina: pokemon.ownershipStatus.stamina_iv != null ? Number(pokemon.ownershipStatus.stamina_iv) : '',
   });
   const [locationCaught, setLocationCaught] = useState(pokemon.ownershipStatus.location_caught);
   const [dateCaught, setDateCaught] = useState(pokemon.ownershipStatus.date_caught);
   const [showBackgrounds, setShowBackgrounds] = useState(false);
   const [selectedBackground, setSelectedBackground] = useState(null);
+
+  // Initialize level state
+  const [level, setLevel] = useState(pokemon.ownershipStatus.level || null);
+
+  // Removed useEffect that might overwrite 'level' state
 
   useEffect(() => {
     if (pokemon.ownershipStatus.location_card !== null) {
@@ -80,9 +95,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     setIsFemale(newGender === 'Female'); // Update the gender state and isFemale
   };
 
-  // Retain existing handlers
   const handleCPChange = (newCP) => {
-    setCP(newCP);
+    setCP(Number(newCP)); // Ensure cp is stored as a number
   };
 
   const handleLuckyToggle = (newLuckyStatus) => {
@@ -98,11 +112,11 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   };
 
   const handleWeightChange = (newWeight) => {
-    setWeight(newWeight);
+    setWeight(Number(newWeight)); // Ensure weight is stored as a number
   };
 
   const handleHeightChange = (newHeight) => {
-    setHeight(newHeight);
+    setHeight(Number(newHeight)); // Ensure height is stored as a number
   };
 
   const handleMovesChange = (newMoves) => {
@@ -121,30 +135,88 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     setDateCaught(newDate);
   };
 
-  const toggleEditMode = () => {
+  const handleLevelChange = (newLevel) => {
+    setLevel(newLevel !== '' ? Number(newLevel) : null); // Ensure level is a number or null
+  };
+
+  const toggleEditMode = async () => {
     if (editMode) {
-      updateDetails(pokemon.pokemonKey, {
-        nickname: nickname,
-        lucky: isLucky,
-        cp: cp,
-        favorite: isFavorite,
-        gender: gender,
-        weight: weight,
-        height: height,
-        fast_move_id: moves.fastMove,
-        charged_move1_id: moves.chargedMove1,
-        charged_move2_id: moves.chargedMove2,
-        attack_iv: ivs.Attack,
-        defense_iv: ivs.Defense,
-        stamina_iv: ivs.Stamina,
-        location_caught: locationCaught,
-        date_caught: dateCaught,
-        location_card: selectedBackground ? selectedBackground.background_id : null,
-        mega: megaData.mega,
-        is_mega: megaData.isMega,
-        mega_form: megaData.isMega ? megaData.megaForm : null
-      });
+      // Prepare the fields to validate
+      const fieldsToValidate = {
+        level,
+        cp,
+        ivs, // Include IVs in the validation
+        weight, // Current Weight from state
+        height, // Current Height from state
+        // Add other fields as necessary
+      };
+
+      console.log('Validating Fields:', fieldsToValidate);
+
+      // Validate the fields along with the entire pokemon object
+      const { validationErrors, computedValues: newComputedValues } = validate(fieldsToValidate, pokemon);
+      console.log('Validation Errors:', validationErrors);
+      console.log('Computed Values:', newComputedValues);
+
+      const isValid = Object.keys(validationErrors).length === 0;
+
+      if (isValid) {
+        try {
+          // Update state based on computed values
+          if (newComputedValues.level !== undefined) {
+            setLevel(newComputedValues.level);
+            console.log(`Computed Level: ${newComputedValues.level}`);
+          }
+          if (newComputedValues.cp !== undefined) {
+            setCP(newComputedValues.cp);
+            console.log(`Computed CP: ${newComputedValues.cp}`);
+          }
+          if (newComputedValues.ivs !== undefined) {
+            setIvs(newComputedValues.ivs);
+            console.log(`Computed IVs:`, newComputedValues.ivs);
+          }
+
+          // Proceed with updating details, including computed values
+          await updateDetails(pokemon.pokemonKey, {
+            nickname: nickname,
+            lucky: isLucky,
+            cp: newComputedValues.cp !== undefined ? newComputedValues.cp : cp,
+            favorite: isFavorite,
+            gender: gender,
+            weight: weight,
+            height: height,
+            fast_move_id: moves.fastMove,
+            charged_move1_id: moves.chargedMove1,
+            charged_move2_id: moves.chargedMove2,
+            attack_iv: newComputedValues.ivs !== undefined ? newComputedValues.ivs.Attack : ivs.Attack,
+            defense_iv: newComputedValues.ivs !== undefined ? newComputedValues.ivs.Defense : ivs.Defense,
+            stamina_iv: newComputedValues.ivs !== undefined ? newComputedValues.ivs.Stamina : ivs.Stamina,
+            location_caught: locationCaught,
+            date_caught: dateCaught,
+            location_card: selectedBackground ? selectedBackground.background_id : null,
+            mega: megaData.mega,
+            is_mega: megaData.isMega,
+            mega_form: megaData.isMega ? megaData.megaForm : null,
+            level: newComputedValues.level !== undefined ? newComputedValues.level : level, // Include the found level as a number
+          });
+          // Optionally reset errors after successful validation
+          resetErrors();
+          console.log(`Details updated successfully.`);
+        } catch (error) {
+          // Handle any errors from updateDetails
+          console.error('Error updating details:', error);
+          alert('An error occurred while updating the Pokémon details. Please try again.');
+          return;
+        }
+      } else {
+        // Validation failed, show alert modal with errors
+        const errorMessages = Object.values(validationErrors).join('\n');
+        alert(errorMessages);
+        console.log(`Validation failed with errors:`, validationErrors);
+        return;
+      }
     }
+    // Toggle edit mode
     setEditMode(!editMode);
   };
 
@@ -167,8 +239,19 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         {isEditable && (
           <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
         )}
-        <CPComponent pokemon={pokemon} editMode={editMode} onCPChange={handleCPChange} />
-        <FavoriteComponent pokemon={pokemon} editMode={editMode} onFavoriteChange={handleFavoriteChange} />
+        <CPComponent 
+          pokemon={pokemon} 
+          editMode={editMode} 
+          onCPChange={handleCPChange}
+          cp={cp}
+          errors={validationErrors}
+          computedCP={computedValues?.cp} // Corrected: Use computedValues from the hook
+        />
+        <FavoriteComponent 
+          pokemon={pokemon} 
+          editMode={editMode} 
+          onFavoriteChange={handleFavoriteChange} 
+        />
       </div>
       {selectableBackgrounds.length > 0 && (
         <div className={`background-select-row ${editMode ? 'active' : ''}`}>
@@ -193,7 +276,11 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         </div>
       </div>
       <div className="name-mega-container">
-        <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
+        <NameComponent 
+          pokemon={pokemon} 
+          editMode={editMode} 
+          onNicknameChange={handleNicknameChange} 
+        />
         {pokemon.megaEvolutions &&
           pokemon.megaEvolutions.length > 0 &&
           !pokemon.ownershipStatus.shadow && // Ensure shadow ownership is false
@@ -206,11 +293,35 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             />
         )}
       </div>
+
+      {/* Level Component in Edit Mode */}
+      {isEditable && (
+        <LevelComponent
+          pokemon={pokemon}
+          editMode={editMode}
+          level={level}
+          onLevelChange={handleLevelChange}
+          errors={validationErrors}
+        />
+      )}
+
+      {/* Displaying Level when not in edit mode */}
+      {!isEditable && level !== null && (
+        <div className="level-display">
+          <strong>Level:</strong> {level}
+        </div>
+      )}
+
       <div className="gender-lucky-row">
         {pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade || pokemon.rarity === "Mythic" ? (
           <div className="lucky-placeholder"></div>
         ) : (
-          <LuckyComponent pokemon={pokemon} onToggleLucky={handleLuckyToggle} isLucky={isLucky} editMode={editMode} />
+          <LuckyComponent 
+            pokemon={pokemon} 
+            onToggleLucky={handleLuckyToggle} 
+            isLucky={isLucky} 
+            editMode={editMode} 
+          />
         )}
         <GenderComponent 
           pokemon={pokemon} 
@@ -220,21 +331,47 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         />
       </div>
       <div className="stats-container">
-        <WeightComponent pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
+        <WeightComponent 
+          pokemon={pokemon} 
+          editMode={editMode} 
+          onWeightChange={handleWeightChange} 
+        />
         <TypeComponent pokemon={pokemon} />
-        <HeightComponent pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
+        <HeightComponent 
+          pokemon={pokemon} 
+          editMode={editMode} 
+          onHeightChange={handleHeightChange} 
+        />
       </div>
       <div className="moves-content">
-        <MovesComponent pokemon={pokemon} editMode={editMode} onMovesChange={handleMovesChange} />
+        <MovesComponent 
+          pokemon={pokemon} 
+          editMode={editMode} 
+          onMovesChange={handleMovesChange} 
+        />
       </div>
       <div className="iv-component">
-        <IVComponent pokemon={pokemon} editMode={editMode} onIvChange={handleIvChange} />
+        <IVComponent 
+          pokemon={pokemon} 
+          editMode={editMode} 
+          onIvChange={handleIvChange} 
+          ivs={ivs}
+          errors={validationErrors}
+        />
       </div>
       <div className="location-caught-component">
-        <LocationCaughtComponent pokemon={pokemon} editMode={editMode} onLocationChange={handleLocationCaughtChange} />
+        <LocationCaughtComponent 
+          pokemon={pokemon} 
+          editMode={editMode} 
+          onLocationChange={handleLocationCaughtChange} 
+        />
       </div>
       <div className="date-caught-component">
-        <DateCaughtComponent pokemon={pokemon} editMode={editMode} onDateChange={handleDateCaughtChange} />
+        <DateCaughtComponent 
+          pokemon={pokemon} 
+          editMode={editMode} 
+          onDateChange={handleDateCaughtChange} 
+        />
       </div>
       {showBackgrounds && (
         <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
@@ -246,6 +383,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
       )}
     </div>
   );
+
 };
 
 export default OwnedInstance;
