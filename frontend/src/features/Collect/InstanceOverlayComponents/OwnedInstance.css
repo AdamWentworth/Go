@@ -150,20 +150,20 @@
 
 .owned-instance .stats-container {
   display: flex;
-  align-items: center; /* Vertically align all components */
-  position: relative; /* Allows absolute positioning for TypeComponent */
+  align-items: center; /* Align items vertically */
   width: 100%;
-  justify-content: space-between; /* Creates space for weight and height components */
+  justify-content: center; /* Default behavior with weight and height */
 }
 
-.weight-container {
-  flex: 1; /* Allows it to take available space */
-}
-
+.weight-container,
 .height-container {
-  flex: 1; /* Allows it to take available space */
+  flex: 1; /* Allow equal space for weight and height components */
 }
 
+.owned-instance .stats-container.only-type .weight-container,
+.owned-instance .stats-container.only-type .height-container {
+  display: none; /* Hide these containers when not rendered */
+}
 
 .owned-instance .weight-component, .owned-instance .type-component, .owned-instance .height-component {
   display: flex;
