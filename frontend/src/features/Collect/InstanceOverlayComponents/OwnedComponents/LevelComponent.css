@@ -1,0 +1,44 @@
+/* LevelComponent.css */
+
+.level-component {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: left;
+  }
+  
+  .level-inline {
+    display: flex;
+    align-items: center; /* Align text and value vertically */
+    gap: 8px; /* Optional spacing between "Level:" and the value */
+  }
+  
+  .level-label {
+    font-weight: normal;
+    font-size: 0.8rem; /* Small font size for the label */
+    color: grey; /* Grey color for the label */
+  }
+  
+  .level-input {
+    background-color: #333; /* Dark background like move-select */
+    color: white; /* White text */
+    border-radius: 4px; /* Rounded corners */
+    font-size: 0.8rem; /* Small font size */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    border: none; /* No border */
+    outline: 1px solid #a3a3a3; /* Light grey outline */
+    padding: 4px 8px; /* Add padding for better usability */
+    text-align: center; /* Center the text inside the input */
+    width: 50px; /* Adjust width as needed */
+  }
+  
+  .level-input:focus {
+    outline: 1px solid white; /* Change outline color when focused */
+  }
+  
+  .level-value {
+    font-weight: normal;
+    font-size: 0.8rem;
+    color: grey; /* Match the small grey style */
+  }
+  

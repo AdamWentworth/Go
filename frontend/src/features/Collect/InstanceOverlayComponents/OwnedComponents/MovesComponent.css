@@ -125,6 +125,6 @@
 }
 
 .spacer {
-  width: 24px; /* Width of the removed icon button to preserve spacing */
-  height: 24px; /* Height to match the button size */
+  width: 20px; /* Width of the removed icon button to preserve spacing */
+  height: 20px; /* Height to match the button size */
 }

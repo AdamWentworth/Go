@@ -100,6 +100,7 @@ type PokemonInstance struct {
 	Mega            bool           `gorm:"column:mega;default:false"`
 	MegaForm        *string        `gorm:"column:mega_form"`
 	IsMega          bool           `gorm:"column:is_mega;default:false"`
+	Level           *float64       `gorm:"column:level"`
 }
 
 // TableName sets the name of the table in the database

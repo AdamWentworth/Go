@@ -2,7 +2,7 @@
 .weight-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start; /* Align content to the start (left) */
   }
   
   .weight-display {

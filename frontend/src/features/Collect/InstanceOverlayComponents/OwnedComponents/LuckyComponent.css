@@ -4,9 +4,7 @@
     display: flex; /* Enables flexbox layout */
     align-items: center; /* Centers the image vertically */
     justify-content: flex-start; /* Aligns the image to the left */
-    width: 100%; /* Adjust width as necessary */
     height: 100%; /* Adjust height as necessary */
-    margin-left: 10px;
 }
 
 .lucky-component img {

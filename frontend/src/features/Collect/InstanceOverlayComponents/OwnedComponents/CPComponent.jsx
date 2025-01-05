@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import './CPComponent.css';
 
-const CPComponent = ({ pokemon, editMode, onCPChange, cp, errors, computedCP }) => {
+const CPComponent = ({ pokemon, editMode, onCPChange, cp, errors }) => {
   const editableRef = useRef(null);
 
   const setCaretToEnd = () => {
@@ -29,7 +29,7 @@ const CPComponent = ({ pokemon, editMode, onCPChange, cp, errors, computedCP }) 
     if (/^\d{0,5}$/.test(newValue)) { // Allow up to 5 digits
       onCPChange(newValue); // Trigger update in parent state
     } else {
-      event.target.innerText = cp; // Reset to last valid value if input is invalid
+      event.target.innerText = cp || ''; // Reset to last valid value if input is invalid
     }
     setCaretToEnd(); // Ensure cursor is at end after input
   };
@@ -42,8 +42,8 @@ const CPComponent = ({ pokemon, editMode, onCPChange, cp, errors, computedCP }) 
   };
 
   const handleBlur = () => {
-    const trimmedCP = cp.toString().trim();
-    onCPChange(trimmedCP); // Ensure CP is trimmed
+    const trimmedCP = cp.trim();
+    onCPChange(trimmedCP); // Pass trimmed CP without converting to number
   };
 
   const handleContainerClick = () => {
@@ -53,7 +53,7 @@ const CPComponent = ({ pokemon, editMode, onCPChange, cp, errors, computedCP }) 
   };
 
   // Conditional Rendering Logic
-  if ((!cp || String(cp).trim() === '') && !editMode) {
+  if ((!cp || cp.trim() === '') && !editMode) {
     return null; // Do not render the component if cp is null/empty and not in edit mode
   }
 
@@ -73,16 +73,14 @@ const CPComponent = ({ pokemon, editMode, onCPChange, cp, errors, computedCP }) 
                 ref={editableRef}
                 className="cp-editable-content"
               >
-                {cp || ''}
+                {cp}
               </span>
             ) : (
               <span className="cp-editable-content">{cp}</span>
             )}
           </div>
-          {/* Display computed CP if available and not in edit mode */}
-          {!editMode && computedCP !== undefined && (
-            <span className="computed-cp">Calculated CP: {computedCP}</span>
-          )}
+          {/* Display CP-related errors */}
+          {!editMode && errors.cp && <div className="error">{errors.cp}</div>}
         </div>
       </div>
     </div>

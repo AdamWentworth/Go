@@ -97,6 +97,7 @@ func GetUpdates(c *fiber.Ctx) error {
 			"mega":             instance.Mega,
 			"mega_form":        instance.MegaForm,
 			"is_mega":          instance.IsMega,
+			"level":            instance.Level,
 		}
 
 		// Add the instance to the response data using its `InstanceID`

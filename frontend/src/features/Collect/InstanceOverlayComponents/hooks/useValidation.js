@@ -2,50 +2,28 @@
 
 import { useState } from 'react';
 import { cpMultipliers } from '../../../../utils/constants'; // Adjust the path as necessary
+import { calculateCP } from '../../../../utils/calculateCP'; // Import the utility function
 
 const useValidation = () => {
   const [errors, setErrors] = useState({});
   const [computedValues, setComputedValues] = useState({}); // To store computed values
 
   /**
-   * Calculates CP based on the given parameters.
-   */
-  const calculateCP = (
-    baseAttack,
-    baseDefense,
-    baseStamina,
-    ivAttack,
-    ivDefense,
-    ivStamina,
-    cpMultiplier
-  ) => {
-    const attack = baseAttack + ivAttack;
-    const defense = baseDefense + ivDefense;
-    const stamina = baseStamina + ivStamina;
-    const cp = Math.floor(
-      (attack * Math.sqrt(defense) * Math.sqrt(stamina) * Math.pow(cpMultiplier, 2)) / 10
-    );
-
-    return cp;
-  };
-
-  /**
    * Validates the provided fields and computes the missing parameter.
+   * Now accepts baseStats as a parameter.
    */
-  const validate = (fields, pokemon) => {
+  const validate = (fields, baseStats) => {
     const validationErrors = {};
     const tempComputedValues = {}; // Temporary object to hold computed values
-
+  
     // Destructure base stats and IVs
-    const baseAttack = Number(pokemon.attack);
-    const baseDefense = Number(pokemon.defense);
-    const baseStamina = Number(pokemon.stamina);
+    const { attack: baseAttack, defense: baseDefense, stamina: baseStamina } = baseStats;
     const ivAttack = fields.ivs?.Attack;
     const ivDefense = fields.ivs?.Defense;
     const ivStamina = fields.ivs?.Stamina;
     const cp = Number(fields.cp);
     const level = Number(fields.level);
-
+  
     // Determine which parameters are provided
     const hasLevel = !isNaN(level) && level > 0;
     const hasCP = !isNaN(cp) && cp > 0;
@@ -59,14 +37,19 @@ const useValidation = () => {
       typeof ivStamina === 'number' &&
       ivStamina >= 0 &&
       ivStamina <= 15;
-
+  
+    // Skip validation if all three parameters are null or absent
+    if (!hasLevel && !hasCP && !hasIVs) {
+      return { validationErrors: {}, computedValues: {} };
+    }
+  
     // Validation for Level
     if (hasLevel) {
       if (level < 1 || level > 50) {
         validationErrors.level = 'Level must be between 1 and 50.';
       }
     }
-
+  
     // Validation for CP
     if (hasCP) {
       if (cp < 0) {
@@ -186,9 +169,6 @@ const useValidation = () => {
 
     // Update errors state
     setErrors(validationErrors);
-
-    console.log('Validation Errors:', validationErrors);
-    console.log('Computed Values:', tempComputedValues);
 
     return { validationErrors, computedValues: tempComputedValues };
   };

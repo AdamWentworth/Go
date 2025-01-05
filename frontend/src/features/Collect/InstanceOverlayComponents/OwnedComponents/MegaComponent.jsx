@@ -1,4 +1,4 @@
-// MegaComponent.jsx
+// OwnedComponents/MegaComponent.jsx
 
 import React from 'react';
 import './MegaComponent.css';
@@ -12,10 +12,10 @@ const MegaComponent = ({
   if (!editMode) return null;
 
   const handleClick = () => {
-    const { isMega, mega, megaForm } = megaData;
+    const { isMega, megaForm } = megaData;
 
     if (!isMega) {
-      // Activate Mega
+      // Activate Mega with the first available Mega form
       setMegaData({
         isMega: true,
         mega: true,
@@ -23,7 +23,7 @@ const MegaComponent = ({
       });
     } else {
       if (megaEvolutions.length === 1) {
-        // Deactivate Mega
+        // Deactivate Mega if only one Mega form exists
         setMegaData({
           isMega: false,
           mega: true,
@@ -34,18 +34,17 @@ const MegaComponent = ({
         const currentIndex = megaEvolutions.findIndex(
           me => me.form.toLowerCase() === megaForm?.toLowerCase()
         );
-        const nextIndex = (currentIndex + 1) % megaEvolutions.length;
-        const nextForm = megaEvolutions[nextIndex].form;
-
-        if (nextIndex === 0) {
-          // If cycling back to first form, deactivate Mega
+        const nextIndex = (currentIndex + 1) % (megaEvolutions.length + 1); // +1 to include deactivation
+        if (nextIndex === megaEvolutions.length) {
+          // Deactivate Mega after cycling through all forms
           setMegaData({
             isMega: false,
-            mega: false,
+            mega: true,
             megaForm: null,
           });
         } else {
-          // Switch to next Mega form
+          // Switch to the next Mega form
+          const nextForm = megaEvolutions[nextIndex].form;
           setMegaData({
             isMega: true,
             mega: true,
@@ -58,9 +57,9 @@ const MegaComponent = ({
 
   const { isMega, megaForm } = megaData;
 
-  const formLabel = megaForm 
+  const formLabel = megaForm
     ? `Mega ${megaForm}`
-    : isMega 
+    : isMega
       ? 'Mega'
       : 'Normal';
 

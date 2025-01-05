@@ -1,6 +1,6 @@
 // OwnedInstance.jsx
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import './OwnedInstance.css';
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
 import { useModal } from '../../../contexts/ModalContext'; // Import useModal
@@ -23,14 +23,16 @@ import MegaComponent from './OwnedComponents/MegaComponent';
 import LevelComponent from './OwnedComponents/LevelComponent'; // Import LevelComponent
 
 import { determineImageUrl } from '../../../utils/imageHelpers';
+import { calculateCP } from '../../../utils/calculateCP'; // Import the utility function
 import useValidation from './hooks/useValidation';
+import { cpMultipliers } from '../../../utils/constants'; // Ensure this includes all levels
 
 const OwnedInstance = ({ pokemon, isEditable }) => {
-  console.log('Pokemon Prop:', pokemon);
+  // console.log('Pokemon Prop:', pokemon);
   const { updateDetails } = useContext(PokemonDataContext);
 
   // Use the custom validation hook
-  const { errors: validationErrors, validate, resetErrors, computedValues } = useValidation(); // Updated to handle computed values
+  const { errors: validationErrors, validate, resetErrors } = useValidation();
 
   // Use the modal context
   const { alert } = useModal();
@@ -50,7 +52,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
 
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
-  const [cp, setCP] = useState(Number(pokemon.ownershipStatus.cp)); // Ensure cp is a number
+  const [cp, setCP] = useState(pokemon.ownershipStatus.cp ? pokemon.ownershipStatus.cp.toString() : ''); // Changed to string
   const [isFavorite, setIsFavorite] = useState(pokemon.ownershipStatus.favorite);
   const [gender, setGender] = useState(pokemon.ownershipStatus.gender);
   const [weight, setWeight] = useState(Number(pokemon.ownershipStatus.weight)); // Ensure weight is a number
@@ -73,7 +75,52 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   // Initialize level state
   const [level, setLevel] = useState(pokemon.ownershipStatus.level || null);
 
-  // Removed useEffect that might overwrite 'level' state
+  // Compute current base stats using useMemo
+  const currentBaseStats = useMemo(() => {
+    if (megaData.isMega) {
+      if (megaData.megaForm) {
+        // Case 1: megaForm is defined
+        const selectedMega = pokemon.megaEvolutions.find(
+          (me) => me.form && me.form.toLowerCase() === megaData.megaForm.toLowerCase()
+        );
+        if (selectedMega) {
+          console.log(`Selected Mega Form: ${selectedMega.form}`);
+          return {
+            attack: Number(selectedMega.attack),
+            defense: Number(selectedMega.defense),
+            stamina: Number(selectedMega.stamina),
+          };
+        } else {
+          console.warn(
+            `Mega form "${megaData.megaForm}" not found in megaEvolutions for Pokémon "${pokemon.name}". Falling back to normal stats.`
+          );
+        }
+      } else {
+        // Case 2: megaForm is null
+        const selectedMega = pokemon.megaEvolutions.find(
+          (me) => !me.form // Find megaEvolution with form as null or undefined
+        );
+        if (selectedMega) {
+          console.log(`Selected Mega Form: null (default Mega Form)`);
+          return {
+            attack: Number(selectedMega.attack),
+            defense: Number(selectedMega.defense),
+            stamina: Number(selectedMega.stamina),
+          };
+        } else {
+          console.warn(
+            `No Mega form with null form found in megaEvolutions for Pokémon "${pokemon.name}". Falling back to normal stats.`
+          );
+        }
+      }
+    }
+    // Fallback to normal base stats
+    return {
+      attack: Number(pokemon.attack),
+      defense: Number(pokemon.defense),
+      stamina: Number(pokemon.stamina),
+    };  
+  }, [megaData.isMega, megaData.megaForm, pokemon.megaEvolutions, pokemon.attack, pokemon.defense, pokemon.stamina]);
 
   useEffect(() => {
     if (pokemon.ownershipStatus.location_card !== null) {
@@ -90,13 +137,52 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     setCurrentImage(updatedImage); 
   }, [isFemale, megaData.isMega, pokemon, megaData.megaForm]);
 
+  /**
+   * Recalculate CP whenever currentBaseStats changes (i.e., when Mega Evolution is toggled).
+   */
+  useEffect(() => {
+    const { attack, defense, stamina } = currentBaseStats;
+    const atk = ivs.Attack;
+    const def = ivs.Defense;
+    const sta = ivs.Stamina;
+
+    // Ensure all required values are present
+    if (
+      level != null &&
+      !isNaN(level) &&
+      atk !== '' &&
+      def !== '' &&
+      sta !== '' &&
+      !isNaN(atk) &&
+      !isNaN(def) &&
+      !isNaN(sta)
+    ) {
+      const multiplier = cpMultipliers[level];
+      if (multiplier) {
+        const calculatedCP = calculateCP(
+          attack,
+          defense,
+          stamina,
+          atk,
+          def,
+          sta,
+          multiplier
+        );
+        setCP(calculatedCP.toString());
+      } else {
+        console.warn(`No CP multiplier found for level ${level}`);
+      }
+    }
+  }, [currentBaseStats, level, ivs]); // Added 'level' and 'ivs' to dependencies to ensure CP recalculation when they change
+
+  // Handler functions remain mostly unchanged
   const handleGenderChange = (newGender) => {
     setGender(newGender);
     setIsFemale(newGender === 'Female'); // Update the gender state and isFemale
   };
 
   const handleCPChange = (newCP) => {
-    setCP(Number(newCP)); // Ensure cp is stored as a number
+    setCP(newCP); // Store cp as a string, allowing empty strings
   };
 
   const handleLuckyToggle = (newLuckyStatus) => {
@@ -144,19 +230,18 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
       // Prepare the fields to validate
       const fieldsToValidate = {
         level,
-        cp,
+        cp: cp !== '' ? Number(cp) : null, // Convert cp to number or null
         ivs, // Include IVs in the validation
         weight, // Current Weight from state
         height, // Current Height from state
         // Add other fields as necessary
       };
 
-      console.log('Validating Fields:', fieldsToValidate);
-
-      // Validate the fields along with the entire pokemon object
-      const { validationErrors, computedValues: newComputedValues } = validate(fieldsToValidate, pokemon);
-      console.log('Validation Errors:', validationErrors);
-      console.log('Computed Values:', newComputedValues);
+      // Validate the fields along with the current base stats
+      const { validationErrors, computedValues: newComputedValues } = validate(
+        fieldsToValidate,
+        currentBaseStats
+      );
 
       const isValid = Object.keys(validationErrors).length === 0;
 
@@ -165,22 +250,19 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           // Update state based on computed values
           if (newComputedValues.level !== undefined) {
             setLevel(newComputedValues.level);
-            console.log(`Computed Level: ${newComputedValues.level}`);
           }
           if (newComputedValues.cp !== undefined) {
-            setCP(newComputedValues.cp);
-            console.log(`Computed CP: ${newComputedValues.cp}`);
+            setCP(newComputedValues.cp.toString());
           }
           if (newComputedValues.ivs !== undefined) {
             setIvs(newComputedValues.ivs);
-            console.log(`Computed IVs:`, newComputedValues.ivs);
           }
 
           // Proceed with updating details, including computed values
           await updateDetails(pokemon.pokemonKey, {
             nickname: nickname,
             lucky: isLucky,
-            cp: newComputedValues.cp !== undefined ? newComputedValues.cp : cp,
+            cp: newComputedValues.cp !== undefined ? (newComputedValues.cp !== null ? Number(newComputedValues.cp) : null) : (cp !== '' ? Number(cp) : null),
             favorite: isFavorite,
             gender: gender,
             weight: weight,
@@ -188,16 +270,28 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             fast_move_id: moves.fastMove,
             charged_move1_id: moves.chargedMove1,
             charged_move2_id: moves.chargedMove2,
-            attack_iv: newComputedValues.ivs !== undefined ? newComputedValues.ivs.Attack : ivs.Attack,
-            defense_iv: newComputedValues.ivs !== undefined ? newComputedValues.ivs.Defense : ivs.Defense,
-            stamina_iv: newComputedValues.ivs !== undefined ? newComputedValues.ivs.Stamina : ivs.Stamina,
+            attack_iv:
+              newComputedValues.ivs !== undefined
+                ? newComputedValues.ivs.Attack
+                : ivs.Attack,
+            defense_iv:
+              newComputedValues.ivs !== undefined
+                ? newComputedValues.ivs.Defense
+                : ivs.Defense,
+            stamina_iv:
+              newComputedValues.ivs !== undefined
+                ? newComputedValues.ivs.Stamina
+                : ivs.Stamina,
             location_caught: locationCaught,
             date_caught: dateCaught,
             location_card: selectedBackground ? selectedBackground.background_id : null,
             mega: megaData.mega,
             is_mega: megaData.isMega,
             mega_form: megaData.isMega ? megaData.megaForm : null,
-            level: newComputedValues.level !== undefined ? newComputedValues.level : level, // Include the found level as a number
+            level:
+              newComputedValues.level !== undefined
+                ? newComputedValues.level
+                : level, // Include the found level as a number
           });
           // Optionally reset errors after successful validation
           resetErrors();
@@ -244,8 +338,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           editMode={editMode} 
           onCPChange={handleCPChange}
           cp={cp}
-          errors={validationErrors}
-          computedCP={computedValues?.cp} // Corrected: Use computedValues from the hook
+          errors={validationErrors} // Pass errors to CPComponent
         />
         <FavoriteComponent 
           pokemon={pokemon} 
@@ -294,24 +387,6 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         )}
       </div>
 
-      {/* Level Component in Edit Mode */}
-      {isEditable && (
-        <LevelComponent
-          pokemon={pokemon}
-          editMode={editMode}
-          level={level}
-          onLevelChange={handleLevelChange}
-          errors={validationErrors}
-        />
-      )}
-
-      {/* Displaying Level when not in edit mode */}
-      {!isEditable && level !== null && (
-        <div className="level-display">
-          <strong>Level:</strong> {level}
-        </div>
-      )}
-
       <div className="gender-lucky-row">
         {pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade || pokemon.rarity === "Mythic" ? (
           <div className="lucky-placeholder"></div>
@@ -323,6 +398,13 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             editMode={editMode} 
           />
         )}
+        <LevelComponent
+          pokemon={pokemon}
+          editMode={editMode}
+          level={level}
+          onLevelChange={handleLevelChange}
+          errors={validationErrors}
+        />
         <GenderComponent 
           pokemon={pokemon} 
           editMode={editMode} 
@@ -383,7 +465,6 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
       )}
     </div>
   );
-
 };
 
 export default OwnedInstance;

@@ -137,20 +137,33 @@
 .owned-instance .gender-lucky-row {
   display: flex;
   align-items: center;
-  justify-content: space-around;
+  justify-content: space-between; /* Default: space out components */
   width: 100%;
+  position: relative; /* Allows precise centering of the LevelComponent */
 }
 
-.owned-instance .gender-component, .owned-instance .lucky-component {
-  flex: 1;
+/* To create consistent space for Lucky and Gender */
+.lucky-component,
+.gender-container {
+  flex: 1; /* Ensures they take up equal available space */
 }
 
 .owned-instance .stats-container {
   display: flex;
-  justify-content: space-around;
-  gap: 20px;
+  align-items: center; /* Vertically align all components */
+  position: relative; /* Allows absolute positioning for TypeComponent */
   width: 100%;
+  justify-content: space-between; /* Creates space for weight and height components */
 }
+
+.weight-container {
+  flex: 1; /* Allows it to take available space */
+}
+
+.height-container {
+  flex: 1; /* Allows it to take available space */
+}
+
 
 .owned-instance .weight-component, .owned-instance .type-component, .owned-instance .height-component {
   display: flex;
