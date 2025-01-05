@@ -8,6 +8,7 @@ import CloseButton from '../../../../components/CloseButton';
 
 const MegaPokemonSelection = ({
   ownedPokemon,
+  baseKey, // New prop to handle shiny status
   onAssignExisting,
   onCreateNew,
   onCancel,
@@ -15,9 +16,28 @@ const MegaPokemonSelection = ({
   const { updateDetails, updateLists } = useContext(PokemonDataContext);
   const [error, setError] = useState(null);
 
+  /**
+   * Determines if the Mega Pokémon is shiny based on baseKey.
+   * @returns {boolean}
+   */
+  const isMegaShiny = () => {
+    return baseKey.includes('shiny');
+  };
+
   const handleAssignExisting = async (instanceId) => {
     console.log(`Initiating mega evolution for Instance ID: ${instanceId}`);
     try {
+      // Retrieve the specific Pokémon's variant data to check shiny status
+      const variantData = await getFromDB('pokemonVariants', instanceId);
+      if (!variantData) {
+        throw new Error(`Variant data not found for Instance ID: ${instanceId}`);
+      }
+
+      // Ensure shiny status matches
+      if (variantData.shiny !== isMegaShiny()) {
+        throw new Error("Shiny status mismatch. Cannot Mega Evolve.");
+      }
+
       // Update the specific Pokémon instance with mega: true
       await updateDetails(instanceId, { mega: true });
       console.log(`Successfully set mega: true for Instance ID: ${instanceId}`);
@@ -30,15 +50,18 @@ const MegaPokemonSelection = ({
       onAssignExisting(instanceId);
     } catch (err) {
       console.error(`Error assigning Instance ID ${instanceId} to Mega Pokémon:`, err);
-      setError(`Failed to assign Instance ID ${instanceId} to Mega Pokémon.`);
+      setError(`Failed to assign Instance ID ${instanceId} to Mega Pokémon. ${err.message}`);
     }
   };
 
   const handleCreateNew = async () => {
     console.log('Initiating creation of a new Mega Pokémon');
     try {
-      // Create a new Mega Pokémon by setting mega: true without a specific instance ID
-      await updateDetails(null, { mega: true });
+      // Create a new Mega Pokémon by setting mega: true and matching shiny status
+      await updateDetails(null, { 
+        mega: true,
+        shiny: isMegaShiny(), // Ensure the new Mega matches the shiny status
+      });
       console.log('Successfully created a new Mega Pokémon');
 
       // Refresh the Pokémon lists

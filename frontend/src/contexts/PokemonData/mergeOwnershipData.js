@@ -108,7 +108,7 @@ export const mergeOwnershipData = (oldData, newData) => {
                         entryType = "mega_y";
                     }
 
-                    console.log(`Dropping unowned ${entryType} "${key}" because a related new entry with the required flags exists.`);
+                    // console.log(`Dropping unowned ${entryType} "${key}" because a related new entry with the required flags exists.`);
                     delete mergedData[key]; // Remove the unowned mega entry
                 }
             }
