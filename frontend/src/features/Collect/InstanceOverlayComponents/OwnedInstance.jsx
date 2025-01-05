@@ -101,7 +101,6 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           (me) => !me.form // Find megaEvolution with form as null or undefined
         );
         if (selectedMega) {
-          console.log(`Selected Mega Form: null (default Mega Form)`);
           return {
             attack: Number(selectedMega.attack),
             defense: Number(selectedMega.defense),
@@ -262,7 +261,9 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           await updateDetails(pokemon.pokemonKey, {
             nickname: nickname,
             lucky: isLucky,
-            cp: newComputedValues.cp !== undefined ? (newComputedValues.cp !== null ? Number(newComputedValues.cp) : null) : (cp !== '' ? Number(cp) : null),
+            cp: newComputedValues.cp !== undefined
+              ? (newComputedValues.cp !== null ? Number(newComputedValues.cp) : null)
+              : (cp !== '' ? Number(cp) : null),
             favorite: isFavorite,
             gender: gender,
             weight: weight,
@@ -272,16 +273,16 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             charged_move2_id: moves.chargedMove2,
             attack_iv:
               newComputedValues.ivs !== undefined
-                ? newComputedValues.ivs.Attack
-                : ivs.Attack,
+                ? (newComputedValues.ivs.Attack === '' ? null : newComputedValues.ivs.Attack)
+                : (ivs.Attack === '' ? null : ivs.Attack),
             defense_iv:
               newComputedValues.ivs !== undefined
-                ? newComputedValues.ivs.Defense
-                : ivs.Defense,
+                ? (newComputedValues.ivs.Defense === '' ? null : newComputedValues.ivs.Defense)
+                : (ivs.Defense === '' ? null : ivs.Defense),
             stamina_iv:
               newComputedValues.ivs !== undefined
-                ? newComputedValues.ivs.Stamina
-                : ivs.Stamina,
+                ? (newComputedValues.ivs.Stamina === '' ? null : newComputedValues.ivs.Stamina)
+                : (ivs.Stamina === '' ? null : ivs.Stamina),
             location_caught: locationCaught,
             date_caught: dateCaught,
             location_card: selectedBackground ? selectedBackground.background_id : null,
@@ -293,6 +294,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
                 ? newComputedValues.level
                 : level, // Include the found level as a number
           });
+
           // Optionally reset errors after successful validation
           resetErrors();
           console.log(`Details updated successfully.`);

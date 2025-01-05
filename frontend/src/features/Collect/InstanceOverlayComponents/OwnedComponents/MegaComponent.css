@@ -1,27 +1,45 @@
+/* MegaComponent.css */
+
 .mega-component {
-    display: flex;
-    align-items: center;
-    margin-left: auto; /* Aligns the component to the right within its container */
-    cursor: pointer; /* Indicates that the image is clickable */
-    justify-content: right;
-  }
-  
-  .mega-component .mega-image {
-    width: 40px; /* Adjust size as needed */
-    height: 40px;
-    transition: filter 0.3s ease; /* Smooth transition for filter changes */
-  }
-  
-  .mega-component  .saturated {
-    filter: none; /* Full color */
+  display: flex;
+  align-items: center;
+  margin-left: auto; /* Aligns the component to the right within its container */
+  justify-content: right;
 }
-  
-  .mega-component  .desaturated {
-    filter: grayscale(100%); /* Grayscale (no saturation) */
-  }
-  
-  /* Optional: Add hover effect */
-  .mega-component  .mega-image:hover {
-    opacity: 0.8;
-  }
-  
+
+.mega-component.edit-mode {
+  cursor: pointer; /* Indicates that the image is clickable */
+}
+
+.mega-component .mega-image {
+  width: 40px; /* Adjust size as needed */
+  height: 40px;
+  transition: filter 0.3s ease, cursor 0.3s ease; /* Smooth transition for filter and cursor changes */
+}
+
+.mega-component .saturated {
+  filter: none; /* Full color */
+}
+
+.mega-component .desaturated {
+  filter: grayscale(100%); /* Grayscale (no saturation) */
+}
+
+.mega-component .static-mode {
+  pointer-events: none; /* Disable interactions */
+  cursor: default; /* Default cursor */
+  filter: none; /* No filter */
+  opacity: 1; /* Fully visible */
+}
+
+.mega-component .mega-image:hover {
+  opacity: 0.8;
+}
+
+.mega-component.edit-mode .mega-image:hover {
+  opacity: 0.8;
+}
+
+.mega-component .static-mode:hover {
+  opacity: 1; /* No hover effect */
+}

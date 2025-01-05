@@ -41,9 +41,9 @@ function useHandleMoveToFilter({
       const megaPokemonKeys = [];
       const skippedMegaPokemonKeys = [];
       const regularPokemonKeys = [];
-      let cardsToMove = new Set();
+      let remainingHighlightedCards = new Set(highlightedCards);
 
-      // First pass: Separate Mega Pokemon from regular Pokemon
+      // Separate Mega Pokémon from regular Pokémon
       for (const pokemonKey of highlightedCards) {
         const parsed = parsePokemonKey(pokemonKey);
         if (!parsed) {
@@ -56,7 +56,7 @@ function useHandleMoveToFilter({
           megaPokemonKeys.push({ key: pokemonKey, baseKey });
         } else {
           regularPokemonKeys.push({ key: pokemonKey, parsed });
-          cardsToMove.add(pokemonKey); // Add regular Pokemon by default
+          remainingHighlightedCards.delete(pokemonKey);
         }
       }
 
@@ -67,9 +67,9 @@ function useHandleMoveToFilter({
           try {
             console.log('Handling Mega Pokémon with baseKey:', baseKey);
             const result = await promptMegaPokemonSelection(baseKey);
-            // Only add to cardsToMove if mega evolution was successful
+
             if (result === 'assignExisting' || result === 'createNew') {
-              cardsToMove.add(pokemonKey);
+              remainingHighlightedCards.delete(pokemonKey);
               console.log(`Successfully handled Mega Pokémon: ${baseKey}`);
             } else {
               skippedMegaPokemonKeys.push(baseKey);
@@ -106,7 +106,7 @@ function useHandleMoveToFilter({
 
           const displayName = instance.nickname || getDisplayName(baseKey, variants);
           const actionDetail = `Move ${displayName} from ${currentStatus} to ${filter}`;
-          
+
           if (!messageDetails.includes(actionDetail)) {
             messageDetails.push(actionDetail);
           }
@@ -117,8 +117,18 @@ function useHandleMoveToFilter({
         }
       }
 
-      // Show confirmation dialog if there are any cards to move
-      if (cardsToMove.size > 0 && messageDetails.length > 0) {
+      if (skippedMegaPokemonKeys.length > 0) {
+        // If any Mega Pokémon were skipped, behave like the first function
+        const skippedMessage = `Skipped handling of Mega Pokémon with baseKey(s): ${skippedMegaPokemonKeys.join(
+          ', '
+        )}`;
+        console.log(skippedMessage);
+        await alert(skippedMessage);
+        return;
+      }
+
+      // Show confirmation dialog for remaining Pokémon
+      if (messageDetails.length > 0) {
         const maxDetails = 10;
         const hasMore = messageDetails.length > maxDetails;
         const displayedDetails = hasMore
@@ -148,23 +158,16 @@ function useHandleMoveToFilter({
         console.log('User confirmed:', userConfirmed);
 
         if (userConfirmed) {
-          console.log('Proceeding to move cards to filter:', cardsToMove);
-          handleMoveHighlightedToFilter(filter, cardsToMove).catch((error) => {
+          console.log('Proceeding to move highlighted cards to filter.');
+          handleMoveHighlightedToFilter(filter, remainingHighlightedCards).catch((error) => {
             console.error('Error during ownership update:', error);
             alert('An error occurred while updating ownership. Please try again.');
           });
         } else {
           console.log('User canceled the operation.');
         }
-      }
-
-      // Notify about skipped Mega Pokémon
-      if (skippedMegaPokemonKeys.length > 0) {
-        const skippedMessage = `Skipped handling of Mega Pokémon with baseKey(s): ${skippedMegaPokemonKeys.join(
-          ', '
-        )}`;
-        console.log(skippedMessage);
-        await alert(skippedMessage);
+      } else {
+        handleMoveHighlightedToFilter(filter, remainingHighlightedCards);
       }
     },
     [

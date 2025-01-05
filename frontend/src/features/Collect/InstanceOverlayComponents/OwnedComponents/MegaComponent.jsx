@@ -9,9 +9,9 @@ const MegaComponent = ({
   editMode,
   megaEvolutions = []
 }) => {
-  if (!editMode) return null;
-
   const handleClick = () => {
+    if (!editMode) return; // Only toggleable when editMode is true
+
     const { isMega, megaForm } = megaData;
 
     if (!isMega) {
@@ -55,23 +55,22 @@ const MegaComponent = ({
     }
   };
 
-  const { isMega, megaForm } = megaData;
+  const { isMega } = megaData;
 
-  const formLabel = megaForm
-    ? `Mega ${megaForm}`
-    : isMega
-      ? 'Mega'
-      : 'Normal';
+  const formLabel = isMega ? `Mega ${megaData.megaForm || ''}` : 'Normal';
 
+  // Conditionally render the mega image
   return (
-    <div className="mega-component">
-      <img
-        src={`${process.env.PUBLIC_URL}/images/mega.png`}
-        alt="Mega Toggle"
-        className={`mega-image ${isMega ? 'saturated' : 'desaturated'}`}
-        onClick={handleClick}
-        title={formLabel}
-      />
+    <div className={`mega-component ${editMode ? 'edit-mode' : ''}`}>
+      {editMode || isMega ? (
+        <img
+          src={`${process.env.PUBLIC_URL}/images/mega.png`}
+          alt="Mega Toggle"
+          className={`mega-image ${isMega ? 'saturated' : 'desaturated'} ${editMode ? '' : 'static-mode'}`}
+          onClick={handleClick}
+          title={formLabel}
+        />
+      ) : null}
     </div>
   );
 };
