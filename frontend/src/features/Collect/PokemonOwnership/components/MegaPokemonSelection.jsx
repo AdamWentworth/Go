@@ -8,7 +8,6 @@ import CloseButton from '../../../../components/CloseButton';
 
 const MegaPokemonSelection = ({
   ownedPokemon,
-  baseKey, // New prop to handle shiny status
   onAssignExisting,
   onCreateNew,
   onCancel,
@@ -16,63 +15,31 @@ const MegaPokemonSelection = ({
   const { updateDetails, updateLists } = useContext(PokemonDataContext);
   const [error, setError] = useState(null);
 
-  /**
-   * Determines if the Mega Pokémon is shiny based on baseKey.
-   * @returns {boolean}
-   */
-  const isMegaShiny = () => {
-    return baseKey.includes('shiny');
-  };
-
   const handleAssignExisting = async (instanceId) => {
     console.log(`Initiating mega evolution for Instance ID: ${instanceId}`);
     try {
-      // Retrieve the specific Pokémon's variant data to check shiny status
-      const variantData = await getFromDB('pokemonVariants', instanceId);
-      if (!variantData) {
-        throw new Error(`Variant data not found for Instance ID: ${instanceId}`);
-      }
-
-      // Ensure shiny status matches
-      if (variantData.shiny !== isMegaShiny()) {
-        throw new Error("Shiny status mismatch. Cannot Mega Evolve.");
-      }
-
-      // Update the specific Pokémon instance with mega: true
-      await updateDetails(instanceId, { mega: true });
+      await updateDetails(instanceId, { mega: true, is_mega: true });
       console.log(`Successfully set mega: true for Instance ID: ${instanceId}`);
-
-      // Refresh the Pokémon lists
       await updateLists();
-      console.log(`Updated Pokémon lists after mega evolution for Instance ID: ${instanceId}`);
-
-      // Callback to parent component
       onAssignExisting(instanceId);
     } catch (err) {
       console.error(`Error assigning Instance ID ${instanceId} to Mega Pokémon:`, err);
-      setError(`Failed to assign Instance ID ${instanceId} to Mega Pokémon. ${err.message}`);
+      setError(`Failed to assign Instance ID ${instanceId} to Mega Pokémon.`);
+      throw err; // Propagate the error to handle the highlighted cards appropriately
     }
   };
 
   const handleCreateNew = async () => {
     console.log('Initiating creation of a new Mega Pokémon');
     try {
-      // Create a new Mega Pokémon by setting mega: true and matching shiny status
-      await updateDetails(null, { 
-        mega: true,
-        shiny: isMegaShiny(), // Ensure the new Mega matches the shiny status
-      });
+      await updateDetails(null, { mega: true, is_mega: true });
       console.log('Successfully created a new Mega Pokémon');
-
-      // Refresh the Pokémon lists
       await updateLists();
-      console.log('Updated Pokémon lists after creating a new Mega Pokémon');
-
-      // Callback to parent component
       onCreateNew();
     } catch (err) {
       console.error('Error creating a new Mega Pokémon:', err);
       setError('Failed to create a new Mega Pokémon.');
+      throw err; // Propagate the error to handle the highlighted cards appropriately
     }
   };
 
