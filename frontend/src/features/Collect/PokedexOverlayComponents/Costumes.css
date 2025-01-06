@@ -27,6 +27,10 @@
 .costume-column h1 {
   padding-bottom: 15px !important;
 }
+
+.overlay-costumes {
+  overflow-y: auto;
+}
   
 .costume-item {
     display: flex;
