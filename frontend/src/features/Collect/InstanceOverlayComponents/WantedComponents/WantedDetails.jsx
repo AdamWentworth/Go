@@ -1,3 +1,5 @@
+// WantedDetails.jsx
+
 import React, { useState, useContext, useEffect } from 'react';
 import './WantedDetails.css';
 import EditSaveComponent from '../EditSaveComponent.jsx';
@@ -52,7 +54,8 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, open
         selectedIncludeOnlyImages,
         localTradeFilters,
         setLocalNotTradeList,
-        localNotTradeList
+        localNotTradeList,
+        editMode
     );
 
     useEffect(() => {

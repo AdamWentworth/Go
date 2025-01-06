@@ -1,4 +1,4 @@
-// ImageGroup.jsx
+// FilterImages.jsx
 import React, { useState } from 'react';
 import './FilterImages.css';
 
