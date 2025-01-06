@@ -25,7 +25,9 @@ function useHandleMoveToFilter({
           await updateOwnership([...cardsToMove], filter);
         }
         setHighlightedCards(new Set());
-        setOwnershipFilter(filter);
+        if (filter !== "Unowned") {
+          setOwnershipFilter(filter);
+        }
       } catch (error) {
         console.error('Error updating ownership:', error);
       } finally {

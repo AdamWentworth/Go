@@ -5,10 +5,14 @@ import './MegaPokemonSelection.css';
 import OwnedInstance from '../../InstanceOverlayComponents/OwnedInstance';
 import { PokemonDataContext } from '../../../../contexts/PokemonDataContext';
 import CloseButton from '../../../../components/CloseButton';
+import { createNewInstanceData } from '../../../../contexts/PokemonData/createNewInstanceData';
+import { generateUUID } from '../../../../utils/PokemonIDUtils';
+import { getFromDB } from '../../../../services/indexedDB';
 
 const MegaPokemonSelection = ({
   ownedPokemon,
-  megaForm, // Receive megaForm as a prop
+  variantKey,
+  megaForm,
   onAssignExisting,
   onCreateNew,
   onCancel,
@@ -37,18 +41,42 @@ const MegaPokemonSelection = ({
   const handleCreateNew = async () => {
     console.log('Initiating creation of a new Mega Pokémon');
     try {
-      const updatePayload = { mega: true, is_mega: true };
-      if (megaForm) {
-        updatePayload.mega_form = megaForm; // Add mega_form if available
+      if (!variantKey) {
+        throw new Error('No variantKey provided; cannot create new instance.');
       }
-      await updateDetails(null, updatePayload);
-      console.log(`Successfully created a new Mega Pokémon`, `mega_form: ${megaForm || 'N/A'}`);
-      await updateLists();
+
+      // 1) Retrieve variant data for "0006-default" or "0006-shiny"
+      const variant = await getFromDB('pokemonVariants', variantKey);
+      if (!variant) {
+        throw new Error(`Variant data not found for key: ${variantKey}`);
+      }
+
+      // 2) Create new ownership object
+      const newInstanceData = createNewInstanceData(variant);
+
+      // 3) Generate instance_id => "0006-default-<UUID>"
+      const uuid = generateUUID();
+      const instanceId = `${variant.pokemonKey}_${uuid}`;
+      newInstanceData.instance_id = instanceId;
+
+      // 4) Apply Mega fields
+      newInstanceData.mega = true;
+      newInstanceData.is_mega = true;
+      if (megaForm) {
+        newInstanceData.mega_form = megaForm;
+      }
+      newInstanceData.is_owned = true;
+      newInstanceData.is_unowned = false;
+
+      // 5) Persist in DB
+      await updateDetails(instanceId, newInstanceData);
+
+      console.log(`Successfully created new Mega Pokémon: [${instanceId}]`);
       onCreateNew();
     } catch (err) {
-      console.error('Error creating a new Mega Pokémon:', err);
+      console.error('Error creating new Mega Pokémon:', err);
       setError('Failed to create a new Mega Pokémon.');
-      throw err; // Propagate the error to handle the highlighted cards appropriately
+      throw err;
     }
   };
 

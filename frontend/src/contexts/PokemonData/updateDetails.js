@@ -2,68 +2,73 @@
 
 import { putBatchedPokemonUpdates } from '../../services/indexedDB';
 
-export const updateDetails = (
-    data,
-    setData
-) => async (pokemonKeys, details) => {
-
-    // Function to update individual details of a Pokemon instance
-    function updatePokemonDetails(pokemonKey, details, ownershipData) {
-        if (ownershipData && ownershipData[pokemonKey]) {
-            // Apply the new details to the specific entry
-            ownershipData[pokemonKey] = { ...ownershipData[pokemonKey], ...details };
-            console.log(`Details updated for ${pokemonKey}:`, ownershipData[pokemonKey]);
-        } else {
-            console.error("No data found for the specified key:", pokemonKey);
-        }
+export const updateDetails = (data, setData) => async (pokemonKeys, details) => {
+  // Function to update or create details of a Pokémon instance
+  function updatePokemonDetails(pokemonKey, details, ownershipData) {
+    // If this key doesn't exist, initialize it
+    if (!ownershipData[pokemonKey]) {
+      console.warn(`No existing data found for "${pokemonKey}". Creating a new entry...`);
+      ownershipData[pokemonKey] = {};
     }
 
-    // Ensure pokemonKeys is an array
-    const keysArray = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
+    // Apply the new details to the specific entry
+    ownershipData[pokemonKey] = { ...ownershipData[pokemonKey], ...details };
+    console.log(`Details updated (or created) for ${pokemonKey}:`, ownershipData[pokemonKey]);
+  }
 
-    // Prepare new ownership data and timestamp
-    const newData = { ...data.ownershipData };
-    const currentTimestamp = Date.now();
+  // Ensure pokemonKeys is an array
+  const keysArray = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
 
-    // Update details for each Pokémon key
-    keysArray.forEach((pokemonKey) => {
-        const specificDetails = Array.isArray(pokemonKeys) && typeof details === 'object' && !Array.isArray(details)
-            ? details[pokemonKey] || {}
-            : details;
+  // Clone current ownership data and prepare a timestamp
+  const newData = { ...data.ownershipData };
+  const currentTimestamp = Date.now();
 
-        // Call the integrated updatePokemonDetails function
-        updatePokemonDetails(pokemonKey, specificDetails, data.ownershipData);
-        newData[pokemonKey] = { ...newData[pokemonKey], ...specificDetails, last_update: currentTimestamp };
+  // Update details for each Pokémon key
+  keysArray.forEach((pokemonKey) => {
+    // If we’re updating multiple Pokémon at once and `details` might be an object of objects,
+    // we grab the portion relevant to this particular `pokemonKey`
+    const specificDetails = Array.isArray(pokemonKeys) && typeof details === 'object' && !Array.isArray(details)
+      ? details[pokemonKey] || {}
+      : details;
+
+    // Update (or create) the Pokémon details
+    updatePokemonDetails(pokemonKey, specificDetails, newData);
+
+    // Always refresh last_update
+    newData[pokemonKey] = {
+      ...newData[pokemonKey],
+      last_update: currentTimestamp,
+    };
+  });
+
+  // Now update the context state in a single pass
+  setData((prevData) => ({
+    ...prevData,
+    ownershipData: newData,
+  }));
+
+  // Attempt to sync with Service Worker
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    registration.active.postMessage({
+      action: 'syncData',
+      data: { data: newData, timestamp: Date.now() },
     });
+  } catch (error) {
+    console.error("Service Worker synchronization failed:", error);
+  }
 
-    // Update the ownership data in context state once after all updates
-    setData(prevData => ({
-        ...prevData,
-        ownershipData: newData
-    }));
+  // Update ownershipTimestamp in localStorage
+  localStorage.setItem('ownershipTimestamp', currentTimestamp.toString());
 
+  console.log('Ownership details updated successfully.');
+
+  // Use IndexedDB to cache the batched updates
+  for (const pokemonKey of keysArray) {
     try {
-        // Sync the updated data to the service worker once
-        const registration = await navigator.serviceWorker.ready;
-        registration.active.postMessage({
-            action: 'syncData',
-            data: { data: newData, timestamp: Date.now() }
-        });
+      await putBatchedPokemonUpdates(pokemonKey, newData[pokemonKey]);
     } catch (error) {
-        console.error("Service Worker synchronization failed:", error);
+      console.error(`Failed to cache updates for ${pokemonKey}:`, error);
     }
-
-    // Update ownershipTimestamp in localStorage
-    localStorage.setItem('ownershipTimestamp', currentTimestamp.toString());
-
-    console.log('Ownership details updated successfully.');
-
-    // Use IndexedDB to cache the batched updates
-    for (const pokemonKey of keysArray) {
-        try {
-            await putBatchedPokemonUpdates(pokemonKey, newData[pokemonKey]);
-        } catch (error) {
-            console.error(`Failed to cache updates for ${pokemonKey}:`, error);
-        }
-    }
+  }
 };

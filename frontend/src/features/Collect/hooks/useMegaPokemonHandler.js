@@ -122,8 +122,29 @@ function useMegaPokemonHandler() {
   const promptMegaPokemonSelection = (baseKey, megaForm) => {
     return new Promise(async (resolve, reject) => {
       try {
+        // 1) We already parse baseKey to find owned Pokémon
         const ownedPokemonWithVariants = await handleMegaPokemon(baseKey);
-        setMegaSelectionData({ ownedPokemon: ownedPokemonWithVariants, resolve, reject, megaForm });
+
+        // 2) Also figure out which variant key to use for *creation* 
+        const baseNumber = parseBaseKey(baseKey);
+        if (!baseNumber) {
+          throw new Error(`Invalid baseKey format: ${baseKey}`);
+        }
+        const isShiny = parseShinyStatus(baseKey);
+        const variantKey = isShiny
+          ? `${baseNumber}-shiny`
+          : `${baseNumber}-default`;
+
+        // 3) Store everything in megaSelectionData
+        setMegaSelectionData({
+          ownedPokemon: ownedPokemonWithVariants,
+          variantKey,    // We'll pass the *calculated* variant key here
+          megaForm,
+          resolve,
+          reject,
+        });
+
+        // 4) Open modal
         setIsMegaSelectionOpen(true);
       } catch (error) {
         reject(error);
@@ -162,6 +183,7 @@ function useMegaPokemonHandler() {
     isMegaSelectionOpen && megaSelectionData ? (
       <MegaPokemonSelection
         ownedPokemon={megaSelectionData.ownedPokemon}
+        variantKey={megaSelectionData.variantKey}
         megaForm={megaSelectionData.megaForm} // Pass megaForm here
         onAssignExisting={() => handleMegaSelectionResolve('assignExisting')}
         onCreateNew={() => handleMegaSelectionResolve('createNew')}
