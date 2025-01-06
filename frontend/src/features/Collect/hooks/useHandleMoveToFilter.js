@@ -1,4 +1,4 @@
-// usehandleMoveToFilter.js
+// useHandleMoveToFilter.js
 
 import { useCallback } from 'react';
 import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
@@ -43,7 +43,7 @@ function useHandleMoveToFilter({
       const regularPokemonKeys = [];
       let remainingHighlightedCards = new Set(highlightedCards);
 
-      // First pass: Separate Mega Pokemon from regular Pokemon
+      // First pass: Separate Mega Pokémon from regular Pokémon
       for (const pokemonKey of highlightedCards) {
         const parsed = parsePokemonKey(pokemonKey);
         if (!parsed) {
@@ -52,8 +52,15 @@ function useHandleMoveToFilter({
         }
 
         const { baseKey } = parsed;
+        let megaForm = undefined;
+
         if (baseKey.includes('_mega') || baseKey.includes('-mega')) {
-          megaPokemonKeys.push({ key: pokemonKey, baseKey });
+          if (baseKey.includes('mega_x')) {
+            megaForm = 'X';
+          } else if (baseKey.includes('mega_y')) {
+            megaForm = 'Y';
+          }
+          megaPokemonKeys.push({ key: pokemonKey, baseKey, megaForm });
         } else {
           regularPokemonKeys.push({ key: pokemonKey, parsed });
         }
@@ -96,10 +103,10 @@ function useHandleMoveToFilter({
       // Handle Mega Pokémon after regular Pokémon
       if (megaPokemonKeys.length > 0) {
         console.log('Handling Mega Pokémon...');
-        for (const { key: pokemonKey, baseKey } of megaPokemonKeys) {
+        for (const { key: pokemonKey, baseKey, megaForm } of megaPokemonKeys) {
           try {
-            console.log('Handling Mega Pokémon with baseKey:', baseKey);
-            const result = await promptMegaPokemonSelection(baseKey);
+            console.log('Handling Mega Pokémon with baseKey:', baseKey, 'and megaForm:', megaForm);
+            const result = await promptMegaPokemonSelection(baseKey, megaForm);
 
             if (result === 'assignExisting' || result === 'createNew') {
               remainingHighlightedCards.delete(pokemonKey);
@@ -163,7 +170,7 @@ function useHandleMoveToFilter({
         handleMoveHighlightedToFilter(filter, remainingHighlightedCards);
       }
 
-      // Show skipped mega Pokémon message at the end if any were skipped
+      // Show skipped Mega Pokémon message at the end if any were skipped
       if (skippedMegaPokemonKeys.length > 0) {
         const skippedMessage = `Skipped handling of Mega Pokémon with baseKey(s): ${skippedMegaPokemonKeys.join(
           ', '

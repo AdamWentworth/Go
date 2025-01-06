@@ -84,7 +84,6 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           (me) => me.form && me.form.toLowerCase() === megaData.megaForm.toLowerCase()
         );
         if (selectedMega) {
-          console.log(`Selected Mega Form: ${selectedMega.form}`);
           return {
             attack: Number(selectedMega.attack),
             defense: Number(selectedMega.defense),
@@ -297,7 +296,6 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
 
           // Optionally reset errors after successful validation
           resetErrors();
-          console.log(`Details updated successfully.`);
         } catch (error) {
           // Handle any errors from updateDetails
           console.error('Error updating details:', error);

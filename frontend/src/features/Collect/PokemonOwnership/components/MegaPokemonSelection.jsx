@@ -8,6 +8,7 @@ import CloseButton from '../../../../components/CloseButton';
 
 const MegaPokemonSelection = ({
   ownedPokemon,
+  megaForm, // Receive megaForm as a prop
   onAssignExisting,
   onCreateNew,
   onCancel,
@@ -18,8 +19,12 @@ const MegaPokemonSelection = ({
   const handleAssignExisting = async (instanceId) => {
     console.log(`Initiating mega evolution for Instance ID: ${instanceId}`);
     try {
-      await updateDetails(instanceId, { mega: true, is_mega: true });
-      console.log(`Successfully set mega: true for Instance ID: ${instanceId}`);
+      const updatePayload = { mega: true, is_mega: true };
+      if (megaForm) {
+        updatePayload.mega_form = megaForm; // Add mega_form if available
+      }
+      await updateDetails(instanceId, updatePayload);
+      console.log(`Successfully set mega: true for Instance ID: ${instanceId}`, `mega_form: ${megaForm || 'N/A'}`);
       await updateLists();
       onAssignExisting(instanceId);
     } catch (err) {
@@ -32,8 +37,12 @@ const MegaPokemonSelection = ({
   const handleCreateNew = async () => {
     console.log('Initiating creation of a new Mega Pokémon');
     try {
-      await updateDetails(null, { mega: true, is_mega: true });
-      console.log('Successfully created a new Mega Pokémon');
+      const updatePayload = { mega: true, is_mega: true };
+      if (megaForm) {
+        updatePayload.mega_form = megaForm; // Add mega_form if available
+      }
+      await updateDetails(null, updatePayload);
+      console.log(`Successfully created a new Mega Pokémon`, `mega_form: ${megaForm || 'N/A'}`);
       await updateLists();
       onCreateNew();
     } catch (err) {

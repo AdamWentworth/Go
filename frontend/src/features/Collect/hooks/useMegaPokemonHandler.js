@@ -1,7 +1,7 @@
 // useMegaPokemonHandler.js
 
 import { useState } from 'react';
-import { getAllFromDB, getFromDB } from '../../../services/indexedDB'; // Ensure getFromDB is imported
+import { getAllFromDB, getFromDB } from '../../../services/indexedDB';
 import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
 import MegaPokemonSelection from '../PokemonOwnership/components/MegaPokemonSelection';
 
@@ -116,13 +116,14 @@ function useMegaPokemonHandler() {
   /**
    * Prompts the Mega Pokémon selection modal and returns a Promise.
    * @param {string} baseKey - The base key of the Mega Pokémon.
+   * @param {string|undefined} megaForm - The form of the Mega Pokémon ("X", "Y", or undefined).
    * @returns {Promise<string>} - Resolves with the user's selection.
    */
-  const promptMegaPokemonSelection = (baseKey) => {
+  const promptMegaPokemonSelection = (baseKey, megaForm) => {
     return new Promise(async (resolve, reject) => {
       try {
         const ownedPokemonWithVariants = await handleMegaPokemon(baseKey);
-        setMegaSelectionData({ ownedPokemon: ownedPokemonWithVariants, resolve, reject });
+        setMegaSelectionData({ ownedPokemon: ownedPokemonWithVariants, resolve, reject, megaForm });
         setIsMegaSelectionOpen(true);
       } catch (error) {
         reject(error);
@@ -161,6 +162,7 @@ function useMegaPokemonHandler() {
     isMegaSelectionOpen && megaSelectionData ? (
       <MegaPokemonSelection
         ownedPokemon={megaSelectionData.ownedPokemon}
+        megaForm={megaSelectionData.megaForm} // Pass megaForm here
         onAssignExisting={() => handleMegaSelectionResolve('assignExisting')}
         onCreateNew={() => handleMegaSelectionResolve('createNew')}
         onCancel={() => handleMegaSelectionReject('User canceled')}
