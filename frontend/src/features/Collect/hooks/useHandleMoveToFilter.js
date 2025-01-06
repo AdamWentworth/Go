@@ -67,6 +67,28 @@ function useHandleMoveToFilter({
           regularPokemonKeys.push({ key: pokemonKey, parsed });
         }
       }
+      console.log(filter)
+
+      // **New Section: Early Check for Mega Pokémon in "For Trade" or "Wanted" Filters**
+      const isTradeOrWanted = filter === 'Trade' || filter === 'Wanted';
+      if (isTradeOrWanted && megaPokemonKeys.length > 0) {
+        // Construct alert message listing all Mega Pokémon
+        const messages = megaPokemonKeys.map(({ key }) => {
+          const instance = ownershipData[key];
+          const displayName = instance?.nickname || getDisplayName(parsePokemonKey(key)?.baseKey, variants) || key;
+          return `Cannot move ${displayName} to ${filter} as it is a Mega Pokémon.`;
+        }).join('\n');
+
+        // Log the blocking reason
+        console.log(`Move to ${filter} blocked due to Mega Pokémon: ${megaPokemonKeys.map(mp => mp.key).join(', ')}`);
+
+        // Show alert to the user
+        await alert(messages);
+
+        // Interrupt the function
+        return;
+      }
+      // **End of New Section**
 
       // Process regular Pokémon first
       for (const { key: pokemonKey, parsed } of regularPokemonKeys) {
@@ -102,7 +124,7 @@ function useHandleMoveToFilter({
         }
       }
 
-      // Handle Mega Pokémon after regular Pokémon
+      // Handle Mega Pokémon after regular Pokémon (if not interrupted)
       if (megaPokemonKeys.length > 0) {
         console.log('Handling Mega Pokémon...');
         for (const { key: pokemonKey, baseKey, megaForm } of megaPokemonKeys) {
