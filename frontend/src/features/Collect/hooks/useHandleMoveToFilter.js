@@ -1,4 +1,4 @@
-// useHandleMoveToFilter.js
+// usehandleMoveToFilter.js
 
 import { useCallback } from 'react';
 import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
@@ -43,7 +43,7 @@ function useHandleMoveToFilter({
       const regularPokemonKeys = [];
       let remainingHighlightedCards = new Set(highlightedCards);
 
-      // Separate Mega Pokémon from regular Pokémon
+      // First pass: Separate Mega Pokemon from regular Pokemon
       for (const pokemonKey of highlightedCards) {
         const parsed = parsePokemonKey(pokemonKey);
         if (!parsed) {
@@ -56,34 +56,10 @@ function useHandleMoveToFilter({
           megaPokemonKeys.push({ key: pokemonKey, baseKey });
         } else {
           regularPokemonKeys.push({ key: pokemonKey, parsed });
-          remainingHighlightedCards.delete(pokemonKey);
         }
       }
 
-      // Handle Mega Pokémon first
-      if (megaPokemonKeys.length > 0) {
-        console.log('Handling Mega Pokémon...');
-        for (const { key: pokemonKey, baseKey } of megaPokemonKeys) {
-          try {
-            console.log('Handling Mega Pokémon with baseKey:', baseKey);
-            const result = await promptMegaPokemonSelection(baseKey);
-
-            if (result === 'assignExisting' || result === 'createNew') {
-              remainingHighlightedCards.delete(pokemonKey);
-              console.log(`Successfully handled Mega Pokémon: ${baseKey}`);
-            } else {
-              skippedMegaPokemonKeys.push(baseKey);
-              console.log(`Skipped Mega Pokémon: ${baseKey}`);
-            }
-          } catch (error) {
-            console.error(`Error handling Mega Pokémon (${baseKey}):`, error);
-            skippedMegaPokemonKeys.push(baseKey);
-            console.log(`Skipped Mega Pokémon: ${baseKey}`);
-          }
-        }
-      }
-
-      // Process regular Pokémon for message details
+      // Process regular Pokémon first
       for (const { key: pokemonKey, parsed } of regularPokemonKeys) {
         const { baseKey, hasUUID } = parsed;
 
@@ -106,7 +82,7 @@ function useHandleMoveToFilter({
 
           const displayName = instance.nickname || getDisplayName(baseKey, variants);
           const actionDetail = `Move ${displayName} from ${currentStatus} to ${filter}`;
-
+          
           if (!messageDetails.includes(actionDetail)) {
             messageDetails.push(actionDetail);
           }
@@ -117,14 +93,31 @@ function useHandleMoveToFilter({
         }
       }
 
-      if (skippedMegaPokemonKeys.length > 0) {
-        // If any Mega Pokémon were skipped, behave like the first function
-        const skippedMessage = `Skipped handling of Mega Pokémon with baseKey(s): ${skippedMegaPokemonKeys.join(
-          ', '
-        )}`;
-        console.log(skippedMessage);
-        await alert(skippedMessage);
-        return;
+      // Handle Mega Pokémon after regular Pokémon
+      if (megaPokemonKeys.length > 0) {
+        console.log('Handling Mega Pokémon...');
+        for (const { key: pokemonKey, baseKey } of megaPokemonKeys) {
+          try {
+            console.log('Handling Mega Pokémon with baseKey:', baseKey);
+            const result = await promptMegaPokemonSelection(baseKey);
+
+            if (result === 'assignExisting' || result === 'createNew') {
+              remainingHighlightedCards.delete(pokemonKey);
+              console.log(`Successfully handled Mega Pokémon: ${baseKey}`);
+            } else {
+              skippedMegaPokemonKeys.push(baseKey);
+              console.log(`Skipped Mega Pokémon: ${baseKey}`);
+              // Remove the skipped mega key from remaining cards
+              remainingHighlightedCards.delete(pokemonKey);
+            }
+          } catch (error) {
+            console.error(`Error handling Mega Pokémon (${baseKey}):`, error);
+            skippedMegaPokemonKeys.push(baseKey);
+            console.log(`Skipped Mega Pokémon: ${baseKey}`);
+            // Remove the errored mega key from remaining cards
+            remainingHighlightedCards.delete(pokemonKey);
+          }
+        }
       }
 
       // Show confirmation dialog for remaining Pokémon
@@ -168,6 +161,15 @@ function useHandleMoveToFilter({
         }
       } else {
         handleMoveHighlightedToFilter(filter, remainingHighlightedCards);
+      }
+
+      // Show skipped mega Pokémon message at the end if any were skipped
+      if (skippedMegaPokemonKeys.length > 0) {
+        const skippedMessage = `Skipped handling of Mega Pokémon with baseKey(s): ${skippedMegaPokemonKeys.join(
+          ', '
+        )}`;
+        console.log(skippedMessage);
+        await alert(skippedMessage);
       }
     },
     [
