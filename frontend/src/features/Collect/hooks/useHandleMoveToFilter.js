@@ -41,11 +41,12 @@ function useHandleMoveToFilter({
     async (filter) => {
       const messageDetails = [];
       const megaPokemonKeys = [];
+      const shadowPokemonKeys = []; // Added for Shadow Pokémon
       const skippedMegaPokemonKeys = [];
       const regularPokemonKeys = [];
       let remainingHighlightedCards = new Set(highlightedCards);
 
-      // First pass: Separate Mega Pokémon from regular Pokémon
+      // First pass: Separate Mega and Shadow Pokémon from regular Pokémon
       for (const pokemonKey of highlightedCards) {
         const parsed = parsePokemonKey(pokemonKey);
         if (!parsed) {
@@ -63,27 +64,49 @@ function useHandleMoveToFilter({
             megaForm = 'Y';
           }
           megaPokemonKeys.push({ key: pokemonKey, baseKey, megaForm });
+        } else if (baseKey.includes('shadow')) { // Detect Shadow Pokémon
+          shadowPokemonKeys.push({ key: pokemonKey, baseKey });
         } else {
           regularPokemonKeys.push({ key: pokemonKey, parsed });
         }
       }
-      console.log(filter)
 
-      // **New Section: Early Check for Mega Pokémon in "For Trade" or "Wanted" Filters**
+      // **New Section: Early Check for Mega and Shadow Pokémon in "Trade" or "Wanted" Filters**
       const isTradeOrWanted = filter === 'Trade' || filter === 'Wanted';
+
+      // Handle Mega Pokémon early interruption
       if (isTradeOrWanted && megaPokemonKeys.length > 0) {
         // Construct alert message listing all Mega Pokémon
-        const messages = megaPokemonKeys.map(({ key }) => {
+        const megaMessages = megaPokemonKeys.map(({ key }) => {
           const instance = ownershipData[key];
           const displayName = instance?.nickname || getDisplayName(parsePokemonKey(key)?.baseKey, variants) || key;
-          return `Cannot move ${displayName} to ${filter} as it is a Mega Pokémon.`;
+          return `• ${displayName} cannot be moved to ${filter} as it is a Mega Pokémon.`;
         }).join('\n');
 
         // Log the blocking reason
         console.log(`Move to ${filter} blocked due to Mega Pokémon: ${megaPokemonKeys.map(mp => mp.key).join(', ')}`);
 
         // Show alert to the user
-        await alert(messages);
+        await alert(megaMessages);
+
+        // Interrupt the function
+        return;
+      }
+
+      // Handle Shadow Pokémon early interruption
+      if (isTradeOrWanted && shadowPokemonKeys.length > 0) {
+        // Construct alert message listing all Shadow Pokémon
+        const shadowMessages = shadowPokemonKeys.map(({ key }) => {
+          const instance = ownershipData[key];
+          const displayName = instance?.nickname || getDisplayName(parsePokemonKey(key)?.baseKey, variants) || key;
+          return `• ${displayName} cannot be moved to ${filter} as it is a Shadow Pokémon.`;
+        }).join('\n');
+
+        // Log the blocking reason
+        console.log(`Move to ${filter} blocked due to Shadow Pokémon: ${shadowPokemonKeys.map(sp => sp.key).join(', ')}`);
+
+        // Show alert to the user
+        await alert(shadowMessages);
 
         // Interrupt the function
         return;
