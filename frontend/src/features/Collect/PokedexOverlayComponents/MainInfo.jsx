@@ -2,22 +2,18 @@
 
 import React from 'react';
 import './MainInfo.css';
+import { generateH2Content } from '../../../utils/formattingHelpers';
 
 function MainInfo({ pokemon, isMale, toggleGender }) {
   const maleIcon = `/images/male-icon.png`;   // Male icon location
   const femaleIcon = `/images/female-icon.png`; // Female icon location
-
-  // Function to extract the base name by slicing off everything before the last space
-  const getBaseName = (name) => {
-    return name.substring(name.lastIndexOf(' ') + 1);
-  };
 
   // Function to calculate the width percentage of the stat gauge
   const calculateWidth = (stat, maxStat) => {
     return `${(stat / maxStat) * 100}%`;
   };
 
-  const baseName = getBaseName(pokemon.name);
+  const baseName = generateH2Content(pokemon);
 
   return (
     <div className="column main-info-column">

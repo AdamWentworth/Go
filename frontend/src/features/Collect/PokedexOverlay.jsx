@@ -233,6 +233,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
             <EvolutionShortcut
               evolvesFrom={currentPokemon.evolves_from}
               allPokemonData={allPokemons}
+              currentPokemon={currentPokemon}
               setSelectedPokemon={switchOverlay}
               className="evolution-shortcut-from"
             />
@@ -244,10 +245,34 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
             <EvolutionShortcut
               evolvesTo={currentPokemon.evolves_to}
               allPokemonData={allPokemons}
+              currentPokemon={currentPokemon}
               setSelectedPokemon={switchOverlay}
               className="evolution-shortcut-to"
             />
           </WindowOverlay>
+        )}
+        {currentPokemon.megaEvolutions && currentPokemon.megaEvolutions.length > 0 && !isMega && (
+          <WindowOverlay onClose={onClose} className="overlay-mega-evolutions">
+            <EvolutionShortcut
+              megaEvolutions={currentPokemon.megaEvolutions}
+              allPokemonData={allPokemons}
+              currentPokemon={currentPokemon}
+              setSelectedPokemon={switchOverlay}
+              className="evolution-shortcut-mega"
+            />
+          </WindowOverlay>
+          
+        )}
+        {currentPokemon.megaEvolutions && currentPokemon.megaEvolutions.length > 0 && isMega && (
+          <WindowOverlay onClose={onClose} className="overlay-evolves-from">
+            <EvolutionShortcut
+              megaEvolutions={currentPokemon.megaEvolutions}
+              allPokemonData={allPokemons}
+              currentPokemon={currentPokemon}
+              setSelectedPokemon={switchOverlay}
+              className="evolution-shortcut-mega"
+            />
+          </WindowOverlay> 
         )}
       </div>
 

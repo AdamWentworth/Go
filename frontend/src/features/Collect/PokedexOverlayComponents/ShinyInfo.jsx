@@ -1,7 +1,7 @@
 /* shinyInfo.jsx */
 import React from 'react';
 import './ShinyInfo.css';
-import { formatShinyRarity, getLastWord } from '../../../utils/formattingHelpers';
+import { formatShinyRarity, getLastWord, generateH2Content } from '../../../utils/formattingHelpers';
 
 function ShinyInfo({ pokemon, allPokemonData, isMale }) {
   // Helper function to find previous evolution's name and ID if needed
@@ -13,12 +13,7 @@ function ShinyInfo({ pokemon, allPokemonData, isMale }) {
     return null;
   };
 
-  // Function to extract the base name by slicing off everything before the last space
-  const getBaseName = (name) => {
-    return name.substring(name.lastIndexOf(' ') + 1);
-  };
-
-  const baseName = getBaseName(pokemon.name);
+  const baseName = generateH2Content(pokemon);
 
   // Function to determine what text to display for shiny rarity
   const displayShinyRarity = () => {
