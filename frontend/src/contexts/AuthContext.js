@@ -13,7 +13,7 @@ import {
   updateUserDetails as updateUserService,
   deleteAccount as deleteAccountService,
   refreshTokenService,
-  updateUsernameInSecondaryDB
+  updateUserInSecondaryDB
 } from '../services/authService';
 import { formatTimeUntil } from '../utils/formattingHelpers';
 import { toast } from 'react-toastify';
@@ -233,36 +233,57 @@ export const AuthProvider = ({ children }) => {
   const updateUserDetails = async (userId, newDetails) => {
     try {
       const response = await updateUserService(userId, newDetails);
-      console.log("Full response from update:", response);
+      console.log('Full response from update:', response);
 
       if (!response.success) {
         console.error('Update failed:', response);
         return { success: false, error: response.error };
       }
 
-      const previousUsername = userRef.current.username;
-      const newUsername = response.data.data.username;
-      const usernameChanged = previousUsername !== newUsername;
+      // 1) Grab the "old" coordinates and username from userRef.current
+      const prevUsername = userRef.current.username;
+      const prevLatitude = userRef.current.coordinates?.latitude;
+      const prevLongitude = userRef.current.coordinates?.longitude;
 
-      // Merge updated user fields
-      const updatedData = { ...userRef.current, ...response.data.data };
-      console.log("Updated user data after merge:", updatedData);
+      // 2) Grab the "new" coordinates and username from the response
+      const updatedUsername = response.data.data.username;
+      const updatedLatitude = response.data.data.coordinates?.latitude;
+      const updatedLongitude = response.data.data.coordinates?.longitude;
 
+      // 3) Determine what changed
+      const usernameChanged = prevUsername !== updatedUsername;
+      const coordinatesChanged =
+        prevLatitude !== updatedLatitude || prevLongitude !== updatedLongitude;
+
+      // 4) Merge the updated user fields
+      const updatedData = {
+        ...userRef.current,
+        ...response.data.data,
+      };
+
+      // 5) Set the updated user in context and localStorage
       setUser(updatedData);
       userRef.current = updatedData;
       localStorage.setItem('user', JSON.stringify(updatedData));
 
-      // If username changed, also update in secondary DB
-      if (usernameChanged) {
-        const secondaryUpdateResponse = await updateUsernameInSecondaryDB(userId, newUsername);
+      // 6) If the username or coords changed, update secondary DB
+      if (usernameChanged || coordinatesChanged) {
+        const secondaryUpdateResponse = await updateUserInSecondaryDB(userId, {
+          username: updatedUsername,
+          latitude: updatedLatitude,
+          longitude: updatedLongitude,
+        });
+
         if (!secondaryUpdateResponse.success) {
-          console.error('Failed to update username in secondary DB:', secondaryUpdateResponse.error);
+          console.error(
+            'Failed to update user in secondary DB:',
+            secondaryUpdateResponse.error
+          );
           toast.error(
-            'Username was updated in main DB, but failed to update in secondary DB.'
+            'User was updated in main DB, but failed to update in secondary DB.'
           );
         } else {
-          console.log('Username updated in secondary DB.');
-          toast.success('Username updated successfully in all systems.');
+          console.log('User updated in secondary DB.');
         }
       }
 

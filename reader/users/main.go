@@ -39,7 +39,7 @@ func main() {
 	protected.Get("/api/ownershipData/username/:username", GetPokemonInstancesByUsername)
 
 	// New protected route for updating username
-	protected.Put("/api/update-username/:user_id", UpdateUsernameHandler)
+	protected.Put("/api/update-user/:user_id", UpdateUserHandler)
 
 	// Use fmt.Println for startup messages without time and log level
 	fmt.Println("Starting User Service at http://127.0.0.1:3005/")
