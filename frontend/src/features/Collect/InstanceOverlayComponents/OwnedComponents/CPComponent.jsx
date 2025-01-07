@@ -22,7 +22,7 @@ const CPComponent = ({ pokemon, editMode, onCPChange, cp, errors }) => {
       editableRef.current.innerText = cp;
       setCaretToEnd(); // Ensure cursor is at end when editing starts
     }
-  }, [editMode, cp]);
+  }, [editMode]); // Removed 'cp' from dependencies  
 
   const handleInput = (event) => {
     const newValue = event.target.innerText;
