@@ -22,7 +22,8 @@ import { useGlobalState } from './GlobalStateContext';
 import { useSession } from './SessionContext';
 import {
   clearStore,
-  clearListsStore
+  clearListsStore,
+  clearTradesStore
 } from '../services/indexedDB';
 import { getDeviceId } from '../utils/deviceID';
 
@@ -217,6 +218,9 @@ export const AuthProvider = ({ children }) => {
       for (const listName of ['owned', 'unowned', 'wanted', 'trade']) {
         await clearListsStore(listName);
       }
+      // Clear trades stores from TradesDB
+      await clearTradesStore('pokemonTrades');
+      await clearTradesStore('relatedInstances');
       console.log('Cleared IndexedDB data.');
     } catch (error) {
       console.error('Error clearing IndexedDB data:', error);

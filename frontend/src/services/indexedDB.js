@@ -418,6 +418,13 @@ export async function deleteFromTradesDB(storeName, key) {
     return db.delete(storeName, key);
 }
 
+// Clear all trades
+export async function clearTradesStore(storeName) {
+    const db = await initTradesDB();
+    return db.clear(storeName);
+  }
+  
+
 // Related Instances Functions (if needed)
 // Example: Add related instance
 export async function addRelatedInstance(instanceData, tradeId) {
