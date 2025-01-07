@@ -143,8 +143,8 @@
 }
 
 /* To create consistent space for Lucky and Gender */
-.lucky-component,
-.gender-container {
+.owned-instance .lucky-component,
+.owned-instance .gender-container {
   flex: 1; /* Ensures they take up equal available space */
 }
 
@@ -200,22 +200,22 @@
   transform: translateY(-50%);
 }
 
-.level-component {
+.owned-instance .level-component {
   display: flex;
   flex-direction: column;
   margin: 10px 0;
 }
 
-.level-component label {
+.owned-instance .level-component label {
   font-weight: bold;
 }
 
-.level-component input {
+.owned-instance .level-component input {
   padding: 5px;
   font-size: 1rem;
 }
 
-.level-component .error {
+.owned-instance .level-component .error {
   color: red;
   font-size: 0.8rem;
 }

@@ -19,10 +19,10 @@ const CPComponent = ({ pokemon, editMode, onCPChange, cp, errors }) => {
 
   useEffect(() => {
     if (editMode && editableRef.current) {
-      editableRef.current.innerText = cp;
+      editableRef.current.innerText = cp || ''; // Default to empty string if cp is undefined
       setCaretToEnd(); // Ensure cursor is at end when editing starts
     }
-  }, [editMode]); // Removed 'cp' from dependencies  
+  }, [editMode]);  
 
   const handleInput = (event) => {
     const newValue = event.target.innerText;
@@ -42,9 +42,9 @@ const CPComponent = ({ pokemon, editMode, onCPChange, cp, errors }) => {
   };
 
   const handleBlur = () => {
-    const trimmedCP = cp.trim();
-    onCPChange(trimmedCP); // Pass trimmed CP without converting to number
-  };
+    const trimmedCP = cp ? cp.trim() : '';
+    onCPChange(trimmedCP);
+  };  
 
   const handleContainerClick = () => {
     if (editMode && editableRef.current) {

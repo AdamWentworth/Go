@@ -114,10 +114,28 @@
   justify-content: center;
 }
 
-.trade-instance .gender-container {
+.trade-instance .level-gender-container {
   width: 100%;
-  display: flex;
-  justify-content: flex-end;
+  display: flex;            /* Make the container a flexbox */
+  justify-content: space-between; /* Distribute space between children */
+  align-items: center;      /* Center children vertically */
+  position: relative;
+}
+
+.trade-instance .level-component {
+  display: flex;            /* Ensure level-component itself is flexbox */
+  align-items: center;      /* Vertically center content inside level-component */
+  margin-top: 10px;
+  margin-bottom: 5px;
+  flex-grow: 1;             /* Allow the level-component to take up flexible space */
+  justify-content: center;  /* Center the content of level-component horizontally */
+}
+
+.trade-instance .gender-container {
+  display: flex;            /* Ensure gender-container itself uses flexbox */
+  justify-content: flex-end; /* Align content inside gender-container to the right */
+  align-items: center;      /* Vertically align content in gender-container */
+  margin-left: auto;        /* Push the gender-container to the far right */
 }
 
 .trade-instance .stats-container {
@@ -130,6 +148,10 @@
 }
 
 .trade-instance .moves-container {
+  width: 100%;
+}
+
+.trade-instance .iv-component {
   width: 100%;
 }
 
