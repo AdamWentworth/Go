@@ -18,7 +18,7 @@ function MainInfo({ pokemon, isMale, toggleGender }) {
     return `${(stat / maxStat) * 100}%`;
   };
 
-  const baseName = getBaseName(pokemon.name);
+  const baseName = pokemon.variantType.includes("mega") ? pokemon.name : getBaseName(pokemon.name);
 
   return (
     <div className="column main-info-column">

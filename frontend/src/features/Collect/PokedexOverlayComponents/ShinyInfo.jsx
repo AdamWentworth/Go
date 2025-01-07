@@ -18,7 +18,7 @@ function ShinyInfo({ pokemon, allPokemonData, isMale }) {
     return name.substring(name.lastIndexOf(' ') + 1);
   };
 
-  const baseName = getBaseName(pokemon.name);
+  const baseName = pokemon.variantType.includes("mega") ? pokemon.name : getBaseName(pokemon.name);
 
   // Function to determine what text to display for shiny rarity
   const displayShinyRarity = () => {
