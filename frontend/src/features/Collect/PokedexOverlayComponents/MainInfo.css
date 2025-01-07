@@ -13,8 +13,6 @@
 }
 
 .main-info-column .pokemon-image {
-    margin-top: -20px;
-    margin-bottom: -15px;
     max-width: 240px;
     filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
 }

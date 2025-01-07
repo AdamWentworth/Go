@@ -89,9 +89,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
 
     return (
       <div className="overlay-row other-overlays-row">
-        <div className="column moves-column">
-          {renderMoves()}
-        </div>
+        {renderMoves()}
         <div className="column main-info-column">
           <WindowOverlay onClose={onClose} className="overlay-main-info">
             <MainInfo

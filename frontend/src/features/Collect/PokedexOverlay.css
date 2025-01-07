@@ -96,7 +96,8 @@
         padding-top: 5px;
     }
     .pokemon-overlay .overlay-charged-moves {
-        margin-bottom: 10px !important;
+        overflow-y: auto;
+        margin-bottom: 80px;
     }
 }
 
@@ -150,7 +151,8 @@
     }
 
     .pokemon-overlay .overlay-charged-moves {
-        margin-bottom: 10px !important;
+        overflow-y: auto;
+        margin-bottom: 80px;
     }
 }
 
@@ -202,6 +204,10 @@
     .pokemon-overlay .overlay-all-moves {
         margin-bottom: 100px !important;
     }
+    .pokemon-overlay .overlay-charged-moves {
+        overflow-y: auto;
+        margin-bottom: 100px;
+    }
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {
@@ -210,8 +216,8 @@
     }
     .pokemon-overlay .overlay-row .other-overlays-row {
         display: flex;
-        flex-direction: row; /* Align children in a row */
-        align-items: flex-start; /* Align items to the start of the flex container */
+        flex-direction: row;
+        align-items: flex-start;
     }
     .pokemon-overlay .overlay-content {
         font-size: 12px !important;
@@ -232,6 +238,7 @@
     }
     .pokemon-overlay .overlay-charged-moves {
         max-height: 560px;
+        overflow-y: auto;
     }
     .pokemon-overlay .overlay-main-info{
         margin-bottom: 10px !important;
@@ -281,6 +288,7 @@
     }
     .pokemon-overlay .overlay-charged-moves {
         max-height: 560px;
+        overflow-y: auto;
     }
     .pokemon-overlay .main-info-column img {
         max-width: 180px !important; 
