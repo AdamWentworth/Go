@@ -7,18 +7,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// GetPokemonInstances handles the GET requests to retrieve Pokémon instances and trades for a user
+// GetPokemonInstances handles the GET requests to retrieve Pokémon instances, trades, and related instances for a user
 func GetPokemonInstances(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
 	tokenUserID, ok := c.Locals("user_id").(string) // Extract user_id from context
 
-	// Check if user_id from the token matches the requested user_id
 	if !ok || tokenUserID != userID {
 		logrus.Error("Authentication failed: User mismatch")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "User mismatch"})
 	}
 
-	// Extract device_id from query parameters
 	deviceID := c.Query("device_id")
 	if deviceID == "" {
 		logrus.Error("device_id is missing in request")
@@ -27,21 +25,18 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 
 	logrus.Infof("Fetching ownership data for user %s from device %s", userID, deviceID)
 
-	// Retrieve the user from the database
 	var user User
 	if err := db.Where("user_id = ?", userID).First(&user).Error; err != nil {
 		logrus.Infof("User %s not found, returning 0 Pokemon instances", userID)
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{})
 	}
 
-	// Retrieve Pokémon instances for the user
 	var instances []PokemonInstance
 	if err := db.Where("user_id = ?", userID).Find(&instances).Error; err != nil {
 		logrus.Error("Error retrieving instances")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve instances"})
 	}
 
-	// Retrieve trades involving this user (proposed or accepting)
 	var trades []Trade
 	if err := db.Where("user_id_proposed = ? OR user_id_accepting = ?", userID, userID).Find(&trades).Error; err != nil {
 		logrus.Error("Error retrieving trades")
@@ -121,13 +116,81 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 		responseTrades[trade.TradeID] = tradeMap
 	}
 
-	logrus.Infof("User %s retrieved %d Pokémon instances and %d trades",
-		user.Username, len(responseInstances), len(responseTrades))
+	// Determine related Pokémon instance IDs for each trade
+	tradeToRelatedID := make(map[string]string) // maps tradeID -> related instance ID
+	var relatedIDs []string                     // list of all related instance IDs to fetch
+	for _, trade := range trades {
+		if trade.UserIDProposed == userID {
+			tradeToRelatedID[trade.TradeID] = trade.PokemonInstanceIDUserAccepting
+			relatedIDs = append(relatedIDs, trade.PokemonInstanceIDUserAccepting)
+		} else if trade.UserIDAccepting == userID {
+			tradeToRelatedID[trade.TradeID] = trade.PokemonInstanceIDUserProposed
+			relatedIDs = append(relatedIDs, trade.PokemonInstanceIDUserProposed)
+		}
+	}
 
-	// Combine both Pokémon instances and trades in one response
+	// Fetch all related instances in bulk
+	var relatedInstancesData []PokemonInstance
+	if len(relatedIDs) > 0 {
+		if err := db.Where("instance_id IN ?", relatedIDs).Find(&relatedInstancesData).Error; err != nil {
+			logrus.Error("Error retrieving related instances")
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve related instances"})
+		}
+	}
+
+	// Map related instance IDs to their attribute maps
+	relatedInstanceByID := make(map[string]interface{})
+	for _, instance := range relatedInstancesData {
+		instanceMap := map[string]interface{}{
+			"pokemon_id":       instance.PokemonID,
+			"nickname":         instance.Nickname,
+			"cp":               instance.CP,
+			"attack_iv":        instance.AttackIV,
+			"defense_iv":       instance.DefenseIV,
+			"stamina_iv":       instance.StaminaIV,
+			"shiny":            instance.Shiny,
+			"costume_id":       instance.CostumeID,
+			"lucky":            instance.Lucky,
+			"shadow":           instance.Shadow,
+			"purified":         instance.Purified,
+			"fast_move_id":     instance.FastMoveID,
+			"charged_move1_id": instance.ChargedMove1ID,
+			"charged_move2_id": instance.ChargedMove2ID,
+			"weight":           instance.Weight,
+			"height":           instance.Height,
+			"gender":           instance.Gender,
+			"mirror":           instance.Mirror,
+			"pref_lucky":       instance.PrefLucky,
+			"registered":       instance.Registered,
+			"favorite":         instance.Favorite,
+			"is_unowned":       instance.IsUnowned,
+			"is_owned":         instance.IsOwned,
+			"is_for_trade":     instance.IsForTrade,
+			"is_wanted":        instance.IsWanted,
+			"not_trade_list":   instance.NotTradeList,
+			"not_wanted_list":  instance.NotWantedList,
+			"location_caught":  instance.LocationCaught,
+			"date_added":       instance.DateAdded,
+			"date_caught":      instance.DateCaught,
+			"friendship_level": instance.FriendshipLevel,
+			"last_update":      instance.LastUpdate,
+			"wanted_filters":   instance.WantedFilters,
+			"trade_filters":    instance.TradeFilters,
+			"mega":             instance.Mega,
+			"mega_form":        instance.MegaForm,
+			"is_mega":          instance.IsMega,
+			"level":            instance.Level,
+		}
+		relatedInstanceByID[instance.InstanceID] = instanceMap
+	}
+
+	logrus.Infof("User %s retrieved %d Pokémon instances, %d trades, and %d related instances",
+		user.Username, len(responseInstances), len(responseTrades), len(relatedInstanceByID))
+
 	response := fiber.Map{
 		"pokemon_instances": responseInstances,
 		"trades":            responseTrades,
+		"related_instances": relatedInstanceByID, // Keys are instance_id now
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response)
