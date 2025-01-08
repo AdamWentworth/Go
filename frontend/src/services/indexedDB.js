@@ -348,6 +348,28 @@ export async function updateTradeStatus(tradeId, newStatus) {
     await tx.done;
 }
 
+// In your IndexedDB utility file (e.g., tradesDB.js)
+
+export async function getTradeByPokemonPair(proposedId, acceptingId) {
+    const db = await initTradesDB();
+    const tx = db.transaction(POKEMON_TRADES_STORE, 'readonly');
+    const store = tx.objectStore(POKEMON_TRADES_STORE);
+  
+    // Retrieve all trades from the store
+    const allTrades = await store.getAll();
+    await tx.done;
+  
+    // Find a trade that matches the pairing in either direction
+    const existingTrade = allTrades.find(trade => 
+      (trade.pokemon_instance_id_user_proposed === proposedId &&
+       trade.pokemon_instance_id_user_accepting === acceptingId) ||
+      (trade.pokemon_instance_id_user_proposed === acceptingId &&
+       trade.pokemon_instance_id_user_accepting === proposedId)
+    );
+  
+    return existingTrade || null;
+  }
+  
 // Get trades by status
 export async function getTradesByStatus(status) {
     if (!Object.values(TRADE_STATUSES).includes(status)) {
@@ -445,27 +467,35 @@ export async function addRelatedInstance(instanceData, tradeId) {
     const db = await initTradesDB();
     const tx = db.transaction(RELATED_INSTANCES_STORE, 'readwrite');
     const store = tx.objectStore(RELATED_INSTANCES_STORE);
-    
+  
     // Ensure instanceData includes 'instance_id'
     if (!instanceData.instance_id) {
-        throw new Error('Missing "instance_id" in instanceData.');
+      throw new Error('Missing "instance_id" in instanceData.');
     }
-    
+  
     // Optionally associate with trade_id
     const relatedEntry = {
-        ...instanceData,
-        trade_id: tradeId, // Link to the trade
+      ...instanceData,
+      trade_id: tradeId, // Link to the trade
     };
-    
+  
     try {
-        await store.add(relatedEntry);
-        await tx.done;
-        return relatedEntry.instance_id;
+      await store.add(relatedEntry);
+      await tx.done;
+      return relatedEntry.instance_id;
     } catch (error) {
-        console.error('Failed to add related instance:', error);
-        throw new Error('Adding related instance failed.');
+      // Handle duplicate entry errors gracefully
+      if (error.name === 'ConstraintError') {
+        console.warn(
+          `Related instance with ID ${relatedEntry.instance_id} already exists. Skipping duplicate entry.`
+        );
+        // Optionally, you can update the existing entry or simply ignore
+        return relatedEntry.instance_id;
+      }
+      console.error('Failed to add related instance:', error);
+      throw new Error('Adding related instance failed.');
     }
-}
+  }  
 
 // Example: Get related instances by trade_id
 export async function getRelatedInstancesByTradeId(tradeId) {

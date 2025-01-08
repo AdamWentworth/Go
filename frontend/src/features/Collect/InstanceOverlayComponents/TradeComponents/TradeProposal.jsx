@@ -13,9 +13,11 @@ import useCalculateStardustCost from '../hooks/useCalculateStardustCost';
 import CloseButton from '../../../../components/CloseButton';
 
 import { useTradeData } from '../../../../contexts/TradeDataContext';
+import { useModal } from '../../../../contexts/ModalContext';
 
 const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose, myOwnershipData, ownershipData, username }) => {
   const { proposeTrade } = useTradeData();
+  const { alert } = useModal();
   console.log(passedInPokemon)
   const containerRef = useRef(null);
   const closeButtonRef = useRef(null);
@@ -61,13 +63,13 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
 
   const handleProposeTrade = async () => {
     if (!selectedMatchedInstance) {
-      alert("Please select which instance to trade.");
+      await alert("Please select which instance to trade.");
       return;
     }
 
     // Validate friendship level
     if (friendship_level < 1 || friendship_level > 4) {
-      alert("Please select a valid friendship level (1-4).");
+      await alert("Please select a valid friendship level (1-4).");
       return;
     }
 
@@ -106,18 +108,25 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
     };
 
     try {
-      // Use the proposeTrade function from tradeService.js
-      const tradeId = await proposeTrade(tradeData);
-      console.log(`Trade created with ID: ${tradeId}`);
-
-      // Optionally, you can update the UI or notify the user
-      alert("Trade proposal successfully created!");
-
-      // Close the proposal modal
+      // Use proposeTrade from context and get structured response
+      const result = await proposeTrade(tradeData);
+  
+      if (!result.success) {
+        // Differentiate error responses based on message content
+        if (result.error.includes('already exists')) {
+          await alert("This trade proposal already exists.");
+        } else {
+          await alert("Failed to create trade proposal. Please try again.");
+        }
+        return;
+      }
+  
+      console.log(`Trade created with ID: ${result.tradeId}`);
+      await alert("Trade proposal successfully created!");
       onClose();
-    } catch (error) {
-      console.error("Error creating trade:", error);
-      alert("Failed to create trade proposal. Please try again.");
+    } catch (unexpectedError) {
+      console.error("Unexpected error:", unexpectedError);
+      await alert("An unexpected error occurred. Please try again.");
     }
   };
 

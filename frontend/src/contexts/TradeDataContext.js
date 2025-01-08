@@ -17,14 +17,17 @@ export const TradeDataProvider = ({ children }) => {
   const [trades, setTrades] = useState({});
   const [relatedInstances, setRelatedInstancesState] = useState({});
 
-  // Example: For proposing a single trade
+  // For proposing a trade
   const proposeTrade = useCallback(
     async (tradeData) => {
-      const tradeId = await proposeTradeService(tradeData);
-
-      periodicUpdates();
-
-      return tradeId;
+      try {
+        const tradeId = await proposeTradeService(tradeData);
+        periodicUpdates();
+        return { success: true, tradeId };
+      } catch (error) {
+        // Return a structured error response without throwing
+        return { success: false, error: error.message };
+      }
     },
     [periodicUpdates]
   );
