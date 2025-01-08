@@ -479,23 +479,39 @@ export async function addRelatedInstance(instanceData, tradeId) {
       trade_id: tradeId, // Link to the trade
     };
   
+    // Attempt to add the related entry
     try {
       await store.add(relatedEntry);
-      await tx.done;
-      return relatedEntry.instance_id;
     } catch (error) {
-      // Handle duplicate entry errors gracefully
-      if (error.name === 'ConstraintError') {
+      if (error.name === 'ConstraintError' || error.name === 'AbortError') {
         console.warn(
-          `Related instance with ID ${relatedEntry.instance_id} already exists. Skipping duplicate entry.`
+          `Related instance with ID ${relatedEntry.instance_id} already exists. Skipping duplicate entry during add.`
         );
-        // Optionally, you can update the existing entry or simply ignore
-        return relatedEntry.instance_id;
+        // Skip adding; proceed to transaction completion handling.
+      } else {
+        console.error('Failed to add related instance:', error);
+        throw new Error('Adding related instance failed at add step.');
       }
-      console.error('Failed to add related instance:', error);
-      throw new Error('Adding related instance failed.');
     }
-  }  
+  
+    // Attempt to complete the transaction
+    try {
+      await tx.done;
+    } catch (error) {
+      if (error.name === 'AbortError' || error.name === 'ConstraintError') {
+        console.warn(
+          `Transaction for related instance ID ${relatedEntry.instance_id} completed with an error, but proceeding.`
+        );
+        // Even if tx.done failed due to duplicate, we can proceed.
+      } else {
+        console.error('Transaction failed:', error);
+        throw new Error('Adding related instance failed at transaction commit.');
+      }
+    }
+  
+    return relatedEntry.instance_id;
+  }
+  
 
 // Example: Get related instances by trade_id
 export async function getRelatedInstancesByTradeId(tradeId) {
