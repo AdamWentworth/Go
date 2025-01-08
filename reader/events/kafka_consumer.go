@@ -57,7 +57,7 @@ func startKafkaConsumer() {
 				continue
 			}
 
-			// Extract necessary fields
+			// Extract necessary fields for determining which clients to broadcast to
 			userID, userIDExists := data["user_id"].(string)
 			if !userIDExists {
 				logrus.Errorf("user_id not found or not a string in Kafka message")
@@ -82,12 +82,37 @@ func startKafkaConsumer() {
 				continue
 			}
 
-			logrus.Infof("Kafka message: username=%s, deviceID=%s", username, deviceID)
+			logrus.Infof("Kafka message received for user=%s (username=%s), deviceID=%s", userID, username, deviceID)
 
-			// Prepare the message to send to clients
-			messageBytes, err := json.Marshal(data)
+			// ------------------------------------------------------------------
+			// Transform data so that we ONLY send:
+			// { "pokemon": { <key>: { <pokemon fields> }, ... } }
+			// ------------------------------------------------------------------
+			transformed := map[string]interface{}{} // final message
+
+			// Check if "pokemonUpdates" exists and is an array
+			if pUpdates, ok := data["pokemonUpdates"].([]interface{}); ok && len(pUpdates) > 0 {
+				pokemonMap := make(map[string]interface{})
+				for _, raw := range pUpdates {
+					// Each raw element should be a map like { key: "...", ...other fields }
+					if item, castOk := raw.(map[string]interface{}); castOk {
+						// Extract the "key" so we can use it as the map key
+						if pk, pkOk := item["key"].(string); pkOk && pk != "" {
+							pokemonMap[pk] = item
+						}
+					}
+				}
+				transformed["pokemon"] = pokemonMap
+			} else {
+				// If there's no pokemonUpdates, or it's empty, you might opt to skip.
+				// For safety, let's just send an empty object. Or you can `continue`.
+				transformed["pokemon"] = map[string]interface{}{}
+			}
+
+			// Marshal the transformed data
+			messageBytes, err := json.Marshal(transformed)
 			if err != nil {
-				logrus.Errorf("Error marshalling message: %v", err)
+				logrus.Errorf("Error marshalling transformed message: %v", err)
 				continue
 			}
 
