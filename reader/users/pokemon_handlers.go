@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// GetPokemonInstances handles the GET requests to retrieve Pokémon instances for a user
+// GetPokemonInstances handles the GET requests to retrieve Pokémon instances and trades for a user
 func GetPokemonInstances(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
 	tokenUserID, ok := c.Locals("user_id").(string) // Extract user_id from context
@@ -25,13 +25,11 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Missing device_id"})
 	}
 
-	// Log the device_id for tracing
 	logrus.Infof("Fetching ownership data for user %s from device %s", userID, deviceID)
 
 	// Retrieve the user from the database
 	var user User
 	if err := db.Where("user_id = ?", userID).First(&user).Error; err != nil {
-		// User is not found, log info and return empty response in the same format
 		logrus.Infof("User %s not found, returning 0 Pokemon instances", userID)
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{})
 	}
@@ -43,10 +41,16 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve instances"})
 	}
 
-	// Prepare the response data, even if no instances exist
-	responseData := make(map[string]interface{})
+	// Retrieve trades involving this user (proposed or accepting)
+	var trades []Trade
+	if err := db.Where("user_id_proposed = ? OR user_id_accepting = ?", userID, userID).Find(&trades).Error; err != nil {
+		logrus.Error("Error retrieving trades")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve trades"})
+	}
+
+	// Prepare Pokémon instances map keyed by instance_id
+	responseInstances := make(map[string]interface{})
 	for _, instance := range instances {
-		// Create a new map to represent the instance without `user_id` and `instance_id`
 		instanceMap := map[string]interface{}{
 			"pokemon_id":       instance.PokemonID,
 			"nickname":         instance.Nickname,
@@ -87,16 +91,46 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 			"is_mega":          instance.IsMega,
 			"level":            instance.Level,
 		}
-
-		// Add the instance to the response data using its `InstanceID`
-		responseData[instance.InstanceID] = instanceMap
+		responseInstances[instance.InstanceID] = instanceMap
 	}
 
-	instanceCount := len(responseData)
+	// Prepare trades map keyed by trade_id with selected attributes
+	responseTrades := make(map[string]interface{})
+	for _, trade := range trades {
+		tradeMap := map[string]interface{}{
+			"user_id_proposed":                   trade.UserIDProposed,
+			"username_proposed":                  trade.UsernameProposed,
+			"user_id_accepting":                  trade.UserIDAccepting,
+			"username_accepting":                 trade.UsernameAccepting,
+			"pokemon_instance_id_user_proposed":  trade.PokemonInstanceIDUserProposed,
+			"pokemon_instance_id_user_accepting": trade.PokemonInstanceIDUserAccepting,
+			"trade_status":                       trade.TradeStatus,
+			"trade_proposal_date":                trade.TradeProposalDate,
+			"trade_accepted_date":                trade.TradeAcceptedDate,
+			"trade_completed_date":               trade.TradeCompletedDate,
+			"trade_cancelled_date":               trade.TradeCancelledDate,
+			"trade_cancelled_by":                 trade.TradeCancelledBy,
+			"is_special_trade":                   trade.IsSpecialTrade,
+			"is_registered_trade":                trade.IsRegisteredTrade,
+			"is_lucky_trade":                     trade.IsLuckyTrade,
+			"trade_dust_cost":                    trade.TradeDustCost,
+			"trade_friendship_level":             trade.TradeFriendshipLevel,
+			"user_1_trade_satisfaction":          trade.User1TradeSatisfaction,
+			"user_2_trade_satisfaction":          trade.User2TradeSatisfaction,
+		}
+		responseTrades[trade.TradeID] = tradeMap
+	}
 
-	// Log and return the response data, even if empty
-	logrus.Infof("User %s retrieved %d Pokemon instances from device %s", user.Username, instanceCount, deviceID)
-	return c.Status(fiber.StatusOK).JSON(responseData)
+	logrus.Infof("User %s retrieved %d Pokémon instances and %d trades",
+		user.Username, len(responseInstances), len(responseTrades))
+
+	// Combine both Pokémon instances and trades in one response
+	response := fiber.Map{
+		"pokemon_instances": responseInstances,
+		"trades":            responseTrades,
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response)
 }
 
 func GetPokemonInstancesByUsername(c *fiber.Ctx) error {

@@ -68,8 +68,9 @@ function Login() {
 
       // Fetch ownership data
       const ownershipData = await fetchOwnershipData(user.user_id);
-      console.log('Ownership Data:', ownershipData);
-      setOwnershipData(ownershipData);
+      console.log('Ownership Data:', ownershipData.pokemon_instances);
+      console.log('Trades Data:', ownershipData.trades);
+      setOwnershipData(ownershipData.pokemon_instances);
 
       setIsSuccessful(true);
       setFeedback('Successfully Logged in');

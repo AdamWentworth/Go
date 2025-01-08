@@ -107,20 +107,21 @@ export const refreshTokenService = async () => {
 
 export const fetchOwnershipData = async (userId) => {
   try {
-      const deviceId = getDeviceId();
-      const response = await readApi.get(`/ownershipData/${userId}`, {
-          params: {
-              device_id: deviceId,
-          },
-          headers: {
-              'Content-Type': 'application/json'
-          },
-          withCredentials: true  // Include credentials in the request
-      });
-      return response.data;
+    const deviceId = getDeviceId();
+    const response = await readApi.get(`/ownershipData/${userId}`, {
+      params: {
+        device_id: deviceId,
+      },
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      withCredentials: true
+    });
+    // response.data now contains { pokemon_instances: { ... }, trades: [ ... ] }
+    return response.data;
   } catch (error) {
-      console.error('Error fetching ownership data:', error);
-      throw error;
+    console.error('Error fetching ownership data:', error);
+    throw error;
   }
 };
 
