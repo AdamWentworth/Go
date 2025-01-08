@@ -3,6 +3,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -73,7 +75,8 @@ func UpdateUserHandler(c *fiber.Ctx) error {
 	// Check if the new username is already taken in the secondary database
 	// (If you do not need unique usernames in your secondary DB, remove this)
 	var existingUser User
-	err := db.Where("username = ?", req.Username).First(&existingUser).Error
+	var err error
+	err = db.Where("username = ?", req.Username).First(&existingUser).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logrus.Errorf("UpdateUserHandler: Database error while checking existing username: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(UpdateUserResponse{
@@ -96,19 +99,49 @@ func UpdateUserHandler(c *fiber.Ctx) error {
 		"longitude": req.Longitude,
 	}
 
-	// Update the user in the secondary database
-	result := db.Model(&User{}).
-		Where("user_id = ?", userID).
-		Updates(updates)
+	// ------------------------------
+	//     ADDING RETRY LOGIC
+	// ------------------------------
+	const maxRetries = 3
+	var result *gorm.DB
+	var updateErr error
 
+	for i := 1; i <= maxRetries; i++ {
+		// Attempt to update
+		result = db.Model(&User{}).Where("user_id = ?", userID).Updates(updates)
+
+		if result.Error == nil {
+			// Success: break out of the retry loop
+			break
+		}
+
+		// If it's not a transient error, no point retrying
+		if !isTransientError(result.Error) {
+			updateErr = result.Error
+			break
+		}
+
+		// Otherwise, we assume it's transient ("bad connection") -> retry
+		logrus.Warnf("UpdateUserHandler: Transient DB error on attempt %d/%d: %v. Retrying...", i, maxRetries, result.Error)
+
+		// Sleep a bit before retrying—*very* simple backoff
+		sleepDuration := i // e.g., 1s, 2s, 3s
+		time.Sleep(time.Duration(sleepDuration) * time.Second)
+	}
+
+	// If we still have an error after retries, return
 	if result.Error != nil {
-		logrus.Errorf("UpdateUserHandler: Failed to update user in secondary DB: %v", result.Error)
+		if updateErr == nil {
+			updateErr = result.Error
+		}
+		logrus.Errorf("UpdateUserHandler: Failed to update user in secondary DB (after retries): %v", updateErr)
 		return c.Status(fiber.StatusInternalServerError).JSON(UpdateUserResponse{
 			Success: false,
 			Message: "Failed to update user in secondary database",
 		})
 	}
 
+	// At this point, the update succeeded or was never needed (RowsAffected=0).
 	if result.RowsAffected == 0 {
 		logrus.Warnf("UpdateUserHandler: No user found with user_id %s", userID)
 		return c.Status(fiber.StatusNotFound).JSON(UpdateUserResponse{
