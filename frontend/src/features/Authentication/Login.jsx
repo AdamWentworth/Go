@@ -13,6 +13,7 @@ import {
 import './Login.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePokemonData } from '../../contexts/PokemonDataContext';
+import { useTradeData } from '../../contexts/TradeDataContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ResetPasswordOverlay from './ResetPasswordOverlay'; // Import the overlay component
@@ -29,6 +30,7 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const { setOwnershipData } = usePokemonData();
+  const { setTradeData, setRelatedInstances } = useTradeData();
 
   // State for managing the visibility of the reset password overlay
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
@@ -72,6 +74,8 @@ function Login() {
       console.log('Trades Data:', ownershipData.trades);
       console.log('Related Instances:', ownershipData.related_instances);
       setOwnershipData(ownershipData.pokemon_instances);
+      setTradeData(ownershipData.trades);
+      setRelatedInstances(ownershipData.related_instances)
 
       setIsSuccessful(true);
       setFeedback('Successfully Logged in');

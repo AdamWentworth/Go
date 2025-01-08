@@ -412,6 +412,20 @@ export async function getAllFromTradesDB(storeName) {
     return allData;
 }
 
+export async function setTradesinDB(storeName, dataArray) {
+    try {
+        const db = await initTradesDB();
+        const tx = db.transaction(storeName, 'readwrite');
+        const store = tx.objectStore(storeName);
+        for (const data of dataArray) {
+            store.put(data);
+        }
+        await tx.done;
+    } catch (error) {
+        console.error('[setTradesinDB] ERROR:', error);
+    }
+}
+
 // Delete a trade
 export async function deleteFromTradesDB(storeName, key) {
     const db = await initTradesDB();

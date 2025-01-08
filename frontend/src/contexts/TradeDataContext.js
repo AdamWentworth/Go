@@ -1,27 +1,27 @@
-// TradeDataContext.js
-
-import React, { createContext, useContext, useCallback } from 'react';
+// src/contexts/TradeDataContext.js (or TradeDataProvider.js)
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { proposeTrade as proposeTradeService } from './TradeData/proposeTrade';
 import { usePokemonData } from './PokemonDataContext';
+import {
+  setTradesinDB
+} from '../services/indexedDB';
 
-// 1) Create the context
 const TradeDataContext = createContext();
 
-// 2) Export a hook to consume it
 export const useTradeData = () => useContext(TradeDataContext);
 
-// 3) Create the provider
 export const TradeDataProvider = ({ children }) => {
-  // We pull `periodicUpdates` from PokemonDataContext
-  // This is the "bound" version that uses the shared scheduledSyncRef & timerRef
   const { periodicUpdates } = usePokemonData();
 
+  // State for trades and related instances
+  const [trades, setTrades] = useState({});
+  const [relatedInstances, setRelatedInstancesState] = useState({});
+
+  // Example: For proposing a single trade
   const proposeTrade = useCallback(
     async (tradeData) => {
-      // 1. Call the raw service function. This just does DB stuff.
       const tradeId = await proposeTradeService(tradeData);
 
-      // 2. After that, we call the *context's* periodicUpdates, which uses the shared refs
       periodicUpdates();
 
       return tradeId;
@@ -29,12 +29,62 @@ export const TradeDataProvider = ({ children }) => {
     [periodicUpdates]
   );
 
-  // Other trade methods: acceptTrade, cancelTrade, etc.
-  // each can do the same pattern: call service => periodicUpdates()
+  /**
+   * Set the entire trades object in state
+   * and bulk-save to "pokemonTrades" store in indexedDB.
+   */
+  const setTradeData = useCallback(async (newTradesObj) => {
+    try {
+
+      // Convert to an array for bulk storing
+      const tradesArray = Object.keys(newTradesObj).map((tradeId) => {
+        return { trade_id: tradeId, ...newTradesObj[tradeId] };
+      });
+
+      // Write them in one go
+      await setTradesinDB('pokemonTrades', tradesArray);
+
+      // Update React state
+      setTrades(newTradesObj);
+
+      return newTradesObj;
+    } catch (err) {
+      console.error('[setTradeData] ERROR:', err);
+      throw err;
+    }
+  }, []);
+
+  /**
+   * Set the entire related instances object in state
+   * and bulk-save to "relatedInstances" store in indexedDB.
+   */
+  const setRelatedInstances = useCallback(async (newInstancesObj) => {
+    try {
+
+      // Convert object to array
+      const instancesArray = Object.keys(newInstancesObj).map((instanceId) => {
+        return { instance_id: instanceId, ...newInstancesObj[instanceId] };
+      });
+
+      // Write them to IndexedDB
+      await setTradesinDB('relatedInstances', instancesArray);
+
+      // Update React state
+      setRelatedInstancesState(newInstancesObj);
+
+      return newInstancesObj;
+    } catch (err) {
+      console.error('[setRelatedInstances] ERROR:', err);
+      throw err;
+    }
+  }, []);
 
   const contextValue = {
     proposeTrade,
-    // acceptTrade, cancelTrade, etc...
+    setTradeData,
+    setRelatedInstances,
+    trades,
+    relatedInstances,
   };
 
   return (
