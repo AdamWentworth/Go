@@ -1,10 +1,10 @@
 // useInstanceIdProcessor.js
-
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 function useInstanceIdProcessor({
+  loading,
+  viewedLoading, 
   viewedOwnershipData,
-  viewedLoading,
   filteredVariants,
   location,
   selectedPokemon,
@@ -14,23 +14,33 @@ function useInstanceIdProcessor({
   setSelectedPokemon,
   setHasProcessedInstanceId,
 }) {
+  // Dummy state to force effect re-runs for polling
+  const [retryCounter, setRetryCounter] = useState(0);
+
   useEffect(() => {
-    if (
-      viewedLoading || // Wait if data is loading
-      !viewedOwnershipData || // Wait until data is available
-      !filteredVariants.length || // Ensure there are variants
-      isOwnCollection || // Skip if viewing own collection
-      hasProcessedInstanceId // Skip if already processed
-    ) {
+    // Skip until BOTH global data & user data is done loading
+    if (loading || viewedLoading) {
       return;
     }
 
+    // Skip if we still have no user data or no filteredVariants for that user
+    if (!viewedOwnershipData || !filteredVariants.length) {
+      return;
+    }
+
+    // Skip if we’re viewing own collection or if instance ID is already processed
+    if (isOwnCollection || hasProcessedInstanceId) {
+      return;
+    }
+
+    // Finally, we can read the instanceId from location.state
     const instanceId = location.state?.instanceId;
 
     if (instanceId && !selectedPokemon) {
       const enrichedPokemonData = filteredVariants.find(
-        (pokemon) => pokemon.pokemonKey === instanceId
+        (p) => p.pokemonKey === instanceId
       );
+
       const pokemonData =
         enrichedPokemonData || viewedOwnershipData[instanceId];
 
@@ -39,27 +49,39 @@ function useInstanceIdProcessor({
           pokemon: { ...pokemonData, pokemonKey: instanceId },
           overlayType: 'instance',
         });
-
         setHasProcessedInstanceId(true);
 
-        // Clear instanceId from location state to prevent re-trigger
-        navigate(location.pathname, {
-          replace: true,
-          state: { ...location.state, instanceId: null },
-        });
+        setTimeout(() => {
+          navigate(location.pathname, {
+            replace: true,
+            state: { ...location.state, instanceId: null },
+          });
+        }, 100);
+      } else {
+        setTimeout(() => {
+          setRetryCounter((prev) => prev + 1);
+        }, 500);
+      }
+    } else {
+      if (!instanceId) {
+        console.log('No instanceId found in location.state.');
       }
     }
   }, [
-    viewedOwnershipData,
+    loading,
     viewedLoading,
+    viewedOwnershipData,
     filteredVariants,
-    location.state,
     selectedPokemon,
     isOwnCollection,
     hasProcessedInstanceId,
     navigate,
     location.pathname,
-  ]); // Include necessary dependencies only
+    location.state,
+    setSelectedPokemon,
+    setHasProcessedInstanceId,
+    retryCounter, // added to dependencies to trigger re-run on change
+  ]);
 }
 
 export default useInstanceIdProcessor;

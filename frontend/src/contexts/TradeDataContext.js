@@ -1,4 +1,4 @@
-// src/contexts/TradeDataContext.js (or TradeDataProvider.js)
+// src/contexts/TradeDataContext.js
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { proposeTrade as proposeTradeService } from './TradeData/proposeTrade';
 import { usePokemonData } from './PokemonDataContext';
@@ -16,20 +16,49 @@ export const TradeDataProvider = ({ children }) => {
   // State for trades and related instances
   const [trades, setTrades] = useState({});
   const [relatedInstances, setRelatedInstancesState] = useState({});
+  
+  const addNewTrade = useCallback(async (newTrade) => {
+    // Update in-memory state by merging the new trade
+    setTrades(prevTrades => ({
+      ...prevTrades,
+      [newTrade.trade_id]: newTrade,
+    }));
+  }, []);
+
+  const addNewRelatedInstance = useCallback(async (newInstance) => {
+    setRelatedInstancesState(prev => ({
+      ...prev,
+      [newInstance.instance_id]: newInstance.ownershipStatus,
+    }));
+  }, []);
 
   // For proposing a trade
   const proposeTrade = useCallback(
     async (tradeData) => {
       try {
-        const tradeId = await proposeTradeService(tradeData);
+        // Propose trade and get new trade ID and related instance from the service
+        const { tradeId, relatedInstance } = await proposeTradeService(tradeData);
+        
+        // Construct the new trade object with the received tradeId
+        const newTrade = { ...tradeData, trade_id: tradeId };
+        
+        // Update in-memory state with the new trade
+        await addNewTrade(newTrade);
+    
+        // Directly update the related instance if available
+        if (relatedInstance) {
+          await addNewRelatedInstance(relatedInstance);
+        }
+    
+        // Optionally call periodicUpdates if needed
         periodicUpdates();
+    
         return { success: true, tradeId };
       } catch (error) {
-        // Return a structured error response without throwing
         return { success: false, error: error.message };
       }
     },
-    [periodicUpdates]
+    [periodicUpdates, addNewTrade, addNewRelatedInstance]
   );
 
   /**
@@ -82,12 +111,17 @@ export const TradeDataProvider = ({ children }) => {
     }
   }, []);
 
+  console.log(`trades`, trades)
+  console.log(`relatedInstances`, relatedInstances)
+
   const contextValue = {
     proposeTrade,
     setTradeData,
     setRelatedInstances,
     trades,
     relatedInstances,
+    addNewTrade,
+    addNewRelatedInstance
   };
 
   return (

@@ -509,7 +509,7 @@ export async function addRelatedInstance(instanceData, tradeId) {
       }
     }
   
-    return relatedEntry.instance_id;
+    return relatedEntry;
   }
   
 

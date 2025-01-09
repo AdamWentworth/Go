@@ -94,7 +94,7 @@ export async function proposeTrade(tradeData) {
             instance_id: pokemon.pokemonKey,
             ...pokemon,
         };
-        await addRelatedInstance(relatedInstanceData, tradeId);
+        const relatedInstance = await addRelatedInstance(relatedInstanceData, tradeId);
 
         // 3. Also cache this trade creation in batchedUpdatesDB (batchedTradeUpdates)
         const batchedUpdateData = {
@@ -104,7 +104,7 @@ export async function proposeTrade(tradeData) {
         // Use the same trade_id as the key so you can uniquely identify it later
         await putBatchedTradeUpdates(tradeEntry.trade_id, batchedUpdateData);
 
-        return tradeId;
+        return { tradeId, relatedInstance };
     } catch (error) {
         console.error('Failed to propose trade:', error);
         throw new Error('Trade proposal failed.');
