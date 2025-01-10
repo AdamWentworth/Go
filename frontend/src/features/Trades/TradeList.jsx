@@ -1,18 +1,40 @@
 // TradeList.jsx
-
 import React, { useEffect } from 'react';
-import './TradeList.css';  // Import CSS for styling
-import TradeCard from './TradeCard';  // Import the TradeCard component
+import './TradeList.css';
+import TradeCard from './TradeCard';
 
 function TradeList({ trades, relatedInstances, selectedStatus }) {
-  // Convert trades object to array, sort by trade_status, then filter by selectedStatus
+  // Retrieve current username from local storage (adjust as needed for your app)
+  const storedUser = localStorage.getItem('user');
+  const currentUsername = storedUser ? JSON.parse(storedUser).username : null;
+
+  // Convert trades object to array and sort by trade_status
   const sortedTrades = Object.values(trades).sort((a, b) =>
     a.trade_status.localeCompare(b.trade_status)
   );
 
-  const filteredTrades = sortedTrades.filter(
-    (trade) => trade.trade_status.toLowerCase() === selectedStatus.toLowerCase()
-  );
+  let filteredTrades = [];
+
+  if (selectedStatus.toLowerCase() === 'proposed') {
+    // Filter trades where current user is the proposer
+    filteredTrades = sortedTrades.filter(
+      (trade) =>
+        trade.trade_status.toLowerCase() === 'proposed' &&
+        trade.username_proposed === currentUsername
+    );
+  } else if (selectedStatus.toLowerCase() === 'accepting') {
+    // Filter trades where current user is the accepter
+    filteredTrades = sortedTrades.filter(
+      (trade) =>
+        trade.trade_status.toLowerCase() === 'proposed' &&
+        trade.username_accepting === currentUsername
+    );
+  } else {
+    // For other statuses, a straightforward filter
+    filteredTrades = sortedTrades.filter(
+      (trade) => trade.trade_status.toLowerCase() === selectedStatus.toLowerCase()
+    );
+  }
 
   useEffect(() => {
     console.log('Trades:', trades);
@@ -26,14 +48,15 @@ function TradeList({ trades, relatedInstances, selectedStatus }) {
       ) : (
         filteredTrades.map((trade) => (
           <TradeCard 
-            key={trade.trade_id} 
+            key={ trade.trade_id }
             trade={trade} 
-            relatedInstances={relatedInstances} 
+            relatedInstances={relatedInstances}
+            selectedStatus={selectedStatus}
           />
         ))
       )}
     </div>
-  );
+  );  
 }
 
 export default TradeList;

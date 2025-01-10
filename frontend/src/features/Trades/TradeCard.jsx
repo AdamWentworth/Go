@@ -3,51 +3,64 @@ import React from 'react';
 import { usePokemonData } from '../../contexts/PokemonDataContext';
 import { useOfferingDetails } from './hooks/useOfferingDetails';
 import { useReceivingDetails } from './hooks/useReceivingDetails';
-import './TradeList.css';  // Reuse the same CSS for styling if applicable
+import ProposedTradeView from './views/ProposedTradeView';
+import AcceptingTradeView from './views/AcceptingTradeView';
+import './TradeCard.css';
 
-function TradeCard({ trade, relatedInstances }) {
-  const { variants, ownershipData } = usePokemonData();
+function TradeCard({ trade, relatedInstances, selectedStatus }) {
+  const { variants, ownershipData, loading } = usePokemonData();
 
   const offeringDetails = useOfferingDetails(trade, variants, ownershipData);
   const receivingCombinedDetails = useReceivingDetails(trade, variants, relatedInstances);
 
+  // Placeholder functions for actions
+  const handleAccept = () => { /* Accept function logic */ };
+  const handleDelete = () => { /* Delete function logic */ };
+  const handleComplete = () => { /* Complete function logic */ };
+  const handleCancel = () => { /* Cancel function logic */ };
+  const handleThumbsUp = () => { /* Thumbs up function logic */ };
+
+  // Retrieve current username from local storage
+  const storedUser = localStorage.getItem('user');
+  const currentUsername = storedUser ? JSON.parse(storedUser).username : '';
+
+  const isProposed = selectedStatus.toLowerCase() === 'proposed';
+  const offeringHeading = isProposed ? 'Offered:' : 'Offering:';
+  const receivingHeading = isProposed ? 'For Trade:' : 'Receiving:';
+
+  if (selectedStatus.toLowerCase() === 'accepting') {
+    return (
+      <AcceptingTradeView
+        trade={trade}
+        currentUsername={currentUsername}
+        offeringDetails={offeringDetails}
+        receivingCombinedDetails={receivingCombinedDetails}
+        loading={loading}
+        handleAccept={handleAccept}
+        handleDelete={handleDelete}
+      />
+    );
+  }
+
+  if (selectedStatus.toLowerCase() === 'proposed') {
+    return (
+      <ProposedTradeView
+        trade={trade}
+        offeringDetails={offeringDetails}
+        receivingCombinedDetails={receivingCombinedDetails}
+        loading={loading}
+        offeringHeading={offeringHeading}
+        receivingHeading={receivingHeading}
+        handleDelete={handleDelete}
+      />
+    );
+  }
+
+  // Fallback rendering for other statuses or default layout
+  // (You can modularize other statuses similarly if needed)
   return (
     <div className="trade-card">
-      <div className="trade-info">
-        <p><strong>Trade ID:</strong> {trade.trade_id}</p>
-        <p><strong>Status:</strong> {trade.trade_status}</p>
-        {/* Additional trade info if needed */}
-      </div>
-      <div className="trade-pokemon">
-        <div className="pokemon offering">
-          <h4>Offering:</h4>
-          {offeringDetails ? (
-            <>
-              <img 
-                src={offeringDetails.currentImage} 
-                alt={offeringDetails.name || 'Offering Pokémon'} 
-              />
-              <p>{offeringDetails.name || offeringDetails.pokemon_name}</p>
-            </>
-          ) : (
-            <p>Loading offering details...</p>
-          )}
-        </div>
-        <div className="pokemon received">
-          <h4>Receiving:</h4>
-          {receivingCombinedDetails ? (
-            <>
-              <img 
-                src={receivingCombinedDetails.currentImage || receivingCombinedDetails.pokemon_image_url} 
-                alt={receivingCombinedDetails.name || 'Receiving Pokémon'} 
-              />
-              <p>{receivingCombinedDetails.name || receivingCombinedDetails.pokemon_name}</p>
-            </>
-          ) : (
-            <p>Loading receiving details...</p>
-          )}
-        </div>
-      </div>
+      {/* Default or other status rendering logic */}
     </div>
   );
 }

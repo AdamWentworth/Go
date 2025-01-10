@@ -98,7 +98,6 @@ export const TradeDataProvider = ({ children }) => {
         }, {});
         await setRelatedInstances(instancesObj);
 
-        console.log(trades, relatedInstances)
       } catch (error) {
         console.error('Error initializing TradeDataContext:', error);
       }

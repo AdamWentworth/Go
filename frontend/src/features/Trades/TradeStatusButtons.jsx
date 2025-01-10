@@ -1,10 +1,12 @@
-// TradeStatusButtons.jsx
-
 import React from 'react';
 import './TradeStatusButtons.css';  // Reuse the same CSS file for styling
 
 function TradeStatusButtons({ selectedStatus, setSelectedStatus }) {
-  const leftStatuses = ['Accepting', 'Proposed'];
+  // Use objects with value and label
+  const leftStatuses = [
+    { value: 'Accepting', label: 'Offers' },
+    { value: 'Proposed', label: 'Proposed' }
+  ];
   const middleStatus = 'Pending';
   const rightStatuses = ['Completed', 'Cancelled'];
 
@@ -12,17 +14,17 @@ function TradeStatusButtons({ selectedStatus, setSelectedStatus }) {
     <div className="status-buttons">
       {/* Left vertical group */}
       <div className="button-group vertical-group">
-        {leftStatuses.map((status) => (
+        {leftStatuses.map(({ value, label }) => (
           <button
-            key={status}
-            onClick={() => setSelectedStatus(status)}
+            key={value}
+            onClick={() => setSelectedStatus(value)}
             className={
-              selectedStatus === status
-                ? `status-button active ${status.toLowerCase()}`
+              selectedStatus === value
+                ? `status-button active ${value.toLowerCase()}`
                 : 'status-button'
             }
           >
-            {status}
+            {label}
           </button>
         ))}
       </div>
