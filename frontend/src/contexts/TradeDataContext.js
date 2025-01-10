@@ -1,9 +1,10 @@
-// src/contexts/TradeDataContext.js
-import React, { createContext, useContext, useState, useCallback } from 'react';
+// TradeDataContext.js
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { proposeTrade as proposeTradeService } from './TradeData/proposeTrade';
 import { usePokemonData } from './PokemonDataContext';
 import {
-  setTradesinDB
+  setTradesinDB,
+  getAllFromTradesDB
 } from '../services/indexedDB';
 
 const TradeDataContext = createContext();
@@ -16,9 +17,8 @@ export const TradeDataProvider = ({ children }) => {
   // State for trades and related instances
   const [trades, setTrades] = useState({});
   const [relatedInstances, setRelatedInstancesState] = useState({});
-  
+
   const addNewTrade = useCallback(async (newTrade) => {
-    // Update in-memory state by merging the new trade
     setTrades(prevTrades => ({
       ...prevTrades,
       [newTrade.trade_id]: newTrade,
@@ -32,27 +32,16 @@ export const TradeDataProvider = ({ children }) => {
     }));
   }, []);
 
-  // For proposing a trade
   const proposeTrade = useCallback(
     async (tradeData) => {
       try {
-        // Propose trade and get new trade ID and related instance from the service
         const { tradeId, relatedInstance } = await proposeTradeService(tradeData);
-        
-        // Construct the new trade object with the received tradeId
         const newTrade = { ...tradeData, trade_id: tradeId };
-        
-        // Update in-memory state with the new trade
         await addNewTrade(newTrade);
-    
-        // Directly update the related instance if available
         if (relatedInstance) {
           await addNewRelatedInstance(relatedInstance);
         }
-    
-        // Optionally call periodicUpdates if needed
         periodicUpdates();
-    
         return { success: true, tradeId };
       } catch (error) {
         return { success: false, error: error.message };
@@ -61,24 +50,13 @@ export const TradeDataProvider = ({ children }) => {
     [periodicUpdates, addNewTrade, addNewRelatedInstance]
   );
 
-  /**
-   * Set the entire trades object in state
-   * and bulk-save to "pokemonTrades" store in indexedDB.
-   */
   const setTradeData = useCallback(async (newTradesObj) => {
     try {
-
-      // Convert to an array for bulk storing
       const tradesArray = Object.keys(newTradesObj).map((tradeId) => {
         return { trade_id: tradeId, ...newTradesObj[tradeId] };
       });
-
-      // Write them in one go
       await setTradesinDB('pokemonTrades', tradesArray);
-
-      // Update React state
       setTrades(newTradesObj);
-
       return newTradesObj;
     } catch (err) {
       console.error('[setTradeData] ERROR:', err);
@@ -86,24 +64,13 @@ export const TradeDataProvider = ({ children }) => {
     }
   }, []);
 
-  /**
-   * Set the entire related instances object in state
-   * and bulk-save to "relatedInstances" store in indexedDB.
-   */
   const setRelatedInstances = useCallback(async (newInstancesObj) => {
     try {
-
-      // Convert object to array
       const instancesArray = Object.keys(newInstancesObj).map((instanceId) => {
         return { instance_id: instanceId, ...newInstancesObj[instanceId] };
       });
-
-      // Write them to IndexedDB
       await setTradesinDB('relatedInstances', instancesArray);
-
-      // Update React state
       setRelatedInstancesState(newInstancesObj);
-
       return newInstancesObj;
     } catch (err) {
       console.error('[setRelatedInstances] ERROR:', err);
@@ -111,8 +78,35 @@ export const TradeDataProvider = ({ children }) => {
     }
   }, []);
 
-  console.log(`trades`, trades)
-  console.log(`relatedInstances`, relatedInstances)
+  // Load trades and related instances from IndexedDB on mount
+  useEffect(() => {
+    async function initializeTradeData() {
+      try {
+        // Load trades from IndexedDB
+        const tradesFromDB = await getAllFromTradesDB('pokemonTrades');
+        const tradesObj = tradesFromDB.reduce((acc, trade) => {
+          acc[trade.trade_id] = { ...trade };
+          return acc;
+        }, {});
+        await setTradeData(tradesObj);
+
+        // Load related instances from IndexedDB
+        const instancesFromDB = await getAllFromTradesDB('relatedInstances');
+        const instancesObj = instancesFromDB.reduce((acc, instance) => {
+          acc[instance.instance_id] = { ...instance };
+          return acc;
+        }, {});
+        await setRelatedInstances(instancesObj);
+
+        console.log(trades, relatedInstances)
+      } catch (error) {
+        console.error('Error initializing TradeDataContext:', error);
+      }
+    }
+
+    initializeTradeData();
+    // Empty dependency array ensures this runs only once on mount
+  }, [setTradeData, setRelatedInstances]);
 
   const contextValue = {
     proposeTrade,
@@ -121,7 +115,7 @@ export const TradeDataProvider = ({ children }) => {
     trades,
     relatedInstances,
     addNewTrade,
-    addNewRelatedInstance
+    addNewRelatedInstance,
   };
 
   return (
