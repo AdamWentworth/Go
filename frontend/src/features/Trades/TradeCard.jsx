@@ -1,75 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { getFromDB } from '../../services/indexedDB';  
-import { parsePokemonKey } from '../../utils/PokemonIDUtils';
+// TradeCard.jsx
+import React from 'react';
+import { usePokemonData } from '../../contexts/PokemonDataContext';
+import { useOfferingDetails } from './hooks/useOfferingDetails';
+import { useReceivingDetails } from './hooks/useReceivingDetails';
 import './TradeList.css';  // Reuse the same CSS for styling if applicable
 
 function TradeCard({ trade, relatedInstances }) {
-  const [offeringDetails, setOfferingDetails] = useState(null);
-  const [receivingCombinedDetails, setReceivingCombinedDetails] = useState(null);
+  const { variants, ownershipData } = usePokemonData();
 
-  useEffect(() => {
-    async function fetchOfferingData() {
-      try {
-        // Parse the offering key
-        const parsed = parsePokemonKey(trade.pokemon_instance_id_user_proposed);
-        console.log('Parsed offering key:', parsed);
-
-        // Retrieve variant data using baseKey from 'pokemonVariants'
-        const variantData = await getFromDB('pokemonVariants', parsed.baseKey);
-        console.log('Variant data for offering:', variantData);
-
-        // Retrieve ownership data using full instance id from 'pokemonOwnership'
-        const ownershipKey = String(trade.pokemon_instance_id_user_proposed);
-        const ownershipData = await getFromDB('pokemonOwnership', ownershipKey);
-        console.log('Ownership data for offering:', ownershipData);
-
-        // Combine variant and ownership data
-        const combinedDetails = {
-          ...variantData,
-          ...ownershipData
-        };
-
-        console.log('Combined offering details:', combinedDetails);
-        setOfferingDetails(combinedDetails);
-      } catch (error) {
-        console.error('Error fetching offering details:', error);
-      }
-    }
-    fetchOfferingData();
-  }, [trade]);
-
-  useEffect(() => {
-    async function fetchReceivingData() {
-      try {
-        // Parse the receiving key
-        const parsedReceiving = parsePokemonKey(trade.pokemon_instance_id_user_accepting);
-        console.log('Parsed receiving key:', parsedReceiving);
-
-        // Retrieve variant data for receiving Pokémon using baseKey from 'pokemonVariants'
-        const variantReceivingData = await getFromDB('pokemonVariants', parsedReceiving.baseKey);
-        console.log('Variant data for receiving:', variantReceivingData);
-
-        // Use relatedInstances prop to get existing receiving details
-        const existingReceivingDetails = relatedInstances 
-          ? relatedInstances[trade.pokemon_instance_id_user_accepting] 
-          : null;
-        console.log('Existing receiving details:', existingReceivingDetails);
-
-        // Combine variant data and existing receiving details
-        const combinedReceiving = {
-          ...variantReceivingData,
-          ...existingReceivingDetails
-        };
-
-        console.log('Combined receiving details:', combinedReceiving);
-        setReceivingCombinedDetails(combinedReceiving);
-      } catch (error) {
-        console.error('Error fetching receiving details:', error);
-      }
-    }
-
-    fetchReceivingData();
-  }, [trade, relatedInstances]);
+  const offeringDetails = useOfferingDetails(trade, variants, ownershipData);
+  const receivingCombinedDetails = useReceivingDetails(trade, variants, relatedInstances);
 
   return (
     <div className="trade-card">
@@ -83,8 +23,11 @@ function TradeCard({ trade, relatedInstances }) {
           <h4>Offering:</h4>
           {offeringDetails ? (
             <>
-              <img src={offeringDetails.currentImage} alt={offeringDetails.name || 'Offering Pokémon'} />
-              <p>{offeringDetails.name}</p>
+              <img 
+                src={offeringDetails.currentImage} 
+                alt={offeringDetails.name || 'Offering Pokémon'} 
+              />
+              <p>{offeringDetails.name || offeringDetails.pokemon_name}</p>
             </>
           ) : (
             <p>Loading offering details...</p>
@@ -94,8 +37,11 @@ function TradeCard({ trade, relatedInstances }) {
           <h4>Receiving:</h4>
           {receivingCombinedDetails ? (
             <>
-              <img src={receivingCombinedDetails.currentImage} alt={receivingCombinedDetails.name || 'Receiving Pokémon'} />
-              <p>{receivingCombinedDetails.name}</p>
+              <img 
+                src={receivingCombinedDetails.currentImage || receivingCombinedDetails.pokemon_image_url} 
+                alt={receivingCombinedDetails.name || 'Receiving Pokémon'} 
+              />
+              <p>{receivingCombinedDetails.name || receivingCombinedDetails.pokemon_name}</p>
             </>
           ) : (
             <p>Loading receiving details...</p>
