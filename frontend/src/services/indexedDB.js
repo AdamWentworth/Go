@@ -348,8 +348,6 @@ export async function updateTradeStatus(tradeId, newStatus) {
     await tx.done;
 }
 
-// In your IndexedDB utility file (e.g., tradesDB.js)
-
 export async function getTradeByPokemonPair(proposedId, acceptingId) {
     const db = await initTradesDB();
     const tx = db.transaction(POKEMON_TRADES_STORE, 'readonly');
@@ -369,6 +367,11 @@ export async function getTradeByPokemonPair(proposedId, acceptingId) {
   
     return existingTrade || null;
   }
+
+export async function getFromTradesDB(storeName, key) {
+    const db = await initTradesDB();
+    return db.get(storeName, key);
+}
   
 // Get trades by status
 export async function getTradesByStatus(status) {

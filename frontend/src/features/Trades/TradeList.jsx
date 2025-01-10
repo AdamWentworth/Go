@@ -1,6 +1,8 @@
 // TradeList.jsx
 
 import React, { useEffect } from 'react';
+import './TradeList.css';  // Import CSS for styling
+import TradeCard from './TradeCard';  // Import the TradeCard component
 
 function TradeList({ trades, relatedInstances, selectedStatus }) {
   // Convert trades object to array, sort by trade_status, then filter by selectedStatus
@@ -12,7 +14,6 @@ function TradeList({ trades, relatedInstances, selectedStatus }) {
     (trade) => trade.trade_status.toLowerCase() === selectedStatus.toLowerCase()
   );
 
-  // Log trades and relatedInstances whenever they change
   useEffect(() => {
     console.log('Trades:', trades);
     console.log('Related Instances:', relatedInstances);
@@ -24,11 +25,11 @@ function TradeList({ trades, relatedInstances, selectedStatus }) {
         <p>No trades found for status: {selectedStatus}</p>
       ) : (
         filteredTrades.map((trade) => (
-          <div key={trade.trade_id} className="trade-card">
-            <p><strong>Trade ID:</strong> {trade.trade_id}</p>
-            <p><strong>Status:</strong> {trade.trade_status}</p>
-            {/* Add other trade details here as needed */}
-          </div>
+          <TradeCard 
+            key={trade.trade_id} 
+            trade={trade} 
+            relatedInstances={relatedInstances} 
+          />
         ))
       )}
     </div>
