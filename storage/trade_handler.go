@@ -4,6 +4,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -92,6 +93,16 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 		pokemonInstanceIDUserProposed := fmt.Sprintf("%v", tradeData["pokemon_instance_id_user_proposed"])
 		pokemonInstanceIDUserAccepting := fmt.Sprintf("%v", tradeData["pokemon_instance_id_user_accepting"])
 
+		rawLastUpdate := fmt.Sprintf("%v", tradeData["last_update"])
+		var lastUpdate *int64 = nil
+		if rawLastUpdate != "" && rawLastUpdate != "<nil>" {
+			if parsed, err := strconv.ParseInt(rawLastUpdate, 10, 64); err == nil {
+				lastUpdate = &parsed
+			} else {
+				logrus.Warnf("Could not parse last_update for trade %s: %v", tradeID, err)
+			}
+		}
+
 		// Build the Trade object
 		updates := Trade{
 			TradeID:                        tradeID,
@@ -117,7 +128,8 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 			User1TradeSatisfaction: user1TradeSatisfaction,
 			User2TradeSatisfaction: user2TradeSatisfaction,
 
-			TraceID: traceID, // nil if not provided
+			TraceID:    traceID, // nil if not provided
+			LastUpdate: lastUpdate,
 		}
 
 		// Check for existing trade
@@ -131,11 +143,17 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				createdTrades++
 			}
 		} else if tx.Error == nil {
-			// Update existing trade
-			if err := DB.Model(&existingTrade).Updates(&updates).Error; err != nil {
-				logrus.Errorf("Failed to update Trade %s: %v", tradeID, err)
+			// Update existing trade only if the incoming update is newer
+			if existingTrade.LastUpdate != nil && updates.LastUpdate != nil &&
+				*existingTrade.LastUpdate >= *updates.LastUpdate {
+				logrus.Infof("Skipping update for Trade %s: incoming last_update (%d) is not newer than existing (%d)",
+					tradeID, *updates.LastUpdate, *existingTrade.LastUpdate)
 			} else {
-				updatedTrades++
+				if err := DB.Model(&existingTrade).Updates(&updates).Error; err != nil {
+					logrus.Errorf("Failed to update Trade %s: %v", tradeID, err)
+				} else {
+					updatedTrades++
+				}
 			}
 		} else {
 			logrus.Errorf("Failed to retrieve Trade %s: %v", tradeID, tx.Error)

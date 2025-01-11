@@ -7,7 +7,8 @@ export async function handleAcceptTrade({ trade, trades, setTradeData, periodicU
   const updatedTrade = {
     ...trade,
     trade_accepted_date: new Date().toISOString(), // Set accepted date to current time
-    trade_status: 'pending'                         // Update status to 'pending'
+    trade_status: 'pending',                        // Update status to 'pending'
+    last_update: Date.now(),
   };
 
   // Update the trades collection with the modified trade

@@ -83,6 +83,7 @@ export async function proposeTrade(tradeData) {
         trade_friendship_level: TRADE_FRIENDSHIP_LEVELS[trade_friendship_level],
         user_1_trade_satisfaction: null,
         user_2_trade_satisfaction: null,
+        last_update: Date.now(),
     };
 
     try {

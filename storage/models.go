@@ -93,6 +93,7 @@ type Trade struct {
 	TradeFriendshipLevel   string     `gorm:"column:trade_friendship_level"`
 	User1TradeSatisfaction *int       `gorm:"column:user_1_trade_satisfaction"`
 	User2TradeSatisfaction *int       `gorm:"column:user_2_trade_satisfaction"`
+	LastUpdate             *int64     `gorm:"column:last_update" json:"last_update"`
 }
 
 func (Trade) TableName() string {
