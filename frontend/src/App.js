@@ -34,8 +34,8 @@ function App() {
                 <GlobalStateProvider>
                     <SessionProvider>
                         <PokemonDataProvider>
-                            <AuthProvider>
-                                <TradeDataProvider>
+                            <TradeDataProvider>
+                                <AuthProvider>
                                     <EventsProvider>
                                         <LocationProvider>
                                             <ThemeProvider>
@@ -72,8 +72,8 @@ function App() {
                                             </ThemeProvider>
                                         </LocationProvider>
                                     </EventsProvider>
-                                </TradeDataProvider>
-                            </AuthProvider>
+                                </AuthProvider>
+                            </TradeDataProvider>
                         </PokemonDataProvider>
                     </SessionProvider>
                 </GlobalStateProvider>

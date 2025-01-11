@@ -18,14 +18,13 @@ import {
 import { formatTimeUntil } from '../utils/formattingHelpers';
 import { toast } from 'react-toastify';
 import { usePokemonData } from './PokemonDataContext';
+import { useTradeData } from './TradeDataContext';
 import { useGlobalState } from './GlobalStateContext';
-import { useSession } from './SessionContext';
 import {
   clearStore,
   clearListsStore,
   clearTradesStore
 } from '../services/indexedDB';
-import { getDeviceId } from '../utils/deviceID';
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
@@ -37,10 +36,9 @@ export const AuthProvider = ({ children }) => {
   const intervalRef = useRef(null);
   const refreshTimeoutRef = useRef(null);
   const { isLoggedIn, setIsLoggedIn } = useGlobalState();
-  const [isLoading, setIsLoading] = useState(true);
-  const deviceIdRef = useRef(getDeviceId());
-  const { updateTimestamp } = useSession(); 
+  const [isLoading, setIsLoading] = useState(true); 
   const { resetData } = usePokemonData();
+  const { resetTradeData } = useTradeData();
 
   useEffect(() => {
     // Attempt to load user from localStorage
@@ -209,6 +207,7 @@ export const AuthProvider = ({ children }) => {
 
     // Reset in-memory data
     resetData();
+    resetTradeData();
 
     // Clear IndexedDB
     try {

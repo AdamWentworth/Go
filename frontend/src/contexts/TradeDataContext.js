@@ -114,6 +114,13 @@ export const TradeDataProvider = ({ children }) => {
     [periodicUpdates, setTradeData, setRelatedInstances]
   );  
 
+  // New resetTradeData function to clear trades and relatedInstances
+  const resetTradeData = useCallback(() => {
+    setTrades({});
+    setRelatedInstancesState({});
+
+  }, []);
+
   // Initialize data on mount
   useEffect(() => {
     async function initializeTradeData() {
@@ -147,6 +154,7 @@ export const TradeDataProvider = ({ children }) => {
     setTradeData,
     setRelatedInstances,
     updateTradeData,
+    resetTradeData,
     trades,
     relatedInstances
   };
