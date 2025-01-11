@@ -29,13 +29,13 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, open
         selectedImages: selectedExcludeImages,
         toggleImageSelection: toggleExcludeImageSelection,
         setSelectedImages: setSelectedExcludeImages
-    } = useImageSelection(EXCLUDE_IMAGES_trade);
+    } = useImageSelection(INCLUDE_IMAGES_trade);
 
     const {
         selectedImages: selectedIncludeOnlyImages,
         toggleImageSelection: toggleIncludeOnlyImageSelection,
         setSelectedImages: setSelectedIncludeOnlyImages
-    } = useImageSelection(INCLUDE_IMAGES_trade);
+    } = useImageSelection(EXCLUDE_IMAGES_trade);
 
     const initializeSelection = (filterNames, filters) => {
         return filterNames.map(name => !!filters[name]);
