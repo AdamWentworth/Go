@@ -52,11 +52,23 @@ export const TradeDataProvider = ({ children }) => {
 
   const setTradeData = useCallback(async (newTradesObj) => {
     try {
-      const tradesArray = Object.keys(newTradesObj).map((tradeId) => {
-        return { trade_id: tradeId, ...newTradesObj[tradeId] };
-      });
+      if (!newTradesObj) return;
+      
+      console.log('[setTradeData] Setting trades:', newTradesObj);
+      const tradesArray = Object.keys(newTradesObj).map(tradeId => ({
+        trade_id: tradeId,
+        ...newTradesObj[tradeId]
+      }));
+      
+      // Update IndexedDB
       await setTradesinDB('pokemonTrades', tradesArray);
-      setTrades(newTradesObj);
+      
+      // Update state
+      setTrades(prevTrades => ({
+        ...prevTrades,
+        ...newTradesObj
+      }));
+      
       return newTradesObj;
     } catch (err) {
       console.error('[setTradeData] ERROR:', err);
@@ -64,19 +76,45 @@ export const TradeDataProvider = ({ children }) => {
     }
   }, []);
 
+  // Enhanced setRelatedInstances with IndexedDB sync
   const setRelatedInstances = useCallback(async (newInstancesObj) => {
     try {
-      const instancesArray = Object.keys(newInstancesObj).map((instanceId) => {
-        return { instance_id: instanceId, ...newInstancesObj[instanceId] };
-      });
+      if (!newInstancesObj) return;
+      
+      const instancesArray = Object.keys(newInstancesObj).map(instanceId => ({
+        instance_id: instanceId,
+        ...newInstancesObj[instanceId]
+      }));
+      
+      // Update IndexedDB
       await setTradesinDB('relatedInstances', instancesArray);
-      setRelatedInstancesState(newInstancesObj);
+      
+      // Update state
+      setRelatedInstancesState(prevInstances => ({
+        ...prevInstances,
+        ...newInstancesObj
+      }));
+      
       return newInstancesObj;
     } catch (err) {
       console.error('[setRelatedInstances] ERROR:', err);
       throw err;
     }
   }, []);
+
+  // New method to handle incoming trade updates from EventsContext
+  const updateTradeData = useCallback(async (newTrades, newInstances) => {
+    try {
+      if (newTrades) {
+        await setTradeData(newTrades);
+      }
+      if (newInstances) {
+        await setRelatedInstances(newInstances);
+      }
+    } catch (err) {
+      console.error('[updateTradeData] ERROR:', err);
+    }
+  }, [setTradeData, setRelatedInstances]);
 
   // Load trades and related instances from IndexedDB on mount
   useEffect(() => {
@@ -111,6 +149,7 @@ export const TradeDataProvider = ({ children }) => {
     proposeTrade,
     setTradeData,
     setRelatedInstances,
+    updateTradeData,
     trades,
     relatedInstances,
     addNewTrade,

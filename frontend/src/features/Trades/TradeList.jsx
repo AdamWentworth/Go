@@ -9,28 +9,32 @@ function TradeList({ trades, relatedInstances, selectedStatus }) {
 
   // Attach trade_id to each trade object from the entries of the trades object
   const sortedTrades = Object.entries(trades)
-    .map(([trade_id, trade]) => ({ ...trade, trade_id })) 
-    .sort((a, b) => a.trade_status.localeCompare(b.trade_status));
+  .map(([trade_id, trade]) => ({ ...trade, trade_id }))
+  .sort((a, b) => {
+    const statusA = a.trade_status || '';
+    const statusB = b.trade_status || '';
+    return statusA.localeCompare(statusB);
+  });
 
   let filteredTrades = [];
 
   if (selectedStatus.toLowerCase() === 'proposed') {
     filteredTrades = sortedTrades.filter(
       (trade) =>
-        trade.trade_status.toLowerCase() === 'proposed' &&
+        (trade.trade_status || '').toLowerCase() === 'proposed' &&
         trade.username_proposed === currentUsername
     );
   } else if (selectedStatus.toLowerCase() === 'accepting') {
     filteredTrades = sortedTrades.filter(
       (trade) =>
-        trade.trade_status.toLowerCase() === 'proposed' &&
+        (trade.trade_status || '').toLowerCase() === 'proposed' &&
         trade.username_accepting === currentUsername
     );
   } else {
     filteredTrades = sortedTrades.filter(
-      (trade) => trade.trade_status.toLowerCase() === selectedStatus.toLowerCase()
+      (trade) => (trade.trade_status || '').toLowerCase() === selectedStatus.toLowerCase()
     );
-  }
+  }  
 
   useEffect(() => {
     console.log('[TradeList] Trades:', sortedTrades);

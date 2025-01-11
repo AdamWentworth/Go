@@ -8,11 +8,12 @@ import React, {
     useCallback
   } from 'react';
   import { useAuth } from './AuthContext';
-  import { usePokemonData } from './PokemonDataContext'; // <-- Import to check loading state
+  import { usePokemonData } from './PokemonDataContext';
   import { useSession } from './SessionContext';
   import { fetchUpdates } from '../services/sseService';
   import { getDeviceId } from '../utils/deviceID';
   import { useTradeData } from './TradeDataContext'
+  import { setTradesinDB } from '../services/indexedDB';
   
   // 1) Create the context & custom hook
   const EventsContext = createContext();
@@ -23,7 +24,7 @@ import React, {
     const { user, isLoading: isAuthLoading } = useAuth();
     // From PokemonDataContext, we can read the 'loading' state
     const { loading: isPokemonDataLoading, setOwnershipData } = usePokemonData();
-    const { trades, relatedInstances, setTradeData, setRelatedInstances } = useTradeData();
+    const { updateTradeData } = useTradeData();
     const { lastUpdateTimestamp, updateTimestamp, isSessionNew } = useSession();
   
     const deviceIdRef = useRef(getDeviceId());
@@ -36,33 +37,17 @@ import React, {
     const handleIncomingUpdate = useCallback(
       (data) => {
         console.log('handleIncomingUpdate called with data:', data);
-        if (data.pokemon) {
-          // Merge into our local ownership data
-          setOwnershipData(data.pokemon);
   
-          // Update the last update timestamp to "now"
+        if (data.pokemon) {
+          setOwnershipData(data.pokemon);
           updateTimestamp(new Date());
         }
-        if (data.trade) {
-          // Update the trades collection with the modified trade(s)
-          const updatedTrades = {
-              ...trades,
-              ...data.trade
-          };
-      
-          setTradeData(updatedTrades);
-        }
-        if (data.relatedInstance) {
-          // Update the trades collection with the modified trade(s)
-          const updatedRelatedInstances = {
-              ...relatedInstances,
-              ...data.relatedInstance
-          };
-      
-          setRelatedInstances(updatedRelatedInstances);
+        
+        if (data.trade || data.relatedInstance) {
+          updateTradeData(data.trade, data.relatedInstance);
         }
       },
-      [setOwnershipData, updateTimestamp]
+      [setOwnershipData, updateTimestamp, updateTradeData]
     );
   
     // -- 4) Close any existing SSE connection
