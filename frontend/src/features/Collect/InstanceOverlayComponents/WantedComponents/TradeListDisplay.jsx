@@ -98,6 +98,7 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
                             src={pokemon.image_url}
                             alt={`Trade Pokémon ${pokemon.name}`}
                             className={imageClasses}
+                            title={`${pokemon.form ? `${pokemon.form} ` : ''}${pokemon.name}`}
                         />
                         {editMode && (
                             <button 

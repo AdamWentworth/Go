@@ -144,6 +144,7 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
                             className={imageClasses}
                             alt={`Wanted Pokémon ${pokemon.name}`}
                             style={{ zIndex: 2 }}
+                            title={`${pokemon.form ? `${pokemon.form} ` : ''}${pokemon.name}`}
                         />
                         {editMode && (
                             <button
