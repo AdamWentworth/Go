@@ -96,8 +96,9 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 		rawLastUpdate := fmt.Sprintf("%v", tradeData["last_update"])
 		var lastUpdate *int64 = nil
 		if rawLastUpdate != "" && rawLastUpdate != "<nil>" {
-			if parsed, err := strconv.ParseInt(rawLastUpdate, 10, 64); err == nil {
-				lastUpdate = &parsed
+			if f, err := strconv.ParseFloat(rawLastUpdate, 64); err == nil {
+				lu := int64(f)
+				lastUpdate = &lu
 			} else {
 				logrus.Warnf("Could not parse last_update for trade %s: %v", tradeID, err)
 			}

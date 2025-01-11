@@ -39,7 +39,7 @@ const useCalculateStardustCost = (
     const calculateCost = () => {
       // 1) Bail if incomplete
       if (!passedInPokemon || !selectedMatchedInstance) {
-        console.log('[useCalculateStardustCost] Incomplete data. Aborting cost calculation.');
+        // console.log('[useCalculateStardustCost] Incomplete data. Aborting cost calculation.');
         return 0;
       }
 
@@ -55,7 +55,7 @@ const useCalculateStardustCost = (
       }
 
       setIsSpecialTrade(specialTrade);
-      console.log(`is Special Trade?`, specialTrade)
+      // console.log(`is Special Trade?`, specialTrade)
 
       // 3) Check registration statuses
       const passedInInstanceId = passedInPokemon.pokemonKey;
@@ -70,8 +70,8 @@ const useCalculateStardustCost = (
         ownershipData
       );
 
-      console.log(`[useCalculateStardustCost] Passed-in Pokémon isRegistered: ${passedInIsRegistered}`);
-      console.log(`[useCalculateStardustCost] Selected Instance isRegistered: ${selectedIsRegistered}`);
+      // console.log(`[useCalculateStardustCost] Passed-in Pokémon isRegistered: ${passedInIsRegistered}`);
+      // console.log(`[useCalculateStardustCost] Selected Instance isRegistered: ${selectedIsRegistered}`);
 
       // 4a) Update isRegisteredTrade based on both registrations
       setIsRegisteredTrade(passedInIsRegistered && selectedIsRegistered);
@@ -99,7 +99,7 @@ const useCalculateStardustCost = (
       }
 
       // 5) Final Stardust cost
-      console.log(`[useCalculateStardustCost] Final Stardust cost calculated: ${cost}`);
+      // console.log(`[useCalculateStardustCost] Final Stardust cost calculated: ${cost}`);
       return cost;
     };
 
@@ -117,7 +117,7 @@ const useCalculateStardustCost = (
 
 function isPokemonRegistered(instanceId, ownershipObj) {
   if (!instanceId || !ownershipObj) {
-    console.log(`[isPokemonRegistered] Invalid instanceId or ownershipObj. Returning false.`);
+    // console.log(`[isPokemonRegistered] Invalid instanceId or ownershipObj. Returning false.`);
     return false;
   }
 
@@ -130,7 +130,7 @@ function isPokemonRegistered(instanceId, ownershipObj) {
     const match = thisBaseKey === baseKey;
     const registered = data.registered;
     if (match) {
-      console.log(`[isPokemonRegistered] Found matching key: ${key}. Registered status: ${registered}`);
+      // console.log(`[isPokemonRegistered] Found matching key: ${key}. Registered status: ${registered}`);
     }
     return match && registered;
   });

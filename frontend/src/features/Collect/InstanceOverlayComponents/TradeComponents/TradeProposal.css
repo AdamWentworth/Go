@@ -10,7 +10,7 @@
     background-color: rgba(0, 0, 0, 0.7);
     justify-content: center;
     align-items: center;
-    z-index: 3000;
+    z-index: 1002;
 }
 
 .trade-proposal-container {
@@ -163,7 +163,7 @@
         font-size: 12px;
     }
     .instance-overlay {
-        z-index: 2000;
+        z-index: 1002;
     }
 }
 
@@ -173,7 +173,7 @@
         height: 96vh;
     }
     .instance-overlay {
-        z-index: 2000;
+        z-index: 1002;
     }
 }
 
@@ -183,6 +183,6 @@
         height: 90vh;
     }
     .instance-overlay {
-        z-index: 2000;
+        z-index: 1002;
     }
 }

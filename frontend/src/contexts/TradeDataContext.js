@@ -5,6 +5,7 @@ import { usePokemonData } from './PokemonDataContext';
 import {
   setTradesinDB,
   getAllFromTradesDB,
+  putBatchedTradeUpdates
 } from '../services/indexedDB';
 
 const TradeDataContext = createContext();
@@ -84,35 +85,39 @@ export const TradeDataProvider = ({ children }) => {
 
   const proposeTrade = useCallback(
     async (tradeData) => {
-      try {
-        const { tradeId, relatedInstance } = await proposeTradeService(tradeData);
-        
-        // Exclude the nested `pokemon` property before constructing the new trade
-        const { pokemon, ...remainingTradeData } = tradeData;
-        const newTrade = { 
-          ...remainingTradeData, 
-          trade_id: tradeId 
-        };
-        console.log(newTrade)
-  
-        await setTradeData({
-          [tradeId]: newTrade
-        });
-  
-        if (relatedInstance) {
-          await setRelatedInstances({
-            [relatedInstance.instance_id]: relatedInstance
-          });
+        try {
+            // Get prepared trade data without DB operations
+            const { tradeEntry, relatedInstanceData } = await proposeTradeService(tradeData);
+            const tradeId = tradeEntry.trade_id;
+
+            // Update state and IndexedDB in one place
+            await setTradeData({
+                [tradeId]: tradeEntry
+            });
+
+            // Create related instance
+            const relatedInstance = {
+                ...relatedInstanceData,
+                trade_id: tradeId
+            };
+            await setRelatedInstances({
+                [relatedInstance.instance_id]: relatedInstance
+            });
+
+            // Add to batched updates
+            await putBatchedTradeUpdates(tradeId, {
+                operation: 'createTrade',
+                tradeData: tradeEntry
+            });
+
+            periodicUpdates();
+            return { success: true, tradeId };
+        } catch (error) {
+            return { success: false, error: error.message };
         }
-  
-        periodicUpdates();
-        return { success: true, tradeId };
-      } catch (error) {
-        return { success: false, error: error.message };
-      }
     },
     [periodicUpdates, setTradeData, setRelatedInstances]
-  );  
+  );
 
   // New resetTradeData function to clear trades and relatedInstances
   const resetTradeData = useCallback(() => {

@@ -1,11 +1,8 @@
 // proposeTrade.js
 
 import {
-    createTrade,
     TRADE_FRIENDSHIP_LEVELS,
     TRADE_STATUSES,
-    addRelatedInstance,
-    putBatchedTradeUpdates,
     getTradeByPokemonPair 
   } from '../../services/indexedDB';
   import { generateUUID } from '../../utils/PokemonIDUtils';
@@ -60,10 +57,10 @@ export async function proposeTrade(tradeData) {
         }
     }
 
-    // Generate a unique trade_id with "trade_" prefix
+    // Generate trade ID
     const trade_id = `trade_${generateUUID()}`;
 
-    // Prepare the trade data for IndexedDB
+    // Prepare the trade data
     const tradeEntry = {
         trade_id,
         username_proposed,
@@ -86,29 +83,14 @@ export async function proposeTrade(tradeData) {
         last_update: Date.now(),
     };
 
-    try {
-        // 1. Create the trade in the tradesDB
-        console.log(tradeEntry)
-        const tradeId = await createTrade(tradeEntry);
+    // Prepare related instance data
+    const relatedInstanceData = {
+        instance_id: pokemon.pokemonKey,
+        ...pokemon.ownershipStatus,
+    };
 
-        // 2. Add related Pokémon instance
-        const relatedInstanceData = {
-            instance_id: pokemon.pokemonKey,
-            ...pokemon.ownershipStatus,
-        };
-        const relatedInstance = await addRelatedInstance(relatedInstanceData, tradeId);
-
-        // 3. Also cache this trade creation in batchedUpdatesDB (batchedTradeUpdates)
-        const batchedUpdateData = {
-            operation: 'createTrade',
-            tradeData: tradeEntry,
-        };
-        // Use the same trade_id as the key so you can uniquely identify it later
-        await putBatchedTradeUpdates(tradeEntry.trade_id, batchedUpdateData);
-
-        return { tradeId, relatedInstance };
-    } catch (error) {
-        console.error('Failed to propose trade:', error);
-        throw new Error('Trade proposal failed.');
-    }
+    return {
+        tradeEntry,
+        relatedInstanceData
+    };
 }
