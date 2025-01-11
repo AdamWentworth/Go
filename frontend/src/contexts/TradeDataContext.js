@@ -4,7 +4,7 @@ import { proposeTrade as proposeTradeService } from './TradeData/proposeTrade';
 import { usePokemonData } from './PokemonDataContext';
 import {
   setTradesinDB,
-  getAllFromTradesDB
+  getAllFromTradesDB,
 } from '../services/indexedDB';
 
 const TradeDataContext = createContext();
@@ -93,6 +93,7 @@ export const TradeDataProvider = ({ children }) => {
           ...remainingTradeData, 
           trade_id: tradeId 
         };
+        console.log(newTrade)
   
         await setTradeData({
           [tradeId]: newTrade

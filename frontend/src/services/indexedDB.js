@@ -295,15 +295,9 @@ export async function storeListsInIndexedDB(lists) {
 // -----------------------------------------------------------------------------
 export async function createTrade(tradeEntry) {
     const db = await initTradesDB();
-    const tx = db.transaction(POKEMON_TRADES_STORE, 'readwrite');
-    const store = tx.objectStore(POKEMON_TRADES_STORE);
-    // Ensure tradeData includes required fields
-    const trade = {
-        ...tradeEntry
-    };
-    const tradeId = await store.add(trade);
-    await tx.done;
-    return tradeId;
+    const store = db.transaction(POKEMON_TRADES_STORE, 'readwrite').objectStore(POKEMON_TRADES_STORE);
+
+    return await store.add(tradeEntry);
 }
 
 // Update trade status and relevant dates

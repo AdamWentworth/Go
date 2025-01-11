@@ -93,25 +93,25 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 	responseTrades := make(map[string]interface{})
 	for _, trade := range trades {
 		tradeMap := map[string]interface{}{
-			"user_id_proposed":                   trade.UserIDProposed,
-			"username_proposed":                  trade.UsernameProposed,
-			"user_id_accepting":                  trade.UserIDAccepting,
-			"username_accepting":                 trade.UsernameAccepting,
-			"pokemon_instance_id_user_proposed":  trade.PokemonInstanceIDUserProposed,
-			"pokemon_instance_id_user_accepting": trade.PokemonInstanceIDUserAccepting,
-			"trade_status":                       trade.TradeStatus,
-			"trade_proposal_date":                trade.TradeProposalDate,
-			"trade_accepted_date":                trade.TradeAcceptedDate,
-			"trade_completed_date":               trade.TradeCompletedDate,
-			"trade_cancelled_date":               trade.TradeCancelledDate,
-			"trade_cancelled_by":                 trade.TradeCancelledBy,
 			"is_special_trade":                   trade.IsSpecialTrade,
 			"is_registered_trade":                trade.IsRegisteredTrade,
 			"is_lucky_trade":                     trade.IsLuckyTrade,
+			"pokemon_instance_id_user_proposed":  trade.PokemonInstanceIDUserProposed,
+			"pokemon_instance_id_user_accepting": trade.PokemonInstanceIDUserAccepting,
+			"trade_accepted_date":                trade.TradeAcceptedDate,
+			"trade_cancelled_by":                 trade.TradeCancelledBy,
+			"trade_cancelled_date":               trade.TradeCancelledDate,
+			"trade_completed_date":               trade.TradeCompletedDate,
 			"trade_dust_cost":                    trade.TradeDustCost,
 			"trade_friendship_level":             trade.TradeFriendshipLevel,
+			"trade_id":                           trade.TradeID,
+			"trade_proposal_date":                trade.TradeProposalDate,
+			"trade_status":                       trade.TradeStatus,
+			"username_proposed":                  trade.UsernameProposed,
+			"username_accepting":                 trade.UsernameAccepting,
 			"user_1_trade_satisfaction":          trade.User1TradeSatisfaction,
 			"user_2_trade_satisfaction":          trade.User2TradeSatisfaction,
+			"last_update":                        trade.LastUpdate,
 		}
 		responseTrades[trade.TradeID] = tradeMap
 	}

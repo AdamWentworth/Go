@@ -131,6 +131,7 @@ type Trade struct {
 	User1TradeSatisfaction         *int       `gorm:"column:user_1_trade_satisfaction" json:"user_1_trade_satisfaction"`
 	User2TradeSatisfaction         *int       `gorm:"column:user_2_trade_satisfaction" json:"user_2_trade_satisfaction"`
 	TraceID                        *string    `gorm:"column:trace_id" json:"trace_id"`
+	LastUpdate                     *int64     `gorm:"column:last_update" json:"last_update"`
 }
 
 func (Trade) TableName() string {

@@ -70,24 +70,25 @@ export async function proposeTrade(tradeData) {
         username_accepting,
         pokemon_instance_id_user_proposed,
         pokemon_instance_id_user_accepting,
-        trade_status: TRADE_STATUSES.PROPOSED,
-        trade_proposal_date: new Date().toISOString(),
-        trade_accepted_date: null,
-        trade_completed_date: null,
-        trade_cancelled_date: null,
-        trade_cancelled_by: null,
         is_special_trade: is_special_trade ? 1 : 0,
         is_registered_trade: is_registered_trade ? 1 : 0,
-        trade_dust_cost,
         is_lucky_trade: is_lucky_trade ? 1 : 0,
+        trade_dust_cost,
         trade_friendship_level: TRADE_FRIENDSHIP_LEVELS[trade_friendship_level],
         user_1_trade_satisfaction: null,
         user_2_trade_satisfaction: null,
+        trade_status: TRADE_STATUSES.PROPOSED,
+        trade_accepted_date: null,
+        trade_proposal_date: new Date().toISOString(),
+        trade_completed_date: null,
+        trade_cancelled_date: null,
+        trade_cancelled_by: null,
         last_update: Date.now(),
     };
 
     try {
         // 1. Create the trade in the tradesDB
+        console.log(tradeEntry)
         const tradeId = await createTrade(tradeEntry);
 
         // 2. Add related Pokémon instance

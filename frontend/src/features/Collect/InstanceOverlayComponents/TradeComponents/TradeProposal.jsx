@@ -98,13 +98,19 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
       pokemon_instance_id_user_accepting: passedInPokemon.pokemonKey, // Their Pokémon
       is_special_trade: isSpecialTrade, // From your stardust calculation hook or other sources
       is_registered_trade: isRegisteredTrade, // From your sources
-      trade_dust_cost: stardustCost, // Calculated Stardust cost
       is_lucky_trade: pref_lucky, // From your component state
+      trade_dust_cost: stardustCost, // Calculated Stardust cost
       trade_friendship_level: friendship_level, // Numeric value (1-4)
-      // Optionally, include trade satisfaction if available
       user_1_trade_satisfaction: null, // To be filled after trade
       user_2_trade_satisfaction: null, // To be filled after trade
       pokemon: passedInPokemon,
+      trade_acceptance_date: null,
+      trade_cancelled_by: null,
+      trade_cancelled_date: null,
+      trade_completed_date: null,
+      trade_proposal_date: new Date().toISOString(),
+      trade_status: 'proposed',
+      last_update: Date.now(),             
     };
 
     try {
