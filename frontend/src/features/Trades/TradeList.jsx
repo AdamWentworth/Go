@@ -4,11 +4,9 @@ import './TradeList.css';
 import TradeCard from './TradeCard';
 
 function TradeList({ trades, relatedInstances, selectedStatus }) {
-  // Retrieve current username from local storage (adjust as needed for your app)
   const storedUser = localStorage.getItem('user');
   const currentUsername = storedUser ? JSON.parse(storedUser).username : null;
 
-  // Convert trades object to array and sort by trade_status
   const sortedTrades = Object.values(trades).sort((a, b) =>
     a.trade_status.localeCompare(b.trade_status)
   );
@@ -16,21 +14,18 @@ function TradeList({ trades, relatedInstances, selectedStatus }) {
   let filteredTrades = [];
 
   if (selectedStatus.toLowerCase() === 'proposed') {
-    // Filter trades where current user is the proposer
     filteredTrades = sortedTrades.filter(
       (trade) =>
         trade.trade_status.toLowerCase() === 'proposed' &&
         trade.username_proposed === currentUsername
     );
   } else if (selectedStatus.toLowerCase() === 'accepting') {
-    // Filter trades where current user is the accepter
     filteredTrades = sortedTrades.filter(
       (trade) =>
         trade.trade_status.toLowerCase() === 'proposed' &&
         trade.username_accepting === currentUsername
     );
   } else {
-    // For other statuses, a straightforward filter
     filteredTrades = sortedTrades.filter(
       (trade) => trade.trade_status.toLowerCase() === selectedStatus.toLowerCase()
     );
@@ -46,9 +41,9 @@ function TradeList({ trades, relatedInstances, selectedStatus }) {
       {filteredTrades.length === 0 ? (
         <p>No trades found for status: {selectedStatus}</p>
       ) : (
-        filteredTrades.map((trade) => (
+        filteredTrades.map((trade, index) => (
           <TradeCard 
-            key={ trade.trade_id }
+            key={ trade.trade_id ? `${trade.trade_id}_${index}` : `trade_${index}` }
             trade={trade} 
             relatedInstances={relatedInstances}
             selectedStatus={selectedStatus}
@@ -56,7 +51,7 @@ function TradeList({ trades, relatedInstances, selectedStatus }) {
         ))
       )}
     </div>
-  );  
+  );
 }
 
 export default TradeList;

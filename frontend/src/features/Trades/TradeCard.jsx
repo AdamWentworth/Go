@@ -1,26 +1,55 @@
 // TradeCard.jsx
 import React from 'react';
 import { usePokemonData } from '../../contexts/PokemonDataContext';
+import { useTradeData } from '../../contexts/TradeDataContext';
 import { useOfferingDetails } from './hooks/useOfferingDetails';
 import { useReceivingDetails } from './hooks/useReceivingDetails';
 import ProposedTradeView from './views/ProposedTradeView';
-import AcceptingTradeView from './views/AcceptingTradeView';
+import OffersTradeView from './views/OffersTradeView';
+import PendingTradeView from './views/PendingTradeView';
+import { putBatchedTradeUpdates } from '../../services/indexedDB';
 import './TradeCard.css';
 
 function TradeCard({ trade, relatedInstances, selectedStatus }) {
-  const { variants, ownershipData, loading } = usePokemonData();
+  const { variants, ownershipData, loading, periodicUpdates } = usePokemonData();
+  const { setTradeData, trades } = useTradeData();
 
   const offeringDetails = useOfferingDetails(trade, variants, ownershipData);
   const receivingCombinedDetails = useReceivingDetails(trade, variants, relatedInstances);
 
-  // Placeholder functions for actions
-  const handleAccept = () => { /* Accept function logic */ };
-  const handleDelete = () => { /* Delete function logic */ };
-  const handleComplete = () => { /* Complete function logic */ };
-  const handleCancel = () => { /* Cancel function logic */ };
-  const handleThumbsUp = () => { /* Thumbs up function logic */ };
+  // Define handleAccept function for OffersTradeView
+  const handleAccept = async () => {
+    // Create an updated trade object with accepted date and new status
+    const updatedTrade = {
+      ...trade,
+      trade_accepted_date: new Date().toISOString(), // Set accepted date to current time
+      trade_status: 'pending'                      // Update status to 'pending'
+    };
 
-  // Retrieve current username from local storage
+    // Update the trades collection with the modified trade
+    const updatedTrades = { ...trades, [trade.trade_id]: updatedTrade };
+
+    // Persist the updated trades data using setTradeData
+    await setTradeData(updatedTrades);
+
+    // Prepare batched update data
+    const batchedUpdateData = {
+      operation: 'updateTrade',
+      tradeData: updatedTrade,
+    };
+
+    // Use the same trade_id as the key to identify uniquely
+    await putBatchedTradeUpdates(updatedTrade.trade_id, batchedUpdateData);
+
+    // Call periodicUpdates to refresh data as needed
+    periodicUpdates();
+  };
+
+  const handleDelete = () => { /*...*/ };
+  const handleComplete = () => { /*...*/ };
+  const handleCancel = () => { /*...*/ };
+  const handleThumbsUp = () => { /*...*/ };
+
   const storedUser = localStorage.getItem('user');
   const currentUsername = storedUser ? JSON.parse(storedUser).username : '';
 
@@ -30,7 +59,7 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
 
   if (selectedStatus.toLowerCase() === 'accepting') {
     return (
-      <AcceptingTradeView
+      <OffersTradeView
         trade={trade}
         currentUsername={currentUsername}
         offeringDetails={offeringDetails}
@@ -56,8 +85,20 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
     );
   }
 
+  if (selectedStatus.toLowerCase() === 'pending') {
+    return (
+      <PendingTradeView
+        trade={trade}
+        offeringDetails={offeringDetails}
+        receivingCombinedDetails={receivingCombinedDetails}
+        loading={loading}
+        handleComplete={handleComplete}
+        handleCancel={handleCancel}
+      />
+    );
+  }
+
   // Fallback rendering for other statuses or default layout
-  // (You can modularize other statuses similarly if needed)
   return (
     <div className="trade-card">
       {/* Default or other status rendering logic */}

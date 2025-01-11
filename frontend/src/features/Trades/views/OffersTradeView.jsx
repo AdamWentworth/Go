@@ -1,8 +1,8 @@
-// AcceptingTradeView.jsx
+// OffersTradeView.jsx
 import React from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 
-const AcceptingTradeView = ({
+const OffersTradeView = ({
   trade,
   currentUsername,
   offeringDetails,
@@ -68,4 +68,4 @@ const AcceptingTradeView = ({
   </div>
 );
 
-export default AcceptingTradeView;
+export default OffersTradeView;
