@@ -8,7 +8,6 @@ import {
 } from '../services/indexedDB';
 
 const TradeDataContext = createContext();
-
 export const useTradeData = () => useContext(TradeDataContext);
 
 export const TradeDataProvider = ({ children }) => {
@@ -18,43 +17,11 @@ export const TradeDataProvider = ({ children }) => {
   const [trades, setTrades] = useState({});
   const [relatedInstances, setRelatedInstancesState] = useState({});
 
-  const addNewTrade = useCallback(async (newTrade) => {
-    setTrades(prevTrades => ({
-      ...prevTrades,
-      [newTrade.trade_id]: newTrade,
-    }));
-  }, []);
-
-  const addNewRelatedInstance = useCallback(async (newInstance) => {
-    setRelatedInstancesState(prev => ({
-      ...prev,
-      [newInstance.instance_id]: newInstance.ownershipStatus,
-    }));
-  }, []);
-
-  const proposeTrade = useCallback(
-    async (tradeData) => {
-      try {
-        const { tradeId, relatedInstance } = await proposeTradeService(tradeData);
-        const newTrade = { ...tradeData, trade_id: tradeId };
-        await addNewTrade(newTrade);
-        if (relatedInstance) {
-          await addNewRelatedInstance(relatedInstance);
-        }
-        periodicUpdates();
-        return { success: true, tradeId };
-      } catch (error) {
-        return { success: false, error: error.message };
-      }
-    },
-    [periodicUpdates, addNewTrade, addNewRelatedInstance]
-  );
-
+  // Define base data management functions first
   const setTradeData = useCallback(async (newTradesObj) => {
     try {
       if (!newTradesObj) return;
       
-      console.log('[setTradeData] Setting trades:', newTradesObj);
       const tradesArray = Object.keys(newTradesObj).map(tradeId => ({
         trade_id: tradeId,
         ...newTradesObj[tradeId]
@@ -76,7 +43,6 @@ export const TradeDataProvider = ({ children }) => {
     }
   }, []);
 
-  // Enhanced setRelatedInstances with IndexedDB sync
   const setRelatedInstances = useCallback(async (newInstancesObj) => {
     try {
       if (!newInstancesObj) return;
@@ -102,7 +68,7 @@ export const TradeDataProvider = ({ children }) => {
     }
   }, []);
 
-  // New method to handle incoming trade updates from EventsContext
+  // Functions that depend on setTradeData and setRelatedInstances
   const updateTradeData = useCallback(async (newTrades, newInstances) => {
     try {
       if (newTrades) {
@@ -116,7 +82,38 @@ export const TradeDataProvider = ({ children }) => {
     }
   }, [setTradeData, setRelatedInstances]);
 
-  // Load trades and related instances from IndexedDB on mount
+  const proposeTrade = useCallback(
+    async (tradeData) => {
+      try {
+        const { tradeId, relatedInstance } = await proposeTradeService(tradeData);
+        
+        // Exclude the nested `pokemon` property before constructing the new trade
+        const { pokemon, ...remainingTradeData } = tradeData;
+        const newTrade = { 
+          ...remainingTradeData, 
+          trade_id: tradeId 
+        };
+  
+        await setTradeData({
+          [tradeId]: newTrade
+        });
+  
+        if (relatedInstance) {
+          await setRelatedInstances({
+            [relatedInstance.instance_id]: relatedInstance
+          });
+        }
+  
+        periodicUpdates();
+        return { success: true, tradeId };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    },
+    [periodicUpdates, setTradeData, setRelatedInstances]
+  );  
+
+  // Initialize data on mount
   useEffect(() => {
     async function initializeTradeData() {
       try {
@@ -142,7 +139,6 @@ export const TradeDataProvider = ({ children }) => {
     }
 
     initializeTradeData();
-    // Empty dependency array ensures this runs only once on mount
   }, [setTradeData, setRelatedInstances]);
 
   const contextValue = {
@@ -151,9 +147,7 @@ export const TradeDataProvider = ({ children }) => {
     setRelatedInstances,
     updateTradeData,
     trades,
-    relatedInstances,
-    addNewTrade,
-    addNewRelatedInstance,
+    relatedInstances
   };
 
   return (

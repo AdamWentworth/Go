@@ -62,10 +62,6 @@ function useInstanceIdProcessor({
           setRetryCounter((prev) => prev + 1);
         }, 500);
       }
-    } else {
-      if (!instanceId) {
-        console.log('No instanceId found in location.state.');
-      }
     }
   }, [
     loading,

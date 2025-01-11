@@ -293,19 +293,13 @@ export async function storeListsInIndexedDB(lists) {
 // -----------------------------------------------------------------------------
 // Trades DB Functions (create, update, etc.)
 // -----------------------------------------------------------------------------
-export async function createTrade(tradeData) {
+export async function createTrade(tradeEntry) {
     const db = await initTradesDB();
     const tx = db.transaction(POKEMON_TRADES_STORE, 'readwrite');
     const store = tx.objectStore(POKEMON_TRADES_STORE);
     // Ensure tradeData includes required fields
     const trade = {
-        ...tradeData,
-        trade_status: TRADE_STATUSES.PROPOSED,
-        trade_proposal_date: new Date().toISOString(),
-        is_special_trade: tradeData.is_special_trade || 0,
-        is_registered_trade: tradeData.is_registered_trade || 0,
-        is_lucky_trade: tradeData.is_lucky_trade || 0,
-        trade_friendship_level: tradeData.trade_friendship_level || TRADE_FRIENDSHIP_LEVELS[1], // Assuming 1 corresponds to 'Good'
+        ...tradeEntry
     };
     const tradeId = await store.add(trade);
     await tx.done;
