@@ -12,6 +12,7 @@ import React, {
   import { useSession } from './SessionContext';
   import { fetchUpdates } from '../services/sseService';
   import { getDeviceId } from '../utils/deviceID';
+  import { useTradeData } from './TradeDataContext'
   
   // 1) Create the context & custom hook
   const EventsContext = createContext();
@@ -22,6 +23,7 @@ import React, {
     const { user, isLoading: isAuthLoading } = useAuth();
     // From PokemonDataContext, we can read the 'loading' state
     const { loading: isPokemonDataLoading, setOwnershipData } = usePokemonData();
+    const { trades, relatedInstances, setTradeData, setRelatedInstances } = useTradeData();
     const { lastUpdateTimestamp, updateTimestamp, isSessionNew } = useSession();
   
     const deviceIdRef = useRef(getDeviceId());
@@ -40,6 +42,24 @@ import React, {
   
           // Update the last update timestamp to "now"
           updateTimestamp(new Date());
+        }
+        if (data.trade) {
+          // Update the trades collection with the modified trade(s)
+          const updatedTrades = {
+              ...trades,
+              ...data.trade
+          };
+      
+          setTradeData(updatedTrades);
+        }
+        if (data.relatedInstance) {
+          // Update the trades collection with the modified trade(s)
+          const updatedRelatedInstances = {
+              ...relatedInstances,
+              ...data.relatedInstance
+          };
+      
+          setRelatedInstances(updatedRelatedInstances);
         }
       },
       [setOwnershipData, updateTimestamp]

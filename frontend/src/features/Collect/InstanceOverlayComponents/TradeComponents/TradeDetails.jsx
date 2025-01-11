@@ -191,6 +191,8 @@ const TradeDetails = ({
       return acc;
     }, {});
 
+    console.log(hashedOwnershipData)
+
     // Store that object in state for passing to TradeProposal
     setMyOwnershipData(hashedOwnershipData);
 

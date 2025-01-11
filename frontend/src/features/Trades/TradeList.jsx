@@ -7,9 +7,10 @@ function TradeList({ trades, relatedInstances, selectedStatus }) {
   const storedUser = localStorage.getItem('user');
   const currentUsername = storedUser ? JSON.parse(storedUser).username : null;
 
-  const sortedTrades = Object.values(trades).sort((a, b) =>
-    a.trade_status.localeCompare(b.trade_status)
-  );
+  // Attach trade_id to each trade object from the entries of the trades object
+  const sortedTrades = Object.entries(trades)
+    .map(([trade_id, trade]) => ({ ...trade, trade_id })) 
+    .sort((a, b) => a.trade_status.localeCompare(b.trade_status));
 
   let filteredTrades = [];
 
@@ -32,9 +33,9 @@ function TradeList({ trades, relatedInstances, selectedStatus }) {
   }
 
   useEffect(() => {
-    console.log('Trades:', trades);
-    console.log('Related Instances:', relatedInstances);
-  }, [trades, relatedInstances]);
+    console.log('[TradeList] Trades:', sortedTrades);
+    console.log('[TradeList] Related Instances:', relatedInstances);
+  }, [sortedTrades, relatedInstances]);
 
   return (
     <div className="trades-list">

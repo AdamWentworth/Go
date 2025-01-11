@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/gofiber/fiber/v2" // Corrected import
+	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 )
 

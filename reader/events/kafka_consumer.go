@@ -57,19 +57,19 @@ func startKafkaConsumer() {
 				continue
 			}
 
-			// Extract necessary fields for determining which clients to broadcast to
+			// Extract the "initiating" user
 			userID, userIDExists := data["user_id"].(string)
 			if !userIDExists {
 				logrus.Errorf("user_id not found or not a string in Kafka message")
 				continue
 			}
 
+			// Extract the device_id from the message
 			deviceIDInterface, deviceIDExists := data["device_id"]
 			if !deviceIDExists {
 				logrus.Errorf("device_id not found in Kafka message")
 				continue
 			}
-
 			deviceID, ok := deviceIDInterface.(string)
 			if !ok {
 				deviceID = fmt.Sprintf("%v", deviceIDInterface)
@@ -82,21 +82,17 @@ func startKafkaConsumer() {
 				continue
 			}
 
-			logrus.Infof("Kafka message received for user=%s (username=%s), deviceID=%s", userID, username, deviceID)
+			logrus.Infof("Kafka message received for user=%s (username=%s), deviceID=%s",
+				userID, username, deviceID)
 
-			// ------------------------------------------------------------------
-			// Transform data so that we ONLY send:
-			// { "pokemon": { <key>: { <pokemon fields> }, ... } }
-			// ------------------------------------------------------------------
-			transformed := map[string]interface{}{} // final message
-
-			// Check if "pokemonUpdates" exists and is an array
+			// ---------------------------------------------------------
+			// 1) Transform "pokemonUpdates" into a nested map (if any)
+			// ---------------------------------------------------------
+			transformed := make(map[string]interface{})
 			if pUpdates, ok := data["pokemonUpdates"].([]interface{}); ok && len(pUpdates) > 0 {
 				pokemonMap := make(map[string]interface{})
 				for _, raw := range pUpdates {
-					// Each raw element should be a map like { key: "...", ...other fields }
 					if item, castOk := raw.(map[string]interface{}); castOk {
-						// Extract the "key" so we can use it as the map key
 						if pk, pkOk := item["key"].(string); pkOk && pk != "" {
 							pokemonMap[pk] = item
 						}
@@ -104,27 +100,127 @@ func startKafkaConsumer() {
 				}
 				transformed["pokemon"] = pokemonMap
 			} else {
-				// If there's no pokemonUpdates, or it's empty, you might opt to skip.
-				// For safety, let's just send an empty object. Or you can `continue`.
 				transformed["pokemon"] = map[string]interface{}{}
 			}
 
-			// Marshal the transformed data
+			// ---------------------------------------------
+			// 2) Process tradeUpdates from nested tradeData
+			//     and collect affected user IDs.
+			// ---------------------------------------------
+			tradeMap := make(map[string]interface{})
+			affectedTradeUserIDs := make(map[string]bool)
+			if tUpdates, ok := data["tradeUpdates"].([]interface{}); ok && len(tUpdates) > 0 {
+				logrus.Infof("Found tradeUpdates: %+v", tUpdates)
+				for _, raw := range tUpdates {
+					if item, castOk := raw.(map[string]interface{}); castOk {
+						keyVal, keyOk := item["key"].(string)
+						operation, opOk := item["operation"].(string)
+						td, tdOk := item["tradeData"].(map[string]interface{})
+						if keyOk && opOk && tdOk {
+							tradeMap[keyVal] = td
+							logrus.Infof("Processing trade update: key=%s operation=%s tradeData=%+v", keyVal, operation, td)
+
+							if proposingUsername, pOk := td["username_proposed"].(string); pOk && proposingUsername != "" {
+								if proposedID, err := getUserIDByUsername(proposingUsername); err == nil {
+									affectedTradeUserIDs[proposedID] = true
+								} else {
+									logrus.Errorf("Failed to get userID for proposed username %s: %v", proposingUsername, err)
+								}
+							}
+							if acceptingUsername, aOk := td["username_accepting"].(string); aOk && acceptingUsername != "" {
+								if acceptingID, err := getUserIDByUsername(acceptingUsername); err == nil {
+									affectedTradeUserIDs[acceptingID] = true
+								} else {
+									logrus.Errorf("Failed to get userID for accepting username %s: %v", acceptingUsername, err)
+								}
+							}
+						}
+					}
+				}
+			}
+			transformed["trade"] = tradeMap
+
+			// --------------------------------------------------
+			// 2a) Fetch relatedInstance not owned by initiating user
+			//    so we do a single broadcast pass.
+			// --------------------------------------------------
+			relatedInstance := make(map[string]interface{})
+			for _, tdRaw := range tradeMap {
+				td, ok := tdRaw.(map[string]interface{})
+				if !ok {
+					continue
+				}
+
+				// Attempt to fetch instance for user_accepting
+				if pidAccepting, ok := td["pokemon_instance_id_user_accepting"].(string); ok && pidAccepting != "" {
+					var instance PokemonInstance
+					if err := db.Where("instance_id = ?", pidAccepting).First(&instance).Error; err != nil {
+						logrus.Errorf("Failed to fetch instance %s: %v", pidAccepting, err)
+					} else {
+						var instanceMap map[string]interface{}
+						if b, err := json.Marshal(instance); err != nil {
+							logrus.Errorf("Error marshalling instance %s: %v", pidAccepting, err)
+						} else if err := json.Unmarshal(b, &instanceMap); err != nil {
+							logrus.Errorf("Error unmarshalling instance %s: %v", pidAccepting, err)
+						} else {
+							relatedInstance[pidAccepting] = instanceMap
+						}
+					}
+				}
+
+				// Attempt to fetch instance for user_proposed
+				if pidProposed, ok := td["pokemon_instance_id_user_proposed"].(string); ok && pidProposed != "" {
+					var instance PokemonInstance
+					if err := db.Where("instance_id = ?", pidProposed).First(&instance).Error; err != nil {
+						logrus.Errorf("Failed to fetch instance %s: %v", pidProposed, err)
+					} else {
+						var instanceMap map[string]interface{}
+						if b, err := json.Marshal(instance); err != nil {
+							logrus.Errorf("Error marshalling instance %s: %v", pidProposed, err)
+						} else if err := json.Unmarshal(b, &instanceMap); err != nil {
+							logrus.Errorf("Error unmarshalling instance %s: %v", pidProposed, err)
+						} else {
+							relatedInstance[pidProposed] = instanceMap
+						}
+					}
+				}
+			}
+			transformed["relatedInstance"] = relatedInstance
+
+			// --------------------------------------------------
+			// 3) Combine userID + trade userIDs into one set
+			//    so we do a single broadcast pass.
+			// --------------------------------------------------
+			broadcastUserIDs := make(map[string]bool)
+			// Always include the user who triggered the update
+			broadcastUserIDs[userID] = true
+
+			// Include any other users affected by trades
+			for uid := range affectedTradeUserIDs {
+				broadcastUserIDs[uid] = true
+			}
+
+			// ---------------------------------------------------
+			// 4) Marshal the final data we want to send via SSE
+			// ---------------------------------------------------
 			messageBytes, err := json.Marshal(transformed)
 			if err != nil {
 				logrus.Errorf("Error marshalling transformed message: %v", err)
 				continue
 			}
 
-			// Send the message to all connected clients for the user except the originating device
+			// -------------------------------------------------------------------
+			// 5) Broadcast to all userIDs in "broadcastUserIDs" except the same
+			//    deviceID that triggered the update
+			// -------------------------------------------------------------------
 			clientsMutex.Lock()
 			for _, client := range clients {
-				if client.UserID == userID && client.DeviceID != deviceID && client.Connected {
+				if broadcastUserIDs[client.UserID] && client.DeviceID != deviceID && client.Connected {
 					select {
 					case client.Channel <- messageBytes:
-						logrus.Infof("Sent update to user %s device %s", userID, client.DeviceID)
+						logrus.Infof("Sent update to user=%s device=%s", client.UserID, client.DeviceID)
 					default:
-						logrus.Warnf("Client channel full for user %s device %s", userID, client.DeviceID)
+						logrus.Warnf("Client channel full for user=%s device=%s", client.UserID, client.DeviceID)
 					}
 				}
 			}
@@ -136,6 +232,14 @@ func startKafkaConsumer() {
 			}
 		}
 	}()
+}
+
+func getUserIDByUsername(username string) (string, error) {
+	var user User
+	if err := db.Where("username = ?", username).First(&user).Error; err != nil {
+		return "", err
+	}
+	return user.UserID, nil
 }
 
 func decompressData(data []byte) ([]byte, error) {
