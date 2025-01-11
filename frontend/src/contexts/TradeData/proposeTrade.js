@@ -92,7 +92,7 @@ export async function proposeTrade(tradeData) {
         // 2. Add related Pokémon instance
         const relatedInstanceData = {
             instance_id: pokemon.pokemonKey,
-            ...pokemon,
+            ...pokemon.ownershipStatus,
         };
         const relatedInstance = await addRelatedInstance(relatedInstanceData, tradeId);
 
