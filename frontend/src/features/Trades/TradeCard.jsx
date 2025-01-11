@@ -7,7 +7,7 @@ import { useReceivingDetails } from './hooks/useReceivingDetails';
 import ProposedTradeView from './views/ProposedTradeView';
 import OffersTradeView from './views/OffersTradeView';
 import PendingTradeView from './views/PendingTradeView';
-import { putBatchedTradeUpdates } from '../../services/indexedDB';
+import { handleAcceptTrade } from './handlers/handleAcceptTrade';
 import './TradeCard.css';
 
 function TradeCard({ trade, relatedInstances, selectedStatus }) {
@@ -17,32 +17,9 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
   const offeringDetails = useOfferingDetails(trade, variants, ownershipData);
   const receivingCombinedDetails = useReceivingDetails(trade, variants, relatedInstances);
 
-  // Define handleAccept function for OffersTradeView
+  // Use the imported utility function for handleAccept
   const handleAccept = async () => {
-    // Create an updated trade object with accepted date and new status
-    const updatedTrade = {
-      ...trade,
-      trade_accepted_date: new Date().toISOString(), // Set accepted date to current time
-      trade_status: 'pending'                      // Update status to 'pending'
-    };
-
-    // Update the trades collection with the modified trade
-    const updatedTrades = { ...trades, [trade.trade_id]: updatedTrade };
-
-    // Persist the updated trades data using setTradeData
-    await setTradeData(updatedTrades);
-
-    // Prepare batched update data
-    const batchedUpdateData = {
-      operation: 'updateTrade',
-      tradeData: updatedTrade,
-    };
-
-    // Use the same trade_id as the key to identify uniquely
-    await putBatchedTradeUpdates(updatedTrade.trade_id, batchedUpdateData);
-
-    // Call periodicUpdates to refresh data as needed
-    periodicUpdates();
+    await handleAcceptTrade({ trade, trades, setTradeData, periodicUpdates });
   };
 
   const handleDelete = () => { /*...*/ };
@@ -98,7 +75,6 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
     );
   }
 
-  // Fallback rendering for other statuses or default layout
   return (
     <div className="trade-card">
       {/* Default or other status rendering logic */}
