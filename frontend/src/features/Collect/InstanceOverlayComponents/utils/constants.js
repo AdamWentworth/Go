@@ -46,3 +46,17 @@ export const FILTER_NAMES = [
     'regionalIconFilter',
     'locationIconFilter'
 ];
+
+export const FILTER_NAMES_TRADE = [
+    'shinyIconFilter',
+    'costumeIconFilter',
+    'legendaryIconFilter',
+    'regionalIconFilter',
+    'locationIconFilter',
+    'communityDayFilter',
+    'researchDayFilter',
+    'raidDayFilter',
+    'legendaryMythicalUltraBeastRaidFilter',
+    'megaRaidFilter',
+    'permaboostedFilter',
+];

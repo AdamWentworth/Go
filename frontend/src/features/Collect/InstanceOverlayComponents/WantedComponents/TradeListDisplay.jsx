@@ -11,6 +11,7 @@ const extractBaseKey = (pokemonKey) => {
 };
 
 const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeList, editMode, toggleReciprocalUpdates, sortType, sortMode, onPokemonClick }) => {
+    
     const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
 
     useEffect(() => {
