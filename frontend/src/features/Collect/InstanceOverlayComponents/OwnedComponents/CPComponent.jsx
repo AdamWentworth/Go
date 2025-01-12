@@ -58,7 +58,7 @@ const CPComponent = ({ pokemon, editMode, onCPChange, cp, errors }) => {
   }
 
   return (
-    <div className="cp-container" onClick={handleContainerClick}>
+    <div className="cp-component-container" onClick={handleContainerClick}>
       <div className="cp-display">
         <div className="cp-center-content">
           <span className="cp-label">CP</span>

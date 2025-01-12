@@ -1,5 +1,5 @@
 /* CPComponent.css */
-.cp-container {
+.cp-component-container {
     display: flex;
     justify-content: center;
     align-items: flex-end;
