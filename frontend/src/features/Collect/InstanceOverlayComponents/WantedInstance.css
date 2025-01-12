@@ -91,26 +91,29 @@
 
 .wanted-instance .pokemon-image-container {
   position: relative;
+  display: inline-block;  /* Adjust size to fit the image */
+  /* Remove or comment out fixed dimensions if present:
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  */
   z-index: 3;
 }
 
 .wanted-instance .lucky-backdrop {
   position: absolute;
-  top: 18%;
-  left: 15%;
-  width: 180px;
-  height: auto;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;  /* Ensure backdrop scales nicely */
   z-index: 4;
 }
 
 .wanted-instance .pokemon-image {
-  max-width: 100%;
+  position: relative;
   z-index: 5;
+  max-width: 100%;
+  height: auto;
 }
 
 .wanted-instance .name-container {

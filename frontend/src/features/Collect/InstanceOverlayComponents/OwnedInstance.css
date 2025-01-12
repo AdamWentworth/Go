@@ -108,12 +108,11 @@
 
 .owned-instance .pokemon-image-container {
   position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-block;  /* Shrink-wraps to fit content */
   z-index: 3;
+  /* Optionally remove or adjust width/height if they restrict dynamic sizing */
+  /* width: 100%; 
+  height: 100%; */
 }
 
 .owned-instance .lucky-placeholder {
@@ -122,16 +121,19 @@
 
 .owned-instance .lucky-backdrop {
   position: absolute;
-  top: 18%;
-  left: 15%;
-  width: 180px;
-  height: auto;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* or cover depending on desired effect */
   z-index: 4;
 }
 
 .owned-instance .pokemon-image {
-  max-width: 100%;
+  position: relative;
   z-index: 5;
+  max-width: 100%;
+  height: auto;
 }
 
 .owned-instance .gender-lucky-row {
