@@ -48,7 +48,7 @@ export const FILTER_NAMES = [
 ];
 
 export const FILTER_NAMES_TRADE = [
-    'shinyIconFilter',
+'shinyIconFilter',
     'costumeIconFilter',
     'legendaryIconFilter',
     'regionalIconFilter',

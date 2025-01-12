@@ -24,14 +24,14 @@ function MainInfo({ pokemon, isMale, toggleGender }) {
     <div className="column main-info-column">
       <div className="header-section">
         <h1>Main Info</h1>
-        {pokemon.rarity.includes("Regional") && (
-          <img 
-            src="/images/regional.png" 
-            alt="Regional" 
-            className="regional-icon" 
-            title="Regional"  // Tooltip for the Regional image
-          />
-        )}
+          {pokemon.rarity && pokemon.rarity.includes("Regional") && (
+            <img 
+              src="/images/regional.png" 
+              alt="Regional" 
+              className="regional-icon" 
+              title="Regional" 
+            />
+          )}
       </div>
       
       <img 
