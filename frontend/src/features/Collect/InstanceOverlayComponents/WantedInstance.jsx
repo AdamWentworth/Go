@@ -40,10 +40,13 @@ const WantedInstance = ({ pokemon, isEditable }) => {
   const [showBackgrounds, setShowBackgrounds] = useState(false);
   const [selectedBackground, setSelectedBackground] = useState(null);
 
+  // On mount, set background if relevant
   useEffect(() => {
     if (pokemon.ownershipStatus.location_card !== null) {
       const locationCardId = parseInt(pokemon.ownershipStatus.location_card, 10);
-      const background = pokemon.backgrounds.find(bg => bg.background_id === locationCardId);
+      const background = pokemon.backgrounds.find(
+        (bg) => bg.background_id === locationCardId
+      );
       if (background) {
         setSelectedBackground(background);
       }

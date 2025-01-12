@@ -75,6 +75,7 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 			"not_trade_list":   instance.NotTradeList,
 			"not_wanted_list":  instance.NotWantedList,
 			"location_caught":  instance.LocationCaught,
+			"location_card":    instance.LocationCard,
 			"date_added":       instance.DateAdded,
 			"date_caught":      instance.DateCaught,
 			"friendship_level": instance.FriendshipLevel,

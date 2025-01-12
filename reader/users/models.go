@@ -91,7 +91,7 @@ type PokemonInstance struct {
 	NotWantedList   datatypes.JSON `gorm:"column:not_wanted_list;type:json" json:"not_wanted_list"`
 	TraceID         *string        `gorm:"column:trace_id" json:"trace_id"`
 	LocationCaught  *string        `gorm:"column:location_caught" json:"location_caught"`
-	LocationCard    *string        `gorm:"column:location_card" json:"location_card"`
+	LocationCard    *int           `gorm:"column:location_card" json:"location_card"`
 	FriendshipLevel *int           `gorm:"column:friendship_level" json:"friendship_level"`
 	LastUpdate      *int64         `gorm:"column:last_update" json:"last_update"`
 	DateCaught      *string        `gorm:"column:date_caught" json:"date_caught"`
