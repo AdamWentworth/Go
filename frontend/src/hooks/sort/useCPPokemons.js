@@ -1,3 +1,5 @@
+// useCPPokemons.js
+
 import { useMemo } from 'react';
 
 const useCPPokemons = (displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll }) => {
