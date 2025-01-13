@@ -3,14 +3,13 @@
 import { useMemo } from 'react';
 import { getEvolutionaryFamily, shouldAddPokemon } from '../../services/filterFunctions';
 
-const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine, showAll) => {
+const useFilterPokemons = (filteredVariants, variants, filters, showEvolutionaryLine, showAll) => {
     const { selectedGeneration, isShiny, searchTerm, showCostume, showShadow, pokemonTypes, generations, multiFormPokedexNumbers } = filters;
-
     const displayedPokemons = useMemo(() => {
-        const evolutionaryFamily = showEvolutionaryLine ? getEvolutionaryFamily(searchTerm, allPokemons) : [];
+        const evolutionaryFamily = showEvolutionaryLine ? getEvolutionaryFamily(searchTerm, variants) : [];
         const addedSingleFormNumbers = new Set(); // Used to track single form Pokédex numbers when showAll is false
 
-        return allPokemons.filter(pokemon => {
+        return filteredVariants.filter(pokemon => {
             // Directly check for evolutionary family inclusion if applicable
             const isInEvolutionaryFamily = showEvolutionaryLine && evolutionaryFamily.includes(pokemon.pokemon_id);
             if (showEvolutionaryLine && !isInEvolutionaryFamily) {
@@ -79,7 +78,7 @@ const useFilterPokemons = (allPokemons, filters, showEvolutionaryLine, showAll) 
             // Fallback to false for all other cases
             return false;
         });
-    }, [allPokemons, showEvolutionaryLine, showAll, isShiny, showShadow, showCostume, searchTerm, selectedGeneration, pokemonTypes, generations, multiFormPokedexNumbers]);
+    }, [filteredVariants, showEvolutionaryLine, showAll, isShiny, showShadow, showCostume, searchTerm, selectedGeneration, pokemonTypes, generations, multiFormPokedexNumbers]);
 
     // console.log(`Displayed Pokemons: ${displayedPokemons.length}`);
 

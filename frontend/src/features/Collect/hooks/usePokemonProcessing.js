@@ -32,6 +32,7 @@ function usePokemonProcessing(
   // Additional filtering based on other criteria
   const displayedPokemons = useFilterPokemons(
     filteredVariants,
+    variants, // Passing variants along with filteredVariants
     filters,
     showEvolutionaryLine,
     showAll

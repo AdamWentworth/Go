@@ -2,9 +2,8 @@
 
 import { matchesSearchTerm } from './searchFunctions';
 
-export function getEvolutionaryFamily(searchTerm, allPokemons) {
-    const basePokemons = allPokemons.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-
+export function getEvolutionaryFamily(searchTerm, variants) {
+    const basePokemons = variants.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
     let family = new Set();
 
     const findAllEvolutions = (pokemonId) => {
@@ -12,7 +11,7 @@ export function getEvolutionaryFamily(searchTerm, allPokemons) {
             return; // Skip if already processed
         }
 
-        const pokemon = allPokemons.find(p => p.pokemon_id === pokemonId);
+        const pokemon = variants.find(p => p.pokemon_id === pokemonId);
         if (!pokemon) return;
 
         // Add current pokemon to the family
