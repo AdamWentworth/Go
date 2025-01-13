@@ -388,9 +388,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
       </div>
 
       <div className="gender-lucky-row">
-        {pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade || pokemon.rarity === "Mythic" ? (
-          <div className="lucky-placeholder"></div>
-        ) : (
+        {!(pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade || pokemon.rarity === "Mythic") && (
           <LuckyComponent 
             pokemon={pokemon} 
             onToggleLucky={handleLuckyToggle} 

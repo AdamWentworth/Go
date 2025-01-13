@@ -27,7 +27,6 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     border: none; /* No border */
     outline: 1px solid #a3a3a3; /* Light grey outline */
-    padding: 4px 8px; /* Add padding for better usability */
     text-align: center; /* Center the text inside the input */
     width: 50px; /* Adjust width as needed */
   }

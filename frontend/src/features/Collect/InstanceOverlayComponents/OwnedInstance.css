@@ -139,15 +139,21 @@
 .owned-instance .gender-lucky-row {
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Default: space out components */
+  justify-content: space-between; /* Space between for gender and lucky components */
   width: 100%;
-  position: relative; /* Allows precise centering of the LevelComponent */
+  position: relative; /* Allows centering of LevelComponent */
 }
 
-/* To create consistent space for Lucky and Gender */
 .owned-instance .lucky-component,
 .owned-instance .gender-container {
-  flex: 1; /* Ensures they take up equal available space */
+  flex: 1; /* Ensures LuckyComponent and GenderComponent take equal space */
+}
+
+.owned-instance .level-component {
+  position: absolute; /* Take the element out of the normal flow */
+  left: 50%; /* Move the element to the center of the container */
+  transform: translateX(-50%); /* Adjust to truly center it horizontally */
+  z-index: 1; /* Ensure it appears above other elements if needed */
 }
 
 .owned-instance .stats-container {
@@ -202,18 +208,12 @@
   transform: translateY(-50%);
 }
 
-.owned-instance .level-component {
-  display: flex;
-  flex-direction: column;
-  margin: 10px 0;
-}
-
 .owned-instance .level-component label {
   font-weight: bold;
 }
 
 .owned-instance .level-component input {
-  padding: 5px;
+  padding: 2px;
   font-size: 1rem;
 }
 
