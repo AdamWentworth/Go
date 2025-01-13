@@ -77,7 +77,7 @@ async function syncData(data) {
   console.log('Sync data called:', data);
   try {
     const startStoreOwnership = Date.now();
-    await storeOwnershipDataInIndexedDB(data);
+    await storeOwnershipDataInIndexedDB(data); // Now correctly waits for completion
     const endStoreOwnership = Date.now();
     console.log(
       `Pokemon ownership data has been updated and stored in IndexedDB in ${
@@ -99,12 +99,12 @@ async function syncData(data) {
 }
 
 async function storeOwnershipDataInIndexedDB(data) {
-  const db = await openDB(); // old function that opens 'pokemonDB'
+  const db = await openDB(); // Opens 'pokemonDB'
   const transaction = db.transaction(['pokemonOwnership'], 'readwrite');
   const ownershipStore = transaction.objectStore('pokemonOwnership');
 
   // Clear the 'pokemonOwnership' store
-  await ownershipStore.clear();
+  ownershipStore.clear();
 
   // Write ownershipData into IndexedDB
   const ownershipData = data.data;
@@ -113,7 +113,21 @@ async function storeOwnershipDataInIndexedDB(data) {
     ownershipStore.put(item);
   }
 
-  await transaction.done;
+  // Return a promise that resolves when the transaction is complete
+  return new Promise((resolve, reject) => {
+    transaction.oncomplete = () => {
+      console.log('IndexedDB transaction completed successfully.');
+      resolve();
+    };
+    transaction.onerror = (event) => {
+      console.error('IndexedDB transaction failed:', event.target.error);
+      reject(event.target.error);
+    };
+    transaction.onabort = (event) => {
+      console.error('IndexedDB transaction aborted:', event.target.error);
+      reject(event.target.error);
+    };
+  });
 }
 
 // -----------------------------------------------------------------------------

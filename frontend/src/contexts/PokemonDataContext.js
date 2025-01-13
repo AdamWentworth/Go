@@ -141,11 +141,17 @@ export const PokemonDataProvider = ({ children }) => {
     });
 
     navigator.serviceWorker.ready.then(registration => {
-      registration.active.postMessage({
-        action: 'syncData',
-        data: { data: ownershipDataRef.current, timestamp: Date.now() }
-      });
-    });
+      const sw = navigator.serviceWorker.controller || registration.active;
+      console.log('Service Worker to send message to:', sw);
+      if (sw) {
+        sw.postMessage({
+          action: 'syncData',
+          data: { data: ownershipDataRef.current, timestamp: Date.now() }
+        });
+      } else {
+        console.warn('No active service worker found');
+      }
+    }).catch(err => console.error('SW readiness error:', err));
   };
 
   // Make sure we provide `periodicUpdates` so others can call it
