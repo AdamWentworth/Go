@@ -119,8 +119,8 @@ func startKafkaConsumer() {
 							tradeMap[keyVal] = td
 
 							// Log key details of the trade update for debugging
-							logrus.Infof("Processing trade update for key=%s, status=%v", keyVal, td["trade_status"])
-							logrus.Debugf("Full tradeData: %+v", td)
+							// logrus.Infof("Processing trade update for key=%s, status=%v", keyVal, td["trade_status"])
+							// logrus.Debugf("Full tradeData: %+v", td)
 
 							if proposingUsername, pOk := td["username_proposed"].(string); pOk && proposingUsername != "" {
 								if proposedID, err := getUserIDByUsername(proposingUsername); err == nil {

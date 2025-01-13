@@ -8,6 +8,8 @@ import ProposedTradeView from './views/ProposedTradeView';
 import OffersTradeView from './views/OffersTradeView';
 import PendingTradeView from './views/PendingTradeView';
 import { handleAcceptTrade } from './handlers/handleAcceptTrade';
+import { handleDenyTrade } from './handlers/handleDenyTrade';
+import { handleDeleteTrade } from './handlers/handleDeleteTrade';
 import './TradeCard.css';
 
 function TradeCard({ trade, relatedInstances, selectedStatus }) {
@@ -22,7 +24,13 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
     await handleAcceptTrade({ trade, trades, setTradeData, periodicUpdates });
   };
 
-  const handleDelete = () => { /*...*/ };
+  const handleDeny = async () => {
+    await handleDenyTrade({ trade, trades, setTradeData, periodicUpdates });
+  };
+
+  const handleDelete = async () => {
+    await handleDeleteTrade({ trade, trades, setTradeData, periodicUpdates });
+  };
   const handleComplete = () => { /*...*/ };
   const handleCancel = () => { /*...*/ };
   const handleThumbsUp = () => { /*...*/ };
@@ -43,7 +51,7 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
         receivingCombinedDetails={receivingCombinedDetails}
         loading={loading}
         handleAccept={handleAccept}
-        handleDelete={handleDelete}
+        handleDeny={handleDeny}
       />
     );
   }

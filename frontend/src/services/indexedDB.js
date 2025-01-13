@@ -441,9 +441,16 @@ export async function setTradesinDB(storeName, dataArray) {
 
 // Delete a trade
 export async function deleteFromTradesDB(storeName, key) {
-    const db = await initTradesDB();
-    return db.delete(storeName, key);
-}
+    try {
+      const db = await initTradesDB();
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      await store.delete(key);
+      await tx.done;
+    } catch (error) {
+      console.error('[deleteFromTradesDB] ERROR:', error);
+    }
+  }  
 
 // Clear all trades
 export async function clearTradesStore(storeName) {

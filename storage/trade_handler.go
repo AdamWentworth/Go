@@ -136,15 +136,34 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 		// Check for existing trade
 		var existingTrade Trade
 		tx := DB.Where("trade_id = ?", tradeID).First(&existingTrade)
+
+		// If trade not found
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
-			// Insert new trade
+			// Skip creating a new trade if its status is "deleted"
+			if tradeStatus == "deleted" {
+				// Nothing to do since we don't create trades flagged as deleted
+				continue
+			}
+			// Otherwise, insert new trade
 			if err := DB.Create(&updates).Error; err != nil {
 				logrus.Errorf("Failed to create Trade %s: %v", tradeID, err)
 			} else {
 				createdTrades++
 			}
 		} else if tx.Error == nil {
-			// Update existing trade only if the incoming update is newer
+			// If an existing trade is found and the incoming status is "deleted"
+			if tradeStatus == "deleted" {
+				// Delete the trade instead of updating it
+				if err := DB.Delete(&Trade{}, "trade_id = ?", tradeID).Error; err != nil {
+					logrus.Errorf("Failed to delete Trade %s: %v", tradeID, err)
+				} else {
+					droppedTrades++
+				}
+				// Skip further update processing for this trade
+				continue
+			}
+
+			// For non-deleted trades, update only if the incoming update is newer
 			if existingTrade.LastUpdate != nil && updates.LastUpdate != nil &&
 				*existingTrade.LastUpdate >= *updates.LastUpdate {
 				logrus.Infof("Skipping update for Trade %s: incoming last_update (%d) is not newer than existing (%d)",
@@ -159,20 +178,6 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 		} else {
 			logrus.Errorf("Failed to retrieve Trade %s: %v", tradeID, tx.Error)
 		}
-
-		// Handle trade deletion if necessary
-		// If your business logic requires deleting trades based on certain conditions,
-		// implement that logic here and increment `droppedTrades` accordingly.
-		// For example:
-		/*
-		   if shouldDeleteTrade(updates) {
-		       if err := DB.Delete(&Trade{}, "trade_id = ?", tradeID).Error; err != nil {
-		           logrus.Errorf("Failed to delete Trade %s: %v", tradeID, err)
-		       } else {
-		           droppedTrades++
-		       }
-		   }
-		*/
 	}
 	return
 }

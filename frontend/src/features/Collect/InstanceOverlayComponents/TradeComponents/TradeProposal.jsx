@@ -296,9 +296,6 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
           </div>
         </div>
       </div>
-      <div className="close-button-container">
-        <CloseButton onClick={onClose} />
-      </div>
     </div>
   );
 };

@@ -9,7 +9,7 @@ const OffersTradeView = ({
   receivingCombinedDetails,
   loading,
   handleAccept,
-  handleDelete
+  handleDeny
 }) => (
   <div className="trade-card">
     <div className="trade-pokemon">
@@ -63,7 +63,7 @@ const OffersTradeView = ({
 
     <div className="trade-actions">
       <button onClick={handleAccept}>Accept</button>
-      <button onClick={handleDelete}>Delete</button>
+      <button onClick={handleDeny}>Deny</button>
     </div>
   </div>
 );

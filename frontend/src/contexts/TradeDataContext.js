@@ -5,7 +5,8 @@ import { usePokemonData } from './PokemonDataContext';
 import {
   setTradesinDB,
   getAllFromTradesDB,
-  putBatchedTradeUpdates
+  putBatchedTradeUpdates,
+  deleteFromTradesDB
 } from '../services/indexedDB';
 
 const TradeDataContext = createContext();
@@ -22,27 +23,46 @@ export const TradeDataProvider = ({ children }) => {
   const setTradeData = useCallback(async (newTradesObj) => {
     try {
       if (!newTradesObj) return;
-      
+  
+      // Handle deleted trades: remove from IndexedDB and state
+      for (const [id, trade] of Object.entries(newTradesObj)) {
+        if (trade.trade_status === 'deleted') {
+          // Remove trade from IndexedDB
+          await deleteFromTradesDB('pokemonTrades', id);
+          // Remove deleted trade from newTradesObj so it's not processed further
+          delete newTradesObj[id];
+          // Remove deleted trade from in-memory state
+          setTrades(prev => {
+            const { [id]: removed, ...rest } = prev;
+            return rest;
+          });
+        }
+      }
+  
+      // Prepare remaining trades for IndexedDB update
       const tradesArray = Object.keys(newTradesObj).map(tradeId => ({
         trade_id: tradeId,
         ...newTradesObj[tradeId]
       }));
-      
-      // Update IndexedDB
+  
+      // Update IndexedDB with remaining trades
       await setTradesinDB('pokemonTrades', tradesArray);
-      
-      // Update state
-      setTrades(prevTrades => ({
-        ...prevTrades,
-        ...newTradesObj
-      }));
-      
+  
+      // Update state for remaining trades
+      setTrades(prevTrades => {
+        // If the new trades object has fewer keys than the previous state, assume a removal and replace state entirely
+        if (Object.keys(newTradesObj).length < Object.keys(prevTrades).length) {
+          return newTradesObj;
+        }
+        return { ...prevTrades, ...newTradesObj };
+      });
+  
       return newTradesObj;
     } catch (err) {
       console.error('[setTradeData] ERROR:', err);
       throw err;
     }
-  }, []);
+  }, []);  
 
   const setRelatedInstances = useCallback(async (newInstancesObj) => {
     try {
