@@ -10,10 +10,10 @@ import React, {
   import { useAuth } from './AuthContext';
   import { usePokemonData } from './PokemonDataContext';
   import { useSession } from './SessionContext';
+  import { useGlobalState } from './GlobalStateContext';
   import { fetchUpdates } from '../services/sseService';
   import { getDeviceId } from '../utils/deviceID';
   import { useTradeData } from './TradeDataContext'
-  import { setTradesinDB } from '../services/indexedDB';
   
   // 1) Create the context & custom hook
   const EventsContext = createContext();
@@ -25,6 +25,7 @@ import React, {
     // From PokemonDataContext, we can read the 'loading' state
     const { loading: isPokemonDataLoading, setOwnershipData } = usePokemonData();
     const { updateTradeData } = useTradeData();
+    const { isLoggedIn } = useGlobalState();
     const { lastUpdateTimestamp, updateTimestamp, isSessionNew } = useSession();
   
     const deviceIdRef = useRef(getDeviceId());
@@ -193,6 +194,16 @@ import React, {
         closeSSEConnection();
       };
     }, [closeSSEConnection]);
+
+    // Add this useEffect to monitor isLoggedIn and close SSE if it becomes false
+    useEffect(() => {
+      if (!isLoggedIn) {
+        console.log('isLoggedIn is false, closing SSE connection...');
+        closeSSEConnection();
+        // Optionally, you can also clear the hasInitializedRef so SSE can reinitialize when logging back in
+        hasInitializedRef.current = false;
+      }
+    }, [isLoggedIn, closeSSEConnection]);
   
     // -- 9) Provide any SSE-related state or methods if needed
     return (

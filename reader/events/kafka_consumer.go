@@ -323,7 +323,7 @@ func doCompletedTradeSwap(tradeData map[string]interface{}, pokemonMapPtr *map[s
 	pokemonMap[propInstanceID] = propPayload
 	pokemonMap[accInstanceID] = accPayload
 
-	logrus.Infof("[IN-MEMORY ONLY] Completed trade swap for propInst=%s -> user=%s, accInst=%s -> user=%s",
+	logrus.Infof("Completed trade swap for propInst=%s -> user=%s, accInst=%s -> user=%s",
 		propInstanceID, usernameAccepting, accInstanceID, usernameProposed)
 }
 

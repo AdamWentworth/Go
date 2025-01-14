@@ -186,7 +186,7 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 					return createErr
 				}
 				createdTrades++
-				logrus.Infof("[DEBUG] Created new Trade record %s with status=%s", tradeID, updates.TradeStatus)
+				logrus.Infof("Created new Trade record %s with status=%s", tradeID, updates.TradeStatus)
 				return nil
 			}
 			if findErr != nil {
@@ -313,8 +313,6 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				}
 
 				logrus.Infof("Successfully swapped traded instances %s", tradeID)
-			} else {
-				logrus.Infof("[DEBUG] Not swapping. oldStatus=%s, newStatus=%s", oldStatus, updates.TradeStatus)
 			}
 
 			updatedTrades++

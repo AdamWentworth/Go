@@ -122,7 +122,7 @@ export const PokemonDataProvider = ({ children }) => {
     // Check if newOwnershipData is empty. Adjust conditions based on your data type.
     if (!newOwnershipData || Object.keys(newOwnershipData).length === 0) {
       console.log("No newOwnershipData provided. Skipping merge and returning oldData.");
-      console.log(ownershipDataRef.current)
+      // console.log(ownershipDataRef.current)
       return;
   }
   
@@ -136,7 +136,7 @@ export const PokemonDataProvider = ({ children }) => {
       username = parsedData.username;
     }
   
-    console.log(ownershipDataRef.current);
+    // console.log(ownershipDataRef.current);
   
     // 1. Merge data up-front
     const updatedOwnershipData = importedMergeOwnershipData(

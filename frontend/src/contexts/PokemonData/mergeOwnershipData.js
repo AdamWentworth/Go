@@ -1,10 +1,6 @@
-export const mergeOwnershipData = (oldData, newData, username) => {
-    // Early exit if newData is empty
-    if (!newData || Object.keys(newData).length === 0) {
-        console.log("No newData provided. Skipping merge and returning oldData.");
-        return oldData;
-    }
+// mergeOwnershipData.js
 
+export const mergeOwnershipData = (oldData, newData, username) => {
     const mergedData = {};
     const oldDataProcessed = {};
 
@@ -20,7 +16,7 @@ export const mergeOwnershipData = (oldData, newData, username) => {
     Object.keys(newData).forEach(key => {
         const entry = newData[key];
         if (entry.username) {
-            console.log(`Entry ${key} has username: ${entry.username}.`);
+            // console.log(`Entry ${key} has username: ${entry.username}.`);
 
             if (entry.username === username) {
                 console.log(`Keeping entry ${key} because username matches provided username.`);
@@ -31,85 +27,96 @@ export const mergeOwnershipData = (oldData, newData, username) => {
             }
         }
     });
-
-    // Step 1: Merge new data
-    Object.keys(newData).forEach(key => {
-        const prefix = extractPrefix(key);
-        // Check for exact key match in old and new data
-        if (oldData.hasOwnProperty(key)) {
-            // If matching keys, compare their last_update values
-            const newDate = new Date(newData[key].last_update);
-            const oldDate = new Date(oldData[key].last_update);
-            if (newDate > oldDate) {
-                mergedData[key] = newData[key];
-            } else {
-                mergedData[key] = oldData[key];
-            }
-        } else {
-            mergedData[key] = newData[key];
-        }
-        oldDataProcessed[prefix] = oldDataProcessed[prefix] || [];
-        oldDataProcessed[prefix].push(key);
-    });
-
-    // Ensure every key from newData is in mergedData
-    Object.keys(newData).forEach(key => {
-        mergedData[key] = newData[key];
-    });
-
-    // Step 2: Merge old data
+    // Step 1: Merge old data
     Object.keys(oldData).forEach(oldKey => {
         const prefix = extractPrefix(oldKey);
-
+    
         if (!oldDataProcessed[prefix]) {
             // No new data with this prefix, add old data as is
             mergedData[oldKey] = oldData[oldKey];
         } else {
-            const significantOld = oldData[oldKey].is_owned ||
-                                   oldData[oldKey].is_for_trade ||
+            // Check if this old entry is significant
+            const significantOld = oldData[oldKey].is_owned || 
+                                   oldData[oldKey].is_for_trade || 
                                    oldData[oldKey].is_wanted;
-
-            const anySignificantNew = oldDataProcessed[prefix].some(newKey =>
-                newData[newKey].is_owned ||
-                newData[newKey].is_for_trade ||
-                newData[newKey].is_wanted
-            );
-
+            
+            // If the old entry is significant, always preserve it
             if (significantOld) {
                 mergedData[oldKey] = oldData[oldKey];
             }
+            // Non-significant old entries are not merged if there's new data for the prefix
         }
     });
+    
+    // Step 2: Merge new data
+    Object.keys(newData).forEach(key => {
+        const prefix = extractPrefix(key);
+        if (oldData.hasOwnProperty(key)) {
+            // Determine if the new entry is significant
+            const significantNew = newData[key].is_owned || newData[key].is_for_trade || newData[key].is_wanted;
+            
+            if (significantNew) {
+                // Always prefer new if it is significant
+                mergedData[key] = newData[key];
+            } else {
+                // If not significant, compare based on last_update
+                const newDate = new Date(newData[key].last_update);
+                const oldDate = new Date(oldData[key].last_update);
+                mergedData[key] = (newDate > oldDate) ? newData[key] : oldData[key];
+            }
+        } else {
+            // Key doesn't exist in oldData, so take newData as is
+            mergedData[key] = newData[key];
+        }
+        
+        // Track processed prefixes
+        oldDataProcessed[prefix] = oldDataProcessed[prefix] || [];
+        oldDataProcessed[prefix].push(key);
+    });
+
+
 
     // Step 3: Integrate Mega Logic
+    // Drop all 'mega', 'shiny_mega', 'mega_x', or 'mega_y' entries that are 'is_unowned' 
+    // if newData has matching instances with the required flags
     Object.keys(mergedData).forEach(key => {
         if (key.includes("mega")) {
+            // Extract the leading numbers by removing "mega" from the key
             const leadingNumbersMatch = key.match(/^(\d+)/);
             if (leadingNumbersMatch) {
                 const leadingNumbers = leadingNumbersMatch[1];
+                // Find all related keys in newData that start with the same leading numbers
                 const relatedNewKeys = Object.keys(newData).filter(newKey => 
                     newKey.startsWith(leadingNumbers)
                 );
 
+                // Determine if it's shiny or X/Y
                 const isShinyMega = key.includes("shiny_mega");
                 const isMegaX = key.toLowerCase().includes("mega_x");
                 const isMegaY = key.toLowerCase().includes("mega_y");
 
+                // --- THE IMPORTANT PART: RELAX THE CHECK FOR mega_x / mega_y ---
                 const hasRelevantMegaInNew = relatedNewKeys.some(newKey => {
-                    const entry = newData[newKey];
-                    if (!entry) return false;
+                const entry = newData[newKey];
+                if (!entry) return false;
 
-                    if (isShinyMega) {
-                        return entry.mega === true && entry.shiny === true;
-                    } else if (isMegaX || isMegaY) {
-                        return entry.mega === true;
-                    } else {
-                        return entry.mega === true;
-                    }
+                // If it's shiny mega, still require both mega && shiny
+                if (isShinyMega) {
+                    return entry.mega === true && entry.shiny === true;
+                }
+                // If it's mega_x or mega_y, we no longer check the form — only need mega === true
+                else if (isMegaX || isMegaY) {
+                    return entry.mega === true;
+                }
+                // Otherwise (regular mega), only need mega === true
+                else {
+                    return entry.mega === true;
+                }
                 });
 
+                // Drop if we found a relevant new entry + old entry is_unowned
                 if (hasRelevantMegaInNew && mergedData[key].is_unowned === true) {
-                    delete mergedData[key];
+                delete mergedData[key];
                 }
             }
         }
@@ -124,6 +131,7 @@ export const mergeOwnershipData = (oldData, newData, username) => {
 
         if (mergedData[key].is_unowned === true) {
             if (unownedTracker.has(prefix)) {
+                // Set the extra unowned instances to owned: false
                 mergedData[key].is_unowned = false;
             } else {
                 unownedTracker.add(prefix);
@@ -133,7 +141,6 @@ export const mergeOwnershipData = (oldData, newData, username) => {
         finalData[key] = mergedData[key];
     });
 
-    console.log(`finalData:`, finalData);
     console.log("Merge process completed.");
     return finalData;
 };
