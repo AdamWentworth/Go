@@ -20,7 +20,7 @@ import (
 var validTransitions = map[string][]string{
 	"proposed":  {"deleted", "denied", "pending"},
 	"pending":   {"cancelled", "completed"},
-	"cancelled": {"pending"},
+	"cancelled": {"proposed"},
 	"denied":    {}, // once denied, no further updates allowed
 	"completed": {}, // once completed, no further updates allowed
 }

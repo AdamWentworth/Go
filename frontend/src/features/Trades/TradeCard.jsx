@@ -7,9 +7,11 @@ import { useReceivingDetails } from './hooks/useReceivingDetails';
 import ProposedTradeView from './views/ProposedTradeView';
 import OffersTradeView from './views/OffersTradeView';
 import PendingTradeView from './views/PendingTradeView';
+import CancelledTradeView from './views/CancelledTradeView';
 import { handleAcceptTrade } from './handlers/handleAcceptTrade';
 import { handleDenyTrade } from './handlers/handleDenyTrade';
 import { handleDeleteTrade } from './handlers/handleDeleteTrade';
+import { handleCancelTrade } from './handlers/handleCancelTrade';
 import './TradeCard.css';
 
 function TradeCard({ trade, relatedInstances, selectedStatus }) {
@@ -32,7 +34,11 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
     await handleDeleteTrade({ trade, trades, setTradeData, periodicUpdates });
   };
   const handleComplete = () => { /*...*/ };
-  const handleCancel = () => { /*...*/ };
+
+  const handleCancel = async () => {
+    await handleCancelTrade({ trade, trades, setTradeData, periodicUpdates });
+  };
+
   const handleThumbsUp = () => { /*...*/ };
 
   const storedUser = localStorage.getItem('user');
@@ -79,6 +85,17 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
         loading={loading}
         handleComplete={handleComplete}
         handleCancel={handleCancel}
+      />
+    );
+  }
+
+  if (selectedStatus.toLowerCase() === 'cancelled') {
+    return (
+      <CancelledTradeView
+        trade={trade}
+        offeringDetails={offeringDetails}
+        receivingCombinedDetails={receivingCombinedDetails}
+        loading={loading}
       />
     );
   }
