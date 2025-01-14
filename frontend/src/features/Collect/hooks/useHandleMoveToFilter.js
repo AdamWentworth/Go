@@ -57,7 +57,7 @@ function useHandleMoveToFilter({
         const { baseKey } = parsed;
         let megaForm = undefined;
 
-        if (baseKey.includes('_mega') || baseKey.includes('-mega')) {
+        if (baseKey.includes('_mega') || baseKey.includes('-mega') || baseKey.includes('_primal') || baseKey.includes('-primal')) {
           if (baseKey.includes('mega_x')) {
             megaForm = 'X';
           } else if (baseKey.includes('mega_y')) {
