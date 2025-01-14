@@ -1,4 +1,3 @@
-// useInstanceIdProcessor.js
 import { useEffect, useState } from 'react';
 
 function useInstanceIdProcessor({
@@ -14,39 +13,57 @@ function useInstanceIdProcessor({
   setSelectedPokemon,
   setHasProcessedInstanceId,
 }) {
-  // Dummy state to force effect re-runs for polling
   const [retryCounter, setRetryCounter] = useState(0);
 
   useEffect(() => {
-    // Skip until BOTH global data & user data is done loading
+    // Wait until both global and user data finish loading
     if (loading || viewedLoading) {
       return;
     }
 
-    // Skip if we still have no user data or no filteredVariants for that user
+    // Skip if no user data or no filtered variants available yet
     if (!viewedOwnershipData || !filteredVariants.length) {
       return;
     }
 
-    // Skip if we’re viewing own collection or if instance ID is already processed
+    // Skip if viewing own collection or instance ID already processed
     if (isOwnCollection || hasProcessedInstanceId) {
       return;
     }
 
-    // Finally, we can read the instanceId from location.state
     const instanceId = location.state?.instanceId;
 
     if (instanceId && !selectedPokemon) {
+      // Try finding enriched Pokémon data in filteredVariants
       const enrichedPokemonData = filteredVariants.find(
         (p) => p.pokemonKey === instanceId
       );
 
-      const pokemonData =
-        enrichedPokemonData || viewedOwnershipData[instanceId];
+      let combinedPokemonData = null;
+      if (enrichedPokemonData) {
+        combinedPokemonData = enrichedPokemonData;
+      } else {
+        const fallbackOwnership = viewedOwnershipData[instanceId];
+        if (fallbackOwnership) {
+          // Use the base Pokémon data that corresponds to the ownership data
+          const basePokemonData = filteredVariants.find(
+            (p) => p.pokemon_id === fallbackOwnership.pokemon_id
+          );
 
-      if (pokemonData) {
+          if (basePokemonData) {
+            // Merge base Pokémon data with ownership data under ownershipStatus
+            combinedPokemonData = {
+              ...basePokemonData,
+              pokemonKey: instanceId,
+              ownershipStatus: fallbackOwnership,
+            };
+          }
+        }
+      }
+
+      if (combinedPokemonData) {
         setSelectedPokemon({
-          pokemon: { ...pokemonData, pokemonKey: instanceId },
+          pokemon: combinedPokemonData,
           overlayType: 'instance',
         });
         setHasProcessedInstanceId(true);
@@ -68,15 +85,14 @@ function useInstanceIdProcessor({
     viewedLoading,
     viewedOwnershipData,
     filteredVariants,
+    location,
     selectedPokemon,
     isOwnCollection,
     hasProcessedInstanceId,
     navigate,
-    location.pathname,
-    location.state,
     setSelectedPokemon,
     setHasProcessedInstanceId,
-    retryCounter, // added to dependencies to trigger re-run on change
+    retryCounter,
   ]);
 }
 
