@@ -2,15 +2,20 @@
 import { putBatchedTradeUpdates, deleteFromTradesDB } from "../../../services/indexedDB";
 
 export async function handleDeleteTrade({ trade, trades, setTradeData, periodicUpdates }) {
-  // Create an updated trades object by removing the deleted trade
+  // 1) Clone existing trades
   const updatedTrades = { ...trades };
-  delete updatedTrades[trade.trade_id];
 
-  // Update state (and underlying IndexedDB via setTradeData) with the trade removed
+  // 2) Mark the specific trade with "deleted" status
+  updatedTrades[trade.trade_id] = {
+    ...trade,
+    trade_status: 'deleted',
+    trade_deleted_date: new Date().toISOString(),
+    last_update: Date.now(),
+  };
+
   try {
+    // 3) Let setTradeData see the 'deleted' status
     await setTradeData(updatedTrades);
-    // Now explicitly remove the trade from IndexedDB
-    await deleteFromTradesDB('pokemonTrades', trade.trade_id);
   } catch (error) {
     console.error("[handleDeleteTrade] Error persisting trade data:", error);
     return;

@@ -51,9 +51,6 @@ export const TradeDataProvider = ({ children }) => {
       // Update state for remaining trades
       setTrades(prevTrades => {
         // If the new trades object has fewer keys than the previous state, assume a removal and replace state entirely
-        if (Object.keys(newTradesObj).length < Object.keys(prevTrades).length) {
-          return newTradesObj;
-        }
         return { ...prevTrades, ...newTradesObj };
       });
   

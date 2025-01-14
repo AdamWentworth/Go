@@ -1,9 +1,10 @@
 // PendingTradeView.jsx
+
 import React, { useState } from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { revealPartnerInfo } from '../../../services/tradeService';
 import PartnerInfoModal from '../components/PartnerInfoModal';
-import './PendingTradeView.css';  // Ensure this CSS is imported
+import './PendingTradeView.css';
 
 const PendingTradeView = ({
   trade,
@@ -16,6 +17,23 @@ const PendingTradeView = ({
   const [partnerInfo, setPartnerInfo] = useState(null);
   const [error, setError] = useState(null);
   const [revealInProgress, setRevealInProgress] = useState(false);
+
+  const storedUser = localStorage.getItem('user');
+  const currentUsername = storedUser ? JSON.parse(storedUser).username : '';
+
+  // Decide who is on the left vs. right
+  const isCurrentUserProposer = (trade.username_proposed === currentUsername);
+
+  const leftDetails = isCurrentUserProposer ? offeringDetails : receivingCombinedDetails;
+  const rightDetails = isCurrentUserProposer ? receivingCombinedDetails : offeringDetails;
+
+  // Usernames for display
+  const leftUsername = isCurrentUserProposer ? trade.username_proposed : trade.username_accepting;
+  const rightUsername = isCurrentUserProposer ? trade.username_accepting : trade.username_proposed;
+
+  // Headings (optional - adjust as desired)
+  const leftHeading = 'Your Pokémon';
+  const rightHeading = 'Trade Partner’s Pokémon';
 
   const handleRevealInfo = async () => {
     setRevealInProgress(true);
@@ -38,37 +56,35 @@ const PendingTradeView = ({
   return (
     <div className="trade-card pending-trade-view">
       <div className="trade-pokemon">
-        {/* Offering Section */}
-        <div className="pokemon offering">
-          {trade.username_proposed && (
-            <p className="receiving-username">{trade.username_proposed}</p>
-          )}
-          <h4>Offering:</h4>
-          {offeringDetails ? (
+        {/* Left Side (Current User) */}
+        <div className="pokemon left-side">
+          <p className="receiving-username">{leftUsername}</p>
+          <h4>{leftHeading}</h4>
+          {leftDetails ? (
             <>
               <img
-                src={offeringDetails.currentImage}
-                alt={offeringDetails.name || 'Offering Pokémon'}
+                src={leftDetails.currentImage || leftDetails.pokemon_image_url}
+                alt={leftDetails.name || 'Your Pokémon'}
               />
-              <p>{offeringDetails.name || offeringDetails.pokemon_name}</p>
+              <p>{leftDetails.name || leftDetails.pokemon_name}</p>
             </>
           ) : loading ? (
             <LoadingSpinner />
           ) : (
-            <p>Could not load offering details.</p>
+            <p>Could not load details.</p>
           )}
         </div>
 
-        {/* Center Column: Reveal Button above Trade Icon */}
+        {/* Center Column: Reveal Partner Button */}
         <div className="center-column">
           <div className="reveal-partner-info">
-          <button
-            className="reveal-partner-button"
-            onClick={handleRevealInfo}
-            disabled={revealInProgress}
-          >
-            <span>Reveal Partner Info</span>
-          </button>
+            <button
+              className="reveal-partner-button"
+              onClick={handleRevealInfo}
+              disabled={revealInProgress}
+            >
+              <span>Reveal Trade Partner Info</span>
+            </button>
             {error && <p className="error">{error}</p>}
           </div>
           <div className="trade-icon">
@@ -76,36 +92,35 @@ const PendingTradeView = ({
           </div>
         </div>
 
-        {/* Receiving Section */}
-        <div className="pokemon received">
-          {trade.username_accepting && (
-            <p className="receiving-username">{trade.username_accepting}</p>
-          )}
-          <h4>Receiving:</h4>
-          {receivingCombinedDetails ? (
+        {/* Right Side (Other User) */}
+        <div className="pokemon right-side">
+          <p className="receiving-username">{rightUsername}</p>
+          <h4>{rightHeading}</h4>
+          {rightDetails ? (
             <>
               <img
-                src={
-                  receivingCombinedDetails.currentImage ||
-                  receivingCombinedDetails.pokemon_image_url
-                }
-                alt={receivingCombinedDetails.name || 'Receiving Pokémon'}
+                src={rightDetails.currentImage || rightDetails.pokemon_image_url}
+                alt={rightDetails.name || 'Partner’s Pokémon'}
               />
-              <p>{receivingCombinedDetails.name || receivingCombinedDetails.pokemon_name}</p>
+              <p>{rightDetails.name || rightDetails.pokemon_name}</p>
             </>
           ) : loading ? (
             <LoadingSpinner />
           ) : (
-            <p>Could not load receiving details.</p>
+            <p>Could not load details.</p>
           )}
         </div>
       </div>
 
       <div className="trade-actions">
-        <button className="complete-button" onClick={handleComplete}>Complete</button>
-        <button className="cancel-button" onClick={handleCancel}>Cancel</button>
+        <button className="complete-button" onClick={handleComplete}>
+          Complete
+        </button>
+        <button className="cancel-button" onClick={handleCancel}>
+          Cancel
+        </button>
       </div>
-      
+
       <PartnerInfoModal
         partnerInfo={partnerInfo}
         onClose={handleCloseModal}
@@ -115,4 +130,3 @@ const PendingTradeView = ({
 };
 
 export default PendingTradeView;
-
