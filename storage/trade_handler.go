@@ -167,10 +167,6 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 			LastUpdate: parsedLastUpdate,
 		}
 
-		// Debug log before transaction
-		logrus.Infof("[DEBUG] Upserting TradeID=%s | IncomingStatus=%s | IncomingLastUpdate=%d",
-			tradeID, updates.TradeStatus, updates.LastUpdate)
-
 		// Use a transaction so we can lock the row to avoid race conditions.
 		txErr := DB.Transaction(func(tx *gorm.DB) error {
 			var existingTrade Trade
@@ -199,9 +195,6 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				return findErr
 			}
 
-			logrus.Infof("[DEBUG] Found existing Trade %s | existingStatus=%s | existingLastUpdate=%d",
-				existingTrade.TradeID, existingTrade.TradeStatus, existingTrade.LastUpdate)
-
 			// If incoming is "deleted", physically remove the row.
 			if tradeStatus == "deleted" {
 				logrus.Infof("[DEBUG] Deleting Trade %s because incoming status is 'deleted'.", tradeID)
@@ -221,7 +214,6 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 			}
 
 			// Check valid status transition
-			logrus.Infof("[DEBUG] Checking transition: %s -> %s", existingTrade.TradeStatus, updates.TradeStatus)
 			if !isValidTransition(existingTrade.TradeStatus, updates.TradeStatus) {
 				logrus.Warnf("Invalid status transition: %s -> %s for trade %s",
 					existingTrade.TradeStatus, updates.TradeStatus, tradeID)
@@ -232,8 +224,6 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 			oldStatus := existingTrade.TradeStatus
 
 			// Perform the Trade record update
-			logrus.Infof("[DEBUG] Updating Trade %s to status=%s last_update=%d ...",
-				tradeID, updates.TradeStatus, updates.LastUpdate)
 			if errUpdate := tx.Model(&existingTrade).
 				Select("*").
 				Updates(&updates).Error; errUpdate != nil {
@@ -241,20 +231,10 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				return errUpdate
 			}
 
-			// Optionally reload or trust existingTrade is updated in memory:
-			// (We'll trust GORM merges updates into existingTrade.)
-
-			// Now existingTrade.TradeStatus = "completed" in memory, but oldStatus might be "pending"
-
-			logrus.Infof("[DEBUG] After update: oldStatus=%s newStatus=%s (existingTrade.TradeStatus=%s)",
-				oldStatus, updates.TradeStatus, existingTrade.TradeStatus)
-
 			// ---------------------------------------------------------
 			// Now handle the "pending" → "completed" swap logic
 			// ---------------------------------------------------------
 			if oldStatus == "pending" && updates.TradeStatus == "completed" {
-				// i.e., we changed from "pending" -> "completed"
-				logrus.Infof("Detected trade %s going from 'pending' to 'completed'. Swapping Pokémon instances...", tradeID)
 
 				// 1) Get the two instance IDs from the updated trade data
 				proposedInstanceID := updates.PokemonInstanceIDUserProposed
@@ -282,9 +262,6 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				}
 
 				// 3) Swap user IDs
-				logrus.Infof("[DEBUG] Swapping ownership: proposedInstanceID=%s => userID=%s, acceptingInstanceID=%s => userID=%s",
-					proposedInstanceID, acceptingInstance.UserID, acceptingInstanceID, proposedInstance.UserID)
-
 				oldProposedUserID := proposedInstance.UserID
 				oldAcceptingUserID := acceptingInstance.UserID
 				proposedInstance.UserID = oldAcceptingUserID
@@ -302,7 +279,7 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				acceptingInstance.IsWanted = false
 
 				// 5) Update last_update for both instances
-				nowTs := time.Now().Unix()
+				nowTs := time.Now().UnixMilli()
 				proposedInstance.LastUpdate = nowTs
 				acceptingInstance.LastUpdate = nowTs
 
@@ -335,7 +312,7 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 					return err
 				}
 
-				logrus.Infof("Successfully swapped instances for trade %s (pending → completed).", tradeID)
+				logrus.Infof("Successfully swapped traded instances %s", tradeID)
 			} else {
 				logrus.Infof("[DEBUG] Not swapping. oldStatus=%s, newStatus=%s", oldStatus, updates.TradeStatus)
 			}
