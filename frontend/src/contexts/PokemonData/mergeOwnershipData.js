@@ -125,7 +125,9 @@ export const mergeOwnershipData = (oldData, newData, username) => {
     // Step 4: Ensure at most one instance per prefix has is_unowned: true
     const finalData = {};
     const ownedTracker = new Set(); // Track prefixes for owned instances
+    const processedPrefixes = new Set(); // Track prefixes already processed
 
+    // First pass: Process owned entries
     Object.keys(mergedData).forEach(key => {
         const prefix = extractPrefix(key);
 
@@ -133,21 +135,29 @@ export const mergeOwnershipData = (oldData, newData, username) => {
             // Keep all owned entries and add their prefix to the tracker
             ownedTracker.add(prefix);
             finalData[key] = mergedData[key];
+            processedPrefixes.add(prefix);
         }
     });
 
-    // Second pass to handle unowned and wanted instances
+    // Second pass: Process wanted entries
     Object.keys(mergedData).forEach(key => {
         const prefix = extractPrefix(key);
 
-        if (mergedData[key].is_wanted === true) {
-            // Keep wanted entries even if an owned instance exists
+        if (!processedPrefixes.has(prefix) && mergedData[key].is_wanted === true) {
+            // Keep wanted entries if the prefix hasn't already been processed
             finalData[key] = mergedData[key];
-        } else if (mergedData[key].is_unowned === true) {
-            // Keep unowned entries only if no owned instance exists for the prefix
-            if (!ownedTracker.has(prefix)) {
-                finalData[key] = mergedData[key];
-            }
+            processedPrefixes.add(prefix);
+        }
+    });
+
+    // Third pass: Process unowned entries
+    Object.keys(mergedData).forEach(key => {
+        const prefix = extractPrefix(key);
+
+        if (!processedPrefixes.has(prefix) && mergedData[key].is_unowned === true) {
+            // Keep unowned entries only if no owned or wanted instance exists for the prefix
+            finalData[key] = mergedData[key];
+            processedPrefixes.add(prefix);
         }
     });
 
