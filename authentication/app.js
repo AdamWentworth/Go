@@ -101,6 +101,9 @@ app.use('/auth', limiter); // Apply rate limiting to authentication routes
 const authRoute = require('./routes/authRoute');
 app.use('/auth', authRoute);
 
+const tradeRevealRoute = require('./routes/tradeRevealRoute');
+app.use('/auth', tradeRevealRoute);
+
 // Define port from configuration file or use a default value
 const port = appConfig.app.port || 3002;
 
