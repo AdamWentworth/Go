@@ -11,31 +11,153 @@
     justify-content: center;
     align-items: center;
     z-index: 9999;
-}
-
-.partner-modal-overlay .modal-content {
+  }
+  
+  .modal-content {
     color: white;
     background: #333;
-    padding: 1.5rem;
+    padding: 1.25rem;
     border-radius: 8px;
-    max-width: 500px;
+    max-width: 800px;
     width: 90%;
     position: relative;
-}
-
-.partner-modal-overlay h2 {
-    margin-block-start: 0px;
-}
-
-.modal-map-container {
+  }
+  
+  h2 {
+    margin-block-start: 0;
+  }
+  
+  /* Map container styling */
+  .modal-map-container {
     width: 100%;
     height: 100%;
-    border-radius: 12px;  /* Adjust the radius as needed */
-    overflow: hidden;     /* Clips child elements to the rounded corners */
+    border-radius: 12px;
+    overflow: hidden;
   }
-
-/* Styling for the campfire image */
-.partner-modal-overlay .campfire-image {
+  
+  /* New classes for moved inline styles */
+  .copy-button {
+    margin-left: 8px;
+  }
+  
+  .map-wrapper {
+    width: 100%;
+    height: 400px;
+    margin-top: 1rem;
+  }
+  
+  .additional-text-container {
+    margin-top: 1rem;
+    text-align: center;
+  }
+  
+  /* Styling for the campfire image */
+  .campfire-image {
     width: 400px;
     height: auto;
-}
+    display: block;
+    margin: 0 auto;
+  }
+  
+  .bottom-message {
+    text-align: center;
+    margin-top: 1rem;
+    font-style: italic;
+    margin-block-end: 0;
+  }
+
+/* Media Query for screens up to 480px */
+@media (max-width: 480px) {
+    /* Styling for the campfire image */
+    .partner-modal-overlay h2 {
+        font-size: 18px;
+        margin-block-end: 0px;
+    }
+    .partner-modal-overlay p {
+        margin-block-start: 5px;
+        margin-block-end: 5px;
+    }
+    .map-wrapper {
+        height: 300px;
+      }
+    .partner-modal-overlay .campfire-image {
+        width: 250px;
+        height: auto;
+    }
+  }
+  
+  /* Media Query for screens up to 767px */
+  @media (min-width: 481px) and (max-width: 767px) {
+    .partner-modal-overlay h2 {
+        font-size: 22px;
+        margin-block-end: 0px;
+    }
+    .partner-modal-overlay p {
+        margin-block-start: 7px;
+        margin-block-end: 7px;
+    }
+    .map-wrapper {
+        height: 350px;
+      }
+    .partner-modal-overlay .campfire-image {
+        width: 300px;
+        height: auto;
+    }
+  }
+  
+  /* Media Query for screens up to 1023px */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .partner-modal-overlay h2 {
+        font-size: 26px;
+        margin-block-end: 0px;
+    }
+    .partner-modal-overlay p {
+        margin-block-start: 7px;
+        margin-block-end: 7px;
+    }
+    .map-wrapper {
+        height: 350px;
+      }
+    .partner-modal-overlay .campfire-image {
+        width: 350px;
+        height: auto;
+    }
+  }
+  
+  /* Media Query for screens up to 1439px */
+  @media (min-width: 1024px) and (max-width: 1439px) {
+    .partner-modal-overlay h2 {
+        font-size: 26px;
+        margin-block-end: 0px;
+    }
+    .partner-modal-overlay p {
+        margin-block-start: 7px;
+        margin-block-end: 7px;
+    }
+    .map-wrapper {
+        height: 350px;
+      }
+    .partner-modal-overlay .campfire-image {
+        width: 350px;
+        height: auto;
+    }
+  }
+  
+  /* Media Query for screens up to 1919px */
+  @media (min-width: 1440px) {
+    .partner-modal-overlay h2 {
+        font-size: 26px;
+        margin-block-end: 0px;
+    }
+    .partner-modal-overlay p {
+        margin-block-start: 7px;
+        margin-block-end: 7px;
+    }
+    .map-wrapper {
+        height: 350px;
+      }
+    .partner-modal-overlay .campfire-image {
+        width: 350px;
+        height: auto;
+    }
+  }

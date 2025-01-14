@@ -7,7 +7,8 @@ const CancelledTradeView = ({
   trade,
   offeringDetails,
   receivingCombinedDetails,
-  loading
+  loading,
+  handleRePropose  // <-- NEW PROP
 }) => {
   const storedUser = localStorage.getItem('user');
   const currentUsername = storedUser ? JSON.parse(storedUser).username : '';
@@ -30,7 +31,6 @@ const CancelledTradeView = ({
   return (
     <div className="trade-card cancelled-trade-view">
       <h2>Trade Cancelled</h2>
-
       {trade.trade_cancelled_date && (
         <p>Cancelled on: {new Date(trade.trade_cancelled_date).toLocaleString()}</p>
       )}
@@ -55,6 +55,7 @@ const CancelledTradeView = ({
           )}
         </div>
 
+        {/* Center Column */}
         <div className="center-column">
           <div className="trade-icon">
             <img src="/images/pogo_trade_icon.png" alt="Trade Icon" />
@@ -79,6 +80,13 @@ const CancelledTradeView = ({
             <p>Could not load details.</p>
           )}
         </div>
+      </div>
+
+      {/* NEW ACTION BUTTON */}
+      <div className="trade-actions">
+        <button className="re-propose-button" onClick={handleRePropose}>
+          Re-Propose
+        </button>
       </div>
     </div>
   );

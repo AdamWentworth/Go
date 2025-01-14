@@ -1,6 +1,7 @@
 // PartnerInfoModal.jsx
+
 import React, { useEffect, useRef } from 'react';
-import './PartnerInfoModal.css'; // optional CSS file
+import './PartnerInfoModal.css'; // external CSS file
 import CloseButton from '../../../components/CloseButton';
 
 // --- Additional OL imports for map ---
@@ -18,7 +19,6 @@ import { Style, Circle, Fill } from 'ol/style';
 import { useTheme } from '../../../contexts/ThemeContext';
 
 // Utility function to format the trainer code into groups of 4 digits.
-// e.g., "123456789012" -> "1234 5678 9012"
 function formatTrainerCode(code) {
   if (!code) return 'N/A';
   const stripped = code.replace(/\D/g, '');
@@ -30,7 +30,6 @@ function PartnerInfoModal({ partnerInfo, onClose }) {
   const mapContainer = useRef(null);
   const { isLightMode } = useTheme();
 
-  // Always call hooks at the top level:
   useEffect(() => {
     if (!partnerInfo?.coordinates?.latitude || !partnerInfo?.coordinates?.longitude) {
       return;
@@ -82,7 +81,8 @@ function PartnerInfoModal({ partnerInfo, onClose }) {
     return null;
   }
 
-  const { trainerCode, pokemonGoName, coordinates } = partnerInfo;
+  // Destructure additional location property if available
+  const { trainerCode, pokemonGoName, coordinates, location } = partnerInfo;
   const formattedCode = formatTrainerCode(trainerCode);
 
   const handleCopyCode = () => {
@@ -101,35 +101,43 @@ function PartnerInfoModal({ partnerInfo, onClose }) {
         <p>
           Trainer Code: <strong>{formattedCode}{' '}</strong>
           {trainerCode && (
-            <button style={{ marginLeft: '8px' }} onClick={handleCopyCode}>
+            <button className="copy-button" onClick={handleCopyCode}>
               Copy
             </button>
           )}
         </p>
+        {!trainerCode && (
+          <p className="info-message">We hope they'll add you!</p>
+        )}
 
         {/* Pokémon GO Name */}
         <p>
           Pokémon GO Name: <strong>{pokemonGoName || 'N/A'}</strong>
         </p>
+        {!pokemonGoName && (
+          <p className="info-message">We hope they'll add their name soon!</p>
+        )}
 
-        {/* Map */}
-        <div style={{ width: '100%', height: '300px', marginTop: '1rem' }}>
+        {/* Map or Location Information */}
+        <div className="map-wrapper">
           {coordinates?.latitude && coordinates?.longitude ? (
             <div 
               ref={mapContainer} 
               className="modal-map-container" 
             />
+          ) : location ? (
+            <p>Location: {location}</p>
           ) : (
-            <p>No location available.</p>
+            <p>We have no location data for this trainer.</p>
           )}
         </div>
 
         {/* Additional Text and Campfire Image Below the Map */}
-        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+        <div className="additional-text-container">
           <p>
             Please proceed with adding <strong>{pokemonGoName || 'this Trainer'}</strong> as a friend on Pokémon Go!
           </p>
-          {/* Campfire Image with CSS class */}
+          {/* Campfire Image */}
           <img 
             src="/images/campfire.png" 
             alt="Campfire" 
@@ -139,6 +147,11 @@ function PartnerInfoModal({ partnerInfo, onClose }) {
             We recommend installing and using Niantic's Campfire App to communicate and sync up for your Trade!
           </p>
         </div>
+
+        {/* New Text at the Bottom */}
+        <p className="bottom-message">
+          Pokemon Go friends can be messaged directly using Campfire!
+        </p>
       </div>
     </div>
   );

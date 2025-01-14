@@ -40,10 +40,6 @@
     max-width: 200px;  /* Adjust size as needed */
     height: auto;
   }
-
-  .trade-card .trade-actions {
-    text-align: center; /* Center buttons horizontally, adjust as needed */
-  }
   
   .trade-card .trade-actions button {
     margin: 0 5px;

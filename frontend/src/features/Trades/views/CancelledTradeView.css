@@ -1,0 +1,56 @@
+/* CancelledTradeView.css */
+
+.cancelled-trade-view .re-propose-button {
+    background-color: #28a745; /* Blue color */
+    color: white;
+    font-size: 1.2rem;       /* Slightly smaller than the reveal button */
+    padding: 0.5rem 1rem;    /* Adjusted padding for a smaller button */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .cancelled-trade-view  .re-propose-button:hover {
+    background-color: #218838; /* Darker blue on hover */
+  }
+  
+  .cancelled-trade-view .re-propose-button:active {
+    background-color: #1e7e34; /* Even darker blue when clicked */
+  }
+  
+  .cancelled-trade-view .re-propose-button:focus {
+    outline: 2px solid #155724; /* Focus outline for accessibility */
+    outline-offset: 2px;
+  }
+  
+  /* Styles for the deny button */
+  .cancelled-trade-view .deny-button {
+    background-color: #dc3545; /* Red color */
+    color: white;
+    font-size: 1.2rem;       /* Slightly smaller than the reveal button */
+    padding: 0.5rem 1rem;    /* Adjusted padding for a smaller button */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .cancelled-trade-view .deny-button:hover {
+    background-color: #c82333; /* Darker red on hover */
+  }
+  
+  .cancelled-trade-view .deny-button:active {
+    background-color: #bd2130; /* Even darker red when clicked */
+  }
+  
+  .cancelled-trade-view .deny-button:focus {
+    outline: 2px solid #721c24; /* Focus outline for accessibility */
+    outline-offset: 2px;
+  }
+  
+  .cancelled-trade-view .trade-actions {
+    justify-content: center;
+    display: flex;
+    gap: 10px;
+  }

@@ -12,6 +12,7 @@ import { handleAcceptTrade } from './handlers/handleAcceptTrade';
 import { handleDenyTrade } from './handlers/handleDenyTrade';
 import { handleDeleteTrade } from './handlers/handleDeleteTrade';
 import { handleCancelTrade } from './handlers/handleCancelTrade';
+import { handleReProposeTrade } from './handlers/handleReProposeTrade';
 import './TradeCard.css';
 
 function TradeCard({ trade, relatedInstances, selectedStatus }) {
@@ -37,6 +38,10 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
 
   const handleCancel = async () => {
     await handleCancelTrade({ trade, trades, setTradeData, periodicUpdates });
+  };
+
+  const handleRePropose = async () => {
+    await handleReProposeTrade({ trade, trades, setTradeData, periodicUpdates, currentUsername });
   };
 
   const handleThumbsUp = () => { /*...*/ };
@@ -96,6 +101,7 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
         offeringDetails={offeringDetails}
         receivingCombinedDetails={receivingCombinedDetails}
         loading={loading}
+        handleRePropose={handleRePropose}
       />
     );
   }

@@ -228,7 +228,9 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 			}
 
 			// If everything is good, do the update
-			if errUpdate := tx.Model(&existingTrade).Updates(&updates).Error; errUpdate != nil {
+			if errUpdate := tx.Model(&existingTrade).
+				Select("*"). // Force update on all fields, including nil values
+				Updates(&updates).Error; errUpdate != nil {
 				logrus.Errorf("Failed to update Trade %s: %v", tradeID, errUpdate)
 				return errUpdate
 			}
