@@ -76,47 +76,48 @@ export const mergeOwnershipData = (oldData, newData, username) => {
 
 
 
-    // Step 3: Integrate Mega Logic
-    // Drop all 'mega', 'shiny_mega', 'mega_x', or 'mega_y' entries that are 'is_unowned' 
+    // Step 3: Integrate Mega and Primal Logic
+    // Drop all 'mega', 'shiny_mega', 'mega_x', 'mega_y', 'primal', or 'shiny_primal' entries that are 'is_unowned'
     // if newData has matching instances with the required flags
     Object.keys(mergedData).forEach(key => {
-        if (key.includes("mega")) {
-            // Extract the leading numbers by removing "mega" from the key
-            const leadingNumbersMatch = key.match(/^(\d+)/);
+        if (key.includes("mega") || key.includes("primal")) {
+            // Extract the leading numbers by removing "mega" or "primal" from the key
+            const leadingNumbersMatch = key.match(/^\d+/);
             if (leadingNumbersMatch) {
-                const leadingNumbers = leadingNumbersMatch[1];
+                const leadingNumbers = leadingNumbersMatch[0];
                 // Find all related keys in newData that start with the same leading numbers
                 const relatedNewKeys = Object.keys(newData).filter(newKey => 
                     newKey.startsWith(leadingNumbers)
                 );
 
-                // Determine if it's shiny or X/Y
+                // Determine specific types
                 const isShinyMega = key.includes("shiny_mega");
                 const isMegaX = key.toLowerCase().includes("mega_x");
                 const isMegaY = key.toLowerCase().includes("mega_y");
+                const isPrimal = key.includes("primal");
+                const isShinyPrimal = key.includes("shiny_primal");
 
-                // --- THE IMPORTANT PART: RELAX THE CHECK FOR mega_x / mega_y ---
-                const hasRelevantMegaInNew = relatedNewKeys.some(newKey => {
-                const entry = newData[newKey];
-                if (!entry) return false;
+                // Check for relevant entries in newData
+                const hasRelevantEntryInNew = relatedNewKeys.some(newKey => {
+                    const entry = newData[newKey];
+                    if (!entry) return false;
 
-                // If it's shiny mega, still require both mega && shiny
-                if (isShinyMega) {
-                    return entry.mega === true && entry.shiny === true;
-                }
-                // If it's mega_x or mega_y, we no longer check the form — only need mega === true
-                else if (isMegaX || isMegaY) {
-                    return entry.mega === true;
-                }
-                // Otherwise (regular mega), only need mega === true
-                else {
-                    return entry.mega === true;
-                }
+                    if (isShinyMega) {
+                        return entry.mega === true && entry.shiny === true;
+                    } else if (isMegaX || isMegaY) {
+                        return entry.mega === true;
+                    } else if (isPrimal) {
+                        return entry.mega === true;
+                    } else if (isShinyPrimal) {
+                        return entry.mega === true && entry.shiny === true;
+                    } else {
+                        return entry.mega === true;
+                    }
                 });
 
                 // Drop if we found a relevant new entry + old entry is_unowned
-                if (hasRelevantMegaInNew && mergedData[key].is_unowned === true) {
-                delete mergedData[key];
+                if (hasRelevantEntryInNew && mergedData[key].is_unowned === true) {
+                    delete mergedData[key];
                 }
             }
         }
