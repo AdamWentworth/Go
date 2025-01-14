@@ -1,6 +1,6 @@
 // mergeOwnershipData.js
 
-export const mergeOwnershipData = (oldData, newData) => {
+export const mergeOwnershipData = (oldData, newData, username) => {
     const mergedData = {};
     const oldDataProcessed = {};
 
@@ -39,9 +39,15 @@ export const mergeOwnershipData = (oldData, newData) => {
             // No new data with this prefix, add old data as is
             mergedData[oldKey] = oldData[oldKey];
         } else {
-            const significantOld = oldData[oldKey].is_owned || oldData[oldKey].is_for_trade || oldData[oldKey].is_wanted;
+            const significantOld = oldData[oldKey].is_owned ||
+                                   oldData[oldKey].is_for_trade ||
+                                   oldData[oldKey].is_wanted;
+
             const anySignificantNew = oldDataProcessed[prefix].some(newKey =>
-                newData[newKey].is_owned || newData[newKey].is_for_trade || newData[newKey].is_wanted);
+                newData[newKey].is_owned ||
+                newData[newKey].is_for_trade ||
+                newData[newKey].is_wanted
+            );
 
             if (significantOld && !anySignificantNew) {
                 // Old data is significant and no new significant data, retain old
@@ -69,28 +75,24 @@ export const mergeOwnershipData = (oldData, newData) => {
                 const isMegaX = key.toLowerCase().includes("mega_x");
                 const isMegaY = key.toLowerCase().includes("mega_y");
 
-                // --- THE IMPORTANT PART: RELAX THE CHECK FOR mega_x / mega_y ---
+                // If new data has an entry with mega === true (and optionally shiny),
+                // then we drop the old unowned mega entry.
                 const hasRelevantMegaInNew = relatedNewKeys.some(newKey => {
-                const entry = newData[newKey];
-                if (!entry) return false;
+                    const entry = newData[newKey];
+                    if (!entry) return false;
 
-                // If it's shiny mega, still require both mega && shiny
-                if (isShinyMega) {
-                    return entry.mega === true && entry.shiny === true;
-                }
-                // If it's mega_x or mega_y, we no longer check the form — only need mega === true
-                else if (isMegaX || isMegaY) {
-                    return entry.mega === true;
-                }
-                // Otherwise (regular mega), only need mega === true
-                else {
-                    return entry.mega === true;
-                }
+                    if (isShinyMega) {
+                        return entry.mega === true && entry.shiny === true;
+                    } else if (isMegaX || isMegaY) {
+                        return entry.mega === true;
+                    } else {
+                        return entry.mega === true;
+                    }
                 });
 
                 // Drop if we found a relevant new entry + old entry is_unowned
                 if (hasRelevantMegaInNew && mergedData[key].is_unowned === true) {
-                delete mergedData[key];
+                    delete mergedData[key];
                 }
             }
         }
@@ -113,6 +115,14 @@ export const mergeOwnershipData = (oldData, newData) => {
         }
 
         finalData[key] = mergedData[key];
+    });
+
+    // Step 5 (NEW): If a Pokémon has `.username` defined,
+    // keep it only if `.username` === `username`. Otherwise, drop it.
+    Object.keys(finalData).forEach(key => {
+        if (finalData[key].username && finalData[key].username !== username) {
+            delete finalData[key];
+        }
     });
 
     console.log("Merge process completed.");

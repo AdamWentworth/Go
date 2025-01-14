@@ -119,40 +119,50 @@ export const PokemonDataProvider = ({ children }) => {
   };
 
   const setOwnershipData = (newOwnershipData) => {
-    setData(prevData => {
-      const updatedOwnershipData = importedMergeOwnershipData(
-        prevData.ownershipData,
-        newOwnershipData
-      );
-      ownershipDataRef.current = updatedOwnershipData;
 
-      const currentTimestamp = Date.now();
-      localStorage.setItem(
-        'pokemonOwnership',
-        JSON.stringify({ data: updatedOwnershipData, timestamp: Date.now() })
-      );
-      localStorage.setItem('ownershipTimestamp', currentTimestamp.toString());
+    // Retrieve the user data from local storage
+    const userData = localStorage.getItem('user');
 
-      return {
-        ...prevData,
-        ownershipData: updatedOwnershipData,
-        lists: initializePokemonLists(updatedOwnershipData, prevData.variants)
-      };
-    });
-
-    navigator.serviceWorker.ready.then(registration => {
-      const sw = navigator.serviceWorker.controller || registration.active;
-      console.log('Service Worker to send message to:', sw);
-      if (sw) {
-        sw.postMessage({
-          action: 'syncData',
-          data: { data: ownershipDataRef.current, timestamp: Date.now() }
-        });
-      } else {
-        console.warn('No active service worker found');
-      }
-    }).catch(err => console.error('SW readiness error:', err));
-  };
+    // Parse the user data (if it exists) and extract the username
+    let username = null;
+    if (userData) {
+      const parsedData = JSON.parse(userData); // Convert the JSON string to an object
+      username = parsedData.username; // Access the 'username' property
+    }
+    // 1. Merge data up-front
+    const updatedOwnershipData = importedMergeOwnershipData(
+      data.ownershipData,   // read from your current data/props/state
+      newOwnershipData,
+      username
+    );
+  
+    // 2. Keep a ref copy or do other synchronous steps
+    ownershipDataRef.current = updatedOwnershipData; 
+    const currentTimestamp = Date.now();
+    localStorage.setItem('ownershipTimestamp', currentTimestamp.toString());
+  
+    // 3. Update state with the *already merged* data
+    setData(prevData => ({
+      ...prevData,
+      ownershipData: updatedOwnershipData,
+      lists: initializePokemonLists(updatedOwnershipData, prevData.variants),
+    }));
+  
+    // 4. Post message to SW with the *same* merged data
+    navigator.serviceWorker.ready
+      .then((registration) => {
+        const sw = navigator.serviceWorker.controller || registration.active;
+        if (sw) {
+          sw.postMessage({
+            action: 'syncData',
+            data: { data: updatedOwnershipData, timestamp: currentTimestamp },
+          });
+        } else {
+          console.warn('No active service worker found');
+        }
+      })
+      .catch((err) => console.error('SW readiness error:', err));
+  };  
 
   // Make sure we provide `periodicUpdates` so others can call it
   const contextValue = useMemo(() => ({

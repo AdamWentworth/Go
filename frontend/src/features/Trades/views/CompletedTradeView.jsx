@@ -1,45 +1,51 @@
-// CancelledTradeView.jsx
+// CompletedTradeView.jsx
 import React from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
-import './CancelledTradeView.css';
+import './CompletedTradeView.css';
 
-const CancelledTradeView = ({
+const CompletedTradeView = ({
   trade,
   offeringDetails,
   receivingCombinedDetails,
   loading,
-  handleRePropose
+  handleThumbsUp
 }) => {
   const storedUser = localStorage.getItem('user');
   const currentUsername = storedUser ? JSON.parse(storedUser).username : '';
 
-  // Determine who is the proposer vs. acceptor
+  // Determine which side the current user was on
   const isCurrentUserProposer = (trade.username_proposed === currentUsername);
 
-  // Left is the current user’s side, right is the partner’s side
-  const leftDetails = isCurrentUserProposer ? offeringDetails : receivingCombinedDetails;
-  const rightDetails = isCurrentUserProposer ? receivingCombinedDetails : offeringDetails;
+  // Determine satisfaction status for the current user
+  const satisfactionStatus = isCurrentUserProposer
+    ? trade.user_1_trade_satisfaction
+    : trade.user_2_trade_satisfaction;
 
-  // Display names
-  const leftUsername = isCurrentUserProposer ? trade.username_proposed : trade.username_accepting;
+  // **Adjusted Content Assignment:**
+  // Left side always shows "Received Pokémon"
+  // Right side always shows "Traded Pokémon"
+  const leftDetails = receivingCombinedDetails;
+  const rightDetails = offeringDetails;
+
+  // For usernames:
+  // Left side: partner who provided the received Pokémon
+  // Right side: current user who traded the Pokémon
+  const leftUsername = currentUsername;
   const rightUsername = isCurrentUserProposer ? trade.username_accepting : trade.username_proposed;
 
-  // Headings for clarity
-  const leftHeading = 'Your Pokémon';
-  const rightHeading = 'Trade Partner’s Pokémon';
+  // Headers remain static as specified
+  const leftHeading = 'Received Pokémon';
+  const rightHeading = 'Traded Pokémon';
 
   return (
-    <div className="trade-card cancelled-trade-view">
-      <h2>Trade Cancelled</h2>
-      {trade.trade_cancelled_date && (
-        <p>Cancelled on: {new Date(trade.trade_cancelled_date).toLocaleString()}</p>
-      )}
-      {trade.trade_cancelled_by && (
-        <p>Cancelled by: {trade.trade_cancelled_by}</p>
+    <div className="trade-card completed-trade-view">
+      <h2>Trade Completed</h2>
+
+      {trade.trade_completed_date && (
+        <p>Completed on: {new Date(trade.trade_completed_date).toLocaleString()}</p>
       )}
 
       <div className="trade-pokemon">
-        {/* Left Side (Current User) */}
         <div className="pokemon left-side">
           <p className="receiving-username">{leftUsername}</p>
           <h4>{leftHeading}</h4>
@@ -58,14 +64,12 @@ const CancelledTradeView = ({
           )}
         </div>
 
-        {/* Center Column */}
         <div className="center-column">
           <div className="trade-icon">
             <img src="/images/pogo_trade_icon.png" alt="Trade Icon" />
           </div>
         </div>
 
-        {/* Right Side (Trade Partner) */}
         <div className="pokemon right-side">
           <p className="receiving-username">{rightUsername}</p>
           <h4>{rightHeading}</h4>
@@ -85,14 +89,22 @@ const CancelledTradeView = ({
         </div>
       </div>
 
-      {/* NEW ACTION BUTTON */}
+      {/* Thumbs Up Button with conditional styling */}
       <div className="trade-actions">
-        <button className="re-propose-button" onClick={handleRePropose}>
-          Re-Propose
+        {/* Conditional text based on satisfactionStatus */}
+        <p className="trade-feedback-text">
+          {satisfactionStatus ? "Thanks for the feedback!" : "Satisfied with your trade?"}
+        </p>
+
+        <button
+          className={`thumbs-up-button ${satisfactionStatus ? 'active' : ''}`}
+          onClick={handleThumbsUp}
+        >
+          👍
         </button>
       </div>
     </div>
   );
 };
 
-export default CancelledTradeView;
+export default CompletedTradeView;

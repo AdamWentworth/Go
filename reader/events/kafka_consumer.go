@@ -89,18 +89,19 @@ func startKafkaConsumer() {
 			// 1) Transform "pokemonUpdates" into a nested map (if any)
 			// ---------------------------------------------------------
 			transformed := make(map[string]interface{})
-			if pUpdates, ok := data["pokemonUpdates"].([]interface{}); ok && len(pUpdates) > 0 {
-				pokemonMap := make(map[string]interface{})
-				for _, raw := range pUpdates {
-					if item, castOk := raw.(map[string]interface{}); castOk {
-						if pk, pkOk := item["key"].(string); pkOk && pk != "" {
-							pokemonMap[pk] = item
+			var pokemonMap map[string]interface{}
+			{
+				pokemonMap = make(map[string]interface{})
+				if pUpdates, ok := data["pokemonUpdates"].([]interface{}); ok && len(pUpdates) > 0 {
+					for _, raw := range pUpdates {
+						if item, castOk := raw.(map[string]interface{}); castOk {
+							if pk, pkOk := item["key"].(string); pkOk && pk != "" {
+								pokemonMap[pk] = item
+							}
 						}
 					}
 				}
 				transformed["pokemon"] = pokemonMap
-			} else {
-				transformed["pokemon"] = map[string]interface{}{}
 			}
 
 			// ---------------------------------------------
@@ -109,6 +110,8 @@ func startKafkaConsumer() {
 			// ---------------------------------------------
 			tradeMap := make(map[string]interface{})
 			affectedTradeUserIDs := make(map[string]bool)
+
+			// We'll look for "completed" trades
 			if tUpdates, ok := data["tradeUpdates"].([]interface{}); ok && len(tUpdates) > 0 {
 				for _, raw := range tUpdates {
 					if item, castOk := raw.(map[string]interface{}); castOk {
@@ -118,10 +121,7 @@ func startKafkaConsumer() {
 						if keyOk && opOk && tdOk {
 							tradeMap[keyVal] = td
 
-							// Log key details of the trade update for debugging
-							// logrus.Infof("Processing trade update for key=%s, status=%v", keyVal, td["trade_status"])
-							// logrus.Debugf("Full tradeData: %+v", td)
-
+							// Gather userIDs for SSE broadcast
 							if proposingUsername, pOk := td["username_proposed"].(string); pOk && proposingUsername != "" {
 								if proposedID, err := getUserIDByUsername(proposingUsername); err == nil {
 									affectedTradeUserIDs[proposedID] = true
@@ -136,6 +136,13 @@ func startKafkaConsumer() {
 									logrus.Errorf("Failed to get userID for accepting username %s: %v", acceptingUsername, err)
 								}
 							}
+
+							// -------------------------------------------------------
+							// NEW LOGIC: If trade_status == "completed", do in-memory swap
+							// -------------------------------------------------------
+							if statusStr, sOk := td["trade_status"].(string); sOk && statusStr == "completed" {
+								doCompletedTradeSwap(td, &pokemonMap)
+							}
 						}
 					}
 				}
@@ -143,8 +150,7 @@ func startKafkaConsumer() {
 			transformed["trade"] = tradeMap
 
 			// --------------------------------------------------
-			// 2a) Fetch relatedInstance not owned by initiating user
-			//    so we do a single broadcast pass.
+			// 2a) (Optional) Fetch relatedInstance for reference
 			// --------------------------------------------------
 			relatedInstance := make(map[string]interface{})
 			for _, tdRaw := range tradeMap {
@@ -212,8 +218,8 @@ func startKafkaConsumer() {
 			}
 
 			// -------------------------------------------------------------------
-			// 5) Broadcast to all userIDs in "broadcastUserIDs" except the same
-			//    deviceID that triggered the update
+			// 5) Broadcast to all userIDs in "broadcastUserIDs"
+			//    except the same deviceID that triggered the update
 			// -------------------------------------------------------------------
 			clientsMutex.Lock()
 			for _, client := range clients {
@@ -236,6 +242,93 @@ func startKafkaConsumer() {
 	}()
 }
 
+// doCompletedTradeSwap is the "new logic" that handles trade_status="completed"
+// *** DOES NOT *** update the DB; only modifies the instances in memory.
+func doCompletedTradeSwap(tradeData map[string]interface{}, pokemonMapPtr *map[string]interface{}) {
+	// tradeData should contain "username_proposed", "username_accepting",
+	// "pokemon_instance_id_user_proposed", "pokemon_instance_id_user_accepting"
+	usernameProposed, _ := tradeData["username_proposed"].(string)
+	usernameAccepting, _ := tradeData["username_accepting"].(string)
+
+	propInstanceID, _ := tradeData["pokemon_instance_id_user_proposed"].(string)
+	accInstanceID, _ := tradeData["pokemon_instance_id_user_accepting"].(string)
+
+	if propInstanceID == "" || accInstanceID == "" {
+		logrus.Warnf("Cannot swap ownership because instance IDs are missing.")
+		return
+	}
+	if usernameProposed == "" || usernameAccepting == "" {
+		logrus.Warnf("Cannot swap ownership because one or both usernames are missing.")
+		return
+	}
+
+	// 1) Attempt to fetch from DB to get full details
+	var propInstance, accInstance PokemonInstance
+	if err := db.Where("instance_id = ?", propInstanceID).First(&propInstance).Error; err != nil {
+		logrus.Errorf("Failed to load proposed instance %s: %v", propInstanceID, err)
+		return
+	}
+	if err := db.Where("instance_id = ?", accInstanceID).First(&accInstance).Error; err != nil {
+		logrus.Errorf("Failed to load accepting instance %s: %v", accInstanceID, err)
+		return
+	}
+
+	// 2) In memory, mark them as "owned" by the opposite user
+	//    but do NOT save to DB. This is purely so the SSE shows them.
+	nowTs := time.Now().Unix()
+
+	// Proposed instance -> belongs to username_accepting
+	propInstance.UserID = "FAKE-" + usernameAccepting // or just keep the old user_id if you prefer
+	propInstance.LastUpdate = &nowTs
+	propInstance.IsOwned = true
+	propInstance.IsUnowned = false
+	propInstance.IsForTrade = false
+	propInstance.IsWanted = false
+
+	// Accepting instance -> belongs to username_proposed
+	accInstance.UserID = "FAKE-" + usernameProposed
+	accInstance.LastUpdate = &nowTs
+	accInstance.IsOwned = true
+	accInstance.IsUnowned = false
+	accInstance.IsForTrade = false
+	accInstance.IsWanted = false
+
+	// 3) Marshal each updated instance to JSON so we can attach all fields
+	propInstanceJson, err := json.Marshal(propInstance)
+	if err != nil {
+		logrus.Errorf("Failed to marshal propInstance %s: %v", propInstanceID, err)
+		return
+	}
+	accInstanceJson, err := json.Marshal(accInstance)
+	if err != nil {
+		logrus.Errorf("Failed to marshal accInstance %s: %v", accInstanceID, err)
+		return
+	}
+
+	// 4) Convert each back into a generic map, and add "username" for clarity
+	var propPayload map[string]interface{}
+	if err := json.Unmarshal(propInstanceJson, &propPayload); err != nil {
+		logrus.Errorf("Failed to unmarshal propInstance JSON: %v", err)
+		return
+	}
+	propPayload["username"] = usernameAccepting
+
+	var accPayload map[string]interface{}
+	if err := json.Unmarshal(accInstanceJson, &accPayload); err != nil {
+		logrus.Errorf("Failed to unmarshal accInstance JSON: %v", err)
+		return
+	}
+	accPayload["username"] = usernameProposed
+
+	// 5) Place them into the SSE "pokemon" map
+	pokemonMap := *pokemonMapPtr
+	pokemonMap[propInstanceID] = propPayload
+	pokemonMap[accInstanceID] = accPayload
+
+	logrus.Infof("[IN-MEMORY ONLY] Completed trade swap for propInst=%s -> user=%s, accInst=%s -> user=%s",
+		propInstanceID, usernameAccepting, accInstanceID, usernameProposed)
+}
+
 func getUserIDByUsername(username string) (string, error) {
 	var user User
 	if err := db.Where("username = ?", username).First(&user).Error; err != nil {
@@ -244,6 +337,7 @@ func getUserIDByUsername(username string) (string, error) {
 	return user.UserID, nil
 }
 
+// decompressData decompresses GZIP data from Kafka if needed.
 func decompressData(data []byte) ([]byte, error) {
 	reader, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {

@@ -91,9 +91,9 @@ type Trade struct {
 	IsLuckyTrade           bool       `gorm:"column:is_lucky_trade"`
 	TradeDustCost          *int       `gorm:"column:trade_dust_cost"`
 	TradeFriendshipLevel   string     `gorm:"column:trade_friendship_level"`
-	User1TradeSatisfaction *int       `gorm:"column:user_1_trade_satisfaction"`
-	User2TradeSatisfaction *int       `gorm:"column:user_2_trade_satisfaction"`
-	LastUpdate             *int64     `gorm:"column:last_update" json:"last_update"`
+	User1TradeSatisfaction bool       `gorm:"column:user_1_trade_satisfaction"`
+	User2TradeSatisfaction bool       `gorm:"column:user_2_trade_satisfaction"`
+	LastUpdate             int64      `gorm:"column:last_update;default:0"`
 }
 
 func (Trade) TableName() string {

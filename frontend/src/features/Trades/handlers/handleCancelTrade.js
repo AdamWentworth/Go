@@ -1,12 +1,13 @@
 // handleCancelTrade.js
 import { putBatchedTradeUpdates } from "../../../services/indexedDB";
 
-export async function handleCancelTrade({ trade, trades, setTradeData, periodicUpdates }) {
-  // Create an updated trade object with a cancelled date, new status, and updated timestamp
+export async function handleCancelTrade({ trade, trades, setTradeData, periodicUpdates, currentUsername }) {
+  // Create an updated trade object with a cancelled date, new status, updated timestamp, and who cancelled
   const updatedTrade = {
     ...trade,
     trade_cancelled_date: new Date().toISOString(), // Set cancelled date
     trade_status: 'cancelled',                      // Update status to 'cancelled'
+    trade_cancelled_by: currentUsername,            // Record who cancelled the trade
     last_update: Date.now(),                        // Update last_update timestamp
   };
 
@@ -38,3 +39,4 @@ export async function handleCancelTrade({ trade, trades, setTradeData, periodicU
   periodicUpdates();
   console.log("[handleCancelTrade] Completed.");
 }
+
