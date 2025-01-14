@@ -124,35 +124,31 @@ export const mergeOwnershipData = (oldData, newData, username) => {
 
     // Step 4: Ensure at most one instance per prefix has is_unowned: true
     const finalData = {};
-    const unownedTracker = new Set();
-    const ownedTracker = new Set();
+    const ownedTracker = new Set(); // Track prefixes for owned instances
 
     Object.keys(mergedData).forEach(key => {
         const prefix = extractPrefix(key);
 
         if (mergedData[key].is_owned === true) {
-            // Mark the prefix as having an owned key
+            // Keep all owned entries and add their prefix to the tracker
             ownedTracker.add(prefix);
+            finalData[key] = mergedData[key];
         }
     });
 
+    // Second pass to handle unowned and wanted instances
     Object.keys(mergedData).forEach(key => {
         const prefix = extractPrefix(key);
 
-        if (mergedData[key].is_unowned === true) {
-            if (ownedTracker.has(prefix)) {
-                // If the prefix already has an owned key, drop the unowned status
-                mergedData[key].is_unowned = false;
-            } else if (unownedTracker.has(prefix)) {
-                // If there's already an unowned key for this prefix, set extra unowned to false
-                mergedData[key].is_unowned = false;
-            } else {
-                // Otherwise, mark this as the unowned key for the prefix
-                unownedTracker.add(prefix);
+        if (mergedData[key].is_wanted === true) {
+            // Keep wanted entries even if an owned instance exists
+            finalData[key] = mergedData[key];
+        } else if (mergedData[key].is_unowned === true) {
+            // Keep unowned entries only if no owned instance exists for the prefix
+            if (!ownedTracker.has(prefix)) {
+                finalData[key] = mergedData[key];
             }
         }
-
-        finalData[key] = mergedData[key];
     });
 
     console.log("Merge process completed.");
