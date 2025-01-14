@@ -22,7 +22,7 @@ import { handleThumbsUpTrade } from './handlers/handleThumbsUpTrade'
 import './TradeCard.css';
 
 function TradeCard({ trade, relatedInstances, selectedStatus }) {
-  const { variants, ownershipData, loading, periodicUpdates } = usePokemonData();
+  const { setOwnershipData, variants, ownershipData, loading, periodicUpdates } = usePokemonData();
   const { setTradeData, trades } = useTradeData();
 
   const offeringDetails = useOfferingDetails(trade, variants, ownershipData);
@@ -41,7 +41,7 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
     await handleDeleteTrade({ trade, trades, setTradeData, periodicUpdates });
   };
   const handleComplete = async () => {
-    await handleCompleteTrade({ trade, trades, setTradeData, periodicUpdates });
+    await handleCompleteTrade({ trade, trades, setTradeData, periodicUpdates, relatedInstances, ownershipData, setOwnershipData });
   };
 
   const handleCancel = async () => {

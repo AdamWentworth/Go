@@ -37,8 +37,8 @@ function TradeList({ trades, relatedInstances, selectedStatus }) {
   }  
 
   useEffect(() => {
-    console.log('[TradeList] Trades:', sortedTrades);
-    console.log('[TradeList] Related Instances:', relatedInstances);
+    // console.log('[TradeList] Trades:', sortedTrades);
+    // console.log('[TradeList] Related Instances:', relatedInstances);
   }, [sortedTrades, relatedInstances]);
 
   return (

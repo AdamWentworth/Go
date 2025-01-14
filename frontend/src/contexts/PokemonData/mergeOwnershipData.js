@@ -1,6 +1,10 @@
-// mergeOwnershipData.js
-
 export const mergeOwnershipData = (oldData, newData, username) => {
+    // Early exit if newData is empty
+    if (!newData || Object.keys(newData).length === 0) {
+        console.log("No newData provided. Skipping merge and returning oldData.");
+        return oldData;
+    }
+
     const mergedData = {};
     const oldDataProcessed = {};
 
@@ -11,6 +15,22 @@ export const mergeOwnershipData = (oldData, newData, username) => {
     };
 
     console.log("Starting merge process...");
+
+    // Early username filtering for newData
+    Object.keys(newData).forEach(key => {
+        const entry = newData[key];
+        if (entry.username) {
+            console.log(`Entry ${key} has username: ${entry.username}.`);
+
+            if (entry.username === username) {
+                console.log(`Keeping entry ${key} because username matches provided username.`);
+            } else {
+                console.log(`Dropping entry ${key} because username does not match provided username (${username}).`);
+                delete newData[key];
+                delete oldData[key];
+            }
+        }
+    });
 
     // Step 1: Merge new data
     Object.keys(newData).forEach(key => {
@@ -32,9 +52,15 @@ export const mergeOwnershipData = (oldData, newData, username) => {
         oldDataProcessed[prefix].push(key);
     });
 
+    // Ensure every key from newData is in mergedData
+    Object.keys(newData).forEach(key => {
+        mergedData[key] = newData[key];
+    });
+
     // Step 2: Merge old data
     Object.keys(oldData).forEach(oldKey => {
         const prefix = extractPrefix(oldKey);
+
         if (!oldDataProcessed[prefix]) {
             // No new data with this prefix, add old data as is
             mergedData[oldKey] = oldData[oldKey];
@@ -49,34 +75,26 @@ export const mergeOwnershipData = (oldData, newData, username) => {
                 newData[newKey].is_wanted
             );
 
-            if (significantOld && !anySignificantNew) {
-                // Old data is significant and no new significant data, retain old
+            if (significantOld) {
                 mergedData[oldKey] = oldData[oldKey];
             }
         }
     });
 
     // Step 3: Integrate Mega Logic
-    // Drop all 'mega', 'shiny_mega', 'mega_x', or 'mega_y' entries that are 'is_unowned' 
-    // if newData has matching instances with the required flags
     Object.keys(mergedData).forEach(key => {
         if (key.includes("mega")) {
-            // Extract the leading numbers by removing "mega" from the key
             const leadingNumbersMatch = key.match(/^(\d+)/);
             if (leadingNumbersMatch) {
                 const leadingNumbers = leadingNumbersMatch[1];
-                // Find all related keys in newData that start with the same leading numbers
                 const relatedNewKeys = Object.keys(newData).filter(newKey => 
                     newKey.startsWith(leadingNumbers)
                 );
 
-                // Determine if it's shiny or X/Y
                 const isShinyMega = key.includes("shiny_mega");
                 const isMegaX = key.toLowerCase().includes("mega_x");
                 const isMegaY = key.toLowerCase().includes("mega_y");
 
-                // If new data has an entry with mega === true (and optionally shiny),
-                // then we drop the old unowned mega entry.
                 const hasRelevantMegaInNew = relatedNewKeys.some(newKey => {
                     const entry = newData[newKey];
                     if (!entry) return false;
@@ -90,7 +108,6 @@ export const mergeOwnershipData = (oldData, newData, username) => {
                     }
                 });
 
-                // Drop if we found a relevant new entry + old entry is_unowned
                 if (hasRelevantMegaInNew && mergedData[key].is_unowned === true) {
                     delete mergedData[key];
                 }
@@ -107,7 +124,6 @@ export const mergeOwnershipData = (oldData, newData, username) => {
 
         if (mergedData[key].is_unowned === true) {
             if (unownedTracker.has(prefix)) {
-                // Set the extra unowned instances to owned: false
                 mergedData[key].is_unowned = false;
             } else {
                 unownedTracker.add(prefix);
@@ -117,14 +133,7 @@ export const mergeOwnershipData = (oldData, newData, username) => {
         finalData[key] = mergedData[key];
     });
 
-    // Step 5 (NEW): If a Pokémon has `.username` defined,
-    // keep it only if `.username` === `username`. Otherwise, drop it.
-    Object.keys(finalData).forEach(key => {
-        if (finalData[key].username && finalData[key].username !== username) {
-            delete finalData[key];
-        }
-    });
-
+    console.log(`finalData:`, finalData);
     console.log("Merge process completed.");
     return finalData;
 };

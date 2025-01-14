@@ -278,7 +278,6 @@ func doCompletedTradeSwap(tradeData map[string]interface{}, pokemonMapPtr *map[s
 	nowTs := time.Now().Unix()
 
 	// Proposed instance -> belongs to username_accepting
-	propInstance.UserID = "FAKE-" + usernameAccepting // or just keep the old user_id if you prefer
 	propInstance.LastUpdate = &nowTs
 	propInstance.IsOwned = true
 	propInstance.IsUnowned = false
@@ -286,7 +285,6 @@ func doCompletedTradeSwap(tradeData map[string]interface{}, pokemonMapPtr *map[s
 	propInstance.IsWanted = false
 
 	// Accepting instance -> belongs to username_proposed
-	accInstance.UserID = "FAKE-" + usernameProposed
 	accInstance.LastUpdate = &nowTs
 	accInstance.IsOwned = true
 	accInstance.IsUnowned = false
