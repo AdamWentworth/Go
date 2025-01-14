@@ -1,6 +1,7 @@
 // ProposedTradeView.jsx
 import React from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
+import './ProposedTradeView.css';
 
 const ProposedTradeView = ({
   trade,
@@ -11,7 +12,7 @@ const ProposedTradeView = ({
   receivingHeading,
   handleDelete
 }) => (
-  <div className="trade-card">
+  <div className="trade-card proposed-trade-view">
     <div className="trade-pokemon">
       <div className="pokemon offering">
         {trade.username_proposed && (
@@ -33,11 +34,10 @@ const ProposedTradeView = ({
         )}
       </div>
 
-      <div className="trade-icon">
-        <img 
-          src="/images/pogo_trade_icon.png" 
-          alt="Trade Icon" 
-        />
+      <div className="center-column">
+        <div className="trade-icon">
+          <img src="/images/pogo_trade_icon.png" alt="Trade Icon" />
+        </div>
       </div>
 
       <div className="pokemon received">
@@ -62,7 +62,7 @@ const ProposedTradeView = ({
     </div>
 
     <div className="trade-actions">
-      <button onClick={handleDelete}>Delete</button>
+      <button className="delete-button" onClick={handleDelete}>Delete</button>
     </div>
   </div>
 );

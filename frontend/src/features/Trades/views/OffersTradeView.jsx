@@ -1,6 +1,7 @@
 // OffersTradeView.jsx
 import React from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
+import './OffersTradeView.css';
 
 const OffersTradeView = ({
   trade,
@@ -11,7 +12,7 @@ const OffersTradeView = ({
   handleAccept,
   handleDeny
 }) => (
-  <div className="trade-card">
+  <div className="trade-card offers-trade-view">
     <div className="trade-pokemon">
       <div className="pokemon offering">
         {currentUsername && (
@@ -33,11 +34,10 @@ const OffersTradeView = ({
         )}
       </div>
 
-      <div className="trade-icon">
-        <img 
-          src="/images/pogo_trade_icon.png" 
-          alt="Trade Icon" 
-        />
+      <div className="center-column">
+        <div className="trade-icon">
+          <img src="/images/pogo_trade_icon.png" alt="Trade Icon" />
+        </div>
       </div>
 
       <div className="pokemon received">
@@ -62,8 +62,8 @@ const OffersTradeView = ({
     </div>
 
     <div className="trade-actions">
-      <button onClick={handleAccept}>Accept</button>
-      <button onClick={handleDeny}>Deny</button>
+      <button className="accept-button" onClick={handleAccept}>Accept</button>
+      <button className="deny-button" onClick={handleDeny}>Deny</button>
     </div>
   </div>
 );

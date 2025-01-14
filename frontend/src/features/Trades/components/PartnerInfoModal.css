@@ -1,0 +1,24 @@
+/* PartnerInfoModal.css */
+.partner-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5); /* a semi-transparent overlay */
+    display: flex;
+    justify-content: center; /* center the modal horizontally */
+    align-items: center;     /* center the modal vertically */
+    z-index: 9999;
+}
+
+.partner-modal-overlay  .modal-content {
+    color: white;
+    background: #333;
+    padding: 1.5rem;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    position: relative; /* for close button positioning */
+  }
+  

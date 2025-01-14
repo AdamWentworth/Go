@@ -1,8 +1,9 @@
 // PendingTradeView.jsx
-
 import React, { useState } from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { revealPartnerInfo } from '../../../services/tradeService';
+import PartnerInfoModal from '../components/PartnerInfoModal';
+import './PendingTradeView.css';  // Ensure this CSS is imported
 
 const PendingTradeView = ({
   trade,
@@ -19,11 +20,8 @@ const PendingTradeView = ({
   const handleRevealInfo = async () => {
     setRevealInProgress(true);
     setError(null);
-
     try {
-      // Pass the entire trade object
       const data = await revealPartnerInfo(trade);
-      // data might be: { trainerCode: '1234-5678-9999', pokemonGoName: 'PikaPro' }
       setPartnerInfo(data);
     } catch (err) {
       setError(err.message);
@@ -32,9 +30,15 @@ const PendingTradeView = ({
     }
   };
 
+  const handleCloseModal = () => {
+    setPartnerInfo(null);
+    setError(null);
+  };
+
   return (
-    <div className="trade-card">
+    <div className="trade-card pending-trade-view">
       <div className="trade-pokemon">
+        {/* Offering Section */}
         <div className="pokemon offering">
           {trade.username_proposed && (
             <p className="receiving-username">{trade.username_proposed}</p>
@@ -55,10 +59,24 @@ const PendingTradeView = ({
           )}
         </div>
 
-        <div className="trade-icon">
-          <img src="/images/pogo_trade_icon.png" alt="Trade Icon" />
+        {/* Center Column: Reveal Button above Trade Icon */}
+        <div className="center-column">
+          <div className="reveal-partner-info">
+          <button
+            className="reveal-partner-button"
+            onClick={handleRevealInfo}
+            disabled={revealInProgress}
+          >
+            <span>Reveal Partner Info</span>
+          </button>
+            {error && <p className="error">{error}</p>}
+          </div>
+          <div className="trade-icon">
+            <img src="/images/pogo_trade_icon.png" alt="Trade Icon" />
+          </div>
         </div>
 
+        {/* Receiving Section */}
         <div className="pokemon received">
           {trade.username_accepting && (
             <p className="receiving-username">{trade.username_accepting}</p>
@@ -83,27 +101,18 @@ const PendingTradeView = ({
         </div>
       </div>
 
-      {/* New "Reveal Info" section */}
-      <div className="reveal-partner-info">
-        {!partnerInfo && !revealInProgress && (
-          <button onClick={handleRevealInfo}>Reveal Partner Info</button>
-        )}
-        {revealInProgress && <p>Revealing info...</p>}
-        {partnerInfo && (
-          <div className="partner-info">
-            <p><strong>Partner's Trainer Code:</strong> {partnerInfo.trainerCode}</p>
-            <p><strong>Partner's Pokémon GO Name:</strong> {partnerInfo.pokemonGoName}</p>
-          </div>
-        )}
-        {error && <p className="error">{error}</p>}
-      </div>
-
       <div className="trade-actions">
-        <button onClick={handleComplete}>Complete</button>
-        <button onClick={handleCancel}>Cancel</button>
+        <button className="complete-button" onClick={handleComplete}>Complete</button>
+        <button className="cancel-button" onClick={handleCancel}>Cancel</button>
       </div>
+      
+      <PartnerInfoModal
+        partnerInfo={partnerInfo}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };
 
 export default PendingTradeView;
+

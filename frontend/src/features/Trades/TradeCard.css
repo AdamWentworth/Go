@@ -1,33 +1,39 @@
-/* TradeCard.css
+/* TradeCard.css */
 
 /* Container for offering and receiving sections */
 .trade-card .trade-pokemon {
     display: flex;
     justify-content: space-between;
-    align-items: center; /* Center items vertically */
-    gap: 20px;          /* Optional spacing between sections */
+    align-items: stretch;
+    gap: 20px;
   }
   
   /* Common styles for each Pokémon section */
-  .pokemon {
+  .trade-card .pokemon {
     flex: 1;
     text-align: center;
+  }
+
+  .trade-card .center-column {
+    display: flex;               /* Make it a flex container */
+    flex-direction: column;      /* Arrange children vertically */
+    align-items: center;         /* Center content horizontally */
+    justify-content: space-between; /* Separate top and centered sections */
+  }
+  
+  .trade-card .center-column .trade-icon {
+    flex-grow: 1;                 /* Let this section grow to fill the space */
+    display: flex;                /* Make it a flex container */
+    justify-content: center;      /* Center the image horizontally */
+    align-items: center;          /* Center the image vertically */
   }
   
   /* Images should be responsive */
   .trade-card .pokemon img {
     width: 100%;
     height: auto;
-    max-width: 150px;      /* Set a max size if needed */
+    max-width: 150px;
     margin-bottom: 10px;
-  }
-  
-  .trade-card .trade-icon {
-    flex-shrink: 0; /* Prevent shrinking */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 20px; /* Adjust spacing if needed */
   }
   
   .trade-card .trade-icon img {
@@ -36,12 +42,12 @@
   }
 
   .trade-card .trade-actions {
-    margin-top: 10px;
     text-align: center; /* Center buttons horizontally, adjust as needed */
   }
   
   .trade-card .trade-actions button {
     margin: 0 5px;
     padding: 8px 12px;
-    /* Additional styling properties */
   }
+
+  

@@ -1,0 +1,74 @@
+/* PendingTradeView.css */
+
+.pending-trade-view .reveal-partner-button {
+    background-color: #28a745; /* A vibrant green color */
+    color: white; /* White text for contrast */
+    font-size: 1.5rem; /* Make the font larger */
+    padding: 0.75rem 1rem; /* Add padding for a larger button */
+    border: none; /* Remove default borders */
+    border-radius: 8px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease; /* Smooth transition on hover */
+  }
+  
+  .pending-trade-view  .reveal-partner-button:hover {
+    background-color: #218838; /* Darker green on hover */
+  }
+  
+  .pending-trade-view  .reveal-partner-button:active {
+    background-color: #1e7e34; /* Even darker green when clicked */
+  }
+  
+  .pending-trade-view .reveal-partner-button:focus {
+    outline: 2px solid #155724; /* Add focus outline for accessibility */
+    outline-offset: 2px;
+  }
+  
+  .pending-trade-view .complete-button {
+    background-color: #007bff; /* Blue color */
+    color: white;
+    font-size: 1.2rem;       /* Slightly smaller than the reveal button */
+    padding: 0.5rem 1rem;    /* Adjusted padding for a smaller button */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .pending-trade-view  .complete-button:hover {
+    background-color: #0069d9; /* Darker blue on hover */
+  }
+  
+  .pending-trade-view .complete-button:active {
+    background-color: #005cbf; /* Even darker blue when clicked */
+  }
+  
+  .pending-trade-view .complete-button:focus {
+    outline: 2px solid #004085; /* Focus outline for accessibility */
+    outline-offset: 2px;
+  }
+  
+  /* Styles for the Cancel button */
+  .pending-trade-view .cancel-button {
+    background-color: #dc3545; /* Red color */
+    color: white;
+    font-size: 1.2rem;       /* Slightly smaller than the reveal button */
+    padding: 0.5rem 1rem;    /* Adjusted padding for a smaller button */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .pending-trade-view .cancel-button:hover {
+    background-color: #c82333; /* Darker red on hover */
+  }
+  
+  .pending-trade-view .cancel-button:active {
+    background-color: #bd2130; /* Even darker red when clicked */
+  }
+  
+  .pending-trade-view .cancel-button:focus {
+    outline: 2px solid #721c24; /* Focus outline for accessibility */
+    outline-offset: 2px;
+  }

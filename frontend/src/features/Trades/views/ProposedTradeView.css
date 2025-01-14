@@ -1,0 +1,26 @@
+/* ProposedTradeView.css */
+
+ /* Styles for the delete button */
+  .proposed-trade-view .delete-button {
+    background-color: #dc3545; /* Red color */
+    color: white;
+    font-size: 1.2rem;       /* Slightly smaller than the reveal button */
+    padding: 0.5rem 1rem;    /* Adjusted padding for a smaller button */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .proposed-trade-view .delete-button:hover {
+    background-color: #c82333; /* Darker red on hover */
+  }
+  
+  .proposed-trade-view .delete-button:active {
+    background-color: #bd2130; /* Even darker red when clicked */
+  }
+  
+  .proposed-trade-view .delete-button:focus {
+    outline: 2px solid #721c24; /* Focus outline for accessibility */
+    outline-offset: 2px;
+  }

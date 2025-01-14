@@ -66,8 +66,10 @@ router.post('/reveal-partner-info', async (req, res) => {
     const revealData = {
       trainerCode: partnerUser.trainerCode || null,
       pokemonGoName: partnerUser.pokemonGoName || null,
+      location: partnerUser.location || null,
+      coordinates: partnerUser.coordinates || { latitude: null, longitude: null },
     };
-
+    
     logger.info(`Reveal Partner Info: Successfully returning partner info for user=${partnerUsername}`);
     return res.json(revealData);
   } catch (err) {
