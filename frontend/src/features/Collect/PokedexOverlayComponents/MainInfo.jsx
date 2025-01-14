@@ -62,7 +62,7 @@ function MainInfo({ pokemon, isMale, toggleGender }) {
       <div className="stat-gauge">
         <div className="stat-text"><strong>Attack:</strong> {pokemon.attack}</div>
         <div className="gauge-container">
-          <div className="gauge" style={{ width: calculateWidth(pokemon.attack, 400), backgroundColor: '#ae4c4c' }}></div>
+          <div className="gauge" style={{ width: calculateWidth(pokemon.attack, 450), backgroundColor: '#ae4c4c' }}></div>
         </div>
       </div>
       <div className="stat-gauge">
@@ -74,7 +74,7 @@ function MainInfo({ pokemon, isMale, toggleGender }) {
       <div className="stat-gauge">
         <div className="stat-text"><strong>Stamina:</strong> {pokemon.stamina}</div>
         <div className="gauge-container">
-          <div className="gauge" style={{ width: calculateWidth(pokemon.stamina, 400), backgroundColor: '#4c7aae' }}></div>
+          <div className="gauge" style={{ width: calculateWidth(pokemon.stamina, 500), backgroundColor: '#4c7aae' }}></div>
         </div>
       </div>
 

@@ -40,19 +40,23 @@ const EvolutionShortcut = ({
         );
       }
     } else {
-      // Otherwise, we assume it is a Mega evolution
-      let variantTypes = ['mega'];
-
-      if (form?.toUpperCase() === 'X') {
-        variantTypes.push('mega_x');
-      } else if (form?.toUpperCase() === 'Y') {
-        variantTypes.push('mega_y');
+      // Handle both Mega and Primal forms here
+      let variantTypes = [];
+      if(form === 'primal') {
+        variantTypes.push('primal');
+      } else {
+        variantTypes.push('mega');
+        if(form?.toUpperCase() === 'X') {
+          variantTypes.push('mega_x');
+        } else if(form?.toUpperCase() === 'Y') {
+          variantTypes.push('mega_y');
+        }
       }
-
+  
       const selectedPokemonData = allPokemonData.find(
         (p) => p.pokemon_id === pokemonId && variantTypes.includes(p.variantType)
       );
-
+  
       if (selectedPokemonData) {
         setSelectedPokemon(selectedPokemonData);
       } else {
@@ -64,7 +68,7 @@ const EvolutionShortcut = ({
         );
       }
     }
-  };
+  };  
 
   const onRevertToBaseClick = (pokemonId) => {
     const baseForm = allPokemonData.find(
@@ -80,6 +84,7 @@ const EvolutionShortcut = ({
   };
 
   const isCurrentMega = currentPokemon?.variantType?.includes('mega');
+  const isCurrentPrimal = currentPokemon?.variantType?.includes('primal');
 
   return (
     <div className="evolution-shortcut">
@@ -121,33 +126,44 @@ const EvolutionShortcut = ({
         </div>
       )}
   
-      {/* Mega evolution section (hidden if current Pokémon is Mega) */}
-      {!isCurrentMega && Array.isArray(megaEvolutions) && megaEvolutions.length > 0 && (
+      {/* Mega/Primal evolution section (hidden if current Pokémon is Mega) */}
+      {!(isCurrentMega || isCurrentPrimal) && Array.isArray(megaEvolutions) && megaEvolutions.length > 0 && (
         <div className="evolution-list evolves-to mega-evolutions">
-          {megaEvolutions.map((mega) => (
-            <div
-              key={mega.id}
-              className="evolution-item"
-              onClick={() => onEvolutionClick(currentPokemon.pokemon_id, mega.form)}
-            >
-              <img
-                src={
-                  mega.image_url 
-                    ? mega.image_url 
-                    : `/images/default/pokemon_${mega.id}.png`
+          {megaEvolutions.map((mega) => {
+            // Use truthiness to determine if this evolution is Primal
+            const isPrimal = !!mega.primal; 
+            const titlePrefix = isPrimal ? 'Primal' : 'Mega';
+
+            return (
+              <div
+                key={mega.id}
+                className="evolution-item"
+                onClick={() => 
+                  onEvolutionClick(
+                    currentPokemon.pokemon_id, 
+                    isPrimal ? 'primal' : mega.form
+                  )
                 }
-                alt={`Mega ${currentPokemon.name}${mega.form ? ` ${mega.form}` : ''}`}
-              />
-              <span>
-                Mega {currentPokemon.name}{mega.form ? ` ${mega.form}` : ''}
-              </span>
-            </div>
-          ))}
+              >
+                <img
+                  src={
+                    mega.image_url 
+                      ? mega.image_url 
+                      : `/images/default/pokemon_${mega.id}.png`
+                  }
+                  alt={`${titlePrefix} ${currentPokemon.name}${mega.form ? ` ${mega.form}` : ''}`}
+                />
+                <span>
+                  {titlePrefix} {currentPokemon.name}{mega.form ? ` ${mega.form}` : ''}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
   
       {/* Revert to base form */}
-      {isCurrentMega && (
+      {(isCurrentMega || isCurrentPrimal) && (
         <div className="evolution-list revert-to-base">
           <div
             className="evolution-item"

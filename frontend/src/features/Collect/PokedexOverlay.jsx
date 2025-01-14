@@ -52,8 +52,9 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
   const chargedMoves = pokemon.moves.filter(move => move.is_fast === 0);
   const showShinyWindow = pokemon.shiny_available === 1;
   const isMega = pokemon.variantType && pokemon.variantType.includes("mega"); // Check if the Pokémon is a mega variant
+  const isPrimal = pokemon.variantType && pokemon.variantType.includes("primal"); // Check if the Pokémon is a mega variant
   const showCostumesWindow = !isMega && Array.isArray(pokemon.costumes) && pokemon.costumes.length > 0; // Only show costumes if not mega
-  const showShadowWindow = !isMega && pokemon.date_shadow_available && pokemon.date_shadow_available.trim() !== '';
+  const showShadowWindow = !isMega && !isPrimal && pokemon.date_shadow_available && pokemon.date_shadow_available.trim() !== '';
 
   const switchOverlay = (newPokemonData) => {
     setCurrentPokemon(newPokemonData);
@@ -249,7 +250,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
             />
           </WindowOverlay>
         )}
-        {currentPokemon.megaEvolutions && currentPokemon.megaEvolutions.length > 0 && !isMega && (
+        {currentPokemon.megaEvolutions && currentPokemon.megaEvolutions.length > 0 && !isMega &&!isPrimal && (
           <WindowOverlay onClose={onClose} className="overlay-mega-evolutions">
             <EvolutionShortcut
               megaEvolutions={currentPokemon.megaEvolutions}
@@ -261,7 +262,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
           </WindowOverlay>
           
         )}
-        {currentPokemon.megaEvolutions && currentPokemon.megaEvolutions.length > 0 && isMega && (
+        {currentPokemon.megaEvolutions && currentPokemon.megaEvolutions.length > 0 && (isMega || isPrimal) && (
           <WindowOverlay onClose={onClose} className="overlay-evolves-from">
             <EvolutionShortcut
               megaEvolutions={currentPokemon.megaEvolutions}

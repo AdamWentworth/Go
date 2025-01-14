@@ -1,9 +1,9 @@
 /* MainInfo.css */
 
 .type-section img {
-    padding: 5px;
-    margin-top: -15px;
-    margin-bottom: -20px;
+    padding: 3px;
+    margin-top: 0px;
+    margin-bottom: -10px;
     width: 24px;
     height: 24px;
 }
@@ -83,5 +83,5 @@
     cursor: pointer;
     width: 40px; /* Set your desired width */
     height: 40px; /* Set your desired height */
-    transform: translate(-10px, 10px); /* Optional: fine-tune position, negative X moves left, positive Y moves down */
+    transform: translate(-10px, -10px); /* Optional: fine-tune position, negative X moves left, positive Y moves down */
 }
