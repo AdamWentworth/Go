@@ -221,6 +221,22 @@ func GetPokemonInstancesByUsername(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve instances"})
 	}
 
+	// Get all pending trades that involve any of these instances
+	var pendingTrades []Trade
+	if err := db.Where("trade_status = ? AND (user_id_proposed = ? OR user_id_accepting = ?)",
+		"pending", user.UserID, user.UserID).
+		Find(&pendingTrades).Error; err != nil {
+		logrus.Errorf("Error retrieving pending trades for user_id %s: %v", user.UserID, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve pending trades"})
+	}
+
+	// Create a map of instance IDs that are involved in pending trades
+	pendingTradeInstances := make(map[string]bool)
+	for _, trade := range pendingTrades {
+		pendingTradeInstances[trade.PokemonInstanceIDUserProposed] = true
+		pendingTradeInstances[trade.PokemonInstanceIDUserAccepting] = true
+	}
+
 	// Prepare the response data
 	responseData := make(map[string]interface{})
 	for _, instance := range instances {
@@ -249,7 +265,7 @@ func GetPokemonInstancesByUsername(c *fiber.Ctx) error {
 			"favorite":         instance.Favorite,
 			"is_unowned":       instance.IsUnowned,
 			"is_owned":         instance.IsOwned,
-			"is_for_trade":     instance.IsForTrade,
+			"is_for_trade":     instance.IsForTrade && !pendingTradeInstances[instance.InstanceID], // Update is_for_trade based on pending trades
 			"is_wanted":        instance.IsWanted,
 			"not_trade_list":   instance.NotTradeList,
 			"not_wanted_list":  instance.NotWantedList,
