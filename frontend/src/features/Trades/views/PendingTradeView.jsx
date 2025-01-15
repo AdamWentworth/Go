@@ -1,5 +1,4 @@
 // PendingTradeView.jsx
-
 import React, { useState } from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { revealPartnerInfo } from '../../../services/tradeService';
@@ -17,23 +16,28 @@ const PendingTradeView = ({
   const [partnerInfo, setPartnerInfo] = useState(null);
   const [error, setError] = useState(null);
   const [revealInProgress, setRevealInProgress] = useState(false);
+  const [completionInProgress, setCompletionInProgress] = useState(false);
 
   const storedUser = localStorage.getItem('user');
   const currentUsername = storedUser ? JSON.parse(storedUser).username : '';
 
-  // Decide who is on the left vs. right
   const isCurrentUserProposer = (trade.username_proposed === currentUsername);
+  const userConfirmationField = isCurrentUserProposer 
+    ? 'user_proposed_completion_confirmed' 
+    : 'user_accepting_completion_confirmed';
+  const partnerConfirmationField = isCurrentUserProposer 
+    ? 'user_accepting_completion_confirmed' 
+    : 'user_proposed_completion_confirmed';
+
+  const hasUserConfirmed = trade[userConfirmationField];
+  const hasPartnerConfirmed = trade[partnerConfirmationField];
 
   const leftDetails = isCurrentUserProposer ? offeringDetails : receivingCombinedDetails;
   const rightDetails = isCurrentUserProposer ? receivingCombinedDetails : offeringDetails;
-
-  // Usernames for display
   const leftUsername = isCurrentUserProposer ? trade.username_proposed : trade.username_accepting;
   const rightUsername = isCurrentUserProposer ? trade.username_accepting : trade.username_proposed;
-
-  // Headings (optional - adjust as desired)
   const leftHeading = 'Your Pokémon';
-  const rightHeading = 'Trade Partner’s Pokémon';
+  const rightHeading = "Trade Partner's Pokémon";
 
   const handleRevealInfo = async () => {
     setRevealInProgress(true);
@@ -51,6 +55,34 @@ const PendingTradeView = ({
   const handleCloseModal = () => {
     setPartnerInfo(null);
     setError(null);
+  };
+
+  const handleCompleteClick = async () => {
+    setCompletionInProgress(true);
+    try {
+      await handleComplete(trade);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCompletionInProgress(false);
+    }
+  };
+
+  const getCompleteButtonText = () => {
+    if (hasUserConfirmed) {
+      return hasPartnerConfirmed ? "Trade Complete!" : "Awaiting Partner...";
+    }
+    return "Confirm Complete";
+  };
+
+  const getCompleteButtonClass = () => {
+    const baseClass = "complete-button";
+    if (hasUserConfirmed) {
+      return hasPartnerConfirmed 
+        ? `${baseClass} completed` 
+        : `${baseClass} awaiting-partner`;
+    }
+    return baseClass;
   };
 
   return (
@@ -113,10 +145,18 @@ const PendingTradeView = ({
       </div>
 
       <div className="trade-actions">
-        <button className="complete-button" onClick={handleComplete}>
-          Complete
+        <button 
+          className={getCompleteButtonClass()}
+          onClick={handleCompleteClick}
+          disabled={completionInProgress || (hasPartnerConfirmed && hasUserConfirmed)}
+        >
+          {getCompleteButtonText()}
         </button>
-        <button className="cancel-button" onClick={handleCancel}>
+        <button 
+          className="cancel-button" 
+          onClick={handleCancel}
+          disabled={completionInProgress}
+        >
           Cancel
         </button>
       </div>

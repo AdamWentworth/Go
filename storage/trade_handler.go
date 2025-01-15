@@ -286,6 +286,15 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				}
 			}
 
+			// Check completion confirmations when transitioning from pending to completed
+			if existingTrade.TradeStatus == "pending" && updates.TradeStatus == "completed" {
+				if !updates.UserProposedCompletionConfirmed || !updates.UserAcceptingCompletionConfirmed {
+					logrus.Warnf("Cannot complete trade %s: both users must confirm completion first. Proposed: %v, Accepting: %v",
+						tradeID, updates.UserProposedCompletionConfirmed, updates.UserAcceptingCompletionConfirmed)
+					return nil // Skip update but don't fail the transaction
+				}
+			}
+
 			// *** STORE OLD STATUS BEFORE UPDATING ***
 			oldStatus := existingTrade.TradeStatus
 

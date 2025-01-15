@@ -1,81 +1,77 @@
 // handleCompleteTrade.js
 import { putBatchedTradeUpdates } from "../../../services/indexedDB";
 
-export async function handleCompleteTrade({ trade, trades, setTradeData, periodicUpdates, relatedInstances, ownershipData, setOwnershipData }) {
-
-  // Create an updated trade object with accepted date and new status
+export async function handleCompleteTrade({ 
+  trade, 
+  trades, 
+  setTradeData, 
+  periodicUpdates, 
+  relatedInstances, 
+  ownershipData, 
+  setOwnershipData,
+  currentUsername 
+}) {
+  // Determine which confirmation field to update based on the current user
+  const isProposer = currentUsername === trade.username_proposed;
+  const confirmationField = isProposer 
+    ? 'user_proposed_completion_confirmed'
+    : 'user_accepting_completion_confirmed';
+  
+  // Create an updated trade object
   const updatedTrade = {
     ...trade,
-    trade_completed_date: new Date().toISOString(), // Set completed date to current time
-    trade_status: 'completed',                     // Update status to 'completed'
+    [confirmationField]: true,  // Set the appropriate confirmation field
     last_update: Date.now(),
   };
 
-  // Update the trades collection with the modified trade
+  // Check if both users have confirmed
+  const bothConfirmed = isProposer
+    ? (updatedTrade.user_proposed_completion_confirmed && trade.user_accepting_completion_confirmed)
+    : (trade.user_proposed_completion_confirmed && updatedTrade.user_accepting_completion_confirmed);
+
+  // Only set completed status if both users have confirmed
+  if (bothConfirmed) {
+    updatedTrade.trade_status = 'completed';
+    updatedTrade.trade_completed_date = new Date().toISOString();
+    
+    // Handle username swaps only when trade is fully completed
+    const idProposed = trade.pokemon_instance_id_user_proposed;
+    const idAccepting = trade.pokemon_instance_id_user_accepting;
+    
+    let instanceProposedData = relatedInstances[idProposed] || ownershipData[idProposed];
+    let instanceAcceptingData = relatedInstances[idAccepting] || ownershipData[idAccepting];
+    
+    if (instanceProposedData && instanceAcceptingData) {
+      instanceProposedData.username = trade.username_accepting;
+      instanceAcceptingData.username = trade.username_proposed;
+      
+      const newDataForOwnership = {
+        [idProposed]: instanceProposedData,
+        [idAccepting]: instanceAcceptingData,
+      };
+      
+      setOwnershipData(newDataForOwnership);
+    }
+  }
+
+  // Update the trades collection
   const updatedTrades = { ...trades, [trade.trade_id]: updatedTrade };
 
-  // Persist the updated trades data using setTradeData
   try {
     await setTradeData(updatedTrades);
-  } catch (error) {
-    console.error("[handleCompleteTrade] Error persisting trade data:", error);
-  }
-
-  
-  // --- New logic for handling username swaps and updating ownership data ---
-  
-  // 1. Extract instance IDs from the trade
-  const idProposed = trade.pokemon_instance_id_user_proposed;
-  const idAccepting = trade.pokemon_instance_id_user_accepting;
-  
-  // 2. Lookup instance data for both instances
-  let instanceProposedData;
-  let instanceAcceptingData;
-  
-  // Try to find the proposed instance first in relatedInstances, otherwise in ownershipData
-  if (relatedInstances[idProposed]) {
-    instanceProposedData = relatedInstances[idProposed];
-  } else {
-    instanceProposedData = ownershipData[idProposed];
-  }
-  
-  // Similarly, find the accepting instance
-  if (relatedInstances[idAccepting]) {
-    instanceAcceptingData = relatedInstances[idAccepting];
-  } else {
-    instanceAcceptingData = ownershipData[idAccepting];
-  }
-  
-  // 3. Swap usernames between the two instances if both were found
-  if (instanceProposedData && instanceAcceptingData) {
-    // Assign the proposed instance the username of the accepting user,
-    // and vice versa.
-    instanceProposedData.username = trade.username_accepting;
-    instanceAcceptingData.username = trade.username_proposed;
-  } else {
-    console.warn("[handleCompleteTrade] One or both instances not found for swapping usernames.");
-  }
-  
-  // 4. Prepare new data object for setOwnershipData using the updated instances
-  const newDataForOwnership = {};
-  if (instanceProposedData) newDataForOwnership[idProposed] = instanceProposedData;
-  if (instanceAcceptingData) newDataForOwnership[idAccepting] = instanceAcceptingData;
-  
-  // 5. Call setOwnershipData with the newly prepared data
-  setOwnershipData(newDataForOwnership);
-  
-  // Prepare batched update data
-  const batchedUpdateData = {
-    operation: 'updateTrade',
-    tradeData: updatedTrade,
-  };
-  
-  try {
+    
+    // Prepare batched update data
+    const batchedUpdateData = {
+      operation: 'updateTrade',
+      tradeData: updatedTrade,
+    };
+    
     await putBatchedTradeUpdates(updatedTrade.trade_id, batchedUpdateData);
   } catch (error) {
-    console.error("[handleCompleteTrade] Error in putBatchedTradeUpdates:", error);
+    console.error("[handleCompleteTrade] Error updating trade:", error);
+    throw error;
   }
-  
+
   periodicUpdates();
-  console.log("[handleCompleteTrade] Completed.");
+  return updatedTrade;
 }

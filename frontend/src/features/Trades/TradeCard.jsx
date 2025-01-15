@@ -41,7 +41,7 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
     await handleDeleteTrade({ trade, trades, setTradeData, periodicUpdates });
   };
   const handleComplete = async () => {
-    await handleCompleteTrade({ trade, trades, setTradeData, periodicUpdates, relatedInstances, ownershipData, setOwnershipData });
+    await handleCompleteTrade({ trade, trades, setTradeData, periodicUpdates, relatedInstances, ownershipData, setOwnershipData, currentUsername });
   };
 
   const handleCancel = async () => {

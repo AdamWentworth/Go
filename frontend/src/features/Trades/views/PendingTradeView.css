@@ -47,6 +47,21 @@
     outline: 2px solid #004085; /* Focus outline for accessibility */
     outline-offset: 2px;
   }
+
+  .pending-trade-view .complete-button.completed {
+    background-color: #28a745;
+    cursor: default;
+  }
+  
+  .pending-trade-view .complete-button.awaiting-partner {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .pending-trade-view .complete-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
   
   /* Styles for the Cancel button */
   .pending-trade-view .cancel-button {

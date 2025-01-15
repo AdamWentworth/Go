@@ -74,6 +74,8 @@ export async function proposeTrade(tradeData) {
         trade_friendship_level: TRADE_FRIENDSHIP_LEVELS[trade_friendship_level],
         user_1_trade_satisfaction: null,
         user_2_trade_satisfaction: null,
+        user_proposed_completion_confirmed: null,
+        user_accepting_completion_confirmed: null,
         trade_status: TRADE_STATUSES.PROPOSED,
         trade_accepted_date: null,
         trade_proposal_date: new Date().toISOString(),
