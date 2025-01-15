@@ -1,11 +1,11 @@
 /* Light-Mode.css */
-.list-view-row, .overlay-content {
+.list-view-row, .overlay-content, .pokemon-action-overlay .overlay-content, .update-for-trade-modal-overlay .modal-content, .trade-proposal-container, .trade-card, .mega-modal-content, .modal-overlay .modal {
     background-color: #e0f0e5;
 }
 .pokemon-card.highlighted {
     background-color: #e3f7dc;
 }
-.navbar h1, .evo-line-checkbox, .overlay-content, .iv-input, .iv-value, .pokemon-search-bar, .list-view, .moves-search-select, .moves-search-move-add-icon, .moves-search-move-add-icon, .list-view-container, .header .toggle-button, .header .collect-ui-toggle {
+.navbar h1, .evo-line-checkbox, .overlay-content, .iv-input, .iv-value, .pokemon-search-bar, .list-view, .moves-search-select, .moves-search-move-add-icon, .moves-search-move-add-icon, .list-view-container, .header .toggle-button, .header .collect-ui-toggle, .pokemon-action-overlay .overlay-content, .update-for-trade-modal-overlay .instance-item, .update-for-trade-modal-overlay .modal-content h2#modal-title, .move-name, .trade-card, .loading-text, .mega-modal-content, .mega-pokemon-item, .modal-overlay .modal {
     color:black
 }
 .header .toggle-button, .header .collect-ui-toggle {
@@ -15,7 +15,7 @@
 .evo-line-custom-checkbox, .add-move-button, .moves-search-add-move-button {
     border: 2px solid black
 }
-.navbar, .header, .pokemon-search-bar, .pokemon-container, .move-select, .move-select option, .App, .moves-search-select {
+.navbar, .header, .pokemon-search-bar, .pokemon-container, .move-select, .move-select option, .App, .moves-search-select, .update-for-trade-modal-overlay .instance-item, .mega-pokemon-item {
     background-color: #f8fff9;
 }
 

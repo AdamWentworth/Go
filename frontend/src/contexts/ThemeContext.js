@@ -8,10 +8,21 @@ export function useTheme() {
 }
 
 export const ThemeProvider = ({ children }) => {
-    const [isLightMode, setIsLightMode] = useState(false);
+    // Initialize state by reading from localStorage
+    const [isLightMode, setIsLightMode] = useState(() => {
+        // Try to fetch the saved theme preference from localStorage
+        const storedPreference = localStorage.getItem('isLightMode');
+        // If found, parse it (since it's stored as a string), otherwise default to false (dark mode)
+        return storedPreference !== null ? JSON.parse(storedPreference) : false;
+    });
 
     const toggleTheme = () => {
-        setIsLightMode(!isLightMode);
+        setIsLightMode((prevMode) => {
+            const newMode = !prevMode;
+            // Save the updated preference to localStorage
+            localStorage.setItem('isLightMode', JSON.stringify(newMode));
+            return newMode;
+        });
     };
 
     return (
