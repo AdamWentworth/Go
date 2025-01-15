@@ -19,7 +19,7 @@
         padding-bottom: 10px !important;
     }
     .account-page .account-form {
-        transform: scale(.8);
+        transform: scale(.70);
         font-size: 0.9em;
     }
     .user-details input {
@@ -44,6 +44,10 @@
     .account-form button[type="button"] {
         font-size: 0.5rem;
         height: 31px !important;
+    }
+    .account-form .buttons > button {
+        padding: 0px;
+        font-size: 0.65rem;
     }
 }
 

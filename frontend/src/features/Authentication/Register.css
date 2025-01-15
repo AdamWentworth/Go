@@ -50,6 +50,9 @@
         font-size: 0.6rem;
         height: 35px;
     }
+    /* .register-form input {
+        padding: 3px;
+    } */
 }
 
 @media (min-width: 481px) and (max-width: 767px) {

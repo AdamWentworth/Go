@@ -5,21 +5,22 @@
     top: 5%;
     left: 50%;
     transform: translateX(-50%);
-    width: 80%;
+    width: 30%;
     background: rgba(255, 255, 255, 0.95);
-    border: 1px solid #ddd;
+    /* border: 1px solid #ddd; */
     padding: 1rem;
     border-radius: 5px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     z-index: 1003;
     max-height: 50%;
     overflow-y: auto;
+    background-color: #333;
   }
   
   .location-options-overlay h4 {
     margin-top: 0;
     font-size: 16px;
-    color: #333;
+    color: white;
   }
   
   .dismiss-options-button {
@@ -40,15 +41,15 @@
   
   .location-button {
     display: block;
-    width: 100%;
+    width: 100%;             /* Fill the width of the parent <ul> */
+    text-align: center;      /* Center the button text */
     margin: 0.5rem 0;
-    padding: 0.5rem;
+    padding: 0.5rem 2rem;
     background-color: #007bff;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    text-align: left;
     transition: background-color 0.3s ease;
   }
   
@@ -56,3 +57,15 @@
     background-color: #0056b3;
   }
   
+  .location-options-overlay ul {
+    list-style-type: none;    /* Remove bullet points */
+    padding: 0;               /* Remove default padding */
+    margin: 0 auto;           /* Center the <ul> horizontally */
+    display: inline-block;    /* Shrink-wrap the content width */
+  }  
+  
+  @media (max-width: 480px) {
+    .location-options-overlay {
+      width: 70%;
+    }
+  }
