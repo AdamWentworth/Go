@@ -77,23 +77,25 @@ type Trade struct {
 	PokemonInstanceIDUserAccepting string `gorm:"column:pokemon_instance_id_user_accepting"`
 
 	// Nullable fields for handling NULL values
-	TraceID                *string    `gorm:"column:trace_id"`
-	UsernameProposed       string     `gorm:"column:username_proposed"`
-	UsernameAccepting      string     `gorm:"column:username_accepting"`
-	TradeStatus            string     `gorm:"column:trade_status"`
-	TradeProposalDate      *time.Time `gorm:"column:trade_proposal_date"`
-	TradeAcceptedDate      *time.Time `gorm:"column:trade_accepted_date"`
-	TradeCompletedDate     *time.Time `gorm:"column:trade_completed_date"`
-	TradeCancelledDate     *time.Time `gorm:"column:trade_cancelled_date"`
-	TradeCancelledBy       *string    `gorm:"column:trade_cancelled_by"`
-	IsSpecialTrade         bool       `gorm:"column:is_special_trade"`
-	IsRegisteredTrade      bool       `gorm:"column:is_registered_trade"`
-	IsLuckyTrade           bool       `gorm:"column:is_lucky_trade"`
-	TradeDustCost          *int       `gorm:"column:trade_dust_cost"`
-	TradeFriendshipLevel   string     `gorm:"column:trade_friendship_level"`
-	User1TradeSatisfaction bool       `gorm:"column:user_1_trade_satisfaction"`
-	User2TradeSatisfaction bool       `gorm:"column:user_2_trade_satisfaction"`
-	LastUpdate             int64      `gorm:"column:last_update;default:0"`
+	TraceID                          *string    `gorm:"column:trace_id"`
+	UsernameProposed                 string     `gorm:"column:username_proposed"`
+	UsernameAccepting                string     `gorm:"column:username_accepting"`
+	TradeStatus                      string     `gorm:"column:trade_status"`
+	UserProposedCompletionConfirmed  bool       `gorm:"column:user_proposed_completion_confirmed" json:"user_proposed_completion_confirmed"`
+	UserAcceptingCompletionConfirmed bool       `gorm:"column:user_accepting_completion_confirmed" json:"user_accepting_completion_confirmed"`
+	TradeProposalDate                *time.Time `gorm:"column:trade_proposal_date"`
+	TradeAcceptedDate                *time.Time `gorm:"column:trade_accepted_date"`
+	TradeCompletedDate               *time.Time `gorm:"column:trade_completed_date"`
+	TradeCancelledDate               *time.Time `gorm:"column:trade_cancelled_date"`
+	TradeCancelledBy                 *string    `gorm:"column:trade_cancelled_by"`
+	IsSpecialTrade                   bool       `gorm:"column:is_special_trade"`
+	IsRegisteredTrade                bool       `gorm:"column:is_registered_trade"`
+	IsLuckyTrade                     bool       `gorm:"column:is_lucky_trade"`
+	TradeDustCost                    *int       `gorm:"column:trade_dust_cost"`
+	TradeFriendshipLevel             string     `gorm:"column:trade_friendship_level"`
+	User1TradeSatisfaction           bool       `gorm:"column:user_1_trade_satisfaction"`
+	User2TradeSatisfaction           bool       `gorm:"column:user_2_trade_satisfaction"`
+	LastUpdate                       int64      `gorm:"column:last_update;default:0"`
 }
 
 func (Trade) TableName() string {

@@ -134,6 +134,10 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 		isLuckyTrade := parseOptionalBool(tradeData["is_lucky_trade"])
 		tradeDustCost := parseNullableInt(tradeData["trade_dust_cost"])
 
+		// Parse the new fields
+		userProposedCompletionConfirmed := parseOptionalBool(tradeData["user_proposed_completion_confirmed"])
+		userAcceptingCompletionConfirmed := parseOptionalBool(tradeData["user_accepting_completion_confirmed"])
+
 		// Default trade status
 		tradeStatus := fmt.Sprintf("%v", tradeData["trade_status"])
 		if tradeStatus == "" {
@@ -195,13 +199,15 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 			TradeCancelledDate: tradeCancelledDate,
 			TradeCancelledBy:   tradeCancelledBy,
 
-			IsSpecialTrade:         isSpecialTrade,
-			IsRegisteredTrade:      isRegisteredTrade,
-			IsLuckyTrade:           isLuckyTrade,
-			TradeDustCost:          tradeDustCost,
-			TradeFriendshipLevel:   friendshipLevel,
-			User1TradeSatisfaction: user1TradeSatisfaction,
-			User2TradeSatisfaction: user2TradeSatisfaction,
+			IsSpecialTrade:                   isSpecialTrade,
+			IsRegisteredTrade:                isRegisteredTrade,
+			IsLuckyTrade:                     isLuckyTrade,
+			TradeDustCost:                    tradeDustCost,
+			TradeFriendshipLevel:             friendshipLevel,
+			User1TradeSatisfaction:           user1TradeSatisfaction,
+			User2TradeSatisfaction:           user2TradeSatisfaction,
+			UserProposedCompletionConfirmed:  userProposedCompletionConfirmed, // New field
+			UserAcceptingCompletionConfirmed: userAcceptingCompletionConfirmed,
 
 			TraceID:    traceID,
 			LastUpdate: parsedLastUpdate,
