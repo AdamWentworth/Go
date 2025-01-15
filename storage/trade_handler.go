@@ -14,7 +14,7 @@ import (
 )
 
 // ---------------------
-// TRADES
+// TRADE VALIDATION
 // ---------------------
 
 // validTransitions defines allowed next statuses from a given current status.
@@ -44,6 +44,46 @@ func isValidTransition(oldStatus, newStatus string) bool {
 	}
 	return false
 }
+
+// isPokemonInPendingTrade checks if a Pokemon instance is currently involved in any pending trades
+func isPokemonInPendingTrade(tx *gorm.DB, instanceID string, excludeTradeID string) (bool, error) {
+	var count int64
+	err := tx.Model(&Trade{}).
+		Where("trade_status = ? AND (pokemon_instance_id_user_proposed = ? OR pokemon_instance_id_user_accepting = ?)",
+							"pending", instanceID, instanceID).
+		Not("trade_id = ?", excludeTradeID). // Exclude current trade when checking updates
+		Count(&count).Error
+
+	if err != nil {
+		logrus.Errorf("Error checking pending trades for instance %s: %v", instanceID, err)
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+// validatePokemonAvailability checks if both Pokemon instances are available for trading
+func validatePokemonAvailability(tx *gorm.DB, proposedInstanceID, acceptingInstanceID, tradeID string) error {
+	// Check proposed Pokemon
+	if isPending, err := isPokemonInPendingTrade(tx, proposedInstanceID, tradeID); err != nil {
+		return err
+	} else if isPending {
+		return fmt.Errorf("proposed Pokemon %s is already in a pending trade", proposedInstanceID)
+	}
+
+	// Check accepting Pokemon
+	if isPending, err := isPokemonInPendingTrade(tx, acceptingInstanceID, tradeID); err != nil {
+		return err
+	} else if isPending {
+		return fmt.Errorf("accepting Pokemon %s is already in a pending trade", acceptingInstanceID)
+	}
+
+	return nil
+}
+
+// ---------------------
+// TRADES
+// ---------------------
 
 // parseAndUpsertTrades processes incoming trade updates in a transactional manner
 // and enforces valid status transitions, chronological updates, etc.
@@ -176,6 +216,15 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 
 			if errors.Is(findErr, gorm.ErrRecordNotFound) {
 				// If trade not found: only create if not "deleted".
+				if tradeStatus == "proposed" {
+					if err := validatePokemonAvailability(tx,
+						updates.PokemonInstanceIDUserProposed,
+						updates.PokemonInstanceIDUserAccepting,
+						tradeID); err != nil {
+						logrus.Warnf("Trade creation failed: %v", err)
+						return nil // Skip creation but don't fail the transaction
+					}
+				}
 				if tradeStatus == "deleted" {
 					logrus.Infof("[DEBUG] Trade %s incoming status is 'deleted'; skipping creation.", tradeID)
 					return nil
@@ -218,6 +267,17 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				logrus.Warnf("Invalid status transition: %s -> %s for trade %s",
 					existingTrade.TradeStatus, updates.TradeStatus, tradeID)
 				return nil
+			}
+
+			// For existing trades transitioning to "pending", validate Pokemon availability
+			if existingTrade.TradeStatus != "pending" && updates.TradeStatus == "pending" {
+				if err := validatePokemonAvailability(tx,
+					updates.PokemonInstanceIDUserProposed,
+					updates.PokemonInstanceIDUserAccepting,
+					tradeID); err != nil {
+					logrus.Warnf("Cannot transition trade to pending: %v", err)
+					return nil // Skip update but don't fail the transaction
+				}
 			}
 
 			// *** STORE OLD STATUS BEFORE UPDATING ***

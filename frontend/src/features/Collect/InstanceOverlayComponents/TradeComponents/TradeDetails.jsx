@@ -3,6 +3,8 @@ import React, { useState, useContext, useEffect } from 'react';
 import './TradeDetails.css';
 import EditSaveComponent from '../EditSaveComponent.jsx';
 import { PokemonDataContext } from '../../../../contexts/PokemonDataContext.js';
+import { ModalProvider, useModal } from '../../../../contexts/ModalContext.js';
+
 import WantedListDisplay from './WantedListDisplay.jsx';
 
 import MirrorManager from './MirrorManager.jsx';
@@ -25,7 +27,7 @@ import PokemonActionOverlay from './PokemonActionOverlay.jsx';
 import TradeProposal from './TradeProposal.jsx'; 
 
 import { parsePokemonKey } from '../../../../utils/PokemonIDUtils.js';
-import { getAllFromDB, OWNERSHIP_DATA_STORE } from '../../../../services/indexedDB.js';
+import { getAllFromDB, OWNERSHIP_DATA_STORE, getAllFromTradesDB } from '../../../../services/indexedDB.js';
 
 import UpdateForTradeModal from './UpdateForTradeModal.jsx';
 
@@ -41,6 +43,7 @@ const TradeDetails = ({
   isEditable,
   username
 }) => {
+  const { alert } = useModal();
   const { not_wanted_list, wanted_filters } = pokemon.ownershipStatus;
   const [localNotWantedList, setLocalNotWantedList] = useState({
     ...not_wanted_list,
@@ -216,32 +219,58 @@ const TradeDetails = ({
     );
 
     if (tradeableInstances.length > 0) {
-      // Build the "matchedInstances" array
-      const { ownershipStatus, ...baseData } = selectedPokemon;
+      // 7) NEW: Check if any of the tradeable instances are already in pending trades
+      try {
+        const allTrades = await getAllFromTradesDB('pokemonTrades');
+        
+        // Filter to only pending trades
+        const pendingTrades = allTrades.filter(trade => trade.trade_status === "pending");
+        
+        // Filter out instances that are already in pending trades
+        const availableInstances = tradeableInstances.filter(instance => {
+          const instanceIsInPendingTrade = pendingTrades.some(trade => 
+            trade.pokemon_instance_id_user_proposed === instance.instance_id ||
+            trade.pokemon_instance_id_user_accepting === instance.instance_id
+          );
+          return !instanceIsInPendingTrade;
+        });
 
-      const matchedInstances = tradeableInstances.map((instance) => ({
-        ...baseData,
-        ownershipStatus: { ...instance },
-      }));
+        if (availableInstances.length === 0) {
+          alert("All instances of this Pokémon are currently involved in pending trades. Catch some more of this Pokémon to offer this trade or cancel your current pending trade.");
+          return;
+        }
 
-      const selectedPokemonWithMatches = {
-        matchedInstances,
-      };
+        // Build the "matchedInstances" array with only available instances
+        const { ownershipStatus, ...baseData } = selectedPokemon;
 
-      setTradeClickedPokemon(selectedPokemonWithMatches);
+        const matchedInstances = availableInstances.map((instance) => ({
+          ...baseData,
+          ownershipStatus: { ...instance },
+        }));
 
-      // Close the overlay
-      closeOverlay();
+        const selectedPokemonWithMatches = {
+          matchedInstances,
+        };
 
-      // Finally open the TradeProposal
-      setIsTradeProposalOpen(true);
-    } else {
-        // User owns it but it isn't listed for trade
-        // Instead of alert, open the UpdateForTradeModal
-        setOwnedInstancesToTrade(ownedInstances);
-        setCurrentBaseKey(selectedBaseKey); // Set the current baseKey
-        setIsUpdateForTradeModalOpen(true);
+        setTradeClickedPokemon(selectedPokemonWithMatches);
+
+        // Close the overlay
+        closeOverlay();
+
+        // Finally open the TradeProposal
+        setIsTradeProposalOpen(true);
+      } catch (error) {
+        console.error("Failed to fetch or process trades data:", error);
+        alert("Could not verify trade availability. Please try again.");
+        return;
       }
+    } else {
+      // User owns it but it isn't listed for trade
+      // Instead of alert, open the UpdateForTradeModal
+      setOwnedInstancesToTrade(ownedInstances);
+      setCurrentBaseKey(selectedBaseKey); // Set the current baseKey
+      setIsUpdateForTradeModalOpen(true);
+    }
   };
 
   const closeOverlay = () => {
