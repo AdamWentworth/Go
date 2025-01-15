@@ -37,6 +37,7 @@
   justify-content: center;
   align-items: center;
   overflow: hidden; /* Ensures background image stays within bounds */
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
 }
 
 .pokemon-variant-container .background-image {

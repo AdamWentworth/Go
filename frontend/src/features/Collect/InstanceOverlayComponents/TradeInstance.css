@@ -108,6 +108,10 @@
   z-index: 3;
 }
 
+.trade-instance .pokemon-image-container img {
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+}
+
 .trade-instance .name-container {
   width: 100%;
   display: flex;

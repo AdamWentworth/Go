@@ -15,6 +15,7 @@
     height: auto;
     display: block;
     margin: 0px auto;
+    filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.2));
 }
 
 /* Ensure IVDisplay takes full width */
@@ -101,6 +102,7 @@
     overflow-y: auto; /* Enable scrolling if needed */
     justify-items: center;
     padding: 5px;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
 }
 
 /* Specific styling for wanted Pokémon images in wantedPopup */

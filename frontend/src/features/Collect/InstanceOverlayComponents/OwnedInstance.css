@@ -136,6 +136,10 @@
   height: auto;
 }
 
+.owned-instance .pokemon-image-container img {
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+}
+
 .owned-instance .gender-lucky-row {
   display: flex;
   align-items: center;

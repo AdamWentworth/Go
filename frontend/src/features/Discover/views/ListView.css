@@ -71,6 +71,10 @@
     position: relative;
     margin: 0 auto;
   }
+
+  .list-view-row .center-column .pokemon-image-container img {
+    filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+  }
   
   .list-view-row .center-column .pokemon-image-container .pokemon-image {
     max-width: 100%;

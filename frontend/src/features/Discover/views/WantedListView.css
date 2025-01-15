@@ -30,6 +30,10 @@
   align-items: center;
 }
 
+.wanted-list-view .pokemon-first-column img {
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+}
+
 .wanted-list-view .pokemon-first-column .cp-display {
   margin-bottom: 10px;
 }
@@ -115,6 +119,7 @@
   height: 72px;
   object-fit: cover;
   border-radius: 8px;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.2));
 }
 
 .wanted-list-view .pokemon-image-container {
