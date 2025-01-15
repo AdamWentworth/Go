@@ -306,6 +306,34 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				return errUpdate
 			}
 
+			// *** NEW: Drop other trades if transitioning from proposed to pending ***
+			if oldStatus == "proposed" && updates.TradeStatus == "pending" {
+				var conflicts []Trade
+				err := tx.Where("trade_status = ? AND trade_id <> ? AND ("+
+					"pokemon_instance_id_user_proposed = ? OR "+
+					"pokemon_instance_id_user_accepting = ? OR "+
+					"pokemon_instance_id_user_proposed = ? OR "+
+					"pokemon_instance_id_user_accepting = ?)",
+					"proposed", tradeID,
+					updates.PokemonInstanceIDUserProposed,
+					updates.PokemonInstanceIDUserProposed,
+					updates.PokemonInstanceIDUserAccepting,
+					updates.PokemonInstanceIDUserAccepting).
+					Find(&conflicts).Error
+				if err != nil {
+					logrus.Errorf("Error finding conflicting trades for Trade %s: %v", tradeID, err)
+				} else {
+					for _, conflictTrade := range conflicts {
+						// Physically delete the conflicting trade
+						if delErr := tx.Delete(&Trade{}, "trade_id = ?", conflictTrade.TradeID).Error; delErr != nil {
+							logrus.Errorf("Failed to delete conflicting Trade %s: %v", conflictTrade.TradeID, delErr)
+						} else {
+							droppedTrades++
+						}
+					}
+				}
+			}
+
 			// ---------------------------------------------------------
 			// Now handle the "pending" → "completed" swap logic
 			// ---------------------------------------------------------

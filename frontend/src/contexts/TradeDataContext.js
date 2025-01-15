@@ -89,16 +89,59 @@ export const TradeDataProvider = ({ children }) => {
   // Functions that depend on setTradeData and setRelatedInstances
   const updateTradeData = useCallback(async (newTrades, newInstances) => {
     try {
+      // Object to accumulate all trade updates (new and deletions).
+      const combinedTradeUpdates = newTrades ? { ...newTrades } : {};
+  
+      // If there are new trades, evaluate conflicts for those transitioning to "pending".
       if (newTrades) {
-        await setTradeData(newTrades);
+        // Merge current trades with incoming trades for evaluation.
+        let currentTrades = { ...trades, ...newTrades };
+  
+        // Loop through each incoming trade update.
+        for (const trade of Object.values(newTrades)) {
+          // Only process trades that transitioned to "pending".
+          if (trade.trade_status === 'pending') {
+            const acceptedPokemonUserAccepting = trade.pokemon_instance_id_user_accepting;
+            const acceptedPokemonUserProposed = trade.pokemon_instance_id_user_proposed;
+  
+            // Iterate over current trades to find conflicting proposals.
+            for (const [id, t] of Object.entries(currentTrades)) {
+              // Skip the current pending trade and trades that are not "proposed".
+              if (id === trade.trade_id || t.trade_status !== 'proposed') continue;
+  
+              const involvesSamePokemon =
+                t.pokemon_instance_id_user_accepting === acceptedPokemonUserAccepting ||
+                t.pokemon_instance_id_user_accepting === acceptedPokemonUserProposed ||
+                t.pokemon_instance_id_user_proposed === acceptedPokemonUserAccepting ||
+                t.pokemon_instance_id_user_proposed === acceptedPokemonUserProposed;
+  
+              if (involvesSamePokemon) {
+                // Mark the conflicting trade as deleted.
+                combinedTradeUpdates[id] = {
+                  ...t,
+                  trade_status: 'deleted',
+                  trade_deleted_date: new Date().toISOString(),
+                  last_update: Date.now(),
+                };
+              }
+            }
+          }
+        }
       }
+  
+      // Persist all combined trade updates in a single call.
+      if (Object.keys(combinedTradeUpdates).length > 0) {
+        await setTradeData(combinedTradeUpdates);
+      }
+  
+      // Process related instance updates if provided.
       if (newInstances) {
         await setRelatedInstances(newInstances);
       }
     } catch (err) {
       console.error('[updateTradeData] ERROR:', err);
     }
-  }, [setTradeData, setRelatedInstances]);
+  }, [setTradeData, setRelatedInstances, trades]);
 
   const proposeTrade = useCallback(
     async (tradeData) => {
