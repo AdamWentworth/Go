@@ -1,31 +1,31 @@
 // UserSearchContext.js
 
 import React, { createContext, useState } from 'react';
-import { openDB } from 'idb'; // Added import for IndexedDB
+import { openDB } from 'idb';
 
 const UserSearchContext = createContext();
 const USERS_API_URL = process.env.REACT_APP_USERS_API_URL;
-const CACHE_NAME = 'SearchCache'; // Keeping this for consistency
-const CACHE_PREFIX = '';
-
+const CACHE_NAME = 'SearchCache';
+  
 export function UserSearchProvider({ children }) {
   const [viewedOwnershipData, setViewedOwnershipData] = useState(null);
-  const [userExists, setUserExists] = useState(null); // null indicates loading
+  const [userExists, setUserExists] = useState(null);
   const [viewedLoading, setViewedLoading] = useState(false);
+  const [canonicalUsername, setCanonicalUsername] = useState(null);
 
-  // Function to fetch user ownership data
   const fetchUserOwnershipData = async (
     searchedUsername,
     setOwnershipFilter,
     setShowAll,
     defaultFilter = 'Owned'
   ) => {
-    // Reset states before fetching new data
     setViewedLoading(true);
     setUserExists(null);
 
     try {
-      // Open IndexedDB database
+      const lowerCaseUsername = searchedUsername.toLowerCase();
+
+      // Open IndexedDB
       const db = await openDB(CACHE_NAME, 1, {
         upgrade(db) {
           if (!db.objectStoreNames.contains(CACHE_NAME)) {
@@ -34,29 +34,41 @@ export function UserSearchProvider({ children }) {
         },
       });
 
-      const cacheKey = CACHE_PREFIX + searchedUsername;
-      const cachedData = await db.get(CACHE_NAME, cacheKey);
-
-      if (cachedData) {
-        const now = Date.now();
-        const cacheAge = now - (cachedData.timestamp || 0);
-
-        // If cache is younger than 1 hour (3600000 ms), use it
-        if (cacheAge < 3600000) {
-          setViewedOwnershipData(cachedData.ownershipData);
-          setUserExists(true);
-          if (setOwnershipFilter) setOwnershipFilter(defaultFilter);
-          if (setShowAll) setShowAll(true);
-          return;
-        } else {
-          // Cache is old, delete it
-          await db.delete(CACHE_NAME, cacheKey);
+      // Attempt to find a matching key ignoring case
+      let canonicalUsername = null;
+      const allKeys = await db.getAllKeys(CACHE_NAME);
+      for (const key of allKeys) {
+        if (typeof key === 'string' && key.toLowerCase() === lowerCaseUsername) {
+          canonicalUsername = key;
+          break;
         }
       }
 
-      // Fetch from API if no cache or cache is expired
+      let cachedData = null;
+      if (canonicalUsername) {
+        cachedData = await db.get(CACHE_NAME, canonicalUsername);
+      }
+
+      // If cached data is found and fresh, use it
+      if (cachedData) {
+        const now = Date.now();
+        const cacheAge = now - (cachedData.timestamp || 0);
+        if (cacheAge < 3600000) { // 1 hour freshness check
+          setViewedOwnershipData(cachedData.ownershipData);
+          setUserExists(true);
+          setCanonicalUsername(cachedData.username); // Add this line to set username from cache
+          if (setOwnershipFilter) setOwnershipFilter(defaultFilter);
+          if (setShowAll) setShowAll(true);
+          return cachedData.username; // Return the username from cache
+        } else {
+          // Remove stale cache
+          await db.delete(CACHE_NAME, canonicalUsername);
+        }
+      }
+
+      // No valid cache entry found, so hit the API
       const response = await fetch(
-        `${USERS_API_URL}/ownershipData/username/${searchedUsername}`,
+        `${USERS_API_URL}/ownershipData/username/${lowerCaseUsername}`,
         {
           method: 'GET',
           credentials: 'include',
@@ -64,30 +76,40 @@ export function UserSearchProvider({ children }) {
       );
 
       if (response.ok) {
-        const data = await response.json();
-        setViewedOwnershipData(data);
+        const result = await response.json();
+
+        // Use the canonical username from the result or fallback to searchedUsername
+        const actualUsername = result.username || searchedUsername;
+        setCanonicalUsername(actualUsername);
+
+        // Update state with the retrieved data
+        setViewedOwnershipData(result.instances);
         setUserExists(true);
         if (setOwnershipFilter) setOwnershipFilter(defaultFilter);
         if (setShowAll) setShowAll(true);
 
+        // Cache the data using the canonical username
         const cacheEntry = {
-          username: cacheKey,
-          ownershipData: data,
+          username: actualUsername,
+          ownershipData: result.instances,
           timestamp: Date.now(),
         };
         await db.put(CACHE_NAME, cacheEntry);
+
+        return actualUsername; // Return the canonical username
       } else if (response.status === 404) {
-        // User not found
         setUserExists(false);
         setViewedOwnershipData(null);
+        setCanonicalUsername(null);
       } else {
-        // Other errors
         console.error('Error fetching user data:', response.statusText);
         setViewedOwnershipData(null);
+        setCanonicalUsername(null);
       }
     } catch (error) {
       console.error(`Fetch error for username ${searchedUsername}:`, error);
       setViewedOwnershipData(null);
+      setCanonicalUsername(null);
     } finally {
       setViewedLoading(false);
     }
@@ -100,8 +122,10 @@ export function UserSearchProvider({ children }) {
         userExists,
         viewedLoading,
         fetchUserOwnershipData,
-        setUserExists, // Expose setter
-        setViewedOwnershipData, // Expose setter
+        setUserExists,
+        setViewedOwnershipData,
+        canonicalUsername,
+        setCanonicalUsername,
       }}
     >
       {children}

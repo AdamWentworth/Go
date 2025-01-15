@@ -1,15 +1,17 @@
 // Navbar.jsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 import { useAuth } from '../contexts/AuthContext';
 import MainButtons from './MainButtons';
 import { useTheme } from '../contexts/ThemeContext';
+import UserSearchContext from '../contexts/UserSearchContext'; // Import the context, not the provider
 
 function Navbar() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { fetchUserOwnershipData } = useContext(UserSearchContext); // Use UserSearchContext instead of UserSearchProvider
     const logoUrl = process.env.PUBLIC_URL + '/images/logo/logo.png';
     const { isLoggedIn } = useAuth();
     const { isLightMode, toggleTheme } = useTheme();
@@ -17,14 +19,29 @@ function Navbar() {
 
     const showMainButtons = location.pathname !== '/';
 
-    const handleSearch = (event) => {
+    const handleSearch = async (event) => {
         event.preventDefault();
         const trimmedQuery = searchQuery.trim();
         if (trimmedQuery) {
-          navigate(`/collection/${trimmedQuery}`); // Updated route
-          setSearchQuery(''); // Clear the search input after navigation
+            // First navigate to the lowercase version
+            navigate(`/collection/${trimmedQuery.toLowerCase()}`);
+            
+            // Fetch user data and get the canonical username
+            const canonicalUsername = await fetchUserOwnershipData(trimmedQuery);
+            
+            // If we got a canonical username and it's different from the current URL,
+            // update the URL without triggering a new page load
+            if (canonicalUsername && canonicalUsername !== trimmedQuery) {
+                window.history.replaceState(
+                    {},
+                    '',
+                    `/collection/${canonicalUsername}`
+                );
+            }
+            
+            setSearchQuery(''); // Clear the search input after navigation
         }
-      };      
+    };   
 
     useEffect(() => {
         const lightModeStylesheet = document.getElementById('light-mode-stylesheet');

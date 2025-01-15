@@ -37,16 +37,33 @@ const HeaderUIMemo = React.memo(HeaderUI);
 const SortOverlayMemo = React.memo(SortOverlay);
 
 function Collect({ isOwnCollection }) {
-  const { username } = useParams();
+  const { username: urlUsername } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const isUsernamePath = !isOwnCollection && Boolean(username);
+  const isUsernamePath = !isOwnCollection && Boolean(urlUsername);
+
+  useEffect(() => {
+    if (!isOwnCollection && urlUsername) {
+      const updateUsername = async () => {
+        const canonical = await fetchUserOwnershipData(urlUsername);
+        if (canonical && canonical !== urlUsername) {
+          // Update URL to canonical username
+          window.history.replaceState(
+            {},
+            '',
+            location.pathname.replace(urlUsername, canonical)
+          );
+        }
+      };
+      updateUsername();
+    }
+  }, [urlUsername, isOwnCollection]);
 
   useEffect(() => {
     if (isUsernamePath) {
       setHighlightedCards(new Set());
     }
-  }, [isUsernamePath, username]);  
+  }, [isUsernamePath, urlUsername]); 
 
   const {
     viewedOwnershipData,
@@ -55,7 +72,10 @@ function Collect({ isOwnCollection }) {
     fetchUserOwnershipData,
     setUserExists,
     setViewedOwnershipData,
+    canonicalUsername
   } = useContext(UserSearchContext);
+
+  const displayUsername = canonicalUsername || urlUsername;
 
   const {
     variants,
@@ -119,7 +139,7 @@ function Collect({ isOwnCollection }) {
   // Use custom hook to load user data
   useUserDataLoader({
     isUsernamePath,
-    username,
+    username: urlUsername,
     location,
     setUserExists,
     setViewedOwnershipData,
@@ -272,7 +292,7 @@ function Collect({ isOwnCollection }) {
       ? 'Editing your Collection'
       : (
           <>
-            Viewing <span className="username"><strong>{username}</strong></span>'s Collection
+            Viewing <span className="username"><strong>{displayUsername}</strong></span>'s Collection
           </>
         );
 
@@ -286,7 +306,7 @@ function Collect({ isOwnCollection }) {
         <>
           <HeaderUIMemo
             isEditable={isEditable}
-            username={username}
+            username={displayUsername}
             showFilterUI={showFilterUI}
             toggleFilterUI={() => setShowFilterUI((prev) => !prev)}
             isShiny={isShiny}
@@ -335,7 +355,7 @@ function Collect({ isOwnCollection }) {
               sortType={sortType}
               sortMode={sortMode}
               variants={variants}
-              username={username}
+              username={displayUsername}
             />
           ) : (
             <ListsMenu 

@@ -3,6 +3,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 )
@@ -211,7 +213,7 @@ func GetPokemonInstancesByUsername(c *fiber.Ctx) error {
 
 	// Retrieve the user_id corresponding to the provided username
 	var user User
-	if err := db.Where("username = ?", username).First(&user).Error; err != nil {
+	if err := db.Where("LOWER(username) = ?", strings.ToLower(username)).First(&user).Error; err != nil {
 		logrus.Errorf("User %s not found: %v", username, err)
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
 	}
@@ -288,5 +290,8 @@ func GetPokemonInstancesByUsername(c *fiber.Ctx) error {
 
 	// Log and return the response data
 	logrus.Infof("User %s retrieved %d Pokemon instances for username %s", tokenUserID, instanceCount, username)
-	return c.Status(fiber.StatusOK).JSON(responseData)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"username":  user.Username,
+		"instances": responseData,
+	})
 }
