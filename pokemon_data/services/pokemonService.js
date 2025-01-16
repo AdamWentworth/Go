@@ -27,7 +27,9 @@ const getPokemonsFromDb = (callback) => {
     LEFT JOIN types AS t1 ON pokemon.type_1_id = t1.type_id 
     LEFT JOIN types AS t2 ON pokemon.type_2_id = t2.type_id 
     LEFT JOIN shadow_pokemon AS sp ON pokemon.pokemon_id = sp.pokemon_id
-    LEFT JOIN fusion_pokemon ON pokemon.pokemon_id = fusion_pokemon.pokemon_id
+    LEFT JOIN fusion_pokemon 
+        ON (pokemon.pokemon_id = fusion_pokemon.base_pokemon_id1 
+            OR pokemon.pokemon_id = fusion_pokemon.base_pokemon_id2)
     WHERE pokemon.available = 1 
     ORDER BY pokemon.pokedex_number ASC
     `;
