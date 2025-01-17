@@ -102,7 +102,9 @@ const createPokemonVariants = (pokemons) => {
           type_1_icon: `/images/types/${megaEvolution.type1_name.toLowerCase()}.png`,
           type_2_icon: megaEvolution.type2_name ? `/images/types/${megaEvolution.type2_name.toLowerCase()}.png` : null,
           currentImage: megaEvolution.image_url,
-          name: megaEvolution.primal ? `Primal ${pokemon.name}` : `Mega ${pokemon.name} ${megaEvolution.form ? megaEvolution.form : ''}`.trim(),
+          name: megaEvolution.primal
+            ? `Primal ${pokemon.name}`
+            : `Mega ${pokemon.name} ${megaEvolution.form ? megaEvolution.form : ''}`.trim(),
           variantType: megaEvolution.primal ? `primal` : `mega${formSuffix}`,
           cp40: megaEvolution.cp40 || pokemon.cp40,
           cp50: megaEvolution.cp50 || pokemon.cp50
@@ -115,7 +117,9 @@ const createPokemonVariants = (pokemons) => {
           const shinyVariant = {
             ...baseVariant,
             currentImage: megaEvolution.image_url_shiny,
-            name: megaEvolution.primal ? `Shiny Primal ${pokemon.name}` : `Shiny Mega ${pokemon.name} ${megaEvolution.form ? megaEvolution.form : ''}`.trim(),
+            name: megaEvolution.primal
+              ? `Shiny Primal ${pokemon.name}`
+              : `Shiny Mega ${pokemon.name} ${megaEvolution.form ? megaEvolution.form : ''}`.trim(),
             variantType: megaEvolution.primal ? `shiny_primal` : `shiny_mega${formSuffix}`,
             cp40: megaEvolution.cp40 || pokemon.cp40,
             cp50: megaEvolution.cp50 || pokemon.cp50
@@ -125,10 +129,62 @@ const createPokemonVariants = (pokemons) => {
       });
     }
 
+    // New section: Create variants for each fusion entry
+    if (pokemon.fusion && pokemon.fusion.length > 0) {
+      pokemon.fusion.forEach(fusion => {
+        // Only create a variant if the current Pokémon matches the first base of the fusion
+        if (pokemon.pokemon_id !== fusion.base_pokemon_id1) {
+          return; // Skip creating variants for this fusion if not the primary base
+        }
+
+        const fusionVariant = {
+          ...pokemon,
+          attack: fusion.attack || pokemon.attack,
+          defense: fusion.defense || pokemon.defense,
+          stamina: fusion.stamina || pokemon.stamina,
+          type_1_id: fusion.type_1_id,
+          type_2_id: fusion.type_2_id,
+          image_url: fusion.image_url || pokemon.image_url,
+          image_url_shiny: fusion.image_url_shiny || pokemon.image_url_shiny,
+          sprite_url: fusion.sprite_url || pokemon.sprite_url,
+          currentImage: fusion.image_url || pokemon.image_url,
+          name: fusion.name,
+          variantType: `fusion_${fusion.fusion_id}`
+        };
+        addVariant(fusionVariant, fusionVariant.variantType);
+
+        if (fusion.image_url_shiny) {
+          const shinyFusionVariant = {
+            ...pokemon,
+            attack: fusion.attack || pokemon.attack,
+            defense: fusion.defense || pokemon.defense,
+            stamina: fusion.stamina || pokemon.stamina,
+            type_1_id: fusion.type_1_id,
+            type_2_id: fusion.type_2_id,
+            image_url: fusion.image_url,
+            image_url_shiny: fusion.image_url_shiny,
+            sprite_url: fusion.sprite_url,
+            currentImage: fusion.image_url_shiny,
+            name: `Shiny ${fusion.name}`,
+            variantType: `shiny_fusion_${fusion.fusion_id}`
+          };
+          addVariant(shinyFusionVariant, shinyFusionVariant.variantType);
+        }
+      });
+    }
+
     // Remove raid boss data from variants that do not meet the criteria
     variants = variants.map(variant => {
       const raidBossForms = pokemon.raid_boss.map(rb => rb.form);
-      const matchResult = raidBossForms.some(raidBossForm => matchFormsAndVariantType(variant, variant.form, raidBossForm, variant.variantType, pokemon.pokemon_id));
+      const matchResult = raidBossForms.some(raidBossForm =>
+        matchFormsAndVariantType(
+          variant,
+          variant.form,
+          raidBossForm,
+          variant.variantType,
+          pokemon.pokemon_id
+        )
+      );
       if (!matchResult) {
         const { raid_boss, ...rest } = variant;
         return rest;

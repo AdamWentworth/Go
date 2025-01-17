@@ -61,7 +61,7 @@ export function determinePokemonKey(pokemon) {
         suffix = '-shiny_shadow';
     }
 
-    // Check for Mega, Shiny Mega, Primal, and Shiny Primal Evolutions
+    // Check for Mega, Shiny Mega, Primal, and Shiny Primal Evolutions, and now Fusion variants
     if (pokemon.variantType) {
         if (pokemon.variantType.startsWith('mega')) {
             suffix = `-${pokemon.variantType}`;
@@ -70,6 +70,10 @@ export function determinePokemonKey(pokemon) {
         } else if (pokemon.variantType.startsWith('primal')) {
             suffix = `-${pokemon.variantType}`;
         } else if (pokemon.variantType.startsWith('shiny_primal')) {
+            suffix = `-${pokemon.variantType}`;
+        } else if (pokemon.variantType.startsWith('fusion_')) {
+            suffix = `-${pokemon.variantType}`;
+        } else if (pokemon.variantType.startsWith('shiny_fusion_')) {
             suffix = `-${pokemon.variantType}`;
         }
     }
@@ -104,12 +108,10 @@ export function determinePokemonKey(pokemon) {
     } else if (id.length === 3) {
         paddedPokemonId = `0${id}`;
     } else {
-        // No padding needed for 4 or more digits
         paddedPokemonId = id;
     }
 
     // Construct the final pokemonKey with the padded pokemon_id and the determined suffix
     const pokemonKey = `${paddedPokemonId}${suffix}`;
-
     return pokemonKey;
 }

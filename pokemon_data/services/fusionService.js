@@ -17,6 +17,8 @@ const formatFusionData = (pokemons, fusionRows) => {
     fusionRows.forEach(fusion => {
         const fusionData = {
             fusion_id: fusion.fusion_id,
+            base_pokemon_id1: fusion.base_pokemon_id1,
+            base_pokemon_id2: fusion.base_pokemon_id2,
             name: fusion.name,
             pokedex_number: fusion.pokedex_number,
             image_url: fusion.image_url,
