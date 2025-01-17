@@ -53,6 +53,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
   const showShinyWindow = pokemon.shiny_available === 1;
   const isMega = pokemon.variantType && pokemon.variantType.includes("mega"); // Check if the Pokémon is a mega variant
   const isPrimal = pokemon.variantType && pokemon.variantType.includes("primal"); // Check if the Pokémon is a mega variant
+  const isFusion = pokemon.variantType && pokemon.variantType.includes("fusion"); // Check if the Pokémon is a fusion pokemon
   const showCostumesWindow = !isMega && Array.isArray(pokemon.costumes) && pokemon.costumes.length > 0; // Only show costumes if not mega
   const showShadowWindow = !isMega && !isPrimal && pokemon.date_shadow_available && pokemon.date_shadow_available.trim() !== '';
 
@@ -274,6 +275,30 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
           </WindowOverlay> 
         )}
       </div>
+
+      {currentPokemon.fusion && currentPokemon.fusion.length > 0 && !isFusion && (
+        <WindowOverlay onClose={onClose} className="overlay-evolves-to">
+          <EvolutionShortcut
+            fusionEvolutions={currentPokemon.fusion}
+            allPokemonData={allPokemons}
+            currentPokemon={currentPokemon}
+            setSelectedPokemon={switchOverlay}
+            className="evolution-shortcut-fusion"
+          />
+        </WindowOverlay>
+      )}
+
+      {currentPokemon.fusion && currentPokemon.fusion.length > 0 && isFusion && (
+        <WindowOverlay onClose={onClose} className="overlay-evolves-from">
+          <EvolutionShortcut
+            fusionEvolutions={currentPokemon.fusion}
+            allPokemonData={allPokemons}
+            currentPokemon={currentPokemon}
+            setSelectedPokemon={switchOverlay}
+            className="evolution-shortcut-fusion"
+          />
+        </WindowOverlay>
+      )}
 
       {isMediumScreen && (
         <div>
