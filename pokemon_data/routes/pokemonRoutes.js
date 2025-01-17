@@ -10,7 +10,7 @@ const { getEvolutionsFromDb } = require('../services/evolutionsService');
 const { getImagePathsForPokemon } = require('../utils/imagePaths');
 const { getCostumesForPokemon, formatCostumes } = require('../services/costumeService');
 const { getMovesForPokemon, formatMoves } = require('../services/movesService');
-const { formatFusionData } = require('../services/fusionService');
+const { getAllFusions, formatFusionData } = require('../services/fusionService');
 const { getBackgroundsForPokemon } = require('../services/backgroundService');
 const { getCpForPokemon, getCpForMegaEvolution } = require('../services/cpService');
 const { getMegaEvolutionsForPokemon } = require('../services/megaService');
@@ -99,14 +99,14 @@ const processAdditionalPokemonData = (pokemons, res) => {
 
                 const pokemonsWithAllData = formatMoves(pokemonsWithCostumes, allMoves, pokemonMoves);
 
-                db.all('SELECT * FROM fusion_pokemon', [], (err, fusionRows) => {
+                // Use service function to get all fusion data instead of direct SQL call
+                getAllFusions((err, fusionRows) => {
                     if (err) {
                         logger.error(`Error fetching fusion data: ${err.message}`);
                         res.status(500).json({ error: err.message });
                         return;
                     }
                     
-                    // Incorporate fusion data into the Pokémon objects
                     const pokemonsWithFusionData = formatFusionData(pokemonsWithAllData, fusionRows);
 
                     getBackgroundsForPokemon((err, backgroundMap) => {

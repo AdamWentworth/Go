@@ -16,9 +16,22 @@ function formatMoveName(name, isLegacy) {
   return name;
 }
 
-function MoveList({ moves }) {
-  const fastAttacks = moves.filter(move => move.is_fast === 1);
-  const chargedAttacks = moves.filter(move => move.is_fast === 0);
+function MoveList({ moves, pokemon }) {
+  // Determine fusionId from variantType if it's a fusion variant
+  const fusionId = pokemon.variantType && pokemon.variantType.startsWith('fusion_')
+    ? parseInt(pokemon.variantType.split('fusion_')[1], 10)
+    : null;
+
+  // Filter moves: if a move has a fusion_id, only keep it if it matches fusionId
+  const filteredMoves = moves.filter(move => {
+    if (move.fusion_id !== null) {
+      return move.fusion_id === fusionId;
+    }
+    return true;
+  });
+
+  const fastAttacks = filteredMoves.filter(move => move.is_fast === 1);
+  const chargedAttacks = filteredMoves.filter(move => move.is_fast === 0);
 
   const handleClick = (event) => {
     event.stopPropagation();
@@ -91,7 +104,6 @@ function MoveList({ moves }) {
           </table>
         </>
       )}
-
     </div>
   );
 }

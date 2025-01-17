@@ -72,15 +72,24 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
     totalMoves > 15 ? (
       <>
         <WindowOverlay onClose={onClose} className="overlay-fast-moves">
-          <MoveList moves={fastMoves} className="move-list-fast" />
+          <MoveList 
+          moves={fastMoves} 
+          className="move-list-fast"
+          pokemon={pokemon} />
         </WindowOverlay>
         <WindowOverlay onClose={onClose} className="overlay-charged-moves">
-          <MoveList moves={chargedMoves} className="move-list-charged" />
+          <MoveList 
+          moves={chargedMoves} 
+          className="move-list-charged"
+          pokemon={pokemon} />
         </WindowOverlay>
       </>
     ) : (
       <WindowOverlay onClose={onClose} className="overlay-all-moves">
-        <MoveList moves={pokemon.moves} className="move-list-all" />
+        <MoveList 
+        moves={pokemon.moves} 
+        className="move-list-all"
+        pokemon={pokemon} />
       </WindowOverlay>
     )
   );
