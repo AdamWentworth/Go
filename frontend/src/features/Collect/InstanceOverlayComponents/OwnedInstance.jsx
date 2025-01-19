@@ -47,6 +47,12 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
       : null,
   });
 
+  // After other useState hooks in OwnedInstance component
+  const [fusionState, setFusionState] = useState({
+    is_fused: pokemon.is_fused,
+    fusion_form: pokemon.fusion_form,
+  });
+
   const [isFemale, setIsFemale] = useState(pokemon.ownershipStatus.gender === 'Female');
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
   const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon, megaData.isMega, megaData.megaForm));
@@ -132,9 +138,16 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   }, [pokemon.backgrounds, pokemon.ownershipStatus.location_card]);
 
   useEffect(() => {
-    const updatedImage = determineImageUrl(isFemale, pokemon, megaData.isMega, megaData.megaForm);
+    const updatedImage = determineImageUrl(
+      isFemale,
+      pokemon,
+      megaData.isMega,
+      megaData.megaForm,
+      fusionState.is_fused,
+      fusionState.fusion_form
+    );
     setCurrentImage(updatedImage); 
-  }, [isFemale, megaData.isMega, pokemon, megaData.megaForm]);
+  }, [isFemale, megaData.isMega, megaData.megaForm, fusionState, pokemon]);  
 
   /**
    * Recalculate CP whenever currentBaseStats changes (i.e., when Mega Evolution is toggled).
@@ -173,6 +186,27 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
       }
     }
   }, [currentBaseStats, level, ivs]); // Added 'level' and 'ivs' to dependencies to ensure CP recalculation when they change
+
+  useEffect(() => {
+    console.log('Fusion state updated:', fusionState);
+  }, [fusionState]);  
+
+  const handleFusionToggle = (fusionId) => {
+    console.log('Fusion image clicked for fusionId:', fusionId);
+    
+    let newState;
+    setFusionState((prevState) => {
+      if (prevState.is_fused && prevState.fusion_form === fusionId) {
+        newState = { is_fused: false, fusion_form: null };
+      } else {
+        newState = { is_fused: true, fusion_form: fusionId };
+      }
+      return newState;
+    });
+  
+    // Log the new state (note: direct logging here may not reflect updated state immediately)
+    console.log('Requested new fusion state:', newState);
+  }; 
 
   // Handler functions remain mostly unchanged
   const handleGenderChange = (newGender) => {
@@ -392,6 +426,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         fusion={pokemon.fusion} 
         editMode={editMode} 
         pokemon={pokemon}
+        fusionState={fusionState}
+        onFusionToggle={handleFusionToggle}
       />
 
       <div className="gender-lucky-row">

@@ -49,5 +49,8 @@ export function createNewInstanceData(variant) {
         mega_form: null,
         is_mega: false,
         level: null,
+        fusion: {},
+        is_fused: null,
+        fusion_form: null,
     };
 }

@@ -1,11 +1,25 @@
 //imageHelpers.js
 
-export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = undefined) {
+export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = undefined, isFused = false, fusionForm = undefined) {
     const DEFAULT_IMAGE_URL = '/images/default_pokemon.png';
 
     if (!pokemon) {
         console.warn('determineImageUrl called without a valid pokemon object.');
         return DEFAULT_IMAGE_URL;
+    }
+
+    // Check for fusion override before other image logic
+    if (isFused && fusionForm && Array.isArray(pokemon.fusion)) {
+        const fusionEntry = pokemon.fusion.find(f => f.fusion_id === fusionForm);
+        if (fusionEntry) {
+            // Use shiny property from ownershipStatus if applicable
+            const isShiny = !!pokemon.ownershipStatus?.shiny;
+            // Select appropriate image based on gender and shiny status
+            if (isShiny) {
+                return fusionEntry.image_url_shiny || fusionEntry.image_url || DEFAULT_IMAGE_URL;
+            }
+            return fusionEntry.image_url || DEFAULT_IMAGE_URL;
+        }
     }
 
     const isShiny = !!pokemon.ownershipStatus?.shiny;
