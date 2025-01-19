@@ -21,6 +21,7 @@ import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
 import BackgroundComponent from './OwnedComponents/BackgroundComponent';
 import MegaComponent from './OwnedComponents/MegaComponent';
 import LevelComponent from './OwnedComponents/LevelComponent'; // Import LevelComponent
+import FusionComponent from './OwnedComponents/FusionComponent';
 
 import { determineImageUrl } from '../../../utils/imageHelpers';
 import { calculateCP } from '../../../utils/calculateCP'; // Import the utility function
@@ -28,7 +29,7 @@ import useValidation from './hooks/useValidation';
 import { cpMultipliers } from '../../../utils/constants'; // Ensure this includes all levels
 
 const OwnedInstance = ({ pokemon, isEditable }) => {
-  // console.log('Pokemon Prop:', pokemon);
+  console.log('Pokemon Prop:', pokemon);
   const { updateDetails } = useContext(PokemonDataContext);
 
   // Use the custom validation hook
@@ -386,6 +387,12 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             />
         )}
       </div>
+
+      <FusionComponent 
+        fusion={pokemon.fusion} 
+        editMode={editMode} 
+        pokemon={pokemon}
+      />
 
       <div className="gender-lucky-row">
         {!(pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade || pokemon.rarity === "Mythic") && (
