@@ -10,7 +10,7 @@ export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = 
 
     // Check for fusion override before other image logic
     if (isFused && fusionForm && Array.isArray(pokemon.fusion)) {
-        const fusionEntry = pokemon.fusion.find(f => f.fusion_id === fusionForm);
+        const fusionEntry = pokemon.fusion.find(f => f.name === fusionForm);
         if (fusionEntry) {
             // Use shiny property from ownershipStatus if applicable
             const isShiny = !!pokemon.ownershipStatus?.shiny;

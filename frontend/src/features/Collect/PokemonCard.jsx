@@ -23,11 +23,13 @@ const PokemonCard = ({
     const isFemale = pokemon.ownershipStatus?.gender === "Female";
     const isMega = pokemon.ownershipStatus?.is_mega === true; // Determine if the Pokémon is Mega Evolved
     const megaForm = pokemon.ownershipStatus?.mega_form;
+    const isFused = pokemon.ownershipStatus?.is_fused;
+    const fusionForm = pokemon.ownershipStatus?.fusion_form;
 
     useEffect(() => {
         // Ensure that 'pokemon' is defined before calling 'determineImageUrl'
         if (pokemon) {
-            const updatedImage = determineImageUrl(isFemale, pokemon, isMega, megaForm);
+            const updatedImage = determineImageUrl(isFemale, pokemon, isMega, megaForm, isFused, fusionForm);
             if (updatedImage) {
                 setCurrentImage(updatedImage);
             } else {

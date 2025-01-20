@@ -2,9 +2,13 @@
 
 import React, { useState, useEffect, useContext, useMemo } from 'react';
 import './OwnedInstance.css';
-import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
-import { useModal } from '../../../contexts/ModalContext'; // Import useModal
 
+// Contexts and Hooks
+import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
+import { useModal } from '../../../contexts/ModalContext'; 
+import useValidation from './hooks/useValidation';
+
+// Components
 import EditSaveComponent from './EditSaveComponent';
 import CPComponent from './OwnedComponents/CPComponent';
 import FavoriteComponent from './OwnedComponents/FavoriteComponent';
@@ -20,50 +24,51 @@ import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
 import BackgroundComponent from './OwnedComponents/BackgroundComponent';
 import MegaComponent from './OwnedComponents/MegaComponent';
-import LevelComponent from './OwnedComponents/LevelComponent'; // Import LevelComponent
+import LevelComponent from './OwnedComponents/LevelComponent'; 
 import FusionComponent from './OwnedComponents/FusionComponent';
+import FuseOverlay from './OwnedComponents/FuseOverlay';
 
+// Utilities and Constants
 import { determineImageUrl } from '../../../utils/imageHelpers';
-import { calculateCP } from '../../../utils/calculateCP'; // Import the utility function
-import useValidation from './hooks/useValidation';
-import { cpMultipliers } from '../../../utils/constants'; // Ensure this includes all levels
+import { calculateBaseStats } from '../../../utils/calculateBaseStats';
+
+// Hooks
+import { useFusion } from './hooks/useFusion'; 
+import { useCalculatedCP } from './hooks/useCalculatedCP';
 
 const OwnedInstance = ({ pokemon, isEditable }) => {
-  console.log('Pokemon Prop:', pokemon);
+  // Contexts and custom hooks
   const { updateDetails } = useContext(PokemonDataContext);
-
-  // Use the custom validation hook
+  const { alert } = useModal();
   const { errors: validationErrors, validate, resetErrors } = useValidation();
 
-  // Use the modal context
-  const { alert } = useModal();
-
-  // Manage mega data via a single state object
+  // State declarations
   const [megaData, setMegaData] = useState({
     isMega: pokemon.ownershipStatus.is_mega || false,
     mega: pokemon.ownershipStatus.mega || false,
     megaForm: (pokemon.ownershipStatus.mega && pokemon.megaEvolutions?.length > 0)
       ? (pokemon.ownershipStatus.mega_form || pokemon.megaEvolutions[0].form)
       : null,
-  });
-
-  // After other useState hooks in OwnedInstance component
-  const [fusionState, setFusionState] = useState({
-    is_fused: pokemon.is_fused,
-    fusion_form: pokemon.fusion_form,
-  });
+    });
+    
+  const {
+    fusion,
+    setFusion,
+    handleFusionToggle,
+    handleFuseProceed,
+    handleUndoFusion,
+  } = useFusion(pokemon, alert);
 
   const [isFemale, setIsFemale] = useState(pokemon.ownershipStatus.gender === 'Female');
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
   const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon, megaData.isMega, megaData.megaForm));
-
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.ownershipStatus.nickname);
-  const [cp, setCP] = useState(pokemon.ownershipStatus.cp ? pokemon.ownershipStatus.cp.toString() : ''); // Changed to string
+  const [cp, setCP] = useState(pokemon.ownershipStatus.cp ? pokemon.ownershipStatus.cp.toString() : '');
   const [isFavorite, setIsFavorite] = useState(pokemon.ownershipStatus.favorite);
   const [gender, setGender] = useState(pokemon.ownershipStatus.gender);
-  const [weight, setWeight] = useState(Number(pokemon.ownershipStatus.weight)); // Ensure weight is a number
-  const [height, setHeight] = useState(Number(pokemon.ownershipStatus.height)); // Ensure height is a number
+  const [weight, setWeight] = useState(Number(pokemon.ownershipStatus.weight));
+  const [height, setHeight] = useState(Number(pokemon.ownershipStatus.height));
   const [moves, setMoves] = useState({
     fastMove: pokemon.ownershipStatus.fast_move_id,
     chargedMove1: pokemon.ownershipStatus.charged_move1_id,
@@ -78,54 +83,17 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   const [dateCaught, setDateCaught] = useState(pokemon.ownershipStatus.date_caught);
   const [showBackgrounds, setShowBackgrounds] = useState(false);
   const [selectedBackground, setSelectedBackground] = useState(null);
-
-  // Initialize level state
   const [level, setLevel] = useState(pokemon.ownershipStatus.level || null);
 
-  // Compute current base stats using useMemo
-  const currentBaseStats = useMemo(() => {
-    if (megaData.isMega) {
-      if (megaData.megaForm) {
-        // Case 1: megaForm is defined
-        const selectedMega = pokemon.megaEvolutions.find(
-          (me) => me.form && me.form.toLowerCase() === megaData.megaForm.toLowerCase()
-        );
-        if (selectedMega) {
-          return {
-            attack: Number(selectedMega.attack),
-            defense: Number(selectedMega.defense),
-            stamina: Number(selectedMega.stamina),
-          };
-        } else {
-          console.warn(
-            `Mega form "${megaData.megaForm}" not found in megaEvolutions for Pokémon "${pokemon.name}". Falling back to normal stats.`
-          );
-        }
-      } else {
-        // Case 2: megaForm is null
-        const selectedMega = pokemon.megaEvolutions.find(
-          (me) => !me.form // Find megaEvolution with form as null or undefined
-        );
-        if (selectedMega) {
-          return {
-            attack: Number(selectedMega.attack),
-            defense: Number(selectedMega.defense),
-            stamina: Number(selectedMega.stamina),
-          };
-        } else {
-          console.warn(
-            `No Mega form with null form found in megaEvolutions for Pokémon "${pokemon.name}". Falling back to normal stats.`
-          );
-        }
-      }
-    }
-    // Fallback to normal base stats
-    return {
-      attack: Number(pokemon.attack),
-      defense: Number(pokemon.defense),
-      stamina: Number(pokemon.stamina),
-    };  
-  }, [megaData.isMega, megaData.megaForm, pokemon.megaEvolutions, pokemon.attack, pokemon.defense, pokemon.stamina]);
+  // Memoized values
+  const currentBaseStats = useMemo(() => 
+    calculateBaseStats(pokemon, megaData), 
+    [pokemon, megaData]
+  );
+
+  console.log(pokemon)
+
+  useCalculatedCP({ currentBaseStats, level, ivs, setCP });
 
   useEffect(() => {
     if (pokemon.ownershipStatus.location_card !== null) {
@@ -143,79 +111,20 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
       pokemon,
       megaData.isMega,
       megaData.megaForm,
-      fusionState.is_fused,
-      fusionState.fusion_form
+      fusion.is_fused,
+      fusion.fusion_form
     );
     setCurrentImage(updatedImage); 
-  }, [isFemale, megaData.isMega, megaData.megaForm, fusionState, pokemon]);  
+  }, [isFemale, megaData.isMega, megaData.megaForm, fusion.is_fused, fusion.fusion_form, pokemon]);  
 
-  /**
-   * Recalculate CP whenever currentBaseStats changes (i.e., when Mega Evolution is toggled).
-   */
-  useEffect(() => {
-    const { attack, defense, stamina } = currentBaseStats;
-    const atk = ivs.Attack;
-    const def = ivs.Defense;
-    const sta = ivs.Stamina;
-
-    // Ensure all required values are present
-    if (
-      level != null &&
-      !isNaN(level) &&
-      atk !== '' &&
-      def !== '' &&
-      sta !== '' &&
-      !isNaN(atk) &&
-      !isNaN(def) &&
-      !isNaN(sta)
-    ) {
-      const multiplier = cpMultipliers[level];
-      if (multiplier) {
-        const calculatedCP = calculateCP(
-          attack,
-          defense,
-          stamina,
-          atk,
-          def,
-          sta,
-          multiplier
-        );
-        setCP(calculatedCP.toString());
-      } else {
-        console.warn(`No CP multiplier found for level ${level}`);
-      }
-    }
-  }, [currentBaseStats, level, ivs]); // Added 'level' and 'ivs' to dependencies to ensure CP recalculation when they change
-
-  useEffect(() => {
-    console.log('Fusion state updated:', fusionState);
-  }, [fusionState]);  
-
-  const handleFusionToggle = (fusionId) => {
-    console.log('Fusion image clicked for fusionId:', fusionId);
-    
-    let newState;
-    setFusionState((prevState) => {
-      if (prevState.is_fused && prevState.fusion_form === fusionId) {
-        newState = { is_fused: false, fusion_form: null };
-      } else {
-        newState = { is_fused: true, fusion_form: fusionId };
-      }
-      return newState;
-    });
-  
-    // Log the new state (note: direct logging here may not reflect updated state immediately)
-    console.log('Requested new fusion state:', newState);
-  }; 
-
-  // Handler functions remain mostly unchanged
+  // Handler Functions
   const handleGenderChange = (newGender) => {
     setGender(newGender);
-    setIsFemale(newGender === 'Female'); // Update the gender state and isFemale
+    setIsFemale(newGender === 'Female');
   };
 
   const handleCPChange = (newCP) => {
-    setCP(newCP); // Store cp as a string, allowing empty strings
+    setCP(newCP);
   };
 
   const handleLuckyToggle = (newLuckyStatus) => {
@@ -231,11 +140,11 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   };
 
   const handleWeightChange = (newWeight) => {
-    setWeight(Number(newWeight)); // Ensure weight is stored as a number
+    setWeight(Number(newWeight));
   };
 
   const handleHeightChange = (newHeight) => {
-    setHeight(Number(newHeight)); // Ensure height is stored as a number
+    setHeight(Number(newHeight));
   };
 
   const handleMovesChange = (newMoves) => {
@@ -255,32 +164,27 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   };
 
   const handleLevelChange = (newLevel) => {
-    setLevel(newLevel !== '' ? Number(newLevel) : null); // Ensure level is a number or null
+    setLevel(newLevel !== '' ? Number(newLevel) : null);
   };
 
   const toggleEditMode = async () => {
     if (editMode) {
-      // Prepare the fields to validate
       const fieldsToValidate = {
         level,
-        cp: cp !== '' ? Number(cp) : null, // Convert cp to number or null
-        ivs, // Include IVs in the validation
-        weight, // Current Weight from state
-        height, // Current Height from state
-        // Add other fields as necessary
+        cp: cp !== '' ? Number(cp) : null,
+        ivs,
+        weight,
+        height,
       };
 
-      // Validate the fields along with the current base stats
       const { validationErrors, computedValues: newComputedValues } = validate(
         fieldsToValidate,
         currentBaseStats
       );
-
       const isValid = Object.keys(validationErrors).length === 0;
-
+  
       if (isValid) {
         try {
-          // Update state based on computed values
           if (newComputedValues.level !== undefined) {
             setLevel(newComputedValues.level);
           }
@@ -290,8 +194,21 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           if (newComputedValues.ivs !== undefined) {
             setIvs(newComputedValues.ivs);
           }
-
-          // Proceed with updating details, including computed values
+  
+          const fusionName = (() => {
+            if (fusionState.fusion_form) { 
+              const foundFusion = pokemon.fusion.find(f => f.fusion_id === fusionState.fusion_form);
+              return foundFusion ? foundFusion.name : null;
+            }
+            return null;
+          })();
+  
+          const existingFusionsObject = storedFusionObject;
+  
+          const updatedFusion = fusionState.is_fused && fusionState.fusion_form
+            ? { ...existingFusionsObject, [fusionState.fusion_form]: true }
+            : existingFusionsObject;
+  
           await updateDetails(pokemon.pokemonKey, {
             nickname: nickname,
             lucky: isLucky,
@@ -326,26 +243,36 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             level:
               newComputedValues.level !== undefined
                 ? newComputedValues.level
-                : level, // Include the found level as a number
+                : level,
+  
+            fusion: updatedFusion,
+            is_fused: fusionState.is_fused,
+            fused_with: fusedWith,
+            fusion_form: fusionName,
           });
-
-          // Optionally reset errors after successful validation
+  
+          if (fusedOtherInstanceKey) {
+            await updateDetails(fusedOtherInstanceKey, {
+              disabled: true,
+              fused_with: pokemon.ownershipStatus?.instance_id,
+            });
+          }
+          
           resetErrors();
+          setStoredFusionObject(updatedFusion);
+  
         } catch (error) {
-          // Handle any errors from updateDetails
           console.error('Error updating details:', error);
           alert('An error occurred while updating the Pokémon details. Please try again.');
           return;
         }
       } else {
-        // Validation failed, show alert modal with errors
         const errorMessages = Object.values(validationErrors).join('\n');
         alert(errorMessages);
         console.log(`Validation failed with errors:`, validationErrors);
         return;
       }
     }
-    // Toggle edit mode
     setEditMode(!editMode);
   };
 
@@ -354,6 +281,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     setShowBackgrounds(false);
   };
 
+  // Computed variables
   const selectableBackgrounds = pokemon.backgrounds.filter((background) => {
     if (!background.costume_id) {
       return true;
@@ -362,6 +290,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     return background.costume_id === parseInt(variantTypeId, 10);
   });
 
+  // JSX Return
   return (
     <div className="owned-instance">
       <div className="top-row">
@@ -373,7 +302,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           editMode={editMode} 
           onCPChange={handleCPChange}
           cp={cp}
-          errors={validationErrors} // Pass errors to CPComponent
+          errors={validationErrors}
         />
         <FavoriteComponent 
           pokemon={pokemon} 
@@ -394,12 +323,21 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
       <div className="image-container">
         {selectedBackground && (
           <div className="background-container">
-            <div className="background-image" style={{ backgroundImage: `url(${selectedBackground.image_url})` }}></div>
+            <div 
+              className="background-image" 
+              style={{ backgroundImage: `url(${selectedBackground.image_url})` }}>
+            </div>
             <div className="brightness-overlay"></div>
           </div>
         )}
         <div className="pokemon-image-container">
-          {isLucky && <img src={process.env.PUBLIC_URL + '/images/lucky.png'} alt="Lucky Backdrop" className="lucky-backdrop" />}
+          {isLucky && (
+            <img 
+              src={process.env.PUBLIC_URL + '/images/lucky.png'} 
+              alt="Lucky Backdrop" 
+              className="lucky-backdrop" 
+            />
+          )}
           <img src={currentImage} alt={pokemon.name} className="pokemon-image" />
         </div>
       </div>
@@ -411,8 +349,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         />
         {pokemon.megaEvolutions &&
           pokemon.megaEvolutions.length > 0 &&
-          !pokemon.ownershipStatus.shadow && // Ensure shadow ownership is false
-          !pokemon.name.toLowerCase().includes("clone") && ( // Ensure name does not include "clone"
+          !pokemon.ownershipStatus.shadow &&
+          !pokemon.name.toLowerCase().includes("clone") && (
             <MegaComponent
               megaData={megaData}
               setMegaData={setMegaData}
@@ -421,15 +359,14 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             />
         )}
       </div>
-
       <FusionComponent 
         fusion={pokemon.fusion} 
         editMode={editMode} 
         pokemon={pokemon}
-        fusionState={fusionState}
+        fusionState={fusion}   
         onFusionToggle={handleFusionToggle}
+        onUndoFusion={handleUndoFusion}
       />
-
       <div className="gender-lucky-row">
         {!(pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade || pokemon.rarity === "Mythic") && (
           <LuckyComponent 
@@ -503,6 +440,18 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             <BackgroundComponent pokemon={pokemon} onSelectBackground={handleBackgroundSelect} />
           </div>
         </div>
+      )}
+      {fusion.overlayPokemon && (
+        <FuseOverlay 
+          pokemon={fusion.overlayPokemon} 
+          onClose={() => 
+            setFusion(prev => ({ 
+              ...prev, 
+              overlayPokemon: null 
+            }))
+          } 
+          onFuse={handleFuseProceed}
+        />
       )}
     </div>
   );
