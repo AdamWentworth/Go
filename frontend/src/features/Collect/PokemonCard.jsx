@@ -76,6 +76,9 @@ const PokemonCard = ({
     <div
       className={cardClass}
       onClick={() => {
+        if (isDisabled) {
+          return;
+        }
         if (isFastSelectEnabled) {
           console.log(`Card highlighted: ${pokemon.name}`);
         } else {

@@ -41,10 +41,15 @@ function useUIHandlers({
   );
   
   const selectAllToggle = useCallback(() => {
-    if (highlightedCards.size === sortedPokemons.length) {
-      setHighlightedCards(new Set());
-    } else {
-      setHighlightedCards(new Set(sortedPokemons.map((pokemon) => pokemon.pokemonKey)));
+   // 1. Filter out disabled Pokémon
+   const nonDisabledPokemons = sortedPokemons.filter(p => !p.ownershipStatus?.disabled);
+
+   if (highlightedCards.size === nonDisabledPokemons.length) {
+        setHighlightedCards(new Set());
+      } else {
+        setHighlightedCards(
+        new Set(nonDisabledPokemons.map((p) => p.pokemonKey))
+      );
     }
   }, [highlightedCards, sortedPokemons, setHighlightedCards]);
   
