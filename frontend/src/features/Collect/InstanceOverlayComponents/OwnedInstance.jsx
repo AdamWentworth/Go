@@ -93,7 +93,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     [pokemon, megaData]
   );
 
-  console.log(pokemon)
+  // console.log(pokemon)
 
   useCalculatedCP({ currentBaseStats, level, ivs, setCP });
 
@@ -266,10 +266,12 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           };
   
           // (A) If we parted ways with the old partner => disable false, fused_with: null
-          if (originalFusedWith && !is_fused) {
+          if (originalFusedWith && originalFusedWith !== newFusedWith) {
             changes[originalFusedWith] = {
               disabled: false,
               fused_with: null,
+              is_fused: false,
+              fusion_form: null,
             };
           }
   
@@ -278,6 +280,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             changes[newFusedWith] = {
               disabled: true,
               fused_with: pokemon.pokemonKey,
+              is_fused: true,
+              fusion_form: fusion_form,  
             };
           }
   

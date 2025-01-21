@@ -81,6 +81,8 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 		favorite := parseOptionalBool(pm["favorite"])
 		isMega := parseOptionalBool(pm["is_mega"])
 		mega := parseOptionalBool(pm["mega"])
+		isFused := parseOptionalBool(pm["is_fused"])
+		disabled := parseOptionalBool(pm["disabled"])
 
 		// Nullable ints/floats
 		cp := parseNullableInt(pm["cp"])
@@ -102,6 +104,8 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 		locationCard := parseNullableString(pm["location_card"])
 		locationCaught := parseNullableString(pm["location_caught"])
 		megaForm := parseNullableString(pm["mega_form"])
+		fusionForm := parseNullableString(pm["fusion_form"])
+		fusedWith := parseNullableString(pm["fused_with"])
 
 		// Date
 		dateCaught := parseOptionalDate(pm["date_caught"])
@@ -111,6 +115,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 		notWantedList := safeJSON(pm["not_wanted_list"])
 		tradeFilters := safeJSON(pm["trade_filters"])
 		wantedFilters := safeJSON(pm["wanted_filters"])
+		fusionJSON := safeJSON(pm["fusion"])
 
 		// Prepare a map for updates
 		updates := map[string]interface{}{
@@ -153,6 +158,11 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			"mega_form":        megaForm,
 			"is_mega":          isMega,
 			"level":            level,
+			"is_fused":         isFused,
+			"fusion":           *fusionJSON,
+			"fusion_form":      fusionForm,
+			"fused_with":       fusedWith,
+			"disabled":         disabled,
 		}
 
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
@@ -199,6 +209,11 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 				MegaForm:        megaForm,
 				IsMega:          isMega,
 				Level:           level,
+				IsFused:         isFused,
+				Fusion:          *fusionJSON,
+				FusionForm:      fusionForm,
+				FusedWith:       fusedWith,
+				Disabled:        disabled,
 			}
 
 			if errCreate := DB.Create(&newInstance).Error; errCreate != nil {
