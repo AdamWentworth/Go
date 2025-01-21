@@ -59,6 +59,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     handleUndoFusion,
   } = useFusion(pokemon, alert);
 
+  const [originalFusedWith, setOriginalFusedWith] = useState(fusion.fusedWith);
+
   const [isFemale, setIsFemale] = useState(pokemon.ownershipStatus.gender === 'Female');
   const [isLucky, setIsLucky] = useState(pokemon.ownershipStatus.lucky);
   const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon, megaData.isMega, megaData.megaForm));
@@ -167,6 +169,13 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     setLevel(newLevel !== '' ? Number(newLevel) : null);
   };
 
+  useEffect(() => {
+    if (editMode) {
+      // We just ENTERED edit mode, store the current partner
+      setOriginalFusedWith(fusion.fusedWith);
+    }
+  }, [editMode]);
+
   const toggleEditMode = async () => {
     if (editMode) {
       const fieldsToValidate = {
@@ -195,20 +204,31 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             setIvs(newComputedValues.ivs);
           }
   
-          const fusionName = (() => {
-            if (fusionState.fusion_form) { 
-              const foundFusion = pokemon.fusion.find(f => f.fusion_id === fusionState.fusion_form);
-              return foundFusion ? foundFusion.name : null;
-            }
-            return null;
-          })();
-  
-          const existingFusionsObject = storedFusionObject;
-  
-          const updatedFusion = fusionState.is_fused && fusionState.fusion_form
-            ? { ...existingFusionsObject, [fusionState.fusion_form]: true }
-            : existingFusionsObject;
-  
+          const {
+            is_fused,
+            fusion_form,
+            fusedWith: newFusedWith,
+            fusedOtherInstanceKey,
+            storedFusionObject,
+          } = fusion;
+          
+          // (A) If we parted ways with the old partner:
+          if (originalFusedWith && !is_fused) {
+            // Means we used to be fused with originalFusedWith, but now we're not
+            await updateDetails(originalFusedWith, {
+              disabled: false,
+              fused_with: null,
+            });
+          }
+          // (B) If we are newly fused with a different partner:
+          if (newFusedWith && is_fused && newFusedWith !== originalFusedWith) {
+            // Mark the new partner as disabled and fused with me
+            await updateDetails(newFusedWith, {
+              disabled: true,
+              fused_with: pokemon.pokemonKey,  // or instance_id, depending on your usage
+            });
+          }
+
           await updateDetails(pokemon.pokemonKey, {
             nickname: nickname,
             lucky: isLucky,
@@ -244,23 +264,15 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
               newComputedValues.level !== undefined
                 ? newComputedValues.level
                 : level,
-  
-            fusion: updatedFusion,
-            is_fused: fusionState.is_fused,
-            fused_with: fusedWith,
-            fusion_form: fusionName,
+
+            fusion: storedFusionObject,
+            is_fused,
+            fused_with: newFusedWith,
+            fusion_form,
           });
   
-          if (fusedOtherInstanceKey) {
-            await updateDetails(fusedOtherInstanceKey, {
-              disabled: true,
-              fused_with: pokemon.ownershipStatus?.instance_id,
-            });
-          }
           
-          resetErrors();
-          setStoredFusionObject(updatedFusion);
-  
+          resetErrors();  
         } catch (error) {
           console.error('Error updating details:', error);
           alert('An error occurred while updating the Pokémon details. Please try again.');
