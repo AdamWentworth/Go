@@ -15,15 +15,29 @@ export const useFusion = (pokemon, alert) => {
 
   const handleFusionToggle = async (fusionId) => {
     console.log('handleFusionToggle called with fusionId:', fusionId);
+    
+    // --- 1) Check if OUR current Pokémon is for trade or not owned ---
+    if (!pokemon.ownershipStatus?.is_owned) {
+      alert(`This Pokémon is not owned. You cannot fuse with a non-owned instance.`);
+      return;
+    }
+    if (pokemon.ownershipStatus?.is_for_trade) {
+      alert(`This instance is listed "for trade". Remove it from trade listings before fusing.`);
+      return;
+    }
+
+    // If we pass those checks, proceed to set pendingFusionId
     setFusion(prev => ({
       ...prev,
       pendingFusionId: fusionId
     }));
 
+    // --- 2) Look up the partner instance to fuse with ---
     const selectedFusion = pokemon.fusion.find(f => f.fusion_id === fusionId);
     if (selectedFusion && selectedFusion.base_pokemon_id2) {
       const baseId2 = selectedFusion.base_pokemon_id2;
       const padded = baseId2.toString().padStart(4, '0');
+
       try {
         const variants = await getAllFromDB('pokemonVariants');
         const variantMatch = variants.find(v => v.pokemon_id === baseId2);
@@ -31,12 +45,27 @@ export const useFusion = (pokemon, alert) => {
           alert(`No variant data found for base_pokemon_id2 ${baseId2}.`);
           return;
         }
+
         const allOwnership = await getAllFromDB('pokemonOwnership');
         const ownershipMatches = allOwnership.filter(data =>
           data.instance_id && data.instance_id.startsWith(`${padded}-`)
         );
+
         if (ownershipMatches.length > 0) {
           const foundOwnership = ownershipMatches[0];
+
+          // --- 3) Check if the partner instance is valid for fusion ---
+          if (!foundOwnership.is_owned) {
+            alert(`The matching instance is not owned, so it cannot be fused.`);
+            return;
+          }
+          if (foundOwnership.is_for_trade) {
+            alert(`Cannot fuse with an instance that is listed for trade. ` +
+                  `Remove it from trade listings before fusing.`);
+            return;
+          }
+
+          // If checks pass, set the overlay so user can confirm fuse:
           setFusion(prev => ({
             ...prev,
             overlayPokemon: {

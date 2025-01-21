@@ -5,137 +5,146 @@ import { determineImageUrl } from "../../utils/imageHelpers";
 import { generateH2Content } from '../../utils/formattingHelpers';
 import './PokemonCard.css';
 
-
 const PokemonCard = ({
-    pokemon,
-    onSelect,
-    isShiny,
-    showShadow,
-    multiFormPokedexNumbers,
-    ownershipFilter,
-    isFastSelectEnabled,
-    isHighlighted,
-    showAll,
-    sortType
+  pokemon,
+  onSelect,
+  isShiny,
+  showShadow,
+  multiFormPokedexNumbers,
+  ownershipFilter,
+  isFastSelectEnabled,
+  isHighlighted,
+  showAll,
+  sortType
 }) => {
-    const [currentImage, setCurrentImage] = useState(pokemon.currentImage);
+  const [currentImage, setCurrentImage] = useState(pokemon.currentImage);
 
-    const isFemale = pokemon.ownershipStatus?.gender === "Female";
-    const isMega = pokemon.ownershipStatus?.is_mega === true; // Determine if the Pokémon is Mega Evolved
-    const megaForm = pokemon.ownershipStatus?.mega_form;
-    const isFused = pokemon.ownershipStatus?.is_fused;
-    const fusionForm = pokemon.ownershipStatus?.fusion_form;
+  const isFemale = pokemon.ownershipStatus?.gender === "Female";
+  const isMega = pokemon.ownershipStatus?.is_mega === true;
+  const megaForm = pokemon.ownershipStatus?.mega_form;
+  const isFused = pokemon.ownershipStatus?.is_fused;
+  const fusionForm = pokemon.ownershipStatus?.fusion_form;
+  const isDisabled = pokemon.ownershipStatus?.disabled === true;
 
-    useEffect(() => {
-        // Ensure that 'pokemon' is defined before calling 'determineImageUrl'
-        if (pokemon) {
-            const updatedImage = determineImageUrl(isFemale, pokemon, isMega, megaForm, isFused, fusionForm);
-            if (updatedImage) {
-                setCurrentImage(updatedImage);
-            } else {
-                // Fallback to a default image if 'determineImageUrl' returns undefined
-                setCurrentImage('/images/default_pokemon.png');
-            }
-        }
-    }, [isFemale, isMega, pokemon]);
-
-    const getOwnershipClass = () => {
-        const filter = ownershipFilter?.toLowerCase() || '';
-        let ownershipClass = '';
-        switch (filter) {
-            case 'owned': ownershipClass = 'owned'; break;
-            case 'trade': ownershipClass = 'trade'; break;
-            case 'wanted': ownershipClass = 'wanted'; break;
-            case 'unowned': ownershipClass = 'unowned'; break;
-            default: ownershipClass = ''; break;
-        }
-        return ownershipClass;
-    };
-
-    if (isShiny && showShadow && (!pokemon.image_url_shiny_shadow || pokemon.shadow_shiny_available !== 1)) {
-        return null;
+  useEffect(() => {
+    if (pokemon) {
+      if (isDisabled) {
+        // If disabled, load the special disabled image
+        setCurrentImage(`${process.env.PUBLIC_URL}/images/disabled/disabled_${pokemon.pokemon_id}.png`);
+      } else {
+        // Otherwise, use the regular logic to determine the image
+        const updatedImage = determineImageUrl(isFemale, pokemon, isMega, megaForm, isFused, fusionForm);
+        setCurrentImage(updatedImage || '/images/default_pokemon.png');
+      }
     }
+  }, [isDisabled, isFemale, isMega, isFused, megaForm, fusionForm, pokemon]);
 
-    if (showShadow && !isShiny && !pokemon.image_url_shadow) {
-        return null;
+  // Determine the ownership class
+  const getOwnershipClass = () => {
+    const filter = ownershipFilter?.toLowerCase() || '';
+    switch (filter) {
+      case 'owned':   return 'owned';
+      case 'trade':   return 'trade';
+      case 'wanted':  return 'wanted';
+      case 'unowned': return 'unowned';
+      default:        return '';
     }
+  };
 
-    const cardClass = `pokemon-card ${getOwnershipClass()} ${isHighlighted ? 'highlighted' : ''}`;
+  // Build the card's main CSS class:
+  // Add "disabled-card" if isDisabled is true
+  const cardClass = `
+    pokemon-card
+    ${getOwnershipClass()}
+    ${isHighlighted ? 'highlighted' : ''}
+    ${isDisabled ? 'disabled-card' : ''}
+  `.trim();
 
-    const shouldDisplayLuckyBackdrop =
-        (ownershipFilter.toLowerCase() === 'wanted' && pokemon.ownershipStatus && pokemon.ownershipStatus.pref_lucky) ||
-        (ownershipFilter.toLowerCase() === 'owned' && pokemon.ownershipStatus && pokemon.ownershipStatus.lucky);
+  // Early returns if images for shiny+shadow do not exist, etc.
+  if (isShiny && showShadow && (!pokemon.image_url_shiny_shadow || pokemon.shadow_shiny_available !== 1)) {
+    return null;
+  }
+  if (showShadow && !isShiny && !pokemon.image_url_shadow) {
+    return null;
+  }
 
-    return (
-        <div className={cardClass} onClick={() => {
-            if (isFastSelectEnabled) {
-                console.log(`Card highlighted: ${pokemon.name}`);
-            } else {
-                onSelect();
-            }
-        }}> 
-            <div className="cp-container">
-                <div className="cp-display" style={{ zIndex: 3 }}>
-                    {ownershipFilter !== "" ? (
-                        // First Condition: ownershipFilter is not empty
-                        pokemon.ownershipStatus?.cp && (
-                            <>
-                                <span className="cp-text">CP</span>
-                                {pokemon.ownershipStatus.cp}
-                            </>
-                        )
-                    ) : (
-                        // Second Condition: ownershipFilter is empty and sortType is 'combatPower'
-                        sortType === 'combatPower' && pokemon.cp50 !== undefined && (
-                            <>
-                                <span className="cp-text">CP</span>
-                                {pokemon.cp50}
-                            </>
-                        )
-                    )}
-                </div>
-            </div>
-            <div className="fav-container">
-                {pokemon.ownershipStatus?.favorite && (
-                    <img 
-                        src={`${process.env.PUBLIC_URL}/images/fav_pressed.png`} 
-                        alt="Favorite" 
-                        className="favorite-icon" 
-                    />
-                )}
-            </div>
-            <div className="pokemon-image-container" style={{ position: 'relative' }}>
-                {shouldDisplayLuckyBackdrop && (
-                    <div className="lucky-backdrop-wrapper">
-                        <img
-                            src={`${process.env.PUBLIC_URL}/images/lucky.png`}
-                            alt="Lucky backdrop"
-                            className="lucky-backdrop"
-                        />
-                    </div>
-                )}
-                <img 
-                    src={currentImage}
-                    alt={pokemon.name} 
-                    loading="lazy" 
-                    className="pokemon-image"
-                    style={{ zIndex: 4 }} 
-                />
-            </div>
-            <p>#{pokemon.pokedex_number}</p>
-            <div className="type-icons">
-                {pokemon.type_1_icon && (
-                    <img src={pokemon.type_1_icon} alt={pokemon.type1_name} loading="lazy" />
-                )}
-                {pokemon.type_2_icon && (
-                    <img src={pokemon.type_2_icon} alt={pokemon.type2_name} loading="lazy" />
-                )}
-            </div>
-            <h2 className="pokemon-name-display">
-                {generateH2Content(pokemon, multiFormPokedexNumbers, showAll)}
-            </h2>
+  const shouldDisplayLuckyBackdrop =
+    (ownershipFilter.toLowerCase() === 'wanted' && pokemon.ownershipStatus?.pref_lucky) ||
+    (ownershipFilter.toLowerCase() === 'owned' && pokemon.ownershipStatus?.lucky);
+
+  return (
+    <div
+      className={cardClass}
+      onClick={() => {
+        if (isFastSelectEnabled) {
+          console.log(`Card highlighted: ${pokemon.name}`);
+        } else {
+          onSelect();
+        }
+      }}
+    >
+      <div className="cp-container">
+        <div className="cp-display" style={{ zIndex: 3 }}>
+          {ownershipFilter !== "" ? (
+            // Condition 1: ownershipFilter is not empty
+            pokemon.ownershipStatus?.cp && (
+              <>
+                <span className="cp-text">CP</span>
+                {pokemon.ownershipStatus.cp}
+              </>
+            )
+          ) : (
+            // Condition 2: ownershipFilter is empty && sortType is 'combatPower'
+            sortType === 'combatPower' && pokemon.cp50 !== undefined && (
+              <>
+                <span className="cp-text">CP</span>
+                {pokemon.cp50}
+              </>
+            )
+          )}
         </div>
-    );
+      </div>
+      <div className="fav-container">
+        {pokemon.ownershipStatus?.favorite && (
+          <img
+            src={`${process.env.PUBLIC_URL}/images/fav_pressed.png`}
+            alt="Favorite"
+            className="favorite-icon"
+          />
+        )}
+      </div>
+      <div className="pokemon-image-container" style={{ position: 'relative' }}>
+        {shouldDisplayLuckyBackdrop && (
+          <div className="lucky-backdrop-wrapper">
+            <img
+              src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+              alt="Lucky backdrop"
+              className="lucky-backdrop"
+            />
+          </div>
+        )}
+        <img
+          src={currentImage}
+          alt={pokemon.name}
+          loading="lazy"
+          className="pokemon-image"
+          style={{ zIndex: 4 }}
+        />
+      </div>
+      <p>#{pokemon.pokedex_number}</p>
+      <div className="type-icons">
+        {pokemon.type_1_icon && (
+          <img src={pokemon.type_1_icon} alt={pokemon.type1_name} loading="lazy" />
+        )}
+        {pokemon.type_2_icon && (
+          <img src={pokemon.type_2_icon} alt={pokemon.type2_name} loading="lazy" />
+        )}
+      </div>
+      <h2 className="pokemon-name-display">
+        {generateH2Content(pokemon, multiFormPokedexNumbers, showAll)}
+      </h2>
+    </div>
+  );
 };
 
 export default memo(PokemonCard);

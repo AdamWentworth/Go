@@ -185,7 +185,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         weight,
         height,
       };
-
+  
       const { validationErrors, computedValues: newComputedValues } = validate(
         fieldsToValidate,
         currentBaseStats
@@ -194,6 +194,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   
       if (isValid) {
         try {
+          // apply computed values to local state if needed
           if (newComputedValues.level !== undefined) {
             setLevel(newComputedValues.level);
           }
@@ -204,37 +205,19 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             setIvs(newComputedValues.ivs);
           }
   
-          const {
-            is_fused,
-            fusion_form,
-            fusedWith: newFusedWith,
-            fusedOtherInstanceKey,
-            storedFusionObject,
-          } = fusion;
-          
-          // (A) If we parted ways with the old partner:
-          if (originalFusedWith && !is_fused) {
-            // Means we used to be fused with originalFusedWith, but now we're not
-            await updateDetails(originalFusedWith, {
-              disabled: false,
-              fused_with: null,
-            });
-          }
-          // (B) If we are newly fused with a different partner:
-          if (newFusedWith && is_fused && newFusedWith !== originalFusedWith) {
-            // Mark the new partner as disabled and fused with me
-            await updateDetails(newFusedWith, {
-              disabled: true,
-              fused_with: pokemon.pokemonKey,  // or instance_id, depending on your usage
-            });
-          }
-
-          await updateDetails(pokemon.pokemonKey, {
+          const { is_fused, fusion_form, fusedWith: newFusedWith, storedFusionObject } = fusion;
+  
+          // Gather changes into a single object
+          const changes = {};
+  
+          // Always set changes for the primary instance
+          changes[pokemon.pokemonKey] = {
             nickname: nickname,
             lucky: isLucky,
-            cp: newComputedValues.cp !== undefined
-              ? (newComputedValues.cp !== null ? Number(newComputedValues.cp) : null)
-              : (cp !== '' ? Number(cp) : null),
+            cp:
+              newComputedValues.cp !== undefined
+                ? newComputedValues.cp ?? null
+                : cp !== '' ? Number(cp) : null,
             favorite: isFavorite,
             gender: gender,
             weight: weight,
@@ -244,16 +227,28 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             charged_move2_id: moves.chargedMove2,
             attack_iv:
               newComputedValues.ivs !== undefined
-                ? (newComputedValues.ivs.Attack === '' ? null : newComputedValues.ivs.Attack)
-                : (ivs.Attack === '' ? null : ivs.Attack),
+                ? newComputedValues.ivs.Attack === ''
+                  ? null
+                  : newComputedValues.ivs.Attack
+                : ivs.Attack === ''
+                ? null
+                : ivs.Attack,
             defense_iv:
               newComputedValues.ivs !== undefined
-                ? (newComputedValues.ivs.Defense === '' ? null : newComputedValues.ivs.Defense)
-                : (ivs.Defense === '' ? null : ivs.Defense),
+                ? newComputedValues.ivs.Defense === ''
+                  ? null
+                  : newComputedValues.ivs.Defense
+                : ivs.Defense === ''
+                ? null
+                : ivs.Defense,
             stamina_iv:
               newComputedValues.ivs !== undefined
-                ? (newComputedValues.ivs.Stamina === '' ? null : newComputedValues.ivs.Stamina)
-                : (ivs.Stamina === '' ? null : ivs.Stamina),
+                ? newComputedValues.ivs.Stamina === ''
+                  ? null
+                  : newComputedValues.ivs.Stamina
+                : ivs.Stamina === ''
+                ? null
+                : ivs.Stamina,
             location_caught: locationCaught,
             date_caught: dateCaught,
             location_card: selectedBackground ? selectedBackground.background_id : null,
@@ -264,14 +259,31 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
               newComputedValues.level !== undefined
                 ? newComputedValues.level
                 : level,
-
             fusion: storedFusionObject,
             is_fused,
             fused_with: newFusedWith,
             fusion_form,
-          });
+          };
   
-          
+          // (A) If we parted ways with the old partner => disable false, fused_with: null
+          if (originalFusedWith && !is_fused) {
+            changes[originalFusedWith] = {
+              disabled: false,
+              fused_with: null,
+            };
+          }
+  
+          // (B) If newly fused with a different partner => disable true, fused_with: current key
+          if (newFusedWith && is_fused && newFusedWith !== originalFusedWith) {
+            changes[newFusedWith] = {
+              disabled: true,
+              fused_with: pokemon.pokemonKey,
+            };
+          }
+  
+          // Now call updateDetails ONCE, passing the entire changes object
+          await updateDetails(changes);
+  
           resetErrors();  
         } catch (error) {
           console.error('Error updating details:', error);
@@ -281,7 +293,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
       } else {
         const errorMessages = Object.values(validationErrors).join('\n');
         alert(errorMessages);
-        console.log(`Validation failed with errors:`, validationErrors);
+        console.log('Validation failed with errors:', validationErrors);
         return;
       }
     }
