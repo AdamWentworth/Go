@@ -102,6 +102,11 @@ type PokemonInstance struct {
 	MegaForm        *string        `gorm:"column:mega_form"`
 	IsMega          bool           `gorm:"column:is_mega;default:false"`
 	Level           *float64       `gorm:"column:level"`
+	IsFused         bool           `gorm:"column:is_fused;default:false"`
+	Fusion          string         `gorm:"column:fusion;type:json;default:'{}'"`
+	FusionForm      *string        `gorm:"column:fusion_form"`
+	FusedWith       *string        `gorm:"column:fused_with"`
+	Disabled        bool           `gorm:"column:disabled;default:false"`
 }
 
 // TableName sets the name of the table in the database

@@ -88,6 +88,11 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 			"mega_form":        instance.MegaForm,
 			"is_mega":          instance.IsMega,
 			"level":            instance.Level,
+			"is_fused":         instance.IsFused,
+			"fusion":           instance.Fusion,
+			"fusion_form":      instance.FusionForm,
+			"fused_with":       instance.FusedWith,
+			"disabled":         instance.Disabled,
 		}
 		responseInstances[instance.InstanceID] = instanceMap
 	}
@@ -185,6 +190,11 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 			"mega_form":        instance.MegaForm,
 			"is_mega":          instance.IsMega,
 			"level":            instance.Level,
+			"is_fused":         instance.IsFused,
+			"fusion":           instance.Fusion,
+			"fusion_form":      instance.FusionForm,
+			"fused_with":       instance.FusedWith,
+			"disabled":         instance.Disabled,
 		}
 		relatedInstanceByID[instance.InstanceID] = instanceMap
 	}
@@ -280,6 +290,11 @@ func GetPokemonInstancesByUsername(c *fiber.Ctx) error {
 			"last_update":      instance.LastUpdate,
 			"wanted_filters":   instance.WantedFilters,
 			"trade_filters":    instance.TradeFilters,
+			"is_fused":         instance.IsFused,
+			"fusion":           instance.Fusion,
+			"fusion_form":      instance.FusionForm,
+			"fused_with":       instance.FusedWith,
+			"disabled":         instance.Disabled,
 		}
 
 		// Add the instance to the response data using its `InstanceID`

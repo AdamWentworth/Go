@@ -98,6 +98,11 @@ func GetUpdates(c *fiber.Ctx) error {
 			"mega_form":        instance.MegaForm,
 			"is_mega":          instance.IsMega,
 			"level":            instance.Level,
+			"is_fused":         instance.IsFused,
+			"fusion":           instance.Fusion,
+			"fusion_form":      instance.FusionForm,
+			"fused_with":       instance.FusedWith,
+			"disabled":         instance.Disabled,
 		}
 		pokemonData[instance.InstanceID] = instanceMap
 	}
@@ -187,6 +192,11 @@ func GetUpdates(c *fiber.Ctx) error {
 					"mega_form":        instance.MegaForm,
 					"is_mega":          instance.IsMega,
 					"level":            instance.Level,
+					"is_fused":         instance.IsFused,
+					"fusion":           instance.Fusion,
+					"fusion_form":      instance.FusionForm,
+					"fused_with":       instance.FusedWith,
+					"disabled":         instance.Disabled,
 				}
 				relatedInstances[instance.InstanceID] = instanceMap
 			}
@@ -234,6 +244,11 @@ func GetUpdates(c *fiber.Ctx) error {
 					"mega_form":        instance.MegaForm,
 					"is_mega":          instance.IsMega,
 					"level":            instance.Level,
+					"is_fused":         instance.IsFused,
+					"fusion":           instance.Fusion,
+					"fusion_form":      instance.FusionForm,
+					"fused_with":       instance.FusedWith,
+					"disabled":         instance.Disabled,
 				}
 				relatedInstances[instance.InstanceID] = instanceMap
 			}
