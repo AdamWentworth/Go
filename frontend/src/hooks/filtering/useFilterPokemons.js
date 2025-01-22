@@ -43,16 +43,39 @@ const useFilterPokemons = (filteredVariants, variants, filters, showEvolutionary
             const isVariantShiny = pokemon.variantType.includes('shiny');
             const isVariantShadow = pokemon.variantType.includes('shadow');
             const isVariantCostume = pokemon.variantType.includes('costume');
+            
+            if (isShiny && showAll &&!showCostume) {
+                return isVariantShiny;
+            }
+
+            if (showCostume && showAll &&!showShadow) {
+                return isVariantCostume;
+            }
+
+            if (showShadow && showAll &&!showCostume) {
+                return isVariantShadow;
+            }
+            if (showAll && isShiny && showCostume &&!showShadow)
+                return isVariantCostume && isVariantShiny && !isVariantShadow;
+
+            if (showAll && isShiny && !showCostume && showShadow)
+                return !isVariantCostume && isVariantShiny && isVariantShadow;
+
+            if (showAll && !isShiny && showCostume && showShadow)
+                return isVariantCostume && !isVariantShiny && isVariantShadow;
+
+            if (showAll && isShiny && showCostume && showShadow)
+                return isVariantCostume && isVariantShiny && isVariantShadow;
 
             // Determine if the variant matches active filters
             if (isShiny && !showShadow && !showCostume) {
                 // Show only non-costume shinies unless showCostume is also true
-                return isVariantShiny;
+                return isVariantShiny && !isVariantCostume && !pokemon.variantType.includes('shiny_shadow');
             }
 
             if (showShadow && !isShiny) {
                 // Show only shadows, excluding shiny shadows unless isShiny is also true
-                return isVariantShadow;
+                return isVariantShadow && !isVariantShiny;
             }
 
             if (isShiny && showShadow) {
@@ -62,7 +85,7 @@ const useFilterPokemons = (filteredVariants, variants, filters, showEvolutionary
 
             if (showCostume && !isShiny) {
                 // Show only costumes, excluding shiny variants unless isShiny is also true
-                return isVariantCostume;
+                return isVariantCostume && !pokemon.variantType.includes('_shiny');
             }
 
             if (isShiny && showCostume) {
@@ -74,6 +97,7 @@ const useFilterPokemons = (filteredVariants, variants, filters, showEvolutionary
             if (showAll) {
                 return true; // Show all variants when showAll is active
             }
+
 
             // Fallback to false for all other cases
             return false;
