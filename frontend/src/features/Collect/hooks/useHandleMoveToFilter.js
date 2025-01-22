@@ -13,6 +13,7 @@ function useHandleMoveToFilter({
   ownershipData,
   setIsUpdating,
   promptMegaPokemonSelection,
+  promptFusionPokemonSelection, // <--- ADD this function to handle Fusion logic
 }) {
   const { confirm, alert } = useModal();
 
@@ -20,33 +21,38 @@ function useHandleMoveToFilter({
     async (filter, cardsToMove) => {
       try {
         setIsUpdating(true);
+        // Let the UI update before heavy processing
         await new Promise((resolve) => setTimeout(resolve, 0));
+
         if (cardsToMove.size > 0) {
           await updateOwnership([...cardsToMove], filter);
         }
+
         setHighlightedCards(new Set());
-        // if (filter !== "Unowned") {
-        //   setOwnershipFilter(filter);
-        // }
+        // If you want to auto-switch the UI filter after moving, you could:
+        // setOwnershipFilter(filter);
       } catch (error) {
         console.error('Error updating ownership:', error);
       } finally {
         setIsUpdating(false);
       }
     },
-    [updateOwnership, setHighlightedCards, setOwnershipFilter, setIsUpdating]
+    [updateOwnership, setHighlightedCards, setIsUpdating]
+    // (If you want to auto-switch filters, add setOwnershipFilter to the dependency array above)
   );
 
   const handleConfirmMoveToFilter = useCallback(
     async (filter) => {
       const messageDetails = [];
-      const megaPokemonKeys = [];
-      const shadowPokemonKeys = []; // Added for Shadow Pokémon
-      const skippedMegaPokemonKeys = [];
-      const regularPokemonKeys = [];
       let remainingHighlightedCards = new Set(highlightedCards);
 
-      // First pass: Separate Mega and Shadow Pokémon from regular Pokémon
+      // We'll categorize the highlighted cards
+      const megaPokemonKeys = [];
+      const shadowPokemonKeys = [];
+      const fusionPokemonKeys = []; // <--- NEW array for Fusion
+      const regularPokemonKeys = [];
+
+      // --- 1) Sort out Mega, Shadow, Fusion, or regular ---
       for (const pokemonKey of highlightedCards) {
         const parsed = parsePokemonKey(pokemonKey);
         if (!parsed) {
@@ -55,75 +61,179 @@ function useHandleMoveToFilter({
         }
 
         const { baseKey } = parsed;
-        let megaForm = undefined;
 
-        if (baseKey.includes('_mega') || baseKey.includes('-mega') || baseKey.includes('_primal') || baseKey.includes('-primal')) {
-          if (baseKey.includes('mega_x')) {
-            megaForm = 'X';
-          } else if (baseKey.includes('mega_y')) {
-            megaForm = 'Y';
-          }
+        // Mega check
+        if (
+          baseKey.includes('_mega') ||
+          baseKey.includes('-mega') ||
+          baseKey.includes('_primal') ||
+          baseKey.includes('-primal')
+        ) {
+          // If it specifically includes "mega_x" or "mega_y", store that
+          let megaForm;
+          if (baseKey.includes('mega_x')) megaForm = 'X';
+          else if (baseKey.includes('mega_y')) megaForm = 'Y';
+
           megaPokemonKeys.push({ key: pokemonKey, baseKey, megaForm });
-        } else if (baseKey.includes('shadow')) { // Detect Shadow Pokémon
+        }
+        // Shadow check
+        else if (baseKey.includes('shadow')) {
           shadowPokemonKeys.push({ key: pokemonKey, baseKey });
-        } else {
+        }
+        // Fusion check
+        else if (baseKey.includes('fusion')) {
+          fusionPokemonKeys.push({ key: pokemonKey, baseKey });
+        }
+        // Regular
+        else {
           regularPokemonKeys.push({ key: pokemonKey, parsed });
         }
       }
 
-      // **New Section: Early Check for Mega and Shadow Pokémon in "Trade" or "Wanted" Filters**
+      // --- 2) If the user is moving to Trade or Wanted, block Mega, Shadow, or Fusion ---
       const isTradeOrWanted = filter === 'Trade' || filter === 'Wanted';
 
-      // Handle Mega Pokémon early interruption
+      // NEW: Check for fused instances when moving to 'Unowned'
+      if (filter === 'Unowned') {
+        const fusedInstances = [];
+        for (const pokemonKey of highlightedCards) {
+          const instance = ownershipData[pokemonKey];
+          if (instance && instance.is_fused) {
+            fusedInstances.push(pokemonKey);
+          }
+        }
+        if (fusedInstances.length > 0) {
+          const fusedMsg = fusedInstances
+            .map((key) => {
+              const instance = ownershipData[key];
+              return `• ${
+                instance?.nickname ||
+                getDisplayName(parsePokemonKey(key)?.baseKey, variants) ||
+                key
+              } is fused. Please unfuse before transferring.`;
+            })
+            .join('\n');
+
+          await alert(fusedMsg);
+          return; // Stop the transfer process if any fused Pokémon are detected
+        }
+      }
+
+      // --- 2) If the user is moving to Trade or Wanted, block Mega, Shadow, or Fusion ---
       if (isTradeOrWanted && megaPokemonKeys.length > 0) {
-        // Construct alert message listing all Mega Pokémon
-        const megaMessages = megaPokemonKeys.map(({ key }) => {
-          const instance = ownershipData[key];
-          const displayName = instance?.nickname || getDisplayName(parsePokemonKey(key)?.baseKey, variants) || key;
-          return `• ${displayName} cannot be moved to ${filter} as it is a Mega Pokémon.`;
-        }).join('\n');
+        const blockedMegaMsg = megaPokemonKeys
+          .map(({ key }) => {
+            const instance = ownershipData[key];
+            return `• ${
+              instance?.nickname ||
+              getDisplayName(parsePokemonKey(key)?.baseKey, variants) ||
+              key
+            } (Mega) cannot be moved to ${filter}.`;
+          })
+          .join('\n');
 
-        // Log the blocking reason
-        console.log(`Move to ${filter} blocked due to Mega Pokémon: ${megaPokemonKeys.map(mp => mp.key).join(', ')}`);
-
-        // Show alert to the user
-        await alert(megaMessages);
-
-        // Interrupt the function
-        return;
+        await alert(blockedMegaMsg);
+        return; // Stop entire operation
       }
 
-      // Handle Shadow Pokémon early interruption
       if (isTradeOrWanted && shadowPokemonKeys.length > 0) {
-        // Construct alert message listing all Shadow Pokémon
-        const shadowMessages = shadowPokemonKeys.map(({ key }) => {
-          const instance = ownershipData[key];
-          const displayName = instance?.nickname || getDisplayName(parsePokemonKey(key)?.baseKey, variants) || key;
-          return `• ${displayName} cannot be moved to ${filter} as it is a Shadow Pokémon.`;
-        }).join('\n');
+        const blockedShadowMsg = shadowPokemonKeys
+          .map(({ key }) => {
+            const instance = ownershipData[key];
+            return `• ${
+              instance?.nickname ||
+              getDisplayName(parsePokemonKey(key)?.baseKey, variants) ||
+              key
+            } (Shadow) cannot be moved to ${filter}.`;
+          })
+          .join('\n');
 
-        // Log the blocking reason
-        console.log(`Move to ${filter} blocked due to Shadow Pokémon: ${shadowPokemonKeys.map(sp => sp.key).join(', ')}`);
-
-        // Show alert to the user
-        await alert(shadowMessages);
-
-        // Interrupt the function
-        return;
+        await alert(blockedShadowMsg);
+        return; // Stop entire operation
       }
-      // **End of New Section**
 
-      // Process regular Pokémon first
+      if (isTradeOrWanted && fusionPokemonKeys.length > 0) {
+        const blockedFusionMsg = fusionPokemonKeys
+          .map(({ key }) => {
+            const instance = ownershipData[key];
+            return `• ${
+              instance?.nickname ||
+              getDisplayName(parsePokemonKey(key)?.baseKey, variants) ||
+              key
+            } (Fusion) cannot be moved to ${filter}.`;
+          })
+          .join('\n');
+
+        await alert(blockedFusionMsg);
+        return; // Stop entire operation
+      }
+
+      // --- 3) Prompt for user’s choice if we have any Mega or Fusion Pokémon ---
+      // We do them separately. Let's store skipped keys in arrays to show the user later.
+      const skippedMegaPokemonKeys = [];
+      const skippedFusionPokemonKeys = [];
+
+      // 3(a) Handle Mega Pokémon (only if not blocked above)
+      if (megaPokemonKeys.length > 0) {
+        console.log('Handling Mega Pokémon...');
+        for (const { key: pokemonKey, baseKey, megaForm } of megaPokemonKeys) {
+          try {
+            console.log('Handling Mega Pokémon with baseKey:', baseKey, 'and megaForm:', megaForm);
+
+            // We'll call the external function you provided:
+            const result = await promptMegaPokemonSelection(baseKey, megaForm);
+
+            if (result === 'assignExisting' || result === 'createNew') {
+              // Remove from the set so we don't handle it again
+              remainingHighlightedCards.delete(pokemonKey);
+              console.log(`Successfully handled Mega Pokémon: ${baseKey}`);
+            } else {
+              // If the user canceled or something else, skip it
+              skippedMegaPokemonKeys.push(baseKey);
+              console.log(`Skipped Mega Pokémon: ${baseKey}`);
+              remainingHighlightedCards.delete(pokemonKey);
+            }
+          } catch (error) {
+            console.error(`Error handling Mega Pokémon (${baseKey}):`, error);
+            skippedMegaPokemonKeys.push(baseKey);
+            remainingHighlightedCards.delete(pokemonKey);
+          }
+        }
+      }
+
+      // 3(b) Handle Fusion Pokémon (only if not blocked above)
+      if (fusionPokemonKeys.length > 0) {
+        console.log('Handling Fusion Pokémon...');
+        for (const { key: pokemonKey, baseKey } of fusionPokemonKeys) {
+          try {
+            console.log('Handling Fusion Pokémon with baseKey:', baseKey);
+
+            // We'll call a new function you pass in, similar to promptMegaPokemonSelection:
+            const result = await promptFusionPokemonSelection(baseKey);
+
+            // Suppose you return either 'fuseThis', 'cancel', or similar
+            if (result === 'fuseThis' || result === 'assignFusion' || result === 'createNew') {
+              remainingHighlightedCards.delete(pokemonKey);
+              console.log(`Successfully handled Fusion Pokémon: ${baseKey}`);
+            } else {
+              skippedFusionPokemonKeys.push(baseKey);
+              console.log(`Skipped Fusion Pokémon: ${baseKey}`);
+              remainingHighlightedCards.delete(pokemonKey);
+            }
+          } catch (error) {
+            console.error(`Error handling Fusion Pokémon (${baseKey}):`, error);
+            skippedFusionPokemonKeys.push(baseKey);
+            remainingHighlightedCards.delete(pokemonKey);
+          }
+        }
+      }
+
+      // --- 4) Build the summary message for Regular Pokémon moves ---
       for (const { key: pokemonKey, parsed } of regularPokemonKeys) {
         const { baseKey, hasUUID } = parsed;
+        const instance = ownershipData[pokemonKey];
 
-        if (hasUUID) {
-          const instance = ownershipData[pokemonKey];
-          if (!instance) {
-            console.warn(`No instance found for UUID: ${pokemonKey}`);
-            continue;
-          }
-
+        if (hasUUID && instance) {
           const currentStatus = instance.is_unowned
             ? 'Unowned'
             : instance.is_for_trade
@@ -136,45 +246,19 @@ function useHandleMoveToFilter({
 
           const displayName = instance.nickname || getDisplayName(baseKey, variants);
           const actionDetail = `Move ${displayName} from ${currentStatus} to ${filter}`;
-          
+
           if (!messageDetails.includes(actionDetail)) {
             messageDetails.push(actionDetail);
           }
         } else {
+          // If there's no instance, it implies we're adding brand-new ownership from the Pokedex
           const displayName = getDisplayName(baseKey, variants);
           const actionDetail = `Generate ${displayName} from Pokédex to ${filter}`;
           messageDetails.push(actionDetail);
         }
       }
 
-      // Handle Mega Pokémon after regular Pokémon (if not interrupted)
-      if (megaPokemonKeys.length > 0) {
-        console.log('Handling Mega Pokémon...');
-        for (const { key: pokemonKey, baseKey, megaForm } of megaPokemonKeys) {
-          try {
-            console.log('Handling Mega Pokémon with baseKey:', baseKey, 'and megaForm:', megaForm);
-            const result = await promptMegaPokemonSelection(baseKey, megaForm);
-
-            if (result === 'assignExisting' || result === 'createNew') {
-              remainingHighlightedCards.delete(pokemonKey);
-              console.log(`Successfully handled Mega Pokémon: ${baseKey}`);
-            } else {
-              skippedMegaPokemonKeys.push(baseKey);
-              console.log(`Skipped Mega Pokémon: ${baseKey}`);
-              // Remove the skipped mega key from remaining cards
-              remainingHighlightedCards.delete(pokemonKey);
-            }
-          } catch (error) {
-            console.error(`Error handling Mega Pokémon (${baseKey}):`, error);
-            skippedMegaPokemonKeys.push(baseKey);
-            console.log(`Skipped Mega Pokémon: ${baseKey}`);
-            // Remove the errored mega key from remaining cards
-            remainingHighlightedCards.delete(pokemonKey);
-          }
-        }
-      }
-
-      // Show confirmation dialog for remaining Pokémon
+      // --- 5) Confirmation for Regular Pokémon moves ---
       if (messageDetails.length > 0) {
         const maxDetails = 10;
         const hasMore = messageDetails.length > maxDetails;
@@ -184,6 +268,7 @@ function useHandleMoveToFilter({
 
         const additionalCount = hasMore ? messageDetails.length - maxDetails : 0;
         const summaryMessage = `Are you sure you want to make the following changes?`;
+
         const detailsList = displayedDetails.map((detail, index) => (
           <li key={index}>{detail}</li>
         ));
@@ -214,12 +299,21 @@ function useHandleMoveToFilter({
           console.log('User canceled the operation.');
         }
       } else {
+        // If there's nothing to confirm, just move the remaining
         handleMoveHighlightedToFilter(filter, remainingHighlightedCards);
       }
 
-      // Show skipped Mega Pokémon message at the end if any were skipped
+      // --- 6) Show messages if we skipped any Mega or Fusion Pokémon ---
       if (skippedMegaPokemonKeys.length > 0) {
         const skippedMessage = `Skipped handling of Mega Pokémon with baseKey(s): ${skippedMegaPokemonKeys.join(
+          ', '
+        )}`;
+        console.log(skippedMessage);
+        await alert(skippedMessage);
+      }
+
+      if (skippedFusionPokemonKeys.length > 0) {
+        const skippedMessage = `Skipped handling of Fusion Pokémon with baseKey(s): ${skippedFusionPokemonKeys.join(
           ', '
         )}`;
         console.log(skippedMessage);
@@ -230,11 +324,11 @@ function useHandleMoveToFilter({
       highlightedCards,
       ownershipData,
       variants,
-      handleMoveHighlightedToFilter,
-      promptMegaPokemonSelection,
       confirm,
       alert,
-      setHighlightedCards,
+      handleMoveHighlightedToFilter,
+      promptMegaPokemonSelection,
+      promptFusionPokemonSelection,
     ]
   );
 

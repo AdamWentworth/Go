@@ -8,7 +8,7 @@ export const useFusion = (pokemon, alert) => {
     fusion_form: pokemon.ownershipStatus?.fusion_form || null,
     fusedWith: pokemon.ownershipStatus?.fused_with || null,
     fusedOtherInstanceKey: null,
-    storedFusionObject: (pokemon.ownershipStatus && pokemon.ownershipStatus.fusion) || {}, 
+    storedFusionObject: (pokemon.ownershipStatus && pokemon.ownershipStatus.fusion) || {},
     overlayPokemon: null,
     pendingFusionId: null,
   });
@@ -47,35 +47,50 @@ export const useFusion = (pokemon, alert) => {
         }
 
         const allOwnership = await getAllFromDB('pokemonOwnership');
+        // Gather all potential matches for the second base ID
         const ownershipMatches = allOwnership.filter(data =>
           data.instance_id && data.instance_id.startsWith(`${padded}-`)
         );
 
-        if (ownershipMatches.length > 0) {
-          const foundOwnership = ownershipMatches[0];
+        console.log('[useFusion] Potential ownershipMatches:', ownershipMatches);
 
-          // --- 3) Check if the partner instance is valid for fusion ---
-          if (!foundOwnership.is_owned) {
-            alert(`The matching instance is not owned, so it cannot be fused.`);
-            return;
+        // --- 3) Filter out any ownership instance that is not viable ---
+        // e.g., it's not owned, it's for trade, or it's disabled (already fused)
+        const validMatches = ownershipMatches.filter(match => {
+          const reasons = [];
+          if (!match.is_owned) {
+            reasons.push('not owned');
           }
-          if (foundOwnership.is_for_trade) {
-            alert(`Cannot fuse with an instance that is listed for trade. ` +
-                  `Remove it from trade listings before fusing.`);
-            return;
+          if (match.is_for_trade) {
+            reasons.push('for trade');
+          }
+          if (match.disabled) {
+            reasons.push('disabled');
           }
 
-          // If checks pass, set the overlay so user can confirm fuse:
-          setFusion(prev => ({
-            ...prev,
-            overlayPokemon: {
-              ...variantMatch,
-              ownershipStatus: foundOwnership
-            }
-          }));
-        } else {
-          alert(`No matching instances found for fusion base_pokemon_id2 ${baseId2}.`);
+          if (reasons.length > 0) {
+            console.log(`[useFusion] Excluding ${match.instance_id} because: ${reasons.join(', ')}`);
+          }
+          return reasons.length === 0; // Only keep if no invalid reasons
+        });
+
+        if (validMatches.length === 0) {
+          alert(`No valid instance found for fusion with base_pokemon_id2 ${baseId2}.
+All matches were either not owned, for trade, or already fused (disabled).`);
+          return;
         }
+
+        // If you only want the *first* valid match:
+        const foundOwnership = validMatches[0];
+
+        // If checks pass, set the overlay so user can confirm fuse
+        setFusion(prev => ({
+          ...prev,
+          overlayPokemon: {
+            ...variantMatch,
+            ownershipStatus: foundOwnership
+          }
+        }));
       } catch (error) {
         console.error('Error retrieving data from indexedDB:', error);
       }
@@ -99,6 +114,9 @@ export const useFusion = (pokemon, alert) => {
         if (prev.overlayPokemon?.ownershipStatus?.instance_id) {
           updated.fusedWith = prev.overlayPokemon.ownershipStatus.instance_id;
           updated.fusedOtherInstanceKey = prev.overlayPokemon.ownershipStatus.instance_id;
+
+          // If you also want to set the partner's "disabled = true" once fused, you can do so
+          // (But you'd need an update back to your DB if you want it persistent)
         }
 
         // Permanently record that we have used this fusion_id in the storedFusionObject
@@ -127,6 +145,7 @@ export const useFusion = (pokemon, alert) => {
       is_fused: false,
       fusion_form: null,
       fusedWith: null,
+      fusedOtherInstanceKey: null,
     }));
   };
 

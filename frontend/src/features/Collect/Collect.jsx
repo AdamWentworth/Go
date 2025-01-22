@@ -28,6 +28,7 @@ import useUIHandlers from './hooks/useUIHandlers';
 import useHandleMoveToFilter from './hooks/useHandleMoveToFilter';
 import usePokemonProcessing from './hooks/usePokemonProcessing';
 import useMegaPokemonHandler from './hooks/useMegaPokemonHandler'; 
+import useFusionPokemonHandler from './hooks/useFusionPokemonHandler'
 
 // Global Component
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -233,6 +234,11 @@ function Collect({ isOwnCollection }) {
   } = useMegaPokemonHandler(); // Use the custom hook
 
   const {
+    promptFusionPokemonSelection,
+    FusionPokemonModal,
+  } = useFusionPokemonHandler();
+
+  const {
     handleConfirmMoveToFilter,
   } = useHandleMoveToFilter({
     setOwnershipFilter,
@@ -242,7 +248,8 @@ function Collect({ isOwnCollection }) {
     variants,
     ownershipData,
     setIsUpdating: (value) => setIsUpdating(value), // Assuming setIsUpdating is still needed
-    promptMegaPokemonSelection, // Pass the callback from the custom hook
+    promptMegaPokemonSelection,
+    promptFusionPokemonSelection
   });
 
   const [isShowingLists, setIsShowingLists] = useState(false);
@@ -382,6 +389,7 @@ function Collect({ isOwnCollection }) {
       )}
 
       <MegaPokemonModal />
+      <FusionPokemonModal />
     </div>
   );
 }
