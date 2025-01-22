@@ -186,6 +186,14 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
         contentParts.push(pokemon.ownershipStatus.mega_form);
     }
 
+    if (pokemon.ownershipStatus?.is_fused && pokemon.ownershipStatus.fusion_form) {
+        contentParts.pop(nameText)
+        contentParts.push(pokemon.ownershipStatus.fusion_form);
+        if (pokemon.ownershipStatus.shiny) {
+            isShiny = true
+        }
+    }
+
     if (isShiny) {
         contentParts.unshift('Shiny');
     }
