@@ -47,12 +47,45 @@ const MovesComponent = ({ pokemon, editMode, onMovesChange }) => {
     }
   };
 
-  // Updated renderMoveOptions to allow "unselected move", bold legacy moves, and no image for unselected moves
+  const getFusionId = () => {
+    const fusionForm = pokemon?.ownershipStatus?.fusion_form;
+    if (!fusionForm) {
+      return null;
+    }
+    if (!pokemon?.fusion || !Array.isArray(pokemon.fusion)) {
+      return null;
+    }
+    const matchingFusion = pokemon.fusion.find(f => f.name === fusionForm);
+    const fusionId = matchingFusion ? matchingFusion.fusion_id : null;
+    return fusionId;
+  };
+
+  const fusionId = getFusionId();
+
   const renderMoveOptions = (moves, selectedMove, moveType) => {
-    const filteredMoves = moves.filter(move => !(moveType.includes('charged') && ((moveType === 'charged1' && move.move_id === chargedMove2) || (moveType === 'charged2' && move.move_id === chargedMove1))));
-
+  
+    const filteredMoves = moves.filter(move => {
+      // Exclude moves with a fusion_id if no fusion_form is present.
+      if (fusionId == null && move.fusion_id != null) {
+        return false;
+      }
+      // If fusionId exists and the move has a fusion_id, require a match.
+      if (fusionId != null && move.fusion_id != null && move.fusion_id !== fusionId) {
+        return false;
+      }
+      // Existing filtering for charged move conflicts.
+      if (
+        moveType.includes('charged') &&
+        ((moveType === 'charged1' && move.move_id === chargedMove2) ||
+         (moveType === 'charged2' && move.move_id === chargedMove1))
+      ) {
+        return false;
+      }
+      return true;
+    });
+  
     const move = getMoveById(selectedMove);
-
+  
     return (
       <div className="move-option-container">
         {/* Only show type icon if a valid move is selected */}
@@ -61,10 +94,18 @@ const MovesComponent = ({ pokemon, editMode, onMovesChange }) => {
         ) : (
           <span className="no-type-icon"></span>
         )}
-        <select value={selectedMove || ''} onChange={(event) => handleMoveChange(event, moveType)} className="move-select">
+        <select 
+          value={selectedMove || ''} 
+          onChange={(event) => handleMoveChange(event, moveType)} 
+          className="move-select"
+        >
           <option value="">Unselected move</option>
           {filteredMoves.map(move => (
-            <option key={move.move_id} value={move.move_id} style={move.legacy ? { fontWeight: 'bold' } : {}}>
+            <option 
+              key={move.move_id} 
+              value={move.move_id} 
+              style={move.legacy ? { fontWeight: 'bold' } : {}}
+            >
               {move.name}{move.legacy ? '*' : ''}
             </option>
           ))}
@@ -72,9 +113,8 @@ const MovesComponent = ({ pokemon, editMode, onMovesChange }) => {
         <div className="spacer"></div>
       </div>
     );
-  };
+  };  
 
-  // Updated renderMoveInfo to bold legacy moves with an asterisk
   const renderMoveInfo = (moveId, moveType) => {
     if (!moveId) return <span className="unselected-move">Unselected move</span>;
     
@@ -100,14 +140,20 @@ const MovesComponent = ({ pokemon, editMode, onMovesChange }) => {
   return (
     <div className={`moves-container ${editMode ? 'editable' : ''}`}>
       <div className="move-section">
-        {editMode ? renderMoveOptions(fastMoves, fastMove, 'fast') : renderMoveInfo(fastMove, 'fast')}
+        {editMode 
+          ? renderMoveOptions(fastMoves, fastMove, 'fast') 
+          : renderMoveInfo(fastMove, 'fast')}
       </div>
       <div className="move-section">
-        {editMode ? renderMoveOptions(chargedMoves, chargedMove1, 'charged1') : renderMoveInfo(chargedMove1, 'charged1')}
+        {editMode 
+          ? renderMoveOptions(chargedMoves, chargedMove1, 'charged1') 
+          : renderMoveInfo(chargedMove1, 'charged1')}
       </div>
       <div className="move-section">
         {chargedMove2 ? (
-          editMode ? renderMoveOptions(chargedMoves, chargedMove2, 'charged2') : renderMoveInfo(chargedMove2, 'charged2')
+          editMode 
+            ? renderMoveOptions(chargedMoves, chargedMove2, 'charged2') 
+            : renderMoveInfo(chargedMove2, 'charged2')
         ) : editMode ? (
           <button onClick={addSecondChargedMove} className="icon-button add-move-button">
             <span className="move-add-icon">+</span>
