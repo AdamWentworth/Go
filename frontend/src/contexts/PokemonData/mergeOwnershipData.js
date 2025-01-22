@@ -123,6 +123,60 @@ export const mergeOwnershipData = (oldData, newData, username) => {
         }
     });
 
+    // --- 3b) Fusion: drop unowned fusion variants if there's a matching ".fusion" ownership ---
+    Object.keys(mergedData).forEach((key) => {
+        // Only handle keys that contain "fusion"
+        if (key.includes("fusion")) {
+    
+            // 1) Grab the digits before the first dash => pokemonId
+            const leadingDigitsMatch = key.match(/^(\d+)-/);
+            if (!leadingDigitsMatch) {
+                return;
+            }
+            const pokemonId = leadingDigitsMatch[1]; // e.g. "0800"
+    
+            // 2) Find "fusion_" plus the digits => fusionId
+            const fusionIdMatch = key.match(/fusion_(\d+)/);
+            if (!fusionIdMatch) {
+                return;
+            }
+            const fusionId = fusionIdMatch[1]; // e.g. "1"
+    
+            // 3) Determine if it's shiny by seeing if the key has "shiny" anywhere
+            const isShiny = key.includes("shiny");
+
+            // Gather related keys in newData that match the same pokemonId
+            // AND either both have "shiny" or both do NOT have "shiny".
+            // This way, if we're dealing with a "shiny" fusion key, we only look at "shiny" base entries, etc.
+            const relatedNewKeys = Object.keys(newData).filter((newKey) => {
+                if (!newKey.startsWith(pokemonId)) return false;
+                const newKeyIsShiny = newKey.includes("shiny");
+                return newKeyIsShiny === isShiny;
+            });
+
+            // Check if user already owns this (shiny or non-shiny) fusion variant
+            const hasOwnedFusionVariant = relatedNewKeys.some((newKey, index) => {
+                // Retrieve the entry from newData
+                const entry = newData[newKey];
+                if (!entry) {
+                    return false;
+                }
+                // If fusion is missing or not an object, initialize to avoid errors
+                if (!entry.fusion || typeof entry.fusion !== 'object') {
+                    entry.fusion = {};
+                }
+                // Now we safely check if this entry’s fusion has fusionId == true
+                const hasThisFusion = entry.fusion[fusionId] === true;
+                return hasThisFusion;
+            });
+
+            // If the user already owns this fusion variant, remove the unowned fusion key
+            if (hasOwnedFusionVariant && mergedData[key].is_unowned === true) {
+                delete mergedData[key];
+            }
+        }
+    });
+
     // Step 4: Ensure at most one instance per prefix has is_unowned: true
     const finalData = {};
 
