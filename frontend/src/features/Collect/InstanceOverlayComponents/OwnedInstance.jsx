@@ -88,9 +88,9 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   const [level, setLevel] = useState(pokemon.ownershipStatus.level || null);
 
   // Memoized values
-  const currentBaseStats = useMemo(() => 
-    calculateBaseStats(pokemon, megaData), 
-    [pokemon, megaData]
+  const currentBaseStats = useMemo(
+    () => calculateBaseStats(pokemon, megaData, fusion),
+    [pokemon, megaData, fusion]
   );
 
   // console.log(pokemon)

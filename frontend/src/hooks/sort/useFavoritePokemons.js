@@ -20,8 +20,8 @@ const useFavoritePokemons = (displayedPokemons, sortMode, { isShiny, showShadow,
 
         // Sort Pokémon: Favorites first, then by CP within each group
         const sortedPokemons = filteredPokemons.sort((a, b) => {
-            const favA = a.favorite;
-            const favB = b.favorite;
+            const favA = a.ownershipStatus?.favorite;
+            const favB = b.ownershipStatus?.favorite;
 
             // Prioritize favorites
             if (favA && !favB) return -1;
