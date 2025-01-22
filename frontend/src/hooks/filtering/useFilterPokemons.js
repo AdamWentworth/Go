@@ -85,7 +85,7 @@ const useFilterPokemons = (filteredVariants, variants, filters, showEvolutionary
 
             if (showCostume && !isShiny) {
                 // Show only costumes, excluding shiny variants unless isShiny is also true
-                return isVariantCostume && !pokemon.variantType.includes('_shiny');
+                return isVariantCostume && !pokemon.variantType.includes('_shiny') && !pokemon.variantType.includes('_shadow');
             }
 
             if (isShiny && showCostume) {

@@ -93,7 +93,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     [pokemon, megaData, fusion]
   );
 
-  // console.log(pokemon)
+  console.log(pokemon)
 
   useCalculatedCP({ currentBaseStats, level, ivs, setCP });
 

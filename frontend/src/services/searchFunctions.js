@@ -60,6 +60,23 @@ export function handleSearchTermChange(allPokemons, term, generations, pokemonTy
                 tempResults = tempResults.filter(pokemon => 
                     !pokemon.rarity || !pokemon.rarity.toLowerCase().includes('regional')
                 );
+            } else if (iTerm === 'mega') {
+                tempResults = tempResults.filter(pokemon => 
+                    Array.isArray(pokemon.megaEvolutions) && pokemon.megaEvolutions.length > 0 &&
+                    !(pokemon.variantType && pokemon.variantType.includes('shadow'))
+                );
+            } else if (iTerm === '!mega') {
+                tempResults = tempResults.filter(pokemon => 
+                    !Array.isArray(pokemon.megaEvolutions) || pokemon.megaEvolutions.length === 0
+                );
+            } else if (iTerm === 'fusion') {
+                tempResults = tempResults.filter(pokemon => 
+                    Array.isArray(pokemon.fusion) && pokemon.fusion.length > 0
+                );
+            } else if (iTerm === '!fusion') {
+                tempResults = tempResults.filter(pokemon => 
+                    !Array.isArray(pokemon.fusion) || pokemon.fusion.length === 0
+                );
             } else {
                 const generationNumber = generationMap[iTerm];
                 if (generationNumber !== undefined) {
@@ -123,6 +140,7 @@ export function checkTermMatches(pokemon, term, pokemonTypes, generationMap) {
     const isMythicalSearch = term === 'mythical';
     const isUltraBeastSearch = term === 'ultrabeast';
     const isRegionalSearch = term === 'regional';
+    const isMegaSearch = term === 'mega';
 
     let result = false;
 
@@ -147,6 +165,15 @@ export function checkTermMatches(pokemon, term, pokemonTypes, generationMap) {
         result = pokemon.rarity && pokemon.rarity.toLowerCase().includes('ultra beast');
     } else if (isRegionalSearch) {
         result = pokemon.rarity && pokemon.rarity.toLowerCase().includes('regional');
+    } else if (isMegaSearch) {
+        result = (
+            Array.isArray(pokemon.megaEvolutions) &&
+            pokemon.megaEvolutions.length > 0 &&
+            !(pokemon.variantType && pokemon.variantType.includes('shadow')) &&
+            !(pokemon.ownershipStatus && pokemon.ownershipStatus.instance_id.includes('clone'))
+        );
+    } else if (term === 'fusion') {
+        result = Array.isArray(pokemon.fusion) && pokemon.fusion.length > 0;
     } else {
         result = (
             pokemon.name &&
