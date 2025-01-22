@@ -64,10 +64,6 @@ function useFusionPokemonHandler() {
       }
       return true;
     });
-  
-    console.log(
-      `[Fusion Handler] getCandidatesForIdWithVariants(${baseId}, shiny=${isShiny}, ignoreShiny=${ignoreShiny}) => found ${filtered.length} candidate(s)`
-    );
 
     // 2) For each candidate, fetch the matching variant data
     const enrichedCandidates = [];
@@ -98,9 +94,6 @@ function useFusionPokemonHandler() {
       }
     }
 
-    console.log(
-      `[Fusion Handler] getCandidatesForIdWithVariants => returning ${enrichedCandidates.length} enriched candidate(s)`
-    );
     return enrichedCandidates;
   }
 
@@ -109,7 +102,6 @@ function useFusionPokemonHandler() {
    * based on which fusion is selected.
    */
   async function handleFusionPokemon(baseKey) {
-    console.log('[Fusion Handler] handleFusionPokemon called with baseKey:', baseKey);
 
     // 1) Parse out baseNumber, fusionId, isShiny
     const baseNumber = parseBaseNumber(baseKey); // "0800"
@@ -119,11 +111,9 @@ function useFusionPokemonHandler() {
     if (!baseNumber || !fusionIdStr) {
       throw new Error(`[Fusion Handler] Could not parse baseNumber/fusionId from key: ${baseKey}`);
     }
-    console.log(`[Fusion Handler] baseNumber=${baseNumber}, fusionId=${fusionIdStr}, isShiny=${isShiny}`);
 
     // 2) Retrieve the "parent" variant data (e.g. "0800-default" or "0800-shiny")
     const variantKey = isShiny ? `${baseNumber}-shiny` : `${baseNumber}-default`;
-    console.log('[Fusion Handler] Retrieving parent variant:', variantKey);
 
     const parentVariant = await getFromDB('pokemonVariants', variantKey);
     if (!parentVariant) {
@@ -136,13 +126,11 @@ function useFusionPokemonHandler() {
       : Object.values(parentVariant.fusion || {});
 
     const fusionId = parseInt(fusionIdStr, 10);
-    console.log('[Fusion Handler] Searching in fusion data array for fusion_id=', fusionId);
     const fusionData = fusionList.find((f) => f.fusion_id === fusionId);
     if (!fusionData) {
       throw new Error(`[Fusion Handler] No matching fusion object for fusion_id=${fusionId}`);
     }
 
-    console.log('[Fusion Handler] Found fusion data =>', fusionData);
     const { base_pokemon_id1, base_pokemon_id2 } = fusionData;
 
     // 4) Gather "enriched" candidates for each parent ID
@@ -167,7 +155,6 @@ function useFusionPokemonHandler() {
    * Handler to create a new fused Pokémon for the left parent.
    */
   async function handleCreateNewLeft() {
-    console.log('[Fusion Handler] handleCreateNewLeft called');
     if (!fusionSelectionData) {
       console.error('[Fusion Handler] Fusion selection data is not available.');
       return;
@@ -175,7 +162,6 @@ function useFusionPokemonHandler() {
 
     const { baseNumber, isShiny, leftBaseId, fusionData } = fusionSelectionData;
     const leftVariantKey = isShiny ? `${baseNumber}-shiny` : `${baseNumber}-default`;
-    console.log('[Fusion Handler] Fetching variant data for left side:', leftVariantKey);
 
     try {
       const leftVariantData = await getFromDB('pokemonVariants', leftVariantKey);
@@ -194,7 +180,6 @@ function useFusionPokemonHandler() {
       newInstanceData.shiny = isShiny; // Must match fusion's shiny status
 
       await updateDetails(newInstanceId, newInstanceData);
-      console.log(`[Fusion Handler] Successfully created new fused Pokémon: ${newInstanceId}`);
 
       const enrichedVariantData = await getFromDB('pokemonVariants', leftVariantKey);
       if (!enrichedVariantData) {
@@ -211,7 +196,6 @@ function useFusionPokemonHandler() {
         leftCandidatesList: [...prevData.leftCandidatesList, enrichedCandidate],
       }));
 
-      console.log('[Fusion Handler] Left candidates list updated with new instance.');
     } catch (err) {
       console.error('[Fusion Handler] Error creating new fused Pokémon for left:', err);
       setFusionSelectionData((prevData) => ({
@@ -225,7 +209,6 @@ function useFusionPokemonHandler() {
    * Handler to create a new fused Pokémon for the right parent.
    */
   async function handleCreateNewRight() {
-    console.log('[Fusion Handler] handleCreateNewRight called');
     if (!fusionSelectionData) {
       console.error('[Fusion Handler] Fusion selection data is not available.');
       return;
@@ -233,7 +216,6 @@ function useFusionPokemonHandler() {
 
     const { baseNumber, fusionData } = fusionSelectionData;
     const rightVariantKey = `${fusionData.base_pokemon_id2}`.padStart(4, '0') + '-default';
-    console.log('[Fusion Handler] Fetching variant data for right side:', rightVariantKey);
 
     try {
       const rightVariantData = await getFromDB('pokemonVariants', rightVariantKey);
@@ -252,7 +234,6 @@ function useFusionPokemonHandler() {
       newInstanceData.shiny = false; // Right side doesn't enforce shiny
 
       await updateDetails(newInstanceId, newInstanceData);
-      console.log(`[Fusion Handler] Successfully created new fused Pokémon: ${newInstanceId}`);
 
       const enrichedVariantData = await getFromDB('pokemonVariants', rightVariantKey);
       if (!enrichedVariantData) {
@@ -269,7 +250,6 @@ function useFusionPokemonHandler() {
         rightCandidatesList: [...prevData.rightCandidatesList, enrichedCandidate],
       }));
 
-      console.log('[Fusion Handler] Right candidates list updated with new instance.');
     } catch (err) {
       console.error('[Fusion Handler] Error creating new fused Pokémon for right:', err);
       setFusionSelectionData((prevData) => ({
@@ -284,7 +264,6 @@ function useFusionPokemonHandler() {
    * based on which fusion is selected.
    */
   async function handleFusionPokemon(baseKey) {
-    console.log('[Fusion Handler] handleFusionPokemon called with baseKey:', baseKey);
 
     // 1) Parse out baseNumber, fusionId, isShiny
     const baseNumber = parseBaseNumber(baseKey); // "0800"
@@ -294,11 +273,9 @@ function useFusionPokemonHandler() {
     if (!baseNumber || !fusionIdStr) {
       throw new Error(`[Fusion Handler] Could not parse baseNumber/fusionId from key: ${baseKey}`);
     }
-    console.log(`[Fusion Handler] baseNumber=${baseNumber}, fusionId=${fusionIdStr}, isShiny=${isShiny}`);
 
     // 2) Retrieve the "parent" variant data (e.g. "0800-default" or "0800-shiny")
     const variantKey = isShiny ? `${baseNumber}-shiny` : `${baseNumber}-default`;
-    console.log('[Fusion Handler] Retrieving parent variant:', variantKey);
 
     const parentVariant = await getFromDB('pokemonVariants', variantKey);
     if (!parentVariant) {
@@ -311,13 +288,11 @@ function useFusionPokemonHandler() {
       : Object.values(parentVariant.fusion || {});
 
     const fusionId = parseInt(fusionIdStr, 10);
-    console.log('[Fusion Handler] Searching in fusion data array for fusion_id=', fusionId);
     const fusionData = fusionList.find((f) => f.fusion_id === fusionId);
     if (!fusionData) {
       throw new Error(`[Fusion Handler] No matching fusion object for fusion_id=${fusionId}`);
     }
 
-    console.log('[Fusion Handler] Found fusion data =>', fusionData);
     const { base_pokemon_id1, base_pokemon_id2 } = fusionData;
 
     // 4) Gather "enriched" candidates for each parent ID
@@ -343,12 +318,10 @@ function useFusionPokemonHandler() {
    * Exposed function to open the Fusion selection modal.
    */
   function promptFusionPokemonSelection(baseKey) {
-    console.log('[Fusion Handler] promptFusionPokemonSelection called with baseKey:', baseKey);
 
     return new Promise(async (resolve, reject) => {
       try {
         const fusionDetails = await handleFusionPokemon(baseKey);
-        console.log('[Fusion Handler] fusionDetails =>', fusionDetails);
 
         // We'll store everything in state, including candidate lists
         setFusionSelectionData({
@@ -370,7 +343,6 @@ function useFusionPokemonHandler() {
    * If user picks an action in the modal (like "Fuse" or "Cancel").
    */
   async function handleFusionSelectionResolve(choice, leftInstanceId, rightInstanceId) {
-    console.log('[Fusion Handler] handleFusionSelectionResolve =>', { choice, leftInstanceId, rightInstanceId });
   
     if (choice === 'confirmFuse' && leftInstanceId && rightInstanceId) {
       try {
@@ -400,10 +372,8 @@ function useFusionPokemonHandler() {
           },
         };
   
-        console.log('[Fusion Handler] Updating DB with changes =>', changes);
   
         await updateDetails(changes);
-        console.log('[Fusion Handler] Fusion completed successfully!');
       } catch (error) {
         console.error('[Fusion Handler] Error fusing:', error);
       }
@@ -441,7 +411,6 @@ function useFusionPokemonHandler() {
    */
   function FusionPokemonModal() {
     if (!isFusionSelectionOpen || !fusionSelectionData) return null;
-    console.log('[Fusion Handler] Rendering FusionPokemonModal with data:', fusionSelectionData);
 
     return (
         <FusionPokemonSelection

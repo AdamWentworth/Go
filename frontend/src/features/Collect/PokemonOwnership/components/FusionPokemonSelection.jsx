@@ -9,36 +9,15 @@ import './FusionPokemonSelection.css';
  * Component for selecting and creating Fusion Pokémon.
  */
 function FusionPokemonSelection({
-  baseKey,
-  fusionId,
-  baseNumber,
-  isShiny,
-  leftBaseId,
-  rightBaseId,
   leftCandidatesList,
   rightCandidatesList,
-  parentVariant,
   fusionData,
   onConfirm,
   onCancel,
-  onCreateNewLeft,   // Handler passed from parent
-  onCreateNewRight,  // Handler passed from parent
-  error,             // Error message from parent
-  // ...other props
+  onCreateNewLeft,
+  onCreateNewRight, 
+  error,          
 }) {
-  console.log('[FusionPokemonSelection] Received props =>', {
-    baseKey,
-    fusionId,
-    baseNumber,
-    isShiny,
-    leftBaseId,
-    rightBaseId,
-    leftCandidatesList,
-    rightCandidatesList,
-    parentVariant,
-    fusionData,
-    error,
-  });
 
   const [selectedLeftInstance, setSelectedLeftInstance] = React.useState(null);
   const [selectedRightInstance, setSelectedRightInstance] = React.useState(null);
@@ -51,9 +30,6 @@ function FusionPokemonSelection({
     alert('Please select one Pokémon from each side before fusing.');
     return;
     }
-    console.log(
-    `[FusionPokemonSelection] handleFuse => Combining ${selectedLeftInstance} + ${selectedRightInstance}`
-    );
 
     // Instead of just "onConfirm('confirmFuse')", pass both instance IDs
     onConfirm('confirmFuse', selectedLeftInstance, selectedRightInstance);
@@ -108,7 +84,6 @@ function FusionPokemonSelection({
               rightCandidatesList.map((c) => {
                 const instanceId = c.ownershipStatus.instance_id;
                 const isSelected = selectedRightInstance === instanceId;
-                console.log('[FusionPokemonSelection] Rendering RIGHT OwnedInstance with:', c);
                 return (
                   <div
                     key={instanceId}
