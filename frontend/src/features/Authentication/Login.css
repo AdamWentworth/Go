@@ -45,7 +45,19 @@
     }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1024px) and (max-width: 1439px) {
+    .login-page {
+        height: calc(100vh - 86px);
+    }
+    .login-page .login-form {
+        transform: scale(0.75);
+    }
+    .login-form input {
+        font-size: 1rem;
+    }
+}
+
+@media (min-width: 1440px) {
     .login-page {
         height: calc(100vh - 86px);
     }

@@ -110,7 +110,35 @@
     }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1024px) and (max-width: 1439px) {
+    .account-page {
+        height: calc(100vh - 86px);
+    }
+    .account-form h1 {
+        padding-bottom: 10px !important;
+    }
+    .account-page .account-form {
+        transform: scale(0.75);
+        font-size: 1em;
+    }
+    .user-details input {
+        font-size: 0.8rem;
+    }
+    .account-form button {
+        padding: 5px 15px;
+    }
+    .account-form label {
+        flex-direction: column; /* Stack label and checkbox vertically */
+        text-align: center;
+    }
+    .account-form input[type="checkbox"] {
+        margin-top: 10px; /* Add some space between the text and checkbox */
+        display: block;
+    }
+}
+
+
+@media (min-width: 1440px) {
     .account-page {
         height: calc(100vh - 86px);
     }

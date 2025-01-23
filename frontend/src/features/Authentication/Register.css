@@ -95,7 +95,27 @@
     }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1024px) and (max-width: 1439px) {
+    .register-page {
+        height: calc(100vh - 86px);
+    }
+    .register-page .register-form {
+        transform: scale(0.75);
+        font-size: 1em;
+    }
+    .register-form input, .location-warning {
+        font-size: 0.85rem;
+    }
+    .register-form input[type="checkbox"] {
+        display: block;
+    }
+    .register-form button[type="button"] {
+        font-size: 0.8rem;
+    }
+}
+
+
+@media (min-width: 1440px) {
     .register-page {
         height: calc(100vh - 86px);
     }
@@ -113,5 +133,4 @@
         font-size: 0.8rem;
     }
 }
-
 
