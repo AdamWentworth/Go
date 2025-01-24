@@ -27,7 +27,20 @@ const getCpForMegaEvolution = (mega_id, callback) => {
     });
 };
 
+const getCpForFusionPokemon = (fusion_id, callback) => {
+    const query = `
+    SELECT level_id, cp FROM fusion_cp_stats
+    WHERE fusion_id = ? AND level_id IN (40, 50)
+    ORDER BY level_id ASC
+    `;
+
+    db.all(query, [fusion_id], (err, rows) => {
+        callback(err, rows);
+    });
+};
+
 module.exports = {
     getCpForPokemon,
     getCpForMegaEvolution,
+    getCpForFusionPokemon,
 };

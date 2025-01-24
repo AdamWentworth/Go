@@ -12,7 +12,11 @@ const { getCostumesForPokemon, formatCostumes } = require('../services/costumeSe
 const { getMovesForPokemon, formatMoves } = require('../services/movesService');
 const { getAllFusions, formatFusionData } = require('../services/fusionService');
 const { getBackgroundsForPokemon } = require('../services/backgroundService');
-const { getCpForPokemon, getCpForMegaEvolution } = require('../services/cpService');
+const { 
+    getCpForPokemon, 
+    getCpForMegaEvolution,
+    getCpForFusionPokemon  // <-- Make sure to import it!
+} = require('../services/cpService');
 const { getMegaEvolutionsForPokemon } = require('../services/megaService');
 const { getRaidBossData } = require('../services/raidService');
 
@@ -22,50 +26,47 @@ router.get('/pokemon/pokemons', (req, res) => {
     getPokemonsFromDb((err, rows) => {
         if (err) {
             logger.error(`Error fetching pokemons from DB: ${err.message}`);
-            res.status(500).json({ error: err.message });
-            return;
+            return res.status(500).json({ error: err.message });
         }
 
         const pokemonsWithImages = rows.map(getImagePathsForPokemon);
 
         // Filter Pokémon with female_unique = 1
-        const femaleUniquePokemons = pokemonsWithImages.filter(pokemon => pokemon.female_unique === 1);
-        const femalePokemonIds = femaleUniquePokemons.map(pokemon => pokemon.pokemon_id);
+        const femaleUniquePokemons = pokemonsWithImages.filter(p => p.female_unique === 1);
+        const femalePokemonIds = femaleUniquePokemons.map(p => p.pokemon_id);
 
         if (femalePokemonIds.length > 0) {
             const femalePokemonQuery = `
                 SELECT * FROM female_pokemon WHERE pokemon_id IN (${femalePokemonIds.join(', ')})
             `;
-
             db.all(femalePokemonQuery, [], (err, femalePokemonRows) => {
                 if (err) {
                     logger.error(`Error fetching female Pokémon data: ${err.message}`);
-                    res.status(500).json({ error: err.message });
-                    return;
+                    return res.status(500).json({ error: err.message });
                 }
 
-                // Map female data to the corresponding Pokémon
+                // Map female data
                 const femalePokemonMap = {};
                 femalePokemonRows.forEach(femaleData => {
                     femalePokemonMap[femaleData.pokemon_id] = femaleData;
                 });
 
-                // Add female data to the relevant Pokémon objects
+                // Attach female_data to the relevant Pokémon objects
                 const pokemonsWithFemaleData = pokemonsWithImages.map(pokemon => {
                     if (pokemon.female_unique === 1 && femalePokemonMap[pokemon.pokemon_id]) {
                         return {
                             ...pokemon,
-                            female_data: femalePokemonMap[pokemon.pokemon_id]  // Attach female data
+                            female_data: femalePokemonMap[pokemon.pokemon_id],
                         };
                     }
-                    return pokemon; // No modification for non-female_unique Pokémon
+                    return pokemon;
                 });
 
-                // Continue processing the rest of the data (costumes, moves, etc.)
+                // Continue processing
                 processAdditionalPokemonData(pokemonsWithFemaleData, res);
             });
         } else {
-            // If no Pokémon has female_unique set to 1, proceed with the rest of the logic
+            // If no Pokémon has female_unique set to 1, just continue
             processAdditionalPokemonData(pokemonsWithImages, res);
         }
     });
@@ -75,8 +76,7 @@ const processAdditionalPokemonData = (pokemons, res) => {
     getCostumesForPokemon(db, (err, costumes) => {
         if (err) {
             logger.error(`Error fetching costumes for pokemons: ${err.message}`);
-            res.status(500).json({ error: err.message });
-            return;
+            return res.status(500).json({ error: err.message });
         }
 
         const pokemonsWithCostumes = formatCostumes(pokemons, costumes);
@@ -84,137 +84,184 @@ const processAdditionalPokemonData = (pokemons, res) => {
         getMovesForPokemon(db, (err, allMoves) => {
             if (err) {
                 logger.error(`Error fetching moves for pokemons: ${err.message}`);
-                res.status(500).json({ error: err.message });
-                return;
+                return res.status(500).json({ error: err.message });
             }
 
             const pokemonMovesQuery = "SELECT * FROM pokemon_moves";
-
             db.all(pokemonMovesQuery, [], (err, pokemonMoves) => {
                 if (err) {
                     logger.error(`Error querying pokemon_moves: ${err.message}`);
-                    res.status(500).json({ error: err.message });
-                    return;
+                    return res.status(500).json({ error: err.message });
                 }
 
-                const pokemonsWithAllData = formatMoves(pokemonsWithCostumes, allMoves, pokemonMoves);
+                const pokemonsWithAllData = formatMoves(
+                    pokemonsWithCostumes, 
+                    allMoves, 
+                    pokemonMoves
+                );
 
-                // Use service function to get all fusion data instead of direct SQL call
+                // Use service function to get all fusion data
                 getAllFusions((err, fusionRows) => {
                     if (err) {
                         logger.error(`Error fetching fusion data: ${err.message}`);
-                        res.status(500).json({ error: err.message });
-                        return;
+                        return res.status(500).json({ error: err.message });
                     }
-                    
+
+                    // Attach basic fusion data
                     const pokemonsWithFusionData = formatFusionData(pokemonsWithAllData, fusionRows);
 
-                    getBackgroundsForPokemon((err, backgroundMap) => {
-                        if (err) {
-                            logger.error(`Error fetching backgrounds for pokemons: ${err.message}`);
-                            res.status(500).json({ error: err.message });
-                            return;
-                        }
-
-                        const pokemonsWithBackgrounds = pokemonsWithFusionData.map(pokemon => {
-                            const backgrounds = backgroundMap[pokemon.pokemon_id] || [];
-                            return {
-                                ...pokemon,
-                                backgrounds: backgrounds.map(background => ({
-                                    ...background,
-                                    costume_id: background.costume_id || null
-                                }))
-                            };
-                        });
-
-                        // Attach CP data for level 40 and 50
-                        async.map(pokemonsWithBackgrounds, (pokemon, callback) => {
-                            getCpForPokemon(pokemon.pokemon_id, (err, cpData) => {
-                                if (err) {
-                                    callback(err);
-                                } else {
-                                    const cpDetails = cpData.reduce((acc, data) => {
-                                        acc[`cp${data.level_id}`] = data.cp;
-                                        return acc;
-                                    }, {});
-                                    callback(null, { ...pokemon, ...cpDetails });
-                                }
-                            });
-                        }, (err, finalPokemons) => {
-                            if (err) {
-                                logger.error(`Error fetching CP data for pokemons: ${err.message}`);
-                                res.status(500).json({ error: err.message });
-                            } else {
-                                // Get evolutions and add them to the response
-                                getEvolutionsFromDb((err, evolutionMap) => {
-                                    if (err) {
-                                        logger.error(`Error fetching evolution data: ${err.message}`);
-                                        res.status(500).json({ error: err.message });
-                                        return;
-                                    }
-
-                                    const pokemonsWithEvolutions = finalPokemons.map(pokemon => {
-                                        const evolutionData = evolutionMap[pokemon.pokemon_id];
-                                        return evolutionData ? { ...pokemon, ...evolutionData } : pokemon;
-                                    });
-
-                                    // Get mega evolutions and add them to the response
-                                    async.map(pokemonsWithEvolutions, (pokemon, callback) => {
-                                        getMegaEvolutionsForPokemon(pokemon.pokemon_id, (err, megaEvolutions) => {
-                                            if (err) {
-                                                callback(err);
-                                            } else {
-                                                async.map(megaEvolutions, (megaEvolution, megaCallback) => {
-                                                    getCpForMegaEvolution(megaEvolution.id, (err, cpData) => {
-                                                        if (err) {
-                                                            megaCallback(err);
-                                                        } else {
-                                                            const cpDetails = cpData.reduce((acc, data) => {
-                                                                acc[`cp${data.level_id}`] = data.cp;
-                                                                return acc;
-                                                            }, {});
-                                                            megaCallback(null, { ...megaEvolution, ...cpDetails });
-                                                        }
-                                                    });
-                                                }, (err, megaEvolutionsWithCp) => {
-                                                    if (err) {
-                                                        callback(err);
-                                                    } else {
-                                                        callback(null, { ...pokemon, megaEvolutions: megaEvolutionsWithCp });
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    }, (err, pokemonsWithMegaEvolutions) => {
-                                        if (err) {
-                                            logger.error(`Error fetching mega evolutions: ${err.message}`);
-                                            res.status(500).json({ error: err.message });
-                                        } else {
-                                            // Add raid boss data to the response
-                                            getRaidBossData((err, raidBossData) => {
-                                                if (err) {
-                                                    logger.error(`Error fetching raid boss data: ${err.message}`);
-                                                    res.status(500).json({ error: err.message });
-                                                    return;
-                                                }
-
-                                                const pokemonsWithRaidBossData = pokemonsWithMegaEvolutions.map(pokemon => {
-                                                    const raidBossEntries = raidBossData[pokemon.pokemon_id] || [];
-                                                    return {
-                                                        ...pokemon,
-                                                        raid_boss: raidBossEntries
-                                                    };
-                                                });
-
-                                                res.json(pokemonsWithRaidBossData);
-                                                logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
-                                            });
-                                        }
-                                    });
-                                });
+                    // --- NEW PART: Attach CP for each Fusion entry ---
+                    async.map(
+                        pokemonsWithFusionData,
+                        (pokemon, mapCallback) => {
+                            // If this Pokémon has no fusions, skip
+                            if (!pokemon.fusion || pokemon.fusion.length === 0) {
+                                return mapCallback(null, pokemon);
                             }
-                        });
-                    });
+
+                            // Otherwise, attach CP to each Fusion
+                            async.map(
+                                pokemon.fusion,
+                                (fusion, fusionCallback) => {
+                                    // fusion.fusion_id or fusion.id? Adjust depending on how formatFusionData structures it:
+                                    getCpForFusionPokemon(fusion.fusion_id, (err, cpData) => {
+                                        if (err) return fusionCallback(err);
+
+                                        const cpDetails = cpData.reduce((acc, data) => {
+                                            acc[`cp${data.level_id}`] = data.cp;
+                                            return acc;
+                                        }, {});
+
+                                        // Merge CP info into the fusion object
+                                        fusionCallback(null, { ...fusion, ...cpDetails });
+                                    });
+                                },
+                                (err, updatedFusions) => {
+                                    if (err) return mapCallback(err);
+
+                                    // Return the Pokémon with updated fusions
+                                    mapCallback(null, { ...pokemon, fusion: updatedFusions });
+                                }
+                            );
+                        },
+                        (err, pokemonsWithFusionCP) => {
+                            if (err) {
+                                logger.error(`Error attaching Fusion CP: ${err.message}`);
+                                return res.status(500).json({ error: err.message });
+                            }
+
+                            // Now proceed with backgrounds
+                            getBackgroundsForPokemon((err, backgroundMap) => {
+                                if (err) {
+                                    logger.error(`Error fetching backgrounds for pokemons: ${err.message}`);
+                                    return res.status(500).json({ error: err.message });
+                                }
+
+                                const pokemonsWithBackgrounds = pokemonsWithFusionCP.map(pokemon => {
+                                    const backgrounds = backgroundMap[pokemon.pokemon_id] || [];
+                                    return {
+                                        ...pokemon,
+                                        backgrounds: backgrounds.map(bg => ({
+                                            ...bg,
+                                            costume_id: bg.costume_id || null
+                                        }))
+                                    };
+                                });
+
+                                // Attach CP for each Pokémon (base forms) for levels 40 & 50
+                                async.map(
+                                    pokemonsWithBackgrounds,
+                                    (pokemon, callback) => {
+                                        getCpForPokemon(pokemon.pokemon_id, (err, cpData) => {
+                                            if (err) {
+                                                return callback(err);
+                                            }
+                                            const cpDetails = cpData.reduce((acc, data) => {
+                                                acc[`cp${data.level_id}`] = data.cp;
+                                                return acc;
+                                            }, {});
+                                            callback(null, { ...pokemon, ...cpDetails });
+                                        });
+                                    },
+                                    (err, finalPokemons) => {
+                                        if (err) {
+                                            logger.error(`Error fetching CP data for pokemons: ${err.message}`);
+                                            return res.status(500).json({ error: err.message });
+                                        }
+
+                                        // Get evolutions and add them to the response
+                                        getEvolutionsFromDb((err, evolutionMap) => {
+                                            if (err) {
+                                                logger.error(`Error fetching evolution data: ${err.message}`);
+                                                return res.status(500).json({ error: err.message });
+                                            }
+
+                                            const pokemonsWithEvolutions = finalPokemons.map(pokemon => {
+                                                const evolutionData = evolutionMap[pokemon.pokemon_id];
+                                                return evolutionData
+                                                    ? { ...pokemon, ...evolutionData }
+                                                    : pokemon;
+                                            });
+
+                                            // Now handle Mega Evolutions (with CP)
+                                            async.map(
+                                                pokemonsWithEvolutions,
+                                                (pokemon, callback) => {
+                                                    getMegaEvolutionsForPokemon(pokemon.pokemon_id, (err, megaEvolutions) => {
+                                                        if (err) return callback(err);
+
+                                                        async.map(
+                                                            megaEvolutions,
+                                                            (megaEvolution, megaCallback) => {
+                                                                getCpForMegaEvolution(megaEvolution.id, (err, cpData) => {
+                                                                    if (err) return megaCallback(err);
+
+                                                                    const cpDetails = cpData.reduce((acc, data) => {
+                                                                        acc[`cp${data.level_id}`] = data.cp;
+                                                                        return acc;
+                                                                    }, {});
+                                                                    megaCallback(null, { ...megaEvolution, ...cpDetails });
+                                                                });
+                                                            },
+                                                            (err, megaEvolutionsWithCp) => {
+                                                                if (err) return callback(err);
+                                                                callback(null, {
+                                                                    ...pokemon,
+                                                                    megaEvolutions: megaEvolutionsWithCp
+                                                                });
+                                                            }
+                                                        );
+                                                    });
+                                                },
+                                                (err, pokemonsWithMegaEvolutions) => {
+                                                    if (err) {
+                                                        logger.error(`Error fetching mega evolutions: ${err.message}`);
+                                                        return res.status(500).json({ error: err.message });
+                                                    }
+
+                                                    // Finally, attach Raid Boss data
+                                                    getRaidBossData((err, raidBossData) => {
+                                                        if (err) {
+                                                            logger.error(`Error fetching raid boss data: ${err.message}`);
+                                                            return res.status(500).json({ error: err.message });
+                                                        }
+
+                                                        const pokemonsWithRaidBossData = pokemonsWithMegaEvolutions.map(pokemon => {
+                                                            const raidBossEntries = raidBossData[pokemon.pokemon_id] || [];
+                                                            return { ...pokemon, raid_boss: raidBossEntries };
+                                                        });
+
+                                                        res.json(pokemonsWithRaidBossData);
+                                                        logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
+                                                    });
+                                                }
+                                            );
+                                        });
+                                    }
+                                );
+                            });
+                        }
+                    );
                 });
             });
         });

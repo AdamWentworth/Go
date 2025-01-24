@@ -153,7 +153,9 @@ const createPokemonVariants = (pokemons) => {
           sprite_url: fusion.sprite_url || pokemon.sprite_url,
           currentImage: fusion.image_url || pokemon.image_url,
           name: fusion.name,
-          variantType: `fusion_${fusion.fusion_id}`
+          variantType: `fusion_${fusion.fusion_id}`,
+          cp40: fusion.cp40 || pokemon.cp40,
+          cp50: fusion.cp50 || pokemon.cp50
         };
         addVariant(fusionVariant, fusionVariant.variantType);
 
@@ -174,7 +176,9 @@ const createPokemonVariants = (pokemons) => {
             sprite_url: fusion.sprite_url,
             currentImage: fusion.image_url_shiny,
             name: `Shiny ${fusion.name}`,
-            variantType: `shiny_fusion_${fusion.fusion_id}`
+            variantType: `shiny_fusion_${fusion.fusion_id}`,
+            cp40: fusion.cp40 || pokemon.cp40,
+            cp50: fusion.cp50 || pokemon.cp50
           };
           addVariant(shinyFusionVariant, shinyFusionVariant.variantType);
         }
