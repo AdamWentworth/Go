@@ -20,6 +20,9 @@ const {
 const { getMegaEvolutionsForPokemon } = require('../services/megaService');
 const { getRaidBossData } = require('../services/raidService');
 
+// Import the new maxPokemonService
+const { appendMaxDataToPokemons } = require('../services/maxPokemonService');
+
 const db = new sqlite3.Database('./data/pokego.db');
 
 router.get('/pokemon/pokemons', (req, res) => {
@@ -251,8 +254,17 @@ const processAdditionalPokemonData = (pokemons, res) => {
                                                             return { ...pokemon, raid_boss: raidBossEntries };
                                                         });
 
-                                                        res.json(pokemonsWithRaidBossData);
-                                                        logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
+                                                        // --- NEW PART: Append max_pokemon data ---
+                                                        appendMaxDataToPokemons(db, pokemonsWithRaidBossData, (err, pokemonsWithMaxData) => {
+                                                            if (err) {
+                                                                logger.error(`Error appending max_pokemon data: ${err.message}`);
+                                                                return res.status(500).json({ error: err.message });
+                                                            }
+
+                                                            // Send the final response with all data, including max_pokemon
+                                                            res.json(pokemonsWithMaxData);
+                                                            logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
+                                                        });
                                                     });
                                                 }
                                             );
