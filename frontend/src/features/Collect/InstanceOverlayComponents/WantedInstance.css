@@ -59,6 +59,18 @@
   height: 240px;
 }
 
+.wanted-instance .max-badge {
+  position: absolute;
+  top: 2%; /* Position at the top */
+  right: 2%; /* Position at the right */
+  width: 35%;
+  height: auto;
+  z-index: 4;
+  max-width: 100%;
+  height: auto;
+}
+
+
 .wanted-instance .background-container {
   position: absolute;
   top: 0;

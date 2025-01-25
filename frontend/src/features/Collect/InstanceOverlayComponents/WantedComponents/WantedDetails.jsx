@@ -141,12 +141,11 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, open
         >
             {/* -- EDIT/SAVE (top-left or top-left in both layouts) -- */}
             <div className="edit-save">
-                {isEditable && (
-                    <EditSaveComponent
-                        editMode={editMode}
-                        toggleEditMode={handleToggleEditMode}
-                    />
-                )}
+                <EditSaveComponent
+                    editMode={editMode}
+                    toggleEditMode={handleToggleEditMode}
+                    isEditable={isEditable}
+                />
             </div>
 
             {/* -- EXCLUDE HEADER -- */}

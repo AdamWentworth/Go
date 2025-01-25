@@ -32,13 +32,6 @@
   margin-right: auto;
 }
 
-/* .CPComponent {
-  flex-grow: 1;
-  display: flex;
-  justify-content: center; 
-  align-items: center;
-} */
-
 .trade-instance .edit-save-container {
   flex-shrink: 0; /* Ensures this container doesn't grow or shrink */
 }
@@ -110,6 +103,17 @@
 
 .trade-instance .pokemon-image-container img {
   filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+}
+
+.trade-instance .max-badge {
+  position: absolute;
+  top: 2%; /* Position at the top */
+  right: 2%; /* Position at the right */
+  width: 35%;
+  height: auto;
+  z-index: 4;
+  max-width: 100%;
+  height: auto;
 }
 
 .trade-instance .name-container {

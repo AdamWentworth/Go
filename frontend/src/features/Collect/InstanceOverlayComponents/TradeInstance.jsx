@@ -17,6 +17,7 @@ import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
 import BackgroundComponent from './OwnedComponents/BackgroundComponent';
 import LevelComponent from './OwnedComponents/LevelComponent';
 import IVComponent from './OwnedComponents/IVComponent';
+import MaxComponent from './OwnedComponents/MaxComponent';
 
 import { determineImageUrl } from '../../../utils/imageHelpers';
 
@@ -50,6 +51,9 @@ const TradeInstance = ({ pokemon, isEditable }) => {
   const [gender, setGender] = useState(pokemon.ownershipStatus.gender);
   const [weight, setWeight] = useState(Number(pokemon.ownershipStatus.weight));
   const [height, setHeight] = useState(Number(pokemon.ownershipStatus.height));
+
+  const [dynamax, setDynamax] = useState(!!pokemon.ownershipStatus.dynamax);
+  const [gigantamax, setGigantamax] = useState(!!pokemon.ownershipStatus.gigantamax);
 
   // Moves
   const [moves, setMoves] = useState({
@@ -108,8 +112,17 @@ const TradeInstance = ({ pokemon, isEditable }) => {
 
   // Recalculate the displayed image on changes
   useEffect(() => {
-    setCurrentImage(determineImageUrl(isFemale, pokemon));
-  }, [isFemale, pokemon]);
+    setCurrentImage(determineImageUrl(
+      isFemale,
+      pokemon,
+      false,
+      undefined,
+      false,
+      undefined,
+      false,
+      gigantamax
+    ));
+  }, [isFemale, pokemon, gigantamax]);
 
   // (Optional) Recalculate CP whenever baseStats, level, or ivs change 
   // if you want the same auto-update logic in TradeInstance.
@@ -146,6 +159,34 @@ const TradeInstance = ({ pokemon, isEditable }) => {
   }, [currentBaseStats, level, ivs]);
 
   // Handlers
+  const handleMaxClick = () => {
+    const maxEntry = pokemon.max?.[0];
+    if (!maxEntry) return;
+
+    const hasDynamax = maxEntry.dynamax === 1;
+    const hasGigantamax = maxEntry.gigantamax === 1;
+
+    if (!dynamax && !gigantamax) {
+        // Start with Dynamax if available, otherwise start with Gigantamax
+        if (hasDynamax) {
+            setDynamax(true);
+        } else if (hasGigantamax) {
+            setGigantamax(true);
+        }
+    } else if (dynamax) {
+        // If currently Dynamax, switch to Gigantamax if available, else reset
+        if (hasGigantamax) {
+            setDynamax(false);
+            setGigantamax(true);
+        } else {
+            setDynamax(false);
+        }
+    } else if (gigantamax) {
+        // If currently Gigantamax, reset to null
+        setGigantamax(false);
+    }
+  };
+
   const handleGenderChange = (newGender) => {
     setGender(newGender);
     setIsFemale(newGender === 'Female');
@@ -265,6 +306,8 @@ const TradeInstance = ({ pokemon, isEditable }) => {
           location_caught: locationCaught,
           date_caught: dateCaught,
           location_card: selectedBackground ? selectedBackground.background_id : null,
+          dynamax: dynamax,
+          gigantamax: gigantamax
         });
       } catch (error) {
         console.error('Error updating trade details:', error);
@@ -282,9 +325,7 @@ const TradeInstance = ({ pokemon, isEditable }) => {
       <div className="trade-title"></div>
       <div className="top-row">
         <div className="edit-save-container">
-          {isEditable && (
-            <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
-          )}
+            <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} isEditable={isEditable} />
         </div>
         <h2>Trade</h2>
       </div>
@@ -323,6 +364,20 @@ const TradeInstance = ({ pokemon, isEditable }) => {
         )}
         <div className="pokemon-image-container">
           <img src={currentImage} alt={pokemon.name} className="pokemon-image" />
+          {dynamax && (
+            <img 
+              src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+              alt="Dynamax Badge" 
+              className="max-badge" 
+            />
+          )}
+          {gigantamax && (
+            <img 
+              src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+              alt="Gigantamax Badge" 
+              className="max-badge" 
+            />
+          )}
         </div>
       </div>
 
@@ -362,6 +417,14 @@ const TradeInstance = ({ pokemon, isEditable }) => {
           onHeightChange={handleHeightChange}
         />
       </div>
+
+      <MaxComponent 
+        pokemon={pokemon} 
+        editMode={editMode}
+        dynamax={dynamax}
+        gigantamax={gigantamax}
+        onMaxClick={handleMaxClick}
+      />
 
       <div className="moves-container">
         <MovesComponent

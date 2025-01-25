@@ -14,6 +14,8 @@ import HeightComponent from './OwnedComponents/HeightComponent';
 import MovesComponent from './OwnedComponents/MovesComponent';
 import FriendshipManager from './WantedComponents/FriendshipManager';
 import BackgroundComponent from './OwnedComponents/BackgroundComponent'; 
+import MaxComponent from './OwnedComponents/MaxComponent';
+
 import { determineImageUrl } from '../../../utils/imageHelpers';  // Import the image helper
 
 const WantedInstance = ({ pokemon, isEditable }) => {
@@ -40,6 +42,9 @@ const WantedInstance = ({ pokemon, isEditable }) => {
   const [showBackgrounds, setShowBackgrounds] = useState(false);
   const [selectedBackground, setSelectedBackground] = useState(null);
 
+  const [dynamax, setDynamax] = useState(!!pokemon.ownershipStatus.dynamax);
+  const [gigantamax, setGigantamax] = useState(!!pokemon.ownershipStatus.gigantamax);
+
   // On mount, set background if relevant
   useEffect(() => {
     if (pokemon.ownershipStatus.location_card !== null) {
@@ -55,9 +60,45 @@ const WantedInstance = ({ pokemon, isEditable }) => {
 
   useEffect(() => {
     // Update the image when the gender or pokemon changes
-    const updatedImage = determineImageUrl(isFemale, pokemon);
+    const updatedImage = determineImageUrl(
+      isFemale,
+      pokemon,
+      false,
+      undefined,
+      false,
+      undefined,
+      false,
+      gigantamax);
     setCurrentImage(updatedImage);
-  }, [isFemale, pokemon]);
+  }, [isFemale, pokemon, gigantamax]);
+
+  const handleMaxClick = () => {
+    const maxEntry = pokemon.max?.[0];
+    if (!maxEntry) return;
+
+    const hasDynamax = maxEntry.dynamax === 1;
+    const hasGigantamax = maxEntry.gigantamax === 1;
+
+    if (!dynamax && !gigantamax) {
+        // Start with Dynamax if available, otherwise start with Gigantamax
+        if (hasDynamax) {
+            setDynamax(true);
+        } else if (hasGigantamax) {
+            setGigantamax(true);
+        }
+    } else if (dynamax) {
+        // If currently Dynamax, switch to Gigantamax if available, else reset
+        if (hasGigantamax) {
+            setDynamax(false);
+            setGigantamax(true);
+        } else {
+            setDynamax(false);
+        }
+    } else if (gigantamax) {
+        // If currently Gigantamax, reset to null
+        setGigantamax(false);
+    }
+  };
 
   const handleNicknameChange = (newNickname) => setNickname(newNickname);
   const handleFavoriteChange = (newFavoriteStatus) => setIsFavorite(newFavoriteStatus);
@@ -88,6 +129,8 @@ const WantedInstance = ({ pokemon, isEditable }) => {
         friendship_level: friendship,
         pref_lucky: isLucky,
         location_card: selectedBackground ? selectedBackground.background_id : null,
+        dynamax: dynamax,
+        gigantamax: gigantamax
       });
     }
     setEditMode(!editMode);
@@ -105,9 +148,7 @@ const WantedInstance = ({ pokemon, isEditable }) => {
     <div className="wanted-instance">
       <div className="top-row">
         <div className="edit-save-container">
-          {isEditable && (
-            <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
-          )}
+            <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} isEditable={isEditable} />
         </div>
         <h2>Wanted</h2>
         <div className="favorite-container">
@@ -154,6 +195,20 @@ const WantedInstance = ({ pokemon, isEditable }) => {
             alt={pokemon.name} 
             className="pokemon-image"
           />
+          {dynamax && (
+            <img 
+              src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+              alt="Dynamax Badge" 
+              className="max-badge" 
+            />
+          )}
+          {gigantamax && (
+            <img 
+              src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+              alt="Gigantamax Badge" 
+              className="max-badge" 
+            />
+          )}
         </div>
       </div>
 
@@ -170,6 +225,14 @@ const WantedInstance = ({ pokemon, isEditable }) => {
         <TypeComponent pokemon={pokemon} />
         <HeightComponent pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
       </div>
+
+      <MaxComponent 
+        pokemon={pokemon} 
+        editMode={editMode}
+        dynamax={dynamax}
+        gigantamax={gigantamax}
+        onMaxClick={handleMaxClick}
+      />
 
       <div className="moves-container">
         <MovesComponent pokemon={pokemon} editMode={editMode} onMovesChange={handleMovesChange} />

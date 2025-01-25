@@ -375,6 +375,7 @@ const TradeDetails = ({
               <EditSaveComponent
                 editMode={editMode}
                 toggleEditMode={toggleEditMode}
+                isEditable={isEditable}
               />
               {!isMirror && (
                 <div
