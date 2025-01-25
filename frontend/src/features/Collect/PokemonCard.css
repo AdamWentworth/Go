@@ -144,7 +144,7 @@
     height: auto;
     max-width: 100%;
     height: auto;
-    z-index: 2;
+    z-index: 5;
   }
 
 .pokemon-card .purified-badge {

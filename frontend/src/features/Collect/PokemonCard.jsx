@@ -26,8 +26,8 @@ const PokemonCard = ({
   const fusionForm = pokemon.ownershipStatus?.fusion_form;
   const isDisabled = pokemon.ownershipStatus?.disabled === true;
   const isPurified = pokemon.ownershipStatus?.purified === true;
-  const isGigantamax = pokemon.ownershipStatus?.gigantamax === true;
-  const isDynamax = pokemon.ownershipStatus?.dynamax === true;
+  const isGigantamax = (pokemon.ownershipStatus?.gigantamax === true || pokemon.variantType.includes('gigantamax'));
+  const isDynamax = (pokemon.ownershipStatus?.dynamax === true || pokemon.variantType.includes('dynamax'));
 
   useEffect(() => {
     if (pokemon) {

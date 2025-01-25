@@ -185,6 +185,33 @@ const createPokemonVariants = (pokemons) => {
       });
     }
 
+    // Gigantamax Variants
+    if (pokemon.max && pokemon.max.length > 0) {
+      pokemon.max.forEach(maxEntry => {
+        if (maxEntry.gigantamax) {
+          // Gigantamax Variant
+          const gigantamaxVariant = {
+            ...pokemon,
+            currentImage: maxEntry.gigantamax_image_url,
+            name: `Gigantamax ${pokemon.name}`,
+            variantType: 'gigantamax'
+          };
+          addVariant(gigantamaxVariant, 'gigantamax');
+
+          // Shiny Gigantamax Variant
+          if (maxEntry.shiny_gigantamax_image_url) {
+            const shinyGigantamaxVariant = {
+              ...pokemon,
+              currentImage: maxEntry.shiny_gigantamax_image_url,
+              name: `Shiny Gigantamax ${pokemon.name}`,
+              variantType: 'shiny_gigantamax'
+            };
+            addVariant(shinyGigantamaxVariant, 'shiny_gigantamax');
+          }
+        }
+      });
+    }
+
     // Remove raid boss data from variants that do not meet the criteria
     variants = variants.map(variant => {
       const raidBossForms = pokemon.raid_boss.map(rb => rb.form);

@@ -21,14 +21,70 @@ export function determineImageUrl(
     const isPurifiedShiny = isPurified && !!pokemon.ownershipStatus.shiny;
     const isShiny = isPurifiedShiny || !!pokemon.ownershipStatus?.shiny;
 
-    // If purified, prioritize using image_url or image_url_shiny
+    // **New Priority: Handle Mega Evolution first to supersede Purified**
+    const handleMegaEvolution = () => {
+        if (!isMega || !Array.isArray(pokemon.megaEvolutions) || pokemon.megaEvolutions.length === 0) {
+            return null;
+        }
+
+        let megaEvolution = null;
+
+        if (pokemon.megaEvolutions.length === 1 || !megaForm) {
+            megaEvolution = pokemon.megaEvolutions[0];
+        } else {
+            megaEvolution = pokemon.megaEvolutions.find(me =>
+                me.form?.toLowerCase() === megaForm.toLowerCase()
+            );
+
+            if (!megaEvolution) {
+                console.warn(`Unable to find mega evolution form: ${megaForm}`);
+                megaEvolution = pokemon.megaEvolutions[0];
+            }
+        }
+
+        const megaVariantType = (megaEvolution.variantType || '').toLowerCase();
+
+        if (megaVariantType.includes('costume')) {
+            const costumeImage = getCostumeImage(
+                megaEvolution.costumes,
+                megaVariantType,
+                isFemale,
+                isShiny
+            );
+            if (costumeImage) {
+                return costumeImage;
+            }
+        }
+
+        if (isFemale && megaEvolution.female_data) {
+            return getVariantImage(
+                megaEvolution.female_data,
+                megaVariantType,
+                isShiny,
+                megaEvolution.image_url || DEFAULT_IMAGE_URL
+            );
+        }
+
+        if (isShiny) {
+            return megaEvolution.image_url_shiny || megaEvolution.image_url || DEFAULT_IMAGE_URL;
+        }
+
+        return megaEvolution.image_url || DEFAULT_IMAGE_URL;
+    };
+
+    // Attempt to get Mega Evolution image first
+    const megaImage = handleMegaEvolution();
+    if (megaImage) {
+        return megaImage;
+    }
+
+    // **Next Priority: Handle Purified Pokémon**
     if (isPurified) {
         if (isPurifiedShiny && pokemon.image_url_shiny) {
             return pokemon.image_url_shiny;
         } else if (pokemon.image_url) {
             return pokemon.image_url;
         }
-        // If purified but images are not directly available, fall through to existing logic
     }
 
     // Check for fusion override before other image logic
@@ -104,64 +160,17 @@ export function determineImageUrl(
         return data.image_url || defaultUrl;
     };
 
-    // Handle Mega Evolution first to prioritize it over Gigantamax
-    const handleMegaEvolution = () => {
-        if (!isMega || !Array.isArray(pokemon.megaEvolutions) || pokemon.megaEvolutions.length === 0) {
-            return null;
-        }
-
-        let megaEvolution = null;
-
-        if (pokemon.megaEvolutions.length === 1 || !megaForm) {
-            megaEvolution = pokemon.megaEvolutions[0];
+    // **Handle Gigantamax Variants Based on variantType**
+    if (variantType === 'gigantamax' || variantType === 'shiny_gigantamax') {
+        if (pokemon.currentImage) {
+            return pokemon.currentImage;
         } else {
-            megaEvolution = pokemon.megaEvolutions.find(me =>
-                me.form?.toLowerCase() === megaForm.toLowerCase()
-            );
-
-            if (!megaEvolution) {
-                console.warn(`Unable to find mega evolution form: ${megaForm}`);
-                megaEvolution = pokemon.megaEvolutions[0];
-            }
+            console.warn(`Gigantamax variantType specified but currentImage is missing for Pokémon ID: ${pokemon.pokemon_id}`);
+            return DEFAULT_IMAGE_URL;
         }
-
-        const megaVariantType = (megaEvolution.variantType || '').toLowerCase();
-
-        if (megaVariantType.includes('costume')) {
-            const costumeImage = getCostumeImage(
-                megaEvolution.costumes,
-                megaVariantType,
-                isFemale,
-                isShiny
-            );
-            if (costumeImage) {
-                return costumeImage;
-            }
-        }
-
-        if (isFemale && megaEvolution.female_data) {
-            return getVariantImage(
-                megaEvolution.female_data,
-                megaVariantType,
-                isShiny,
-                megaEvolution.image_url || DEFAULT_IMAGE_URL
-            );
-        }
-
-        if (isShiny) {
-            return megaEvolution.image_url_shiny || megaEvolution.image_url || DEFAULT_IMAGE_URL;
-        }
-
-        return megaEvolution.image_url || DEFAULT_IMAGE_URL;
-    };
-
-    // Attempt to get Mega Evolution image first
-    const megaImage = handleMegaEvolution();
-    if (megaImage) {
-        return megaImage;
     }
 
-    // Add Gigantamax handling after Mega Evolution
+    // Add Gigantamax handling after Mega Evolution using the gigantamax flag
     if (gigantamax && Array.isArray(pokemon.max) && pokemon.max.length > 0) {
         const maxEntry = pokemon.max[0];
         if (isShiny && maxEntry.shiny_gigantamax_image_url) {

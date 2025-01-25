@@ -80,14 +80,14 @@ def main():
     # ======= Configuration =======
     
     # Path to the directory containing original Pokémon images
-    input_dir = r'A:\\Visual-Studio-Code\\Go\\frontend\\public\\images\\shiny_gigantamax'  # e.g., r'C:\Users\YourName\Pictures\Pokemon'
+    input_dir = r'A:\\Visual-Studio-Code\\Go\\frontend\\public\\images\\shiny_g'  # e.g., r'C:\Users\YourName\Pictures\Pokemon'
 
     # Path to the shiny icon image
     shiny_icon_path = r'A:\\Visual-Studio-Code\\Go\\frontend\\public\\images\\shiny_icon.png'  # e.g., r'C:\Users\YourName\Pictures\Icons\shiny_icon.png'
 
     # Path to save processed images
     # If set to None, an 'output' folder will be created inside the input directory
-    output_dir = r'A:\\Visual-Studio-Code\\Go\\frontend\\public\\images\\shiny_gigantamax_2'  # e.g., r'C:\Users\YourName\Pictures\Processed_Pokemon'
+    output_dir = r'A:\\Visual-Studio-Code\\Go\\frontend\\public\\images\\shiny_gigantamax'  # e.g., r'C:\Users\YourName\Pictures\Processed_Pokemon'
     # To use the default 'output' directory inside input_dir, set to None:
     # output_dir = None
 

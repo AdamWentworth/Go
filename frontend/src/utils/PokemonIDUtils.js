@@ -75,6 +75,10 @@ export function determinePokemonKey(pokemon) {
             suffix = `-${pokemon.variantType}`;
         } else if (pokemon.variantType.startsWith('shiny_fusion_')) {
             suffix = `-${pokemon.variantType}`;
+        } else if (pokemon.variantType === 'gigantamax') {
+            suffix = '-gigantamax';
+        } else if (pokemon.variantType === 'shiny_gigantamax') {
+            suffix = '-shiny_gigantamax';
         }
     }
 
