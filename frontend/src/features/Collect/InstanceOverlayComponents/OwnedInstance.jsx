@@ -14,7 +14,7 @@ import CPComponent from './OwnedComponents/CPComponent';
 import FavoriteComponent from './OwnedComponents/FavoriteComponent';
 import NameComponent from './OwnedComponents/NameComponent';
 import LuckyComponent from './OwnedComponents/LuckyComponent';
-import PurifyComponent from './OwnedComponents/PurifyComponent'; // Import PurifyComponent
+import PurifyComponent from './OwnedComponents/PurifyComponent';
 import GenderComponent from './OwnedComponents/GenderComponent';
 import WeightComponent from './OwnedComponents/WeightComponent';
 import TypeComponent from './OwnedComponents/TypeComponent';
@@ -28,6 +28,7 @@ import MegaComponent from './OwnedComponents/MegaComponent';
 import LevelComponent from './OwnedComponents/LevelComponent'; 
 import FusionComponent from './OwnedComponents/FusionComponent';
 import FuseOverlay from './OwnedComponents/FuseOverlay';
+import MaxComponent from './OwnedComponents/MaxComponent'; // Import MaxComponent
 
 // Utilities and Constants
 import { determineImageUrl } from '../../../utils/imageHelpers';
@@ -339,9 +340,11 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   return (
     <div className="owned-instance">
       <div className="top-row">
-        {isEditable && (
-          <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} />
-        )}
+        <EditSaveComponent 
+          editMode={editMode} 
+          toggleEditMode={toggleEditMode}
+          isEditable={isEditable}
+        />
         <CPComponent 
           pokemon={pokemon} 
           editMode={editMode} 
@@ -393,31 +396,53 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           />
         )}
       </div>
-      <div className="name-mega-container">
-        {!isShadow && !pokemon.ownershipStatus.is_for_trade && pokemon.rarity !== "Mythic" && (
-          <LuckyComponent 
-            pokemon={pokemon} 
-            onToggleLucky={handleLuckyToggle} 
-            isLucky={isLucky} 
-            editMode={editMode} 
-          />
-        )}
+      <div className="purify-name-shadow-container">
+        <LuckyComponent 
+          pokemon={pokemon} 
+          onToggleLucky={handleLuckyToggle} 
+          isLucky={isLucky} 
+          editMode={editMode} 
+          isShadow={isShadow}
+        />
         <NameComponent 
           pokemon={pokemon} 
           editMode={editMode} 
           onNicknameChange={handleNicknameChange} 
         />
-        {pokemon.megaEvolutions &&
-          pokemon.megaEvolutions.length > 0 &&
-          !isShadow &&
-          !pokemon.name.toLowerCase().includes("clone") && (
-            <MegaComponent
-              megaData={megaData}
-              setMegaData={setMegaData}
-              editMode={editMode}
-              megaEvolutions={pokemon.megaEvolutions}
-            />
-        )}
+        <PurifyComponent 
+          isShadow={isShadow}
+          isPurified={isPurified}
+          editMode={editMode}
+          onTogglePurify={handlePurifyToggle}
+        />
+      </div>
+      <div className="level-gender-row">
+        <LevelComponent
+          pokemon={pokemon}
+          editMode={editMode}
+          level={level}
+          onLevelChange={handleLevelChange}
+          errors={validationErrors}
+        />
+        <GenderComponent 
+          pokemon={pokemon} 
+          editMode={editMode} 
+          isFemale={isFemale} 
+          onGenderChange={handleGenderChange}
+          />
+      </div>
+      <div className="weight-type-height-container">
+        <WeightComponent 
+          pokemon={pokemon} 
+          editMode={editMode} 
+          onWeightChange={handleWeightChange} 
+          />
+        <TypeComponent pokemon={pokemon} />
+        <HeightComponent 
+          pokemon={pokemon} 
+          editMode={editMode} 
+          onHeightChange={handleHeightChange} 
+          />
       </div>
       <FusionComponent 
         fusion={pokemon.fusion} 
@@ -427,45 +452,19 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         onFusionToggle={handleFusionToggle}
         onUndoFusion={handleUndoFusion}
       />
-      <div className="gender-lucky-row">
-
-        {(isShadow || isPurified) && (
-          <PurifyComponent 
-            isShadow={isShadow}
-            isPurified={isPurified}
-            editMode={editMode}
-            onTogglePurify={handlePurifyToggle}
-          />
-        )}
-
-        <LevelComponent
-          pokemon={pokemon}
+      <div className="mega-max-container">
+        <MaxComponent 
+          pokemon={pokemon} 
+          editMode={editMode} />
+        <MegaComponent
+          megaData={megaData}
+          setMegaData={setMegaData}
           editMode={editMode}
-          level={level}
-          onLevelChange={handleLevelChange}
-          errors={validationErrors}
-        />
-        
-        <GenderComponent 
-          pokemon={pokemon} 
-          editMode={editMode} 
-          isFemale={isFemale} 
-          onGenderChange={handleGenderChange}
-        />
-      </div>
-      <div className="stats-container">
-        <WeightComponent 
-          pokemon={pokemon} 
-          editMode={editMode} 
-          onWeightChange={handleWeightChange} 
-        />
-        <TypeComponent pokemon={pokemon} />
-        <HeightComponent 
-          pokemon={pokemon} 
-          editMode={editMode} 
-          onHeightChange={handleHeightChange} 
-        />
-      </div>
+          megaEvolutions={pokemon.megaEvolutions}
+          isShadow={isShadow}
+          name={pokemon.name}
+          />
+        </div>
       <div className="moves-content">
         <MovesComponent 
           pokemon={pokemon} 
@@ -496,6 +495,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           onDateChange={handleDateCaughtChange} 
         />
       </div>
+
+
       {showBackgrounds && (
         <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
           <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>

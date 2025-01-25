@@ -1,0 +1,23 @@
+/* MaxComponent.css */
+
+.max-component {
+    border: 1px solid #ccc;
+    padding: 16px;
+    margin-top: 16px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+  }
+  
+  .max-component h3 {
+    margin-bottom: 8px;
+  }
+  
+  .max-component ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .max-component li {
+    padding: 4px 0;
+  }
+  

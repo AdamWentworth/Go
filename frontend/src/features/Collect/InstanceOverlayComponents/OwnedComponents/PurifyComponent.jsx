@@ -4,8 +4,10 @@ import React from 'react';
 import './PurifyComponent.css';
 
 const PurifyComponent = ({ isShadow, isPurified, editMode, onTogglePurify }) => {
-  // If not in edit mode, don't render anything
-  if (!editMode) return null;
+  // Move the rendering logic inside the component
+  if (!editMode || (!isShadow && !isPurified)) {
+    return null; // Do not render if not in edit mode or if neither isShadow nor isPurified
+  }
 
   const handlePurifyClick = () => {
     onTogglePurify(!isPurified);
@@ -19,9 +21,7 @@ const PurifyComponent = ({ isShadow, isPurified, editMode, onTogglePurify }) => 
 
   return (
     <div className="purify-component" onClick={handlePurifyClick}>
-      {(isShadow || isPurified) && (
-        <img src={imageSrc} alt={altText} className="purify-icon" />
-      )}
+      <img src={imageSrc} alt={altText} className="purify-icon" />
     </div>
   );
 };

@@ -7,8 +7,20 @@ const MegaComponent = ({
   megaData,
   setMegaData,
   editMode,
-  megaEvolutions = []
+  megaEvolutions = [],
+  isShadow,
+  name,
 }) => {
+  // Conditional Rendering Logic
+  if (
+    !megaEvolutions ||
+    megaEvolutions.length === 0 ||
+    isShadow ||
+    (name && name.toLowerCase().includes("clone"))
+  ) {
+    return null; // Do not render anything if conditions are not met
+  }
+
   const handleClick = () => {
     if (!editMode) return; // Only toggleable when editMode is true
 
@@ -26,13 +38,13 @@ const MegaComponent = ({
         // Deactivate Mega if only one Mega form exists
         setMegaData({
           isMega: false,
-          mega: true,
           megaForm: null,
+          mega: true,
         });
       } else {
         // Cycle through Mega Forms
         const currentIndex = megaEvolutions.findIndex(
-          me => me.form.toLowerCase() === megaForm?.toLowerCase()
+          (me) => me.form.toLowerCase() === megaForm?.toLowerCase()
         );
         const nextIndex = (currentIndex + 1) % (megaEvolutions.length + 1); // +1 to include deactivation
         if (nextIndex === megaEvolutions.length) {
@@ -66,7 +78,9 @@ const MegaComponent = ({
         <img
           src={`${process.env.PUBLIC_URL}/images/mega.png`}
           alt="Mega Toggle"
-          className={`mega-image ${isMega ? 'saturated' : 'desaturated'} ${editMode ? '' : 'static-mode'}`}
+          className={`mega-image ${isMega ? 'saturated' : 'desaturated'} ${
+            editMode ? '' : 'static-mode'
+          }`}
           onClick={handleClick}
           title={formLabel}
         />

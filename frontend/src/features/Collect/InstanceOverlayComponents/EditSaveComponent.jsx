@@ -3,7 +3,9 @@
 import React from 'react';
 import './EditSaveComponent.css';
 
-const EditSaveComponent = ({ editMode, toggleEditMode }) => {
+const EditSaveComponent = ({ editMode, toggleEditMode, isEditable }) => {
+  if (!isEditable) return null;
+  
   const editIcon = `/images/edit-icon.png`;
   const saveIcon = `/images/save-icon.png`;
 
@@ -17,4 +19,3 @@ const EditSaveComponent = ({ editMode, toggleEditMode }) => {
 };
 
 export default EditSaveComponent;
-

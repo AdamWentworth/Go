@@ -3,7 +3,6 @@
     display: flex;
     justify-content: center; /* Horizontally center the nickname text */
     align-items: center; /* Vertically align items in the middle */
-    width: 100%; /* Use the full container width */
     position: relative; /* Positioning context for absolute elements */
 }
 

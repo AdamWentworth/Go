@@ -3,9 +3,15 @@
 import React from 'react';
 import './LuckyComponent.css';
 
-const LuckyComponent = ({ pokemon, onToggleLucky, isLucky, editMode }) => {
-    if (!editMode) {
-        return null; // Do not render anything if editMode is false
+const LuckyComponent = ({ pokemon, onToggleLucky, isLucky, editMode, isShadow }) => {
+    // Move all the rendering conditions inside the component
+    if (
+        isShadow || 
+        pokemon.ownershipStatus.is_for_trade || 
+        pokemon.rarity === "Mythic" || 
+        !editMode
+    ) {
+        return null; // Do not render the component if any of these conditions are met
     }
 
     const toggleLucky = () => {
@@ -20,7 +26,7 @@ const LuckyComponent = ({ pokemon, onToggleLucky, isLucky, editMode }) => {
                 src={process.env.PUBLIC_URL + '/images/lucky-icon.png'} 
                 alt="Lucky Icon" 
                 className={isLucky ? 'lucky-on' : 'lucky-off'}
-                onClick={toggleLucky} // Move the onClick handler to the image
+                onClick={toggleLucky} 
             />
         </div>
     );

@@ -12,15 +12,10 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  padding: 0 1rem;
   position: relative;
 }
 
-.owned-instance .top-row .edit-save-component {
-  margin-right: auto;
-}
-
-.owned-instance .top-row .cp-component {
+.owned-instance .top-row .cp-component-container {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -38,13 +33,6 @@
 
 .owned-instance .top-row .favorite-component {
   margin-left: auto;
-}
-
-.owned-instance .cp-row {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  margin-top: 1rem;
 }
 
 .owned-instance .pokemon-image-container {
@@ -110,29 +98,18 @@
   position: relative;
   display: inline-block;  /* Shrink-wraps to fit content */
   z-index: 3;
-  /* Optionally remove or adjust width/height if they restrict dynamic sizing */
-  /* width: 100%; 
-  height: 100%; */
 }
 
 /* Purified Badge Styling with Percentage-Based Sizing */
 .owned-instance .purified-badge {
   position: absolute;
-  bottom: 2%; /* 5% from the bottom of the container */
-  left: 2%;   /* 5% from the left of the container */
-  
-  width: 20%;  /* Badge width is 15% of the container's width */
-  height: auto; /* Height adjusts to maintain aspect ratio */
-  
-  z-index: 4;    /* Ensure it appears above other elements */
-  
+  bottom: 2%;
+  left: 2%;
+  width: 20%;
+  height: auto;
+  z-index: 4;
   max-width: 100%;
   height: auto;
-}
-
-
-.owned-instance .lucky-placeholder {
-  flex: 1; 
 }
 
 .owned-instance .lucky-backdrop {
@@ -156,17 +133,39 @@
   filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
 }
 
-.owned-instance .gender-lucky-row {
+.owned-instance .purify-name-shadow-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+  height: 2rem;
+}
+
+.owned-instance .lucky-component {
+  flex: 0 0 auto; /* Only takes space if it renders */
+  margin-right: auto; /* Pushes towards the left */
+}
+
+.owned-instance .purify-component {
+  flex: 0 0 auto; /* Only takes space if it renders */
+  margin-left: auto; /* Pushes towards the right */
+}
+
+.owned-instance .name-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap; /* Prevents text from wrapping */
+}
+
+.owned-instance .level-gender-row {
   display: flex;
   align-items: center;
   justify-content: space-between; /* Space between for gender and lucky components */
   width: 100%;
   position: relative; /* Allows centering of LevelComponent */
-}
-
-.owned-instance .lucky-component,
-.owned-instance .gender-container {
-  flex: 1; /* Ensures LuckyComponent and GenderComponent take equal space */
 }
 
 .owned-instance .level-component {
@@ -176,7 +175,11 @@
   z-index: 1; /* Ensure it appears above other elements if needed */
 }
 
-.owned-instance .stats-container {
+.owned-instance .gender-container {
+  flex: 1; /* Ensures LuckyComponent and GenderComponent take equal space */
+}
+
+.owned-instance .weight-type-height-container {
   display: flex;
   align-items: center; /* Align items vertically */
   width: 100%;
@@ -188,14 +191,18 @@
   flex: 1; /* Allow equal space for weight and height components */
 }
 
-.owned-instance .stats-container.only-type .weight-container,
-.owned-instance .stats-container.only-type .height-container {
+.owned-instance .weight-type-height-container.only-type .weight-container,
+.owned-instance .weight-type-height-container.only-type .height-container {
   display: none; /* Hide these containers when not rendered */
 }
 
 .owned-instance .weight-component, .owned-instance .type-component, .owned-instance .height-component {
   display: flex;
   align-items: center;
+}
+
+.mega-max-container {
+  display: flex;
 }
 
 .owned-instance .moves-content, 
@@ -205,28 +212,6 @@
   width: 100%; /* Ensure these containers take up the full width */
 }
 
-.owned-instance .name-mega-container {
-  display: flex;
-  align-items: center;
-  justify-content: center; /* Space between for gender and lucky components */
-  width: 100%;
-  position: relative; /* Allows centering of LevelComponent */
-  height: 2rem;
-}
-
-.owned-instance .name-container {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-  white-space: nowrap; /* Prevents wrapping */
-}
-
-.owned-instance .lucky-component,
-.owned-instance .name-container,
-.owned-instance .mega-component {
-  flex: 1; /* Ensures LuckyComponent and GenderComponent take equal space */
-}
 
 .owned-instance .level-component label {
   font-weight: bold;
