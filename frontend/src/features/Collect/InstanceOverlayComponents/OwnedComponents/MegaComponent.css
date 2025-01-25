@@ -4,7 +4,7 @@
   display: flex;
   align-items: center;
   margin-left: auto; /* Aligns the component to the right within its container */
-  justify-content: right;
+  justify-content: center;
 }
 
 .mega-component.edit-mode {

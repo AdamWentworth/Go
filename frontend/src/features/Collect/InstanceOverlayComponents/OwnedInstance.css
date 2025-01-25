@@ -100,7 +100,17 @@
   z-index: 3;
 }
 
-/* Purified Badge Styling with Percentage-Based Sizing */
+.owned-instance .max-badge {
+  position: absolute;
+  top: 2%; /* Position at the top */
+  right: 2%; /* Position at the right */
+  width: 35%;
+  height: auto;
+  z-index: 4;
+  max-width: 100%;
+  height: auto;
+}
+
 .owned-instance .purified-badge {
   position: absolute;
   bottom: 2%;
@@ -201,8 +211,15 @@
   align-items: center;
 }
 
-.mega-max-container {
+.owned-instance .max-mega-container {
   display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.owned-instance .max-component,
+.owned-instance .mega-component {
+  flex: 1;
 }
 
 .owned-instance .moves-content, 

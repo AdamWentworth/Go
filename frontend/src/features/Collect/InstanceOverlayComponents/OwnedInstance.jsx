@@ -28,7 +28,7 @@ import MegaComponent from './OwnedComponents/MegaComponent';
 import LevelComponent from './OwnedComponents/LevelComponent'; 
 import FusionComponent from './OwnedComponents/FusionComponent';
 import FuseOverlay from './OwnedComponents/FuseOverlay';
-import MaxComponent from './OwnedComponents/MaxComponent'; // Import MaxComponent
+import MaxComponent from './OwnedComponents/MaxComponent';
 
 // Utilities and Constants
 import { determineImageUrl } from '../../../utils/imageHelpers';
@@ -90,6 +90,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   const [level, setLevel] = useState(pokemon.ownershipStatus.level || null);
   const [isShadow, setIsShadow] = useState(!!pokemon.ownershipStatus.shadow);
   const [isPurified, setIsPurified] = useState(!!pokemon.ownershipStatus.purified);
+  const [dynamax, setDynamax] = useState(false);
+  const [gigantamax, setGigantamax] = useState(false);
 
   // Memoized values
   const currentBaseStats = useMemo(
@@ -119,10 +121,11 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
       megaData.megaForm,
       fusion.is_fused,
       fusion.fusion_form,
-      isPurified
+      isPurified,
+      gigantamax
     );
     setCurrentImage(updatedImage); 
-  }, [isFemale, megaData.isMega, megaData.megaForm, fusion.is_fused, fusion.fusion_form, pokemon, isPurified]);  
+  }, [isFemale, megaData.isMega, megaData.megaForm, fusion.is_fused, fusion.fusion_form, pokemon, isPurified, gigantamax]);  
 
   // Handler Functions
   const handleGenderChange = (newGender) => {
@@ -174,7 +177,6 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     setLevel(newLevel !== '' ? Number(newLevel) : null);
   };
 
-  // 2. Handler for Purify toggling
   const handlePurifyToggle = (newPurifiedValue) => {
     if (newPurifiedValue) {
       setIsPurified(true);
@@ -182,6 +184,34 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     } else {
       setIsPurified(false);
       setIsShadow(true);
+    }
+  };
+
+  const handleMaxClick = () => {
+    const maxEntry = pokemon.max?.[0];
+    if (!maxEntry) return;
+
+    const hasDynamax = maxEntry.dynamax === 1;
+    const hasGigantamax = maxEntry.gigantamax === 1;
+
+    if (!dynamax && !gigantamax) {
+        // Start with Dynamax if available, otherwise start with Gigantamax
+        if (hasDynamax) {
+            setDynamax(true);
+        } else if (hasGigantamax) {
+            setGigantamax(true);
+        }
+    } else if (dynamax) {
+        // If currently Dynamax, switch to Gigantamax if available, else reset
+        if (hasGigantamax) {
+            setDynamax(false);
+            setGigantamax(true);
+        } else {
+            setDynamax(false);
+        }
+    } else if (gigantamax) {
+        // If currently Gigantamax, reset to null
+        setGigantamax(false);
     }
   };
 
@@ -387,14 +417,28 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             />
           )}
           <img src={currentImage} alt={pokemon.name} className="pokemon-image" />
+          {dynamax && (
+            <img 
+              src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+              alt="Dynamax Badge" 
+              className="max-badge" 
+            />
+          )}
+          {gigantamax && (
+            <img 
+              src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+              alt="Gigantamax Badge" 
+              className="max-badge" 
+            />
+          )}
+          {isPurified && (
+            <img 
+              src={process.env.PUBLIC_URL + '/images/purified.png'} 
+              alt="Purified Badge" 
+              className="purified-badge" 
+            />
+          )}
         </div>
-        {isPurified && (
-          <img 
-            src={process.env.PUBLIC_URL + '/images/purified.png'} 
-            alt="Purified Badge" 
-            className="purified-badge" 
-          />
-        )}
       </div>
       <div className="purify-name-shadow-container">
         <LuckyComponent 
@@ -452,10 +496,14 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         onFusionToggle={handleFusionToggle}
         onUndoFusion={handleUndoFusion}
       />
-      <div className="mega-max-container">
+      <div className="max-mega-container">
         <MaxComponent 
           pokemon={pokemon} 
-          editMode={editMode} />
+          editMode={editMode}
+          dynamax={dynamax}
+          gigantamax={gigantamax}
+          onMaxClick={handleMaxClick}
+        />
         <MegaComponent
           megaData={megaData}
           setMegaData={setMegaData}

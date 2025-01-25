@@ -7,7 +7,8 @@ export function determineImageUrl(
     megaForm = undefined,
     isFused = false,
     fusionForm = undefined,
-    isPurified = false
+    isPurified = false,
+    gigantamax = false
 ) {
     const DEFAULT_IMAGE_URL = '/images/default_pokemon.png';
 
@@ -18,6 +19,7 @@ export function determineImageUrl(
 
     // Determine if the Pokemon should be treated as shiny based on purification
     const isPurifiedShiny = isPurified && !!pokemon.ownershipStatus.shiny;
+    const isShiny = isPurifiedShiny || !!pokemon.ownershipStatus?.shiny;
 
     // If purified, prioritize using image_url or image_url_shiny
     if (isPurified) {
@@ -34,8 +36,6 @@ export function determineImageUrl(
         const fusionEntry = pokemon.fusion.find(f => f.name === fusionForm);
         if (fusionEntry) {
             // Use shiny property from ownershipStatus if applicable
-            const isShiny = isPurifiedShiny || !!pokemon.ownershipStatus?.shiny;
-            // Select appropriate image based on gender and shiny status
             if (isShiny) {
                 return fusionEntry.image_url_shiny || fusionEntry.image_url || DEFAULT_IMAGE_URL;
             }
@@ -43,7 +43,16 @@ export function determineImageUrl(
         }
     }
 
-    const isShiny = isPurifiedShiny || !!pokemon.ownershipStatus?.shiny;
+    // Add Gigantamax handling
+    if (gigantamax && Array.isArray(pokemon.max) && pokemon.max.length > 0) {
+        const maxEntry = pokemon.max[0];
+        if (isShiny && maxEntry.shiny_gigantamax_image_url) {
+            return maxEntry.shiny_gigantamax_image_url;
+        } else if (maxEntry.gigantamax_image_url) {
+            return maxEntry.gigantamax_image_url;
+        }
+    }
+
     const variantType = (pokemon.variantType || '').toLowerCase();
 
     const getCostumeImage = (costumes, variantType, isFemale, isShiny) => {
