@@ -142,7 +142,7 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
 
     let contentParts = [];
 
-    const isMegaVariant = pokemon.variantType && pokemon.variantType.includes('mega') || pokemon.ownershipStatus?.is_mega;
+    const isMegaVariant = (pokemon.variantType && pokemon.variantType.includes('mega')) || pokemon.ownershipStatus?.is_mega;
 
     // Handle Shiny if it's part of the costume name
     let isShiny = false;
@@ -152,7 +152,6 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
         costumeName = formatCostumeName(pokemon.currentCostumeName);
         if (costumeName.toLowerCase().includes('shiny')) {
             isShiny = true;
-            // Remove 'Shiny' from costume name
             costumeName = costumeName.replace(/shiny/i, '').trim();
             if (costumeName) {
                 contentParts.push(costumeName);
@@ -163,25 +162,43 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
     }
 
     // Determine the Pokémon name with form if applicable
-    let nameText;
+    let nameText = pokemon.name;
     const hasMultiFormPokedexNumbers = Array.isArray(multiFormPokedexNumbers) && multiFormPokedexNumbers.length > 0;
     const shouldIncludeForm = !isMegaVariant && pokemon.form && pokemon.form !== 'Average' && 
         (!hasMultiFormPokedexNumbers || !multiFormPokedexNumbers.includes(pokemon.pokedex_number) || showAll);
 
     if (shouldIncludeForm) {
         nameText = formatPokemonName(pokemon.name, pokemon.form);
-    } else {
-        nameText = pokemon.name;
+    }
+
+    // Remove 'Shiny' from the start of the name if it exists
+    if (nameText.toLowerCase().startsWith('shiny ')) {
+        isShiny = true;
+        nameText = nameText.substring(6);
+    }
+
+    // Handle Dynamax and Gigantamax
+    const isDynamax = pokemon.ownershipStatus?.dynamax;
+    const isGigantamax = pokemon.ownershipStatus?.gigantamax;
+    const dynamaxText = isDynamax ? 'Dynamax' : (isGigantamax ? 'Gigantamax' : null);
+
+    // Construct content parts with guaranteed order
+    contentParts = [];
+    if (isShiny) {
+        contentParts.push('Shiny');
+    }
+    
+    if (dynamaxText) {
+        contentParts.push(dynamaxText);
     }
 
     contentParts.push(nameText);
 
-    // Add caveat for Mega
+    // Rest of the existing logic remains the same...
     if (pokemon.ownershipStatus?.is_mega && !contentParts.includes('Mega')) {
         contentParts.unshift('Mega');
     }
 
-    // Add mega_form at the end if it exists and is not null
     if (pokemon.ownershipStatus?.is_mega && pokemon.ownershipStatus.mega_form != null) {
         contentParts.push(pokemon.ownershipStatus.mega_form);
     }
@@ -194,17 +211,10 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
         }
     }
 
-    if (isShiny) {
-        contentParts.unshift('Shiny');
-    }
-
-    // Handle Purified vs Shadow
     if (pokemon.ownershipStatus?.purified) {
-        // Remove the word 'shadow' from each part (case-insensitive)
         contentParts = contentParts.map(part => part.replace(/shadow/gi, '').trim())
                                    .filter(part => part.length > 0);
 
-        // Ensure 'Purified' is added if not already present
         if (!contentParts.some(part => part.toLowerCase() === 'purified')) {
             contentParts.unshift('Purified');
         }
