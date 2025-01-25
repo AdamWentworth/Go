@@ -67,8 +67,8 @@
 
 .fav-container {
     position: absolute;
-    top: 5px; /* Add 'px' or another unit */
-    right: 0.65rem;
+    top: 5px;
+    right: 0.5rem;
     z-index: 5;
 }
 
@@ -120,8 +120,6 @@
 .pokemon-card .pokemon-image-container img {
     max-width: 100%;
     height: auto;
-    position: relative;
-    z-index: 4;
 }
 
 .pokemon-card.highlighted {
@@ -138,16 +136,24 @@
     margin-bottom: 0.5em;
 }
 
+.pokemon-card .max-badge {
+    position: absolute;
+    top: 8%; /* Position at the top */
+    right: 8%; /* Position at the right */
+    width: 35%;
+    height: auto;
+    max-width: 100%;
+    height: auto;
+    z-index: 2;
+  }
+
 .pokemon-card .purified-badge {
     position: absolute;
     bottom: 5%; /* Adjusted from 5% to 2% */
     left: 5%;   /* Adjusted from 5% to 2% */
-    
     width: 20%;  /* Adjusted width */
     height: auto;
-    
     z-index: 5;
-    
     max-width: 100%;
     height: auto;
 }
@@ -171,12 +177,16 @@
         font-size: calc((100vw - (8 * 8px)) / 100 * 2.5);
     }
     .favorite-icon {
-        width: .85em;
+        width: .75em;
         height: auto;
     }
     .pokemon-card h2,
     .pokemon-card .cp-display {
         font-size: calc((100vw - (8 * 8px)) / 100 * 3);
+    }
+    .pokemon-card .max-badge {
+        top: 10%;
+        width: 30%;
     }
 }
 
@@ -196,11 +206,15 @@
         font-size: calc((100vw - (8 * 8px)) / 100 * 1);
     }
     .favorite-icon {
-        width: 0.65em;
+        width: 0.6em;
     }
     .pokemon-card h2,
     .pokemon-card .cp-display {
         font-size: calc((100vw - (8 * 10px)) / 100 * 1.5);
+    }
+    .pokemon-card .max-badge {
+        top: 10%; /* Position at the top */
+        width: 30%;
     }
 }
 
@@ -220,11 +234,15 @@
         font-size: calc((100vw - (8 * 8px)) / 100 * 1.25);
     }
     .favorite-icon {
-        width: 0.85em;
+        width: 0.75em;
     }
     .pokemon-card h2,
     .pokemon-card .cp-display {
         font-size: calc((100vw - (8 * 10px)) / 100 * 1.75);
+    }
+    .pokemon-card .max-badge {
+        top: 6%; /* Position at the top */
+        width: 30%;
     }
 }
 
@@ -244,11 +262,15 @@
         width: .9em;
     }
     .favorite-icon {
-        width: 0.9em;
+        width: 0.8em;
     }
     .pokemon-card h2,
     .pokemon-card .cp-display {
         font-size: calc((100vw - (8 * 10px)) / 100 * 1);
+    }
+    .pokemon-card .max-badge {
+        top: 6%; /* Position at the top */
+        width: 30%;
     }
 }
 
@@ -273,6 +295,10 @@
     .pokemon-card h2,
     .pokemon-card .cp-display {
         font-size: calc((100vw - (8 * 10px)) / 100 * 1.15);
+    }
+    .pokemon-card .max-badge {
+        top: 5%; /* Position at the top */
+        width: 30%;
     }
 }
 

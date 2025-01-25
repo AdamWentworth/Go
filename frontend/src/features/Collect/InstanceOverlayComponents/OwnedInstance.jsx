@@ -90,8 +90,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   const [level, setLevel] = useState(pokemon.ownershipStatus.level || null);
   const [isShadow, setIsShadow] = useState(!!pokemon.ownershipStatus.shadow);
   const [isPurified, setIsPurified] = useState(!!pokemon.ownershipStatus.purified);
-  const [dynamax, setDynamax] = useState(false);
-  const [gigantamax, setGigantamax] = useState(false);
+  const [dynamax, setDynamax] = useState(!!pokemon.ownershipStatus.dynamax);
+  const [gigantamax, setGigantamax] = useState(!!pokemon.ownershipStatus.gigantamax);
 
   // Memoized values
   const currentBaseStats = useMemo(
@@ -311,6 +311,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             fusion_form,
             shadow: isShadow,
             purified: isPurified,
+            dynamax: dynamax,
+            gigantamax: gigantamax,
           };
   
           // (A) If we parted ways with the old partner => disable false, fused_with: null

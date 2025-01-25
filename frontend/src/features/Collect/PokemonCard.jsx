@@ -26,6 +26,8 @@ const PokemonCard = ({
   const fusionForm = pokemon.ownershipStatus?.fusion_form;
   const isDisabled = pokemon.ownershipStatus?.disabled === true;
   const isPurified = pokemon.ownershipStatus?.purified === true;
+  const isGigantamax = pokemon.ownershipStatus?.gigantamax === true;
+  const isDynamax = pokemon.ownershipStatus?.dynamax === true;
 
   useEffect(() => {
     if (pokemon) {
@@ -34,11 +36,11 @@ const PokemonCard = ({
         setCurrentImage(`${process.env.PUBLIC_URL}/images/disabled/disabled_${pokemon.pokemon_id}.png`);
       } else {
         // Otherwise, use the regular logic to determine the image
-        const updatedImage = determineImageUrl(isFemale, pokemon, isMega, megaForm, isFused, fusionForm, isPurified);
+        const updatedImage = determineImageUrl(isFemale, pokemon, isMega, megaForm, isFused, fusionForm, isPurified, isGigantamax);
         setCurrentImage(updatedImage || '/images/default_pokemon.png');
       }
     }
-  }, [isDisabled, isFemale, isMega, isFused, megaForm, fusionForm, pokemon, isPurified]);
+  }, [isDisabled, isFemale, isMega, isFused, megaForm, fusionForm, pokemon, isPurified, isGigantamax]);
 
   // Determine the ownership class
   const getOwnershipClass = () => {
@@ -132,8 +134,21 @@ const PokemonCard = ({
           alt={pokemon.name}
           loading="lazy"
           className="pokemon-image"
-          style={{ zIndex: 4 }}
         />
+        {isDynamax && (
+            <img 
+              src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+              alt="Dynamax Badge" 
+              className="max-badge" 
+            />
+          )}
+          {isGigantamax && (
+            <img 
+              src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+              alt="Gigantamax Badge" 
+              className="max-badge" 
+            />
+          )}
         {isPurified && (
           <div className="purified-badge">
             <img
