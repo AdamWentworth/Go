@@ -83,6 +83,8 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 		mega := parseOptionalBool(pm["mega"])
 		isFused := parseOptionalBool(pm["is_fused"])
 		disabled := parseOptionalBool(pm["disabled"])
+		dynamax := parseOptionalBool(pm["dynamax"])
+		gigantamax := parseOptionalBool(pm["gigantamax"])
 
 		// Nullable ints/floats
 		cp := parseNullableInt(pm["cp"])
@@ -163,6 +165,8 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			"fusion_form":      fusionForm,
 			"fused_with":       fusedWith,
 			"disabled":         disabled,
+			"dynamax":          dynamax,
+			"gigantamax":       gigantamax,
 		}
 
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
@@ -214,6 +218,8 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 				FusionForm:      fusionForm,
 				FusedWith:       fusedWith,
 				Disabled:        disabled,
+				Dynamax:         dynamax,
+				Gigantamax:      gigantamax,
 			}
 
 			if errCreate := DB.Create(&newInstance).Error; errCreate != nil {

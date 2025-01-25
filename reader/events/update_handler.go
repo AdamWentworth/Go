@@ -103,6 +103,8 @@ func GetUpdates(c *fiber.Ctx) error {
 			"fusion_form":      instance.FusionForm,
 			"fused_with":       instance.FusedWith,
 			"disabled":         instance.Disabled,
+			"dynamax":          instance.Dynamax,
+			"gigantamax":       instance.Gigantamax,
 		}
 		pokemonData[instance.InstanceID] = instanceMap
 	}
@@ -197,6 +199,8 @@ func GetUpdates(c *fiber.Ctx) error {
 					"fusion_form":      instance.FusionForm,
 					"fused_with":       instance.FusedWith,
 					"disabled":         instance.Disabled,
+					"dynamax":          instance.Dynamax,
+					"gigantamax":       instance.Gigantamax,
 				}
 				relatedInstances[instance.InstanceID] = instanceMap
 			}
@@ -249,6 +253,8 @@ func GetUpdates(c *fiber.Ctx) error {
 					"fusion_form":      instance.FusionForm,
 					"fused_with":       instance.FusedWith,
 					"disabled":         instance.Disabled,
+					"dynamax":          instance.Dynamax,
+					"gigantamax":       instance.Gigantamax,
 				}
 				relatedInstances[instance.InstanceID] = instanceMap
 			}

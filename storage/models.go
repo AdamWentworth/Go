@@ -67,6 +67,8 @@ type PokemonInstance struct {
 	FusionForm      *string    `gorm:"column:fusion_form"`
 	FusedWith       *string    `gorm:"column:fused_with"`
 	Disabled        bool       `gorm:"column:disabled;default:false"`
+	Dynamax         bool       `gorm:"column:dynamax;default:false"`
+	Gigantamax      bool       `gorm:"column:gigantamax;default:false"`
 }
 
 func (PokemonInstance) TableName() string {

@@ -93,6 +93,8 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 			"fusion_form":      instance.FusionForm,
 			"fused_with":       instance.FusedWith,
 			"disabled":         instance.Disabled,
+			"dynamax":          instance.Dynamax,
+			"gigantamax":       instance.Gigantamax,
 		}
 		responseInstances[instance.InstanceID] = instanceMap
 	}
@@ -195,6 +197,8 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 			"fusion_form":      instance.FusionForm,
 			"fused_with":       instance.FusedWith,
 			"disabled":         instance.Disabled,
+			"dynamax":          instance.Dynamax,
+			"gigantamax":       instance.Gigantamax,
 		}
 		relatedInstanceByID[instance.InstanceID] = instanceMap
 	}
@@ -295,6 +299,8 @@ func GetPokemonInstancesByUsername(c *fiber.Ctx) error {
 			"fusion_form":      instance.FusionForm,
 			"fused_with":       instance.FusedWith,
 			"disabled":         instance.Disabled,
+			"dynamax":          instance.Dynamax,
+			"gigantamax":       instance.Gigantamax,
 		}
 
 		// Add the instance to the response data using its `InstanceID`
