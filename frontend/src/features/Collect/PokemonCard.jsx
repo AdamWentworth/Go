@@ -25,6 +25,7 @@ const PokemonCard = ({
   const isFused = pokemon.ownershipStatus?.is_fused;
   const fusionForm = pokemon.ownershipStatus?.fusion_form;
   const isDisabled = pokemon.ownershipStatus?.disabled === true;
+  const isPurified = pokemon.ownershipStatus?.purified === true;
 
   useEffect(() => {
     if (pokemon) {
@@ -33,11 +34,11 @@ const PokemonCard = ({
         setCurrentImage(`${process.env.PUBLIC_URL}/images/disabled/disabled_${pokemon.pokemon_id}.png`);
       } else {
         // Otherwise, use the regular logic to determine the image
-        const updatedImage = determineImageUrl(isFemale, pokemon, isMega, megaForm, isFused, fusionForm);
+        const updatedImage = determineImageUrl(isFemale, pokemon, isMega, megaForm, isFused, fusionForm, isPurified);
         setCurrentImage(updatedImage || '/images/default_pokemon.png');
       }
     }
-  }, [isDisabled, isFemale, isMega, isFused, megaForm, fusionForm, pokemon]);
+  }, [isDisabled, isFemale, isMega, isFused, megaForm, fusionForm, pokemon, isPurified]);
 
   // Determine the ownership class
   const getOwnershipClass = () => {
@@ -116,7 +117,7 @@ const PokemonCard = ({
           />
         )}
       </div>
-      <div className="pokemon-image-container" style={{ position: 'relative' }}>
+      <div className="pokemon-image-container">
         {shouldDisplayLuckyBackdrop && (
           <div className="lucky-backdrop-wrapper">
             <img
@@ -133,6 +134,15 @@ const PokemonCard = ({
           className="pokemon-image"
           style={{ zIndex: 4 }}
         />
+        {isPurified && (
+          <div className="purified-badge">
+            <img
+              src={`${process.env.PUBLIC_URL}/images/purified.png`}
+              alt={`${pokemon.name} is purified`}
+              className="purified-badge-image"
+            />
+          </div>
+        )}
       </div>
       <p>#{pokemon.pokedex_number}</p>
       <div className="type-icons">

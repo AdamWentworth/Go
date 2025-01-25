@@ -48,11 +48,10 @@ function useHandleMoveToFilter({
 
       // We'll categorize the highlighted cards
       const megaPokemonKeys = [];
-      const shadowPokemonKeys = [];
       const fusionPokemonKeys = []; // <--- NEW array for Fusion
       const regularPokemonKeys = [];
 
-      // --- 1) Sort out Mega, Shadow, Fusion, or regular ---
+      // --- 1) Sort out Mega, Fusion, or regular ---
       for (const pokemonKey of highlightedCards) {
         const parsed = parsePokemonKey(pokemonKey);
         if (!parsed) {
@@ -76,10 +75,6 @@ function useHandleMoveToFilter({
 
           megaPokemonKeys.push({ key: pokemonKey, baseKey, megaForm });
         }
-        // Shadow check
-        else if (baseKey.includes('shadow')) {
-          shadowPokemonKeys.push({ key: pokemonKey, baseKey });
-        }
         // Fusion check
         else if (baseKey.includes('fusion')) {
           fusionPokemonKeys.push({ key: pokemonKey, baseKey });
@@ -90,7 +85,7 @@ function useHandleMoveToFilter({
         }
       }
 
-      // --- 2) If the user is moving to Trade or Wanted, block Mega, Shadow, or Fusion ---
+      // --- 2) If the user is moving to Trade or Wanted, block Mega or Fusion ---
       const isTradeOrWanted = filter === 'Trade' || filter === 'Wanted';
 
       // NEW: Check for fused instances when moving to 'Unowned'
@@ -119,7 +114,7 @@ function useHandleMoveToFilter({
         }
       }
 
-      // --- 2) If the user is moving to Trade or Wanted, block Mega, Shadow, or Fusion ---
+      // --- 2) If the user is moving to Trade or Wanted, block Mega, or Fusion ---
       if (isTradeOrWanted && megaPokemonKeys.length > 0) {
         const blockedMegaMsg = megaPokemonKeys
           .map(({ key }) => {
@@ -133,22 +128,6 @@ function useHandleMoveToFilter({
           .join('\n');
 
         await alert(blockedMegaMsg);
-        return; // Stop entire operation
-      }
-
-      if (isTradeOrWanted && shadowPokemonKeys.length > 0) {
-        const blockedShadowMsg = shadowPokemonKeys
-          .map(({ key }) => {
-            const instance = ownershipData[key];
-            return `• ${
-              instance?.nickname ||
-              getDisplayName(parsePokemonKey(key)?.baseKey, variants) ||
-              key
-            } (Shadow) cannot be moved to ${filter}.`;
-          })
-          .join('\n');
-
-        await alert(blockedShadowMsg);
         return; // Stop entire operation
       }
 

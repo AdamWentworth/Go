@@ -115,6 +115,22 @@
   height: 100%; */
 }
 
+/* Purified Badge Styling with Percentage-Based Sizing */
+.owned-instance .purified-badge {
+  position: absolute;
+  bottom: 2%; /* 5% from the bottom of the container */
+  left: 2%;   /* 5% from the left of the container */
+  
+  width: 20%;  /* Badge width is 15% of the container's width */
+  height: auto; /* Height adjusts to maintain aspect ratio */
+  
+  z-index: 4;    /* Ensure it appears above other elements */
+  
+  max-width: 100%;
+  height: auto;
+}
+
+
 .owned-instance .lucky-placeholder {
   flex: 1; 
 }
@@ -190,26 +206,26 @@
 }
 
 .owned-instance .name-mega-container {
-  position: relative;          /* Establishes a new positioning context */
-  display: flex;               /* Enables Flexbox */
-  justify-content: center;     /* Centers the NameComponent horizontally */
-  align-items: center;         /* Centers items vertically */
-  width: 100%;                 /* Ensures the container takes full width */
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Space between for gender and lucky components */
+  width: 100%;
+  position: relative; /* Allows centering of LevelComponent */
+  height: 2rem;
 }
 
-.owned-instance .name-mega-container .name-container {
-  flex: 1;                   /* Allows it to grow and take available space */
-  display: flex;             /* Enables Flexbox within NameComponent */
-  justify-content: center;   /* Centers the content horizontally */
-  align-items: center;       /* Centers the content vertically */
+.owned-instance .name-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap; /* Prevents wrapping */
 }
 
-.owned-instance .name-mega-container .mega-component {
-  position: absolute;  /* Removes it from the normal flow */
-  right: 0;            /* Aligns it to the right */
-  /* Optional: Adjust vertical alignment if needed */
-  top: 0%;
-  transform: translateY(-50%);
+.owned-instance .lucky-component,
+.owned-instance .name-container,
+.owned-instance .mega-component {
+  flex: 1; /* Ensures LuckyComponent and GenderComponent take equal space */
 }
 
 .owned-instance .level-component label {

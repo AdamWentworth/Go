@@ -14,6 +14,7 @@ import CPComponent from './OwnedComponents/CPComponent';
 import FavoriteComponent from './OwnedComponents/FavoriteComponent';
 import NameComponent from './OwnedComponents/NameComponent';
 import LuckyComponent from './OwnedComponents/LuckyComponent';
+import PurifyComponent from './OwnedComponents/PurifyComponent'; // Import PurifyComponent
 import GenderComponent from './OwnedComponents/GenderComponent';
 import WeightComponent from './OwnedComponents/WeightComponent';
 import TypeComponent from './OwnedComponents/TypeComponent';
@@ -49,7 +50,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     megaForm: (pokemon.ownershipStatus.mega && pokemon.megaEvolutions?.length > 0)
       ? (pokemon.ownershipStatus.mega_form || pokemon.megaEvolutions[0].form)
       : null,
-    });
+  });
     
   const {
     fusion,
@@ -86,6 +87,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   const [showBackgrounds, setShowBackgrounds] = useState(false);
   const [selectedBackground, setSelectedBackground] = useState(null);
   const [level, setLevel] = useState(pokemon.ownershipStatus.level || null);
+  const [isShadow, setIsShadow] = useState(!!pokemon.ownershipStatus.shadow);
+  const [isPurified, setIsPurified] = useState(!!pokemon.ownershipStatus.purified);
 
   // Memoized values
   const currentBaseStats = useMemo(
@@ -114,10 +117,11 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
       megaData.isMega,
       megaData.megaForm,
       fusion.is_fused,
-      fusion.fusion_form
+      fusion.fusion_form,
+      isPurified
     );
     setCurrentImage(updatedImage); 
-  }, [isFemale, megaData.isMega, megaData.megaForm, fusion.is_fused, fusion.fusion_form, pokemon]);  
+  }, [isFemale, megaData.isMega, megaData.megaForm, fusion.is_fused, fusion.fusion_form, pokemon, isPurified]);  
 
   // Handler Functions
   const handleGenderChange = (newGender) => {
@@ -167,6 +171,17 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
 
   const handleLevelChange = (newLevel) => {
     setLevel(newLevel !== '' ? Number(newLevel) : null);
+  };
+
+  // 2. Handler for Purify toggling
+  const handlePurifyToggle = (newPurifiedValue) => {
+    if (newPurifiedValue) {
+      setIsPurified(true);
+      setIsShadow(false);
+    } else {
+      setIsPurified(false);
+      setIsShadow(true);
+    }
   };
 
   useEffect(() => {
@@ -263,6 +278,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
             is_fused,
             fused_with: newFusedWith,
             fusion_form,
+            shadow: isShadow,
+            purified: isPurified,
           };
   
           // (A) If we parted ways with the old partner => disable false, fused_with: null
@@ -368,8 +385,23 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           )}
           <img src={currentImage} alt={pokemon.name} className="pokemon-image" />
         </div>
+        {isPurified && (
+          <img 
+            src={process.env.PUBLIC_URL + '/images/purified.png'} 
+            alt="Purified Badge" 
+            className="purified-badge" 
+          />
+        )}
       </div>
       <div className="name-mega-container">
+        {!isShadow && !pokemon.ownershipStatus.is_for_trade && pokemon.rarity !== "Mythic" && (
+          <LuckyComponent 
+            pokemon={pokemon} 
+            onToggleLucky={handleLuckyToggle} 
+            isLucky={isLucky} 
+            editMode={editMode} 
+          />
+        )}
         <NameComponent 
           pokemon={pokemon} 
           editMode={editMode} 
@@ -377,7 +409,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         />
         {pokemon.megaEvolutions &&
           pokemon.megaEvolutions.length > 0 &&
-          !pokemon.ownershipStatus.shadow &&
+          !isShadow &&
           !pokemon.name.toLowerCase().includes("clone") && (
             <MegaComponent
               megaData={megaData}
@@ -396,14 +428,16 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         onUndoFusion={handleUndoFusion}
       />
       <div className="gender-lucky-row">
-        {!(pokemon.ownershipStatus.shadow || pokemon.ownershipStatus.is_for_trade || pokemon.rarity === "Mythic") && (
-          <LuckyComponent 
-            pokemon={pokemon} 
-            onToggleLucky={handleLuckyToggle} 
-            isLucky={isLucky} 
-            editMode={editMode} 
+
+        {(isShadow || isPurified) && (
+          <PurifyComponent 
+            isShadow={isShadow}
+            isPurified={isPurified}
+            editMode={editMode}
+            onTogglePurify={handlePurifyToggle}
           />
         )}
+
         <LevelComponent
           pokemon={pokemon}
           editMode={editMode}
@@ -411,6 +445,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           onLevelChange={handleLevelChange}
           errors={validationErrors}
         />
+        
         <GenderComponent 
           pokemon={pokemon} 
           editMode={editMode} 

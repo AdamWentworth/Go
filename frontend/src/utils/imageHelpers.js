@@ -1,6 +1,14 @@
 //imageHelpers.js
 
-export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = undefined, isFused = false, fusionForm = undefined) {
+export function determineImageUrl(
+    isFemale,
+    pokemon,
+    isMega = false,
+    megaForm = undefined,
+    isFused = false,
+    fusionForm = undefined,
+    isPurified = false
+) {
     const DEFAULT_IMAGE_URL = '/images/default_pokemon.png';
 
     if (!pokemon) {
@@ -8,12 +16,25 @@ export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = 
         return DEFAULT_IMAGE_URL;
     }
 
+    // Determine if the Pokemon should be treated as shiny based on purification
+    const isPurifiedShiny = isPurified && !!pokemon.ownershipStatus.shiny;
+
+    // If purified, prioritize using image_url or image_url_shiny
+    if (isPurified) {
+        if (isPurifiedShiny && pokemon.image_url_shiny) {
+            return pokemon.image_url_shiny;
+        } else if (pokemon.image_url) {
+            return pokemon.image_url;
+        }
+        // If purified but images are not directly available, fall through to existing logic
+    }
+
     // Check for fusion override before other image logic
     if (isFused && fusionForm && Array.isArray(pokemon.fusion)) {
         const fusionEntry = pokemon.fusion.find(f => f.name === fusionForm);
         if (fusionEntry) {
             // Use shiny property from ownershipStatus if applicable
-            const isShiny = !!pokemon.ownershipStatus?.shiny;
+            const isShiny = isPurifiedShiny || !!pokemon.ownershipStatus?.shiny;
             // Select appropriate image based on gender and shiny status
             if (isShiny) {
                 return fusionEntry.image_url_shiny || fusionEntry.image_url || DEFAULT_IMAGE_URL;
@@ -22,7 +43,7 @@ export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = 
         }
     }
 
-    const isShiny = !!pokemon.ownershipStatus?.shiny;
+    const isShiny = isPurifiedShiny || !!pokemon.ownershipStatus?.shiny;
     const variantType = (pokemon.variantType || '').toLowerCase();
 
     const getCostumeImage = (costumes, variantType, isFemale, isShiny) => {
@@ -33,7 +54,7 @@ export function determineImageUrl(isFemale, pokemon, isMega = false, megaForm = 
         const costume = costumes?.find(c => c.costume_id.toString() === costumeId);
 
         if (!costume) return null;
-        
+
         // Handle Shadow Costumes
         if (variantType.includes('shadow_')) {
             const shadow = costume.shadow_costume;

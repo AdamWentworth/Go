@@ -1,0 +1,12 @@
+/* PurifyComponent.css */
+
+.purify-component {
+    display: inline-block;
+    cursor: pointer;
+  }
+  
+  .purify-icon {
+    width: 40px;
+    height: 40px;
+  }
+  

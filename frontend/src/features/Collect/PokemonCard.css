@@ -26,8 +26,10 @@
 }
 
 .pokemon-image-container {
-    position: relative;
+    position: relative; /* Ensure it's relative for absolute positioning of badges */
     display: inline-block; /* Ensures container shrinks to fit its content */
+    width: 100%; /* Ensure it takes up the full width of the parent container */
+    height: auto; /* Adjust as needed */
 }
 
 .pokemon-card .pokemon-image-container img {
@@ -135,6 +137,21 @@
 .pokemon-card .pokemon-name-display {
     margin-bottom: 0.5em;
 }
+
+.pokemon-card .purified-badge {
+    position: absolute;
+    bottom: 5%; /* Adjusted from 5% to 2% */
+    left: 5%;   /* Adjusted from 5% to 2% */
+    
+    width: 20%;  /* Adjusted width */
+    height: auto;
+    
+    z-index: 5;
+    
+    max-width: 100%;
+    height: auto;
+}
+
 
 /* Media Queries */
 

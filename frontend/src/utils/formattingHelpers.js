@@ -181,21 +181,33 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
         contentParts.unshift('Mega');
     }
 
-     // Add mega_form at the end if it exists and is not null
-     if (pokemon.ownershipStatus?.is_mega && pokemon.ownershipStatus.mega_form != null) {
+    // Add mega_form at the end if it exists and is not null
+    if (pokemon.ownershipStatus?.is_mega && pokemon.ownershipStatus.mega_form != null) {
         contentParts.push(pokemon.ownershipStatus.mega_form);
     }
 
     if (pokemon.ownershipStatus?.is_fused && pokemon.ownershipStatus.fusion_form) {
-        contentParts.pop(nameText)
+        contentParts.pop(nameText);
         contentParts.push(pokemon.ownershipStatus.fusion_form);
         if (pokemon.ownershipStatus.shiny) {
-            isShiny = true
+            isShiny = true;
         }
     }
 
     if (isShiny) {
         contentParts.unshift('Shiny');
+    }
+
+    // Handle Purified vs Shadow
+    if (pokemon.ownershipStatus?.purified) {
+        // Remove the word 'shadow' from each part (case-insensitive)
+        contentParts = contentParts.map(part => part.replace(/shadow/gi, '').trim())
+                                   .filter(part => part.length > 0);
+
+        // Ensure 'Purified' is added if not already present
+        if (!contentParts.some(part => part.toLowerCase() === 'purified')) {
+            contentParts.unshift('Purified');
+        }
     }
 
     return (

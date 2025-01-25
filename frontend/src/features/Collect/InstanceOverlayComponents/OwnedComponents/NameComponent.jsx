@@ -19,11 +19,14 @@ const NameComponent = ({ pokemon, editMode, onNicknameChange }) => {
 
   useEffect(() => {
     if (editMode && editableRef.current) {
-      // Ensure React is in charge of updates
-      editableRef.current.textContent = nickname;
+      const defaultName = getLastWord(pokemon.name);
+      const displayName = nickname || defaultName; // Use nickname if present, otherwise default name
+  
+      editableRef.current.textContent = displayName;
+      setNicknameState(displayName); // Ensure state is updated for editing
       setCaretToEnd();
     }
-  }, [editMode, nickname]);
+  }, [editMode, nickname, pokemon.name]);  
 
   const setCaretToEnd = () => {
     if (editableRef.current) {
@@ -38,16 +41,20 @@ const NameComponent = ({ pokemon, editMode, onNicknameChange }) => {
   };
 
   const handleInput = (event) => {
-    const newValue = event.target.textContent;
-    if (newValue.trim() === '') {
-      // If the input is cleared, we treat nickname as null/empty
+    const newValue = event.target.textContent.trim();
+    const defaultName = getLastWord(pokemon.name); // Get last word from name
+  
+    if (newValue === '') {
       setNicknameState('');
-      onNicknameChange(''); // Pass empty value to parent
+      onNicknameChange(null); // Pass null for empty nickname
+    } else if (newValue === defaultName) {
+      setNicknameState('');
+      onNicknameChange(null); // Nullify nickname if it matches default name
     } else if (validateNickname(newValue)) {
       setNicknameState(newValue);
       onNicknameChange(newValue);
     }
-  };
+  };  
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {

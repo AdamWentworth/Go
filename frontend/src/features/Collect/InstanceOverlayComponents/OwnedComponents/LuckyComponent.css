@@ -5,6 +5,8 @@
     align-items: center; /* Centers the image vertically */
     justify-content: flex-start; /* Aligns the image to the left */
     height: 100%; /* Adjust height as necessary */
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
 
 .lucky-component img {
