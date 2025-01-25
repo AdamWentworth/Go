@@ -43,16 +43,7 @@ export function determineImageUrl(
         }
     }
 
-    // Add Gigantamax handling
-    if (gigantamax && Array.isArray(pokemon.max) && pokemon.max.length > 0) {
-        const maxEntry = pokemon.max[0];
-        if (isShiny && maxEntry.shiny_gigantamax_image_url) {
-            return maxEntry.shiny_gigantamax_image_url;
-        } else if (maxEntry.gigantamax_image_url) {
-            return maxEntry.gigantamax_image_url;
-        }
-    }
-
+    // Define helper functions
     const variantType = (pokemon.variantType || '').toLowerCase();
 
     const getCostumeImage = (costumes, variantType, isFemale, isShiny) => {
@@ -113,6 +104,7 @@ export function determineImageUrl(
         return data.image_url || defaultUrl;
     };
 
+    // Handle Mega Evolution first to prioritize it over Gigantamax
     const handleMegaEvolution = () => {
         if (!isMega || !Array.isArray(pokemon.megaEvolutions) || pokemon.megaEvolutions.length === 0) {
             return null;
@@ -167,6 +159,16 @@ export function determineImageUrl(
     const megaImage = handleMegaEvolution();
     if (megaImage) {
         return megaImage;
+    }
+
+    // Add Gigantamax handling after Mega Evolution
+    if (gigantamax && Array.isArray(pokemon.max) && pokemon.max.length > 0) {
+        const maxEntry = pokemon.max[0];
+        if (isShiny && maxEntry.shiny_gigantamax_image_url) {
+            return maxEntry.shiny_gigantamax_image_url;
+        } else if (maxEntry.gigantamax_image_url) {
+            return maxEntry.gigantamax_image_url;
+        }
     }
 
     const handleNonMegaEvolution = () => {
