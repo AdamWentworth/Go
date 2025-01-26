@@ -10,8 +10,6 @@ import { generateH2Content } from '../../../../utils/formattingHelpers';
 import FriendshipManager from '../WantedComponents/FriendshipManager';
 import useCalculateStardustCost from '../hooks/useCalculateStardustCost';
 
-import CloseButton from '../../../../components/CloseButton';
-
 import { useTradeData } from '../../../../contexts/TradeDataContext';
 import { useModal } from '../../../../contexts/ModalContext';
 
@@ -20,7 +18,6 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
   const { alert } = useModal();
   console.log(passedInPokemon)
   const containerRef = useRef(null);
-  const closeButtonRef = useRef(null);
 
   const [selectedMatchedInstance, setSelectedMatchedInstance] = useState(null);
   const [friendship_level, setFriendshipLevel] = useState(0);
@@ -224,6 +221,7 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
           </div>
           <div className="trade-proposal-stardust">
             <p>Stardust Cost: {formattedStardustCost}</p>
+            <img src="/images/stardust.png" alt="Stardust Icon" className="stardust-icon" />
             {isSpecialTrade && <p className="special-trade-warning">Special Trade!</p>}
           </div>
         </div>

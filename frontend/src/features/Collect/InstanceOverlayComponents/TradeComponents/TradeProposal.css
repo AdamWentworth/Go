@@ -117,6 +117,15 @@
     font-weight: bold;
     color: white; /* Text color for contrast */
 }
+.trade-proposal-stardust p {
+    margin-block-start: 0px;
+    margin-block-end: 0px;
+}
+.trade-proposal-stardust .stardust-icon {
+    margin-top: 5px;
+    width: 1.5rem;
+    height: auto;
+}
 
 /* Diagonal Arrow */
 .trade-proposal-arrow-image {
