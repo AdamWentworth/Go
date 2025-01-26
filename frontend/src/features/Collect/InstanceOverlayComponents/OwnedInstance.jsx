@@ -541,7 +541,9 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         <MovesComponent 
           pokemon={pokemon} 
           editMode={editMode} 
-          onMovesChange={handleMovesChange} 
+          onMovesChange={handleMovesChange}
+          isShadow={isShadow}
+          isPurified={isPurified}
         />
       </div>
       <div className="iv-component">
