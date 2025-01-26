@@ -211,6 +211,12 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
         }
     }
 
+    if (pokemon.form === 'Apex') {
+        if (pokemon.variantType === 'default' && pokemon.ownershipStatus?.shadow) {
+            contentParts.unshift('Shadow')
+        }
+    }
+
     return (
         <>
             {contentParts.map((part, index) => (

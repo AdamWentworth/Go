@@ -55,6 +55,16 @@ function handleBaseKeyEntry(pokemonKey, newStatus, ownershipData, variantData, v
 function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey) {
     const instance = ownershipData[pokemonKey];
 
+    // Apex Lugia and Apex Ho-Oh are always purified if not shadow.
+    if (baseKey.startsWith('2301') || baseKey.startsWith('2302')) {
+        // Further check if baseKey includes 'default'
+        if (baseKey.toLowerCase().includes('default')) {
+            instance.purified = true;
+        } else {
+            instance.purified = false; // Optionally reset if 'default' is not present
+        }
+    }
+
     // Set dynamax and gigantamax flags based on baseKey
     if (baseKey.toLowerCase().includes('dynamax')) {
         instance.dynamax = true;

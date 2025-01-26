@@ -17,6 +17,13 @@ export function determineImageUrl(
         return DEFAULT_IMAGE_URL;
     }
 
+    // Specific Handling for Apex Lugia and Ho-Oh
+    if (pokemon.pokemon_id === 2301 || pokemon.pokemon_id === 2302) {
+        if (isPurified === false) {
+            return pokemon.image_url_shadow;
+        }
+    }
+
     // Determine if the Pokemon should be treated as shiny based on purification
     const isPurifiedShiny = isPurified && !!pokemon.ownershipStatus.shiny;
     const isShiny = isPurifiedShiny || !!pokemon.ownershipStatus?.shiny;
