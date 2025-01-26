@@ -18,6 +18,7 @@ import BackgroundComponent from './OwnedComponents/BackgroundComponent';
 import LevelComponent from './OwnedComponents/LevelComponent';
 import IVComponent from './OwnedComponents/IVComponent';
 import MaxComponent from './OwnedComponents/MaxComponent';
+import MaxMovesComponent from "./OwnedComponents/MaxMovesComponent";
 
 import { determineImageUrl } from '../../../utils/imageHelpers';
 
@@ -52,8 +53,14 @@ const TradeInstance = ({ pokemon, isEditable }) => {
   const [weight, setWeight] = useState(Number(pokemon.ownershipStatus.weight));
   const [height, setHeight] = useState(Number(pokemon.ownershipStatus.height));
 
-  const [dynamax, setDynamax] = useState(!!pokemon.ownershipStatus.dynamax);
-  const [gigantamax, setGigantamax] = useState(!!pokemon.ownershipStatus.gigantamax);
+  const dynamax = !!pokemon.ownershipStatus.dynamax;
+  const gigantamax = !!pokemon.ownershipStatus.gigantamax;
+  const [showMaxOptions, setShowMaxOptions] = useState(false);
+
+  // Extract max moves from ownershipStatus
+  const [maxAttack, setMaxAttack] = useState(pokemon.ownershipStatus.max_attack || '');
+  const [maxGuard, setMaxGuard] = useState(pokemon.ownershipStatus.max_guard || '');
+  const [maxSpirit, setMaxSpirit] = useState(pokemon.ownershipStatus.max_spirit || '');
 
   // Moves
   const [moves, setMoves] = useState({
@@ -159,32 +166,21 @@ const TradeInstance = ({ pokemon, isEditable }) => {
   }, [currentBaseStats, level, ivs]);
 
   // Handlers
-  const handleMaxClick = () => {
-    const maxEntry = pokemon.max?.[0];
-    if (!maxEntry) return;
+  const handleMaxAttackChange = (newMaxAttack) => {
+    setMaxAttack(newMaxAttack);
+  };
 
-    const hasDynamax = maxEntry.dynamax === 1;
-    const hasGigantamax = maxEntry.gigantamax === 1;
+  const handleMaxGuardChange = (newMaxGuard) => {
+    setMaxGuard(newMaxGuard);
+  };
 
-    if (!dynamax && !gigantamax) {
-        // Start with Dynamax if available, otherwise start with Gigantamax
-        if (hasDynamax) {
-            setDynamax(true);
-        } else if (hasGigantamax) {
-            setGigantamax(true);
-        }
-    } else if (dynamax) {
-        // If currently Dynamax, switch to Gigantamax if available, else reset
-        if (hasGigantamax) {
-            setDynamax(false);
-            setGigantamax(true);
-        } else {
-            setDynamax(false);
-        }
-    } else if (gigantamax) {
-        // If currently Gigantamax, reset to null
-        setGigantamax(false);
-    }
+  const handleMaxSpiritChange = (newMaxSpirit) => {
+    setMaxSpirit(newMaxSpirit);
+  };
+
+  // Handler for toggling max options
+  const handleToggleMaxOptions = () => {
+    setShowMaxOptions(prev => !prev);
   };
 
   const handleGenderChange = (newGender) => {
@@ -306,8 +302,9 @@ const TradeInstance = ({ pokemon, isEditable }) => {
           location_caught: locationCaught,
           date_caught: dateCaught,
           location_card: selectedBackground ? selectedBackground.background_id : null,
-          dynamax: dynamax,
-          gigantamax: gigantamax
+          max_attack: maxAttack,
+          max_guard: maxGuard,
+          max_spirit: maxSpirit,
         });
       } catch (error) {
         console.error('Error updating trade details:', error);
@@ -423,9 +420,21 @@ const TradeInstance = ({ pokemon, isEditable }) => {
         editMode={editMode}
         dynamax={dynamax}
         gigantamax={gigantamax}
-        onMaxClick={handleMaxClick}
+        onToggleMax={handleToggleMaxOptions}
+        showMaxOptions={showMaxOptions}
       />
-
+      <MaxMovesComponent
+        pokemon={pokemon}
+        editMode={editMode}
+        showMaxOptions={showMaxOptions}
+        setShowMaxOptions={setShowMaxOptions}
+        maxAttack={maxAttack}
+        maxGuard={maxGuard}
+        maxSpirit={maxSpirit}
+        handleMaxAttackChange={handleMaxAttackChange}
+        handleMaxGuardChange={handleMaxGuardChange}
+        handleMaxSpiritChange={handleMaxSpiritChange}
+      />
       <div className="moves-container">
         <MovesComponent
           pokemon={pokemon}

@@ -1,3 +1,5 @@
+// MaxMovesComponent.jsx
+
 import React, { useEffect } from "react";
 import PropTypes from "prop-types";
 import "./MaxMovesComponent.css";
@@ -19,7 +21,7 @@ const MaxMovesComponent = ({
     if (!editMode) {
       setShowMaxOptions(false);
     }
-  }, [editMode]);
+  }, [editMode, setShowMaxOptions]);
 
   return (
     <div
@@ -28,8 +30,12 @@ const MaxMovesComponent = ({
       aria-hidden={!showMaxOptions}
     >
       <div className="max-moves-row">
+        {/* Max Attack */}
         <div className="max-move">
-          <label htmlFor="max-attack">Max Attack:</label>
+          <label htmlFor="max-attack" className="max-move-label">
+            <span className="max-text">Max</span>
+            <span className="move-name">Attack</span>
+          </label>
           <select
             id="max-attack"
             value={maxAttack}
@@ -41,8 +47,13 @@ const MaxMovesComponent = ({
             <option value="3">3</option>
           </select>
         </div>
+
+        {/* Max Guard */}
         <div className="max-move">
-          <label htmlFor="max-guard">Max Guard:</label>
+          <label htmlFor="max-guard" className="max-move-label">
+            <span className="max-text">Max</span>
+            <span className="move-name">Guard</span>
+          </label>
           <select
             id="max-guard"
             value={maxGuard}
@@ -55,8 +66,13 @@ const MaxMovesComponent = ({
             <option value="3">3</option>
           </select>
         </div>
+
+        {/* Max Spirit */}
         <div className="max-move">
-          <label htmlFor="max-spirit">Max Spirit:</label>
+          <label htmlFor="max-spirit" className="max-move-label">
+            <span className="max-text">Max</span>
+            <span className="move-name">Spirit</span>
+          </label>
           <select
             id="max-spirit"
             value={maxSpirit}
