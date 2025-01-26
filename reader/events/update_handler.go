@@ -105,6 +105,9 @@ func GetUpdates(c *fiber.Ctx) error {
 			"disabled":         instance.Disabled,
 			"dynamax":          instance.Dynamax,
 			"gigantamax":       instance.Gigantamax,
+			"max_attack":       instance.MaxAttack,
+			"max_guard":        instance.MaxGuard,
+			"max_spirit":       instance.MaxSpirit,
 		}
 		pokemonData[instance.InstanceID] = instanceMap
 	}
@@ -201,6 +204,9 @@ func GetUpdates(c *fiber.Ctx) error {
 					"disabled":         instance.Disabled,
 					"dynamax":          instance.Dynamax,
 					"gigantamax":       instance.Gigantamax,
+					"max_attack":       instance.MaxAttack,
+					"max_guard":        instance.MaxGuard,
+					"max_spirit":       instance.MaxSpirit,
 				}
 				relatedInstances[instance.InstanceID] = instanceMap
 			}
@@ -255,6 +261,9 @@ func GetUpdates(c *fiber.Ctx) error {
 					"disabled":         instance.Disabled,
 					"dynamax":          instance.Dynamax,
 					"gigantamax":       instance.Gigantamax,
+					"max_attack":       instance.MaxAttack,
+					"max_guard":        instance.MaxGuard,
+					"max_spirit":       instance.MaxSpirit,
 				}
 				relatedInstances[instance.InstanceID] = instanceMap
 			}

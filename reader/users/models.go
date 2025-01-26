@@ -109,6 +109,9 @@ type PokemonInstance struct {
 	Disabled        bool           `gorm:"column:disabled;default:false"`
 	Dynamax         bool           `gorm:"column:dynamax;default:false"`
 	Gigantamax      bool           `gorm:"column:gigantamax;default:false"`
+	MaxAttack       *string        `gorm:"column:max_attack"`
+	MaxGuard        *string        `gorm:"column:max_guard"`
+	MaxSpirit       *string        `gorm:"column:max_spirit"`
 }
 
 // TableName sets the name of the table in the database

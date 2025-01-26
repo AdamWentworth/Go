@@ -95,6 +95,9 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 			"disabled":         instance.Disabled,
 			"dynamax":          instance.Dynamax,
 			"gigantamax":       instance.Gigantamax,
+			"max_attack":       instance.MaxAttack,
+			"max_guard":        instance.MaxGuard,
+			"max_spirit":       instance.MaxSpirit,
 		}
 		responseInstances[instance.InstanceID] = instanceMap
 	}
@@ -199,6 +202,9 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 			"disabled":         instance.Disabled,
 			"dynamax":          instance.Dynamax,
 			"gigantamax":       instance.Gigantamax,
+			"max_attack":       instance.MaxAttack,
+			"max_guard":        instance.MaxGuard,
+			"max_spirit":       instance.MaxSpirit,
 		}
 		relatedInstanceByID[instance.InstanceID] = instanceMap
 	}
@@ -301,6 +307,9 @@ func GetPokemonInstancesByUsername(c *fiber.Ctx) error {
 			"disabled":         instance.Disabled,
 			"dynamax":          instance.Dynamax,
 			"gigantamax":       instance.Gigantamax,
+			"max_attack":       instance.MaxAttack,
+			"max_guard":        instance.MaxGuard,
+			"max_spirit":       instance.MaxSpirit,
 		}
 
 		// Add the instance to the response data using its `InstanceID`

@@ -109,6 +109,10 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 		fusionForm := parseNullableString(pm["fusion_form"])
 		fusedWith := parseNullableString(pm["fused_with"])
 
+		maxAttack := parseNullableString(pm["max_attack"])
+		maxGuard := parseNullableString(pm["max_guard"])
+		maxSpirit := parseNullableString(pm["max_spirit"])
+
 		// Date
 		dateCaught := parseOptionalDate(pm["date_caught"])
 
@@ -167,6 +171,9 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			"disabled":         disabled,
 			"dynamax":          dynamax,
 			"gigantamax":       gigantamax,
+			"max_attack":       maxAttack,
+			"max_guard":        maxGuard,
+			"max_spirit":       maxSpirit,
 		}
 
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
@@ -220,6 +227,9 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 				Disabled:        disabled,
 				Dynamax:         dynamax,
 				Gigantamax:      gigantamax,
+				MaxAttack:       maxAttack,
+				MaxGuard:        maxGuard,
+				MaxSpirit:       maxSpirit,
 			}
 
 			if errCreate := DB.Create(&newInstance).Error; errCreate != nil {
