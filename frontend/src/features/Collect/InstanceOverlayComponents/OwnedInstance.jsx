@@ -29,6 +29,7 @@ import LevelComponent from './OwnedComponents/LevelComponent';
 import FusionComponent from './OwnedComponents/FusionComponent';
 import FuseOverlay from './OwnedComponents/FuseOverlay';
 import MaxComponent from './OwnedComponents/MaxComponent';
+import MaxMovesComponent from "./OwnedComponents/MaxMovesComponent";
 
 // Utilities and Constants
 import { determineImageUrl } from '../../../utils/imageHelpers';
@@ -90,8 +91,18 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   const [level, setLevel] = useState(pokemon.ownershipStatus.level || null);
   const [isShadow, setIsShadow] = useState(!!pokemon.ownershipStatus.shadow);
   const [isPurified, setIsPurified] = useState(!!pokemon.ownershipStatus.purified);
-  const [dynamax, setDynamax] = useState(!!pokemon.ownershipStatus.dynamax);
-  const [gigantamax, setGigantamax] = useState(!!pokemon.ownershipStatus.gigantamax);
+
+  // Extract max moves from ownershipStatus
+  const [maxAttack, setMaxAttack] = useState(pokemon.ownershipStatus.max_attack || '');
+  const [maxGuard, setMaxGuard] = useState(pokemon.ownershipStatus.max_guard || '');
+  const [maxSpirit, setMaxSpirit] = useState(pokemon.ownershipStatus.max_spirit || '');
+
+  // State for toggling max options
+  const [showMaxOptions, setShowMaxOptions] = useState(false);
+
+  // Determine if Dynamax or Gigantamax is active
+  const dynamax = !!pokemon.ownershipStatus.dynamax;
+  const gigantamax = !!pokemon.ownershipStatus.gigantamax;
 
   // Memoized values
   const currentBaseStats = useMemo(
@@ -187,33 +198,29 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     }
   };
 
-  const handleMaxClick = () => {
-    const maxEntry = pokemon.max?.[0];
-    if (!maxEntry) return;
-
-    const hasDynamax = maxEntry.dynamax === 1;
-    const hasGigantamax = maxEntry.gigantamax === 1;
-
-    if (!dynamax && !gigantamax) {
-        // Start with Dynamax if available, otherwise start with Gigantamax
-        if (hasDynamax) {
-            setDynamax(true);
-        } else if (hasGigantamax) {
-            setGigantamax(true);
-        }
-    } else if (dynamax) {
-        // If currently Dynamax, switch to Gigantamax if available, else reset
-        if (hasGigantamax) {
-            setDynamax(false);
-            setGigantamax(true);
-        } else {
-            setDynamax(false);
-        }
-    } else if (gigantamax) {
-        // If currently Gigantamax, reset to null
-        setGigantamax(false);
-    }
+  // Handlers for MaxComponent edits
+  const handleMaxAttackChange = (newMaxAttack) => {
+    setMaxAttack(newMaxAttack);
   };
+
+  const handleMaxGuardChange = (newMaxGuard) => {
+    setMaxGuard(newMaxGuard);
+  };
+
+  const handleMaxSpiritChange = (newMaxSpirit) => {
+    setMaxSpirit(newMaxSpirit);
+  };
+
+  // Handler for toggling max options
+  const handleToggleMaxOptions = () => {
+    setShowMaxOptions(prev => !prev);
+  };
+
+  useEffect(() => {
+    if (!editMode) {
+        setShowMaxOptions(false); // Close max options when edit mode is disabled
+    }
+  }, [editMode]);
 
   useEffect(() => {
     if (editMode) {
@@ -240,7 +247,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   
       if (isValid) {
         try {
-          // apply computed values to local state if needed
+          // Apply computed values to local state if needed
           if (newComputedValues.level !== undefined) {
             setLevel(newComputedValues.level);
           }
@@ -250,13 +257,11 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           if (newComputedValues.ivs !== undefined) {
             setIvs(newComputedValues.ivs);
           }
-  
-          const { is_fused, fusion_form, fusedWith: newFusedWith, storedFusionObject } = fusion;
-  
-          // Gather changes into a single object
+
+          // Prepare changes object
           const changes = {};
-  
-          // Always set changes for the primary instance
+
+          // Primary Pokémon changes
           changes[pokemon.pokemonKey] = {
             nickname: nickname,
             lucky: isLucky,
@@ -305,16 +310,20 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
               newComputedValues.level !== undefined
                 ? newComputedValues.level
                 : level,
-            fusion: storedFusionObject,
-            is_fused,
-            fused_with: newFusedWith,
-            fusion_form,
+            fusion: fusion.storedFusionObject,
+            is_fused: fusion.is_fused,
+            fused_with: fusion.fusedWith,
+            fusion_form: fusion.fusion_form,
             shadow: isShadow,
             purified: isPurified,
-            dynamax: dynamax,
-            gigantamax: gigantamax,
+            max_attack: maxAttack,
+            max_guard: maxGuard,
+            max_spirit: maxSpirit,
           };
-  
+
+          // Handle fusion changes
+          const { is_fused, fusion_form, fusedWith: newFusedWith } = fusion;
+
           // (A) If we parted ways with the old partner => disable false, fused_with: null
           if (originalFusedWith && originalFusedWith !== newFusedWith) {
             changes[originalFusedWith] = {
@@ -324,7 +333,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
               fusion_form: null,
             };
           }
-  
+
           // (B) If newly fused with a different partner => disable true, fused_with: current key
           if (newFusedWith && is_fused && newFusedWith !== originalFusedWith) {
             changes[newFusedWith] = {
@@ -334,10 +343,10 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
               fusion_form: fusion_form,  
             };
           }
-  
+
           // Now call updateDetails ONCE, passing the entire changes object
           await updateDetails(changes);
-  
+
           resetErrors();  
         } catch (error) {
           console.error('Error updating details:', error);
@@ -504,7 +513,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           editMode={editMode}
           dynamax={dynamax}
           gigantamax={gigantamax}
-          onMaxClick={handleMaxClick}
+          onToggleMax={handleToggleMaxOptions}
         />
         <MegaComponent
           megaData={megaData}
@@ -513,8 +522,20 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           megaEvolutions={pokemon.megaEvolutions}
           isShadow={isShadow}
           name={pokemon.name}
-          />
-        </div>
+        />
+      </div>
+      <MaxMovesComponent
+        pokemon={pokemon}
+        editMode={editMode}
+        showMaxOptions={showMaxOptions}
+        setShowMaxOptions={setShowMaxOptions}
+        maxAttack={maxAttack}
+        maxGuard={maxGuard}
+        maxSpirit={maxSpirit}
+        handleMaxAttackChange={handleMaxAttackChange}
+        handleMaxGuardChange={handleMaxGuardChange}
+        handleMaxSpiritChange={handleMaxSpiritChange}
+      />
       <div className="moves-content">
         <MovesComponent 
           pokemon={pokemon} 

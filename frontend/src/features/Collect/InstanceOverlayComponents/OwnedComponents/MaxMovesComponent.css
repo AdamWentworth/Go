@@ -1,0 +1,59 @@
+/* MaxMovesComponent.css */
+
+/* Container for Max Moves */
+.max-options-container {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease, opacity 0.5s ease, padding 0.5s ease;
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.max-options-container.show {
+    max-height: 250px; /* Adjust based on content */
+    opacity: 1;
+}
+
+/* Arrange max moves in a row */
+.max-moves-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px; /* Space between max moves */
+    margin: 5px 1px;
+}
+
+.max-move {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* Style labels and select elements */
+.max-move label {
+    margin-bottom: 5px;
+    margin-top: -5px;
+    font-weight: bold;
+    color: white; /* Set text color to white */
+    text-align: center; /* Center align text */
+    font-size: .9rem;
+}
+
+.max-move select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    appearance: none; /* Remove default arrow */
+    background-color: #333; /* Set dropdown background color */
+    color: white; /* Set text color to white */
+    text-align: center; /* Center align text */
+    cursor: pointer;
+}
+
+/* Optional: Add hover effect */
+.max-move select:hover {
+    border-color: #888;
+}

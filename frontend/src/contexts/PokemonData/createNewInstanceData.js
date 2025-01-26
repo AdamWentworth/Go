@@ -54,5 +54,8 @@ export function createNewInstanceData(variant) {
         fusion_form: null,
         dynamax: null,
         gigantamax: null,
+        max_attack: null,
+        max_guard: null,
+        max_spirit: null,
     };
 }
