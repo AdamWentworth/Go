@@ -185,6 +185,31 @@ const createPokemonVariants = (pokemons) => {
       });
     }
 
+    // Dynamax pokemon
+    if (pokemon.max && pokemon.max.length > 0) {
+      pokemon.max.forEach(maxEntry => {
+        if (maxEntry.dynamax) {
+          // Gigantamax Variant
+          const dynamaxVariant = {
+            ...pokemon,
+            currentImage: pokemon.image_url,
+            name: `Dynamax ${pokemon.name}`,
+            variantType: 'dynamax'
+          };
+          addVariant(dynamaxVariant, 'dynamax');
+
+          // Shiny Dynamax Variant
+          const shinyDynamaxVariant = {
+            ...pokemon,
+            currentImage: pokemon.image_url_shiny,
+            name: `Shiny Dynamax ${pokemon.name}`,
+            variantType: 'shiny_dynamax'
+          };
+          addVariant(shinyDynamaxVariant, 'shiny_dynamax');
+          }
+        });
+    }
+
     // Gigantamax Variants
     if (pokemon.max && pokemon.max.length > 0) {
       pokemon.max.forEach(maxEntry => {

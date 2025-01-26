@@ -79,6 +79,10 @@ export function determinePokemonKey(pokemon) {
             suffix = '-gigantamax';
         } else if (pokemon.variantType === 'shiny_gigantamax') {
             suffix = '-shiny_gigantamax';
+        } else if (pokemon.variantType === 'dynamax') {
+            suffix = '-dynamax';
+        } else if (pokemon.variantType === 'shiny_dynamax') {
+            suffix = '-shiny_dynamax';
         }
     }
 

@@ -52,5 +52,7 @@ export function createNewInstanceData(variant) {
         fusion: {},
         is_fused: null,
         fusion_form: null,
+        dynamax: null,
+        gigantamax: null,
     };
 }

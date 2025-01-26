@@ -177,19 +177,10 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
         nameText = nameText.substring(6);
     }
 
-    // Handle Dynamax and Gigantamax
-    const isDynamax = pokemon.ownershipStatus?.dynamax;
-    const isGigantamax = pokemon.ownershipStatus?.gigantamax;
-    const dynamaxText = isDynamax ? 'Dynamax' : (isGigantamax ? 'Gigantamax' : null);
-
     // Construct content parts with guaranteed order
     contentParts = [];
     if (isShiny) {
         contentParts.push('Shiny');
-    }
-    
-    if (dynamaxText) {
-        contentParts.push(dynamaxText);
     }
 
     contentParts.push(nameText);

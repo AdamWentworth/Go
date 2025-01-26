@@ -15,7 +15,7 @@ export async function updatePokemonOwnership(pokemonKey, newStatus, variants, ow
     console.log('updating in updatePokemonOwnership')
     let updatedKey;
     if (hasUUID) {
-        updatedKey = handleInstanceUUIDEntry(pokemonKey, newStatus, ownershipData);
+        updatedKey = handleInstanceUUIDEntry(pokemonKey, newStatus, ownershipData, baseKey);
     } else {
         updatedKey = handleBaseKeyEntry(pokemonKey, newStatus, ownershipData, variantData, variants);
     }
@@ -54,6 +54,19 @@ function handleBaseKeyEntry(pokemonKey, newStatus, ownershipData, variantData, v
 
 function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey) {
     const instance = ownershipData[pokemonKey];
+
+    // Set dynamax and gigantamax flags based on baseKey
+    if (baseKey.toLowerCase().includes('dynamax')) {
+        instance.dynamax = true;
+    } else {
+        instance.dynamax = false; // Optionally reset if not present
+    }
+
+    if (baseKey.toLowerCase().includes('gigantamax')) {
+        instance.gigantamax = true;
+    } else {
+        instance.gigantamax = false; // Optionally reset if not present
+    }
 
     if (newStatus === 'Trade' || newStatus === 'Wanted') {
         if (instance.lucky || instance.shadow || instance.is_mega || (instance.pokemon_id === 2270 || instance.pokemon_id === 2271)) {
@@ -123,8 +136,21 @@ function updateInstanceStatus(pokemonKey, newStatus, ownershipData, baseKey) {
     updateRegistrationStatus(instance, ownershipData);
 }
 
-function handleInstanceUUIDEntry(pokemonKey, newStatus, ownershipData) {
+function handleInstanceUUIDEntry(pokemonKey, newStatus, ownershipData, baseKey) {
     const instance = ownershipData[pokemonKey];
+
+    // Set dynamax and gigantamax flags based on baseKey
+    if (baseKey.toLowerCase().includes('dynamax')) {
+        instance.dynamax = true;
+    } else {
+        instance.dynamax = false; // Optionally reset if not present
+    }
+
+    if (baseKey.toLowerCase().includes('gigantamax')) {
+        instance.gigantamax = true;
+    } else {
+        instance.gigantamax = false; // Optionally reset if not present
+    }
 
     if (newStatus === 'Trade' || newStatus === 'Wanted') {
         if (instance.lucky || instance.shadow || instance.is_mega || (instance.pokemon_id === 2270 || instance.pokemon_id === 2271)) {
