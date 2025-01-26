@@ -1,12 +1,24 @@
 // utils/updateImage.js
 
-export const updateImage = (pokemonData, name, shinyChecked, shadowChecked, selectedCostume, form, selectedGender) => {
+export const updateImage = (pokemonData, name, shinyChecked, shadowChecked, selectedCostume, form, selectedGender, gigantamax) => {
   const matchedPokemon = pokemonData.find(
     (variant) => variant.name.toLowerCase() === name.toLowerCase() && (form ? variant.form === form : true)
   );
 
   if (matchedPokemon) {
     let url = matchedPokemon.image_url;
+
+    // Handle Gigantamax
+    if (gigantamax && matchedPokemon.max && matchedPokemon.max.length > 0) {
+      const maxData = matchedPokemon.max[0]; // Assuming the first element represents the Gigantamax form
+      if (shinyChecked && maxData.shiny_gigantamax_image_url) {
+        url = maxData.shiny_gigantamax_image_url;
+      } else if (maxData.gigantamax_image_url) {
+        url = maxData.gigantamax_image_url;
+      }
+      // If Gigantamax is active, return the Gigantamax image immediately
+      return url;
+    }
     
     // Determine if we need to use female data
     const isFemale = selectedGender === "Female";

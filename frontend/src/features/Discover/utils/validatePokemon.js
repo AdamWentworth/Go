@@ -1,7 +1,24 @@
 // validatePokemon.js
 
-const validatePokemon = (pokemonData, name, shinyChecked, shadowChecked, selectedCostume, form) => {
-  // console.log("Starting validation for:", name, "with form:", form);
+const validatePokemon = (pokemonData, name, shinyChecked, shadowChecked, selectedCostume, form, dynamax, gigantamax) => {
+  
+  if (dynamax || gigantamax) {
+    if (shadowChecked) {
+      return { 
+        error: `Shadow not available for Dynamax/Gigantamax.`, 
+        availableCostumes: [], 
+        availableForms: [] 
+      };
+    }
+
+    if (selectedCostume && selectedCostume !== 'None') {
+      return { 
+        error: `Costumes not available for Dynamax/Gigantamax.`, 
+        availableCostumes: [], 
+        availableForms: [] 
+      };
+    }
+  }
 
   const matchedPokemon = pokemonData.find(
     (variant) => variant.name.toLowerCase() === name.toLowerCase() && (form ? variant.form === form : true)
@@ -74,7 +91,7 @@ const validatePokemon = (pokemonData, name, shinyChecked, shadowChecked, selecte
     return { error: `No shadow variant available for the costume "${selectedCostume}".`, availableCostumes: matchedPokemon.costumes, availableForms: [] };
   }
 
-  // console.log("Available forms and costumes determined.");
+  // Continue with the rest of your existing validation logic
   return { error: null, availableCostumes, availableForms };
 };
 

@@ -204,6 +204,17 @@
   align-items: center;
 }
 
+.gender-background-row .max-icon {
+  width: 2.5rem;
+  height: auto;
+  transition: filter 0.3s ease; /* Smooth transition effect */
+}
+
+/* Apply desaturation effect when Dynamax is inactive */
+.gender-background-row .max-icon.desaturated {
+  filter: grayscale(100%) opacity(50%);
+}
+
 .pokemon-variant-container .background-button {
   cursor: pointer;
   width: 40px; /* Adjust as needed */

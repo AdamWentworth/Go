@@ -21,6 +21,8 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
   });
   const [selectedGender, setSelectedGender] = useState('Any');
   const [selectedBackgroundId, setSelectedBackgroundId] = useState(null);
+  const [dynamax, setDynamax] = useState(false);
+  const [gigantamax, setGigantamax] = useState(false);
   const [city, setCity] = useState('');
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
   const [ownershipStatus, setOwnershipStatus] = useState('owned');
@@ -180,6 +182,8 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
       ownership: ownershipStatus,
       range_km: range,
       limit: resultsLimit,
+      dynamax: dynamax,
+      gigantamax: gigantamax,
     };
   
     // Set irrelevant parameters to null based on ownershipStatus
@@ -229,6 +233,10 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
               setSelectedGender={setSelectedGender}
               setSelectedBackgroundId={setSelectedBackgroundId}
               setErrorMessage={setErrorMessage}
+              dynamax={dynamax}
+              setDynamax={setDynamax}
+              gigantamax={gigantamax}
+              setGigantamax={setGigantamax}
             />
           </div>
 
