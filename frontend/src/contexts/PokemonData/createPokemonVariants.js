@@ -198,7 +198,7 @@ const createPokemonVariants = (pokemons) => {
           };
           addVariant(dynamaxVariant, 'dynamax');
 
-          // Shiny Dynamax Variant
+          if (pokemon.shiny_available) {
           const shinyDynamaxVariant = {
             ...pokemon,
             currentImage: pokemon.image_url_shiny,
@@ -206,7 +206,7 @@ const createPokemonVariants = (pokemons) => {
             variantType: 'shiny_dynamax'
           };
           addVariant(shinyDynamaxVariant, 'shiny_dynamax');
-          }
+          }}
         });
     }
 

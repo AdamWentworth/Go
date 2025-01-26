@@ -514,6 +514,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           dynamax={dynamax}
           gigantamax={gigantamax}
           onToggleMax={handleToggleMaxOptions}
+          showMaxOptions={showMaxOptions}
         />
         <MegaComponent
           megaData={megaData}
