@@ -311,3 +311,8 @@
         height: 30px !important;
     }
 }
+@media (min-width: 1721px) {
+    .pokemon-overlay .overlay-charged-moves {
+        overflow-y: auto;
+    }
+}
