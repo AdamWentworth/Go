@@ -3,13 +3,12 @@
 .trades-list {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 10px;
     padding: 10px;
   }
   
   .trade-card {
     border: 1px solid #ccc;
-    padding: 15px;
     border-radius: 5px;
     background: #333;
   }

@@ -1,4 +1,3 @@
-// ProposedTradeView.jsx
 import React from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import './ProposedTradeView.css';
@@ -21,10 +20,12 @@ const ProposedTradeView = ({
         <h4>{offeringHeading}</h4>
         {offeringDetails ? (
           <>
-            <img 
-              src={offeringDetails.currentImage} 
-              alt={offeringDetails.name || 'Offering Pokémon'} 
-            />
+            <div className="pokemon-image-container">
+              <img 
+                src={offeringDetails.currentImage} 
+                alt={offeringDetails.name || 'Offering Pokémon'} 
+              />
+            </div>
             <p>{offeringDetails.name || offeringDetails.pokemon_name}</p>
           </>
         ) : loading ? (
@@ -38,6 +39,9 @@ const ProposedTradeView = ({
         <div className="trade-icon">
           <img src="/images/pogo_trade_icon.png" alt="Trade Icon" />
         </div>
+        <div className="trade-actions">
+          <button className="delete-button" onClick={handleDelete}>Delete</button>
+        </div>
       </div>
 
       <div className="pokemon received">
@@ -47,10 +51,12 @@ const ProposedTradeView = ({
         <h4>{receivingHeading}</h4>
         {receivingCombinedDetails ? (
           <>
-            <img 
-              src={receivingCombinedDetails.currentImage || receivingCombinedDetails.pokemon_image_url} 
-              alt={receivingCombinedDetails.name || 'Receiving Pokémon'} 
-            />
+            <div className="pokemon-image-container">
+              <img 
+                src={receivingCombinedDetails.currentImage || receivingCombinedDetails.pokemon_image_url} 
+                alt={receivingCombinedDetails.name || 'Receiving Pokémon'} 
+              />
+            </div>
             <p>{receivingCombinedDetails.name || receivingCombinedDetails.pokemon_name}</p>
           </>
         ) : loading ? (
@@ -59,10 +65,6 @@ const ProposedTradeView = ({
           <p>Could not load receiving details.</p>
         )}
       </div>
-    </div>
-
-    <div className="trade-actions">
-      <button className="delete-button" onClick={handleDelete}>Delete</button>
     </div>
   </div>
 );

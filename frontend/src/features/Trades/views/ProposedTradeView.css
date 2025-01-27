@@ -1,6 +1,11 @@
 /* ProposedTradeView.css */
 
  /* Styles for the delete button */
+ .proposed-trade-view .trade-actions {
+    margin-bottom: 10px;
+    margin-top: -10px;
+ }
+
   .proposed-trade-view .delete-button {
     background-color: #dc3545; /* Red color */
     color: white;
@@ -23,4 +28,17 @@
   .proposed-trade-view .delete-button:focus {
     outline: 2px solid #721c24; /* Focus outline for accessibility */
     outline-offset: 2px;
+  }
+
+  @media (max-width: 480px) {
+    .proposed-trade-view .delete-button {
+      font-size: 0.75rem;       /* Slightly smaller than the reveal button */
+      padding: 0.35rem 0.5rem;    /* Adjusted padding for a smaller button */
+    }
+  }
+  @media (min-width: 481px) and (max-width: 767px) {
+    .proposed-trade-view .delete-button {
+      font-size: 0.75rem;       /* Slightly smaller than the reveal button */
+      padding: 0.35rem 0.5rem;    /* Adjusted padding for a smaller button */
+    }
   }

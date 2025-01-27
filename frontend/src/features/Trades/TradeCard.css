@@ -1,49 +1,83 @@
 /* TradeCard.css */
 
-/* Container for offering and receiving sections */
+/* Ensure offering and receiving sections are spaced properly */
 .trade-card .trade-pokemon {
-    display: flex;
-    justify-content: space-between;
-    align-items: stretch;
-    gap: 20px;
-  }
-  
-  /* Common styles for each Pokémon section */
-  .trade-card .pokemon {
-    flex: 1;
-    text-align: center;
-  }
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+}
 
-  .trade-card .center-column {
-    display: flex;               /* Make it a flex container */
-    flex-direction: column;      /* Arrange children vertically */
-    align-items: center;         /* Center content horizontally */
-    justify-content: space-between; /* Separate top and centered sections */
-  }
-  
-  .trade-card .center-column .trade-icon {
-    flex-grow: 1;                 /* Let this section grow to fill the space */
-    display: flex;                /* Make it a flex container */
-    justify-content: center;      /* Center the image horizontally */
-    align-items: center;          /* Center the image vertically */
-  }
-  
-  /* Images should be responsive */
-  .trade-card .pokemon img {
-    width: 100%;
-    height: auto;
-    max-width: 150px;
-    margin-bottom: 10px;
-  }
-  
-  .trade-card .trade-icon img {
-    max-width: 200px;  /* Adjust size as needed */
-    height: auto;
-  }
-  
-  .trade-card .trade-actions button {
-    margin: 0 5px;
-    padding: 8px 12px;
-  }
+/* Ensure text remains visually neat */
+.trade-card p, .trade-card h4 {
+  margin-block-start: 4px;
+  margin-block-end: 4px;
+}
 
-  
+/* Ensure each Pokémon section is properly aligned */
+.trade-card .pokemon {
+  flex: 1;
+  width: 5rem;  /* Adjust width as needed */
+  height: auto;
+  text-align: center;
+  display: flex;         /* Make it a flex container */
+  flex-direction: column; /* Stack content vertically */
+  align-items: center;   /* Center all content horizontally */
+  justify-content: center;
+}
+
+/* Styling for the center column (trade icon and buttons) */
+.trade-card .center-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Trade icon should be centered properly */
+.trade-card .center-column .trade-icon {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Set consistent styles for Pokémon images */
+.trade-card .pokemon-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Ensure Pokémon images scale properly and remain centered */
+.trade-card .pokemon-image-container img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+}
+
+@media (max-width: 480px) {
+  .trade-card p, .trade-card h4 {
+    margin-block-start: 2px;
+    margin-block-end: 2px;
+    font-size: 0.5rem;
+  }
+  .trade-card .center-column .trade-icon img{
+    width: 2rem;
+    height: auto;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+  .trade-card p, .trade-card h4 {
+    margin-block-start: 2px;
+    margin-block-end: 2px;
+    font-size: 0.75rem;
+  }
+  .trade-card .center-column .trade-icon img{
+    width: 3rem;
+    height: auto;
+  }
+}
