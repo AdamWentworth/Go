@@ -52,9 +52,11 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 	friendshipLevelStr := c.Query("friendship_level")
 	onlyMatchingTradesStr := c.Query("only_matching_trades")
 	tradeInWantedListStr := c.Query("trade_in_wanted_list")
+	dynamaxStr := c.Query("dynamax")
+	gigantamaxStr := c.Query("gigantamax")
 
-	logrus.Infof("Received search query with params: pokemon_id=%s, shiny=%s, shadow=%s, costume_id=%s, ownership=%s, limit=%s, range_km=%s, latitude=%s, longitude=%s, fast_move_id=%s, charged_move_1_id=%s, charged_move_2_id=%s, gender=%s, already_registered=%s, attack_iv=%s, defense_iv=%s, stamina_iv=%s, background_id=%s, pref_lucky=%s, friendship_level=%s, only_matching_trades=%s, trade_in_wanted_list=%s",
-		pokemonIDStr, shinyStr, shadowStr, costumeIDStr, ownership, limitStr, rangeKMStr, latitudeStr, longitudeStr, fastMoveIDStr, chargedMove1IDStr, chargedMove2IDStr, genderStr, alreadyRegisteredStr, attackIVStr, defenseIVStr, staminaIVStr, backgroundIDStr, prefLuckyStr, friendshipLevelStr, onlyMatchingTradesStr, tradeInWantedListStr)
+	logrus.Infof("Received search query with params: pokemon_id=%s, shiny=%s, shadow=%s, costume_id=%s, ownership=%s, limit=%s, range_km=%s, latitude=%s, longitude=%s, fast_move_id=%s, charged_move_1_id=%s, charged_move_2_id=%s, gender=%s, already_registered=%s, attack_iv=%s, defense_iv=%s, stamina_iv=%s, background_id=%s, pref_lucky=%s, friendship_level=%s, only_matching_trades=%s, trade_in_wanted_list=%s, dynamax=%s, gigantamax=%s",
+		pokemonIDStr, shinyStr, shadowStr, costumeIDStr, ownership, limitStr, rangeKMStr, latitudeStr, longitudeStr, fastMoveIDStr, chargedMove1IDStr, chargedMove2IDStr, genderStr, alreadyRegisteredStr, attackIVStr, defenseIVStr, staminaIVStr, backgroundIDStr, prefLuckyStr, friendshipLevelStr, onlyMatchingTradesStr, tradeInWantedListStr, dynamaxStr, gigantamaxStr)
 
 	// Parse parameters into appropriate types
 	var pokemonID, fastMoveID, chargedMove1ID, chargedMove2ID int
@@ -107,6 +109,23 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		if err != nil {
 			logrus.Error("Invalid shadow value: ", err)
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid shadow value"})
+		}
+	}
+
+	var dynamax, gigantamax bool
+	if dynamaxStr != "" {
+		dynamax, err = strconv.ParseBool(dynamaxStr)
+		if err != nil {
+			logrus.Error("Invalid dynamax value: ", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid dynamax value"})
+		}
+	}
+
+	if gigantamaxStr != "" {
+		gigantamax, err = strconv.ParseBool(gigantamaxStr)
+		if err != nil {
+			logrus.Error("Invalid gigantamax value: ", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid gigantamax value"})
 		}
 	}
 
@@ -312,6 +331,14 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 
 	if shadowStr != "" {
 		query = query.Where("shadow = ?", shadow)
+	}
+
+	if dynamaxStr != "" {
+		query = query.Where("dynamax = ?", dynamax)
+	}
+
+	if gigantamaxStr != "" {
+		query = query.Where("gigantamax = ?", gigantamax)
 	}
 
 	// Apply costume_id filtering logic
@@ -627,6 +654,8 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 			"wanted_filters":   instance.WantedFilters,
 			"trade_filters":    instance.TradeFilters,
 			"distance":         userDistance,
+			"dynamax":          instance.Dynamax,
+			"gigantamax":       instance.Gigantamax,
 		}
 
 		if instanceUserID != "" && username != "" {
@@ -706,6 +735,8 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 						"date_added":       tradeInstance.DateAdded,
 						"wanted_filters":   tradeInstance.WantedFilters,
 						"trade_filters":    tradeInstance.TradeFilters,
+						"dynamax":          tradeInstance.Dynamax,
+						"gigantamax":       tradeInstance.Gigantamax,
 					}
 					// Add 'match' field based on tradeInWantedList
 					if tradeInWantedList && userID != "" {
@@ -809,6 +840,8 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 						"date_added":       wantedInstance.DateAdded,
 						"wanted_filters":   wantedInstance.WantedFilters,
 						"trade_filters":    wantedInstance.TradeFilters,
+						"dynamax":          wantedInstance.Dynamax,
+						"gigantamax":       wantedInstance.Gigantamax,
 					}
 
 					// Add 'match' field based on onlyMatchingTrades
