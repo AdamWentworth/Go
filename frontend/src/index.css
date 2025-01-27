@@ -1,6 +1,7 @@
 /* index.css */
 
-body {
+/* Ensure scrolling works but scrollbar is hidden */
+html, body {
   background-color: #111;
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -8,58 +9,25 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  height: 100vh;
+  width: 100vw;
   overflow-x: hidden;
-  overflow-y: scroll;
+  overflow-y: scroll;  /* Enable scrolling but hide scrollbar */
+  scrollbar-width: none; /* Hide scrollbar in Firefox */
+  -ms-overflow-style: none; /* Hide scrollbar in IE and Edge */
 }
 
-/* Final Scrollbar Styling with One Button Per End */
-body::-webkit-scrollbar {
-  width: 1.2rem;
+/* Hide scrollbar for Chrome, Safari, Edge */
+html::-webkit-scrollbar, body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
 }
 
-body::-webkit-scrollbar-track {
-  background-color: rgba(0, 0, 0, 0); /* Fully transparent track */
-}
-
-body::-webkit-scrollbar-thumb {
-  background-color: #aaa; /* Light gray thumb as shown */
-  border-radius: 0; /* No border-radius for a flat, rectangular thumb */
-  border: 3px solid #111; /* Creates a gap between the thumb and the edge */
-}
-
-body::-webkit-scrollbar-thumb:hover {
-  background-color: #888; /* Slight hover effect for visibility */
-}
-
-/* Scrollbar buttons (One button at each end) */
-body::-webkit-scrollbar-button:single-button:vertical:decrement {
-  background-color: transparent; /* Dark color for the top arrow */
-  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iNSIgdmlld0JveD0iMCAwIDEwIDUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBvbHlnb24gcG9pbnRzPSIwLDUsNSwwLDEwLDVMMCw1IiBmaWxsPSIjZmZmIi8+PC9zdmc+'); /* Up arrow */
-  background-repeat: no-repeat;
-  background-position: center;
-  height: 16px;
-  width: 16px;
-}
-
-body::-webkit-scrollbar-button:single-button:vertical:increment {
-  background-color: transparent; /* Dark color for the bottom arrow */
-  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iNSIgdmlld0JveD0iMCAwIDEwIDUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBvbHlnb24gcG9pbnRzPSIwLDAgNSw1LDEwLDAiIGZpbGw9IiNmZmYiLz48L3N2Zz4='); /* Down arrow */
-  background-repeat: no-repeat;
-  background-position: center;
-  height: 16px;
-  width: 16px;
-}
-
-/* Remove any extra unwanted space */
-body::-webkit-scrollbar-track-piece:start {
-  margin-top: 0px;
-}
-
-body::-webkit-scrollbar-track-piece:end {
-  margin-bottom: 0px;
-}
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
