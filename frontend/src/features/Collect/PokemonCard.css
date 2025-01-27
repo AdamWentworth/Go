@@ -25,7 +25,7 @@
     opacity: 0;
 }
 
-.pokemon-image-container {
+.pokemon-card .pokemon-image-container {
     position: relative; /* Ensure it's relative for absolute positioning of badges */
     display: inline-block; /* Ensures container shrinks to fit its content */
     width: 100%; /* Ensure it takes up the full width of the parent container */

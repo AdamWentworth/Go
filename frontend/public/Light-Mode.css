@@ -19,7 +19,7 @@
 .account-form { 
     background-color: rgb(182, 212, 188);
 }
-.navbar, .header, .pokemon-search-bar, .pokemon-container, .move-select, .move-select option, .App, .update-for-trade-modal-overlay .instance-item, .mega-pokemon-item, .account-page, .login-page, .register-page, .success-container, .mainButtonsContainer{
+.navbar, .header, .pokemon-search-bar, .pokemon-container, .move-select, .move-select option, .App, .update-for-trade-modal-overlay .instance-item, .mega-pokemon-item, .account-page, .login-page, .register-page, .success-container, .mainButtonsContainer, .confirmation-content{
     background-color: #f8fff9;
 }
 

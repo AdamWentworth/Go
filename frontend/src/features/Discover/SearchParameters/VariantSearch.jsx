@@ -172,6 +172,9 @@ const VariantSearch = ({
         chargedMove1: null,
         chargedMove2: null,
       });
+
+      setDynamax(false);
+      setGigantamax(false);
   
       // Generate suggestions if input is 3 or more characters
       if (newPokemon.length >= 3) {

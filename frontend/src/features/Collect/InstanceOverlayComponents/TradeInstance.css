@@ -192,15 +192,6 @@
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {
-  .trade-instance-overlay {
-    transform: scale(.75);
-    transform-origin: center;
-    overflow-y: visible;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
   .trade-details-container .wanted-item img.wanted-item-img {
     width: 100px !important;
   }

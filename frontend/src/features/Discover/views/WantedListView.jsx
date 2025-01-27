@@ -78,11 +78,13 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                 {item.cp && <CPDisplay cp={item.cp} />}
                 <div className="pokemon-image-container">
                   {item.pref_lucky && (
+                  <div className="lucky-backdrop-wrapper">
                     <img
                       src={`${process.env.PUBLIC_URL}/images/lucky.png`}
                       alt="Lucky backdrop"
                       className="lucky-backdrop"
                     />
+                  </div>
                   )}
                   {imageUrl && (
                     <img

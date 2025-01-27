@@ -1,4 +1,5 @@
-// TradeProposal.jsx
+/* TradeProposal.jsx */
+
 import React, { useEffect, useRef, useState } from 'react';
 import './TradeProposal.css';
 import MovesComponent from '../OwnedComponents/MovesComponent';
@@ -16,7 +17,6 @@ import { useModal } from '../../../../contexts/ModalContext';
 const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose, myOwnershipData, ownershipData, username }) => {
   const { proposeTrade } = useTradeData();
   const { alert } = useModal();
-  console.log(passedInPokemon)
   const containerRef = useRef(null);
 
   const [selectedMatchedInstance, setSelectedMatchedInstance] = useState(null);
@@ -165,8 +165,8 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
           {/* Passed-in Pokémon details */}
           <div className="trade-proposal-details">
             {passedInPokemon && (
-              <div style={{ marginTop: '1rem' }}>
-                <p style={{ marginTop: '10px', color: 'white' }}>
+              <div className="pokemon-details">
+                <p>
                   {passedInPokemon.ownershipStatus.nickname
                     ? `Nickname: ${passedInPokemon.ownershipStatus.nickname}`
                     : null}
@@ -180,18 +180,20 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
           </div>
           {/* Pokémon image */}
           <div className="trade-proposal-image-container">
-            {pref_lucky && (
+            <div className="image-wrapper">
+              {pref_lucky && (
+                <img
+                  src={process.env.PUBLIC_URL + '/images/lucky.png'}
+                  alt="Lucky Backdrop"
+                  className="lucky-backdrop"
+                />
+              )}
               <img
-                src={process.env.PUBLIC_URL + '/images/lucky.png'}
-                alt="Lucky Backdrop"
-                className="lucky-backdrop"
+                src={passedInPokemon.currentImage || '/images/default/placeholder.png'}
+                alt={passedInPokemon.name}
+                className="trade-proposal-pokemon-img"
               />
-            )}
-            <img
-              src={passedInPokemon.currentImage || '/images/default/placeholder.png'}
-              alt={passedInPokemon.name}
-              className="trade-proposal-pokemon-img"
-            />
+            </div>
             {passedInPokemon && (
               <h3 className="trade-proposal-name">
                 {generateH2Content(passedInPokemon)}
@@ -205,10 +207,6 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
             className="trade-proposal-propose-button"
             onClick={handleProposeTrade}
             disabled={friendship_level === 0}
-            style={{
-              cursor: friendship_level === 0 ? 'not-allowed' : 'pointer',
-              backgroundColor: friendship_level === 0 ? '#ccc' : '',
-            }}
           >
             Propose Trade
           </button>
@@ -229,21 +227,23 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
         {/* BOTTOM ROW (Our matchedInstances) */}
         <div className="trade-proposal-row trade-proposal-row-bottom">
           <div className="trade-proposal-image-container">
-            {pref_lucky && (
+            <div className="image-wrapper">
+              {pref_lucky && (
+                <img
+                  src={process.env.PUBLIC_URL + '/images/lucky.png'}
+                  alt="Lucky Backdrop"
+                  className="lucky-backdrop"
+                />
+              )}
               <img
-                src={process.env.PUBLIC_URL + '/images/lucky.png'}
-                alt="Lucky Backdrop"
-                className="lucky-backdrop"
+                src={
+                  selectedMatchedInstance?.currentImage ||
+                  '/images/default/placeholder.png'
+                }
+                alt={selectedMatchedInstance?.name || 'Clicked Pokémon'}
+                className="trade-proposal-pokemon-img"
               />
-            )}
-            <img
-              src={
-                selectedMatchedInstance?.currentImage ||
-                '/images/default/placeholder.png'
-              }
-              alt={selectedMatchedInstance?.name || 'Clicked Pokémon'}
-              className="trade-proposal-pokemon-img"
-            />
+            </div>
             {selectedMatchedInstance && (
               <h3 className="trade-proposal-name">
                 {generateH2Content(selectedMatchedInstance)}
@@ -253,7 +253,7 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
           <div className="trade-proposal-details">
             {/* Optional: show more details about the selected instance */}
             {selectedMatchedInstance && (
-              <div style={{ marginTop: '1rem' }}>
+              <div className="pokemon-details">
                 <CPComponent pokemon={selectedMatchedInstance} />
                 <MovesComponent pokemon={selectedMatchedInstance} />
                 <LocationCaughtComponent pokemon={selectedMatchedInstance} />
@@ -263,10 +263,8 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
 
             {/* INSTANCE PICKER */}
             {matchedInstances.length > 1 ? (
-              <div className="trade-instance-picker" style={{ marginTop: '1rem' }}>
-                <label htmlFor="instance-selector" style={{ marginRight: '8px' }}>
-                  Choose the instance to trade:
-                </label>
+              <div className="trade-instance-picker">
+                <label htmlFor="instance-selector">Choose the instance to trade:</label>
                 <select
                   id="instance-selector"
                   value={selectedMatchedInstance?.ownershipStatus?.instance_id || ''}
@@ -285,7 +283,7 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
                 </select>
               </div>
             ) : (
-              <p style={{ marginTop: '10px', color: 'white' }}>
+              <p>
                 {selectedMatchedInstance?.ownershipStatus?.nickname
                   ? `Nickname: ${selectedMatchedInstance.ownershipStatus.nickname}`
                   : null}
