@@ -30,8 +30,6 @@
 
 /* Image section styling */
 .pokemon-variant-image {
-  width: 200px;
-  height: 200px;
   position: relative; /* Allows for background image positioning */
   display: flex;
   justify-content: center;
@@ -175,12 +173,6 @@
   background-color: rgb(152, 0, 152);
 }
 
-/* Image styling */
-.pokemon-variant-container .pokemon-variant-image img {
-  width: 200px;
-  height: 200px;
-}
-
 .gender-background-row {
   display: flex;
   align-items: center;
@@ -208,6 +200,17 @@
   width: 2.5rem;
   height: auto;
   transition: filter 0.3s ease; /* Smooth transition effect */
+}
+
+.pokemon-variant-image .max-badge {
+  position: absolute;
+  top: 2%; /* Position at the top */
+  right: 5%; /* Position at the right */
+  width: 30%;
+  height: auto;
+  z-index: 5;
+  max-width: 100%;
+  height: auto;
 }
 
 /* Apply desaturation effect when Dynamax is inactive */
@@ -447,14 +450,6 @@
     height: 150px;
     margin-top: 25px;
     margin-right: 10px;
-  }
-
-  .pokemon-variant-container .pokemon-variant-image img {
-    width: 150px;
-    height: 150px;
-    position: absolute;
-    top: 0;
-    left: 0;
   }
   .pokemon-variant-container .main-content {
     min-width: unset;

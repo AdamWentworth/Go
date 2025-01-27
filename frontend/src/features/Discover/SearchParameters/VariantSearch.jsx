@@ -384,11 +384,26 @@ const VariantSearch = ({
               onError={handleImageError}
               className="pokemon-image"
             />
+            
           ) : imageError ? (
             <div className="pokemon-variant-image-error">
               This variant doesn't exist.
             </div>
           ) : null}
+          {dynamax && (
+            <img 
+              src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+              alt="Dynamax Badge" 
+              className="max-badge" 
+            />
+          )}
+          {gigantamax && (
+            <img 
+              src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+              alt="Gigantamax Badge" 
+              className="max-badge" 
+            />
+          )}
         </div>
   
         {/* Fixed Width Column for Moves, Gender, and Background */}

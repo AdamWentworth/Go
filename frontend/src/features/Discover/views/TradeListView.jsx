@@ -22,6 +22,8 @@ const TradeListView = ({ item, findPokemonByKey }) => {
   const navigate = useNavigate();
   const [showConfirmation, setShowConfirmation] = useState(false); // State for confirmation overlay
   const imageUrl = URLSelect(item.pokemonInfo, item);
+  const dynamax = item.dynamax;
+  const gigantamax = item.gigantamax;
   const pokemonDisplayName = getPokemonDisplayName(item);
 
   const hasAdditionalDetails =
@@ -83,6 +85,20 @@ const TradeListView = ({ item, findPokemonByKey }) => {
                     src={imageUrl}
                     alt={pokemonDisplayName}
                     className="pokemon-image"
+                  />
+                )}
+                {dynamax && (
+                  <img 
+                    src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+                    alt="Dynamax Badge" 
+                    className="max-badge" 
+                  />
+                )}
+                {gigantamax && (
+                  <img 
+                    src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+                    alt="Gigantamax Badge" 
+                    className="max-badge" 
                   />
                 )}
                 <p className="pokemon-name">

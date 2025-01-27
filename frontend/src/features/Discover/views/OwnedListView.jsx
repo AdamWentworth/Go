@@ -22,6 +22,8 @@ const formatDate = (dateString) => {
 const OwnedListView = ({ item }) => {
   const navigate = useNavigate();
   const imageUrl = URLSelect(item.pokemonInfo, item);
+  const dynamax = item.dynamax;
+  const gigantamax = item.gigantamax;
   const pokemonDisplayName = getPokemonDisplayName(item);
   const [showConfirmation, setShowConfirmation] = useState(false); // State to show the confirmation overlay
 
@@ -64,6 +66,20 @@ const OwnedListView = ({ item }) => {
                 />
               )}
               {imageUrl && <img src={imageUrl} alt={pokemonDisplayName} className="pokemon-image" />}
+              {dynamax && (
+                <img 
+                  src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+                  alt="Dynamax Badge" 
+                  className="max-badge" 
+                />
+              )}
+              {gigantamax && (
+                <img 
+                  src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+                  alt="Gigantamax Badge" 
+                  className="max-badge" 
+                />
+              )}
               <p className="pokemon-name">
                 {pokemonDisplayName}
                 <GenderIcon gender={item.gender} />

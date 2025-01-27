@@ -47,6 +47,17 @@
   .list-view-row .center-column {
     flex: 1;
   }
+
+  .list-view-row .max-badge {
+    position: absolute;
+    top: 2%; /* Position at the top */
+    right: 2%; /* Position at the right */
+    width: 25%;
+    height: auto;
+    z-index: 5;
+    max-width: 100%;
+    height: auto;
+  }
   
   .list-view-row .center-column .card {
     padding: 5px;
