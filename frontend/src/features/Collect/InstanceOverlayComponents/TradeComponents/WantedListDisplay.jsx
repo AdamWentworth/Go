@@ -43,7 +43,7 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
     };
 
     // Extract the baseKey of the current Pokémon
-    const baseKey = extractBaseKey(pokemon.pokemonKey);
+    const baseKey = extractBaseKey(pokemon.ownershipStatus.instance_id);
 
     // Filter the wanted list to display relevant items
     const wantedListToDisplay = Object.entries(lists.wanted)

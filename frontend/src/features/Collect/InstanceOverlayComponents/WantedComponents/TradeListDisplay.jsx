@@ -34,14 +34,15 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
         }
     };
 
-    const baseKey = extractBaseKey(pokemon.pokemonKey);
+    const baseKey = extractBaseKey(pokemon.ownershipStatus.instance_id);
 
     const tradeListToDisplay = Object.entries(lists.trade)
-        .filter(([key, details]) => {
-            const itemBaseKey = extractBaseKey(key);
-            return (editMode || !localNotTradeList[key]) && 
-                   (!details.mirror || (details.mirror && itemBaseKey === baseKey));
-        });
+            .filter(([key, details]) => {
+                const itemBaseKey = extractBaseKey(key);
+                const mirrorCondition = !details.mirror || (details.mirror && itemBaseKey === baseKey);
+
+                return (!localNotTradeList[key] || editMode) && mirrorCondition;
+            });
 
     const transformedTradeList = tradeListToDisplay.map(([key, details]) => ({
         key,
