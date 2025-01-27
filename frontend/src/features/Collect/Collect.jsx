@@ -368,7 +368,6 @@ function Collect({ isOwnCollection }) {
             <ListsMenu 
               onSelectList={handleSelectList}
               activeLists={activeLists}
-              ownershipData={ownershipData}
             />
           )}
           <SortOverlayMemo

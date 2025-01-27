@@ -24,10 +24,14 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
         // Check if the Pokémon is female and has female data, and update the image accordingly
         const isFemale = value.gender === 'Female';
         const isMega = value?.is_mega === true;
+        const megaForm = value?.mega_form
+        const isFused = value?.is_fused
+        const fusionForm = value?.fusion_form
+        const isPurified = value?.purified
 
-        if ((isFemale && variantDetail?.female_data) || (isMega && variantDetail?.megaEvolutions)) {
-            currentImage = determineImageUrl(isFemale, variantDetail, isMega);
-        }   
+        if ((isFemale && variantDetail?.female_data) || (isMega && variantDetail?.megaEvolutions) || (isFused && variantDetail?.fusion) || (isPurified)) {
+            currentImage = determineImageUrl(isFemale, variantDetail, isMega, megaForm, isFused, fusionForm, isPurified);
+        }       
 
         // Prepare the object to be added to the list
         const listItem = {
@@ -73,16 +77,13 @@ export const updatePokemonLists = (ownershipData, variants, callback) => {
     callback(lists);
 };
 
-export const initializePokemonLists = (ownershipData, variants, search) => {
+export const initializePokemonLists = (ownershipData, variants) => {
     const lists = {
         unowned: {},
         owned: {},
         trade: {},
         wanted: {}
     };
-
-    // Track all existing base keys from ownershipData to later check for unassigned variants
-    const assignedKeys = new Set(Object.keys(ownershipData));
 
     Object.entries(ownershipData).forEach(([key, value]) => {
         const { baseKey } = parsePokemonKey(key); // Extract the base key from the key
@@ -93,10 +94,17 @@ export const initializePokemonLists = (ownershipData, variants, search) => {
         const isFemale = value.gender === 'Female';
         const isMega = value?.is_mega === true;
         const megaForm = value?.mega_form
+        const isFused = value?.is_fused
+        const fusionForm = value?.fusion_form
+        const isPurified = value?.purified
 
-        if ((isFemale && variantDetail?.female_data) || (isMega && variantDetail?.megaEvolutions)) {
-            currentImage = determineImageUrl(isFemale, variantDetail, isMega, megaForm);
-        }        
+        if ((isFemale && variantDetail?.female_data) || 
+            (isMega && variantDetail?.megaEvolutions) || 
+            (isFused && variantDetail?.fusion) || 
+            (isPurified)) {
+
+            currentImage = determineImageUrl(isFemale, variantDetail, isMega, megaForm, isFused, fusionForm, isPurified);
+        }
 
         // Prepare the object to be added to the list
         const listItem = {
@@ -137,25 +145,6 @@ export const initializePokemonLists = (ownershipData, variants, search) => {
         if (value.is_for_trade) lists.trade[key] = listItem;
         if (value.is_wanted) lists.wanted[key] = listItem;
     });
-    // Uncomment this code below if we want to add all missing unowned pokemon
-    // // If search is true, ensure all variants are represented, defaulting remaining ones to unowned
-    // if (search) {
-    //     variants.forEach(variant => {
-    //         const variantKey = variant.pokemonKey;
-
-    //         // Check if the variant is already categorized under owned, trade, or wanted
-    //         const isVariantAssigned = Object.keys(lists.owned).some(existingKey => existingKey.startsWith(variantKey)) ||
-    //                                   Object.keys(lists.trade).some(existingKey => existingKey.startsWith(variantKey)) ||
-    //                                   Object.keys(lists.wanted).some(existingKey => existingKey.startsWith(variantKey));
-
-    //         // If the variant is not assigned in any list, create a new unowned entry with a unique key
-    //         if (!isVariantAssigned) {
-    //             const fullKey = `${variantKey}_${generateUUID()}`; // Append UUID to create a unique key
-    //             const newVariantData = createNewDataForVariant(variant);
-    //             lists.unowned[fullKey] = newVariantData;
-    //         }
-    //     });
-    // }
 
     return lists;
 };

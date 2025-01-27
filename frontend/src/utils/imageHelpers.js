@@ -25,8 +25,8 @@ export function determineImageUrl(
     }
 
     // Determine if the Pokemon should be treated as shiny based on purification
-    const isPurifiedShiny = isPurified && !!pokemon.ownershipStatus.shiny;
-    const isShiny = isPurifiedShiny || !!pokemon.ownershipStatus?.shiny;
+    const isPurifiedShiny = isPurified && pokemon.variantType.includes('shiny');
+    const isShiny = isPurifiedShiny || pokemon.variantType.includes('shiny');
 
     // **New Priority: Handle Mega Evolution first to supersede Purified**
     const handleMegaEvolution = () => {
@@ -85,14 +85,17 @@ export function determineImageUrl(
         return megaImage;
     }
 
-    // **Next Priority: Handle Purified Pokémon**
-    if (isPurified) {
+    if (isPurified) {        
+        if (!pokemon) {
+            console.error("pokemon is undefined or null! Check where it's coming from.");
+            return null;
+        }    
         if (isPurifiedShiny && pokemon.image_url_shiny) {
             return pokemon.image_url_shiny;
         } else if (pokemon.image_url) {
             return pokemon.image_url;
         }
-    }
+    }    
 
     // Check for fusion override before other image logic
     if (isFused && fusionForm && Array.isArray(pokemon.fusion)) {

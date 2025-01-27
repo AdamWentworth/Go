@@ -4,7 +4,7 @@
 .lists-menu {
   display: flex;
   justify-content: center;
-  margin: 20px;
+  margin: 1.25rem; /* 20px */
 }
 
 /* Column Styling */
@@ -12,8 +12,8 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-width: 300px; /* Adjust as needed */
-  margin: 10px;
+  min-width: 18.75rem; /* 300px */
+  margin: 0.625rem; /* 10px */
 }
 
 /* List Item Container */
@@ -21,10 +21,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 10px 0;
-  border: 2px solid #ccc; /* Border outline */
-  border-radius: 15px;
-  padding: 10px;
+  margin: 0.625rem 0; /* 10px 0 */
+  border: 0.125rem solid #ccc; /* 2px */
+  border-radius: 0.9375rem; /* 15px */
+  padding: 0.625rem; /* 10px */
   cursor: pointer; /* Make the entire area clickable */
   transition: background-color 0.2s ease;
 }
@@ -37,11 +37,11 @@
 .lists-menu .list-header {
   width: 100%; /* Make header full width */
   text-align: center;
-  font-size: 1.5em;
+  font-size: 1.5rem; /* 24px */
   font-weight: bold;
-  padding: 10px 0;
-  border-bottom: 1px solid #ccc;
-  border-radius: 15px 15px 0 0;
+  padding: 0.625rem 0; /* 10px 0 */
+  border-bottom: 0.0625rem solid #ccc; /* 1px */
+  border-radius: 0.9375rem 0.9375rem 0 0; /* 15px 15px 0 0 */
   color: white;
 }
 
@@ -63,31 +63,59 @@
   background-color: #4CAF50;
 }
 
+/* Apply desaturated filter to images with the 'unowned' class */
+.lists-menu .list-item .pokemon-preview img.preview-image.unowned,
+.lists-menu .list-item .pokemon-preview img.variant-overlay.unowned {
+  filter: grayscale(100%) brightness(0.2) contrast(0.5) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
+  transition: filter 0.3s ease; /* Smooth transition */
+}
+
 /* Pokemon Preview Container */
 .lists-menu .pokemon-preview {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  margin-top: 10px;
+  margin-top: 0.625rem; /* 10px */
+}
+
+/* Pokemon Container Styling */
+.lists-menu .pokemon-list-container {
+  position: relative;
+  display: inline-block;
+  margin: unset;
+  width: 3.5rem; /* 56px */
+  height: auto;
+  padding: 0.3125rem; /* 5px */
 }
 
 /* Preview Image Styling */
 .lists-menu .preview-image {
-  width: 45px;
-  height: 45px;
-  margin: 2px;
-  border-radius: 5px;
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 0.3125rem; /* Optional: Rounded corners */
+}
+
+/* Variant Overlay Styling */
+.lists-menu .variant-overlay {
+  position: absolute;
+  top: 0.2rem; /* Adjusted to move down */
+  right: 0.2rem; /* Adjusted to move left */
+  width: 1rem;
+  height: auto;
+  pointer-events: none; /* Allows clicks to pass through to the underlying image */
+  z-index: 1; /* Ensure overlay is on top */
 }
 
 /* No Pokémon Text */
 .lists-menu .no-pokemon-text {
-  font-size: 14px;
+  font-size: 0.875rem; /* 14px */
   color: #666;
-  margin-top: 10px;
+  margin-top: 0.625rem; /* 10px */
 }
 
 /* Responsive Design */
-@media (max-width: 600px) {
+@media (max-width: 650px) { /* 650px */
   .lists-menu {
     flex-direction: column;
     align-items: center;
@@ -95,6 +123,44 @@
 
   .lists-menu .column {
     width: 100%;
-    max-width: 400px;
+    max-width: 90%;
+    margin: unset;
+  }
+
+  .lists-menu .pokemon-list-container {
+    width: 2.8125rem; /* 45px */
+    height: 2.8125rem; /* 45px */
+  }
+
+  .lists-menu .variant-overlay {
+    width: 0.75rem; /* 12px */
+    top: 0.15rem; /* Slightly less offset */
+    right: 0.15rem;
+  }
+}
+
+@media (min-width: 1024px) { /* 1024px */
+  .lists-menu .pokemon-list-container {
+    width: 4rem; /* 64px */
+    height: auto;
+  }
+
+  .lists-menu .variant-overlay {
+    width: 1.25rem; /* 20px */
+    top: 0.25rem; /* Slightly more offset */
+    right: 0.25rem;
+  }
+}
+
+@media (min-width: 1440px) { /* 1440px */
+  .lists-menu .pokemon-list-container {
+    width: 5rem; /* 80px */
+    height: auto;
+  }
+
+  .lists-menu .variant-overlay {
+    width: 1.5rem; /* 24px */
+    top: 0.3rem; /* Even more offset */
+    right: 0.3rem;
   }
 }

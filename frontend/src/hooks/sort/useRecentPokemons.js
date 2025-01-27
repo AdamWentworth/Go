@@ -2,7 +2,11 @@
 
 import { useMemo } from 'react';
 
-const useRecentPokemons = (displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll }) => {
+const useRecentPokemons = (
+    displayedPokemons,
+    sortMode,
+    { isShiny = false, showShadow = false, showCostume = false, showAll = false } = {}
+  ) => {
     return useMemo(() => {
         // Convert 'ascending' or 'descending' to appropriate sort order
         const sortOrder = sortMode === 'ascending' ? 1 : -1;
