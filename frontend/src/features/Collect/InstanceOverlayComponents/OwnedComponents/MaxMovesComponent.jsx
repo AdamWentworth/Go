@@ -27,7 +27,6 @@ const MaxMovesComponent = ({
     <div
       className={`max-options-container ${showMaxOptions ? "show" : ""}`}
       id={`max-options-${pokemon.pokemonKey}`}
-      aria-hidden={!showMaxOptions}
     >
       <div className="max-moves-row">
         {/* Max Attack */}

@@ -16,57 +16,36 @@ export const SessionProvider = ({ children }) => {
     const initializeSession = () => {
       const currentTime = new Date().getTime();
       const lastActivityTimeStr = localStorage.getItem('lastActivityTime');
-      let lastActivityTime = null;
-      if (lastActivityTimeStr) {
-        lastActivityTime = parseInt(lastActivityTimeStr, 10);
-      }
+      let lastActivityTime = lastActivityTimeStr ? parseInt(lastActivityTimeStr, 10) : null;
 
       if (lastActivityTime) {
         const timeSinceLastActivity = currentTime - lastActivityTime;
-        if (timeSinceLastActivity > INACTIVITY_THRESHOLD_MS) {
-          // Consider this as a new session
-          setIsSessionNew(true);
-        } else {
-          setIsSessionNew(false);
-        }
+        setIsSessionNew(timeSinceLastActivity > INACTIVITY_THRESHOLD_MS);
       } else {
-        // No previous activity time, consider it a new session
         setIsSessionNew(true);
       }
 
-      // Update lastActivityTime to current time
+      // Update lastActivityTime
       localStorage.setItem('lastActivityTime', currentTime.toString());
 
-      // Initialize lastUpdateTimestamp
-      const storedData = localStorage.getItem('pokemonOwnership');
-      if (storedData) {
-        try {
-          const parsedData = JSON.parse(storedData);
-          if (parsedData.timestamp) {
-            const timestamp = new Date(parsedData.timestamp);
-            console.log('Initialized lastUpdateTimestamp from localStorage:', timestamp);
-            setLastUpdateTimestamp(timestamp);
-          } else {
-            console.log('No timestamp found in stored data, initializing to current time');
-            setLastUpdateTimestamp(new Date());
-          }
-        } catch (error) {
-          console.error('Error parsing pokemonOwnership from localStorage:', error);
-          setLastUpdateTimestamp(new Date());
-        }
+      // Initialize lastUpdateTimestamp using ownershipTimestamp
+      const ownershipTimestamp = localStorage.getItem('ownershipTimestamp');
+      if (ownershipTimestamp) {
+        const timestamp = new Date(parseInt(ownershipTimestamp, 10));
+        console.log('Initialized lastUpdateTimestamp from localStorage:', timestamp);
+        setLastUpdateTimestamp(timestamp);
       } else {
-        console.log('No pokemonOwnership data found in localStorage, initializing to current time');
+        console.log('No ownershipTimestamp found in localStorage, initializing to current time');
         setLastUpdateTimestamp(new Date());
       }
     };
 
     initializeSession();
 
-    // Update lastActivityTime whenever the app gains focus
+    // Update lastActivityTime when the app gains focus
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        const currentTime = new Date().getTime();
-        localStorage.setItem('lastActivityTime', currentTime.toString());
+        localStorage.setItem('lastActivityTime', new Date().getTime().toString());
       }
     };
 
@@ -80,7 +59,6 @@ export const SessionProvider = ({ children }) => {
   const updateTimestamp = useCallback((timestamp) => {
     console.log('Updating lastUpdateTimestamp to:', timestamp);
     setLastUpdateTimestamp(timestamp);
-    // Since we've received updates, the session is no longer new
     setIsSessionNew(false);
     console.log('Session is no longer new');
   }, []);

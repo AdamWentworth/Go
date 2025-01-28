@@ -7,7 +7,7 @@
         width: 100%;
         font-size: 12px;
     }
-    .weight-height-move-container .moves-container .move p{
+    .list-view-row .weight-height-move-container .moves-container .move p{
         font-size: 14px;
     }
     .weight-height-move-container .moves-container .move img{
@@ -33,7 +33,7 @@
 @media (min-width: 481px) and (max-width: 767px) {
     .weight-height-move-container {
         /* transform: scale(.75); */
-        justify-content: space-between;
+        justify-content: space-around;
         width: 100%;
         font-size: 14px;
     }
@@ -63,7 +63,7 @@
 @media (min-width: 768px) and (max-width: 1023px) {
     .weight-height-move-container {
         /* transform: scale(.75); */
-        justify-content: space-between;
+        justify-content: space-around;
         width: 100%;
         font-size: 16px;
     }
@@ -95,7 +95,7 @@
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {
-    .weight-height-move-container {
+    .list-view-row .weight-height-move-container {
         /* transform: scale(.75); */
         justify-content: space-between;
         width: 100%;
