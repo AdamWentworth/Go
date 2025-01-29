@@ -1,11 +1,11 @@
 /* Light-Mode.css */
-.list-view-row, .overlay-content, .pokemon-action-overlay .overlay-content, .update-for-trade-modal-overlay .modal-content, .trade-proposal-container, .trade-card, .mega-modal-content, .modal-overlay .modal, .ol-popup, .account-form .user-details, .login-form, .register-form, .moves-search-select, .location-options-overlay {
+.list-view-row, .overlay-content, .pokemon-action-overlay .overlay-content, .update-for-trade-modal-overlay .modal-content, .trade-proposal-container, .trade-card, .mega-modal-content, .modal-overlay .modal, .ol-popup, .account-form .user-details, .login-form, .register-form, .moves-search-select, .location-options-overlay, .proposed-trade-view .details-content {
     background-color: #e0f0e5;
 }
 .pokemon-card.highlighted {
     background-color: #e3f7dc;
 }
-.navbar h1, .evo-line-checkbox, .overlay-content, .iv-input, .iv-value, .pokemon-search-bar, .list-view, .moves-search-select, .moves-search-move-add-icon, .moves-search-move-add-icon, .list-view-container, .header .toggle-button, .header .collect-ui-toggle, .pokemon-action-overlay .overlay-content, .update-for-trade-modal-overlay .instance-item, .update-for-trade-modal-overlay .modal-content h2#modal-title, .move-name, .trade-card, .loading-text, .mega-modal-content, .mega-pokemon-item, .modal-overlay .modal, .ol-popup, .account-form .user-details .grid-item, .account-form h1, .register-page .register-form, .location-options-overlay h4, .pokemon-card .cp-container .cp-display  {
+.navbar h1, .evo-line-checkbox, .overlay-content, .iv-input, .iv-value, .pokemon-search-bar, .list-view, .moves-search-select, .moves-search-move-add-icon, .moves-search-move-add-icon, .list-view-container, .header .toggle-button, .header .collect-ui-toggle, .pokemon-action-overlay .overlay-content, .update-for-trade-modal-overlay .instance-item, .update-for-trade-modal-overlay .modal-content h2#modal-title, .move-name, .trade-card, .loading-text, .mega-modal-content, .mega-pokemon-item, .modal-overlay .modal, .ol-popup, .account-form .user-details .grid-item, .account-form h1, .register-page .register-form, .location-options-overlay h4, .pokemon-card .cp-container .cp-display, .proposed-trade-view .details-content  {
     color:black
 }
 .header .toggle-button, .header .collect-ui-toggle {

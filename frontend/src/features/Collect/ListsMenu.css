@@ -141,7 +141,7 @@
 
 @media (min-width: 1024px) { /* 1024px */
   .lists-menu .pokemon-list-container {
-    width: 4rem; /* 64px */
+    width: 3.75rem; /* 64px */
     height: auto;
   }
 
@@ -154,7 +154,7 @@
 
 @media (min-width: 1440px) { /* 1440px */
   .lists-menu .pokemon-list-container {
-    width: 5rem; /* 80px */
+    width: 4.05rem; /* 80px */
     height: auto;
   }
 

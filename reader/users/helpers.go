@@ -4,16 +4,9 @@ package main
 
 import "strings"
 
-// isTransientError checks if the error message suggests a transient DB connection issue.
+// isTransientError checks if the error message indicates a transient DB connection issue.
+// Adjust this logic to suit your DB driver's actual error strings or underlying error types.
 func isTransientError(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	// Example: Look for 'bad connection' substring in error text
-	if strings.Contains(err.Error(), "bad connection") {
-		return true
-	}
-
-	return false
+	// Example: Look for "bad connection" in the error string
+	return err != nil && strings.Contains(err.Error(), "bad connection")
 }

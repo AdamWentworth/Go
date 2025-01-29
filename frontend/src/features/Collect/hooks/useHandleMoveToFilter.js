@@ -4,6 +4,11 @@ import { useCallback } from 'react';
 import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
 import { useModal } from '../../../contexts/ModalContext';
 
+import {
+  getStatusFromInstance,
+  getTransitionMessage,
+} from '../utils/transitionMessages';
+
 function useHandleMoveToFilter({
   setOwnershipFilter,
   setHighlightedCards,
@@ -13,7 +18,7 @@ function useHandleMoveToFilter({
   ownershipData,
   setIsUpdating,
   promptMegaPokemonSelection,
-  promptFusionPokemonSelection, // <--- ADD this function to handle Fusion logic
+  promptFusionPokemonSelection,
 }) {
   const { confirm, alert } = useModal();
 
@@ -38,7 +43,6 @@ function useHandleMoveToFilter({
       }
     },
     [updateOwnership, setHighlightedCards, setIsUpdating]
-    // (If you want to auto-switch filters, add setOwnershipFilter to the dependency array above)
   );
 
   const handleConfirmMoveToFilter = useCallback(
@@ -48,7 +52,7 @@ function useHandleMoveToFilter({
 
       // We'll categorize the highlighted cards
       const megaPokemonKeys = [];
-      const fusionPokemonKeys = []; // <--- NEW array for Fusion
+      const fusionPokemonKeys = [];
       const regularPokemonKeys = [];
 
       // --- 1) Sort out Mega, Fusion, or regular ---
@@ -88,7 +92,7 @@ function useHandleMoveToFilter({
       // --- 2) If the user is moving to Trade or Wanted, block Mega or Fusion ---
       const isTradeOrWanted = filter === 'Trade' || filter === 'Wanted';
 
-      // NEW: Check for fused instances when moving to 'Unowned'
+      // Check for fused instances when moving to 'Unowned'
       if (filter === 'Unowned') {
         const fusedInstances = [];
         for (const pokemonKey of highlightedCards) {
@@ -114,7 +118,7 @@ function useHandleMoveToFilter({
         }
       }
 
-      // --- 2) If the user is moving to Trade or Wanted, block Mega, or Fusion ---
+      // Block Mega or Fusion if moving to Trade/Wanted
       if (isTradeOrWanted && megaPokemonKeys.length > 0) {
         const blockedMegaMsg = megaPokemonKeys
           .map(({ key }) => {
@@ -148,28 +152,18 @@ function useHandleMoveToFilter({
       }
 
       // --- 3) Prompt for user’s choice if we have any Mega or Fusion Pokémon ---
-      // We do them separately. Let's store skipped keys in arrays to show the user later.
       const skippedMegaPokemonKeys = [];
       const skippedFusionPokemonKeys = [];
 
-      // 3(a) Handle Mega Pokémon (only if not blocked above)
+      // 3(a) Handle Mega Pokémon
       if (megaPokemonKeys.length > 0) {
-        console.log('Handling Mega Pokémon...');
         for (const { key: pokemonKey, baseKey, megaForm } of megaPokemonKeys) {
           try {
-            console.log('Handling Mega Pokémon with baseKey:', baseKey, 'and megaForm:', megaForm);
-
-            // We'll call the external function you provided:
             const result = await promptMegaPokemonSelection(baseKey, megaForm);
-
             if (result === 'assignExisting' || result === 'createNew') {
-              // Remove from the set so we don't handle it again
               remainingHighlightedCards.delete(pokemonKey);
-              console.log(`Successfully handled Mega Pokémon: ${baseKey}`);
             } else {
-              // If the user canceled or something else, skip it
               skippedMegaPokemonKeys.push(baseKey);
-              console.log(`Skipped Mega Pokémon: ${baseKey}`);
               remainingHighlightedCards.delete(pokemonKey);
             }
           } catch (error) {
@@ -180,23 +174,15 @@ function useHandleMoveToFilter({
         }
       }
 
-      // 3(b) Handle Fusion Pokémon (only if not blocked above)
+      // 3(b) Handle Fusion Pokémon
       if (fusionPokemonKeys.length > 0) {
-        console.log('Handling Fusion Pokémon...');
         for (const { key: pokemonKey, baseKey } of fusionPokemonKeys) {
           try {
-            console.log('Handling Fusion Pokémon with baseKey:', baseKey);
-
-            // We'll call a new function you pass in, similar to promptMegaPokemonSelection:
             const result = await promptFusionPokemonSelection(baseKey);
-
-            // Suppose you return either 'fuseThis', 'cancel', or similar
             if (result === 'fuseThis' || result === 'assignFusion' || result === 'createNew') {
               remainingHighlightedCards.delete(pokemonKey);
-              console.log(`Successfully handled Fusion Pokémon: ${baseKey}`);
             } else {
               skippedFusionPokemonKeys.push(baseKey);
-              console.log(`Skipped Fusion Pokémon: ${baseKey}`);
               remainingHighlightedCards.delete(pokemonKey);
             }
           } catch (error) {
@@ -213,31 +199,28 @@ function useHandleMoveToFilter({
         const instance = ownershipData[pokemonKey];
 
         if (hasUUID && instance) {
-          const currentStatus = instance.is_unowned
-            ? 'Unowned'
-            : instance.is_for_trade
-            ? 'For Trade'
-            : instance.is_wanted
-            ? 'Wanted'
-            : instance.is_owned
-            ? 'Owned'
-            : 'Unknown';
+          // (NEW) Use our helper to get the 'from' status:
+          const currentStatus = getStatusFromInstance(instance);
+          const displayName =
+            instance.nickname || getDisplayName(baseKey, variants);
 
-          const displayName = instance.nickname || getDisplayName(baseKey, variants);
-          const actionDetail = `Move ${displayName} from ${currentStatus} to ${filter}`;
+          // (NEW) Use your dictionary-based message generator:
+          const actionDetail = getTransitionMessage(
+            currentStatus,
+            filter,
+            displayName
+          );
 
-          if (!messageDetails.includes(actionDetail)) {
-            messageDetails.push(actionDetail);
-          }
+          messageDetails.push(actionDetail);
         } else {
-          // If there's no instance, it implies we're adding brand-new ownership from the Pokedex
+          // If there's no instance, it implies a new record
           const displayName = getDisplayName(baseKey, variants);
           const actionDetail = `Generate ${displayName} from Pokédex to ${filter}`;
           messageDetails.push(actionDetail);
         }
       }
 
-      // --- 5) Confirmation for Regular Pokémon moves ---
+      // --- 5) Ask user to confirm any Regular Pokémon moves ---
       if (messageDetails.length > 0) {
         const maxDetails = 10;
         const hasMore = messageDetails.length > maxDetails;
@@ -266,15 +249,14 @@ function useHandleMoveToFilter({
         );
 
         const userConfirmed = await confirm(messageContent);
-        console.log('User confirmed:', userConfirmed);
-
         if (userConfirmed) {
-          console.log('Proceeding to move highlighted cards to filter.');
+          // Proceed with the move
           handleMoveHighlightedToFilter(filter, remainingHighlightedCards).catch((error) => {
             console.error('Error during ownership update:', error);
             alert('An error occurred while updating ownership. Please try again.');
           });
         } else {
+          // User canceled
           console.log('User canceled the operation.');
         }
       } else {
@@ -316,7 +298,7 @@ function useHandleMoveToFilter({
   };
 }
 
-// Helper function to get display name
+// (Unchanged) Helper function to get display name
 function getDisplayName(baseKey, variants) {
   const variant = variants.find((v) => v.pokemonKey === baseKey);
   return variant?.name || baseKey;

@@ -133,8 +133,8 @@
 }
 
 .proposed-trade-view .pokemon-types .type-icon {
-  width: 24px;
-  height: 24px;
+  width: 1rem;
+  height: auto;
 }
 
 /* Moves Container */
@@ -254,6 +254,10 @@
     grid-gap: 10px;
   }
 
+  .proposed-trade-view .weight-height-move-container {
+    gap: 5px;
+  }
+
   .proposed-trade-view .pokemon.offering,
   .proposed-trade-view .center-column,
   .proposed-trade-view .pokemon.received {
@@ -298,6 +302,10 @@
     padding: 10px;
     grid-template-columns: 1fr;
     grid-gap: 10px;
+  }
+
+  .proposed-trade-view .pokemon-types .type-icon {
+    width: 1.5rem;
   }
 
   .proposed-trade-view .pokemon.offering,
@@ -345,6 +353,10 @@
     display: none;
   }
 
+  .proposed-trade-view .pokemon-types .type-icon {
+    width: 1.5rem;
+  }
+
   .proposed-trade-view .details-content {
     position: relative;
     visibility: visible;
@@ -378,7 +390,15 @@
 
   .proposed-trade-view .details-content.offering-details,
   .proposed-trade-view .details-content.receiving-details {
-    background: #333;
+    background: transparent;
     border-radius: 8px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .proposed-trade-view .weight-height-move-container,
+  .proposed-trade-view .weight-height-move-container .moves-container .move p,
+  .proposed-trade-view .details-content p {
+    font-size: .85rem;
   }
 }

@@ -26,10 +26,7 @@ type UpdateUserResponse struct {
 }
 
 // UpdateUserHandler handles updating user details in the secondary database.
-// This replaces the old "UpdateUsernameHandler" and now supports
-// username, latitude, and longitude.
 func UpdateUserHandler(c *fiber.Ctx) error {
-	// Retrieve the user_id from the URL parameter
 	userID := c.Params("user_id")
 	if userID == "" {
 		logrus.Error("UpdateUserHandler: Missing user_id in URL parameters")
@@ -39,7 +36,6 @@ func UpdateUserHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	// Retrieve the authenticated user's ID from the JWT middleware
 	authenticatedUserID := c.Locals("user_id").(string)
 	if authenticatedUserID != userID {
 		logrus.Warnf("UpdateUserHandler: User %s attempted to update user %s",
@@ -50,7 +46,6 @@ func UpdateUserHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	// Parse the request body
 	var req UpdateUserRequest
 	if err := c.BodyParser(&req); err != nil {
 		logrus.Errorf("UpdateUserHandler: Failed to parse request body: %v", err)
@@ -60,10 +55,7 @@ func UpdateUserHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	// --- EXAMPLE VALIDATIONS ---
-
-	// Validate the new username
-	// (If you do not care about username validation, you can remove this)
+	// Simple validation for username length
 	if len(req.Username) < 3 || len(req.Username) > 30 {
 		logrus.Warnf("UpdateUserHandler: Username length validation failed for user %s", userID)
 		return c.Status(fiber.StatusBadRequest).JSON(UpdateUserResponse{
@@ -72,11 +64,9 @@ func UpdateUserHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	// Check if the new username is already taken in the secondary database
-	// (If you do not need unique usernames in your secondary DB, remove this)
+	// Check if the username already exists
 	var existingUser User
-	var err error
-	err = db.Where("username = ?", req.Username).First(&existingUser).Error
+	err := db.Where("username = ?", req.Username).First(&existingUser).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logrus.Errorf("UpdateUserHandler: Database error while checking existing username: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(UpdateUserResponse{
@@ -92,41 +82,37 @@ func UpdateUserHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	// Prepare the map of fields to update
 	updates := map[string]interface{}{
 		"username":  req.Username,
 		"latitude":  req.Latitude,
 		"longitude": req.Longitude,
 	}
 
-	// ------------------------------
+	// ---------------------------
 	//     ADDING RETRY LOGIC
-	// ------------------------------
+	// ---------------------------
 	const maxRetries = 3
 	var result *gorm.DB
 	var updateErr error
 
 	for i := 1; i <= maxRetries; i++ {
-		// Attempt to update
 		result = db.Model(&User{}).Where("user_id = ?", userID).Updates(updates)
 
 		if result.Error == nil {
-			// Success: break out of the retry loop
+			// Update was successful; break out of the retry loop
 			break
 		}
 
-		// If it's not a transient error, no point retrying
+		// Check if it's a transient error (like a bad connection)
 		if !isTransientError(result.Error) {
+			// Non-transient: no point in retrying
 			updateErr = result.Error
 			break
 		}
 
-		// Otherwise, we assume it's transient ("bad connection") -> retry
+		// It's a transient error; log and retry after a short sleep
 		logrus.Warnf("UpdateUserHandler: Transient DB error on attempt %d/%d: %v. Retrying...", i, maxRetries, result.Error)
-
-		// Sleep a bit before retrying—*very* simple backoff
-		sleepDuration := i // e.g., 1s, 2s, 3s
-		time.Sleep(time.Duration(sleepDuration) * time.Second)
+		time.Sleep(time.Duration(i) * time.Second) // simple linear backoff
 	}
 
 	// If we still have an error after retries, return
@@ -141,7 +127,7 @@ func UpdateUserHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	// At this point, the update succeeded or was never needed (RowsAffected=0).
+	// Check if the update affected any rows
 	if result.RowsAffected == 0 {
 		logrus.Warnf("UpdateUserHandler: No user found with user_id %s", userID)
 		return c.Status(fiber.StatusNotFound).JSON(UpdateUserResponse{
@@ -164,7 +150,6 @@ func UpdateUserHandler(c *fiber.Ctx) error {
 	logrus.Infof("UpdateUserHandler: User %s updated their username to '%s' and location to (%f, %f)",
 		userID, req.Username, req.Latitude, req.Longitude)
 
-	// Respond with the updated user details
 	return c.Status(fiber.StatusOK).JSON(UpdateUserResponse{
 		Success: true,
 		Message: "User updated successfully",

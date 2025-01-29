@@ -197,13 +197,17 @@ import React, {
 
     // Add this useEffect to monitor isLoggedIn and close SSE if it becomes false
     useEffect(() => {
+      // 1) If we are still loading auth, do nothing yet:
+      if (isAuthLoading) return;
+    
+      // 2) Now that we know auth is done loading,
+      //    if user truly isn't logged in, close SSE:
       if (!isLoggedIn) {
         console.log('isLoggedIn is false, closing SSE connection...');
         closeSSEConnection();
-        // Optionally, you can also clear the hasInitializedRef so SSE can reinitialize when logging back in
         hasInitializedRef.current = false;
       }
-    }, [isLoggedIn, closeSSEConnection]);
+    }, [isLoggedIn, isAuthLoading, closeSSEConnection]);
   
     // -- 9) Provide any SSE-related state or methods if needed
     return (
