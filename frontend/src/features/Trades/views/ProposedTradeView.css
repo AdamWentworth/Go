@@ -1,3 +1,5 @@
+/* ProposedTradeView.css */
+
 /* Base Layout */
 .proposed-trade-view .trade-pokemon {
   display: grid;
@@ -23,16 +25,26 @@
   grid-column: 1 / 3;
 }
 
-/* Content Layout */
-.proposed-trade-view .pokemon.offering .pokemon-content,
-.proposed-trade-view .pokemon.received .pokemon-content {
+/* Updated Pokemon Content Layout */
+.proposed-trade-view .pokemon .pokemon-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   grid-column: 1 / 3;
 }
 
-.proposed-trade-view .pokemon.offering .static-content {
-  grid-column: 1 / 3;
+.proposed-trade-view .pokemon.has-details .pokemon-content {
+  grid-template-columns: 1fr 1fr;
+}
+
+.proposed-trade-view .pokemon.no-details .pokemon-content {
+  grid-template-columns: 1fr;
+}
+
+.proposed-trade-view .pokemon.no-details .static-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Center Column */
@@ -92,8 +104,7 @@
 
 .proposed-trade-view .weight-height-move-container,
 .proposed-trade-view .weight-height-move-container .moves-container .move p,
-.proposed-trade-view .details-content p
- {
+.proposed-trade-view .details-content p {
   font-size: 0.75rem;
 }
 
@@ -150,8 +161,7 @@
   height: auto;
 }
 
-
-/* Toggle Details Button - Hidden by default */
+/* Toggle Details Button */
 .proposed-trade-view .toggle-details-button {
   display: none;
   margin-top: 10px;
@@ -192,61 +202,16 @@
   color: #000;
 }
 
-/* Details Content Overlay */
+/* Details Content */
 .proposed-trade-view .details-content {
-  position: absolute;
-  background: #333;
-  color: #fff; /* Ensures readability */
-  
-  /* Stronger shadow for more depth */
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5), 
-              inset 0 2px 4px rgba(255, 255, 255, 0.1); /* Inner light emboss */
-  
-  border-radius: 12px; /* Soft rounded corners */
-  
-  /* 3D effect */
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  outline: 2px solid rgba(0, 0, 0, 0.6);
-
-  transition: transform 0.3s ease, opacity 0.3s ease;
-  z-index: 1001;
-  overflow-y: auto;
+  position: relative;
+  background: transparent;
+  color: inherit;
   padding: 5px;
   box-sizing: border-box;
 }
 
-/* Offering Details */
-.proposed-trade-view .offering-details {
-  right: 0;
-  transform: translateX(100%);
-  visibility: hidden;
-  opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.proposed-trade-view .offering-details.visible {
-  transform: translateX(100%);
-  visibility: visible;
-  opacity: 1;
-}
-
-/* Receiving Details */
-.proposed-trade-view .receiving-details {
-  left: 0;
-  transform: translateX(-100%);
-  visibility: hidden;
-  opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.proposed-trade-view .receiving-details.visible {
-  transform: translateX(-100%);
-  visibility: visible;
-  opacity: 1;
-}
-
 /* Media Queries */
-/* Small tablets and large phones (480px and below) */
 @media (max-width: 480px) {
   .proposed-trade-view .trade-pokemon {
     padding: 10px;
@@ -267,8 +232,8 @@
     align-items: center;
   }
 
-  .proposed-trade-view .pokemon.offering .pokemon-content,
-  .proposed-trade-view .pokemon.received .pokemon-content {
+  .proposed-trade-view .pokemon.has-details .pokemon-content,
+  .proposed-trade-view .pokemon.no-details .pokemon-content {
     grid-template-columns: 1fr;
   }
 
@@ -291,9 +256,24 @@
     height: 40px;
   }
 
-  .proposed-trade-view .toggle-details-button {
-    margin: 10px auto;
-    padding: 0.25rem 0.5rem;
+  .proposed-trade-view .details-content {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: #333;
+    color: #fff;
+    padding: 15px;
+    z-index: 1001;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0.3s, opacity 0.3s;
+  }
+
+  .proposed-trade-view .details-content.visible {
+    visibility: visible;
+    opacity: 1;
   }
 }
 
@@ -317,8 +297,8 @@
     align-items: center;
   }
 
-  .proposed-trade-view .pokemon.offering .pokemon-content,
-  .proposed-trade-view .pokemon.received .pokemon-content {
+  .proposed-trade-view .pokemon.has-details .pokemon-content,
+  .proposed-trade-view .pokemon.no-details .pokemon-content {
     grid-template-columns: 1fr;
   }
 
@@ -331,30 +311,43 @@
     position: relative;
   }
 
+  .proposed-trade-view .details-content {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: #333;
+    color: #fff;
+    padding: 15px;
+    z-index: 1001;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0.3s, opacity 0.3s;
+  }
+
+  .proposed-trade-view .details-content.visible {
+    visibility: visible;
+    opacity: 1;
+  }
+
   .proposed-trade-view .toggle-details-button {
     display: flex;
     justify-content: center;
     align-items: center;
     margin: 10px auto;
     padding: 0.5rem 1rem;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
     width: fit-content;
   }
 }
 
-/* Large screens (1024px and above) */
 @media (min-width: 1024px) {
-  .proposed-trade-view .toggle-details-button {
-    display: none;
-  }
-
   .proposed-trade-view .pokemon-types .type-icon {
     width: 1.5rem;
+  }
+
+  .proposed-trade-view .toggle-details-button {
+    display: none;
   }
 
   .proposed-trade-view .details-content {
@@ -362,36 +355,12 @@
     visibility: visible;
     opacity: 1;
     transform: none;
-    display: block;
-    background: none;
-    box-shadow: none;
-    border-radius: none;
-    border: none;
-    outline: none;
-    padding: 0;
-    transition: none;
-    z-index: unset;
-    overflow-y: unset;
-    box-sizing: unset;
-    padding: unset;
     align-self: center;
-    margin: 10px;
-  }
-
-  .proposed-trade-view .pokemon.offering .pokemon-content,
-  .proposed-trade-view .pokemon.received .pokemon-content {
-    grid-template-columns: 1fr 1fr;
   }
 
   .proposed-trade-view .trade-pokemon {
     grid-template-columns: repeat(2, 1fr) auto repeat(2, 1fr);
     grid-gap: 20px;
-  }
-
-  .proposed-trade-view .details-content.offering-details,
-  .proposed-trade-view .details-content.receiving-details {
-    background: transparent;
-    border-radius: 8px;
   }
 }
 

@@ -5,6 +5,10 @@ import { useTradeData } from '../../contexts/TradeDataContext';
 //hooks
 import { useOfferingDetails } from './hooks/useOfferingDetails';
 import { useReceivingDetails } from './hooks/useReceivingDetails';
+
+import { useForTradeDetails } from './hooks/useForTradeDetails'
+import { useOfferedDetails } from './hooks/useOfferedDetails'
+
 //views
 import ProposedTradeView from './views/ProposedTradeView';
 import OffersTradeView from './views/OffersTradeView';
@@ -25,8 +29,13 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
   const { setOwnershipData, variants, ownershipData, loading, periodicUpdates } = usePokemonData();
   const { setTradeData, trades } = useTradeData();
 
+  // Proposed View
   const offeringDetails = useOfferingDetails(trade, variants, ownershipData);
   const receivingCombinedDetails = useReceivingDetails(trade, variants, relatedInstances);
+
+  //Offers View
+  const forTradeDetails = useForTradeDetails(trade, variants, ownershipData);
+  const offeredDetails = useOfferedDetails(trade, variants, relatedInstances);
 
   // Use the imported utility function for handleAccept
   const handleAccept = async () => {
@@ -65,11 +74,11 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
 
   if (selectedStatus.toLowerCase() === 'accepting') {
     return (
-      <OffersTradeView
+        <OffersTradeView
         trade={trade}
         currentUsername={currentUsername}
-        offeringDetails={offeringDetails}
-        receivingCombinedDetails={receivingCombinedDetails}
+        forTradeDetails={forTradeDetails}
+        offeredDetails={offeredDetails}
         loading={loading}
         handleAccept={handleAccept}
         handleDeny={handleDeny}

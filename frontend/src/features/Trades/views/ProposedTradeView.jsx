@@ -1,3 +1,5 @@
+// ProposedTradeView.jsx
+
 import React, { useEffect, useState } from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import MoveDisplay from '../../Discover/views/ListViewComponents/MoveDisplay';
@@ -95,47 +97,53 @@ const ProposedTradeView = ({
         {details.date_caught && <p><strong>Date Caught:</strong> {formatDate(details.date_caught)}</p>}
       </>
     );
-  };  
+  };
+
+  const renderPokemonSection = (details, section, heading, username) => {
+    const hasDetailsToShow = details && hasDetails(details);
+    const sectionClass = `pokemon ${section} ${hasDetailsToShow ? 'has-details' : 'no-details'}`;
+
+    return (
+      <div className={sectionClass}>
+        <div className="headers">
+          {username && <p className="receiving-username">{username}</p>}
+          <h4>{heading}</h4>
+        </div>
+
+        <div className="pokemon-content">
+          <div className="static-content">
+            {details ? (
+              <>
+                <div className="pokemon-image-container">
+                  <img src={details.currentImage || details.pokemon_image_url} alt={details.name || `${section} Pokémon`} />
+                </div>
+                <p className="pokemon-name">{details.name || 'Unknown Pokémon'}</p>
+                <div className="pokemon-types">
+                  {details.type_1_icon && <img src={details.type_1_icon} alt="Type 1" className="type-icon" />}
+                  {details.type_2_icon && <img src={details.type_2_icon} alt="Type 2" className="type-icon" />}
+                </div>
+              </>
+            ) : loading ? <LoadingSpinner /> : <p>Could not load {section} details.</p>}
+            {details && <button className="toggle-details-button" onClick={() => toggleDetails(section)}>
+              {visibleDetails[section] ? 'Hide Details' : 'Show Details'}
+            </button>}
+          </div>
+
+          {hasDetailsToShow && (
+            <div className={`details-content ${section}-details ${visibleDetails[section] ? 'visible' : ''}`}>
+              {renderPokemonDetails(details, visibleDetails[section])}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="trade-card proposed-trade-view">
       <div className="trade-pokemon">
-        {/* Offering Section */}
-        <div className="pokemon offering">
-          <div className="headers">
-            {trade.username_proposed && <p className="receiving-username">{trade.username_proposed}</p>}
-            <h4>{offeringHeading}</h4>
-          </div>
-
-          <div className="pokemon-content">
-            <div className="static-content">
-              {offeringDetails ? (
-                <>
-                  <div className="pokemon-image-container">
-                    <img src={offeringDetails.currentImage} alt={offeringDetails.name || 'Offering Pokémon'} />
-                  </div>
-                  <p className="pokemon-name">{offeringDetails.name || 'Unknown Pokémon'}</p>
-                  <div className="pokemon-types">
-                    {offeringDetails.type_1_icon && <img src={offeringDetails.type_1_icon} alt="Type 1" className="type-icon" />}
-                    {offeringDetails.type_2_icon && <img src={offeringDetails.type_2_icon} alt="Type 2" className="type-icon" />}
-                  </div>
-                </>
-              ) : loading ? <LoadingSpinner /> : <p>Could not load offering details.</p>}
-              {offeringDetails && <button className="toggle-details-button" onClick={() => toggleDetails('offering')}>
-                {visibleDetails.offering ? 'Hide Details' : 'Show Details'}
-              </button>}
-            </div>
-
-            {/* Only render details content if there are details or if we need to show "No additional details" */}
-            {offeringDetails && (visibleDetails.offering || hasDetails(offeringDetails)) && (
-              <div className={`details-content offering-details ${visibleDetails.offering ? 'visible' : ''}`}>
-                {renderPokemonDetails(offeringDetails, visibleDetails.offering)}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Trade Actions */}
+        {renderPokemonSection(offeringDetails, 'offering', offeringHeading, trade.username_proposed)}
+        
         <div className="center-column">
           <div className="trade-icon">
             <img src="/images/pogo_trade_icon.png" alt="Trade Icon" />
@@ -145,40 +153,7 @@ const ProposedTradeView = ({
           </div>
         </div>
 
-        {/* Receiving Section */}
-        <div className="pokemon received">
-          <div className="headers">
-            {trade.username_accepting && <p className="receiving-username">{trade.username_accepting}</p>}
-            <h4>{receivingHeading}</h4>
-          </div>
-
-          <div className="pokemon-content">
-            <div className="static-content">
-              {receivingCombinedDetails ? (
-                <>
-                  <div className="pokemon-image-container">
-                    <img src={receivingCombinedDetails.currentImage || receivingCombinedDetails.pokemon_image_url} alt={receivingCombinedDetails.name || 'Receiving Pokémon'} />
-                  </div>
-                  <p className="pokemon-name">{receivingCombinedDetails.name || 'Unknown Pokémon'}</p>
-                  <div className="pokemon-types">
-                    {receivingCombinedDetails.type_1_icon && <img src={receivingCombinedDetails.type_1_icon} alt="Type 1" className="type-icon" />}
-                    {receivingCombinedDetails.type_2_icon && <img src={receivingCombinedDetails.type_2_icon} alt="Type 2" className="type-icon" />}
-                  </div>
-                </>
-              ) : loading ? <LoadingSpinner /> : <p>Could not load receiving details.</p>}
-              {receivingCombinedDetails && <button className="toggle-details-button" onClick={() => toggleDetails('receiving')}>
-                {visibleDetails.receiving ? 'Hide Details' : 'Show Details'}
-              </button>}
-            </div>
-
-            {/* Only render details content if there are details or if we need to show "No additional details" */}
-            {receivingCombinedDetails && (visibleDetails.receiving || hasDetails(receivingCombinedDetails)) && (
-              <div className={`details-content receiving-details ${visibleDetails.receiving ? 'visible' : ''}`}>
-                {renderPokemonDetails(receivingCombinedDetails, visibleDetails.receiving)}
-              </div>
-            )}
-          </div>
-        </div>
+        {renderPokemonSection(receivingCombinedDetails, 'received', receivingHeading, trade.username_accepting)}
       </div>
     </div>
   );
