@@ -46,8 +46,8 @@ const ProposedTradeView = ({
   });
 
   useEffect(() => {
-    if (offeringDetails) console.log('Offering Details:', offeringDetails);
-    if (receivingCombinedDetails) console.log('Receiving Details:', receivingCombinedDetails);
+      console.log('Offering Details:', offeringDetails);
+      console.log('Receiving Details:', receivingCombinedDetails);
   }, [offeringDetails, receivingCombinedDetails]);
 
   const toggleDetails = (section) => {
@@ -115,7 +115,14 @@ const ProposedTradeView = ({
             {details ? (
               <>
                 <div className="pokemon-image-container">
-                  <img src={details.currentImage || details.pokemon_image_url} alt={details.name || `${section} Pokémon`} />
+                {details && (details.currentImage || details.pokemon_image_url) ? (
+                  <img
+                    src={details.currentImage || details.pokemon_image_url}
+                    alt={details.name || `${section} Pokémon`}
+                  />
+                ) : (
+                  <p>No image available.</p>
+                )}
                 </div>
                 <p className="pokemon-name">{details.name || 'Unknown Pokémon'}</p>
                 <div className="pokemon-types">

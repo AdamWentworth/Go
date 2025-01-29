@@ -1,80 +1,100 @@
 // TradeCard.jsx
+
 import React from 'react';
-import { usePokemonData } from '../../contexts/PokemonDataContext';
 import { useTradeData } from '../../contexts/TradeDataContext';
-//hooks
+// hooks
 import { useOfferingDetails } from './hooks/useOfferingDetails';
 import { useReceivingDetails } from './hooks/useReceivingDetails';
+import { useForTradeDetails } from './hooks/useForTradeDetails';
+import { useOfferedDetails } from './hooks/useOfferedDetails';
 
-import { useForTradeDetails } from './hooks/useForTradeDetails'
-import { useOfferedDetails } from './hooks/useOfferedDetails'
-
-//views
+// views
 import ProposedTradeView from './views/ProposedTradeView';
 import OffersTradeView from './views/OffersTradeView';
 import PendingTradeView from './views/PendingTradeView';
 import CancelledTradeView from './views/CancelledTradeView';
-import CompletedTradeView from './views/CompletedTradeView'
-//handlers
+import CompletedTradeView from './views/CompletedTradeView';
+
+// handlers
 import { handleAcceptTrade } from './handlers/handleAcceptTrade';
 import { handleDenyTrade } from './handlers/handleDenyTrade';
 import { handleDeleteTrade } from './handlers/handleDeleteTrade';
 import { handleCancelTrade } from './handlers/handleCancelTrade';
 import { handleReProposeTrade } from './handlers/handleReProposeTrade';
 import { handleCompleteTrade } from './handlers/handleCompleteTrade';
-import { handleThumbsUpTrade } from './handlers/handleThumbsUpTrade'
+import { handleThumbsUpTrade } from './handlers/handleThumbsUpTrade';
+
 import './TradeCard.css';
 
-function TradeCard({ trade, relatedInstances, selectedStatus }) {
-  const { setOwnershipData, variants, ownershipData, loading, periodicUpdates } = usePokemonData();
+function TradeCard({
+  trade,
+  relatedInstances,
+  selectedStatus,
+  // The props formerly from usePokemonData, now passed in
+  setOwnershipData,
+  variants,
+  ownershipData,
+  loading,
+  periodicUpdates
+}) {
   const { setTradeData, trades } = useTradeData();
+
+  const storedUser = localStorage.getItem('user');
+  const currentUsername = storedUser ? JSON.parse(storedUser).username : '';
 
   // Proposed View
   const offeringDetails = useOfferingDetails(trade, variants, ownershipData);
   const receivingCombinedDetails = useReceivingDetails(trade, variants, relatedInstances);
 
-  //Offers View
+  // Offers View
   const forTradeDetails = useForTradeDetails(trade, variants, ownershipData);
   const offeredDetails = useOfferedDetails(trade, variants, relatedInstances);
 
-  // Use the imported utility function for handleAccept
+  // Accepting or Denying the trade
   const handleAccept = async () => {
     await handleAcceptTrade({ trade, trades, setTradeData, periodicUpdates });
   };
-
   const handleDeny = async () => {
     await handleDenyTrade({ trade, trades, setTradeData, periodicUpdates });
   };
 
+  // Deleting or Completing the trade
   const handleDelete = async () => {
     await handleDeleteTrade({ trade, trades, setTradeData, periodicUpdates });
   };
   const handleComplete = async () => {
-    await handleCompleteTrade({ trade, trades, setTradeData, periodicUpdates, relatedInstances, ownershipData, setOwnershipData, currentUsername });
+    await handleCompleteTrade({
+      trade,
+      trades,
+      setTradeData,
+      periodicUpdates,
+      relatedInstances,
+      ownershipData,
+      setOwnershipData,
+      currentUsername
+    });
   };
 
+  // Cancelling / Re-Proposing / Thumbs Up
   const handleCancel = async () => {
     await handleCancelTrade({ trade, trades, setTradeData, periodicUpdates, currentUsername });
   };
-
   const handleRePropose = async () => {
     await handleReProposeTrade({ trade, trades, setTradeData, periodicUpdates, currentUsername });
   };
-
   const handleThumbsUp = async () => {
     await handleThumbsUpTrade({ trade, trades, setTradeData, periodicUpdates, currentUsername });
   };
 
-  const storedUser = localStorage.getItem('user');
-  const currentUsername = storedUser ? JSON.parse(storedUser).username : '';
-
+  // Determine headings (depending on selectedStatus)
   const isProposed = selectedStatus.toLowerCase() === 'proposed';
   const offeringHeading = isProposed ? 'Offered:' : 'Offering:';
   const receivingHeading = isProposed ? 'For Trade:' : 'Receiving:';
 
+  // Render conditionally based on selectedStatus
   if (selectedStatus.toLowerCase() === 'accepting') {
     return (
-        <OffersTradeView
+      <OffersTradeView
         trade={trade}
         currentUsername={currentUsername}
         forTradeDetails={forTradeDetails}
@@ -124,6 +144,7 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
       />
     );
   }
+
   if (selectedStatus.toLowerCase() === 'completed') {
     return (
       <CompletedTradeView
@@ -134,11 +155,12 @@ function TradeCard({ trade, relatedInstances, selectedStatus }) {
         handleThumbsUp={handleThumbsUp}
       />
     );
-  }  
+  }
 
+  // Default fallback (if any other status)
   return (
     <div className="trade-card">
-      {/* Default or other status rendering logic */}
+      {/* Render something if desired */}
     </div>
   );
 }
