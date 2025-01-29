@@ -34,7 +34,7 @@
 /* ====================================
    Friendship Manager
    ==================================== */
-.friendship-manager {
+   .trade-proposal-overlay .friendship-manager {
     width: 50%;
     margin: 0 auto;
     text-align: center;
@@ -90,7 +90,7 @@
     width: 100%;
 }
 
-.image-wrapper {
+.trade-proposal-overlay .image-wrapper {
     position: relative;
     width: 16rem;
     aspect-ratio: 1 / 1;
@@ -196,7 +196,7 @@
         width: 100%
     }
     
-    .image-wrapper {
+    .trade-proposal-overlay .image-wrapper {
         width: 8rem;
     }
     

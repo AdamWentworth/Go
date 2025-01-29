@@ -225,3 +225,10 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
         </>
     );
 };
+
+// Utility function to format dates
+export const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown Date';
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };

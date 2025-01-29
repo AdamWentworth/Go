@@ -4,32 +4,11 @@ import React, { useEffect, useState } from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import MoveDisplay from '../../Discover/views/ListViewComponents/MoveDisplay';
 import IVDisplay from '../../Discover/views/ListViewComponents/IVDisplay';
+import FriendshipLevel from '../../Discover/views/ListViewComponents/FriendshipLevel';
+import { TRADE_FRIENDSHIP_LEVELS } from '../../../services/indexedDB';
+import { formatDate } from '../../../utils/formattingHelpers';
+import { hasDetails } from '../helpers/hasDetails';
 import './ProposedTradeView.css';
-
-// Utility function to format dates
-const formatDate = (dateString) => {
-  if (!dateString) return 'Unknown Date';
-  const options = { year: 'numeric', month: 'long', day: 'numeric' };
-  return new Date(dateString).toLocaleDateString(undefined, options);
-};
-
-// Function to check if a Pokémon has any details
-const hasDetails = (pokemon) => {
-  if (!pokemon) return false;
-  
-  return (
-    pokemon.weight ||
-    pokemon.height ||
-    pokemon.fast_move_id ||
-    pokemon.charged_move1_id ||
-    pokemon.charged_move2_id ||
-    pokemon.attack_iv !== null ||
-    pokemon.defense_iv !== null ||
-    pokemon.stamina_iv !== null ||
-    pokemon.location_caught ||
-    pokemon.date_caught
-  );
-};
 
 const ProposedTradeView = ({
   trade,
@@ -45,9 +24,29 @@ const ProposedTradeView = ({
     receiving: false,
   });
 
+  // Convert friendship level string to integer
+  const reversedFriendshipLevels = Object.entries(TRADE_FRIENDSHIP_LEVELS).reduce((acc, [key, value]) => {
+    acc[value] = parseInt(key, 10);
+    return acc;
+  }, {});
+
+  const friendshipLevel = reversedFriendshipLevels[trade.trade_friendship_level] || 0;
+
   useEffect(() => {
-      console.log('Offering Details:', offeringDetails);
-      console.log('Receiving Details:', receivingCombinedDetails);
+    if (offeringDetails) {
+      console.log('Offering Details Structure:', {
+      section: 'offering',
+      hasDetails: hasDetails(offeringDetails, 'offering'),
+      name: offeringDetails?.name
+    });
+  }
+  if (receivingCombinedDetails) {
+      console.log('Receiving Details Structure:', {
+      section: 'received',
+      hasDetails: hasDetails(receivingCombinedDetails, 'received'),
+      name: receivingCombinedDetails?.name
+    });
+  }
   }, [offeringDetails, receivingCombinedDetails]);
 
   const toggleDetails = (section) => {
@@ -57,9 +56,9 @@ const ProposedTradeView = ({
     }));
   };
 
-  const renderPokemonDetails = (details, isVisible) => {
+  const renderPokemonDetails = (details, isVisible, section) => {
     if (!details) return null;
-    if (!hasDetails(details)) {
+    if (!hasDetails(details, section)) {
       return isVisible ? <p>No additional details available.</p> : null;
     }
   
@@ -82,6 +81,7 @@ const ProposedTradeView = ({
                 chargedMove1Id={details.charged_move1_id}
                 chargedMove2Id={details.charged_move2_id}
                 moves={details.moves}
+                pokemonId={details.pokemon_id} // Add this if needed
               />
             )}
             {details.height && (
@@ -100,9 +100,9 @@ const ProposedTradeView = ({
   };
 
   const renderPokemonSection = (details, section, heading, username) => {
-    const hasDetailsToShow = details && hasDetails(details);
+    const hasDetailsToShow = details && hasDetails(details, section);
     const sectionClass = `pokemon ${section} ${hasDetailsToShow ? 'has-details' : 'no-details'}`;
-
+  
     return (
       <div className={sectionClass}>
         <div className="headers">
@@ -115,14 +115,26 @@ const ProposedTradeView = ({
             {details ? (
               <>
                 <div className="pokemon-image-container">
-                {details && (details.currentImage || details.pokemon_image_url) ? (
-                  <img
-                    src={details.currentImage || details.pokemon_image_url}
-                    alt={details.name || `${section} Pokémon`}
-                  />
-                ) : (
-                  <p>No image available.</p>
-                )}
+                  <div className="image-wrapper">
+                    {trade.is_lucky_trade && (
+                      <div className="lucky-backdrop-wrapper">
+                        <img
+                          src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                          alt="Lucky backdrop"
+                          className="lucky-backdrop"
+                        />
+                      </div>
+                    )}
+                    {details && (details.currentImage || details.pokemon_image_url) ? (
+                      <img
+                        src={details.currentImage || details.pokemon_image_url}
+                        alt={details.name || `${section} Pokémon`}
+                        className="pokemon-image"
+                      />
+                    ) : (
+                      <p>No image available.</p>
+                    )}
+                  </div>
                 </div>
                 <p className="pokemon-name">{details.name || 'Unknown Pokémon'}</p>
                 <div className="pokemon-types">
@@ -136,11 +148,9 @@ const ProposedTradeView = ({
             </button>}
           </div>
 
-          {hasDetailsToShow && (
             <div className={`details-content ${section}-details ${visibleDetails[section] ? 'visible' : ''}`}>
-              {renderPokemonDetails(details, visibleDetails[section])}
-            </div>
-          )}
+            {renderPokemonDetails(details, visibleDetails[section], section)}
+          </div>
         </div>
       </div>
     );
@@ -152,8 +162,22 @@ const ProposedTradeView = ({
         {renderPokemonSection(offeringDetails, 'offering', offeringHeading, trade.username_proposed)}
         
         <div className="center-column">
+          <FriendshipLevel 
+            level={friendshipLevel} 
+            prefLucky={trade.is_lucky_trade}
+          />
           <div className="trade-icon">
             <img src="/images/pogo_trade_icon.png" alt="Trade Icon" />
+          </div>
+          <div className="stardust-display">
+            <img 
+              src={`/images/stardust.png`} 
+              alt="Stardust" 
+              className="stardust-icon"
+            />
+            <span className="stardust-cost">
+              {trade.trade_dust_cost?.toLocaleString() || '0'}
+            </span>
           </div>
           <div className="trade-actions">
             <button className="delete-button" onClick={handleDelete}>Delete</button>

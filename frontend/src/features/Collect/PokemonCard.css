@@ -33,7 +33,6 @@
 }
 
 .pokemon-card .pokemon-image-container img {
-    margin-top: 5px;
     filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
 }
 
@@ -119,7 +118,6 @@
 
 .pokemon-card .pokemon-image-container img {
     max-width: 100%;
-    height: auto;
 }
 
 .pokemon-card.highlighted {
