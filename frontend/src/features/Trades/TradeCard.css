@@ -102,9 +102,10 @@
   pointer-events: none;
 }
 
-.trade-card .pokemon-image-container img:not(.lucky-backdrop) {
-  position: relative;
-  z-index: 2;
+.trade-card .list-view-gender-icon {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
 }
 
 /* Hearts, lucky container images */
@@ -197,7 +198,6 @@
   display: flex;
   justify-content: center;
   gap: 5px;
-  margin-bottom: 8px;
 }
 
 .trade-card .pokemon-types .type-icon {
@@ -320,7 +320,7 @@
 
   .trade-card .toggle-details-button {
     display: block;
-    margin: 0 auto;
+    margin: 5px auto;
     padding: 8px 6px;
     font-size: 0.75rem;
   }
@@ -335,8 +335,6 @@
   /* Overriding details-content to be a modal-like popup */
   .trade-card .details-content {
     position: absolute;
-    left: 0;
-    right: 0;
     background: #333;
     color: #fff;
     padding: 15px;
@@ -353,6 +351,18 @@
     opacity: 1;
   }
 
+  .trade-card .details-content.offering-details,
+  .trade-card .details-content.for-trade-details {
+    left: 100%;
+    transform: translateX(0%);
+  }
+
+  .trade-card .details-content.received-details,
+  .trade-card .details-content.offered-details {
+    left: 0%;
+    transform: translateX(-100%);
+  }
+
   /* Tighten up text a bit */
   .trade-card p,
   .trade-card h4 {
@@ -360,6 +370,12 @@
     margin-block-end: 2px;
     font-size: 0.45rem;
   }
+
+  .trade-card .list-view-gender-icon {
+    height: 16px;
+    width: auto;
+  }
+  
 }
 
 /* ————— From 481px to 767px ————— */
@@ -413,8 +429,6 @@
   /* Modal-like details content again */
   .trade-card .details-content {
     position: absolute;
-    left: 0;
-    right: 0;
     background: #333;
     color: #fff;
     padding: 15px;
@@ -429,6 +443,18 @@
   .trade-card .details-content.visible {
     visibility: visible;
     opacity: 1;
+  }
+
+  .trade-card .details-content.offering-details,
+  .trade-card .details-content.for-trade-details {
+    left: 100%;
+    transform: translateX(0%);
+  }
+
+  .trade-card .details-content.received-details,
+  .trade-card .details-content.offered-details {
+    left: 0%;
+    transform: translateX(-100%);
   }
 
   /* Center the toggle button more nicely */
