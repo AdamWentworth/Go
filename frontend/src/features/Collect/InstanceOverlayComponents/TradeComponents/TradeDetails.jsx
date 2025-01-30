@@ -336,6 +336,7 @@ const TradeDetails = ({
 
     const mergedPokemonData = {
       ...variantData,
+      pokemonKey: pokemonKey,
       ownershipStatus: {
         ...variantData.ownershipStatus,
         ...ownershipDataEntry,
@@ -343,6 +344,7 @@ const TradeDetails = ({
     };
 
     // 3) This is your existing "openWantedOverlay" for the clicked Pokémon
+    // console.log(mergedPokemonData)
     openWantedOverlay(mergedPokemonData);
   };
 

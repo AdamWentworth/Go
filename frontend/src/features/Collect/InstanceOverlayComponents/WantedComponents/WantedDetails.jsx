@@ -124,6 +124,7 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, open
         }
         const mergedPokemonData = {
             ...variantData,
+            pokemonKey: pokemonKey,
             ownershipStatus: {
                 ...variantData.ownershipStatus,
                 ...ownershipDataEntry,

@@ -236,6 +236,8 @@ const TradeInstance = ({ pokemon, isEditable }) => {
     return background.costume_id === parseInt(variantTypeId, 10);
   });
 
+  // console.log(pokemon.pokemonKey)
+
   // --- 4) Validate in toggleEditMode just like OwnedInstance
   const toggleEditMode = async () => {
     if (editMode) {

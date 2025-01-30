@@ -117,7 +117,6 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
                         style={{ position: 'relative', overflow: 'hidden' }}
                         onClick={() => {
                             if (!editMode) {
-                                // Only trigger onPokemonClick when not in edit mode
                                 console.log(`Clicked Pokemon Key: ${pokemon.key}`);
                                 onPokemonClick(pokemon.key);
                             }
@@ -128,14 +127,36 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
                                 src={`${process.env.PUBLIC_URL}/images/lucky.png`}
                                 className={backdropClasses}
                                 alt="Lucky backdrop"
+                                style={{ /* existing styles */ }}
+                            />
+                        )}
+                        {/* Dynamax Icon */}
+                        {pokemon.variantType?.includes('dynamax') && (
+                            <img
+                                src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
+                                alt="Dynamax"
                                 style={{
                                     position: 'absolute',
-                                    top: '50%',
-                                    left: '50%',
-                                    width: '75%',
+                                    top: '0',
+                                    right: '3%',
+                                    width: '30%',
                                     height: 'auto',
-                                    transform: 'translate(-50%, -50%)',
-                                    zIndex: 1,
+                                    zIndex: 0,
+                                }}
+                            />
+                        )}
+                        {/* Gigantamax Icon */}
+                        {pokemon.variantType?.includes('gigantamax') && (
+                            <img
+                                src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
+                                alt="Gigantamax"
+                                style={{
+                                    position: 'absolute',
+                                    top: '0',
+                                    right: '3%',
+                                    width: '30%',
+                                    height: 'auto',
+                                    zIndex: 0,
                                 }}
                             />
                         )}

@@ -96,6 +96,36 @@ const TradeListDisplay = ({ pokemon, lists, localNotTradeList, setLocalNotTradeL
                             }
                         }}
                     >
+                        {/* Dynamax Icon */}
+                        {pokemon.variantType?.includes('dynamax') && (
+                            <img
+                                src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
+                                alt="Dynamax"
+                                style={{
+                                    position: 'absolute',
+                                    top: '0',
+                                    right: '3%',
+                                    width: '30%',
+                                    height: 'auto',
+                                    zIndex: 0,
+                                }}
+                            />
+                        )}
+                        {/* Gigantamax Icon */}
+                        {pokemon.variantType?.includes('gigantamax') && (
+                            <img
+                                src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
+                                alt="Gigantamax"
+                                style={{
+                                    position: 'absolute',
+                                    top: '0',
+                                    right: '3%',
+                                    width: '30%',
+                                    height: 'auto',
+                                    zIndex: 0,
+                                }}
+                            />
+                        )}
                         <img 
                             src={pokemon.image_url}
                             alt={`Trade Pokémon ${pokemon.name}`}
