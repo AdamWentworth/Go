@@ -3,10 +3,7 @@
 import React from 'react';
 import { useTradeData } from '../../contexts/TradeDataContext';
 // hooks
-import { useOfferingDetails } from './hooks/useOfferingDetails';
-import { useReceivingDetails } from './hooks/useReceivingDetails';
-import { useForTradeDetails } from './hooks/useForTradeDetails';
-import { useOfferedDetails } from './hooks/useOfferedDetails';
+import { usePokemonDetails } from './hooks/usePokemonDetails';
 
 // views
 import ProposedTradeView from './views/ProposedTradeView';
@@ -41,13 +38,35 @@ function TradeCard({
   const storedUser = localStorage.getItem('user');
   const currentUsername = storedUser ? JSON.parse(storedUser).username : '';
 
-  // Proposed View
-  const offeringDetails = useOfferingDetails(trade, variants, ownershipData);
-  const receivingCombinedDetails = useReceivingDetails(trade, variants, relatedInstances);
+  // Determine user role early
+  const isCurrentUserProposer = trade.username_proposed === currentUsername;
 
-  // Offers View
-  const forTradeDetails = useForTradeDetails(trade, variants, ownershipData);
-  const offeredDetails = useOfferedDetails(trade, variants, relatedInstances);
+  // Dynamic details for pending view
+  const currentUserInstanceId = isCurrentUserProposer
+    ? 'pokemon_instance_id_user_proposed'
+    : 'pokemon_instance_id_user_accepting';
+
+  const partnerInstanceId = isCurrentUserProposer
+    ? 'pokemon_instance_id_user_accepting'
+    : 'pokemon_instance_id_user_proposed';
+
+  // Always use ownership data for current user's Pokémon
+  const currentUserDetails = usePokemonDetails(
+    trade,
+    currentUserInstanceId,
+    variants,
+    null,
+    ownershipData
+  );
+
+  // Always use related instances for partner's Pokémon
+  const partnerDetails = usePokemonDetails(
+    trade,
+    partnerInstanceId,
+    variants,
+    relatedInstances,
+    null
+  );
 
   // Accepting or Denying the trade
   const handleAccept = async () => {
@@ -96,8 +115,8 @@ function TradeCard({
       <OffersTradeView
         trade={trade}
         currentUsername={currentUsername}
-        forTradeDetails={forTradeDetails}
-        offeredDetails={offeredDetails}
+        forTradeDetails={currentUserDetails}
+        offeredDetails={partnerDetails}
         loading={loading}
         handleAccept={handleAccept}
         handleDeny={handleDeny}
@@ -109,8 +128,8 @@ function TradeCard({
     return (
       <ProposedTradeView
         trade={trade}
-        offeringDetails={offeringDetails}
-        receivingCombinedDetails={receivingCombinedDetails}
+        offeringDetails={currentUserDetails}
+        receivingCombinedDetails={partnerDetails}
         loading={loading}
         offeringHeading={offeringHeading}
         receivingHeading={receivingHeading}
@@ -123,8 +142,8 @@ function TradeCard({
     return (
       <PendingTradeView
         trade={trade}
-        offeringDetails={offeringDetails}
-        receivingCombinedDetails={receivingCombinedDetails}
+        offeringDetails={currentUserDetails}
+        receivingCombinedDetails={partnerDetails}
         loading={loading}
         handleComplete={handleComplete}
         handleCancel={handleCancel}
@@ -136,8 +155,8 @@ function TradeCard({
     return (
       <CancelledTradeView
         trade={trade}
-        offeringDetails={offeringDetails}
-        receivingCombinedDetails={receivingCombinedDetails}
+        offeringDetails={currentUserDetails}
+        receivingCombinedDetails={partnerDetails}
         loading={loading}
         handleRePropose={handleRePropose}
       />

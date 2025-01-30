@@ -93,3 +93,16 @@
     display: flex;
     gap: 10px;
   }
+
+  .pending-trade-view {
+    padding: 10px 0px;
+  }
+
+  @media (max-width: 767px) {
+    .pending-trade-view .cancel-button,
+    .pending-trade-view .complete-button,
+    .pending-trade-view .reveal-partner-button {
+      font-size: 0.75rem;
+      padding: 0.35rem 0.5rem;
+    }
+  }

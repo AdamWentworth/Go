@@ -352,13 +352,15 @@
   }
 
   .trade-card .details-content.offering-details,
-  .trade-card .details-content.for-trade-details {
+  .trade-card .details-content.for-trade-details,
+  .trade-card .details-content.left-details {
     left: 100%;
     transform: translateX(0%);
   }
 
   .trade-card .details-content.received-details,
-  .trade-card .details-content.offered-details {
+  .trade-card .details-content.offered-details,
+  .trade-card .details-content.right-details {
     left: 0%;
     transform: translateX(-100%);
   }
@@ -446,13 +448,15 @@
   }
 
   .trade-card .details-content.offering-details,
-  .trade-card .details-content.for-trade-details {
+  .trade-card .details-content.for-trade-details,
+  .trade-card .details-content.left-details {
     left: 100%;
     transform: translateX(0%);
   }
 
   .trade-card .details-content.received-details,
-  .trade-card .details-content.offered-details {
+  .trade-card .details-content.offered-details,
+  .trade-card .details-content.right-details {
     left: 0%;
     transform: translateX(-100%);
   }
