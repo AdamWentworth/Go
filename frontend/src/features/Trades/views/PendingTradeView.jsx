@@ -159,6 +159,36 @@ const PendingTradeView = ({
                           />
                         </div>
                       ) : null}
+                    {/* Dynamax Icon */}
+                    {details.variantType?.includes('dynamax') && (
+                      <img
+                          src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
+                          alt="Dynamax"
+                          style={{
+                              position: 'absolute',
+                              top: '0',
+                              right: '3%',
+                              width: '30%',
+                              height: 'auto',
+                              zIndex: 0,
+                          }}
+                      />
+                    )}
+                    {/* Gigantamax Icon */}
+                    {details.variantType?.includes('gigantamax') && (
+                        <img
+                            src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
+                            alt="Gigantamax"
+                            style={{
+                                position: 'absolute',
+                                top: '0',
+                                right: '3%',
+                                width: '30%',
+                                height: 'auto',
+                                zIndex: 0,
+                            }}
+                        />
+                    )}
                     {(details.currentImage || details.pokemon_image_url) ? (
                       <img
                         src={details.currentImage || details.pokemon_image_url}
