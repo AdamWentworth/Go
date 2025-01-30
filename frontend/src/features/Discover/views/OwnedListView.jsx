@@ -47,7 +47,7 @@ const OwnedListView = ({ item }) => {
     <div className="list-view-row">
       {/* Left Column: MiniMap */}
       <div className="left-column" onClick={(e) => e.stopPropagation()}>
-        {item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
+      {item.distance > 0 && <p>Distance: {item.distance.toFixed(2)} km</p>}
         <MiniMap latitude={item.latitude} longitude={item.longitude} ownershipStatus="owned" />
       </div>
 
@@ -55,7 +55,7 @@ const OwnedListView = ({ item }) => {
       <div className="center-column" onClick={handleOpenConfirmation}>
         <div className="card">
           <h3>{item.username}</h3>
-          <CPDisplay cp={item.cp} />
+          {item.cp > 0 && item.cp && <CPDisplay cp={item.cp} />}
           {item.pokemonInfo && (
             <div className="pokemon-image-container">
               {item.lucky && (
@@ -92,7 +92,7 @@ const OwnedListView = ({ item }) => {
       {/* Right Column: Weight, Height, Moves, IVs, Location, Date */}
       <div className="right-column">
         <div className="weight-height-move-container">
-          {item.weight && (
+          {item.weight > 0 && item.weight && (
             <div className="weight-height">
               <p><strong>{item.weight}kg</strong> WEIGHT</p>
             </div>
@@ -103,7 +103,7 @@ const OwnedListView = ({ item }) => {
             chargedMove2Id={item.charged_move2_id}
             moves={item.pokemonInfo.moves}
           />
-          {item.height && (
+          {item.height > 0 && item.height && (
             <div className="weight-height">
               <p><strong>{item.height}m</strong> HEIGHT</p>
             </div>

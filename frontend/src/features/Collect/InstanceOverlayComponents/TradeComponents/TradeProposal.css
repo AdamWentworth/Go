@@ -122,6 +122,15 @@
     filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
 }
 
+.trade-proposal-overlay .max-icon {
+    position: absolute;
+    top: 0;
+    right: 3%;
+    width: 25%;
+    height: auto;
+    z-index: 1; /* Ensure icons appear above the Pokémon image */
+  }
+
 /* ====================================
    Propose Button
    ==================================== */

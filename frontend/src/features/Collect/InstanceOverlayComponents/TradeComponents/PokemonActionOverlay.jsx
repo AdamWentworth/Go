@@ -12,21 +12,43 @@ const PokemonActionOverlay = ({
   if (!isOpen) return null;
 
   const handleActionClick = (action) => (e) => {
-    e.stopPropagation(); // Prevent propagation of click events
+    e.stopPropagation();
     action();
-    onClose(); // Close the overlay after the action
+    onClose();
   };
 
-  if (!pokemon) return null; // Ensure pokemon data is available
+  if (!pokemon) return null;
 
   return (
     <div className="pokemon-action-overlay" onClick={onClose}>
       <div className="overlay-content" onClick={(e) => e.stopPropagation()}>
-        <img
-          src={pokemon.currentImage}
-          alt={pokemon.name}
-          className="pokemon-action-image"
-        />
+        {/* Image Container */}
+        <div className="image-container">
+          <img
+            src={pokemon.currentImage}
+            alt={pokemon.name}
+            className="pokemon-action-image"
+          />
+          
+          {/* Dynamax Icon */}
+          {pokemon.variantType?.includes('dynamax') && (
+            <img
+              src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
+              alt="Dynamax"
+              className="max-icon"
+            />
+          )}
+          
+          {/* Gigantamax Icon */}
+          {pokemon.variantType?.includes('gigantamax') && (
+            <img
+              src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
+              alt="Gigantamax"
+              className="max-icon"
+            />
+          )}
+        </div>
+
         <h2>{pokemon.name}</h2>
         <p>What would you like to do with this Pokémon?</p>
         <div className="button-group">

@@ -55,7 +55,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
     <div className="list-view-row trade-list-view">
       {/* Left Column: MiniMap */}
       <div className="left-column">
-        {item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
+        {item.distance > 0 && item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
         <MiniMap
           latitude={item.latitude}
           longitude={item.longitude}
@@ -72,6 +72,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
             <div className="pokemon-columns">
               {/* First Column: CP and Pokémon Image */}
               <div className="pokemon-first-column">
+              <div className="pokemon-image-container">
                 {item.cp && <CPDisplay cp={item.cp} />}
                 {item.lucky && (
                   <img
@@ -105,12 +106,13 @@ const TradeListView = ({ item, findPokemonByKey }) => {
                   {pokemonDisplayName}
                   <GenderIcon gender={item.gender} />
                 </p>
+                </div>
               </div>
 
               {/* Second Column: Weight, Height, Moves, Location, and Date */}
               <div className="pokemon-second-column">
                 <div className="pokemon-weight-height">
-                  {item.weight && (
+                  {item.weight > 0 && item.weight && (
                     <div className="pokemon-weight">
                       <p>
                         <strong>{item.weight}kg</strong>
@@ -118,7 +120,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
                       <p>WEIGHT</p>
                     </div>
                   )}
-                  {item.height && (
+                  {item.height > 0 && item.height && (
                     <div className="pokemon-height">
                       <p>
                         <strong>{item.height}m</strong>
@@ -162,7 +164,8 @@ const TradeListView = ({ item, findPokemonByKey }) => {
             </div>
           ) : (
             <div className="pokemon-single-column">
-              {item.cp && <CPDisplay cp={item.cp} />}
+              {item.cp > 0 && item.cp && <CPDisplay cp={item.cp} />}
+              <div className="pokemon-image-container">
               {item.lucky && (
                 <img
                   src={`${process.env.PUBLIC_URL}/images/lucky.png`}
@@ -177,10 +180,25 @@ const TradeListView = ({ item, findPokemonByKey }) => {
                   className="pokemon-image"
                 />
               )}
+              {dynamax && (
+                <img 
+                  src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+                  alt="Dynamax Badge" 
+                  className="max-badge" 
+                />
+              )}
+              {gigantamax && (
+                <img 
+                  src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+                  alt="Gigantamax Badge" 
+                  className="max-badge" 
+                />
+              )}
               <p className="pokemon-name">
                 {pokemonDisplayName}
                 <GenderIcon gender={item.gender} />
               </p>
+              </div>
             </div>
           )}
         </div>

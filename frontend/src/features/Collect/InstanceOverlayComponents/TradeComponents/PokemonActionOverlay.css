@@ -65,3 +65,26 @@
     color: white;
     cursor: pointer;
 }
+
+.pokemon-action-overlay .image-container {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  max-width: 200px; /* Match your image size */
+  margin: 0 auto;
+}
+
+.pokemon-action-overlay .pokemon-action-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.pokemon-action-overlay .max-icon {
+  position: absolute;
+  top: 0;
+  right: 3%;
+  width: 25%;
+  height: auto;
+  z-index: 1; /* Ensure icons appear above the Pokémon image */
+}

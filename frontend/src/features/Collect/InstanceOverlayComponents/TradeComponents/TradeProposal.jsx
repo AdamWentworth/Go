@@ -188,6 +188,23 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
                   className="lucky-backdrop"
                 />
               )}
+              {/* Dynamax Icon */}
+              {passedInPokemon.variantType?.includes('dynamax') && (
+                <img
+                  src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
+                  alt="Dynamax"
+                  className="max-icon"
+                />
+              )}
+              
+              {/* Gigantamax Icon */}
+              {passedInPokemon.variantType?.includes('gigantamax') && (
+                <img
+                  src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
+                  alt="Gigantamax"
+                  className="max-icon"
+                />
+              )}
               <img
                 src={passedInPokemon.currentImage || '/images/default/placeholder.png'}
                 alt={passedInPokemon.name}
@@ -233,6 +250,23 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
                   src={process.env.PUBLIC_URL + '/images/lucky.png'}
                   alt="Lucky Backdrop"
                   className="lucky-backdrop"
+                />
+              )}
+              {/* Dynamax Icon */}
+              {selectedMatchedInstance.variantType?.includes('dynamax') && (
+                <img
+                  src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
+                  alt="Dynamax"
+                  className="max-icon"
+                />
+              )}
+              
+              {/* Gigantamax Icon */}
+              {selectedMatchedInstance.variantType?.includes('gigantamax') && (
+                <img
+                  src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
+                  alt="Gigantamax"
+                  className="max-icon"
                 />
               )}
               <img

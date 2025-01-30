@@ -9,7 +9,7 @@
   
   .list-view-container p {
     margin-block-start: 10px;
-    margin-block-end: 5px;
+    margin-block-end: 0px;
   }
   
   /* Only the first list-view-row will have margin-top */
@@ -75,6 +75,7 @@
   
   .list-view-row .center-column .card p {
     margin: 0;
+    padding-right: 10px;
   }
   
   /* Styles for the Pokémon image container */
@@ -121,6 +122,15 @@
     align-items: center;
     justify-content: center;
     margin-top: 0.5rem;
+    position: relative;
+    width: 100%;
+  }
+
+  .list-view-row .list-view-gender-icon {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
   }
   
   .list-view-row .left-column .map-preview,
