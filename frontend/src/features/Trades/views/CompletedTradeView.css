@@ -1,36 +1,94 @@
 /* CompletedTradeView.css */
 
 .completed-trade-view .trade-actions {
-    text-align: center;
-    margin-top: 1rem;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.completed-trade-view .trade-feedback-text {
+  margin-bottom: 12px;
+}
+
+.completed-trade-view .thumbs-up-button {
+  /* Base size */
+  padding: 15px 25px;
+  font-size: 24px;
+  
+  /* Button styling */
+  cursor: pointer;
+  outline: none;
+  color: #fff;
+  background: linear-gradient(to bottom, #007bff, #0056b3);
+  border: none;
+  border-radius: 12px;
+  
+  /* 3D effect - proportional to button size */
+  box-shadow: 0 6px #003d73,
+             0 4px 6px rgba(0, 0, 0, 0.2);
+  
+  /* Smooth transitions */
+  transition: all 0.2s ease;
+  
+  /* Prevent text selection */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.completed-trade-view .thumbs-up-button:hover {
+  background: linear-gradient(to bottom, #0066d6, #004ba0);
+  transform: translateY(-1px);
+}
+
+.completed-trade-view .thumbs-up-button:active,
+.completed-trade-view .thumbs-up-button.active {
+  /* Pressed state - shadow depth proportional to button size */
+  box-shadow: inset 0 4px #004d9e,
+              inset 0 4px 6px rgba(0, 0, 0, 0.2);
+  transform: translateY(3px);
+  background: linear-gradient(to bottom, #0056b3, #003d73);
+}
+
+/* Mobile size adjustments */
+@media (max-width: 480px) {
+  .completed-trade-view .trade-actions {
+    margin-bottom: 10px;
   }
   
-  .thumbs-up-button {
-    padding: 15px 25px; /* Padding for larger buttons */
-    font-size: 24px; /* Text and emoji size */
-    cursor: pointer;
-    outline: none;
-    color: #fff; /* White text */
-    background: linear-gradient(to bottom, #007bff, #0056b3); /* Gradient for 3D effect */
-    border: none; /* No border */
-    border-radius: 15px; /* Rounded corners */
-    transition: all 0.2s ease; /* Smooth transitions for effects */
-    
-    /* Outer shadow for 3D depth */
-    box-shadow: 0 6px #003d73, 0 4px 6px rgba(0, 0, 0, 0.2);
+  .completed-trade-view .trade-feedback-text {
+    margin-bottom: 8px;
+    font-size: 14px;
   }
   
-  .thumbs-up-button:active,
-  .thumbs-up-button.active {
-    /* Remove outer shadow and simulate pressed effect */
-    box-shadow: inset 0 4px #004d9e, inset 0 4px 6px rgba(0, 0, 0, 0.2);
-    transform: translateY(3px); /* Slight downward press */
-    background: linear-gradient(to bottom, #0056b3, #003d73); /* Darker gradient for pressed look */
+  .completed-trade-view .thumbs-up-button {
+    padding: 8px 15px;
+    font-size: 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px #003d73,
+    0 2px 4px rgba(0, 0, 0, 0.2);
   }
   
-  .thumbs-up-button:hover {
-    background: linear-gradient(to bottom, #0066d6, #004ba0); /* Slightly brighter on hover */
+  .completed-trade-view .thumbs-up-button:active,
+  .completed-trade-view .thumbs-up-button.active {
+    box-shadow: inset 0 2px #004d9e,
+    inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    transform: translateY(2px);
   }
-  
-  
-  
+}
+
+/* Tablet size adjustments */
+@media (max-width: 768px) {
+  .completed-trade-view .thumbs-up-button {
+    padding: 12px 20px;
+    font-size: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px #003d73,
+                0 3px 5px rgba(0, 0, 0, 0.2);
+  }
+
+  .completed-trade-view .thumbs-up-button:active,
+  .completed-trade-view .thumbs-up-button.active {
+    box-shadow: inset 0 3px #004d9e,
+                inset 0 3px 5px rgba(0, 0, 0, 0.2);
+    transform: translateY(2px);
+  }
+}

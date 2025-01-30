@@ -61,4 +61,8 @@
     font-size: 0.75rem;
     padding: 0.35rem 0.5rem;
   }
+  .offers-trade-view .trade-actions {
+    gap:5px;
+    padding: 0px 5px;
+  }
 }

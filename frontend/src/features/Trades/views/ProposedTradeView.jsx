@@ -13,8 +13,8 @@ import './ProposedTradeView.css';
 
 const ProposedTradeView = ({
   trade,
-  offeringDetails,
-  receivingCombinedDetails,
+  currentUserDetails,
+  partnerDetails,
   loading,
   offeringHeading,
   receivingHeading,
@@ -34,21 +34,21 @@ const ProposedTradeView = ({
   const friendshipLevel = reversedFriendshipLevels[trade.trade_friendship_level] || 0;
 
   useEffect(() => {
-    if (offeringDetails) {
+    if (currentUserDetails) {
       console.log('Offering Details Structure:', {
       section: 'offering',
-      hasDetails: hasDetails(offeringDetails, 'offering'),
-      name: offeringDetails?.name
+      hasDetails: hasDetails(currentUserDetails, 'offering'),
+      name: currentUserDetails?.name
     });
   }
-  if (receivingCombinedDetails) {
+  if (partnerDetails) {
       console.log('Receiving Details Structure:', {
       section: 'received',
-      hasDetails: hasDetails(receivingCombinedDetails, 'received'),
-      name: receivingCombinedDetails?.name
+      hasDetails: hasDetails(partnerDetails, 'received'),
+      name: partnerDetails?.name
     });
   }
-  }, [offeringDetails, receivingCombinedDetails]);
+  }, [currentUserDetails, partnerDetails]);
 
   const toggleDetails = (section) => {
     setVisibleDetails((prev) => ({
@@ -117,15 +117,15 @@ const ProposedTradeView = ({
               <>
                 <div className="pokemon-image-container">
                   <div className="image-wrapper">
-                    {trade.is_lucky_trade && (
-                      <div className="lucky-backdrop-wrapper">
-                        <img
-                          src={`${process.env.PUBLIC_URL}/images/lucky.png`}
-                          alt="Lucky backdrop"
-                          className="lucky-backdrop"
-                        />
-                      </div>
-                    )}
+                  {trade.is_lucky_trade ? (
+                        <div className="lucky-backdrop-wrapper">
+                          <img
+                            src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                            alt="Lucky backdrop"
+                            className="lucky-backdrop"
+                          />
+                        </div>
+                      ) : null}
                     {details && (details.currentImage || details.pokemon_image_url) ? (
                       <img
                         src={details.currentImage || details.pokemon_image_url}
@@ -161,7 +161,7 @@ const ProposedTradeView = ({
   return (
     <div className="trade-card proposed-trade-view">
       <div className="trade-pokemon">
-        {renderPokemonSection(offeringDetails, 'offering', offeringHeading, trade.username_proposed)}
+        {renderPokemonSection(currentUserDetails, 'offering', offeringHeading, trade.username_proposed)}
         
         <div className="center-column">
           <FriendshipLevel 
@@ -186,7 +186,7 @@ const ProposedTradeView = ({
           </div>
         </div>
 
-        {renderPokemonSection(receivingCombinedDetails, 'received', receivingHeading, trade.username_accepting)}
+        {renderPokemonSection(partnerDetails, 'received', receivingHeading, trade.username_accepting)}
       </div>
     </div>
   );

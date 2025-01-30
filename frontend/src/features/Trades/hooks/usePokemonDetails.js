@@ -2,27 +2,29 @@
 import { useEffect, useState } from 'react';
 import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
 
-export function usePokemonDetails(trade, instanceIdKey, variants, relatedInstances, ownershipData) {
+export function usePokemonDetails(instanceId, variants, relatedInstances, ownershipData) {
   const [details, setDetails] = useState(null);
 
   useEffect(() => {
-    if (!variants || !trade[instanceIdKey]) {
+    if (!variants || !instanceId) {
       setDetails(null);
       return;
     }
 
-    // Parse Pokémon instance ID
-    const parsed = parsePokemonKey(trade[instanceIdKey]);
-    
-    // Find variant data
-    const variantData = variants[parsed.pokemonKey] || 
+    const parsed = parsePokemonKey(instanceId);
+
+    const variantData =
+      variants[parsed.pokemonKey] ||
       (Array.isArray(variants) && variants.find(v => v.pokemonKey === parsed.baseKey));
 
-    // Get instance details (check relatedInstances first)
-    const instanceDetails = relatedInstances?.[trade[instanceIdKey]] || ownershipData?.[trade[instanceIdKey]] || {};
+    // Check relatedInstances or ownershipData for the instance
+    const instanceDetails =
+      (relatedInstances && relatedInstances[instanceId]) ||
+      (ownershipData && ownershipData[instanceId]) ||
+      {};
 
     setDetails({ ...variantData, ...instanceDetails });
-  }, [trade, instanceIdKey, variants, relatedInstances, ownershipData]);
+  }, [instanceId, variants, relatedInstances, ownershipData]);
 
   return details;
 }

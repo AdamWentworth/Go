@@ -14,8 +14,8 @@ import { hasDetails } from '../helpers/hasDetails';
 const OffersTradeView = ({
   trade,
   currentUsername,
-  forTradeDetails,
-  offeredDetails,
+  currentUserDetails,
+  partnerDetails,
   loading,
   handleAccept,
   handleDeny,
@@ -32,13 +32,13 @@ const OffersTradeView = ({
   const friendshipLevel = reversedFriendshipLevels[trade.trade_friendship_level] || 0;
 
   useEffect(() => {
-    if (forTradeDetails) {
-      console.log('For Trade Details:', forTradeDetails);
+    if (currentUserDetails) {
+      console.log('For Trade Details:', currentUserDetails);
     }
-    if (offeredDetails) {
-      console.log('Offered (current user) Details:', offeredDetails);
+    if (partnerDetails) {
+      console.log('Offered (current user) Details:', partnerDetails);
     }
-  }, [forTradeDetails, offeredDetails]);
+  }, [currentUserDetails, partnerDetails]);
 
   /** Toggle function for show/hide detail overlays. */
   const toggleDetails = (section) => {
@@ -111,15 +111,15 @@ const OffersTradeView = ({
               <>
                 <div className="pokemon-image-container">
                   <div className="image-wrapper">
-                    {trade.is_lucky_trade && (
-                      <div className="lucky-backdrop-wrapper">
-                        <img
-                          src={`${process.env.PUBLIC_URL}/images/lucky.png`}
-                          alt="Lucky backdrop"
-                          className="lucky-backdrop"
-                        />
-                      </div>
-                    )}
+                    {trade.is_lucky_trade ? (
+                        <div className="lucky-backdrop-wrapper">
+                          <img
+                            src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                            alt="Lucky backdrop"
+                            className="lucky-backdrop"
+                          />
+                        </div>
+                      ) : null}
                     {details && (details.currentImage || details.pokemon_image_url) ? (
                       <img
                         src={details.currentImage || details.pokemon_image_url}
@@ -171,7 +171,7 @@ const OffersTradeView = ({
     <div className="trade-card offers-trade-view">
       <div className="trade-pokemon">
         {/* LEFT SIDE: The other user's Pokémon, labeled "Offered" */}
-        {renderPokemonSection(forTradeDetails, 'for-trade', 'For Trade:', currentUsername)}
+        {renderPokemonSection(currentUserDetails, 'for-trade', 'For Trade:', currentUsername)}
 
         {/* CENTER COLUMN: Trade Icon + Accept/Deny */}
         <div className="center-column">
@@ -201,7 +201,7 @@ const OffersTradeView = ({
             </button>
           </div>
         </div>
-        {renderPokemonSection(offeredDetails, 'offered', 'Offered', trade.username_proposed)}
+        {renderPokemonSection(partnerDetails, 'offered', 'Offered', trade.username_proposed)}
       </div>
     </div>
   );

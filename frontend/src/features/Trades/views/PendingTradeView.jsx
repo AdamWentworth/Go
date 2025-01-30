@@ -14,8 +14,8 @@ import './PendingTradeView.css';
 
 const PendingTradeView = ({
   trade,
-  offeringDetails,
-  receivingCombinedDetails,
+  currentUserDetails,
+  partnerDetails,
   loading,
   handleComplete,
   handleCancel
@@ -29,6 +29,8 @@ const PendingTradeView = ({
     right: false,
   });
 
+  console.log(trade)
+
   const reversedFriendshipLevels = Object.entries(TRADE_FRIENDSHIP_LEVELS).reduce((acc, [key, value]) => {
       acc[value] = parseInt(key, 10);
       return acc;
@@ -37,6 +39,14 @@ const PendingTradeView = ({
 
   const storedUser = localStorage.getItem('user');
   const currentUsername = storedUser ? JSON.parse(storedUser).username : '';
+
+  // Add state for local trade copy
+  const [localTrade, setLocalTrade] = useState(trade);
+
+  // Update local trade when prop changes
+  useEffect(() => {
+    setLocalTrade(trade);
+  }, [trade]);
 
   const isCurrentUserProposer = trade.username_proposed === currentUsername;
   const userConfirmationField = isCurrentUserProposer 
@@ -49,10 +59,16 @@ const PendingTradeView = ({
   const hasUserConfirmed = trade[userConfirmationField];
   const hasPartnerConfirmed = trade[partnerConfirmationField];
 
-  const leftDetails = isCurrentUserProposer ? offeringDetails : receivingCombinedDetails;
-  const rightDetails = isCurrentUserProposer ? receivingCombinedDetails : offeringDetails;
-  const leftUsername = isCurrentUserProposer ? trade.username_proposed : trade.username_accepting;
-  const rightUsername = isCurrentUserProposer ? trade.username_accepting : trade.username_proposed;
+  // Always show current user's Pokémon on left
+  const leftDetails = currentUserDetails;
+  const rightDetails = partnerDetails;
+
+  // Get partner username (the non-current user)
+  const partnerUsername = isCurrentUserProposer 
+    ? trade.username_accepting 
+    : trade.username_proposed;
+
+  // Fixed headings
   const leftHeading = 'Your Pokémon';
   const rightHeading = "Trade Partner's Pokémon";
 
@@ -134,15 +150,15 @@ const PendingTradeView = ({
               <>
                 <div className="pokemon-image-container">
                   <div className="image-wrapper">
-                    {trade.is_lucky_trade && (
-                      <div className="lucky-backdrop-wrapper">
-                        <img
-                          src={`${process.env.PUBLIC_URL}/images/lucky.png`}
-                          alt="Lucky backdrop"
-                          className="lucky-backdrop"
-                        />
-                      </div>
-                    )}
+                  {trade.is_lucky_trade ? (
+                        <div className="lucky-backdrop-wrapper">
+                          <img
+                            src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                            alt="Lucky backdrop"
+                            className="lucky-backdrop"
+                          />
+                        </div>
+                      ) : null}
                     {(details.currentImage || details.pokemon_image_url) ? (
                       <img
                         src={details.currentImage || details.pokemon_image_url}
@@ -209,8 +225,16 @@ const PendingTradeView = ({
   const handleCompleteClick = async () => {
     setCompletionInProgress(true);
     try {
-      await handleComplete(trade);
+      // Optimistically update local state
+      setLocalTrade(prev => ({
+        ...prev,
+        [userConfirmationField]: true
+      }));
+      
+      await handleComplete(localTrade);
     } catch (err) {
+      // Rollback on error
+      setLocalTrade(trade);
       setError(err.message);
     } finally {
       setCompletionInProgress(false);
@@ -234,6 +258,10 @@ const PendingTradeView = ({
     return baseClass;
   };
 
+  const disableCompleteButton = completionInProgress || 
+    (hasPartnerConfirmed && hasUserConfirmed) ||
+    hasUserConfirmed;
+
   return (
     <div className="trade-card pending-trade-view">
           <div className="reveal-partner-info">
@@ -247,7 +275,7 @@ const PendingTradeView = ({
             {error && <p className="error">{error}</p>}
           </div>
       <div className="trade-pokemon">
-        {renderPokemonSection(leftDetails, 'left', leftHeading, leftUsername)}
+        {renderPokemonSection(leftDetails, 'left', leftHeading, currentUsername)}
         
         <div className="center-column">
           <FriendshipLevel 
@@ -269,14 +297,14 @@ const PendingTradeView = ({
           </div>
         </div>
 
-        {renderPokemonSection(rightDetails, 'right', rightHeading, rightUsername)}
+        {renderPokemonSection(rightDetails, 'right', rightHeading, partnerUsername)}
       </div>
 
       <div className="trade-actions">
         <button 
           className={getCompleteButtonClass()}
           onClick={handleCompleteClick}
-          disabled={completionInProgress || (hasPartnerConfirmed && hasUserConfirmed)}
+          disabled={disableCompleteButton}
         >
           {getCompleteButtonText()}
         </button>
