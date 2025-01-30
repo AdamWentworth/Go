@@ -30,7 +30,6 @@ function TradeCard({
   trade,
   relatedInstances,
   selectedStatus,
-  // The props formerly from usePokemonData, now passed in
   setOwnershipData,
   variants,
   ownershipData,

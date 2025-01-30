@@ -4,7 +4,7 @@ import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
 
 export function useForTradeDetails(trade, variants, ownershipData) {
   const [offeringDetails, setOfferingDetails] = useState(null);
-
+  
   useEffect(() => {
     if (!variants || !ownershipData) return;
 

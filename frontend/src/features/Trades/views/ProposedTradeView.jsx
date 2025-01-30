@@ -57,9 +57,9 @@ const ProposedTradeView = ({
     }));
   };
 
-  const renderPokemonDetails = (details, isVisible, section) => {
+  const renderPokemonDetails = (details, isVisible) => {
     if (!details) return null;
-    if (!hasDetails(details, section)) {
+    if (!hasDetails(details)) {
       return isVisible ? <p>No additional details available.</p> : null;
     }
   
@@ -101,7 +101,7 @@ const ProposedTradeView = ({
   };
 
   const renderPokemonSection = (details, section, heading, username) => {
-    const hasDetailsToShow = details && hasDetails(details, section);
+    const hasDetailsToShow = details && hasDetails(details);
     const sectionClass = `pokemon ${section} ${hasDetailsToShow ? 'has-details' : 'no-details'}`;
   
     return (
@@ -151,7 +151,7 @@ const ProposedTradeView = ({
           </div>
 
             <div className={`details-content ${section}-details ${visibleDetails[section] ? 'visible' : ''}`}>
-            {renderPokemonDetails(details, visibleDetails[section], section)}
+            {renderPokemonDetails(details, visibleDetails[section])}
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import LoadingSpinner from '../../../components/LoadingSpinner';
 import MoveDisplay from '../../Discover/views/ListViewComponents/MoveDisplay';
 import IVDisplay from '../../Discover/views/ListViewComponents/IVDisplay';
 import FriendshipLevel from '../../Discover/views/ListViewComponents/FriendshipLevel';
+import GenderIcon from '../../Discover/views/ListViewComponents/GenderIcon';
 import { TRADE_FRIENDSHIP_LEVELS } from '../../../services/indexedDB';
 import './OffersTradeView.css';
 import { formatDate } from '../../../utils/formattingHelpers';
@@ -128,6 +129,7 @@ const OffersTradeView = ({
                     ) : (
                       <p>No image available.</p>
                     )}
+                    {details?.gender && <GenderIcon gender={details.gender} />}
                   </div>
                 </div>
                 <p className="pokemon-name">
