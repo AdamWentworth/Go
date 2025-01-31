@@ -146,7 +146,8 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
   if (!passedInPokemon || !clickedPokemon) {
     return <p>Missing Pokémon data. Please try again.</p>;
   }
-
+  console.log(`passedInPokemon`, passedInPokemon)
+  console.log(`selectedMatchedInstance`, selectedMatchedInstance)
   return (
     <div className="trade-proposal-overlay">
       <div className="trade-proposal-container" ref={containerRef}>
@@ -189,7 +190,7 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
                 />
               )}
               {/* Dynamax Icon */}
-              {passedInPokemon.variantType?.includes('dynamax') && (
+              {passedInPokemon?.variantType?.includes('dynamax') && (
                 <img
                   src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
                   alt="Dynamax"
@@ -198,7 +199,7 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
               )}
               
               {/* Gigantamax Icon */}
-              {passedInPokemon.variantType?.includes('gigantamax') && (
+              {passedInPokemon?.variantType?.includes('gigantamax') && (
                 <img
                   src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
                   alt="Gigantamax"
@@ -253,7 +254,7 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
                 />
               )}
               {/* Dynamax Icon */}
-              {selectedMatchedInstance.variantType?.includes('dynamax') && (
+              {selectedMatchedInstance?.variantType?.includes('dynamax') && (
                 <img
                   src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
                   alt="Dynamax"
@@ -262,7 +263,7 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
               )}
               
               {/* Gigantamax Icon */}
-              {selectedMatchedInstance.variantType?.includes('gigantamax') && (
+              {selectedMatchedInstance?.variantType?.includes('gigantamax') && (
                 <img
                   src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
                   alt="Gigantamax"
