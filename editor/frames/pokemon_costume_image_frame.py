@@ -7,456 +7,436 @@ import os
 from io import BytesIO
 
 class PokemonCostumeImageFrame(tk.Frame):
-    LABELS = ['Costume Name', 'Shiny Available', 'Date Available', 'Date Shiny Available', 
-              'Image URL', 'Shiny Image URL', 'Female Image URL', 'Shiny Female Image URL']
+    LABELS = [
+        'Costume Name', 
+        'Shiny Available', 
+        'Date Available', 
+        'Date Shiny Available',
+        'Image URL', 
+        'Shiny Image URL', 
+        'Female Image URL', 
+        'Shiny Female Image URL'
+    ]
+
     def __init__(self, parent, pokemon_id, details_window):
         super().__init__(parent)
         self.parent = parent
         self.pokemon_id = pokemon_id
         self.details_window = details_window
         self.db_manager = details_window.db_manager
+        
+        # Current costumes from DB
         self.costumes = self.db_manager.fetch_pokemon_costumes(pokemon_id)
-        self.images = {}  # To store the loaded images
-        self.costume_entries = {}  # To store the entry widgets for costume attributes
-
-        # Set up the base directory for images
+        
+        self.images = {}            # store PhotoImages
+        self.costume_entries = {}   # dict of {(costume_id, label): ttk.Entry}
+        
+        # Base path
         script_directory = os.path.dirname(os.path.realpath(__file__))
         go_directory = os.path.normpath(os.path.join(script_directory, '../../'))
         self.relative_path_to_images = os.path.join(go_directory, 'frontend', 'public')
 
-        self.initialize_ui()  # This now can be called safely after the above attributes are set
-        self.load_costume_images() 
+        # Build UI
+        self.initialize_ui()
+        self.load_costume_images()
 
     def initialize_ui(self):
-        # UI setup for costumes
         self.costume_frames = []
         for costume in self.costumes:
-            self.create_costume_frame(costume, False)  # False indicating it's not a new costume
-        self.add_costume_button()  # Setup add costume button
+            self.create_costume_frame(costume, is_new=False)
+        self.add_costume_button()
 
     def create_costume_frame(self, costume, is_new):
         costume_id = 'new' if is_new else costume[0]
         frame_text = "New Costume" if is_new else f"Costume ID: {costume_id}"
+        
         frame = tk.LabelFrame(self, text=frame_text, borderwidth=2, relief=tk.GROOVE)
         frame.pack(side="top", fill="x", padx=5, pady=5)
+        frame.costume_id = costume_id 
 
-        # Create entries for all labels including new ones
+        # Save Changes
+        save_button = tk.Button(
+            frame,
+            text="Save Changes",
+            command=lambda f=frame: self.save_costume_changes(f)  # Pass the frame
+        )
+        save_button.grid(row=8, column=1, sticky="ew")
+
+        # Delete button (only if not new)
+        if not is_new:
+            self.add_delete_button(frame, costume_id, row=8, column=0)
+
+        # Create the 8 entry widgets
         for i, label in enumerate(self.LABELS):
             tk.Label(frame, text=label).grid(row=i, column=0, sticky="e")
             entry = ttk.Entry(frame)
             entry.grid(row=i, column=1, sticky="ew")
+
+            # If existing costume from DB, fill the field
             if not is_new:
+                # costume[i+2] because index 0 is costume_id, 1 is pokemon_id, so actual fields start at index 2
                 entry.insert(0, str(costume[i+2]) if costume[i+2] is not None else "")
+
+            # store in dictionary
             self.costume_entries[(costume_id, label)] = entry
 
-        # Now create the image controls (both regular and shiny + female and shiny female)
-        image_label, shiny_image_label, female_image_label, shiny_female_image_label = self.create_image_controls(frame, costume_id, is_new)
+        # Add image controls (download, select) for each type of image
+        image_label, shiny_image_label, female_image_label, shiny_female_image_label = \
+            self.create_image_controls(frame, costume_id, is_new)
         
-        # Store these references
-        self.costume_frames.append((frame, image_label, shiny_image_label, female_image_label, shiny_female_image_label, costume_id))
+        # track the entire set in self.costume_frames
+        self.costume_frames.append(
+            (frame, image_label, shiny_image_label, female_image_label, shiny_female_image_label, costume_id)
+        )
         return frame
-    
+
     def create_image_controls(self, frame, costume_id, is_new):
-        # Image display placeholders for regular, shiny, female, and shiny female images
         image_label = tk.Label(frame)
         image_label.grid(row=0, column=2, rowspan=6, padx=10, pady=10)
+        
         shiny_image_label = tk.Label(frame)
         shiny_image_label.grid(row=0, column=3, rowspan=6, padx=10, pady=10)
-
+        
         female_image_label = tk.Label(frame)
         female_image_label.grid(row=0, column=4, rowspan=6, padx=10, pady=10)
+        
         shiny_female_image_label = tk.Label(frame)
         shiny_female_image_label.grid(row=0, column=5, rowspan=6, padx=10, pady=10)
 
-        # Buttons for downloading/uploading regular and shiny images
-        update_reg_image_url_button = tk.Button(frame, text="Download Image",
-                                                command=lambda c_id=costume_id: self.download_image_from_url(c_id, is_shiny=False, is_female=False))
-        update_reg_image_url_button.grid(row=6, column=2, sticky="ew")
-        
-        upload_reg_image_file_button = tk.Button(frame, text="Select Image",
-                                                command=lambda c_id=costume_id: self.upload_costume_image(c_id, is_shiny=False, is_female=False))
-        upload_reg_image_file_button.grid(row=7, column=2, sticky="ew")
+        # Download/Upload buttons for each image type
+        btn_download_image = tk.Button(
+        frame, text="Download Image",
+        command=lambda f=frame: self.download_image_from_url(f, is_shiny=False, is_female=False)
+        )
+        btn_download_image.grid(row=6, column=2, sticky="ew")
 
-        update_shiny_image_url_button = tk.Button(frame, text="Download Shiny Image",
-                                                command=lambda c_id=costume_id: self.download_image_from_url(c_id, is_shiny=True, is_female=False))
-        update_shiny_image_url_button.grid(row=6, column=3, sticky="ew")
-        
-        upload_shiny_image_file_button = tk.Button(frame, text="Select Shiny Image",
-                                                command=lambda c_id=costume_id: self.upload_costume_image(c_id, is_shiny=True, is_female=False))
-        upload_shiny_image_file_button.grid(row=7, column=3, sticky="ew")
+        btn_download_shiny = tk.Button(
+            frame, text="Download Shiny Image",
+            command=lambda f=frame: self.download_image_from_url(f, is_shiny=True, is_female=False)
+        )
+        btn_download_shiny.grid(row=6, column=3, sticky="ew")
 
-        # Buttons for downloading/uploading female and shiny female images
-        update_female_image_url_button = tk.Button(frame, text="Download Female Image",
-                                                command=lambda c_id=costume_id: self.download_image_from_url(c_id, is_shiny=False, is_female=True))
-        update_female_image_url_button.grid(row=6, column=4, sticky="ew")
+        btn_download_female = tk.Button(
+            frame, text="Download Female Image",
+            command=lambda f=frame: self.download_image_from_url(f, is_shiny=False, is_female=True)
+        )
+        btn_download_female.grid(row=6, column=4, sticky="ew")
 
-        upload_female_image_file_button = tk.Button(frame, text="Select Female Image",
-                                                    command=lambda c_id=costume_id: self.upload_costume_image(c_id, is_shiny=False, is_female=True))
-        upload_female_image_file_button.grid(row=7, column=4, sticky="ew")
-
-        update_shiny_female_image_url_button = tk.Button(frame, text="Download Shiny Female Image",
-                                                        command=lambda c_id=costume_id: self.download_image_from_url(c_id, is_shiny=True, is_female=True))
-        update_shiny_female_image_url_button.grid(row=6, column=5, sticky="ew")
-
-        upload_shiny_female_image_file_button = tk.Button(frame, text="Select Shiny Female Image",
-                                                        command=lambda c_id=costume_id: self.upload_costume_image(c_id, is_shiny=True, is_female=True))
-        upload_shiny_female_image_file_button.grid(row=7, column=5, sticky="ew")
+        btn_download_shiny_female = tk.Button(
+            frame, text="Download Shiny Female Image",
+            command=lambda f=frame: self.download_image_from_url(f, is_shiny=True, is_female=True)
+        )
+        btn_download_shiny_female.grid(row=6, column=5, sticky="ew")
 
         return image_label, shiny_image_label, female_image_label, shiny_female_image_label
 
-    def refresh_ui_for_costume(self, costume_id):
-        # Find and destroy the old frame for the specific costume
-        for frame, _, _, c_id in self.costume_frames:
-            if c_id == costume_id:
-                frame.destroy()
-                break
-
-        # Fetch the updated costume from the database
-        updated_costume = self.db_manager.fetch_pokemon_costumes(self.pokemon_id, costume_id)
-
-        # Rebuild the UI for the updated costume
-        self.initialize_ui_for_costume(updated_costume)  # You'll need to modify initialize_ui to handle single costume
-        self.load_costume_images()  # Reload images for all costumes
-        self.display_costume_images()  # Redisplay images for all costumes
-
     def load_costume_images(self):
-        # Load and display images for each stored costume
+        """
+        For each existing costume (non-'new'), load images from local disk
+        and update the UI. 'new' costumes won't have paths from DB yet.
+        """
         for frame, image_label, shiny_image_label, female_image_label, shiny_female_image_label, costume_id in self.costume_frames:
-            if costume_id != 'new':  # Ensure we're not trying to load images for a 'new' costume
-                # Find the costume in self.costumes with the matching costume_id
-                costume = next((c for c in self.costumes if c[0] == costume_id), None)
-                if costume:  # Check if the costume was found
-                    regular_image_path = costume[6]  # Regular image path (already relative)
-                    shiny_image_path = costume[7]  # Shiny image path
-                    female_image_path = costume[8]  # Female image path
-                    shiny_female_image_path = costume[9]  # Shiny female image path
+            if costume_id == 'new':
+                continue  # skip brand-new since it has no DB data yet
 
-                    # Open regular and shiny costume images, as well as female images
-                    image = self.open_local_image(regular_image_path) if regular_image_path else self.get_placeholder_image()
-                    shiny_image = self.open_local_image(shiny_image_path) if shiny_image_path else self.get_placeholder_image()
-                    female_image = self.open_local_image(female_image_path) if female_image_path else self.get_placeholder_image()
-                    shiny_female_image = self.open_local_image(shiny_female_image_path) if shiny_female_image_path else self.get_placeholder_image()
+            # find in self.costumes
+            costume = next((c for c in self.costumes if c[0] == costume_id), None)
+            if not costume:
+                continue
 
-                    # Update the image and shiny_image labels with the images
-                    image_label.configure(image=image)
-                    image_label.image = image  # Keep a reference
-                    shiny_image_label.configure(image=shiny_image)
-                    shiny_image_label.image = shiny_image  # Keep a reference
-                    female_image_label.configure(image=female_image)
-                    female_image_label.image = female_image  # Keep a reference
-                    shiny_female_image_label.configure(image=shiny_female_image)
-                    shiny_female_image_label.image = shiny_female_image  # Keep a reference
+            regular_image_path = costume[6]   # image_url_costume
+            shiny_image_path   = costume[7]   # image_url_shiny_costume
+            female_image_path  = costume[8]   # image_url_costume_female
+            shiny_female_path  = costume[9]   # image_url_shiny_costume_female
+
+            # load each from disk
+            image = self.open_local_image(regular_image_path) or self.get_placeholder_image()
+            image_label.configure(image=image)
+            image_label.image = image
+
+            shiny_image = self.open_local_image(shiny_image_path) or self.get_placeholder_image()
+            shiny_image_label.configure(image=shiny_image)
+            shiny_image_label.image = shiny_image
+
+            female_image = self.open_local_image(female_image_path) or self.get_placeholder_image()
+            female_image_label.configure(image=female_image)
+            female_image_label.image = female_image
+
+            shiny_female_image = self.open_local_image(shiny_female_path) or self.get_placeholder_image()
+            shiny_female_image_label.configure(image=shiny_female_image)
+            shiny_female_image_label.image = shiny_female_image
 
         self.display_costume_images()
 
     def open_local_image(self, image_url):
-        # Trim leading slash from image_url if present to ensure it's treated as relative
+        if not image_url:
+            return None
         image_url = image_url.lstrip("\\/")
+        full_path = os.path.join(self.relative_path_to_images, image_url)
+        full_path = os.path.normpath(full_path)
 
-        # Combine the base path with the specific image URL
-        full_image_path = os.path.join(self.relative_path_to_images, image_url)
-
-        # Normalize the path to ensure consistent slashes
-        full_image_path = os.path.normpath(full_image_path)
-
-        # Try to open the image from the local filesystem
+        print(f"[DEBUG] Attempting to open local image at: {full_path}")
         try:
-            image = Image.open(full_image_path)
-
-            # Resize the image to 240x240
-            image = image.resize((240, 240), Image.ANTIALIAS)
-
-            return ImageTk.PhotoImage(image)
+            pil_img = Image.open(full_path)
+            pil_img = pil_img.resize((240, 240))
+            return ImageTk.PhotoImage(pil_img)
         except FileNotFoundError:
-            # Instead of showing an error, return None or a placeholder image
-            return None  # or return self.get_placeholder_image()
+            print(f"[WARNING] File not found: {full_path}")
+            return None
         except Exception as e:
-            # Log the error for debugging purposes
-            print(f"Failed to open image: {e}")
-            return None  # or return self.get_placeholder_image()
+            print(f"[ERROR] Failed to open image: {e}")
+            return None
 
     def get_placeholder_image(self):
-        # This method returns a placeholder image to be used when the image is missing
         try:
-            placeholder = Image.open("path/to/placeholder.png")  # Update this path to your placeholder image
+            print("[DEBUG] Loading placeholder.png")
+            placeholder = Image.open("path/to/placeholder.png")  # Adjust path
             return ImageTk.PhotoImage(placeholder)
         except IOError:
-            # If placeholder is also missing, you can create a blank image or show an error
+            print("[WARNING] Placeholder image not found, returning None.")
             return None
 
     def display_costume_images(self):
-        # Update the UI with loaded images
-        for frame_tuple in self.costume_frames:
-            try:
-                frame, image_label, shiny_image_label, female_image_label, shiny_female_image_label, costume_id = frame_tuple  # Unpack correctly
+        """
+        Optionally re-display images from self.images, if we had them in memory.
+        Currently we rely on load_costume_images for existing costumes.
+        """
+        pass  # if you want to do any additional logic, put it here.
 
-                costume = next((c for c in self.costumes if str(c[0]) == str(costume_id)), None)
-                if costume:
-                    regular_image_path = costume[6]  # Regular image path
-                    shiny_image_path = costume[7]    # Shiny image path
-                    female_image_path = costume[8]   # Female image path
-                    shiny_female_image_path = costume[9]  # Shiny female image path
-
-                    # Update regular and shiny images
-                    if regular_image_path and regular_image_path in self.images:
-                        image = self.images.get(regular_image_path)
-                        image_label.configure(image=image)
-                        image_label.image = image  # Keep a reference
-
-                    if shiny_image_path and shiny_image_path in self.images:
-                        shiny_image = self.images.get(shiny_image_path)
-                        shiny_image_label.configure(image=shiny_image)
-                        shiny_image_label.image = shiny_image  # Keep a reference
-
-                    # Update female and shiny female images
-                    if female_image_path and female_image_path in self.images:
-                        female_image = self.images.get(female_image_path)
-                        female_image_label.configure(image=female_image)
-                        female_image_label.image = female_image  # Keep a reference
-
-                    if shiny_female_image_path and shiny_female_image_path in self.images:
-                        shiny_female_image = self.images.get(shiny_female_image_path)
-                        shiny_female_image_label.configure(image=shiny_female_image)
-                        shiny_female_image_label.image = shiny_female_image  # Keep a reference
-
-            except Exception as e:
-                print(f"Error updating costume image: {e}")
-
-    def upload_costume_image(self, costume_id):
-        # Use the existing upload_image method to get the image from the file system
+    def upload_costume_image(self, costume_id, is_shiny=False, is_female=False):
+        """
+        Let the user pick a local file from disk, then store it in self.images dict
+        under some key. Optionally, you'd also store the path in the DB, but we have
+        no code for that here.
+        """
         new_image = self.upload_image()
         if new_image:
-            # Here you would update the database with the path of the new image
-            # self.db_manager.update_costume_image_file(costume_id, file_path)
-            self.images[costume_id] = new_image
-            self.display_costume_images()
+            # For demonstration, store it in self.images with some key:
+            key = f"upload_{costume_id}_{is_shiny}_{is_female}"
+            self.images[key] = new_image
+            # Then you could update the UI as you wish:
+            # e.g. self.display_costume_images()
+            messagebox.showinfo("Uploaded", "Image successfully uploaded!")
 
     def upload_image(self):
-        # Upload a new image from the user's device
         file_path = filedialog.askopenfilename()
         if file_path:
+            print(f"[DEBUG] Selected file for upload: {file_path}")
             try:
-                image = Image.open(file_path)
-
-                # Resize the image to 240x240
-                image = image.resize((240, 240), Image.ANTIALIAS)
-
-                return ImageTk.PhotoImage(image)
+                pil_img = Image.open(file_path).resize((240, 240))
+                return ImageTk.PhotoImage(pil_img)
             except Exception as e:
+                print(f"[ERROR] Failed to open or process the selected image: {e}")
                 messagebox.showerror("Upload Error", f"Failed to open or process the image: {e}")
-                return None
+        else:
+            print("[DEBUG] No file selected for upload.")
+        return None
 
     def add_delete_button(self, frame, costume_id, row, column):
-        # Ensure the delete command has the correct costume_id
-        delete_button = tk.Button(frame, text="Delete Costume", command=lambda: self.delete_costume(costume_id))
-        delete_button.grid(row=row, column=column)
+        # Pass the frame to the delete command
+        btn_delete = tk.Button(frame, text="Delete Costume", 
+                            command=lambda f=frame: self.delete_costume(f.costume_id))
+        btn_delete.grid(row=row, column=column)
 
     def delete_costume(self, costume_id):
-        # Confirm before deleting
-        if messagebox.askyesno("Delete", "Are you sure you want to delete this costume?", parent=self.details_window.window):
-            self.db_manager.delete_costume(costume_id)
+        """
+        Delete from DB if not 'new', remove from self.costumes, remove frame from UI.
+        """
+        if costume_id != 'new':
+            if messagebox.askyesno("Delete", "Are you sure you want to delete this costume?", parent=self.details_window.window):
+                self.db_manager.delete_costume(costume_id)
+                self.costumes = [c for c in self.costumes if c[0] != costume_id]
+        else:
+            # If it's 'new' and not saved, just remove the UI frame
+            if not messagebox.askyesno("Discard", "Discard this new costume?", parent=self.details_window.window):
+                return
 
-            # Find and remove the frame for the deleted costume from the UI
-            for frame_tuple in self.costume_frames:
-                frame, _, _, c_id = frame_tuple  # Correctly unpack the tuple
-                if c_id == costume_id:
-                    frame.destroy()
-                    self.costume_frames.remove(frame_tuple)
-                    break
-    
+        # remove from UI
+        for frame_tuple in self.costume_frames[:]:
+            frame, _, _, _, _, c_id = frame_tuple
+            if c_id == costume_id:
+                frame.destroy()
+                self.costume_frames.remove(frame_tuple)
+
     def add_costume_button(self):
-        add_button = tk.Button(self, text="Add Costume", command=self.add_costume)
-        add_button.pack(side="top")  # Adjust the placement as needed
-    
+        btn_add = tk.Button(self, text="Add Costume", command=self.add_costume)
+        btn_add.pack(side="top")
+
     def add_costume(self):
-        print("add_costume in PokemonCostumeImageFrame called")  # Debug print
-        # No need to create a new costume_id here, just use a placeholder
-        self.create_costume_frame(['new'] + [''] * 7, True)  # Pass 'new' as the temporary costume_id
-    
+        """
+        Creates a brand-new 'new' costume. The user can fill in the fields,
+        optionally download images, then eventually "Save Changes".
+        """
+        print("[DEBUG] add_costume in PokemonCostumeImageFrame called.")
+        self.create_costume_frame(['new'] + [''] * 7, True)
+
     def update_costume_entries_key(self, old_key, new_key):
+        """
+        If we do a DB insert for 'new', we replace 'new' with the real DB ID
+        in self.costume_entries so future references are consistent.
+        """
         for label in self.LABELS:
             if (old_key, label) in self.costume_entries:
                 self.costume_entries[(new_key, label)] = self.costume_entries.pop((old_key, label))
 
-    def save_costume_changes(self, costume_id):
-        # Gather the updated details from the entries, including the new female image fields
+    def save_costume_changes(self, frame):
+        costume_id = frame.costume_id  # Get current ID from frame
         updated_details = {}
         for label in self.LABELS:
-            entry = self.costume_entries.get((costume_id, label))
-            if entry is not None:
-                value = entry.get().strip()
+            widget = self.costume_entries.get((costume_id, label))
+            if widget is not None:
+                value = widget.get().strip()
                 if label == 'Shiny Available':
-                    raw_value = value
-                    if raw_value.lower() in ['true', '1']:
+                    raw = value.lower()
+                    if raw in ['true','1']:
                         value = 1
-                    elif raw_value.lower() in ['false', '0']:
+                    elif raw in ['false','0']:
                         value = 0
                     else:
-                        value = None  # Handle unexpected input
+                        value = None
                 updated_details[label] = value
+            else:
+                updated_details[label] = None
 
         if costume_id == 'new':
-            # Insert new costume in the database and get the new ID
             new_id = self.db_manager.add_costume(self.pokemon_id, updated_details)
             self.update_costume_entries_key('new', new_id)
-            costume_id = new_id  # Update the costume_id to the new ID
+            
+            # Update the frame's costume_id and costume_frames entry
+            frame.costume_id = new_id
+            for i, frame_tuple in enumerate(self.costume_frames):
+                f, img_lbl, shiny_lbl, female_lbl, shiny_female_lbl, c_id = frame_tuple
+                if c_id == 'new' and f == frame:
+                    self.costume_frames[i] = (f, img_lbl, shiny_lbl, female_lbl, shiny_female_lbl, new_id)
+                    break
+            costume_id = new_id
         else:
-            # Update the existing costume in the database
-            self.db_manager.update_pokemon_costume(costume_id, list(updated_details.values()))
+            # existing
+            values_list = [updated_details[lbl] for lbl in self.LABELS]
+            self.db_manager.update_pokemon_costume(costume_id, values_list)
 
-        # Reload the costumes to reflect the changes
+        # re-fetch from DB
         self.costumes = self.db_manager.fetch_pokemon_costumes(self.pokemon_id)
         messagebox.showinfo("Update Successful", f"Costume ID: {costume_id} updated.", parent=self.details_window.window)
 
-    def get_blank_costume_details(self):
-        # Return blank details as per your costume structure in the database
-        # This is an example structure, adjust according to your actual database schema
-        return {
-            'costume_name': '',
-            'shiny_available': '',
-            'date_available': '',
-            'date_shiny_available': '',
-            'image_url_costume': '',
-            'image_url_shiny_costume': ''
-        }
+    def download_image_from_url(self, frame, is_shiny=False, is_female=False):
+        costume_id = frame.costume_id
+        url = simpledialog.askstring("Download Image", "Enter the REMOTE image URL (http...):")
+        if not url:
+            print("[DEBUG] No remote URL entered by user.")
+            return
+        print(f"[DEBUG] download_image_from_url -> user entered remote URL: {url}")
 
-    def create_blank_costume_frame(self, costume_id, is_new=False):
-        frame_text = "New Costume" if is_new else f"Costume ID: {costume_id}"
-        frame = tk.LabelFrame(self, text=frame_text, borderwidth=2, relief=tk.GROOVE)
-        frame.pack(side="top", fill="x", padx=5, pady=5)
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()  # ensure status code 200
 
-        labels = ['Costume Name', 'Shiny Available', 'Date Available', 'Date Shiny Available', 'Image URL', 'Shiny Image URL']
-        for i, label in enumerate(labels):
-            tk.Label(frame, text=label).grid(row=i, column=0, sticky="e")
-            entry = ttk.Entry(frame)
-            entry.grid(row=i, column=1, sticky="ew")
-            self.costume_entries[(costume_id, label)] = entry  # Store the entry with its costume_id and label
+            print(f"[DEBUG] HTTP response status: {response.status_code}")
+            print(f"[DEBUG] Content length: {len(response.content)} bytes")
 
-        # Image display placeholders for regular and shiny images
-        image_label = tk.Label(frame)
-        image_label.grid(row=0, column=2, rowspan=6, padx=10, pady=10)
+            # Log current fields for debugging
+            print("[DEBUG] Dumping all fields for this costume_id:")
+            for label in self.LABELS:
+                w = self.costume_entries.get((costume_id, label))
+                w_val = w.get() if w else "[NONE]"
+                print(f"   => {label}: {w_val}")
 
-        shiny_image_label = tk.Label(frame)
-        shiny_image_label.grid(row=0, column=3, rowspan=6, padx=10, pady=10)
+            # Downloaded image
+            pil_img = Image.open(BytesIO(response.content)).resize((240, 240))
 
-        # Buttons for regular image update placed right beneath the image placeholders
-        update_reg_image_url_button = tk.Button(frame, text="Download Image",
-                                            command=lambda c_id=costume_id: self.download_image_from_url(c_id, is_shiny=False))
-        update_reg_image_url_button.grid(row=6, column=2, sticky="ew")
+            if is_shiny:
+                pil_img = self.combine_images_with_shiny_icon(pil_img)
+                if not pil_img:
+                    print("[ERROR] Could not combine with shiny icon. Aborting.")
+                    return
 
-        upload_reg_image_file_button = tk.Button(frame, text="Select Image",
-                                                command=lambda c_id=costume_id: self.upload_costume_image(c_id, is_shiny=False))
-        upload_reg_image_file_button.grid(row=7, column=2, sticky="ew")
+            # Decide which local path field to use
+            if is_female:
+                entry_key = 'Shiny Female Image URL' if is_shiny else 'Female Image URL'
+            else:
+                entry_key = 'Shiny Image URL' if is_shiny else 'Image URL'
 
-        # Buttons for shiny image update placed right beneath the shiny image placeholders
-        update_shiny_image_url_button = tk.Button(frame, text="Download Image",
-                                            command=lambda c_id=costume_id: self.download_image_from_url(c_id, is_shiny=True))
-        update_shiny_image_url_button.grid(row=6, column=3, sticky="ew")
+            # Get the user-typed local path
+            widget = self.costume_entries.get((costume_id, entry_key))
+            if not widget:
+                # This means we have no such field, which shouldn't happen if everything is correct
+                messagebox.showerror(
+                    "No Field Found",
+                    f"No entry widget found for costume_id={costume_id}, label='{entry_key}'."
+                )
+                print(f"[ERROR] No widget found for (costume_id={costume_id}, '{entry_key}') in self.costume_entries.")
+                return
 
-        upload_shiny_image_file_button = tk.Button(frame, text="Select Image",
-                                                command=lambda c_id=costume_id: self.upload_costume_image(c_id, is_shiny=True))
-        upload_shiny_image_file_button.grid(row=7, column=3, sticky="ew")
+            relative_path = widget.get().strip()
+            if not relative_path:
+                messagebox.showerror(
+                    "No Local Path",
+                    f"You must enter a local file path in '{entry_key}' before downloading."
+                )
+                print("[DEBUG] Local path is empty; aborting.")
+                return
 
-        # Add save button for the costume
-        save_costume_button = tk.Button(frame, text="Save Costume", command=lambda: self.save_costume_changes(costume_id))
-        save_costume_button.grid(row=8, column=1, sticky="ew")
+            print(f"[DEBUG] Using user-entered local path: {relative_path}")
 
-        # Add delete button for the costume
-        delete_button = tk.Button(frame, text="Delete Costume", command=lambda: self.delete_costume(costume_id))
-        delete_button.grid(row=8, column=0, sticky="ew")
+            # Build absolute save path
+            save_path = os.path.join(self.relative_path_to_images, relative_path.lstrip("\\/"))
+            save_path = os.path.normpath(save_path)
+            print(f"[DEBUG] Full save_path: {save_path}")
 
-        # Store the frame along with other components for later use
-        self.costume_frames.append((frame, image_label, shiny_image_label, costume_id))
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            pil_img.save(save_path)
+            print("[DEBUG] Image saved successfully to disk.")
 
-        return frame  # Return the frame for potential further use
+            if os.path.exists(save_path):
+                print(f"[DEBUG] Verified file exists on disk: {save_path}")
+            else:
+                print(f"[WARNING] File not found on disk after saving: {save_path}")
 
-    def download_image_from_url(self, costume_id, is_shiny=False, is_female=False):
-        url = simpledialog.askstring("Download Image", "Enter the Image URL:")
-        if url:
-            print(f"Downloading image from URL: {url}")
-            try:
-                response = requests.get(url)
-                response.raise_for_status()  # Check if the request was successful
-                image = Image.open(BytesIO(response.content))
+            # Update the UI label
+            tk_img = ImageTk.PhotoImage(pil_img)
+            for frame_tuple in self.costume_frames:
+                # (frame, image_label, shiny_image_label, female_image_label, shiny_female_image_label, c_id)
+                _, img_lbl, shiny_lbl, female_lbl, shiny_female_lbl, c_id = frame_tuple
+                if str(c_id) == str(costume_id):
+                    if is_female:
+                        label_to_update = shiny_female_lbl if is_shiny else female_lbl
+                    else:
+                        label_to_update = shiny_lbl if is_shiny else img_lbl
 
-                # Resize the image to 240x240
-                image = image.resize((240, 240), Image.ANTIALIAS)
+                    label_to_update.configure(image=tk_img)
+                    label_to_update.image = tk_img
+                    print("[DEBUG] Label image updated in UI.")
+                    break
 
-                if is_shiny:
-                    # Combine with shiny icon if needed
-                    image = self.combine_images_with_shiny_icon(image)
-
-                # Determine which entry to use for saving the image based on whether it's a shiny or female image
-                if is_female:
-                    entry_key = 'Shiny Female Image URL' if is_shiny else 'Female Image URL'
-                else:
-                    entry_key = 'Shiny Image URL' if is_shiny else 'Image URL'
-
-                image_url_entry = self.costume_entries.get((costume_id, entry_key))
-                relative_image_path = image_url_entry.get().strip() if image_url_entry else ""
-
-                # If no path was provided, create a default path based on costume_id and entry_key
-                if not relative_image_path:
-                    relative_image_path = f'images/costumes/{costume_id}_{entry_key}.png'
-                    if image_url_entry:
-                        image_url_entry.delete(0, tk.END)
-                        image_url_entry.insert(0, relative_image_path)
-
-                print(f"Relative image path from entry: {relative_image_path}")
-
-                # Construct the full path for saving the image
-                script_directory = os.path.dirname(os.path.realpath(__file__))
-                go_directory = os.path.normpath(os.path.join(script_directory, '../../../../'))
-                public_directory = os.path.join(go_directory, 'frontend', 'public')
-                save_path = os.path.join(public_directory, relative_image_path.lstrip("\\/"))
-                save_path = os.path.normpath(save_path)
-                print(f"Full path for saving image: {save_path}")
-
-                # Create directories if they do not exist
-                os.makedirs(os.path.dirname(save_path), exist_ok=True)
-
-                # Save the image to the specified path
-                image.save(save_path)
-                print("Image saved successfully.")
-
-                # Load the saved image and update the UI
-                photo_image = ImageTk.PhotoImage(image)
-                for frame_tuple in self.costume_frames:
-                    _, image_label, shiny_image_label, female_image_label, shiny_female_image_label, c_id = frame_tuple
-                    if str(c_id) == str(costume_id):
-                        if is_female:
-                            label_to_update = shiny_female_image_label if is_shiny else female_image_label
-                        else:
-                            label_to_update = shiny_image_label if is_shiny else image_label
-                        
-                        label_to_update.configure(image=photo_image)
-                        label_to_update.image = photo_image  # Keep a reference
-                        break
-
-            except requests.exceptions.RequestException as e:
-                print(f"Failed to download the image: {e}")
-                messagebox.showerror("Error", f"Failed to download the image: {e}")
-            except Exception as e:
-                print(f"Error processing the image: {e}")
-                messagebox.showerror("Error", f"Error processing the image: {e}")
+        except requests.exceptions.RequestException as re:
+            print(f"[ERROR] Failed to download the image: {re}")
+            messagebox.showerror("Error", f"Failed to download the image: {re}")
+        except Exception as e:
+            print(f"[ERROR] Error processing the image: {e}")
+            messagebox.showerror("Error", f"Error processing the image: {e}")
 
     def combine_images_with_shiny_icon(self, pokemon_image):
-        
+        """
+        Overlays 'shiny_icon.png' on top of the downloaded Pokemon image.
+        """
         try:
-            # Assuming you have similar paths defined for shiny_icon.png
-            shiny_icon_path = os.path.normpath(os.path.join(self.relative_path_to_images, 'images', 'shiny_icon.png'))
+            shiny_icon_path = os.path.normpath(
+                os.path.join(self.relative_path_to_images, 'images', 'shiny_icon.png')
+            )
+            print(f"[DEBUG] Attempting to open shiny icon at: {shiny_icon_path}")
             shiny_icon = Image.open(shiny_icon_path).convert("RGBA")
 
-            # Assuming the size of the pokemon_image or you can resize as needed
             base_image = Image.new("RGBA", pokemon_image.size, (0, 0, 0, 0))
-            base_image.paste(pokemon_image, (0, 0), pokemon_image)
+            base_image.paste(pokemon_image, (0,0))
 
-            # Place shiny icon at the top left or desired location
-            shiny_position = (0, 0)  # top left corner
-            base_image.paste(shiny_icon, shiny_position, shiny_icon)
-
+            # top-left corner
+            base_image.paste(shiny_icon, (0,0), shiny_icon)
+            print("[DEBUG] Shiny icon successfully overlaid.")
             return base_image
-        except Exception as e:
-            print(f"Failed to combine images with shiny icon: {e}")
-            return None
 
+        except FileNotFoundError:
+            print(f"[WARNING] Shiny icon not found. Path: {shiny_icon_path}")
+            return pokemon_image  # gracefully proceed without icon
+        except Exception as e:
+            print(f"[ERROR] Failed to combine images with shiny icon: {e}")
+            return None
