@@ -3,34 +3,38 @@
 const { faker } = require('@faker-js/faker');
 const fs = require('fs');
 
+const { cpMultipliers, calculateCP } = require('./cpUtils');
+
 // Load Pokémon data and keys from JSON files
 const pokemonData = JSON.parse(fs.readFileSync('./pokemon.json', 'utf8'));
 const pokemonKeys = JSON.parse(fs.readFileSync('./pokemonKeys.json', 'utf8'));
 
-// Helper function to generate random coordinates within Vancouver
-function getRandomVancouverCoordinates() {
-    const latitude = faker.number.float({ min: 49.198, max: 49.316, precision: 0.00001 });
-    const longitude = faker.number.float({ min: -123.264, max: -123.023, precision: 0.00001 });
-
-    return { latitude, longitude };
-}
-
-// Function to get a random Pokémon key
+// Function to get a random Pokémon key, excluding primal, mega, and fusion forms
 function getRandomPokemonKey() {
-    const randomKey = faker.helpers.arrayElement(pokemonKeys);
+    // Filter out keys containing primal, mega, or fusion
+    const filteredKeys = pokemonKeys.filter(key => {
+        const lowerKey = key.toLowerCase();
+        return !lowerKey.includes('primal') && 
+               !lowerKey.includes('mega') && 
+               !lowerKey.includes('fusion');
+    });
+    
+    const randomKey = faker.helpers.arrayElement(filteredKeys);
     return randomKey;
 }
 
 // Helper function to parse pokemonKey and determine variant details
 function parsePokemonKey(pokemonKey) {
     const keyParts = pokemonKey.split('-');
-    const pokemon_id = parseInt(keyParts[0], 10); // The first part is the pokemon_id
-    const variantPart = keyParts.slice(1).join('-'); // The rest is the variant part
+    const pokemon_id = parseInt(keyParts[0], 10);
+    const variantPart = keyParts.slice(1).join('-');
 
     let isShiny = false;
     let isShadow = false;
     let costumeName = null;
-    let formName = null; // For mega and primal forms
+    let formName = null;
+    let isDynamax = false;
+    let isGigantamax = false;
 
     if (!variantPart) {
         throw new Error(`Invalid pokemonKey: ${pokemonKey}`);
@@ -38,8 +42,8 @@ function parsePokemonKey(pokemonKey) {
 
     const tokens = variantPart.split('_');
 
-    // Define known forms including mega_x and mega_y
-    const knownForms = ['mega', 'mega_x', 'mega_y', 'primal'];
+    // Define known forms - removing primal and mega since we're not using them
+    const knownForms = [];  // Emptied since we're excluding mega/primal forms
 
     // Process tokens to set flags and names
     let i = 0;
@@ -52,17 +56,21 @@ function parsePokemonKey(pokemonKey) {
         } else if (token === 'shadow') {
             isShadow = true;
             i++;
+        } else if (token === 'dynamax') {
+            isDynamax = true;
+            i++;
+        } else if (token === 'gigantamax') {
+            isGigantamax = true;
+            i++;
         } else if (token === 'default') {
-            // 'default' doesn't change any flags
             i++;
         } else {
             // Check if the remaining tokens form a known form
             const remainingTokens = tokens.slice(i).join('_').toLowerCase();
             if (knownForms.includes(remainingTokens)) {
                 formName = remainingTokens;
-                break; // No more tokens to process
+                break;
             } else {
-                // Assume it's part of a costume name
                 if (costumeName) {
                     costumeName += `_${token}`;
                 } else {
@@ -73,18 +81,15 @@ function parsePokemonKey(pokemonKey) {
         }
     }
 
-    // Get the Pokémon data for this pokemon_id
     const pokemon = pokemonData.find(p => p.pokemon_id === pokemon_id);
 
     if (!pokemon) {
         console.warn(`Could not find pokemon with id ${pokemon_id}`);
-        return null; // Return null to indicate failure
+        return null;
     }
 
-    // If there is a costumeName, find the costume_id
     let costumeId = null;
     if (costumeName) {
-        // Ensure pokemon.costumes is an array
         if (Array.isArray(pokemon.costumes)) {
             const costume = pokemon.costumes.find(
                 c =>
@@ -105,80 +110,46 @@ function parsePokemonKey(pokemonKey) {
         }
     }
 
-    // Handle forms (mega and primal)
+    // Handle regular forms (not mega/primal)
     let form = null;
     if (formName) {
         form = formName;
-
-        if (formName.startsWith('mega') || formName === 'primal') {
-            // For mega and primal forms
-            if (pokemon.megaEvolutions && pokemon.megaEvolutions.length > 0) {
-                if (formName === 'mega') {
-                    // Mega evolution exists; accept it
-                    // No further validation needed
-                } else if (formName.startsWith('mega_')) {
-                    // For mega_x and mega_y
-                    const formSuffix = formName.replace('mega_', '').toLowerCase(); // 'x' or 'y'
-                    const matchingMega = pokemon.megaEvolutions.find(mega => {
-                        return (
-                            mega.form &&
-                            mega.form.toLowerCase() === formSuffix &&
-                            !mega.primal // Ensure it's not a primal form
-                        );
-                    });
-                    if (!matchingMega) {
-                        console.warn(
-                            `Warning: Mega form '${formName}' not found for pokemon id ${pokemon_id}`
-                        );
-                        // Handle accordingly
-                    }
-                } else if (formName === 'primal') {
-                    // Check for primal evolution
-                    const primalEvolution = pokemon.megaEvolutions.find(mega => mega.primal === 1);
-                    if (!primalEvolution) {
-                        console.warn(
-                            `Warning: No primal evolutions available for pokemon id ${pokemon_id}`
-                        );
-                        return null; // Return null or handle accordingly
-                    }
-                }
-            } else {
+        
+        // Handle other forms
+        if (Array.isArray(pokemon.forms) && pokemon.forms.length > 0) {
+            const formExists = pokemon.forms.some(
+                f =>
+                    f.name &&
+                    f.name.replace(/ /g, '_').toLowerCase() === formName.toLowerCase()
+            );
+            if (!formExists) {
                 console.warn(
-                    `Warning: No mega or primal evolutions available for pokemon id ${pokemon_id}`
+                    `Warning: Form '${formName}' not found for pokemon id ${pokemon_id}`
                 );
-                return null; // Return null or handle accordingly
             }
         } else {
-            // Handle other forms
-            if (Array.isArray(pokemon.forms) && pokemon.forms.length > 0) {
-                const formExists = pokemon.forms.some(
-                    f =>
-                        f.name &&
-                        f.name.replace(/ /g, '_').toLowerCase() === formName.toLowerCase()
-                );
-                if (!formExists) {
-                    console.warn(
-                        `Warning: Form '${formName}' not found for pokemon id ${pokemon_id}`
-                    );
-                    // Handle accordingly
-                }
-            } else {
-                console.warn(
-                    `Warning: No valid forms found for pokemon id ${pokemon_id}`
-                );
-            }
+            console.warn(
+                `Warning: No valid forms found for pokemon id ${pokemon_id}`
+            );
         }
     }
 
-    // Get gender_rate from pokemon
     const genderRate = pokemon.gender_rate;
-
-    // Get moves from pokemon
     const moves = pokemon.moves || [];
-
     const name = pokemon.name;
 
-    return { pokemon_id, isShiny, isShadow, costumeId, form, genderRate, moves, name };
+    return { 
+        pokemon_id, 
+        isShiny, 
+        isShadow, 
+        costumeId, 
+        form, 
+        genderRate, 
+        moves, 
+        name,
+        isDynamax,
+        isGigantamax
+    };
 }
 
 // Helper function to generate a Pokémon instance for a user
@@ -186,17 +157,84 @@ function generatePokemonInstance(pokemonKey, userId) {
     try {
         console.log(`Generating Pokémon instance for user ID: ${userId} and Pokémon key: ${pokemonKey}`);
 
-        // Parse the pokemonKey to get details
         const parsedData = parsePokemonKey(pokemonKey);
-
         if (!parsedData) {
             console.warn(`Failed to parse Pokémon key: ${pokemonKey}`);
             return null; // Return null to indicate failure
         }
 
-        const { pokemon_id, isShiny, isShadow, costumeId, form, genderRate, moves, name } = parsedData;
+        const { 
+            pokemon_id, 
+            isShiny, 
+            isShadow, 
+            costumeId, 
+            form, 
+            genderRate, 
+            moves, 
+            name,
+            isDynamax,
+            isGigantamax
+        } = parsedData;
+        const pokemon = pokemonData.find((p) => p.pokemon_id === pokemon_id);
 
-        // Determine gender
+        if (!pokemon) {
+            console.warn(`Could not find pokemon with id ${pokemon_id}`);
+            return null;
+        }
+
+        // ---------------------------
+        // 1. Grab the base stats
+        //    (Adjust property names as needed based on your JSON structure!)
+        // ---------------------------
+        const baseAttack = parseInt(pokemon.attack, 10) || 0;
+        const baseDefense = parseInt(pokemon.defense, 10) || 0;
+        const baseStamina = parseInt(pokemon.stamina, 10) || 0;
+
+        // ---------------------------
+        // 2. Randomly generate your level and IVs
+        //    (You can do a full random approach or
+        //     some other logic if needed.)
+        // ---------------------------
+        const level = faker.number.int({ min: 1, max: 50 }); // or go up to 51, or allow half levels
+        const generateValidIV = () => {
+            const iv = faker.number.int({ min: 0, max: 15 });
+            return Number.isInteger(iv) ? iv : 0; // Fallback to 0 if not a valid integer
+        };
+        
+        const ivAttack = generateValidIV();
+        const ivDefense = generateValidIV();
+        const ivStamina = generateValidIV();
+
+        // ---------------------------
+        // 3. Calculate CP
+        // ---------------------------
+        const multiplier = cpMultipliers[level];
+        let cp = 0; // Default to 0 instead of null
+
+        if (multiplier) {
+            cp = calculateCP(
+                baseAttack,
+                baseDefense,
+                baseStamina,
+                ivAttack,
+                ivDefense,
+                ivStamina,
+                multiplier
+            );
+        } else {
+            console.warn(`No CP multiplier found for level ${level}. CP set to 0.`);
+        }
+
+        // ---------------------------
+        // 4. Generate Weight and Height
+        // ---------------------------
+        // Define realistic ranges
+        const weight = parseFloat(faker.number.float({ min: 0.1, max: 1000, precision: 0.1 }).toFixed(1)) || 0.1; // in kilograms
+        const height = parseFloat(faker.number.float({ min: 0.1, max: 10, precision: 0.01 }).toFixed(2)) || 0.1; // in meters
+
+        // ---------------------------
+        // 5. Decide the rest of your fields (moves, ownership, etc.)
+        // ---------------------------
         let gender = 'Genderless';
 
         if (genderRate) {
@@ -204,17 +242,17 @@ function generatePokemonInstance(pokemonKey, userId) {
             let femaleRate = 0;
             let genderlessRate = 0;
             const rates = genderRate.split('_');
-            rates.forEach(rate => {
+            rates.forEach((rate) => {
                 if (rate.endsWith('M')) {
-                    maleRate = parseInt(rate.replace('M', ''), 10);
+                    maleRate = parseInt(rate.replace('M', ''), 10) || 0;
                 } else if (rate.endsWith('F')) {
-                    femaleRate = parseInt(rate.replace('F', ''), 10);
+                    femaleRate = parseInt(rate.replace('F', ''), 10) || 0;
                 } else if (rate.endsWith('GL')) {
-                    genderlessRate = parseInt(rate.replace('GL', ''), 10);
+                    genderlessRate = parseInt(rate.replace('GL', ''), 10) || 0;
                 }
             });
             const totalRate = maleRate + femaleRate + genderlessRate;
-            const randomValue = faker.number.int({ min: 1, max: totalRate });
+            const randomValue = faker.number.int({ min: 1, max: totalRate || 1 }); // Avoid max < min
 
             if (randomValue <= maleRate) {
                 gender = 'Male';
@@ -225,27 +263,24 @@ function generatePokemonInstance(pokemonKey, userId) {
             }
         }
 
-        // Select moves
-        const fastMoves = moves.filter(move => move.is_fast);
-        const chargedMoves = moves.filter(move => !move.is_fast);
+        const fastMoves = moves.filter((move) => move.is_fast);
+        const chargedMoves = moves.filter((move) => !move.is_fast);
 
-        // Check if moves are available
         let fastMove = null;
         let selectedChargedMoves = [];
 
         if (fastMoves.length > 0) {
             fastMove = faker.helpers.arrayElement(fastMoves);
         } else {
-            console.warn(`Warning: No fast moves available for Pokémon ID ${pokemon_id} (${name}). Setting fast_move_id to null.`);
+            console.warn(`No fast moves available for Pokémon ID ${pokemon_id} (${name}). Setting to 0.`);
         }
 
         if (chargedMoves.length > 0) {
-            selectedChargedMoves = faker.helpers.arrayElements(chargedMoves, 2);
+            selectedChargedMoves = faker.helpers.arrayElements(chargedMoves, Math.min(2, chargedMoves.length));
         } else {
-            console.warn(`Warning: No charged moves available for Pokémon ID ${pokemon_id} (${name}). Setting charged_move1_id and charged_move2_id to null.`);
+            console.warn(`No charged moves available for Pokémon ID ${pokemon_id} (${name}). Setting to 0.`);
         }
 
-        // Handle trade/wanted status. Shadow and mega/primal Pokémon can only be owned.
         let isForTrade = 0;
         let isWanted = 0;
         let isOwned = 1;
@@ -253,79 +288,125 @@ function generatePokemonInstance(pokemonKey, userId) {
         let registered = 0;
 
         if (isShadow || form) {
-            // Shadows and mega/primal forms can only be owned, not for trade or wanted
             isForTrade = 0;
             isWanted = 0;
             isOwned = 1;
             registered = 1;
         } else {
-            // For non-shadow and non-form Pokémon, determine trade or wanted status
             const tradeOrWantedRoll = faker.number.int({ min: 1, max: 100 });
-
             if (tradeOrWantedRoll <= 40) {
-                // 40% chance to be "for trade"
                 isForTrade = 1;
-                registered = 1; // If it's for trade, it must be registered and owned
+                registered = 1;
                 isOwned = 1;
             } else if (tradeOrWantedRoll > 40 && tradeOrWantedRoll <= 70) {
-                // 30% chance to be "wanted"
                 isWanted = 1;
-                isOwned = faker.datatype.boolean() ? 1 : 0; // Wanted Pokémon can be owned or unowned
+                isOwned = faker.datatype.boolean() ? 1 : 0;
                 isUnowned = isOwned === 0 ? 1 : 0;
             } else {
-                // 30% chance to be owned only
                 isOwned = 1;
                 registered = 1;
             }
         }
 
-        // If the Pokémon is owned or for trade, it must be registered
         if (isOwned || isForTrade) {
             registered = 1;
         }
 
-        let friendship_level = null;
+        let friendship_level = 0; // Default to 0 instead of null
         let pref_lucky = 0;
 
-        // For wanted Pokémon, set friendship_level and pref_lucky
         if (isWanted === 1) {
-            const friendshipLevels = [null, 1, 2, 3, 4];
+            const friendshipLevels = [0, 1, 2, 3, 4];
             friendship_level = faker.helpers.arrayElement(friendshipLevels);
             if (friendship_level === 4) {
                 pref_lucky = faker.datatype.boolean() ? 1 : 0;
             }
         }
 
+        // ---------------------------
+        // 6. Enforce Mutual Exclusivity for Dynamax and Gigantamax
+        // ---------------------------
+        // A Pokémon cannot be both Dynamax and Gigantamax
+        let dynamax = 0;
+        let gigantamax = 0;
+
+        if (isGigantamax) {
+            gigantamax = 1;
+            dynamax = 0; // Ensure it's not both
+        } else if (isDynamax) {
+            dynamax = 1;
+            gigantamax = 0;
+        }
+
+        // ---------------------------
+        // 7. Finally, build the Pokémon instance object
+        // ---------------------------
         const instance = {
-            instance_id: `${pokemonKey}_${faker.string.uuid()}`, // Generate instance_id based on pokemonKey and UUID
-            pokemon_id: pokemon_id,
-            shiny: isShiny,
-            shadow: isShadow,
-            costume_id: costumeId,
-            form: form, // Include form in the instance
-            fast_move_id: fastMove ? fastMove.move_id : null,
-            charged_move1_id: selectedChargedMoves[0] ? selectedChargedMoves[0].move_id : null,
-            charged_move2_id: selectedChargedMoves[1] ? selectedChargedMoves[1].move_id : null,
-            gender: gender,
-            is_unowned: isUnowned,
-            is_owned: isOwned,
-            is_for_trade: isForTrade,
-            is_wanted: isWanted,
-            registered: registered,
+            instance_id: `${pokemonKey}_${faker.string.uuid()}`,
+            pokemon_id,
+            shiny: isShiny ? 1 : 0,
+            shadow: isShadow ? 1 : 0,
+            costume_id: costumeId || 0,
+            form: form || 'default',
+            fast_move_id: fastMove ? fastMove.move_id : 0,
+            charged_move1_id: selectedChargedMoves[0] ? selectedChargedMoves[0].move_id : 0,
+            charged_move2_id: selectedChargedMoves[1] ? selectedChargedMoves[1].move_id : 0,
+            gender,
+            is_unowned: isUnowned || 0,
+            is_owned: isOwned || 0,
+            is_for_trade: isForTrade || 0,
+            is_wanted: isWanted || 0,
+            registered: registered || 0,
             user_id: userId,
-            not_trade_list: '{}', // Default empty
-            not_wanted_list: '{}', // Default empty
+            not_trade_list: '{}', 
+            not_wanted_list: '{}',
             date_added: new Date(),
             last_update: Date.now(),
-            friendship_level: friendship_level,
-            pref_lucky: pref_lucky
+            friendship_level,
+            pref_lucky,
+
+            // ---------------------------
+            // New CP-related fields
+            // ---------------------------
+            level: level || 1,
+            cp: cp || 0,  // in case no multiplier was found
+
+            attack_iv: Number.isInteger(ivAttack) ? ivAttack : 0,
+            defense_iv: Number.isInteger(ivDefense) ? ivDefense : 0,
+            stamina_iv: Number.isInteger(ivStamina) ? ivStamina : 0,
+
+            // ---------------------------
+            // New Weight and Height fields
+            // ---------------------------
+            weight: weight || 0.1, // in kilograms
+            height: height || 0.1, // in meters
+
+            // ---------------------------
+            // New Dynamax and Gigantamax flags
+            // ---------------------------
+            dynamax,
+            gigantamax,
+            mega: 0
         };
 
-        return instance;
+        // Validate IV fields before returning
+        return validatePokemonInstance(instance);
     } catch (error) {
         console.warn(`Error generating Pokémon instance for key ${pokemonKey}: ${error.message}`);
         return null;
     }
+}
+
+// Function to validate IV fields
+function validatePokemonInstance(instance) {
+    const ivFields = ['attack_iv', 'defense_iv', 'stamina_iv'];
+    ivFields.forEach(field => {
+        if (typeof instance[field] !== 'number' || isNaN(instance[field])) {
+            console.warn(`Invalid value for ${field}: ${instance[field]}. Setting to 0.`);
+            instance[field] = 0;
+        }
+    });
+    return instance;
 }
 
 // Function to update the not_wanted_list and not_trade_list
@@ -348,7 +429,6 @@ function updateTradeAndWantedLists(wantedInstances, tradeInstances) {
 }
 
 module.exports = {
-    getRandomVancouverCoordinates,
     getRandomPokemonKey,
     generatePokemonInstance,
     updateTradeAndWantedLists

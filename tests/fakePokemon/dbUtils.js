@@ -11,10 +11,11 @@ async function usernameExists(connection, username) {
     return rows[0].count > 0;
 }
 
-// Function to insert a user into MySQL once
-async function insertUser(connection, mongoUser, coordinates) {
-    const latitude = coordinates.latitude !== undefined ? coordinates.latitude : null;
-    const longitude = coordinates.longitude !== undefined ? coordinates.longitude : null;
+// Updated function to use MongoDB coordinates directly
+async function insertUser(connection, mongoUser) {
+    // Get coordinates directly from the mongoUser object
+    const latitude = mongoUser.coordinates?.latitude || null;
+    const longitude = mongoUser.coordinates?.longitude || null;
 
     console.log(`Inserting user: ${mongoUser.username}, Latitude: ${latitude}, Longitude: ${longitude}`);
 
@@ -27,16 +28,14 @@ async function insertUser(connection, mongoUser, coordinates) {
 
 // Function to insert a Pokémon instance into MySQL
 async function insertPokemonInstance(connection, instance) {
-    // console.log(`Inserting Pokémon instance: ${instance.instance_id} for user: ${instance.user_id}`);
-
     const values = [
         instance.instance_id,
         instance.pokemon_id,
         instance.nickname || null,
         instance.cp || null,
-        instance.attack_iv || null,
-        instance.defense_iv || null,
-        instance.stamina_iv || null,
+        instance.attack_iv || 0,
+        instance.defense_iv || 0,
+        instance.stamina_iv || 0,
         instance.shiny,
         instance.costume_id || null,
         instance.lucky || 0,
@@ -67,15 +66,35 @@ async function insertPokemonInstance(connection, instance) {
         instance.trace_id || null,
         instance.user_id,
         instance.trade_filters || '{}',
-        instance.wanted_filters || '{}'
+        instance.wanted_filters || '{}',
+        instance.mega || 0,
+        instance.mega_form || null,
+        instance.is_mega || 0,
+        instance.level,
+        instance.is_fused || 0,
+        instance.fusion || {},
+        instance.fusion_form || null,
+        instance.fused_with || null,
+        instance.disabled || 0,
+        instance.dynamax,
+        instance.gigantamax,
+        instance.max_attack || null,
+        instance.max_guard || null,
+        instance.max_spirit || null
     ];
 
     const query = `INSERT INTO instances (
-        instance_id, pokemon_id, nickname, cp, attack_iv, defense_iv, stamina_iv, shiny, costume_id, lucky, shadow, purified, fast_move_id, charged_move1_id, charged_move2_id, weight, height, gender, mirror, pref_lucky, registered, favorite, location_card, location_caught, friendship_level, date_caught, date_added, last_update, is_unowned, is_owned, is_for_trade, is_wanted, not_trade_list, not_wanted_list, trace_id, user_id, trade_filters, wanted_filters
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        instance_id, pokemon_id, nickname, cp, attack_iv, defense_iv, stamina_iv, 
+        shiny, costume_id, lucky, shadow, purified, fast_move_id, charged_move1_id, 
+        charged_move2_id, weight, height, gender, mirror, pref_lucky, registered, 
+        favorite, location_card, location_caught, friendship_level, date_caught, 
+        date_added, last_update, is_unowned, is_owned, is_for_trade, is_wanted, 
+        not_trade_list, not_wanted_list, trace_id, user_id, trade_filters, wanted_filters,
+        mega, mega_form, is_mega, level, is_fused, fusion, fusion_form, fused_with, 
+        disabled, dynamax, gigantamax, max_attack, max_guard, max_spirit
+    ) VALUES (${Array(values.length).fill('?').join(',')})`;
 
     const [rows] = await connection.execute(query, values);
-    // console.log(`Inserted Pokémon instance: ${instance.instance_id}`);
     return rows;
 }
 
