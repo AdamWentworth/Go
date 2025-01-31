@@ -18,6 +18,7 @@ const getMegaEvolutionsForPokemon = (pokemon_id, callback) => {
         mega_evolution.form, 
         mega_evolution.type_1_id, 
         mega_evolution.type_2_id,
+        mega_evolution.date_available,
         t1.name AS type1_name, 
         t2.name AS type2_name
     FROM mega_evolution

@@ -2,11 +2,7 @@
 
 import { useMemo } from 'react';
 
-const useRecentPokemons = (
-    displayedPokemons,
-    sortMode,
-    { isShiny = false, showShadow = false, showCostume = false, showAll = false } = {}
-  ) => {
+const useRecentPokemons = (displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll }) => {
     return useMemo(() => {
         // Convert 'ascending' or 'descending' to appropriate sort order
         const sortOrder = sortMode === 'ascending' ? 1 : -1;
@@ -38,12 +34,53 @@ const useRecentPokemons = (
                         if (costumeData) {
                             return new Date(costumeData.shadow_costume.date_available);
                         }
+                    }
+                    if (pokemon.variantType?.includes('fusion')) {
+                        // Split on underscore and get the last element in case of 'shiny_fusion_1'
+                        const parts = pokemon.variantType.split('_');
+                        const fusionId = parseInt(parts[parts.length - 1], 10);
+                        const fusionData = pokemon.fusion?.find(f => f.fusion_id === fusionId);
+                        if (fusionData) {
+                            return new Date(fusionData.date_available);
+                        }
+                    }
+                    if (pokemon.variantType.includes('mega') || pokemon.variantType.includes('primal')) {
+                        // Extract the form directly from the pokemon's form property
+                        const megaForm = pokemon.form; // This will be 'X' or 'Y'
+                        // If pokemon has mega evolutions
+                        if (pokemon.megaEvolutions && pokemon.megaEvolutions.length > 0) {
+                            // Find the matching mega evolution based on form
+                            const selectedMegaEvolution = pokemon.megaEvolutions.find(
+                                mega => mega.form === megaForm
+                            ) || pokemon.megaEvolutions[0]; // Fallback to first mega if no match
+                            // Return the appropriate date
+                            return new Date(selectedMegaEvolution.date_available);
+                        }               
                     } else {
+                        const maxData = pokemon.max?.[0];
                         switch (pokemon.variantType) {
                             case 'default': return new Date(pokemon.date_available);
                             case 'shiny': return new Date(pokemon.date_shiny_available);
                             case 'shadow': return new Date(pokemon.date_shadow_available);
                             case 'shiny_shadow': return new Date(pokemon.date_shiny_shadow_available);
+                            case 'dynamax':
+                            case 'shiny_dynamax':
+                                if (maxData?.dynamax_release_date) {
+                                    return new Date(maxData.dynamax_release_date);
+                                } else {
+                                    console.warn(`No dynamax_release_date found for Pokemon ${pokemon.name} (ID: ${pokemon.pokedex_number})`);
+                                    return new Date();
+                                }
+                                break;
+                            case 'gigantamax':
+                            case 'shiny_gigantamax':
+                                if (maxData?.gigantamax_release_date) {
+                                    return new Date(maxData.gigantamax_release_date);
+                                } else {
+                                    console.warn(`No gigantamax_release_date found for Pokemon ${pokemon.name} (ID: ${pokemon.pokedex_number})`);
+                                    return new Date();
+                                }
+                                break;
                             default: return new Date();
                         }
                     }
