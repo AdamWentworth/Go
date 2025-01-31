@@ -214,15 +214,56 @@ const TradeListView = ({ item, findPokemonByKey }) => {
                 const { baseKey } = parsePokemonKey(pokemonKeyWithUUID);
                 const wantedListPokemon = item.wanted_list[pokemonKeyWithUUID];
                 const matchedPokemon = findPokemonByKey(baseKey);
-                return matchedPokemon ? (
-                  <img
+                
+                if (!matchedPokemon) return null;
+
+                return (
+                  <div
                     key={pokemonKeyWithUUID}
-                    src={matchedPokemon.currentImage}
-                    alt={matchedPokemon.name}
-                    className={`wanted-pokemon-image ${wantedListPokemon.match ? 'glowing-pokemon' : ''}`}
-                    title={`${matchedPokemon.form ? `${matchedPokemon.form} ` : ''}${matchedPokemon.name}`}
-                  />
-                ) : null;
+                    className="wanted-pokemon-container"
+                    style={{ position: 'relative' }}
+                  >
+                    {/* Dynamax Icon */}
+                    {wantedListPokemon.dynamax && (
+                      <img
+                        src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
+                        alt="Dynamax"
+                        style={{
+                          position: 'absolute',
+                          top: '5%',
+                          right: '5%',
+                          width: '30%',
+                          height: '30%',
+                          zIndex: 1,
+                        }}
+                      />
+                    )}
+
+                    {/* Gigantamax Icon */}
+                    {wantedListPokemon.gigantamax && (
+                      <img
+                        src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
+                        alt="Gigantamax"
+                        style={{
+                          position: 'absolute',
+                          top: '5%',
+                          right: '5%', // Adjust position if both icons are present
+                          width: '30%',
+                          height: '30%',
+                          zIndex: 1,
+                        }}
+                      />
+                    )}
+
+                    {/* Pokémon Image */}
+                    <img
+                      src={matchedPokemon.currentImage}
+                      alt={matchedPokemon.name}
+                      className={`wanted-pokemon-image ${wantedListPokemon.match ? 'glowing-pokemon' : ''}`}
+                      title={`${matchedPokemon.form ? `${matchedPokemon.form} ` : ''}${matchedPokemon.name}`}
+                    />
+                  </div>
+                );
               })}
             </div>
           </div>

@@ -9,10 +9,10 @@ const NUM_USERS = 1000; // Generate 1000 users
 
 // Vancouver coordinates boundaries (approximate)
 const VANCOUVER_BOUNDS = {
-  minLat: 49.20,   // Southern boundary (Richmond/Tsawwassen)
-  maxLat: 49.50,   // Northern boundary (North Vancouver mountains)
-  minLon: -123.30, // Western boundary (Howe Sound)
-  maxLon: -122.60  // Eastern boundary (Port Moody/Coquitlam)
+  minLat: 49.198,   // Southern boundary (Richmond/Tsawwassen)
+  maxLat: 49.316,   // Northern boundary (North Vancouver mountains)
+  minLon: -123.264, // Western boundary (Howe Sound)
+  maxLon: -123.023  // Eastern boundary (Port Moody/Coquitlam)
 };
 
 // Generate sequential trainer codes

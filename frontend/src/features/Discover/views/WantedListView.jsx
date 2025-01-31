@@ -227,18 +227,59 @@ const WantedListView = ({ item, findPokemonByKey }) => {
             <div className="trade-list">
               {Object.keys(item.trade_list).map((pokemonKeyWithUUID) => {
                 const { baseKey } = parsePokemonKey(pokemonKeyWithUUID);
-                const tradeListPokemon = item.trade_list[pokemonKeyWithUUID]; // Access each trade list Pokémon
+                const tradeListPokemon = item.trade_list[pokemonKeyWithUUID];
                 const matchedPokemon = findPokemonByKey(baseKey);
 
-                return matchedPokemon ? (
-                  <img
+                if (!matchedPokemon) return null;
+
+                return (
+                  <div
                     key={pokemonKeyWithUUID}
-                    src={matchedPokemon.currentImage}
-                    alt={matchedPokemon.name}
-                    className={`trade-pokemon-image ${tradeListPokemon.match ? 'glowing-pokemon' : ''}`}
-                    title={`${matchedPokemon.form ? `${matchedPokemon.form} ` : ''}${matchedPokemon.name}`}
-                  />
-                ) : null;
+                    className="trade-pokemon-container"
+                    style={{ position: 'relative', display: 'inline-block', margin: '10px' }}
+                  >
+                    {/* Dynamax Icon */}
+                    {tradeListPokemon.dynamax && (
+                      <img
+                        src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
+                        alt="Dynamax"
+                        style={{
+                          position: 'absolute',
+                          top: '5%',
+                          right: '5%',
+                          width: '30px',
+                          height: '30px',
+                          zIndex: 1,
+                        }}
+                      />
+                    )}
+
+                    {/* Gigantamax Icon */}
+                    {tradeListPokemon.gigantamax && (
+                      <img
+                        src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
+                        alt="Gigantamax"
+                        style={{
+                          position: 'absolute',
+                          top: '5%',
+                          right: tradeListPokemon.dynamax ? '40px' : '5%', // Adjust position if both icons are present
+                          width: '30px',
+                          height: '30px',
+                          zIndex: 1,
+                        }}
+                      />
+                    )}
+
+                    {/* Pokémon Image */}
+                    <img
+                      src={matchedPokemon.currentImage}
+                      alt={matchedPokemon.name}
+                      className={`trade-pokemon-image ${tradeListPokemon.match ? 'glowing-pokemon' : ''}`}
+                      title={`${matchedPokemon.form ? `${matchedPokemon.form} ` : ''}${matchedPokemon.name}`}
+                      style={{ width: '100px', height: '100px' }} // Adjust size as needed
+                    />
+                  </div>
+                );
               })}
             </div>
           </div>
