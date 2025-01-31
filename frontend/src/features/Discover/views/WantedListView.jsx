@@ -236,7 +236,7 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                   <div
                     key={pokemonKeyWithUUID}
                     className="trade-pokemon-container"
-                    style={{ position: 'relative', display: 'inline-block', margin: '10px' }}
+                    style={{ position: 'relative' }}
                   >
                     {/* Dynamax Icon */}
                     {tradeListPokemon.dynamax && (
@@ -247,8 +247,8 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                           position: 'absolute',
                           top: '5%',
                           right: '5%',
-                          width: '30px',
-                          height: '30px',
+                          width: '30%',
+                          height: '30%',
                           zIndex: 1,
                         }}
                       />
@@ -262,9 +262,9 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                         style={{
                           position: 'absolute',
                           top: '5%',
-                          right: tradeListPokemon.dynamax ? '40px' : '5%', // Adjust position if both icons are present
-                          width: '30px',
-                          height: '30px',
+                          right: '5%', // Adjust position if both icons are present
+                          width: '30%',
+                          height: '30%',
                           zIndex: 1,
                         }}
                       />

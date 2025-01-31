@@ -900,6 +900,16 @@ func instancesMatch(a, b PokemonInstance) (bool, string) {
 		return false, "LocationCard mismatch"
 	}
 
+	// Dynamax check
+	if a.Dynamax != b.Dynamax {
+		return false, "Dynamax mismatch"
+	}
+
+	// Gigantamax check
+	if a.Gigantamax != b.Gigantamax {
+		return false, "Gigantamax mismatch"
+	}
+
 	// FastMoveID check
 	if a.FastMoveID != nil && b.FastMoveID != nil && *a.FastMoveID != *b.FastMoveID {
 		return false, "FastMoveID mismatch"
