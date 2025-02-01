@@ -11,23 +11,6 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Bypass the service worker for specific API requests
-  if (
-    (url.origin === 'http://localhost:3005' && url.pathname.startsWith('/api/ownershipData/')) ||
-    url.origin === 'http://localhost:3006' ||
-    (
-      url.origin === 'http://localhost:3008' && url.pathname.startsWith('/api/sse')
-    ) ||
-    url.origin === 'http://localhost:3007'
-  ) {
-    return; // Do not intercept this request
-  }
-
-  // Bypass for external service
-  if (url.origin === 'https://photon.komoot.io') {
-    return;
-  }
-
   // If it's same-origin, attempt to serve from cache first, fallback to fetch
   if (url.origin === self.location.origin) {
     event.respondWith(
@@ -316,7 +299,7 @@ async function sendBatchedUpdatesToBackend(location) {
 
     console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, payload);
 
-    const response = await fetch('http://localhost:3003/api/batchedUpdates', {
+    const response = await fetch(`${REACT_APP_RECEIVER_API_URL}/batchedUpdates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
