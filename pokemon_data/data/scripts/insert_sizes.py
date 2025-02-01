@@ -18,46 +18,80 @@ def fetch_pokemon_data():
         return []
 
 def process_pokemon_data(data):
-    """Process and filter the API data to keep only one entry per pokemon_id."""
+    """
+    Process the API data to select only one entry per pokemon_id.
+    If a Pokémon has multiple entries, prefer the one with form "Normal".
+    Only entries with form "Normal" are returned.
+    """
     unique_pokemon = {}
-
     for entry in data:
-        pokemon_id = entry["pokemon_id"]
-        if pokemon_id not in unique_pokemon:
-            unique_pokemon[pokemon_id] = {
-                "pokemon_id": pokemon_id,
+        pid = entry["pokemon_id"]
+        current_form = entry.get("form", "Normal")
+        if pid not in unique_pokemon:
+            unique_pokemon[pid] = entry
+        else:
+            # If an entry already exists but is not "Normal" and the current one is,
+            # override the stored entry.
+            existing_form = unique_pokemon[pid].get("form", "Normal")
+            if current_form == "Normal" and existing_form != "Normal":
+                unique_pokemon[pid] = entry
+
+    # Filter to include only those entries whose form is "Normal"
+    processed = []
+    for entry in unique_pokemon.values():
+        if entry.get("form", "Normal") == "Normal":
+            processed.append({
+                "pokemon_id": entry["pokemon_id"],
                 "pokedex_height": entry["pokedex_height"],
                 "pokedex_weight": entry["pokedex_weight"],
                 "height_standard_deviation": entry["height_standard_deviation"],
                 "weight_standard_deviation": entry["weight_standard_deviation"],
-            }
-
-    return list(unique_pokemon.values())
+                "form": entry.get("form", "Normal")
+            })
+    return processed
 
 def compute_thresholds(pokemon):
-    """Compute height and weight thresholds for a Pokémon entry."""
-    h_std = pokemon["height_standard_deviation"]
-    w_std = pokemon["weight_standard_deviation"]
+    """
+    Compute height and weight thresholds for a Pokémon entry using doubled standard deviations.
+    
+    The doubled standard deviations are used as follows:
+      - new_h_std = height_standard_deviation * 2
+      - new_w_std = weight_standard_deviation * 2
+      
+    Then the thresholds are:
+      - XXS: mean - 2 * (new_std)
+      - XS:  mean - (new_std)
+      - XL:  mean + (new_std)
+      - XXL: mean + 2 * (new_std)
+    """
+    # Double the original standard deviations
+    new_h_std = pokemon["height_standard_deviation"] * 2
+    new_w_std = pokemon["weight_standard_deviation"] * 2
     h_mean = pokemon["pokedex_height"]
     w_mean = pokemon["pokedex_weight"]
 
     return {
-        "height_xxs_threshold": h_mean - 2 * h_std,
-        "height_xs_threshold": h_mean - h_std,
-        "height_xl_threshold": h_mean + h_std,
-        "height_xxl_threshold": h_mean + 2 * h_std,
-        "weight_xxs_threshold": w_mean - 2 * w_std,
-        "weight_xs_threshold": w_mean - w_std,
-        "weight_xl_threshold": w_mean + w_std,
-        "weight_xxl_threshold": w_mean + 2 * w_std,
+        "height_xxs_threshold": h_mean - 2 * new_h_std,
+        "height_xs_threshold": h_mean - new_h_std,
+        "height_xl_threshold": h_mean + new_h_std,
+        "height_xxl_threshold": h_mean + 2 * new_h_std,
+        "weight_xxs_threshold": w_mean - 2 * new_w_std,
+        "weight_xs_threshold": w_mean - new_w_std,
+        "weight_xl_threshold": w_mean + new_w_std,
+        "weight_xxl_threshold": w_mean + 2 * new_w_std,
     }
 
-def insert_into_database(data):
-    """Insert processed Pokémon size data into SQLite database."""
+def update_database_with_normal_forms(data):
+    """
+    Update the pokemon_sizes table with entries having form 'Normal'.
+    
+    For each entry, the thresholds are computed using doubled standard deviations,
+    and the doubled standard deviations are stored in the database.
+    """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # Ensure table exists without generated columns
+    # Ensure the table exists.
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS pokemon_sizes (
             pokemon_id INTEGER PRIMARY KEY,
@@ -77,7 +111,16 @@ def insert_into_database(data):
         )
     """)
 
+    # Process each Normal-form entry:
+    # - First, compute the doubled standard deviations.
+    # - Next, compute thresholds using the doubled standard deviations.
+    # - Then insert (or update) the database with these values.
     for pokemon in data:
+        # Calculate the doubled standard deviations
+        doubled_height_std = pokemon["height_standard_deviation"] * 2
+        doubled_weight_std = pokemon["weight_standard_deviation"] * 2
+
+        # Compute thresholds using the doubled values.
         thresholds = compute_thresholds(pokemon)
 
         cursor.execute("""
@@ -101,14 +144,21 @@ def insert_into_database(data):
                 weight_xl_threshold = excluded.weight_xl_threshold,
                 weight_xxl_threshold = excluded.weight_xxl_threshold
         """, (
-            pokemon["pokemon_id"], pokemon["pokedex_height"], pokemon["pokedex_weight"],
-            pokemon["height_standard_deviation"], pokemon["weight_standard_deviation"],
-            thresholds["height_xxs_threshold"], thresholds["height_xs_threshold"], 
-            thresholds["height_xl_threshold"], thresholds["height_xxl_threshold"],
-            thresholds["weight_xxs_threshold"], thresholds["weight_xs_threshold"], 
-            thresholds["weight_xl_threshold"], thresholds["weight_xxl_threshold"]
+            pokemon["pokemon_id"],
+            pokemon["pokedex_height"],
+            pokemon["pokedex_weight"],
+            # Store the doubled standard deviations
+            doubled_height_std,
+            doubled_weight_std,
+            thresholds["height_xxs_threshold"],
+            thresholds["height_xs_threshold"],
+            thresholds["height_xl_threshold"],
+            thresholds["height_xxl_threshold"],
+            thresholds["weight_xxs_threshold"],
+            thresholds["weight_xs_threshold"],
+            thresholds["weight_xl_threshold"],
+            thresholds["weight_xxl_threshold"]
         ))
-
     conn.commit()
     conn.close()
 
@@ -121,13 +171,13 @@ def main():
         print("No data fetched. Exiting.")
         return
 
-    print("Processing and filtering data...")
+    print("Processing and filtering data (preferring Normal forms)...")
     processed_data = process_pokemon_data(data)
 
-    print(f"Inserting {len(processed_data)} Pokémon entries into the database...")
-    insert_into_database(processed_data)
+    print("Updating entries with form 'Normal' using doubled standard deviations for thresholds...")
+    update_database_with_normal_forms(processed_data)
 
-    print("Done! Pokémon size data updated.")
+    print("Done! Database updated.")
 
 if __name__ == "__main__":
     main()

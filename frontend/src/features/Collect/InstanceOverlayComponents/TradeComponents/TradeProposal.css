@@ -93,7 +93,7 @@
 
 .trade-proposal-overlay .image-wrapper {
     position: relative;
-    width: 16rem;
+    width: 12rem;
     aspect-ratio: 1 / 1;
     margin: 0 auto;
 }
@@ -285,5 +285,11 @@
     
     .trade-proposal-arrow-image {
         width: 6.25rem;
+    }
+
+}
+@media (min-width: 1440px) {
+    .trade-proposal-overlay .image-wrapper {
+        width: 14rem;
     }
 }
