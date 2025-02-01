@@ -15,13 +15,14 @@ const { getBackgroundsForPokemon } = require('../services/backgroundService');
 const { 
     getCpForPokemon, 
     getCpForMegaEvolution,
-    getCpForFusionPokemon  // <-- Make sure to import it!
+    getCpForFusionPokemon
 } = require('../services/cpService');
 const { getMegaEvolutionsForPokemon } = require('../services/megaService');
 const { getRaidBossData } = require('../services/raidService');
-
-// Import the new maxPokemonService
 const { appendMaxDataToPokemons } = require('../services/maxPokemonService');
+const { appendSizesToPokemons } = require('../services/sizesService');
+
+const { writeJsonToFile } = require('../utils/jsonWriter');
 
 const db = new sqlite3.Database('./data/pokego.db');
 
@@ -261,9 +262,24 @@ const processAdditionalPokemonData = (pokemons, res) => {
                                                                 return res.status(500).json({ error: err.message });
                                                             }
 
-                                                            // Send the final response with all data, including max_pokemon
-                                                            res.json(pokemonsWithMaxData);
-                                                            logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
+                                                            appendSizesToPokemons(db, pokemonsWithRaidBossData, (err, pokemonsWithSizes) => {
+                                                                if (err) {
+                                                                    logger.error(`Error appending size data: ${err.message}`);
+                                                                    return res.status(500).json({ error: err.message });
+                                                                }
+                                                            
+                                                                // Now append max data to the pokemons that have sizes
+                                                                appendMaxDataToPokemons(db, pokemonsWithSizes, (err, finalPokemons) => {
+                                                                    if (err) {
+                                                                        logger.error(`Error appending max_pokemon data: ${err.message}`);
+                                                                        return res.status(500).json({ error: err.message });
+                                                                    }
+                                                            
+                                                                    // Send the final response with all data
+                                                                    res.json(finalPokemons);
+                                                                    logger.info(`Returned data for /pokemons with status ${res.statusCode}`);
+                                                                });
+                                                            });
                                                         });
                                                     });
                                                 }
