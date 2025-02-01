@@ -152,6 +152,40 @@ function parsePokemonKey(pokemonKey) {
     };
 }
 
+function generateSizeWithDistribution(baseValue, standardDeviation, xxsThreshold, xsThreshold, xlThreshold, xxlThreshold) {
+    // 1 in 5 chance (20%) for XXS or XXL
+    const extremeRoll = faker.number.int({ min: 1, max: 100 });
+    
+    if (extremeRoll <= 10) {
+        // XXS: Generate a value below xxsThreshold
+        return faker.number.float({
+            min: xxsThreshold * 0.7, // Allow some variation below XXS threshold
+            max: xxsThreshold,
+            precision: 0.01
+        });
+    } else if (extremeRoll <= 20) {
+        // XXL: Generate a value above xxlThreshold
+        return faker.number.float({
+            min: xxlThreshold,
+            max: xxlThreshold * 1.3, // Allow some variation above XXL threshold
+            precision: 0.01
+        });
+    } else {
+        // Normal distribution for the remaining 80%
+        // Using Box-Muller transform for normal distribution
+        const u1 = faker.number.float({ min: 0, max: 1 });
+        const u2 = faker.number.float({ min: 0, max: 1 });
+        
+        const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+        let value = baseValue + z * standardDeviation;
+        
+        // Clamp the value between XS and XL thresholds
+        value = Math.max(xsThreshold, Math.min(xlThreshold, value));
+        
+        return parseFloat(value.toFixed(2));
+    }
+}
+
 // Helper function to generate a Pokémon instance for a user
 function generatePokemonInstance(pokemonKey, userId) {
     try {
@@ -160,9 +194,9 @@ function generatePokemonInstance(pokemonKey, userId) {
         const parsedData = parsePokemonKey(pokemonKey);
         if (!parsedData) {
             console.warn(`Failed to parse Pokémon key: ${pokemonKey}`);
-            return null; // Return null to indicate failure
+            return null;
         }
-
+        
         const { 
             pokemon_id, 
             isShiny, 
@@ -181,6 +215,56 @@ function generatePokemonInstance(pokemonKey, userId) {
             console.warn(`Could not find pokemon with id ${pokemon_id}`);
             return null;
         }
+        // Extract size data from pokemon.json
+        const {
+            pokedex_height,
+            pokedex_weight,
+            height_standard_deviation,
+            weight_standard_deviation,
+            height_xxs_threshold,
+            height_xs_threshold,
+            height_xl_threshold,
+            height_xxl_threshold,
+            weight_xxs_threshold,
+            weight_xs_threshold,
+            weight_xl_threshold,
+            weight_xxl_threshold
+        } = pokemon.sizes;
+
+        // Generate height and weight using the new distribution
+        const height = generateSizeWithDistribution(
+            pokedex_height,
+            height_standard_deviation,
+            height_xxs_threshold,
+            height_xs_threshold,
+            height_xl_threshold,
+            height_xxl_threshold
+        );
+
+        const weight = generateSizeWithDistribution(
+            pokedex_weight,
+            weight_standard_deviation,
+            weight_xxs_threshold,
+            weight_xs_threshold,
+            weight_xl_threshold,
+            weight_xxl_threshold
+        );
+
+        // Calculate size categories for logging/verification
+        let heightCategory = 'normal';
+        if (height <= height_xxs_threshold) heightCategory = 'XXS';
+        else if (height <= height_xs_threshold) heightCategory = 'XS';
+        else if (height >= height_xxl_threshold) heightCategory = 'XXL';
+        else if (height >= height_xl_threshold) heightCategory = 'XL';
+
+        let weightCategory = 'normal';
+        if (weight <= weight_xxs_threshold) weightCategory = 'XXS';
+        else if (weight <= weight_xs_threshold) weightCategory = 'XS';
+        else if (weight >= weight_xxl_threshold) weightCategory = 'XXL';
+        else if (weight >= weight_xl_threshold) weightCategory = 'XL';
+
+        console.log(`Generated ${pokemon.name} size - Height: ${height}m (${heightCategory}), Weight: ${weight}kg (${weightCategory})`);
+
 
         // ---------------------------
         // 1. Grab the base stats
@@ -224,13 +308,6 @@ function generatePokemonInstance(pokemonKey, userId) {
         } else {
             console.warn(`No CP multiplier found for level ${level}. CP set to 0.`);
         }
-
-        // ---------------------------
-        // 4. Generate Weight and Height
-        // ---------------------------
-        // Define realistic ranges
-        const weight = parseFloat(faker.number.float({ min: 0.1, max: 1000, precision: 0.1 }).toFixed(1)) || 0.1; // in kilograms
-        const height = parseFloat(faker.number.float({ min: 0.1, max: 10, precision: 0.01 }).toFixed(2)) || 0.1; // in meters
 
         // ---------------------------
         // 5. Decide the rest of your fields (moves, ownership, etc.)
@@ -378,8 +455,8 @@ function generatePokemonInstance(pokemonKey, userId) {
             // ---------------------------
             // New Weight and Height fields
             // ---------------------------
-            weight: weight || 0.1, // in kilograms
-            height: height || 0.1, // in meters
+            weight: parseFloat(weight.toFixed(1)),
+            height: parseFloat(height.toFixed(2)),
 
             // ---------------------------
             // New Dynamax and Gigantamax flags
