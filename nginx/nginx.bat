@@ -1,6 +1,6 @@
 @echo off
 set nginxPath="C:\Program Files\nginx"
-set confPath="A:\Visual-Studio-Code\Go\frontend\nginx\nginx.conf"
+set confPath="A:\Visual-Studio-Code\Go\nginx\nginx.conf"
 
 if "%1"=="start" (
     echo Starting Nginx...
