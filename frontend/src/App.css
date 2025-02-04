@@ -12,6 +12,26 @@
   pointer-events: none;
 }
 
+.install-toast {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.install-toast-btn {
+  background: #1E90FF;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.install-toast-btn:hover {
+  background: #0066cc;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;

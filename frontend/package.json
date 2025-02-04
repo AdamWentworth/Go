@@ -52,8 +52,10 @@
     "@testing-library/react": "^14.3.1",
     "@testing-library/user-event": "^14.5.2",
     "babel-jest": "^29.7.0",
+    "babel-loader": "^9.2.1",
     "babel-preset-react-app": "^10.0.1",
     "broadcast-channel": "^7.0.0",
+    "copy-webpack-plugin": "^12.0.2",
     "cross-env": "^7.0.3",
     "eslint-plugin-react-hooks": "^5.0.0",
     "fake-indexeddb": "^6.0.0",
@@ -65,7 +67,10 @@
     "msw": "^1.2.1",
     "npm-force-resolutions": "^0.0.10",
     "util": "^0.12.5",
-    "web-streams-polyfill": "^4.0.0"
+    "web-streams-polyfill": "^4.0.0",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.0"
   },
   "resolutions": {
     "nth-check": "2.0.1",

@@ -5,6 +5,8 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
@@ -53,32 +55,60 @@ func sseHandler(c *fiber.Ctx) error {
 	c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
 		// Send initial event to confirm connection
 		if _, err := fmt.Fprintf(w, "event: connected\ndata: Connected to SSE stream\n\n"); err != nil {
-			// Handle error, possibly client disconnected
 			handleClientDisconnect(clientID, client)
 			return
 		}
 		if err := w.Flush(); err != nil {
-			// Handle error, possibly client disconnected
 			handleClientDisconnect(clientID, client)
 			return
 		}
 
-		// Listen for messages using for-range loop
+		// Start the heartbeat goroutine to keep the connection alive
+		heartbeatDone := make(chan struct{})
+		var hbOnce sync.Once
+		closeHeartbeat := func() {
+			hbOnce.Do(func() {
+				close(heartbeatDone)
+			})
+		}
+
+		go func() {
+			ticker := time.NewTicker(30 * time.Second)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ticker.C:
+					// Send a heartbeat comment (SSE comments start with ':')
+					if _, err := fmt.Fprintf(w, ": heartbeat\n\n"); err != nil {
+						closeHeartbeat()
+						return
+					}
+					if err := w.Flush(); err != nil {
+						closeHeartbeat()
+						return
+					}
+				case <-heartbeatDone:
+					return
+				}
+			}
+		}()
+
+		// Listen for messages from the client channel
 		for msg := range client.Channel {
-			// Write message to the client
 			if _, err := fmt.Fprintf(w, "data: %s\n\n", msg); err != nil {
-				// Handle error, possibly client disconnected
 				handleClientDisconnect(clientID, client)
+				closeHeartbeat()
 				return
 			}
 			if err := w.Flush(); err != nil {
-				// Handle error, possibly client disconnected
 				handleClientDisconnect(clientID, client)
+				closeHeartbeat()
 				return
 			}
 		}
 
-		// When the channel is closed, exit the function
+		// When the channel is closed, signal the heartbeat goroutine to stop
+		closeHeartbeat()
 	})
 
 	// Return nil to keep the connection open
@@ -87,12 +117,15 @@ func sseHandler(c *fiber.Ctx) error {
 
 func handleClientDisconnect(clientID string, client *Client) {
 	clientsMutex.Lock()
+	// Mark client as disconnected and remove from the clients map
 	client.Connected = false
 	delete(clients, clientID)
 	clientsMutex.Unlock()
 
-	// Close the channel to signal the for-range loop to exit
-	close(client.Channel)
+	// Close the client channel only once using sync.Once
+	client.closeOnce.Do(func() {
+		close(client.Channel)
+	})
 
 	logrus.Infof("Client disconnected: UserID=%s, DeviceID=%s", client.UserID, client.DeviceID)
 }

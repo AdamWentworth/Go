@@ -14,6 +14,7 @@ type Client struct {
 	Channel   chan []byte
 	Context   *fiber.Ctx
 	Connected bool
+	closeOnce sync.Once // ensures Channel is closed only once
 }
 
 var clients = make(map[string]*Client)

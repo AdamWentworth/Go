@@ -23,7 +23,6 @@
     gap: 1rem; /* Spacing between buttons */
     height: calc(100vh - 138px); /* Adjust height considering navbar; change 50px to your navbar's height */
     margin-top: 0px; /* Remove any top margin to eliminate the gap */
-    background-color: #333;
 }
 
 /* Base style for individual buttons */
@@ -39,6 +38,7 @@
     text-shadow: 2px 2px 4px rgba(0,0,0,1); /* Example shadow */
     flex-basis: calc(25% - 1rem); /* Adjust width to be half of the container minus the gap */
     box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
 }
 
 

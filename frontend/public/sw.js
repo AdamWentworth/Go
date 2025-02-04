@@ -1,5 +1,16 @@
 // sw.js
 
+let RECEIVER_API_URL = null;
+
+// Listen for configuration messages
+self.addEventListener('message', (event) => {
+  const { type, payload } = event.data;
+  if (type === 'SET_CONFIG' && payload && payload.RECEIVER_API_URL) {
+    RECEIVER_API_URL = payload.RECEIVER_API_URL;
+    console.log('Service Worker configured with RECEIVER_API_URL:', RECEIVER_API_URL);
+  }
+});
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -299,7 +310,7 @@ async function sendBatchedUpdatesToBackend(location) {
 
     console.log(`[${new Date().toLocaleTimeString()}] Syncing Updates to Backend:`, payload);
 
-    const response = await fetch(`${REACT_APP_RECEIVER_API_URL}/batchedUpdates`, {
+    const response = await fetch(`${RECEIVER_API_URL}/batchedUpdates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

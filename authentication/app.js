@@ -65,12 +65,25 @@ app.use(express.json());
 
 app.use(cookieParser());
 
+app.set('trust proxy', 'loopback, linklocal, uniquelocal');
+
 // CORS setup
-app.use(cors({
-    origin: process.env.FRONTEND_URL, // Ensure this matches exactly with the front-end's origin
-    credentials: true,
-    optionsSuccessStatus: 200
-}));
+const allowedOrigins = [
+    'http://localhost:3000',  // Local frontend
+    'https://pokemongonexus.com'
+  ];
+  
+  app.use(cors({
+      origin: (origin, callback) => {
+          if (!origin || allowedOrigins.includes(origin)) {
+              callback(null, true); // Allow the request
+          } else {
+              callback(new Error('CORS not allowed for this origin'));
+          }
+      },
+      credentials: true, // Allow cookies & credentials
+      optionsSuccessStatus: 200
+  }));
 
 // Security enhancements with Helmet
 app.use(helmet());
