@@ -47,6 +47,7 @@ function Register() {
     // Sanitize form values
     const sanitizedFormValues = {
       ...formValues,
+      username: formValues.username.trim(),
       trainerCode: formValues.trainerCode.replace(/\s+/g, ''),
     };
 

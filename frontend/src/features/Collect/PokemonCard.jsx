@@ -18,6 +18,7 @@ const PokemonCard = ({
   sortType,
   toggleCardHighlight,
   setIsFastSelectEnabled,
+  isEditable,
 }) => {
 
   const touchTimeoutRef = useRef(null);
@@ -34,7 +35,7 @@ const PokemonCard = ({
     touchHandled.current = false;
 
     touchTimeoutRef.current = setTimeout(() => {
-      if (!isFastSelectEnabled) {
+      if (!isFastSelectEnabled && isEditable) {
         toggleCardHighlight(pokemon.pokemonKey);
         setIsFastSelectEnabled(true);
       }
@@ -68,6 +69,19 @@ const PokemonCard = ({
     }
     isScrolling.current = false;
   };
+
+  const [shouldJiggle, setShouldJiggle] = useState(false);
+  const prevIsHighlighted = useRef();
+
+  useEffect(() => {
+    if (prevIsHighlighted.current !== undefined && 
+        prevIsHighlighted.current !== isHighlighted) {
+      setShouldJiggle(true);
+      const timer = setTimeout(() => setShouldJiggle(false), 300);
+      return () => clearTimeout(timer);
+    }
+    prevIsHighlighted.current = isHighlighted;
+  }, [isHighlighted])
 
   const [currentImage, setCurrentImage] = useState(pokemon.currentImage);
 
@@ -113,6 +127,7 @@ const PokemonCard = ({
     ${getOwnershipClass()}
     ${isHighlighted ? 'highlighted' : ''}
     ${isDisabled ? 'disabled-card' : ''}
+    ${shouldJiggle ? 'jiggle' : ''}
   `.trim();
 
   // Early returns if images for shiny+shadow do not exist, etc.

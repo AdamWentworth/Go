@@ -8,6 +8,18 @@
     position: relative;
 }
 
+@keyframes jiggle {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.05); }
+    50% { transform: scale(0.95); }
+    75% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+  
+  .pokemon-card.jiggle {
+    animation: jiggle 0.3s ease;
+  }
+
 /* Adjust the backlight pseudo-element to create a centered glow */
 .pokemon-card::before {
     content: '';

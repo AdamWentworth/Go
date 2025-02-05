@@ -108,9 +108,12 @@ const useRegisterForm = (onSubmit) => {
     // Input change handler
     const handleInputChange = async (event) => {
         const { name, value, type, checked } = event.target;
+        // If the field is username, trim the value before saving it.
+        const newValue = name === 'username' ? value.trim() : value;
+    
         let updatedValues = {
             ...values,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: type === 'checkbox' ? checked : newValue
         };
     
         if (name === 'pokemonGoNameDisabled') {
@@ -120,7 +123,7 @@ const useRegisterForm = (onSubmit) => {
                 updatedValues.pokemonGoName = '';
             }
         } else if (name === 'username' && values.pokemonGoNameDisabled) {
-            updatedValues.pokemonGoName = value;
+            updatedValues.pokemonGoName = newValue;
         }
     
         // Format trainer code to display in XXXX XXXX XXXX format as user types
@@ -128,7 +131,7 @@ const useRegisterForm = (onSubmit) => {
             const cleanValue = value.replace(/\s+/g, '').slice(0, 12);
             updatedValues.trainerCode = cleanValue.replace(/(.{4})/g, '$1 ').trim();
         }
-
+    
         if (name === 'locationInput') {
             setShowLocationWarning(true);
             setSelectedCoordinates(null);
@@ -142,15 +145,15 @@ const useRegisterForm = (onSubmit) => {
                 setSuggestions([]);
             }
         }
-
+    
         // Only validate and show errors if user has already attempted to submit
         if (hasSubmitted) {
             const validationErrors = validate(updatedValues);
             setErrors(validationErrors);
         }
-
+    
         setValues(updatedValues);
-    };
+    };    
 
     // Form submission handler
     const handleSubmit = (event) => {
