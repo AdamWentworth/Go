@@ -40,7 +40,7 @@ const PokemonCard = ({
         setIsFastSelectEnabled(true);
       }
       touchTimeoutRef.current = null;
-    }, 500);
+    }, 300);
   };
 
   const handleTouchMove = (e) => {

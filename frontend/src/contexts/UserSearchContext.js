@@ -2,15 +2,13 @@
 
 import React, { createContext, useState } from 'react';
 import { openDB } from 'idb';
-// Import your modal hook (adjust the path as needed)
 import { useModal } from './ModalContext';
 
 const UserSearchContext = createContext();
 const USERS_API_URL = process.env.REACT_APP_USERS_API_URL;
 const CACHE_NAME = 'SearchCache';
-  
+
 export function UserSearchProvider({ children }) {
-  // Use the modal context to get the alert function.
   const { alert } = useModal();
 
   const [viewedOwnershipData, setViewedOwnershipData] = useState(null);
@@ -39,76 +37,93 @@ export function UserSearchProvider({ children }) {
         },
       });
 
-      // Attempt to find a matching key ignoring case
-      let canonicalUsername = null;
+      // Try to find a canonical key in our cache ignoring case
+      let actualKey = null;
       const allKeys = await db.getAllKeys(CACHE_NAME);
       for (const key of allKeys) {
         if (typeof key === 'string' && key.toLowerCase() === lowerCaseUsername) {
-          canonicalUsername = key;
+          actualKey = key;
           break;
         }
       }
 
+      // Retrieve cached data (if any)
       let cachedData = null;
-      if (canonicalUsername) {
-        cachedData = await db.get(CACHE_NAME, canonicalUsername);
+      if (actualKey) {
+        cachedData = await db.get(CACHE_NAME, actualKey);
       }
 
-      // If cached data is found and fresh, use it
-      if (cachedData) {
-        const now = Date.now();
-        const cacheAge = now - (cachedData.timestamp || 0);
-        if (cacheAge < 3600000) { // 1 hour freshness check
-          setViewedOwnershipData(cachedData.ownershipData);
-          setUserExists(true);
-          setCanonicalUsername(cachedData.username); // Set username from cache
-          if (setOwnershipFilter) setOwnershipFilter(defaultFilter);
-          if (setShowAll) setShowAll(true);
-          return cachedData.username; // Return the username from cache
-        } else {
-          // Remove stale cache
-          await db.delete(CACHE_NAME, canonicalUsername);
-        }
-      }
+      // Grab our ETag from the cached data (if we have any).
+      const cachedEtag = cachedData?.etag || null;
 
-      // No valid cache entry found, so hit the API
+      // Always perform a fetch, providing If-None-Match if we have an ETag
       const response = await fetch(
         `${USERS_API_URL}/ownershipData/username/${lowerCaseUsername}`,
         {
           method: 'GET',
           credentials: 'include',
+          headers: {
+            ...(cachedEtag ? { 'If-None-Match': cachedEtag } : {}),
+          },
         }
       );
 
-      if (response.ok) {
-        const result = await response.json();
+      if (response.status === 304) {
+        // The data hasn't changed since the last time we fetched it.
+        if (cachedData) {
+          // Use our cached data
+          setViewedOwnershipData(cachedData.ownershipData);
+          setUserExists(true);
+          setCanonicalUsername(cachedData.username);
+          if (setOwnershipFilter) setOwnershipFilter(defaultFilter);
+          if (setShowAll) setShowAll(true);
+          setViewedLoading(false);
+          return cachedData.username;
+        } else {
+          // 304 but we have no cache? That's unusual. You could handle differently (re-fetch without ETag, etc.)
+          console.warn(
+            'Received 304 Not Modified but have no cached data. Falling back to "not found" behavior.'
+          );
+          setUserExists(false);
+          setViewedOwnershipData(null);
+          setCanonicalUsername(null);
+          setViewedLoading(false);
+          return;
+        }
+      }
 
-        // Use the canonical username from the result or fallback to searchedUsername
+      if (response.ok) {
+        // We have a new or updated response (200 OK)
+        const result = await response.json();
         const actualUsername = result.username || searchedUsername;
         setCanonicalUsername(actualUsername);
-
-        // Update state with the retrieved data
         setViewedOwnershipData(result.instances);
         setUserExists(true);
         if (setOwnershipFilter) setOwnershipFilter(defaultFilter);
         if (setShowAll) setShowAll(true);
 
-        // Cache the data using the canonical username
+        // Grab the ETag from the response, if it exists
+        const responseEtag = response.headers.get('ETag') || null;
+
+        // Cache with updated data and ETag
+        const now = Date.now();
         const cacheEntry = {
           username: actualUsername,
           ownershipData: result.instances,
-          timestamp: Date.now(),
+          timestamp: now,
+          etag: responseEtag,
         };
         await db.put(CACHE_NAME, cacheEntry);
 
-        return actualUsername; // Return the canonical username
+        setViewedLoading(false);
+        return actualUsername;
       } else if (response.status === 404) {
         // User not found
         setUserExists(false);
         setViewedOwnershipData(null);
         setCanonicalUsername(null);
       } else if (response.status === 403) {
-        // Forbidden: inform the user they must be logged in using modal alert.
+        // Forbidden: user must be logged in
         await alert('You must be logged in to perform this search.');
         setViewedOwnershipData(null);
         setCanonicalUsername(null);

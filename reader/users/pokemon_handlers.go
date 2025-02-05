@@ -3,7 +3,9 @@
 package main
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
@@ -226,49 +228,71 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 }
 
 func GetPokemonInstancesByUsername(c *fiber.Ctx) error {
-	// Retrieve the username being searched from the route parameters
+	// Retrieve the username from the route
 	username := c.Params("username")
 
-	// Retrieve the token's username (i.e., the user making the request)
+	// Retrieve the token's username
 	tokenUsername, _ := c.Locals("username").(string)
-
-	// Log the access for tracing using the token's username and the username being searched
 	logrus.Infof("User %s is fetching ownership data for username %s", tokenUsername, username)
 
-	// Retrieve the user_id corresponding to the provided username
+	// Fetch user by LOWER(username)
 	var user User
 	if err := db.Where("LOWER(username) = ?", strings.ToLower(username)).First(&user).Error; err != nil {
 		logrus.Errorf("User %s not found: %v", username, err)
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
 	}
 
-	// Retrieve Pokémon instances for the user with the found user_id
+	// Retrieve instances by user_id (which is a string)
 	var instances []PokemonInstance
 	if err := db.Where("user_id = ?", user.UserID).Find(&instances).Error; err != nil {
 		logrus.Errorf("Error retrieving instances for user_id %s: %v", user.UserID, err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve instances"})
+		return c.Status(fiber.StatusInternalServerError).
+			JSON(fiber.Map{"error": "Failed to retrieve instances"})
 	}
 
-	// Get all pending trades that involve any of these instances
+	// Retrieve pending trades for this user
 	var pendingTrades []Trade
 	if err := db.Where("trade_status = ? AND (user_id_proposed = ? OR user_id_accepting = ?)",
 		"pending", user.UserID, user.UserID).
 		Find(&pendingTrades).Error; err != nil {
 		logrus.Errorf("Error retrieving pending trades for user_id %s: %v", user.UserID, err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve pending trades"})
+		return c.Status(fiber.StatusInternalServerError).
+			JSON(fiber.Map{"error": "Failed to retrieve pending trades"})
 	}
 
-	// Create a map of instance IDs that are involved in pending trades
+	// Mark pending-trade instance IDs
 	pendingTradeInstances := make(map[string]bool)
 	for _, trade := range pendingTrades {
 		pendingTradeInstances[trade.PokemonInstanceIDUserProposed] = true
 		pendingTradeInstances[trade.PokemonInstanceIDUserAccepting] = true
 	}
 
-	// Prepare the response data
+	// Build the response data
 	responseData := make(map[string]interface{})
+
+	// We'll track the maximum LastUpdate to build an ETag.
+	// Because LastUpdate is *int64, we'll convert it to time.Time if not nil.
+	var latestUpdate time.Time
+
 	for _, instance := range instances {
-		// Create a map representation of the instance
+		// Safely convert LastUpdate (*int64) to time.Time (assuming epoch SECONDS)
+		var updateTime time.Time
+		if instance.LastUpdate != nil {
+			// If your LastUpdate is actually epoch *seconds*, do:
+			updateTime = time.Unix(*instance.LastUpdate, 0)
+
+			// If your LastUpdate is epoch *milliseconds*, do:
+			// updateTime = time.UnixMilli(*instance.LastUpdate)
+
+			// If your LastUpdate is epoch *nanoseconds*, do:
+			// updateTime = time.Unix(0, *instance.LastUpdate)
+
+			if updateTime.After(latestUpdate) {
+				latestUpdate = updateTime
+			}
+		}
+
+		// Build the map of fields
 		instanceMap := map[string]interface{}{
 			"pokemon_id":       instance.PokemonID,
 			"nickname":         instance.Nickname,
@@ -293,36 +317,63 @@ func GetPokemonInstancesByUsername(c *fiber.Ctx) error {
 			"favorite":         instance.Favorite,
 			"is_unowned":       instance.IsUnowned,
 			"is_owned":         instance.IsOwned,
-			"is_for_trade":     instance.IsForTrade && !pendingTradeInstances[instance.InstanceID], // Update is_for_trade based on pending trades
+			// We only set "is_for_trade" to false if this instance is involved in a pending trade
+			"is_for_trade":     instance.IsForTrade && !pendingTradeInstances[instance.InstanceID],
 			"is_wanted":        instance.IsWanted,
 			"not_trade_list":   instance.NotTradeList,
 			"not_wanted_list":  instance.NotWantedList,
 			"location_caught":  instance.LocationCaught,
+			"location_card":    instance.LocationCard,
 			"date_added":       instance.DateAdded,
 			"date_caught":      instance.DateCaught,
 			"friendship_level": instance.FriendshipLevel,
-			"last_update":      instance.LastUpdate,
-			"wanted_filters":   instance.WantedFilters,
-			"trade_filters":    instance.TradeFilters,
-			"is_fused":         instance.IsFused,
-			"fusion":           instance.Fusion,
-			"fusion_form":      instance.FusionForm,
-			"fused_with":       instance.FusedWith,
-			"disabled":         instance.Disabled,
-			"dynamax":          instance.Dynamax,
-			"gigantamax":       instance.Gigantamax,
-			"max_attack":       instance.MaxAttack,
-			"max_guard":        instance.MaxGuard,
-			"max_spirit":       instance.MaxSpirit,
+			// We'll store the raw *int64 for last_update, or we can store an ISO time string if you prefer
+			"last_update":    instance.LastUpdate,
+			"wanted_filters": instance.WantedFilters,
+			"trade_filters":  instance.TradeFilters,
+			"mega":           instance.Mega,
+			"mega_form":      instance.MegaForm,
+			"is_mega":        instance.IsMega,
+			"level":          instance.Level,
+			"is_fused":       instance.IsFused,
+			"fusion":         instance.Fusion,
+			"fusion_form":    instance.FusionForm,
+			"fused_with":     instance.FusedWith,
+			"disabled":       instance.Disabled,
+			"dynamax":        instance.Dynamax,
+			"gigantamax":     instance.Gigantamax,
+			"max_attack":     instance.MaxAttack,
+			"max_guard":      instance.MaxGuard,
+			"max_spirit":     instance.MaxSpirit,
 		}
 
-		// Add the instance to the response data using its `InstanceID`
+		// Add to the response keyed by instance_id
 		responseData[instance.InstanceID] = instanceMap
 	}
 
 	instanceCount := len(responseData)
 
-	// Log and return the response data
+	// Compute ETag from latestUpdate
+	var etag string
+	if instanceCount > 0 && !latestUpdate.IsZero() {
+		// Use the UnixNano of the "latest" record
+		etag = fmt.Sprintf("%d", latestUpdate.UnixNano())
+	} else {
+		// If no instances or no valid LastUpdate, fallback
+		etag = "0"
+	}
+
+	// Compare with client's If-None-Match
+	clientEtag := c.Get("If-None-Match")
+	if clientEtag != "" && clientEtag == etag {
+		// Data has not changed
+		logrus.Infof("Returning 304 Not Modified for user %s", username)
+		return c.Status(fiber.StatusNotModified).Send(nil)
+	}
+
+	// Otherwise, set ETag and return data
+	c.Set("ETag", etag)
+
 	logrus.Infof("User %s retrieved %d Pokemon instances for username %s", tokenUsername, instanceCount, username)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"username":  user.Username,
