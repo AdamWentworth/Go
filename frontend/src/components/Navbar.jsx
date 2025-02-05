@@ -23,25 +23,12 @@ function Navbar() {
         event.preventDefault();
         const trimmedQuery = searchQuery.trim();
         if (trimmedQuery) {
-            // First navigate to the lowercase version
-            navigate(`/collection/${trimmedQuery.toLowerCase()}`);
-            
-            // Fetch user data and get the canonical username
-            const canonicalUsername = await fetchUserOwnershipData(trimmedQuery);
-            
-            // If we got a canonical username and it's different from the current URL,
-            // update the URL without triggering a new page load
-            if (canonicalUsername && canonicalUsername !== trimmedQuery) {
-                window.history.replaceState(
-                    {},
-                    '',
-                    `/collection/${canonicalUsername}`
-                );
-            }
-            
-            setSearchQuery(''); // Clear the search input after navigation
+          // 1) Navigate to route
+          navigate(`/collection/${trimmedQuery.toLowerCase()}`);
+      
+          setSearchQuery('');
         }
-    };   
+    };
 
     useEffect(() => {
         const lightModeStylesheet = document.getElementById('light-mode-stylesheet');

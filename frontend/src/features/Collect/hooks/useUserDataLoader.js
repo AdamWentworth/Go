@@ -1,6 +1,5 @@
 // src/hooks/useUserDataLoader.js
-
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 function useUserDataLoader({
   isUsernamePath,
@@ -12,40 +11,86 @@ function useUserDataLoader({
   setShowAll,
   fetchUserOwnershipData,
 }) {
+  // Keep track of last fetch params to avoid redundant calls
+  const lastFetchedRef = useRef({ username: null, ownershipStatus: null });
+
   useEffect(() => {
-    if (isUsernamePath && username) {
-      // Prevent API call for non-username paths
+    async function loadUserData() {
+      if (!isUsernamePath || !username) {
+        // When NOT viewing someone else's collection, reset
+        setOwnershipFilter('');
+        setShowAll(false);
+        return;
+      }
+
+      // Don't fetch for reserved paths
       if (
-        ['collect', 'discover', 'login', 'register', 'account', 'trades'].includes(
-          username.toLowerCase()
-        )
+        ['collect', 'discover', 'login', 'register', 'account', 'trades']
+          .includes(username.toLowerCase())
       ) {
-        // Invalid username, do not fetch
         setUserExists(false);
         setViewedOwnershipData(null);
         return;
       }
 
-      const ownershipStatus = location.state?.ownershipStatus;
+      // Pull ownership status from React Router location (if any)
+      const ownershipStatus = location.state?.ownershipStatus || '';
 
+      // Check if we're about to fetch the same combo again
+      const combo = { username, ownershipStatus };
+      const lastCombo = lastFetchedRef.current;
+      if (
+        lastCombo.username === combo.username &&
+        lastCombo.ownershipStatus === combo.ownershipStatus
+      ) {
+        // Skip — we've already fetched for this exact combination
+        return;
+      }
+
+      // Otherwise, record new combination and fetch
+      lastFetchedRef.current = combo;
+
+      // If we have an ownershipStatus, apply it; otherwise default
+      let canonicalUsername;
       if (ownershipStatus) {
         setOwnershipFilter(ownershipStatus);
-        fetchUserOwnershipData(
+        canonicalUsername = await fetchUserOwnershipData(
           username,
           setOwnershipFilter,
           setShowAll,
           ownershipStatus
         );
       } else {
-        fetchUserOwnershipData(username, setOwnershipFilter, setShowAll);
+        canonicalUsername = await fetchUserOwnershipData(
+          username,
+          setOwnershipFilter,
+          setShowAll
+        );
       }
-    } else if (!isUsernamePath) {
-      // Viewing own collection
-      setOwnershipFilter('');
-      setShowAll(false);
-      // No need to fetch data
+
+      // If the canonical username returned differs from URL, replace it
+      if (canonicalUsername && canonicalUsername !== username) {
+        window.history.replaceState(
+          {},
+          '',
+          location.pathname.replace(username, canonicalUsername)
+        );
+      }
     }
-  }, [isUsernamePath, username]); // Only include necessary dependencies
+
+    loadUserData();
+    // Notice we keep the dependencies minimal — only what truly changes:
+    // username, isUsernamePath, location, setOwnershipFilter, setShowAll, ...
+  }, [
+    isUsernamePath,
+    username,
+    location,
+    setUserExists,
+    setViewedOwnershipData,
+    setOwnershipFilter,
+    setShowAll,
+    fetchUserOwnershipData,
+  ]);
 }
 
 export default useUserDataLoader;

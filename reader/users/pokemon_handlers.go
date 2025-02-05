@@ -13,11 +13,13 @@ import (
 func GetPokemonInstances(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
 	tokenUserID, ok := c.Locals("user_id").(string) // Extract user_id from context
-
 	if !ok || tokenUserID != userID {
 		logrus.Error("Authentication failed: User mismatch")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "User mismatch"})
 	}
+
+	// Extract the username from the JWT token (set by the JWT middleware)
+	tokenUsername, _ := c.Locals("username").(string)
 
 	deviceID := c.Query("device_id")
 	if deviceID == "" {
@@ -25,7 +27,9 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Missing device_id"})
 	}
 
-	logrus.Infof("Fetching ownership data for user %s from device %s", userID, deviceID)
+	// Log with the username from the token along with the device_id.
+	// You can include both the tokenUsername and userID if you wish.
+	logrus.Infof("Fetching ownership data for user %s (ID: %s) from device %s", tokenUsername, userID, deviceID)
 
 	var user User
 	if err := db.Where("user_id = ?", userID).First(&user).Error; err != nil {
@@ -222,14 +226,14 @@ func GetPokemonInstances(c *fiber.Ctx) error {
 }
 
 func GetPokemonInstancesByUsername(c *fiber.Ctx) error {
-	// Retrieve the username from the route parameters
+	// Retrieve the username being searched from the route parameters
 	username := c.Params("username")
 
-	// Retrieve the user_id from the token for logging purposes
-	tokenUserID, _ := c.Locals("user_id").(string)
+	// Retrieve the token's username (i.e., the user making the request)
+	tokenUsername, _ := c.Locals("username").(string)
 
-	// Log the access for tracing
-	logrus.Infof("User %s is fetching ownership data for username %s", tokenUserID, username)
+	// Log the access for tracing using the token's username and the username being searched
+	logrus.Infof("User %s is fetching ownership data for username %s", tokenUsername, username)
 
 	// Retrieve the user_id corresponding to the provided username
 	var user User
@@ -319,7 +323,7 @@ func GetPokemonInstancesByUsername(c *fiber.Ctx) error {
 	instanceCount := len(responseData)
 
 	// Log and return the response data
-	logrus.Infof("User %s retrieved %d Pokemon instances for username %s", tokenUserID, instanceCount, username)
+	logrus.Infof("User %s retrieved %d Pokemon instances for username %s", tokenUsername, instanceCount, username)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"username":  user.Username,
 		"instances": responseData,

@@ -46,7 +46,7 @@ function Collect({ isOwnCollection }) {
   useEffect(() => {
     if (!isOwnCollection && urlUsername) {
       const updateUsername = async () => {
-        const canonical = await fetchUserOwnershipData(urlUsername);
+        const canonical = (urlUsername);
         if (canonical && canonical !== urlUsername) {
           // Update URL to canonical username
           window.history.replaceState(
