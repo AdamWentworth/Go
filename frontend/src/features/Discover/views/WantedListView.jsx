@@ -276,7 +276,6 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                       alt={matchedPokemon.name}
                       className={`trade-pokemon-image ${tradeListPokemon.match ? 'glowing-pokemon' : ''}`}
                       title={`${matchedPokemon.form ? `${matchedPokemon.form} ` : ''}${matchedPokemon.name}`}
-                      style={{ width: '100px', height: '100px' }} // Adjust size as needed
                     />
                   </div>
                 );

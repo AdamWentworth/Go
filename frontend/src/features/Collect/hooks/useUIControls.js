@@ -7,6 +7,7 @@ export function useUIControls(initialSettings) {
     const [showCollectUI, setShowCollectUI] = useState(initialSettings.showCollectUI);
     const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(initialSettings.showEvolutionaryLine);
     const [isFastSelectEnabled, setIsFastSelectEnabled] = useState(initialSettings.isFastSelectEnabled);
+    const [isSelectAllEnabled, setIsSelectAllEnabled] = useState(initialSettings.isSelectAllEnabled);
     const [sortType, setSortType] = useState(initialSettings.sortType);
     const [sortMode, setSortMode] = useState(initialSettings.sortMode);
 
@@ -29,6 +30,8 @@ export function useUIControls(initialSettings) {
         toggleEvolutionaryLine,
         isFastSelectEnabled,
         setIsFastSelectEnabled,
+        isSelectAllEnabled,
+        setIsSelectAllEnabled,
         toggleFastSelect,
         sortType,
         setSortType,

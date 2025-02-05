@@ -35,6 +35,8 @@ const HeaderUI = ({
   onListsButtonClick,
   contextText,
   isWide,
+  isFastSelectEnabled,
+  isSelectAllEnabled,
 }) => {
   return (
     <div className={`header ${showCollectUI ? 'expand-collect' : ''}`}>
@@ -91,6 +93,8 @@ const HeaderUI = ({
             onListsButtonClick={onListsButtonClick}
             isWide={isWide}
             username={username}
+            isFastSelectEnabled={isFastSelectEnabled}
+            isSelectAllEnabled={isSelectAllEnabled}
           />
         )}
       </div>

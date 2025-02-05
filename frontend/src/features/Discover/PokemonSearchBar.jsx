@@ -6,7 +6,6 @@ import LocationSearch from './SearchParameters/LocationSearch';
 import OwnershipSearch from './SearchParameters/OwnershipSearch';
 import './PokemonSearchBar.css';
 import { FaChevronUp, FaChevronDown, FaList, FaGlobe } from 'react-icons/fa';
-import axios from 'axios';
 
 const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, setIsCollapsed }) => {
   const [pokemon, setPokemon] = useState('');
@@ -46,6 +45,8 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
 
   const [boundary, setBoundary] = useState(null);
 
+  const searchTriggeredRef = useRef(false); // Add this ref
+
   useEffect(() => {
     const handleResize = () => {
       setIsMidWidth(window.innerWidth >= 1024 && window.innerWidth <= 1439);
@@ -64,22 +65,39 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
   }, []);
 
   useEffect(() => {
+    if (!collapsibleRef.current || isCollapsed) return;
+  
+    const contentElement = collapsibleRef.current.querySelector('.content');
+    if (!contentElement) return;
+  
+    const observer = new ResizeObserver(() => {
+      if (!isCollapsed && collapsibleRef.current) {
+        // Smoothly adjust height to new content size
+        collapsibleRef.current.style.maxHeight = `${collapsibleRef.current.scrollHeight}px`;
+      }
+    });
+  
+    observer.observe(contentElement);
+    return () => observer.disconnect();
+  }, [isCollapsed]);
+
+  useEffect(() => {
     if (collapsibleRef.current) {
       if (!isCollapsed) {
-        // Expand the container
+        // Set initial height and enable transition
         collapsibleRef.current.style.maxHeight = `${collapsibleRef.current.scrollHeight}px`;
         setTimeout(() => {
-          if (!isCollapsed) {
-            collapsibleRef.current.style.overflow = 'visible'; 
+          if (!isCollapsed && collapsibleRef.current) {
+            collapsibleRef.current.style.overflow = 'visible';
           }
-        }, 600); // Match transition duration (0.6s)
+        }, 600);
       } else {
-        // Collapse the container
+        // Collapse smoothly
         collapsibleRef.current.style.maxHeight = '0px';
-        collapsibleRef.current.style.overflow = 'hidden'; // Hide content during collapse
+        collapsibleRef.current.style.overflow = 'hidden';
       }
     }
-  }, [isCollapsed]);  
+  }, [isCollapsed]); 
 
   // Function to handle scroll event
   const handleScroll = () => {
@@ -92,9 +110,14 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
 
     // Collapse the search bar when the user scrolls past the adjusted point
     if (window.scrollY > adjustedCollapsePoint) {
-      setIsCollapsed(true); // Collapse the search bar
+      setIsCollapsed(true);
     } else if (window.scrollY === 0) {
-      setIsCollapsed(false); // Expand the search bar when scrolled to the top
+      // Prevent auto-expand if collapse was triggered by search
+      if (searchTriggeredRef.current) {
+        searchTriggeredRef.current = false;
+        return;
+      }
+      setIsCollapsed(false);
     }
   };
 
@@ -208,7 +231,9 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
   
     // Call onSearch and collapse the search bar upon success
     onSearch(queryParams, boundary);
-    setIsCollapsed(true); // Collapse after a successful search
+    setIsCollapsed(true);
+    searchTriggeredRef.current = true; // Mark search as trigger
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Add smooth scroll
   };
 
   return (

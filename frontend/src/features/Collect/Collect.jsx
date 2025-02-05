@@ -106,6 +106,8 @@ function Collect({ isOwnCollection }) {
     toggleEvolutionaryLine,
     isFastSelectEnabled,
     setIsFastSelectEnabled,
+    isSelectAllEnabled,
+    setIsSelectAllEnabled,
     sortType,
     setSortType,
     sortMode,
@@ -115,6 +117,7 @@ function Collect({ isOwnCollection }) {
     showCollectUI: false,
     showEvolutionaryLine: false,
     isFastSelectEnabled: false,
+    isSelectAllEnabled: false,
     sortType: 'number',
     sortMode: 'ascending',
   });
@@ -219,10 +222,12 @@ function Collect({ isOwnCollection }) {
     setShowCostume,
     setShowShadow,
     setIsFastSelectEnabled,
+    setIsSelectAllEnabled,
     setHighlightedCards,
     setShowAll,
     highlightedCards,
-    sortedPokemons
+    sortedPokemons,
+    setIsSelectAllEnabled
   });
 
   const [isUpdating, setIsUpdating] = useState(false);
@@ -249,7 +254,9 @@ function Collect({ isOwnCollection }) {
     ownershipData,
     setIsUpdating: (value) => setIsUpdating(value), // Assuming setIsUpdating is still needed
     promptMegaPokemonSelection,
-    promptFusionPokemonSelection
+    promptFusionPokemonSelection,
+    setIsFastSelectEnabled,
+    setIsSelectAllEnabled,
   });
 
   const [isShowingLists, setIsShowingLists] = useState(false);
@@ -340,6 +347,8 @@ function Collect({ isOwnCollection }) {
             confirmMoveToFilter={handleConfirmMoveToFilter}
             onListsButtonClick={handleListsButtonClick}
             contextText={contextText}
+            isFastSelectEnabled={isFastSelectEnabled}
+            isSelectAllEnabled={isSelectAllEnabled}
           />
           {!isShowingLists ? (
             <PokemonListMemo
@@ -363,6 +372,7 @@ function Collect({ isOwnCollection }) {
               sortMode={sortMode}
               variants={variants}
               username={displayUsername}
+              setIsFastSelectEnabled={setIsFastSelectEnabled}
             />
           ) : (
             <ListsMenu 

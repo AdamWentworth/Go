@@ -1,6 +1,6 @@
 // CollectUI.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './CollectUI.css';
 
 const CollectUI = ({
@@ -12,37 +12,42 @@ const CollectUI = ({
   ownershipFilter,
   onClearOwnershipFilter,
   isWide,
-  username
+  username,
+  isFastSelectEnabled,
+  isSelectAllEnabled
 }) => {
-  const [fastSelectEnabled, setFastSelectEnabled] = useState(false);
-  const [selectAllEnabled, setSelectAllEnabled] = useState(false);
+  // Add state to track touch interactions
+  const [touchTarget, setTouchTarget] = useState(null);
 
   useEffect(() => {
     if (!isEditable) {
-      if (fastSelectEnabled) {
-        setFastSelectEnabled(false);
+      if (isFastSelectEnabled) {
         onFastSelectToggle(false);
       }
-      if (selectAllEnabled) {
-        setSelectAllEnabled(false);
+      if (isSelectAllEnabled) {
         onSelectAll(false);
       }
     }
-  }, [isEditable, fastSelectEnabled, selectAllEnabled, onFastSelectToggle, onSelectAll]);
+  }, [isEditable, isFastSelectEnabled, isSelectAllEnabled, onFastSelectToggle, onSelectAll]);
 
-  const handleSelectAll = () => {
-    const newSelectAllState = !selectAllEnabled;
-    setSelectAllEnabled(newSelectAllState);
-    onSelectAll(newSelectAllState);
+  // Handle touch start
+  const handleTouchStart = (e, action) => {
+    e.preventDefault();
+    setTouchTarget(action);
   };
 
-  const handleToggleFastSelect = () => {
-    const newFastSelectState = !fastSelectEnabled;
-    setFastSelectEnabled(newFastSelectState);
-    onFastSelectToggle(newFastSelectState);
+  // Handle touch end
+  const handleTouchEnd = (e) => {
+    e.preventDefault();
+    if (touchTarget === 'fastSelect') {
+      onFastSelectToggle(!isFastSelectEnabled);
+    } else if (touchTarget === 'selectAll') {
+      onSelectAll(!isSelectAllEnabled);
+    }
+    setTouchTarget(null);
   };
 
-  // Determine the text and class for the Lists button based on ownershipFilter
+  // Determine Lists button styling
   let listsButtonText = 'Lists';
   let listsButtonClass = '';
 
@@ -60,26 +65,35 @@ const CollectUI = ({
     listsButtonClass = 'unowned';
   }
 
-  // Conditional class for long usernames
-  const contextTextClass =
-  username?.length > 10 ? 'context-text long-username' : 'context-text';
+  const contextTextClass = username?.length > 10 ? 'context-text long-username' : 'context-text';
 
   return (
     <div className={`collect-ui ${!isWide && isEditable ? 'collect-overlay' : ''}`}>
       <div className={`button-container ${isEditable ? 'editable' : 'non-editable'}`}>
         {isEditable ? (
           <>
-            {/* Buttons */}
             <button
-              onClick={handleToggleFastSelect}
-              className={`fast-select-button ${fastSelectEnabled ? 'active' : ''}`}
+              onTouchStart={(e) => handleTouchStart(e, 'fastSelect')}
+              onTouchEnd={handleTouchEnd}
+              onClick={(e) => {
+                if (!('ontouchstart' in window)) {
+                  onFastSelectToggle(!isFastSelectEnabled);
+                }
+              }}
+              className={`fast-select-button ${isFastSelectEnabled ? 'active' : ''} ${touchTarget === 'fastSelect' ? 'touch-active' : ''}`}
               disabled={!isEditable}
             >
               <img src="/images/fast_select.png" alt="Toggle Fast Select" />
             </button>
             <button
-              className={`select-all-button ${selectAllEnabled ? 'active' : ''}`}
-              onClick={handleSelectAll}
+              className={`select-all-button ${isSelectAllEnabled ? 'active' : ''} ${touchTarget === 'selectAll' ? 'touch-active' : ''}`}
+              onTouchStart={(e) => handleTouchStart(e, 'selectAll')}
+              onTouchEnd={handleTouchEnd}
+              onClick={(e) => {
+                if (!('ontouchstart' in window)) {
+                  onSelectAll(!isSelectAllEnabled);
+                }
+              }}
               disabled={!isEditable}
             >
               Select All
@@ -100,7 +114,6 @@ const CollectUI = ({
             </button>
           </>
         ) : (
-          // Render context-text and lists button side by side when not editable
           <div className="non-editable-collect">
             <p className={contextTextClass}>{contextText}</p>
             <button
@@ -117,4 +130,3 @@ const CollectUI = ({
 };
 
 export default CollectUI;
-

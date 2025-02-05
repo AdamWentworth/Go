@@ -30,6 +30,21 @@
     display: inline-block; /* Ensures container shrinks to fit its content */
     width: 100%; /* Ensure it takes up the full width of the parent container */
     height: auto; /* Adjust as needed */
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+
+.pokemon-image, .lucky-backdrop, .max-badge, .purified-badge-image {
+    pointer-events: none;
+    touch-action: manipulation;
+}
+
+.pokemon-image-container img {
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .pokemon-card .pokemon-image-container img {

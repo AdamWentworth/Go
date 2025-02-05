@@ -63,7 +63,7 @@ function Navbar() {
     return (
         <div className={`navbar ${isLightMode ? 'light-mode' : 'dark-mode'}`}>
             <div className="logo-container">
-                <img src={logoUrl} alt="Logo" />
+                <img src={logoUrl} alt="Logo" onContextMenu={(e) => e.preventDefault()} />
             </div>
             <div className="navbar-main">
                 <div className="title-container">
@@ -89,6 +89,7 @@ function Navbar() {
                         <img
                             src={`${process.env.PUBLIC_URL}/images/${isLightMode ? 'dark-mode.png' : 'light-mode.png'}`}
                             alt={isLightMode ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+                            onContextMenu={(e) => e.preventDefault()}
                         />
                     </div>
                 </div>

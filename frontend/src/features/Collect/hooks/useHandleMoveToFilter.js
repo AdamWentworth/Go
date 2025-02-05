@@ -19,6 +19,8 @@ function useHandleMoveToFilter({
   setIsUpdating,
   promptMegaPokemonSelection,
   promptFusionPokemonSelection,
+  setIsFastSelectEnabled,
+  setIsSelectAllEnabled,
 }) {
   const { confirm, alert } = useModal();
 
@@ -34,6 +36,8 @@ function useHandleMoveToFilter({
         }
 
         setHighlightedCards(new Set());
+        setIsFastSelectEnabled(false);
+        setIsSelectAllEnabled(false);
         // If you want to auto-switch the UI filter after moving, you could:
         // setOwnershipFilter(filter);
       } catch (error) {

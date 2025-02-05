@@ -84,7 +84,7 @@
 
 /* Active state styles for buttons */
 .collect-ui .button-container .select-all-button.active {
-  background-color: #47bbb7;
+  background-color: #47bbb7 !important;
 }
 
 .collect-ui .button-container .fast-select-button.active {
@@ -272,6 +272,12 @@
   margin-block-start: 0px;
   margin-block-end: 0px;
   font-size: 12px;
+}
+
+.collect-ui .button-container button {
+  /* Add this to existing button styles */
+  touch-action: manipulation; /* Reduces touch delay on mobile */
+  user-select: none;
 }
 
 /* Responsive Styles */

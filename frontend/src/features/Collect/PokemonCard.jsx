@@ -1,6 +1,6 @@
 // PokemonCard.jsx
 
-import React, { useEffect, useState, memo } from 'react';
+import React, { useEffect, useState, memo, useRef } from 'react';
 import { determineImageUrl } from "../../utils/imageHelpers";
 import { generateH2Content } from '../../utils/formattingHelpers';
 import './PokemonCard.css';
@@ -15,8 +15,33 @@ const PokemonCard = ({
   isFastSelectEnabled,
   isHighlighted,
   showAll,
-  sortType
+  sortType,
+  toggleCardHighlight,
+  setIsFastSelectEnabled,
 }) => {
+
+  const touchTimeoutRef = useRef(null);
+
+  const handleTouchStart = (e) => {
+    e.preventDefault(); // Always prevent default
+    touchTimeoutRef.current = setTimeout(() => {
+      if (!isFastSelectEnabled) {
+        toggleCardHighlight(pokemon.pokemonKey);
+        setIsFastSelectEnabled(true);
+      }
+      touchTimeoutRef.current = null;
+    }, 500);
+  };
+  
+  const handleTouchEnd = (e) => {
+    e.preventDefault(); // Always prevent default
+    if (touchTimeoutRef.current) {
+      clearTimeout(touchTimeoutRef.current);
+      touchTimeoutRef.current = null;
+      onSelect();
+    }
+  };
+
   const [currentImage, setCurrentImage] = useState(pokemon.currentImage);
 
   const isFemale = pokemon.ownershipStatus?.gender === "Female";
@@ -78,15 +103,13 @@ const PokemonCard = ({
   return (
     <div
       className={cardClass}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       onClick={() => {
         if (isDisabled) {
           return;
         }
-        if (isFastSelectEnabled) {
-          console.log(`Card highlighted: ${pokemon.name}`);
-        } else {
-          onSelect();
-        }
+        onSelect();
       }}
     >
       <div className="cp-container">
@@ -116,6 +139,7 @@ const PokemonCard = ({
             src={`${process.env.PUBLIC_URL}/images/fav_pressed.png`}
             alt="Favorite"
             className="favorite-icon"
+            draggable="false"
           />
         )}
       </div>
@@ -126,6 +150,7 @@ const PokemonCard = ({
               src={`${process.env.PUBLIC_URL}/images/lucky.png`}
               alt="Lucky backdrop"
               className="lucky-backdrop"
+              draggable="false"
             />
           </div>
         )}
@@ -134,12 +159,14 @@ const PokemonCard = ({
           alt={pokemon.name}
           loading="lazy"
           className="pokemon-image"
+          draggable="false"
         />
         {isDynamax && (
             <img 
               src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
               alt="Dynamax Badge" 
               className="max-badge" 
+              draggable="false"
             />
           )}
           {isGigantamax && (
@@ -147,6 +174,7 @@ const PokemonCard = ({
               src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
               alt="Gigantamax Badge" 
               className="max-badge" 
+              draggable="false"
             />
           )}
         {isPurified && (
@@ -155,6 +183,7 @@ const PokemonCard = ({
               src={`${process.env.PUBLIC_URL}/images/purified.png`}
               alt={`${pokemon.name} is purified`}
               className="purified-badge-image"
+              draggable="false"
             />
           </div>
         )}
@@ -162,10 +191,10 @@ const PokemonCard = ({
       <p>#{pokemon.pokedex_number}</p>
       <div className="type-icons">
         {pokemon.type_1_icon && (
-          <img src={pokemon.type_1_icon} alt={pokemon.type1_name} loading="lazy" />
+          <img src={pokemon.type_1_icon} alt={pokemon.type1_name} loading="lazy" draggable="false" />
         )}
         {pokemon.type_2_icon && (
-          <img src={pokemon.type_2_icon} alt={pokemon.type2_name} loading="lazy" />
+          <img src={pokemon.type_2_icon} alt={pokemon.type2_name} loading="lazy" draggable="false"/>
         )}
       </div>
       <h2 className="pokemon-name-display">

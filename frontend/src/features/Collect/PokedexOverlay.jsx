@@ -41,12 +41,6 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
     setIsMale((prevIsMale) => !prevIsMale);
   };
 
-  const handleOverlayClick = (event) => {
-    if (!event.target.closest('.overlay-windows')) {
-      onClose();
-    }
-  };
-
   const totalMoves = pokemon.moves.length;
   const fastMoves = pokemon.moves.filter(move => move.is_fast === 1);
   const chargedMoves = pokemon.moves.filter(move => move.is_fast === 0);
@@ -232,7 +226,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
   }  
 
   return (
-    <div className="pokemon-overlay" onClick={handleOverlayClick}>
+    <div className="pokemon-overlay">
       {renderCloseButton()}
 
       <div className={`overlay-row evolution-shortcuts-row ${isWidescreen ? '' : 'column-layout'}`}>

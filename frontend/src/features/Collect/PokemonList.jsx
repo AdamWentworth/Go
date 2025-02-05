@@ -1,6 +1,6 @@
 // PokemonList.jsx
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { validate as uuidValidate } from 'uuid';
 import PokemonCard from './PokemonCard';
 import PokemonOverlay from './PokedexOverlay';
@@ -29,36 +29,42 @@ function PokemonList({
   sortMode,
   variants,
   username,
+  setIsFastSelectEnabled,
 }) {
   const { alert } = useModal();
 
   const handleSelect = (pokemon) => {
     console.log('Pokemon selected:', pokemon.pokemonKey);
-
-    // Step 1) If user is in multi-select mode, just highlight
+  
+    // Step 1) If user is in multi-select mode
     if (isFastSelectEnabled) {
+      const wasHighlighted = highlightedCards.has(pokemon.pokemonKey);
       toggleCardHighlight(pokemon.pokemonKey);
-      return;
+  
+      // Only disable fast select if user un-highlights the last card
+      if (wasHighlighted && highlightedCards.size === 1) {
+        setIsFastSelectEnabled(false);
+      }
+      return; // Maintain early return for fast-select mode
     }
-
+  
     // Step 2) If the Pokémon is disabled, do nothing (no overlays)
     if (pokemon.ownershipStatus?.disabled) {
       alert('This Pokémon is fused with another and is disabled until unfused; no overlay will open.');
       return;
     }
-
-    // Step 3) Otherwise, check if it's an instance (uuid => overlayType: 'instance')
+  
+    // Step 3) Check if it's an instance (uuid => overlayType: 'instance')
     const keyParts = pokemon.pokemonKey.split('_');
     const possibleUUID = keyParts[keyParts.length - 1];
     const isInstance = uuidValidate(possibleUUID);
-
-    if (isInstance) {
-      // Show the InstanceOverlay
-      setSelectedPokemon({ pokemon, overlayType: 'instance' });
-    } else {
-      // Non-instance => show the standard PokemonOverlay
-      setSelectedPokemon(pokemon);
-    }
+  
+    // Step 4) Set overlay appropriately
+    setSelectedPokemon(
+      isInstance 
+        ? { pokemon, overlayType: 'instance' }
+        : pokemon
+    );
   };
 
   return (
@@ -80,6 +86,9 @@ function PokemonList({
               showAll={showAll}
               sortType={sortType}
               isEditable={isEditable}
+              toggleCardHighlight={toggleCardHighlight}
+              setIsFastSelectEnabled={setIsFastSelectEnabled}
+              isFastSelectEnabled={isFastSelectEnabled}
             />
           ))}
           {selectedPokemon && (

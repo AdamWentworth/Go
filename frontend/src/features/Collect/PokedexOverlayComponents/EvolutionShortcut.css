@@ -4,6 +4,7 @@
     display: flex;
     justify-content: space-between; /* Spreads out items to both ends */
     width: 100%; /* Full width */
+    z-index: 4;
 }
 
 .evolves-from,

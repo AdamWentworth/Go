@@ -8,6 +8,7 @@ function useUIHandlers({
   setShowCostume,
   setShowShadow,
   setIsFastSelectEnabled,
+  setIsSelectAllEnabled,
   setHighlightedCards,
   setShowAll,
   highlightedCards,
@@ -44,6 +45,8 @@ function useUIHandlers({
    // 1. Filter out disabled Pokémon
    const nonDisabledPokemons = sortedPokemons.filter(p => !p.ownershipStatus?.disabled);
 
+   setIsSelectAllEnabled(prev => !prev);
+
    if (highlightedCards.size === nonDisabledPokemons.length) {
         setHighlightedCards(new Set());
       } else {
@@ -51,7 +54,7 @@ function useUIHandlers({
         new Set(nonDisabledPokemons.map((p) => p.pokemonKey))
       );
     }
-  }, [highlightedCards, sortedPokemons, setHighlightedCards]);
+  }, [highlightedCards, sortedPokemons, setHighlightedCards, setIsSelectAllEnabled]);
   
   const handleUpdateOwnershipFilter = useCallback(
     (filterType) => {

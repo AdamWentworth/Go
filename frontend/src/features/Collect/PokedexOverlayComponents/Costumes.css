@@ -29,7 +29,7 @@
 }
 
 .overlay-costumes {
-  overflow-y: auto;
+  overflow-y: auto !important;
 }
   
 .costume-item {

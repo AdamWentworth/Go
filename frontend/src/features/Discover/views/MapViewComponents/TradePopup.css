@@ -86,6 +86,7 @@
 /* Styling for the Wanted List Section in TradePopup */
 .trade-popup-container .wanted-list-section {
     text-align: center;
+    width: 100%;
 }
 
 .trade-popup-container .wanted-list-section h3 {
@@ -97,11 +98,9 @@
 .trade-popup-container .wanted-list {
     display: grid;
     grid-template-columns: repeat(6, 1fr); /* Six columns */
-    grid-gap: 3px; /* Small gap between images */
     max-height: 115px; /* Limit height to fit rows */
     overflow-y: auto; /* Enable scrolling if needed */
     justify-items: center;
-    padding: 5px;
     filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
 }
 
@@ -139,8 +138,8 @@
         height: 16px;
     }
     .trade-popup-container .wanted-pokemon-image {
-        width: 8px;
-        height: 8px;
+        width: 20px;
+        height: 20px;
     }
 }
 

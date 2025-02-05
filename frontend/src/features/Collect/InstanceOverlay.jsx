@@ -27,12 +27,6 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
     };
   }, []);
 
-  const handleOverlayClick = (event) => {
-    if (!event.target.closest('.overlay-windows')) {
-      onClose();
-    }
-  };
-
   const handleOpenWantedOverlay = (pokemonData) => {
     setSelectedPokemon(pokemonData);
     setCurrentOverlay('Wanted');
@@ -119,7 +113,6 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
   return (
     <div 
       className={`instance-overlay ${currentOverlay === 'Owned' ? 'owned-overlay' : ''}`} 
-      onClick={handleOverlayClick}
     >
       {renderContent()}
       {renderCloseButton()}

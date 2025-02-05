@@ -1,13 +1,14 @@
 // ListView.jsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import './ListView.css';
 import OwnedListView from './OwnedListView';
 import TradeListView from './TradeListView';
 import WantedListView from './WantedListView';
 
-const ListView = ({ data, ownershipStatus, hasSearched, pokemonCache }) => {
+const ListView = ({ data, ownershipStatus, hasSearched, pokemonCache, scrollToTopTrigger }) => {
   const [pokemonVariants, setPokemonVariants] = useState([]);
+  const listViewRef = useRef(null);
 
   console.log(data)
 
@@ -16,6 +17,16 @@ const ListView = ({ data, ownershipStatus, hasSearched, pokemonCache }) => {
       setPokemonVariants(pokemonCache);
     }
   }, [pokemonCache]);
+
+  // Scroll to top when scrollToTopTrigger changes
+  useEffect(() => {
+    if (listViewRef.current) {
+      listViewRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  }, [scrollToTopTrigger]);
 
   // Helper function to find Pokémon by key in the cache
   const findPokemonByKey = (baseKey) => {
