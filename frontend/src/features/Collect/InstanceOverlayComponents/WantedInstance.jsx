@@ -131,13 +131,15 @@ const WantedInstance = ({ pokemon, isEditable }) => {
       </div>
 
       {selectableBackgrounds.length > 0 && (
-        <div className={`background-select-row ${editMode ? 'active' : ''}`}>
-          <img
-            src={process.env.PUBLIC_URL + '/images/location.png'}
-            alt="Background Selector"
-            className="background-icon"
-            onClick={editMode ? () => setShowBackgrounds(!showBackgrounds) : null}
-          />
+        <div className="background-select-container">
+          <div className={`background-select-row ${editMode ? 'active' : ''}`}>
+            <img
+              src={process.env.PUBLIC_URL + '/images/location.png'}
+              alt="Background Selector"
+              className="background-icon"
+              onClick={editMode ? () => setShowBackgrounds(!showBackgrounds) : null}
+            />
+          </div>
         </div>
       )}
 

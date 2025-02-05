@@ -66,3 +66,7 @@
     width: 100px;
     height: auto;
   }
+
+  .background-item.selectable {
+    cursor: pointer;
+  }

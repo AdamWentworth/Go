@@ -35,17 +35,25 @@
   align-items: center;
 }
 
-.wanted-instance .background-select-row {
+.wanted-instance .background-select-container {
+  width: 100%;
   position: relative;
   display: flex;
   justify-content: flex-end;
-  width: 100%;
-  margin-left: 15px;
-  z-index: 10;
   margin-bottom: -40px;
+  margin-top: 10px;
+}
+
+.wanted-instance .background-select-row {
+  position: relative;
+  display: inline-flex;  /* Changed to inline-flex */
+  justify-content: flex-end;
+  z-index: 10;
 }
 
 .wanted-instance .background-icon {
+  width: 25px;  /* Or whatever size you want */
+  height: 25px;  /* Or whatever size you want */
   z-index: 11;
 }
 
