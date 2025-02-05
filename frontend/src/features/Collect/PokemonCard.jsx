@@ -21,9 +21,18 @@ const PokemonCard = ({
 }) => {
 
   const touchTimeoutRef = useRef(null);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const isScrolling = useRef(false);
+  const touchHandled = useRef(false);
 
   const handleTouchStart = (e) => {
-    e.preventDefault(); // Always prevent default
+    const touch = e.touches[0];
+    touchStartX.current = touch.clientX;
+    touchStartY.current = touch.clientY;
+    isScrolling.current = false;
+    touchHandled.current = false;
+
     touchTimeoutRef.current = setTimeout(() => {
       if (!isFastSelectEnabled) {
         toggleCardHighlight(pokemon.pokemonKey);
@@ -32,14 +41,32 @@ const PokemonCard = ({
       touchTimeoutRef.current = null;
     }, 500);
   };
-  
+
+  const handleTouchMove = (e) => {
+    if (!touchTimeoutRef.current) return;
+
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - touchStartX.current);
+    const deltaY = Math.abs(touch.clientY - touchStartY.current);
+    const threshold = 5; // Adjust threshold as needed
+
+    if (deltaX > threshold || deltaY > threshold) {
+      clearTimeout(touchTimeoutRef.current);
+      touchTimeoutRef.current = null;
+      isScrolling.current = true;
+    }
+  };
+
   const handleTouchEnd = (e) => {
-    e.preventDefault(); // Always prevent default
     if (touchTimeoutRef.current) {
       clearTimeout(touchTimeoutRef.current);
       touchTimeoutRef.current = null;
-      onSelect();
+      if (!isScrolling.current) {
+        touchHandled.current = true;
+        onSelect();
+      }
     }
+    isScrolling.current = false;
   };
 
   const [currentImage, setCurrentImage] = useState(pokemon.currentImage);
@@ -104,9 +131,11 @@ const PokemonCard = ({
     <div
       className={cardClass}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onClick={() => {
-        if (isDisabled) {
+        if (isDisabled || touchHandled.current) {
+          touchHandled.current = false;
           return;
         }
         onSelect();

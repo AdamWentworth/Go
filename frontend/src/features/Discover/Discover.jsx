@@ -7,6 +7,7 @@ import MapView from './views/MapView';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import axios from 'axios';
 import { getAllFromDB } from '../../services/indexedDB';
+import { useModal } from '../../contexts/ModalContext'; // adjust the path as needed
 
 const Discover = () => {
   const [view, setView] = useState('list');
@@ -22,6 +23,8 @@ const Discover = () => {
   // Add refs for the container and to track if we should scroll
   const containerRef = useRef(null);
   const shouldScrollRef = useRef(false);
+
+  const { alert } = useModal();
 
   const fetchPokemonVariantsCache = async () => {
     try {
@@ -65,7 +68,7 @@ const Discover = () => {
     setHasSearched(true);
     setOwnershipStatus(queryParams.ownership);
     shouldScrollRef.current = true; // Set flag to scroll after results
-
+  
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_DISCOVER_API_URL}/discoverPokemon`,
@@ -74,38 +77,38 @@ const Discover = () => {
           withCredentials: true,
         }
       );
-
+  
       if (response.status === 200) {
         let data = response.data;
         const dataArray = Array.isArray(data) ? data : Object.values(data);
-
+  
         if (dataArray && dataArray.length > 0) {
           const enrichedData = [];
           const pokemonDataStored = JSON.parse(localStorage.getItem('pokemonData'));
-
+  
           if (pokemonDataStored && pokemonDataStored.data) {
             const pokemonDataArray = pokemonDataStored.data;
-
+  
             for (const item of dataArray) {
               if (item.pokemon_id) {
                 const pokemonInfo = pokemonDataArray.find(
                   (p) => p.pokemon_id === item.pokemon_id
                 );
-
+  
                 if (pokemonInfo) {
                   enrichedData.push({
                     ...item,
                     pokemonInfo,
-                    boundary: boundaryWKT
+                    boundary: boundaryWKT,
                   });
                 }
               }
             }
-
+  
             if (enrichedData.length > 0) {
               enrichedData.sort((a, b) => a.distance - b.distance);
               setSearchResults(enrichedData);
-              setScrollToTopTrigger(prev => prev + 1);
+              setScrollToTopTrigger((prev) => prev + 1);
               setIsCollapsed(true);
             } else {
               setSearchResults([]);
@@ -125,12 +128,19 @@ const Discover = () => {
       }
     } catch (error) {
       console.error('Error during API request:', error);
-      setErrorMessage('An error occurred while searching. Please try again.');
+  
+      // Trigger the modal alert immediately on a 403 error
+      if (error.response?.status === 403) {
+        await alert('You must be logged in to perform this search.');
+      } else {
+        await alert('An error occurred while searching. Please try again.');
+      }
+  
       setIsCollapsed(false);
     } finally {
       setIsLoading(false);
     }
-  };
+  };  
 
   return (
     <div>
@@ -143,6 +153,13 @@ const Discover = () => {
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
       />
+
+      {/* Render error message at the top */}
+      {errorMessage && (
+        <div className="error-message" style={{ color: 'red', padding: '1rem', textAlign: 'center' }}>
+          {errorMessage}
+        </div>
+      )}
 
       <div ref={containerRef}>
         {isLoading ? (
