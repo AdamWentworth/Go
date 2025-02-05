@@ -35,7 +35,7 @@
         height: calc(83vh - 74px);
     }
     .register-page .register-form {
-        transform: scale(.75);
+        transform: scale(.9);
         font-size: 0.6em;
     }
     .register-form input, .location-warning {

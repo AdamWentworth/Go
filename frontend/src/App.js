@@ -39,8 +39,8 @@ function App() {
                                     <EventsProvider>
                                         <LocationProvider>
                                             <ThemeProvider>
-                                                <UserSearchProvider>
-                                                    <ModalProvider>
+                                                <ModalProvider>
+                                                    <UserSearchProvider>
                                                         <div className="App">
                                                             <Navbar />
                                                             <main>
@@ -67,8 +67,8 @@ function App() {
                                                                 pauseOnHover
                                                                 />
                                                         </div>
-                                                    </ModalProvider>
-                                                </UserSearchProvider>
+                                                    </UserSearchProvider>
+                                                </ModalProvider>
                                             </ThemeProvider>
                                         </LocationProvider>
                                     </EventsProvider>

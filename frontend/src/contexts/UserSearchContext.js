@@ -2,12 +2,17 @@
 
 import React, { createContext, useState } from 'react';
 import { openDB } from 'idb';
+// Import your modal hook (adjust the path as needed)
+import { useModal } from './ModalContext';
 
 const UserSearchContext = createContext();
 const USERS_API_URL = process.env.REACT_APP_USERS_API_URL;
 const CACHE_NAME = 'SearchCache';
   
 export function UserSearchProvider({ children }) {
+  // Use the modal context to get the alert function.
+  const { alert } = useModal();
+
   const [viewedOwnershipData, setViewedOwnershipData] = useState(null);
   const [userExists, setUserExists] = useState(null);
   const [viewedLoading, setViewedLoading] = useState(false);
@@ -56,7 +61,7 @@ export function UserSearchProvider({ children }) {
         if (cacheAge < 3600000) { // 1 hour freshness check
           setViewedOwnershipData(cachedData.ownershipData);
           setUserExists(true);
-          setCanonicalUsername(cachedData.username); // Add this line to set username from cache
+          setCanonicalUsername(cachedData.username); // Set username from cache
           if (setOwnershipFilter) setOwnershipFilter(defaultFilter);
           if (setShowAll) setShowAll(true);
           return cachedData.username; // Return the username from cache
@@ -98,7 +103,13 @@ export function UserSearchProvider({ children }) {
 
         return actualUsername; // Return the canonical username
       } else if (response.status === 404) {
+        // User not found
         setUserExists(false);
+        setViewedOwnershipData(null);
+        setCanonicalUsername(null);
+      } else if (response.status === 403) {
+        // Forbidden: inform the user they must be logged in using modal alert.
+        await alert('You must be logged in to perform this search.');
         setViewedOwnershipData(null);
         setCanonicalUsername(null);
       } else {
