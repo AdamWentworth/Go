@@ -36,6 +36,8 @@ const corsOptions = {
     if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV === 'production' || origin.endsWith('.cloudflare.com')) {
       callback(null, true);
     } else {
+      // Log the unauthorized access attempt
+      logger.warn(`Unauthorized CORS access attempt from origin: ${origin}`);
       callback(new Error('CORS not allowed for this origin'));
     }
   },

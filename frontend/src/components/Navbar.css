@@ -182,6 +182,7 @@
         text-align: center;
         padding-top: 10px;
         width: 100%; /* Ensure the navbar takes full width */
+        padding-bottom: 0px;
     }
 
     .navbar h1 {
@@ -346,6 +347,7 @@
 @media (min-width: 768px) and (max-width: 1023px) {
     .navbar {
         flex-direction: column;
+        padding-bottom: 0px;
     }
 
     .logo-container {
@@ -429,6 +431,7 @@
         align-items: center;
         justify-content: space-between;
         padding-top: 10px;
+        padding-bottom: 0px;
     }
 
     /* Adjust title size */

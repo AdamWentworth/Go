@@ -164,7 +164,7 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
     // Determine the Pokémon name with form if applicable
     let nameText = pokemon.name;
     const hasMultiFormPokedexNumbers = Array.isArray(multiFormPokedexNumbers) && multiFormPokedexNumbers.length > 0;
-    const shouldIncludeForm = !isMegaVariant && pokemon.form && pokemon.form !== 'Average' && 
+    const shouldIncludeForm = !isMegaVariant && pokemon.form && 
         (!hasMultiFormPokedexNumbers || !multiFormPokedexNumbers.includes(pokemon.pokedex_number) || showAll);
 
     if (shouldIncludeForm) {
