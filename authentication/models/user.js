@@ -3,10 +3,10 @@
 const mongoose = require('../middlewares/mongoose');
 
 const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true, minlength: 6, maxlength: 36 },
+    username: { type: String, required: true, unique: true, minlength: 3, maxlength: 36 },
     email: { type: String, unique: true, maxlength: 255, minlength: 6 },
     password: { type: String, maxlength: 1024, minlength: 6 },
-    pokemonGoName: { type: String, default: null },
+    pokemonGoName: { type: String, minlength: 3, default: null },
     trainerCode: { type: String, match: [/^\d{12}$/, 'Trainer code must be 12 digits'], default: null },
     location: { type: String, default: "" },
     allowLocation: { type: Boolean, default: false },

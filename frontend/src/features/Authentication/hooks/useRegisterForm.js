@@ -36,7 +36,7 @@ const useRegisterForm = (onSubmit) => {
             tempErrors.username = "Username is required";
         } else if (/\s/.test(username)) {
             tempErrors.username = "Username cannot contain spaces";
-        } else if (!/^[A-Za-z0-9_]{4,15}$/.test(username)) { // Allowing underscores
+        } else if (!/^[A-Za-z0-9_]{3,15}$/.test(username)) { // Allowing underscores
             tempErrors.username = "Username can only contain letters, numbers, and underscores";
         } else {
             tempErrors.username = "";
@@ -70,8 +70,8 @@ const useRegisterForm = (onSubmit) => {
         const pokemonGoName = values.pokemonGoName.trim();
         if (!values.pokemonGoNameDisabled) { // Only validate if not disabled
             if (pokemonGoName) { // If provided, validate like username
-                if (pokemonGoName.length < 4) {
-                    tempErrors.pokemonGoName = "Pokémon GO Name must be at least 4 characters long";
+                if (pokemonGoName.length < 3) {
+                    tempErrors.pokemonGoName = "Pokémon GO Name must be at least 3 characters long";
                 } else if (pokemonGoName.length > 15) {
                     tempErrors.pokemonGoName = "Pokémon GO Name must be at most 15 characters long";
                 } else if (/\s/.test(pokemonGoName)) {
