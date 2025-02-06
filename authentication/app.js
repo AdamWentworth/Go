@@ -70,7 +70,8 @@ app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 // CORS setup
 const allowedOrigins = [
     'http://localhost:3000',  // Local frontend
-    'https://pokemongonexus.com'
+    'https://pokemongonexus.com',
+    'https://www.pokemongonexus.com'
   ];
   
   app.use(cors({

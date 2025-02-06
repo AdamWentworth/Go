@@ -12,7 +12,7 @@ import (
 
 func handleBatchedUpdates(c *fiber.Ctx) error {
 	if c.Method() == http.MethodOptions {
-		c.Set("Access-Control-Allow-Origin", "http://localhost:3000, https://pokemongonexus.com")
+		c.Set("Access-Control-Allow-Origin", "http://localhost:3000, https://pokemongonexus.com, https://www.pokemongonexus.com")
 		c.Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 		c.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
 		c.Set("Access-Control-Allow-Credentials", "true")

@@ -8,8 +8,9 @@ import (
 
 func corsMiddleware(c *fiber.Ctx) error {
 	allowedOrigins := map[string]bool{
-		"http://localhost:3000":      true,
-		"https://pokemongonexus.com": true,
+		"http://localhost:3000":          true,
+		"https://pokemongonexus.com":     true,
+		"https://www.pokemongonexus.com": true,
 	}
 
 	origin := c.Get("Origin")
