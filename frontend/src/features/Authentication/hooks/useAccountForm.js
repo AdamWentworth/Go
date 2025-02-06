@@ -135,7 +135,8 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
             ...values,
             [name]: type === 'checkbox' ? checked : value
         };
-
+    
+        // Handle Pokémon GO name checkbox
         if (name === 'pokemonGoNameDisabled') {
             if (checked) {
                 updatedValues.pokemonGoName = updatedValues.username;
@@ -145,31 +146,46 @@ const useAccountForm = (user, handleUpdateUserDetails) => {
         } else if (name === 'username' && values.pokemonGoNameDisabled) {
             updatedValues.pokemonGoName = value;
         }
-
+    
+        // Format Trainer Code input
         if (name === 'trainerCode') {
             const cleanValue = value.replace(/\s+/g, '').slice(0, 12);
             updatedValues.trainerCode = cleanValue.replace(/(.{4})/g, '$1 ').trim();
         }
-
-        if (name === 'location') { // Updated from 'locationInput' to 'location'
+    
+        // Handle Location input changes
+        if (name === 'location') {
             setShowLocationWarning(true);
             setSelectedCoordinates(null);
-            updatedValues.coordinates = { latitude: '', longitude: '' }; // Reset coordinates
-            updatedValues.allowLocation = false; // Reset allowLocation
-
+            updatedValues.coordinates = { latitude: '', longitude: '' };
+            updatedValues.allowLocation = false;
+    
+            // Immediately update the input value
+            setValues(updatedValues);
+    
+            // Fetch suggestions after state update
             if (value.length > 2) {
                 const fetchedSuggestions = await fetchSuggestions(value);
                 setSuggestions(fetchedSuggestions);
             } else {
                 setSuggestions([]);
             }
+    
+            // Validate if submission was attempted
+            if (hasSubmitted) {
+                const validationErrors = validate(updatedValues);
+                setErrors(validationErrors);
+            }
+    
+            return; // Exit early to avoid duplicate state update
         }
-
+    
+        // Validate and update state for other fields
         if (hasSubmitted) {
             const validationErrors = validate(updatedValues);
             setErrors(validationErrors);
         }
-
+    
         setValues(updatedValues);
     };
 

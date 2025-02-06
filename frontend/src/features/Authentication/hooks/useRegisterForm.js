@@ -108,7 +108,6 @@ const useRegisterForm = (onSubmit) => {
     // Input change handler
     const handleInputChange = async (event) => {
         const { name, value, type, checked } = event.target;
-        // If the field is username, trim the value before saving it.
         const newValue = name === 'username' ? value.trim() : value;
     
         let updatedValues = {
@@ -126,34 +125,39 @@ const useRegisterForm = (onSubmit) => {
             updatedValues.pokemonGoName = newValue;
         }
     
-        // Format trainer code to display in XXXX XXXX XXXX format as user types
         if (name === 'trainerCode') {
             const cleanValue = value.replace(/\s+/g, '').slice(0, 12);
             updatedValues.trainerCode = cleanValue.replace(/(.{4})/g, '$1 ').trim();
         }
     
+        // Handle locationInput separately to update state before fetching
         if (name === 'locationInput') {
             setShowLocationWarning(true);
             setSelectedCoordinates(null);
             updatedValues.coordinates = null;
             updatedValues.allowLocation = false;
     
+            // Immediately update the input value
+            setValues(updatedValues);
+    
+            // Fetch suggestions after state update
             if (value.length > 2) {
                 const fetchedSuggestions = await fetchSuggestions(value);
                 setSuggestions(fetchedSuggestions);
             } else {
                 setSuggestions([]);
             }
+        } else {
+            // For other inputs, update state as usual
+            setValues(updatedValues);
         }
     
-        // Only validate and show errors if user has already attempted to submit
+        // Validate only if submission was attempted
         if (hasSubmitted) {
             const validationErrors = validate(updatedValues);
             setErrors(validationErrors);
         }
-    
-        setValues(updatedValues);
-    };    
+    };
 
     // Form submission handler
     const handleSubmit = (event) => {
