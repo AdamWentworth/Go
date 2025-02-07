@@ -139,14 +139,20 @@ export function handleSearchTermChange(
   }
   
 export function matchesSearchTerm(pokemon, searchTerm, pokemonTypes, generations) {
+    // Split by commas (for union) then by ampersand (for intersection)
     const unionTerms = searchTerm
       .split(',')
-      .map(t => t.trim())
-      .filter(t => !t.startsWith('+')) // <--- ignoring + tokens
-      .map(t => t.toLowerCase());
+      .map(t => t.trim().toLowerCase());
 
     for (const uTerm of unionTerms) {
-        const intersectionTerms = uTerm.split('&').map(term => term.trim().toLowerCase());
+        // For each intersection token, remove a leading "+" if present
+        const intersectionTerms = uTerm.split('&').map(term => {
+            term = term.trim();
+            if (term.startsWith('+')) {
+                return term.slice(1).toLowerCase();
+            }
+            return term.toLowerCase();
+        });
         const allIntersectionTermsMatch = intersectionTerms.every(term => 
             checkTermMatches(pokemon, term, pokemonTypes, generationMap)
         );

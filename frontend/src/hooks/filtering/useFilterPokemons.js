@@ -34,7 +34,7 @@ const useFilterPokemons = (
       : [];
 
     // 2) Also get families from "+someName" tokens, regardless of showEvolutionaryLine
-    const plusFamily = getEvolutionaryFamilyFromPlusTokens(searchTerm, variants);
+    const plusFamily = getEvolutionaryFamilyFromPlusTokens(searchTerm, variants, pokemonTypes, generations);
 
     // 3) Combine them so anything that is in either family is allowed
     const combinedFamilyIds = new Set([...normalFamily, ...plusFamily]);
