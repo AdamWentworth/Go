@@ -3,7 +3,14 @@
 import { matchesSearchTerm } from './searchFunctions';
 
 export function getEvolutionaryFamily(searchTerm, variants) {
-    const basePokemons = variants.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    // Split on commas, trim spaces, and lowercase each term
+    const terms = searchTerm.split(',')
+    .map(t => t.trim().toLowerCase());
+
+    // Find all pokemons that match *any* of the comma-separated terms
+    const basePokemons = variants.filter(p => 
+    terms.some(term => p.name.toLowerCase().includes(term))
+    );
     let family = new Set();
 
     const findAllEvolutions = (pokemonId) => {
