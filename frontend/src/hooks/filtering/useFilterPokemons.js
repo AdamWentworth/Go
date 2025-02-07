@@ -1,114 +1,185 @@
 // useFilterPokemons.js
 
 import { useMemo } from 'react';
-import { getEvolutionaryFamily, shouldAddPokemon } from '../../services/filterFunctions';
+import {
+  // Original function for global "Show Evolutionary Line"
+  getEvolutionaryFamily,
+  // New helper for "+Name" logic (defined in filterFunctions.js, see below)
+  getEvolutionaryFamilyFromPlusTokens,
+  shouldAddPokemon,
+} from '../../services/filterFunctions';
 
-const useFilterPokemons = (filteredVariants, variants, filters, showEvolutionaryLine, showAll) => {
-    const { selectedGeneration, isShiny, searchTerm, showCostume, showShadow, pokemonTypes, generations, multiFormPokedexNumbers } = filters;
-    const displayedPokemons = useMemo(() => {
-        const evolutionaryFamily = showEvolutionaryLine ? getEvolutionaryFamily(searchTerm, variants) : [];
-        const addedSingleFormNumbers = new Set(); // Used to track single form Pokédex numbers when showAll is false
+const useFilterPokemons = (
+  filteredVariants,
+  variants,
+  filters,
+  showEvolutionaryLine,
+  showAll
+) => {
+  const {
+    selectedGeneration,
+    isShiny,
+    searchTerm,
+    showCostume,
+    showShadow,
+    pokemonTypes,
+    generations,
+    multiFormPokedexNumbers,
+  } = filters;
 
-        return filteredVariants.filter(pokemon => {
-            // Directly check for evolutionary family inclusion if applicable
-            const isInEvolutionaryFamily = showEvolutionaryLine && evolutionaryFamily.includes(pokemon.pokemon_id);
-            if (showEvolutionaryLine && !isInEvolutionaryFamily) {
-                return false; // Skip this Pokémon if not in the evolutionary family
-            }
+  const displayedPokemons = useMemo(() => {
+    // 1) If user toggles "Show Evolutionary Line," get entire families
+    const normalFamily = showEvolutionaryLine
+      ? getEvolutionaryFamily(searchTerm, variants)
+      : [];
 
-            // When showAll is false, check if Pokémon's Pokédex number is already added; if showAll is true, this check is bypassed
-            if (!showAll && multiFormPokedexNumbers.includes(pokemon.pokedex_number) && addedSingleFormNumbers.has(pokemon.pokedex_number)) {
-                return false; // Skip this Pokémon
-            }
+    // 2) Also get families from "+someName" tokens, regardless of showEvolutionaryLine
+    const plusFamily = getEvolutionaryFamilyFromPlusTokens(searchTerm, variants);
 
-            // Match against search term and other filter criteria
-            const matchesSearchTerm = shouldAddPokemon(pokemon, null, selectedGeneration, isShiny, pokemonTypes, searchTerm, generations, showShadow);
-            if (!matchesSearchTerm && !isInEvolutionaryFamily) return false; // Skip Pokémon if it doesn't match the search term criteria unless it's in the evolutionary family
+    // 3) Combine them so anything that is in either family is allowed
+    const combinedFamilyIds = new Set([...normalFamily, ...plusFamily]);
 
-            // If showAll is false, add Pokémon's Pokédex number to the set to ensure it's only included once
-            if (!showAll && multiFormPokedexNumbers.includes(pokemon.pokedex_number)) {
-                addedSingleFormNumbers.add(pokemon.pokedex_number);
-            }
+    // Used to track single-form Pokédex numbers (your existing logic)
+    const addedSingleFormNumbers = new Set();
 
-            // Existing variant filtering logic below
-            // Check for inclusion in the evolutionary family, if applicable
-            if (showEvolutionaryLine && !isInEvolutionaryFamily) return false;
+    return filteredVariants.filter((pokemon) => {
+      // Is this Pokémon in either the normal or the +Name family?
+      const isInCombinedFamily = combinedFamilyIds.has(pokemon.pokemon_id);
 
-            // Default filtering logic as an example when not showing all
-            if (!isShiny && !showShadow && !showCostume && pokemon.variantType === 'default') {
-                return true;
-            }
-            
-            // Extract specific flags from variantType
-            const isVariantShiny = pokemon.variantType.includes('shiny');
-            const isVariantShadow = pokemon.variantType.includes('shadow');
-            const isVariantCostume = pokemon.variantType.includes('costume');
-            
-            if (isShiny && showAll &&!showCostume) {
-                return isVariantShiny;
-            }
+      // If "Show Evolutionary Line" is on, the Pokémon must be in that family
+      if (showEvolutionaryLine && !isInCombinedFamily) {
+        return false;
+      }
 
-            if (showCostume && showAll &&!showShadow) {
-                return isVariantCostume;
-            }
+      // Single-form logic (skip duplicates if showAll is false)
+      if (
+        !showAll &&
+        multiFormPokedexNumbers.includes(pokemon.pokedex_number) &&
+        addedSingleFormNumbers.has(pokemon.pokedex_number)
+      ) {
+        return false;
+      }
 
-            if (showShadow && showAll &&!showCostume) {
-                return isVariantShadow;
-            }
-            if (showAll && isShiny && showCostume &&!showShadow)
-                return isVariantCostume && isVariantShiny && !isVariantShadow;
+      // Check normal search/filters, *unless* we already have the Pokémon in a +Name family
+      const passesNormalSearch = shouldAddPokemon(
+        pokemon,
+        null,
+        selectedGeneration,
+        isShiny,
+        pokemonTypes,
+        searchTerm,
+        generations,
+        showShadow,
+        showCostume
+      );
 
-            if (showAll && isShiny && !showCostume && showShadow)
-                return !isVariantCostume && isVariantShiny && isVariantShadow;
+      // If it's neither in a family nor passes normal search, skip it
+      if (!isInCombinedFamily && !passesNormalSearch) {
+        return false;
+      }
 
-            if (showAll && !isShiny && showCostume && showShadow)
-                return isVariantCostume && !isVariantShiny && isVariantShadow;
+      // Mark single-form usage if needed
+      if (
+        !showAll &&
+        multiFormPokedexNumbers.includes(pokemon.pokedex_number)
+      ) {
+        addedSingleFormNumbers.add(pokemon.pokedex_number);
+      }
 
-            if (showAll && isShiny && showCostume && showShadow)
-                return isVariantCostume && isVariantShiny && isVariantShadow;
+      // ----------------------------------------------------
+      // Your existing variant filtering logic below.
+      // ----------------------------------------------------
 
-            // Determine if the variant matches active filters
-            if (isShiny && !showShadow && !showCostume) {
-                // Show only non-costume shinies unless showCostume is also true
-                return isVariantShiny && !isVariantCostume && !pokemon.variantType.includes('shiny_shadow');
-            }
+      // If no special flags are active, allow default forms
+      if (!isShiny && !showShadow && !showCostume && pokemon.variantType === 'default') {
+        return true;
+      }
 
-            if (showShadow && !isShiny) {
-                // Show only shadows, excluding shiny shadows unless isShiny is also true
-                return isVariantShadow && !isVariantShiny;
-            }
+      const isVariantShiny = pokemon.variantType.includes('shiny');
+      const isVariantShadow = pokemon.variantType.includes('shadow');
+      const isVariantCostume = pokemon.variantType.includes('costume');
 
-            if (isShiny && showShadow) {
-                // Show shiny shadows specifically
-                return pokemon.variantType === 'shiny_shadow';
-            }
+      // ShowAll combos
+      if (isShiny && showAll && !showCostume) {
+        return isVariantShiny;
+      }
+      if (showCostume && showAll && !showShadow) {
+        return isVariantCostume;
+      }
+      if (showShadow && showAll && !showCostume) {
+        return isVariantShadow;
+      }
+      if (showAll && isShiny && showCostume && !showShadow) {
+        return isVariantCostume && isVariantShiny && !isVariantShadow;
+      }
+      if (showAll && isShiny && !showCostume && showShadow) {
+        return !isVariantCostume && isVariantShiny && isVariantShadow;
+      }
+      if (showAll && !isShiny && showCostume && showShadow) {
+        return isVariantCostume && !isVariantShiny && isVariantShadow;
+      }
+      if (showAll && isShiny && showCostume && showShadow) {
+        return isVariantCostume && isVariantShiny && isVariantShadow;
+      }
 
-            if (showCostume && !isShiny) {
-                // Show only costumes, excluding shiny variants unless isShiny is also true
-                return isVariantCostume && !pokemon.variantType.includes('_shiny') && !pokemon.variantType.includes('_shadow');
-            }
+      // More specific filters
+      if (isShiny && !showShadow && !showCostume) {
+        // Show only non-costume shinies unless showCostume is also true
+        return (
+          isVariantShiny &&
+          !isVariantCostume &&
+          !pokemon.variantType.includes('shiny_shadow')
+        );
+      }
 
-            if (isShiny && showCostume) {
-                // Show shiny costumes specifically
-                return isVariantCostume && isVariantShiny;
-            }
+      if (showShadow && !isShiny) {
+        // Show only shadows, excluding shiny shadows unless isShiny is also true
+        return isVariantShadow && !isVariantShiny;
+      }
 
-            // Fallback to true when showAll is active, otherwise continue with specific variant checks
-            if (showAll) {
-                return true; // Show all variants when showAll is active
-            }
+      if (isShiny && showShadow) {
+        // Show shiny shadows specifically
+        return pokemon.variantType === 'shiny_shadow';
+      }
 
+      if (showCostume && !isShiny) {
+        // Show only costumes, excluding shiny variants unless isShiny is also true
+        return (
+          isVariantCostume &&
+          !pokemon.variantType.includes('_shiny') &&
+          !pokemon.variantType.includes('_shadow')
+        );
+      }
 
-            // Fallback to false for all other cases
-            return false;
-        });
-    }, [filteredVariants, showEvolutionaryLine, showAll, isShiny, showShadow, showCostume, searchTerm, selectedGeneration, pokemonTypes, generations, multiFormPokedexNumbers]);
+      if (isShiny && showCostume) {
+        // Show shiny costumes specifically
+        return isVariantCostume && isVariantShiny;
+      }
 
-    // console.log(`Displayed Pokemons: ${displayedPokemons.length}`);
+      // Fallback to showing everything if showAll is active
+      if (showAll) {
+        return true;
+      }
 
-    // console.log('Displayed Pokemons', displayedPokemons)
+      // Otherwise skip
+      return false;
+    });
+  }, [
+    filteredVariants,
+    showEvolutionaryLine,
+    showAll,
+    isShiny,
+    showShadow,
+    showCostume,
+    searchTerm,
+    selectedGeneration,
+    pokemonTypes,
+    generations,
+    multiFormPokedexNumbers,
+    variants,
+  ]);
 
-    return displayedPokemons;
+  return displayedPokemons;
 };
 
 export default useFilterPokemons;

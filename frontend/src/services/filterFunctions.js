@@ -44,6 +44,51 @@ export function getEvolutionaryFamily(searchTerm, variants) {
     return Array.from(family);
 }
 
+export function getEvolutionaryFamilyFromPlusTokens(searchTerm, variants) {
+    // 1. Split the searchTerm on commas
+    const rawTokens = searchTerm.split(',').map(t => t.trim());
+  
+    // 2. Extract tokens that start with "+"
+    //    and remove the "+" sign so we get just the name.
+    const plusTokens = rawTokens
+      .filter(token => token.startsWith('+'))
+      .map(token => token.slice(1).toLowerCase());
+  
+    // 3. For those tokens, find the base Pokémon that match
+    //    and build a union of all their evolutions/pre-evolutions.
+    let family = new Set();
+  
+    function findAllEvolutions(pokemonId) {
+      if (family.has(pokemonId)) return; // skip if already added
+  
+      const pokemon = variants.find(p => p.pokemon_id === pokemonId);
+      if (!pokemon) return;
+  
+      family.add(pokemonId);
+  
+      // Add forward evolutions
+      if (Array.isArray(pokemon.evolves_to)) {
+        pokemon.evolves_to.forEach(evoId => findAllEvolutions(evoId));
+      }
+  
+      // Add pre-evolutions
+      if (Array.isArray(pokemon.evolves_from)) {
+        pokemon.evolves_from.forEach(preId => findAllEvolutions(preId));
+      }
+    }
+  
+    // 4. Find all "base" Pokémon whose name matches any plusToken
+    //    and gather full family for each.
+    variants.forEach(p => {
+      const pName = p.name.toLowerCase();
+      if (plusTokens.some(t => pName.includes(t))) {
+        findAllEvolutions(p.pokemon_id);
+      }
+    });
+  
+    return Array.from(family);
+  }
+
 
 export function shouldAddPokemon(pokemon, costume, selectedGeneration, isShiny, pokemonTypes, searchTerm, generations, showShadow, showCostume) {
     const matchesGeneration = selectedGeneration ? pokemon.generation === selectedGeneration : true;

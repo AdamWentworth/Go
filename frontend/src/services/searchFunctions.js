@@ -108,7 +108,11 @@ export function handleSearchTermChange(allPokemons, term, generations, pokemonTy
 }
 
 export function matchesSearchTerm(pokemon, searchTerm, pokemonTypes, generations) {
-    const unionTerms = searchTerm.split(',').map(term => term.trim().toLowerCase());
+    const unionTerms = searchTerm
+      .split(',')
+      .map(t => t.trim())
+      .filter(t => !t.startsWith('+')) // <--- ignoring + tokens
+      .map(t => t.toLowerCase());
 
     for (const uTerm of unionTerms) {
         const intersectionTerms = uTerm.split('&').map(term => term.trim().toLowerCase());
