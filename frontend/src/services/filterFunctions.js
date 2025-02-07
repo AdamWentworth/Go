@@ -9,7 +9,7 @@ export function getEvolutionaryFamily(searchTerm, variants) {
 
     // Find all pokemons that match *any* of the comma-separated terms
     const basePokemons = variants.filter(p => 
-    terms.some(term => p.name.toLowerCase().includes(term))
+    terms.some(term => p.species_name.toLowerCase().includes(term))
     );
     let family = new Set();
 
@@ -80,7 +80,7 @@ export function getEvolutionaryFamilyFromPlusTokens(searchTerm, variants) {
     // 4. Find all "base" Pokémon whose name matches any plusToken
     //    and gather full family for each.
     variants.forEach(p => {
-      const pName = p.name.toLowerCase();
+      const pName = p.species_name.toLowerCase();
       if (plusTokens.some(t => pName.includes(t))) {
         findAllEvolutions(p.pokemon_id);
       }

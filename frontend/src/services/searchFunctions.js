@@ -88,7 +88,7 @@ export function handleSearchTermChange(allPokemons, term, generations, pokemonTy
                     );
                 } else {
                     tempResults = tempResults.filter(pokemon =>
-                        pokemon.name.toLowerCase().includes(iTerm)
+                        pokemon.species_name.toLowerCase().includes(iTerm)
                     );
                 }
             }
@@ -180,9 +180,9 @@ export function checkTermMatches(pokemon, term, pokemonTypes, generationMap) {
         result = Array.isArray(pokemon.fusion) && pokemon.fusion.length > 0;
     } else {
         result = (
-            pokemon.name &&
-            typeof pokemon.name === 'string' &&
-            pokemon.name.toLowerCase().includes(term)
+            pokemon.species_name &&
+            typeof pokemon.species_name === 'string' &&
+            pokemon.species_name.toLowerCase().includes(term)
         );
     }
 
