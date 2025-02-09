@@ -22,6 +22,7 @@ export function UserSearchProvider({ children }) {
     setShowAll,
     defaultFilter = 'Owned'
   ) => {
+    // console.log('[UserSearchContext] Setting ownership filter:', defaultFilter);
     setViewedLoading(true);
     setUserExists(null);
 
@@ -99,7 +100,10 @@ export function UserSearchProvider({ children }) {
         setCanonicalUsername(actualUsername);
         setViewedOwnershipData(result.instances);
         setUserExists(true);
-        if (setOwnershipFilter) setOwnershipFilter(defaultFilter);
+        if (setOwnershipFilter) {
+          // console.log('[UserSearchContext] Setting filter to:', defaultFilter);
+          setOwnershipFilter(defaultFilter);
+        }
         if (setShowAll) setShowAll(true);
 
         // Grab the ETag from the response, if it exists

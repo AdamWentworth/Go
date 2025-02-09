@@ -58,10 +58,16 @@ function useUIHandlers({
   
   const handleUpdateOwnershipFilter = useCallback(
     (filterType) => {
-      setOwnershipFilter((prev) => (prev === filterType ? '' : filterType));
+      // console.log('[useUIHandlers] Updating ownership filter:', filterType);
+      setOwnershipFilter((prev) => {
+        const newFilter = prev === filterType ? '' : filterType;
+        // console.log('[useUIHandlers] New filter value:', newFilter);
+        return newFilter;
+      });
     },
     [setOwnershipFilter]
   );
+
   return {
     handleUpdateOwnershipFilter,
     toggleShiny,

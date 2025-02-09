@@ -268,6 +268,7 @@ function Collect({ isOwnCollection }) {
 
   // Handler function to clear the ownership filter
   const handleClearOwnershipFilter = () => {
+    // console.log('[Collect] Clearing ownership filter');
     setOwnershipFilter('');
 
     if (!isShiny && !showCostume && !showShadow) {

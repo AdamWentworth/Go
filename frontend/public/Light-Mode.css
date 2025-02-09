@@ -5,67 +5,53 @@
 .pokemon-card.highlighted {
     background-color: #e3f7dc;
 }
-.navbar h1, .evo-line-checkbox, .overlay-content, .iv-input, .iv-value, .pokemon-search-bar, .list-view, .moves-search-select, .moves-search-move-add-icon, .moves-search-move-add-icon, .list-view-container, .header .toggle-button, .header .collect-ui-toggle, .pokemon-action-overlay .overlay-content, .update-for-trade-modal-overlay .instance-item, .update-for-trade-modal-overlay .modal-content h2#modal-title, .move-name, .trade-card, .loading-text, .mega-modal-content, .mega-pokemon-item, .modal-overlay .modal, .ol-popup, .account-form .user-details .grid-item, .account-form h1, .register-page .register-form, .location-options-overlay h4, .pokemon-card .cp-container .cp-display, .proposed-trade-view .details-content, .partner-modal-overlay .modal-content  {
+.navbar h1, .evo-line-checkbox, .overlay-content, .iv-input, .iv-value, .pokemon-search-bar, .list-view, .moves-search-select, .moves-search-move-add-icon, .moves-search-move-add-icon, .list-view-container, .header .toggle-button, .header .collect-ui-toggle, .pokemon-action-overlay .overlay-content, .update-for-trade-modal-overlay .instance-item, .update-for-trade-modal-overlay .modal-content h2#modal-title, .move-name, .trade-card, .loading-text, .mega-modal-content, .mega-pokemon-item, .modal-overlay .modal, .ol-popup, .account-form .user-details .grid-item, .account-form h1, .register-page .register-form, .location-options-overlay h4, .pokemon-card .cp-container .cp-display, .proposed-trade-view .details-content, .partner-modal-overlay .modal-content, .evo-checkbox:checked + .evo-line-custom-checkbox::after   {
     color:black
 }
 .header .toggle-button, .header .collect-ui-toggle {
     border: 1px solid black;
 }
-
 .evo-line-custom-checkbox, .add-move-button, .moves-search-add-move-button {
     border: 2px solid black
 }
-
-.account-form { 
+.account-form {
     background-color: rgb(182, 212, 188);
 }
 .navbar, .header, .pokemon-search-bar, .pokemon-container, .move-select, .move-select option, .App, .update-for-trade-modal-overlay .instance-item, .mega-pokemon-item, .account-page, .login-page, .register-page, .success-container, .mainButtonsContainer, .confirmation-content{
     background-color: #f8fff9;
 }
-
 .header {
     box-shadow: 2px -4px 2px 2px #f8fff9;
 }
-
 .pokemon-card h2, p, .add-move-button, .favorite-component, .move-select, .move-select option {
     color: black
 }
-
 .favorite-component.not-filled img, .background-button, .reset-container img, .reset img {
     filter: invert(1); /* Apply a black overlay effect */
 }
-
 .edit-save-container .icon-button img {
     filter: none
 }
-
 /* Light mode specific styles */
 .lucky-backdrop {
     filter: brightness(1.0); /* Set higher brightness for light mode */
 }
- 
 body::-webkit-scrollbar-track {
     background-color: #f8fff9; /* Light background for the track */
 }
-
 body::-webkit-scrollbar-thumb {
     background-color: #888; /* Slightly darker thumb for contrast */
     border: 3px solid #f8fff9; /* Border matching the background color */
 }
-
 body::-webkit-scrollbar-thumb:hover {
     background-color: #666; /* Darken the thumb on hover for visibility */
 }
-
 /* Scrollbar buttons (One button at each end with switched colors) */
 body::-webkit-scrollbar-button:single-button:vertical:decrement {
     background-color: #f8fff9; /* Light background matching the track */
     background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iNSIgdmlld0JveD0iMCAwIDEwIDUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBvbHlnb24gcG9pbnRzPSIwLDUsNSwwLDEwLDVMMCw1IiBmaWxsPSIjODg4ODg4Ii8+PC9zdmc+'); /* Darker gray up arrow */
 }
-
 body::-webkit-scrollbar-button:single-button:vertical:increment {
     background-color: #f8fff9; /* Light background matching the track */
     background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iNSIgdmlld0JveD0iMCAwIDEwIDUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBvbHlnb24gcG9pbnRzPSIwLDAgNSw1LDEwLDAiIGZpbGw9IiM4ODg4ODgiLz48L3N2Zz4='); /* Darker gray down arrow */
 }
-
-

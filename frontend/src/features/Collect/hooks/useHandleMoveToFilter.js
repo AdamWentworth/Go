@@ -26,6 +26,7 @@ function useHandleMoveToFilter({
 
   const handleMoveHighlightedToFilter = useCallback(
     async (filter, cardsToMove) => {
+      // console.log('[useHandleMoveToFilter] Moving cards to filter:', filter);
       try {
         setIsUpdating(true);
         // Let the UI update before heavy processing

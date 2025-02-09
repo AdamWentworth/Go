@@ -14,12 +14,19 @@ function useUserDataLoader({
   // Keep track of last fetch params to avoid redundant calls
   const lastFetchedRef = useRef({ username: null, ownershipStatus: null });
 
+  // Separate effect for handling path/username changes
+  useEffect(() => {
+    if (!isUsernamePath || !username) {
+      // console.log('[useUserDataLoader] Resetting filter - path/username changed');
+      setOwnershipFilter('');
+      setShowAll(false);
+    }
+  }, [isUsernamePath, username, setOwnershipFilter, setShowAll]);
+
+  // Main data loading effect
   useEffect(() => {
     async function loadUserData() {
       if (!isUsernamePath || !username) {
-        // When NOT viewing someone else's collection, reset
-        setOwnershipFilter('');
-        setShowAll(false);
         return;
       }
 
@@ -53,6 +60,7 @@ function useUserDataLoader({
       // If we have an ownershipStatus, apply it; otherwise default
       let canonicalUsername;
       if (ownershipStatus) {
+        // console.log('[useUserDataLoader] Setting filter from location state:', ownershipStatus);
         setOwnershipFilter(ownershipStatus);
         canonicalUsername = await fetchUserOwnershipData(
           username,
@@ -79,8 +87,6 @@ function useUserDataLoader({
     }
 
     loadUserData();
-    // Notice we keep the dependencies minimal — only what truly changes:
-    // username, isUsernamePath, location, setOwnershipFilter, setShowAll, ...
   }, [
     isUsernamePath,
     username,
