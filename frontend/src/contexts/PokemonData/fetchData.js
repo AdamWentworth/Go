@@ -57,27 +57,38 @@ export const fetchData = async (setData, updateOwnership, updateLists) => {
         const startVariantsRetrieval = Date.now();
         variants = await getAllFromDB('pokemonVariants');
         const endVariantsRetrieval = Date.now();
-        console.log(`Retrieved variants from IndexedDB in ${(endVariantsRetrieval - startVariantsRetrieval)} ms`);
+        console.log(
+            `Retrieved variants from IndexedDB in ${endVariantsRetrieval - startVariantsRetrieval} ms`
+        );
+
+        // ADDED SIZE LOG
+        try {
+            const variantsSize = new Blob([JSON.stringify(variants)]).size;
+            console.log(`Size of retrieved cached variants in bytes: ${variantsSize}`);
+        } catch (err) {
+            console.log('Error measuring size of cached variants:', err);
+        }
+
     } else {
         console.log("Variants are stale or missing, updating...");
         variants = await fetchAndProcessVariants();
     }
 
     // Immediately set initial data with just variants
-    setData({ 
-        variants, 
-        ownershipData: null, 
-        lists: null, 
+    setData({
+        variants,
+        ownershipData: null,
+        lists: null,
         loading: true,
         updateOwnership,
-        updateLists 
+        updateLists
     });
 
     // Process remaining data in the background
-    processRemainingData(variants, setData, updateOwnership, updateLists, { 
-        ownershipFresh, 
-        listsFresh, 
-        variantsFresh 
+    processRemainingData(variants, setData, updateOwnership, updateLists, {
+        ownershipFresh,
+        listsFresh,
+        variantsFresh
     });
 
     // Return variants immediately
@@ -94,6 +105,16 @@ async function processRemainingData(variants, setData, updateOwnership, updateLi
         const { data: ownershipDataData } = await getOwnershipDataAsync();
         const cachedOwnership = ownershipDataData || null;
 
+        if (cachedOwnership) {
+            // ADDED SIZE LOG
+            try {
+                const ownershipSize = new Blob([JSON.stringify(cachedOwnership)]).size;
+                console.log(`Size of cached ownership data in bytes: ${ownershipSize}`);
+            } catch (err) {
+                console.log('Error measuring size of cached ownership data:', err);
+            }
+        }
+
         // Get ownership data
         let ownershipData;
         if (ownershipFresh && !variantsUpdated) {
@@ -103,6 +124,14 @@ async function processRemainingData(variants, setData, updateOwnership, updateLi
             const keys = variants.map(variant => variant.pokemonKey);
             ownershipData = await initializeOrUpdateOwnershipDataAsync(keys, variants);
             ownershipUpdated = true;
+
+            // ADDED SIZE LOG
+            try {
+                const newOwnershipSize = new Blob([JSON.stringify(ownershipData)]).size;
+                console.log(`Size of new ownership data in bytes: ${newOwnershipSize}`);
+            } catch (err) {
+                console.log('Error measuring size of new ownership data:', err);
+            }
         }
 
         // Update state with ownership data
@@ -118,16 +147,34 @@ async function processRemainingData(variants, setData, updateOwnership, updateLi
             const startListsRetrieval = Date.now();
             lists = await getAllListsFromDB();
             const endListsRetrieval = Date.now();
-            console.log(`Retrieved lists from IndexedDB in ${(endListsRetrieval - startListsRetrieval)} ms`);
+            console.log(
+                `Retrieved lists from IndexedDB in ${endListsRetrieval - startListsRetrieval} ms`
+            );
+
+            // ADDED SIZE LOG
+            try {
+                const listsSize = new Blob([JSON.stringify(lists)]).size;
+                console.log(`Size of cached lists data in bytes: ${listsSize}`);
+            } catch (err) {
+                console.log('Error measuring size of cached lists data:', err);
+            }
         } else {
             console.log("Lists are stale or ownership data/variants updated, updating lists...");
             lists = initializePokemonLists(ownershipData, variants);
-            
+
+            // ADDED SIZE LOG
+            try {
+                const newListsSize = new Blob([JSON.stringify(lists)]).size;
+                console.log(`Size of new lists data in bytes: ${newListsSize}`);
+            } catch (err) {
+                console.log('Error measuring size of new lists data:', err);
+            }
+
             const startStoreLists = Date.now();
             await storeListsInIndexedDB(lists);
             localStorage.setItem('listsTimestamp', Date.now().toString());
             const endStoreLists = Date.now();
-            console.log(`Stored updated lists in IndexedDB in ${(endStoreLists - startStoreLists)} ms`);
+            console.log(`Stored updated lists in IndexedDB in ${endStoreLists - startStoreLists} ms`);
         }
 
         // Final update with all data
@@ -147,30 +194,25 @@ async function processRemainingData(variants, setData, updateOwnership, updateLi
     }
 }
 
+/**
+ * Fetches fresh Pokémon data from the API and processes them into variants.
+ * Removes any reliance on localStorage to store the entire raw Pokémon data.
+ */
 async function fetchAndProcessVariants() {
-    // Retrieve Pokémon data from localStorage or fetch from API
-    let pokemons;
-    const cachedData = localStorage.getItem('pokemonData');
-    const pokemonTimestamp = cachedData ? JSON.parse(cachedData).timestamp : 0;
+    console.log("Fetching new data from API");
 
-    if (cachedData && isDataFresh(pokemonTimestamp)) {
-        console.log("Using Pokémon data from localStorage");
-        pokemons = JSON.parse(cachedData).data;
-    } else {
-        console.log("Fetching new data from API");
-        const startFetchPokemons = Date.now();
-        pokemons = await getPokemons();
-        const endFetchPokemons = Date.now();
-        console.log(`Fetched new Pokémon data from API in ${(endFetchPokemons - startFetchPokemons)} ms`);
+    // Fetch directly from API
+    const startFetchPokemons = Date.now();
+    let pokemons = await getPokemons();
+    const endFetchPokemons = Date.now();
+    console.log(`Fetched new Pokémon data from API in ${endFetchPokemons - startFetchPokemons} ms`);
 
-        // Store Pokémon data in localStorage
-        const startStorePokemons = Date.now();
-        localStorage.setItem('pokemonData', JSON.stringify({
-            data: pokemons,
-            timestamp: Date.now()
-        }));
-        const endStorePokemons = Date.now();
-        console.log(`Stored new Pokémon data in localStorage in ${(endStorePokemons - startStorePokemons)} ms`);
+    // ADDED SIZE LOG
+    try {
+        const pokemonsSize = new Blob([JSON.stringify(pokemons)]).size;
+        console.log(`Size of newly fetched Pokémon data in bytes: ${pokemonsSize}`);
+    } catch (err) {
+        console.log('Error measuring size of newly fetched Pokémon data:', err);
     }
 
     // Process pokemons into variants
@@ -183,9 +225,17 @@ async function fetchAndProcessVariants() {
         if (variant.type_2_icon) preloadImage(variant.type_2_icon);
     });
     const endProcessVariants = Date.now();
-    console.log(`Processed Pokémon into variants in ${(endProcessVariants - startProcessVariants)} ms`);
+    console.log(`Processed Pokémon into variants in ${endProcessVariants - startProcessVariants} ms`);
 
-    // Store all variants in IndexedDB using a single transaction
+    // ADDED SIZE LOG
+    try {
+        const variantsSize = new Blob([JSON.stringify(variants)]).size;
+        console.log(`Size of processed variants in bytes: ${variantsSize}`);
+    } catch (err) {
+        console.log('Error measuring size of processed variants:', err);
+    }
+
+    // Store all variants in IndexedDB
     const startStoreVariants = Date.now();
     try {
         await putBulkIntoDB('pokemonVariants', variants);
@@ -193,9 +243,9 @@ async function fetchAndProcessVariants() {
         console.error('Failed to store variants in IndexedDB:', error);
     }
     const endStoreVariants = Date.now();
-    console.log(`Stored variants in IndexedDB in ${(endStoreVariants - startStoreVariants)} ms`);
+    console.log(`Stored variants in IndexedDB in ${endStoreVariants - startStoreVariants} ms`);
 
-    // Update timestamp for variants in localStorage
+    // Update timestamp for variants in localStorage (only store the timestamp, not the data)
     localStorage.setItem('variantsTimestamp', Date.now().toString());
     console.log("Stored updated variants in IndexedDB");
 
