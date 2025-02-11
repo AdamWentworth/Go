@@ -1,22 +1,74 @@
 // PokedexFiltersMenu.jsx
 
 import React from 'react';
-import './PokedexFiltersMenu.css'; // You can reuse or modify the ListsMenu CSS if desired
+import './PokedexFiltersMenu.css';
 
-const PokedexFiltersMenu = ({ onSelectFilter }) => {
+const PokedexFiltersMenu = ({
+  setOwnershipFilter,
+  setHighlightedCards,
+  setIsShiny,
+  setShowCostume,
+  setShowShadow,
+  setShowAll,
+  setActiveView,
+}) => {
   // Define the filter categories.
   const leftColumnFilters = ['Default', 'Shiny'];
   const rightColumnFilters = ['Costume', 'Shadow'];
+
+  // New handler moved from Collect.jsx:
+  const handleFilterSelect = (filter) => {
+    // Always clear the ownership filter when a Pokédex option is chosen.
+    setOwnershipFilter('');
+    // Clear any highlighted cards.
+    setHighlightedCards(new Set());
+
+    // Update filter states based on the selected filter.
+    switch (filter) {
+      case 'Default':
+        setIsShiny(false);
+        setShowCostume(false);
+        setShowShadow(false);
+        setShowAll(false);
+        break;
+      case 'Shiny':
+        setIsShiny(true);
+        setShowCostume(false);
+        setShowShadow(false);
+        setShowAll(false);
+        break;
+      case 'Costume':
+        setIsShiny(false);
+        setShowCostume(true);
+        setShowShadow(false);
+        setShowAll(false);
+        break;
+      case 'Shadow':
+        setIsShiny(false);
+        setShowCostume(false);
+        setShowShadow(true);
+        setShowAll(false);
+        break;
+      default:
+        setIsShiny(false);
+        setShowCostume(false);
+        setShowShadow(false);
+        setShowAll(false);
+        break;
+    }
+    // Slide back to the Pokémon List panel.
+    setActiveView("pokemonList");
+  };
 
   const renderFilterItems = (filterNames) => {
     return filterNames.map((filterName) => (
       <div
         key={filterName}
         className="list-item"
-        onClick={() => onSelectFilter(filterName)}
+        onClick={() => handleFilterSelect(filterName)}
         tabIndex="0" // For accessibility
         onKeyPress={(e) => {
-          if (e.key === 'Enter') onSelectFilter(filterName);
+          if (e.key === 'Enter') handleFilterSelect(filterName);
         }}
       >
         <div className="list-header">{filterName}</div>

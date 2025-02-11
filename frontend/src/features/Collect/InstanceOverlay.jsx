@@ -1,6 +1,7 @@
 // InstanceOverlay.jsx
 import React, { useState, useEffect } from 'react';
 import './InstanceOverlay.css';
+import OverlayPortal from '../../components/OverlayPortal';
 import OwnedInstance from './InstanceOverlayComponents/OwnedInstance';
 import TradeInstance from './InstanceOverlayComponents/TradeInstance';
 import TradeDetails from './InstanceOverlayComponents/TradeComponents/TradeDetails';
@@ -111,12 +112,14 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
   };
 
   return (
+    <OverlayPortal>
     <div 
       className={`instance-overlay ${currentOverlay === 'Owned' ? 'owned-overlay' : ''}`} 
     >
       {renderContent()}
       {renderCloseButton()}
     </div>
+    </OverlayPortal>
   );
 };
 

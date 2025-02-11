@@ -1,12 +1,12 @@
-// ListsMenu.jsx
+// OwnershipListsMenu.jsx
 
 import React from 'react';
-import './ListsMenu.css';
+import './OwnershipListsMenu.css';
 
 // Import the sorting hook for the Owned list
-import useFavoriteList from '../../hooks/sort/useFavoriteList';
+import useFavoriteList from '../../../hooks/sort/useFavoriteList';
 
-const ListsMenu = ({
+const OwnershipListsMenu = ({
   onSelectList,
   activeLists
 }) => {
@@ -114,4 +114,4 @@ const ListsMenu = ({
   );
 };
 
-export default ListsMenu;
+export default OwnershipListsMenu;

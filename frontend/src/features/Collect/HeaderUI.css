@@ -3,7 +3,6 @@
 .header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding: 10px 20px;
     background-color: #111;
     color: white;
@@ -11,63 +10,42 @@
     top: 0;
     z-index: 1000;
     box-shadow: 2px -4px 2px 2px #111;
-    flex-wrap: nowrap; /* Keep header in one row */
+    flex-wrap: nowrap;
 }
 
-.filters-container,
-.collect-container {
-    position: relative; /* Positioning context for overlays */
-}
-
-.header.expand-collect {
-    justify-content: flex-start;
-}
-
-.header.expand-collect .collect-ui-toggle,
-.header.expand-collect .filter-ui,
-.header.expand-collect .search-ui {
-    flex-shrink: 0;
-}
-
-.header.expand-collect .toggle-button {
-    margin-right: auto;
-}
-
-.header .toggle-button,
-.header .collect-ui-toggle {
-    background: none;
-    border: 1px solid white;
-    color: white;
-    cursor: pointer;
-    padding: 5px 10px;
-    flex-shrink: 0;
-}
-
-.search-ui {
-    flex-grow: 1;
-    flex-shrink: 1;
+/* Left and right containers get a small portion of the space */
+.pokedex-container,
+.lists-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
     min-width: 0;
-    margin-right: 10px;
 }
 
-@media (max-width: 320px) {
-    .header{
-    padding: 10px 5px;
-    }
+/* Search container takes up a lot more space */
+.search-container {
+    flex: 20;
+    margin: 0 10px;
 }
 
+/* Common styling for the toggle buttons */
+.toggle-button {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background-color: #222;
+    border: 1px solid white;
+    cursor: pointer;
+}
+
+.toggle-text {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: white;
+}
+
+/* Responsive adjustments */
 @media (max-width: 480px) {
-    .header{
-    padding: 10px 10px;
-    }
-    .header .filters-container {
-        margin-right: 5px;
-    }
-}
-
-@media (min-width: 1024px) {
-    .toggle-button,
-    .collect-ui-toggle {
-        display: none;
+    .header {
+        padding: 10px 10px;
     }
 }

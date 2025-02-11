@@ -1,16 +1,15 @@
 // Collect.jsx
-
 import React, { useState, useMemo, useContext, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import './Collect.css';
 
 // Components for Collect
 import PokemonList from './PokemonList';
-import ListsMenu from './ListsMenu';
 import HeaderUI from './HeaderUI';
 import SortOverlay from './SortOverlay';
 import HighlightActionButton from './HighlightActionButton';
-import PokedexFiltersMenu from './UIComponents/PokedexFiltersMenu'; // New: for pokedex filters
+import PokedexFiltersMenu from './UIComponents/PokedexFiltersMenu';
+import OwnershipListsMenu from './UIComponents/OwnershipListsMenu';
 
 // Contexts
 import { usePokemonData } from '../../contexts/PokemonDataContext';
@@ -100,11 +99,8 @@ function Collect({ isOwnCollection }) {
   const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState(false);
   const [highlightedCards, setHighlightedCards] = useState(new Set());
 
+  // Removed showFilterUI and showCollectUI from UI controls.
   const {
-    showFilterUI,
-    setShowFilterUI,
-    showCollectUI,
-    setShowCollectUI,
     showEvolutionaryLine,
     toggleEvolutionaryLine,
     isFastSelectEnabled,
@@ -116,8 +112,6 @@ function Collect({ isOwnCollection }) {
     sortMode,
     toggleSortMode,
   } = useUIControls({
-    showFilterUI: false,
-    showCollectUI: false,
     showEvolutionaryLine: false,
     isFastSelectEnabled: false,
     isSelectAllEnabled: false,
@@ -139,9 +133,6 @@ function Collect({ isOwnCollection }) {
     generations,
     pokemonTypes,
   } = useSearchFilters(variants);
-
-  // Handle responsive UI
-  const isWide = useResponsiveUI(setShowFilterUI, setShowCollectUI);
 
   // Load user data if viewing another user's collection
   useUserDataLoader({
@@ -252,19 +243,19 @@ function Collect({ isOwnCollection }) {
     setIsSelectAllEnabled,
   });
 
-  // --- Sliding view state --- 
+  // --- Sliding view state ---
   // activeView can be:
-  //   "pokemonList" (default) – shows the Pokémon List panel,
-  //   "pokedex" – shows the Pokédex Filters panel,
-  //   "lists" – shows the ListsMenu.
+  //   "pokedex" – left panel: PokedexFiltersMenu,
+  //   "pokemonList" – middle panel: PokemonList,
+  //   "lists" – right panel: OwnershipListsMenu.
   const [activeView, setActiveView] = useState("pokemonList");
 
   // Handler for switching to Lists view
   const handleListsButtonClick = () => {
-    setActiveView("lists");
+    setActiveView(prev => (prev === "lists" ? "pokemonList" : "lists"));
   };
 
-  // Handler for selecting a list from ListsMenu
+  // Handler for selecting a list from OwnershipListsMenu
   const handleSelectList = (filter) => {
     setHighlightedCards(new Set());
     setOwnershipFilter(filter);
@@ -288,46 +279,6 @@ function Collect({ isOwnCollection }) {
     setActiveView("pokemonList");
   };
 
-  // Handler for Pokédex filter selection; updates filter states then slides back to Pokémon list
-  const handleSelectPokedexFilter = (filter) => {
-    setHighlightedCards(new Set());
-
-    switch (filter) {
-      case 'Default':
-        setIsShiny(false);
-        setShowCostume(false);
-        setShowShadow(false);
-        setShowAll(false);
-        break;
-      case 'Shiny':
-        setIsShiny(true);
-        setShowCostume(false);
-        setShowShadow(false);
-        setShowAll(false);
-        break;
-      case 'Costume':
-        setIsShiny(false);
-        setShowCostume(true);
-        setShowShadow(false);
-        setShowAll(false);
-        break;
-      case 'Shadow':
-        setIsShiny(false);
-        setShowCostume(false);
-        setShowShadow(true);
-        setShowAll(false);
-        break;
-      default:
-        setIsShiny(false);
-        setShowCostume(false);
-        setShowShadow(false);
-        setShowAll(false);
-        break;
-    }
-    // Slide back to the Pokémon List panel
-    setActiveView("pokemonList");
-  };
-
   const contextText =
     ownershipFilter === ''
       ? 'Pokédex View'
@@ -348,86 +299,69 @@ function Collect({ isOwnCollection }) {
       {(isOwnCollection || userExists) && !loading && !viewedLoading && (
         <>
           <HeaderUIMemo
-            isEditable={isEditable}
-            username={displayUsername}
-            showFilterUI={showFilterUI}
-            toggleFilterUI={() => setShowFilterUI((prev) => !prev)}
-            isShiny={isShiny}
-            toggleShiny={toggleShiny}
-            showCostume={showCostume}
-            toggleCostume={toggleCostume}
-            showShadow={showShadow}
-            toggleShadow={toggleShadow}
-            toggleShowAll={toggleShowAll}
-            showAll={showAll}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             showEvolutionaryLine={showEvolutionaryLine}
             toggleEvolutionaryLine={toggleEvolutionaryLine}
-            showCollectUI={showCollectUI}
-            toggleCollectUI={() => setShowCollectUI((prev) => !prev)}
-            isWide={isWide}
-            ownershipFilter={ownershipFilter}
-            handleClearOwnershipFilter={handleClearOwnershipFilter}
-            updateOwnershipFilter={handleUpdateOwnershipFilter}
-            handleFastSelectToggle={handleFastSelectToggle}
-            selectAllToggle={selectAllToggle}
-            highlightedCards={highlightedCards}
-            confirmMoveToFilter={handleConfirmMoveToFilter}
             onListsButtonClick={handleListsButtonClick}
-            contextText={contextText}
-            isFastSelectEnabled={isFastSelectEnabled}
-            isSelectAllEnabled={isSelectAllEnabled}
-            // Toggle between Pokédex filters and Pokémon List views
             onPokedexClick={() =>
               setActiveView((prev) => (prev === "pokedex" ? "pokemonList" : "pokedex"))
             }
           />
-          {activeView === "lists" ? (
-            <ListsMenu 
-              onSelectList={handleSelectList}
-              activeLists={activeLists}
-            />
-          ) : (
-            // The sliding view container – it shows two panels:
-            // The first panel contains the Pokédex Filters
-            // The second panel shows the Pokémon List.
-            <div
-              className="view-slider"
-              style={{
-                transform: activeView === "pokedex" ? "translateX(0)" : "translateX(-100%)",
-              }}
-            >
-              <div className="slider-panel">
-                <PokedexFiltersMenu onSelectFilter={handleSelectPokedexFilter} />
-              </div>
-              <div className="slider-panel">
-                <PokemonListMemo
-                  isEditable={isEditable}
-                  sortedPokemons={sortedPokemons}
-                  allPokemons={variants}
-                  loading={loading}
-                  selectedPokemon={selectedPokemon}
-                  setSelectedPokemon={setSelectedPokemon}
-                  isFastSelectEnabled={isFastSelectEnabled}
-                  toggleCardHighlight={toggleCardHighlight}
-                  highlightedCards={highlightedCards}
-                  isShiny={isShiny}
-                  showShadow={showShadow}
-                  multiFormPokedexNumbers={multiFormPokedexNumbers}
-                  ownershipFilter={ownershipFilter}
-                  lists={activeLists}
-                  ownershipData={ownershipData}
-                  showAll={showAll}
-                  sortType={sortType}
-                  sortMode={sortMode}
-                  variants={variants}
-                  username={displayUsername}
-                  setIsFastSelectEnabled={setIsFastSelectEnabled}
-                />
-              </div>
+          <div
+            className="view-slider"
+            style={{
+              transform:
+                activeView === "pokedex"
+                  ? "translateX(0)"
+                  : activeView === "pokemonList"
+                  ? "translateX(-100%)"
+                  : "translateX(-200%)",
+            }}
+          >
+            <div className="slider-panel">
+              <PokedexFiltersMenu 
+                setOwnershipFilter={setOwnershipFilter}
+                setHighlightedCards={setHighlightedCards}
+                setIsShiny={setIsShiny}
+                setShowCostume={setShowCostume}
+                setShowShadow={setShowShadow}
+                setShowAll={setShowAll}
+                setActiveView={setActiveView}
+              />
             </div>
-          )}
+            <div className="slider-panel">
+              <PokemonListMemo
+                isEditable={isEditable}
+                sortedPokemons={sortedPokemons}
+                allPokemons={variants}
+                loading={loading}
+                selectedPokemon={selectedPokemon}
+                setSelectedPokemon={setSelectedPokemon}
+                isFastSelectEnabled={isFastSelectEnabled}
+                toggleCardHighlight={toggleCardHighlight}
+                highlightedCards={highlightedCards}
+                isShiny={isShiny}
+                showShadow={showShadow}
+                multiFormPokedexNumbers={multiFormPokedexNumbers}
+                ownershipFilter={ownershipFilter}
+                lists={activeLists}
+                ownershipData={ownershipData}
+                showAll={showAll}
+                sortType={sortType}
+                sortMode={sortMode}
+                variants={variants}
+                username={displayUsername}
+                setIsFastSelectEnabled={setIsFastSelectEnabled}
+              />
+            </div>
+            <div className="slider-panel">
+              <OwnershipListsMenu 
+                onSelectList={handleSelectList}
+                activeLists={activeLists}
+              />
+            </div>
+          </div>
 
           <SortOverlayMemo
             sortType={sortType}
