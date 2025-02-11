@@ -10,7 +10,7 @@
     justify-content: center;
     background-color: rgba(0, 0, 0, 0.7);
     overflow-y: auto;
-    z-index: 1001;
+    z-index: 2000;
     padding: 10px;
     /* Hide scrollbar but enable scrolling */
     -ms-overflow-style: none;

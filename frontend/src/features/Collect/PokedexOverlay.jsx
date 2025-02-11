@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import './PokedexOverlay.css';
+import OverlayPortal from '../../components/OverlayPortal';
 import WindowOverlay from './WindowOverlay';
 import MoveList from './PokedexOverlayComponents/MoveList';
 import MainInfo from './PokedexOverlayComponents/MainInfo';
@@ -226,6 +227,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
   }  
 
   return (
+    <OverlayPortal>
     <div className="pokemon-overlay">
       {renderCloseButton()}
 
@@ -324,6 +326,7 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
         </div>
       )}
     </div>
+    </OverlayPortal>
   );
 };
 

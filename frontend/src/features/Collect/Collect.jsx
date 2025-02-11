@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useContext, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import './Collect.css'
+import './Collect.css';
 
 // Components for Collect
 import PokemonList from './PokemonList';
@@ -30,7 +30,7 @@ import useUIHandlers from './hooks/useUIHandlers';
 import useHandleMoveToFilter from './hooks/useHandleMoveToFilter';
 import usePokemonProcessing from './hooks/usePokemonProcessing';
 import useMegaPokemonHandler from './hooks/useMegaPokemonHandler'; 
-import useFusionPokemonHandler from './hooks/useFusionPokemonHandler'
+import useFusionPokemonHandler from './hooks/useFusionPokemonHandler';
 
 // Global Component
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -45,12 +45,19 @@ function Collect({ isOwnCollection }) {
   const navigate = useNavigate();
   const isUsernamePath = !isOwnCollection && Boolean(urlUsername);
 
+  // When username changes clear any highlighted cards
+  useEffect(() => {
+    if (isUsernamePath) {
+      setHighlightedCards(new Set());
+    }
+  }, [isUsernamePath, urlUsername]);
+
+  // Update URL to canonical username if needed
   useEffect(() => {
     if (!isOwnCollection && urlUsername) {
       const updateUsername = async () => {
-        const canonical = urlUsername;
+        const canonical = urlUsername; // Extend logic if needed
         if (canonical && canonical !== urlUsername) {
-          // Update URL to canonical username
           window.history.replaceState(
             {},
             '',
@@ -60,13 +67,7 @@ function Collect({ isOwnCollection }) {
       };
       updateUsername();
     }
-  }, [urlUsername, isOwnCollection]);
-
-  useEffect(() => {
-    if (isUsernamePath) {
-      setHighlightedCards(new Set());
-    }
-  }, [isUsernamePath, urlUsername]);
+  }, [urlUsername, isOwnCollection, location.pathname]);
 
   const {
     viewedOwnershipData,
@@ -75,7 +76,7 @@ function Collect({ isOwnCollection }) {
     fetchUserOwnershipData,
     setUserExists,
     setViewedOwnershipData,
-    canonicalUsername
+    canonicalUsername,
   } = useContext(UserSearchContext);
 
   const displayUsername = canonicalUsername || urlUsername;
@@ -98,8 +99,6 @@ function Collect({ isOwnCollection }) {
   const [selectedPokemon, setSelectedPokemon] = useState(null);
   const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState(false);
   const [highlightedCards, setHighlightedCards] = useState(new Set());
-
-  const [filterVersion, setFilterVersion] = useState(0);
 
   const {
     showFilterUI,
@@ -141,10 +140,10 @@ function Collect({ isOwnCollection }) {
     pokemonTypes,
   } = useSearchFilters(variants);
 
-  // Use custom hook to handle responsive UI
+  // Handle responsive UI
   const isWide = useResponsiveUI(setShowFilterUI, setShowCollectUI);
 
-  // Use custom hook to load user data
+  // Load user data if viewing another user's collection
   useUserDataLoader({
     isUsernamePath,
     username: urlUsername,
@@ -172,7 +171,6 @@ function Collect({ isOwnCollection }) {
       multiFormPokedexNumbers,
       pokemonTypes,
       generations,
-      filterVersion, // Include this so that any change in filterVersion forces a re-creation.
     }),
     [
       selectedGeneration,
@@ -183,55 +181,8 @@ function Collect({ isOwnCollection }) {
       multiFormPokedexNumbers,
       pokemonTypes,
       generations,
-      filterVersion,
     ]
-  );  
-  
-  const handleSelectPokedexFilter = (filter) => {
-    // Clear highlighted cards and set the ownership filter if needed.
-    setHighlightedCards(new Set());
-  
-    // Reset filter states based on the option selected.
-    switch (filter) {
-      case 'Default':
-        setIsShiny(false);
-        setShowCostume(false);
-        setShowShadow(false);
-        setShowAll(false);
-        break;
-      case 'Shiny':
-        setIsShiny(true);
-        setShowCostume(false);
-        setShowShadow(false);
-        setShowAll(false);
-        break;
-      case 'Costume':
-        setIsShiny(false);
-        setShowCostume(true);
-        setShowShadow(false);
-        setShowAll(false);
-        break;
-      case 'Shadow':
-        setIsShiny(false);
-        setShowCostume(false);
-        setShowShadow(true);
-        setShowAll(false);
-        break;
-      default:
-        // In case of any unexpected value, reset to no special filter.
-        setIsShiny(false);
-        setShowCostume(false);
-        setShowShadow(false);
-        setShowAll(false);
-        break;
-    }
-  
-    // Increment filterVersion to force usePokemonProcessing to re-run.
-    setFilterVersion((prev) => prev + 1);
-  
-    // Slide back to the Pokémon list view.
-    setActiveView("pokemonList");
-  };  
+  );
 
   const { filteredVariants, sortedPokemons } = usePokemonProcessing(
     variants,
@@ -245,7 +196,6 @@ function Collect({ isOwnCollection }) {
     sortMode
   );
 
-  // Use custom hook to process instanceId
   useInstanceIdProcessor({
     viewedOwnershipData,
     viewedLoading,
@@ -284,20 +234,11 @@ function Collect({ isOwnCollection }) {
 
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Initialize the Mega Pokémon handler
-  const {
-    promptMegaPokemonSelection,
-    MegaPokemonModal,
-  } = useMegaPokemonHandler();
+  // Mega and Fusion Pokémon handlers
+  const { promptMegaPokemonSelection, MegaPokemonModal } = useMegaPokemonHandler();
+  const { promptFusionPokemonSelection, FusionPokemonModal } = useFusionPokemonHandler();
 
-  const {
-    promptFusionPokemonSelection,
-    FusionPokemonModal,
-  } = useFusionPokemonHandler();
-
-  const {
-    handleConfirmMoveToFilter,
-  } = useHandleMoveToFilter({
+  const { handleConfirmMoveToFilter } = useHandleMoveToFilter({
     setOwnershipFilter,
     setHighlightedCards,
     highlightedCards,
@@ -311,11 +252,14 @@ function Collect({ isOwnCollection }) {
     setIsSelectAllEnabled,
   });
 
-  // Replace isShowingLists with activeView.
-  // Possible values: "pokemonList" (default), "lists", "pokedex"
+  // --- Sliding view state --- 
+  // activeView can be:
+  //   "pokemonList" (default) – shows the Pokémon List panel,
+  //   "pokedex" – shows the Pokédex Filters panel,
+  //   "lists" – shows the ListsMenu.
   const [activeView, setActiveView] = useState("pokemonList");
 
-  // Handler for "Lists" button click (existing behavior)
+  // Handler for switching to Lists view
   const handleListsButtonClick = () => {
     setActiveView("lists");
   };
@@ -330,11 +274,9 @@ function Collect({ isOwnCollection }) {
     } else if (!showAll && filter !== '' && !isShiny && !showCostume && !showShadow) {
       setShowAll(true);
     }
-
-    // Return to default view after selection
+    // Return to the default Pokémon List view after selection
     setActiveView("pokemonList");
   };
-
 
   // Handler to clear the ownership filter and reset view
   const handleClearOwnershipFilter = () => {
@@ -346,16 +288,56 @@ function Collect({ isOwnCollection }) {
     setActiveView("pokemonList");
   };
 
+  // Handler for Pokédex filter selection; updates filter states then slides back to Pokémon list
+  const handleSelectPokedexFilter = (filter) => {
+    setHighlightedCards(new Set());
+
+    switch (filter) {
+      case 'Default':
+        setIsShiny(false);
+        setShowCostume(false);
+        setShowShadow(false);
+        setShowAll(false);
+        break;
+      case 'Shiny':
+        setIsShiny(true);
+        setShowCostume(false);
+        setShowShadow(false);
+        setShowAll(false);
+        break;
+      case 'Costume':
+        setIsShiny(false);
+        setShowCostume(true);
+        setShowShadow(false);
+        setShowAll(false);
+        break;
+      case 'Shadow':
+        setIsShiny(false);
+        setShowCostume(false);
+        setShowShadow(true);
+        setShowAll(false);
+        break;
+      default:
+        setIsShiny(false);
+        setShowCostume(false);
+        setShowShadow(false);
+        setShowAll(false);
+        break;
+    }
+    // Slide back to the Pokémon List panel
+    setActiveView("pokemonList");
+  };
+
   const contextText =
     ownershipFilter === ''
       ? 'Pokédex View'
       : isEditable
       ? 'Editing your Collection'
       : (
-          <>
-            Viewing <span className="username"><strong>{displayUsername}</strong></span>'s Collection
-          </>
-        );
+        <>
+          Viewing <span className="username"><strong>{displayUsername}</strong></span>'s Collection
+        </>
+      );
 
   return (
     <div>
@@ -396,7 +378,7 @@ function Collect({ isOwnCollection }) {
             contextText={contextText}
             isFastSelectEnabled={isFastSelectEnabled}
             isSelectAllEnabled={isSelectAllEnabled}
-            // New: Pass the callback that will switch to the Pokédex view
+            // Toggle between Pokédex filters and Pokémon List views
             onPokedexClick={() =>
               setActiveView((prev) => (prev === "pokedex" ? "pokemonList" : "pokedex"))
             }
@@ -407,17 +389,18 @@ function Collect({ isOwnCollection }) {
               activeLists={activeLists}
             />
           ) : (
+            // The sliding view container – it shows two panels:
+            // The first panel contains the Pokédex Filters
+            // The second panel shows the Pokémon List.
             <div
               className="view-slider"
               style={{
-                transform: activeView === "pokedex" ? "translateX(0)" : "translateX(-100%)"
+                transform: activeView === "pokedex" ? "translateX(0)" : "translateX(-100%)",
               }}
             >
-              {/* First panel: Pokédex Filters Menu */}
               <div className="slider-panel">
                 <PokedexFiltersMenu onSelectFilter={handleSelectPokedexFilter} />
               </div>
-              {/* Second panel: Pokémon List */}
               <div className="slider-panel">
                 <PokemonListMemo
                   isEditable={isEditable}
@@ -454,6 +437,7 @@ function Collect({ isOwnCollection }) {
           />
         </>
       )}
+
       {isEditable && highlightedCards.size > 0 && (
         <HighlightActionButton
           highlightedCards={highlightedCards}

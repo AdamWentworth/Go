@@ -1,24 +1,28 @@
 /* pokemonOverlay.css */
 
 .pokemon-overlay {
-    position: fixed;
+    position: fixed;         /* Cover entire screen */
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
+    z-index: 3000;           /* Above everything else */
+    background-color: rgba(0, 0, 0, 0.7);
+    overflow-y: auto;        /* Scroll within the overlay */
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: rgba(0, 0, 0, 0.7); /* Dimming background */
-    z-index: 1001; /* Ensures overlay is on top */
-    flex-direction: column; 
-}
+  }
 
 .pokemon-overlay .column-layout {
     flex-direction: column;
 }
 
 .pokemon-overlay .overlay-row {
+    position: absolute;
+    top: 0;
+    right: 0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -311,6 +315,20 @@
         height: 30px !important;
     }
 }
+@media (min-width: 1024px) {
+    .pokemon-overlay .overlay-row.other-overlays-row {
+        position: absolute;    
+        top: 50%;                
+        left: 0;                 
+        width: 100%;             
+        transform: translateY(-50%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }  
+}
+
 @media (min-width: 1721px) {
     .pokemon-overlay .overlay-charged-moves {
         overflow-y: auto;

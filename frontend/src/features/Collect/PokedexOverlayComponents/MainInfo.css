@@ -1,24 +1,32 @@
 /* MainInfo.css */
 
+.type-section {
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Align items vertically */
+    gap: 5px; /* Space between images */
+    width: 100%; /* Ensure it takes full width */
+}
+
 .type-section img {
+    display: inline-block; /* Ensures images are treated like inline elements */
     padding: 3px;
-    margin-top: 0px;
-    margin-bottom: -10px;
     width: 24px;
     height: 24px;
 }
 
-.main-info-column p {
-    margin: 0px;
+.main-info-column p,
+.main-info-column h2,
+.main-info-column .cp,
+.stat-text {
+    text-align: center;
+    width: 100%; /* Ensures elements use full width of the container */
+    margin: 5px auto; /* Centers it inside parent */
 }
 
 .main-info-column .pokemon-image {
     max-width: 240px;
     filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
-}
-
-.type-section img {
-    filter: none;
 }
 
 .stat-gauge {
