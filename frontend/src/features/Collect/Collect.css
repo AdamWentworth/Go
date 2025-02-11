@@ -1,0 +1,14 @@
+/* Collect.css */
+
+.view-slider {
+    display: flex;
+    width: 100%; /* Because we have two panels side by side */
+    transition: transform 0.3s ease;
+    /* Optional: set a fixed height or min-height to avoid layout jumps */
+  }
+  
+  .slider-panel {
+    flex: 0 0 100%; /* Each panel takes full container width */
+    /* Optional: add padding/margin if needed */
+  }
+  

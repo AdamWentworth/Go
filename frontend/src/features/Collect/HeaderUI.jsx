@@ -1,7 +1,7 @@
 // HeaderUI.jsx
 
 import React from 'react';
-import FilterUI from './UIComponents/FilterUI';
+import PokedexFilters from './UIComponents/PokedexFilters';
 import SearchUI from './UIComponents/SearchUI';
 import CollectUI from './UIComponents/CollectUI';
 import './HeaderUI.css';
@@ -33,6 +33,8 @@ const HeaderUI = ({
   highlightedCards,
   confirmMoveToFilter,
   onListsButtonClick,
+  // New prop for Pokedex
+  onPokedexClick,
   contextText,
   isWide,
   isFastSelectEnabled,
@@ -45,7 +47,7 @@ const HeaderUI = ({
           Filters
         </button>
         {showFilterUI && (
-          <FilterUI
+          <PokedexFilters
             isShiny={isShiny}
             toggleShiny={toggleShiny}
             showCostume={showCostume}
@@ -55,6 +57,8 @@ const HeaderUI = ({
             toggleShowAll={toggleShowAll}
             showAll={showAll}
             isWide={isWide}
+            // Pass the new callback down:
+            onPokedexClick={onPokedexClick}
           />
         )}
       </div>
@@ -65,7 +69,6 @@ const HeaderUI = ({
         toggleEvolutionaryLine={toggleEvolutionaryLine}
       />
       <div className="collect-container">
-        {/* Conditionally render the Collect toggle button based on isEditable */}
         {isEditable && (
           <button
             className="toggle-button collect-ui-toggle"
@@ -74,7 +77,6 @@ const HeaderUI = ({
             Collect
           </button>
         )}
-        {/* Conditionally render CollectUI based on isEditable and showCollectUI */}
         {(isEditable ? showCollectUI : true) && (
           <CollectUI
             isEditable={isEditable}
