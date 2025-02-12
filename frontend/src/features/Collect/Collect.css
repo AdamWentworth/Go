@@ -1,16 +1,42 @@
 /* Collect.css */
+/* Make the entire page container fill the viewport with no scrolling at the page level. */
+.collect-page {
+  width: 100%;
+  height: 100vh;       /* or "calc(100vh - <headerHeight>)" if you have a fixed header */
+  margin: 0;
+  overflow: hidden;    /* no page scrolling; each panel will scroll itself */
+  display: flex;
+  flex-direction: column;
+}
 
+/* Container for the horizontal slider */
+.view-slider-container {
+  flex: 1;             /* fill remaining space below header (if your header is inside collect-page) */
+  width: 100%;
+  overflow: hidden;    /* hide the horizontal scrollbar */
+  position: relative;  
+}
+
+/* The horizontal slider with 3 panels side by side */
 .view-slider {
-    display: flex;
-    width: 100%; /* Because we have two panels side by side */
-    transition: transform 0.3s ease;
-    /* Optional: set a fixed height or min-height to avoid layout jumps */
-  }
-  
-  .slider-panel {
-    position: relative; /* so absolutely-positioned children stay within this slider */
-    flex: 0 0 100%;
-    /* Add overflow if you want scrolling or hiding. Example: */
-    overflow: auto;
-  }
-  
+  display: flex;
+  height: 100%;        /* fill container's height */
+  width: 100%;         /* 3 slides (pokedex, main list, ownership) each 100% */
+  transition: transform 0.3s ease;
+}
+
+/* Each panel: full container height + its own scrollbar. */
+.slider-panel {
+  flex: 0 0 100%;
+  height: 100%;
+  overflow-y: auto;    /* Keep scrolling enabled */
+  box-sizing: border-box;
+  /* Hide scrollbar for all browsers */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Hide scrollbar for Chrome/Safari/Webkit */
+.slider-panel::-webkit-scrollbar {
+  display: none;
+}

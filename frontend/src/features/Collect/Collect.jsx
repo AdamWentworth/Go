@@ -1,9 +1,8 @@
 // Collect.jsx
-import React, { useState, useMemo, useContext, useEffect } from 'react';
+import React, { useState, useMemo, useContext, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import './Collect.css';
 
-// Components for Collect
 import PokemonList from './PokemonList';
 import HeaderUI from './HeaderUI';
 import SortOverlay from './SortOverlay';
@@ -11,27 +10,22 @@ import HighlightActionButton from './HighlightActionButton';
 import PokedexFiltersMenu from './UIComponents/PokedexFiltersMenu';
 import OwnershipListsMenu from './UIComponents/OwnershipListsMenu';
 
-// Contexts
 import { usePokemonData } from '../../contexts/PokemonDataContext';
 import UserSearchContext from '../../contexts/UserSearchContext';
 import { initializePokemonLists } from '../../contexts/PokemonData/PokemonTradeListOperations';
 
-// Utils
 import { multiFormPokedexNumbers } from '../../utils/constants';
 
-// Hooks
 import useUserDataLoader from './hooks/useUserDataLoader';
 import useInstanceIdProcessor from './hooks/useInstanceIdProcessor';
-import useResponsiveUI from './hooks/useResponsiveUI';
 import useSearchFilters from '../../hooks/search/useSearchFilters';
 import { useUIControls } from './hooks/useUIControls';
 import useUIHandlers from './hooks/useUIHandlers';
 import useHandleMoveToFilter from './hooks/useHandleMoveToFilter';
 import usePokemonProcessing from './hooks/usePokemonProcessing';
-import useMegaPokemonHandler from './hooks/useMegaPokemonHandler'; 
+import useMegaPokemonHandler from './hooks/useMegaPokemonHandler';
 import useFusionPokemonHandler from './hooks/useFusionPokemonHandler';
 
-// Global Component
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 const PokemonListMemo = React.memo(PokemonList);
@@ -44,30 +38,6 @@ function Collect({ isOwnCollection }) {
   const navigate = useNavigate();
   const isUsernamePath = !isOwnCollection && Boolean(urlUsername);
 
-  // When username changes clear any highlighted cards
-  useEffect(() => {
-    if (isUsernamePath) {
-      setHighlightedCards(new Set());
-    }
-  }, [isUsernamePath, urlUsername]);
-
-  // Update URL to canonical username if needed
-  useEffect(() => {
-    if (!isOwnCollection && urlUsername) {
-      const updateUsername = async () => {
-        const canonical = urlUsername; // Extend logic if needed
-        if (canonical && canonical !== urlUsername) {
-          window.history.replaceState(
-            {},
-            '',
-            location.pathname.replace(urlUsername, canonical)
-          );
-        }
-      };
-      updateUsername();
-    }
-  }, [urlUsername, isOwnCollection, location.pathname]);
-
   const {
     viewedOwnershipData,
     userExists,
@@ -77,8 +47,6 @@ function Collect({ isOwnCollection }) {
     setViewedOwnershipData,
     canonicalUsername,
   } = useContext(UserSearchContext);
-
-  const displayUsername = canonicalUsername || urlUsername;
 
   const {
     variants,
@@ -94,12 +62,12 @@ function Collect({ isOwnCollection }) {
 
   const [ownershipFilter, setOwnershipFilter] = useState('');
   const [showAll, setShowAll] = useState(false);
-  const isEditable = isOwnCollection;
   const [selectedPokemon, setSelectedPokemon] = useState(null);
   const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState(false);
   const [highlightedCards, setHighlightedCards] = useState(new Set());
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Removed showFilterUI and showCollectUI from UI controls.
+  // UI Controls
   const {
     showEvolutionaryLine,
     toggleEvolutionaryLine,
@@ -119,6 +87,7 @@ function Collect({ isOwnCollection }) {
     sortMode: 'ascending',
   });
 
+  // Filter states
   const {
     isShiny,
     setIsShiny,
@@ -134,7 +103,7 @@ function Collect({ isOwnCollection }) {
     pokemonTypes,
   } = useSearchFilters(variants);
 
-  // Load user data if viewing another user's collection
+  // If viewing another user’s collection, load that data
   useUserDataLoader({
     isUsernamePath,
     username: urlUsername,
@@ -169,7 +138,6 @@ function Collect({ isOwnCollection }) {
       searchTerm,
       showCostume,
       showShadow,
-      multiFormPokedexNumbers,
       pokemonTypes,
       generations,
     ]
@@ -201,7 +169,6 @@ function Collect({ isOwnCollection }) {
   });
 
   const {
-    handleUpdateOwnershipFilter,
     toggleShiny,
     toggleCostume,
     toggleShadow,
@@ -220,12 +187,9 @@ function Collect({ isOwnCollection }) {
     setShowAll,
     highlightedCards,
     sortedPokemons,
-    setIsSelectAllEnabled,
   });
 
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  // Mega and Fusion Pokémon handlers
+  // Mega/Fusion
   const { promptMegaPokemonSelection, MegaPokemonModal } = useMegaPokemonHandler();
   const { promptFusionPokemonSelection, FusionPokemonModal } = useFusionPokemonHandler();
 
@@ -236,65 +200,104 @@ function Collect({ isOwnCollection }) {
     updateOwnership,
     variants,
     ownershipData,
-    setIsUpdating: (value) => setIsUpdating(value),
+    setIsUpdating,
     promptMegaPokemonSelection,
     promptFusionPokemonSelection,
     setIsFastSelectEnabled,
     setIsSelectAllEnabled,
   });
 
-  // --- Sliding view state ---
-  // activeView can be:
-  //   "pokedex" – left panel: PokedexFiltersMenu,
-  //   "pokemonList" – middle panel: PokemonList,
-  //   "lists" – right panel: OwnershipListsMenu.
-  const [activeView, setActiveView] = useState("pokemonList");
+  //--- Sliding view state ---
+  const [activeView, setActiveView] = useState('pokemonList');
 
-  // Define a swipe handler that updates the active view.
+  // 1) Create refs for all 3 panels
+  const pokedexPanelRef = useRef(null);
+  const mainListPanelRef = useRef(null);
+  const ownershipPanelRef = useRef(null);
+
+  // 2) When activeView changes, reset each panel’s scroll
+  useEffect(() => {
+    if (pokedexPanelRef.current) {
+      pokedexPanelRef.current.scrollTop = 0;
+    }
+    if (mainListPanelRef.current) {
+      mainListPanelRef.current.scrollTop = 0;
+    }
+    if (ownershipPanelRef.current) {
+      ownershipPanelRef.current.scrollTop = 0;
+    }
+  }, [activeView]);
+
+  // 3) “Swipe” logic
   const handleCardSwipe = (direction) => {
     if (direction === 'left') {
-      if (activeView === "pokedex") {
-        setActiveView("pokemonList");
-      } else if (activeView === "pokemonList") {
-        setActiveView("lists");
+      if (activeView === 'pokedex') {
+        setActiveView('pokemonList');
+      } else if (activeView === 'pokemonList') {
+        setActiveView('lists');
       }
     } else if (direction === 'right') {
-      if (activeView === "lists") {
-        setActiveView("pokemonList");
-      } else if (activeView === "pokemonList") {
-        setActiveView("pokedex");
+      if (activeView === 'lists') {
+        setActiveView('pokemonList');
+      } else if (activeView === 'pokemonList') {
+        setActiveView('pokedex');
       }
     }
   };
 
-  // Handler for switching to Lists view
   const handleListsButtonClick = () => {
-    setActiveView(prev => (prev === "lists" ? "pokemonList" : "lists"));
+    setActiveView((prev) => (prev === 'lists' ? 'pokemonList' : 'lists'));
   };
 
-  // Handler for selecting a list from OwnershipListsMenu
   const handleSelectList = (filter) => {
     setHighlightedCards(new Set());
     setOwnershipFilter(filter);
 
-    if (filter === '' && !isShiny && !showCostume && !showShadow) {
+    if (
+      filter === '' &&
+      !isShiny &&
+      !showCostume &&
+      !showShadow
+    ) {
       setShowAll(false);
-    } else if (!showAll && filter !== '' && !isShiny && !showCostume && !showShadow) {
+    } else if (
+      !showAll &&
+      filter !== '' &&
+      !isShiny &&
+      !showCostume &&
+      !showShadow
+    ) {
       setShowAll(true);
     }
-    // Return to the default Pokémon List view after selection
-    setActiveView("pokemonList");
+    setActiveView('pokemonList');
   };
 
-  // Handler to clear the ownership filter and reset view
-  const handleClearOwnershipFilter = () => {
-    setOwnershipFilter('');
-    if (!isShiny && !showCostume && !showShadow) {
-      setShowAll(false);
+  // Clear highlights if username changes
+  useEffect(() => {
+    if (isUsernamePath) {
+      setHighlightedCards(new Set());
     }
-    setHighlightedCards(new Set());
-    setActiveView("pokemonList");
-  };
+  }, [isUsernamePath, urlUsername]);
+
+  // Possibly replace path with canonical username
+  useEffect(() => {
+    if (!isOwnCollection && urlUsername) {
+      const updateUsername = async () => {
+        const canonical = urlUsername; // Extend logic if needed
+        if (canonical && canonical !== urlUsername) {
+          window.history.replaceState(
+            {},
+            '',
+            location.pathname.replace(urlUsername, canonical)
+          );
+        }
+      };
+      updateUsername();
+    }
+  }, [urlUsername, isOwnCollection, location.pathname]);
+
+  const displayUsername = canonicalUsername || urlUsername;
+  const isEditable = isOwnCollection;
 
   const contextText =
     ownershipFilter === ''
@@ -303,12 +306,16 @@ function Collect({ isOwnCollection }) {
       ? 'Editing your Collection'
       : (
         <>
-          Viewing <span className="username"><strong>{displayUsername}</strong></span>'s Collection
+          Viewing{' '}
+          <span className="username">
+            <strong>{displayUsername}</strong>
+          </span>
+          's Collection
         </>
       );
 
   return (
-    <div>
+    <div className="collect-page">
       {isUsernamePath && userExists === false && <h1>User not found</h1>}
 
       {(loading || viewedLoading || isUpdating) && <LoadingSpinner />}
@@ -322,64 +329,89 @@ function Collect({ isOwnCollection }) {
             toggleEvolutionaryLine={toggleEvolutionaryLine}
             onListsButtonClick={handleListsButtonClick}
             onPokedexClick={() =>
-              setActiveView((prev) => (prev === "pokedex" ? "pokemonList" : "pokedex"))
+              setActiveView((prev) =>
+                prev === 'pokedex' ? 'pokemonList' : 'pokedex'
+              )
             }
             contextText={contextText}
             totalPokemon={sortedPokemons.length}
           />
-          <div
-            className="view-slider"
-            style={{
-              transform:
-                activeView === "pokedex"
-                  ? "translateX(0)"
-                  : activeView === "pokemonList"
-                  ? "translateX(-100%)"
-                  : "translateX(-200%)",
+
+          {/* Horizontal slider container */}
+          <div 
+            className="view-slider-container" 
+            style={{ 
+              overflowY: activeView === 'pokemonList' ? 'auto' : 'hidden',
             }}
           >
-            <div className="slider-panel">
-              <PokedexFiltersMenu 
-                setOwnershipFilter={setOwnershipFilter}
-                setHighlightedCards={setHighlightedCards}
-                setIsShiny={setIsShiny}
-                setShowCostume={setShowCostume}
-                setShowShadow={setShowShadow}
-                setShowAll={setShowAll}
-                setActiveView={setActiveView}
-              />
-            </div>
-            <div className="slider-panel">
-              <PokemonListMemo
-                isEditable={isEditable}
-                sortedPokemons={sortedPokemons}
-                allPokemons={variants}
-                loading={loading}
-                selectedPokemon={selectedPokemon}
-                setSelectedPokemon={setSelectedPokemon}
-                isFastSelectEnabled={isFastSelectEnabled}
-                toggleCardHighlight={toggleCardHighlight}
-                highlightedCards={highlightedCards}
-                isShiny={isShiny}
-                showShadow={showShadow}
-                multiFormPokedexNumbers={multiFormPokedexNumbers}
-                ownershipFilter={ownershipFilter}
-                lists={activeLists}
-                ownershipData={ownershipData}
-                showAll={showAll}
-                sortType={sortType}
-                sortMode={sortMode}
-                variants={variants}
-                username={displayUsername}
-                setIsFastSelectEnabled={setIsFastSelectEnabled}
-                onSwipe={handleCardSwipe} 
-              />
-            </div>
-            <div className="slider-panel">
-              <OwnershipListsMenu 
-                onSelectList={handleSelectList}
-                activeLists={activeLists}
-              />
+            <div
+              className="view-slider"
+              style={{
+                transform:
+                  activeView === 'pokedex'
+                    ? 'translateX(0)'
+                    : activeView === 'pokemonList'
+                    ? 'translateX(-100%)'
+                    : 'translateX(-200%)',
+              }}
+            >
+              {/* LEFT panel - Pokedex */}
+              <div
+                className="slider-panel"
+                ref={pokedexPanelRef}
+              >
+                <PokedexFiltersMenu
+                  setOwnershipFilter={setOwnershipFilter}
+                  setHighlightedCards={setHighlightedCards}
+                  setIsShiny={setIsShiny}
+                  setShowCostume={setShowCostume}
+                  setShowShadow={setShowShadow}
+                  setShowAll={setShowAll}
+                  setActiveView={setActiveView}
+                />
+              </div>
+
+              {/* MIDDLE panel - Main Pokemon List */}
+              <div
+                className="slider-panel"
+                ref={mainListPanelRef}
+              >
+                <PokemonListMemo
+                  isEditable={isEditable}
+                  sortedPokemons={sortedPokemons}
+                  allPokemons={variants}
+                  loading={loading}
+                  selectedPokemon={selectedPokemon}
+                  setSelectedPokemon={setSelectedPokemon}
+                  isFastSelectEnabled={isFastSelectEnabled}
+                  toggleCardHighlight={toggleCardHighlight}
+                  highlightedCards={highlightedCards}
+                  isShiny={isShiny}
+                  showShadow={showShadow}
+                  multiFormPokedexNumbers={multiFormPokedexNumbers}
+                  ownershipFilter={ownershipFilter}
+                  lists={activeLists}
+                  ownershipData={ownershipData}
+                  showAll={showAll}
+                  sortType={sortType}
+                  sortMode={sortMode}
+                  variants={variants}
+                  username={displayUsername}
+                  setIsFastSelectEnabled={setIsFastSelectEnabled}
+                  onSwipe={handleCardSwipe}
+                />
+              </div>
+
+              {/* RIGHT panel - Ownership lists */}
+              <div
+                className="slider-panel"
+                ref={ownershipPanelRef}
+              >
+                <OwnershipListsMenu
+                  onSelectList={handleSelectList}
+                  activeLists={activeLists}
+                />
+              </div>
             </div>
           </div>
 

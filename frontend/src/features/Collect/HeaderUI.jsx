@@ -47,7 +47,7 @@ const HeaderUI = ({
           />
           <div className="lists-container">
             <div className="toggle-button" onClick={onListsButtonClick}>
-              <span className="toggle-text">LISTS</span>
+              <span className="toggle-text">LISTINGS</span>
             </div>
           </div>
         </>
@@ -71,7 +71,7 @@ const HeaderUI = ({
             </div>
             <div className="lists-container">
               <div className="toggle-button" onClick={onListsButtonClick}>
-                <span className="toggle-text">LISTS</span>
+                <span className="toggle-text">LISTINGS</span>
               </div>
             </div>
           </div>

@@ -77,7 +77,7 @@
 }
 
 .pokemon-options-overlay .option-card,
-.pokemon-options-overlay .preview-card-container {
+.pokemon-options-overlay .pokemon-card {
     background-color: #444;
 }
 
@@ -99,7 +99,7 @@
   transition: filter 0.3s ease-in-out; /* Smooth transition */
 }
 
-.pokemon-options-overlay .preview-card-container:hover {
+.pokemon-options-overlay .pokemon-card:hover {
   transition: background-color 0.3s ease-in-out; /* Smooth background transition */
   background-color: #34807d;
 }

@@ -12,8 +12,8 @@ const PokedexFiltersMenu = ({
   setShowAll,
   setActiveView,
 }) => {
-  // Define the filter categories.
-  const leftColumnFilters = ['Default', 'Shiny'];
+  // Add the new filter "All" into one of the columns (here, leftColumnFilters)
+  const leftColumnFilters = ['Default', 'Shiny', 'All'];
   const rightColumnFilters = ['Costume', 'Shadow'];
 
   // New handler moved from Collect.jsx:
@@ -48,6 +48,12 @@ const PokedexFiltersMenu = ({
         setShowCostume(false);
         setShowShadow(true);
         setShowAll(false);
+        break;
+      case 'All':
+        setIsShiny(false);
+        setShowCostume(false);
+        setShowShadow(false);
+        setShowAll(true);
         break;
       default:
         setIsShiny(false);
