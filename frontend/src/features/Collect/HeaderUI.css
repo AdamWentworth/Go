@@ -1,5 +1,4 @@
 /* HeaderUI.css */
-
 .header {
     display: flex;
     align-items: center;
@@ -10,42 +9,128 @@
     top: 0;
     z-index: 1000;
     box-shadow: 2px -4px 2px 2px #111;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+}
+
+.pokemon-count, .pokemon-count-narrow {
+    text-align: center;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
 }
 
 /* Left and right containers get a small portion of the space */
-.pokedex-container,
-.lists-container {
+.header .pokedex-container,
+.header .lists-container {
     flex: 1;
     display: flex;
     justify-content: center;
     min-width: 0;
 }
 
-/* Search container takes up a lot more space */
-.search-container {
-    flex: 20;
-    margin: 0 10px;
-}
-
 /* Common styling for the toggle buttons */
-.toggle-button {
+.header .toggle-button {
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     background-color: #222;
     border: 1px solid white;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.toggle-text {
+.header .toggle-text {
     font-size: 1.25rem;
     font-weight: bold;
     color: white;
 }
 
-/* Responsive adjustments */
+/* Responsive layout for width <= 1023px */
+@media (max-width: 1023px) {
+    .header {
+        justify-content: center;
+    }
+
+    .pokemon-count-narrow {
+        display: flex;
+        flex: 0 1 auto;
+    }
+
+    .controls-row {
+        order: 1;
+    }
+
+    /* SearchUI wrapper */
+    .header > :last-child {
+        order: 2;
+        width: 100%;
+    }
+
+    .pokedex-container,
+    .lists-container {
+        flex: 0 1 auto;
+    }
+}
+
+/* Responsive font sizes */
 @media (max-width: 480px) {
     .header {
         padding: 10px 10px;
+        padding-top: 0px
+    }
+    .header .toggle-button {
+        padding: 0.5rem 0.5rem;
+    }
+    .header .toggle-text {
+        font-size: 1rem;
+    }
+}
+
+/* Rest of your media queries remain the same */
+@media (min-width: 481px) and (max-width: 767px) {
+    .toggle-text {
+        font-size: 1.125rem;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .toggle-text {
+        font-size: 1.25rem;
+    }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+    .toggle-text {
+        font-size: 1.375rem;
+    }
+}
+
+@media (min-width: 1440px) {
+    .toggle-text {
+        font-size: 1.5rem;
+    }
+}
+
+@media (min-width: 1919px) {
+    .toggle-text {
+        font-size: 1.625rem;
+    }
+}
+
+@media (min-width: 2559px) {
+    .toggle-text {
+        font-size: 1.75rem;
     }
 }

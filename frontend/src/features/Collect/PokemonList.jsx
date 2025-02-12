@@ -1,10 +1,11 @@
 // PokemonList.jsx
 
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { validate as uuidValidate } from 'uuid';
 import PokemonCard from './PokemonCard';
-import PokemonOverlay from './PokedexOverlay';
+import PokedexOverlay from './PokedexOverlay';
 import InstanceOverlay from './InstanceOverlay';
+import PokemonOptionsOverlay from './PokemonOptionsOverlay';
 import './PokemonList.css';
 import { useModal } from '../../contexts/ModalContext';
 
@@ -30,40 +31,58 @@ function PokemonList({
   variants,
   username,
   setIsFastSelectEnabled,
+  onSwipe
 }) {
   const { alert } = useModal();
+  const [optionsSelectedPokemon, setOptionsSelectedPokemon] = useState(null);
 
+  // ---------------------------------------
+  // Step A) On user click
+  // ---------------------------------------
   const handleSelect = (pokemon) => {
     console.log('Pokemon selected:', pokemon.pokemonKey);
-  
-    // Step 1) If user is in multi-select mode
+
+    // If not editable, skip options overlay and go directly into the Instance Overlay.
+    if (!isEditable) {
+      setSelectedPokemon({ pokemon, overlayType: 'instance' });
+      return;
+    }
+
+    // 1) If user is in multi-select (fast-select) mode, just highlight/unhighlight:
     if (isFastSelectEnabled) {
       const wasHighlighted = highlightedCards.has(pokemon.pokemonKey);
       toggleCardHighlight(pokemon.pokemonKey);
-  
-      // Only disable fast select if user un-highlights the last card
+
       if (wasHighlighted && highlightedCards.size === 1) {
         setIsFastSelectEnabled(false);
       }
-      return; // Maintain early return for fast-select mode
-    }
-  
-    // Step 2) If the Pokémon is disabled, do nothing (no overlays)
-    if (pokemon.ownershipStatus?.disabled) {
-      alert('This Pokémon is fused with another and is disabled until unfused; no overlay will open.');
       return;
     }
-  
-    // Step 3) Check if it's an instance (uuid => overlayType: 'instance')
+
+    // 2) If the Pokémon is disabled, show alert & do nothing:
+    if (pokemon.ownershipStatus?.disabled) {
+      alert(
+        'This Pokémon is fused with another and is disabled until unfused; no overlay will open.'
+      );
+      return;
+    }
+
+    // 3) Compute whether this Pokémon is an instance only once.
     const keyParts = pokemon.pokemonKey.split('_');
     const possibleUUID = keyParts[keyParts.length - 1];
     const isInstance = uuidValidate(possibleUUID);
-  
-    // Step 4) Set overlay appropriately
+
+    // 4) Open the options overlay and pass along the isInstance flag.
+    setOptionsSelectedPokemon({ pokemon, isInstance });
+  };
+
+  // ---------------------------------------
+  // Step B) If the user chooses "Open Overlay"
+  // ---------------------------------------
+  // Note: Now we expect an object that contains both the Pokémon and isInstance.
+  const openOverlay = ({ pokemon, isInstance }) => {
     setSelectedPokemon(
-      isInstance 
-        ? { pokemon, overlayType: 'instance' }
-        : pokemon
+      isInstance ? { pokemon, overlayType: 'instance' } : pokemon
     );
   };
 
@@ -78,6 +97,7 @@ function PokemonList({
               key={pokemon.pokemonKey}
               pokemon={pokemon}
               onSelect={() => handleSelect(pokemon)}
+              onSwipe={onSwipe} // <-- pass the onSwipe prop down to each card
               isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
               isShiny={isShiny}
               showShadow={showShadow}
@@ -91,8 +111,34 @@ function PokemonList({
               isFastSelectEnabled={isFastSelectEnabled}
             />
           ))}
-          {selectedPokemon && (
-            selectedPokemon.overlayType === 'instance' ? (
+
+          {/* Only render the options overlay if isEditable is true */}
+          {isEditable && optionsSelectedPokemon && (
+            <PokemonOptionsOverlay
+              // Pass both the raw Pokémon and the computed isInstance flag.
+              pokemon={optionsSelectedPokemon.pokemon}
+              isInstance={optionsSelectedPokemon.isInstance}
+              ownershipFilter={ownershipFilter}
+              onClose={() => setOptionsSelectedPokemon(null)}
+              // If user chooses "Highlight":
+              onHighlight={(poke) => {
+                toggleCardHighlight(poke.pokemonKey);
+                setIsFastSelectEnabled(true);
+                setOptionsSelectedPokemon(null);
+              }}
+              // If user chooses "Open Overlay":
+              onOpenOverlay={(poke) => {
+                openOverlay({
+                  pokemon: poke,
+                  isInstance: optionsSelectedPokemon.isInstance,
+                });
+                setOptionsSelectedPokemon(null);
+              }}
+            />
+          )}
+
+          {selectedPokemon &&
+            (selectedPokemon.overlayType === 'instance' ? (
               <InstanceOverlay
                 pokemon={selectedPokemon.pokemon}
                 onClose={() => setSelectedPokemon(null)}
@@ -108,7 +154,7 @@ function PokemonList({
                 username={username}
               />
             ) : (
-              <PokemonOverlay
+              <PokedexOverlay
                 pokemon={
                   selectedPokemon.overlayType
                     ? selectedPokemon.pokemon
@@ -118,8 +164,7 @@ function PokemonList({
                 setSelectedPokemon={setSelectedPokemon}
                 allPokemons={allPokemons}
               />
-            )
-          )}
+            ))}
         </>
       )}
     </div>

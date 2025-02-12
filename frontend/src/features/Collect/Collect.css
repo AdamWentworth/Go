@@ -11,6 +11,6 @@
     position: relative; /* so absolutely-positioned children stay within this slider */
     flex: 0 0 100%;
     /* Add overflow if you want scrolling or hiding. Example: */
-    /* overflow: auto; */
+    overflow: auto;
   }
   

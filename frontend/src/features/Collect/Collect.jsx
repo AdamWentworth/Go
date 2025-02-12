@@ -250,6 +250,23 @@ function Collect({ isOwnCollection }) {
   //   "lists" – right panel: OwnershipListsMenu.
   const [activeView, setActiveView] = useState("pokemonList");
 
+  // Define a swipe handler that updates the active view.
+  const handleCardSwipe = (direction) => {
+    if (direction === 'left') {
+      if (activeView === "pokedex") {
+        setActiveView("pokemonList");
+      } else if (activeView === "pokemonList") {
+        setActiveView("lists");
+      }
+    } else if (direction === 'right') {
+      if (activeView === "lists") {
+        setActiveView("pokemonList");
+      } else if (activeView === "pokemonList") {
+        setActiveView("pokedex");
+      }
+    }
+  };
+
   // Handler for switching to Lists view
   const handleListsButtonClick = () => {
     setActiveView(prev => (prev === "lists" ? "pokemonList" : "lists"));
@@ -307,6 +324,8 @@ function Collect({ isOwnCollection }) {
             onPokedexClick={() =>
               setActiveView((prev) => (prev === "pokedex" ? "pokemonList" : "pokedex"))
             }
+            contextText={contextText}
+            totalPokemon={sortedPokemons.length}
           />
           <div
             className="view-slider"
@@ -353,6 +372,7 @@ function Collect({ isOwnCollection }) {
                 variants={variants}
                 username={displayUsername}
                 setIsFastSelectEnabled={setIsFastSelectEnabled}
+                onSwipe={handleCardSwipe} 
               />
             </div>
             <div className="slider-panel">

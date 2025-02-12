@@ -19,23 +19,30 @@ const PokemonCard = ({
   toggleCardHighlight,
   setIsFastSelectEnabled,
   isEditable,
+  onSwipe // new prop for swipe events
 }) => {
-
+  // Refs for touch coordinates and flags
   const touchTimeoutRef = useRef(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
+  const lastTouchX = useRef(0);
+  const isSwiping = useRef(false);
   const isScrolling = useRef(false);
   const touchHandled = useRef(false);
 
+  // --- Touch Handlers for tap/long-press and swipe detection ---
   const handleTouchStart = (e) => {
     const touch = e.touches[0];
     touchStartX.current = touch.clientX;
     touchStartY.current = touch.clientY;
+    lastTouchX.current = touch.clientX;
+    isSwiping.current = false;
     isScrolling.current = false;
     touchHandled.current = false;
 
+    // Long press detection (300ms)
     touchTimeoutRef.current = setTimeout(() => {
-      if (!isFastSelectEnabled && isEditable) {
+      if (!isSwiping.current && !isFastSelectEnabled && isEditable) {
         toggleCardHighlight(pokemon.pokemonKey);
         setIsFastSelectEnabled(true);
       }
@@ -44,16 +51,24 @@ const PokemonCard = ({
   };
 
   const handleTouchMove = (e) => {
-    if (!touchTimeoutRef.current) return;
-
     const touch = e.touches[0];
-    const deltaX = Math.abs(touch.clientX - touchStartX.current);
-    const deltaY = Math.abs(touch.clientY - touchStartY.current);
-    const threshold = 5; // Adjust threshold as needed
+    lastTouchX.current = touch.clientX;
+    const deltaX = touch.clientX - touchStartX.current;
+    const deltaY = touch.clientY - touchStartY.current;
 
-    if (deltaX > threshold || deltaY > threshold) {
-      clearTimeout(touchTimeoutRef.current);
-      touchTimeoutRef.current = null;
+    // Determine if the gesture is mostly horizontal
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      isSwiping.current = true;
+    } else {
+      isSwiping.current = false;
+    }
+
+    // If the user moves enough in any direction, cancel the long press timer
+    if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+      if (touchTimeoutRef.current) {
+        clearTimeout(touchTimeoutRef.current);
+        touchTimeoutRef.current = null;
+      }
       isScrolling.current = true;
     }
   };
@@ -62,10 +77,21 @@ const PokemonCard = ({
     if (touchTimeoutRef.current) {
       clearTimeout(touchTimeoutRef.current);
       touchTimeoutRef.current = null;
-      if (!isScrolling.current) {
-        touchHandled.current = true;
-        onSelect();
-      }
+    }
+    const deltaX = lastTouchX.current - touchStartX.current;
+
+    // If a horizontal swipe is detected (e.g. more than 50px), fire the onSwipe callback.
+    if (isSwiping.current && Math.abs(deltaX) > 50) {
+      const direction = deltaX < 0 ? 'left' : 'right';
+      if (onSwipe) onSwipe(direction);
+      touchHandled.current = true; // prevent onClick from also firing
+      isSwiping.current = false;
+      return;
+    }
+
+    // If no swipe was detected and the gesture wasn’t a scroll, treat it as a tap.
+    if (!isScrolling.current) {
+      onSelect();
     }
     isScrolling.current = false;
   };

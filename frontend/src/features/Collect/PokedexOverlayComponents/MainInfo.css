@@ -27,6 +27,8 @@
 .main-info-column .pokemon-image {
     max-width: 240px;
     filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
+    margin: 0 auto; 
+    display: block;
 }
 
 .stat-gauge {

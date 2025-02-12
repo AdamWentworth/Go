@@ -29,7 +29,7 @@ const useScreenWidth = () => {
   return screenWidth;
 };
 
-const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) => {
+const PokedexOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) => {
   const [currentPokemon, setCurrentPokemon] = useState(pokemon);
   const [isMale, setIsMale] = useState(true); // Gender state, default is male
   const screenWidth = useScreenWidth();
@@ -330,4 +330,4 @@ const PokemonOverlay = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) =
   );
 };
 
-export default PokemonOverlay;
+export default PokedexOverlay;
