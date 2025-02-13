@@ -102,8 +102,6 @@ function Collection({ isOwnCollection }) {
     toggleEvolutionaryLine,
     isFastSelectEnabled,
     setIsFastSelectEnabled,
-    isSelectAllEnabled,
-    setIsSelectAllEnabled,
     sortType,
     setSortType,
     sortMode,
@@ -111,25 +109,21 @@ function Collection({ isOwnCollection }) {
   } = useUIControls({
     showEvolutionaryLine: false,
     isFastSelectEnabled: false,
-    isSelectAllEnabled: false,
     sortType: 'number',
     sortMode: 'ascending',
   });
 
   // Filter states
   const {
-    isShiny,
-    setIsShiny,
-    showShadow,
-    setShowShadow,
     selectedGeneration,
     setSelectedGeneration,
     searchTerm,
     setSearchTerm,
-    showCostume,
-    setShowCostume,
     generations,
     pokemonTypes,
+    filteredPokemonList,
+    isTypeSearch,
+    isGenerationSearch,
   } = useSearchFilters(variants);
 
   // If viewing another user’s collection, load that data
@@ -152,20 +146,14 @@ function Collection({ isOwnCollection }) {
   const filters = useMemo(
     () => ({
       selectedGeneration,
-      isShiny,
       searchTerm,
-      showCostume,
-      showShadow,
       multiFormPokedexNumbers,
       pokemonTypes,
       generations,
     }),
     [
       selectedGeneration,
-      isShiny,
       searchTerm,
-      showCostume,
-      showShadow,
       pokemonTypes,
       generations,
     ]
@@ -197,23 +185,8 @@ function Collection({ isOwnCollection }) {
     setHasProcessedInstanceId,
   });
 
-  const {
-    toggleShiny,
-    toggleCostume,
-    toggleShadow,
-    handleFastSelectToggle,
-    toggleCardHighlight,
-    selectAllToggle,
-  } = useUIHandlers({
-    setOwnershipFilter,
-    setIsShiny,
-    setShowCostume,
-    setShowShadow,
-    setIsFastSelectEnabled,
-    setIsSelectAllEnabled,
+  const { toggleCardHighlight } = useUIHandlers({
     setHighlightedCards,
-    highlightedCards,
-    sortedPokemons,
   });
 
   // Mega/Fusion
@@ -231,7 +204,6 @@ function Collection({ isOwnCollection }) {
     promptMegaPokemonSelection,
     promptFusionPokemonSelection,
     setIsFastSelectEnabled,
-    setIsSelectAllEnabled,
   });
 
   //--- Sliding view state ---
@@ -367,9 +339,6 @@ function Collection({ isOwnCollection }) {
                 <PokedexFiltersMenu
                   setOwnershipFilter={setOwnershipFilter}
                   setHighlightedCards={setHighlightedCards}
-                  setIsShiny={setIsShiny}
-                  setShowCostume={setShowCostume}
-                  setShowShadow={setShowShadow}
                   setActiveView={setActiveView}
           
                   // new callback prop
@@ -395,8 +364,6 @@ function Collection({ isOwnCollection }) {
                   isFastSelectEnabled={isFastSelectEnabled}
                   toggleCardHighlight={toggleCardHighlight}
                   highlightedCards={highlightedCards}
-                  isShiny={isShiny}
-                  showShadow={showShadow}
                   multiFormPokedexNumbers={multiFormPokedexNumbers}
                   ownershipFilter={ownershipFilter}
                   lists={activeLists}

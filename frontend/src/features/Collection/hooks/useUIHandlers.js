@@ -2,82 +2,23 @@
 
 import { useCallback } from 'react';
 
-function useUIHandlers({
-  setOwnershipFilter,
-  setIsShiny,
-  setShowCostume,
-  setShowShadow,
-  setIsFastSelectEnabled,
-  setIsSelectAllEnabled,
-  setHighlightedCards,
-  setShowAll,
-  highlightedCards,
-  sortedPokemons
-}) {
-  
-  const toggleShowAll = useCallback(() => setShowAll((prev) => !prev), [setShowAll]);
-  
-  const toggleShiny = useCallback(() => setIsShiny((prev) => !prev), [setIsShiny]);
-  
-  const toggleCostume = useCallback(() => setShowCostume((prev) => !prev), [setShowCostume]);
-  
-  const toggleShadow = useCallback(() => setShowShadow((prev) => !prev), [setShowShadow]);
-  
-  const handleFastSelectToggle = useCallback(
-    (enabled) => setIsFastSelectEnabled(enabled),
-    [setIsFastSelectEnabled]
-  );
-  
+function useUIHandlers({ setHighlightedCards }) {
   const toggleCardHighlight = useCallback(
     (pokemonId) => {
       setHighlightedCards((prev) => {
         const newHighlights = new Set(prev);
-        newHighlights.has(pokemonId)
-        ? newHighlights.delete(pokemonId)
-        : newHighlights.add(pokemonId);
+        if (newHighlights.has(pokemonId)) {
+          newHighlights.delete(pokemonId);
+        } else {
+          newHighlights.add(pokemonId);
+        }
         return newHighlights;
       });
     },
     [setHighlightedCards]
   );
-  
-  const selectAllToggle = useCallback(() => {
-   // 1. Filter out disabled Pokémon
-   const nonDisabledPokemons = sortedPokemons.filter(p => !p.ownershipStatus?.disabled);
 
-   setIsSelectAllEnabled(prev => !prev);
-
-   if (highlightedCards.size === nonDisabledPokemons.length) {
-        setHighlightedCards(new Set());
-      } else {
-        setHighlightedCards(
-        new Set(nonDisabledPokemons.map((p) => p.pokemonKey))
-      );
-    }
-  }, [highlightedCards, sortedPokemons, setHighlightedCards, setIsSelectAllEnabled]);
-  
-  const handleUpdateOwnershipFilter = useCallback(
-    (filterType) => {
-      // console.log('[useUIHandlers] Updating ownership filter:', filterType);
-      setOwnershipFilter((prev) => {
-        const newFilter = prev === filterType ? '' : filterType;
-        // console.log('[useUIHandlers] New filter value:', newFilter);
-        return newFilter;
-      });
-    },
-    [setOwnershipFilter]
-  );
-
-  return {
-    handleUpdateOwnershipFilter,
-    toggleShiny,
-    toggleCostume,
-    toggleShadow,
-    handleFastSelectToggle,
-    toggleCardHighlight,
-    selectAllToggle,
-    toggleShowAll
-  };
+  return { toggleCardHighlight };
 }
 
 export default useUIHandlers;

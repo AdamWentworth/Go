@@ -45,7 +45,7 @@ const PokedexListsMenu = ({
     'shiny costume': 'Shiny Costume',
     'shiny shadow': 'Shiny Shadow',
     'shadow costume': 'Shadow Costume',
-    mega: 'Mega/Primal',
+    mega: 'Mega',
     'shiny mega': 'Shiny Mega',
     dynamax: 'Dynamax',
     'shiny dynamax': 'Shiny Dynamax',
