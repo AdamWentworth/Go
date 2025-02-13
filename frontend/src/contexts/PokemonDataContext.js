@@ -28,6 +28,7 @@ export const PokemonDataProvider = ({ children }) => {
     variants: [],
     ownershipData: {},
     lists: {},
+    pokedexLists: {}, // NEW: added pokedexLists to the state
     loading: true
   });
 
@@ -114,6 +115,7 @@ export const PokemonDataProvider = ({ children }) => {
       variants: [],
       ownershipData: {},
       lists: {},
+      pokedexLists: {}, // NEW: include pokedexLists on reset
       loading: true
     });
   };
@@ -122,21 +124,16 @@ export const PokemonDataProvider = ({ children }) => {
     // Check if newOwnershipData is empty. Adjust conditions based on your data type.
     if (!newOwnershipData || Object.keys(newOwnershipData).length === 0) {
       console.log("No newOwnershipData provided. Skipping merge and returning oldData.");
-      // console.log(ownershipDataRef.current)
       return;
-  }
+    }
   
     // Retrieve the user data from local storage
     const userData = localStorage.getItem('user');
-  
-    // Parse the user data (if it exists) and extract the username
     let username = null;
     if (userData) {
       const parsedData = JSON.parse(userData);
       username = parsedData.username;
     }
-  
-    // console.log(ownershipDataRef.current);
   
     // 1. Merge data up-front
     const updatedOwnershipData = importedMergeOwnershipData(
@@ -181,7 +178,7 @@ export const PokemonDataProvider = ({ children }) => {
     updateDetails,
     setOwnershipData,
     resetData,
-    periodicUpdates // <- Expose it here
+    periodicUpdates
   }), [
     data,
     updateOwnership,

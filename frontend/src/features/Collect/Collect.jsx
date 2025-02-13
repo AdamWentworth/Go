@@ -7,7 +7,7 @@ import PokemonList from './PokemonList';
 import HeaderUI from './HeaderUI';
 import SortOverlay from './SortOverlay';
 import HighlightActionButton from './HighlightActionButton';
-import PokedexFiltersMenu from './UIComponents/PokedexFiltersMenu';
+import PokedexFiltersMenu from './UIComponents/PokedexListsMenu';
 import OwnershipListsMenu from './UIComponents/OwnershipListsMenu';
 
 import { usePokemonData } from '../../contexts/PokemonDataContext';
@@ -53,6 +53,7 @@ function Collect({ isOwnCollection }) {
     ownershipData: contextOwnershipData,
     lists: defaultLists,
     loading,
+    pokedexLists,
     updateOwnership,
   } = usePokemonData();
 
@@ -368,6 +369,8 @@ function Collect({ isOwnCollection }) {
                   setShowShadow={setShowShadow}
                   setShowAll={setShowAll}
                   setActiveView={setActiveView}
+                  pokedexLists={pokedexLists}
+                  variants={variants}
                 />
               </div>
 

@@ -11,12 +11,14 @@ import {
     getAllFromDB,
     getAllListsFromDB,
     storeListsInIndexedDB,
-    putBulkIntoDB
+    putBulkIntoDB,
+    storePokedexListsInIndexedDB
 } from '../../services/indexedDB';
 import {
     initializeOrUpdateOwnershipDataAsync,
     getOwnershipDataAsync
 } from './pokemonOwnershipStorage';
+import sortPokedexLists from './sortPokedexLists';
 
 export const fetchData = async (setData, updateOwnership, updateLists) => {
     console.log("Fetching data from API or cache...");
@@ -79,6 +81,7 @@ export const fetchData = async (setData, updateOwnership, updateLists) => {
         variants,
         ownershipData: null,
         lists: null,
+        pokedexLists: null, // NEW: add pokedexLists to the initial state
         loading: true,
         updateOwnership,
         updateLists
@@ -99,98 +102,113 @@ async function processRemainingData(variants, setData, updateOwnership, updateLi
     const { ownershipFresh, listsFresh } = freshness;
     let variantsUpdated = !freshness.variantsFresh;
     let ownershipUpdated = false;
-
+  
+    // NEW: We'll keep a reference to our sorted Pokedex lists here.
+    let pokedexLists = null;
+  
     try {
-        // Retrieve ownershipData from IndexedDB
-        const { data: ownershipDataData } = await getOwnershipDataAsync();
-        const cachedOwnership = ownershipDataData || null;
-
-        if (cachedOwnership) {
-            // ADDED SIZE LOG
-            try {
-                const ownershipSize = new Blob([JSON.stringify(cachedOwnership)]).size;
-                console.log(`Size of cached ownership data in bytes: ${ownershipSize}`);
-            } catch (err) {
-                console.log('Error measuring size of cached ownership data:', err);
-            }
+      // Retrieve ownershipData from IndexedDB
+      const { data: ownershipDataData } = await getOwnershipDataAsync();
+      const cachedOwnership = ownershipDataData || null;
+  
+      if (cachedOwnership) {
+        // ADDED SIZE LOG
+        try {
+          const ownershipSize = new Blob([JSON.stringify(cachedOwnership)]).size;
+          console.log(`Size of cached ownership data in bytes: ${ownershipSize}`);
+        } catch (err) {
+          console.log('Error measuring size of cached ownership data:', err);
         }
-
-        // Get ownership data
-        let ownershipData;
-        if (ownershipFresh && !variantsUpdated) {
-            ownershipData = cachedOwnership;
-        } else {
-            console.log("Ownership data is stale or variants updated, updating ownership data...");
-            const keys = variants.map(variant => variant.pokemonKey);
-            ownershipData = await initializeOrUpdateOwnershipDataAsync(keys, variants);
-            ownershipUpdated = true;
-
-            // ADDED SIZE LOG
-            try {
-                const newOwnershipSize = new Blob([JSON.stringify(ownershipData)]).size;
-                console.log(`Size of new ownership data in bytes: ${newOwnershipSize}`);
-            } catch (err) {
-                console.log('Error measuring size of new ownership data:', err);
-            }
+      }
+  
+      // Get ownership data
+      let ownershipData;
+      if (ownershipFresh && !variantsUpdated) {
+        ownershipData = cachedOwnership;
+      } else {
+        console.log("Ownership data is stale or variants updated, updating ownership data...");
+        const keys = variants.map(variant => variant.pokemonKey);
+        ownershipData = await initializeOrUpdateOwnershipDataAsync(keys, variants);
+        ownershipUpdated = true;
+  
+        // ADDED SIZE LOG
+        try {
+          const newOwnershipSize = new Blob([JSON.stringify(ownershipData)]).size;
+          console.log(`Size of new ownership data in bytes: ${newOwnershipSize}`);
+        } catch (err) {
+          console.log('Error measuring size of new ownership data:', err);
         }
-
-        // Update state with ownership data
-        setData(prevData => ({
-            ...prevData,
-            ownershipData,
-            loading: true
-        }));
-
-        // Get lists
-        let lists;
-        if (listsFresh && ownershipFresh && !variantsUpdated) {
-            const startListsRetrieval = Date.now();
-            lists = await getAllListsFromDB();
-            const endListsRetrieval = Date.now();
-            console.log(
-                `Retrieved lists from IndexedDB in ${endListsRetrieval - startListsRetrieval} ms`
-            );
-
-            // ADDED SIZE LOG
-            try {
-                const listsSize = new Blob([JSON.stringify(lists)]).size;
-                console.log(`Size of cached lists data in bytes: ${listsSize}`);
-            } catch (err) {
-                console.log('Error measuring size of cached lists data:', err);
-            }
-        } else {
-            console.log("Lists are stale or ownership data/variants updated, updating lists...");
-            lists = initializePokemonLists(ownershipData, variants);
-
-            // ADDED SIZE LOG
-            try {
-                const newListsSize = new Blob([JSON.stringify(lists)]).size;
-                console.log(`Size of new lists data in bytes: ${newListsSize}`);
-            } catch (err) {
-                console.log('Error measuring size of new lists data:', err);
-            }
-
-            const startStoreLists = Date.now();
-            await storeListsInIndexedDB(lists);
-            localStorage.setItem('listsTimestamp', Date.now().toString());
-            const endStoreLists = Date.now();
-            console.log(`Stored updated lists in IndexedDB in ${endStoreLists - startStoreLists} ms`);
+      }
+  
+      // Update state with ownership data
+      setData(prevData => ({
+        ...prevData,
+        ownershipData,
+        loading: true
+      }));
+  
+      // Get lists
+      let lists;
+      if (listsFresh && ownershipFresh && !variantsUpdated) {
+        const startListsRetrieval = Date.now();
+        lists = await getAllListsFromDB();
+        const endListsRetrieval = Date.now();
+        console.log(
+          `Retrieved lists from IndexedDB in ${endListsRetrieval - startListsRetrieval} ms`
+        );
+  
+        // ADDED SIZE LOG
+        try {
+          const listsSize = new Blob([JSON.stringify(lists)]).size;
+          console.log(`Size of cached lists data in bytes: ${listsSize}`);
+        } catch (err) {
+          console.log('Error measuring size of cached lists data:', err);
         }
-
-        // Final update with all data
-        setData(prevData => ({
-            ...prevData,
-            lists,
-            loading: false
-        }));
-
+      } else {
+        console.log("Lists are stale or ownership data/variants updated, updating lists...");
+        lists = initializePokemonLists(ownershipData, variants);
+  
+        // NEW: Call sortPokedexLists and store them
+        pokedexLists = sortPokedexLists(variants);
+  
+        try {
+          await storePokedexListsInIndexedDB(pokedexLists);
+          console.log("Successfully stored Pokedex lists in PokedexListsDB");
+        } catch (error) {
+          console.error("Failed to store Pokedex lists in PokedexListsDB:", error);
+        }
+  
+        // ADDED SIZE LOG
+        try {
+          const newListsSize = new Blob([JSON.stringify(lists)]).size;
+          console.log(`Size of new lists data in bytes: ${newListsSize}`);
+        } catch (err) {
+          console.log('Error measuring size of new lists data:', err);
+        }
+  
+        const startStoreLists = Date.now();
+        await storeListsInIndexedDB(lists);
+        localStorage.setItem('listsTimestamp', Date.now().toString());
+        const endStoreLists = Date.now();
+        console.log(`Stored updated lists in IndexedDB in ${endStoreLists - startStoreLists} ms`);
+      }
+  
+      // Final update with all data
+      // NEW: We include `pokedexLists` in setData, falling back to prevData.pokedexLists if it’s null
+      setData(prevData => ({
+        ...prevData,
+        lists,
+        pokedexLists: pokedexLists || prevData.pokedexLists, 
+        loading: false
+      }));
+  
     } catch (error) {
-        console.error('Error processing remaining data:', error);
-        setData(prevData => ({
-            ...prevData,
-            loading: false,
-            error: 'Failed to load complete data'
-        }));
+      console.error('Error processing remaining data:', error);
+      setData(prevData => ({
+        ...prevData,
+        loading: false,
+        error: 'Failed to load complete data'
+      }));
     }
 }
 

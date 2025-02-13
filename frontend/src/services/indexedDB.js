@@ -1,3 +1,5 @@
+// indexedDB.js
+
 import { openDB } from 'idb';
 
 // -----------------------------------------------------------------------------
@@ -14,6 +16,7 @@ const DB_NAME = 'pokemonDB';
 const LISTS_DB_NAME = 'pokemonListsDB';
 const TRADES_DB_NAME = 'tradesDB';
 const UPDATES_DB_NAME = 'batchedUpdatesDB';
+const POKEDEX_LISTS_DB_NAME = 'PokedexListsDB';
 
 // -----------------------------------------------------------------------------
 // DB Versions
@@ -61,6 +64,22 @@ export const TRADE_FRIENDSHIP_LEVELS = {
   3: 'Ultra',
   4: 'Best',
 };
+
+const POKEDEX_LISTS_STORES = [
+  'default',
+  'shiny',
+  'costume',
+  'shadow',
+  'shiny costume',
+  'shiny shadow',
+  'shadow costume',
+  'mega',
+  'shiny mega',
+  'dynamax',
+  'shiny dynamax',
+  'gigantamax',
+  'shiny gigantamax'
+];
 
 // -----------------------------------------------------------------------------
 // Main DB: pokemonDB
@@ -158,6 +177,33 @@ export async function initUpdatesDB() {
     updatesDBInstance = null;
   }
   return updatesDBInstance;
+}
+
+// Single DB instance to avoid re-opening
+let pokedexListsDBInstance = null;
+/**
+ * Initialize or upgrade the PokedexListsDB. 
+ * Each store corresponds to one of the lists created by sortPokedexLists.
+ */
+export async function initPokedexListsDB() {
+  if (pokedexListsDBInstance) return pokedexListsDBInstance;
+  try {
+    pokedexListsDBInstance = await openDB(POKEDEX_LISTS_DB_NAME, DB_VERSION, {
+      upgrade(db) {
+        POKEDEX_LISTS_STORES.forEach(storeName => {
+          if (!db.objectStoreNames.contains(storeName)) {
+            // Using 'pokemonKey' as a keyPath because each variant 
+            // typically has a unique 'pokemonKey' or use your own unique field.
+            db.createObjectStore(storeName, { keyPath: 'pokemonKey' });
+          }
+        });
+      },
+    });
+  } catch (err) {
+    console.error("PokedexListsDB initialization failed:", err);
+    pokedexListsDBInstance = null;
+  }
+  return pokedexListsDBInstance;
 }
 
 // -----------------------------------------------------------------------------
@@ -506,4 +552,83 @@ export async function clearTradesStore(storeName) {
   const db = await initTradesDB();
   if (!db) return;
   return db.clear(storeName);
+}
+
+// -----------------------------------------------------------------------------
+// Helper functions for the Lists DB (pokedexListsDB)
+// -----------------------------------------------------------------------------
+/**
+ * Store the sorted variants (lists) in the PokedexListsDB.
+ * The object keys (e.g. "default", "shiny", etc.) must match
+ * the names of the object stores (POKEDEX_LISTS_STORES).
+ *
+ * @param {Object} pokedexLists - An object with keys matching 
+ *        POKEDEX_LISTS_STORES, each containing an array of variant objects.
+ */
+export async function storePokedexListsInIndexedDB(pokedexLists) {
+  const db = await initPokedexListsDB();
+  if (!db) {
+    console.warn("PokedexListsDB not available; cannot store lists data.");
+    return;
+  }
+
+  // Open one transaction across all store names.
+  const storeNames = Object.keys(pokedexLists);
+  const tx = db.transaction(storeNames, 'readwrite');
+
+  try {
+    // Optional: log total size 
+    const listsSize = new Blob([JSON.stringify(pokedexLists)]).size;
+    console.log(
+      `storePokedexListsInIndexedDB: Storing lists with keys: [${storeNames.join(', ')}], total size: ${listsSize} bytes`
+    );
+  } catch (err) {
+    console.log('Error measuring size in storePokedexListsInIndexedDB:', err);
+  }
+
+  // For each list name, clear the store, then put each variant.
+  for (const storeName of storeNames) {
+    const store = tx.objectStore(storeName);
+    await store.clear();
+    for (const variant of pokedexLists[storeName]) {
+      await store.put(variant);
+    }
+  }
+
+  await tx.done;
+  console.log("storePokedexListsInIndexedDB: Finished saving all lists.");
+}
+
+/**
+ * Retrieve *all* data from PokedexListsDB. Returns an object with the
+ * same keys as POKEDEX_LISTS_STORES, each holding an array of variants.
+ */
+export async function getAllPokedexListsFromDB() {
+  const db = await initPokedexListsDB();
+  if (!db) {
+    console.warn("PokedexListsDB not available; cannot read lists data.");
+    return {};
+  }
+
+  const tx = db.transaction(POKEDEX_LISTS_STORES, 'readonly');
+  const result = {};
+
+  for (const storeName of POKEDEX_LISTS_STORES) {
+    const store = tx.objectStore(storeName);
+    const variants = await store.getAll();
+    result[storeName] = variants;
+  }
+
+  await tx.done;
+
+  try {
+    const listsSize = new Blob([JSON.stringify(result)]).size;
+    console.log(
+      `getAllPokedexListsFromDB: Retrieved Pokedex lists with total size: ${listsSize} bytes`
+    );
+  } catch (err) {
+    console.log('Error measuring combined lists size in getAllPokedexListsFromDB:', err);
+  }
+
+  return result;
 }
