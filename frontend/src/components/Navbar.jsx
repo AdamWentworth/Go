@@ -64,7 +64,7 @@ function Navbar() {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Username..."
+                        placeholder="Search Username..."
                         className="search-input"
                     />
                     <button type="submit" className="search-button">🔍</button>

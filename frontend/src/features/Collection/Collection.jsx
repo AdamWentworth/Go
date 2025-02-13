@@ -1,7 +1,7 @@
-// Collect.jsx
+// Collection.jsx
 import React, { useState, useMemo, useContext, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import './Collect.css';
+import './Collection.css';
 
 import PokemonList from './PokemonList';
 import HeaderUI from './HeaderUI';
@@ -32,7 +32,7 @@ const PokemonListMemo = React.memo(PokemonList);
 const HeaderUIMemo = React.memo(HeaderUI);
 const SortOverlayMemo = React.memo(SortOverlay);
 
-function Collect({ isOwnCollection }) {
+function Collection({ isOwnCollection }) {
   const { username: urlUsername } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -442,4 +442,4 @@ function Collect({ isOwnCollection }) {
   );
 }
 
-export default Collect;
+export default Collection;

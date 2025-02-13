@@ -4,7 +4,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import MainButtons from './components/MainButtons';
-import Collect from './features/Collect/Collect';
+import Collection from './features/Collection/Collection';
 import Login from './features/Authentication/Login';
 import Register from './features/Authentication/Register';
 import Account from './features/Authentication/Account';
@@ -46,13 +46,13 @@ function App() {
                                                             <main>
                                                                 <Routes>
                                                                     <Route path="/" element={<MainButtons />} />
-                                                                    <Route path="/collect" element={<Collect isOwnCollection={true} />} />
+                                                                    <Route path="/collection" element={<Collection isOwnCollection={true} />} />
                                                                     <Route path="/trades" element={<Trades />} />
                                                                     <Route path="/login" element={<Login />} />
                                                                     <Route path="/register" element={<Register />} />
                                                                     <Route path="/account" element={<Account />} />
                                                                     <Route path="/discover" element={<Discover />} />
-                                                                    <Route path="/collection/:username" element={<Collect isOwnCollection={false} />} />
+                                                                    <Route path="/collection/:username" element={<Collection isOwnCollection={false} />} />
                                                                 </Routes>
                                                             </main>
                                                             <ToastContainer

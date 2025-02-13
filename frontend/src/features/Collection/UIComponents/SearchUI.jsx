@@ -32,7 +32,7 @@ function SearchUI({
       )}
       <input
         type="text"
-        placeholder="Search..."
+        placeholder="Search Pokémon..."
         defaultValue={searchTerm}
         onChange={handleInputChange}
       />
