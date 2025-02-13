@@ -12,11 +12,10 @@ function usePokemonProcessing(
   activeLists,
   filters,
   showEvolutionaryLine,
-  showAll,
   sortType,
   sortMode
 ) {
-  // Filtering logic
+  // Apply ownership-based filtering if needed
   const filteredVariants = useMemo(() => {
     if (ownershipFilter) {
       return getFilteredPokemonsByOwnership(
@@ -29,21 +28,19 @@ function usePokemonProcessing(
     return variants;
   }, [variants, ownershipData, ownershipFilter, activeLists]);
 
-  // Additional filtering based on other criteria
+  // Filter the Pokémon list (no more showAll parameter)
   const displayedPokemons = useFilterPokemons(
     filteredVariants,
-    variants, // Passing variants along with filteredVariants
+    variants,
     filters,
-    showEvolutionaryLine,
-    showAll
+    showEvolutionaryLine
   );
 
-  // Sorting logic
+  // Sort the results (removed showAll from options)
   const sortedPokemons = useSortManager(displayedPokemons, sortType, sortMode, {
     isShiny: filters.isShiny,
     showShadow: filters.showShadow,
     showCostume: filters.showCostume,
-    showAll,
   });
 
   return { filteredVariants, sortedPokemons };

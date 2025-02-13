@@ -62,11 +62,39 @@ function Collection({ isOwnCollection }) {
     : viewedOwnershipData || contextOwnershipData;
 
   const [ownershipFilter, setOwnershipFilter] = useState('');
-  const [showAll, setShowAll] = useState(false);
   const [selectedPokemon, setSelectedPokemon] = useState(null);
   const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState(false);
   const [highlightedCards, setHighlightedCards] = useState(new Set());
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedPokedexList, setSelectedPokedexList] = useState([]);
+  // "pokedex" or "ownership"; default to "pokedex"
+  const [lastMenu, setLastMenu] = useState('pokedex');
+
+  useEffect(() => {
+    // On mount or whenever pokedexLists change,
+    // set the default list to "default" from Pokedex (if available).
+    if (pokedexLists?.default) {
+      setSelectedPokedexList(pokedexLists.default);
+    }
+  }, [pokedexLists]);
+
+  // Handler called when user clicks in PokedexListsMenu
+  const handlePokedexMenuClick = (listData) => {
+    setSelectedPokedexList(listData);
+    setLastMenu('pokedex');
+  };
+
+  // Handler called when user clicks in OwnershipListsMenu
+  const handleOwnershipListClick = (filter) => {
+    setHighlightedCards(new Set());
+    setOwnershipFilter(filter);
+
+    // Switch to the ownership-based filtering
+    setLastMenu('ownership');
+
+    // existing logic ...
+    setActiveView('pokemonList');
+  };
 
   // UI Controls
   const {
@@ -112,7 +140,6 @@ function Collection({ isOwnCollection }) {
     setUserExists,
     setViewedOwnershipData,
     setOwnershipFilter,
-    setShowAll,
     fetchUserOwnershipData,
   });
 
@@ -144,14 +171,15 @@ function Collection({ isOwnCollection }) {
     ]
   );
 
+  const baseVariants = lastMenu === 'pokedex' ? selectedPokedexList : variants;
+
   const { filteredVariants, sortedPokemons } = usePokemonProcessing(
-    variants,
+    baseVariants,
     ownershipData,
     ownershipFilter,
     activeLists,
     filters,
     showEvolutionaryLine,
-    showAll,
     sortType,
     sortMode
   );
@@ -176,7 +204,6 @@ function Collection({ isOwnCollection }) {
     handleFastSelectToggle,
     toggleCardHighlight,
     selectAllToggle,
-    toggleShowAll,
   } = useUIHandlers({
     setOwnershipFilter,
     setIsShiny,
@@ -185,7 +212,6 @@ function Collection({ isOwnCollection }) {
     setIsFastSelectEnabled,
     setIsSelectAllEnabled,
     setHighlightedCards,
-    setShowAll,
     highlightedCards,
     sortedPokemons,
   });
@@ -248,29 +274,6 @@ function Collection({ isOwnCollection }) {
 
   const handleListsButtonClick = () => {
     setActiveView((prev) => (prev === 'lists' ? 'pokemonList' : 'lists'));
-  };
-
-  const handleSelectList = (filter) => {
-    setHighlightedCards(new Set());
-    setOwnershipFilter(filter);
-
-    if (
-      filter === '' &&
-      !isShiny &&
-      !showCostume &&
-      !showShadow
-    ) {
-      setShowAll(false);
-    } else if (
-      !showAll &&
-      filter !== '' &&
-      !isShiny &&
-      !showCostume &&
-      !showShadow
-    ) {
-      setShowAll(true);
-    }
-    setActiveView('pokemonList');
   };
 
   // Clear highlights if username changes
@@ -367,8 +370,11 @@ function Collection({ isOwnCollection }) {
                   setIsShiny={setIsShiny}
                   setShowCostume={setShowCostume}
                   setShowShadow={setShowShadow}
-                  setShowAll={setShowAll}
                   setActiveView={setActiveView}
+          
+                  // new callback prop
+                  onListSelect={handlePokedexMenuClick}
+          
                   pokedexLists={pokedexLists}
                   variants={variants}
                 />
@@ -395,7 +401,6 @@ function Collection({ isOwnCollection }) {
                   ownershipFilter={ownershipFilter}
                   lists={activeLists}
                   ownershipData={ownershipData}
-                  showAll={showAll}
                   sortType={sortType}
                   sortMode={sortMode}
                   variants={variants}
@@ -411,7 +416,7 @@ function Collection({ isOwnCollection }) {
                 ref={ownershipPanelRef}
               >
                 <OwnershipListsMenu
-                  onSelectList={handleSelectList}
+                  onSelectList={handleOwnershipListClick}
                   activeLists={activeLists}
                 />
               </div>

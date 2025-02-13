@@ -1,42 +1,42 @@
+// PokedexListsMenu.jsx
+
 import React from 'react';
 import './PokedexListsMenu.css';
 
 const PokedexListsMenu = ({
-  // For controlling the old filter actions
+  // Removed: setIsShiny, setShowCostume, setShowShadow, setShowAll
+  // Still available if needed: setOwnershipFilter, setHighlightedCards, setActiveView
   setOwnershipFilter,
   setHighlightedCards,
-  setIsShiny,
-  setShowCostume,
-  setShowShadow,
-  setShowAll,
   setActiveView,
   // For building the previews
   pokedexLists,
-  variants
+  variants,
+  onListSelect,
 }) => {
-  // Left column vs. Right column categorization:
+  // Remove "all" from the right column
   const leftColumnLists = [
     'default',
-    'shiny',
     'costume',
     'shadow',
-    'shiny costume',
-    'shiny shadow'
-  ];
-  
-  // Include an "all" option at the end (plus the other categories).
-  const rightColumnLists = [
-    'shadow costume',
     'mega',
-    'shiny mega',
     'dynamax',
-    'shiny dynamax',
     'gigantamax',
-    'shiny gigantamax',
-    'all'
+    'shadow costume',
   ];
 
-  // Optional: If you want nicer display names in the UI:
+  const rightColumnLists = [
+    'shiny',
+    'shiny costume',
+    'shiny shadow',
+    'shiny mega',
+    'shiny dynamax',
+    'shiny gigantamax'
+  ];
+
+  // "All" will be rendered separately spanning both columns.
+  const fullWidthList = 'all';
+
   const displayNameMap = {
     default: 'Default',
     shiny: 'Shiny',
@@ -55,80 +55,41 @@ const PokedexListsMenu = ({
   };
 
   /**
-   * Handle the onClick action for each list item.
-   * - For "Default", "Shiny", "Costume", "Shadow", and "All", replicate
-   *   the old filter behavior from PokedexFiltersMenu.
-   * - For the others, just log a placeholder message for now.
+   * Convert a list name (e.g., "shiny costume") into
+   * a CSS-friendly class name (e.g., "shiny-costume").
    */
-  const handleListClick = (listName) => {
-    if (setOwnershipFilter) {
-      // Always clear the ownership filter when changing Pokedex list
-      setOwnershipFilter('');
-    }
-    if (setHighlightedCards) {
-      setHighlightedCards(new Set());
-    }
+  const getClassNameForList = (listName) => {
+    return listName.replace(/\s+/g, '-').toLowerCase();
+  };
 
-    // Switch-case for the main filters
-    switch (listName) {
-      case 'default':
-        setIsShiny?.(false);
-        setShowCostume?.(false);
-        setShowShadow?.(false);
-        setShowAll?.(false);
-        break;
-      case 'shiny':
-        setIsShiny?.(true);
-        setShowCostume?.(false);
-        setShowShadow?.(false);
-        setShowAll?.(false);
-        break;
-      case 'costume':
-        setIsShiny?.(false);
-        setShowCostume?.(true);
-        setShowShadow?.(false);
-        setShowAll?.(false);
-        break;
-      case 'shadow':
-        setIsShiny?.(false);
-        setShowCostume?.(false);
-        setShowShadow?.(true);
-        setShowAll?.(false);
-        break;
-      case 'all':
-        setIsShiny?.(false);
-        setShowCostume?.(false);
-        setShowShadow?.(false);
-        setShowAll?.(true);
-        break;
-      default:
-        // For now, do nothing or log a placeholder
-        console.log(`No custom filter actions yet for '${listName}'`);
-        break;
+  const handleListClick = (listName) => {
+    // Optionally clear any old filters or highlights here
+    setOwnershipFilter?.('');
+    setHighlightedCards?.(new Set());
+
+    // Simply return the list data when clicked.
+    if (onListSelect) {
+      if (listName === 'all') {
+        onListSelect(variants);
+      } else {
+        onListSelect(pokedexLists[listName] || []);
+      }
     }
-    // Slide back to the Pokémon List panel
+    // Switch the view (if needed)
     setActiveView?.('pokemonList');
   };
 
-  /**
-   * Renders the preview images for a given list name.
-   */
   const renderListPreview = (listName) => {
     let listData;
 
     if (listName === 'all') {
-      // Show *all* variants for "All" list
-      listData = variants;
+      listData = variants; // Show *all* variants
     } else {
-      // Grab the array from pokedexLists (or empty array if missing)
       listData = pokedexLists[listName] || [];
     }
 
-    // Slice the first 24 to make a grid preview
     return listData.slice(0, 24).map((pokemon, index) => {
-      if (!pokemon || !pokemon.currentImage) {
-        return null;
-      }
+      if (!pokemon || !pokemon.currentImage) return null;
       const vt = (pokemon.variantType || '').toLowerCase();
       const hasDynamax = vt.includes('dynamax');
       const hasGigantamax = vt.includes('gigantamax');
@@ -141,17 +102,17 @@ const PokedexListsMenu = ({
       }
 
       return (
-        <div key={pokemon.id || index} className="pokemon-list-container">
+        <div key={pokemon.id || index} className="pokedex-pokemon-list-container">
           <img
             src={pokemon.currentImage}
             alt={pokemon.name || 'Unknown Pokémon'}
-            className="preview-image"
+            className="pokedex-preview-image"
           />
           {overlaySrc && (
             <img
               src={overlaySrc}
               alt={hasGigantamax ? 'Gigantamax' : 'Dynamax'}
-              className="variant-overlay"
+              className="pokedex-variant-overlay"
               aria-hidden="true"
             />
           )}
@@ -160,18 +121,14 @@ const PokedexListsMenu = ({
     });
   };
 
-  /**
-   * Renders the menu items in a column (similar to OwnershipListsMenu).
-   */
   const renderListItems = (listNames) => {
     return listNames.map((listName) => {
-      // Build the preview
       const previewPokemon = renderListPreview(listName);
 
       return (
         <div
           key={listName}
-          className="list-item"
+          className="pokedex-list-item"
           onClick={() => handleListClick(listName)}
           tabIndex="0"
           onKeyPress={(e) => {
@@ -180,14 +137,14 @@ const PokedexListsMenu = ({
             }
           }}
         >
-          <div className="list-header">
+          <div className={`pokedex-list-header ${getClassNameForList(listName)}`}>
             {displayNameMap[listName] || listName}
           </div>
-          <div className="pokemon-preview">
+          <div className="pokedex-pokemon-preview">
             {previewPokemon && previewPokemon.length > 0 ? (
               previewPokemon
             ) : (
-              <p className="no-pokemon-text">No Pokémon in this list</p>
+              <p className="pokedex-no-pokemon-text">No Pokémon in this list</p>
             )}
           </div>
         </div>
@@ -196,12 +153,18 @@ const PokedexListsMenu = ({
   };
 
   return (
-    <div className="lists-menu pokedex-lists-menu">
-      <div className="column">
-        {renderListItems(leftColumnLists)}
+    <div className="pokedex-lists-menu">
+      {/* Render the "all" list spanning both columns */}
+      <div className="pokedex-fullwidth-list">
+        {renderListItems([fullWidthList])}
       </div>
-      <div className="column">
-        {renderListItems(rightColumnLists)}
+      <div className="pokedex-columns">
+        <div className="pokedex-column">
+          {renderListItems(leftColumnLists)}
+        </div>
+        <div className="pokedex-column">
+          {renderListItems(rightColumnLists)}
+        </div>
       </div>
     </div>
   );

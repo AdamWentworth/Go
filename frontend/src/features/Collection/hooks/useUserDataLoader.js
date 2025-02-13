@@ -8,7 +8,6 @@ function useUserDataLoader({
   setUserExists,
   setViewedOwnershipData,
   setOwnershipFilter,
-  setShowAll,
   fetchUserOwnershipData,
 }) {
   // Keep track of last fetch params to avoid redundant calls
@@ -17,11 +16,10 @@ function useUserDataLoader({
   // Separate effect for handling path/username changes
   useEffect(() => {
     if (!isUsernamePath || !username) {
-      // console.log('[useUserDataLoader] Resetting filter - path/username changed');
+      // Reset the ownership filter when the path or username changes
       setOwnershipFilter('');
-      setShowAll(false);
     }
-  }, [isUsernamePath, username, setOwnershipFilter, setShowAll]);
+  }, [isUsernamePath, username, setOwnershipFilter]);
 
   // Main data loading effect
   useEffect(() => {
@@ -32,8 +30,9 @@ function useUserDataLoader({
 
       // Don't fetch for reserved paths
       if (
-        ['collect', 'discover', 'login', 'register', 'account', 'trades']
-          .includes(username.toLowerCase())
+        ['collect', 'discover', 'login', 'register', 'account', 'trades'].includes(
+          username.toLowerCase()
+        )
       ) {
         setUserExists(false);
         setViewedOwnershipData(null);
@@ -54,29 +53,23 @@ function useUserDataLoader({
         return;
       }
 
-      // Otherwise, record new combination and fetch
+      // Record the new combination and fetch data
       lastFetchedRef.current = combo;
 
-      // If we have an ownershipStatus, apply it; otherwise default
       let canonicalUsername;
       if (ownershipStatus) {
-        // console.log('[useUserDataLoader] Setting filter from location state:', ownershipStatus);
+        // Apply the ownership status filter from location state
         setOwnershipFilter(ownershipStatus);
         canonicalUsername = await fetchUserOwnershipData(
           username,
           setOwnershipFilter,
-          setShowAll,
           ownershipStatus
         );
       } else {
-        canonicalUsername = await fetchUserOwnershipData(
-          username,
-          setOwnershipFilter,
-          setShowAll
-        );
+        canonicalUsername = await fetchUserOwnershipData(username, setOwnershipFilter);
       }
 
-      // If the canonical username returned differs from URL, replace it
+      // If the canonical username returned differs from URL, update the URL accordingly
       if (canonicalUsername && canonicalUsername !== username) {
         window.history.replaceState(
           {},
@@ -94,7 +87,6 @@ function useUserDataLoader({
     setUserExists,
     setViewedOwnershipData,
     setOwnershipFilter,
-    setShowAll,
     fetchUserOwnershipData,
   ]);
 }
