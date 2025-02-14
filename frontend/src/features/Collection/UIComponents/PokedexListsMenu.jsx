@@ -1,10 +1,8 @@
-// PokedexListsMenu.jsx
-
 import React from 'react';
+import useWindowWidth from '../hooks/useWindowWidth';
 import './PokedexListsMenu.css';
 
 const PokedexListsMenu = ({
-  // Removed: setIsShiny, setShowCostume, setShowShadow, setShowAll
   // Still available if needed: setOwnershipFilter, setHighlightedCards, setActiveView
   setOwnershipFilter,
   setHighlightedCards,
@@ -14,7 +12,7 @@ const PokedexListsMenu = ({
   variants,
   onListSelect,
 }) => {
-  // Remove "all" from the right column
+  // Original arrays for two-column layout
   const leftColumnLists = [
     'default',
     'costume',
@@ -34,7 +32,8 @@ const PokedexListsMenu = ({
     'shiny gigantamax'
   ];
 
-  // "All" will be rendered separately spanning both columns.
+  // "All" will be rendered as a full-width list in two-column mode, 
+  // but in one-column mode it will be the first in our ordering.
   const fullWidthList = 'all';
 
   const displayNameMap = {
@@ -67,7 +66,7 @@ const PokedexListsMenu = ({
     setOwnershipFilter?.('');
     setHighlightedCards?.(new Set());
 
-    // Simply return the list data when clicked.
+    // Return the list data when clicked.
     if (onListSelect) {
       if (listName === 'all') {
         onListSelect(variants);
@@ -121,9 +120,77 @@ const PokedexListsMenu = ({
     });
   };
 
+  // New helper function to render icons for shiny, shadow, costume, mega, dynamax, and gigantamax.
+  const renderHeaderIcons = (listName) => {
+    const icons = [];
+    const lower = listName.toLowerCase();
+    if (lower.includes('shiny')) {
+      icons.push(
+        <img
+          key="shiny"
+          src={`${process.env.PUBLIC_URL}/images/shiny_icon.png`}
+          alt="Shiny"
+          className="list-header-icon"
+        />
+      );
+    }
+    if (lower.includes('shadow')) {
+      icons.push(
+        <img
+          key="shadow"
+          src={`${process.env.PUBLIC_URL}/images/shadow_icon.png`}
+          alt="Shadow"
+          className="list-header-icon"
+        />
+      );
+    }
+    if (lower.includes('costume')) {
+      icons.push(
+        <img
+          key="costume"
+          src={`${process.env.PUBLIC_URL}/images/costume_icon.png`}
+          alt="Costume"
+          className="list-header-icon"
+        />
+      );
+    }
+    if (lower.includes('mega')) {
+      icons.push(
+        <img
+          key="mega"
+          src={`${process.env.PUBLIC_URL}/images/mega.png`}
+          alt="Mega"
+          className="list-header-icon"
+        />
+      );
+    }
+    if (lower.includes('dynamax')) {
+      icons.push(
+        <img
+          key="dynamax"
+          src={`${process.env.PUBLIC_URL}/images/dynamax-icon.png`}
+          alt="Dynamax"
+          className="list-header-icon"
+        />
+      );
+    }
+    if (lower.includes('gigantamax')) {
+      icons.push(
+        <img
+          key="gigantamax"
+          src={`${process.env.PUBLIC_URL}/images/gigantamax-icon.png`}
+          alt="Gigantamax"
+          className="list-header-icon"
+        />
+      );
+    }
+    return icons;
+  };
+
   const renderListItems = (listNames) => {
     return listNames.map((listName) => {
       const previewPokemon = renderListPreview(listName);
+      const icons = renderHeaderIcons(listName);
 
       return (
         <div
@@ -138,7 +205,24 @@ const PokedexListsMenu = ({
           }}
         >
           <div className={`pokedex-list-header ${getClassNameForList(listName)}`}>
-            {displayNameMap[listName] || listName}
+            {icons.length === 2 ? (
+              <>
+                <span className="list-header-icon left">{icons[0]}</span>
+                <span className="list-header-text">
+                  {displayNameMap[listName] || listName}
+                </span>
+                <span className="list-header-icon right">{icons[1]}</span>
+              </>
+            ) : (
+              <>
+                {icons.length > 0 && (
+                  <div className="list-header-icons">
+                    {icons}
+                  </div>
+                )}
+                {displayNameMap[listName] || listName}
+              </>
+            )}
           </div>
           <div className="pokedex-pokemon-preview">
             {previewPokemon && previewPokemon.length > 0 ? (
@@ -152,22 +236,47 @@ const PokedexListsMenu = ({
     });
   };
 
-  return (
-    <div className="pokedex-lists-menu">
-      {/* Render the "all" list spanning both columns */}
-      <div className="pokedex-fullwidth-list">
-        {renderListItems([fullWidthList])}
+  // Use a hook to get window width
+  const width = useWindowWidth();
+  const isOneColumn = width < 650;
+
+  if (isOneColumn) {
+    // Build a single array that starts with "all" then alternates between left and right
+    const alternateLists = [];
+    const maxLen = Math.max(leftColumnLists.length, rightColumnLists.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (i < leftColumnLists.length) {
+        alternateLists.push(leftColumnLists[i]);
+      }
+      if (i < rightColumnLists.length) {
+        alternateLists.push(rightColumnLists[i]);
+      }
+    }
+    const oneColumnOrder = [fullWidthList, ...alternateLists];
+
+    return (
+      <div className="pokedex-lists-menu one-column">
+        {renderListItems(oneColumnOrder)}
       </div>
-      <div className="pokedex-columns">
-        <div className="pokedex-column">
-          {renderListItems(leftColumnLists)}
+    );
+  } else {
+    return (
+      <div className="pokedex-lists-menu">
+        {/* Render the "all" list spanning both columns */}
+        <div className="pokedex-fullwidth-list">
+          {renderListItems([fullWidthList])}
         </div>
-        <div className="pokedex-column">
-          {renderListItems(rightColumnLists)}
+        <div className="pokedex-columns">
+          <div className="pokedex-column">
+            {renderListItems(leftColumnLists)}
+          </div>
+          <div className="pokedex-column">
+            {renderListItems(rightColumnLists)}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 };
 
 export default PokedexListsMenu;

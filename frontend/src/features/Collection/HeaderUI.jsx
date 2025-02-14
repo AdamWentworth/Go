@@ -47,7 +47,7 @@ const HeaderUI = ({
         onClick={attachPokedexClick ? onPokedexClick : undefined}
       >
         <span className="toggle-text">
-          {React.isValidElement(contextText) ? contextText : 'POKEDEX'}
+          {React.isValidElement(contextText) ? contextText : 'POKÉDEX'}
         </span>
       </div>
     );
@@ -64,7 +64,7 @@ const HeaderUI = ({
     }
     return (
       <div className="toggle-button" onClick={onListsButtonClick}>
-        <span className="toggle-text">LISTINGS</span>
+        <span className="toggle-text">MY POKÉMON</span>
       </div>
     );
   };

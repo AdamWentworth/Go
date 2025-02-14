@@ -53,7 +53,7 @@ function HighlightActionButton({
           onClick={handleMainButtonClick}
           disabled={isUpdating}
         >
-          List ({highlightedCards.size})
+          Tag ({highlightedCards.size})
         </button>
         {ownershipFilter !== '' && (
           <button

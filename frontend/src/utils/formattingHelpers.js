@@ -162,14 +162,7 @@ export const generateH2Content = (pokemon, multiFormPokedexNumbers, showAll) => 
     }
 
     // Determine the Pokémon name with form if applicable
-    let nameText = pokemon.name;
-    const hasMultiFormPokedexNumbers = Array.isArray(multiFormPokedexNumbers) && multiFormPokedexNumbers.length > 0;
-    const shouldIncludeForm = !isMegaVariant && pokemon.form && 
-        (!hasMultiFormPokedexNumbers || !multiFormPokedexNumbers.includes(pokemon.pokedex_number) || showAll);
-
-    if (shouldIncludeForm) {
-        nameText = formatPokemonName(pokemon.name, pokemon.form);
-    }
+    let nameText = formatPokemonName(pokemon.name, pokemon.form);
 
     // Remove 'Shiny' from the start of the name if it exists
     if (nameText.toLowerCase().startsWith('shiny ')) {

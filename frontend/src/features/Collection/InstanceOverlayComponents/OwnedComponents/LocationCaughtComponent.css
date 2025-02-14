@@ -9,6 +9,7 @@
     overflow-wrap: break-word; /* Handles long words */
     word-wrap: break-word; /* Handles word wrapping for older browsers */
     box-sizing: border-box; /* Includes padding/border in width */
+    text-align: center;
 }
 
 .location-caught-container .location-field {

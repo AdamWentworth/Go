@@ -162,6 +162,31 @@
   margin-top: 0.625rem;
 }
 
+.pokedex-lists-menu .list-header-icons {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-right: 0.3rem;
+}
+
+.pokedex-lists-menu .list-header-icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+}
+
+.pokedex-lists-menu .list-header-icon.left {
+  margin-right: 0.3rem;
+}
+
+.pokedex-lists-menu .list-header-icon.right {
+  margin-left: 0.3rem;
+}
+
+.pokedex-lists-menu .list-header-text {
+  display: inline-block;
+  vertical-align: middle;
+}
+
 /* Responsive Design */
 @media (max-width: 650px) {
   .pokedex-lists-menu {
