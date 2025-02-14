@@ -25,71 +25,68 @@ const HeaderUI = ({
   // Determine if we are in fast-select mode (i.e. some cards are highlighted)
   const hasSelection = highlightedCards && highlightedCards.size > 0;
 
+  // Add a class when fast-select is active
   const headerClassNames = [
     'header',
     isWideScreen ? 'header-widescreen' : 'header-narrow',
+    hasSelection ? 'header-fast-select' : ''
   ];
 
-  // For widescreen layout: if there is a selection, replace the POKEDEX text with an "X"
-  const widescreenPokedex = (
+  // Render the left toggle (Pokedex/X)
+  const renderPokedexToggle = () => {
+    if (hasSelection) {
+      return (
+        <div className="free-toggle" onClick={onClearSelection}>
+          <span className="free-toggle-text">X</span>
+        </div>
+      );
+    }
+    return (
+      <div
+        className="toggle-button"
+        onClick={attachPokedexClick ? onPokedexClick : undefined}
+      >
+        <span className="toggle-text">
+          {React.isValidElement(contextText) ? contextText : 'POKEDEX'}
+        </span>
+      </div>
+    );
+  };
+
+  // Render the right toggle (Listings/Select All)
+  const renderListsToggle = () => {
+    if (hasSelection) {
+      return (
+        <div className="free-toggle" onClick={onSelectAll}>
+          <span className="free-toggle-text">SELECT ALL</span>
+        </div>
+      );
+    }
+    return (
+      <div className="toggle-button" onClick={onListsButtonClick}>
+        <span className="toggle-text">LISTINGS</span>
+      </div>
+    );
+  };
+
+  // Common containers for both widescreen and mobile
+  const pokedexContainer = (
     <div className="pokedex-container">
-      <div
-        className="toggle-button"
-        onClick={hasSelection ? onClearSelection : (attachPokedexClick ? onPokedexClick : undefined)}
-      >
-        <span className="toggle-text">
-          {hasSelection ? 'X' : (React.isValidElement(contextText) ? contextText : 'POKEDEX')}
-        </span>
-      </div>
+      {renderPokedexToggle()}
     </div>
   );
 
-  const widescreenLists = (
+  const listsContainer = (
     <div className="lists-container">
-      <div
-        className="toggle-button"
-        onClick={hasSelection ? onSelectAll : onListsButtonClick}
-      >
-        <span className="toggle-text">
-          {hasSelection ? 'SELECT ALL' : 'LISTINGS'}
-        </span>
-      </div>
-    </div>
-  );
-
-  // For mobile layout, use similar logic.
-  const mobilePokedex = (
-    <div className="pokedex-container">
-      <div
-        className="toggle-button"
-        onClick={hasSelection ? onClearSelection : (attachPokedexClick ? onPokedexClick : undefined)}
-      >
-        <span className="toggle-text">
-          {hasSelection ? 'X' : (React.isValidElement(contextText) ? contextText : 'POKEDEX')}
-        </span>
-      </div>
-    </div>
-  );
-
-  const mobileLists = (
-    <div className="lists-container">
-      <div
-        className="toggle-button"
-        onClick={hasSelection ? onSelectAll : onListsButtonClick}
-      >
-        <span className="toggle-text">
-          {hasSelection ? 'SELECT ALL' : 'LISTINGS'}
-        </span>
-      </div>
+      {renderListsToggle()}
     </div>
   );
 
   return (
     <header className={headerClassNames.join(' ')}>
       {isWideScreen ? (
-        // Widescreen layout: Pokémon count will be rendered in SearchUI.
         <>
-          {widescreenPokedex}
+          {pokedexContainer}
           <SearchUI
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
@@ -98,18 +95,17 @@ const HeaderUI = ({
             totalPokemon={totalPokemon}
             showCount={true} // show the count in widescreen
           />
-          {widescreenLists}
+          {listsContainer}
         </>
       ) : (
-        // Mobile / narrow layout: Pokémon count rendered in the controls row.
         <>
           <div className="controls-row">
-            {mobilePokedex}
+            {pokedexContainer}
             <div className="pokemon-count-narrow">
               <span>Pokémon</span>
               <span>({totalPokemon})</span>
             </div>
-            {mobileLists}
+            {listsContainer}
           </div>
           <SearchUI
             searchTerm={searchTerm}
