@@ -70,6 +70,18 @@ function Collection({ isOwnCollection }) {
   // "pokedex" or "ownership"; default to "pokedex"
   const [lastMenu, setLastMenu] = useState('pokedex');
 
+  const handleClearSelection = () => {
+    setIsFastSelectEnabled(false);
+    setHighlightedCards(new Set());
+  };
+
+  const handleSelectAll = () => {
+    // Use pokemon.pokemonKey (not pokemon.id)
+    const allIds = sortedPokemons.map((pokemon) => pokemon.pokemonKey);
+    setHighlightedCards(new Set(allIds));
+    setIsFastSelectEnabled(true);
+  };
+
   useEffect(() => {
     // On mount or whenever pokedexLists change,
     // set the default list to "default" from Pokedex (if available).
@@ -311,6 +323,9 @@ function Collection({ isOwnCollection }) {
             }
             contextText={contextText}
             totalPokemon={sortedPokemons.length}
+            highlightedCards={highlightedCards}
+            onClearSelection={handleClearSelection}
+            onSelectAll={handleSelectAll}
           />
 
           {/* Horizontal slider container */}
@@ -340,10 +355,7 @@ function Collection({ isOwnCollection }) {
                   setOwnershipFilter={setOwnershipFilter}
                   setHighlightedCards={setHighlightedCards}
                   setActiveView={setActiveView}
-          
-                  // new callback prop
                   onListSelect={handlePokedexMenuClick}
-          
                   pokedexLists={pokedexLists}
                   variants={variants}
                 />
