@@ -9,7 +9,7 @@ function SearchUI({
   showEvolutionaryLine,
   toggleEvolutionaryLine,
   totalPokemon,
-  showCount, // new prop to conditionally render the count
+  showCount,
 }) {
   const debouncedSearchChange = useCallback(
     debounce((value) => onSearchChange(value), 250),
@@ -36,19 +36,22 @@ function SearchUI({
         defaultValue={searchTerm}
         onChange={handleInputChange}
       />
-      <label className="evo-line-checkbox">
-        <div className="checkbox-container">
-          <input
-            id="evolutionaryLineCheckbox"
-            type="checkbox"
-            className="evo-checkbox"
-            checked={showEvolutionaryLine}
-            onChange={toggleEvolutionaryLine}
-          />
-          <span className="evo-line-custom-checkbox"></span>
-        </div>
-        SHOW EVOLUTIONARY LINE
-      </label>
+      {/* Only show the evolutionary line checkbox if searchTerm is not empty */}
+      {searchTerm.trim() !== '' && (
+        <label className="evo-line-checkbox">
+          <div className="checkbox-container">
+            <input
+              id="evolutionaryLineCheckbox"
+              type="checkbox"
+              className="evo-checkbox"
+              checked={showEvolutionaryLine}
+              onChange={toggleEvolutionaryLine}
+            />
+            <span className="evo-line-custom-checkbox"></span>
+          </div>
+          SHOW EVOLUTIONARY LINE
+        </label>
+      )}
     </div>
   );
 }

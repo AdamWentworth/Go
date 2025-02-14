@@ -82,13 +82,11 @@
 }
 
 .pokemon-card .cp-container {
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative; /* Changed from absolute to relative */
     padding: 0;
     z-index: 5;
-    margin-top: -5px;
+    margin-top: 10px;  /* Adjust this value as needed */
+    text-align: center;
 }
 
 .fav-container {

@@ -109,7 +109,6 @@
 @media (max-width: 480px) {
     .header {
         padding: 10px 10px;
-        padding-top: 0px
     }
     .header .toggle-button {
         padding: 0.5rem 0.5rem;

@@ -36,13 +36,13 @@
 
 @media (max-width: 480px) {
     .sort-overlay {
-        transform: scale(0.40);
+        transform: scale(0.55);
     }
 }
 
 @media (min-width: 481px) and (max-width: 767px) {
     .sort-overlay {
-        transform: scale(0.5);
+        transform: scale(0.6);
     }
 }
 

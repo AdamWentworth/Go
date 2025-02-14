@@ -167,6 +167,12 @@
   .pokedex-lists-menu {
     align-items: center;
   }
+  .pokedex-columns {
+    display: flex;
+    flex-direction: column; /* Stack columns vertically */
+    align-items: center;
+    width: 100%;
+  }
   .pokedex-lists-menu .pokedex-column {
     width: 100%;
     max-width: 90%;

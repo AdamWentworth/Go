@@ -76,6 +76,10 @@
     line-height: 1;
 }
 
+.search-input.input-margin-bottom {
+    margin-bottom: 5px; /* Adjust the value as needed */
+  }
+
 @media (max-width: 480px) {
     .header-section.search-section {
         font-size: 8px;

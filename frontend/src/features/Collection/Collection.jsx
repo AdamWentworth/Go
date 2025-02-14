@@ -70,6 +70,9 @@ function Collection({ isOwnCollection }) {
   // "pokedex" or "ownership"; default to "pokedex"
   const [lastMenu, setLastMenu] = useState('pokedex');
 
+  // New state to indicate the default list has been loaded
+  const [defaultListLoaded, setDefaultListLoaded] = useState(false);
+
   const handleClearSelection = () => {
     setIsFastSelectEnabled(false);
     setHighlightedCards(new Set());
@@ -87,6 +90,7 @@ function Collection({ isOwnCollection }) {
     // set the default list to "default" from Pokedex (if available).
     if (pokedexLists?.default) {
       setSelectedPokedexList(pokedexLists.default);
+      setDefaultListLoaded(true);
     }
   }, [pokedexLists]);
 
@@ -100,11 +104,7 @@ function Collection({ isOwnCollection }) {
   const handleOwnershipListClick = (filter) => {
     setHighlightedCards(new Set());
     setOwnershipFilter(filter);
-
-    // Switch to the ownership-based filtering
     setLastMenu('ownership');
-
-    // existing logic ...
     setActiveView('pokemonList');
   };
 
@@ -163,12 +163,7 @@ function Collection({ isOwnCollection }) {
       pokemonTypes,
       generations,
     }),
-    [
-      selectedGeneration,
-      searchTerm,
-      pokemonTypes,
-      generations,
-    ]
+    [selectedGeneration, searchTerm, pokemonTypes, generations]
   );
 
   const baseVariants = lastMenu === 'pokedex' ? selectedPokedexList : variants;
@@ -302,113 +297,114 @@ function Collection({ isOwnCollection }) {
         </>
       );
 
+  // Render LoadingSpinner until defaultListLoaded is true (in addition to other loading flags)
+  if (loading || viewedLoading || isUpdating || !defaultListLoaded) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div className="collect-page">
       {isUsernamePath && userExists === false && <h1>User not found</h1>}
 
-      {(loading || viewedLoading || isUpdating) && <LoadingSpinner />}
+      <HeaderUIMemo
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        showEvolutionaryLine={showEvolutionaryLine}
+        toggleEvolutionaryLine={toggleEvolutionaryLine}
+        onListsButtonClick={handleListsButtonClick}
+        onPokedexClick={() =>
+          setActiveView((prev) =>
+            prev === 'pokedex' ? 'pokemonList' : 'pokedex'
+          )
+        }
+        contextText={contextText}
+        totalPokemon={sortedPokemons.length}
+        highlightedCards={highlightedCards}
+        onClearSelection={handleClearSelection}
+        onSelectAll={handleSelectAll}
+      />
 
-      {(isOwnCollection || userExists) && !loading && !viewedLoading && (
-        <>
-          <HeaderUIMemo
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            showEvolutionaryLine={showEvolutionaryLine}
-            toggleEvolutionaryLine={toggleEvolutionaryLine}
-            onListsButtonClick={handleListsButtonClick}
-            onPokedexClick={() =>
-              setActiveView((prev) =>
-                prev === 'pokedex' ? 'pokemonList' : 'pokedex'
-              )
-            }
-            contextText={contextText}
-            totalPokemon={sortedPokemons.length}
-            highlightedCards={highlightedCards}
-            onClearSelection={handleClearSelection}
-            onSelectAll={handleSelectAll}
-          />
-
-          {/* Horizontal slider container */}
-          <div 
-            className="view-slider-container" 
-            style={{ 
-              overflowY: activeView === 'pokemonList' ? 'auto' : 'hidden',
-            }}
+      {/* Horizontal slider container */}
+      <div 
+        className="view-slider-container" 
+        style={{ 
+          overflowY: activeView === 'pokemonList' ? 'auto' : 'hidden',
+        }}
+      >
+        <div
+          className="view-slider"
+          style={{
+            transform:
+              activeView === 'pokedex'
+                ? 'translateX(0)'
+                : activeView === 'pokemonList'
+                ? 'translateX(-100%)'
+                : 'translateX(-200%)',
+          }}
+        >
+          {/* LEFT panel - Pokedex */}
+          <div
+            className="slider-panel"
+            ref={pokedexPanelRef}
           >
-            <div
-              className="view-slider"
-              style={{
-                transform:
-                  activeView === 'pokedex'
-                    ? 'translateX(0)'
-                    : activeView === 'pokemonList'
-                    ? 'translateX(-100%)'
-                    : 'translateX(-200%)',
-              }}
-            >
-              {/* LEFT panel - Pokedex */}
-              <div
-                className="slider-panel"
-                ref={pokedexPanelRef}
-              >
-                <PokedexFiltersMenu
-                  setOwnershipFilter={setOwnershipFilter}
-                  setHighlightedCards={setHighlightedCards}
-                  setActiveView={setActiveView}
-                  onListSelect={handlePokedexMenuClick}
-                  pokedexLists={pokedexLists}
-                  variants={variants}
-                />
-              </div>
-
-              {/* MIDDLE panel - Main Pokemon List */}
-              <div
-                className="slider-panel"
-                ref={mainListPanelRef}
-              >
-                <PokemonListMemo
-                  isEditable={isEditable}
-                  sortedPokemons={sortedPokemons}
-                  allPokemons={variants}
-                  loading={loading}
-                  selectedPokemon={selectedPokemon}
-                  setSelectedPokemon={setSelectedPokemon}
-                  isFastSelectEnabled={isFastSelectEnabled}
-                  toggleCardHighlight={toggleCardHighlight}
-                  highlightedCards={highlightedCards}
-                  multiFormPokedexNumbers={multiFormPokedexNumbers}
-                  ownershipFilter={ownershipFilter}
-                  lists={activeLists}
-                  ownershipData={ownershipData}
-                  sortType={sortType}
-                  sortMode={sortMode}
-                  variants={variants}
-                  username={displayUsername}
-                  setIsFastSelectEnabled={setIsFastSelectEnabled}
-                  onSwipe={handleCardSwipe}
-                />
-              </div>
-
-              {/* RIGHT panel - Ownership lists */}
-              <div
-                className="slider-panel"
-                ref={ownershipPanelRef}
-              >
-                <OwnershipListsMenu
-                  onSelectList={handleOwnershipListClick}
-                  activeLists={activeLists}
-                />
-              </div>
-            </div>
+            <PokedexFiltersMenu
+              setOwnershipFilter={setOwnershipFilter}
+              setHighlightedCards={setHighlightedCards}
+              setActiveView={setActiveView}
+              onListSelect={handlePokedexMenuClick}
+              pokedexLists={pokedexLists}
+              variants={variants}
+            />
           </div>
 
-          <SortOverlayMemo
-            sortType={sortType}
-            setSortType={setSortType}
-            sortMode={sortMode}
-            setSortMode={toggleSortMode}
-          />
-        </>
+          {/* MIDDLE panel - Main Pokemon List */}
+          <div
+            className="slider-panel"
+            ref={mainListPanelRef}
+          >
+            <PokemonListMemo
+              isEditable={isEditable}
+              sortedPokemons={sortedPokemons}
+              allPokemons={variants}
+              loading={loading}
+              selectedPokemon={selectedPokemon}
+              setSelectedPokemon={setSelectedPokemon}
+              isFastSelectEnabled={isFastSelectEnabled}
+              toggleCardHighlight={toggleCardHighlight}
+              highlightedCards={highlightedCards}
+              multiFormPokedexNumbers={multiFormPokedexNumbers}
+              ownershipFilter={ownershipFilter}
+              lists={activeLists}
+              ownershipData={ownershipData}
+              sortType={sortType}
+              sortMode={sortMode}
+              variants={variants}
+              username={displayUsername}
+              setIsFastSelectEnabled={setIsFastSelectEnabled}
+              onSwipe={handleCardSwipe}
+            />
+          </div>
+
+          {/* RIGHT panel - Ownership lists */}
+          <div
+            className="slider-panel"
+            ref={ownershipPanelRef}
+          >
+            <OwnershipListsMenu
+              onSelectList={handleOwnershipListClick}
+              activeLists={activeLists}
+            />
+          </div>
+        </div>
+      </div>
+
+      {highlightedCards.size === 0 && (
+        <SortOverlayMemo
+          sortType={sortType}
+          setSortType={setSortType}
+          sortMode={sortMode}
+          setSortMode={toggleSortMode}
+        />
       )}
 
       {isEditable && highlightedCards.size > 0 && (

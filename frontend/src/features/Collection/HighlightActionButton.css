@@ -14,6 +14,8 @@
     display: flex;
     flex-direction: column; /* Keep as column */
     align-items: center;
+    width: 90%;
+    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.2));
   }
   
   .main-button {
@@ -25,7 +27,7 @@
     cursor: pointer;
     transition: background-color 0.3s ease;
     margin-top: 10px; /* Add margin-top for spacing */
-    width: 300px;
+    width: 100%;
   }
   
   .main-button:hover, .transfer-button:hover {
@@ -41,7 +43,7 @@
     cursor: pointer;
     margin-top: 10px; /* Spacing above the button */
     transition: background-color 0.3s ease;
-    width: 300px;
+    width: 100%;
   }
   
   .filter-buttons {
@@ -56,6 +58,8 @@
   .action-buttons.expanded .filter-buttons {
     opacity: 1;
     max-height: 300px; /* Adjust as needed */
+    width: 100%;
+    align-items: center;
   }
   
   .filter-button {
@@ -67,7 +71,7 @@
     border: none;
     border-radius: 20px;
     cursor: pointer;
-    width: 200px;
+    width: 80%;
   }
   
   .filter-button.Owned {
@@ -87,30 +91,41 @@
 
 @media (max-width: 480px) {
   .main-button {
-    width: 100px;
     padding: 12px 5px;
     font-size: 14px;
   }
   .filter-button {
     padding: 10px 5px;
     font-size: 14px;
-    width: 150px;
+    width: 90%;
   }
 }
 
 @media (min-width: 480px)and (max-width: 767px) {
-  .main-button {
-    width: 225px;
-  }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
-
+  .main-button, .transfer-button {
+    width: 75%;
+  }
+  .filter-button {
+    width: 65%;
+  }
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {
-
+  .main-button, .transfer-button  {
+    width: 65%;
+  }
+  .filter-button {
+    width: 50%;
+  }
 }
 @media (min-width: 1440px) {
-
+  .main-button, .transfer-button  {
+    width: 50%;
+  }
+  .filter-button {
+    width: 40%;
+  }
 }

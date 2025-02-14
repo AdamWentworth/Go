@@ -2,7 +2,7 @@
     background-color: #111;
     display: grid;
     grid-template-columns: repeat(9, 1fr); 
-    gap: 16px;
+    gap: 0px;
     padding: 20px;
     box-sizing: border-box;
     margin-left: auto;
@@ -15,7 +15,6 @@
         grid-template-columns: repeat(3, 1fr);
         padding: 5px;
         width: calc(100vw - 20px);
-        gap: 6px;
     }
 }
 
@@ -24,7 +23,6 @@
         grid-template-columns: repeat(6, 1fr);
         padding: 5px;
         width: calc(100vw - 20px); /* Adjust width if necessary */
-        gap: 6px;
     }
 }
 
@@ -33,7 +31,6 @@
         grid-template-columns: repeat(6, 1fr);
         padding: 10px;
         width: calc(100vw - 20px); /* Adjust width if necessary */
-        gap: 9px;
     }
 }
 
@@ -42,6 +39,5 @@
         grid-template-columns: repeat(9, 1fr);
         padding: 10px;
         width: calc(100vw - 10px); /* Adjust width if necessary */
-        gap: 0px;
     }
 }
