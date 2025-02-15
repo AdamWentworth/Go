@@ -194,6 +194,7 @@ function Collection({ isOwnCollection }) {
 
   const { toggleCardHighlight } = useUIHandlers({
     setHighlightedCards,
+    setIsFastSelectEnabled,
   });
 
   // Mega/Fusion

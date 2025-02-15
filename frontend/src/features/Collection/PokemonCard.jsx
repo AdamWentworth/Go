@@ -5,14 +5,15 @@ import { determineImageUrl } from "../../utils/imageHelpers";
 import { generateH2Content } from '../../utils/formattingHelpers';
 import './PokemonCard.css';
 
-const LONG_PRESS_MS = 300;    // Time threshold for long-press
-const SWIPE_THRESHOLD = 50;   // Distance threshold for horizontal swipe
+const LONG_PRESS_MS = 300;       // Time threshold for long-press
+const SWIPE_THRESHOLD = 50;      // Distance threshold for horizontal swipe
+const MOVE_CANCEL_THRESHOLD = 10; // Movement that cancels long-press
 
 const PokemonCard = ({
   pokemon,
   onSelect,
   onSwipe,                  // Called with 'left' or 'right' after a horizontal swipe
-  toggleCardHighlight,      // Called on successful long-press if isEditable
+  toggleCardHighlight,      // Called on successful long-press OR short tap if fast-select is already on
   setIsFastSelectEnabled,   // Called to enable fast-select
   isEditable,
   isFastSelectEnabled,
@@ -24,18 +25,19 @@ const PokemonCard = ({
   showAll,
   sortType,
 }) => {
-  // Refs for touch-based logic
+  // Refs for detecting gestures
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const lastTouchX = useRef(0);
   const isSwiping = useRef(false);
   const isScrolling = useRef(false);
   const longPressTimeout = useRef(null);
+  const longPressTriggered = useRef(false);
 
-  // Used to prevent duplicate handling from touch and click events
+  // Prevents double-firing on mobile (touch + click)
   const touchHandled = useRef(false);
 
-  // Jiggle effect state when highlight changes
+  // For jiggle animation when highlight changes
   const [shouldJiggle, setShouldJiggle] = useState(false);
   const prevIsHighlighted = useRef(isHighlighted);
 
@@ -70,14 +72,26 @@ const PokemonCard = ({
       setCurrentImage(`${process.env.PUBLIC_URL}/images/disabled/disabled_${pokemon.pokemon_id}.png`);
     } else {
       const updated = determineImageUrl(
-        isFemale, pokemon, isMega, megaForm,
-        isFused, fusionForm, isPurified, isGigantamax
+        isFemale,
+        pokemon,
+        isMega,
+        megaForm,
+        isFused,
+        fusionForm,
+        isPurified,
+        isGigantamax
       );
       setCurrentImage(updated || '/images/default_pokemon.png');
     }
   }, [
-    isDisabled, isFemale, isMega, megaForm,
-    isFused, fusionForm, isPurified, isGigantamax,
+    isDisabled,
+    isFemale,
+    isMega,
+    megaForm,
+    isFused,
+    fusionForm,
+    isPurified,
+    isGigantamax,
     pokemon
   ]);
 
@@ -101,11 +115,11 @@ const PokemonCard = ({
     ${shouldJiggle ? 'jiggle' : ''}
   `.trim();
 
-  // Bail out if the image for shiny+shadow doesn’t exist
-  if (isShiny && showShadow && (!pokemon.image_url_shiny_shadow || pokemon.shadow_shiny_available !== 1)) {
-    return null;
-  }
-  if (showShadow && !isShiny && !pokemon.image_url_shadow) {
+  // Bail out if the combination of shiny+shadow doesn’t exist
+  if (
+    (isShiny && showShadow && (!pokemon.image_url_shiny_shadow || pokemon.shadow_shiny_available !== 1)) ||
+    (showShadow && !isShiny && !pokemon.image_url_shadow)
+  ) {
     return null;
   }
 
@@ -120,20 +134,25 @@ const PokemonCard = ({
     if (!e.touches || e.touches.length === 0) return;
     const touch = e.touches[0];
 
+    // Reset flags
+    touchHandled.current = false;
+    isSwiping.current = false;
+    isScrolling.current = false;
+    longPressTriggered.current = false;
+
     touchStartX.current = touch.clientX;
     touchStartY.current = touch.clientY;
     lastTouchX.current = touch.clientX;
-    isSwiping.current = false;
-    isScrolling.current = false;
-    touchHandled.current = false;
 
-    // Set up long-press if editable and not already in fast-select mode
-    if (isEditable && !isFastSelectEnabled) {
+    // Set up long-press if editable
+    if (isEditable) {
       longPressTimeout.current = setTimeout(() => {
-        if (!isSwiping.current && !isScrolling.current) {
+        // If no swiping/scrolling yet and not already in fast-select
+        if (!isSwiping.current && !isScrolling.current && !isFastSelectEnabled) {
           toggleCardHighlight(pokemon.pokemonKey);
           setIsFastSelectEnabled(true);
         }
+        longPressTriggered.current = true;
         longPressTimeout.current = null;
       }, LONG_PRESS_MS);
     }
@@ -142,20 +161,18 @@ const PokemonCard = ({
   const handleTouchMove = (e) => {
     if (!e.touches || e.touches.length === 0) return;
     const touch = e.touches[0];
-    lastTouchX.current = touch.clientX;
 
+    lastTouchX.current = touch.clientX;
     const dx = touch.clientX - touchStartX.current;
     const dy = touch.clientY - touchStartY.current;
 
     // If horizontal movement is larger than vertical, mark as swiping
     if (Math.abs(dx) > Math.abs(dy)) {
       isSwiping.current = true;
-    } else {
-      isSwiping.current = false;
     }
 
-    // Cancel long-press if movement exceeds a small threshold
-    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+    // Cancel long-press if movement is beyond a small threshold
+    if (Math.abs(dx) > MOVE_CANCEL_THRESHOLD || Math.abs(dy) > MOVE_CANCEL_THRESHOLD) {
       if (longPressTimeout.current) {
         clearTimeout(longPressTimeout.current);
         longPressTimeout.current = null;
@@ -173,33 +190,43 @@ const PokemonCard = ({
 
     const dx = lastTouchX.current - touchStartX.current;
 
+    // If a valid horizontal swipe
     if (isSwiping.current && Math.abs(dx) > SWIPE_THRESHOLD) {
-      // Determine swipe direction
       const direction = dx < 0 ? 'left' : 'right';
-      // Only allow left swipes if isEditable is true
-      if (direction === 'right' && !isEditable) {
-        // Do nothing if left swipe is not allowed
-      } else {
-        onSwipe && onSwipe(direction);
-        touchHandled.current = true;
-      }
+      onSwipe && onSwipe(direction);
+      touchHandled.current = true;
       return;
     }
 
-    if (isScrolling.current) return; // If the user scrolled, do nothing
+    // If the user scrolled or did a long-press, skip short-tap
+    if (isScrolling.current || longPressTriggered.current) {
+      return;
+    }
 
-    // Otherwise, treat as a tap
-    onSelect();
+    // Otherwise, treat it as a short tap
+    // If fast-select is enabled, short-tap toggles highlight
+    if (isFastSelectEnabled) {
+      toggleCardHighlight(pokemon.pokemonKey);
+    } else {
+      onSelect();
+    }
+    touchHandled.current = true;
   };
 
-  // Prevent duplicate events from firing (e.g., onClick after touch)
+  // Prevent duplicate events (e.g., iOS sending click after touch)
   const handleClick = () => {
     if (touchHandled.current) {
       touchHandled.current = false;
       return;
     }
     if (isDisabled) return;
-    onSelect();
+
+    // If fast-select is enabled, toggling highlight on click
+    if (isFastSelectEnabled) {
+      toggleCardHighlight(pokemon.pokemonKey);
+    } else {
+      onSelect();
+    }
   };
 
   return (
@@ -260,18 +287,18 @@ const PokemonCard = ({
           draggable="false"
         />
         {isDynamax && (
-          <img 
-            src={`${process.env.PUBLIC_URL}/images/dynamax.png`} 
-            alt="Dynamax Badge" 
-            className="max-badge" 
+          <img
+            src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
+            alt="Dynamax Badge"
+            className="max-badge"
             draggable="false"
           />
         )}
         {isGigantamax && (
-          <img 
-            src={`${process.env.PUBLIC_URL}/images/gigantamax.png`} 
-            alt="Gigantamax Badge" 
-            className="max-badge" 
+          <img
+            src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
+            alt="Gigantamax Badge"
+            className="max-badge"
             draggable="false"
           />
         )}
@@ -288,6 +315,7 @@ const PokemonCard = ({
       </div>
 
       <p>#{pokemon.pokedex_number}</p>
+
       <div className="type-icons">
         {pokemon.type_1_icon && (
           <img
