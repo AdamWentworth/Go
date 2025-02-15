@@ -44,6 +44,11 @@
     min-width: 0;
 }
 
+/* Remove padding when custom context is active */
+.header .toggle-button.custom-context-button {
+    cursor: auto;
+}
+
 /* Common styling for the toggle buttons */
 .header .toggle-button {
     padding: 0.5rem 1rem;
@@ -115,13 +120,28 @@
         padding: 0.5rem 0.5rem;
     }
     .header .toggle-text {
-        font-size: 1rem;
+        font-size: 0.8rem;
     }
     .header .free-toggle {
         padding: 0rem;
     }
     .header .free-toggle-text {
         font-size: 1rem; /* larger text */
+    }
+    .header .toggle-button .custom-context {
+        font-size: 0.6rem; /* Adjust as needed */
+        white-space: normal !important; /* Always wrap */
+        word-wrap: break-word !important; /* Ensure long words break */
+        overflow-wrap: break-word !important; /* Ensures breaking across browsers */
+        word-break: break-word !important; /* Forces word breaking */
+        display: block !important; /* Forces it to be a block, allowing wrap */
+        max-width: 95% !important; /* Prevents any overflow */
+        text-align: center; /* Ensures proper alignment */
+    }
+    
+    /* Remove padding when custom context is active */
+    .header .toggle-button.custom-context-button {
+        padding: 0.3rem 0rem;
     }
 }
 
@@ -135,6 +155,20 @@
     }
     .header .free-toggle-text {
         font-size: 1rem; /* larger text */
+    }
+    .header .toggle-button .custom-context {
+        font-size: 0.7rem; /* Adjust as needed */
+        white-space: normal !important; /* Always wrap */
+        word-wrap: break-word !important; /* Ensure long words break */
+        overflow-wrap: break-word !important; /* Ensures breaking across browsers */
+        word-break: break-word !important; /* Forces word breaking */
+        display: block !important; /* Forces it to be a block, allowing wrap */
+        max-width: 95% !important; /* Prevents any overflow */
+        text-align: center; /* Ensures proper alignment */
+    }
+    /* Remove padding when custom context is active */
+    .header .toggle-button.custom-context-button {
+        padding: 0.3rem 0rem;
     }
 }
 
@@ -160,6 +194,20 @@
     .header .free-toggle-text {
         font-size: 1.25rem; /* larger text */
     }
+    .header .toggle-button .custom-context {
+        font-size: 0.7rem; /* Adjust as needed */
+        white-space: normal !important; /* Always wrap */
+        word-wrap: break-word !important; /* Ensure long words break */
+        overflow-wrap: break-word !important; /* Ensures breaking across browsers */
+        word-break: break-word !important; /* Forces word breaking */
+        display: block !important; /* Forces it to be a block, allowing wrap */
+        max-width: 95% !important; /* Prevents any overflow */
+        text-align: center; /* Ensures proper alignment */
+    }
+    /* Remove padding when custom context is active */
+    .header .toggle-button.custom-context-button {
+        padding: 0.3rem 0rem;
+    }
 }
 
 @media (min-width: 1440px) {
@@ -171,6 +219,20 @@
     }
     .header .free-toggle-text {
         font-size: 1.5rem; /* larger text */
+    }
+    .header .toggle-button .custom-context {
+        font-size: 0.85rem; /* Adjust as needed */
+        white-space: normal !important; /* Always wrap */
+        word-wrap: break-word !important; /* Ensure long words break */
+        overflow-wrap: break-word !important; /* Ensures breaking across browsers */
+        word-break: break-word !important; /* Forces word breaking */
+        display: block !important; /* Forces it to be a block, allowing wrap */
+        max-width: 95% !important; /* Prevents any overflow */
+        text-align: center; /* Ensures proper alignment */
+    }
+    /* Remove padding when custom context is active */
+    .header .toggle-button.custom-context-button {
+        padding: 0.5rem 0rem;
     }
 }
 

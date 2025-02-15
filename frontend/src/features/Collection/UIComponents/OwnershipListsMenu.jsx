@@ -1,60 +1,66 @@
 // OwnershipListsMenu.jsx
-
-import React from 'react';
+import React, { useRef } from 'react';
 import './OwnershipListsMenu.css';
-
-// Import the sorting hook for the Owned list
 import useFavoriteList from '../../../hooks/sort/useFavoriteList';
 
-const OwnershipListsMenu = ({
-  onSelectList,
-  activeLists
-}) => {
-  // Define the lists for each column
+const OwnershipListsMenu = ({ onSelectList, activeLists, onSwipe }) => {
   const leftColumnLists = ['Owned', 'Trade'];
   const rightColumnLists = ['Wanted', 'Unowned'];
 
-  // Apply sorting hook only to the 'Owned' list
   const sortedOwnedPokemons = useFavoriteList(
     activeLists.owned ? Object.values(activeLists.owned) : []
   );
 
-  // Function to render the list items
+  // Swipe handlers for Ownership menu: only allow left swipe
+  const SWIPE_THRESHOLD = 50;
+  const touchStartX = useRef(0);
+  const lastTouchX = useRef(0);
+
+  const handleTouchStart = (e) => {
+    const touch = e.touches[0];
+    touchStartX.current = touch.clientX;
+    lastTouchX.current = touch.clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    const touch = e.touches[0];
+    lastTouchX.current = touch.clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const dx = lastTouchX.current - touchStartX.current;
+  
+    // Swipe to the right:
+    if (dx > SWIPE_THRESHOLD) {
+      onSwipe && onSwipe('right');
+    }
+    // Swipe to the left:
+    else if (dx < -SWIPE_THRESHOLD) {
+      onSwipe && onSwipe('left');
+    }
+  };
+
   const renderListItems = (listNames) => {
     return listNames.map((listName) => {
       let listData = [];
-
       if (listName === 'Owned') {
-        // Use the sorted data for Owned list
         listData = sortedOwnedPokemons;
       } else {
-        // For other lists, use the original data
         listData = activeLists[listName.toLowerCase()]
           ? Object.values(activeLists[listName.toLowerCase()])
           : [];
       }
-
       const previewPokemon = listData.slice(0, 24).map((pokemon, index) => {
-        if (!pokemon || !pokemon.currentImage) {
-          console.log('No currentImage found for:', pokemon?.id || `index ${index}`);
-          return null;
-        }
-
-        // Determine if the Pokémon has a variant
+        if (!pokemon || !pokemon.currentImage) return null;
         const hasDynamax = pokemon.variantType && pokemon.variantType.includes('dynamax');
         const hasGigantamax = pokemon.variantType && pokemon.variantType.includes('gigantamax');
-
-        // Decide which overlay to display
         let overlaySrc = '';
         if (hasGigantamax) {
           overlaySrc = `${process.env.PUBLIC_URL}/images/gigantamax.png`;
         } else if (hasDynamax) {
           overlaySrc = `${process.env.PUBLIC_URL}/images/dynamax.png`;
         }
-
-        // Determine if the current list is 'Unowned'
         const isUnowned = listName === 'Unowned';
-
         return (
           <div key={pokemon.id || index} className="pokemon-list-container">
             <img
@@ -62,25 +68,23 @@ const OwnershipListsMenu = ({
               alt={pokemon.name || 'Unknown Pokémon'}
               className={`preview-image ${isUnowned ? 'unowned' : ''}`}
             />
-            {/* Conditionally render the Variant overlay */}
             {overlaySrc && (
               <img
                 src={overlaySrc}
                 alt={hasGigantamax ? 'Gigantamax' : 'Dynamax'}
                 className={`variant-overlay ${isUnowned ? 'unowned' : ''}`}
-                aria-hidden="true" // Hides the image from screen readers
+                aria-hidden="true"
               />
             )}
           </div>
         );
       });
-
       return (
         <div
           key={listName}
           className="list-item"
           onClick={() => onSelectList(listName)}
-          tabIndex="0" /* Make it focusable for accessibility */
+          tabIndex="0"
           onKeyPress={(e) => {
             if (e.key === 'Enter') onSelectList(listName);
           }}
@@ -89,11 +93,7 @@ const OwnershipListsMenu = ({
             {listName}
           </div>
           <div className="pokemon-preview">
-            {previewPokemon.length > 0 ? (
-              previewPokemon
-            ) : (
-              <p className="no-pokemon-text">No Pokémon in this list</p>
-            )}
+            {previewPokemon.length > 0 ? previewPokemon : <p className="no-pokemon-text">No Pokémon in this list</p>}
           </div>
         </div>
       );
@@ -101,13 +101,16 @@ const OwnershipListsMenu = ({
   };
 
   return (
-    <div className="lists-menu">
+    <div
+      className="lists-menu"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="column">
-        {/* Left Column Lists */}
         {renderListItems(leftColumnLists)}
       </div>
       <div className="column">
-        {/* Right Column Lists */}
         {renderListItems(rightColumnLists)}
       </div>
     </div>

@@ -216,6 +216,10 @@ function Collection({ isOwnCollection }) {
   //--- Sliding view state ---
   const [activeView, setActiveView] = useState('pokemonList');
 
+  useEffect(() => {
+    console.log('Active view changed to:', activeView);
+  }, [activeView]);
+
   // 1) Create refs for all 3 panels
   const pokedexPanelRef = useRef(null);
   const mainListPanelRef = useRef(null);
@@ -259,6 +263,7 @@ function Collection({ isOwnCollection }) {
   useEffect(() => {
     if (isUsernamePath) {
       setHighlightedCards(new Set());
+      setActiveView('pokemonList');
     }
   }, [isUsernamePath, urlUsername]);
 
@@ -368,6 +373,7 @@ function Collection({ isOwnCollection }) {
               onListSelect={handlePokedexMenuClick}
               pokedexLists={pokedexLists}
               variants={variants}
+              onSwipe={handleCardSwipe}
             />
           </div>
 
@@ -407,6 +413,7 @@ function Collection({ isOwnCollection }) {
             <OwnershipListsMenu
               onSelectList={handleOwnershipListClick}
               activeLists={activeLists}
+              onSwipe={handleCardSwipe}
             />
           </div>
         </div>

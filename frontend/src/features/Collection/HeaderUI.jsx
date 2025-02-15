@@ -34,6 +34,10 @@ const HeaderUI = ({
 
   // Render the left toggle (Pokedex/X)
   const renderPokedexToggle = () => {
+    const isCustomContext = React.isValidElement(contextText);
+    const toggleButtonClassName = isCustomContext ? "toggle-button custom-context-button" : "toggle-button";
+    const toggleTextClassName = isCustomContext ? "toggle-text custom-context" : "toggle-text";
+  
     if (hasSelection) {
       return (
         <div className="free-toggle" onClick={onClearSelection}>
@@ -43,16 +47,16 @@ const HeaderUI = ({
     }
     return (
       <div
-        className="toggle-button"
+        className={toggleButtonClassName}
         onClick={attachPokedexClick ? onPokedexClick : undefined}
       >
-        <span className="toggle-text">
-          {React.isValidElement(contextText) ? contextText : 'POKÉDEX'}
+        <span className={toggleTextClassName}>
+          {isCustomContext ? contextText : 'POKÉDEX'}
         </span>
       </div>
     );
   };
-
+  
   // Render the right toggle (Listings/Select All)
   const renderListsToggle = () => {
     if (hasSelection) {
