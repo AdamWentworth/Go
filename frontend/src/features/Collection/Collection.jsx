@@ -297,6 +297,20 @@ function Collection({ isOwnCollection }) {
         </>
       );
 
+  useEffect(() => {
+    if (pokedexPanelRef.current) {
+      pokedexPanelRef.current.scrollTop = 0;
+    }
+    if (mainListPanelRef.current) {
+      mainListPanelRef.current.scrollTop = 0;
+    }
+    if (ownershipPanelRef.current) {
+      ownershipPanelRef.current.scrollTop = 0;
+    }
+    // Reset page scroll to top when view changes
+    window.scrollTo(0, 0);
+  }, [activeView]);
+
   // Render LoadingSpinner until defaultListLoaded is true (in addition to other loading flags)
   if (loading || viewedLoading || isUpdating || !defaultListLoaded) {
     return <LoadingSpinner />;
