@@ -123,6 +123,9 @@
         width: 70%;
         margin-top: 3px;
     }
+    .header-section.search-section {
+        flex-grow: 4;
+    }
 }
 
 @media (min-width: 1440px) {
