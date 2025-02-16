@@ -12,6 +12,9 @@ import useErrorHandler from '../hooks/useErrorHandler';
 import './VariantSearch.css';
 import { formatForm } from '../../../utils/formattingHelpers';
 
+// Removed: IndexedDB helper import
+// import { getAllPokedexListsFromDB } from '../../../services/indexedDB';
+
 const VariantSearch = ({
   pokemon,
   setPokemon,
@@ -33,37 +36,46 @@ const VariantSearch = ({
   setDynamax,
   gigantamax,
   setGigantamax,
+  pokemonCache // Passed in default Pokémon list
 }) => {
   const { error, handleError, clearError } = useErrorHandler();
   const [availableForms, setAvailableForms] = useState([]);
   const [availableCostumes, setAvailableCostumes] = useState([]);
-  const [pokemonData, setPokemonData] = useState([]);
+  
+  // Instead of fetching from IndexedDB, we use the passed pokemonCache prop.
+  const [pokemonData, setPokemonData] = useState(pokemonCache || []);
+
   const [imageUrl, setImageUrl] = useState(null);
   const [imageError, setImageError] = useState(false);
   const [showCostumeDropdown, setShowCostumeDropdown] = useState(false);
-  const [selectedBackground, setSelectedBackground] = useState(null); // State for selected background
-  const [showBackgroundOverlay, setShowBackgroundOverlay] = useState(false); // State for overlay visibility
+  const [selectedBackground, setSelectedBackground] = useState(null);
+  const [showBackgroundOverlay, setShowBackgroundOverlay] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
 
-  // Get the current Pokémon data based on the entered name
+  // Update local state whenever pokemonCache prop changes
+  useEffect(() => {
+    setPokemonData(pokemonCache || []);
+  }, [pokemonCache]);
+
+  // Determine current Pokémon data from user input
   const currentPokemonData = pokemonData.find(
     (p) => p.name.toLowerCase() === (pokemon || '').toLowerCase()
   );
 
-  // Determine availability
-  const hasDynamax = currentPokemonData?.max?.some(max => max.dynamax === 1) || false;
-  const hasGigantamax = currentPokemonData?.max?.some(max => max.gigantamax === 1) || false;
+  // If your data includes "max" fields for Dynamax/Gigantamax:
+  const hasDynamax = currentPokemonData?.max?.some((max) => max.dynamax === 1) || false;
+  const hasGigantamax = currentPokemonData?.max?.some((max) => max.gigantamax === 1) || false;
 
   const toggleMax = () => {
     if (!dynamax && !gigantamax) {
-      // Start with Dynamax if available, otherwise Gigantamax
+      // Start with Dynamax if available, else Gigantamax
       if (hasDynamax) {
         setDynamax(true);
       } else if (hasGigantamax) {
         setGigantamax(true);
       }
     } else if (dynamax) {
-      // Switch from Dynamax to Gigantamax if available
+      // Switch from Dynamax to Gigantamax
       if (hasGigantamax) {
         setDynamax(false);
         setGigantamax(true);
@@ -76,21 +88,17 @@ const VariantSearch = ({
     }
   };
 
-  useEffect(() => {
-    const storedData = localStorage.getItem('pokemonData');
-    if (storedData) {
-      const parsedData = JSON.parse(storedData);
-      if (parsedData && parsedData.data) {
-        setPokemonData(parsedData.data);
-      } else {
-        handleError('No valid Pokémon data found.');
-      }
-    } else {
-      handleError('No Pokémon data found in local storage.');
-    }
-  }, []);
-
-  const handleValidation = (name, shinyChecked, shadowChecked, selectedCostume, form, selectedGender, dynamax, gigantamax) => {
+  // The existing validation logic
+  const handleValidation = (
+    name,
+    shinyChecked,
+    shadowChecked,
+    selectedCostume,
+    form,
+    selectedGender,
+    dynamaxEnabled,
+    gigantamaxEnabled
+  ) => {
     const { error, availableCostumes, availableForms } = validatePokemon(
       pokemonData,
       name,
@@ -98,30 +106,28 @@ const VariantSearch = ({
       shadowChecked,
       selectedCostume,
       form,
-      dynamax,         // Pass dynamax
-      gigantamax      // Pass gigantamax
+      dynamaxEnabled,
+      gigantamaxEnabled
     );
     if (error) {
       handleError(error);
-      setErrorMessage(error); // Pass error message to parent
+      setErrorMessage(error);
     } else {
       clearError();
-      setErrorMessage(null); // Clear error message in parent
+      setErrorMessage(null);
     }
 
     const sortedCostumes = availableCostumes.sort(
       (a, b) => new Date(a.date_available) - new Date(b.date_available)
     );
     setAvailableCostumes(sortedCostumes);
-  
+
     const filteredForms = availableForms
       .filter((form) => form && form.trim().toLowerCase() !== '')
       .map((form) => (form.toLowerCase() === 'none' ? 'None' : form));
-  
     setAvailableForms(filteredForms.length > 0 ? filteredForms : []);
 
     if (!error) {
-      // Update image with selectedGender and maximization state
       const url = updateImage(
         pokemonData,
         name,
@@ -130,29 +136,38 @@ const VariantSearch = ({
         selectedCostume,
         form,
         selectedGender,
-        gigantamax
+        gigantamaxEnabled
       );
       setImageUrl(url);
-      setImageError(false); // Reset the image error when updating the image URL
+      setImageError(false);
     }
   };
 
   const handleGenderChange = (gender) => {
-    setSelectedGender(gender); // Update the selectedGender state
+    setSelectedGender(gender);
   };
 
-  // --- Ensure useEffect includes dynamax and gigantamax in dependencies ---
+  // Revalidate when these states change
   useEffect(() => {
-    // Only call handleValidation if a Pokémon is selected
     if (pokemon) {
-      handleValidation(pokemon, isShiny, isShadow, costume, selectedForm, selectedGender, dynamax, gigantamax);
+      handleValidation(
+        pokemon,
+        isShiny,
+        isShadow,
+        costume,
+        selectedForm,
+        selectedGender,
+        dynamax,
+        gigantamax
+      );
     }
+    // eslint-disable-next-line
   }, [selectedGender, isShiny, isShadow, costume, selectedForm, dynamax, gigantamax]);
 
   const handleBackgroundChange = (background) => {
     setSelectedBackground(background);
-    setSelectedBackgroundId(background ? background.background_id : null); // Pass the background_id or null to the parent
-    setShowBackgroundOverlay(false); // Hide the overlay when a background is selected
+    setSelectedBackgroundId(background ? background.background_id : null);
+    setShowBackgroundOverlay(false);
   };
 
   const handleImageError = () => {
@@ -164,87 +179,118 @@ const VariantSearch = ({
     if (newPokemon.length <= 11) {
       setPokemon(newPokemon);
       setSelectedForm('');
-      setSelectedGender('Any'); // Reset gender only if new Pokémon is selected.
-  
-      // Reset selected moves when a new Pokémon is selected
+      setSelectedGender('Any');
       setSelectedMoves({
         fastMove: null,
         chargedMove1: null,
         chargedMove2: null,
       });
-
       setDynamax(false);
       setGigantamax(false);
-  
-      // Generate suggestions if input is 3 or more characters
+
+      // Auto-suggestions for 3+ chars
       if (newPokemon.length >= 3) {
-        // Use a Set to ensure unique suggestions
-        const filteredSuggestions = Array.from(
+        const filtered = Array.from(
           new Set(
             pokemonData
-              .filter(pokemon => pokemon.name.toLowerCase().startsWith(newPokemon.toLowerCase()))
-              .map(pokemon => pokemon.name)
+              .filter((p) =>
+                p.name.toLowerCase().startsWith(newPokemon.toLowerCase())
+              )
+              .map((p) => p.name)
           )
         );
-        setSuggestions(filteredSuggestions);
+        setSuggestions(filtered);
       } else {
-        setSuggestions([]); // Clear suggestions if fewer than 3 characters
+        setSuggestions([]);
       }
-  
-      if (newPokemon.trim() === "") {
-        // Clear the image, costume, background, and any other states when the input is empty
+
+      if (newPokemon.trim() === '') {
         setImageUrl(null);
         setAvailableForms([]);
         setAvailableCostumes([]);
-        setCostume(null); // Reset costume to null
-        setSelectedBackground(null); // Reset background to null
+        setCostume(null);
+        setSelectedBackground(null);
       } else {
-        handleValidation(newPokemon, isShiny, isShadow, costume, '', selectedGender, dynamax, gigantamax); // Pass maximization states
+        handleValidation(
+          newPokemon,
+          isShiny,
+          isShadow,
+          costume,
+          '',
+          selectedGender,
+          dynamax,
+          gigantamax
+        );
       }
     }
   };
-  
+
   const handleInputFocus = () => {
-    // Show suggestions again if any exist
     if (pokemon && pokemon.length >= 3) {
-      const filteredSuggestions = Array.from(
+      const filtered = Array.from(
         new Set(
           pokemonData
-            .filter(pokemonItem => pokemonItem.name.toLowerCase().startsWith(pokemon.toLowerCase()))
-            .map(pokemonItem => pokemonItem.name)
+            .filter((pItem) =>
+              pItem.name.toLowerCase().startsWith(pokemon.toLowerCase())
+            )
+            .map((pItem) => pItem.name)
         )
       );
-      setSuggestions(filteredSuggestions);
+      setSuggestions(filtered);
     }
-  };  
-  
+  };
+
   const handleInputBlur = () => {
-    // Hide suggestions when the input loses focus
     setSuggestions([]);
   };
-    
 
   const handleShinyChange = () => {
     const shinyChecked = !isShiny;
     setIsShiny(shinyChecked);
-    handleValidation(pokemon, shinyChecked, isShadow, costume, selectedForm, selectedGender, dynamax, gigantamax); // Pass maximization states
-  };  
+    handleValidation(
+      pokemon,
+      shinyChecked,
+      isShadow,
+      costume,
+      selectedForm,
+      selectedGender,
+      dynamax,
+      gigantamax
+    );
+  };
 
   const handleShadowChange = () => {
     const shadowChecked = !isShadow;
     setIsShadow(shadowChecked);
-    handleValidation(pokemon, isShiny, shadowChecked, costume, selectedForm, selectedGender, dynamax, gigantamax); // Pass maximization states
+    handleValidation(
+      pokemon,
+      isShiny,
+      shadowChecked,
+      costume,
+      selectedForm,
+      selectedGender,
+      dynamax,
+      gigantamax
+    );
   };
 
   const handleCostumeToggle = () => {
-    const newShowCostumeDropdown = !showCostumeDropdown;
-    setShowCostumeDropdown(newShowCostumeDropdown);
-
-    if (!newShowCostumeDropdown) {
-      setCostume(null); // Reset costume to null
+    const newShow = !showCostumeDropdown;
+    setShowCostumeDropdown(newShow);
+    if (!newShow) {
+      setCostume(null);
       clearError();
-      handleValidation(pokemon, isShiny, isShadow, '', selectedForm, selectedGender, dynamax, gigantamax);
-      const defaultImageUrl = updateImage(
+      handleValidation(
+        pokemon,
+        isShiny,
+        isShadow,
+        '',
+        selectedForm,
+        selectedGender,
+        dynamax,
+        gigantamax
+      );
+      const defaultImg = updateImage(
         pokemonData,
         pokemon,
         isShiny,
@@ -255,20 +301,38 @@ const VariantSearch = ({
         dynamax,
         gigantamax
       );
-      setImageUrl(defaultImageUrl);
-      setImageError(false); // Reset the image error when toggling costume dropdown
+      setImageUrl(defaultImg);
+      setImageError(false);
     }
   };
 
   const handleCostumeChange = (e) => {
     const selectedCostume = e.target.value;
     setCostume(selectedCostume);
-    handleValidation(pokemon, isShiny, isShadow, selectedCostume, selectedForm, selectedGender, dynamax, gigantamax); // Pass maximization states
+    handleValidation(
+      pokemon,
+      isShiny,
+      isShadow,
+      selectedCostume,
+      selectedForm,
+      selectedGender,
+      dynamax,
+      gigantamax
+    );
   };
 
   const handleFormChange = (e) => {
     setSelectedForm(e.target.value);
-    handleValidation(pokemon, isShiny, isShadow, costume, e.target.value, selectedGender, dynamax, gigantamax); // Pass maximization states
+    handleValidation(
+      pokemon,
+      isShiny,
+      isShadow,
+      costume,
+      e.target.value,
+      selectedGender,
+      dynamax,
+      gigantamax
+    );
   };
 
   const handleMovesChange = (moves) => {
@@ -277,34 +341,39 @@ const VariantSearch = ({
 
   const handleSuggestionClick = (suggestion) => {
     setPokemon(suggestion);
-    setSuggestions([]); // Clear suggestions after selection
-    handleValidation(suggestion, isShiny, isShadow, costume, selectedForm, selectedGender, dynamax, gigantamax);
-  };  
-
-  // Check if the selected costume allows backgrounds or if the backgrounds have null costume_id
-  const isBackgroundAllowed = () => {
-    if (!currentPokemonData || !currentPokemonData.backgrounds) return false;
-    if (!costume) {
-      // If no costume is selected, allow backgrounds with null costume_id
-      return currentPokemonData.backgrounds.some((background) => background.costume_id === null);
-    }
-    const selectedCostumeId = availableCostumes.find((c) => c.name === costume)?.costume_id;
-    return currentPokemonData.backgrounds.some(
-      (background) =>
-        background.costume_id === selectedCostumeId || background.costume_id === null
+    setSuggestions([]);
+    handleValidation(
+      suggestion,
+      isShiny,
+      isShadow,
+      costume,
+      selectedForm,
+      selectedGender,
+      dynamax,
+      gigantamax
     );
   };
 
-  // Retrieve the costume ID for the currently selected costume
-  const selectedCostumeId = availableCostumes.find(c => c.name === costume)?.costume_id;
+  // Helper to check if backgrounds are allowed for the current selection
+  const isBackgroundAllowed = () => {
+    if (!currentPokemonData || !currentPokemonData.backgrounds) return false;
+    if (!costume) {
+      return currentPokemonData.backgrounds.some(
+        (bg) => bg.costume_id === null
+      );
+    }
+    const selectedCostumeId = availableCostumes.find((c) => c.name === costume)?.costume_id;
+    return currentPokemonData.backgrounds.some(
+      (bg) => bg.costume_id === selectedCostumeId || bg.costume_id === null
+    );
+  };
 
-  // Determine if Dynamax is available
-  const canDynamax = hasDynamax || hasGigantamax; // If either is available
+  const selectedCostumeId = availableCostumes.find((c) => c.name === costume)?.costume_id;
+  const canDynamax = hasDynamax || hasGigantamax;
 
   return (
     <div className="pokemon-variant-container">
       <div className="main-content">
-        {/* Fixed Width Column for Details */}
         <div className="pokemon-variant-details">
           <h3>Pokémon Variant</h3>
           <div className="pokemon-search-row">
@@ -319,7 +388,7 @@ const VariantSearch = ({
             {suggestions.length > 0 && (
               <ul
                 className="autocomplete-suggestions"
-                onMouseDown={(e) => e.preventDefault()} // Prevent blur when clicking a suggestion
+                onMouseDown={(e) => e.preventDefault()} 
               >
                 {suggestions.map((suggestion, index) => (
                   <li key={index} onClick={() => handleSuggestionClick(suggestion)}>
@@ -329,6 +398,7 @@ const VariantSearch = ({
               </ul>
             )}
           </div>
+
           <div className="button-container">
             <button
               onClick={handleShinyChange}
@@ -348,8 +418,8 @@ const VariantSearch = ({
             >
               <img src="/images/shadow_icon.png" alt="Toggle Shadow" />
             </button>
-            
           </div>
+
           {availableForms.length > 0 && (
             <Dropdown
               label="Form"
@@ -364,15 +434,14 @@ const VariantSearch = ({
             <Dropdown
               label="Costume"
               value={costume}
-              options={availableCostumes.map((costume) => costume.name)}
+              options={availableCostumes.map((c) => c.name)}
               handleChange={handleCostumeChange}
               formatLabel={formatCostumeName}
               className="costume-dropdown"
             />
           )}
         </div>
-  
-        {/* Fixed Width Column for Image */}
+
         <div className="pokemon-variant-image">
           {selectedBackground && (
             <div
@@ -387,12 +456,12 @@ const VariantSearch = ({
               onError={handleImageError}
               className="pokemon-image"
             />
-            
           ) : imageError ? (
             <div className="pokemon-variant-image-error">
               This variant doesn't exist.
             </div>
           ) : null}
+
           {dynamax && (
             <img 
               src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
@@ -408,83 +477,79 @@ const VariantSearch = ({
             />
           )}
         </div>
-  
-        {/* Fixed Width Column for Moves, Gender, and Background */}
+
         <div className="pokemon-moves-gender-section">
           <MovesSearch
-            pokemon={currentPokemonData || { moves: [{ name: 'Any Move', move_id: 0 }] }} // Always pass default moves even if no Pokémon is selected
+            pokemon={
+              currentPokemonData ||
+              { moves: [{ name: 'Any Move', move_id: 0 }] }
+            }
             selectedMoves={selectedMoves}
             onMovesChange={handleMovesChange}
           />
 
-            {/* Container for Gender and Background Search */}
-            <div className="gender-background-row">
-              {/* Gender Search Component */}
-              <GenderSearch
-                genderRate={currentPokemonData ? currentPokemonData.gender_rate : null}
-                selectedGender={selectedGender} // Pass the current selectedGender state
-                onGenderChange={handleGenderChange} // Pass handleGenderChange to GenderSearch
-              />
-              {/* Background Button to Open Overlay */}
-              {isBackgroundAllowed() && (
-                <div className="background-button-container">
-                  <img
-                    src="/images/location.png" // Use location.png for the background button
-                    alt="Background Selector"
-                    className="background-button"
-                    onClick={() => setShowBackgroundOverlay(true)}
-                  />
-                </div>
-              )}
-              {/* Dynamax/Gigantamax Toggle Button */}
-              {canDynamax && (
+          <div className="gender-background-row">
+            <GenderSearch
+              genderRate={currentPokemonData ? currentPokemonData.gender_rate : null}
+              selectedGender={selectedGender}
+              onGenderChange={handleGenderChange}
+            />
+
+            {isBackgroundAllowed() && (
+              <div className="background-button-container">
                 <img
-                  onClick={toggleMax}
-                  src={
-                    gigantamax
-                      ? '/images/gigantamax-icon.png'
-                      : dynamax
-                      ? '/images/dynamax-icon.png'
-                      : '/images/dynamax-icon.png' // Default to Dynamax icon
-                  }
-                  alt={
-                    gigantamax
-                      ? 'Gigantamax'
-                      : dynamax
-                      ? 'Dynamax'
-                      : 'Dynamax (Desaturated)'
-                  }
-                  className={`max-icon ${
-                    !gigantamax && !dynamax ? 'desaturated' : ''
-                  }`}
-                  title={
-                    gigantamax
-                      ? 'Gigantamax'
-                      : dynamax
-                      ? 'Dynamax'
-                      : 'Dynamax (Desaturated)'
-                  }
+                  src="/images/location.png"
+                  alt="Background Selector"
+                  className="background-button"
+                  onClick={() => setShowBackgroundOverlay(true)}
                 />
-              )}
-            </div>
+              </div>
+            )}
+
+            {canDynamax && (
+              <img
+                onClick={toggleMax}
+                src={
+                  gigantamax
+                    ? '/images/gigantamax-icon.png'
+                    : dynamax
+                    ? '/images/dynamax-icon.png'
+                    : '/images/dynamax-icon.png'
+                }
+                alt={gigantamax ? 'Gigantamax' : dynamax ? 'Dynamax' : 'Dynamax (Desaturated)'}
+                className={`max-icon ${!gigantamax && !dynamax ? 'desaturated' : ''}`}
+                title={gigantamax ? 'Gigantamax' : dynamax ? 'Dynamax' : 'Dynamax (Desaturated)'}
+              />
+            )}
           </div>
+        </div>
       </div>
 
-      {/* Background Overlay */}
       {showBackgroundOverlay && (
-        <div className="background-overlay" onClick={() => setShowBackgroundOverlay(false)}>
-          <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-button" onClick={() => setShowBackgroundOverlay(false)}>Close</button>
+        <div
+          className="background-overlay"
+          onClick={() => setShowBackgroundOverlay(false)}
+        >
+          <div
+            className="background-overlay-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="close-button"
+              onClick={() => setShowBackgroundOverlay(false)}
+            >
+              Close
+            </button>
             <BackgroundSearch
               pokemon={currentPokemonData}
               onSelectBackground={handleBackgroundChange}
-              selectedCostumeId={selectedCostumeId} // Pass the costume ID to BackgroundSearch
+              selectedCostumeId={selectedCostumeId}
             />
           </div>
         </div>
       )}
     </div>
-  );  
+  );
 };
 
 export default VariantSearch;

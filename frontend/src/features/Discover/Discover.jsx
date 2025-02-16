@@ -6,8 +6,10 @@ import ListView from './views/ListView';
 import MapView from './views/MapView';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import axios from 'axios';
-import { getAllFromDB } from '../../services/indexedDB';
-import { useModal } from '../../contexts/ModalContext'; // adjust the path as needed
+
+// Import the context hook (ensure you’re using useContext inside your hook)
+import { usePokemonData } from '../../contexts/PokemonDataContext';
+import { useModal } from '../../contexts/ModalContext'; // adjust path if needed
 
 const Discover = () => {
   const [view, setView] = useState('list');
@@ -19,56 +21,50 @@ const Discover = () => {
   const [pokemonCache, setPokemonCache] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [scrollToTopTrigger, setScrollToTopTrigger] = useState(0);
-  
-  // Add refs for the container and to track if we should scroll
+
+  // Get pokedexLists from the PokemonDataContext
+  const { variants, pokedexLists } = usePokemonData();
+
+  // Refs for scrolling
   const containerRef = useRef(null);
   const shouldScrollRef = useRef(false);
 
   const { alert } = useModal();
 
-  const fetchPokemonVariantsCache = async () => {
-    try {
-      const variants = await getAllFromDB('pokemonVariants');
-      if (variants && variants.length > 0) {
-        setPokemonCache(variants);
-        console.log('Fetched pokemonVariants from IndexedDB:', variants);
-      } else {
-        console.warn('No pokemonVariants found in IndexedDB.');
-      }
-    } catch (error) {
-      console.error('Error fetching pokemonVariants from IndexedDB:', error);
-    }
-  };
-
+  // Instead of fetching from the DB, we now pull the default list from the context
   useEffect(() => {
-    fetchPokemonVariantsCache();
-  }, []);
+    if (pokedexLists) {
+      // Assumes that the default list is stored under the key "default"
+      setPokemonCache(pokedexLists.default || []);
+      console.log('Using default store from pokedexLists in context:', pokedexLists.default);
+    }
+  }, [pokedexLists]);
 
-  // Add useEffect to handle scrolling after results are updated
+  // Handle scrolling when new results arrive
   useEffect(() => {
     if (shouldScrollRef.current && searchResults.length > 0) {
       setTimeout(() => {
         if (containerRef.current) {
-          const offset = 50; // Adjust this value as needed
+          const offset = 50; // adjust as needed
           const rect = containerRef.current.getBoundingClientRect();
           const absoluteTop = rect.top + window.pageYOffset - offset;
           window.scrollTo({
             top: absoluteTop,
-            behavior: 'smooth'
+            behavior: 'smooth',
           });
         }
         shouldScrollRef.current = false;
       }, 100);
     }
-  }, [searchResults]);  
+  }, [searchResults]);
 
   const handleSearch = async (queryParams, boundaryWKT) => {
     setErrorMessage('');
     setIsLoading(true);
     setHasSearched(true);
     setOwnershipStatus(queryParams.ownership);
-    shouldScrollRef.current = true; // Set flag to scroll after results
-  
+    shouldScrollRef.current = true;
+
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_DISCOVER_API_URL}/discoverPokemon`,
@@ -77,24 +73,23 @@ const Discover = () => {
           withCredentials: true,
         }
       );
-  
+
       if (response.status === 200) {
         let data = response.data;
         const dataArray = Array.isArray(data) ? data : Object.values(data);
-  
+
         if (dataArray && dataArray.length > 0) {
+          // Enrich the data using the default list from context
           const enrichedData = [];
-          const pokemonDataStored = JSON.parse(localStorage.getItem('pokemonData'));
-  
-          if (pokemonDataStored && pokemonDataStored.data) {
-            const pokemonDataArray = pokemonDataStored.data;
-  
+
+          if (pokemonCache && pokemonCache.length > 0) {
             for (const item of dataArray) {
               if (item.pokemon_id) {
-                const pokemonInfo = pokemonDataArray.find(
+                // Match the item by pokemon_id in the default list array
+                const pokemonInfo = pokemonCache.find(
                   (p) => p.pokemon_id === item.pokemon_id
                 );
-  
+
                 if (pokemonInfo) {
                   enrichedData.push({
                     ...item,
@@ -104,8 +99,9 @@ const Discover = () => {
                 }
               }
             }
-  
+
             if (enrichedData.length > 0) {
+              // Sort by distance
               enrichedData.sort((a, b) => a.distance - b.distance);
               setSearchResults(enrichedData);
               setScrollToTopTrigger((prev) => prev + 1);
@@ -115,7 +111,7 @@ const Discover = () => {
               setIsCollapsed(false);
             }
           } else {
-            setErrorMessage('pokemonData is not properly formatted in localStorage.');
+            setErrorMessage('No data found in the default store of PokemonDataContext.');
             setIsCollapsed(false);
           }
         } else {
@@ -128,19 +124,16 @@ const Discover = () => {
       }
     } catch (error) {
       console.error('Error during API request:', error);
-  
-      // Trigger the modal alert immediately on a 403 error
       if (error.response?.status === 403) {
         await alert('You must be logged in to perform this search.');
       } else {
         await alert('An error occurred while searching. Please try again.');
       }
-  
       setIsCollapsed(false);
     } finally {
       setIsLoading(false);
     }
-  };  
+  };
 
   return (
     <div>
@@ -152,11 +145,15 @@ const Discover = () => {
         setView={setView}
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
+        pokemonCache={pokemonCache}
       />
 
       {/* Render error message at the top */}
       {errorMessage && (
-        <div className="error-message" style={{ color: 'red', padding: '1rem', textAlign: 'center' }}>
+        <div
+          className="error-message"
+          style={{ color: 'red', padding: '1rem', textAlign: 'center' }}
+        >
           {errorMessage}
         </div>
       )}
@@ -169,14 +166,14 @@ const Discover = () => {
             data={searchResults}
             ownershipStatus={ownershipStatus}
             hasSearched={hasSearched}
-            pokemonCache={pokemonCache}
+            pokemonCache={variants}
             scrollToTopTrigger={scrollToTopTrigger}
           />
         ) : (
           <MapView 
             data={searchResults} 
             ownershipStatus={ownershipStatus} 
-            pokemonCache={pokemonCache} 
+            pokemonCache={variants} 
           />
         )}
       </div>

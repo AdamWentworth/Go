@@ -39,24 +39,21 @@ const LocationSearch = ({
   const selectSuggestion = (suggestion) => {
     const formattedLocation = suggestion.displayName;
     setCity(formattedLocation);
-
-    // Set coordinates as before
+  
+    // Set coordinates if available
     if (suggestion.latitude && suggestion.longitude) {
       setCoordinates({ latitude: suggestion.latitude, longitude: suggestion.longitude });
     } else {
       setCoordinates({ latitude: null, longitude: null });
     }
-
-    // Update local boundary
-    setSelectedBoundary(suggestion.boundary);
-
-    // Also update the parent boundary state:
+  
+    // Only update the boundary if setSelectedBoundary is a function
     if (typeof setSelectedBoundary === 'function') {
       setSelectedBoundary(suggestion.boundary);
     }
-
+  
     setSuggestions([]);
-  };
+  };  
 
   const toggleUseCurrentLocation = () => {
     const newUseCurrentLocation = !useCurrentLocation;

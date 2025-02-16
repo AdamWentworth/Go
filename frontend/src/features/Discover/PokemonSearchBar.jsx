@@ -7,7 +7,15 @@ import OwnershipSearch from './SearchParameters/OwnershipSearch';
 import './PokemonSearchBar.css';
 import { FaChevronUp, FaChevronDown, FaList, FaGlobe } from 'react-icons/fa';
 
-const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, setIsCollapsed }) => {
+const PokemonSearchBar = ({
+  onSearch,
+  isLoading,
+  view,
+  setView,
+  isCollapsed,
+  setIsCollapsed,
+  pokemonCache,
+}) => {
   const [pokemon, setPokemon] = useState('');
   const [isShiny, setIsShiny] = useState(false);
   const [isShadow, setIsShadow] = useState(false);
@@ -32,59 +40,52 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
   const [isHundo, setIsHundo] = useState(false);
   const [onlyMatchingTrades, setOnlyMatchingTrades] = useState(false);
 
-  // Add states for 'wanted' parameters
+  // 'wanted' parameters
   const [prefLucky, setPrefLucky] = useState(false);
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const [tradeInWantedList, setTradeInWantedList] = useState(false);
   const [friendshipLevel, setFriendshipLevel] = useState(0);
 
   const [errorMessage, setErrorMessage] = useState('');
-  const [isMidWidth, setIsMidWidth] = useState(false); // Add this to track window width
+  const [isMidWidth, setIsMidWidth] = useState(false);
 
-  const collapsibleRef = useRef(null); // Add a ref for the collapsible container
+  const collapsibleRef = useRef(null);
+  const searchTriggeredRef = useRef(false);
 
-  const [boundary, setBoundary] = useState(null);
+  // Removed local state for pokedexDefault and its fetching logic.
+  // We'll use the pokemonCache prop directly.
 
-  const searchTriggeredRef = useRef(false); // Add this ref
-
+  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       setIsMidWidth(window.innerWidth >= 1024 && window.innerWidth <= 1439);
     };
-
-    // Set initial state
     handleResize();
-
-    // Add event listener to track resizing
     window.addEventListener('resize', handleResize);
-
-    // Cleanup the event listener
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Handle auto-resizing of collapsible container
   useEffect(() => {
     if (!collapsibleRef.current || isCollapsed) return;
-  
+
     const contentElement = collapsibleRef.current.querySelector('.content');
     if (!contentElement) return;
-  
+
     const observer = new ResizeObserver(() => {
       if (!isCollapsed && collapsibleRef.current) {
-        // Smoothly adjust height to new content size
         collapsibleRef.current.style.maxHeight = `${collapsibleRef.current.scrollHeight}px`;
       }
     });
-  
+
     observer.observe(contentElement);
     return () => observer.disconnect();
   }, [isCollapsed]);
 
+  // Animate open/close
   useEffect(() => {
     if (collapsibleRef.current) {
       if (!isCollapsed) {
-        // Set initial height and enable transition
         collapsibleRef.current.style.maxHeight = `${collapsibleRef.current.scrollHeight}px`;
         setTimeout(() => {
           if (!isCollapsed && collapsibleRef.current) {
@@ -92,23 +93,19 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
           }
         }, 600);
       } else {
-        // Collapse smoothly
         collapsibleRef.current.style.maxHeight = '0px';
         collapsibleRef.current.style.overflow = 'hidden';
       }
     }
-  }, [isCollapsed]); 
+  }, [isCollapsed]);
 
-  // Function to handle scroll event
+  // Collapse when scrolling
   const handleScroll = () => {
     const searchBar = collapsibleRef.current;
     const searchBarHeight = searchBar ? searchBar.offsetHeight : 0;
     const searchBarBottom = searchBar ? searchBar.offsetTop + searchBarHeight : 0;
+    const adjustedCollapsePoint = searchBarBottom - searchBarHeight * 0.15;
 
-    // Adjust collapse point by 25% of the search bar height
-    const adjustedCollapsePoint = searchBarBottom - (searchBarHeight * .15);
-
-    // Collapse the search bar when the user scrolls past the adjusted point
     if (window.scrollY > adjustedCollapsePoint) {
       setIsCollapsed(true);
     } else if (window.scrollY === 0) {
@@ -121,67 +118,58 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
     }
   };
 
-  // useEffect to add and clean up the scroll event listener
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
-
-    // Cleanup listener on component unmount
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
 
-
   const handleSearch = async () => {
     setErrorMessage('');
-  
-    // Check if shadow Pokémon are selected for trade or wanted
+
     if (isShadow && (ownershipStatus === 'trade' || ownershipStatus === 'wanted')) {
       setErrorMessage('Shadow Pokémon cannot be listed for trade or wanted');
       return;
     }
-  
+
     if (!pokemon) {
       setErrorMessage('Please provide a Pokémon name.');
       return;
     }
-  
+
     if (!useCurrentLocation && (!city || !coordinates.latitude || !coordinates.longitude)) {
       setErrorMessage('Please provide a location or use your current location.');
       return;
     }
-  
-    let locationCoordinates = coordinates; // Now directly from LocationSearch
-  
-    const storedData = localStorage.getItem('pokemonData');
-    if (!storedData) {
-      setErrorMessage('No Pokémon data found in local storage.');
+
+    // Use the passed pokemonCache directly
+    if (!pokemonCache || pokemonCache.length === 0) {
+      setErrorMessage('No Pokémon data found in the default store.');
       return;
     }
-  
-    const pokemonData = JSON.parse(storedData).data;
-  
-    const matchingPokemon = pokemonData.find(
+
+    // Find the matching Pokémon by name & form in the pokemonCache array
+    const matchingPokemon = pokemonCache.find(
       (p) =>
         p.name?.toLowerCase() === pokemon.toLowerCase() &&
         (!selectedForm || p.form?.toLowerCase() === selectedForm.toLowerCase())
     );
-  
+
     if (!matchingPokemon) {
-      setErrorMessage('No matching Pokémon found.');
+      setErrorMessage('No matching Pokémon found in the default list.');
       setIsCollapsed(false);
       return;
     }
-  
+
     const { pokemon_id } = matchingPokemon;
-  
+
+    // Try to match the chosen costume (if any)
     const matchingCostume = matchingPokemon.costumes?.find((c) => c.name === costume);
     const costume_id = matchingCostume ? matchingCostume.costume_id : null;
-  
+
     const queryParams = {
       pokemon_id,
       shiny: isShiny,
@@ -200,45 +188,48 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
       friendship_level: friendshipLevel,
       already_registered: alreadyRegistered ? true : null,
       trade_in_wanted_list: tradeInWantedList ? true : null,
-      latitude: locationCoordinates.latitude,
-      longitude: locationCoordinates.longitude,
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
       ownership: ownershipStatus,
       range_km: range,
       limit: resultsLimit,
-      dynamax: dynamax,
-      gigantamax: gigantamax,
+      dynamax,
+      gigantamax,
     };
-  
-    // Set irrelevant parameters to null based on ownershipStatus
+
+    // Clear out irrelevant params based on ownership
     if (ownershipStatus !== 'owned') {
       queryParams.attack_iv = null;
       queryParams.defense_iv = null;
       queryParams.stamina_iv = null;
     }
-  
+
     if (ownershipStatus !== 'trade') {
       queryParams.only_matching_trades = null;
     }
-  
+
     if (ownershipStatus !== 'wanted') {
       queryParams.pref_lucky = null;
       queryParams.friendship_level = null;
       queryParams.already_registered = null;
       queryParams.trade_in_wanted_list = null;
     }
-  
+
     console.log('Search Query Parameters:', queryParams);
-  
-    // Call onSearch and collapse the search bar upon success
-    onSearch(queryParams, boundary);
+
+    // Call the parent onSearch with the constructed queryParams
+    onSearch(queryParams, null); // Pass boundary if needed
     setIsCollapsed(true);
-    searchTriggeredRef.current = true; // Mark search as trigger
-    window.scrollTo({ top: 0, behavior: 'smooth' }); // Add smooth scroll
+    searchTriggeredRef.current = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
     <div className="pokemon-search-bar sticky">
-      <div ref={collapsibleRef} className={`collapsible-container ${isCollapsed ? 'collapsed' : ''}`}>
+      <div
+        ref={collapsibleRef}
+        className={`collapsible-container ${isCollapsed ? 'collapsed' : ''}`}
+      >
         <div className="search-bar-container content">
           <div className="pokemon-variant">
             <VariantSearch
@@ -262,6 +253,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
               setDynamax={setDynamax}
               gigantamax={gigantamax}
               setGigantamax={setGigantamax}
+              pokemonCache={pokemonCache}
             />
           </div>
 
@@ -282,7 +274,6 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
                   isLoading={isLoading}
                   view={view}
                   setView={setView}
-                  setSelectedBoundary={setBoundary}
                 />
               </div>
 
@@ -300,7 +291,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
                   setPrefLucky={setPrefLucky}
                   alreadyRegistered={alreadyRegistered}
                   setAlreadyRegistered={setAlreadyRegistered}
-                  tradeInWantedList={tradeInWantedList}
+                  trade_in_wanted_list={tradeInWantedList}
                   setTradeInWantedList={setTradeInWantedList}
                   friendshipLevel={friendshipLevel}
                   setFriendshipLevel={setFriendshipLevel}
@@ -324,7 +315,6 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
                   isLoading={isLoading}
                   view={view}
                   setView={setView}
-                  setSelectedBoundary={setBoundary}
                 />
               </div>
 
@@ -342,7 +332,7 @@ const PokemonSearchBar = ({ onSearch, isLoading, view, setView, isCollapsed, set
                   setPrefLucky={setPrefLucky}
                   alreadyRegistered={alreadyRegistered}
                   setAlreadyRegistered={setAlreadyRegistered}
-                  tradeInWantedList={tradeInWantedList}
+                  trade_in_wanted_list={tradeInWantedList}
                   setTradeInWantedList={setTradeInWantedList}
                   friendshipLevel={friendshipLevel}
                   setFriendshipLevel={setFriendshipLevel}
