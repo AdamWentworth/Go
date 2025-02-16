@@ -6,12 +6,10 @@ import './Navbar.css';
 import { useAuth } from '../contexts/AuthContext';
 import MainButtons from './MainButtons';
 import { useTheme } from '../contexts/ThemeContext';
-import UserSearchContext from '../contexts/UserSearchContext'; // Import the context, not the provider
 
 function Navbar() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { fetchUserOwnershipData } = useContext(UserSearchContext); // Use UserSearchContext instead of UserSearchProvider
     const logoUrl = process.env.PUBLIC_URL + '/images/logo/logo.png';
     const { isLoggedIn } = useAuth();
     const { isLightMode, toggleTheme } = useTheme();

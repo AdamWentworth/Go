@@ -19,7 +19,6 @@ export function UserSearchProvider({ children }) {
   const fetchUserOwnershipData = async (
     searchedUsername,
     setOwnershipFilter,
-    setShowAll,
     defaultFilter = 'Owned'
   ) => {
     // console.log('[UserSearchContext] Setting ownership filter:', defaultFilter);
@@ -77,7 +76,6 @@ export function UserSearchProvider({ children }) {
           setUserExists(true);
           setCanonicalUsername(cachedData.username);
           if (setOwnershipFilter) setOwnershipFilter(defaultFilter);
-          if (setShowAll) setShowAll(true);
           setViewedLoading(false);
           return cachedData.username;
         } else {
@@ -104,8 +102,6 @@ export function UserSearchProvider({ children }) {
           // console.log('[UserSearchContext] Setting filter to:', defaultFilter);
           setOwnershipFilter(defaultFilter);
         }
-        if (setShowAll) setShowAll(true);
-
         // Grab the ETag from the response, if it exists
         const responseEtag = response.headers.get('ETag') || null;
 

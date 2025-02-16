@@ -86,13 +86,16 @@ function Collection({ isOwnCollection }) {
   };
 
   useEffect(() => {
-    // On mount or whenever pokedexLists change,
-    // set the default list to "default" from Pokedex (if available).
-    if (pokedexLists?.default) {
+    if (isUsernamePath) {
+      // If viewing another user's collection, use all variants as the selected list.
+      setSelectedPokedexList(variants);
+      setDefaultListLoaded(true);
+    } else if (pokedexLists?.default) {
+      // Otherwise, use the default list from pokedexLists.
       setSelectedPokedexList(pokedexLists.default);
       setDefaultListLoaded(true);
     }
-  }, [pokedexLists]);
+  }, [isUsernamePath, variants, pokedexLists]);  
 
   // Handler called when user clicks in PokedexListsMenu
   const handlePokedexMenuClick = (listData) => {
@@ -165,6 +168,9 @@ function Collection({ isOwnCollection }) {
     }),
     [selectedGeneration, searchTerm, pokemonTypes, generations]
   );
+
+  console.log(activeLists)
+  console.log(ownershipData)
 
   const baseVariants = lastMenu === 'pokedex' ? selectedPokedexList : variants;
 
