@@ -89,6 +89,7 @@
 
 .trade-details-container h2 {
     margin: 10px 0px -10px;
+    text-align: center;
 }
 
 .for-trade h2 {
@@ -198,6 +199,7 @@
 
 .include-only-header-group.include-few h3 {
     margin-bottom: 3px;
+    text-align: center;
 }
 
 .trade-details-container .top-row.few-wanted {

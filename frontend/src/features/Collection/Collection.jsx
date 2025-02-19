@@ -169,8 +169,8 @@ function Collection({ isOwnCollection }) {
     [selectedGeneration, searchTerm, pokemonTypes, generations]
   );
 
-  console.log(activeLists)
-  console.log(ownershipData)
+  // console.log(activeLists)
+  // console.log(ownershipData)
 
   const baseVariants = lastMenu === 'pokedex' ? selectedPokedexList : variants;
 
