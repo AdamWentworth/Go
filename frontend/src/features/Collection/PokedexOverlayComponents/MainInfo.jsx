@@ -2,7 +2,6 @@
 
 import React from 'react';
 import './MainInfo.css';
-import { generateH2Content } from '../../../utils/formattingHelpers';
 
 function MainInfo({ pokemon, isMale, toggleGender }) {
   const maleIcon = `/images/male-icon.png`;   // Male icon location
@@ -18,20 +17,29 @@ function MainInfo({ pokemon, isMale, toggleGender }) {
     return `${(stat / maxStat) * 100}%`;
   };
 
-  const baseName = pokemon.variantType.includes("mega") ? pokemon.name : getBaseName(pokemon.name);
+  // Helper function for dynamic rounding. 
+  // This uses toPrecision to eliminate floating‑point imprecision while preserving significant digits.
+  const formatNumber = (num) => {
+    if (typeof num !== 'number') return num;
+    return parseFloat(num.toPrecision(12));
+  };
+
+  const baseName = pokemon.variantType.includes("mega")
+    ? pokemon.name
+    : getBaseName(pokemon.name);
 
   return (
     <div className="column main-info-column">
       <div className="header-section">
         <h1>Main Info</h1>
-          {pokemon.rarity && pokemon.rarity.includes("Regional") && (
-            <img 
-              src="/images/regional.png" 
-              alt="Regional" 
-              className="regional-icon" 
-              title="Regional" 
-            />
-          )}
+        {pokemon.rarity && pokemon.rarity.includes("Regional") && (
+          <img 
+            src="/images/regional.png" 
+            alt="Regional" 
+            className="regional-icon" 
+            title="Regional" 
+          />
+        )}
       </div>
       
       <img 
@@ -48,7 +56,7 @@ function MainInfo({ pokemon, isMale, toggleGender }) {
           className="gender-toggle-icon" 
           role="button" 
           aria-label={`Toggle gender to ${isMale ? 'Female' : 'Male'}`}
-          style={{ cursor: 'pointer' }}  // Add custom styling as necessary
+          style={{ cursor: 'pointer' }} 
         />
       )}
       <div className="type-section">
@@ -62,19 +70,28 @@ function MainInfo({ pokemon, isMale, toggleGender }) {
       <div className="stat-gauge">
         <div className="stat-text"><strong>Attack:</strong> {pokemon.attack}</div>
         <div className="gauge-container">
-          <div className="gauge" style={{ width: calculateWidth(pokemon.attack, 450), backgroundColor: '#ae4c4c' }}></div>
+          <div 
+            className="gauge" 
+            style={{ width: calculateWidth(pokemon.attack, 450), backgroundColor: '#ae4c4c' }}
+          ></div>
         </div>
       </div>
       <div className="stat-gauge">
         <div className="stat-text"><strong>Defense:</strong> {pokemon.defense}</div>
         <div className="gauge-container">
-          <div className="gauge" style={{ width: calculateWidth(pokemon.defense, 400), backgroundColor: '#4cae4f' }}></div>
+          <div 
+            className="gauge" 
+            style={{ width: calculateWidth(pokemon.defense, 400), backgroundColor: '#4cae4f' }}
+          ></div>
         </div>
       </div>
       <div className="stat-gauge">
         <div className="stat-text"><strong>Stamina:</strong> {pokemon.stamina}</div>
         <div className="gauge-container">
-          <div className="gauge" style={{ width: calculateWidth(pokemon.stamina, 500), backgroundColor: '#4c7aae' }}></div>
+          <div 
+            className="gauge" 
+            style={{ width: calculateWidth(pokemon.stamina, 500), backgroundColor: '#4c7aae' }}
+          ></div>
         </div>
       </div>
 
@@ -84,6 +101,35 @@ function MainInfo({ pokemon, isMale, toggleGender }) {
       <div className="cp">
         <strong>Level 50 Max CP:</strong> {pokemon.cp50}
       </div>
+
+      {pokemon.sizes && (
+        <div className="sizes-section">
+          <div className="size-details">
+            {/* Weights on the left */}
+            <div className="weight-ranges">
+              <h3>Weight</h3>
+              <ul>
+                <li><strong>Average:</strong> {formatNumber(pokemon.sizes.pokedex_weight)} kg</li>
+                <li><strong>XXS:</strong> &lt; {formatNumber(pokemon.sizes.weight_xxs_threshold)} kg</li>
+                <li><strong>XS:</strong> &lt; {formatNumber(pokemon.sizes.weight_xs_threshold)} kg</li>
+                <li><strong>XL:</strong> &gt; {formatNumber(pokemon.sizes.weight_xl_threshold)} kg</li>
+                <li><strong>XXL:</strong> &gt; {formatNumber(pokemon.sizes.weight_xxl_threshold)} kg</li>
+              </ul>
+            </div>
+            {/* Heights on the right */}
+            <div className="height-ranges">
+              <h3>Height</h3>
+              <ul>
+                <li><strong>Average:</strong> {formatNumber(pokemon.sizes.pokedex_height)} m</li>
+                <li><strong>XXS:</strong> &lt; {formatNumber(pokemon.sizes.height_xxs_threshold)} m</li>
+                <li><strong>XS:</strong> &lt; {formatNumber(pokemon.sizes.height_xs_threshold)} m</li>
+                <li><strong>XL:</strong> &gt; {formatNumber(pokemon.sizes.height_xl_threshold)} m</li>
+                <li><strong>XXL:</strong> &gt; {formatNumber(pokemon.sizes.height_xxl_threshold)} m</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

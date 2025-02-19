@@ -95,3 +95,47 @@
     height: 40px; /* Set your desired height */
     transform: translate(-10px, -10px); /* Optional: fine-tune position, negative X moves left, positive Y moves down */
 }
+
+.main-info-column .size-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+  
+.main-info-column .weight-ranges,
+.main-info-column .height-ranges {
+    flex: 1;
+}
+  
+.main-info-column .weight-ranges h3,
+.main-info-column .height-ranges h3 {
+    text-align: center;
+    margin-block-start: 0px;
+    margin-block-end: 0px;
+}
+  
+.main-info-column .weight-ranges ul,
+.main-info-column .height-ranges ul {
+    list-style: none;
+    padding: 0;
+    margin-block-start: 0px;
+    margin-block-end: 0px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Prevent list items from wrapping */
+.main-info-column .weight-ranges ul li,
+.main-info-column .height-ranges ul li {
+    white-space: nowrap;
+}
+
+/* Add a small gap after the Average (first li) and after XS (third li) */
+.main-info-column .weight-ranges ul li:nth-child(1),
+.main-info-column .height-ranges ul li:nth-child(1),
+.main-info-column .weight-ranges ul li:nth-child(3),
+.main-info-column .height-ranges ul li:nth-child(3) {
+    margin-bottom: 5px; /* Adjust the gap as needed */
+}

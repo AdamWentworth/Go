@@ -12,9 +12,15 @@ const MaxComponent = ({
     onToggleMax,
     showMaxOptions // New prop to indicate the current state
 }) => {
+    // Only render if the variantType includes 'dynamax' or 'gigantamax'
+    const hasMaxVariant =
+        pokemon.variantType &&
+        (pokemon.variantType.includes('dynamax') || pokemon.variantType.includes('gigantamax'));
+
     // Early return if conditions are not met
     if (
         !editMode || 
+        !hasMaxVariant || // Ensure the variantType includes dynamax or gigantamax
         !Array.isArray(pokemon.max) || 
         pokemon.max.length === 0 || 
         pokemon.ownershipStatus.shadow || 
@@ -22,7 +28,7 @@ const MaxComponent = ({
         (pokemon.variantType && pokemon.variantType.includes('costume'))
     ) {
         return null;
-    }      
+    }       
 
     const maxEntry = pokemon.max[0];
     if (!maxEntry) return null;
