@@ -3,7 +3,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import './WeightComponent.css';
 
 const WeightComponent = ({ pokemon, editMode, onWeightChange }) => {
-  const [weight, setWeight] = useState(pokemon.ownershipStatus.weight ? String(pokemon.ownershipStatus.weight) : '');
+  const [weight, setWeight] = useState(
+    pokemon.ownershipStatus.weight ? String(pokemon.ownershipStatus.weight) : ''
+  );
   const editableRef = useRef(null);
 
   // Helper function to move cursor to end
@@ -49,9 +51,24 @@ const WeightComponent = ({ pokemon, editMode, onWeightChange }) => {
     }
   }, [editMode]);
 
-  // New behavior: If weight is null or empty and editMode is off, render nothing
+  // If weight is null or empty and not in edit mode, render nothing.
   if (!editMode && !weight) {
     return null;
+  }
+
+  // Determine the weight category tag based on pokemon.sizes thresholds.
+  const weightVal = parseFloat(weight);
+  let weightCategory = '';
+  if (!isNaN(weightVal) && pokemon.sizes) {
+    if (weightVal < pokemon.sizes.weight_xxs_threshold) {
+      weightCategory = 'XXS';
+    } else if (weightVal < pokemon.sizes.weight_xs_threshold) {
+      weightCategory = 'XS';
+    } else if (weightVal > pokemon.sizes.weight_xxl_threshold) {
+      weightCategory = 'XXL';
+    } else if (weightVal > pokemon.sizes.weight_xl_threshold) {
+      weightCategory = 'XL';
+    }
   }
 
   return (
@@ -73,6 +90,10 @@ const WeightComponent = ({ pokemon, editMode, onWeightChange }) => {
             <span className="weight-editable-content">{weight}</span>
           )}
           <span className="weight-suffix">kg</span>
+          {/* Display the weight category tag if determined */}
+          {weightCategory && (
+            <span className="weight-category-tag">{weightCategory}</span>
+          )}
         </div>
         <div className="weight-label">Weight</div>
       </div>

@@ -3,7 +3,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import './HeightComponent.css';
 
 const HeightComponent = ({ pokemon, editMode, onHeightChange }) => {
-  const [height, setHeight] = useState(pokemon.ownershipStatus.height ? String(pokemon.ownershipStatus.height) : '');
+  const [height, setHeight] = useState(
+    pokemon.ownershipStatus.height ? String(pokemon.ownershipStatus.height) : ''
+  );
   const editableRef = useRef(null);
 
   // Helper function to move cursor to end
@@ -21,7 +23,7 @@ const HeightComponent = ({ pokemon, editMode, onHeightChange }) => {
 
   useEffect(() => {
     if (editMode && editableRef.current) {
-      editableRef.current.innerText = height || ''; // Make sure it's never null
+      editableRef.current.innerText = height || '';
       setCaretToEnd();
     }
   }, [editMode, height]);
@@ -32,7 +34,7 @@ const HeightComponent = ({ pokemon, editMode, onHeightChange }) => {
       setHeight(newValue);
       onHeightChange(newValue);  // Notify parent component of the change
     } else {
-      event.target.innerText = height; // Revert if invalid
+      event.target.innerText = height;
     }
     setCaretToEnd();
   };
@@ -49,9 +51,24 @@ const HeightComponent = ({ pokemon, editMode, onHeightChange }) => {
     }
   }, [editMode]);
 
-  // New behavior: If height is null or empty and editMode is off, render nothing
+  // If height is null or empty and not in edit mode, render nothing.
   if (!editMode && !height) {
     return null;
+  }
+
+  // Determine the height category tag based on pokemon.sizes thresholds.
+  const heightVal = parseFloat(height);
+  let heightCategory = '';
+  if (!isNaN(heightVal) && pokemon.sizes) {
+    if (heightVal < pokemon.sizes.height_xxs_threshold) {
+      heightCategory = 'XXS';
+    } else if (heightVal < pokemon.sizes.height_xs_threshold) {
+      heightCategory = 'XS';
+    } else if (heightVal > pokemon.sizes.height_xxl_threshold) {
+      heightCategory = 'XXL';
+    } else if (heightVal > pokemon.sizes.height_xl_threshold) {
+      heightCategory = 'XL';
+    }
   }
 
   return (
@@ -70,9 +87,13 @@ const HeightComponent = ({ pokemon, editMode, onHeightChange }) => {
               {height}
             </span>
           ) : (
-            <span className="height-editable-content">{height ? height : ''}</span>
+            <span className="height-editable-content">{height}</span>
           )}
           <span className="height-suffix">m</span>
+          {/* Display the height category tag if determined */}
+          {heightCategory && (
+            <span className="height-category-tag">{heightCategory}</span>
+          )}
         </div>
         <div className="height-label">Height</div>
       </div>

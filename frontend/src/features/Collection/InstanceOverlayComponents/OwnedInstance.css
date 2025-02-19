@@ -175,6 +175,7 @@
   justify-content: space-between; /* Space between for gender and lucky components */
   width: 100%;
   position: relative; /* Allows centering of LevelComponent */
+  margin-bottom: 10px;
 }
 
 .owned-instance .level-component {

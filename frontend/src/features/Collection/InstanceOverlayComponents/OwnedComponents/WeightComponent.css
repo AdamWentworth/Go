@@ -1,48 +1,62 @@
 /* WeightComponent.css */
 .weight-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start; /* Align content to the start (left) */
-  }
-  
-  .weight-display {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .weight-editable-container {
-    display: flex;
-    align-items: center;
-    position: relative; /* Ensure relative positioning for absolute positioning of button */
-  }
-  
-  .weight-editable-content {
-    outline: none; /* Remove focus outline */
-    background: transparent; /* Ensure no background color */
-    border: 1px solid transparent; /* Transparent border that becomes visible in edit mode */
-    display: inline-block; /* Ensure the element behaves inline */
-    min-width: 10px; /* Ensure there's space for the cursor */
-    text-align: right; /* Align text to the right */
-    padding: 0 2px;
-    margin: 0 -1px;
-    line-height: 18px;
-    margin-bottom: -5px;
-    margin-right: -4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: -20px;
+}
+
+.weight-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.weight-editable-container {
+  display: flex;
+  align-items: center;
+  position: relative; /* For absolute positioning of the category tag */
+}
+
+.weight-editable-content {
+  outline: none; /* Remove focus outline */
+  background: transparent; /* Ensure no background color */
+  border: 1px solid transparent; /* Transparent border that becomes visible in edit mode */
+  display: inline-block; /* Ensure the element behaves inline */
+  min-width: 10px; /* Ensure there's space for the cursor */
+  text-align: right; /* Align text to the right */
+  padding: 0 2px;
+  margin: 0 -1px;
+  line-height: 18px;
+  margin-bottom: -5px;
+  margin-right: -4px;
 }
 
 .weight-editable-container.editable .weight-editable-content {
-  border-color: #a3a3a3; /* Solid border around the content to indicate editable mode */
-  border-radius: 2px; /* Optional: Rounds the corners of the border */
+  border-color: #a3a3a3; /* Solid border to indicate editable mode */
+  border-radius: 2px;
 }
-  
-  .weight-label {
-    font-size: 12px;
-    color: grey;
-    margin-top: 2px; /* Space between value and label */
-    text-align: center; /* Center the label text */
-  }
 
-  .weight-suffix {
-    margin-top: 4px;
-  }
+.weight-label {
+  font-size: 12px;
+  color: grey;
+  margin-top: 2px; /* Space between value and label */
+  text-align: center;
+}
+
+.weight-suffix {
+  margin-top: 4px;
+}
+
+/* Styles for the weight category tag (no pointer) */
+.weight-category-tag {
+  position: absolute;
+  top: -10px; /* Position above the weight text */
+  right: -20px;
+  background-color: teal;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+}

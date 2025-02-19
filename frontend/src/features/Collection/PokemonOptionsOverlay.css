@@ -37,6 +37,7 @@
     width: 100%;
     justify-content: space-between;
     align-items: stretch; /* Force columns to have the same height */
+    gap: 5px;
   }
   
   /* Each column is a flex container in column direction */
@@ -49,7 +50,6 @@
     justify-content: space-between;
     align-items: center;
     border-radius: 8px;
-    overflow: hidden; /* or overflow: auto */
   }  
   
   .pokemon-options-overlay .preview-column {
@@ -161,9 +161,6 @@
   
   /* Responsive layout for width <= 1023px */
 @media (min-width: 1023px) {
-  .pokemon-options-overlay .overlay-content {
-    width: 30%;
-  }
 }
 
 /* Responsive font sizes */
