@@ -240,18 +240,28 @@ const PokemonCard = ({
       <div className="cp-container">
         <div className="cp-display" style={{ zIndex: 3 }}>
           {ownershipFilter !== "" ? (
-            pokemon.ownershipStatus?.cp && (
+            pokemon.ownershipStatus?.cp ? (
               <>
                 <span className="cp-text">CP</span>
                 {pokemon.ownershipStatus.cp}
               </>
+            ) : (
+              // Render placeholder text that’s invisible but occupies space
+              <span style={{ visibility: 'hidden' }}>
+                <span className="cp-text">CP</span>000
+              </span>
             )
           ) : (
-            sortType === 'combatPower' && pokemon.cp50 != null && (
+            sortType === 'combatPower' && pokemon.cp50 != null ? (
               <>
                 <span className="cp-text">CP</span>
                 {pokemon.cp50}
               </>
+            ) : (
+              // Same invisible placeholder for consistent spacing
+              <span style={{ visibility: 'hidden' }}>
+                <span className="cp-text">CP</span>000
+              </span>
             )
           )}
         </div>
