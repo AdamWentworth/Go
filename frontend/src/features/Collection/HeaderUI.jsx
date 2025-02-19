@@ -66,9 +66,17 @@ const HeaderUI = ({
         </div>
       );
     }
+    // Check if a custom context is provided
+    const isCustomContext = React.isValidElement(contextText);
+    // Conditionally add a unique class if the contextText is provided ("THEIR POKÉMON")
+    const toggleTextClass = isCustomContext
+      ? "toggle-text toggle-text--theirs"
+      : "toggle-text";
     return (
       <div className="toggle-button" onClick={onListsButtonClick}>
-        <span className="toggle-text">MY POKÉMON</span>
+        <span className={toggleTextClass}>
+          {isCustomContext ? "THEIR POKÉMON" : "MY POKÉMON"}
+        </span>
       </div>
     );
   };

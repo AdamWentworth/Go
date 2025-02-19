@@ -143,6 +143,9 @@
     .header .toggle-button.custom-context-button {
         padding: 0.3rem 0rem;
     }
+    .header .toggle-text--theirs {
+        font-size: 0.7rem;
+    }
 }
 
 /* Rest of your media queries remain the same */
@@ -208,6 +211,9 @@
     .header .toggle-button.custom-context-button {
         padding: 0.3rem 0rem;
     }
+    .header .toggle-text--theirs {
+        font-size: 0.85rem;
+    }
 }
 
 @media (min-width: 1440px) {
@@ -233,6 +239,9 @@
     /* Remove padding when custom context is active */
     .header .toggle-button.custom-context-button {
         padding: 0.5rem 0rem;
+    }
+    .header .toggle-text--theirs {
+        font-size: 1.15rem;
     }
 }
 
