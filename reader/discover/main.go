@@ -31,9 +31,12 @@ func main() {
 	// Use CORS middleware
 	app.Use(corsMiddleware)
 
-	// Protected routes
-	protected := app.Group("/", verifyJWT) // JWT middleware to protect routes
-	protected.Get("/api/discoverPokemon/", SearchPokemonInstances)
+	// // Protected routes
+	// protected := app.Group("/", verifyJWT) // JWT middleware to protect routes
+	// protected.Get("/api/discoverPokemon/", SearchPokemonInstances)
+
+	// Unprotected route for discoverPokemon (no token validation)
+	app.Get("/api/discoverPokemon/", SearchPokemonInstances)
 
 	// Use fmt.Println for startup messages without time and log level
 	fmt.Println("Starting SearchPokemonInstances server at http://127.0.0.1:3006/")
@@ -44,4 +47,3 @@ func main() {
 		log.Fatal("Server failed to start", err)
 	}
 }
-
