@@ -10,11 +10,31 @@ import WantedDetails from './InstanceOverlayComponents/WantedComponents/WantedDe
 import WindowOverlay from './WindowOverlay';
 import CloseButton from '../../components/CloseButton';
 
-const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, ownershipData, sortType, sortMode, isEditable, username }) => {
+const InstanceOverlay = ({
+  pokemon,
+  onClose,
+  variants,
+  ownershipFilter,
+  lists,
+  ownershipData,
+  sortType,
+  sortMode,
+  isEditable,
+  username,
+}) => {
   console.log("Rendering InstanceOverlay for pokemon:", pokemon);
   const [currentOverlay, setCurrentOverlay] = useState(ownershipFilter);
   const [selectedPokemon, setSelectedPokemon] = useState(pokemon);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 686);
+
+  // NEW: State to disable pointer events briefly after mount
+  const [ignorePointerEvents, setIgnorePointerEvents] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIgnorePointerEvents(false);
+    }, 300); // 300ms delay; adjust as needed
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -22,7 +42,6 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
     };
 
     window.addEventListener('resize', handleResize);
-
     return () => {
       window.removeEventListener('resize', handleResize);
     };
@@ -59,7 +78,7 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
           </WindowOverlay>
         );
       case 'Unowned':
-        return <div>Unowned Instance Component</div>; // Placeholder for UnownedInstance component
+        return <div>Unowned Instance Component</div>;
       case 'Trade':
         return (
           <div className={`trade-instance-overlay ${isSmallScreen ? 'small-screen' : ''}`}>
@@ -113,12 +132,13 @@ const InstanceOverlay = ({ pokemon, onClose, variants, ownershipFilter, lists, o
 
   return (
     <OverlayPortal>
-    <div 
-      className={`instance-overlay ${currentOverlay === 'Owned' ? 'owned-overlay' : ''}`} 
-    >
-      {renderContent()}
-      {renderCloseButton()}
-    </div>
+      <div 
+        className={`instance-overlay ${currentOverlay === 'Owned' ? 'owned-overlay' : ''}`} 
+        style={{ pointerEvents: ignorePointerEvents ? 'none' : 'auto' }}
+      >
+        {renderContent()}
+        {renderCloseButton()}
+      </div>
     </OverlayPortal>
   );
 };

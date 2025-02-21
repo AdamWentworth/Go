@@ -20,6 +20,7 @@ const PokedexListsMenu = ({
     'mega',
     'dynamax',
     'gigantamax',
+    'fusion',
     'shadow costume',
   ];
   const rightColumnLists = [
@@ -28,7 +29,8 @@ const PokedexListsMenu = ({
     'shiny shadow',
     'shiny mega',
     'shiny dynamax',
-    'shiny gigantamax'
+    'shiny gigantamax',
+    'shiny fusion',
   ];
   const fullWidthList = 'all';
 
@@ -46,6 +48,8 @@ const PokedexListsMenu = ({
     'shiny dynamax': 'Shiny Dynamax',
     gigantamax: 'Gigantamax',
     'shiny gigantamax': 'Shiny Gigantamax',
+    fusion: 'Fusion',
+    'shiny fusion': 'Shiny Fusion',
     all: 'All'
   };
 
@@ -156,6 +160,22 @@ const PokedexListsMenu = ({
         />
       );
     }
+    if (lower.includes('fusion')) {
+      icons.push(
+        <img
+          key="fusion1"
+          src={`${process.env.PUBLIC_URL}/images/fusion_1.png`}
+          alt="Fusion1"
+          className="list-header-icon"
+        />,
+        <img
+          key="fusion2"
+          src={`${process.env.PUBLIC_URL}/images/fusion_2.png`}
+          alt="Fusion2"
+          className="list-header-icon"
+        />
+      );
+    }
     return icons;
   };
 
@@ -197,6 +217,43 @@ const PokedexListsMenu = ({
   const renderListItems = (listNames) => {
     return listNames.map((listName) => {
       const previewPokemon = renderListPreview(listName);
+      // Special handling for "shiny fusion"
+      if (listName.toLowerCase() === 'shiny fusion') {
+        const icons = renderHeaderIcons(listName);
+        // Expected: icons[0] is the Shiny icon,
+        // icons[1] and icons[2] are the fusion icons.
+        return (
+          <div
+            key={listName}
+            className="pokedex-list-item"
+            onClick={() => handleListClick(listName)}
+            tabIndex="0"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') handleListClick(listName);
+            }}
+          >
+            <div className={`pokedex-list-header ${getClassNameForList(listName)} fusion-header`}>
+              <span className="list-header-icon left">{icons[0]}</span>
+              <span className="list-header-text">
+                {displayNameMap[listName] || listName}
+              </span>
+              <span className="fusion-icons">
+                {icons[1]}
+                {icons[2]}
+              </span>
+            </div>
+            <div className="pokedex-pokemon-preview">
+              {renderListPreview(listName).length > 0 ? (
+                renderListPreview(listName)
+              ) : (
+                <p className="pokedex-no-pokemon-text">No Pokémon in this list</p>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // Default rendering for other list types
       const icons = renderHeaderIcons(listName);
       return (
         <div
@@ -238,7 +295,7 @@ const PokedexListsMenu = ({
         </div>
       );
     });
-  };
+  };  
 
   // --- Responsive Layout ---
   const width = useWindowWidth();

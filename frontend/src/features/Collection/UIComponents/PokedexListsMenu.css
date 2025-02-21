@@ -118,6 +118,14 @@
   background: linear-gradient(45deg, #efcf78, #a70e68);
 }
 
+.pokedex-lists-menu .pokedex-list-header.fusion {
+  background-color: #3b82f6;
+}
+
+.pokedex-lists-menu .pokedex-list-header.shiny-fusion {
+  background: linear-gradient(45deg, #efcf78, #3b82f6);
+}
+
 /* Pokemon Preview Container */
 .pokedex-lists-menu .pokedex-pokemon-preview {
   display: flex;
@@ -187,6 +195,18 @@
   vertical-align: middle;
 }
 
+.fusion-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fusion-header .list-header-text {
+  text-align: center;
+}
+.fusion-header .fusion-icons {
+  display: flex;
+}
+
 /* Responsive Design */
 @media (max-width: 650px) {
   .pokedex-lists-menu {
@@ -211,6 +231,9 @@
     width: 0.75rem;
     top: 0.15rem;
     right: 0.15rem;
+  }
+  .pokedex-lists-menu .pokedex-list-item {
+  min-width: 50%;
   }
 }
 
