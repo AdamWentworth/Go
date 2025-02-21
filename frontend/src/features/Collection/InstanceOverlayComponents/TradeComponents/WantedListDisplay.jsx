@@ -48,11 +48,9 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
     // Filter the wanted list to display relevant items
     const wantedListToDisplay = Object.entries(lists.wanted)
         .filter(([key, details]) => {
-            const itemBaseKey = extractBaseKey(key);
-            // Show all items if in edit mode or if not toggled off
-            return (editMode || !localNotWantedList[key]) && 
-                   (!isMirror || (isMirror && itemBaseKey === baseKey));
-        });
+            return (editMode || !localNotWantedList[key]) &&
+                (!isMirror || (isMirror && key === mirrorKey));
+        });      
 
     // Transform the array to match the format expected by useSortManager
     const transformedWantedList = wantedListToDisplay.map(([key, details]) => ({

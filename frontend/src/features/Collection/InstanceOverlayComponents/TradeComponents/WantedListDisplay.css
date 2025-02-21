@@ -82,6 +82,11 @@
     grid-template-columns: repeat(3, minmax(80px, 1fr)); /* Force max 3 columns per row */
 }
 
+/* Ensure .single-item-list takes precedence over everything else */
+.wanted-list-container.single-item-list {
+    grid-template-columns: repeat(1, 1fr) !important; /* Use !important to enforce single-item layout */
+    justify-content: center;
+}
 @media (max-width: 480px) {
 }
 
@@ -113,9 +118,4 @@
     .wanted-list-container.xxlarge-list {
         max-height: 615px;
     }
-}
-
-/* Ensure .single-item-list takes precedence over everything else */
-.wanted-list-container.single-item-list {
-    grid-template-columns: repeat(1, 1fr) !important; /* Use !important to enforce single-item layout */
 }

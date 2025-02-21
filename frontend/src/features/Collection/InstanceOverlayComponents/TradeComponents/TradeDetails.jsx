@@ -416,21 +416,21 @@ const TradeDetails = ({
             <div className="spacer"></div>
           )}
           <div className="mirror">
-            {isEditable && (
-              <MirrorManager
-                pokemon={pokemon}
-                ownershipData={ownershipData}
-                lists={lists}
-                isMirror={isMirror}
-                setIsMirror={setIsMirror}
-                setMirrorKey={setMirrorKey}
-                editMode={editMode}
-                updateDisplayedList={(newData) =>
-                  updateDisplayedList(newData, listsState, setListsState)
-                }
-                updateDetails={updateDetails}
-              />
-            )}
+            <MirrorManager
+              pokemon={pokemon}
+              ownershipData={ownershipData}
+              lists={lists}
+              isMirror={isMirror}
+              setIsMirror={setIsMirror}
+              setMirrorKey={setMirrorKey}
+              // Pass isEditable as the editMode prop so that when viewing (isEditable is false)
+              // the toggle logic inside MirrorManager is disabled.
+              editMode={isEditable}
+              updateDisplayedList={(newData) =>
+                updateDisplayedList(newData, listsState, setListsState)
+              }
+              updateDetails={updateDetails}
+            />
           </div>
         </div>
 
