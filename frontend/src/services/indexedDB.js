@@ -78,7 +78,9 @@ const POKEDEX_LISTS_STORES = [
   'dynamax',
   'shiny dynamax',
   'gigantamax',
-  'shiny gigantamax'
+  'shiny gigantamax',
+  'fusion',
+  'shiny fusion'
 ];
 
 // -----------------------------------------------------------------------------
