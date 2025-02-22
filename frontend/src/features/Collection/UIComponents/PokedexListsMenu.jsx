@@ -20,7 +20,7 @@ const PokedexListsMenu = ({
     'mega',
     'dynamax',
     'gigantamax',
-    'fusion',
+    'fusion',         // non-shiny fusion list
     'shadow costume',
   ];
   const rightColumnLists = [
@@ -30,7 +30,7 @@ const PokedexListsMenu = ({
     'shiny mega',
     'shiny dynamax',
     'shiny gigantamax',
-    'shiny fusion',
+    'shiny fusion',   // shiny fusion list
   ];
   const fullWidthList = 'all';
 
@@ -98,8 +98,80 @@ const PokedexListsMenu = ({
 
   // --- Header Icons ---
   const renderHeaderIcons = (listName) => {
-    const icons = [];
     const lower = listName.toLowerCase();
+    const icons = [];
+
+    // Special ordering for non-shiny "fusion"
+    if (lower === 'fusion') {
+      // Left side: fusion 3 & 4; Right side: fusion 1 & 2
+      icons.push(
+        <img
+          key="fusion3"
+          src={`${process.env.PUBLIC_URL}/images/fusion_3.png`}
+          alt="Fusion3"
+          className="list-header-icon"
+        />,
+        <img
+          key="fusion4"
+          src={`${process.env.PUBLIC_URL}/images/fusion_4.png`}
+          alt="Fusion4"
+          className="list-header-icon"
+        />,
+        <img
+          key="fusion1"
+          src={`${process.env.PUBLIC_URL}/images/fusion_1.png`}
+          alt="Fusion1"
+          className="list-header-icon"
+        />,
+        <img
+          key="fusion2"
+          src={`${process.env.PUBLIC_URL}/images/fusion_2.png`}
+          alt="Fusion2"
+          className="list-header-icon"
+        />
+      );
+      return icons;
+    }
+
+    // Special ordering for "shiny fusion"
+    if (lower === 'shiny fusion') {
+      // First add the shiny icon, then all fusion icons (order: 3, 4, 1, 2)
+      icons.push(
+        <img
+          key="shiny"
+          src={`${process.env.PUBLIC_URL}/images/shiny_icon.png`}
+          alt="Shiny"
+          className="list-header-icon"
+        />,
+        <img
+          key="fusion3"
+          src={`${process.env.PUBLIC_URL}/images/fusion_3.png`}
+          alt="Fusion3"
+          className="list-header-icon"
+        />,
+        <img
+          key="fusion4"
+          src={`${process.env.PUBLIC_URL}/images/fusion_4.png`}
+          alt="Fusion4"
+          className="list-header-icon"
+        />,
+        <img
+          key="fusion1"
+          src={`${process.env.PUBLIC_URL}/images/fusion_1.png`}
+          alt="Fusion1"
+          className="list-header-icon"
+        />,
+        <img
+          key="fusion2"
+          src={`${process.env.PUBLIC_URL}/images/fusion_2.png`}
+          alt="Fusion2"
+          className="list-header-icon"
+        />
+      );
+      return icons;
+    }
+
+    // Other icons for non-fusion lists
     if (lower.includes('shiny')) {
       icons.push(
         <img
@@ -160,6 +232,7 @@ const PokedexListsMenu = ({
         />
       );
     }
+    // Fallback: if any other fusion keyword is found, add default fusion icons
     if (lower.includes('fusion')) {
       icons.push(
         <img
@@ -216,12 +289,44 @@ const PokedexListsMenu = ({
   // --- Render List Items ---
   const renderListItems = (listNames) => {
     return listNames.map((listName) => {
-      const previewPokemon = renderListPreview(listName);
-      // Special handling for "shiny fusion"
+      // Special handling for non-shiny "fusion" list
+      if (listName.toLowerCase() === 'fusion') {
+        const icons = renderHeaderIcons(listName);
+        return (
+          <div
+            key={listName}
+            className="pokedex-list-item"
+            onClick={() => handleListClick(listName)}
+            tabIndex="0"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') handleListClick(listName);
+            }}
+          >
+            <div className={`pokedex-list-header ${getClassNameForList(listName)} fusion-header`}>
+              <span className="fusion-icons left">
+                {icons[0]} {icons[1]}
+              </span>
+              <span className="list-header-text">
+                {displayNameMap[listName] || listName}
+              </span>
+              <span className="fusion-icons right">
+                {icons[2]} {icons[3]}
+              </span>
+            </div>
+            <div className="pokedex-pokemon-preview">
+              {renderListPreview(listName).length > 0 ? (
+                renderListPreview(listName)
+              ) : (
+                <p className="pokedex-no-pokemon-text">No Pokémon in this list</p>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // Special handling for "shiny fusion" list
       if (listName.toLowerCase() === 'shiny fusion') {
         const icons = renderHeaderIcons(listName);
-        // Expected: icons[0] is the Shiny icon,
-        // icons[1] and icons[2] are the fusion icons.
         return (
           <div
             key={listName}
@@ -238,8 +343,7 @@ const PokedexListsMenu = ({
                 {displayNameMap[listName] || listName}
               </span>
               <span className="fusion-icons">
-                {icons[1]}
-                {icons[2]}
+                {icons[1]} {icons[2]} {icons[3]} {icons[4]}
               </span>
             </div>
             <div className="pokedex-pokemon-preview">
@@ -286,8 +390,8 @@ const PokedexListsMenu = ({
             )}
           </div>
           <div className="pokedex-pokemon-preview">
-            {previewPokemon && previewPokemon.length > 0 ? (
-              previewPokemon
+            {renderListPreview(listName).length > 0 ? (
+              renderListPreview(listName)
             ) : (
               <p className="pokedex-no-pokemon-text">No Pokémon in this list</p>
             )}
@@ -295,7 +399,7 @@ const PokedexListsMenu = ({
         </div>
       );
     });
-  };  
+  };
 
   // --- Responsive Layout ---
   const width = useWindowWidth();
