@@ -1,0 +1,27 @@
+/* ActionMenuButton.css */
+
+.action-menu-button {
+    /* Position and layout similar to your CloseButton */
+    position: fixed;
+    bottom: 1.25rem; /* equivalent to bottom-5 in Tailwind */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .action-menu-button-image {
+    /* If CloseButton uses a specific size or drop shadow, mirror that here */
+    width: 60px; /* adjust as needed */
+    height: 60px; /* adjust as needed */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+  }
+  
+  .action-menu-button:hover .action-menu-button-image {
+    transform: scale(1.05);
+  }
+  
+  

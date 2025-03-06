@@ -27,6 +27,8 @@ import useMegaPokemonHandler from './hooks/useMegaPokemonHandler';
 import useFusionPokemonHandler from './hooks/useFusionPokemonHandler';
 
 import LoadingSpinner from '../../components/LoadingSpinner';
+import ActionMenu from '../../components/ActionMenu';
+import CloseButton from '../../components/CloseButton';
 
 const PokemonListMemo = React.memo(PokemonList);
 const HeaderUIMemo = React.memo(HeaderUI);
@@ -72,6 +74,12 @@ function Collection({ isOwnCollection }) {
 
   // New state to indicate the default list has been loaded
   const [defaultListLoaded, setDefaultListLoaded] = useState(false);
+
+  const [showActionMenu, setShowActionMenu] = useState(false);
+
+  const handleActionMenuToggle = () => {
+    setShowActionMenu((prev) => !prev);
+  };
 
   const handleClearSelection = () => {
     setIsFastSelectEnabled(false);
@@ -443,6 +451,22 @@ function Collection({ isOwnCollection }) {
           isUpdating={isUpdating}
         />
       )}
+
+      <div className={`action-menu-overlay ${showActionMenu ? 'active' : ''}`}>
+        {showActionMenu && (
+          <>
+            {/* The close button to toggle off the overlay */}
+            <CloseButton onClick={handleActionMenuToggle} />
+            <div className="action-menu-content">
+              <p>This is the action menu content.</p>
+              {/* Add additional overlay UI elements here */}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Insert the reusable ActionMenu */}
+      <ActionMenu />
 
       <MegaPokemonModal />
       <FusionPokemonModal />
