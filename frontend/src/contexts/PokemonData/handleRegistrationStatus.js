@@ -1,6 +1,6 @@
 // updateRegistrationStatus.js
 
-import { oneWaySharedFormPokemonIDs } from '../../../../utils/constants'
+import { oneWaySharedFormPokemonIDs } from '../../utils/constants'
 
 // Updated function to handle shared registrations
 export function updateRegistrationStatus(instance, ownershipData) {

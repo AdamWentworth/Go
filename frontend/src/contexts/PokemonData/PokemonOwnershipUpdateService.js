@@ -1,8 +1,8 @@
 // PokemonOwnershipUpdateService.js
 
-import { generateUUID, parsePokemonKey } from '../../../utils/PokemonIDUtils';
-import { createNewInstanceData } from '../../../contexts/PokemonData/createNewInstanceData';
-import { updateRegistrationStatus } from './handlers/handleRegistrationStatus';
+import { generateUUID, parsePokemonKey } from '../../utils/PokemonIDUtils';
+import { createNewInstanceData } from './createNewInstanceData';
+import { updateRegistrationStatus } from './handleRegistrationStatus';
 
 export async function updatePokemonOwnership(pokemonKey, newStatus, variants, ownershipData, lists) {
     const { baseKey, hasUUID } = parsePokemonKey(pokemonKey);

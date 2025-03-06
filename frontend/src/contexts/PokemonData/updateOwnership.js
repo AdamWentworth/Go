@@ -1,6 +1,6 @@
 // updateOwnership.js
 
-import { updatePokemonOwnership } from '../../features/Collection/PokemonOwnership/PokemonOwnershipUpdateService';
+import { updatePokemonOwnership } from './PokemonOwnershipUpdateService';
 import { putBatchedPokemonUpdates } from '../../services/indexedDB';
 
 export const updateOwnership = (data, setData, ownershipDataRef, lists) => async (pokemonKeys, newStatus) => {
