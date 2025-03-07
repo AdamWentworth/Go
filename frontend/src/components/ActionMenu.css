@@ -7,16 +7,11 @@
   left: 0;
   width: 100%;
   height: 100%;
-  /* Gradient: light (#e0f0e5) at top-left to dark (#34807d) at bottom-right */
   background: linear-gradient(to bottom right, #e0f0e5, #34807d);
   z-index: 2000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity 0.15s ease-in-out;
 }
 
 .action-menu-overlay.active {
@@ -24,7 +19,7 @@
   pointer-events: all;
 }
 
-/* Settings button in the top right corner */
+/* Settings button in the top right */
 .settings-button {
   position: absolute;
   top: 1rem;
@@ -57,90 +52,97 @@
   height: 24px;
 }
 
-/* Container for circular button arrangement */
-.action-menu-buttons-container {
-  position: relative;
-  width: 300px;
-  height: 300px;
-  margin: 2rem auto;
-}
+/* Container for animated buttons */
+/* (No explicit sizing needed as buttons are fixed) */
+.action-menu-buttons-container {}
 
-/* Common styles for each button */
+/* Common styles for each animated button; all start at the same closed state (bottom–center) */
 .action-menu-item {
-  position: absolute;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
+  position: fixed;
+  left: 50%;
+  top: calc(100% - 25px); /* Closed state: 25px from the bottom */
+  transform: translate(-50%, -50%);
   opacity: 0;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+  transition: top 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
 }
 
-/* All buttons start at center (where the ActionMenuButton/CloseButton is) */
-.action-menu-buttons-container .action-menu-item {
+/* Open state positions (each button moves from center to its final position): */
+
+/* Raid button: positioned to the far left, above the others */
+.action-menu-buttons-container.open .button-raid {
+  top: 50%;
+  left: 50%;
+  transform: translate(calc(-50% - 60px), calc(-50% - 80px));
+  opacity: 1;
+}
+
+/* Search button: positioned between Raid and Pokémon (to the left, slightly lower than Raid) */
+.action-menu-buttons-container.open .button-search {
+  top: 50%;
+  left: 50%;
+  transform: translate(calc(-50% - 100px), calc(-50% + 0px));
+  opacity: 1;
+}
+
+/* Pokémon button: positioned to the bottom left */
+.action-menu-buttons-container.open .button-pokemon {
+  top: 50%;
+  left: 50%;
+  transform: translate(calc(-50% - 60px), calc(-50% + 80px));
+  opacity: 1;
+}
+
+/* Home button: remains centered */
+.action-menu-buttons-container.open .button-home {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-}
-
-/* Animation for each button when menu is open */
-.action-menu-buttons-container.open .button-raid {
   opacity: 1;
-  transform: translate(-50%, -50%) rotate(240deg) translate(120px) rotate(-240deg);
-  transition-delay: 0.05s;
 }
 
+/* PvP button: positioned to the top right */
 .action-menu-buttons-container.open .button-pvp {
+  top: 50%;
+  left: 50%;
+  transform: translate(calc(-50% + 60px), calc(-50% - 80px));
   opacity: 1;
-  transform: translate(-50%, -50%) rotate(300deg) translate(120px) rotate(-300deg);
-  transition-delay: 0.1s;
 }
 
-.action-menu-buttons-container.open .button-search {
-  opacity: 1;
-  transform: translate(-50%, -50%) rotate(180deg) translate(120px) rotate(-180deg);
-  transition-delay: 0.15s;
-}
-
-.action-menu-buttons-container.open .button-rankings {
-  opacity: 1;
-  transform: translate(-50%, -50%) rotate(60deg) translate(120px) rotate(-60deg);
-  transition-delay: 0.2s;
-}
-
-.action-menu-buttons-container.open .button-pokemon {
-  opacity: 1;
-  transform: translate(-50%, -50%) rotate(120deg) translate(120px) rotate(-120deg);
-  transition-delay: 0.25s;
-}
-
+/* Trades button: positioned directly to the right */
 .action-menu-buttons-container.open .button-trades {
+  top: 50%;
+  left: 50%;
+  transform: translate(calc(-50% + 100px), calc(-50% + 0px));
   opacity: 1;
-  transform: translate(-50%, -50%) rotate(0deg) translate(120px) rotate(0deg);
-  transition-delay: 0.3s;
 }
 
-/* Home button: remains in center but should still appear with animation */
-.action-menu-buttons-container.open .button-home {
+/* Rankings button: positioned to the bottom right */
+.action-menu-buttons-container.open .button-rankings {
+  top: 50%;
+  left: 50%;
+  transform: translate(calc(-50% + 60px), calc(-50% + 80px));
   opacity: 1;
-  transform: translate(-50%, -50%);
-  transition-delay: 0.3s;
 }
 
-/* A common inner container for stacking icon and label */
+/* Inner container for stacking icon and label */
 .button-content {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-/* Common icon and label styling */
+/* Icon styling */
 .button-icon {
   width: 40px;
   height: 40px;
   transition: transform 0.2s;
 }
 
+/* Label styling */
 .button-label {
   margin-top: 0.25rem;
   font-size: 0.75rem;
@@ -150,11 +152,4 @@
 /* Hover effect */
 .action-menu-item:hover .button-icon {
   transform: scale(1.05);
-}
-
-/* Styling for any additional content */
-.action-menu-content {
-  margin-top: 1rem;
-  text-align: center;
-  color: #333;
 }
