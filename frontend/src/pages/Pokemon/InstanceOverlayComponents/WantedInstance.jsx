@@ -14,7 +14,7 @@ import TypeComponent from './OwnedComponents/TypeComponent';
 import HeightComponent from './OwnedComponents/HeightComponent';
 import MovesComponent from './OwnedComponents/MovesComponent';
 import FriendshipManager from './WantedComponents/FriendshipManager';
-import BackgroundComponent from './OwnedComponents/BackgroundComponent'; 
+import BackgroundLocationCard from '../../../components/pokemonComponents/BackgroundLocationCard';
 
 import { determineImageUrl } from '../../../utils/imageHelpers';  // Import the image helper
 
@@ -207,13 +207,19 @@ const WantedInstance = ({ pokemon, isEditable }) => {
       </div>
 
       {showBackgrounds && (
-        <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
-          <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-button" onClick={() => setShowBackgrounds(false)}>Close</button>
-            <BackgroundComponent pokemon={pokemon} onSelectBackground={handleBackgroundSelect} />
-          </div>
+      <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
+        <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
+          <button className="close-button" onClick={() => setShowBackgrounds(false)}>
+            Close
+          </button>
+          <BackgroundLocationCard
+            pokemon={pokemon}
+            onSelectBackground={handleBackgroundSelect}
+            // No selectedCostumeId passed, so it uses pokemon.variantType for filtering.
+          />
         </div>
-      )}
+      </div>
+    )}
     </div>
   );
 };

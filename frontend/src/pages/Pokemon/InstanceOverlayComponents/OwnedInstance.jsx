@@ -23,7 +23,7 @@ import MovesComponent from './OwnedComponents/MovesComponent';
 import IVComponent from './OwnedComponents/IVComponent';
 import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
-import BackgroundComponent from './OwnedComponents/BackgroundComponent';
+import BackgroundLocationCard from '../../../components/pokemonComponents/BackgroundLocationCard';
 import MegaComponent from './OwnedComponents/MegaComponent';
 import LevelComponent from './OwnedComponents/LevelComponent'; 
 import FusionComponent from './OwnedComponents/FusionComponent';
@@ -574,8 +574,14 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
       {showBackgrounds && (
         <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
           <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-button" onClick={() => setShowBackgrounds(false)}>Close</button>
-            <BackgroundComponent pokemon={pokemon} onSelectBackground={handleBackgroundSelect} />
+            <button className="close-button" onClick={() => setShowBackgrounds(false)}>
+              Close
+            </button>
+            <BackgroundLocationCard
+              pokemon={pokemon}
+              onSelectBackground={handleBackgroundSelect}
+              // No selectedCostumeId passed, so it uses pokemon.variantType for filtering.
+            />
           </div>
         </div>
       )}

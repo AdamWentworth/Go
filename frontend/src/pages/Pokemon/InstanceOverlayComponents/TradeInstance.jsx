@@ -14,7 +14,7 @@ import HeightComponent from './OwnedComponents/HeightComponent';
 import MovesComponent from './OwnedComponents/MovesComponent';
 import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
-import BackgroundComponent from './OwnedComponents/BackgroundComponent';
+import BackgroundLocationCard from '../../../components/pokemonComponents/BackgroundLocationCard';
 import LevelComponent from './OwnedComponents/LevelComponent';
 import IVComponent from './OwnedComponents/IVComponent';
 import MaxComponent from './OwnedComponents/MaxComponent';
@@ -477,7 +477,11 @@ const TradeInstance = ({ pokemon, isEditable }) => {
             <button className="close-button" onClick={() => setShowBackgrounds(false)}>
               Close
             </button>
-            <BackgroundComponent pokemon={pokemon} onSelectBackground={handleBackgroundSelect} />
+            <BackgroundLocationCard
+              pokemon={pokemon}
+              onSelectBackground={handleBackgroundSelect}
+              // No selectedCostumeId passed, so it uses pokemon.variantType for filtering.
+            />
           </div>
         </div>
       )}

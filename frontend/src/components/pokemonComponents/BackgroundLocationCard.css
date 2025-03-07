@@ -1,75 +1,84 @@
-/* BackgroundSearch.css */
+/* BackgroundLocationCard.css */
 
-.background-search-component {
+/* Container for the entire card */
+.background-location-card {
     padding: 20px;
     border: 1px solid #ddd;
     border-radius: 10px;
     max-width: 600px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     margin: 20px auto;
-    text-align: center; /* Center content */
+    text-align: center;
 }
 
+/* Title header */
+.background-location-card h3 {
+    margin-bottom: 15px;
+    font-size: 1.5em;
+}
+
+/* List of backgrounds */
 .background-list {
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
-    justify-content: center; /* Center the background items */
+    justify-content: center;
 }
 
+/* Each background item */
 .background-item {
     border: 2px solid #ddd;
     padding: 10px;
     border-radius: 8px;
     cursor: pointer;
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
-    width: 120px; /* Adjust width as needed */
+    width: 120px;
     text-align: center;
 }
 
+/* Hover state for items */
 .background-item:hover {
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
     border-color: #007bff;
 }
 
+/* Image styling inside each item */
 .background-item img {
     width: 80px;
     height: 80px;
     border-radius: 4px;
 }
 
+/* Information area for each background */
 .background-info {
     margin-top: 10px;
-    text-align: center;
     font-size: 14px;
 }
 
+/* Style for selected item */
 .background-item.selected {
     border: 2px solid #007bff;
     box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
 }
 
+/* None option styling */
 .none-option {
     font-size: 16px;
     color: #555;
     padding: 20px;
-    text-align: center;
 }
 
-.selectable {
-    border-color: green;
-}
-
-.non-selectable {
-    border-color: red;
-}
-
+/* Selected background display (after choosing an item) */
 .selected-background {
     margin-top: 20px;
     padding: 15px;
     border: 2px solid #007bff;
     border-radius: 8px;
     text-align: center;
+}
+
+.selected-background h4 {
+    margin-bottom: 10px;
 }
 
 .selected-background img {
@@ -79,6 +88,7 @@
     margin: 10px auto;
 }
 
+/* Overlay styles if needed (for modal usage) */
 .background-overlay {
     position: fixed;
     top: 0;
@@ -96,14 +106,15 @@
     background: #333;
     padding: 20px;
     border-radius: 10px;
-    position: relative;
     width: 90%;
     max-width: 600px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
     text-align: center;
+    position: relative;
 }
 
-.background-search-component .close-button {
+/* Close button for overlay */
+.background-overlay-content .close-button {
     position: absolute;
     top: 10px;
     right: 10px;
@@ -120,6 +131,7 @@
     justify-content: center;
 }
 
+/* Optional: Background button styling (if you have a dedicated trigger button) */
 .background-button-container {
     display: flex;
     justify-content: center;

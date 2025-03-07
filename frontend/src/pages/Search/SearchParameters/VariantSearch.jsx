@@ -7,13 +7,10 @@ import { formatCostumeName } from '../utils/formatCostumeName';
 import Dropdown from '../components/Dropdown';
 import MovesSearch from './VariantComponents/MovesSearch';
 import GenderSearch from './VariantComponents/GenderSearch';
-import BackgroundSearch from './VariantComponents/BackgroundSearch';
+import BackgroundLocationCard from '../../../components/pokemonComponents/BackgroundLocationCard';
 import useErrorHandler from '../hooks/useErrorHandler';
 import './VariantSearch.css';
-import { formatForm } from '../../../utils/formattingHelpers';
-
-// Removed: IndexedDB helper import
-// import { getAllPokedexListsFromDB } from '../../../services/indexedDB';
+import { formatForm } from '../../../utils/formattingHelpers'
 
 const VariantSearch = ({
   pokemon,
@@ -540,10 +537,10 @@ const VariantSearch = ({
             >
               Close
             </button>
-            <BackgroundSearch
+            <BackgroundLocationCard
               pokemon={currentPokemonData}
               onSelectBackground={handleBackgroundChange}
-              selectedCostumeId={selectedCostumeId}
+              selectedCostumeId={selectedCostumeId} // filtering by costume in VariantSearch
             />
           </div>
         </div>
