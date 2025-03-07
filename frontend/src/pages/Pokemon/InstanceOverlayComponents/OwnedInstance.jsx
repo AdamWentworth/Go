@@ -9,20 +9,20 @@ import { useModal } from '../../../contexts/ModalContext';
 import useValidation from './hooks/useValidation';
 
 // Components
-import EditSaveComponent from './EditSaveComponent';
+import EditSaveComponent from '../../../components/EditSaveComponent';
 import CP from '../../../components/pokemonComponents/CP';
-import FavoriteComponent from './OwnedComponents/FavoriteComponent';
+import FavoriteComponent from '../../../components/pokemonComponents/Favorite';
 import NameComponent from './OwnedComponents/NameComponent';
 import LuckyComponent from './OwnedComponents/LuckyComponent';
 import PurifyComponent from './OwnedComponents/PurifyComponent';
-import GenderComponent from './OwnedComponents/GenderComponent';
+import Gender from '../../../components/pokemonComponents/Gender';
 import WeightComponent from './OwnedComponents/WeightComponent';
 import TypeComponent from './OwnedComponents/TypeComponent';
 import HeightComponent from './OwnedComponents/HeightComponent';
 import MovesComponent from './OwnedComponents/MovesComponent';
 import IVComponent from './OwnedComponents/IVComponent';
 import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
-import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
+import DateCaughtComponent from '../../../components/pokemonComponents/DateCaught';
 import BackgroundLocationCard from '../../../components/pokemonComponents/BackgroundLocationCard';
 import MegaComponent from './OwnedComponents/MegaComponent';
 import LevelComponent from './OwnedComponents/LevelComponent'; 
@@ -482,12 +482,13 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           onLevelChange={handleLevelChange}
           errors={validationErrors}
         />
-        <GenderComponent 
-          pokemon={pokemon} 
-          editMode={editMode} 
-          isFemale={isFemale} 
-          onGenderChange={handleGenderChange}
+        <div className="gender-wrapper">
+          <Gender
+            pokemon={pokemon} 
+            editMode={editMode} 
+            onGenderChange={handleGenderChange}
           />
+        </div>
       </div>
       <div className="weight-type-height-container">
         <WeightComponent 

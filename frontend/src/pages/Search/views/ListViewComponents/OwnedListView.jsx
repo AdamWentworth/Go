@@ -6,7 +6,7 @@ import CP from '../../../../components/pokemonComponents/CP';
 import MiniMap from './MiniMap';
 import IVDisplay from '../../../../components/pokemonComponents/IVDisplay';
 import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
-import GenderIcon from '../../../../components/pokemonComponents/GenderIcon';
+import Gender from '../../../../components/pokemonComponents/Gender';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
 import ConfirmationOverlay from '../ConfirmationOverlay'; // Import ConfirmationOverlay
@@ -82,7 +82,7 @@ const OwnedListView = ({ item }) => {
               )}
               <p className="pokemon-name">
                 {pokemonDisplayName}
-                <GenderIcon gender={item.gender} />
+                <Gender gender={item.gender} />
               </p>
             </div>
           )}

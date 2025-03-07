@@ -5,7 +5,7 @@ import './TradeProposal.css';
 import MovesComponent from '../OwnedComponents/MovesComponent';
 import CP from '../../../../components/pokemonComponents/CP';
 import LocationCaughtComponent from '../OwnedComponents/LocationCaughtComponent';
-import DateCaughtComponent from '../OwnedComponents/DateCaughtComponent';
+import DateCaughtComponent from '../../../../components/pokemonComponents/DateCaught';
 import { generateH2Content } from '../../../../utils/formattingHelpers';
 
 import FriendshipManager from '../WantedComponents/FriendshipManager';

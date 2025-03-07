@@ -2,12 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import './InstanceOverlay.css';
 import OverlayPortal from '../../components/OverlayPortal';
+import WindowOverlay from '../../components/WindowOverlay';
 import OwnedInstance from './InstanceOverlayComponents/OwnedInstance';
 import TradeInstance from './InstanceOverlayComponents/TradeInstance';
 import TradeDetails from './InstanceOverlayComponents/TradeComponents/TradeDetails';
 import WantedInstance from './InstanceOverlayComponents/WantedInstance';
 import WantedDetails from './InstanceOverlayComponents/WantedComponents/WantedDetails';
-import WindowOverlay from '../../components/WindowOverlay';
 import CloseButton from '../../components/CloseButton';
 
 const InstanceOverlay = ({

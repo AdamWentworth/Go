@@ -1,0 +1,22 @@
+/* Gender.css */
+.gender-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Container size: minimum 24px and maximum 30px */
+  width: clamp(24px, 4vw, 30px);
+  height: clamp(24px, 4vw, 30px);
+  transition: opacity 0.2s ease-in-out;
+  min-width: 24px;
+  min-height: 24px;
+}
+
+.gender-container:hover {
+  opacity: 0.8;
+}
+
+.gender-icon {
+  /* Icon size responsive between 20px and 26px */
+  width: clamp(20px, 3.5vw, 26px);
+  height: clamp(20px, 3.5vw, 26px);
+}

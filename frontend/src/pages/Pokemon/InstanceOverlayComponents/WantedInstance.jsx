@@ -5,10 +5,9 @@ import './WantedInstance.css';
 
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext'; 
 
-import EditSaveComponent from './EditSaveComponent';
-import FavoriteComponent from './OwnedComponents/FavoriteComponent';
+import EditSaveComponent from '../../../components/EditSaveComponent';
 import NameComponent from './OwnedComponents/NameComponent';
-import GenderComponent from './OwnedComponents/GenderComponent';
+import Gender from '../../../components/pokemonComponents/Gender';
 import WeightComponent from './OwnedComponents/WeightComponent';
 import TypeComponent from './OwnedComponents/TypeComponent';
 import HeightComponent from './OwnedComponents/HeightComponent';
@@ -125,9 +124,6 @@ const WantedInstance = ({ pokemon, isEditable }) => {
             <EditSaveComponent editMode={editMode} toggleEditMode={toggleEditMode} isEditable={isEditable} />
         </div>
         <h2>Wanted</h2>
-        <div className="favorite-container">
-          <FavoriteComponent pokemon={pokemon} editMode={editMode} onFavoriteChange={handleFavoriteChange} />
-        </div>
       </div>
 
       {selectableBackgrounds.length > 0 && (
@@ -193,7 +189,7 @@ const WantedInstance = ({ pokemon, isEditable }) => {
       </div>
 
       <div className="gender-container">
-        <GenderComponent pokemon={pokemon} editMode={editMode} onGenderChange={handleGenderChange} />
+        <Gender pokemon={pokemon} editMode={editMode} onGenderChange={handleGenderChange} />
       </div>
 
       <div className="stats-container">

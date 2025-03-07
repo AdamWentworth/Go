@@ -5,7 +5,7 @@ import { parse, format, isValid } from 'date-fns';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import enUS from 'date-fns/locale/en-US';
 import 'react-datepicker/dist/react-datepicker.css';
-import './DateCaughtComponent.css';
+import './DateCaught.css';
 
 registerLocale('en-US', enUS);
 

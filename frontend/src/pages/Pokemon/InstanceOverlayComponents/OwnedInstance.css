@@ -193,6 +193,12 @@
   flex: 1; /* Ensures LuckyComponent and GenderComponent take equal space */
 }
 
+.owned-instance .gender-wrapper {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
 .owned-instance .weight-type-height-container {
   display: flex;
   align-items: center; /* Align items vertically */

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MiniMap from './MiniMap';
 import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
-import GenderIcon from '../../../../components/pokemonComponents/GenderIcon';
+import Gender from '../../../../components/pokemonComponents/Gender';
 import CP from '../../../../components/pokemonComponents/CP';
 import ConfirmationOverlay from '../ConfirmationOverlay'; // Import ConfirmationOverlay
 import { URLSelect } from '../../utils/URLSelect';
@@ -104,7 +104,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
                 )}
                 <p className="pokemon-name">
                   {pokemonDisplayName}
-                  <GenderIcon gender={item.gender} />
+                  <Gender gender={item.gender} />
                 </p>
                 </div>
               </div>

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import MoveDisplay from '../../../components/pokemonComponents/MoveDisplay';
 import IVDisplay from '../../../components/pokemonComponents/IVDisplay';
-import GenderIcon from '../../../components/pokemonComponents/GenderIcon';
+import Gender from '../../../components/pokemonComponents/Gender';
 import FriendshipLevel from '../../../components/pokemonComponents/FriendshipLevel';
 import { TRADE_FRIENDSHIP_LEVELS } from '../../../services/indexedDB';
 import { formatDate } from '../../../utils/formattingHelpers';
@@ -175,7 +175,7 @@ const CancelledTradeView = ({
                     ) : (
                       <p>No image available.</p>
                     )}
-                    {details?.gender && <GenderIcon gender={details.gender} />}
+                    {details?.gender && <Gender gender={details.gender} />}
                   </div>
                 </div>
                 <p className="pokemon-name">

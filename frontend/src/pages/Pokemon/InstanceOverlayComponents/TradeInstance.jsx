@@ -4,16 +4,16 @@ import React, { useState, useContext, useEffect, useMemo } from 'react';
 import './TradeInstance.css';
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext'; 
 
-import EditSaveComponent from './EditSaveComponent';
+import EditSaveComponent from '../../../components/EditSaveComponent';
 import CP from '../../../components/pokemonComponents/CP';
 import NameComponent from './OwnedComponents/NameComponent';
-import GenderComponent from './OwnedComponents/GenderComponent';
+import Gender from '../../../components/pokemonComponents/Gender';
 import WeightComponent from './OwnedComponents/WeightComponent';
 import TypeComponent from './OwnedComponents/TypeComponent';
 import HeightComponent from './OwnedComponents/HeightComponent';
 import MovesComponent from './OwnedComponents/MovesComponent';
 import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
-import DateCaughtComponent from './OwnedComponents/DateCaughtComponent';
+import DateCaughtComponent from '../../../components/pokemonComponents/DateCaught';
 import BackgroundLocationCard from '../../../components/pokemonComponents/BackgroundLocationCard';
 import LevelComponent from './OwnedComponents/LevelComponent';
 import IVComponent from './OwnedComponents/IVComponent';
@@ -396,7 +396,7 @@ const TradeInstance = ({ pokemon, isEditable }) => {
           onLevelChange={handleLevelChange}
           errors={validationErrors}
         />
-        <GenderComponent
+        <Gender
           pokemon={pokemon}
           editMode={editMode}
           onGenderChange={handleGenderChange}

@@ -6,7 +6,7 @@ import { updateImage } from '../utils/updateImage';
 import { formatCostumeName } from '../utils/formatCostumeName';
 import Dropdown from '../components/Dropdown';
 import MovesSearch from './VariantComponents/MovesSearch';
-import GenderSearch from './VariantComponents/GenderSearch';
+import Gender from '../../../components/pokemonComponents/Gender';
 import BackgroundLocationCard from '../../../components/pokemonComponents/BackgroundLocationCard';
 import useErrorHandler from '../hooks/useErrorHandler';
 import './VariantSearch.css';
@@ -486,12 +486,12 @@ const VariantSearch = ({
           />
 
           <div className="gender-background-row">
-            <GenderSearch
+            <Gender
               genderRate={currentPokemonData ? currentPokemonData.gender_rate : null}
-              selectedGender={selectedGender}
+              editMode={true}   // or false, depending on your search needs
+              searchMode={true}
               onGenderChange={handleGenderChange}
             />
-
             {isBackgroundAllowed() && (
               <div className="background-button-container">
                 <img

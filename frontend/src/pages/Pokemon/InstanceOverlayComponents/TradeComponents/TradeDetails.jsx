@@ -1,9 +1,9 @@
 // TradeDetails.jsx
 import React, { useState, useContext, useEffect } from 'react';
 import './TradeDetails.css';
-import EditSaveComponent from '../EditSaveComponent.jsx';
+import EditSaveComponent from '../../../../components/EditSaveComponent.jsx';
 import { PokemonDataContext } from '../../../../contexts/PokemonDataContext.js';
-import { ModalProvider, useModal } from '../../../../contexts/ModalContext.js';
+import { useModal } from '../../../../contexts/ModalContext.js';
 
 import WantedListDisplay from './WantedListDisplay.jsx';
 

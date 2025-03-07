@@ -4,7 +4,7 @@ import React, { useState } from 'react'; // Import useState
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import MiniMap from './MiniMap';
 import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
-import GenderIcon from '../../../../components/pokemonComponents/GenderIcon';
+import Gender from '../../../../components/pokemonComponents/Gender';
 import CP from '../../../../components/pokemonComponents/CP';
 import FriendshipLevel from '../../../../components/pokemonComponents/FriendshipLevel';
 import ConfirmationOverlay from '../ConfirmationOverlay'; // Import ConfirmationOverlay
@@ -109,7 +109,7 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                   )}
                 <p className="pokemon-name">
                   {pokemonDisplayName}
-                  <GenderIcon gender={item.gender} />
+                  <Gender gender={item.gender} />
                 </p>
                 </div>
               </div>

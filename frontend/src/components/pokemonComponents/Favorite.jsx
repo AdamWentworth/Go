@@ -1,7 +1,7 @@
-// FavoriteComponent.jsx
+// Favorite.jsx
 
 import React, { useState, useEffect } from 'react';
-import './FavoriteComponent.css';
+import './Favorite.css';
 
 const FavoriteComponent = ({ pokemon, editMode, onFavoriteChange }) => {
   const [isFavorite, setIsFavorite] = useState(pokemon.ownershipStatus.favorite);

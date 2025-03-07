@@ -2,7 +2,7 @@
 
 import React, { useState, useContext, useEffect } from 'react';
 import './WantedDetails.css';
-import EditSaveComponent from '../EditSaveComponent.jsx';
+import EditSaveComponent from '../../../../components/EditSaveComponent.jsx';
 import { PokemonDataContext } from '../../../../contexts/PokemonDataContext.js';
 import TradeListDisplay from './TradeListDisplay.jsx';
 
