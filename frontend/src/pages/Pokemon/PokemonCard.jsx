@@ -3,6 +3,7 @@
 import React, { useEffect, useState, memo, useRef } from 'react';
 import { determineImageUrl } from "../../utils/imageHelpers";
 import { generateH2Content } from '../../utils/formattingHelpers';
+import CP from '../../components/pokemonComponents/CP'; // Updated import for unified CP
 import './PokemonCard.css';
 
 const LONG_PRESS_MS = 300;       // Time threshold for long-press
@@ -229,6 +230,14 @@ const PokemonCard = ({
     }
   };
 
+  // ──────────────────────────────────────────────────────────────
+  // Determine CP value for display
+  // ──────────────────────────────────────────────────────────────
+  const cpValue =
+    ownershipFilter !== ""
+      ? (pokemon.ownershipStatus?.cp ? pokemon.ownershipStatus.cp : '')
+      : (sortType === 'combatPower' && pokemon.cp50 != null ? pokemon.cp50 : '');
+
   return (
     <div
       className={cardClass}
@@ -237,34 +246,9 @@ const PokemonCard = ({
       onTouchEnd={handleTouchEnd}
       onClick={handleClick}
     >
+      {/* CP Section using unified CP component */}
       <div className="cp-container">
-        <div className="cp-display" style={{ zIndex: 3 }}>
-          {ownershipFilter !== "" ? (
-            pokemon.ownershipStatus?.cp ? (
-              <>
-                <span className="cp-text">CP</span>
-                {pokemon.ownershipStatus.cp}
-              </>
-            ) : (
-              // Render placeholder text that’s invisible but occupies space
-              <span style={{ visibility: 'hidden' }}>
-                <span className="cp-text">CP</span>000
-              </span>
-            )
-          ) : (
-            sortType === 'combatPower' && pokemon.cp50 != null ? (
-              <>
-                <span className="cp-text">CP</span>
-                {pokemon.cp50}
-              </>
-            ) : (
-              // Same invisible placeholder for consistent spacing
-              <span style={{ visibility: 'hidden' }}>
-                <span className="cp-text">CP</span>000
-              </span>
-            )
-          )}
-        </div>
+        <CP cp={cpValue} editMode={false} />
       </div>
 
       <div className="fav-container">

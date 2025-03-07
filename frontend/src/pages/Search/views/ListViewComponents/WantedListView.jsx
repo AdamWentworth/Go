@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import MiniMap from './MiniMap';
 import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
 import GenderIcon from '../../../../components/pokemonComponents/GenderIcon';
-import CPDisplay from '../../../../components/pokemonComponents/CPDisplay';
+import CP from '../../../../components/pokemonComponents/CP';
 import FriendshipLevel from '../../../../components/pokemonComponents/FriendshipLevel';
 import ConfirmationOverlay from '../ConfirmationOverlay'; // Import ConfirmationOverlay
 import { URLSelect } from '../../utils/URLSelect';
@@ -75,7 +75,7 @@ const WantedListView = ({ item, findPokemonByKey }) => {
             <div className="pokemon-columns">
               {/* First Column: CP and Pokémon Image */}
               <div className="pokemon-first-column">
-              {item.cp > 0 && item.cp && <CPDisplay cp={item.cp} />}
+              {item.cp > 0 && item.cp && <CP cp={item.cp} />}
                 <div className="pokemon-image-container">
                   {item.pref_lucky && (
                   <div className="lucky-backdrop-wrapper">
@@ -179,7 +179,7 @@ const WantedListView = ({ item, findPokemonByKey }) => {
           ) : (
             // Single-column layout
             <div className="pokemon-single-column">
-              {item.cp && <CPDisplay cp={item.cp} />}
+              {item.cp && <CP cp={item.cp} />}
               <div className="pokemon-image-container">
                 {item.pref_lucky && (
                   <img

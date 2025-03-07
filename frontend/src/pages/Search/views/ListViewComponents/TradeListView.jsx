@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import MiniMap from './MiniMap';
 import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
 import GenderIcon from '../../../../components/pokemonComponents/GenderIcon';
-import CPDisplay from '../../../../components/pokemonComponents/CPDisplay';
+import CP from '../../../../components/pokemonComponents/CP';
 import ConfirmationOverlay from '../ConfirmationOverlay'; // Import ConfirmationOverlay
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
@@ -73,7 +73,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
               {/* First Column: CP and Pokémon Image */}
               <div className="pokemon-first-column">
               <div className="pokemon-image-container">
-                {item.cp && <CPDisplay cp={item.cp} />}
+                {item.cp && <CP cp={item.cp} />}
                 {item.lucky && (
                   <img
                     src={`${process.env.PUBLIC_URL}/images/lucky.png`}
@@ -164,7 +164,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
             </div>
           ) : (
             <div className="pokemon-single-column">
-              {item.cp > 0 && item.cp && <CPDisplay cp={item.cp} />}
+              {item.cp > 0 && item.cp && <CP cp={item.cp} />}
               <div className="pokemon-image-container">
               {item.lucky && (
                 <img

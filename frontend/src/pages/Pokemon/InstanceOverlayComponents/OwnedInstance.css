@@ -48,9 +48,13 @@
 
 .owned-instance .background-icon {
   position: absolute;
-  top: 10px;
-  right: -8px;
+  top: 10px;         /* Push it down so it appears below the favorite icon */
+  right: -3px;
+  width: 30px;       /* Set a fixed width */
+  height: 30px;      /* Set a fixed height */
   z-index: 10;
+  object-fit: contain; /* Ensures the image scales properly */
+  cursor: pointer;
 }
 
 .owned-instance .background-select-row.active .background-icon {

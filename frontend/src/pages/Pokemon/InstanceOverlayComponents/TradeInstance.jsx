@@ -5,7 +5,7 @@ import './TradeInstance.css';
 import { PokemonDataContext } from '../../../contexts/PokemonDataContext'; 
 
 import EditSaveComponent from './EditSaveComponent';
-import CPComponent from './OwnedComponents/CPComponent';
+import CP from '../../../components/pokemonComponents/CP';
 import NameComponent from './OwnedComponents/NameComponent';
 import GenderComponent from './OwnedComponents/GenderComponent';
 import WeightComponent from './OwnedComponents/WeightComponent';
@@ -331,7 +331,7 @@ const TradeInstance = ({ pokemon, isEditable }) => {
 
       {/* CP Component with validation errors passed down */}
       <div className="CPComponent">
-        <CPComponent
+        <CP
           pokemon={pokemon}
           editMode={editMode}
           onCPChange={handleCPChange}

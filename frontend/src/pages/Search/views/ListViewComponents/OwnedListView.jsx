@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CPDisplay from '../../../../components/pokemonComponents/CPDisplay';
+import CP from '../../../../components/pokemonComponents/CP';
 import MiniMap from './MiniMap';
 import IVDisplay from '../../../../components/pokemonComponents/IVDisplay';
 import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
@@ -55,7 +55,7 @@ const OwnedListView = ({ item }) => {
       <div className="center-column" onClick={handleOpenConfirmation}>
         <div className="card">
           <h3>{item.username}</h3>
-          {item.cp > 0 && item.cp && <CPDisplay cp={item.cp} />}
+          {item.cp > 0 && item.cp && <CP cp={item.cp} />}
           {item.pokemonInfo && (
             <div className="pokemon-image-container">
               {item.lucky && (

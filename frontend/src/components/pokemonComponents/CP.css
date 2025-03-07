@@ -1,0 +1,54 @@
+/* CP.css */
+.cp-unified-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    position: relative;
+}
+
+.cp-unified-display {
+    display: inline-flex;
+    align-items: baseline; /* Ensures the label and value align on the same baseline */
+    width: 100%;
+    justify-content: center;
+}
+
+.cp-label {
+    /* Small, dynamic font size for the label */
+    font-size: clamp(10px, 2vw, 12px);
+    line-height: 1;
+    vertical-align: baseline;
+}
+
+.cp-editable-content {
+    outline: none;
+    background: transparent;
+    border: 1px solid transparent;
+    /* Use the same size as the CP value for editing */
+    font-size: clamp(15px, 2.5vw, 20px);
+    line-height: 1.2;
+    box-sizing: border-box;
+    display: inline-block;
+    min-width: 10px;
+    font-weight: bold;
+}
+
+.cp-editable-container.editable .cp-editable-content {
+    border-color: #a3a3a3;
+    border-radius: 2px;
+}
+
+.cp-value {
+    /* CP value is 1.25 times the label's size */
+    font-size: clamp(15px, 2.5vw, 20px);
+    line-height: 1.2;
+    vertical-align: baseline;
+    font-weight: bold;
+}
+
+.cp-unified-container .error {
+    color: red;
+    font-size: 0.8em;
+    margin-top: 4px;
+    text-align: center;
+}

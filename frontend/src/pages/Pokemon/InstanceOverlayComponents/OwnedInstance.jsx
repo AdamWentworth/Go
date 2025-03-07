@@ -10,7 +10,7 @@ import useValidation from './hooks/useValidation';
 
 // Components
 import EditSaveComponent from './EditSaveComponent';
-import CPComponent from './OwnedComponents/CPComponent';
+import CP from '../../../components/pokemonComponents/CP';
 import FavoriteComponent from './OwnedComponents/FavoriteComponent';
 import NameComponent from './OwnedComponents/NameComponent';
 import LuckyComponent from './OwnedComponents/LuckyComponent';
@@ -386,13 +386,16 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           toggleEditMode={toggleEditMode}
           isEditable={isEditable}
         />
-        <CPComponent 
-          pokemon={pokemon} 
-          editMode={editMode} 
-          onCPChange={handleCPChange}
-          cp={cp}
-          errors={validationErrors}
-        />
+        {/* Wrap CP with a container to center it */}
+        <div className="cp-component-container">
+          <CP
+            pokemon={pokemon} 
+            editMode={editMode} 
+            onCPChange={handleCPChange}
+            cp={cp}
+            errors={validationErrors}
+          />
+        </div>
         <FavoriteComponent 
           pokemon={pokemon} 
           editMode={editMode} 
