@@ -1,10 +1,10 @@
 // PendingTradeView.jsx
 import React, { useState, useEffect } from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
-import MoveDisplay from '../../Search/views/ListViewComponents/MoveDisplay';
-import IVDisplay from '../../Search/views/ListViewComponents/IVDisplay';
-import GenderIcon from '../../Search/views/ListViewComponents/GenderIcon';
-import FriendshipLevel from '../../Search/views/ListViewComponents/FriendshipLevel';
+import MoveDisplay from '../../../components/pokemonComponents/MoveDisplay';
+import IVDisplay from '../../../components/pokemonComponents/IVDisplay';
+import GenderIcon from '../../../components/pokemonComponents/GenderIcon';
+import FriendshipLevel from '../../../components/pokemonComponents/FriendshipLevel';
 import { TRADE_FRIENDSHIP_LEVELS } from '../../../services/indexedDB';
 import { formatDate } from '../../../utils/formattingHelpers';
 import { hasDetails } from '../helpers/hasDetails';

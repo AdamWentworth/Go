@@ -1,17 +1,16 @@
-// WantedListView.jsx
+// TradeListView.jsx
 
-import React, { useState } from 'react'; // Import useState
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import MiniMap from './ListViewComponents/MiniMap';
-import MoveDisplay from './ListViewComponents/MoveDisplay';
-import GenderIcon from './ListViewComponents/GenderIcon';
-import CPDisplay from './ListViewComponents/CPDisplay';
-import FriendshipLevel from './ListViewComponents/FriendshipLevel';
-import ConfirmationOverlay from './ConfirmationOverlay'; // Import ConfirmationOverlay
-import { URLSelect } from '../utils/URLSelect';
-import getPokemonDisplayName from '../utils/getPokemonDisplayName';
-import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
-import './WantedListView.css';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import MiniMap from './MiniMap';
+import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
+import GenderIcon from '../../../../components/pokemonComponents/GenderIcon';
+import CPDisplay from '../../../../components/pokemonComponents/CPDisplay';
+import ConfirmationOverlay from '../ConfirmationOverlay'; // Import ConfirmationOverlay
+import { URLSelect } from '../../utils/URLSelect';
+import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
+import { parsePokemonKey } from '../../../../utils/PokemonIDUtils';
+import './TradeListView.css';
 
 const formatDate = (dateString) => {
   if (!dateString) return 'Unknown';
@@ -19,7 +18,7 @@ const formatDate = (dateString) => {
   return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
 };
 
-const WantedListView = ({ item, findPokemonByKey }) => {
+const TradeListView = ({ item, findPokemonByKey }) => {
   const navigate = useNavigate();
   const [showConfirmation, setShowConfirmation] = useState(false); // State for confirmation overlay
   const imageUrl = URLSelect(item.pokemonInfo, item);
@@ -27,7 +26,6 @@ const WantedListView = ({ item, findPokemonByKey }) => {
   const gigantamax = item.gigantamax;
   const pokemonDisplayName = getPokemonDisplayName(item);
 
-  // Check if any additional details are present
   const hasAdditionalDetails =
     item.weight ||
     item.height ||
@@ -42,9 +40,9 @@ const WantedListView = ({ item, findPokemonByKey }) => {
     setShowConfirmation(true);
   };
 
-  // Confirm and navigate to user's catalog with "Wanted" ownershipStatus
+  // Confirm and navigate to user's catalog with "Trade" ownershipStatus
   const handleConfirmNavigation = () => {
-    navigate(`/collection/${item.username}`, { state: { instanceId: item.instance_id, ownershipStatus: "Wanted" } });
+    navigate(`/collection/${item.username}`, { state: { instanceId: item.instance_id, ownershipStatus: "Trade" } });
     setShowConfirmation(false);
   };
 
@@ -54,14 +52,14 @@ const WantedListView = ({ item, findPokemonByKey }) => {
   };
 
   return (
-    <div className="list-view-row wanted-list-view">
+    <div className="list-view-row trade-list-view">
       {/* Left Column: MiniMap */}
       <div className="left-column">
         {item.distance > 0 && item.distance && <p>Distance: {item.distance.toFixed(2)} km</p>}
         <MiniMap
           latitude={item.latitude}
           longitude={item.longitude}
-          ownershipStatus="wanted"
+          ownershipStatus="trade"
         />
       </div>
 
@@ -71,42 +69,39 @@ const WantedListView = ({ item, findPokemonByKey }) => {
           <h3>{item.username}</h3>
 
           {hasAdditionalDetails ? (
-            // Two-column layout
             <div className="pokemon-columns">
               {/* First Column: CP and Pokémon Image */}
               <div className="pokemon-first-column">
-              {item.cp > 0 && item.cp && <CPDisplay cp={item.cp} />}
-                <div className="pokemon-image-container">
-                  {item.pref_lucky && (
-                  <div className="lucky-backdrop-wrapper">
-                    <img
-                      src={`${process.env.PUBLIC_URL}/images/lucky.png`}
-                      alt="Lucky backdrop"
-                      className="lucky-backdrop"
-                    />
-                  </div>
-                  )}
-                  {imageUrl && (
-                    <img
-                      src={imageUrl}
-                      alt={pokemonDisplayName}
-                      className="pokemon-image"
-                    />
-                  )}
-                  {dynamax && (
-                    <img 
-                      src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
-                      alt="Dynamax Badge" 
-                      className="max-badge" 
-                    />
-                  )}
-                  {gigantamax && (
-                    <img 
-                      src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
-                      alt="Gigantamax Badge" 
-                      className="max-badge" 
-                    />
-                  )}
+              <div className="pokemon-image-container">
+                {item.cp && <CPDisplay cp={item.cp} />}
+                {item.lucky && (
+                  <img
+                    src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                    alt="Lucky backdrop"
+                    className="lucky-backdrop"
+                  />
+                )}
+                {imageUrl && (
+                  <img
+                    src={imageUrl}
+                    alt={pokemonDisplayName}
+                    className="pokemon-image"
+                  />
+                )}
+                {dynamax && (
+                  <img 
+                    src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+                    alt="Dynamax Badge" 
+                    className="max-badge" 
+                  />
+                )}
+                {gigantamax && (
+                  <img 
+                    src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+                    alt="Gigantamax Badge" 
+                    className="max-badge" 
+                  />
+                )}
                 <p className="pokemon-name">
                   {pokemonDisplayName}
                   <GenderIcon gender={item.gender} />
@@ -114,17 +109,8 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                 </div>
               </div>
 
-              {/* Second Column: Weight, Height, Moves, Friendship, Location, and Date */}
+              {/* Second Column: Weight, Height, Moves, Location, and Date */}
               <div className="pokemon-second-column">
-                {/* Add the FriendshipLevel component */}
-                {item.friendship_level && (
-                  <div className="pokemon-friendship">
-                    <FriendshipLevel
-                      level={item.friendship_level}
-                      prefLucky={item.pref_lucky}
-                    />
-                  </div>
-                )}
                 <div className="pokemon-weight-height">
                   {item.weight > 0 && item.weight && (
                     <div className="pokemon-weight">
@@ -177,38 +163,37 @@ const WantedListView = ({ item, findPokemonByKey }) => {
               </div>
             </div>
           ) : (
-            // Single-column layout
             <div className="pokemon-single-column">
-              {item.cp && <CPDisplay cp={item.cp} />}
+              {item.cp > 0 && item.cp && <CPDisplay cp={item.cp} />}
               <div className="pokemon-image-container">
-                {item.pref_lucky && (
-                  <img
-                    src={`${process.env.PUBLIC_URL}/images/lucky.png`}
-                    alt="Lucky backdrop"
-                    className="lucky-backdrop"
-                  />
-                )}
-                {imageUrl && (
-                  <img
-                    src={imageUrl}
-                    alt={pokemonDisplayName}
-                    className="pokemon-image"
-                  />
-                )}
-                {dynamax && (
-                  <img 
-                    src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
-                    alt="Dynamax Badge" 
-                    className="max-badge" 
-                  />
-                )}
-                {gigantamax && (
-                  <img 
-                    src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
-                    alt="Gigantamax Badge" 
-                    className="max-badge" 
-                  />
-                )}
+              {item.lucky && (
+                <img
+                  src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                  alt="Lucky backdrop"
+                  className="lucky-backdrop"
+                />
+              )}
+              {imageUrl && (
+                <img
+                  src={imageUrl}
+                  alt={pokemonDisplayName}
+                  className="pokemon-image"
+                />
+              )}
+              {dynamax && (
+                <img 
+                  src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+                  alt="Dynamax Badge" 
+                  className="max-badge" 
+                />
+              )}
+              {gigantamax && (
+                <img 
+                  src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+                  alt="Gigantamax Badge" 
+                  className="max-badge" 
+                />
+              )}
               <p className="pokemon-name">
                 {pokemonDisplayName}
                 <GenderIcon gender={item.gender} />
@@ -219,27 +204,27 @@ const WantedListView = ({ item, findPokemonByKey }) => {
         </div>
       </div>
 
-      {/* Right Column: Trade List */}
+      {/* Right Column: Wanted List */}
       <div className="right-column">
-        {item.trade_list && (
-          <div className="trade-list-section">
-            <h1>Trade Pokémon:</h1>
-            <div className="trade-list">
-              {Object.keys(item.trade_list).map((pokemonKeyWithUUID) => {
+        {item.wanted_list && (
+          <div className="wanted-list-section">
+            <h1>Wanted Pokémon:</h1>
+            <div className="wanted-list">
+              {Object.keys(item.wanted_list).map((pokemonKeyWithUUID) => {
                 const { baseKey } = parsePokemonKey(pokemonKeyWithUUID);
-                const tradeListPokemon = item.trade_list[pokemonKeyWithUUID];
+                const wantedListPokemon = item.wanted_list[pokemonKeyWithUUID];
                 const matchedPokemon = findPokemonByKey(baseKey);
-
+                
                 if (!matchedPokemon) return null;
 
                 return (
                   <div
                     key={pokemonKeyWithUUID}
-                    className="trade-pokemon-container"
+                    className="wanted-pokemon-container"
                     style={{ position: 'relative' }}
                   >
                     {/* Dynamax Icon */}
-                    {tradeListPokemon.dynamax && (
+                    {wantedListPokemon.dynamax && (
                       <img
                         src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
                         alt="Dynamax"
@@ -255,7 +240,7 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                     )}
 
                     {/* Gigantamax Icon */}
-                    {tradeListPokemon.gigantamax && (
+                    {wantedListPokemon.gigantamax && (
                       <img
                         src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
                         alt="Gigantamax"
@@ -274,7 +259,7 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                     <img
                       src={matchedPokemon.currentImage}
                       alt={matchedPokemon.name}
-                      className={`trade-pokemon-image ${tradeListPokemon.match ? 'glowing-pokemon' : ''}`}
+                      className={`wanted-pokemon-image ${wantedListPokemon.match ? 'glowing-pokemon' : ''}`}
                       title={`${matchedPokemon.form ? `${matchedPokemon.form} ` : ''}${matchedPokemon.name}`}
                     />
                   </div>
@@ -299,4 +284,4 @@ const WantedListView = ({ item, findPokemonByKey }) => {
   );
 };
 
-export default WantedListView;
+export default TradeListView;

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import './PokedexOverlay.css';
 import OverlayPortal from '../../components/OverlayPortal';
-import WindowOverlay from './WindowOverlay';
+import WindowOverlay from '../../components/WindowOverlay';
 import MoveList from './PokedexOverlayComponents/MoveList';
 import MainInfo from './PokedexOverlayComponents/MainInfo';
 import ShinyInfo from './PokedexOverlayComponents/ShinyInfo';

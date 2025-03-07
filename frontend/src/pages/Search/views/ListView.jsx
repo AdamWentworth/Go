@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import './ListView.css';
-import OwnedListView from './OwnedListView';
-import TradeListView from './TradeListView';
-import WantedListView from './WantedListView';
+import OwnedListView from './ListViewComponents/OwnedListView';
+import TradeListView from './ListViewComponents/TradeListView';
+import WantedListView from './ListViewComponents/WantedListView';
 
 const ListView = ({ data, ownershipStatus, hasSearched, pokemonCache, scrollToTopTrigger }) => {
   const [pokemonVariants, setPokemonVariants] = useState([]);

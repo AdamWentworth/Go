@@ -1,8 +1,8 @@
 // WantedPopup.jsx
 
-import React, { useState, useEffect } from 'react';
-import IVDisplay from '../ListViewComponents/IVDisplay';
-import MoveDisplay from '../ListViewComponents/MoveDisplay';
+import React, { useState } from 'react';
+import IVDisplay from '../../../../components/pokemonComponents/IVDisplay';
+import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
 import ConfirmationOverlay from '../ConfirmationOverlay';

@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CPDisplay from './ListViewComponents/CPDisplay';
-import MiniMap from './ListViewComponents/MiniMap';
-import IVDisplay from './ListViewComponents/IVDisplay';
-import MoveDisplay from './ListViewComponents/MoveDisplay';
-import GenderIcon from './ListViewComponents/GenderIcon';
-import { URLSelect } from '../utils/URLSelect';
-import getPokemonDisplayName from '../utils/getPokemonDisplayName';
-import ConfirmationOverlay from './ConfirmationOverlay'; // Import ConfirmationOverlay
+import CPDisplay from '../../../../components/pokemonComponents/CPDisplay';
+import MiniMap from './MiniMap';
+import IVDisplay from '../../../../components/pokemonComponents/IVDisplay';
+import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
+import GenderIcon from '../../../../components/pokemonComponents/GenderIcon';
+import { URLSelect } from '../../utils/URLSelect';
+import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
+import ConfirmationOverlay from '../ConfirmationOverlay'; // Import ConfirmationOverlay
 import './OwnedListView.css';
 
 // Helper function to format date to YYYY-MM-DD

@@ -7,7 +7,7 @@ import TradeInstance from './InstanceOverlayComponents/TradeInstance';
 import TradeDetails from './InstanceOverlayComponents/TradeComponents/TradeDetails';
 import WantedInstance from './InstanceOverlayComponents/WantedInstance';
 import WantedDetails from './InstanceOverlayComponents/WantedComponents/WantedDetails';
-import WindowOverlay from './WindowOverlay';
+import WindowOverlay from '../../components/WindowOverlay';
 import CloseButton from '../../components/CloseButton';
 
 const InstanceOverlay = ({
