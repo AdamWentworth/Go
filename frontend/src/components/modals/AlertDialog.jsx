@@ -1,18 +1,27 @@
 // AlertDialog.js
 
-import React from 'react';
-import './ModalStyles.css'; // Ensure consistent styling
+import React, { useState } from 'react';
+import './AlertDialog.css'; // Unique styling for alert modal
 
 const AlertDialog = ({ message, onClose }) => {
+  const [closing, setClosing] = useState(false);
+
+  const handleClick = () => {
+    // Begin fade out
+    setClosing(true);
+    // After the transition ends, call onClose to remove the modal
+    setTimeout(() => {
+      onClose();
+    }, 300); // Make sure this matches the CSS transition duration
+  };
+
   return (
-    <div className="modal-overlay">
-      <div className="modal">
+    <div 
+      className={`modal-overlay ${closing ? 'fade-out' : ''}`}
+      onClick={handleClick}
+    >
+      <div className="alert-modal">
         <p>{message}</p>
-        <div className="modal-actions">
-          <button onClick={onClose} className="btn btn-primary">
-            OK
-          </button>
-        </div>
       </div>
     </div>
   );

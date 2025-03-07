@@ -4,12 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ActionMenuButton from './ActionMenuButton';
 import CloseButton from './CloseButton';
+import { useModal } from '../contexts/ModalContext'; // Adjust path if needed
 import './ActionMenu.css';
 
 const ActionMenu = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const navigate = useNavigate();
+  const { alert } = useModal();
 
   const toggleMenu = () => {
     if (isAnimating) return;
@@ -70,10 +72,10 @@ const ActionMenu = ({ children }) => {
             </button>
 
             {/* Circular button container */}
-            <div className={`action-menu-buttons-container ${isOpen ? '' : ''}`}>
+            <div className="action-menu-buttons-container">
               <button 
                 className="action-menu-item button-raid" 
-                onClick={() => navigate('/raid')}
+                onClick={() => alert("Raid page is not implemented yet!")}
               >
                 <div className="button-content">
                   <img src="/images/btn_raid.png" alt="Raid" className="button-icon" />
@@ -83,7 +85,7 @@ const ActionMenu = ({ children }) => {
 
               <button 
                 className="action-menu-item button-pvp" 
-                onClick={() => navigate('/pvp')}
+                onClick={() => alert("PvP page is not implemented yet!")}
               >
                 <div className="button-content">
                   <img src="/images/btn_pvp.png" alt="PvP" className="button-icon" />
@@ -103,7 +105,7 @@ const ActionMenu = ({ children }) => {
 
               <button 
                 className="action-menu-item button-rankings" 
-                onClick={() => navigate('/rankings')}
+                onClick={() => alert("Rankings page is not implemented yet!")}
               >
                 <div className="button-content">
                   <img src="/images/btn_rankings.png" alt="Rankings" className="button-icon" />

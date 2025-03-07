@@ -1,7 +1,7 @@
 // ConfirmDialog.js
 
 import React from 'react';
-import './ModalStyles.css'; // Ensure consistent styling
+import './ModalStyles.css'; // Confirm dialog styling
 
 const ConfirmDialog = ({ message, onConfirm, onCancel }) => {
   return (

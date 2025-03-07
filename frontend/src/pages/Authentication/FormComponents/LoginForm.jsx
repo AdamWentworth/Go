@@ -9,6 +9,8 @@ import {
 } from 'react-social-login-buttons';
 import './LoginForm.css';
 
+import { useModal } from '../../../contexts/ModalContext';
+
 const LoginForm = ({
   values,
   errors,
@@ -16,6 +18,9 @@ const LoginForm = ({
   onSubmit,
   onResetPassword, // Added prop for handling reset password
 }) => {
+  // Destructure alert function from the context object
+  const { alert } = useModal();
+
   return (
     <div className="login-page">
       <div className="login-form">
@@ -42,7 +47,7 @@ const LoginForm = ({
           <button
             type="button"
             className="reset-password-button"
-            onClick={() => alert('Password Reset is not yet implemented.')} // Hook up the reset password handler
+            onClick={() => alert('Password Reset is not yet implemented.')}
           >
             Reset Password
           </button>

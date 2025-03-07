@@ -10,52 +10,52 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1005;
+  z-index: 2005;
 }
 
-.modal-overlay .modal {
+.modal {
   background-color: #333;
   color: white;
   padding: 1.5rem;
   border-radius: 8px;
-  max-width: 600px; /* Increased width for more content */
+  max-width: 600px;
   width: 90%;
-  max-height: 80vh; /* Set a maximum height */
+  max-height: 80vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-.modal-overlay .modal-content {
+.modal-content {
   overflow-y: auto;
   flex-grow: 1;
   margin-bottom: 1rem;
 }
 
-.modal-overlay .modal-actions {
+.modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
 }
 
-.modal-overlay .btn {
+.btn {
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
 }
 
-.modal-overlay .btn-primary {
+.btn-primary {
   background-color: #007bff;
   color: #fff;
 }
 
-.modal-overlay .btn-secondary {
+.btn-secondary {
   background-color: #6c757d;
   color: #fff;
 }
 
-.modal-overlay .btn-link {
+.btn-link {
   background: none;
   border: none;
   color: #007bff;
@@ -65,10 +65,10 @@
   text-decoration: underline;
 }
 
-.modal-overlay ul {
+ul {
   padding-left: 1.5rem;
 }
 
-.modal-overlay li {
+li {
   margin-bottom: 0.5rem;
 }
