@@ -24,12 +24,15 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: none;
+  background: transparent;
   border: none;
   padding: 0;
   cursor: pointer;
   display: flex;
+  flex-direction: row;
   align-items: center;
+  pointer-events: auto;
+  z-index: 2100;  /* Ensures it’s on top */
   opacity: 0;
   transform: translateY(-20px);
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -41,20 +44,26 @@
   transition-delay: 0.1s;
 }
 
+/* Settings text: add right margin for spacing */
 .settings-text {
+  font-size: clamp(1rem, 1.5vw, 1.5rem);
   color: #fff;
-  font-size: 1rem;
-  margin-right: 0.5rem;
+  margin-right: 0.5rem;  /* Gap between text and icon */
 }
 
 .settings-icon {
-  width: 24px;
-  height: 24px;
+  width: clamp(30px, 4vw, 60px);
+  height: clamp(30px, 4vw, 60px);
+  transition: transform 0.2s;
 }
 
 /* Container for animated buttons */
-/* (No explicit sizing needed as buttons are fixed) */
-.action-menu-buttons-container {}
+/* Make it span the full viewport for relative units to work */
+.action-menu-buttons-container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
 
 /* Common styles for each animated button; all start at the same closed state (bottom–center) */
 .action-menu-item {
@@ -63,7 +72,7 @@
   top: calc(100% - 25px); /* Closed state: 25px from the bottom */
   transform: translate(-50%, -50%);
   opacity: 0;
-  transition: top 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
+  transition: top 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
   background: transparent;
   border: none;
   outline: none;
@@ -72,19 +81,19 @@
 
 /* Open state positions (each button moves from center to its final position): */
 
-/* Raid button: positioned to the far left, above the others */
+/* Raid button: positioned to the far left and above center */
 .action-menu-buttons-container.open .button-raid {
   top: 50%;
   left: 50%;
-  transform: translate(calc(-50% - 60px), calc(-50% - 80px));
+  transform: translate(calc(-50% - 15vw), calc(-50% - 15vh));
   opacity: 1;
 }
 
-/* Search button: positioned between Raid and Pokémon (to the left, slightly lower than Raid) */
+/* Search button: positioned to the left, slightly lower than Raid */
 .action-menu-buttons-container.open .button-search {
   top: 50%;
   left: 50%;
-  transform: translate(calc(-50% - 100px), calc(-50% + 0px));
+  transform: translate(calc(-50% - 30vw), calc(-50% + 0vh));
   opacity: 1;
 }
 
@@ -92,7 +101,7 @@
 .action-menu-buttons-container.open .button-pokemon {
   top: 50%;
   left: 50%;
-  transform: translate(calc(-50% - 60px), calc(-50% + 80px));
+  transform: translate(calc(-50% - 15vw), calc(-50% + 15vh));
   opacity: 1;
 }
 
@@ -108,7 +117,7 @@
 .action-menu-buttons-container.open .button-pvp {
   top: 50%;
   left: 50%;
-  transform: translate(calc(-50% + 60px), calc(-50% - 80px));
+  transform: translate(calc(-50% + 15vw), calc(-50% - 15vh));
   opacity: 1;
 }
 
@@ -116,7 +125,7 @@
 .action-menu-buttons-container.open .button-trades {
   top: 50%;
   left: 50%;
-  transform: translate(calc(-50% + 100px), calc(-50% + 0px));
+  transform: translate(calc(-50% + 30vw), calc(-50% + 0vh));
   opacity: 1;
 }
 
@@ -124,7 +133,7 @@
 .action-menu-buttons-container.open .button-rankings {
   top: 50%;
   left: 50%;
-  transform: translate(calc(-50% + 60px), calc(-50% + 80px));
+  transform: translate(calc(-50% + 15vw), calc(-50% + 15vh));
   opacity: 1;
 }
 
@@ -135,17 +144,17 @@
   align-items: center;
 }
 
-/* Icon styling */
+/* Icon styling: size now scales with viewport width, but with larger bounds */
 .button-icon {
-  width: 40px;
-  height: 40px;
+  width: clamp(80px, 8vw, 150px);
+  height: clamp(80px, 8vw, 150px);
   transition: transform 0.2s;
 }
 
-/* Label styling */
+/* Label styling: font-size scales with viewport width with larger bounds */
 .button-label {
   margin-top: 0.25rem;
-  font-size: 0.75rem;
+  font-size: clamp(1.25rem, 1.5vw, 1.75rem);
   color: #fff;
 }
 

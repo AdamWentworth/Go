@@ -26,7 +26,7 @@ const ActionMenu = () => {
       setTimeout(() => {
         setIsOpen(false);
         setIsAnimating(false);
-      }, 500); // Should match the CSS transition duration
+      }, 250); // Adjust as desired
     } else {
       setIsOpen(true);
       // Query the container after the overlay is rendered.
@@ -51,10 +51,10 @@ const ActionMenu = () => {
           <>
             <CloseButton onClick={toggleMenu} />
 
-            {/* Settings button in the top right */}
+            {/* Settings button in the top right now acts like an animated button */}
             <button 
               className="settings-button" 
-              onClick={() => navigate('/settings')}
+              onClick={() => alert("Settings page is not implemented yet!")}
             >
               <span className="settings-text">Settings</span>
               <img 
