@@ -22,7 +22,7 @@ function Navbar() {
         const trimmedQuery = searchQuery.trim();
         if (trimmedQuery) {
           // 1) Navigate to route
-          navigate(`/collection/${trimmedQuery.toLowerCase()}`);
+          navigate(`/pokemon/${trimmedQuery.toLowerCase()}`);
       
           setSearchQuery('');
         }

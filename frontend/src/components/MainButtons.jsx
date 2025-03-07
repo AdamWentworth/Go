@@ -10,14 +10,14 @@ function MainButtons({ navbar }) {
     return (
         <div className={containerClass}>
             {/* <button className="mainButton pvp-btn">PVP</button> */}
-            <Link to="/collection">
-                <button className="mainButton collect-btn">Collection</button>
+            <Link to="/pokemon">
+                <button className="mainButton collect-btn">Pokemon</button>
             </Link>
             {/* <Link to="/raid">
                 <button className="mainButton raid-btn">Raid</button>
             </Link> */}
-            <Link to="/discover"> 
-                <button className="mainButton discover-btn">Discover</button>
+            <Link to="/search"> 
+                <button className="mainButton discover-btn">Search</button>
             </Link>
                 {/* <button className="mainButton leaderboards-btn">Leaderboards</button> */}
         </div>

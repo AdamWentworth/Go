@@ -4,11 +4,11 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import MainButtons from './components/MainButtons';
-import Collection from './pages/Collection/Collection';
+import Pokemon from './pages/Pokemon/Pokemon';
 import Login from './pages/Authentication/Login';
 import Register from './pages/Authentication/Register';
 import Account from './pages/Authentication/Account';
-import Discover from './pages/Discover/Discover';
+import Search from './pages/Search/Search';
 import Trades from './pages/Trades/Trades';
 import './App.css';
 import CacheContext from './contexts/CacheContext';
@@ -46,13 +46,13 @@ function App() {
                                                             <main>
                                                                 <Routes>
                                                                     <Route path="/" element={<MainButtons />} />
-                                                                    <Route path="/collection" element={<Collection isOwnCollection={true} />} />
+                                                                    <Route path="/pokemon" element={<Pokemon isOwnCollection={true} />} />
                                                                     <Route path="/trades" element={<Trades />} />
                                                                     <Route path="/login" element={<Login />} />
                                                                     <Route path="/register" element={<Register />} />
                                                                     <Route path="/account" element={<Account />} />
-                                                                    <Route path="/discover" element={<Discover />} />
-                                                                    <Route path="/collection/:username" element={<Collection isOwnCollection={false} />} />
+                                                                    <Route path="/search" element={<Search />} />
+                                                                    <Route path="/pokemon/:username" element={<Pokemon isOwnCollection={false} />} />
                                                                 </Routes>
                                                             </main>
                                                             <ToastContainer

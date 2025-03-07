@@ -80,7 +80,7 @@ const ActionMenu = () => {
               {/* Search button */}
               <button 
                 className="action-menu-item button-search" 
-                onClick={() => navigate('/discover')}
+                onClick={() => navigate('/search')}
               >
                 <div className="button-content">
                   <img src="/images/btn_search.png" alt="Search" className="button-icon" />
@@ -91,7 +91,7 @@ const ActionMenu = () => {
               {/* Pokémon button */}
               <button 
                 className="action-menu-item button-pokemon" 
-                onClick={() => navigate('/collection')}
+                onClick={() => navigate('/pokemon')}
               >
                 <div className="button-content">
                   <img src="/images/btn_pokemon.png" alt="Pokémon" className="button-icon" />

@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
-import MoveDisplay from '../../Discover/views/ListViewComponents/MoveDisplay';
-import IVDisplay from '../../Discover/views/ListViewComponents/IVDisplay';
-import FriendshipLevel from '../../Discover/views/ListViewComponents/FriendshipLevel';
-import GenderIcon from '../../Discover/views/ListViewComponents/GenderIcon'; // Add this import
+import MoveDisplay from '../../Search/views/ListViewComponents/MoveDisplay';
+import IVDisplay from '../../Search/views/ListViewComponents/IVDisplay';
+import FriendshipLevel from '../../Search/views/ListViewComponents/FriendshipLevel';
+import GenderIcon from '../../Search/views/ListViewComponents/GenderIcon'; // Add this import
 import { TRADE_FRIENDSHIP_LEVELS } from '../../../services/indexedDB';
 import { formatDate } from '../../../utils/formattingHelpers';
 import { hasDetails } from '../helpers/hasDetails';

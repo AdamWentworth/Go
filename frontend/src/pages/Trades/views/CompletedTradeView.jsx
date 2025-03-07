@@ -1,10 +1,10 @@
 // CompletedTradeView.jsx
 import React, { useState, useEffect } from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
-import MoveDisplay from '../../Discover/views/ListViewComponents/MoveDisplay';
-import IVDisplay from '../../Discover/views/ListViewComponents/IVDisplay';
-import GenderIcon from '../../Discover/views/ListViewComponents/GenderIcon';
-import FriendshipLevel from '../../Discover/views/ListViewComponents/FriendshipLevel';
+import MoveDisplay from '../../Search/views/ListViewComponents/MoveDisplay';
+import IVDisplay from '../../Search/views/ListViewComponents/IVDisplay';
+import GenderIcon from '../../Search/views/ListViewComponents/GenderIcon';
+import FriendshipLevel from '../../Search/views/ListViewComponents/FriendshipLevel';
 import { TRADE_FRIENDSHIP_LEVELS } from '../../../services/indexedDB';
 import { formatDate } from '../../../utils/formattingHelpers';
 import { hasDetails } from '../helpers/hasDetails';
