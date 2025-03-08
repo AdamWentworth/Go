@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import { useTradeData } from '../../contexts/TradeDataContext';
-import { usePokemonData } from '../../contexts/PokemonDataContext';  // <-- Import here
+import { usePokemonData } from '../../contexts/PokemonDataContext';
 import TradeStatusButtons from './TradeStatusButtons';  
 import TradeList from './TradeList';  
 import './TradeStatusButtons.css';
+import ActionMenu from '../../components/ActionMenu'; // Import the ActionMenu component
 
 function Trades() {
   const { trades, relatedInstances } = useTradeData();  
@@ -38,6 +39,9 @@ function Trades() {
         loading={loading}
         periodicUpdates={periodicUpdates}
       />
+
+      {/* Render the ActionMenu component */}
+      <ActionMenu />
     </div>
   );
 }

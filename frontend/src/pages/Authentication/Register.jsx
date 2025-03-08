@@ -9,7 +9,8 @@ import './Register.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import LoadingSpinner from '../../components/LoadingSpinner'; // Import the LoadingSpinner component
+import LoadingSpinner from '../../components/LoadingSpinner';
+import ActionMenu from '../../components/ActionMenu'; // Import the reusable ActionMenu component
 
 function Register() {
   const {
@@ -33,12 +34,12 @@ function Register() {
     showOptionsOverlay,
     setShowOptionsOverlay,
     locationOptions,
-    setErrors // Ensure setErrors is destructured from the hook
+    setErrors
   } = useRegisterForm(onSubmit);
 
   const [feedback, setFeedback] = useState('');
   const [isRegistered, setIsRegistered] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // New state for loading
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
 
   async function onSubmit(formValues) {
@@ -114,7 +115,7 @@ function Register() {
   return (
     <div>
       {isLoading ? (
-        <LoadingSpinner /> // Show spinner while loading
+        <LoadingSpinner />
       ) : isRegistered ? (
         <SuccessMessage mainMessage={feedback} detailMessage="You are now successfully registered and logged in!" />
       ) : (
@@ -141,6 +142,8 @@ function Register() {
           locationOptions={locationOptions}
         />
       )}
+      {/* Render the ActionMenu component */}
+      <ActionMenu />
     </div>
   );
 }

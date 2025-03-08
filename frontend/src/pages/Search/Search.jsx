@@ -1,4 +1,4 @@
-// Discover.jsx
+// Search.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
 import PokemonSearchBar from './PokemonSearchBar';
@@ -7,11 +7,14 @@ import MapView from './views/MapView';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import axios from 'axios';
 
-// Import the context hook (ensure you’re using useContext inside your hook)
+// Import contexts
 import { usePokemonData } from '../../contexts/PokemonDataContext';
-import { useModal } from '../../contexts/ModalContext'; // adjust path if needed
+import { useModal } from '../../contexts/ModalContext';
 
-const Discover = () => {
+// Import the reusable ActionMenu (adjust the path if necessary)
+import ActionMenu from '../../components/ActionMenu';
+
+const Search = () => {
   const [view, setView] = useState('list');
   const [searchResults, setSearchResults] = useState([]);
   const [ownershipStatus, setOwnershipStatus] = useState('owned');
@@ -24,17 +27,14 @@ const Discover = () => {
 
   // Get pokedexLists from the PokemonDataContext
   const { variants, pokedexLists } = usePokemonData();
+  const { alert } = useModal();
 
   // Refs for scrolling
   const containerRef = useRef(null);
   const shouldScrollRef = useRef(false);
 
-  const { alert } = useModal();
-
-  // Instead of fetching from the DB, we now pull the default list from the context
   useEffect(() => {
     if (pokedexLists) {
-      // Assumes that the default list is stored under the key "default"
       setPokemonCache(pokedexLists.default || []);
       console.log('Using default store from pokedexLists in context:', pokedexLists.default);
     }
@@ -79,13 +79,11 @@ const Discover = () => {
         const dataArray = Array.isArray(data) ? data : Object.values(data);
 
         if (dataArray && dataArray.length > 0) {
-          // Enrich the data using the default list from context
           const enrichedData = [];
 
           if (pokemonCache && pokemonCache.length > 0) {
             for (const item of dataArray) {
               if (item.pokemon_id) {
-                // Match the item by pokemon_id in the default list array
                 const pokemonInfo = pokemonCache.find(
                   (p) => p.pokemon_id === item.pokemon_id
                 );
@@ -101,7 +99,6 @@ const Discover = () => {
             }
 
             if (enrichedData.length > 0) {
-              // Sort by distance
               enrichedData.sort((a, b) => a.distance - b.distance);
               setSearchResults(enrichedData);
               setScrollToTopTrigger((prev) => prev + 1);
@@ -148,7 +145,6 @@ const Discover = () => {
         pokemonCache={pokemonCache}
       />
 
-      {/* Render error message at the top */}
       {errorMessage && (
         <div
           className="error-message"
@@ -179,8 +175,11 @@ const Discover = () => {
       </div>
 
       {errorMessage && <div className="error-message">{errorMessage}</div>}
+
+      {/* Simply render the ActionMenu component as in the Pokémon page */}
+      <ActionMenu />
     </div>
   );
 };
 
-export default Discover;
+export default Search;

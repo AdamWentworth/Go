@@ -1,560 +1,145 @@
 /* Navbar.css */
 
 /* General navbar styling */
-.logo-container img {
-    width: 70px;
-    height: 70px;
-    margin-left: 20px;
-    margin-right: 10px;
-    margin-top: -15px;
-    margin-bottom: -15px;
-}
-
-/* Navbar background color based on theme */
 .navbar {
     display: flex;
-    align-items: center;
-    padding-top: 10px;
-    justify-content: space-between;
-    min-height: 68px;
-    background-color: #111;
-    padding-bottom: 8px;
+    width: 100%;
+    background-color: #0F0F0F;
+    padding: 10px 20px;
+    border-bottom: 1px solid #ccc; /* Light gray border */
+    position: relative; /* For positioning mobile elements */
 }
 
-/* Navbar main: align title and buttons to the left */
-.navbar-main {
+/* Desktop styles */
+.navbar-left,
+.navbar-right {
+    width: 50%;
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
 }
 
-/* Title color based on theme */
-.navbar.light-mode h1 {
-    color: black;
-}
-
-.navbar.dark-mode h1 {
-    color: white;
-}
-
-.title-container {
-    margin-right: 8px; /* Add space between title and buttons */
+.navbar-right {
+    margin-right: 0;
 }
 
 .navbar-buttons {
     display: flex;
     gap: 10px;
     align-items: center;
-    margin-right: 20px;
-    justify-content: flex-end;
 }
 
-.navbar-buttons button {
+/* Auth button styling */
+.navbar .auth-button {
     background-color: #007BFF;
     border: none;
     color: white;
-    padding: 10px 20px;
-    text-align: center;
-    font-size: 16px;
+    padding: clamp(0.5rem, 1vw, 0.75rem) clamp(1rem, 2vw, 1.5rem);
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
     cursor: pointer;
     border-radius: 12px;
-    white-space: nowrap; /* Prevent word wrapping */
+    white-space: nowrap;
 }
 
-.navbar-buttons button:hover {
+/* .auth-button:hover {
+    background-color: #0056b3;
+} */
+
+/* Mobile Hamburger Menus: hidden on desktop */
+.mobile-left-menu,
+.mobile-right-menu {
+    display: none;
+}
+
+/* Hamburger button style */
+.hamburger-button {
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    color: white;
+    cursor: pointer;
+}
+
+/* Mobile dropdown common style */
+.mobile-dropdown {
+    position: absolute;
+    background: #0F0F0F;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    z-index: 1000;
+    min-width: 150px;
+}
+
+/* Specific alignment for left dropdown */
+.left-dropdown {
+    top: calc(100%); /* 5px gap inside the navbar */
+}
+
+/* Specific alignment for right dropdown */
+.right-dropdown {
+    top: calc(100%);
+    right: 20px;
+}
+
+/* Ensure dropdown links are contained and do not overflow */
+.mobile-dropdown a {
+    display: block;
+    padding: 0.5rem 0.5rem;
+    color: white;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.mobile-dropdown a:hover {
+    background-color: #007BFF;
+}
+/* Gear button style for settings (right menu) */
+.gear-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+/* Style for gear icon */
+.settings-icon {
+    width: clamp(32px, 4vw, 32px);
+    height: clamp(32px, 4vw, 32px);
+    margin-right: 5px;
+    margin-bottom: -5px;
+}
+
+/* Ensure all links and buttons in the navbar show a pointer cursor on hover */
+.navbar a, .navbar button {
+    cursor: pointer;
+}
+
+/* Optionally, if you want the whole clickable area of the auth buttons to be styled consistently */
+.navbar-buttons a {
+    display: inline-block;
+}
+
+/* Maintain existing hover style for auth-button */
+.navbar-buttons .auth-button:hover {
     background-color: #0056b3;
 }
 
-/* Specific Styling for Trades Button */
-.navbar-buttons a[href="/trades"] button {
-    background-color: #28a745; /* Green color for Trades button */
-}
 
-.navbar-buttons a[href="/trades"] button:hover {
-    background-color: #1e7e34; /* Darker green on hover */
-}
-
-/* Theme Toggle Styling */
-.theme-toggle {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 10px;
-}
-
-.icon-background {
-    width: 34px;
-    height: 34px;
-    background-color: transparent;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.4s ease;
-}
-
-.navbar.light-mode .icon-background {
-    background-color: #222; /* Dark grey background in dark mode */
-}
-
-.navbar.dark-mode .icon-background {
-    background-color: #f0f0f0; /* Light grey background in light mode */
-}
-
-.theme-toggle img {
-    width: 24px;
-    height: 24px;
-    transition: filter 0.4s ease;
-}
-
-/* Invert icon color in light mode */
-.navbar.light-mode .theme-toggle img {
-    filter: invert(1);
-}
-
-/* Invert icon color in dark mode */
-.navbar.dark-mode .theme-toggle img {
-    filter: invert(0);
-}
-
-/* Button text color based on theme */
-.navbar.light-mode .navbar-buttons button {
-    color: white;
-}
-
-.navbar.dark-mode .navbar-buttons button {
-    color: white;
-}
-
-/* Search container is separate from navbar buttons */
-.search-container {
-    flex-grow: 2;
-    display: flex;
-    justify-content: center;
-    max-width: 50%; /* Make sure it extends to the middle */
-}
-
-.search-form {
-    display: flex;
-    width: 100%;
-    position: relative;
-}
-
-.search-input {
-    width: 100%;
-    padding: 10px 15px;
-    border-radius: 30px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-    padding-right: 40px; /* Leave space for the button */
-    box-sizing: border-box;
-}
-
-.search-button {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 20px;
-}
-
-.navbar.light-mode .search-button {
-    color: #007BFF;
-}
-
-.navbar.dark-mode .search-button {
-    color: #66b3ff;
-}
-
-.search-button:hover {
-    color: #0056b3;
-}
-
-/* Responsive adjustments */
-@media (max-width: 480px) {
-    .navbar {
-        display: flex;
-        flex-direction: column;
-        text-align: center;
-        padding-top: 10px;
-        width: 100%; /* Ensure the navbar takes full width */
-        padding-bottom: 0px;
+/* Media Query for Mobile (viewport less than 768px) */
+@media (max-width: 768px) {
+    /* Hide desktop navbar content */
+    .navbar-left,
+    .navbar-right {
+        display: none;
     }
-
-    .navbar h1 {
-        font-size: 14px; /* Set header text to 14px */
-    }
-    
-    .logo-container {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        margin-top: 10px;
-        margin-bottom: 5px;
-    }
-    .search-container {
-        max-width: 75%
-    }
-    /* Render the header in its own row */
-    .title-container {
-        width: 100%;
-        text-align: center;
-        margin: 10px 0;
-    }
-
-    /* Main buttons appear below the header */
-    .navbar-main {
-        flex-direction: column;
-        width: 100%;
-        align-items: center;
-    }
-
-    .navbar-buttons {
-        flex-direction: row;
-        justify-content: center;
-        width: 100%;
-        margin-top: 10px;
-        min-width: unset; /* Remove the min-width on small screens */
-        margin-bottom: 10px;
-    }    
-
-    .navbar-buttons .icon-background {
-        height: 26px;
-        width: 26px;
-    }
-
-    .navbar-buttons .icon-background img {
-        height: 18px;
-        width: 18px;
-    }
-
-    .navbar-buttons button {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
-
-    .search-container {
-        width: 100%;
-        margin-top: 10px;
-    }
-
-    .search-form {
-        max-width: 100%;
-    }
-
-    .search-input {
-        max-width: 100%; /* Ensure the input takes full width on small screens */
-        font-size: 10px;
-    }
-
-    .App h1 {
-        padding: 0px !important;
-    }
-
-    .logo-container img {
-        margin-left: 10px;
-        margin-right: 10px;
-    }
-}
-
-@media (min-width: 481px) and (max-width: 767px) {
-    .navbar {
-        flex-direction: column;
-    }
-
-    .logo-container img {
-        margin-top: -5px;
-        margin-bottom: -10px;
-    }
-
-    .title-container {
-        width: 100%;
-        text-align: center;
-        margin: 10px 0;
-    }
-
-    .logo-container {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-    }
-
-    .navbar h1 {
-        font-size: 16px; /* Slightly larger than 480px screens */
-    }
-
-    .App h1 {
-        padding-bottom: 0px !important;
-        font-size: 22px;
-    }
-
-    .navbar-main {
-        flex-direction: column;
-        width: 100%;
-        align-items: center;
-    }
-
-    .search-container {
-        max-width: 75%
-    }
-
-    .navbar-buttons {
-        flex-direction: row;
-        justify-content: center;
-        width: 100%;
-        margin-top: 10px;
-        min-width: unset; /* Remove min-width on medium screens */
-    }
-
-    .navbar-buttons .icon-background {
-        height: 32px;
-        width: 32px;
-    }
-
-    .navbar-buttons .icon-background img {
-        height: 24px;
-        width: 24px;
-    }
-
-    .navbar-buttons button {
-        padding: 8px 12px;
-        font-size: 14px;
-    }
-
-    .search-container {
-        width: 100%;
-        margin-top: 10px;
-    }
-
-    .search-form {
-        max-width: 100%;
-    }
-
-    .search-input {
-        max-width: 100%; /* Ensure input takes full width */
-        font-size: 12px; /* Slightly larger than 480px screens */
-    }
-    .logo-container img {
-        margin-left: 10px;
-        margin-right: 10px;
-    }
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
-    .navbar {
-        flex-direction: column;
-        padding-bottom: 0px;
-    }
-
-    .logo-container {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        margin-top: 10px;
-        margin-bottom: 5px;
-    }
-
-    .navbar h1 {
-        font-size: 18px; /* Slightly larger font size for larger screens */
-    }
-
-    .App h1 {
-        padding-bottom: 0px !important;
-        font-size: 28px;
-    }
-
-    .search-container {
-        max-width: 75%
-    }
-
-    .title-container {
-        width: 100%;
-        text-align: center;
-        margin: 10px 0;
-    }
-
-    .navbar-main {
-        flex-direction: column;
-        width: 100%;
-        align-items: center;
-    }
-
-    .navbar-buttons {
-        flex-direction: row;
-        justify-content: center;
-        width: 100%;
-        margin-top: 10px;
-        margin-bottom: 8px;
-        min-width: unset; /* Remove min-width on larger screens */
-    }
-
-    .navbar-buttons .icon-background {
-        height: 38px;
-        width: 38px;
-    }
-
-    .navbar-buttons .icon-background img {
-        height: 30px;
-        width: 30px;
-    }
-
-    .navbar-buttons button {
-        padding: 10px 15px;
-        font-size: 16px;
-    }
-
-    .search-container {
-        width: 100%;
-        margin-top: 10px;
-    }
-
-    .search-form {
-        max-width: 100%;
-    }
-
-    .search-input {
-        max-width: 100%;
-        font-size: 14px; /* Larger font size for larger screens */
-    }
-    .logo-container img {
-        margin-left: 10px;
-        margin-right: 10px;
-    }
-}
-
-@media (min-width: 1024px) {
-    .navbar {
+    /* Show mobile hamburger menus */
+    .mobile-left-menu,
+    .mobile-right-menu {
         display: flex;
         align-items: center;
+    }
+    .navbar {
         justify-content: space-between;
-        padding-top: 10px;
-        padding-bottom: 0px;
-    }
-
-    /* Adjust title size */
-    .navbar h1 {
-        font-size: 24px; /* Adjusted for larger screens */
-        white-space: nowrap; /* Prevent wrapping */
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .App h1 {
-        padding-bottom: 0px !important;
-        font-size: 17px;
-    }
-
-    /* Search container with a min-width and centered */
-    .search-container {
-        display: flex;
-        justify-content: center;
-    }
-
-    /* Navbar buttons aligned to the right */
-    .navbar-buttons {
-        min-width: unset;
-    }
-
-    .navbar-buttons .icon-background {
-        height: 31px;
-        width: 31px;
-    }
-
-    .navbar-buttons .icon-background img {
-        height: 22px;
-        width: 22px;
-    }
-
-    .navbar-buttons button {
-        font-size: 10px;
-        padding: 10px 10px;
-    }
-
-    .navbar-buttons button:hover {
-        background-color: #0056b3;
-    }
-
-    /* Search form styling */
-    .search-form {
-        display: flex;
-        width: 100%;
-        /* max-width: 600px; */
-        position: relative;
-    }
-
-    .search-input {
-        width: 100%;
-        padding: 9px 10px;
-        border-radius: 30px;
-        border: 1px solid #ccc;
-        font-size: 12px;
-        padding-right: 40px; /* Leave space for the search button */
-    }
-
-    .search-button {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: none;
-        border: none;
-        cursor: pointer;
-        font-size: 20px;
-        color: #007BFF;
-    }
-
-    .search-button:hover {
-        color: #0056b3;
     }
 }
 
-@media (min-width: 1440px) {
-    .navbar h1 {
-        font-size: 28px;
-    }
-
-    .navbar-main {
-        justify-content: center;
-    }
-
-    .navbar-buttons .icon-background {
-        height: 38px;
-        width: 38px;
-    }
-
-    .navbar-buttons .icon-background img {
-        height: 30px;
-        width: 30px;
-    }
-
-    .navbar-buttons button {
-        padding: 10px 20px;
-        font-size: 16px;
-    }
-    .search-input {
-        font-size: 14px;
-
-    }
-}
-
-@media (min-width: 2560px) {
-    .navbar h1 {
-        font-size: 42px;
-    }
-    .App h1 {
-       padding-left: 10px;
-
-    }
-
-    .navbar-buttons button {
-        padding: 10px 20px;
-        font-size: 28px;
-    }
-    .search-input {
-        font-size: 24px;
-    }
-}

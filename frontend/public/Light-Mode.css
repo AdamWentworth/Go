@@ -35,7 +35,13 @@
 .edit-save-container .icon-button img, .iv-reset-image {
     filter: none
 }
+.action-menu-overlay {
+    background: linear-gradient(to bottom right, #e0f0e5, #34807d);
+}
 
+.action-menu-button-image {
+    filter: drop-shadow(0 0 3px #000000); /* Adds blue glow around opaque parts */
+}
 .pokemon-options-overlay .option-card.pokedex:hover {
     background-color: #adf3ff;
 }

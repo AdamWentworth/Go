@@ -7,7 +7,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to bottom right, #e0f0e5, #34807d);
+  background: linear-gradient(to bottom right, #111, #34807d);
   z-index: 2000;
   opacity: 0;
   pointer-events: none;
@@ -19,7 +19,7 @@
   pointer-events: all;
 }
 
-/* Settings button in the top right */
+/* Settings button styling (fade only) */
 .settings-button {
   position: absolute;
   top: 1rem;
@@ -32,44 +32,95 @@
   flex-direction: row;
   align-items: center;
   pointer-events: auto;
-  z-index: 2100;  /* Ensures it’s on top */
+  z-index: 2100;
   opacity: 0;
-  transform: translateY(-20px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.3s ease;
+  margin-top: 20px;
+  margin-right: 20px;
 }
 
 .action-menu-overlay.active .settings-button {
   opacity: 1;
-  transform: translateY(0);
   transition-delay: 0.1s;
 }
 
-/* Settings text: add right margin for spacing */
+/* Settings text */
 .settings-text {
   font-size: clamp(1rem, 1.5vw, 1.5rem);
   color: #fff;
-  margin-right: 0.5rem;  /* Gap between text and icon */
+  margin-right: 0.5rem;
 }
 
 .settings-icon {
-  width: clamp(30px, 4vw, 60px);
-  height: clamp(30px, 4vw, 60px);
+  width: clamp(30px, 4vw, 40px);
+  height: clamp(30px, 4vw, 40px);
   transition: transform 0.2s;
 }
 
-/* Container for animated buttons */
-/* Make it span the full viewport for relative units to work */
+/* Auth button container (fade only) */
+.auth-button-container {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  z-index: 2100;
+  margin-bottom: 20px;
+  margin-left: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.action-menu-overlay.active .auth-button-container {
+  opacity: 1;
+  transition-delay: 0.1s;
+}
+
+/* Auth button styling */
+.auth-button {
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  cursor: pointer;
+}
+
+.auth-button-text {
+  font-size: clamp(1rem, 1.5vw, 1.5rem);
+  color: #fff;
+}
+
+.auth-button-icon {
+  width: clamp(30px, 4vw, 40px);
+  height: clamp(30px, 4vw, 40px);
+  transition: transform 0.2s;
+  margin-left: 5px;
+}
+
+.auth-button:hover .auth-button-icon {
+  transform: scale(1.05);
+}
+
+.auth-button-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+/* Central animated buttons */
 .action-menu-buttons-container {
   width: 100vw;
   height: 100vh;
   position: relative;
 }
 
-/* Common styles for each animated button; all start at the same closed state (bottom–center) */
 .action-menu-item {
   position: fixed;
   left: 50%;
-  top: calc(100% - 25px); /* Closed state: 25px from the bottom */
+  top: calc(100% - 25px);
   transform: translate(-50%, -50%);
   opacity: 0;
   transition: top 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
@@ -79,9 +130,6 @@
   cursor: pointer;
 }
 
-/* Open state positions (each button moves from center to its final position): */
-
-/* Raid button: positioned to the far left and above center */
 .action-menu-buttons-container.open .button-raid {
   top: 50%;
   left: 50%;
@@ -89,7 +137,6 @@
   opacity: 1;
 }
 
-/* Search button: positioned to the left, slightly lower than Raid */
 .action-menu-buttons-container.open .button-search {
   top: 50%;
   left: 50%;
@@ -97,7 +144,6 @@
   opacity: 1;
 }
 
-/* Pokémon button: positioned to the bottom left */
 .action-menu-buttons-container.open .button-pokemon {
   top: 50%;
   left: 50%;
@@ -105,7 +151,6 @@
   opacity: 1;
 }
 
-/* Home button: remains centered */
 .action-menu-buttons-container.open .button-home {
   top: 50%;
   left: 50%;
@@ -113,7 +158,6 @@
   opacity: 1;
 }
 
-/* PvP button: positioned to the top right */
 .action-menu-buttons-container.open .button-pvp {
   top: 50%;
   left: 50%;
@@ -121,7 +165,6 @@
   opacity: 1;
 }
 
-/* Trades button: positioned directly to the right */
 .action-menu-buttons-container.open .button-trades {
   top: 50%;
   left: 50%;
@@ -129,7 +172,6 @@
   opacity: 1;
 }
 
-/* Rankings button: positioned to the bottom right */
 .action-menu-buttons-container.open .button-rankings {
   top: 50%;
   left: 50%;
@@ -137,28 +179,72 @@
   opacity: 1;
 }
 
-/* Inner container for stacking icon and label */
+/* Inner container for button content */
 .button-content {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-/* Icon styling: size now scales with viewport width, but with larger bounds */
 .button-icon {
   width: clamp(80px, 8vw, 150px);
   height: clamp(80px, 8vw, 150px);
   transition: transform 0.2s;
 }
 
-/* Label styling: font-size scales with viewport width with larger bounds */
 .button-label {
   margin-top: 0.25rem;
   font-size: clamp(1.25rem, 1.5vw, 1.75rem);
   color: #fff;
 }
 
-/* Hover effect */
 .action-menu-item:hover .button-icon {
   transform: scale(1.05);
+}
+
+/* Light Mode Toggle styling in ActionMenu overlay */
+.theme-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  position: absolute;
+  top: calc(1rem + 60px); /* Adjust to fine-tune vertical positioning */
+  right: 1rem;
+  cursor: pointer;
+  z-index: 2100;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  margin-top: 10px;
+  margin-right: 20px;
+  gap: 10px;
+}
+
+.action-menu-overlay.active .theme-toggle {
+  opacity: 1;
+  transition-delay: 0.2s;
+}
+
+.icon-background {
+  width: clamp(30px, 4vw, 40px);
+  height: clamp(30px, 4vw, 40px);
+  background-color: transparent;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.4s ease;
+}
+
+.icon-background img {
+  width: 100%;
+  height: 100%;
+  filter: invert(1);
+}
+
+/* Theme toggle text styling */
+.theme-toggle-text {
+  font-size: 1rem;
+  color: #fff;
+  margin-top: 4px;
+  text-align: center;
 }

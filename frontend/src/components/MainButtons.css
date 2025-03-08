@@ -1,187 +1,45 @@
+/* MainButtons.css */
+
+/* Container modifications for navbar usage using grid for equal spacing */
 .mainButtonsContainerNavbar {
-    display: flex;
-    justify-content: space-around; /* Change as needed for layout in navbar */
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);  /* Three equal-width columns */
     align-items: center;
-    padding: 0.5rem; /* Smaller padding for navbar */
-    gap: 0.5rem; /* Smaller gap for navbar */
-    background-color: transparent; /* Same background, adjust as needed */
+    background-color: transparent;
 }
 
-/* Adjust the button sizes for navbar context */
-.mainButtonsContainerNavbar .mainButton {
-    font-size: 1.5rem; /* Smaller font size for navbar */
-    padding: 0.5rem 1rem; /* Smaller padding for compact appearance */
-    border-radius: 8px; /* Smaller border radius */
-}
-
-/* Style for the container holding the buttons */
-.mainButtonsContainer {
+/* Ensure each Link centers its content */
+.mainButtonsContainerNavbar a {
     display: flex;
-    justify-content: space-between; /* Evenly distribute space between the buttons */
-    align-items: center; /* Center align on the Y axis */
-    padding: 2rem 11%; /* Add vertical padding and slightly reduce horizontal padding */
-    gap: 1rem; /* Spacing between buttons */
-    height: calc(100vh - 138px); /* Adjust height considering navbar; change 50px to your navbar's height */
-    margin-top: 0px; /* Remove any top margin to eliminate the gap */
+    justify-content: center;
 }
 
-/* Base style for individual buttons */
-.mainButton {
-    font-size: 5rem;  /* Increase font size */
-    padding: 2.5rem 5rem;  /* Adjust padding for larger buttons */
-    text-align: center;
+/* Override fixed positioning for navbar buttons */
+.navbar-action-button {
+    position: relative; /* Remove fixed positioning */
+    transform: none;    /* Disable any transforms from ActionMenu */
+    opacity: 1;         /* Ensure buttons are fully visible */
+    transition: none;   /* Disable transitions intended for animated menus */
+    background: transparent; /* Inherit background if needed */
+    border: none;       /* Maintain borderless appearance */
+    padding: clamp(0.5rem, 1vw, 0.5rem); /* Responsive padding */
+}
+
+/* Inner content styling */
+.mainButton .button-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Adjust image sizes for navbar using clamp */
+.mainButton .button-icon {
+    width: clamp(30px, 4vw, 45px);
+    height: clamp(30px, 4vw, 45px);
+}
+
+/* Adjust text size for navbar using clamp */
+.mainButton .button-label {
+    font-size: clamp(0.8rem, 1vw, 1rem);
     color: white;
-    border: none; /* Remove any default borders */
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    text-shadow: 2px 2px 4px rgba(0,0,0,1); /* Example shadow */
-    flex-basis: calc(25% - 1rem); /* Adjust width to be half of the container minus the gap */
-    box-sizing: border-box; /* Include padding and border in the element's total width and height */
-    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
 }
-
-
-.mainButton:hover {
-    filter: saturate(150%); /* Increase saturation by 150% */
-}
-
-.collect-btn {
-    background-color: #ae4c4c;
-}
-
-.pvp-btn {
-    background-color: #4cae4f;
-}
-
-.raid-btn {
-    background-color: #4c7aae;
-}
-
-.discover-btn {
-    background-color: #ffc00e;
-}
-
-/* .leaderboards-btn {
-    background-color: #6c5c9c;
-} */
-
-@media (max-width: 480px) {
-    .mainButtonsContainer {
-        flex-direction: column; 
-        height: auto; /* Let height adjust based on content */
-        margin-top: -10px;
-    }
-    .mainButtonsContainerNavbar {
-        padding:0; 
-    }
-    .mainButtonsContainerNavbar .mainButton {
-        font-size: 0.7rem;  /* Smaller font size for compact appearance */
-        padding: 0.5rem 1rem;  /* Reduce padding to make buttons smaller */
-        border-radius: 5px;
-    }
-    .mainButton {
-        font-size: 2rem; /* Adjust font size for smaller screens */
-    }
-    .collect-btn {
-        padding: 2.5rem 3.5rem;  /* Adjust padding for larger buttons */
-    }
-}
-
-@media (min-width: 481px) and (max-width: 767px) {
-    .mainButtonsContainer {
-        flex-direction: column; 
-        height: auto; /* Let height adjust based on content */
-        margin-top: 0px;
-    }
-    .mainButtonsContainerNavbar .mainButton {
-        border-radius: 5px;
-        margin-bottom: -10px;  /* Optionally adjust border-radius for aesthetic consistency */
-    }
-    .mainButtonsContainerNavbar {
-        padding-top: 0px; 
-    }
-    .mainButton {
-        font-size: 3rem; /* Adjust font size for smaller screens */
-    }
-    .collect-btn {
-        padding: 2.5rem 3.5rem;  /* Adjust padding for larger buttons */
-    }
-}
-@media (min-width: 768px) and (max-width: 1023px) {
-    .mainButtonsContainer {
-        justify-content: center; /* Center buttons horizontally */
-        align-items: center; /* Center align on the Y axis */
-        flex-direction: row; /* Ensure buttons are in a row */
-    }
-    .mainButtonsContainerNavbar .mainButton {
-        border-radius: 5px;
-        margin-bottom: -10px;  /* Optionally adjust border-radius for aesthetic consistency */
-        font-size: 2.5rem;
-    }
-
-    .mainButtonsContainerNavbar {
-        padding-top: 0px; 
-    }
-    .mainButton {
-        font-size: 5rem;  /* Increase font size */
-        padding: 2.25rem 2.5rem;
-    }
-
-    
-}
-
-@media (min-width: 1024px) and (max-width: 1439px) {
-    .mainButtonsContainer {
-        justify-content: center; /* Center buttons horizontally */
-        align-items: center; /* Center align on the Y axis */
-        flex-direction: row; /* Ensure buttons are in a row */
-    }
-
-    .mainButtonsContainerNavbar .mainButton {
-        font-size: 1.25rem;  /* Smaller font size for compact appearance */
-        padding: 0.4rem .7rem;  /* Reduce padding to make buttons smaller */
-        border-radius: 5px;
-    }
-
-    .mainButtonsContainerNavbar {
-        margin-left: -5px;
-    }
-    
-    .mainButton {
-        font-size: 3rem;  /* Increase font size */
-        padding: 2rem 3.5rem;
-    }
-}
-@media (min-width: 1440px) and (max-width: 1919px) {
-    .mainButtonsContainer {
-        justify-content: center; /* Center buttons horizontally */
-        align-items: center; /* Center align on the Y axis */
-        flex-direction: row; /* Ensure buttons are in a row */
-        gap: 2rem;   /* Spacing between buttons */
-    }
-
-    .mainButtonsContainerNavbar .mainButton {
-        font-size: 1rem;  /* Smaller font size for compact appearance */
-        padding: 0.5rem 1rem;  /* Reduce padding to make buttons smaller */
-        border-radius: 5px;
-    }
-
-    .mainButton {
-        font-size: 3rem;  /* Increase font size */
-        padding: 2rem 4rem;
-    }
-}
-@media (min-width: 1920px) and (max-width: 2559px) {
-    .mainButtonsContainer {
-        justify-content: center; /* Center buttons horizontally */
-        align-items: center; /* Center align on the Y axis */
-        flex-direction: row; /* Ensure buttons are in a row */
-        gap: 3rem;   /* Spacing between buttons */
-    }
-    .mainButton {
-        font-size: 5rem;  /* Increase font size */
-        padding: 3rem 4rem;
-    }
-}
-

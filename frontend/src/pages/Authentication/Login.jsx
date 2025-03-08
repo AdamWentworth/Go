@@ -16,7 +16,9 @@ import { usePokemonData } from '../../contexts/PokemonDataContext';
 import { useTradeData } from '../../contexts/TradeDataContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import ResetPasswordOverlay from './ResetPasswordOverlay'; // Import the overlay component
+import ResetPasswordOverlay from './ResetPasswordOverlay';
+// Import the reusable ActionMenu component
+import ActionMenu from '../../components/ActionMenu';
 
 function Login() {
   const initialFormValues = {
@@ -119,6 +121,8 @@ function Login() {
         />
       )}
       {isResetPasswordOpen && <ResetPasswordOverlay onClose={closeResetPassword} />}
+      {/* Render the ActionMenu component */}
+      <ActionMenu />
     </div>
   );
 }
