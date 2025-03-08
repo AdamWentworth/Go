@@ -1,0 +1,57 @@
+/* HomeHeader.css */
+
+.homeHeader {
+    text-align: center;
+    margin-bottom: clamp(1rem, 2vw, 2rem);
+  }
+  
+  .logoContainer {
+    padding-top: clamp(0.5rem, 2vw, 1rem);
+  }
+  
+  .logoContainer img {
+    max-width: clamp(100px, 20vw, 150px);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))
+            drop-shadow(0 2px 2px rgba(255, 255, 255, 0.2));
+  }
+  
+  .titleContainer h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    margin: 0;
+    font-weight: 800;
+    color: #ffffff;
+  }
+  
+  .titleContainer h2 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: bold;
+    margin: 0;
+    background: linear-gradient(to right, #c8fdf3, #42c9ff);
+    background-size: 100% 100%;
+    background-position: 0 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    display: inline-block;
+  }
+  
+  .titleContainer p {
+    max-width: 50%;
+    margin: clamp(0.25rem, 1vw, 0.5rem) auto;
+    color: #bbb;
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  
+  .titleContainer p strong {
+    color: #c8fdf3;
+  }
+  
+  @media (max-width: 768px) {
+    .titleContainer p {
+      max-width: 85%;
+    }
+  }
+  

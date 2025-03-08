@@ -4,7 +4,7 @@
 .navbar {
     display: flex;
     width: 100%;
-    background-color: #0F0F0F;
+    background-color: #111;
     padding: 10px 20px;
     border-bottom: 1px solid #ccc; /* Light gray border */
     position: relative; /* For positioning mobile elements */
@@ -41,10 +41,6 @@
     white-space: nowrap;
 }
 
-/* .auth-button:hover {
-    background-color: #0056b3;
-} */
-
 /* Mobile Hamburger Menus: hidden on desktop */
 .mobile-left-menu,
 .mobile-right-menu {
@@ -54,10 +50,12 @@
 /* Hamburger button style */
 .hamburger-button {
     background: transparent;
-    border: none;
-    font-size: 2rem;
+    border: 1px solid white; /* add border */
+    border-radius: 5px;
+    padding: 0px 10px;
+    padding-bottom: 5px;
+    font-size: 1.5rem;
     color: white;
-    cursor: pointer;
 }
 
 /* Mobile dropdown common style */
@@ -124,6 +122,23 @@
     background-color: #0056b3;
 }
 
+.mobile-left-menu {
+    margin-left: 20px; /* or any value that suits your design */
+}
+
+.left-dropdown {
+    top: calc(100%);
+    left: 40px; /* adjust from left edge */
+}
+
+.mobile-right-menu {
+    margin-right: 20px; /* adjust this margin as needed */
+}
+
+.right-dropdown {
+    top: calc(100%);
+    right: 40px; /* move it in from the edge */
+}
 
 /* Media Query for Mobile (viewport less than 768px) */
 @media (max-width: 768px) {

@@ -78,7 +78,7 @@
 }
 
 /* Auth button styling */
-.auth-button {
+.action-menu-overlay .auth-button {
   background: transparent;
   border: none;
   display: flex;
