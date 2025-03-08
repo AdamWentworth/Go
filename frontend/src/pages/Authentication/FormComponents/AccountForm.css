@@ -2,7 +2,7 @@
 
 /* Parent Container */
 .account-form {
-    background-color: #111; /* Dark background for the page */
+    background-color: #333; /* Dark background for the page */
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     padding: 20px;

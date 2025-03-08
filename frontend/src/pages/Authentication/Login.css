@@ -1,6 +1,5 @@
 .login-page {
-    background-color: #333;
-    height: calc(100vh - 80px);
+    height: calc(100vh);
     width: 100vw;
     overflow: hidden;
     display: flex;
@@ -10,9 +9,6 @@
 }
 
 @media (max-width: 480px) {
-    .login-page {
-        height: calc(83vh - 74px);
-    }
     .login-page .login-form {
         transform: scale(.85);
     }
@@ -22,9 +18,6 @@
 }
 
 @media (min-width: 481px) and (max-width: 767px) {
-    .login-page {
-        height: calc(80vh - 70px);
-    }
     .login-page .login-form {
         transform: scale(.85);
     }
@@ -34,9 +27,6 @@
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
-    .login-page {
-        height: calc(80vh - 101px);
-    }
     .login-page .login-form {
         transform: scale(1);
     }
@@ -46,9 +36,6 @@
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {
-    .login-page {
-        height: calc(100vh - 86px);
-    }
     .login-page .login-form {
         transform: scale(0.75);
     }
@@ -58,9 +45,6 @@
 }
 
 @media (min-width: 1440px) {
-    .login-page {
-        height: calc(100vh - 86px);
-    }
     .login-page .login-form {
         transform: scale(1);
     }

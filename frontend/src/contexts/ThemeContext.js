@@ -1,5 +1,5 @@
 // ThemeContext.js
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext();
 
@@ -8,22 +8,36 @@ export function useTheme() {
 }
 
 export const ThemeProvider = ({ children }) => {
-    // Initialize state by reading from localStorage
     const [isLightMode, setIsLightMode] = useState(() => {
-        // Try to fetch the saved theme preference from localStorage
         const storedPreference = localStorage.getItem('isLightMode');
-        // If found, parse it (since it's stored as a string), otherwise default to false (dark mode)
         return storedPreference !== null ? JSON.parse(storedPreference) : false;
     });
 
     const toggleTheme = () => {
         setIsLightMode((prevMode) => {
             const newMode = !prevMode;
-            // Save the updated preference to localStorage
             localStorage.setItem('isLightMode', JSON.stringify(newMode));
             return newMode;
         });
     };
+
+    // Always run this effect regardless of which page or component is rendered.
+    useEffect(() => {
+        const lightModeStylesheet = document.getElementById('light-mode-stylesheet');
+        if (isLightMode) {
+            if (!lightModeStylesheet) {
+                const link = document.createElement('link');
+                link.id = 'light-mode-stylesheet';
+                link.rel = 'stylesheet';
+                link.href = `${process.env.PUBLIC_URL}/Light-Mode.css`;
+                document.head.appendChild(link);
+            }
+        } else {
+            if (lightModeStylesheet) {
+                lightModeStylesheet.remove();
+            }
+        }
+    }, [isLightMode]);
 
     return (
         <ThemeContext.Provider value={{ isLightMode, toggleTheme }}>
