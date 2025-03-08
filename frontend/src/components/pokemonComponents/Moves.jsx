@@ -1,8 +1,8 @@
-// MovesComponent.jsx
+// Moves.jsx
 import React, { useState, useEffect } from 'react';
-import './MovesComponent.css';
+import './Moves.css';
 
-const MovesComponent = ({ pokemon, editMode, onMovesChange, isShadow, isPurified }) => {
+const Moves = ({ pokemon, editMode, onMovesChange, isShadow, isPurified }) => {
   const allMoves = pokemon.moves;
 
   // Initialize state with possible existing moves or null
@@ -310,4 +310,4 @@ const MovesComponent = ({ pokemon, editMode, onMovesChange, isShadow, isPurified
   );
 };
 
-export default MovesComponent;
+export default Moves;

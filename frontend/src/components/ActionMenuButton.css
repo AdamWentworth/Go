@@ -16,7 +16,6 @@
     /* If CloseButton uses a specific size or drop shadow, mirror that here */
     width: 60px; /* adjust as needed */
     height: 60px; /* adjust as needed */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s;
   }
   

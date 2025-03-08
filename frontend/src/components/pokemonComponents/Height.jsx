@@ -8,55 +8,45 @@ const Height = ({ pokemon, editMode, onHeightChange }) => {
   );
   const editableRef = useRef(null);
 
-  // Helper function to move cursor to end
-  function setCaretToEnd() {
-    const range = document.createRange();
-    const sel = window.getSelection();
-    if (editableRef.current) {
-      range.selectNodeContents(editableRef.current);
-      range.collapse(false);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      editableRef.current.focus();
-    }
-  }
-
+  // When entering edit mode, set the field's content without further re-rendering.
   useEffect(() => {
     if (editMode && editableRef.current) {
-      editableRef.current.innerText = height || '';
-      setCaretToEnd();
+      editableRef.current.innerText = height;
     }
-  }, [editMode, height]);
+  }, [editMode]); // Note: no dependency on height so that we don't update while typing.
 
   const handleInput = (event) => {
+    // Read the current content without altering it.
     const newValue = event.target.innerText.replace('m', '').trim();
-    if (/^\d*\.?\d*$/.test(newValue)) { // Allow only numbers and decimal point
+    if (/^\d*\.?\d*$/.test(newValue)) {
+      // We update state here but do not force a DOM update.
       setHeight(newValue);
-      onHeightChange(newValue);  // Notify parent component of the change
+      onHeightChange(newValue);
     } else {
+      // If invalid input, revert to the last valid value.
       event.target.innerText = height;
     }
-    setCaretToEnd();
   };
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
+      editableRef.current.blur();
     }
   };
 
-  useEffect(() => {
-    if (!editMode) {
-      setHeight((prevHeight) => (prevHeight ? prevHeight.trim() : ''));
-    }
-  }, [editMode]);
+  // On blur, capture the final value.
+  const handleBlur = () => {
+    const currentText = editableRef.current.innerText.replace('m', '').trim();
+    setHeight(currentText);
+    onHeightChange(currentText);
+  };
 
-  // If height is null or empty and not in edit mode, render nothing.
   if (!editMode && !height) {
     return null;
   }
 
-  // Determine the height category tag based on pokemon.sizes thresholds.
+  // Compute height category from numeric value.
   const heightVal = parseFloat(height);
   let heightCategory = '';
   if (!isNaN(heightVal) && pokemon.sizes) {
@@ -79,18 +69,16 @@ const Height = ({ pokemon, editMode, onHeightChange }) => {
             <span
               contentEditable
               suppressContentEditableWarning={true}
+              ref={editableRef}
               onInput={handleInput}
               onKeyDown={handleKeyDown}
-              ref={editableRef}
+              onBlur={handleBlur}
               className="height-editable-content"
-            >
-              {height}
-            </span>
+            />
           ) : (
             <span className="height-editable-content">{height}</span>
           )}
           <span className="height-suffix">m</span>
-          {/* Display the height category tag if determined */}
           {heightCategory && (
             <span className="height-category-tag">{heightCategory}</span>
           )}

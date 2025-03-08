@@ -1,11 +1,12 @@
 // CP.jsx
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './CP.css';
 
 const CP = ({ cp, editMode, onCPChange, errors = {} }) => {
   const editableRef = useRef(null);
   const cpString = cp != null ? cp.toString() : '';
+  const [userFocus, setUserFocus] = useState(false);
 
   const setCaretToEnd = () => {
     const range = document.createRange();
@@ -21,9 +22,11 @@ const CP = ({ cp, editMode, onCPChange, errors = {} }) => {
   useEffect(() => {
     if (editMode && editableRef.current) {
       editableRef.current.innerText = cpString;
-      setCaretToEnd();
+      if (userFocus) {
+        setCaretToEnd();
+      }
     }
-  }, [editMode, cpString]);
+  }, [editMode, cpString, userFocus]);
 
   const handleInput = (event) => {
     const newValue = event.target.innerText;
@@ -32,23 +35,25 @@ const CP = ({ cp, editMode, onCPChange, errors = {} }) => {
     } else {
       event.target.innerText = cpString;
     }
-    setCaretToEnd();
+    if (userFocus) {
+      setCaretToEnd();
+    }
   };
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
       editableRef.current.blur();
+      setUserFocus(false);
     }
   };
 
   const handleBlur = () => {
     const trimmedCP = cpString.trim();
     onCPChange(trimmedCP);
+    setUserFocus(false);
   };
 
-  // Instead of returning null when cp is empty in display mode,
-  // return a placeholder that occupies the same space.
   if ((!cpString || cpString.trim() === '') && !editMode) {
     return (
       <div className="cp-unified-container">
@@ -65,6 +70,7 @@ const CP = ({ cp, editMode, onCPChange, errors = {} }) => {
       className="cp-unified-container"
       onClick={() => {
         if (editMode && editableRef.current) {
+          setUserFocus(true);
           editableRef.current.focus();
         }
       }}
@@ -79,6 +85,8 @@ const CP = ({ cp, editMode, onCPChange, errors = {} }) => {
               onInput={handleInput}
               onKeyDown={handleKeyDown}
               onBlur={handleBlur}
+              onClick={() => setUserFocus(true)}
+              onTouchStart={() => setUserFocus(true)}
               ref={editableRef}
               className="cp-editable-content"
             >

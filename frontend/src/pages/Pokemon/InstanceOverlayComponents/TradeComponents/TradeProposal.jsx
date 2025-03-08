@@ -2,9 +2,9 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import './TradeProposal.css';
-import MovesComponent from '../OwnedComponents/MovesComponent';
+import MovesComponent from '../../../../components/pokemonComponents/Moves';
 import CP from '../../../../components/pokemonComponents/CP';
-import LocationCaughtComponent from '../OwnedComponents/LocationCaughtComponent';
+import LocationCaught from '../../../../components/pokemonComponents/LocationCaught';
 import DateCaughtComponent from '../../../../components/pokemonComponents/DateCaught';
 import { generateH2Content } from '../../../../utils/formattingHelpers';
 
@@ -174,7 +174,7 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
                 </p>
                 <CP pokemon={passedInPokemon} />
                 <MovesComponent pokemon={passedInPokemon} />
-                <LocationCaughtComponent pokemon={passedInPokemon} />
+                <LocationCaught pokemon={passedInPokemon} />
                 <DateCaughtComponent pokemon={passedInPokemon} />
               </div>
             )}
@@ -291,7 +291,7 @@ const TradeProposal = ({ passedInPokemon, clickedPokemon, wantedPokemon, onClose
               <div className="pokemon-details">
                 <CP pokemon={selectedMatchedInstance} />
                 <MovesComponent pokemon={selectedMatchedInstance} />
-                <LocationCaughtComponent pokemon={selectedMatchedInstance} />
+                <LocationCaught pokemon={selectedMatchedInstance} />
                 <DateCaughtComponent pokemon={selectedMatchedInstance} />
               </div>
             )}

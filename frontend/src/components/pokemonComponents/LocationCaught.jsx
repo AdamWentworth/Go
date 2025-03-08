@@ -1,12 +1,13 @@
-// LocationCaughtComponent.jsx
+// LocationCaught.jsx
 
 import React, { useRef, useState, useEffect } from 'react';
-import { fetchSuggestions } from '../../../../services/locationServices';
-import './LocationCaughtComponent.css';
+import { fetchSuggestions } from '../../services/locationServices';
+import './LocationCaught.css';
 
-const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
+const LocationCaught = ({ pokemon, editMode, onLocationChange }) => {
   const [location, setLocation] = useState(pokemon.ownershipStatus.location_caught || '');
   const [suggestions, setSuggestions] = useState([]);
+  const [userFocus, setUserFocus] = useState(false);
   const locationRef = useRef(null);
   const wrapperRef = useRef(null);
 
@@ -30,10 +31,12 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
   useEffect(() => {
     if (editMode && locationRef.current) {
       locationRef.current.textContent = location;
-      setCaretToEnd(locationRef.current);
-      locationRef.current.focus(); // Automatically focus when entering edit mode
+      if (userFocus) {
+        setCaretToEnd(locationRef.current);
+        locationRef.current.focus();
+      }
     }
-  }, [editMode, location]);
+  }, [editMode, location, userFocus]);
 
   const handleLocationInput = async (event) => {
     const userInput = event.target.textContent;
@@ -42,7 +45,7 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
 
     if (userInput.length > 2) {
       try {
-        const fetchedSuggestions = await fetchSuggestions(userInput); // Use the imported function
+        const fetchedSuggestions = await fetchSuggestions(userInput);
         setSuggestions(fetchedSuggestions);
       } catch (error) {
         console.error('Error fetching suggestions:', error);
@@ -67,7 +70,8 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      locationRef.current.blur(); // Remove focus to stop editing
+      locationRef.current.blur();
+      setUserFocus(false);
     }
   };
 
@@ -80,9 +84,8 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
     sel.addRange(range);
   };
 
-  // Conditional Rendering Logic
   if ((!location || location.trim() === '') && !editMode) {
-    return null; // Do not render the component if location is null/empty and not in edit mode
+    return null;
   }
 
   return (
@@ -95,6 +98,8 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
           ref={locationRef}
           onInput={handleLocationInput}
           onKeyDown={handleKeyDown}
+          onClick={() => setUserFocus(true)}
+          onTouchStart={() => setUserFocus(true)}
           role="textbox"
           suppressContentEditableWarning={true}
           className={editMode ? 'editable' : 'text'}
@@ -119,4 +124,4 @@ const LocationCaughtComponent = ({ pokemon, editMode, onLocationChange }) => {
   );
 };
 
-export default LocationCaughtComponent;
+export default LocationCaught;

@@ -1,9 +1,9 @@
 // OwnedComponents/LevelComponent.jsx
 
 import React from 'react';
-import './LevelComponent.css';
+import './Level.css';
 
-const LevelComponent = ({ pokemon, editMode, level, onLevelChange, errors }) => {
+const Level = ({ editMode, level, onLevelChange }) => {
   return (
     <div className="level-component">
       {editMode || level !== null ? (
@@ -28,4 +28,4 @@ const LevelComponent = ({ pokemon, editMode, level, onLevelChange, errors }) => 
   );
 };
 
-export default LevelComponent;
+export default Level;

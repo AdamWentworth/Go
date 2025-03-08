@@ -21,13 +21,13 @@ import Gender from '../../../components/pokemonComponents/Gender';
 import Weight from '../../../components/pokemonComponents/Weight';
 import Types from '../../../components/pokemonComponents/Types';
 import Height from '../../../components/pokemonComponents/Height';
-import MovesComponent from './OwnedComponents/MovesComponent';
+import Moves from '../../../components/pokemonComponents/Moves';
 import IV from '../../../components/pokemonComponents/IV';
-import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
+import LocationCaught from '../../../components/pokemonComponents/LocationCaught';
 import DateCaughtComponent from '../../../components/pokemonComponents/DateCaught';
 import BackgroundLocationCard from '../../../components/pokemonComponents/BackgroundLocationCard';
 import MegaComponent from './OwnedComponents/MegaComponent';
-import LevelComponent from './OwnedComponents/LevelComponent'; 
+import Level from '../../../components/pokemonComponents/Level';
 import FusionComponent from './OwnedComponents/FusionComponent';
 import FuseOverlay from './OwnedComponents/FuseOverlay';
 import MaxComponent from './OwnedComponents/MaxComponent';
@@ -86,6 +86,11 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
     Defense: pokemon.ownershipStatus.defense_iv != null ? Number(pokemon.ownershipStatus.defense_iv) : '',
     Stamina: pokemon.ownershipStatus.stamina_iv != null ? Number(pokemon.ownershipStatus.stamina_iv) : '',
   });
+  const areIVsEmpty =
+  (ivs.Attack === '' || ivs.Attack === null) &&
+  (ivs.Defense === '' || ivs.Defense === null) &&
+  (ivs.Stamina === '' || ivs.Stamina === null);
+
   const [locationCaught, setLocationCaught] = useState(pokemon.ownershipStatus.location_caught);
   const [dateCaught, setDateCaught] = useState(pokemon.ownershipStatus.date_caught);
   const [showBackgrounds, setShowBackgrounds] = useState(false);
@@ -477,20 +482,22 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         />
       </div>
       <div className="level-gender-row">
-        <LevelComponent
+        <Level
           pokemon={pokemon}
           editMode={editMode}
           level={level}
           onLevelChange={handleLevelChange}
           errors={validationErrors}
         />
-        <div className="gender-wrapper">
-          <Gender
-            pokemon={pokemon} 
-            editMode={editMode} 
-            onGenderChange={handleGenderChange}
-          />
-        </div>
+        { (editMode || (gender !== null && gender !== '')) && (
+          <div className="gender-wrapper">
+            <Gender 
+              pokemon={pokemon} 
+              editMode={editMode} 
+              onGenderChange={handleGenderChange} 
+            />
+          </div>
+        )}
       </div>
       <div className="weight-type-height-container">
         <Weight
@@ -544,7 +551,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         handleMaxSpiritChange={handleMaxSpiritChange}
       />
       <div className="moves-content">
-        <MovesComponent 
+        <Moves
           pokemon={pokemon} 
           editMode={editMode} 
           onMovesChange={handleMovesChange}
@@ -552,15 +559,17 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           isPurified={isPurified}
         />
       </div>
-      <div className="iv-component">
-        <IV 
-          editMode={editMode} 
-          onIvChange={handleIvChange} 
-          ivs={ivs}
-        />
-      </div>
+      { (editMode || !areIVsEmpty) && (
+        <div className="iv-component">
+          <IV 
+            editMode={editMode} 
+            onIvChange={handleIvChange} 
+            ivs={ivs}
+          />
+        </div>
+      )}
       <div className="location-caught-component">
-        <LocationCaughtComponent 
+        <LocationCaught 
           pokemon={pokemon} 
           editMode={editMode} 
           onLocationChange={handleLocationCaughtChange} 

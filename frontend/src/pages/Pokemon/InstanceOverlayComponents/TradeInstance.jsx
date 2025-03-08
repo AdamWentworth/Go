@@ -11,11 +11,11 @@ import Gender from '../../../components/pokemonComponents/Gender';
 import Weight from '../../../components/pokemonComponents/Weight';
 import Types from '../../../components/pokemonComponents/Types';
 import Height from '../../../components/pokemonComponents/Height';
-import MovesComponent from './OwnedComponents/MovesComponent';
-import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
+import Moves from '../../../components/pokemonComponents/Moves';
+import LocationCaught from '../../../components/pokemonComponents/LocationCaught';
 import DateCaughtComponent from '../../../components/pokemonComponents/DateCaught';
 import BackgroundLocationCard from '../../../components/pokemonComponents/BackgroundLocationCard';
-import LevelComponent from './OwnedComponents/LevelComponent';
+import Level from '../../../components/pokemonComponents/Level';
 import IV from '../../../components/pokemonComponents/IV';
 import MaxComponent from './OwnedComponents/MaxComponent';
 import MaxMovesComponent from "./OwnedComponents/MaxMovesComponent";
@@ -82,6 +82,11 @@ const TradeInstance = ({ pokemon, isEditable }) => {
       ? Number(pokemon.ownershipStatus.stamina_iv)
       : '',
   });
+
+  const areIVsEmpty =
+  (ivs.Attack === '' || ivs.Attack === null) &&
+  (ivs.Defense === '' || ivs.Defense === null) &&
+  (ivs.Stamina === '' || ivs.Stamina === null);
 
   const [level, setLevel] = useState(
     pokemon.ownershipStatus.level != null ? Number(pokemon.ownershipStatus.level) : null
@@ -389,18 +394,22 @@ const TradeInstance = ({ pokemon, isEditable }) => {
       </div>
 
       <div className="level-gender-container">
-      <LevelComponent
+      <Level
           pokemon={pokemon}
           editMode={editMode}
           level={level}
           onLevelChange={handleLevelChange}
           errors={validationErrors}
         />
-        <Gender
-          pokemon={pokemon}
-          editMode={editMode}
-          onGenderChange={handleGenderChange}
-        />
+        { (editMode || (gender !== null && gender !== '')) && (
+          <div className="gender-wrapper">
+            <Gender 
+              pokemon={pokemon} 
+              editMode={editMode} 
+              onGenderChange={handleGenderChange} 
+            />
+          </div>
+        )}
       </div>
 
       <div className="stats-container">
@@ -438,25 +447,23 @@ const TradeInstance = ({ pokemon, isEditable }) => {
         handleMaxSpiritChange={handleMaxSpiritChange}
       />
       <div className="moves-container">
-        <MovesComponent
+        <Moves
           pokemon={pokemon}
           editMode={editMode}
           onMovesChange={handleMovesChange}
         />
       </div>
-      {(editMode || (ivs.Attack !== '' && ivs.Defense !== '' && ivs.Stamina !== '')) && (
+      { (editMode || !areIVsEmpty) && (
         <div className="iv-component">
-          <IV
-            pokemon={pokemon} 
+          <IV 
             editMode={editMode} 
             onIvChange={handleIvChange} 
             ivs={ivs}
-            errors={validationErrors}
           />
         </div>
       )}
       <div className="location-container">
-        <LocationCaughtComponent
+        <LocationCaught
           pokemon={pokemon}
           editMode={editMode}
           onLocationChange={handleLocationCaughtChange}

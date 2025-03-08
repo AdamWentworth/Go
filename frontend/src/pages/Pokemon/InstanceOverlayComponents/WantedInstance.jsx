@@ -11,7 +11,7 @@ import Gender from '../../../components/pokemonComponents/Gender';
 import Weight from '../../../components/pokemonComponents/Weight';
 import Types from '../../../components/pokemonComponents/Types';
 import Height from '../../../components/pokemonComponents/Height';
-import MovesComponent from './OwnedComponents/MovesComponent';
+import Moves from '../../../components/pokemonComponents/Moves';
 import FriendshipManager from './WantedComponents/FriendshipManager';
 import BackgroundLocationCard from '../../../components/pokemonComponents/BackgroundLocationCard';
 
@@ -189,7 +189,15 @@ const WantedInstance = ({ pokemon, isEditable }) => {
       </div>
 
       <div className="gender-container">
-        <Gender pokemon={pokemon} editMode={editMode} onGenderChange={handleGenderChange} />
+      { (editMode || (gender !== null && gender !== '')) && (
+          <div className="gender-wrapper">
+            <Gender 
+              pokemon={pokemon} 
+              editMode={editMode} 
+              onGenderChange={handleGenderChange} 
+            />
+          </div>
+        )}
       </div>
 
       <div className="stats-container">
@@ -199,7 +207,7 @@ const WantedInstance = ({ pokemon, isEditable }) => {
       </div>
 
       <div className="moves-container">
-        <MovesComponent pokemon={pokemon} editMode={editMode} onMovesChange={handleMovesChange} />
+        <Moves pokemon={pokemon} editMode={editMode} onMovesChange={handleMovesChange} />
       </div>
 
       {showBackgrounds && (

@@ -6,9 +6,9 @@ const Weight = ({ pokemon, editMode, onWeightChange }) => {
   const [weight, setWeight] = useState(
     pokemon.ownershipStatus.weight ? String(pokemon.ownershipStatus.weight) : ''
   );
+  const [userFocus, setUserFocus] = useState(false);
   const editableRef = useRef(null);
 
-  // Helper function to move cursor to end
   function setCaretToEnd() {
     const range = document.createRange();
     const sel = window.getSelection();
@@ -24,39 +24,44 @@ const Weight = ({ pokemon, editMode, onWeightChange }) => {
   useEffect(() => {
     if (editMode && editableRef.current) {
       editableRef.current.innerText = weight || '';
-      setCaretToEnd();
+      if (userFocus) {
+        setCaretToEnd();
+      }
     }
-  }, [editMode, weight]);
+  }, [editMode, weight, userFocus]);
 
   const handleInput = (event) => {
     const newValue = event.target.innerText.replace('kg', '').trim();
-    if (/^\d*\.?\d*$/.test(newValue)) { // Allow only numbers and decimal point
+    if (/^\d*\.?\d*$/.test(newValue)) {
       setWeight(newValue);
-      onWeightChange(newValue);  // Notify parent component of the change
+      onWeightChange(newValue);
     } else {
       event.target.innerText = weight;
     }
-    setCaretToEnd();
+    if (userFocus) {
+      setCaretToEnd();
+    }
   };
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
+      editableRef.current.blur();
+      setUserFocus(false);
     }
   };
 
   useEffect(() => {
     if (!editMode) {
       setWeight((prevWeight) => (prevWeight ? prevWeight.trim() : ''));
+      setUserFocus(false);
     }
   }, [editMode]);
 
-  // If weight is null or empty and not in edit mode, render nothing.
   if (!editMode && !weight) {
     return null;
   }
 
-  // Determine the weight category tag based on pokemon.sizes thresholds.
   const weightVal = parseFloat(weight);
   let weightCategory = '';
   if (!isNaN(weightVal) && pokemon.sizes) {
@@ -81,6 +86,8 @@ const Weight = ({ pokemon, editMode, onWeightChange }) => {
               suppressContentEditableWarning={true}
               onInput={handleInput}
               onKeyDown={handleKeyDown}
+              onClick={() => setUserFocus(true)}
+              onTouchStart={() => setUserFocus(true)}
               ref={editableRef}
               className="weight-editable-content"
             >
@@ -90,7 +97,6 @@ const Weight = ({ pokemon, editMode, onWeightChange }) => {
             <span className="weight-editable-content">{weight}</span>
           )}
           <span className="weight-suffix">kg</span>
-          {/* Display the weight category tag if determined */}
           {weightCategory && (
             <span className="weight-category-tag">{weightCategory}</span>
           )}
