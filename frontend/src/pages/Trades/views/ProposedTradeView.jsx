@@ -93,7 +93,11 @@ const ProposedTradeView = ({
             )}
           </div>
         )}
-        <IV item={details} />
+        <IV ivs={{ 
+          Attack: details.attack_iv, 
+          Defense: details.defense_iv, 
+          Stamina: details.stamina_iv 
+        }} />
         {details.location_caught && <p><strong>Location Caught:</strong> {details.location_caught}</p>}
         {details.date_caught && <p><strong>Date Caught:</strong> {formatDate(details.date_caught)}</p>}
       </>

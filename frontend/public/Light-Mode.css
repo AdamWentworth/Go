@@ -32,7 +32,7 @@
 .favorite-component.not-filled img, .background-button, .reset-container img, .reset img {
     filter: invert(1); /* Apply a black overlay effect */
 }
-.edit-save-container .icon-button img {
+.edit-save-container .icon-button img, .iv-reset-image {
     filter: none
 }
 

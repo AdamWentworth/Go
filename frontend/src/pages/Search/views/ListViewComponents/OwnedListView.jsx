@@ -9,7 +9,7 @@ import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
 import Gender from '../../../../components/pokemonComponents/Gender';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
-import ConfirmationOverlay from '../ConfirmationOverlay'; // Import ConfirmationOverlay
+import ConfirmationOverlay from '../ConfirmationOverlay';
 import './OwnedListView.css';
 
 // Helper function to format date to YYYY-MM-DD
@@ -25,7 +25,7 @@ const OwnedListView = ({ item }) => {
   const dynamax = item.dynamax;
   const gigantamax = item.gigantamax;
   const pokemonDisplayName = getPokemonDisplayName(item);
-  const [showConfirmation, setShowConfirmation] = useState(false); // State to show the confirmation overlay
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Show the confirmation overlay on center-column click
   const handleOpenConfirmation = () => {
@@ -47,7 +47,7 @@ const OwnedListView = ({ item }) => {
     <div className="list-view-row">
       {/* Left Column: MiniMap */}
       <div className="left-column" onClick={(e) => e.stopPropagation()}>
-      {item.distance > 0 && <p>Distance: {item.distance.toFixed(2)} km</p>}
+        {item.distance > 0 && <p>Distance: {item.distance.toFixed(2)} km</p>}
         <MiniMap latitude={item.latitude} longitude={item.longitude} ownershipStatus="owned" />
       </div>
 
@@ -109,7 +109,12 @@ const OwnedListView = ({ item }) => {
             </div>
           )}
         </div>
-        <IV item={item} />
+        {/* Instead of passing the entire item, we pass just the IVs */}
+        <IV ivs={{ 
+          Attack: item.attack_iv, 
+          Defense: item.defense_iv, 
+          Stamina: item.stamina_iv 
+        }} />
 
         {/* Location Caught */}
         {item.location_caught && (

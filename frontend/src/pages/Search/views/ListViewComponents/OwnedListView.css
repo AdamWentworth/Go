@@ -14,10 +14,11 @@
         height: 18px;
         width: 18px;
     }
-    .iv-display-container {
+    .list-view-row .iv-display-container {
         transform: scale(.75);
         margin-top: -10px;
         margin-bottom: -10px;
+        width: 85%;
     }
     .list-view-container .location-caught,  .list-view-container .date-caught{
         font-size: 12px;
@@ -44,10 +45,11 @@
         height: 20px;
         width: 20px;
     }
-    .iv-display-container {
+    .list-view-row .iv-display-container {
         transform: scale(.85);
         margin-top: -10px;
         margin-bottom: 0px;
+        width: 85%;
     }
     .list-view-container .location-caught,  .list-view-container .date-caught{
         font-size: 14px;
@@ -78,10 +80,11 @@
         height: 20px;
         width: 20px;
     }
-    .iv-display-container {
+    .list-view-row .iv-display-container {
         transform: scale(.85);
         margin-top: -10px;
         margin-bottom: 0px;
+        width: 85%;
     }
     .list-view-container .location-caught,  .list-view-container .date-caught{
         font-size: 16px;
@@ -112,10 +115,11 @@
         height: 20px;
         width: 20px;
     }
-    .iv-display-container {
+    .list-view-row .iv-display-container {
         transform: scale(.9);
         margin-top: -10px;
         margin-bottom: 0px;
+        width: 85%;
     }
     .list-view-container .location-caught,  .list-view-container .date-caught{
         font-size: 14px;
@@ -125,5 +129,11 @@
     }
     .list-view-row .right-column {
         margin-bottom: 10px;
+    }
+}
+
+@media (min-width: 1440px) {
+    .list-view-row .iv-display-container {
+        width: 85%;
     }
 }

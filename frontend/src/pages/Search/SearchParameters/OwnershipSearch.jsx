@@ -9,8 +9,8 @@ import WantedSearch from './OwnershipComponents/WantedSearch';
 const OwnershipSearch = ({
   ownershipStatus,
   setOwnershipStatus,
-  stats,
-  setStats,
+  ivs,
+  setIvs,
   isHundo,
   setIsHundo,
   onlyMatchingTrades,
@@ -19,26 +19,23 @@ const OwnershipSearch = ({
   setPrefLucky,
   alreadyRegistered,
   setAlreadyRegistered,
-  tradeInWantedList,
+  trade_in_wanted_list,
   setTradeInWantedList,
   friendshipLevel,
   setFriendshipLevel,
 }) => {
   const options = ['owned', 'trade', 'wanted'];
 
-  const handleStatChange = (statName, value) => {
-    setStats((prevStats) => ({
-      ...prevStats,
-      [statName]: value,
-    }));
-  };
+  const handleIvChange = (newIvs) => {
+    setIvs(newIvs);
+  };  
 
   useEffect(() => {
     if (ownershipStatus !== 'owned') {
-      setStats({ attack: null, defense: null, stamina: null });
+      setIvs({ Attack: null, Defense: null, Stamina: null });
       setIsHundo(false);
     }
-  }, [ownershipStatus, setStats, setIsHundo]);
+  }, [ownershipStatus, setIvs, setIsHundo]);
 
   useEffect(() => {
     if (ownershipStatus !== 'trade') {
@@ -51,22 +48,19 @@ const OwnershipSearch = ({
       setPrefLucky(false);
       setAlreadyRegistered(false);
       setTradeInWantedList(false);
-      setFriendshipLevel(0);  // Reset friendship level when not wanted
+      setFriendshipLevel(0);
     }
   }, [ownershipStatus, setPrefLucky, setAlreadyRegistered, setTradeInWantedList, setFriendshipLevel]);
 
   return (
     <div className="ownership-status-container">
-      {/* Header on its own row */}
       <h3 className="ownership-header">Ownership Status</h3>
-  
-      {/* Ownership content and options in the same row */}
       <div className="ownership-row">
         <div className="ownership-content">
           {ownershipStatus === 'owned' && (
             <OwnedSearch
-              stats={stats}
-              onStatChange={handleStatChange}
+              ivs={ivs}
+              onIvChange={handleIvChange}
               isHundo={isHundo}
               setIsHundo={setIsHundo}
             />
@@ -85,7 +79,7 @@ const OwnershipSearch = ({
               setPrefLucky={setPrefLucky}
               alreadyRegistered={alreadyRegistered}
               setAlreadyRegistered={setAlreadyRegistered}
-              tradeInWantedList={tradeInWantedList}
+              trade_in_wanted_list={trade_in_wanted_list}
               setTradeInWantedList={setTradeInWantedList}
               friendshipLevel={friendshipLevel}
               setFriendshipLevel={setFriendshipLevel}

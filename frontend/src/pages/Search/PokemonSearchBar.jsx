@@ -36,7 +36,7 @@ const PokemonSearchBar = ({
   const [coordinates, setCoordinates] = useState({ latitude: null, longitude: null });
   const [range, setRange] = useState(5);
   const [resultsLimit, setResultsLimit] = useState(5);
-  const [stats, setStats] = useState({ attack: null, defense: null, stamina: null });
+  const [ivs, setIvs] = useState({ Attack: null, Defense: null, Stamina: null });
   const [isHundo, setIsHundo] = useState(false);
   const [onlyMatchingTrades, setOnlyMatchingTrades] = useState(false);
 
@@ -51,9 +51,6 @@ const PokemonSearchBar = ({
 
   const collapsibleRef = useRef(null);
   const searchTriggeredRef = useRef(false);
-
-  // Removed local state for pokedexDefault and its fetching logic.
-  // We'll use the pokemonCache prop directly.
 
   // Handle window resize
   useEffect(() => {
@@ -109,7 +106,6 @@ const PokemonSearchBar = ({
     if (window.scrollY > adjustedCollapsePoint) {
       setIsCollapsed(true);
     } else if (window.scrollY === 0) {
-      // Prevent auto-expand if collapse was triggered by search
       if (searchTriggeredRef.current) {
         searchTriggeredRef.current = false;
         return;
@@ -145,13 +141,11 @@ const PokemonSearchBar = ({
       return;
     }
 
-    // Use the passed pokemonCache directly
     if (!pokemonCache || pokemonCache.length === 0) {
       setErrorMessage('No Pokémon data found in the default store.');
       return;
     }
 
-    // Find the matching Pokémon by name & form in the pokemonCache array
     const matchingPokemon = pokemonCache.find(
       (p) =>
         p.name?.toLowerCase() === pokemon.toLowerCase() &&
@@ -165,8 +159,6 @@ const PokemonSearchBar = ({
     }
 
     const { pokemon_id } = matchingPokemon;
-
-    // Try to match the chosen costume (if any)
     const matchingCostume = matchingPokemon.costumes?.find((c) => c.name === costume);
     const costume_id = matchingCostume ? matchingCostume.costume_id : null;
 
@@ -180,9 +172,9 @@ const PokemonSearchBar = ({
       charged_move_2_id: selectedMoves.chargedMove2,
       gender: selectedGender === 'Any' ? null : selectedGender,
       background_id: selectedBackgroundId,
-      attack_iv: stats.attack !== null ? stats.attack : null,
-      defense_iv: stats.defense !== null ? stats.defense : null,
-      stamina_iv: stats.stamina !== null ? stats.stamina : null,
+      attack_iv: ivs.Attack !== null ? ivs.Attack : null,
+      defense_iv: ivs.Defense !== null ? ivs.Defense : null,
+      stamina_iv: ivs.Stamina !== null ? ivs.Stamina : null,
       only_matching_trades: onlyMatchingTrades ? true : null,
       pref_lucky: prefLucky ? true : null,
       friendship_level: friendshipLevel,
@@ -197,7 +189,6 @@ const PokemonSearchBar = ({
       gigantamax,
     };
 
-    // Clear out irrelevant params based on ownership
     if (ownershipStatus !== 'owned') {
       queryParams.attack_iv = null;
       queryParams.defense_iv = null;
@@ -216,9 +207,7 @@ const PokemonSearchBar = ({
     }
 
     console.log('Search Query Parameters:', queryParams);
-
-    // Call the parent onSearch with the constructed queryParams
-    onSearch(queryParams, null); // Pass boundary if needed
+    onSearch(queryParams, null);
     setIsCollapsed(true);
     searchTriggeredRef.current = true;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -281,8 +270,8 @@ const PokemonSearchBar = ({
                 <OwnershipSearch
                   ownershipStatus={ownershipStatus}
                   setOwnershipStatus={setOwnershipStatus}
-                  stats={stats}
-                  setStats={setStats}
+                  ivs={ivs}
+                  setIvs={setIvs}
                   isHundo={isHundo}
                   setIsHundo={setIsHundo}
                   onlyMatchingTrades={onlyMatchingTrades}
@@ -322,8 +311,8 @@ const PokemonSearchBar = ({
                 <OwnershipSearch
                   ownershipStatus={ownershipStatus}
                   setOwnershipStatus={setOwnershipStatus}
-                  stats={stats}
-                  setStats={setStats}
+                  ivs={ivs}
+                  setIvs={setIvs}
                   isHundo={isHundo}
                   setIsHundo={setIsHundo}
                   onlyMatchingTrades={onlyMatchingTrades}

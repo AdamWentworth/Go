@@ -5,7 +5,7 @@
     display: flex;
     flex-direction: column;
     height: 100%; /* Take full height of the parent container */
-    width: 70%;
+    width: 100%;
     padding-bottom: 10px;
   }
   
@@ -139,5 +139,25 @@
   .iv-display::before,
   .iv-display-stat::before {
     left: calc(12.5% + 50%);
+  }
+  .iv-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px; /* Adjust as needed */
+  }
+  
+  .iv-hundo-image {
+    cursor: pointer;
+    width: clamp(32px, 4vw, 40px);
+    height: clamp(32px, 4vw, 40px);
+    margin-right: -5px;
+  }
+  
+  .iv-reset-image {
+    cursor: pointer;
+    width: clamp(24px, 4vw, 32px);
+    height: clamp(22px, 4vw, 28px);
+    filter: invert(100%);
   }
   
