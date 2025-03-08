@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CP from '../../../../components/pokemonComponents/CP';
 import MiniMap from './MiniMap';
-import IVDisplay from '../../../../components/pokemonComponents/IVDisplay';
+import IV from '../../../../components/pokemonComponents/IV';
 import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
 import Gender from '../../../../components/pokemonComponents/Gender';
 import { URLSelect } from '../../utils/URLSelect';
@@ -109,7 +109,7 @@ const OwnedListView = ({ item }) => {
             </div>
           )}
         </div>
-        <IVDisplay item={item} />
+        <IV item={item} />
 
         {/* Location Caught */}
         {item.location_caught && (

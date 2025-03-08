@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import MoveDisplay from '../../../components/pokemonComponents/MoveDisplay';
-import IVDisplay from '../../../components/pokemonComponents/IVDisplay';
+import IV from '../../../components/pokemonComponents/IV';
 import Gender from '../../../components/pokemonComponents/Gender';
 import FriendshipLevel from '../../../components/pokemonComponents/FriendshipLevel';
 import { TRADE_FRIENDSHIP_LEVELS } from '../../../services/indexedDB';
@@ -126,7 +126,7 @@ const PendingTradeView = ({
           </div>
         )}
 
-        <IVDisplay item={details} />
+        <IV item={details} />
         {details.location_caught && <p><strong>Location Caught:</strong> {details.location_caught}</p>}
         {details.date_caught && <p><strong>Date Caught:</strong> {formatDate(details.date_caught)}</p>}
       </>

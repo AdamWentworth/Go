@@ -1,8 +1,8 @@
-// WeightComponent.jsx
+// Weight.jsx
 import React, { useEffect, useRef, useState } from 'react';
-import './WeightComponent.css';
+import './Weight.css';
 
-const WeightComponent = ({ pokemon, editMode, onWeightChange }) => {
+const Weight = ({ pokemon, editMode, onWeightChange }) => {
   const [weight, setWeight] = useState(
     pokemon.ownershipStatus.weight ? String(pokemon.ownershipStatus.weight) : ''
   );
@@ -101,4 +101,4 @@ const WeightComponent = ({ pokemon, editMode, onWeightChange }) => {
   );
 };
 
-export default WeightComponent;
+export default Weight;

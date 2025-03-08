@@ -8,9 +8,9 @@ import { PokemonDataContext } from '../../../contexts/PokemonDataContext';
 import EditSaveComponent from '../../../components/EditSaveComponent';
 import NameComponent from './OwnedComponents/NameComponent';
 import Gender from '../../../components/pokemonComponents/Gender';
-import WeightComponent from './OwnedComponents/WeightComponent';
-import TypeComponent from './OwnedComponents/TypeComponent';
-import HeightComponent from './OwnedComponents/HeightComponent';
+import Weight from '../../../components/pokemonComponents/Weight';
+import Types from '../../../components/pokemonComponents/Types';
+import Height from '../../../components/pokemonComponents/Height';
 import MovesComponent from './OwnedComponents/MovesComponent';
 import FriendshipManager from './WantedComponents/FriendshipManager';
 import BackgroundLocationCard from '../../../components/pokemonComponents/BackgroundLocationCard';
@@ -193,9 +193,9 @@ const WantedInstance = ({ pokemon, isEditable }) => {
       </div>
 
       <div className="stats-container">
-        <WeightComponent pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
-        <TypeComponent pokemon={pokemon} />
-        <HeightComponent pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
+        <Weight pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
+        <Types pokemon={pokemon} />
+        <Height pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
       </div>
 
       <div className="moves-container">

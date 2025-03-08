@@ -1,0 +1,143 @@
+/* IV.css */
+
+/* Container styles */
+.iv-display-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Take full height of the parent container */
+    width: 70%;
+    padding-bottom: 10px;
+  }
+  
+  .iv-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: -10px;
+    margin-bottom: 10px;
+  }
+  
+  /* Row container styles for both display and edit modes */
+  .iv-display,
+  .iv-display-stat {
+    position: relative;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto; /* For label and content */
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  /* Specific differences in spacing */
+  .iv-display {
+    margin: 5px;
+    padding: 5px;
+  }
+  
+  .iv-display-stat {
+    margin: 5px 0;
+    padding: 2px;
+  }
+  
+  /* Label styles */
+  .iv-label,
+  .iv-display-label {
+    text-align: left;
+    justify-self: start;
+  }
+  
+  /* Content area styles */
+  .iv-content,
+  .iv-display-content {
+    display: flex;
+    justify-content: flex-end;
+    width: 40px;
+  }
+  
+  /* Value and input styles */
+  .iv-value,
+  .iv-input,
+  .iv-display-value {
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+    padding: 0;
+    color: white;
+    background-color: transparent;
+    text-align: center;
+    border-radius: 2px;
+    line-height: normal;
+  }
+  
+  .iv-value {
+    border: 1px solid transparent; /* Invisible border to occupy space */
+  }
+  
+  .iv-input {
+    border: 1px solid #a3a3a3; /* Visible border for input */
+  }
+  
+  /* Remove number input spinners */
+  .iv-input::-webkit-outer-spin-button,
+  .iv-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  
+  /* Gauge elements (both variants) */
+  .iv-bar-bg,
+  .iv-bar,
+  .iv-display-bar-bg,
+  .iv-display-bar {
+    position: absolute;
+    height: 15px;
+    bottom: -20px;
+    width: 75%; /* Gauge width */
+    border-radius: 7.5px;
+    left: 12.5%; /* Centering the gauge */
+    margin-bottom: 5px;
+  }
+  
+  .iv-bar-bg,
+  .iv-display-bar-bg {
+    background-color: #ccc;
+  }
+  
+  .iv-bar,
+  .iv-display-bar {
+    background-color: #ef9219;
+    width: 0%;
+    transition: width 0.3s ease-in-out;
+  }
+  
+  /* Full gauge styling */
+  .iv-bar.full,
+  .iv-display-full {
+    background-color: #c45856;
+  }
+  
+  /* Gauge markers (pseudo-elements) */
+  .iv-display::after,
+  .iv-display::before,
+  .iv-display-stat::after,
+  .iv-display-stat::before {
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    width: 2px;
+    height: 15px;
+    background-color: white;
+    z-index: 2;
+    margin-bottom: 5px;
+  }
+  
+  .iv-display::after,
+  .iv-display-stat::after {
+    left: calc(12.5% + 25%);
+  }
+  
+  .iv-display::before,
+  .iv-display-stat::before {
+    left: calc(12.5% + 50%);
+  }
+  

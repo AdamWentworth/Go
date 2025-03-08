@@ -1,8 +1,8 @@
 // TypeComponent.jsx
 import React from 'react';
-import './TypeComponent.css';
+import './Types.css';
 
-const TypeComponent = ({ pokemon }) => {
+const Types = ({ pokemon }) => {
   const type1 = pokemon.type1_name;
   const type2 = pokemon.type2_name;
   const type1Icon = pokemon.type_1_icon;
@@ -21,4 +21,4 @@ const TypeComponent = ({ pokemon }) => {
   );
 };
 
-export default TypeComponent;
+export default Types;

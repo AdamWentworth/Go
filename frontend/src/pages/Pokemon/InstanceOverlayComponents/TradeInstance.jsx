@@ -8,15 +8,15 @@ import EditSaveComponent from '../../../components/EditSaveComponent';
 import CP from '../../../components/pokemonComponents/CP';
 import NameComponent from './OwnedComponents/NameComponent';
 import Gender from '../../../components/pokemonComponents/Gender';
-import WeightComponent from './OwnedComponents/WeightComponent';
-import TypeComponent from './OwnedComponents/TypeComponent';
-import HeightComponent from './OwnedComponents/HeightComponent';
+import Weight from '../../../components/pokemonComponents/Weight';
+import Types from '../../../components/pokemonComponents/Types';
+import Height from '../../../components/pokemonComponents/Height';
 import MovesComponent from './OwnedComponents/MovesComponent';
 import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from '../../../components/pokemonComponents/DateCaught';
 import BackgroundLocationCard from '../../../components/pokemonComponents/BackgroundLocationCard';
 import LevelComponent from './OwnedComponents/LevelComponent';
-import IVComponent from './OwnedComponents/IVComponent';
+import IV from '../../../components/pokemonComponents/IV';
 import MaxComponent from './OwnedComponents/MaxComponent';
 import MaxMovesComponent from "./OwnedComponents/MaxMovesComponent";
 
@@ -404,13 +404,13 @@ const TradeInstance = ({ pokemon, isEditable }) => {
       </div>
 
       <div className="stats-container">
-        <WeightComponent
+        <Weight
           pokemon={pokemon}
           editMode={editMode}
           onWeightChange={handleWeightChange}
         />
-        <TypeComponent pokemon={pokemon} />
-        <HeightComponent
+        <Types pokemon={pokemon} />
+        <Height
           pokemon={pokemon}
           editMode={editMode}
           onHeightChange={handleHeightChange}
@@ -446,7 +446,7 @@ const TradeInstance = ({ pokemon, isEditable }) => {
       </div>
       {(editMode || (ivs.Attack !== '' && ivs.Defense !== '' && ivs.Stamina !== '')) && (
         <div className="iv-component">
-          <IVComponent 
+          <IV
             pokemon={pokemon} 
             editMode={editMode} 
             onIvChange={handleIvChange} 

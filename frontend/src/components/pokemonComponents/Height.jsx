@@ -1,8 +1,8 @@
-// HeightComponent.jsx
+// Height.jsx
 import React, { useEffect, useRef, useState } from 'react';
-import './HeightComponent.css';
+import './Height.css';
 
-const HeightComponent = ({ pokemon, editMode, onHeightChange }) => {
+const Height = ({ pokemon, editMode, onHeightChange }) => {
   const [height, setHeight] = useState(
     pokemon.ownershipStatus.height ? String(pokemon.ownershipStatus.height) : ''
   );
@@ -101,4 +101,4 @@ const HeightComponent = ({ pokemon, editMode, onHeightChange }) => {
   );
 };
 
-export default HeightComponent;
+export default Height;

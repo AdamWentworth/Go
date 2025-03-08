@@ -172,21 +172,20 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 	// Determine the value of gender based on the input
 	var gender *string
 	if genderStr != "" && genderStr != "null" {
-		validGenders := []string{"Male", "Female", "Any"}
-		isValidGender := false
-		for _, g := range validGenders {
-			if genderStr == g {
-				isValidGender = true
-				break
+		// Only filter when a specific gender ("Male" or "Female") is provided.
+		if genderStr != "Any" && genderStr != "Genderless" {
+			validGenders := []string{"Male", "Female"}
+			isValid := false
+			for _, g := range validGenders {
+				if genderStr == g {
+					isValid = true
+					break
+				}
 			}
-		}
-
-		if !isValidGender {
-			logrus.Error("Invalid gender value: ", genderStr)
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid gender value"})
-		}
-
-		if genderStr != "Any" {
+			if !isValid {
+				logrus.Error("Invalid gender value: ", genderStr)
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid gender value"})
+			}
 			gender = &genderStr
 		}
 	}

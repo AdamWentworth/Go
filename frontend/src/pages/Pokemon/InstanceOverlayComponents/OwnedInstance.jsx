@@ -10,17 +10,19 @@ import useValidation from './hooks/useValidation';
 
 // Components
 import EditSaveComponent from '../../../components/EditSaveComponent';
+
+// Pokemon Components
 import CP from '../../../components/pokemonComponents/CP';
 import FavoriteComponent from '../../../components/pokemonComponents/Favorite';
 import NameComponent from './OwnedComponents/NameComponent';
 import LuckyComponent from './OwnedComponents/LuckyComponent';
 import PurifyComponent from './OwnedComponents/PurifyComponent';
 import Gender from '../../../components/pokemonComponents/Gender';
-import WeightComponent from './OwnedComponents/WeightComponent';
-import TypeComponent from './OwnedComponents/TypeComponent';
-import HeightComponent from './OwnedComponents/HeightComponent';
+import Weight from '../../../components/pokemonComponents/Weight';
+import Types from '../../../components/pokemonComponents/Types';
+import Height from '../../../components/pokemonComponents/Height';
 import MovesComponent from './OwnedComponents/MovesComponent';
-import IVComponent from './OwnedComponents/IVComponent';
+import IV from '../../../components/pokemonComponents/IV';
 import LocationCaughtComponent from './OwnedComponents/LocationCaughtComponent';
 import DateCaughtComponent from '../../../components/pokemonComponents/DateCaught';
 import BackgroundLocationCard from '../../../components/pokemonComponents/BackgroundLocationCard';
@@ -491,13 +493,13 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         </div>
       </div>
       <div className="weight-type-height-container">
-        <WeightComponent 
+        <Weight
           pokemon={pokemon} 
           editMode={editMode} 
           onWeightChange={handleWeightChange} 
           />
-        <TypeComponent pokemon={pokemon} />
-        <HeightComponent 
+        <Types pokemon={pokemon} />
+        <Height 
           pokemon={pokemon} 
           editMode={editMode} 
           onHeightChange={handleHeightChange} 
@@ -551,12 +553,10 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
         />
       </div>
       <div className="iv-component">
-        <IVComponent 
-          pokemon={pokemon} 
+        <IV 
           editMode={editMode} 
           onIvChange={handleIvChange} 
           ivs={ivs}
-          errors={validationErrors}
         />
       </div>
       <div className="location-caught-component">

@@ -4,11 +4,11 @@
   align-items: center;
   justify-content: center;
   /* Container size: minimum 24px and maximum 30px */
-  width: clamp(24px, 4vw, 30px);
-  height: clamp(24px, 4vw, 30px);
+  width: clamp(30px, 4vw, 30px);
+  height: clamp(30px, 4vw, 30px);
   transition: opacity 0.2s ease-in-out;
-  min-width: 24px;
-  min-height: 24px;
+  min-width: 30px;
+  min-height: 30px;
 }
 
 .gender-container:hover {
@@ -17,6 +17,6 @@
 
 .gender-icon {
   /* Icon size responsive between 20px and 26px */
-  width: clamp(20px, 3.5vw, 26px);
-  height: clamp(20px, 3.5vw, 26px);
+  width: clamp(30px, 3.5vw, 30px);
+  height: clamp(30px, 3.5vw, 30px);
 }

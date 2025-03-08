@@ -1,7 +1,7 @@
 // TradePopup.jsx
 
 import React, { useState } from 'react';
-import IVDisplay from '../../../../components/pokemonComponents/IVDisplay';
+import IV from '../../../../components/pokemonComponents/IV';
 import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
@@ -53,7 +53,7 @@ const TradePopup = ({ item, navigateToUserCatalog, findPokemonByKey }) => {
           />
         </div>
       </div>
-      <IVDisplay item={item} />
+      <IV item={item} />
 
       {/* Wanted List Section */}
       {item.wanted_list && (
