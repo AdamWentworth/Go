@@ -2,7 +2,7 @@
 
 import React from 'react';
 import NavigationSection from './HowItWorks/NavigationSection';
-import SecondarySection from './/HowItWorks/SecondarySection';
+import PokemonSection from './HowItWorks/PokemonSection';
 import './HowItWorks.css';
 
 const HowItWorks = () => {
@@ -10,7 +10,8 @@ const HowItWorks = () => {
     <section className="howItWorks">
       <h2>How It Works</h2>
       <NavigationSection />
-      <SecondarySection />
+      <div className="section-divider" />
+      <PokemonSection />
     </section>
   );
 };

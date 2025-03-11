@@ -75,7 +75,7 @@ const HeaderUI = ({
     return (
       <div className="toggle-button" onClick={onListsButtonClick}>
         <span className={toggleTextClass}>
-          {isCustomContext ? "THEIR POKÉMON" : "MY POKÉMON"}
+          {"TAGS"}
         </span>
       </div>
     );

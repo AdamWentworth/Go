@@ -1,8 +1,10 @@
 /* HomeHeader.css */
 
 .homeHeader {
+    background-color: #1a1a1a;
     text-align: center;
     margin-bottom: clamp(1rem, 2vw, 2rem);
+    width: 100%;
   }
   
   .logoContainer {

@@ -1,15 +1,9 @@
-/* HowItWorks.css */
-
 .howItWorks {
     background-color: #111;
     width: 100%;
     text-align: center;
     padding: clamp(1rem, 2vw, 2rem) 0;
     color: white;
-  }
-  
-  .howItWorks h2 {
-    margin-bottom: 1rem;
   }
   
   /* Common row container */
@@ -19,5 +13,13 @@
     gap: 1rem;
     justify-content: center;
     margin-bottom: 1rem;
+  }
+  
+  /* Section divider styling */
+  .section-divider {
+    width: 80%;
+    height: 2px;
+    background-color: #333;
+    margin: 2rem auto;
   }
   

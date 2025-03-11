@@ -4,7 +4,7 @@ import './OwnershipListsMenu.css';
 import useFavoriteList from '../../../hooks/sort/useFavoriteList';
 
 const OwnershipListsMenu = ({ onSelectList, activeLists, onSwipe }) => {
-  const leftColumnLists = ['Owned', 'Trade'];
+  const leftColumnLists = ['Caught', 'Trade'];
   const rightColumnLists = ['Wanted', 'Unowned'];
 
   const sortedOwnedPokemons = useFavoriteList(

@@ -50,6 +50,10 @@ function useHandleMoveToFilter({
 
   const handleConfirmMoveToFilter = useCallback(
     async (filter) => {
+      // Create a displayFilter variable so that if filter is "Owned"
+      // the user sees "Caught" in alerts and messages.
+      const displayFilter = filter === 'Owned' ? 'Caught' : filter;
+
       const messageDetails = [];
       let remainingHighlightedCards = new Set(highlightedCards);
 
@@ -130,7 +134,7 @@ function useHandleMoveToFilter({
               instance?.nickname ||
               getDisplayName(parsePokemonKey(key)?.baseKey, variants) ||
               key
-            } (Mega) cannot be moved to ${filter}.`;
+            } (Mega) cannot be moved to ${displayFilter}.`;
           })
           .join('\n');
 
@@ -146,7 +150,7 @@ function useHandleMoveToFilter({
               instance?.nickname ||
               getDisplayName(parsePokemonKey(key)?.baseKey, variants) ||
               key
-            } (Fusion) cannot be moved to ${filter}.`;
+            } (Fusion) cannot be moved to ${displayFilter}.`;
           })
           .join('\n');
 
@@ -182,7 +186,11 @@ function useHandleMoveToFilter({
         for (const { key: pokemonKey, baseKey } of fusionPokemonKeys) {
           try {
             const result = await promptFusionPokemonSelection(baseKey);
-            if (result === 'fuseThis' || result === 'assignFusion' || result === 'createNew') {
+            if (
+              result === 'fuseThis' ||
+              result === 'assignFusion' ||
+              result === 'createNew'
+            ) {
               remainingHighlightedCards.delete(pokemonKey);
             } else {
               skippedFusionPokemonKeys.push(baseKey);
@@ -207,10 +215,10 @@ function useHandleMoveToFilter({
           const displayName =
             instance.nickname || getDisplayName(baseKey, variants);
 
-          // (NEW) Use your dictionary-based message generator:
+          // (NEW) Use our dictionary-based message generator:
           const actionDetail = getTransitionMessage(
             currentStatus,
-            filter,
+            displayFilter,
             displayName
           );
 
@@ -218,7 +226,7 @@ function useHandleMoveToFilter({
         } else {
           // If there's no instance, it implies a new record
           const displayName = getDisplayName(baseKey, variants);
-          const actionDetail = `Generate ${displayName} from Pokédex to ${filter}`;
+          const actionDetail = `Generate ${displayName} from Pokédex to ${displayFilter}`;
           messageDetails.push(actionDetail);
         }
       }
@@ -254,10 +262,14 @@ function useHandleMoveToFilter({
         const userConfirmed = await confirm(messageContent);
         if (userConfirmed) {
           // Proceed with the move
-          handleMoveHighlightedToFilter(filter, remainingHighlightedCards).catch((error) => {
-            console.error('Error during ownership update:', error);
-            alert('An error occurred while updating ownership. Please try again.');
-          });
+          handleMoveHighlightedToFilter(filter, remainingHighlightedCards).catch(
+            (error) => {
+              console.error('Error during ownership update:', error);
+              alert(
+                'An error occurred while updating ownership. Please try again.'
+              );
+            }
+          );
         } else {
           // User canceled
           console.log('User canceled the operation.');

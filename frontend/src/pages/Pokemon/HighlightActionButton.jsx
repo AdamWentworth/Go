@@ -30,7 +30,7 @@ function HighlightActionButton({
               onClick={() => handleFilterClick('Owned')}
               disabled={isUpdating} // Disable during updates
             >
-              Owned
+              Caught
             </button>
             <button
               className="filter-button Trade"

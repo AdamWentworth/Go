@@ -1,0 +1,187 @@
+.pokemon-section {
+  text-align: center;
+  color: white;
+}
+
+/* Row container */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.8rem, 2vw, 1.5rem);
+  justify-content: center;
+  margin-bottom: clamp(0.8rem, 2vw, 1.5rem);
+}
+
+/* Top row styling */
+.top-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Section header styling */
+.section-header {
+  width: 100%;
+  text-align: center;
+  margin: clamp(1rem, 2vw, 1.5rem) 0;
+}
+
+.section-header h2 {
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  margin: 0;
+}
+
+/* Pokémon button styling */
+.pokemon-button img {
+  width: clamp(50px, 7vw, 80px);
+  height: auto;
+  display: block;
+}
+
+/* Card styling */
+.card {
+  background-color: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: clamp(5px, 1vw, 10px);
+  padding: clamp(0.8rem, 2vw, 2rem);
+  width: clamp(240px, 35vw, 300px);
+  text-align: center;
+  color: white;
+}
+
+/* Ensure the trade and wanted cards are positioned relative for pseudo-elements */
+.card.trade,
+.card.wanted {
+  position: relative;
+}
+
+/* Individual Pokémon frame styling */
+.pokemon-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid #fff;
+  border-radius: clamp(6px, 2vw, 10px);
+  padding: clamp(4px, 1vw, 8px);
+  background-color: #2a2a2a;
+  width: fit-content;
+  position: relative;
+}
+
+/* Pseudo-element for gradient glow */
+.pokemon-frame::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: translateY(-5%);
+  z-index: 0;
+}
+
+/* Unique glow styles defined solely in CSS */
+
+/* Trade Section: Detective Pikachu */
+.pokemon-frame.detective-pikachu::before {
+  background: radial-gradient(circle, rgba(40, 167, 69, 0.4) 10%, transparent 60%);
+}
+
+/* Wanted Section: Nightcap Snorlax */
+.pokemon-frame.nightcap-snorlax::before {
+  background: radial-gradient(circle, rgba(220, 53, 69, 0.4) 10%, transparent 60%);
+}
+
+/* Find Trades Section: Detective Pikachu */
+.pokemon-frame.findtrades-detective-pikachu::before {
+  background: radial-gradient(circle, rgba(40, 167, 69, 0.4) 10%, transparent 50%);
+  transform: translateY(-10%);
+}
+
+.pokemon-frame.findtrades-nightcap-snorlax::before {
+  background: radial-gradient(circle, rgba(255, 100, 100, 0.4) 10%, transparent 50%);
+  transform: translateY(-10%);
+}
+
+/* Centered Pokémon frame */
+.centered-frame {
+  margin: 0 auto;
+  margin-top: clamp(8px, 2vw, 15px);
+}
+
+/* Pokémon image styling */
+.pokemon-img {
+  width: clamp(50px, 8vw, 105px);
+  height: auto;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+/* Larger Pokémon images for Trade & Wanted cards */
+.large-img {
+  width: clamp(80px, 12vw, 120px);
+}
+
+/* Trade icon styling */
+.trade-icon {
+  width: clamp(25px, 5vw, 40px);
+  height: auto;
+  display: block;
+}
+
+/* Pokémon name styling */
+.pokemon-name {
+  font-size: clamp(0.7rem, 1.2vw, 0.9rem);
+  color: white;
+  margin-top: clamp(4px, 1vw, 8px);
+  text-align: center;
+}
+
+/* Headers inside cards */
+.card h3 {
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  margin-bottom: clamp(0.5rem, 1vw, 1rem);
+}
+
+/* Body text in cards */
+.card p {
+  font-size: clamp(0.8rem, 2vw, 1rem);
+  line-height: 1.4;
+  margin-block-start: 0.2rem;
+  margin-block-end: 0.2rem;
+}
+
+/* Smaller text for Find Trades card */
+.pokemon-name.small-text {
+  font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+}
+.pokemon-name.smaller-text {
+  font-size: clamp(0.6rem, 1.25vw, 0.75rem);
+}
+
+/* Optional text colors */
+.caught-text {
+  color: #2196F3;
+}
+.trade-text {
+  color: #4CAF50;
+}
+.wanted-text {
+  color: #F44336;
+}
+
+/* Drop-shadow filter for images and trade icon */
+.pokemon-img,
+.trade-icon {
+  filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
+}
+
+/* Styling for trade-images container */
+.trade-images {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(5px, 1vw, 10px);
+  margin-top: clamp(8px, 2vw, 15px);
+}
