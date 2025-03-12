@@ -3,6 +3,7 @@
 import React from 'react';
 import NavigationSection from './HowItWorks/NavigationSection';
 import PokemonSection from './HowItWorks/PokemonSection';
+import SearchSection from './HowItWorks/SearchSection';
 import './HowItWorks.css';
 
 const HowItWorks = () => {
@@ -12,6 +13,8 @@ const HowItWorks = () => {
       <NavigationSection />
       <div className="section-divider" />
       <PokemonSection />
+      <div className="section-divider" />
+      <SearchSection />
     </section>
   );
 };

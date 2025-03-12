@@ -2,7 +2,7 @@
 
 /* Only used by the TradeCard */
 .card.trade {
-  position: relative; /* for glows or absolute children if needed */
+  position: relative;
 }
 
 /* If .trade-text is only used in the TradeCard, keep it here */
@@ -10,19 +10,31 @@
   color: #4CAF50;
 }
 
-/* Detective Pikachu glow unique to the TradeCard */
-.pokemon-frame.detective-pikachu::before {
+/* New container wrapping the image */
+.pokemon-image-container {
+  position: relative;
+  display: inline-block; /* Ensures the container wraps the image */
+}
+
+/* Unique backdrop for TradeCard */
+.trade-bg::before {
   content: "";
   position: absolute;
-  top: 0;
+  top: 0%; /* Adjust vertical offset as needed */
   left: 0;
   width: 100%;
   height: 100%;
-  transform: translateY(-5%);
   background: radial-gradient(
     circle,
     rgba(40, 167, 69, 0.4) 10%,
-    transparent 60%
+    transparent 70%
   );
   z-index: 0;
+}
+
+/* Ensure the image appears above the pseudo-element */
+.pokemon-img {
+  position: relative;
+  z-index: 1;
+  display: block;
 }

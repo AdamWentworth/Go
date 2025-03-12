@@ -136,6 +136,11 @@
     font-size: clamp(0.6rem, 1vw, 0.75rem) !important;
   }
 
+  .height-label,
+  .weight-label {
+    margin-top: unset !important;
+  }
+
   .weight-editable-container, .height-editable-container {
     display: unset !important;
   }

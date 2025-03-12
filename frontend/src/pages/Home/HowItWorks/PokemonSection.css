@@ -43,7 +43,7 @@
   border: 1px solid #333;
   border-radius: clamp(5px, 1vw, 10px);
   padding: clamp(0.8rem, 2vw, 2rem);
-  width: clamp(280px, 35vw, 400px);
+  width: clamp(260px, 35vw, 400px);
   text-align: center;
   color: white;
 }
@@ -77,7 +77,7 @@
 
 /* Base image sizing used in multiple cards */
 .pokemon-img {
-  width: clamp(50px, 8vw, 105px);
+  width: clamp(50px, 8vw, 120px);
   height: auto;
   display: block;
   position: relative; /* so it's above any pseudo-element glow */

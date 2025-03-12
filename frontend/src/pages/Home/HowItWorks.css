@@ -14,6 +14,10 @@
     justify-content: center;
     margin-bottom: 1rem;
   }
+
+  .row.top-row {
+    margin-bottom: unset;
+  }
   
   /* Section divider styling */
   .section-divider {
