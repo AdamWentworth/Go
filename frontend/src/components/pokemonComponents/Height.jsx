@@ -6,47 +6,72 @@ const Height = ({ pokemon, editMode, onHeightChange }) => {
   const [height, setHeight] = useState(
     pokemon.ownershipStatus.height ? String(pokemon.ownershipStatus.height) : ''
   );
+  const [userFocus, setUserFocus] = useState(false);
   const editableRef = useRef(null);
 
-  // When entering edit mode, set the field's content without further re-rendering.
+  function setCaretToEnd() {
+    const range = document.createRange();
+    const sel = window.getSelection();
+    if (editableRef.current) {
+      range.selectNodeContents(editableRef.current);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      editableRef.current.focus();
+    }
+  }
+
+  // Sync the contentEditable text whenever editMode changes or height changes.
   useEffect(() => {
     if (editMode && editableRef.current) {
-      editableRef.current.innerText = height;
+      editableRef.current.innerText = height || '';
+      if (userFocus) {
+        setCaretToEnd();
+      }
     }
-  }, [editMode]); // Note: no dependency on height so that we don't update while typing.
+  }, [editMode, height, userFocus]);
 
   const handleInput = (event) => {
-    // Read the current content without altering it.
+    // Strip out "m" from user text
     const newValue = event.target.innerText.replace('m', '').trim();
+    // Only allow numbers and an optional decimal point
     if (/^\d*\.?\d*$/.test(newValue)) {
-      // We update state here but do not force a DOM update.
       setHeight(newValue);
-      onHeightChange(newValue);
+      if (onHeightChange) {
+        onHeightChange(newValue);
+      }
     } else {
-      // If invalid input, revert to the last valid value.
+      // If invalid, revert to the old value
       event.target.innerText = height;
+    }
+    if (userFocus) {
+      setCaretToEnd();
     }
   };
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
+      // Prevent newline
       event.preventDefault();
       editableRef.current.blur();
+      setUserFocus(false);
     }
   };
 
-  // On blur, capture the final value.
-  const handleBlur = () => {
-    const currentText = editableRef.current.innerText.replace('m', '').trim();
-    setHeight(currentText);
-    onHeightChange(currentText);
-  };
+  // If we exit edit mode, finalize the current value and reset focus.
+  useEffect(() => {
+    if (!editMode) {
+      setHeight((prevHeight) => (prevHeight ? prevHeight.trim() : ''));
+      setUserFocus(false);
+    }
+  }, [editMode]);
 
+  // If there's no height in non-edit mode, don't render anything.
   if (!editMode && !height) {
     return null;
   }
 
-  // Compute height category from numeric value.
+  // Compute a "size tag" (e.g., XXS, XS, XL, XXL) if thresholds are provided
   const heightVal = parseFloat(height);
   let heightCategory = '';
   if (!isNaN(heightVal) && pokemon.sizes) {
@@ -69,12 +94,16 @@ const Height = ({ pokemon, editMode, onHeightChange }) => {
             <span
               contentEditable
               suppressContentEditableWarning={true}
-              ref={editableRef}
               onInput={handleInput}
               onKeyDown={handleKeyDown}
-              onBlur={handleBlur}
+              // Track userFocus so we can put the caret at the end
+              onClick={() => setUserFocus(true)}
+              onTouchStart={() => setUserFocus(true)}
+              ref={editableRef}
               className="height-editable-content"
-            />
+            >
+              {height}
+            </span>
           ) : (
             <span className="height-editable-content">{height}</span>
           )}

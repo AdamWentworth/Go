@@ -43,7 +43,7 @@
   border: 1px solid #333;
   border-radius: clamp(5px, 1vw, 10px);
   padding: clamp(0.8rem, 2vw, 2rem);
-  width: clamp(240px, 35vw, 300px);
+  width: clamp(280px, 35vw, 400px);
   text-align: center;
   color: white;
 }

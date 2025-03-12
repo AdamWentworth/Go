@@ -18,7 +18,7 @@
   .variants-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    grid-auto-rows: clamp(40px, 8vw, 60px);
+    grid-auto-rows: clamp(50px, 8vw, 90px);
     margin-top: clamp(8px, 2vw, 15px);
     padding: clamp(2px, 1vw, 4px);
     border: 1px solid #fff;
@@ -32,7 +32,6 @@
     align-items: center;
     justify-content: flex-start;
     background-color: #2a2a2a;
-    max-width: clamp(60px, 8vw, 80px);
     width: 100%;
     border: none;
     padding: 0;
@@ -44,7 +43,7 @@
   }
   
   .variants-grid .pokemon-name {
-    font-size: clamp(5px, 1vw, 7px);
+    font-size: clamp(6px, 1vw, 10px);
     margin: 0;
     line-height: 1.2;
     min-height: clamp(12px, 2vw, 16px);

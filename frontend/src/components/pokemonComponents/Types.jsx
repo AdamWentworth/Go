@@ -1,4 +1,4 @@
-// TypeComponent.jsx
+// Types.jsx
 import React from 'react';
 import './Types.css';
 
