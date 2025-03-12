@@ -30,9 +30,6 @@
 
 .trade-instance .edit-save-container {
   margin-right: auto;
-}
-
-.trade-instance .edit-save-container {
   flex-shrink: 0; /* Ensures this container doesn't grow or shrink */
 }
 
@@ -43,12 +40,17 @@
   width: 100%;
 }
 
+/* Updated styling for the location.png image (background-icon)
+   copied from OwnedInstance.css */
 .trade-instance .background-icon {
   position: absolute;
-  top: 0;
-  right: 0;
-  cursor: pointer;
+  top: 10px;         /* Push it down so it appears below the favorite icon */
+  right: -3px;
+  width: 30px;       /* Fixed width */
+  height: 30px;      /* Fixed height */
   z-index: 10;
+  object-fit: contain; /* Ensures the image scales properly */
+  cursor: pointer;
 }
 
 .trade-instance .background-select-row.active .background-icon {
@@ -113,7 +115,6 @@
   height: auto;
   z-index: 4;
   max-width: 100%;
-  height: auto;
 }
 
 .trade-instance .name-container {
@@ -136,13 +137,13 @@
   margin-top: 10px;
   margin-bottom: 5px;
   flex-grow: 1;             /* Allow the level-component to take up flexible space */
-  justify-content: center;  /* Center the content of level-component horizontally */
+  justify-content: center;  /* Center the content horizontally */
 }
 
 .trade-instance .gender-container {
   display: flex;            /* Ensure gender-container itself uses flexbox */
   justify-content: flex-end; /* Align content inside gender-container to the right */
-  align-items: center;      /* Vertically align content in gender-container */
+  align-items: center;      /* Vertically align content */
   margin-left: auto;        /* Push the gender-container to the far right */
 }
 
@@ -173,7 +174,7 @@
 
 .trade-instance-overlay .overlay-row {
   align-items: center;
-  gap: 10px
+  gap: 10px;
 }
 
 @media (max-width: 480px) {
@@ -189,6 +190,7 @@
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
+  /* Add any responsive styling if needed */
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {

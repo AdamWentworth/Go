@@ -9,7 +9,7 @@ import IV from '../../../../components/pokemonComponents/IV';
 
 const CaughtCard = () => {
   return (
-    <div className="card">
+    <div className="card caught-card">
       <h3>Manage Your Collection</h3>
       <p>
       Effortlessly tag your Pokémon GO captures as <strong className="caught-text">Caught</strong> and refine their details to perfectly align with your Pokémon GO collection, ensuring a truly authentic experience.

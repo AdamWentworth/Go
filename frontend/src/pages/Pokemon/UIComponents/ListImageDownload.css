@@ -1,0 +1,43 @@
+/* ListImageDownload.css */
+
+/* Container for the entire section */
+.list-image-download {
+    text-align: center;
+  }
+  
+  /* The area being captured by html2canvas */
+  .list-image-download .capture-area {
+    display: inline-block;
+    padding: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #fff;
+  }
+  
+  /* A simple flexible grid for Pokémon images */
+  .list-image-download .pokemon-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+  
+  /* Pokémon card styling */
+  .list-image-download .pokemon-card {
+    width: 64px;
+    height: 64px;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .list-image-download .pokemon-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  
+  /* Spacing for sections (Wanted, Trade) */
+  .list-image-download .section-block {
+    margin-bottom: 2rem;
+  }  
