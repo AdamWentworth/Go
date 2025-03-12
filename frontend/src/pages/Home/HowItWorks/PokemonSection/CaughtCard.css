@@ -1,0 +1,13 @@
+/* CaughtCard.css */
+
+/* If you want a special background or layout only for CaughtCard, do it here: 
+.card {
+  background-image: url('/images/caught_bg.png');
+}
+*/
+
+/* If "caught-text" is only used in the CaughtCard, keep it here */
+.caught-text {
+    color: #2196F3;
+  }
+  

@@ -22,4 +22,9 @@
     background-color: #333;
     margin: 2rem auto;
   }
+
+.howItWorks h2 {
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  margin-block-start: 0.5rem;
+}
   
