@@ -41,3 +41,21 @@
   .list-image-download .section-block {
     margin-bottom: 2rem;
   }  
+
+  /* ListImageDownload.css */
+.list-image-download .capture-area {
+    display: inline-block;
+    padding: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: var(--preview-bg-color, #fff); /* Fallback to white */
+  }
+  
+  .list-image-download .section-block {
+    margin-bottom: 2rem;
+    background-color: var(--section-frame-bg-color, #f0f0f0); /* Fallback to light gray */
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+  

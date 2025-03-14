@@ -1,3 +1,5 @@
+// OverlayPortal.jsx
+
 import { createPortal } from 'react-dom';
 
 // Provide a reusable Portal component that renders its children
