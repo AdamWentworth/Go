@@ -10,11 +10,7 @@ const ListImageDownload = forwardRef(
   ({
     wantedPokemons = [],
     tradePokemons = [],
-    previewMode = false,
-    // These props are no longer used directly for styling because we rely on CSS variables,
-    // but we now use inline styles for html2canvas compatibility.
-    previewBgColor = "#fff",
-    sectionFrameBgColor = "#f0f0f0"
+    previewMode = false
   }, ref) => {
     const captureRef = useRef(null);
 
@@ -24,15 +20,8 @@ const ListImageDownload = forwardRef(
 
     return (
       <div className="list-image-download">
-        <div
-          ref={captureRef}
-          className="capture-area"
-          style={{ backgroundColor: previewBgColor }}
-        >
-          <section
-            className="section-block"
-            style={{ backgroundColor: sectionFrameBgColor }}
-          >
+        <div ref={captureRef} className="capture-area">
+          <section className="section-block">
             <h2>Wanted</h2>
             <div className="pokemon-grid">
               {wantedPokemons.map((pokemon, idx) => (
@@ -46,10 +35,7 @@ const ListImageDownload = forwardRef(
             </div>
           </section>
 
-          <section
-            className="section-block"
-            style={{ backgroundColor: sectionFrameBgColor }}
-          >
+          <section className="section-block">
             <h2>Trade</h2>
             <div className="pokemon-grid">
               {tradePokemons.map((pokemon, idx) => (

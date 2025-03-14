@@ -72,23 +72,26 @@ const OwnershipListsMenu = ({ onSelectList, activeLists, onSwipe }) => {
   const handleDownload = async () => {
     const captureArea = downloadRef.current?.getCaptureRef();
     if (!captureArea) return;
-  
+
     setIsDownloading(true);
-  
-    // Make sure the browser has a chance to re-render any offscreen changes
-    const rafPromise = () =>
-      new Promise((resolve) => requestAnimationFrame(resolve));
+
+    // Freeze dimensions by reading computed size
+    const rect = captureArea.getBoundingClientRect();
+    captureArea.style.width = `${rect.width}px`;
+    captureArea.style.height = `${rect.height}px`;
+
+    // Let React finish re-rendering with these fixed dimensions
+    const rafPromise = () => new Promise(resolve => requestAnimationFrame(resolve));
     await rafPromise();
     await rafPromise();
-  
+
     try {
+      // Use html2canvas to capture the fixed-size area
       const canvas = await html2canvas(captureArea, {
-        // forcibly limit how large the canvas can be
-        windowWidth: captureArea.scrollWidth, 
-        windowHeight: captureArea.scrollHeight,
-        // optionally set the scale to 1 so it doesn't grow for high DPI screens
-        scale: 1
-      });      
+        scale: 1, // Prevent upscaling for high DPI
+        height: rect.height, // explicitly set the height based on computed rect
+      });
+
       const dataURL = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = dataURL;
@@ -101,10 +104,13 @@ const OwnershipListsMenu = ({ onSelectList, activeLists, onSwipe }) => {
     } catch (err) {
       console.error('Download failed:', err);
     } finally {
+      // Optionally, remove the fixed dimensions so that the preview returns to its responsive behavior
+      captureArea.style.width = "";
+      captureArea.style.height = "";
       setIsDownloading(false);
     }
   };
-
+  
   return (
     <div
       className="lists-menu"

@@ -1,5 +1,4 @@
 /* ListItems.css */
-
 .list-item {
     display: flex;
     flex-direction: column;
@@ -39,7 +38,6 @@
     display: inline-block;
     margin: unset;
     width: 3.5rem;
-    height: auto;
     padding: 0.3125rem;
   }
   
@@ -55,7 +53,6 @@
     top: 0.2rem;
     right: 0.2rem;
     width: 1rem;
-    height: auto;
     pointer-events: none;
     z-index: 1;
   }

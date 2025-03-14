@@ -1,5 +1,4 @@
 /* OwnershipListsMenu.css */
-
 .lists-menu {
   display: flex;
   flex-direction: column;
@@ -7,20 +6,20 @@
   margin: 1.25rem;
 }
 
-/* Row for toggle button */
+/* Toggle Button Row */
 .toggle-row {
   width: 100%;
   text-align: center;
 }
 
-/* 2-column wrapper */
+/* Two‑Column Wrapper */
 .columns-wrapper {
   display: flex;
   justify-content: center;
   width: 100%;
 }
 
-/* Each column */
+/* Each Column */
 .lists-menu .column {
   display: flex;
   flex-direction: column;
@@ -29,7 +28,7 @@
   margin: 0.625rem;
 }
 
-/* List items */
+/* List Items */
 .lists-menu .list-item {
   display: flex;
   flex-direction: column;
@@ -46,7 +45,7 @@
   background-color: #f5f5f5;
 }
 
-/* Header Styling */
+/* List Header */
 .lists-menu .list-header {
   width: 100%;
   text-align: center;
@@ -58,29 +57,25 @@
   color: white;
 }
 
-/* Header color examples */
+/* Header Color Variants */
 .lists-menu .list-header.Unowned {
   background-color: #ccc;
   color: black;
 }
+
 .lists-menu .list-header.Wanted {
   background-color: #F44336;
 }
+
 .lists-menu .list-header.Caught {
   background-color: #2196F3;
 }
+
 .lists-menu .list-header.Trade {
   background-color: #4CAF50;
 }
 
-/* If unowned, apply grayscale to images */
-.lists-menu .pokemon-preview img.preview-image.unowned,
-.lists-menu .pokemon-preview img.variant-overlay.unowned {
-  filter: grayscale(100%) brightness(0.2) contrast(0.5)
-    drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
-  transition: filter 0.3s ease;
-}
-
+/* Pokémon Preview Styles */
 .lists-menu .pokemon-preview {
   display: flex;
   flex-wrap: wrap;
@@ -88,13 +83,19 @@
   margin-top: 0.625rem;
 }
 
-/* Pokemon Container */
+.lists-menu .pokemon-preview img.preview-image.unowned,
+.lists-menu .pokemon-preview img.variant-overlay.unowned {
+  filter: grayscale(100%) brightness(0.2) contrast(0.5)
+    drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
+  transition: filter 0.3s ease;
+}
+
+/* Pokémon List Container & Images */
 .lists-menu .pokemon-list-container {
   position: relative;
   display: inline-block;
   margin: unset;
   width: 3.5rem;
-  height: auto;
   padding: 0.3125rem;
 }
 
@@ -110,18 +111,18 @@
   top: 0.2rem;
   right: 0.2rem;
   width: 1rem;
-  height: auto;
   pointer-events: none;
   z-index: 1;
 }
 
+/* No Pokémon Text */
 .lists-menu .no-pokemon-text {
   font-size: 0.875rem;
   color: #666;
   margin-top: 0.625rem;
 }
 
-/* Button styling */
+/* Preview Toggle Button */
 .lists-menu .preview-toggle-button {
   padding: 0.5rem 1rem;
   font-size: 1rem;
@@ -140,7 +141,7 @@
   margin-right: 0.5rem;
 }
 
-/* Container for the preview mode */
+/* Preview Container & Header */
 .lists-menu .preview-container {
   width: 100%;
   display: flex;
@@ -148,7 +149,6 @@
   align-items: center;
 }
 
-/* Row for "Back to Lists" and "Download" button in preview mode */
 .lists-menu .preview-header {
   display: flex;
   justify-content: center;
@@ -156,6 +156,7 @@
   margin-bottom: 1rem;
 }
 
+/* Hidden Capture Area */
 .hidden-capture {
   position: absolute;
   top: -9999px;
@@ -164,34 +165,12 @@
   pointer-events: none;
 }
 
+/* Color Settings Panel & Buttons */
 .color-settings-panel {
+  background: #fff;
   margin: 1rem 0;
   padding: 1rem;
   border: 1px solid #ccc;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.preset-button {
-  margin: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  background: #ddd;
-}
-
-.color-settings-overlay {
-  /* Customize these styles as needed */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.5);
-}
-
-.color-settings-panel {
-  background: #fff;
-  padding: 1rem;
   border-radius: 8px;
   text-align: center;
 }
@@ -206,7 +185,14 @@
   background: #ddd;
 }
 
-/* Responsive */
+.color-settings-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive Styles */
 @media (max-width: 650px) {
   .columns-wrapper {
     flex-direction: column;
