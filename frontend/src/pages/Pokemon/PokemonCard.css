@@ -46,6 +46,24 @@
     user-select: none;
 }
 
+/* Location backdrop styling */
+.pokemon-card .location-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures the image covers the container */
+    z-index: 0; /* Lowest z-index so it's behind the lucky and main images */
+    border-radius: 4px; /* Same rounding as the main image (adjust if needed) */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    /* Apply a mask to round off the edges with a soft fade */
+    -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0.3) 70%, transparent 100%);
+    mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 45%, rgba(0, 0, 0, 0.3) 65%, transparent 70%);
+}
+
 .pokemon-image, .lucky-backdrop, .max-badge, .purified-badge-image {
     pointer-events: none;
     touch-action: manipulation;

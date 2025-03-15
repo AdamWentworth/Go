@@ -109,6 +109,7 @@ function PokemonList({
               toggleCardHighlight={toggleCardHighlight}
               setIsFastSelectEnabled={setIsFastSelectEnabled}
               isFastSelectEnabled={isFastSelectEnabled}
+              variants={allPokemons}
             />
           ))}
 

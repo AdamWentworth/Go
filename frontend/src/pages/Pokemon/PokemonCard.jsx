@@ -25,6 +25,7 @@ const PokemonCard = ({
   multiFormPokedexNumbers,
   showAll,
   sortType,
+  variants,
 }) => {
   // Refs for detecting gestures
   const touchStartX = useRef(0);
@@ -230,6 +231,34 @@ const PokemonCard = ({
     }
   };
 
+  // New: Determine if there is a location background to render.
+  let locationBackground = null;
+  if (pokemon.ownershipStatus?.location_card != null) {
+    const matchingVariant = variants.find(
+      (variant) => variant.pokemon_id === pokemon.pokemon_id
+    );
+    if (matchingVariant) {
+      locationBackground = matchingVariant.backgrounds.find(
+        (background) =>
+          background.background_id === pokemon.ownershipStatus.location_card
+      );
+      if (locationBackground) {
+        console.log(
+          `PokemonCard: Found matching location background for ${pokemon.name} (id: ${pokemon.pokemon_id}):`,
+          locationBackground
+        );
+      } else {
+        console.log(
+          `PokemonCard: No matching location background for ${pokemon.name} (id: ${pokemon.pokemon_id}).`
+        );
+      }
+    } else {
+      console.log(
+        `PokemonCard: No matching variant found for ${pokemon.name} (id: ${pokemon.pokemon_id}).`
+      );
+    }
+  }
+
   // ──────────────────────────────────────────────────────────────
   // Determine CP value for display
   // ──────────────────────────────────────────────────────────────
@@ -263,6 +292,16 @@ const PokemonCard = ({
       </div>
 
       <div className="pokemon-image-container">
+        {/* Render the location background if available.
+            It is rendered before the lucky backdrop so it sits at the very back. */}
+        {locationBackground && (
+          <img
+            src={locationBackground.image_url}
+            alt={`Location backdrop for ${locationBackground.name}`}
+            className="location-backdrop"
+            draggable="false"
+          />
+        )}
         {shouldDisplayLuckyBackdrop && (
           <div className="lucky-backdrop-wrapper">
             <img
