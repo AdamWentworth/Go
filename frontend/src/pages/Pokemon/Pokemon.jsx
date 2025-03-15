@@ -1,4 +1,4 @@
-// Collection.jsx
+// Pokemon.jsx
 import React, { useState, useMemo, useContext, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import './Pokemon.css';
@@ -341,10 +341,10 @@ function Pokemon({ isOwnCollection }) {
       {isUsernamePath && userExists === false && <h1>User not found</h1>}
 
       <HeaderUIMemo
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        showEvolutionaryLine={showEvolutionaryLine}
-        toggleEvolutionaryLine={toggleEvolutionaryLine}
+        // searchTerm={searchTerm}
+        // setSearchTerm={setSearchTerm}
+        // showEvolutionaryLine={showEvolutionaryLine}
+        // toggleEvolutionaryLine={toggleEvolutionaryLine}
         onListsButtonClick={handleListsButtonClick}
         onPokedexClick={() =>
           setActiveView((prev) =>
@@ -417,6 +417,10 @@ function Pokemon({ isOwnCollection }) {
               username={displayUsername}
               setIsFastSelectEnabled={setIsFastSelectEnabled}
               onSwipe={handleCardSwipe}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              showEvolutionaryLine={showEvolutionaryLine}
+              toggleEvolutionaryLine={toggleEvolutionaryLine}
             />
           </div>
 

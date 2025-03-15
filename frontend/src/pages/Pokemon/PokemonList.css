@@ -1,43 +1,43 @@
-.pokemon-container {
+/* The outer wrapper that includes the search bar + the grid */
+.pokemon-list-wrapper {
     background-color: #111;
-    display: grid;
-    grid-template-columns: repeat(9, 1fr); 
-    gap: 0px;
+    /* any global padding, margin, or width you want for the entire list block */
     padding: 20px;
+    padding-top: unset;
     box-sizing: border-box;
     margin-left: auto;
     margin-right: auto;
-    width: 100%; /* Adjusts to full width of the viewport */
-}
-
-@media (max-width: 480px) {
-    .pokemon-container {
-        grid-template-columns: repeat(3, 1fr);
-        padding: 5px;
-        width: calc(100vw - 20px);
+    width: 100%;
+  }
+  
+  /* The actual grid for Pokémon cards only */
+  .pokemon-grid {
+    display: grid;
+    gap: 0px;
+    grid-template-columns: repeat(9, 1fr);
+  }
+  
+  @media (max-width: 480px) {
+    .pokemon-grid {
+      grid-template-columns: repeat(3, 1fr);
     }
-}
-
-@media (min-width: 481px) and (max-width: 767px) {
-    .pokemon-container {
-        grid-template-columns: repeat(6, 1fr);
-        padding: 5px;
-        width: calc(100vw - 20px); /* Adjust width if necessary */
+  }
+  
+  @media (min-width: 481px) and (max-width: 767px) {
+    .pokemon-grid {
+      grid-template-columns: repeat(6, 1fr);
     }
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
-    .pokemon-container {
-        grid-template-columns: repeat(6, 1fr);
-        padding: 10px;
-        width: calc(100vw - 20px); /* Adjust width if necessary */
+  }
+  
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .pokemon-grid {
+      grid-template-columns: repeat(6, 1fr);
     }
-}
-
-@media (min-width: 1024px) {
-    .pokemon-container {
-        grid-template-columns: repeat(9, 1fr);
-        padding: 10px;
-        width: calc(100vw - 10px); /* Adjust width if necessary */
+  }
+  
+  @media (min-width: 1024px) {
+    .pokemon-grid {
+      grid-template-columns: repeat(9, 1fr);
     }
-}
+  }
+  

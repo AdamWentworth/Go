@@ -1,43 +1,36 @@
 // HeaderUI.jsx
 import React from 'react';
-import SearchUI from './UIComponents/SearchUI';
 import useWindowWidth from './hooks/useWindowWidth';
 import './HeaderUI.css';
 
 const HeaderUI = ({
-  searchTerm,
-  setSearchTerm,
-  showEvolutionaryLine,
-  toggleEvolutionaryLine,
   onListsButtonClick,
   onPokedexClick,
   contextText,
   totalPokemon,
-  // New props for fast select
   highlightedCards,
   onClearSelection,
   onSelectAll,
 }) => {
   const width = useWindowWidth();
   const isWideScreen = width >= 1024;
-  const attachPokedexClick = !React.isValidElement(contextText);
 
   // Determine if we are in fast-select mode (i.e. some cards are highlighted)
   const hasSelection = highlightedCards && highlightedCards.size > 0;
 
-  // Add a class when fast-select is active
+  // Decide if clicking on the Pokedex side should do anything (custom context)
+  const isCustomContext = React.isValidElement(contextText);
+  const attachPokedexClick = !isCustomContext;
+
+  // Header classes when fast-select is active
   const headerClassNames = [
     'header',
     isWideScreen ? 'header-widescreen' : 'header-narrow',
     hasSelection ? 'header-fast-select' : ''
   ];
 
-  // Render the left toggle (Pokedex/X)
+  // Left toggle (Pokedex/X)
   const renderPokedexToggle = () => {
-    const isCustomContext = React.isValidElement(contextText);
-    const toggleButtonClassName = isCustomContext ? "toggle-button custom-context-button" : "toggle-button";
-    const toggleTextClassName = isCustomContext ? "toggle-text custom-context" : "toggle-text";
-  
     if (hasSelection) {
       return (
         <div className="free-toggle" onClick={onClearSelection}>
@@ -45,19 +38,26 @@ const HeaderUI = ({
         </div>
       );
     }
+    const toggleButtonClass = isCustomContext
+      ? 'toggle-button custom-context-button'
+      : 'toggle-button';
+    const toggleTextClass = isCustomContext
+      ? 'toggle-text custom-context'
+      : 'toggle-text';
+
     return (
       <div
-        className={toggleButtonClassName}
+        className={toggleButtonClass}
         onClick={attachPokedexClick ? onPokedexClick : undefined}
       >
-        <span className={toggleTextClassName}>
+        <span className={toggleTextClass}>
           {isCustomContext ? contextText : 'POKÉDEX'}
         </span>
       </div>
     );
   };
-  
-  // Render the right toggle (Listings/Select All)
+
+  // Right toggle (Tags/Select All)
   const renderListsToggle = () => {
     if (hasSelection) {
       return (
@@ -66,28 +66,22 @@ const HeaderUI = ({
         </div>
       );
     }
-    // Check if a custom context is provided
-    const isCustomContext = React.isValidElement(contextText);
-    // Conditionally add a unique class if the contextText is provided ("THEIR POKÉMON")
     const toggleTextClass = isCustomContext
-      ? "toggle-text toggle-text--theirs"
-      : "toggle-text";
+      ? 'toggle-text toggle-text--theirs'
+      : 'toggle-text';
     return (
       <div className="toggle-button" onClick={onListsButtonClick}>
-        <span className={toggleTextClass}>
-          {"TAGS"}
-        </span>
+        <span className={toggleTextClass}>TAGS</span>
       </div>
     );
   };
 
-  // Common containers for both widescreen and mobile
+  // Containers for left/right toggles
   const pokedexContainer = (
     <div className="pokedex-container">
       {renderPokedexToggle()}
     </div>
   );
-
   const listsContainer = (
     <div className="lists-container">
       {renderListsToggle()}
@@ -99,35 +93,23 @@ const HeaderUI = ({
       {isWideScreen ? (
         <>
           {pokedexContainer}
-          <SearchUI
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            showEvolutionaryLine={showEvolutionaryLine}
-            toggleEvolutionaryLine={toggleEvolutionaryLine}
-            totalPokemon={totalPokemon}
-            showCount={true} // show the count in widescreen
-          />
+          {/* Middle count for wide screens */}
+          <div className="pokemon-count-wide">
+            <span>Pokémon</span>
+            <span>({totalPokemon})</span>
+          </div>
           {listsContainer}
         </>
       ) : (
-        <>
-          <div className="controls-row">
-            {pokedexContainer}
-            <div className="pokemon-count-narrow">
-              <span>Pokémon</span>
-              <span>({totalPokemon})</span>
-            </div>
-            {listsContainer}
+        <div className="controls-row">
+          {pokedexContainer}
+          {/* Narrow screens: existing layout */}
+          <div className="pokemon-count-narrow">
+            <span>Pokémon</span>
+            <span>({totalPokemon})</span>
           </div>
-          <SearchUI
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            showEvolutionaryLine={showEvolutionaryLine}
-            toggleEvolutionaryLine={toggleEvolutionaryLine}
-            totalPokemon={totalPokemon}
-            showCount={false} // do not show the count in SearchUI for mobile
-          />
-        </>
+          {listsContainer}
+        </div>
       )}
     </header>
   );

@@ -1,4 +1,5 @@
 /* HeaderUI.css */
+
 .header {
     display: flex;
     align-items: center;
@@ -11,47 +12,60 @@
     box-shadow: 2px -4px 2px 2px #111;
     flex-wrap: wrap;
     gap: 10px;
-    margin-top: 10px
-}
-
-/* New fast-select header styling */
-.header-fast-select {
+    margin-top: 10px;
+  }
+  
+  /* Highlight color when some cards are selected */
+  .header-fast-select {
     background-color: #34807d;
     filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
-}
-
-.controls-row {
+  }
+  
+  .controls-row {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 20px;
     width: 100%;
-}
-
-.pokemon-count, .pokemon-count-narrow {
+  }
+  
+  /* Center counters */
+  .pokemon-count,
+  .pokemon-count-narrow {
     text-align: center;
     font-weight: bold;
     display: flex;
     flex-direction: column;
     align-items: center;
-}
-
-/* Left and right containers get a small portion of the space */
-.header .pokedex-container,
-.header .lists-container {
+  }
+  
+  /* Wide-screen middle counter */
+  .pokemon-count-wide {
+    text-align: center;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 1rem; /* adjust as needed for spacing */
+  }
+  
+  /* Left + Right containers share space */
+  .header .pokedex-container,
+  .header .lists-container {
     flex: 1;
     display: flex;
     justify-content: center;
     min-width: 0;
-}
-
-/* Remove padding when custom context is active */
-.header .toggle-button.custom-context-button {
+  }
+  
+  /* If a custom context element is used, remove pointer for it */
+  .header .toggle-button.custom-context-button {
     cursor: auto;
-}
-
-/* Common styling for the toggle buttons */
-.header .toggle-button {
+  }
+  
+  /* Common styling for both toggles */
+  .header .toggle-button {
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     background-color: #222;
@@ -60,200 +74,160 @@
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.header .toggle-text {
+  }
+  
+  .header .toggle-text {
     font-size: 1.25rem;
     font-weight: bold;
     color: white;
     white-space: nowrap;
-}
-
-.header .free-toggle {
-    /* Remove border and background so it's “free” */
+  }
+  
+  /* “free-toggle” is used when in multi-select mode (X or SELECT ALL) */
+  .header .free-toggle {
     padding: 0.5rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.header .free-toggle-text {
-    font-size: 2rem; /* larger text */
+  }
+  
+  .header .free-toggle-text {
+    font-size: 2rem;
     font-weight: bold;
     color: white;
-}
-
-
-/* Responsive layout for width <= 1023px */
-@media (max-width: 1023px) {
+  }
+  
+  /* Responsive layout for width <= 1023px */
+  @media (max-width: 1023px) {
     .header {
-        justify-content: center;
+      justify-content: center;
     }
-
-    .pokemon-count-narrow {
-        display: flex;
-        flex: 0 1 auto;
-    }
-
     .controls-row {
-        order: 1;
+      order: 1;
     }
-
-    /* SearchUI wrapper */
-    .header > :last-child {
-        order: 2;
-        width: 100%;
+    .pokemon-count-narrow {
+      display: flex;
+      flex: 0 1 auto;
     }
-
     .pokedex-container,
     .lists-container {
-        flex: 0 1 auto;
+      flex: 0 1 auto;
     }
-}
-
-/* Responsive font sizes */
-@media (max-width: 480px) {
+  }
+  
+  /* Responsive font sizes, etc. */
+  @media (max-width: 480px) {
     .header {
-        padding: 10px 10px;
+      padding: 10px 10px;
     }
     .header .toggle-button {
-        padding: 0.5rem 0.5rem;
+      padding: 0.5rem 0.5rem;
     }
     .header .toggle-text {
-        font-size: 0.8rem;
+      font-size: 0.8rem;
     }
     .header .free-toggle {
-        padding: 0rem;
+      padding: 0rem;
     }
     .header .free-toggle-text {
-        font-size: 1rem; /* larger text */
+      font-size: 1rem;
     }
     .header .toggle-button .custom-context {
-        font-size: 0.6rem; /* Adjust as needed */
-        white-space: normal !important; /* Always wrap */
-        word-wrap: break-word !important; /* Ensure long words break */
-        overflow-wrap: break-word !important; /* Ensures breaking across browsers */
-        word-break: break-word !important; /* Forces word breaking */
-        display: block !important; /* Forces it to be a block, allowing wrap */
-        max-width: 95% !important; /* Prevents any overflow */
-        text-align: center; /* Ensures proper alignment */
+      font-size: 0.6rem;
+      white-space: normal !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      word-break: break-word !important;
+      display: block !important;
+      max-width: 95% !important;
+      text-align: center !important;
     }
-    
-    /* Remove padding when custom context is active */
     .header .toggle-button.custom-context-button {
-        padding: 0.3rem 0rem;
+      padding: 0.3rem 0rem;
     }
     .header .toggle-text--theirs {
-        font-size: 0.7rem;
+      font-size: 0.7rem;
     }
-}
-
-/* Rest of your media queries remain the same */
-@media (min-width: 481px) and (max-width: 767px) {
+  }
+  
+  @media (min-width: 481px) and (max-width: 767px) {
     .header .toggle-text {
-        font-size: 1.125rem;
-    }
-    .header .free-toggle {
-        padding: 0rem;
+      font-size: 1.125rem;
     }
     .header .free-toggle-text {
-        font-size: 1rem; /* larger text */
+      font-size: 1rem;
     }
     .header .toggle-button .custom-context {
-        font-size: 0.7rem; /* Adjust as needed */
-        white-space: normal !important; /* Always wrap */
-        word-wrap: break-word !important; /* Ensure long words break */
-        overflow-wrap: break-word !important; /* Ensures breaking across browsers */
-        word-break: break-word !important; /* Forces word breaking */
-        display: block !important; /* Forces it to be a block, allowing wrap */
-        max-width: 95% !important; /* Prevents any overflow */
-        text-align: center; /* Ensures proper alignment */
+      font-size: 0.7rem;
+      white-space: normal !important;
+      word-break: break-word !important;
+      max-width: 95% !important;
+      text-align: center !important;
     }
-    /* Remove padding when custom context is active */
     .header .toggle-button.custom-context-button {
-        padding: 0.3rem 0rem;
+      padding: 0.3rem 0rem;
     }
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
+  }
+  
+  @media (min-width: 768px) and (max-width: 1023px) {
     .header .toggle-text {
-        font-size: 1.25rem;
-    }
-    .header .free-toggle {
-        padding: 0rem;
+      font-size: 1.25rem;
     }
     .header .free-toggle-text {
-        font-size: 1.25rem; /* larger text */
+      font-size: 1.25rem;
     }
-}
-
-@media (min-width: 1024px) and (max-width: 1439px) {
+  }
+  
+  @media (min-width: 1024px) and (max-width: 1439px) {
     .header .toggle-text {
-        font-size: 1rem;
-    }
-    .header .free-toggle {
-        padding: 0rem;
+      font-size: 1rem;
     }
     .header .free-toggle-text {
-        font-size: 1.25rem; /* larger text */
+      font-size: 1.25rem;
     }
     .header .toggle-button .custom-context {
-        font-size: 0.7rem; /* Adjust as needed */
-        white-space: normal !important; /* Always wrap */
-        word-wrap: break-word !important; /* Ensure long words break */
-        overflow-wrap: break-word !important; /* Ensures breaking across browsers */
-        word-break: break-word !important; /* Forces word breaking */
-        display: block !important; /* Forces it to be a block, allowing wrap */
-        max-width: 95% !important; /* Prevents any overflow */
-        text-align: center; /* Ensures proper alignment */
+      font-size: 0.7rem;
+      white-space: normal !important;
+      word-break: break-word !important;
+      max-width: 95% !important;
+      text-align: center !important;
     }
-    /* Remove padding when custom context is active */
     .header .toggle-button.custom-context-button {
-        padding: 0.3rem 0rem;
+      padding: 0.3rem 0rem;
     }
     .header .toggle-text--theirs {
-        font-size: 0.85rem;
+      font-size: 0.85rem;
     }
-}
-
-@media (min-width: 1440px) {
+  }
+  
+  @media (min-width: 1440px) {
     .header .toggle-text {
-        font-size: 1.5rem;
-    }
-    .header .free-toggle {
-        padding: 0rem;
+      font-size: 1.5rem;
     }
     .header .free-toggle-text {
-        font-size: 1.5rem; /* larger text */
+      font-size: 1.5rem;
     }
     .header .toggle-button .custom-context {
-        font-size: 0.85rem; /* Adjust as needed */
-        white-space: normal !important; /* Always wrap */
-        word-wrap: break-word !important; /* Ensure long words break */
-        overflow-wrap: break-word !important; /* Ensures breaking across browsers */
-        word-break: break-word !important; /* Forces word breaking */
-        display: block !important; /* Forces it to be a block, allowing wrap */
-        max-width: 95% !important; /* Prevents any overflow */
-        text-align: center; /* Ensures proper alignment */
+      font-size: 0.85rem;
     }
-    /* Remove padding when custom context is active */
     .header .toggle-button.custom-context-button {
-        padding: 0.5rem 0rem;
+      padding: 0.5rem 0rem;
     }
     .header .toggle-text--theirs {
-        font-size: 1.15rem;
+      font-size: 1.15rem;
     }
-}
-
-@media (min-width: 1919px) {
+  }
+  
+  @media (min-width: 1919px) {
     .header .toggle-text {
-        font-size: 1.625rem;
+      font-size: 1.625rem;
     }
-}
-
-@media (min-width: 2559px) {
+  }
+  
+  @media (min-width: 2559px) {
     .header .toggle-text {
-        font-size: 1.75rem;
+      font-size: 1.75rem;
     }
-}
+  }
+  

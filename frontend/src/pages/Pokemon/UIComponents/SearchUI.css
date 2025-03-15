@@ -1,12 +1,19 @@
 /* SearchUI.css */
 
 .header-section.search-section {
-    position: relative; /* Ensure child elements can be absolutely positioned */
+    /* Use sticky positioning */
+    position: sticky;
+    top: 0;
+    z-index: 10; /* higher than the cards so it stays on top */
+    background-color: #111;
+
+    /* All your existing flex styling remains */
     flex-grow: 5;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: 10px; /* some padding so it looks nice when stuck */
 }
 
 /* Other styles for input and checkbox */
@@ -15,7 +22,7 @@
     width: 80%;
 }
 
-.header input {
+.header-section.search-section input {
     padding: 8px;
     font-size: 16px;
 }
@@ -32,6 +39,7 @@
     transition: background-color 0.3s ease;
 }
 
+/* The rest of your styles remain unchanged */
 .checkbox-container {
     display: flex;
     align-items: center;
@@ -78,8 +86,9 @@
 
 .search-input.input-margin-bottom {
     margin-bottom: 5px; /* Adjust the value as needed */
-  }
+}
 
+/* Media queries remain the same */
 @media (max-width: 480px) {
     .header-section.search-section {
         font-size: 8px;

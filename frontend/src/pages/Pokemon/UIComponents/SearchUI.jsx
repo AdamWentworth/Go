@@ -23,13 +23,6 @@ function SearchUI({
 
   return (
     <div className="header-section search-section">
-      {/* Render the Pokémon count only if showCount is true */}
-      {showCount && (
-        <div className="pokemon-count">
-          <span>Pokémon</span>
-          <span>({totalPokemon})</span>
-        </div>
-      )}
       <input
         type="text"
         placeholder="Search Pokémon..."
