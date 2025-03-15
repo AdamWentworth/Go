@@ -18,6 +18,7 @@ const PreviewContainer = ({
   onSelectPreset,
   h2FontColor,
   pokemonNameColor,
+  variants
 }) => (
   <div className="preview-container">
     <div className="preview-header">
@@ -50,6 +51,7 @@ const PreviewContainer = ({
           ref={downloadRef}
           wantedPokemons={activeLists.wanted ? Object.values(activeLists.wanted) : []}
           tradePokemons={activeLists.trade ? Object.values(activeLists.trade) : []}
+          variants={variants}
         />
       </div>
       {isDownloading && (

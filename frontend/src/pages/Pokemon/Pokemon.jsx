@@ -429,6 +429,7 @@ function Pokemon({ isOwnCollection }) {
               onSelectList={handleOwnershipListClick}
               activeLists={activeLists}
               onSwipe={handleCardSwipe}
+              variants={variants}
             />
           </div>
         </div>

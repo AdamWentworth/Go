@@ -9,7 +9,7 @@ import useFavoriteList from '../../../hooks/sort/useFavoriteList';
 import useNumberPokemons from '../../../hooks/sort/useNumberPokemons';
 import ListItems from './ListItems';
 
-const OwnershipListsMenu = ({ onSelectList, activeLists, onSwipe }) => {
+const OwnershipListsMenu = ({ onSelectList, activeLists, onSwipe, variants }) => {
   const { isLightMode } = useTheme();
 
   const defaultColors = isLightMode
@@ -107,6 +107,7 @@ const OwnershipListsMenu = ({ onSelectList, activeLists, onSwipe }) => {
             setPokemonNameColor(preset.pokemonNameColor || preset.h2FontColor);
             setShowColorSettings(false);
           }}
+          variants={variants}
         />
       ) : (
         <>

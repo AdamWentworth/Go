@@ -90,3 +90,49 @@
   margin-right: auto;
   color: var(--pokemon-name-color, #000);  /* Dynamic text color with fallback */
 }
+
+.list-image-download .image-container {
+  position: relative;
+  display: inline-block;
+  width: clamp(40px, 10vw, 64px);
+  height: clamp(40px, 10vw, 64px);
+}
+
+/* Location backdrop styling */
+.list-image-download .location-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensures the image covers the container */
+  z-index: 0; /* Lowest z-index so it's behind the lucky and main images */
+  border-radius: 4px; /* Same rounding as the main image */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* Apply a mask to round off the edges with a soft fade */
+  -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0.3) 70%, transparent 100%);
+  mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 45%, rgba(0, 0, 0, 0.3) 65%, transparent 70%);
+}
+
+/* Lucky backdrop remains unchanged but sits above the location backdrop */
+.list-image-download .lucky-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 1;
+  filter: brightness(0.85); /* Optional: adjust brightness */
+}
+
+/* Main image on top */
+.list-image-download .main-image {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
