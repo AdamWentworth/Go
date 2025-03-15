@@ -3,12 +3,12 @@ import React, { useState, useMemo, useContext, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import './Pokemon.css';
 
-import PokemonList from './PokemonList';
+import PokemonMenu from './PokemonMenu/PokemonMenu';
 import HeaderUI from './HeaderUI';
-import SortOverlay from './SortOverlay';
-import HighlightActionButton from './HighlightActionButton';
-import PokedexFiltersMenu from './UIComponents/PokedexListsMenu';
-import OwnershipListsMenu from './UIComponents/OwnershipListsMenu';
+import SortOverlay from './PokemonMenu/SortOverlay';
+import HighlightActionButton from './PokemonMenu/HighlightActionButton';
+import PokedexFiltersMenu from './PokedexMenu/PokedexListsMenu';
+import TagsMenu from './TagsMenu/TagsMenu';
 
 import { usePokemonData } from '../../contexts/PokemonDataContext';
 import UserSearchContext from '../../contexts/UserSearchContext';
@@ -30,7 +30,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ActionMenu from '../../components/ActionMenu';
 import CloseButton from '../../components/CloseButton';
 
-const PokemonListMemo = React.memo(PokemonList);
+const PokemonMenuMemo = React.memo(PokemonMenu);
 const HeaderUIMemo = React.memo(HeaderUI);
 const SortOverlayMemo = React.memo(SortOverlay);
 
@@ -397,7 +397,7 @@ function Pokemon({ isOwnCollection }) {
             className="slider-panel"
             ref={mainListPanelRef}
           >
-            <PokemonListMemo
+            <PokemonMenuMemo
               isEditable={isEditable}
               sortedPokemons={sortedPokemons}
               allPokemons={variants}
@@ -429,7 +429,7 @@ function Pokemon({ isOwnCollection }) {
             className="slider-panel"
             ref={ownershipPanelRef}
           >
-            <OwnershipListsMenu
+            <TagsMenu
               onSelectList={handleOwnershipListClick}
               activeLists={activeLists}
               onSwipe={handleCardSwipe}

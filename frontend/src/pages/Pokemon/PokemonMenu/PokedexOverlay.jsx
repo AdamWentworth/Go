@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import './PokedexOverlay.css';
-import OverlayPortal from '../../components/OverlayPortal';
-import WindowOverlay from '../../components/WindowOverlay';
-import MoveList from './PokedexOverlayComponents/MoveList';
-import MainInfo from './PokedexOverlayComponents/MainInfo';
-import ShinyInfo from './PokedexOverlayComponents/ShinyInfo';
-import Costumes from './PokedexOverlayComponents/Costumes';
-import ShadowInfo from './PokedexOverlayComponents/ShadowInfo';
-import EvolutionShortcut from './PokedexOverlayComponents/EvolutionShortcut';
-import CloseButton from '../../components/CloseButton';
+import OverlayPortal from '../../../components/OverlayPortal';
+import WindowOverlay from '../../../components/WindowOverlay';
+import MoveList from '../PokedexOverlayComponents/MoveList';
+import MainInfo from '../PokedexOverlayComponents/MainInfo';
+import ShinyInfo from '../PokedexOverlayComponents/ShinyInfo';
+import Costumes from '../PokedexOverlayComponents/Costumes';
+import ShadowInfo from '../PokedexOverlayComponents/ShadowInfo';
+import EvolutionShortcut from '../PokedexOverlayComponents/EvolutionShortcut';
+import CloseButton from '../../../components/CloseButton';
 
 const useScreenWidth = () => {
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);

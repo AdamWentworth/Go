@@ -3,7 +3,7 @@ import React from 'react';
 import './PreviewContainer.css';
 import ColorSettingsOverlay from './ColorSettingsOverlay';
 import ListImageDownload from './ListImageDownload';
-import LoadingSpinner from './../../../components/LoadingSpinner';
+import LoadingSpinner from '../../../components/LoadingSpinner';
 
 const PreviewContainer = ({
   isDownloading,

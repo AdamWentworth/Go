@@ -1,7 +1,7 @@
-// OwnershipListsMenu.jsx
+// TagsMenu.jsx
 import React, { useRef, useState, useEffect } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
-import './OwnershipListsMenu.css';
+import './TagsMenu.css';
 import useSwipe from './hooks/useSwipe';
 import useDownloadImage from './hooks/useDownloadImage';
 import PreviewContainer from './PreviewContainer';
@@ -9,7 +9,7 @@ import useFavoriteList from '../../../hooks/sort/useFavoriteList';
 import useNumberPokemons from '../../../hooks/sort/useNumberPokemons';
 import ListItems from './ListItems';
 
-const OwnershipListsMenu = ({ onSelectList, activeLists, onSwipe, variants }) => {
+const TagsMenu = ({ onSelectList, activeLists, onSwipe, variants }) => {
   const { isLightMode } = useTheme();
 
   const defaultColors = isLightMode
@@ -148,4 +148,4 @@ const OwnershipListsMenu = ({ onSelectList, activeLists, onSwipe, variants }) =>
   );
 };
 
-export default OwnershipListsMenu;
+export default TagsMenu;

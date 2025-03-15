@@ -2,12 +2,12 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import './PokemonOptionsOverlay.css';
-import OverlayPortal from '../../components/OverlayPortal';
+import OverlayPortal from '../../../components/OverlayPortal';
 import PokemonCard from './PokemonCard';
-import OwnedInstance from './InstanceOverlayComponents/OwnedInstance';
-import TradeInstance from './InstanceOverlayComponents/TradeInstance';
-import WantedInstance from './InstanceOverlayComponents/WantedInstance';
-import CloseButton from '../../components/CloseButton';
+import OwnedInstance from '../InstanceOverlayComponents/OwnedInstance';
+import TradeInstance from '../InstanceOverlayComponents/TradeInstance';
+import WantedInstance from '../InstanceOverlayComponents/WantedInstance';
+import CloseButton from '../../../components/CloseButton';
 
 const PokemonOptionsOverlay = ({
   pokemon,

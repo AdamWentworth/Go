@@ -1,4 +1,4 @@
-// PokemonList.jsx
+// PokemonMenu.jsx
 
 import React, { useState } from 'react';
 import { validate as uuidValidate } from 'uuid';
@@ -6,11 +6,11 @@ import PokemonCard from './PokemonCard';
 import PokedexOverlay from './PokedexOverlay';
 import InstanceOverlay from './InstanceOverlay';
 import PokemonOptionsOverlay from './PokemonOptionsOverlay';
-import './PokemonList.css';
-import { useModal } from '../../contexts/ModalContext';
-import SearchUI from './UIComponents/SearchUI';
+import './PokemonMenu.css';
+import { useModal } from '../../../contexts/ModalContext';
+import SearchUI from './SearchUI';
 
-function PokemonList({
+function PokemonMenu({
   isEditable,
   sortedPokemons,
   allPokemons,
@@ -169,4 +169,4 @@ function PokemonList({
   );
 }
 
-export default React.memo(PokemonList);
+export default React.memo(PokemonMenu);

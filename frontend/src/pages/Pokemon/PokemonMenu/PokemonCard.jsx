@@ -1,9 +1,9 @@
 // PokemonCard.jsx
 
 import React, { useEffect, useState, memo, useRef } from 'react';
-import { determineImageUrl } from "../../utils/imageHelpers";
-import { generateH2Content } from '../../utils/formattingHelpers';
-import CP from '../../components/pokemonComponents/CP'; // Updated import for unified CP
+import { determineImageUrl } from "../../../utils/imageHelpers";
+import { generateH2Content } from '../../../utils/formattingHelpers';
+import CP from '../../../components/pokemonComponents/CP'; // Updated import for unified CP
 import './PokemonCard.css';
 
 const LONG_PRESS_MS = 300;       // Time threshold for long-press

@@ -1,7 +1,7 @@
 // ColorSettingsOverlay.jsx
 import React from 'react';
-import OverlayPortal from './../../../components/OverlayPortal';
-import WindowOverlay from './../../../components/WindowOverlay';
+import OverlayPortal from '../../../components/OverlayPortal';
+import WindowOverlay from '../../../components/WindowOverlay';
 import CloseButton from '../../../components/CloseButton';
 import './ColorSettingsOverlay.css';
 
