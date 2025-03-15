@@ -1,61 +1,92 @@
 /* ListImageDownload.css */
 .list-image-download {
-    text-align: center;
-  }
-  
-  .list-image-download .capture-area {
-    display: block;           /* Use block-level instead of inline-block */
-    position: relative;       /* Ensure proper positioning */
-    margin: 0 auto;
-    padding: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: var(--preview-bg-color, #fff);
-    overflow: hidden;         /* Hide any overflowing content */
-    line-height: 0;           /* Remove any inline whitespace gaps */
-    box-sizing: border-box;   /* Important: include padding in element's total width and height */
-  }
-  
-  /* Reset heading margins inside the capture area */
-  .list-image-download .capture-area h2 {
-    margin: 0;
-    padding: 0;
-    line-height: normal;      /* Restore normal line-height for text */
-  }  
-  
-  .list-image-download .section-block {
-    margin-bottom: 1rem;
-    background-color: var(--section-frame-bg-color, #f0f0f0); /* Uses parent's variable */
-    padding: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-sizing: border-box;   /* Include padding in the height calculation */
-  }
-  
-  /* Make sure the last section block doesn't have margin */
-  .list-image-download .section-block:last-child {
-    margin-bottom: 0;
-  }
-  
-  /* Pokémon Grid & Cards */
-  .list-image-download .pokemon-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: center;
-    margin-top: 0.5rem;
-    margin-bottom: 0;         /* Ensure no margin at the bottom */
-  }
-  
-  .list-image-download .pokemon-card {
-    width: 64px;
-    height: 64px;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  
-  .list-image-download .pokemon-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
+  text-align: center;
+}
+
+.list-image-download .capture-area {
+  display: block;
+  position: relative;
+  margin: 0 auto;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: var(--preview-bg-color, #e0f0e5); /* fallback for light mode */
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.list-image-download .capture-area h2 {
+  margin: 0;
+  padding: 0;
+  line-height: normal;
+  color: var(--h2-font-color, #000); /* fallback for light mode */
+  margin-bottom: 5px;
+}
+
+.list-image-download .section-block {
+  margin-bottom: 1rem;
+  background: var(--section-frame-bg-color, #f8fff9); /* fallback for light mode */
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.list-image-download .section-block:last-child {
+  margin-bottom: 0;
+}
+
+.list-image-download .pokemon-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+/* Inner glow for Wanted grid (red) */
+.section-block.wanted-section {
+  box-shadow: inset 0 0 clamp(6px, 1.5vw, 9px) clamp(1px, 0.5vw, 2px) red;
+}
+
+/* Inner glow for Trade grid (green) */
+.section-block.trade-section {
+  box-shadow: inset 0 0 clamp(6px, 1.5vw, 9px) clamp(1px, 0.5vw, 2px) green;
+}
+
+/* Ensure each preview container is relatively positioned */
+.list-image-download .pokemon-image-preview {
+  width: clamp(40px, 10vw, 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative; /* Needed for absolute positioning of variant icon */
+}
+
+/* Style the main Pokémon image specifically */
+.list-image-download .pokemon-image-preview .main-image {
+  width: clamp(40px, 10vw, 64px);
+  height: clamp(40px, 10vw, 64px);
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+/* Style for the variant icon overlay */
+.list-image-download .variant-icon {
+  position: absolute;
+  top: 0px;
+  right: 2px;
+  width: clamp(15px, 2vw, 20px); /* Uses clamp for responsive, small icon */
+  height: auto;
+  z-index: 1;
+}
+
+.list-image-download .pokemon-image-preview .pokemon-name {
+  margin-top: unset;
+  font-size: clamp(5px, 7px, 8px);
+  text-align: center;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+  color: var(--pokemon-name-color, #000);  /* Dynamic text color with fallback */
+}

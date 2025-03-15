@@ -1,116 +1,85 @@
 // OwnershipListsMenu.jsx
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { useTheme } from '../../../contexts/ThemeContext';
 import './OwnershipListsMenu.css';
-import html2canvas from 'html2canvas';
-
-// Your custom hook
+import useSwipe from './hooks/useSwipe';
+import useDownloadImage from './hooks/useDownloadImage';
+import PreviewContainer from './PreviewContainer';
 import useFavoriteList from '../../../hooks/sort/useFavoriteList';
-// The display-only preview component
-import ListImageDownload from './ListImageDownload';
-// The loading spinner
-import LoadingSpinner from './../../../components/LoadingSpinner';
-
-// Import our new modular components
-import ColorSettingsOverlay from './ColorSettingsOverlay';
+import useNumberPokemons from '../../../hooks/sort/useNumberPokemons';
 import ListItems from './ListItems';
 
 const OwnershipListsMenu = ({ onSelectList, activeLists, onSwipe }) => {
-  const leftColumnLists = ['Caught', 'Trade'];
-  const rightColumnLists = ['Wanted', 'Unowned'];
+  const { isLightMode } = useTheme();
 
-  // Sorted 'owned' Pokémons using your custom hook
+  const defaultColors = isLightMode
+    ? {
+        previewBgColor: "#e0f0e5",
+        sectionFrameBgColor: "#f8fff9",
+        h2FontColor: "#000",
+        pokemonNameColor: "#000",
+      }
+    : {
+        previewBgColor: "#000",
+        sectionFrameBgColor: "#222",
+        h2FontColor: "#fff",
+        pokemonNameColor: "#fff",
+      };
+
   const sortedOwnedPokemons = useFavoriteList(
     activeLists.owned ? Object.values(activeLists.owned) : []
   );
 
-  // States for toggling preview mode, download, and color settings overlay
+  // For the other lists, use useNumberPokemons with default sort options.
+  const sortedTradePokemons = useNumberPokemons(
+    activeLists.trade ? Object.values(activeLists.trade) : [],
+    "ascending",
+    { isShiny: false, showShadow: false, showCostume: false, showAll: true }
+  );
+  const sortedWantedPokemons = useNumberPokemons(
+    activeLists.wanted ? Object.values(activeLists.wanted) : [],
+    "ascending",
+    { isShiny: false, showShadow: false, showCostume: false, showAll: true }
+  );
+  const sortedUnownedPokemons = useNumberPokemons(
+    activeLists.unowned ? Object.values(activeLists.unowned) : [],
+    "ascending",
+    { isShiny: false, showShadow: false, showCostume: false, showAll: true }
+  );
+
+  // Combine the sorted arrays into one object keyed by list name.
+  const sortedLists = {
+    Caught: sortedOwnedPokemons,
+    Trade: sortedTradePokemons,
+    Wanted: sortedWantedPokemons,
+    Unowned: sortedUnownedPokemons,
+  };
+
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
   const [showColorSettings, setShowColorSettings] = useState(false);
 
-  // Color customization states
-  const [previewBgColor, setPreviewBgColor] = useState("#fff");
-  const [sectionFrameBgColor, setSectionFrameBgColor] = useState("#f0f0f0");
+  const [previewBgColor, setPreviewBgColor] = useState(defaultColors.previewBgColor);
+  const [sectionFrameBgColor, setSectionFrameBgColor] = useState(defaultColors.sectionFrameBgColor);
+  const [h2FontColor, setH2FontColor] = useState(defaultColors.h2FontColor);
+  const [pokemonNameColor, setPokemonNameColor] = useState(defaultColors.pokemonNameColor);
 
-  // Color presets available for users
-  const colorPresets = [
-    { name: "Default", previewBgColor: "#fff", sectionFrameBgColor: "#f0f0f0" },
-    { name: "Dark", previewBgColor: "#333", sectionFrameBgColor: "#555" },
-    { name: "Blue", previewBgColor: "#e0f7fa", sectionFrameBgColor: "#80deea" },
-    { name: "Green", previewBgColor: "#e8f5e9", sectionFrameBgColor: "#a5d6a7" },
-  ];
+  useEffect(() => {
+    setPreviewBgColor(defaultColors.previewBgColor);
+    setSectionFrameBgColor(defaultColors.sectionFrameBgColor);
+    setH2FontColor(defaultColors.h2FontColor);
+    setPokemonNameColor(defaultColors.pokemonNameColor);
+  }, [isLightMode]);
 
-  // Ref to the child component exposing a capture area
+  const { isDownloading, downloadImage } = useDownloadImage();
   const downloadRef = useRef(null);
+  const { handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipe(onSwipe);
 
-  // Swipe logic
-  const SWIPE_THRESHOLD = 50;
-  const touchStartX = useRef(0);
-  const lastTouchX = useRef(0);
-
-  const handleTouchStart = (e) => {
-    const touch = e.touches[0];
-    touchStartX.current = touch.clientX;
-    lastTouchX.current = touch.clientX;
-  };
-
-  const handleTouchMove = (e) => {
-    const touch = e.touches[0];
-    lastTouchX.current = touch.clientX;
-  };
-
-  const handleTouchEnd = () => {
-    const dx = lastTouchX.current - touchStartX.current;
-    if (dx > SWIPE_THRESHOLD) {
-      onSwipe && onSwipe('right');
-    } else if (dx < -SWIPE_THRESHOLD) {
-      onSwipe && onSwipe('left');
-    }
-  };
-
-  // Trigger the screenshot/download
-  const handleDownload = async () => {
+  const handleDownload = () => {
     const captureArea = downloadRef.current?.getCaptureRef();
-    if (!captureArea) return;
-
-    setIsDownloading(true);
-
-    // Freeze dimensions by reading computed size
-    const rect = captureArea.getBoundingClientRect();
-    captureArea.style.width = `${rect.width}px`;
-    captureArea.style.height = `${rect.height}px`;
-
-    // Let React finish re-rendering with these fixed dimensions
-    const rafPromise = () => new Promise(resolve => requestAnimationFrame(resolve));
-    await rafPromise();
-    await rafPromise();
-
-    try {
-      // Use html2canvas to capture the fixed-size area
-      const canvas = await html2canvas(captureArea, {
-        scale: 1, // Prevent upscaling for high DPI
-        height: rect.height, // explicitly set the height based on computed rect
-      });
-
-      const dataURL = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = dataURL;
-      link.download = isPreviewMode
-        ? 'preview-wanted-trade.png'
-        : 'wanted-trade-pokemons.png';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
-      console.error('Download failed:', err);
-    } finally {
-      // Optionally, remove the fixed dimensions so that the preview returns to its responsive behavior
-      captureArea.style.width = "";
-      captureArea.style.height = "";
-      setIsDownloading(false);
-    }
+    const filename = isPreviewMode ? 'preview-wanted-trade.png' : 'wanted-trade-pokemons.png';
+    downloadImage(captureArea, filename);
   };
-  
+
   return (
     <div
       className="lists-menu"
@@ -119,69 +88,26 @@ const OwnershipListsMenu = ({ onSelectList, activeLists, onSwipe }) => {
       onTouchEnd={handleTouchEnd}
     >
       {isPreviewMode ? (
-        <div className="preview-container">
-          {/* Header buttons for preview mode */}
-          {!isDownloading && (
-            <div className="preview-header">
-              <button
-                className="preview-toggle-button"
-                onClick={() => setIsPreviewMode(false)}
-              >
-                Back to Lists
-              </button>
-              <button className="preview-toggle-button" onClick={handleDownload}>
-                <img
-                  src="/images/download-icon.png"
-                  alt="Download Icon"
-                  className="button-icon"
-                />
-                Download Preview Image
-              </button>
-              <button
-                className="preview-toggle-button"
-                onClick={() => setShowColorSettings(true)}
-              >
-                Customize Colors
-              </button>
-            </div>
-          )}
-
-          {/* Render color presets overlay */}
-          {showColorSettings && (
-            <ColorSettingsOverlay
-              colorPresets={colorPresets}
-              onSelectPreset={(preset) => {
-                setPreviewBgColor(preset.previewBgColor);
-                setSectionFrameBgColor(preset.sectionFrameBgColor);
-                setShowColorSettings(false);
-              }}
-              onClose={() => setShowColorSettings(false)}
-            />
-          )}
-
-          {/* Preview content */}
-          <div className="preview-content-wrapper">
-            <div
-              className={`capture-container ${isDownloading ? 'hidden-capture' : ''}`}
-              style={{
-                "--preview-bg-color": previewBgColor,
-                "--section-frame-bg-color": sectionFrameBgColor,
-              }}
-            >
-              <ListImageDownload
-                ref={downloadRef}
-                wantedPokemons={activeLists.wanted ? Object.values(activeLists.wanted) : []}
-                tradePokemons={activeLists.trade ? Object.values(activeLists.trade) : []}
-                previewMode={true}
-              />
-            </div>
-            {isDownloading && (
-              <div className="spinner-overlay">
-                <LoadingSpinner />
-              </div>
-            )}
-          </div>
-        </div>
+        <PreviewContainer
+          isDownloading={isDownloading}
+          setIsPreviewMode={setIsPreviewMode}
+          setShowColorSettings={setShowColorSettings}
+          showColorSettings={showColorSettings}
+          downloadRef={downloadRef}
+          handleDownload={handleDownload}
+          previewBgColor={previewBgColor}
+          sectionFrameBgColor={sectionFrameBgColor}
+          activeLists={activeLists}
+          h2FontColor={h2FontColor}
+          pokemonNameColor={pokemonNameColor}
+          onSelectPreset={(preset) => {
+            setPreviewBgColor(preset.previewBgColor);
+            setSectionFrameBgColor(preset.sectionFrameBgColor);
+            setH2FontColor(preset.h2FontColor);
+            setPokemonNameColor(preset.pokemonNameColor || preset.h2FontColor);
+            setShowColorSettings(false);
+          }}
+        />
       ) : (
         <>
           <div className="toggle-row">
@@ -199,18 +125,18 @@ const OwnershipListsMenu = ({ onSelectList, activeLists, onSwipe }) => {
           </div>
           <div className="columns-wrapper">
             <div className="column">
+              {/* First column: Caught and Trade */}
               <ListItems
-                listNames={leftColumnLists}
-                activeLists={activeLists}
-                sortedOwnedPokemons={sortedOwnedPokemons}
+                listNames={['Caught', 'Trade']}
+                sortedLists={sortedLists}
                 onSelectList={onSelectList}
               />
             </div>
             <div className="column">
+              {/* Second column: Wanted and Unowned */}
               <ListItems
-                listNames={rightColumnLists}
-                activeLists={activeLists}
-                sortedOwnedPokemons={sortedOwnedPokemons}
+                listNames={['Wanted', 'Unowned']}
+                sortedLists={sortedLists}
                 onSelectList={onSelectList}
               />
             </div>

@@ -3,15 +3,10 @@
 import React from 'react';
 import './ListItems.css';
 
-const ListItems = ({ listNames, activeLists, sortedOwnedPokemons, onSelectList }) => {
+const ListItems = ({ listNames, sortedLists, onSelectList }) => {
   return listNames.map((listName) => {
-    let listData = [];
-    if (listName === 'Owned' || listName === 'Caught') {
-      listData = sortedOwnedPokemons;
-    } else {
-      const lower = listName.toLowerCase();
-      listData = activeLists[lower] ? Object.values(activeLists[lower]) : [];
-    }
+    // Use the sorted list from the sortedLists object
+    const listData = sortedLists[listName] || [];
 
     const previewPokemon = listData.slice(0, 24).map((pokemon, index) => {
       if (!pokemon || !pokemon.currentImage) return null;
@@ -43,6 +38,7 @@ const ListItems = ({ listNames, activeLists, sortedOwnedPokemons, onSelectList }
       );
     });
 
+    // For the header, if listName is "Caught" we might label it as "Owned" (if needed)
     const filterName = listName === 'Caught' ? 'Owned' : listName;
     return (
       <div

@@ -1,3 +1,5 @@
+// useNumberPokemons.js
+
 import { useMemo } from 'react';
 
 const useNumberPokemons = (displayedPokemons, sortMode, { isShiny, showShadow, showCostume, showAll }) => {
