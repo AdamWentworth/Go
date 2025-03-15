@@ -3,24 +3,30 @@ import React, { useState, useEffect } from 'react';
 import './LoadingSpinner.css';
 
 function LoadingSpinner() {
-    const [dotState, setDotState] = useState(0);
+  const spinnerVideoSrc = `${process.env.PUBLIC_URL}/assets/loading_spinner.webm`;
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setDotState(prev => (prev + 1) % 3);
-        }, 500);
+  // State to cycle through "Loading", "Loading.", "Loading..", "Loading..."
+  const [loadingText, setLoadingText] = useState("Loading");
 
-        return () => clearInterval(interval);
-    }, []);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLoadingText((prev) => {
+        if (prev === "Loading...") return "Loading";
+        return prev + ".";
+      });
+    }, 500); // Change every 500ms
 
-    const dotText = ".".repeat(dotState + 1);
+    return () => clearInterval(interval); // Cleanup interval
+  }, []);
 
-    return (
-        <div className="loading-container" role="status" aria-label="Loading">
-            <div className="spinner"></div>
-            <div className="loading-text">Loading{dotText}</div>
-        </div>
-    );
+  return (
+    <div className="loading-container">
+      <video className="spinner-video" autoPlay loop muted playsInline>
+        <source src={spinnerVideoSrc} type="video/webm" />
+      </video>
+      <div className="loading-text">{loadingText}</div>
+    </div>
+  );
 }
 
 export default LoadingSpinner;

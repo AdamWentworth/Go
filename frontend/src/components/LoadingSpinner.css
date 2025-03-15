@@ -1,34 +1,23 @@
 /* LoadingSpinner.css */
-
-/* Center the loading container */
 .loading-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: calc(var(--vh, 1vh) * 100); /* Use custom viewport height */
+    height: 100vh;
+    background-color: var(--spinner-bg, transparent);
 }
 
-.spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border-left-color: #3498db; /* Blue color */
-    animation: spin 1s ease-in-out infinite;
+.spinner-video {
+    width: clamp(50px, 10vw, 80px);
+    height: clamp(50px, 10vw, 80px);
+    background-color: transparent;
+    filter: drop-shadow(0 0 10px #34807d);
 }
 
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
+/* Loading Text Styling */
 .loading-text {
-    font-size: 16px;
-    margin-top: 8px;
-    color: #3498db; /* Match spinner color */
+    font-size: 1rem;
+    margin-top: 10px;
+    color: #fff;
 }
