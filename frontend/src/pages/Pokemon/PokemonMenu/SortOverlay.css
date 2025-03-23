@@ -1,10 +1,10 @@
 /* SortOverlay.css */
 .sort-overlay {
     position: fixed;
-    right: 20px;
-    bottom: 20px;
+    bottom: 3%;
+    right: -99%;
     z-index: 1001;
-    transform-origin: bottom right; /* Scale from the bottom-right corner */
+    transform-origin: bottom right;
 }
 
 .sort-button, .sort-type-button {
@@ -19,7 +19,7 @@
 .sort-list {
     display: flex;
     flex-direction: column; /* List expands upwards */
-    align-items: flex-end; /* Align buttons to the start */
+    align-items: flex-end; /* Align buttons to the end (right side) */
 }
 
 .sort-overlay .error-message {

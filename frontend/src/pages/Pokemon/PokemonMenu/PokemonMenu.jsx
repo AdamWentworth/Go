@@ -9,6 +9,7 @@ import PokemonOptionsOverlay from './PokemonOptionsOverlay';
 import './PokemonMenu.css';
 import { useModal } from '../../../contexts/ModalContext';
 import SearchUI from './SearchUI';
+import SortOverlay from './SortOverlay';
 
 function PokemonMenu({
   isEditable,
@@ -28,7 +29,9 @@ function PokemonMenu({
   ownershipData,
   showAll,
   sortType,
+  setSortType,
   sortMode,
+  toggleSortMode,
   variants,
   username,
   setIsFastSelectEnabled,
@@ -79,19 +82,20 @@ function PokemonMenu({
   }
 
   return (
-    <div className="pokemon-list-wrapper">
-      {/* Search bar at the top, outside the grid */}
-      <SearchUI
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        showEvolutionaryLine={showEvolutionaryLine}
-        toggleEvolutionaryLine={toggleEvolutionaryLine}
-        totalPokemon={sortedPokemons.length}
-        showCount
-      />
-
-      {/* 2) The grid container for the Pokémon cards */}
-      <div className="pokemon-grid">
+    <div className={`pokemon-container ${searchTerm.trim() !== '' ? 'has-checkbox' : ''}`}>
+      {/* Sticky SearchUI header that stays at the top of this panel only */}
+      <header className="search-header">
+        <SearchUI
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          showEvolutionaryLine={showEvolutionaryLine}
+          toggleEvolutionaryLine={toggleEvolutionaryLine}
+          totalPokemon={sortedPokemons.length}
+          showCount
+        />
+      </header>
+      {/* The grid container for the Pokémon cards */}
+      <main className="pokemon-grid">
         {sortedPokemons.map((pokemon) => (
           <PokemonCard
             key={pokemon.pokemonKey}
@@ -112,8 +116,16 @@ function PokemonMenu({
             variants={allPokemons}
           />
         ))}
-      </div>
-
+      </main>
+      {/* Render SortOverlay if no cards are highlighted */}
+      {highlightedCards.size === 0 && (
+        <SortOverlay
+          sortType={sortType}
+          setSortType={setSortType}
+          sortMode={sortMode}
+          setSortMode={toggleSortMode}
+        />
+      )}
       {/* Options overlay (if isEditable) */}
       {isEditable && optionsSelectedPokemon && (
         <PokemonOptionsOverlay
@@ -135,7 +147,6 @@ function PokemonMenu({
           }}
         />
       )}
-
       {/* Instance or Pokedex overlay */}
       {selectedPokemon &&
         (selectedPokemon.overlayType === 'instance' ? (

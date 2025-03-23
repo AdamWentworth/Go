@@ -62,7 +62,7 @@
     margin-top: 10px;
 }
 
-.header-section {
+.main-info-column .header-section {
     display: flex;
     align-items: center;
     justify-content: center;

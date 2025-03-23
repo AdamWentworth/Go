@@ -3,8 +3,8 @@ import React, { useState, useMemo, useContext, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import './Pokemon.css';
 
-import PokemonMenu from './PokemonMenu/PokemonMenu';
 import HeaderUI from './HeaderUI';
+import PokemonMenu from './PokemonMenu/PokemonMenu';
 import SortOverlay from './PokemonMenu/SortOverlay';
 import HighlightActionButton from './PokemonMenu/HighlightActionButton';
 import PokedexFiltersMenu from './PokedexMenu/PokedexListsMenu';
@@ -337,14 +337,10 @@ function Pokemon({ isOwnCollection }) {
   }
 
   return (
-    <div className="collect-page">
+    <div className="pokemon-page">
       {isUsernamePath && userExists === false && <h1>User not found</h1>}
 
       <HeaderUIMemo
-        // searchTerm={searchTerm}
-        // setSearchTerm={setSearchTerm}
-        // showEvolutionaryLine={showEvolutionaryLine}
-        // toggleEvolutionaryLine={toggleEvolutionaryLine}
         onListsButtonClick={handleListsButtonClick}
         onPokedexClick={() =>
           setActiveView((prev) =>
@@ -412,7 +408,9 @@ function Pokemon({ isOwnCollection }) {
               lists={activeLists}
               ownershipData={ownershipData}
               sortType={sortType}
+              setSortType={setSortType}
               sortMode={sortMode}
+              toggleSortMode={toggleSortMode}
               variants={variants}
               username={displayUsername}
               setIsFastSelectEnabled={setIsFastSelectEnabled}
@@ -438,15 +436,6 @@ function Pokemon({ isOwnCollection }) {
           </div>
         </div>
       </div>
-
-      {highlightedCards.size === 0 && (
-        <SortOverlayMemo
-          sortType={sortType}
-          setSortType={setSortType}
-          sortMode={sortMode}
-          setSortMode={toggleSortMode}
-        />
-      )}
 
       {isEditable && highlightedCards.size > 0 && (
         <HighlightActionButton

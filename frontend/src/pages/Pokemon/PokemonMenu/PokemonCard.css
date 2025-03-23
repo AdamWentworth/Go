@@ -6,6 +6,11 @@
     color: white;
     box-sizing: border-box;
     position: relative;
+    /* Add these properties to prevent vertical stretching */
+    height: fit-content;
+    min-height: 0;
+    max-height: max-content;
+    align-self: flex-start;
 }
 
 @keyframes jiggle {
@@ -38,10 +43,10 @@
 }
 
 .pokemon-card .pokemon-image-container {
-    position: relative; /* Ensure it's relative for absolute positioning of badges */
-    display: inline-block; /* Ensures container shrinks to fit its content */
-    width: 100%; /* Ensure it takes up the full width of the parent container */
-    height: auto; /* Adjust as needed */
+    position: relative; /* Already present */
+    display: inline-block;
+    width: 100%;
+    height: auto;
     -webkit-touch-callout: none;
     user-select: none;
 }

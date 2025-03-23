@@ -1,43 +1,78 @@
-/* The outer wrapper that includes the search bar + the grid */
-.pokemon-list-wrapper {
-    background-color: #111;
-    /* any global padding, margin, or width you want for the entire list block */
-    padding: 20px;
-    padding-top: unset;
-    box-sizing: border-box;
-    margin-left: auto;
-    margin-right: auto;
-    width: 100%;
-  }
-  
-  /* The actual grid for Pokémon cards only */
+/* PokemonMenu.css */
+
+/* Default styling for .pokemon-container */
+.pokemon-container {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background-color: #111;
+  box-sizing: border-box;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  position: relative;
+  align-items: start;
+}
+
+/* Sticky header (SearchUI) */
+.search-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #111;
+  margin: 0px;
+}
+
+/* Grid for Pokémon cards */
+.pokemon-grid {
+  display: grid;
+  gap: 0px;
+  grid-template-columns: repeat(9, 1fr);
+  padding-top: 50px;
+}
+
+.pokemon-container.has-checkbox .pokemon-grid {
+  padding-top: 100px;
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 480px) {
   .pokemon-grid {
-    display: grid;
-    gap: 0px;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .pokemon-container.has-checkbox .pokemon-grid {
+    padding-top: 70px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+  .pokemon-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .pokemon-container.has-checkbox .pokemon-grid {
+    padding-top: 80px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .pokemon-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .pokemon-container.has-checkbox .pokemon-grid {
+    padding-top: 80px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pokemon-grid {
     grid-template-columns: repeat(9, 1fr);
   }
-  
-  @media (max-width: 480px) {
-    .pokemon-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
+  .pokemon-container.has-checkbox .pokemon-grid {
+    padding-top: 90px;
   }
-  
-  @media (min-width: 481px) and (max-width: 767px) {
-    .pokemon-grid {
-      grid-template-columns: repeat(6, 1fr);
-    }
+}
+
+@media (min-width: 1440px) {
+  .pokemon-container.has-checkbox .pokemon-grid {
+    padding-top: 100px;
   }
-  
-  @media (min-width: 768px) and (max-width: 1023px) {
-    .pokemon-grid {
-      grid-template-columns: repeat(6, 1fr);
-    }
-  }
-  
-  @media (min-width: 1024px) {
-    .pokemon-grid {
-      grid-template-columns: repeat(9, 1fr);
-    }
-  }
-  
+}

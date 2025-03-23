@@ -1,6 +1,6 @@
-/* Collect.css */
+/* Pokemon.css */
 /* Make the entire page container fill the viewport with no scrolling at the page level. */
-.collect-page {
+.pokemon-page {
   width: 100%;
   height: 100vh;       /* or "calc(100vh - <headerHeight>)" if you have a fixed header */
   margin: 0;
@@ -11,7 +11,7 @@
 
 /* Container for the horizontal slider */
 .view-slider-container {
-  flex: 1;             /* fill remaining space below header (if your header is inside collect-page) */
+  flex: 1;             /* fill remaining space below header (if your header is inside pokemon-page) */
   width: 100%;
   overflow: hidden;    /* hide the horizontal scrollbar */
   position: relative;  

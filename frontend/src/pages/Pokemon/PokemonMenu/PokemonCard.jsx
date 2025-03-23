@@ -242,20 +242,6 @@ const PokemonCard = ({
         (background) =>
           background.background_id === pokemon.ownershipStatus.location_card
       );
-      if (locationBackground) {
-        console.log(
-          `PokemonCard: Found matching location background for ${pokemon.name} (id: ${pokemon.pokemon_id}):`,
-          locationBackground
-        );
-      } else {
-        console.log(
-          `PokemonCard: No matching location background for ${pokemon.name} (id: ${pokemon.pokemon_id}).`
-        );
-      }
-    } else {
-      console.log(
-        `PokemonCard: No matching variant found for ${pokemon.name} (id: ${pokemon.pokemon_id}).`
-      );
     }
   }
 
