@@ -75,19 +75,15 @@
 }
 
 /* Underline styling */
+/* Underline styling */
 .header-underline {
   position: absolute;
   bottom: 0;
-  height: 4px;
+  height: 6px;           /* slightly thicker */
   background-color: #fff;
-  /* The transition you like */
+  border-radius: 3px;    /* rounded corners */
   transition: left 0.3s ease, transform 0.3s ease, width 0.3s ease;
-
-  /* The magical part: CSS now picks the width between 70px and 120px,
-     letting 10vw be the 'preferred' size. */
   width: clamp(100px, 10vw, 10vw);
-
-  /* We want the element’s own center to line up with left= from JS. */
   transform: translateX(-50%);
 }
 
