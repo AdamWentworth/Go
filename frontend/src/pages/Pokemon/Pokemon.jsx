@@ -1,11 +1,10 @@
 // Pokemon.jsx
-import React, { useState, useMemo, useContext, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useContext, useEffect, useRef, useCallback } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import './Pokemon.css';
 
 import HeaderUI from './HeaderUI';
 import PokemonMenu from './PokemonMenu/PokemonMenu';
-import SortOverlay from './PokemonMenu/SortOverlay';
 import HighlightActionButton from './PokemonMenu/HighlightActionButton';
 import PokedexFiltersMenu from './PokedexMenu/PokedexListsMenu';
 import TagsMenu from './TagsMenu/TagsMenu';
@@ -30,9 +29,12 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ActionMenu from '../../components/ActionMenu';
 import CloseButton from '../../components/CloseButton';
 
+// Import the centralized swipe mapping function
+import { getNextActiveView } from './utils/swipeNavigation';
+import useSwipeHandler from './hooks/useSwipeHandler';
+
 const PokemonMenuMemo = React.memo(PokemonMenu);
 const HeaderUIMemo = React.memo(HeaderUI);
-const SortOverlayMemo = React.memo(SortOverlay);
 
 function Pokemon({ isOwnCollection }) {
   const { username: urlUsername } = useParams();
@@ -95,31 +97,26 @@ function Pokemon({ isOwnCollection }) {
 
   useEffect(() => {
     if (isUsernamePath) {
-      // If viewing another user's collection, use all variants as the selected list.
       setSelectedPokedexList(variants);
       setDefaultListLoaded(true);
     } else if (pokedexLists?.default) {
-      // Otherwise, use the default list from pokedexLists.
       setSelectedPokedexList(pokedexLists.default);
       setDefaultListLoaded(true);
     }
   }, [isUsernamePath, variants, pokedexLists]);  
 
-  // Handler called when user clicks in PokedexListsMenu
   const handlePokedexMenuClick = (listData) => {
     setSelectedPokedexList(listData);
     setLastMenu('pokedex');
   };
 
-  // Handler called when user clicks in OwnershipListsMenu
   const handleOwnershipListClick = (filter) => {
     setHighlightedCards(new Set());
     setOwnershipFilter(filter);
     setLastMenu('ownership');
-    setActiveView('pokemonList');
+    setActiveView('pokemon'); // updated from 'pokemonList'
   };
 
-  // UI Controls
   const {
     showEvolutionaryLine,
     toggleEvolutionaryLine,
@@ -136,7 +133,6 @@ function Pokemon({ isOwnCollection }) {
     sortMode: 'ascending',
   });
 
-  // Filter states
   const {
     selectedGeneration,
     setSelectedGeneration,
@@ -149,7 +145,6 @@ function Pokemon({ isOwnCollection }) {
     isGenerationSearch,
   } = useSearchFilters(variants);
 
-  // If viewing another user’s collection, load that data
   useUserDataLoader({
     isUsernamePath,
     username: urlUsername,
@@ -176,9 +171,6 @@ function Pokemon({ isOwnCollection }) {
     }),
     [selectedGeneration, searchTerm, pokemonTypes, generations]
   );
-
-  // console.log(activeLists)
-  // console.log(ownershipData)
 
   const baseVariants = lastMenu === 'pokedex' ? selectedPokedexList : variants;
 
@@ -211,7 +203,6 @@ function Pokemon({ isOwnCollection }) {
     setIsFastSelectEnabled,
   });
 
-  // Mega/Fusion
   const { promptMegaPokemonSelection, MegaPokemonModal } = useMegaPokemonHandler();
   const { promptFusionPokemonSelection, FusionPokemonModal } = useFusionPokemonHandler();
 
@@ -228,65 +219,97 @@ function Pokemon({ isOwnCollection }) {
     setIsFastSelectEnabled,
   });
 
-  //--- Sliding view state ---
-  const [activeView, setActiveView] = useState('pokemonList');
+  // --- Sliding view state ---
+  // Default view is now "pokemon" (the middle panel)
+  const [activeView, setActiveView] = useState('pokemon');
 
   useEffect(() => {
     console.log('Active view changed to:', activeView);
   }, [activeView]);
 
-  // 1) Create refs for all 3 panels
+  const handleSwipe = useCallback((direction) => {
+    const nextView = getNextActiveView(activeView, direction);
+    setActiveView(nextView);
+  }, [activeView]);
+
+  // Add these new state variables
+const [dragOffset, setDragOffset] = useState(0);
+const [isDragging, setIsDragging] = useState(false);
+const containerRef = useRef(null);
+
+// Update swipe handler initialization
+const swipeHandlers = useSwipeHandler({
+  onSwipe: (direction) => {
+    if (direction) {
+      const nextView = getNextActiveView(activeView, direction);
+      setActiveView(nextView);
+    }
+    // Animate back if swipe was canceled
+    setDragOffset(0);
+    setIsDragging(false);
+  },
+  onDrag: (dx) => {
+    if (!containerRef.current) return;
+    const containerWidth = containerRef.current.offsetWidth;
+    const maxOffset = containerWidth * 0.3; // Max peek distance
+    
+    // Limit drag offset to max peek distance
+    const limitedDx = Math.max(-maxOffset, Math.min(maxOffset, dx));
+    setDragOffset(limitedDx);
+    setIsDragging(true);
+  }
+});
+
+// Add to your existing transform calculation
+const getTransform = () => {
+  const viewIndex = ['pokedex', 'pokemon', 'tags'].indexOf(activeView);
+  let baseTransform = -viewIndex * 100;
+  
+  // Add drag offset as percentage of container width
+  if (containerRef.current) {
+    const containerWidth = containerRef.current.offsetWidth;
+    const offsetPercentage = (dragOffset / containerWidth) * 100;
+    baseTransform += offsetPercentage;
+  }
+  
+  return `translateX(${baseTransform}%)`;
+};
+
+  const {
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+  } = swipeHandlers;
+
   const pokedexPanelRef = useRef(null);
   const mainListPanelRef = useRef(null);
   const ownershipPanelRef = useRef(null);
 
-  // 2) When activeView changes, reset each panel’s scroll
   useEffect(() => {
-    if (pokedexPanelRef.current) {
-      pokedexPanelRef.current.scrollTop = 0;
-    }
-    if (mainListPanelRef.current) {
-      mainListPanelRef.current.scrollTop = 0;
-    }
-    if (ownershipPanelRef.current) {
-      ownershipPanelRef.current.scrollTop = 0;
-    }
+    if (pokedexPanelRef.current) pokedexPanelRef.current.scrollTop = 0;
+    if (mainListPanelRef.current) mainListPanelRef.current.scrollTop = 0;
+    if (ownershipPanelRef.current) ownershipPanelRef.current.scrollTop = 0;
+    window.scrollTo(0, 0);
   }, [activeView]);
 
-  // 3) “Swipe” logic
-  const handleCardSwipe = (direction) => {
-    if (direction === 'left') {
-      if (activeView === 'pokedex') {
-        setActiveView('pokemonList');
-      } else if (activeView === 'pokemonList') {
-        setActiveView('lists');
-      }
-    } else if (direction === 'right') {
-      if (activeView === 'lists') {
-        setActiveView('pokemonList');
-      } else if (activeView === 'pokemonList') {
-        setActiveView('pokedex');
-      }
-    }
-  };
-
   const handleListsButtonClick = () => {
-    setActiveView((prev) => (prev === 'lists' ? 'pokemonList' : 'lists'));
+    setActiveView((prev) => (prev === 'tags' ? 'pokemon' : 'tags'));
   };
 
-  // Clear highlights if username changes
   useEffect(() => {
     if (isUsernamePath) {
       setHighlightedCards(new Set());
-      setActiveView('pokemonList');
+      setActiveView('pokemon');
     }
   }, [isUsernamePath, urlUsername]);
 
-  // Possibly replace path with canonical username
   useEffect(() => {
     if (!isOwnCollection && urlUsername) {
       const updateUsername = async () => {
-        const canonical = urlUsername; // Extend logic if needed
+        const canonical = urlUsername;
         if (canonical && canonical !== urlUsername) {
           window.history.replaceState(
             {},
@@ -317,21 +340,6 @@ function Pokemon({ isOwnCollection }) {
         </>
       );
 
-  useEffect(() => {
-    if (pokedexPanelRef.current) {
-      pokedexPanelRef.current.scrollTop = 0;
-    }
-    if (mainListPanelRef.current) {
-      mainListPanelRef.current.scrollTop = 0;
-    }
-    if (ownershipPanelRef.current) {
-      ownershipPanelRef.current.scrollTop = 0;
-    }
-    // Reset page scroll to top when view changes
-    window.scrollTo(0, 0);
-  }, [activeView]);
-
-  // Render LoadingSpinner until defaultListLoaded is true (in addition to other loading flags)
   if (loading || viewedLoading || isUpdating || !defaultListLoaded) {
     return <LoadingSpinner />;
   }
@@ -343,9 +351,7 @@ function Pokemon({ isOwnCollection }) {
       <HeaderUIMemo
         onListsButtonClick={handleListsButtonClick}
         onPokedexClick={() =>
-          setActiveView((prev) =>
-            prev === 'pokedex' ? 'pokemonList' : 'pokedex'
-          )
+          setActiveView((prev) => (prev === 'pokedex' ? 'pokemon' : 'pokedex'))
         }
         contextText={contextText}
         totalPokemon={sortedPokemons.length}
@@ -356,27 +362,28 @@ function Pokemon({ isOwnCollection }) {
 
       {/* Horizontal slider container */}
       <div 
-        className="view-slider-container" 
+        className="view-slider-container"
+        ref={containerRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
         style={{ 
-          overflowY: activeView === 'pokemonList' ? 'auto' : 'hidden',
+          overflowY: activeView === 'pokemon' ? 'auto' : 'hidden',
+          touchAction: 'pan-y'
         }}
       >
         <div
           className="view-slider"
           style={{
-            transform:
-              activeView === 'pokedex'
-                ? 'translateX(0)'
-                : activeView === 'pokemonList'
-                ? 'translateX(-100%)'
-                : 'translateX(-200%)',
+            transform: getTransform(),
+            transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
           }}
         >
           {/* LEFT panel - Pokedex */}
-          <div
-            className="slider-panel"
-            ref={pokedexPanelRef}
-          >
+          <div className="slider-panel" ref={pokedexPanelRef}>
             <PokedexFiltersMenu
               setOwnershipFilter={setOwnershipFilter}
               setHighlightedCards={setHighlightedCards}
@@ -384,15 +391,11 @@ function Pokemon({ isOwnCollection }) {
               onListSelect={handlePokedexMenuClick}
               pokedexLists={pokedexLists}
               variants={variants}
-              onSwipe={handleCardSwipe}
             />
           </div>
 
-          {/* MIDDLE panel - Main Pokemon List */}
-          <div
-            className="slider-panel"
-            ref={mainListPanelRef}
-          >
+          {/* MIDDLE panel - Main Pokémon List */}
+          <div className="slider-panel" ref={mainListPanelRef}>
             <PokemonMenuMemo
               isEditable={isEditable}
               sortedPokemons={sortedPokemons}
@@ -414,7 +417,6 @@ function Pokemon({ isOwnCollection }) {
               variants={variants}
               username={displayUsername}
               setIsFastSelectEnabled={setIsFastSelectEnabled}
-              onSwipe={handleCardSwipe}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               showEvolutionaryLine={showEvolutionaryLine}
@@ -422,15 +424,11 @@ function Pokemon({ isOwnCollection }) {
             />
           </div>
 
-          {/* RIGHT panel - Ownership lists */}
-          <div
-            className="slider-panel"
-            ref={ownershipPanelRef}
-          >
+          {/* RIGHT panel - Tags */}
+          <div className="slider-panel" ref={ownershipPanelRef}>
             <TagsMenu
               onSelectList={handleOwnershipListClick}
               activeLists={activeLists}
-              onSwipe={handleCardSwipe}
               variants={variants}
             />
           </div>
@@ -449,17 +447,14 @@ function Pokemon({ isOwnCollection }) {
       <div className={`action-menu-overlay ${showActionMenu ? 'active' : ''}`}>
         {showActionMenu && (
           <>
-            {/* The close button to toggle off the overlay */}
             <CloseButton onClick={handleActionMenuToggle} />
             <div className="action-menu-content">
               <p>This is the action menu content.</p>
-              {/* Add additional overlay UI elements here */}
             </div>
           </>
         )}
       </div>
 
-      {/* Insert the reusable ActionMenu */}
       <ActionMenu />
 
       <MegaPokemonModal />

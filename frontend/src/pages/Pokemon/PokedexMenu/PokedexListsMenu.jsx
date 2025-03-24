@@ -1,7 +1,9 @@
 // PokedexListsMenu.jsx
-import React, { useRef } from 'react';
+import React from 'react';
 import useWindowWidth from '../hooks/useWindowWidth';
 import './PokedexListsMenu.css';
+// Import the centralized swipe hook
+import useSwipeHandler from '../hooks/useSwipeHandler';
 
 const PokedexListsMenu = ({
   setOwnershipFilter,
@@ -10,9 +12,7 @@ const PokedexListsMenu = ({
   pokedexLists,
   variants,
   onListSelect,
-  onSwipe // New prop for swipe handling
 }) => {
-  // Define list order for two-column mode
   const leftColumnLists = [
     'default',
     'costume',
@@ -20,7 +20,7 @@ const PokedexListsMenu = ({
     'mega',
     'dynamax',
     'gigantamax',
-    'fusion',         // non-shiny fusion list
+    'fusion',
     'shadow costume',
   ];
   const rightColumnLists = [
@@ -30,7 +30,7 @@ const PokedexListsMenu = ({
     'shiny mega',
     'shiny dynamax',
     'shiny gigantamax',
-    'shiny fusion',   // shiny fusion list
+    'shiny fusion',
   ];
   const fullWidthList = 'all';
 
@@ -53,11 +53,9 @@ const PokedexListsMenu = ({
     all: 'All'
   };
 
-  // Helper: convert list name to a CSS-friendly class name
   const getClassNameForList = (listName) =>
     listName.replace(/\s+/g, '-').toLowerCase();
 
-  // When a list is clicked, clear filters/highlights and pass back the data
   const handleListClick = (listName) => {
     setOwnershipFilter?.('');
     setHighlightedCards?.(new Set());
@@ -68,32 +66,7 @@ const PokedexListsMenu = ({
         onListSelect(pokedexLists[listName] || []);
       }
     }
-    setActiveView?.('pokemonList');
-  };
-
-  // --- Swipe Handling ---
-  const SWIPE_THRESHOLD = 50;
-  const touchStartX = useRef(0);
-  const lastTouchX = useRef(0);
-
-  const handleTouchStart = (e) => {
-    const touch = e.touches[0];
-    touchStartX.current = touch.clientX;
-    lastTouchX.current = touch.clientX;
-  };
-
-  const handleTouchMove = (e) => {
-    const touch = e.touches[0];
-    lastTouchX.current = touch.clientX;
-  };
-
-  const handleTouchEnd = () => {
-    const dx = lastTouchX.current - touchStartX.current;
-    if (dx > SWIPE_THRESHOLD) {
-      onSwipe && onSwipe('right');
-    } else if (dx < -SWIPE_THRESHOLD) {
-      onSwipe && onSwipe('left');
-    }
+    setActiveView?.('pokemon'); // updated from 'pokemonList'
   };
 
   // --- Header Icons ---
@@ -101,9 +74,7 @@ const PokedexListsMenu = ({
     const lower = listName.toLowerCase();
     const icons = [];
 
-    // Special ordering for non-shiny "fusion"
     if (lower === 'fusion') {
-      // Left side: fusion 3 & 4; Right side: fusion 1 & 2
       icons.push(
         <img
           key="fusion3"
@@ -133,9 +104,7 @@ const PokedexListsMenu = ({
       return icons;
     }
 
-    // Special ordering for "shiny fusion"
     if (lower === 'shiny fusion') {
-      // First add the shiny icon, then all fusion icons (order: 3, 4, 1, 2)
       icons.push(
         <img
           key="shiny"
@@ -171,7 +140,6 @@ const PokedexListsMenu = ({
       return icons;
     }
 
-    // Other icons for non-fusion lists
     if (lower.includes('shiny')) {
       icons.push(
         <img
@@ -232,7 +200,6 @@ const PokedexListsMenu = ({
         />
       );
     }
-    // Fallback: if any other fusion keyword is found, add default fusion icons
     if (lower.includes('fusion')) {
       icons.push(
         <img
@@ -252,7 +219,6 @@ const PokedexListsMenu = ({
     return icons;
   };
 
-  // --- Render Pokémon Preview ---
   const renderListPreview = (listName) => {
     const listData = listName === 'all' ? variants : (pokedexLists[listName] || []);
     return listData.slice(0, 24).map((pokemon, index) => {
@@ -286,10 +252,8 @@ const PokedexListsMenu = ({
     });
   };
 
-  // --- Render List Items ---
   const renderListItems = (listNames) => {
     return listNames.map((listName) => {
-      // Special handling for non-shiny "fusion" list
       if (listName.toLowerCase() === 'fusion') {
         const icons = renderHeaderIcons(listName);
         return (
@@ -298,25 +262,15 @@ const PokedexListsMenu = ({
             className="pokedex-list-item"
             onClick={() => handleListClick(listName)}
             tabIndex="0"
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') handleListClick(listName);
-            }}
+            onKeyPress={(e) => { if (e.key === 'Enter') handleListClick(listName); }}
           >
             <div className={`pokedex-list-header ${getClassNameForList(listName)} fusion-header`}>
-              <span className="fusion-icons left">
-                {icons[0]} {icons[1]}
-              </span>
-              <span className="list-header-text">
-                {displayNameMap[listName] || listName}
-              </span>
-              <span className="fusion-icons right">
-                {icons[2]} {icons[3]}
-              </span>
+              <span className="fusion-icons left">{icons[0]} {icons[1]}</span>
+              <span className="list-header-text">{displayNameMap[listName] || listName}</span>
+              <span className="fusion-icons right">{icons[2]} {icons[3]}</span>
             </div>
             <div className="pokedex-pokemon-preview">
-              {renderListPreview(listName).length > 0 ? (
-                renderListPreview(listName)
-              ) : (
+              {renderListPreview(listName).length > 0 ? renderListPreview(listName) : (
                 <p className="pokedex-no-pokemon-text">No Pokémon in this list</p>
               )}
             </div>
@@ -324,7 +278,6 @@ const PokedexListsMenu = ({
         );
       }
 
-      // Special handling for "shiny fusion" list
       if (listName.toLowerCase() === 'shiny fusion') {
         const icons = renderHeaderIcons(listName);
         return (
@@ -333,23 +286,15 @@ const PokedexListsMenu = ({
             className="pokedex-list-item"
             onClick={() => handleListClick(listName)}
             tabIndex="0"
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') handleListClick(listName);
-            }}
+            onKeyPress={(e) => { if (e.key === 'Enter') handleListClick(listName); }}
           >
             <div className={`pokedex-list-header ${getClassNameForList(listName)} fusion-header`}>
               <span className="list-header-icon left">{icons[0]}</span>
-              <span className="list-header-text">
-                {displayNameMap[listName] || listName}
-              </span>
-              <span className="fusion-icons">
-                {icons[1]} {icons[2]} {icons[3]} {icons[4]}
-              </span>
+              <span className="list-header-text">{displayNameMap[listName] || listName}</span>
+              <span className="fusion-icons">{icons[1]} {icons[2]} {icons[3]} {icons[4]}</span>
             </div>
             <div className="pokedex-pokemon-preview">
-              {renderListPreview(listName).length > 0 ? (
-                renderListPreview(listName)
-              ) : (
+              {renderListPreview(listName).length > 0 ? renderListPreview(listName) : (
                 <p className="pokedex-no-pokemon-text">No Pokémon in this list</p>
               )}
             </div>
@@ -357,7 +302,6 @@ const PokedexListsMenu = ({
         );
       }
 
-      // Default rendering for other list types
       const icons = renderHeaderIcons(listName);
       return (
         <div
@@ -365,34 +309,24 @@ const PokedexListsMenu = ({
           className="pokedex-list-item"
           onClick={() => handleListClick(listName)}
           tabIndex="0"
-          onKeyPress={(e) => {
-            if (e.key === 'Enter') handleListClick(listName);
-          }}
+          onKeyPress={(e) => { if (e.key === 'Enter') handleListClick(listName); }}
         >
           <div className={`pokedex-list-header ${getClassNameForList(listName)}`}>
             {icons.length === 2 ? (
               <>
                 <span className="list-header-icon left">{icons[0]}</span>
-                <span className="list-header-text">
-                  {displayNameMap[listName] || listName}
-                </span>
+                <span className="list-header-text">{displayNameMap[listName] || listName}</span>
                 <span className="list-header-icon right">{icons[1]}</span>
               </>
             ) : (
               <>
-                {icons.length > 0 && (
-                  <div className="list-header-icons">
-                    {icons}
-                  </div>
-                )}
+                {icons.length > 0 && (<div className="list-header-icons">{icons}</div>)}
                 <span className="list-header-text">{displayNameMap[listName] || listName}</span>
               </>
             )}
           </div>
           <div className="pokedex-pokemon-preview">
-            {renderListPreview(listName).length > 0 ? (
-              renderListPreview(listName)
-            ) : (
+            {renderListPreview(listName).length > 0 ? renderListPreview(listName) : (
               <p className="pokedex-no-pokemon-text">No Pokémon in this list</p>
             )}
           </div>
@@ -401,53 +335,35 @@ const PokedexListsMenu = ({
     });
   };
 
-  // --- Responsive Layout ---
   const width = useWindowWidth();
   const isOneColumn = width < 650;
 
   if (isOneColumn) {
-    // Alternate ordering: interleave left and right column lists
     const alternateLists = [];
     const maxLen = Math.max(leftColumnLists.length, rightColumnLists.length);
     for (let i = 0; i < maxLen; i++) {
-      if (i < leftColumnLists.length) {
-        alternateLists.push(leftColumnLists[i]);
-      }
-      if (i < rightColumnLists.length) {
-        alternateLists.push(rightColumnLists[i]);
-      }
+      if (i < leftColumnLists.length) alternateLists.push(leftColumnLists[i]);
+      if (i < rightColumnLists.length) alternateLists.push(rightColumnLists[i]);
     }
-    // Prepend the "all" list so it appears first
     const oneColumnOrder = [fullWidthList, ...alternateLists];
     return (
       <div
         className="pokedex-lists-menu one-column"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         {renderListItems(oneColumnOrder)}
       </div>
     );
   } else {
-    // Two-column view: render the "all" list at the top and then left/right columns
     return (
       <div
         className="pokedex-lists-menu"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         <div className="pokedex-fullwidth-list">
           {renderListItems([fullWidthList])}
         </div>
         <div className="pokedex-columns">
-          <div className="pokedex-column">
-            {renderListItems(leftColumnLists)}
-          </div>
-          <div className="pokedex-column">
-            {renderListItems(rightColumnLists)}
-          </div>
+          <div className="pokedex-column">{renderListItems(leftColumnLists)}</div>
+          <div className="pokedex-column">{renderListItems(rightColumnLists)}</div>
         </div>
       </div>
     );

@@ -1,8 +1,8 @@
 // TagsMenu.jsx
-import React, { useRef, useState, useEffect } from 'react';
+import React from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import './TagsMenu.css';
-import useSwipe from './hooks/useSwipe';
+import useSwipeHandler from '../hooks/useSwipeHandler';
 import useDownloadImage from './hooks/useDownloadImage';
 import PreviewContainer from './PreviewContainer';
 import useFavoriteList from '../../../hooks/sort/useFavoriteList';
@@ -30,7 +30,6 @@ const TagsMenu = ({ onSelectList, activeLists, onSwipe, variants }) => {
     activeLists.owned ? Object.values(activeLists.owned) : []
   );
 
-  // For the other lists, use useNumberPokemons with default sort options.
   const sortedTradePokemons = useNumberPokemons(
     activeLists.trade ? Object.values(activeLists.trade) : [],
     "ascending",
@@ -47,7 +46,6 @@ const TagsMenu = ({ onSelectList, activeLists, onSwipe, variants }) => {
     { isShiny: false, showShadow: false, showCostume: false, showAll: true }
   );
 
-  // Combine the sorted arrays into one object keyed by list name.
   const sortedLists = {
     Caught: sortedOwnedPokemons,
     Trade: sortedTradePokemons,
@@ -55,15 +53,15 @@ const TagsMenu = ({ onSelectList, activeLists, onSwipe, variants }) => {
     Unowned: sortedUnownedPokemons,
   };
 
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [showColorSettings, setShowColorSettings] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = React.useState(false);
+  const [showColorSettings, setShowColorSettings] = React.useState(false);
 
-  const [previewBgColor, setPreviewBgColor] = useState(defaultColors.previewBgColor);
-  const [sectionFrameBgColor, setSectionFrameBgColor] = useState(defaultColors.sectionFrameBgColor);
-  const [h2FontColor, setH2FontColor] = useState(defaultColors.h2FontColor);
-  const [pokemonNameColor, setPokemonNameColor] = useState(defaultColors.pokemonNameColor);
+  const [previewBgColor, setPreviewBgColor] = React.useState(defaultColors.previewBgColor);
+  const [sectionFrameBgColor, setSectionFrameBgColor] = React.useState(defaultColors.sectionFrameBgColor);
+  const [h2FontColor, setH2FontColor] = React.useState(defaultColors.h2FontColor);
+  const [pokemonNameColor, setPokemonNameColor] = React.useState(defaultColors.pokemonNameColor);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setPreviewBgColor(defaultColors.previewBgColor);
     setSectionFrameBgColor(defaultColors.sectionFrameBgColor);
     setH2FontColor(defaultColors.h2FontColor);
@@ -71,8 +69,7 @@ const TagsMenu = ({ onSelectList, activeLists, onSwipe, variants }) => {
   }, [isLightMode]);
 
   const { isDownloading, downloadImage } = useDownloadImage();
-  const downloadRef = useRef(null);
-  const { handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipe(onSwipe);
+  const downloadRef = React.useRef(null);
 
   const handleDownload = () => {
     const captureArea = downloadRef.current?.getCaptureRef();
@@ -83,9 +80,6 @@ const TagsMenu = ({ onSelectList, activeLists, onSwipe, variants }) => {
   return (
     <div
       className="lists-menu"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
     >
       {isPreviewMode ? (
         <PreviewContainer
@@ -126,7 +120,6 @@ const TagsMenu = ({ onSelectList, activeLists, onSwipe, variants }) => {
           </div>
           <div className="columns-wrapper">
             <div className="column">
-              {/* First column: Caught and Trade */}
               <ListItems
                 listNames={['Caught', 'Trade']}
                 sortedLists={sortedLists}
@@ -134,7 +127,6 @@ const TagsMenu = ({ onSelectList, activeLists, onSwipe, variants }) => {
               />
             </div>
             <div className="column">
-              {/* Second column: Wanted and Unowned */}
               <ListItems
                 listNames={['Wanted', 'Unowned']}
                 sortedLists={sortedLists}

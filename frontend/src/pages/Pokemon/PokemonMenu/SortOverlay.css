@@ -1,7 +1,7 @@
 /* SortOverlay.css */
 .sort-overlay {
     position: fixed;
-    bottom: 3%;
+    bottom: 1.5%;
     right: -99%;
     z-index: 1001;
     transform-origin: bottom right;

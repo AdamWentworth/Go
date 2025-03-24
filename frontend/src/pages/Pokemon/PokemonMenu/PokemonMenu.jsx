@@ -35,7 +35,6 @@ function PokemonMenu({
   variants,
   username,
   setIsFastSelectEnabled,
-  onSwipe,
   searchTerm,
   setSearchTerm,
   showEvolutionaryLine,
@@ -101,7 +100,6 @@ function PokemonMenu({
             key={pokemon.pokemonKey}
             pokemon={pokemon}
             onSelect={() => handleSelect(pokemon)}
-            onSwipe={onSwipe}
             isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
             isShiny={isShiny}
             showShadow={showShadow}
