@@ -19,7 +19,6 @@
 .partner-modal-overlay .modal-content,
 .pokemon-options-overlay .option-card,
 .pokemon-options-overlay .pokemon-card,
-.header .toggle-button,
 .fusion-pokemon-selection-overlay .fusion-modal-content {
     background-color: #e0f0e5;
 }
@@ -63,6 +62,10 @@
     box-shadow: 2px -4px 2px 2px #f8fff9;
 }
 
+.header .toggle-text {
+    color: #abbbb8
+}
+
 /* Text Colors */
 .navbar h1,
 .header,
@@ -99,7 +102,7 @@
 .pokemon-options-overlay .overlay-header,
 .pokemon-options-overlay .option-text,
 .pokemon-options-overlay .preview-text,
-.header .toggle-text,
+.header .toggle-text.active,
 .pokemon-count,
 .pokemon-count-narrow,
 .fusion-pokemon-selection-overlay .fusion-modal-content,
@@ -117,7 +120,6 @@ p,
 }
 
 /* Borders */
-.header .toggle-button,
 .header .collect-ui-toggle {
     border: 1px solid black;
 }
@@ -158,6 +160,10 @@ p,
 /* Light mode specific styles */
 .lucky-backdrop {
     filter: brightness(1.0); /* Set higher brightness for light mode */
+}
+
+.header-underline {
+    background-color: black;
 }
 
 /* Scrollbar Styling */

@@ -349,10 +349,12 @@ const getTransform = () => {
       {isUsernamePath && userExists === false && <h1>User not found</h1>}
 
       <HeaderUIMemo
+        activeView={activeView}
         onListsButtonClick={handleListsButtonClick}
         onPokedexClick={() =>
           setActiveView((prev) => (prev === 'pokedex' ? 'pokemon' : 'pokedex'))
         }
+        onPokemonClick={() => setActiveView('pokemon')}  // NEW handler for Pokémon click
         contextText={contextText}
         totalPokemon={sortedPokemons.length}
         highlightedCards={highlightedCards}

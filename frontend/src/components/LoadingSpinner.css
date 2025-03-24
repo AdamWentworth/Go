@@ -12,7 +12,7 @@
     width: clamp(50px, 10vw, 80px);
     height: clamp(50px, 10vw, 80px);
     background-color: transparent;
-    filter: drop-shadow(0 0 10px #34807d);
+    filter: drop-shadow(0 0 10px #000000);
 }
 
 /* Loading Text Styling */
