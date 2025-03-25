@@ -75,7 +75,6 @@
 }
 
 /* Underline styling */
-/* Underline styling */
 .header-underline {
   position: absolute;
   bottom: 0;
@@ -91,7 +90,7 @@
 @media (max-width: 480px) {
   .toggle-text,
   .free-toggle-text {
-    font-size: 1rem;
+    font-size: 0.7rem;
   }
 }
 

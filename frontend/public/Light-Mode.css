@@ -65,12 +65,14 @@
 .header .toggle-text {
     color: #abbbb8
 }
+.header-section.search-section input {
+background-color: #e7f3df;
+}
 
 /* Text Colors */
 .navbar h1,
 .header,
 .evo-line-checkbox,
-.overlay-content,
 .iv-input,
 .iv-value,
 .pokemon-search-bar,
@@ -79,8 +81,6 @@
 .moves-search-move-add-icon,
 .moves-search-move-add-icon,
 .list-view-container,
-.header .toggle-button,
-.header .collect-ui-toggle,
 .pokemon-action-overlay .overlay-content,
 .update-for-trade-modal-overlay .instance-item,
 .update-for-trade-modal-overlay .modal-content h2#modal-title,
@@ -102,12 +102,9 @@
 .pokemon-options-overlay .overlay-header,
 .pokemon-options-overlay .option-text,
 .pokemon-options-overlay .preview-text,
-.header .toggle-text.active,
-.pokemon-count,
-.pokemon-count-narrow,
 .fusion-pokemon-selection-overlay .fusion-modal-content,
 .header .free-toggle-text {
-    color: black;
+    color: #48615e;
 }
 
 .pokemon-card h2,
@@ -116,7 +113,7 @@ p,
 .favorite-component,
 .move-select,
 .move-select option {
-    color: black;
+    color: #48615e;
 }
 
 /* Borders */
@@ -163,9 +160,14 @@ p,
 }
 
 .header-underline {
-    background-color: black;
+    background-color: #48615e;
 }
-
+.header .toggle-text.active,
+.pokemon-card h2,
+p,
+.overlay-content {
+    color: #48615e;
+}
 /* Scrollbar Styling */
 body::-webkit-scrollbar-track {
     background-color: #f8fff9; /* Light background for the track */

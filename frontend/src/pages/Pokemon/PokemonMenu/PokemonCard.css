@@ -108,7 +108,6 @@
     position: relative; /* Changed from absolute to relative */
     padding: 0;
     z-index: 5;
-    margin-top: 10px;  /* Adjust this value as needed */
     text-align: center;
 }
 
@@ -195,10 +194,10 @@
         padding: 4px;
     }
     .pokemon-card .type-icons {
-        margin-top: 3px;
+        margin-top: 1px;
     }
     .type-icons img {
-        width: 1em;
+        width: 0.6em;
         height: auto;
     }
     .pokemon-card p {
@@ -223,11 +222,11 @@
         padding: 5px;
     }
     .pokemon-card .type-icons {
-        margin-top: 3px;
-        margin-bottom: 2px;
+        margin-top: 2px;
+        margin-bottom: 0px;
     }
     .type-icons img {
-        width: .65em;
+        width: .5em;
     }
     .pokemon-card p {
         font-size: calc((100vw - (8 * 8px)) / 100 * 1);
@@ -251,10 +250,10 @@
     }
     .pokemon-card .type-icons {
         margin-top: 3px;
-        margin-bottom: 2px;
+        margin-bottom: 0px;
     }
     .type-icons img {
-        width: .85em;
+        width: 1em;
     }
     .pokemon-card p {
         font-size: calc((100vw - (8 * 8px)) / 100 * 1.25);
@@ -278,13 +277,13 @@
     }
     .pokemon-card .type-icons {
         margin-top: 3px;
-        margin-bottom: 2px;
+        margin-bottom: 1px;
     }
     .pokemon-card p {
         font-size: calc((100vw - (8 * 8px)) / 100 * 0.75);
     }
     .type-icons img {
-        width: .9em;
+        width: .8em;
     }
     .favorite-icon {
         width: 0.8em;
@@ -304,14 +303,14 @@
         padding: 6px;
     }
     .pokemon-card .type-icons {
-        margin-top: 3px;
+        margin-top: 4px;
         margin-bottom: 0px;
     }
     .pokemon-card p {
         font-size: calc((100vw - (8 * 8px)) / 100 * .8);
     }
     .type-icons img {
-        width: 1.15em;
+        width: 1em;
     }
     .favorite-icon {
         width: 1em;
