@@ -29,8 +29,9 @@
   grid-template-columns: repeat(9, 1fr);
 }
 
-.pokemon-container.has-checkbox .pokemon-grid {
-  padding-top: 100px;
+/* New container for the search menu */
+.search-menu {
+  display: block;
 }
 
 /* Responsive grid adjustments */
@@ -42,6 +43,9 @@
   .pokemon-container.has-checkbox .pokemon-grid {
     padding-top: 85px;
   }
+  .search-menu {
+    padding-top: 70px;
+  }
 }
 
 @media (min-width: 481px) and (max-width: 767px) {
@@ -51,6 +55,9 @@
   }
   .pokemon-container.has-checkbox .pokemon-grid {
     padding-top: 95px;
+  }
+  .search-menu {
+    padding-top: 70px;
   }
 }
 
@@ -62,6 +69,9 @@
   .pokemon-container.has-checkbox .pokemon-grid {
     padding-top: 95px;
   }
+  .search-menu {
+    padding-top: 70px;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -71,6 +81,9 @@
   }
   .pokemon-container.has-checkbox .pokemon-grid {
     padding-top: 100px;
+  }
+  .search-menu {
+    padding-top: 75px;
   }
 }
 

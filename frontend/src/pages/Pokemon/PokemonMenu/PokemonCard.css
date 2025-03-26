@@ -214,6 +214,9 @@
         top: 10%;
         width: 30%;
     }
+    .pokemon-card .pokemon-image-container {
+        width: 75%;
+    }
 }
 
 /* Small devices (landscape phones, 576px and up) */

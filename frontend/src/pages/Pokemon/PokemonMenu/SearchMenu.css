@@ -1,0 +1,190 @@
+/* SearchMenu.css */
+
+/* ============================= */
+/*   Existing Search Menu Styles */
+/* ============================= */
+.search-menu {  
+    pointer-events: auto;
+    position: relative;
+}
+.search-menu h3 {
+    margin-block-start: 0px;
+}
+
+.search-menu .search-menu-section {
+    margin-bottom: clamp(16px, 4vw, 32px);
+}
+
+.search-menu .section-title {
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    margin-bottom: clamp(8px, 2vw, 16px);
+    color: white;
+}
+
+/* Grid Layout */
+.search-menu .filters-grid {
+    display: grid;
+    gap: clamp(8px, 2vw, 16px);
+    width: 100%;
+    grid-template-columns: repeat(auto-fill, minmax(clamp(60px, 10vw, 80px), 1fr));
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 480px) {
+    .search-menu .filters-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+    .search-menu .filters-grid {
+      grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .search-menu .filters-grid {
+      grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .search-menu .filters-grid {
+      grid-template-columns: repeat(9, 1fr);
+    }
+}
+
+/* Filter Item Styling */
+.search-menu .filter-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* Base rule for filter images */
+.search-menu .filter-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Special (Circular) Filter Styling */
+.search-menu .filter-image {
+    width: clamp(40px, 10vw, 4rem);
+    height: clamp(40px, 10vw, 4rem);
+    margin-bottom: clamp(3px, 0.75vw, 6px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Nested image styling for special filters */
+.search-menu .filter-image img {
+    width: clamp(0.85rem, 6.5vw, 2rem);
+    height: auto;
+    object-fit: contain;
+    margin: 0;
+    display: block;
+}
+
+/* Background colors for specific filters */
+.search-menu .filter-image.shiny-background {
+    background-color: #efcf78;
+}
+.search-menu .filter-image.costume-background {
+    background-color: #e4ade4;
+}
+.search-menu .filter-image.shadow-background {
+    background-color: #c39eeb;
+}
+.search-menu .filter-image.mega-background {
+    background-color: #d15382;
+}
+.search-menu .filter-image.dynamax-background {
+    background-color: #de0c87;
+}
+.search-menu .filter-image.gigantamax-background {
+    background-color: #a70e68;
+}
+.search-menu .filter-image.lucky-background {
+    background-color: #eac89b;
+}
+.search-menu .filter-image.percent-background {
+    background-color: #f29ead;
+}
+.search-menu .filter-image.xxs-background {
+    background-color: #ADD8E6; /* Soft Blue for tiny Pokémon */
+}
+.search-menu .filter-image.xxl-background {
+    background-color: #90EE90; /* Soft Green for large Pokémon */
+}
+.search-menu .filter-image.legendary-background {
+    background-color: #595566;
+}
+.search-menu .filter-image.mythical-background {
+    background-color: #e89beb;
+}
+.search-menu .filter-image.regional-background {
+    background-color: #85e0fd;
+}
+
+.search-menu .filter-image.kanto-region {
+    background-image: linear-gradient(135deg, #EE4B2B, #3B4CCA, #FFDE00); /* Red, Blue, Yellow */
+  }
+  
+  .search-menu .filter-image.johto-region {
+    background-image: linear-gradient(135deg, #D4AF37, #C0C0C0, #9BD3E0); /* Gold, Silver, Crystal */
+  }
+  
+  .search-menu .filter-image.hoenn-region {
+    background-image: linear-gradient(135deg, #AA0000, #0A6DC2, #2E8B57); /* Ruby, Sapphire, Emerald */
+  }
+  
+  .search-menu .filter-image.sinnoh-region {
+    background-image: linear-gradient(135deg, #8FD2F5, #E1B8D8, #A7A7A7); /* Diamond, Pearl, Platinum */
+  }
+  
+  .search-menu .filter-image.unova-region {
+    background-image: linear-gradient(135deg, #F5F5F5, #1C1C1C, #F5F5F5); /* Black, White, BW2 Purple */
+  }
+  
+  .search-menu .filter-image.kalos-region {
+    background-image: linear-gradient(135deg, #637CFF, #FF6B81, #B68FCC); /* X, Y, Theme Neutral */
+  }
+  
+  .search-menu .filter-image.alola-region {
+    background-image: linear-gradient(135deg, #FDB813, #2D2D70, #EAADEA); /* Sun, Moon, Ultra tones */
+  }
+  
+  .search-menu .filter-image.galar-region {
+    background-image: linear-gradient(135deg, #0074B8, #D80040, #B9A0E7); /* Sword, Shield, Crown Tundra */
+  }
+  
+  .search-menu .filter-image.hisui-region {
+    background-image: linear-gradient(135deg, #A1A1A1, #AE8BAF, #E3D1A7); /* Ancient tones + Arceus gold */
+  }
+  
+  .search-menu .filter-image.paldea-region {
+    background-image: linear-gradient(135deg, #B80000, #7F3FBF, #FFD966); /* Scarlet, Violet, Gold Academy trim */
+  }  
+
+/* Filter Labels */
+.search-menu .filter-label {
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+    color: white;
+}
+
+/* New rule for type icons */
+.search-menu .filter-image.types img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.search-menu .close-button {
+    left: 150%;
+    z-index: 2000;
+}

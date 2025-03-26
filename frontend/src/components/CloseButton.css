@@ -1,32 +1,42 @@
 /* CloseButton.css */
 
 .close-button {
-  position: fixed; /* Position relative to the viewport */
-  bottom: 20px; /* 20px from the bottom of the viewport */
-  left: 50%; /* Center horizontally within the viewport */
-  transform: translateX(-50%); /* Adjust for centering */
-  background: none; /* Remove background */
-  border: none; /* Remove border */
-  padding: 0; /* Remove padding */
-  cursor: pointer; /* Pointer cursor for interaction */
-  z-index: 1100; /* Ensure it's above other elements */
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 1100;
 }
 
 .close-button-image {
-  width: 40px; /* Adjust image size */
-  height: 40px;
+  /*
+    Similarly increase the min to 50px. 
+    This ensures a bigger button on small devices.
+  */
+  width: clamp(50px, 12vw, 80px);
+  height: clamp(50px, 12vw, 80px);
+  transition: transform 0.2s;
 }
 
+/* Optional breakpoints for further sizing tweaks */
 @media (min-width: 481px) and (max-width: 767px) {
   .close-button-image {
-    width: 50px; /* Adjust image size */
-    height: 50px;
+    width: clamp(60px, 10vw, 90px);
+    height: clamp(60px, 10vw, 90px);
   }
 }
 
 @media (min-width: 768px) {
   .close-button-image {
-    width: 60px; /* Adjust image size */
-    height: 60px;
+    width: clamp(70px, 6vw, 100px);
+    height: clamp(70px, 6vw, 100px);
   }
+}
+
+.close-button:hover .close-button-image {
+  transform: scale(1.05);
 }

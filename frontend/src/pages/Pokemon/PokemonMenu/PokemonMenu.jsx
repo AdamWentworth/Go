@@ -1,6 +1,6 @@
 // PokemonMenu.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { validate as uuidValidate } from 'uuid';
 import PokemonCard from './PokemonCard';
 import PokedexOverlay from './PokedexOverlay';
@@ -9,6 +9,7 @@ import PokemonOptionsOverlay from './PokemonOptionsOverlay';
 import './PokemonMenu.css';
 import { useModal } from '../../../contexts/ModalContext';
 import SearchUI from './SearchUI';
+import SearchMenu from './SearchMenu';
 import SortOverlay from './SortOverlay';
 
 function PokemonMenu({
@@ -39,12 +40,56 @@ function PokemonMenu({
   setSearchTerm,
   showEvolutionaryLine,
   toggleEvolutionaryLine,
+  onSearchMenuStateChange,
 }) {
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [forceMenuOpen, setForceMenuOpen] = useState(false);
   const { alert } = useModal();
   const [optionsSelectedPokemon, setOptionsSelectedPokemon] = useState(null);
+  const searchAreaRef = useRef(null);
+
+  useEffect(() => {
+    function handleDocumentClick(e) {
+      if (searchAreaRef.current && !searchAreaRef.current.contains(e.target)) {
+        setIsSearchFocused(false);
+      }
+    }
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentClick);
+    };
+  }, []);
+
+  const handleFilterClick = (filterText) => {
+    setSearchTerm((prev) => {
+      const newValue = prev ? `${prev} ${filterText}` : filterText;
+      return newValue;
+    });
+    setForceMenuOpen(false);
+  };
+
+  const handleSearchChange = (val) => {
+    if (val.trim() === '') {
+      setForceMenuOpen(true);
+    } else {
+      setForceMenuOpen(false);
+    }
+    setSearchTerm(val);
+  };
+
+  const handleFocusChange = (focused) => {
+    setIsSearchFocused(focused);
+    if (focused) {
+      setForceMenuOpen(true);
+    }
+  };
+
+  const handleCloseMenu = () => {
+    setForceMenuOpen(false);
+    setIsSearchFocused(false);
+  };
 
   const handleSelect = (pokemon) => {
-    console.log('Pokemon selected:', pokemon.pokemonKey);
     if (!isEditable) {
       setSelectedPokemon({ pokemon, overlayType: 'instance' });
       return;
@@ -58,11 +103,10 @@ function PokemonMenu({
       return;
     }
     if (pokemon.ownershipStatus?.disabled) {
-      alert(
-        'This Pokémon is fused with another and is disabled until unfused; no overlay will open.'
-      );
+      alert('This Pokémon is fused with another and is disabled until unfused.');
       return;
     }
+
     const keyParts = pokemon.pokemonKey.split('_');
     const possibleUUID = keyParts[keyParts.length - 1];
     const isInstance = uuidValidate(possibleUUID);
@@ -71,51 +115,68 @@ function PokemonMenu({
   };
 
   const openOverlay = ({ pokemon, isInstance }) => {
-    setSelectedPokemon(
-      isInstance ? { pokemon, overlayType: 'instance' } : pokemon
-    );
+    setSelectedPokemon(isInstance ? { pokemon, overlayType: 'instance' } : pokemon);
   };
 
   if (loading) {
     return <p>Loading...</p>;
   }
 
+  const shouldShowMenu = isSearchFocused && forceMenuOpen;
+
+  useEffect(() => {
+    if (onSearchMenuStateChange) {
+      onSearchMenuStateChange(shouldShowMenu);
+    }
+  }, [shouldShowMenu, onSearchMenuStateChange]);
+
   return (
-    <div className={`pokemon-container ${searchTerm.trim() !== '' ? 'has-checkbox' : ''}`}>
-      {/* Sticky SearchUI header that stays at the top of this panel only */}
-      <header className="search-header">
+    <div
+      className={`pokemon-container ${
+        searchTerm.trim() !== '' ? 'has-checkbox' : ''
+      }`}
+    >
+      <header className="search-header" ref={searchAreaRef}>
         <SearchUI
           searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
+          onSearchChange={handleSearchChange}
           showEvolutionaryLine={showEvolutionaryLine}
           toggleEvolutionaryLine={toggleEvolutionaryLine}
-          totalPokemon={sortedPokemons.length}
-          showCount
+          onFocusChange={handleFocusChange}
         />
-      </header>
-      {/* The grid container for the Pokémon cards */}
-      <main className="pokemon-grid">
-        {sortedPokemons.map((pokemon) => (
-          <PokemonCard
-            key={pokemon.pokemonKey}
-            pokemon={pokemon}
-            onSelect={() => handleSelect(pokemon)}
-            isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
-            isShiny={isShiny}
-            showShadow={showShadow}
-            multiFormPokedexNumbers={multiFormPokedexNumbers}
-            ownershipFilter={ownershipFilter}
-            showAll={showAll}
-            sortType={sortType}
-            isEditable={isEditable}
-            toggleCardHighlight={toggleCardHighlight}
-            setIsFastSelectEnabled={setIsFastSelectEnabled}
-            isFastSelectEnabled={isFastSelectEnabled}
-            variants={allPokemons}
+
+        {shouldShowMenu && (
+          <SearchMenu
+            onFilterClick={handleFilterClick}
+            onCloseMenu={handleCloseMenu}
           />
-        ))}
-      </main>
-      {/* Render SortOverlay if no cards are highlighted */}
+        )}
+      </header>
+
+      {!shouldShowMenu && (
+        <main className="pokemon-grid">
+          {sortedPokemons.map((pokemon) => (
+            <PokemonCard
+              key={pokemon.pokemonKey}
+              pokemon={pokemon}
+              onSelect={() => handleSelect(pokemon)}
+              isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
+              isShiny={isShiny}
+              showShadow={showShadow}
+              multiFormPokedexNumbers={multiFormPokedexNumbers}
+              ownershipFilter={ownershipFilter}
+              showAll={showAll}
+              sortType={sortType}
+              isEditable={isEditable}
+              toggleCardHighlight={toggleCardHighlight}
+              setIsFastSelectEnabled={setIsFastSelectEnabled}
+              isFastSelectEnabled={isFastSelectEnabled}
+              variants={allPokemons}
+            />
+          ))}
+        </main>
+      )}
+
       {highlightedCards.size === 0 && (
         <SortOverlay
           sortType={sortType}
@@ -124,13 +185,15 @@ function PokemonMenu({
           setSortMode={toggleSortMode}
         />
       )}
-      {/* Options overlay (if isEditable) */}
+
       {isEditable && optionsSelectedPokemon && (
         <PokemonOptionsOverlay
           pokemon={optionsSelectedPokemon.pokemon}
           isInstance={optionsSelectedPokemon.isInstance}
           ownershipFilter={ownershipFilter}
-          onClose={() => setOptionsSelectedPokemon(null)}
+          onClose={() => {
+            setOptionsSelectedPokemon(null);
+          }}
           onHighlight={(poke) => {
             toggleCardHighlight(poke.pokemonKey);
             setIsFastSelectEnabled(true);
@@ -145,12 +208,14 @@ function PokemonMenu({
           }}
         />
       )}
-      {/* Instance or Pokedex overlay */}
+
       {selectedPokemon &&
         (selectedPokemon.overlayType === 'instance' ? (
           <InstanceOverlay
             pokemon={selectedPokemon.pokemon}
-            onClose={() => setSelectedPokemon(null)}
+            onClose={() => {
+              setSelectedPokemon(null);
+            }}
             setSelectedPokemon={setSelectedPokemon}
             allPokemons={sortedPokemons}
             ownershipFilter={ownershipFilter}
@@ -169,7 +234,9 @@ function PokemonMenu({
                 ? selectedPokemon.pokemon
                 : selectedPokemon
             }
-            onClose={() => setSelectedPokemon(null)}
+            onClose={() => {
+              setSelectedPokemon(null);
+            }}
             setSelectedPokemon={setSelectedPokemon}
             allPokemons={allPokemons}
           />

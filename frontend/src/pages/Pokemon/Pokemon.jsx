@@ -227,53 +227,49 @@ function Pokemon({ isOwnCollection }) {
     console.log('Active view changed to:', activeView);
   }, [activeView]);
 
-  const handleSwipe = useCallback((direction) => {
-    const nextView = getNextActiveView(activeView, direction);
-    setActiveView(nextView);
-  }, [activeView]);
-
   // Add these new state variables
-const [dragOffset, setDragOffset] = useState(0);
-const [isDragging, setIsDragging] = useState(false);
-const containerRef = useRef(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef(null);
 
-// Update swipe handler initialization
-const swipeHandlers = useSwipeHandler({
-  onSwipe: (direction) => {
-    if (direction) {
-      const nextView = getNextActiveView(activeView, direction);
-      setActiveView(nextView);
+  const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false);
+
+  // Update swipe handler initialization
+  const swipeHandlers = useSwipeHandler({
+    onSwipe: (direction) => {
+      if (direction) {
+        const nextView = getNextActiveView(activeView, direction);
+        setActiveView(nextView);
+      }
+      // Animate back if swipe was canceled
+      setDragOffset(0);
+      setIsDragging(false);
+    },
+    onDrag: (dx) => {
+      if (!containerRef.current) return;
+      const containerWidth = containerRef.current.offsetWidth;
+      const maxOffset = containerWidth * 0.3; // Max peek distance
+      
+      // Limit drag offset to max peek distance
+      const limitedDx = Math.max(-maxOffset, Math.min(maxOffset, dx));
+      setDragOffset(limitedDx);
+      setIsDragging(true);
     }
-    // Animate back if swipe was canceled
-    setDragOffset(0);
-    setIsDragging(false);
-  },
-  onDrag: (dx) => {
-    if (!containerRef.current) return;
-    const containerWidth = containerRef.current.offsetWidth;
-    const maxOffset = containerWidth * 0.3; // Max peek distance
-    
-    // Limit drag offset to max peek distance
-    const limitedDx = Math.max(-maxOffset, Math.min(maxOffset, dx));
-    setDragOffset(limitedDx);
-    setIsDragging(true);
-  }
-});
+  });
 
-// Add to your existing transform calculation
-const getTransform = () => {
-  const viewIndex = ['pokedex', 'pokemon', 'tags'].indexOf(activeView);
-  let baseTransform = -viewIndex * 100;
-  
-  // Add drag offset as percentage of container width
-  if (containerRef.current) {
-    const containerWidth = containerRef.current.offsetWidth;
-    const offsetPercentage = (dragOffset / containerWidth) * 100;
-    baseTransform += offsetPercentage;
-  }
-  
-  return `translateX(${baseTransform}%)`;
-};
+  const getTransform = () => {
+    const viewIndex = ['pokedex', 'pokemon', 'tags'].indexOf(activeView);
+    let baseTransform = -viewIndex * 100;
+    
+    // Add drag offset as percentage of container width
+    if (containerRef.current) {
+      const containerWidth = containerRef.current.offsetWidth;
+      const offsetPercentage = (dragOffset / containerWidth) * 100;
+      baseTransform += offsetPercentage;
+    }
+    
+    return `translateX(${baseTransform}%)`;
+  };
 
   const {
     handleTouchStart,
@@ -423,6 +419,10 @@ const getTransform = () => {
               setSearchTerm={setSearchTerm}
               showEvolutionaryLine={showEvolutionaryLine}
               toggleEvolutionaryLine={toggleEvolutionaryLine}
+              onSearchMenuStateChange={(open) => {
+                console.log('[Pokemon] onSearchMenuStateChange ->', open);
+                setIsSearchMenuOpen(open);
+              }}
             />
           </div>
 
@@ -456,7 +456,6 @@ const getTransform = () => {
           </>
         )}
       </div>
-
       <ActionMenu />
 
       <MegaPokemonModal />

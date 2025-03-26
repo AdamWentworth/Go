@@ -1,19 +1,25 @@
 // SearchUI.jsx
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { debounce } from 'lodash';
 import './SearchUI.css';
 
 function SearchUI({
-  searchTerm, // initial value from parent
+  searchTerm,
   onSearchChange,
   showEvolutionaryLine,
   toggleEvolutionaryLine,
+  onFocusChange,
 }) {
   const [inputValue, setInputValue] = useState(searchTerm);
-  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    setInputValue(searchTerm);
+  }, [searchTerm]);
 
   const debouncedSearchChange = useCallback(
-    debounce((value) => onSearchChange(value), 250),
+    debounce((value) => {
+      onSearchChange(value);
+    }, 250),
     [onSearchChange]
   );
 
@@ -23,21 +29,23 @@ function SearchUI({
     debouncedSearchChange(value);
   };
 
-  const showEvoCheckbox = inputValue.trim() !== '';
+  const handleFocus = () => {
+    if (onFocusChange) {
+      onFocusChange(true);
+    }
+  };
 
   return (
-    <div className={`header-section search-section ${showEvoCheckbox ? 'with-evo-checkbox' : ''}`}>
+    <div className="header-section search-section">
       <div className="search-input-wrapper">
         <input
           type="text"
           value={inputValue}
+          onFocus={handleFocus}
           onChange={handleInputChange}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
           className="search-input"
         />
-        {/* Render the placeholder only when the input is empty and not focused */}
-        {!isFocused && inputValue.trim() === '' && (
+        {inputValue.trim() === '' && (
           <div className="placeholder-container">
             <img
               src="/images/search_icon.png"
@@ -48,7 +56,7 @@ function SearchUI({
           </div>
         )}
       </div>
-      {showEvoCheckbox && (
+      {inputValue.trim() !== '' && (
         <label className="evo-line-checkbox">
           <div className="checkbox-container">
             <input
