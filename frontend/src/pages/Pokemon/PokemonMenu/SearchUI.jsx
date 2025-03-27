@@ -49,8 +49,10 @@ function SearchUI({
     }
   };
 
+  const layoutClass = getLayoutClass();
+
   return (
-    <div className={`header-section search-section ${getLayoutClass()}`}>
+    <div className={`header-section search-section ${layoutClass}`}>
       <div className="search-row">
         <div className="arrow-input-wrapper">
           <img
@@ -68,7 +70,14 @@ function SearchUI({
               onChange={handleInputChange}
               className="search-input"
             />
-            {inputValue.trim() === '' && (
+            {/* Left-aligned search icon for focused/text states */}
+            <img
+              src="/images/search_icon.png"
+              alt="Search Icon"
+              className="search-icon-left"
+            />
+            {/* Centered placeholder only for base state */}
+            {layoutClass === 'search-layout--base' && (
               <div className="placeholder-container">
                 <img
                   src="/images/search_icon.png"

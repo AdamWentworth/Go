@@ -60,6 +60,7 @@
   border: none;
   outline: none;
   border-radius: 9999px;
+  transition: padding 0.3s ease; /* Add transition for smooth padding change */
 }
 
 .placeholder-container {
@@ -183,6 +184,41 @@
 .search-layout--with-text .search-input-wrapper {
   /* Immediate transition when expanding */
   transition: left 0.3s ease 0s; /* No delay when showing arrow */
+}
+
+.search-icon-left {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: clamp(0.85rem, 3vw, 1.25rem);
+  height: auto;
+  filter: invert(0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+/* Show left icon in focused/text states */
+.search-layout--focused .search-icon-left,
+.search-layout--with-text .search-icon-left {
+  opacity: 1;
+}
+
+/* Hide centered placeholder in focused/text states */
+.search-layout--focused .placeholder-container,
+.search-layout--with-text .placeholder-container {
+  display: none;
+}
+
+.search-layout--focused .search-input,
+.search-layout--with-text .search-input {
+  padding-left: 35px; /* Adjust this value based on your icon size + spacing needs */
+}
+
+/* Keep original padding for base state */
+.search-layout--base .search-input {
+  padding-left: 20px;
 }
 
 /* 
