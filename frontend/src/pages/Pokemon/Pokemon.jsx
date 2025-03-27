@@ -236,6 +236,8 @@ function Pokemon({ isOwnCollection }) {
 
   const MAX_PEEK_DISTANCE = 0.3;
 
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
   // Update swipe handler initialization
   const swipeHandlers = useSwipeHandler({
     onSwipe: (direction) => {
@@ -264,15 +266,17 @@ function Pokemon({ isOwnCollection }) {
     return `translate3d(${baseTransform + offsetPercentage}%, 0, 0)`;
   };
   
-
-  const {
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-  } = swipeHandlers;
+  // Then modify the swipeEventHandlers creation to:
+  const swipeEventHandlers = {
+    onTouchStart: swipeHandlers.handleTouchStart,
+    onTouchMove: swipeHandlers.handleTouchMove,
+    onTouchEnd: swipeHandlers.handleTouchEnd,
+    ...(isDevelopment ? {
+      onMouseDown: swipeHandlers.handleMouseDown,
+      onMouseMove: swipeHandlers.handleMouseMove,
+      onMouseUp: swipeHandlers.handleMouseUp
+    } : {})
+  };
 
   const pokedexPanelRef = useRef(null);
   const mainListPanelRef = useRef(null);
@@ -349,13 +353,7 @@ function Pokemon({ isOwnCollection }) {
       <div 
         className="view-slider-container"
         ref={containerRef}
-        // Re-add these crucial event handlers
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
+        {...swipeEventHandlers}
         style={{ 
           overflow: 'hidden',
           touchAction: 'pan-y', // Allow vertical scrolling

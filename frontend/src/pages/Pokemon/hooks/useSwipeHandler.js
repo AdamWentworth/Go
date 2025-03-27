@@ -122,8 +122,11 @@ export default function useSwipeHandler({ onSwipe, onDrag }) {
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
+    // Only include mouse handlers in development
+    ...(process.env.NODE_ENV === 'development' ? {
+      handleMouseDown,
+      handleMouseMove,
+      handleMouseUp
+    } : {})
   };
 }
