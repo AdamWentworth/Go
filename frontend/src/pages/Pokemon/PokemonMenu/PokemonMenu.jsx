@@ -143,6 +143,7 @@ function PokemonMenu({
           showEvolutionaryLine={showEvolutionaryLine}
           toggleEvolutionaryLine={toggleEvolutionaryLine}
           onFocusChange={handleFocusChange}
+          onArrowClick={handleCloseMenu}
         />
 
         {shouldShowMenu && (

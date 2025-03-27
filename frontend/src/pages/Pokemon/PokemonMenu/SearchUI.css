@@ -1,9 +1,6 @@
-/* 
-  ================
-  Base Styles
-  ================
-*/
-
+/* ===================== */
+/* Component Structure */
+/* ===================== */
 .header-section.search-section {
   position: fixed;
   top: 0;
@@ -34,13 +31,23 @@
   top: 50%;
   left: 0;
   transform: translateY(-50%) scaleX(-1);
-  width: 24px;
+  width: 18px; /* Reduced from 24px to 75% of original size */
   transition: opacity 0.3s ease;
   opacity: 0;
   pointer-events: none;
   z-index: 10;
+  cursor: pointer; /* Add pointer cursor */
 }
 
+.arrow-icon:hover {
+  filter: brightness(1.2);
+  transform: translateY(-50%) scaleX(-1) scale(1.1);
+  cursor: pointer; /* Add pointer cursor */
+}
+
+/* ===================== */
+/* Search Input & Elements */
+/* ===================== */
 .search-input-wrapper {
   position: absolute;
   top: 0;
@@ -60,7 +67,7 @@
   border: none;
   outline: none;
   border-radius: 9999px;
-  transition: padding 0.3s ease; /* Add transition for smooth padding change */
+  transition: padding 0.3s ease;
 }
 
 .placeholder-container {
@@ -87,16 +94,70 @@
   font-size: clamp(0.85rem, 3vw, 1.25rem);
 }
 
-.evo-line-checkbox {
-  display: none;
-  color: #ffffff;
-  font-size: 1em;
-  margin-top: 5px;
+.clear-button-container {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  opacity: 0.8;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.clear-button-container::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 100%;
+  width: 1px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.clear-button-container:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.clear-icon {
+  width: 16px;
+  height: 16px;
+  filter: invert(0.8);
+}
+
+.search-icon-left {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: clamp(0.85rem, 3vw, 1.25rem);
+  height: auto;
+  filter: invert(0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+/* ===================== */
+/* Evolutionary Line Checkbox */
+/* ===================== */
+.evo-line-checkbox {
+  display: inline-flex; /* Changed from flex */
+  color: #ffffff;
+  font-size: 1em;
+  margin: 5px auto 0; /* Center horizontally */
+  padding: 4px 8px; /* Add some padding around content */
+  align-items: center;
   gap: 0.5em;
   cursor: pointer;
+  border-radius: 4px; /* Optional: subtle rounded corners */
+  width: auto; /* Ensure it doesn't stretch to full width */
 }
 
 .checkbox-container {
@@ -131,12 +192,9 @@
   line-height: 1;
 }
 
-/* 
-  ================
-  Layout Modifiers
-  ================
-*/
-
+/* ===================== */
+/* Layout Modifiers */
+/* ===================== */
 .search-layout--base .arrow-icon {
   opacity: 0;
   transition: opacity 0.3s ease 0.3s;
@@ -144,8 +202,7 @@
 
 .search-layout--base .search-input-wrapper {
   left: 0;
-  /* Match arrow's transition timing with delay */
-  transition: left 0.3s ease 0.3s; /* Added delay to sync with arrow */
+  transition: left 0.3s ease 0.3s;
 }
 
 .search-layout--base .evo-line-checkbox {
@@ -154,8 +211,9 @@
 
 .search-layout--focused .arrow-icon {
   opacity: 1;
-  pointer-events: none;
+  pointer-events: auto;
   transition: opacity 0.3s ease;
+  cursor: pointer;
 }
 
 .search-layout--focused .search-input-wrapper {
@@ -168,65 +226,43 @@
 
 .search-layout--with-text .arrow-icon {
   opacity: 1;
-  pointer-events: none;
+  pointer-events: auto;
   transition: opacity 0.3s ease;
+  cursor: pointer;
 }
 
 .search-layout--with-text .search-input-wrapper {
   left: 32px;
 }
 
-.search-layout--with-text .evo-line-checkbox {
-  display: flex;
-}
-
 .search-layout--focused .search-input-wrapper,
 .search-layout--with-text .search-input-wrapper {
-  /* Immediate transition when expanding */
-  transition: left 0.3s ease 0s; /* No delay when showing arrow */
+  transition: left 0.3s ease 0s;
 }
 
-.search-icon-left {
-  position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: clamp(0.85rem, 3vw, 1.25rem);
-  height: auto;
-  filter: invert(0.5);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-/* Show left icon in focused/text states */
 .search-layout--focused .search-icon-left,
 .search-layout--with-text .search-icon-left {
   opacity: 1;
 }
 
-/* Hide centered placeholder in focused/text states */
 .search-layout--focused .placeholder-container,
 .search-layout--with-text .placeholder-container {
   display: none;
 }
 
-.search-layout--focused .search-input,
-.search-layout--with-text .search-input {
-  padding-left: 35px; /* Adjust this value based on your icon size + spacing needs */
+.search-layout--with-text .search-input,
+.search-layout--focused .search-input {
+  padding-left: 35px;
+  padding-right: 60px;
 }
 
-/* Keep original padding for base state */
 .search-layout--base .search-input {
   padding-left: 20px;
 }
 
-/* 
-  ================
-  Misc / Responsive
-  ================
-*/
-
+/* ===================== */
+/* Responsive Design */
+/* ===================== */
 @media (max-width: 480px) {
   .header-section.search-section {
     font-size: 8px;
@@ -253,6 +289,11 @@
     width: 2em;
     height: 2em;
   }
+
+  .search-layout--with-text .search-input,
+  .search-layout--focused .search-input {
+  padding-left: 40px;
+}
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {

@@ -8,6 +8,7 @@ function SearchUI({
   showEvolutionaryLine,
   toggleEvolutionaryLine,
   onFocusChange,
+  onArrowClick,
 }) {
   const [inputValue, setInputValue] = useState(searchTerm);
   const [isFocused, setIsFocused] = useState(false);
@@ -39,6 +40,13 @@ function SearchUI({
     onFocusChange?.(false);
   };
 
+  const handleClearInput = () => {
+    setInputValue('');
+    onSearchChange('');
+    onFocusChange?.(true);
+    setIsFocused(true);
+  };
+
   const getLayoutClass = () => {
     if (inputValue.trim() !== '') {
       return 'search-layout--with-text';
@@ -59,6 +67,7 @@ function SearchUI({
             src="/images/arrow_right.png"
             alt="Arrow Left"
             className="arrow-icon"
+            onClick={onArrowClick}
           />
 
           <div className="search-input-wrapper">
@@ -70,6 +79,16 @@ function SearchUI({
               onChange={handleInputChange}
               className="search-input"
             />
+            {/* Add clear button */}
+            {inputValue.trim() !== '' && (
+              <div className="clear-button-container" onClick={handleClearInput}>
+                <img
+                  src="/images/close.png"
+                  alt="Clear input"
+                  className="clear-icon"
+                />
+              </div>
+            )}
             {/* Left-aligned search icon for focused/text states */}
             <img
               src="/images/search_icon.png"
