@@ -1,4 +1,3 @@
-// SearchUI.jsx
 import React, { useState, useCallback, useEffect } from 'react';
 import { debounce } from 'lodash';
 import './SearchUI.css';
@@ -11,6 +10,7 @@ function SearchUI({
   onFocusChange,
 }) {
   const [inputValue, setInputValue] = useState(searchTerm);
+  const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
     setInputValue(searchTerm);
@@ -30,32 +30,58 @@ function SearchUI({
   };
 
   const handleFocus = () => {
-    if (onFocusChange) {
-      onFocusChange(true);
+    setIsFocused(true);
+    onFocusChange?.(true);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    onFocusChange?.(false);
+  };
+
+  const getLayoutClass = () => {
+    if (inputValue.trim() !== '') {
+      return 'search-layout--with-text';
+    } else if (isFocused) {
+      return 'search-layout--focused';
+    } else {
+      return 'search-layout--base';
     }
   };
 
   return (
-    <div className="header-section search-section">
-      <div className="search-input-wrapper">
-        <input
-          type="text"
-          value={inputValue}
-          onFocus={handleFocus}
-          onChange={handleInputChange}
-          className="search-input"
-        />
-        {inputValue.trim() === '' && (
-          <div className="placeholder-container">
-            <img
-              src="/images/search_icon.png"
-              alt="Search Icon"
-              className="search-icon"
+    <div className={`header-section search-section ${getLayoutClass()}`}>
+      <div className="search-row">
+        <div className="arrow-input-wrapper">
+          <img
+            src="/images/arrow_right.png"
+            alt="Arrow Left"
+            className="arrow-icon"
+          />
+
+          <div className="search-input-wrapper">
+            <input
+              type="text"
+              value={inputValue}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              onChange={handleInputChange}
+              className="search-input"
             />
-            <span className="placeholder-text">Search</span>
+            {inputValue.trim() === '' && (
+              <div className="placeholder-container">
+                <img
+                  src="/images/search_icon.png"
+                  alt="Search Icon"
+                  className="search-icon"
+                />
+                <span className="placeholder-text">Search</span>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
+
       {inputValue.trim() !== '' && (
         <label className="evo-line-checkbox">
           <div className="checkbox-container">
@@ -66,7 +92,7 @@ function SearchUI({
               checked={showEvolutionaryLine}
               onChange={toggleEvolutionaryLine}
             />
-            <span className="evo-line-custom-checkbox"></span>
+            <span className="evo-line-custom-checkbox" />
           </div>
           SHOW EVOLUTIONARY LINE
         </label>
