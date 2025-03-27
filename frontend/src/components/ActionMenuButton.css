@@ -9,25 +9,18 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  overflow: hidden; /* Clipping any overflow */
+  overflow: hidden;
 }
 
 .action-menu-button-image {
-  /*
-    Make the smallest size bigger on small screens by raising the min value.
-    For instance, clamp(50px, 12vw, 80px) means:
-      - min: 50px,
-      - preferred: 12vw,
-      - max: 80px
-  */
+  /* Small screens */
   width: clamp(50px, 12vw, 80px);
   height: clamp(50px, 12vw, 80px);
   transition: transform 0.2s;
   filter: drop-shadow(0 0 3px #ffffff);
 }
 
-/* If you want to refine further at breakpoints, 
-   you can still override the clamp with a bigger range. */
+/* Medium screens */
 @media (min-width: 481px) and (max-width: 767px) {
   .action-menu-button-image {
     width: clamp(60px, 10vw, 90px);
@@ -35,10 +28,11 @@
   }
 }
 
+/* Wider screens */
 @media (min-width: 768px) {
   .action-menu-button-image {
-    width: clamp(70px, 6vw, 100px);
-    height: clamp(70px, 6vw, 100px);
+    width: clamp(60px, 3.5vw, 80px);
+    height: clamp(60px, 3.5vw, 80px);
   }
 }
 

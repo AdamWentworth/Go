@@ -13,16 +13,13 @@
 }
 
 .close-button-image {
-  /*
-    Similarly increase the min to 50px. 
-    This ensures a bigger button on small devices.
-  */
+  /* Small screens */
   width: clamp(50px, 12vw, 80px);
   height: clamp(50px, 12vw, 80px);
   transition: transform 0.2s;
 }
 
-/* Optional breakpoints for further sizing tweaks */
+/* Medium screens */
 @media (min-width: 481px) and (max-width: 767px) {
   .close-button-image {
     width: clamp(60px, 10vw, 90px);
@@ -30,10 +27,11 @@
   }
 }
 
+/* Wider screens */
 @media (min-width: 768px) {
   .close-button-image {
-    width: clamp(70px, 6vw, 100px);
-    height: clamp(70px, 6vw, 100px);
+    width: clamp(60px, 3.5vw, 80px);
+    height: clamp(60px, 3.5vw, 80px);
   }
 }
 
