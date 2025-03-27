@@ -2,8 +2,6 @@
 import React from 'react';
 import useWindowWidth from '../hooks/useWindowWidth';
 import './PokedexListsMenu.css';
-// Import the centralized swipe hook
-import useSwipeHandler from '../hooks/useSwipeHandler';
 
 const PokedexListsMenu = ({
   setOwnershipFilter,

@@ -81,12 +81,18 @@ export default function useSwipeHandler({ onSwipe, onDrag }) {
   // Touch event handlers
   const handleTouchStart = useCallback((e) => {
     const touch = e.touches[0];
+    const target = e.target;
+    if (['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)) return;
+    
     handleStart(touch.clientX, touch.clientY);
     e.preventDefault();
   }, [handleStart]);
 
   const handleTouchMove = useCallback((e) => {
     const touch = e.touches[0];
+    const target = e.target;
+    if (['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)) return;
+    
     handleMove(touch.clientX, touch.clientY);
     if (directionLock.current === 'horizontal') e.preventDefault();
   }, [handleMove]);
@@ -99,6 +105,9 @@ export default function useSwipeHandler({ onSwipe, onDrag }) {
 
   // Mouse event handlers
   const handleMouseDown = useCallback((e) => {
+    const target = e.target;
+    if (['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)) return;
+  
     if (e.button === 0) {
       handleStart(e.clientX, e.clientY);
       e.preventDefault();
