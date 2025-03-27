@@ -23,6 +23,11 @@
   height: 100%;        /* fill container's height */
   width: 100%;         /* 3 slides (pokedex, main list, ownership) each 100% */
   transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  user-select: none; /* Prevent text selection during drag */
+  touch-action: none; /* Disable browser's default touch handling */
 }
 
 /* Each panel: full container height + its own scrollbar. */

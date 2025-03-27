@@ -261,10 +261,16 @@ function Pokemon({ isOwnCollection }) {
     const viewIndex = ['pokedex', 'pokemon', 'tags'].indexOf(activeView);
     let baseTransform = -viewIndex * 100;
     
-    // Add drag offset as percentage of container width
+    // Smooth drag offset calculation
     if (containerRef.current) {
       const containerWidth = containerRef.current.offsetWidth;
-      const offsetPercentage = (dragOffset / containerWidth) * 100;
+      const maxPeekDistance = containerWidth * 0.3; // 30% of container width
+      
+      // Apply non-linear dampening to drag offset
+      const smoothDragOffset = Math.sign(dragOffset) * 
+        Math.pow(Math.abs(dragOffset), 0.7) * (maxPeekDistance / Math.pow(maxPeekDistance, 0.7));
+      
+      const offsetPercentage = (smoothDragOffset / containerWidth) * 100;
       baseTransform += offsetPercentage;
     }
     
@@ -283,13 +289,6 @@ function Pokemon({ isOwnCollection }) {
   const pokedexPanelRef = useRef(null);
   const mainListPanelRef = useRef(null);
   const ownershipPanelRef = useRef(null);
-
-  useEffect(() => {
-    if (pokedexPanelRef.current) pokedexPanelRef.current.scrollTop = 0;
-    if (mainListPanelRef.current) mainListPanelRef.current.scrollTop = 0;
-    if (ownershipPanelRef.current) ownershipPanelRef.current.scrollTop = 0;
-    window.scrollTo(0, 0);
-  }, [activeView]);
 
   const handleListsButtonClick = () => {
     setActiveView((prev) => (prev === 'tags' ? 'pokemon' : 'tags'));
@@ -420,7 +419,6 @@ function Pokemon({ isOwnCollection }) {
               showEvolutionaryLine={showEvolutionaryLine}
               toggleEvolutionaryLine={toggleEvolutionaryLine}
               onSearchMenuStateChange={(open) => {
-                console.log('[Pokemon] onSearchMenuStateChange ->', open);
                 setIsSearchMenuOpen(open);
               }}
             />
