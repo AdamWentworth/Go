@@ -1,130 +1,106 @@
 // useSwipeHandler.js
 import { useRef, useCallback } from 'react';
 
-const PEEK_THRESHOLD = 5; // Reduced from 10
-const MAX_PEEK_DISTANCE = 0.25; // Reduced from 0.3 (25% of screen width)
-const BASE_FRICTION = 0.7; // Reduced resistance
-const VELOCITY_FACTOR = 0.15; // Increased velocity impact
-const DIRECTION_LOCK_ANGLE = 25; // More forgiving angle
-const MIN_SWIPE_VELOCITY = 0.3; // px/ms (new threshold)
+const PEEK_THRESHOLD = 30;
+const SWIPE_THRESHOLD = 100;
+const MAX_PEEK_DISTANCE = 0.3;
+const DIRECTION_LOCK_ANGLE = 30;
 
 export default function useSwipeHandler({ onSwipe, onDrag }) {
   const startX = useRef(0);
   const startY = useRef(0);
   const lastX = useRef(0);
-  const lastTime = useRef(0);
   const isDragging = useRef(false);
-  const offsetRef = useRef(0);
   const directionLock = useRef(null);
 
+  const isInteractiveElement = (target) => {
+    const interactiveTags = ['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT', 'LABEL'];
+    return interactiveTags.includes(target?.tagName) || 
+           target?.contentEditable === 'true';
+  };
+
   const handleStart = useCallback((x, y) => {
+    if (isInteractiveElement(document.elementFromPoint(x, y))) return;
+    
     startX.current = x;
     startY.current = y;
     lastX.current = x;
-    lastTime.current = Date.now();
     isDragging.current = true;
-    offsetRef.current = 0;
     directionLock.current = null;
   }, []);
 
   const handleMove = useCallback((x, y) => {
     if (!isDragging.current) return;
 
-    const dx = x - startX.current;
-    const dy = y - startY.current;
-    
+    // Establish direction lock
     if (!directionLock.current) {
+      const dx = x - startX.current;
+      const dy = y - startY.current;
       const angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
-      directionLock.current = angle < DIRECTION_LOCK_ANGLE || angle > (180 - DIRECTION_LOCK_ANGLE) ? 'horizontal' : 'vertical';
+      
+      if (angle < DIRECTION_LOCK_ANGLE || angle > 180 - DIRECTION_LOCK_ANGLE) {
+        directionLock.current = 'horizontal';
+      } else {
+        directionLock.current = 'vertical';
+      }
     }
 
     if (directionLock.current === 'horizontal') {
-      const now = Date.now();
-      const deltaX = x - lastX.current;
-      const deltaTime = Math.max(1, now - lastTime.current);
+      const dx = x - startX.current;
+      const limitedDx = Math.max(-window.innerWidth * MAX_PEEK_DISTANCE, 
+        Math.min(window.innerWidth * MAX_PEEK_DISTANCE, dx));
       
-      // Increased sensitivity with velocity boost
-      const velocity = deltaX / deltaTime;
-      const dynamicFriction = BASE_FRICTION - (Math.abs(velocity) * VELOCITY_FACTOR);
-      
-      // Apply velocity boost to offset
-      offsetRef.current += deltaX * Math.max(dynamicFriction, 0.3) * 1.2;
-      onDrag?.(offsetRef.current);
-      
+      onDrag?.(limitedDx);
       lastX.current = x;
-      lastTime.current = now;
     }
   }, [onDrag]);
 
   const handleEnd = useCallback(() => {
     if (!isDragging.current) return;
     
-    if (directionLock.current === 'horizontal') {
-      const containerWidth = window.innerWidth;
-      const absOffset = Math.abs(offsetRef.current);
-      const velocity = absOffset / (Date.now() - lastTime.current);
-      
-      // Combine distance and velocity thresholds
-      const isDistanceSwipe = absOffset > (containerWidth * MAX_PEEK_DISTANCE);
-      const isVelocitySwipe = velocity > MIN_SWIPE_VELOCITY;
-      
-      if (isDistanceSwipe || isVelocitySwipe) {
-        const direction = offsetRef.current > 0 ? 'right' : 'left';
-        onSwipe?.(direction);
-      }
+    const dx = lastX.current - startX.current;
+    const absDx = Math.abs(dx);
+    
+    if (absDx > SWIPE_THRESHOLD) {
+      onSwipe?.(dx > 0 ? 'right' : 'left');
+    } else {
+      onSwipe?.(null);
     }
     
     isDragging.current = false;
-    offsetRef.current = 0;
   }, [onSwipe]);
 
-  // Touch event handlers
+  // Touch handlers
   const handleTouchStart = useCallback((e) => {
     const touch = e.touches[0];
-    const target = e.target;
-    if (['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)) return;
-    
     handleStart(touch.clientX, touch.clientY);
-    e.preventDefault();
   }, [handleStart]);
 
   const handleTouchMove = useCallback((e) => {
     const touch = e.touches[0];
-    const target = e.target;
-    if (['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)) return;
-    
     handleMove(touch.clientX, touch.clientY);
-    if (directionLock.current === 'horizontal') e.preventDefault();
-  }, [handleMove]);
-
-  const handleTouchEnd = useCallback((e) => {
-    handleEnd();
-    // Prevent any lingering default behaviors
-    e.preventDefault();
-  }, [handleEnd]);
-
-  // Mouse event handlers
-  const handleMouseDown = useCallback((e) => {
-    const target = e.target;
-    if (['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName)) return;
-  
-    if (e.button === 0) {
-      handleStart(e.clientX, e.clientY);
+    
+    // Only prevent scroll when swiping horizontally
+    if (directionLock.current === 'horizontal') {
       e.preventDefault();
     }
+  }, [handleMove]);
+
+  const handleTouchEnd = useCallback(() => {
+    handleEnd();
+  }, [handleEnd]);
+
+  // Mouse handlers
+  const handleMouseDown = useCallback((e) => {
+    handleStart(e.clientX, e.clientY);
   }, [handleStart]);
 
   const handleMouseMove = useCallback((e) => {
-    if (e.buttons === 1) {
-      handleMove(e.clientX, e.clientY);
-    }
+    if (e.buttons === 1) handleMove(e.clientX, e.clientY);
   }, [handleMove]);
 
-  const handleMouseUp = useCallback((e) => {
-    // Only end on left mouse button
-    if (e.button === 0) {
-      handleEnd();
-    }
+  const handleMouseUp = useCallback(() => {
+    handleEnd();
   }, [handleEnd]);
 
   return {
