@@ -1,11 +1,12 @@
 // useSwipeHandler.js
 import { useRef, useCallback } from 'react';
 
-const PEEK_THRESHOLD = 10;
-const MAX_PEEK_DISTANCE = 0.3;
-const BASE_FRICTION = 0.78;
-const VELOCITY_FACTOR = 0.12;
-const DIRECTION_LOCK_ANGLE = 30; // Degrees from vertical to consider as horizontal swipe
+const PEEK_THRESHOLD = 5; // Reduced from 10
+const MAX_PEEK_DISTANCE = 0.25; // Reduced from 0.3 (25% of screen width)
+const BASE_FRICTION = 0.7; // Reduced resistance
+const VELOCITY_FACTOR = 0.15; // Increased velocity impact
+const DIRECTION_LOCK_ANGLE = 25; // More forgiving angle
+const MIN_SWIPE_VELOCITY = 0.3; // px/ms (new threshold)
 
 export default function useSwipeHandler({ onSwipe, onDrag }) {
   const startX = useRef(0);
@@ -32,22 +33,22 @@ export default function useSwipeHandler({ onSwipe, onDrag }) {
     const dx = x - startX.current;
     const dy = y - startY.current;
     
-    // Determine swipe direction lock
     if (!directionLock.current) {
       const angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
       directionLock.current = angle < DIRECTION_LOCK_ANGLE || angle > (180 - DIRECTION_LOCK_ANGLE) ? 'horizontal' : 'vertical';
     }
 
-    // Only process horizontal movement if direction is locked to horizontal
     if (directionLock.current === 'horizontal') {
       const now = Date.now();
       const deltaX = x - lastX.current;
       const deltaTime = Math.max(1, now - lastTime.current);
       
+      // Increased sensitivity with velocity boost
       const velocity = deltaX / deltaTime;
       const dynamicFriction = BASE_FRICTION - (Math.abs(velocity) * VELOCITY_FACTOR);
       
-      offsetRef.current += deltaX * Math.max(dynamicFriction, 0.4);
+      // Apply velocity boost to offset
+      offsetRef.current += deltaX * Math.max(dynamicFriction, 0.3) * 1.2;
       onDrag?.(offsetRef.current);
       
       lastX.current = x;
@@ -58,12 +59,19 @@ export default function useSwipeHandler({ onSwipe, onDrag }) {
   const handleEnd = useCallback(() => {
     if (!isDragging.current) return;
     
-    // Only trigger swipe if direction was horizontal
     if (directionLock.current === 'horizontal') {
       const containerWidth = window.innerWidth;
-      const isSwipe = Math.abs(offsetRef.current) > (containerWidth * MAX_PEEK_DISTANCE);
-      const direction = offsetRef.current > 0 ? 'right' : 'left';
-      onSwipe?.(isSwipe ? direction : null);
+      const absOffset = Math.abs(offsetRef.current);
+      const velocity = absOffset / (Date.now() - lastTime.current);
+      
+      // Combine distance and velocity thresholds
+      const isDistanceSwipe = absOffset > (containerWidth * MAX_PEEK_DISTANCE);
+      const isVelocitySwipe = velocity > MIN_SWIPE_VELOCITY;
+      
+      if (isDistanceSwipe || isVelocitySwipe) {
+        const direction = offsetRef.current > 0 ? 'right' : 'left';
+        onSwipe?.(direction);
+      }
     }
     
     isDragging.current = false;
