@@ -234,6 +234,8 @@ function Pokemon({ isOwnCollection }) {
 
   const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false);
 
+  const MAX_PEEK_DISTANCE = 0.3;
+
   // Update swipe handler initialization
   const swipeHandlers = useSwipeHandler({
     onSwipe: (direction) => {
@@ -241,16 +243,13 @@ function Pokemon({ isOwnCollection }) {
         const nextView = getNextActiveView(activeView, direction);
         setActiveView(nextView);
       }
-      // Animate back if swipe was canceled
       setDragOffset(0);
       setIsDragging(false);
     },
     onDrag: (dx) => {
       if (!containerRef.current) return;
       const containerWidth = containerRef.current.offsetWidth;
-      const maxOffset = containerWidth * 0.3; // Max peek distance
-      
-      // Limit drag offset to max peek distance
+      const maxOffset = containerWidth * MAX_PEEK_DISTANCE;
       const limitedDx = Math.max(-maxOffset, Math.min(maxOffset, dx));
       setDragOffset(limitedDx);
       setIsDragging(true);
@@ -259,23 +258,12 @@ function Pokemon({ isOwnCollection }) {
 
   const getTransform = () => {
     const viewIndex = ['pokedex', 'pokemon', 'tags'].indexOf(activeView);
-    let baseTransform = -viewIndex * 100;
+    const baseTransform = -viewIndex * 100;
+    const offsetPercentage = (dragOffset / (containerRef.current?.offsetWidth || window.innerWidth)) * 100;
     
-    // Smooth drag offset calculation
-    if (containerRef.current) {
-      const containerWidth = containerRef.current.offsetWidth;
-      const maxPeekDistance = containerWidth * 0.3; // 30% of container width
-      
-      // Apply non-linear dampening to drag offset
-      const smoothDragOffset = Math.sign(dragOffset) * 
-        Math.pow(Math.abs(dragOffset), 0.7) * (maxPeekDistance / Math.pow(maxPeekDistance, 0.7));
-      
-      const offsetPercentage = (smoothDragOffset / containerWidth) * 100;
-      baseTransform += offsetPercentage;
-    }
-    
-    return `translateX(${baseTransform}%)`;
+    return `translate3d(${baseTransform + offsetPercentage}%, 0, 0)`;
   };
+  
 
   const {
     handleTouchStart,
@@ -361,6 +349,7 @@ function Pokemon({ isOwnCollection }) {
       <div 
         className="view-slider-container"
         ref={containerRef}
+        // Re-add these crucial event handlers
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -368,8 +357,9 @@ function Pokemon({ isOwnCollection }) {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         style={{ 
-          overflowY: activeView === 'pokemon' ? 'auto' : 'hidden',
-          touchAction: 'pan-y'
+          overflow: 'hidden',
+          touchAction: 'pan-y', // Allow vertical scrolling
+          willChange: 'transform'
         }}
       >
         <div

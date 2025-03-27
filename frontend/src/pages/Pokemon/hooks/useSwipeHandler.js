@@ -1,62 +1,54 @@
 // useSwipeHandler.js
 import { useRef, useCallback } from 'react';
 
-const PEEK_THRESHOLD = 10; // Minimum pixels to start peeking
-const MAX_PEEK_DISTANCE = 0.3; // 30% of container width
-const FRICTION = 0.6; // Dampening factor for smoother drag
+const PEEK_THRESHOLD = 10;
+const MAX_PEEK_DISTANCE = 0.3;
+const BASE_FRICTION = 0.75;
+const VELOCITY_FACTOR = 0.15;
 
 export default function useSwipeHandler({ onSwipe, onDrag }) {
   const startX = useRef(0);
-  const startTime = useRef(0);
   const lastX = useRef(0);
+  const lastTime = useRef(0);
   const isDragging = useRef(false);
-  const isPeeking = useRef(false);
+  const offsetRef = useRef(0);
 
   const handleStart = useCallback((x) => {
     startX.current = x;
     lastX.current = x;
-    startTime.current = Date.now();
+    lastTime.current = Date.now();
     isDragging.current = true;
-    isPeeking.current = false;
+    offsetRef.current = 0;
   }, []);
 
   const handleMove = useCallback((x) => {
     if (!isDragging.current) return;
     
-    const dx = x - startX.current;
-    const absDx = Math.abs(dx);
+    const now = Date.now();
+    const deltaX = x - lastX.current;
+    const deltaTime = Math.max(1, now - lastTime.current);
     
-    // Start peeking only after a small threshold
-    if (!isPeeking.current && absDx > PEEK_THRESHOLD) {
-      isPeeking.current = true;
-    }
+    // Calculate velocity-adjusted friction
+    const velocity = deltaX / deltaTime;
+    const dynamicFriction = BASE_FRICTION - (Math.abs(velocity) * VELOCITY_FACTOR);
     
-    if (isPeeking.current) {
-      // Apply non-linear friction for smoother drag
-      const sign = Math.sign(dx);
-      const dampedDx = sign * Math.pow(Math.abs(dx), FRICTION);
-      
-      onDrag?.(dampedDx);
-    }
+    offsetRef.current += deltaX * Math.max(dynamicFriction, 0.4);
+    onDrag?.(offsetRef.current);
     
     lastX.current = x;
+    lastTime.current = now;
   }, [onDrag]);
 
   const handleEnd = useCallback(() => {
     if (!isDragging.current) return;
     
-    const dx = lastX.current - startX.current;
-    const absDx = Math.abs(dx);
-    const direction = dx > 0 ? 'right' : 'left';
-    
-    // Reset dragging states
-    isDragging.current = false;
-    isPeeking.current = false;
-    
-    // Determine if it was a significant swipe
-    const isSwipe = absDx > (window.innerWidth * MAX_PEEK_DISTANCE);
+    const containerWidth = window.innerWidth;
+    const isSwipe = Math.abs(offsetRef.current) > (containerWidth * MAX_PEEK_DISTANCE);
+    const direction = offsetRef.current > 0 ? 'right' : 'left';
     
     onSwipe?.(isSwipe ? direction : null);
+    isDragging.current = false;
+    offsetRef.current = 0;
   }, [onSwipe]);
 
   // Touch event handlers

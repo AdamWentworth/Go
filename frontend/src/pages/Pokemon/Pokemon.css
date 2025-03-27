@@ -26,8 +26,6 @@
   will-change: transform;
   backface-visibility: hidden;
   transform-style: preserve-3d;
-  user-select: none; /* Prevent text selection during drag */
-  touch-action: none; /* Disable browser's default touch handling */
 }
 
 /* Each panel: full container height + its own scrollbar. */
