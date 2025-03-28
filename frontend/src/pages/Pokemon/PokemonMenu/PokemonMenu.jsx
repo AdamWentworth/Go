@@ -62,7 +62,8 @@ function PokemonMenu({
 
   const handleFilterClick = (filterText) => {
     setSearchTerm((prev) => {
-      const newValue = prev ? `${prev} ${filterText}` : filterText;
+      // Use '&' instead of space when previous text exists
+      const newValue = prev.trim() ? `${prev}&${filterText}` : filterText;
       return newValue;
     });
     setForceMenuOpen(false);
