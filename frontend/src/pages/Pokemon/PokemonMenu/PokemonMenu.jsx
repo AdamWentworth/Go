@@ -74,6 +74,7 @@ function PokemonMenu({
 
   // Update the search term as the user types.
   const handleSearchChange = (val) => {
+    setIsMenuVisible(false);
     setSearchTerm(val);
   };
 
