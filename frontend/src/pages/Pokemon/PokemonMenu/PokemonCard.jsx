@@ -10,7 +10,7 @@ const LONG_PRESS_MS = 300;       // Time threshold for long-press
 const SWIPE_THRESHOLD = 50;      // Distance threshold for horizontal swipe
 const MOVE_CANCEL_THRESHOLD = 10; // Movement that cancels long-press
 
-const PokemonCard = ({
+const PokemonCard = memo(({
   pokemon,
   onSelect,
   onSwipe,                  // Called with 'left' or 'right' after a horizontal swipe
@@ -359,6 +359,22 @@ const PokemonCard = ({
       </h2>
     </div>
   );
-};
+},
 
-export default memo(PokemonCard);
+(prevProps, nextProps) => {
+  return (
+    prevProps.pokemon === nextProps.pokemon &&
+    prevProps.isHighlighted === nextProps.isHighlighted &&
+    prevProps.isShiny === nextProps.isShiny &&
+    prevProps.showShadow === nextProps.showShadow &&
+    prevProps.ownershipFilter === nextProps.ownershipFilter &&
+    prevProps.isEditable === nextProps.isEditable &&
+    prevProps.isFastSelectEnabled === nextProps.isFastSelectEnabled &&
+    prevProps.multiFormPokedexNumbers === nextProps.multiFormPokedexNumbers &&
+    prevProps.showAll === nextProps.showAll &&
+    prevProps.sortType === nextProps.sortType &&
+    prevProps.variants === nextProps.variants
+  );
+});
+
+export default PokemonCard;

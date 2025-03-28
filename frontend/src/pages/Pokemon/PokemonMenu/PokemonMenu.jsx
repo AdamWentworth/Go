@@ -1,8 +1,8 @@
 // PokemonMenu.jsx
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'; // ADDED HOOKS
 import { validate as uuidValidate } from 'uuid';
-import PokemonCard from './PokemonCard';
+import PokemonGrid from './PokemonGrid'; // ADDED IMPORT
 import PokedexOverlay from './PokedexOverlay';
 import InstanceOverlay from './InstanceOverlay';
 import PokemonOptionsOverlay from './PokemonOptionsOverlay';
@@ -42,12 +42,44 @@ function PokemonMenu({
   toggleEvolutionaryLine,
   onSearchMenuStateChange,
 }) {
-  // Track whether the input is focused and whether the search menu is visible.
+  // Existing state and refs
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const { alert } = useModal();
   const [optionsSelectedPokemon, setOptionsSelectedPokemon] = useState(null);
   const searchAreaRef = useRef(null);
+
+  // MEMOIZE SORTED POKEMONS
+  const memoizedSortedPokemons = useMemo(() => sortedPokemons, [sortedPokemons]);
+
+  // MEMOIZE HANDLERS
+  const handleSelect = useCallback((pokemon) => {
+    if (!isEditable) {
+      setSelectedPokemon({ pokemon, overlayType: 'instance' });
+      return;
+    }
+    if (isFastSelectEnabled) {
+      const wasHighlighted = highlightedCards.has(pokemon.pokemonKey);
+      toggleCardHighlight(pokemon.pokemonKey);
+      if (wasHighlighted && highlightedCards.size === 1) {
+        setIsFastSelectEnabled(false);
+      }
+      return;
+    }
+    if (pokemon.ownershipStatus?.disabled) {
+      alert('This Pokémon is fused with another and is disabled until unfused.');
+      return;
+    }
+    const keyParts = pokemon.pokemonKey.split('_');
+    const possibleUUID = keyParts[keyParts.length - 1];
+    const isInstance = uuidValidate(possibleUUID);
+    setOptionsSelectedPokemon({ pokemon, isInstance });
+  }, [isEditable, isFastSelectEnabled, highlightedCards, toggleCardHighlight, setIsFastSelectEnabled, alert, setSelectedPokemon]);
+
+  const memoizedToggleCardHighlight = useCallback(
+    (key) => toggleCardHighlight(key),
+    [toggleCardHighlight]
+  );
 
   // Hide menu (and mark input as unfocused) if clicking outside the search area.
   useEffect(() => {
@@ -92,29 +124,6 @@ function PokemonMenu({
     setSearchTerm('')
   };
 
-  const handleSelect = (pokemon) => {
-    if (!isEditable) {
-      setSelectedPokemon({ pokemon, overlayType: 'instance' });
-      return;
-    }
-    if (isFastSelectEnabled) {
-      const wasHighlighted = highlightedCards.has(pokemon.pokemonKey);
-      toggleCardHighlight(pokemon.pokemonKey);
-      if (wasHighlighted && highlightedCards.size === 1) {
-        setIsFastSelectEnabled(false);
-      }
-      return;
-    }
-    if (pokemon.ownershipStatus?.disabled) {
-      alert('This Pokémon is fused with another and is disabled until unfused.');
-      return;
-    }
-    const keyParts = pokemon.pokemonKey.split('_');
-    const possibleUUID = keyParts[keyParts.length - 1];
-    const isInstance = uuidValidate(possibleUUID);
-    setOptionsSelectedPokemon({ pokemon, isInstance });
-  };
-
   const openOverlay = ({ pokemon, isInstance }) => {
     setSelectedPokemon(isInstance ? { pokemon, overlayType: 'instance' } : pokemon);
   };
@@ -147,31 +156,27 @@ function PokemonMenu({
         )}
       </header>
 
-      {/* When the menu is hidden, show the filtered Pokémon grid */}
+      {/* REPLACED GRID WITH VIRTUALIZED COMPONENT */}
       {!isMenuVisible && (
-        <main className="pokemon-grid">
-          {sortedPokemons.map((pokemon) => (
-            <PokemonCard
-              key={pokemon.pokemonKey}
-              pokemon={pokemon}
-              onSelect={() => handleSelect(pokemon)}
-              isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
-              isShiny={isShiny}
-              showShadow={showShadow}
-              multiFormPokedexNumbers={multiFormPokedexNumbers}
-              ownershipFilter={ownershipFilter}
-              showAll={showAll}
-              sortType={sortType}
-              isEditable={isEditable}
-              toggleCardHighlight={toggleCardHighlight}
-              setIsFastSelectEnabled={setIsFastSelectEnabled}
-              isFastSelectEnabled={isFastSelectEnabled}
-              variants={allPokemons}
-            />
-          ))}
-        </main>
+          <PokemonGrid
+            sortedPokemons={memoizedSortedPokemons}
+            highlightedCards={highlightedCards}
+            handleSelect={handleSelect}
+            isShiny={isShiny}
+            showShadow={showShadow}
+            multiFormPokedexNumbers={multiFormPokedexNumbers}
+            ownershipFilter={ownershipFilter}
+            showAll={showAll}
+            sortType={sortType}
+            isEditable={isEditable}
+            toggleCardHighlight={memoizedToggleCardHighlight}
+            setIsFastSelectEnabled={setIsFastSelectEnabled}
+            isFastSelectEnabled={isFastSelectEnabled}
+            variants={variants}
+          />
       )}
 
+      {/* KEEP REST OF THE COMPONENT THE SAME */}
       {highlightedCards.size === 0 && (
         <SortOverlay
           sortType={sortType}
