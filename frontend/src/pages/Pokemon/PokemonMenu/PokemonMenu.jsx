@@ -42,16 +42,19 @@ function PokemonMenu({
   toggleEvolutionaryLine,
   onSearchMenuStateChange,
 }) {
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [forceMenuOpen, setForceMenuOpen] = useState(false);
+  // Track whether the input is focused and whether the search menu is visible.
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
   const { alert } = useModal();
   const [optionsSelectedPokemon, setOptionsSelectedPokemon] = useState(null);
   const searchAreaRef = useRef(null);
 
+  // Hide menu (and mark input as unfocused) if clicking outside the search area.
   useEffect(() => {
     function handleDocumentClick(e) {
       if (searchAreaRef.current && !searchAreaRef.current.contains(e.target)) {
-        setIsSearchFocused(false);
+        setIsInputFocused(false);
+        setIsMenuVisible(false);
       }
     }
     document.addEventListener('mousedown', handleDocumentClick);
@@ -60,34 +63,32 @@ function PokemonMenu({
     };
   }, []);
 
+  // When a filter is clicked, update the search term, blur the input, and hide the menu.
   const handleFilterClick = (filterText) => {
-    setSearchTerm((prev) => {
-      // Use '&' instead of space when previous text exists
-      const newValue = prev.trim() ? `${prev}&${filterText}` : filterText;
-      return newValue;
-    });
-    setForceMenuOpen(false);
+    const newValue = searchTerm.trim() ? `${searchTerm}&${filterText}` : filterText;
+    setSearchTerm(newValue);
+    const searchInput = searchAreaRef.current?.querySelector('input');
+    searchInput?.blur(); // blur to hide the menu and show the grid
+    setIsMenuVisible(false);
   };
 
+  // Update the search term as the user types.
   const handleSearchChange = (val) => {
-    if (val.trim() === '') {
-      setForceMenuOpen(true);
-    } else {
-      setForceMenuOpen(false);
-    }
     setSearchTerm(val);
   };
 
+  // When the input is focused, mark it as focused and show the menu.
   const handleFocusChange = (focused) => {
-    setIsSearchFocused(focused);
+    setIsInputFocused(focused);
     if (focused) {
-      setForceMenuOpen(true);
+      setIsMenuVisible(true);
     }
   };
 
+  // Optionally close the menu and blur the input when the arrow is clicked.
   const handleCloseMenu = () => {
-    setForceMenuOpen(false);
-    setIsSearchFocused(false);
+    setIsMenuVisible(false);
+    setSearchTerm('')
   };
 
   const handleSelect = (pokemon) => {
@@ -107,11 +108,9 @@ function PokemonMenu({
       alert('This Pokémon is fused with another and is disabled until unfused.');
       return;
     }
-
     const keyParts = pokemon.pokemonKey.split('_');
     const possibleUUID = keyParts[keyParts.length - 1];
     const isInstance = uuidValidate(possibleUUID);
-
     setOptionsSelectedPokemon({ pokemon, isInstance });
   };
 
@@ -123,20 +122,15 @@ function PokemonMenu({
     return <p>Loading...</p>;
   }
 
-  const shouldShowMenu = isSearchFocused && forceMenuOpen;
-
+  // Inform any parent about the menu visibility.
   useEffect(() => {
     if (onSearchMenuStateChange) {
-      onSearchMenuStateChange(shouldShowMenu);
+      onSearchMenuStateChange(isMenuVisible);
     }
-  }, [shouldShowMenu, onSearchMenuStateChange]);
+  }, [isMenuVisible, onSearchMenuStateChange]);
 
   return (
-    <div
-      className={`pokemon-container ${
-        searchTerm.trim() !== '' ? 'has-checkbox' : ''
-      }`}
-    >
+    <div className={`pokemon-container ${searchTerm.trim() !== '' ? 'has-checkbox' : ''}`}>
       <header className="search-header" ref={searchAreaRef}>
         <SearchUI
           searchTerm={searchTerm}
@@ -147,15 +141,13 @@ function PokemonMenu({
           onArrowClick={handleCloseMenu}
         />
 
-        {shouldShowMenu && (
-          <SearchMenu
-            onFilterClick={handleFilterClick}
-            onCloseMenu={handleCloseMenu}
-          />
+        {isMenuVisible && (
+          <SearchMenu onFilterClick={handleFilterClick} onCloseMenu={handleCloseMenu} />
         )}
       </header>
 
-      {!shouldShowMenu && (
+      {/* When the menu is hidden, show the filtered Pokémon grid */}
+      {!isMenuVisible && (
         <main className="pokemon-grid">
           {sortedPokemons.map((pokemon) => (
             <PokemonCard
@@ -193,19 +185,14 @@ function PokemonMenu({
           pokemon={optionsSelectedPokemon.pokemon}
           isInstance={optionsSelectedPokemon.isInstance}
           ownershipFilter={ownershipFilter}
-          onClose={() => {
-            setOptionsSelectedPokemon(null);
-          }}
+          onClose={() => setOptionsSelectedPokemon(null)}
           onHighlight={(poke) => {
             toggleCardHighlight(poke.pokemonKey);
             setIsFastSelectEnabled(true);
             setOptionsSelectedPokemon(null);
           }}
           onOpenOverlay={(poke) => {
-            openOverlay({
-              pokemon: poke,
-              isInstance: optionsSelectedPokemon.isInstance,
-            });
+            openOverlay({ pokemon: poke, isInstance: optionsSelectedPokemon.isInstance });
             setOptionsSelectedPokemon(null);
           }}
         />
@@ -215,9 +202,7 @@ function PokemonMenu({
         (selectedPokemon.overlayType === 'instance' ? (
           <InstanceOverlay
             pokemon={selectedPokemon.pokemon}
-            onClose={() => {
-              setSelectedPokemon(null);
-            }}
+            onClose={() => setSelectedPokemon(null)}
             setSelectedPokemon={setSelectedPokemon}
             allPokemons={sortedPokemons}
             ownershipFilter={ownershipFilter}
@@ -231,14 +216,8 @@ function PokemonMenu({
           />
         ) : (
           <PokedexOverlay
-            pokemon={
-              selectedPokemon.overlayType
-                ? selectedPokemon.pokemon
-                : selectedPokemon
-            }
-            onClose={() => {
-              setSelectedPokemon(null);
-            }}
+            pokemon={selectedPokemon.overlayType ? selectedPokemon.pokemon : selectedPokemon}
+            onClose={() => setSelectedPokemon(null)}
             setSelectedPokemon={setSelectedPokemon}
             allPokemons={allPokemons}
           />

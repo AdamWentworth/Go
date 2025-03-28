@@ -3,7 +3,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import './SearchMenu.css';
-import CloseButton from '../../../components/CloseButton';
 
 const filterSections = {
   Variants: ['Shiny', 'Costume', 'Shadow', 'Mega', 'Dynamax', 'Gigantamax'],
@@ -61,19 +60,8 @@ function SearchMenu({ onFilterClick, onCloseMenu }) {
     onFilterClick(filter);
   };
 
-  const closeButtonPortal = createPortal(
-    <CloseButton
-      onClick={onCloseMenu}
-      style={{
-        zIndex: 9999,
-      }}
-    />,
-    document.body
-  );
-
   return (
     <div className="search-menu">
-      {closeButtonPortal}
 
       {Object.keys(filterSections).map((section) => (
         <div key={section} className="search-menu-section">

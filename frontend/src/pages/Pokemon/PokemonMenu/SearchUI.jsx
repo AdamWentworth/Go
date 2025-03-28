@@ -1,3 +1,5 @@
+// SearchUI.jsx
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { debounce } from 'lodash';
 import './SearchUI.css';
@@ -35,16 +37,18 @@ function SearchUI({
     onFocusChange?.(true);
   };
 
-  const handleBlur = () => {
-    setIsFocused(false);
-    onFocusChange?.(false);
-  };
-
   const handleClearInput = () => {
     setInputValue('');
     onSearchChange('');
     onFocusChange?.(true);
     setIsFocused(true);
+  };
+
+  // When the arrow is clicked, if input is empty, reset focus to show the base layout.
+  const handleArrowClick = () => {
+    setIsFocused(false);
+    onFocusChange?.(false);
+    onArrowClick?.();
   };
 
   const getLayoutClass = () => {
@@ -67,7 +71,7 @@ function SearchUI({
             src="/images/arrow_right.png"
             alt="Arrow Left"
             className="arrow-icon"
-            onClick={onArrowClick}
+            onClick={handleArrowClick}
           />
 
           <div className="search-input-wrapper">
@@ -75,7 +79,6 @@ function SearchUI({
               type="text"
               value={inputValue}
               onFocus={handleFocus}
-              onBlur={handleBlur}
               onChange={handleInputChange}
               className="search-input"
             />
