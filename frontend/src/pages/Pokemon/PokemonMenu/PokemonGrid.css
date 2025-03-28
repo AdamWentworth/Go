@@ -10,4 +10,35 @@
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;     /* Firefox */
   }
-  
+
+/* Grid for Pokémon cards */
+.pokemon-grid {
+  display: grid;
+  gap: 0px;
+  grid-template-columns: repeat(9, 1fr);
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 480px) {
+  .pokemon-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+  .pokemon-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .pokemon-grid {
+    grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+  .pokemon-grid {
+    grid-template-columns: repeat(9, 1fr);
+  }
+}

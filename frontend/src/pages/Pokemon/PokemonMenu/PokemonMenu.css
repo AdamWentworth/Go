@@ -2,6 +2,7 @@
 
 /* Default styling for .pokemon-container */
 .pokemon-container {
+  display: grid;
   grid-template-rows: auto 1fr;
   background-color: #111;
   box-sizing: border-box;
