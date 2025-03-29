@@ -28,7 +28,7 @@
 /* New styles for the grid area and custom scrollbar */
 .grid-wrapper {
   position: relative;
-  height: calc(100vh - 120px); /* Adjust the height as needed */
+  height: calc(100vh - 130px); /* Adjust the height as needed */
   display: flex;
 }
 

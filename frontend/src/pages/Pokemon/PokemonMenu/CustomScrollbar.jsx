@@ -11,11 +11,13 @@ const CustomScrollbar = ({
   cardHeight      // estimated card height in px
 }) => {
   const [thumbPosition, setThumbPosition] = useState(0);
-  const [thumbHeight, setThumbHeight] = useState(20);
+  const [thumbHeight, setThumbHeight] = useState(40); // default thumb height
   const rafRef = useRef(null);
   
   // Define the scrollable area height limit (85% of container)
-  const scrollHeightLimit = 0.85; // 85% of the container height
+  const scrollHeightLimit = 0.85;
+  // Scale factor to increase the thumb size even more (triple the base size)
+  const thumbScale = 3;
 
   const updateScrollThumb = useCallback(() => {
     const container = containerRef.current;
@@ -29,26 +31,27 @@ const CustomScrollbar = ({
     rafRef.current = requestAnimationFrame(() => {
       const scrollTop = container.scrollTop;
       
+      // If no scrolling is needed, hide the thumb.
       if (estimatedScrollHeight <= clientHeight) {
         setThumbHeight(0);
         return;
       }
       
-      const newThumbHeight = Math.max((clientHeight / estimatedScrollHeight) * clientHeight, 20);
+      // Compute base thumb height proportional to the container's visible area.
+      const baseHeight = Math.max((clientHeight / estimatedScrollHeight) * clientHeight, 20);
+      // Scale the thumb height (tripling it)
+      const newThumbHeight = baseHeight * thumbScale;
       setThumbHeight(newThumbHeight);
       
       const maxScrollTop = estimatedScrollHeight - clientHeight;
-      
-      // Calculate the limited scroll area height
       const limitedScrollbarHeight = clientHeight * scrollHeightLimit;
-      
-      // Map the full scroll range to the limited scrollbar range
       const scrollPercentage = scrollTop / maxScrollTop;
+      // Adjust thumb position using the scaled height
       const computedPosition = scrollPercentage * (limitedScrollbarHeight - newThumbHeight);
       
       setThumbPosition(scrollTop < 1 ? 0 : computedPosition);
     });
-  }, [containerRef, totalItems, columns, cardHeight, scrollHeightLimit]);
+  }, [containerRef, totalItems, columns, cardHeight, scrollHeightLimit, thumbScale]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -62,9 +65,7 @@ const CustomScrollbar = ({
     
     let resizeObserver;
     if (typeof ResizeObserver !== 'undefined') {
-      resizeObserver = new ResizeObserver(() => {
-        updateScrollThumb();
-      });
+      resizeObserver = new ResizeObserver(updateScrollThumb);
       resizeObserver.observe(container);
     }
     
@@ -87,14 +88,11 @@ const CustomScrollbar = ({
     const expectedRows = Math.ceil(totalItems / columns);
     const estimatedScrollHeight = expectedRows * cardHeight;
     const maxScrollTop = estimatedScrollHeight - clientHeight;
-    
-    // The limited height for scrollbar movement
     const limitedScrollbarHeight = clientHeight * scrollHeightLimit;
     
     const handlePointerMove = (e) => {
       const deltaY = e.clientY - startY;
-      
-      // Convert the limited movement to the full scroll range
+      // Convert the limited movement to the full scroll range.
       const scrollbarDeltaPercentage = deltaY / limitedScrollbarHeight;
       const newScrollTop = startScrollTop + (scrollbarDeltaPercentage * maxScrollTop);
       
@@ -114,7 +112,7 @@ const CustomScrollbar = ({
     <div 
       className="custom-scrollbar"
       style={{
-        bottom: `${(1 - scrollHeightLimit) * 100}%` // Set bottom position to 20% from bottom
+        bottom: `${(1 - scrollHeightLimit) * 100}%`
       }}
     >
       <div 

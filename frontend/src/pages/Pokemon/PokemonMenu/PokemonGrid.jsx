@@ -81,7 +81,6 @@ const PokemonGrid = memo(({
       {visiblePokemons.map((pokemon, index) => (
         <PokemonCard
           key={pokemon.pokemonKey}
-          ref={index === 0 ? firstItemRef : null}
           pokemon={pokemon}
           onSelect={() => handleSelect(pokemon)}
           isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
