@@ -9,19 +9,18 @@ const CustomScrollbar = ({
   totalItems
 }) => {
   const [thumbPosition, setThumbPosition] = useState(0);
-  const [thumbHeight, setThumbHeight] = useState(40);
   const rafRef = useRef(null);
   
-  // The fraction of the container height used to compute the scrollbar area.
+  // Fixed thumb height matching the image size
+  const THUMB_HEIGHT = 60;
+  // The fraction of the container height used for the scroll track
   const scrollHeightLimit = 0.85;
-  const thumbScale = 4;
 
   const updateScrollThumb = useCallback(() => {
     const container = containerRef.current;
     if (!container) return;
     
     const clientHeight = container.clientHeight;
-    // Use the actual scrollHeight from the container (which now reflects the full virtual grid).
     const estimatedScrollHeight = container.scrollHeight;
     
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -29,22 +28,19 @@ const CustomScrollbar = ({
       const scrollTop = container.scrollTop;
       
       if (estimatedScrollHeight <= clientHeight) {
-        setThumbHeight(0);
+        setThumbPosition(0);
         return;
       }
       
-      const baseHeight = Math.max((clientHeight / estimatedScrollHeight) * clientHeight, 20);
-      const newThumbHeight = baseHeight * thumbScale;
-      setThumbHeight(newThumbHeight);
-      
+      const trackHeight = clientHeight * scrollHeightLimit;
       const maxScrollTop = estimatedScrollHeight - clientHeight;
-      const limitedScrollbarHeight = clientHeight * scrollHeightLimit;
       const scrollPercentage = scrollTop / maxScrollTop;
-      const computedPosition = scrollPercentage * (limitedScrollbarHeight - newThumbHeight);
+      // Calculate position based on fixed thumb height
+      const computedPosition = scrollPercentage * (trackHeight - THUMB_HEIGHT);
       
       setThumbPosition(scrollTop < 1 ? 0 : computedPosition);
     });
-  }, [containerRef, scrollHeightLimit, thumbScale]);
+  }, [containerRef, scrollHeightLimit, THUMB_HEIGHT]);
 
   useEffect(() => {
     updateScrollThumb();
@@ -54,7 +50,6 @@ const CustomScrollbar = ({
     const container = containerRef.current;
     if (!container) return;
     
-    container.scrollTop = 0;
     updateScrollThumb();
     
     container.addEventListener('scroll', updateScrollThumb);
@@ -84,11 +79,15 @@ const CustomScrollbar = ({
     const clientHeight = container.clientHeight;
     const estimatedScrollHeight = container.scrollHeight;
     const maxScrollTop = estimatedScrollHeight - clientHeight;
-    const limitedScrollbarHeight = clientHeight * scrollHeightLimit;
+    
+    // Use the actual available movement space for the thumb
+    const scrollbarTrackHeight = clientHeight * scrollHeightLimit;
+    const availableTrackSpace = scrollbarTrackHeight - THUMB_HEIGHT;
     
     const handlePointerMove = (e) => {
       const deltaY = e.clientY - startY;
-      const scrollbarDeltaPercentage = deltaY / limitedScrollbarHeight;
+      // Calculate movement based on available track space
+      const scrollbarDeltaPercentage = deltaY / availableTrackSpace;
       const newScrollTop = startScrollTop + (scrollbarDeltaPercentage * maxScrollTop);
       
       container.scrollTop = Math.max(0, Math.min(newScrollTop, maxScrollTop));
@@ -114,7 +113,7 @@ const CustomScrollbar = ({
         className="scroll-thumb" 
         style={{ 
           transform: `translateY(${thumbPosition}px)`,
-          height: `${thumbHeight}px`
+          height: `${THUMB_HEIGHT}px`
         }}
         onPointerDown={handleThumbPointerDown}
       >
