@@ -91,7 +91,7 @@ const PokemonGrid = memo(({
     return () => clearTimeout(timeout);
   }, [columns, cardHeight]);  
 
-  const rowHeight = measuredRowHeight || cardHeight;
+  const rowHeight = (measuredRowHeight || cardHeight) + 10;
   const totalRows = Math.ceil(totalItems / columns);
   const totalHeight = totalRows * rowHeight + 100;
 
