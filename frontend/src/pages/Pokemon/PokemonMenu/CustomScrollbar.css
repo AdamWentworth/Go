@@ -1,0 +1,32 @@
+/* CustomScrollbar.css */
+
+.custom-scrollbar {
+    width: 20px;
+    background: transparent; /* Hide the track */
+    position: absolute;
+    right: 0;
+    top: 0;
+    /* bottom: 0; -- This was removed and will be set dynamically in the component */
+    cursor: pointer;
+    border-radius: 10px;
+    user-select: none;
+  }
+  
+  .scroll-thumb {
+    position: absolute;
+    width: 100%;
+    left: 0;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    transition: transform 0.2s ease, height 0.2s ease;
+  }
+  
+  .scroll-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+    min-height: 40px;
+  }

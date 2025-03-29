@@ -1,47 +1,87 @@
 // PokemonGrid.jsx
+
 import React, { useState, useEffect, useRef, memo } from 'react';
 import PokemonCard from './PokemonCard';
 import './PokemonGrid.css';
 
-const BATCH_SIZE = 50;
+const BUFFER_ROWS = 3;
 
-const PokemonGrid = memo(({
-  sortedPokemons,
-  highlightedCards,
-  handleSelect,
-  isShiny,
-  showShadow,
-  multiFormPokedexNumbers,
-  ownershipFilter,
-  showAll,
-  sortType,
-  isEditable,
-  toggleCardHighlight,
-  setIsFastSelectEnabled,
-  isFastSelectEnabled,
-  variants }) => {
-  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
-  const sentinelRef = useRef();
+const PokemonGrid = memo(({ 
+  sortedPokemons, 
+  highlightedCards, 
+  handleSelect, 
+  isShiny, 
+  showShadow, 
+  multiFormPokedexNumbers, 
+  ownershipFilter, 
+  showAll, 
+  sortType, 
+  isEditable, 
+  toggleCardHighlight, 
+  setIsFastSelectEnabled, 
+  isFastSelectEnabled, 
+  variants, 
+  totalItems, 
+  columns, 
+  cardHeight, 
+  gridContainerRef 
+}) => {
+  const [scrollTop, setScrollTop] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
+  const [measuredRowHeight, setMeasuredRowHeight] = useState(cardHeight);
+  const firstItemRef = useRef(null);
 
+  // Scroll and resize listeners
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, sortedPokemons.length));
-      }
-    }, { threshold: 0 }); // Changed threshold to 0
-  
-    const currentSentinel = sentinelRef.current;
-    if (currentSentinel) observer.observe(currentSentinel);
-    return () => observer.disconnect();
-  }, [sortedPokemons.length]);  
+    const container = gridContainerRef.current;
+    if (!container) return;
 
-  const visiblePokemons = sortedPokemons.slice(0, visibleCount);
+    const handleScroll = () => setScrollTop(container.scrollTop);
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      setContainerHeight(entry.contentRect.height);
+    });
+
+    container.addEventListener('scroll', handleScroll);
+    resizeObserver.observe(container);
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      resizeObserver.disconnect();
+    };
+  }, [gridContainerRef]);
+
+  // Measure actual row height
+  useEffect(() => {
+    if (firstItemRef.current) {
+      const item = firstItemRef.current;
+      const style = window.getComputedStyle(item.parentElement);
+      const rowGap = parseInt(style.gridRowGap) || 0;
+      setMeasuredRowHeight(item.offsetHeight + rowGap);
+    }
+  }, [columns, cardHeight]);
+
+  const rowHeight = measuredRowHeight || cardHeight;
+  const startRow = Math.max(0, Math.floor(scrollTop / rowHeight) - BUFFER_ROWS);
+  const endRow = Math.ceil((scrollTop + containerHeight) / rowHeight) + BUFFER_ROWS;
+  
+  // Calculate indices ensuring we don't skip the first item
+  const startIndex = startRow * columns;
+  const endIndex = Math.min(endRow * columns, totalItems);
+  
+  // Generate grid items
+  const visiblePokemons = sortedPokemons.slice(startIndex, endIndex);
+  
+  // Calculate spacer heights
+  const topSpacerHeight = startRow > 0 ? startRow * rowHeight : 0;
+  const bottomSpacerHeight = Math.max(0, ((totalItems - endIndex) / columns) * rowHeight);
 
   return (
     <div className="pokemon-grid">
-      {visiblePokemons.map((pokemon) => (
+      {startRow > 0 && <div style={{ height: `${topSpacerHeight}px` }} />}
+      {visiblePokemons.map((pokemon, index) => (
         <PokemonCard
           key={pokemon.pokemonKey}
+          ref={index === 0 ? firstItemRef : null}
           pokemon={pokemon}
           onSelect={() => handleSelect(pokemon)}
           isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
@@ -58,7 +98,7 @@ const PokemonGrid = memo(({
           variants={variants}
         />
       ))}
-      <div ref={sentinelRef} style={{ height: '1px' }} />
+      <div style={{ height: `${bottomSpacerHeight}px` }} />
     </div>
   );
 });

@@ -1,11 +1,12 @@
 // PokemonMenu.jsx
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'; // ADDED HOOKS
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { validate as uuidValidate } from 'uuid';
-import PokemonGrid from './PokemonGrid'; // ADDED IMPORT
+import PokemonGrid from './PokemonGrid';
 import PokedexOverlay from './PokedexOverlay';
 import InstanceOverlay from './InstanceOverlay';
 import PokemonOptionsOverlay from './PokemonOptionsOverlay';
+import CustomScrollbar from './CustomScrollbar';
 import './PokemonMenu.css';
 import { useModal } from '../../../contexts/ModalContext';
 import SearchUI from './SearchUI';
@@ -48,6 +49,19 @@ function PokemonMenu({
   const { alert } = useModal();
   const [optionsSelectedPokemon, setOptionsSelectedPokemon] = useState(null);
   const searchAreaRef = useRef(null);
+  // New ref for the scrollable grid container:
+  const gridContainerRef = useRef(null);
+
+  // Determine columns based on window width.
+  const getColumns = () => {
+    const width = window.innerWidth;
+    if (width < 480) return 3;
+    if (width < 768) return 6;
+    if (width < 1024) return 6;
+    return 9;
+  };
+  const columns = getColumns();
+  const estimatedCardHeight = 150; // adjust based on your design
 
   // MEMOIZE SORTED POKEMONS
   const memoizedSortedPokemons = useMemo(() => sortedPokemons, [sortedPokemons]);
@@ -81,7 +95,7 @@ function PokemonMenu({
     [toggleCardHighlight]
   );
 
-  // Hide menu (and mark input as unfocused) if clicking outside the search area.
+  // Hide menu (and mark input as unfocused) if clicking outside.
   useEffect(() => {
     function handleDocumentClick(e) {
       if (searchAreaRef.current && !searchAreaRef.current.contains(e.target)) {
@@ -95,22 +109,19 @@ function PokemonMenu({
     };
   }, []);
 
-  // When a filter is clicked, update the search term, blur the input, and hide the menu.
   const handleFilterClick = (filterText) => {
     const newValue = searchTerm.trim() ? `${searchTerm}&${filterText}` : filterText;
     setSearchTerm(newValue);
     const searchInput = searchAreaRef.current?.querySelector('input');
-    searchInput?.blur(); // blur to hide the menu and show the grid
+    searchInput?.blur();
     setIsMenuVisible(false);
   };
 
-  // Update the search term as the user types.
   const handleSearchChange = (val) => {
     setIsMenuVisible(false);
     setSearchTerm(val);
   };
 
-  // When the input is focused, mark it as focused and show the menu.
   const handleFocusChange = (focused) => {
     setIsInputFocused(focused);
     if (focused) {
@@ -118,10 +129,9 @@ function PokemonMenu({
     }
   };
 
-  // Optionally close the menu and blur the input when the arrow is clicked.
   const handleCloseMenu = () => {
     setIsMenuVisible(false);
-    setSearchTerm('')
+    setSearchTerm('');
   };
 
   const openOverlay = ({ pokemon, isInstance }) => {
@@ -132,7 +142,6 @@ function PokemonMenu({
     return <p>Loading...</p>;
   }
 
-  // Inform any parent about the menu visibility.
   useEffect(() => {
     if (onSearchMenuStateChange) {
       onSearchMenuStateChange(isMenuVisible);
@@ -156,27 +165,39 @@ function PokemonMenu({
         )}
       </header>
 
-      {/* REPLACED GRID WITH VIRTUALIZED COMPONENT */}
       {!isMenuVisible && (
-          <PokemonGrid
-            sortedPokemons={memoizedSortedPokemons}
-            highlightedCards={highlightedCards}
-            handleSelect={handleSelect}
-            isShiny={isShiny}
-            showShadow={showShadow}
-            multiFormPokedexNumbers={multiFormPokedexNumbers}
-            ownershipFilter={ownershipFilter}
-            showAll={showAll}
-            sortType={sortType}
-            isEditable={isEditable}
-            toggleCardHighlight={memoizedToggleCardHighlight}
-            setIsFastSelectEnabled={setIsFastSelectEnabled}
-            isFastSelectEnabled={isFastSelectEnabled}
-            variants={variants}
+        <div className="grid-wrapper">
+          <div className="grid-container" ref={gridContainerRef}>
+            <PokemonGrid
+              sortedPokemons={memoizedSortedPokemons}
+              highlightedCards={highlightedCards}
+              handleSelect={handleSelect}
+              isShiny={isShiny}
+              showShadow={showShadow}
+              multiFormPokedexNumbers={multiFormPokedexNumbers}
+              ownershipFilter={ownershipFilter}
+              showAll={showAll}
+              sortType={sortType}
+              isEditable={isEditable}
+              toggleCardHighlight={memoizedToggleCardHighlight}
+              setIsFastSelectEnabled={setIsFastSelectEnabled}
+              isFastSelectEnabled={isFastSelectEnabled}
+              variants={variants}
+              totalItems={memoizedSortedPokemons.length}
+              columns={columns}
+              cardHeight={estimatedCardHeight}
+              gridContainerRef={gridContainerRef} 
+            />
+          </div>
+          <CustomScrollbar 
+            containerRef={gridContainerRef} 
+            totalItems={memoizedSortedPokemons.length} 
+            columns={columns} 
+            cardHeight={estimatedCardHeight} 
           />
+        </div>
       )}
 
-      {/* KEEP REST OF THE COMPONENT THE SAME */}
       {highlightedCards.size === 0 && (
         <SortOverlay
           sortType={sortType}

@@ -1,6 +1,6 @@
 /* PokemonMenu.css */
 
-/* Default styling for .pokemon-container */
+/* Existing styles … */
 .pokemon-container {
   display: grid;
   grid-template-rows: auto 1fr;
@@ -13,7 +13,6 @@
   align-items: start;
 }
 
-/* Sticky header (SearchUI) */
 .search-header {
   position: sticky;
   top: 0;
@@ -22,7 +21,27 @@
   margin: 0px;
 }
 
-/* New container for the search menu */
 .search-menu {
   display: block;
+}
+
+/* New styles for the grid area and custom scrollbar */
+.grid-wrapper {
+  position: relative;
+  height: calc(100vh - 120px); /* Adjust the height as needed */
+  display: flex;
+}
+
+.grid-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px;
+  height: 100%;
+  /* Hide native scrollbars */
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE and Edge */
+}
+
+.grid-container::-webkit-scrollbar {
+  display: none;               /* Chrome, Safari, Opera */
 }
