@@ -17,7 +17,7 @@ const CustomScrollbar = ({
   // Define the scrollable area height limit (85% of container)
   const scrollHeightLimit = 0.85;
   // Scale factor to increase the thumb size even more (triple the base size)
-  const thumbScale = 3;
+  const thumbScale = 4;
 
   const updateScrollThumb = useCallback(() => {
     const container = containerRef.current;
