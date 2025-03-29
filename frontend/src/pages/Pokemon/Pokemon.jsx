@@ -99,8 +99,8 @@ function Pokemon({ isOwnCollection }) {
     if (isUsernamePath) {
       setSelectedPokedexList(variants);
       setDefaultListLoaded(true);
-    } else if (pokedexLists?.default) {
-      setSelectedPokedexList(pokedexLists.default);
+    } else if (variants) {
+      setSelectedPokedexList(variants);
       setDefaultListLoaded(true);
     }
   }, [isUsernamePath, variants, pokedexLists]);  

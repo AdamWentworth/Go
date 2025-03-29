@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, memo } from 'react';
 import PokemonCard from './PokemonCard';
 import './PokemonGrid.css';
 
-const BATCH_SIZE = 30;
+const BATCH_SIZE = 50;
 
 const PokemonGrid = memo(({
   sortedPokemons,
@@ -28,12 +28,12 @@ const PokemonGrid = memo(({
       if (entry.isIntersecting) {
         setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, sortedPokemons.length));
       }
-    }, { threshold: 1 });
-
+    }, { threshold: 0 }); // Changed threshold to 0
+  
     const currentSentinel = sentinelRef.current;
     if (currentSentinel) observer.observe(currentSentinel);
     return () => observer.disconnect();
-  }, [sortedPokemons.length]);
+  }, [sortedPokemons.length]);  
 
   const visiblePokemons = sortedPokemons.slice(0, visibleCount);
 
