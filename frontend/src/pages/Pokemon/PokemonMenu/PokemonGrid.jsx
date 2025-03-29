@@ -70,6 +70,27 @@ const PokemonGrid = memo(({
     }
   }, [columns, cardHeight]);
 
+  useEffect(() => {
+    const measureHeight = () => {
+      if (firstItemRef.current) {
+        const item = firstItemRef.current;
+        const style = window.getComputedStyle(item);
+        const marginBottom = parseInt(style.marginBottom) || 0;
+        setMeasuredRowHeight(item.offsetHeight + marginBottom);
+      }
+    };
+  
+    // Initial measurement
+    measureHeight();
+  
+    // Re-measure after a delay to account for late-loading content (e.g. images)
+    const timeout = setTimeout(() => {
+      measureHeight();
+    }, 100); // You can adjust the delay as needed
+  
+    return () => clearTimeout(timeout);
+  }, [columns, cardHeight]);  
+
   const rowHeight = measuredRowHeight || cardHeight;
   const totalRows = Math.ceil(totalItems / columns);
   const totalHeight = totalRows * rowHeight + 100;
