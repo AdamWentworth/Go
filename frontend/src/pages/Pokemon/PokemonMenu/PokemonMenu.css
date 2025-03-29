@@ -32,6 +32,10 @@
   display: flex;
 }
 
+.pokemon-container.has-checkbox .grid-wrapper {
+  height: calc(100vh - 163px); /* Adjust the height as needed */
+}
+
 .grid-container {
   flex: 1;
   overflow-y: auto;
@@ -44,4 +48,51 @@
 
 .grid-container::-webkit-scrollbar {
   display: none;               /* Chrome, Safari, Opera */
+}
+
+
+/* Responsive grid adjustments */
+@media (max-width: 480px) {
+  .grid-wrapper {
+    height: calc(100vh - 130px); /* Adjust the height as needed */
+  }
+  .pokemon-container.has-checkbox .grid-wrapper {
+    height: calc(100vh - 163px); /* Adjust the height as needed */
+  }
+}
+
+@media (min-width: 481px) {
+  .grid-wrapper {
+    height: calc(100vh - 164px); /* Adjust the height as needed */
+  }
+  .pokemon-container.has-checkbox .grid-wrapper {
+    height: calc(100vh - 205px); /* Adjust the height as needed */
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .grid-wrapper {
+    height: calc(100vh - 164px); /* Adjust the height as needed */
+  }
+  .pokemon-container.has-checkbox .grid-wrapper {
+    height: calc(100vh - 205px); /* Adjust the height as needed */
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .grid-wrapper {
+    height: calc(100vh - 164px); /* Adjust the height as needed */
+  }
+  .pokemon-container.has-checkbox .grid-wrapper {
+    height: calc(100vh - 210px); /* Adjust the height as needed */
+  }
+}
+
+@media (min-width: 1440px) {
+  .grid-wrapper {
+    height: calc(100vh - 164px); /* Adjust the height as needed */
+  }
+  .pokemon-container.has-checkbox .grid-wrapper {
+    height: calc(100vh - 219px); /* Adjust the height as needed */
+  }
 }
