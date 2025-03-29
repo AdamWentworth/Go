@@ -191,7 +191,7 @@ function PokemonMenu({
           </div>
           <CustomScrollbar 
             containerRef={gridContainerRef} 
-            totalItems={memoizedSortedPokemons.length} 
+            totalItems={memoizedSortedPokemons.length}
             columns={columns} 
             cardHeight={estimatedCardHeight} 
           />

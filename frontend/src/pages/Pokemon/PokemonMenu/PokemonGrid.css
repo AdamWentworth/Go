@@ -18,6 +18,11 @@
   grid-template-columns: repeat(9, 1fr);
 }
 
+.pokemon-grid-virtualized {
+  width: 100%;
+  overflow: hidden; /* Scrolling is managed by the outer container */
+}
+
 /* Responsive grid adjustments */
 @media (max-width: 480px) {
   .pokemon-grid {

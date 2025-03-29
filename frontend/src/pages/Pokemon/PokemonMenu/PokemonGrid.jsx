@@ -6,32 +6,33 @@ import './PokemonGrid.css';
 
 const BUFFER_ROWS = 3;
 
-const PokemonGrid = memo(({ 
-  sortedPokemons, 
-  highlightedCards, 
-  handleSelect, 
-  isShiny, 
-  showShadow, 
-  multiFormPokedexNumbers, 
-  ownershipFilter, 
-  showAll, 
-  sortType, 
-  isEditable, 
-  toggleCardHighlight, 
-  setIsFastSelectEnabled, 
-  isFastSelectEnabled, 
-  variants, 
-  totalItems, 
-  columns, 
-  cardHeight, 
-  gridContainerRef 
+const PokemonGrid = memo(({
+  sortedPokemons,
+  highlightedCards,
+  handleSelect,
+  isShiny,
+  showShadow,
+  multiFormPokedexNumbers,
+  ownershipFilter,
+  showAll,
+  sortType,
+  isEditable,
+  toggleCardHighlight,
+  setIsFastSelectEnabled,
+  isFastSelectEnabled,
+  variants,
+  totalItems,
+  columns,
+  cardHeight,
+  gridContainerRef
 }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
+  // measuredRowHeight may include any margins if used by PokemonCard
   const [measuredRowHeight, setMeasuredRowHeight] = useState(cardHeight);
   const firstItemRef = useRef(null);
 
-  // Scroll and resize listeners
+  // Listen to scroll events and measure container height.
   useEffect(() => {
     const container = gridContainerRef.current;
     if (!container) return;
@@ -50,54 +51,80 @@ const PokemonGrid = memo(({
     };
   }, [gridContainerRef]);
 
-  // Measure actual row height
+  useEffect(() => {
+    // When sortedPokemons changes, reset the grid’s scroll position and internal state.
+    if (gridContainerRef && gridContainerRef.current) {
+      gridContainerRef.current.scrollTop = 0;
+    }
+    setScrollTop(0);
+  }, [sortedPokemons, gridContainerRef]);  
+
+  // Measure the height of a row based on the first item.
   useEffect(() => {
     if (firstItemRef.current) {
       const item = firstItemRef.current;
-      const style = window.getComputedStyle(item.parentElement);
-      const rowGap = parseInt(style.gridRowGap) || 0;
-      setMeasuredRowHeight(item.offsetHeight + rowGap);
+      // Here we try to include any vertical spacing (for example, margin-bottom)
+      const style = window.getComputedStyle(item);
+      const marginBottom = parseInt(style.marginBottom) || 0;
+      setMeasuredRowHeight(item.offsetHeight + marginBottom);
     }
   }, [columns, cardHeight]);
 
   const rowHeight = measuredRowHeight || cardHeight;
+  const totalRows = Math.ceil(totalItems / columns);
+  const totalHeight = totalRows * rowHeight + 100;
+
+  // Determine which rows should be visible.
   const startRow = Math.max(0, Math.floor(scrollTop / rowHeight) - BUFFER_ROWS);
-  const endRow = Math.ceil((scrollTop + containerHeight) / rowHeight) + BUFFER_ROWS;
-  
-  // Calculate indices ensuring we don't skip the first item
+  const endRow = Math.min(
+    totalRows,
+    Math.ceil((scrollTop + containerHeight) / rowHeight) + BUFFER_ROWS
+  );
+
   const startIndex = startRow * columns;
   const endIndex = Math.min(endRow * columns, totalItems);
-  
-  // Generate grid items
+
   const visiblePokemons = sortedPokemons.slice(startIndex, endIndex);
-  
-  // Calculate spacer heights
-  const topSpacerHeight = startRow > 0 ? startRow * rowHeight : 0;
-  const bottomSpacerHeight = Math.max(0, ((totalItems - endIndex) / columns) * rowHeight);
 
   return (
-    <div className="pokemon-grid">
-      {startRow > 0 && <div style={{ height: `${topSpacerHeight}px` }} />}
-      {visiblePokemons.map((pokemon, index) => (
-        <PokemonCard
-          key={pokemon.pokemonKey}
-          pokemon={pokemon}
-          onSelect={() => handleSelect(pokemon)}
-          isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
-          isShiny={isShiny}
-          showShadow={showShadow}
-          multiFormPokedexNumbers={multiFormPokedexNumbers}
-          ownershipFilter={ownershipFilter}
-          showAll={showAll}
-          sortType={sortType}
-          isEditable={isEditable}
-          toggleCardHighlight={toggleCardHighlight}
-          setIsFastSelectEnabled={setIsFastSelectEnabled}
-          isFastSelectEnabled={isFastSelectEnabled}
-          variants={variants}
-        />
-      ))}
-      <div style={{ height: `${bottomSpacerHeight}px` }} />
+    <div
+      className="pokemon-grid"
+      style={{ position: 'relative', height: `${totalHeight}px` }}
+    >
+      {visiblePokemons.map((pokemon, i) => {
+        const index = startIndex + i;
+        const row = Math.floor(index / columns);
+        const col = index % columns;
+        return (
+          <div
+            key={pokemon.pokemonKey}
+            ref={i === 0 ? firstItemRef : null}
+            style={{
+              position: 'absolute',
+              top: `${row * rowHeight}px`,
+              left: `${(col * 100) / columns}%`,
+              width: `${100 / columns}%`,
+            }}
+          >
+            <PokemonCard
+              pokemon={pokemon}
+              onSelect={() => handleSelect(pokemon)}
+              isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
+              isShiny={isShiny}
+              showShadow={showShadow}
+              multiFormPokedexNumbers={multiFormPokedexNumbers}
+              ownershipFilter={ownershipFilter}
+              showAll={showAll}
+              sortType={sortType}
+              isEditable={isEditable}
+              toggleCardHighlight={toggleCardHighlight}
+              setIsFastSelectEnabled={setIsFastSelectEnabled}
+              isFastSelectEnabled={isFastSelectEnabled}
+              variants={variants}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 });
