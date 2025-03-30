@@ -1,59 +1,222 @@
 /* SortOverlay.css */
 .sort-overlay {
     position: fixed;
-    bottom: 1.5%;
+    bottom: clamp(0.5%, 1.5%, 2.5%);
     right: -99%;
     z-index: 1001;
     transform-origin: bottom right;
 }
 
-.sort-button, .sort-type-button {
-    padding: 8px 16px;
-    font-size: 16px;
+.sort-button {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-size: clamp(12px, 16px, 20px);
     cursor: pointer;
-    display: block; /* Makes each option expand the full width of the list */
-    margin-top: 4px; /* Spacing between buttons */
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 1002;
+    filter: drop-shadow(0 0 3px #ffffff);
+}
+
+.sort-type-button {
+    padding: clamp(4px, 8px, 12px) clamp(8px, 16px, 24px);
+    font-size: clamp(12px, 16px, 20px);
+    cursor: pointer;
+    display: block;
+    margin-top: clamp(2px, 4px, 6px);
     background-color: #34807d;
+}
+
+.icon-circle {
+    border-radius: 50%;
+    background-color: #34807d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    z-index: 1003;
+    box-sizing: border-box;
+}
+
+.icon-circle::before {
+    content: '';
+    position: absolute;
+    top: clamp(1.3px, 2.6px, 3.9px);
+    left: clamp(1.3px, 2.6px, 3.9px);
+    right: clamp(1.3px, 2.6px, 3.9px);
+    bottom: clamp(1.3px, 2.6px, 3.9px);
+    border: clamp(0.65px, 1.3px, 1.95px) solid #b4fea7;
+    border-radius: 50%;
+    z-index: 1004;
+}
+
+.sort-type-circle {
+    width: clamp(46.8px, 62.4px, 78px);
+    height: clamp(46.8px, 62.4px, 78px);
+}
+
+.sort-mode-circle {
+    width: clamp(23.4px, 31.2px, 39px);
+    height: clamp(23.4px, 31.2px, 39px);
+    margin-left: clamp(-11.7px, -15.6px, -19.5px);
+    z-index: 1005;
+}
+
+.sort-button-img {
+    max-width: clamp(15px, 30px, 50px);
+    max-height: clamp(15px, 30px, 50px);
+    position: relative;
+    z-index: 1006;
+}
+
+.sort-arrow-img {
+    max-width: clamp(8px, 15px, 20px);
+    max-height: clamp(8px, 15px, 20px);
+    position: relative;
+    z-index: 1006;
 }
 
 .sort-list {
     display: flex;
-    flex-direction: column; /* List expands upwards */
-    align-items: flex-end; /* Align buttons to the end (right side) */
+    flex-direction: column;
+    align-items: flex-end;
+    position: relative;
+    z-index: 1007;
 }
 
 .sort-overlay .error-message {
     color: red;
-    font-size: 14px;
+    font-size: clamp(10px, 14px, 18px);
     position: absolute;
-    bottom: -25px; /* Position it below the sort button */
+    bottom: clamp(-15px, -25px, -35px);
     right: 0;
     background: white;
-    padding: 5px;
+    padding: clamp(3px, 5px, 7px);
     border: 1px solid #ff0000;
-    border-radius: 4px;
+    border-radius: clamp(2px, 4px, 6px);
+    z-index: 1008;
 }
 
-@media (max-width: 480px) {
-    .sort-overlay {
-        transform: scale(0.55);
-    }
-}
-
+/* Media Queries for Scaling Up */
 @media (min-width: 481px) and (max-width: 767px) {
-    .sort-overlay {
-        transform: scale(0.6);
+    .sort-type-circle {
+        width: clamp(54.6px, 72.8px, 91px);
+        height: clamp(54.6px, 72.8px, 91px);
+    }
+    .sort-mode-circle {
+        width: clamp(27.3px, 36.4px, 45.5px);
+        height: clamp(27.3px, 36.4px, 45.5px);
+        margin-left: clamp(-13.65px, -18.2px, -22.75px);
+    }
+    .sort-button-img {
+        max-width: clamp(17.5px, 35px, 58px);
+        max-height: clamp(17.5px, 35px, 58px);
+    }
+    .sort-arrow-img {
+        max-width: clamp(9.2px, 17.5px, 23px);
+        max-height: clamp(9.2px, 17.5px, 23px);
+    }
+    .icon-circle::before {
+        content: ''; /* Preserve the pseudo-element */
+        position: absolute;
+        top: clamp(1.5px, 3px, 4.5px);
+        left: clamp(1.5px, 3px, 4.5px);
+        right: clamp(1.5px, 3px, 4.5px);
+        bottom: clamp(1.5px, 3px, 4.5px);
+        border: clamp(0.75px, 1.5px, 2.25px) solid #b4fea7;
+        border-radius: 50%;
     }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
-    .sort-overlay {
-        transform: scale(0.65);
-    }    
+    .sort-type-circle {
+        width: clamp(62.4px, 83.2px, 104px);
+        height: clamp(62.4px, 83.2px, 104px);
+    }
+    .sort-mode-circle {
+        width: clamp(31.2px, 41.6px, 52px);
+        height: clamp(31.2px, 41.6px, 52px);
+        margin-left: clamp(-15.6px, -20.8px, -26px);
+    }
+    .sort-button-img {
+        max-width: clamp(20px, 40px, 66px);
+        max-height: clamp(20px, 40px, 66px);
+    }
+    .sort-arrow-img {
+        max-width: clamp(10.5px, 20px, 26px);
+        max-height: clamp(10.5px, 20px, 26px);
+    }
+    .icon-circle::before {
+        content: '';
+        position: absolute;
+        top: clamp(1.7px, 3.4px, 5.1px);
+        left: clamp(1.7px, 3.4px, 5.1px);
+        right: clamp(1.7px, 3.4px, 5.1px);
+        bottom: clamp(1.7px, 3.4px, 5.1px);
+        border: clamp(0.85px, 1.7px, 2.55px) solid #b4fea7;
+        border-radius: 50%;
+    }
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {
-    .sort-overlay {
-        transform: scale(0.75);
-    }    
+    .sort-type-circle {
+        width: clamp(70.2px, 93.6px, 117px);
+        height: clamp(70.2px, 93.6px, 117px);
+    }
+    .sort-mode-circle {
+        width: clamp(35.1px, 46.8px, 58.5px);
+        height: clamp(35.1px, 46.8px, 58.5px);
+        margin-left: clamp(-17.55px, -23.4px, -29.25px);
+    }
+    .sort-button-img {
+        max-width: clamp(22.5px, 45px, 75px);
+        max-height: clamp(22.5px, 45px, 75px);
+    }
+    .sort-arrow-img {
+        max-width: clamp(12px, 22.5px, 30px);
+        max-height: clamp(12px, 22.5px, 30px);
+    }
+    .icon-circle::before {
+        content: '';
+        position: absolute;
+        top: clamp(2px, 4px, 6px);
+        left: clamp(2px, 4px, 6px);
+        right: clamp(2px, 4px, 6px);
+        bottom: clamp(2px, 4px, 6px);
+        border: clamp(1px, 2px, 3px) solid #b4fea7;
+        border-radius: 50%;
+    }
+}
+
+@media (min-width: 1440px) {
+    .sort-type-circle {
+        width: clamp(78px, 104px, 130px);
+        height: clamp(78px, 104px, 130px);
+    }
+    .sort-mode-circle {
+        width: clamp(39px, 52px, 65px);
+        height: clamp(39px, 52px, 65px);
+        margin-left: clamp(-19.5px, -26px, -32.5px);
+    }
+    .sort-button-img {
+        max-width: clamp(25px, 50px, 83px);
+        max-height: clamp(25px, 50px, 83px);
+    }
+    .sort-arrow-img {
+        max-width: clamp(13.5px, 25px, 33px);
+        max-height: clamp(13.5px, 25px, 33px);
+    }
+    .icon-circle::before {
+        content: '';
+        position: absolute;
+        top: clamp(2.2px, 4.4px, 6.6px);
+        left: clamp(2.2px, 4.4px, 6.6px);
+        right: clamp(2.2px, 4.4px, 6.6px);
+        bottom: clamp(2.2px, 4.4px, 6.6px);
+        border: clamp(1.1px, 2.2px, 3.3px) solid #b4fea7;
+        border-radius: 50%;
+    }
 }
