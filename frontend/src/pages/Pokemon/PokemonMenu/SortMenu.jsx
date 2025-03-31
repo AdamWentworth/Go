@@ -7,7 +7,7 @@ import './SortMenu.css';
 
 const SortMenu = ({ sortType, setSortType, sortMode, setSortMode }) => {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false); // Combined state for in/out animation
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const sortTypeDisplayNames = {
     releaseDate: 'RECENT',
@@ -37,12 +37,10 @@ const SortMenu = ({ sortType, setSortType, sortMode, setSortMode }) => {
 
   const handleToggleSortMenu = () => {
     if (isMenuVisible) {
-      // Start fade-out
-      setIsAnimating(false); // Trigger fade-out
+      setIsAnimating(false); // Trigger fade-out and slide-down
     } else {
-      // Start fade-in
       setIsMenuVisible(true);
-      setTimeout(() => setIsAnimating(true), 10); // Small delay for fade-in
+      setTimeout(() => setIsAnimating(true), 10); // Small delay for fade-in and slide-up
     }
   };
 
@@ -53,18 +51,17 @@ const SortMenu = ({ sortType, setSortType, sortMode, setSortMode }) => {
       setSortType(newSortType);
       setSortMode('ascending');
     }
-    setIsAnimating(false); // Trigger fade-out
+    setIsAnimating(false); // Trigger fade-out and slide-down
   };
 
   const handleBackdropClick = (event) => {
     if (event.target === event.currentTarget) {
-      setIsAnimating(false); // Trigger fade-out
+      setIsAnimating(false); // Trigger fade-out and slide-down
     }
   };
 
   useEffect(() => {
     if (!isAnimating && isMenuVisible) {
-      // When fade-out starts and isMenuVisible is still true, wait for animation to finish
       const timer = setTimeout(() => setIsMenuVisible(false), 250); // Match CSS transition duration
       return () => clearTimeout(timer);
     }
@@ -98,12 +95,13 @@ const SortMenu = ({ sortType, setSortType, sortMode, setSortMode }) => {
         <OverlayPortal>
           <div className={`sort-menu-overlay ${isAnimating ? 'visible' : ''}`} onClick={handleBackdropClick}>
             <WindowOverlay onClose={() => setIsAnimating(false)} className="sort-menu-content">
-              <div className="sort-menu">
-                {['releaseDate', 'favorite', 'number', 'hp', 'name', 'combatPower'].map((type) => (
+              <div className={`sort-menu ${isAnimating ? 'open' : ''}`}>
+                {['releaseDate', 'favorite', 'number', 'hp', 'name', 'combatPower'].map((type, index) => (
                   <button
                     key={type}
                     onClick={() => handleSortTypeChange(type)}
                     className="sort-type-button"
+                    style={{ transitionDelay: `${index * 0.05}s` }} // Stagger animation
                   >
                     <span className="sort-type-text">{sortTypeDisplayNames[type]}</span>
                     <img className="sort-type-image" src={getImagePath(type)} alt={sortTypeDisplayNames[type]} />

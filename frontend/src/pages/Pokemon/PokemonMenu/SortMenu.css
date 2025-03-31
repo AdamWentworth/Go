@@ -118,8 +118,15 @@
   cursor: pointer;
   font-size: clamp(1rem, 2vw, 1.5rem);
   color: #fff;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, transform 0.15s ease, opacity 0.15s ease; /* Added transform and opacity transitions */
   gap: 10px;
+  transform: translateY(100vh); /* Start below the viewport */
+  opacity: 0; /* Start hidden */
+}
+
+.sort-menu.open .sort-type-button {
+  transform: translateY(0); /* Move to natural grid position */
+  opacity: 1; /* Fully visible */
 }
 
 .sort-type-text {
@@ -144,10 +151,10 @@
 /* Close Button Styling - Base (up to 480px) */
 .sort-menu-overlay .close-button {
   position: fixed;
-  bottom: clamp(0.5%, 1%, 1.5%); /* Different base position */
-  right: clamp(6%, 7%, 8%); /* Adjusted for this range */
-  transform: none; /* Override default CloseButton transform */
-  z-index: 2100; /* Ensure it’s above the overlay */
+  bottom: clamp(0.5%, 1%, 1.5%);
+  right: clamp(6%, 7%, 8%);
+  transform: none;
+  z-index: 2100;
   left: unset;
   padding: unset;
 }
@@ -179,8 +186,8 @@
     border: clamp(0.75px, 1.5px, 2.25px) solid #b4fea7;
   }
   .sort-menu-overlay .close-button {
-    bottom: clamp(1%, 1.5%, 2%); /* Adjusted for this range */
-    right: clamp(3%, 4%, 5%); /* Adjusted for this range */
+    bottom: clamp(1%, 1.5%, 2%);
+    right: clamp(3%, 4%, 5%);
   }
 }
 
@@ -210,8 +217,8 @@
     border: clamp(0.85px, 1.7px, 2.55px) solid #b4fea7;
   }
   .sort-menu-overlay .close-button {
-    bottom: clamp(1.5%, 2%, 2.5%); /* Adjusted for this range */
-    right: clamp(4%, 5%, 6%); /* Adjusted for this range */
+    bottom: clamp(1.5%, 2%, 2.5%);
+    right: clamp(4%, 5%, 6%);
   }
 }
 
@@ -241,8 +248,8 @@
     border: clamp(1px, 2px, 3px) solid #b4fea7;
   }
   .sort-menu-overlay .close-button {
-    bottom: clamp(2%, 2.5%, 3%); /* Adjusted for this range */
-    right: clamp(4%, 5%, 6%); /* Adjusted for this range */
+    bottom: clamp(2%, 2.5%, 3%);
+    right: clamp(4%, 5%, 6%);
   }
 }
 
@@ -272,8 +279,8 @@
     border: clamp(1.1px, 2.2px, 3.3px) solid #b4fea7;
   }
   .sort-menu-overlay .close-button {
-    bottom: clamp(2.5%, 3%, 3.5%); /* Adjusted for this range */
-    right: clamp(3%, 4%, 5%); /* Adjusted for this range */
+    bottom: clamp(2.5%, 3%, 3.5%);
+    right: clamp(3%, 4%, 5%);
   }
 }
 
@@ -285,6 +292,9 @@
   .sort-menu {
     transform: translateY(10%);
     padding-right: 20px;
+  }
+  .sort-menu.open {
+    transform: translateY(10%); /* Maintain final position */
   }
 }
 
