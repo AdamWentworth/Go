@@ -1,6 +1,76 @@
 /* SortMenu.css */
+.sort-overlay {
+  position: fixed;
+  bottom: clamp(0.5%, 1.5%, 2.5%);
+  right: clamp(-99%, -98.5%, -97.5%);
+  z-index: 1001;
+  transform-origin: bottom right;
+}
 
-/* Full-screen overlay with gradient background */
+.sort-button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: clamp(12px, 16px, 20px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 1002;
+  filter: drop-shadow(0 0 3px #ffffff);
+}
+
+.icon-circle {
+  border-radius: 50%;
+  background-color: #34807d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  z-index: 1003;
+  box-sizing: border-box;
+}
+
+.icon-circle::before {
+  content: '';
+  position: absolute;
+  top: clamp(1.3px, 2.6px, 3.9px);
+  left: clamp(1.3px, 2.6px, 3.9px);
+  right: clamp(1.3px, 2.6px, 3.9px);
+  bottom: clamp(1.3px, 2.6px, 3.9px);
+  border: clamp(0.65px, 1.3px, 1.95px) solid #b4fea7;
+  border-radius: 50%;
+  z-index: 1004;
+}
+
+.sort-type-circle {
+  width: clamp(46.8px, 62.4px, 78px);
+  height: clamp(46.8px, 62.4px, 78px);
+}
+
+.sort-mode-circle {
+  width: clamp(23.4px, 31.2px, 39px);
+  height: clamp(23.4px, 31.2px, 39px);
+  margin-left: clamp(-11.7px, -15.6px, -19.5px);
+  z-index: 1005;
+}
+
+.sort-button-img {
+  max-width: clamp(15px, 30px, 50px);
+  max-height: clamp(15px, 30px, 50px);
+  position: relative;
+  z-index: 1006;
+}
+
+.sort-arrow-img {
+  max-width: clamp(8px, 15px, 20px);
+  max-height: clamp(8px, 15px, 20px);
+  position: relative;
+  z-index: 1006;
+  margin-left: 1px;
+}
+
 .sort-menu-overlay {
   position: fixed;
   top: 0;
@@ -14,7 +84,6 @@
   transition: opacity 0.25s ease-in-out;
 }
 
-/* When visible, fade in */
 .sort-menu-overlay.visible {
   opacity: 1;
   pointer-events: all;
@@ -24,14 +93,13 @@
   width: 100%;
   height: 100%;
   display: flex;
-  justify-content: center; /* Center vertically */
-  align-items: flex-end;   /* Align horizontally to the right */
+  justify-content: center;
+  align-items: flex-end;
   background: transparent;
   box-shadow: none;
   padding: 0;
 }
 
-/* Container for sort rows */
 .sort-menu {
   display: grid;
   grid-template-columns: 1fr;
@@ -39,7 +107,6 @@
   transform: translateY(20%);
 }
 
-/* Each button is a grid with 3 columns */
 .sort-type-button {
   display: grid;
   grid-template-columns: 1fr auto auto;
@@ -52,16 +119,14 @@
   font-size: clamp(1rem, 2vw, 1.5rem);
   color: #fff;
   transition: background 0.2s ease;
-  gap: 10px; /* Base gap for mobile */
+  gap: 10px;
 }
 
-/* Text column: right-aligned */
 .sort-type-text {
   text-align: right;
   color: #deffe1;
 }
 
-/* Style for the sort type image */
 .sort-type-image {
   width: clamp(35px, 4.5vw, 55px);
   height: auto;
@@ -76,19 +141,143 @@
   object-fit: contain;
 }
 
-.sort-menu-header .close-button {
-  left: 85%;
+/* Close Button Styling - Base (up to 480px) */
+.sort-menu-overlay .close-button {
+  position: fixed;
+  bottom: clamp(0.5%, 1%, 1.5%); /* Different base position */
+  right: clamp(6%, 7%, 8%); /* Adjusted for this range */
+  transform: none; /* Override default CloseButton transform */
+  z-index: 2100; /* Ensure it’s above the overlay */
+  left: unset;
+  padding: unset;
 }
 
-/* Media Queries for wider screens */
-
-@media screen and (min-width: 480px) {
-  .sort-menu-header .close-button {
-    left: 90%;
+/* Media Queries for Sort Overlay and Close Button */
+@media (min-width: 481px) and (max-width: 767px) {
+  .sort-type-circle {
+    width: clamp(54.6px, 72.8px, 91px);
+    height: clamp(54.6px, 72.8px, 91px);
+  }
+  .sort-mode-circle {
+    width: clamp(27.3px, 36.4px, 45.5px);
+    height: clamp(27.3px, 36.4px, 45.5px);
+    margin-left: clamp(-13.65px, -18.2px, -22.75px);
+  }
+  .sort-button-img {
+    max-width: clamp(17.5px, 35px, 58px);
+    max-height: clamp(17.5px, 35px, 58px);
+  }
+  .sort-arrow-img {
+    max-width: clamp(9.2px, 17.5px, 23px);
+    max-height: clamp(9.2px, 17.5px, 23px);
+  }
+  .icon-circle::before {
+    top: clamp(1.5px, 3px, 4.5px);
+    left: clamp(1.5px, 3px, 4.5px);
+    right: clamp(1.5px, 3px, 4.5px);
+    bottom: clamp(1.5px, 3px, 4.5px);
+    border: clamp(0.75px, 1.5px, 2.25px) solid #b4fea7;
+  }
+  .sort-menu-overlay .close-button {
+    bottom: clamp(1%, 1.5%, 2%); /* Adjusted for this range */
+    right: clamp(3%, 4%, 5%); /* Adjusted for this range */
   }
 }
 
-/* For tablets and small desktops */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .sort-type-circle {
+    width: clamp(62.4px, 83.2px, 104px);
+    height: clamp(62.4px, 83.2px, 104px);
+  }
+  .sort-mode-circle {
+    width: clamp(31.2px, 41.6px, 52px);
+    height: clamp(31.2px, 41.6px, 52px);
+    margin-left: clamp(-15.6px, -20.8px, -26px);
+  }
+  .sort-button-img {
+    max-width: clamp(20px, 40px, 66px);
+    max-height: clamp(20px, 40px, 66px);
+  }
+  .sort-arrow-img {
+    max-width: clamp(10.5px, 20px, 26px);
+    max-height: clamp(10.5px, 20px, 26px);
+  }
+  .icon-circle::before {
+    top: clamp(1.7px, 3.4px, 5.1px);
+    left: clamp(1.7px, 3.4px, 5.1px);
+    right: clamp(1.7px, 3.4px, 5.1px);
+    bottom: clamp(1.7px, 3.4px, 5.1px);
+    border: clamp(0.85px, 1.7px, 2.55px) solid #b4fea7;
+  }
+  .sort-menu-overlay .close-button {
+    bottom: clamp(1.5%, 2%, 2.5%); /* Adjusted for this range */
+    right: clamp(4%, 5%, 6%); /* Adjusted for this range */
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .sort-type-circle {
+    width: clamp(70.2px, 93.6px, 117px);
+    height: clamp(70.2px, 93.6px, 117px);
+  }
+  .sort-mode-circle {
+    width: clamp(35.1px, 46.8px, 58.5px);
+    height: clamp(35.1px, 46.8px, 58.5px);
+    margin-left: clamp(-17.55px, -23.4px, -29.25px);
+  }
+  .sort-button-img {
+    max-width: clamp(22.5px, 45px, 75px);
+    max-height: clamp(22.5px, 45px, 75px);
+  }
+  .sort-arrow-img {
+    max-width: clamp(12px, 22.5px, 30px);
+    max-height: clamp(12px, 22.5px, 30px);
+  }
+  .icon-circle::before {
+    top: clamp(2px, 4px, 6px);
+    left: clamp(2px, 4px, 6px);
+    right: clamp(2px, 4px, 6px);
+    bottom: clamp(2px, 4px, 6px);
+    border: clamp(1px, 2px, 3px) solid #b4fea7;
+  }
+  .sort-menu-overlay .close-button {
+    bottom: clamp(2%, 2.5%, 3%); /* Adjusted for this range */
+    right: clamp(4%, 5%, 6%); /* Adjusted for this range */
+  }
+}
+
+@media (min-width: 1440px) {
+  .sort-type-circle {
+    width: clamp(78px, 104px, 130px);
+    height: clamp(78px, 104px, 130px);
+  }
+  .sort-mode-circle {
+    width: clamp(39px, 52px, 65px);
+    height: clamp(39px, 52px, 65px);
+    margin-left: clamp(-19.5px, -26px, -32.5px);
+  }
+  .sort-button-img {
+    max-width: clamp(25px, 50px, 83px);
+    max-height: clamp(25px, 50px, 83px);
+  }
+  .sort-arrow-img {
+    max-width: clamp(13.5px, 25px, 33px);
+    max-height: clamp(13.5px, 25px, 33px);
+  }
+  .icon-circle::before {
+    top: clamp(2.2px, 4.4px, 6.6px);
+    left: clamp(2.2px, 4.4px, 6.6px);
+    right: clamp(2.2px, 4.4px, 6.6px);
+    bottom: clamp(2.2px, 4.4px, 6.6px);
+    border: clamp(1.1px, 2.2px, 3.3px) solid #b4fea7;
+  }
+  .sort-menu-overlay .close-button {
+    bottom: clamp(2.5%, 3%, 3.5%); /* Adjusted for this range */
+    right: clamp(3%, 4%, 5%); /* Adjusted for this range */
+  }
+}
+
+/* Media Queries for Sort Menu */
 @media screen and (min-width: 768px) {
   .sort-type-button {
     gap: 15px;
@@ -97,24 +286,16 @@
     transform: translateY(10%);
     padding-right: 20px;
   }
-  .sort-menu-header .close-button {
-    left: 92.5%;
-  }
 }
 
-/* For medium desktops */
 @media screen and (min-width: 1024px) {
   .sort-type-button {
     gap: 20px;
   }
 }
 
-/* For large desktops */
 @media screen and (min-width: 1440px) {
   .sort-type-button {
     gap: 25px;
-  }
-  .sort-menu-header .close-button {
-    left: 95%;
   }
 }

@@ -1,5 +1,4 @@
 // PokemonMenu.jsx
-
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { validate as uuidValidate } from 'uuid';
 import PokemonGrid from './PokemonGrid';
@@ -11,8 +10,7 @@ import './PokemonMenu.css';
 import { useModal } from '../../../contexts/ModalContext';
 import SearchUI from './SearchUI';
 import SearchMenu from './SearchMenu';
-import SortOverlay from './SortOverlay';
-import SortMenu from './SortMenu';
+import SortMenu from './SortMenu'; // Only importing SortMenu now
 
 function PokemonMenu({
   isEditable,
@@ -34,7 +32,7 @@ function PokemonMenu({
   sortType,
   setSortType,
   sortMode,
-  toggleSortMode,
+  toggleSortMode, // Will be renamed to setSortMode for consistency
   variants,
   username,
   setIsFastSelectEnabled,
@@ -46,8 +44,6 @@ function PokemonMenu({
 }) {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
-  const [isSortMenuVisible, setIsSortMenuVisible] = useState(false);
-  const [isSortMenuExiting, setIsSortMenuExiting] = useState(false); // New state for exit animation
   const { alert } = useModal();
   const [optionsSelectedPokemon, setOptionsSelectedPokemon] = useState(null);
   const searchAreaRef = useRef(null);
@@ -146,20 +142,6 @@ function PokemonMenu({
     setSelectedPokemon(isInstance ? { pokemon, overlayType: 'instance' } : pokemon);
   };
 
-  const toggleSortMenu = () => {
-    if (isSortMenuVisible) {
-      // Start exiting animation
-      setIsSortMenuExiting(true);
-      // Delay unmounting until animation completes (now 250ms)
-      setTimeout(() => {
-        setIsSortMenuVisible(false);
-        setIsSortMenuExiting(false);
-      }, 250); // 250ms delay
-    } else {
-      setIsSortMenuVisible(true);
-    }
-  };  
-
   if (loading) {
     return <p>Loading...</p>;
   }
@@ -219,23 +201,11 @@ function PokemonMenu({
       )}
 
       {highlightedCards.size === 0 && (
-        <SortOverlay
-          sortType={sortType}
-          setSortType={setSortType}
-          sortMode={sortMode}
-          setSortMode={toggleSortMode}
-          onToggleSortMenu={toggleSortMenu}
-        />
-      )}
-
-      {(isSortMenuVisible || isSortMenuExiting) && (
         <SortMenu
           sortType={sortType}
           setSortType={setSortType}
           sortMode={sortMode}
-          setSortMode={toggleSortMode}
-          onClose={() => toggleSortMenu()} // Update to use toggleSortMenu
-          isVisible={isSortMenuVisible && !isSortMenuExiting} // Visible only when not exiting
+          setSortMode={toggleSortMode} // Renamed from toggleSortMode to setSortMode in props
         />
       )}
 
