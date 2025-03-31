@@ -103,7 +103,8 @@ background-color: #e7f3df;
 .pokemon-options-overlay .option-text,
 .pokemon-options-overlay .preview-text,
 .fusion-pokemon-selection-overlay .fusion-modal-content,
-.header .free-toggle-text {
+.header .free-toggle-text,
+.pokemon-card {
     color: #48615e;
 }
 
@@ -141,7 +142,7 @@ p,
 }
 
 /* Gradients and Shadows */
-.action-menu-overlay {
+.action-menu-overlay, .sort-menu-content {
     background: linear-gradient(to bottom right, #e0f0e5, #34807d);
 }
 

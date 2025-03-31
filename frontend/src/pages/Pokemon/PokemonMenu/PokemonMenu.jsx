@@ -12,6 +12,7 @@ import { useModal } from '../../../contexts/ModalContext';
 import SearchUI from './SearchUI';
 import SearchMenu from './SearchMenu';
 import SortOverlay from './SortOverlay';
+import SortMenu from './SortMenu';
 
 function PokemonMenu({
   isEditable,
@@ -43,16 +44,15 @@ function PokemonMenu({
   toggleEvolutionaryLine,
   onSearchMenuStateChange,
 }) {
-  // Existing state and refs
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [isSortMenuVisible, setIsSortMenuVisible] = useState(false);
+  const [isSortMenuExiting, setIsSortMenuExiting] = useState(false); // New state for exit animation
   const { alert } = useModal();
   const [optionsSelectedPokemon, setOptionsSelectedPokemon] = useState(null);
   const searchAreaRef = useRef(null);
-  // New ref for the scrollable grid container:
   const gridContainerRef = useRef(null);
 
-  // Determine columns based on window width.
   const getColumns = () => {
     const width = window.innerWidth;
     if (width < 480) return 3;
@@ -61,41 +61,49 @@ function PokemonMenu({
     return 9;
   };
   const columns = getColumns();
-  const estimatedCardHeight = 150; // adjust based on your design
+  const estimatedCardHeight = 150;
 
-  // MEMOIZE SORTED POKEMONS
   const memoizedSortedPokemons = useMemo(() => sortedPokemons, [sortedPokemons]);
 
-  // MEMOIZE HANDLERS
-  const handleSelect = useCallback((pokemon) => {
-    if (!isEditable) {
-      setSelectedPokemon({ pokemon, overlayType: 'instance' });
-      return;
-    }
-    if (isFastSelectEnabled) {
-      const wasHighlighted = highlightedCards.has(pokemon.pokemonKey);
-      toggleCardHighlight(pokemon.pokemonKey);
-      if (wasHighlighted && highlightedCards.size === 1) {
-        setIsFastSelectEnabled(false);
+  const handleSelect = useCallback(
+    (pokemon) => {
+      if (!isEditable) {
+        setSelectedPokemon({ pokemon, overlayType: 'instance' });
+        return;
       }
-      return;
-    }
-    if (pokemon.ownershipStatus?.disabled) {
-      alert('This Pokémon is fused with another and is disabled until unfused.');
-      return;
-    }
-    const keyParts = pokemon.pokemonKey.split('_');
-    const possibleUUID = keyParts[keyParts.length - 1];
-    const isInstance = uuidValidate(possibleUUID);
-    setOptionsSelectedPokemon({ pokemon, isInstance });
-  }, [isEditable, isFastSelectEnabled, highlightedCards, toggleCardHighlight, setIsFastSelectEnabled, alert, setSelectedPokemon]);
+      if (isFastSelectEnabled) {
+        const wasHighlighted = highlightedCards.has(pokemon.pokemonKey);
+        toggleCardHighlight(pokemon.pokemonKey);
+        if (wasHighlighted && highlightedCards.size === 1) {
+          setIsFastSelectEnabled(false);
+        }
+        return;
+      }
+      if (pokemon.ownershipStatus?.disabled) {
+        alert('This Pokémon is fused with another and is disabled until unfused.');
+        return;
+      }
+      const keyParts = pokemon.pokemonKey.split('_');
+      const possibleUUID = keyParts[keyParts.length - 1];
+      const isInstance = uuidValidate(possibleUUID);
+      setOptionsSelectedPokemon({ pokemon, isInstance });
+    },
+    [
+      isEditable,
+      isFastSelectEnabled,
+      highlightedCards,
+      toggleCardHighlight,
+      setIsFastSelectEnabled,
+      alert,
+      setSelectedPokemon,
+    ]
+  );
 
   const memoizedToggleCardHighlight = useCallback(
     (key) => toggleCardHighlight(key),
     [toggleCardHighlight]
   );
 
-  // Hide menu (and mark input as unfocused) if clicking outside.
   useEffect(() => {
     function handleDocumentClick(e) {
       if (searchAreaRef.current && !searchAreaRef.current.contains(e.target)) {
@@ -137,6 +145,20 @@ function PokemonMenu({
   const openOverlay = ({ pokemon, isInstance }) => {
     setSelectedPokemon(isInstance ? { pokemon, overlayType: 'instance' } : pokemon);
   };
+
+  const toggleSortMenu = () => {
+    if (isSortMenuVisible) {
+      // Start exiting animation
+      setIsSortMenuExiting(true);
+      // Delay unmounting until animation completes (now 250ms)
+      setTimeout(() => {
+        setIsSortMenuVisible(false);
+        setIsSortMenuExiting(false);
+      }, 250); // 250ms delay
+    } else {
+      setIsSortMenuVisible(true);
+    }
+  };  
 
   if (loading) {
     return <p>Loading...</p>;
@@ -186,11 +208,11 @@ function PokemonMenu({
               totalItems={memoizedSortedPokemons.length}
               columns={columns}
               cardHeight={estimatedCardHeight}
-              gridContainerRef={gridContainerRef} 
+              gridContainerRef={gridContainerRef}
             />
           </div>
-          <CustomScrollbar 
-            containerRef={gridContainerRef} 
+          <CustomScrollbar
+            containerRef={gridContainerRef}
             totalItems={memoizedSortedPokemons.length}
           />
         </div>
@@ -202,6 +224,18 @@ function PokemonMenu({
           setSortType={setSortType}
           sortMode={sortMode}
           setSortMode={toggleSortMode}
+          onToggleSortMenu={toggleSortMenu}
+        />
+      )}
+
+      {(isSortMenuVisible || isSortMenuExiting) && (
+        <SortMenu
+          sortType={sortType}
+          setSortType={setSortType}
+          sortMode={sortMode}
+          setSortMode={toggleSortMode}
+          onClose={() => toggleSortMenu()} // Update to use toggleSortMenu
+          isVisible={isSortMenuVisible && !isSortMenuExiting} // Visible only when not exiting
         />
       )}
 
