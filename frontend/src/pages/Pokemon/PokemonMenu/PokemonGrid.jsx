@@ -63,12 +63,12 @@ const PokemonGrid = memo(({
   useEffect(() => {
     if (firstItemRef.current) {
       const item = firstItemRef.current;
-      // Here we try to include any vertical spacing (for example, margin-bottom)
       const style = window.getComputedStyle(item);
+      const marginTop = parseInt(style.marginTop) || 0;
       const marginBottom = parseInt(style.marginBottom) || 0;
-      setMeasuredRowHeight(item.offsetHeight + marginBottom);
+      setMeasuredRowHeight(item.offsetHeight + marginTop + marginBottom);
     }
-  }, [columns, cardHeight]);
+  }, [columns, cardHeight]);  
 
   useEffect(() => {
     const measureHeight = () => {

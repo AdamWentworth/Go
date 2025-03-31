@@ -47,7 +47,9 @@
 .success-container,
 .mainButtonsContainer,
 .confirmation-content,
-.header-section.search-section {
+.header-section.search-section,
+.search-menu,
+.search-header {
     background-color: #f8fff9;
 }
 
@@ -104,8 +106,13 @@ background-color: #e7f3df;
 .pokemon-options-overlay .preview-text,
 .fusion-pokemon-selection-overlay .fusion-modal-content,
 .header .free-toggle-text,
-.pokemon-card {
+.pokemon-card,
+.search-menu .section-title{
     color: #48615e;
+}
+
+.search-layout--focused .arrow-icon {
+    filter: invert(0.5); /* Apply a black overlay effect */
 }
 
 .pokemon-card h2,
@@ -146,7 +153,7 @@ p,
     background: linear-gradient(to bottom right, #e0f0e5, #34807d);
 }
 
-.action-menu-button-image {
+.action-menu-button-image, .sort-button {
     filter: drop-shadow(0 0 3px #000000); /* Adds blue glow around opaque parts */
 }
 

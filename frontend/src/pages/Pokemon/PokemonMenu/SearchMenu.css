@@ -6,6 +6,7 @@
 .search-menu {  
     pointer-events: auto;
     position: relative;
+    margin-bottom: 80px;
 }
 .search-menu h3 {
     margin-block-start: 0px;
