@@ -1,70 +1,213 @@
-# Getting Started with Create React App
+# Pokémon Go Nexus Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is the **React frontend** for the Pokémon Go Nexus platform, designed to provide a rich, responsive interface for managing Pokémon ownership, proposing trades, creating a wanted list, viewing Pokédex entries, and filtering or comparing Pokémon attributes.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🧩 Overview
 
-### `npm start`
+The app supports:
+- 🧠 Ownership tracking with deep variant detail
+- 📊 Filtering by traits (shiny, lucky, CP, gender, etc.)
+- 🔁 Trade proposal & negotiation flows
+- 🔍 Full search & map-based Pokémon discovery
+- 🧬 Fusion and Mega evolution management
+- 🧭 Pokedex-based browsing and list organization
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+> 🔧 The frontend is actively in development. Many components are still evolving, and some pages (like search, trades, and ownership overlays) may be incomplete or frequently changing.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## ⚙️ Tech Stack
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **React 18+**
+- **React Router** for navigation
+- **Context API** for shared state (auth, theme, Pokémon data, trades, etc.)
+- **Custom Hooks** for filtering, sorting, fetching, etc.
+- **IndexedDB** + **SSE** for fast offline caching and syncing
+- **Jest** + **Testing Library** for component tests
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🚀 Getting Started
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 1. Install dependencies
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+npm install
+```
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## ⚙️ Environment Configuration
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Set up your environment variables for API connections in the appropriate `.env` files.
+If you're developing the frontend and don't need to run the backend locally, you can use the `.env.production` values to connect directly to the live APIs.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### 🛠️ `.env.development`
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```env
+REACT_APP_POKEMON_API_URL=http://localhost:3001/pokemon
+REACT_APP_AUTH_API_URL=http://localhost:3002/auth
+REACT_APP_RECEIVER_API_URL=http://localhost:3003/api
+REACT_APP_USERS_API_URL=http://localhost:3005/api
+REACT_APP_DISCOVER_API_URL=http://localhost:3006/api
+REACT_APP_LOCATION_SERVICE_URL=http://localhost:3007
+REACT_APP_EVENTS_API_URL=http://localhost:3008/api
 
-## Learn More
+REACT_APP_FORCED_REFRESH_TIMESTAMP=1740519179122
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 🚀 `.env.production`
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```env
+REACT_APP_POKEMON_API_URL=https://pokemongonexus.com/api/pokemon
+REACT_APP_AUTH_API_URL=https://pokemongonexus.com/api/auth
+REACT_APP_RECEIVER_API_URL=https://pokemongonexus.com/api/receiver
+REACT_APP_USERS_API_URL=https://pokemongonexus.com/api/users
+REACT_APP_DISCOVER_API_URL=https://pokemongonexus.com/api/discover
+REACT_APP_LOCATION_SERVICE_URL=https://pokemongonexus.com/api/location
+REACT_APP_EVENTS_API_URL=https://pokemongonexus.com/api/events
 
-### Code Splitting
+REACT_APP_FORCED_REFRESH_TIMESTAMP=1741290124604
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+🧠 The REACT_APP_FORCED_REFRESH_TIMESTAMP can be set to override the standard 24-hour Pokémon data cache. When updated, it forces all clients to re-fetch fresh data even if their local cache is still considered valid. Update this value whenever a major data update occurs.
 
-### Analyzing the Bundle Size
+Make sure to restart your dev server after changing `.env` values.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### 3. Start the dev server
 
-### Making a Progressive Web App
+```bash
+npm start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+---
 
-### Advanced Configuration
+## 🧱 Project Structure
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```plaintext
+frontend/
+├── public/              # Static files, assets, images, favicons, loading screens
+├── src/                 # Main app source code
+│   ├── components/      # Global reusable components (modals, spinners, nav, etc.)
+│   ├── contexts/        # Global React contexts (Auth, Session, TradeData, etc.)
+│   ├── hooks/           # Custom hooks for search, sort, filtering, etc.
+│   ├── pages/           # Main route-based app pages
+│   ├── services/        # API, SSE, location, IndexedDB interactions
+│   ├── utils/           # Constants, formatters, ID utils, etc.
+│   └── index.js         # Entry point
+```
 
-### Deployment
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 🧠 Core Page: `Pokemon.jsx`
 
-### `npm run build` fails to minify
+This is the **main UI** for managing a user's collection or another player's Pokémon list.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### 🧩 Key features:
+
+- **Horizontal 3-panel layout**:
+  - **Left:** Pokédex filters & saved lists
+  - **Center:** Main Pokémon grid with ownership status
+  - **Right:** Tag/Trade list manager
+- **Swipe/drag gesture support** (touch + mouse in dev)
+- **Dynamic filtering, sorting, searching**
+- **Fusion, Mega, Lucky, Max, IV, CP, Gender, Shadow, etc.**
+- **Trade mode integration**
+
+### 🧠 Key logic includes:
+
+- `usePokemonProcessing` → handles filtering/sorting
+- `useSwipeHandler` → controls sliding views
+- `useInstanceIdProcessor` → preselects specific Pokémon by query
+- `useMegaPokemonHandler` and `useFusionPokemonHandler` → dynamic modals for variant selection
+- `getTransform()` → calculates transform for panel slide animation
+
+### 🔄 View modes:
+
+```plaintext
+[pokedex] <--> [pokemon] <--> [tags]
+```
+
+---
+
+## 📍 Routes
+
+Currently implemented:
+
+- `/pokemon` — your collection
+- `/pokemon/:username` — view someone else's collection
+- `/login`, `/register`, `/account` — auth screens
+- `/trades` — trade list (work in progress)
+- `/search` — Pokémon search via filters or location
+
+---
+
+## 🗂 Major Contexts
+
+Located in `src/contexts/`, these React contexts help manage global state across the app:
+
+- `AuthContext` — Handles login state, authentication tokens, and user data.
+- `PokemonDataContext` — Core Pokémon ownership data, variants, syncing, and mutation helpers.
+- `TradeDataContext` — Centralized trade data and related helpers for proposal, acceptance, and state changes.
+- `ModalContext` — Global modal system for alerts, confirmation dialogs, and custom overlays.
+- `LocationContext` — Handles map view logic and geolocation features.
+- `ThemeContext` — Manages dark/light mode and theme switching.
+- `EventsContext` — Manages real-time updates via Server-Sent Events (SSE), including missed data syncing and reconnection logic.
+- `GlobalStateContext` — Shared flags like `isLoggedIn`, usable outside of auth logic.
+- `SessionContext` — Tracks session freshness and the last known update timestamp for conditional data refreshes.
+- `UserSearchContext` — Handles searching other users’ Pokémon collections and caches results using IndexedDB + ETag-aware API calls.
+
+---
+
+## ⚒ Development Tips
+
+- All components and pages are written in modular files with separate `.css` styles
+- Variant image files are under `public/images/` and structured by type (shiny, shadow, costumes, etc.)
+
+---
+
+## 🧪 Testing
+
+```bash
+npm test
+```
+
+*Currently only some tests for the registration flow are there and not sure they still work*
+
+Tests are written with React Testing Library and live under `src/pages/*/tests/` and `src/components/tests/`
+
+Mock APIs, services, and contexts are found in `src/mocks/`
+
+---
+
+## 🎨 Theming
+
+Dark/light mode is toggleable via `ThemeContext`. You can adjust base themes in:
+
+```plaintext
+public/Light-Mode.css
+src/components/ThemeSwitch.jsx
+```
+
+---
+
+## 🧭 Future Plans
+
+- Pokédex in Pokemon Page to be more fleshed out
+- Home page to be more fleshed out to offer a how to for everything along with boilerplate content to appear like a professional site
+- Profile pages + friend management
+- More Animations and UI niceties. 
+- Advanced / Bulk operations so that Pokemon Customization can be done with many in mind rather than one by one.
+- Refinement and more Development in frontend UI for Search page and Trades page.
+
+---
+
+## 🧠 Author Notes
+
+This frontend was designed to be modular, touch-friendly, and scale as features evolve. The complexity of Pokémon variant data is abstracted into centralized processing hooks and context providers, with flexibility in mind for trading, sharing, and managing multi-variant collections.
+
+The current codebase is large, but **structured for rapid iteration**, with clean folder grouping and reusable UI components.
+
+> If you're working on a section or need help tracking data flow — `contexts/`, `hooks/`, and `pages/Pokemon/` are the best starting points.
