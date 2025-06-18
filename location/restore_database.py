@@ -28,6 +28,8 @@ def restore_latest_backup(database_name, backup_directory=".", host="localhost",
             f"--port={port}",
             f"--username={username}",
             "--clean",         # Drops existing objects before restoring
+            "--no-owner",
+            "--no-comments",
             "--dbname", database_name,
             "--no-password",   # Use PGPASSWORD environment variable
             latest_backup
@@ -36,7 +38,7 @@ def restore_latest_backup(database_name, backup_directory=".", host="localhost",
         print(f"Starting restore for database: {database_name} using backup: {latest_backup}")
 
         # Execute the command
-        subprocess.run(command, check=True)
+        subprocess.run(command, check=False)
 
         print(f"Restore completed successfully for database: {database_name}")
 

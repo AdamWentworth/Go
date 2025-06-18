@@ -1,0 +1,135 @@
+{
+    "$schema": "https://cdn.statically.io/gh/nguyenngoclongdev/cdn/main/schema/v10/terminal-keeper.json",
+    "theme": "tribe",
+    "active": "default",
+    "activateOnStartup": true,
+    "keepExistingTerminals": true,
+    "sessions": {
+        "default": [
+            [
+                {
+                    "name": "pokemon_data",
+                    "cwd": "/media/adam/storage/Code/Go/pokemon_data",
+                    "icon": "package",
+                    "color": "terminal.ansiBlue",
+                    "commands": [
+                        ""
+                    ]
+                },
+                {
+                    "name": "authentication",
+                    "cwd": "/media/adam/storage/Code/Go/authentication",
+                    "icon": "lock",
+                    "color": "terminal.ansiBlue",
+                    "commands": [
+                        ""
+                    ]
+                },
+                {
+                    "name": "location",
+                    "cwd": "/media/adam/storage/Code/Go/location",
+                    "icon": "globe",
+                    "color": "terminal.ansiBlue",
+                    "commands": [
+                        ""
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "receiver",
+                    "cwd": "/media/adam/storage/Code/Go/receiver",
+                    "icon": "broadcast",
+                    "color": "terminal.ansiRed",
+                    "commands": [
+                        ""
+                    ]
+                },
+                {
+                    "name": "kafka",
+                    "cwd": "/media/adam/storage/Code/Go/kafka",
+                    "icon": "server",
+                    "color": "terminal.ansiRed",
+                    "commands": [
+                        ""
+                    ]
+                },
+                {
+                    "name": "storage",
+                    "cwd": "/media/adam/storage/Code/Go/storage",
+                    "icon": "database",
+                    "color": "terminal.ansiRed",
+                    "commands": [
+                        ""
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "discover",
+                    "cwd": "/media/adam/storage/Code/Go/reader/discover",
+                    "icon": "search",
+                    "color": "terminal.ansiCyan",
+                    "commands": [
+                        ""
+                    ]
+                },
+                {
+                    "name": "events",
+                    "cwd": "/media/adam/storage/Code/Go/reader/events",
+                    "icon": "calendar",
+                    "color": "terminal.ansiCyan",
+                    "commands": [
+                        ""
+                    ]
+                },
+                {
+                    "name": "users",
+                    "cwd": "/media/adam/storage/Code/Go/reader/users",
+                    "icon": "account",
+                    "color": "terminal.ansiCyan",
+                    "commands": [
+                        ""
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "frontend-dev",
+                    "cwd": "/media/adam/storage/Code/Go/frontend",
+                    "icon": "browser",
+                    "color": "terminal.ansiGreen",
+                    "commands": [
+                        ""
+                    ]
+                },
+                {
+                    "name": "frontend-test",
+                    "cwd": "/media/adam/storage/Code/Go/frontend",
+                    "icon": "beaker",
+                    "color": "terminal.ansiGreen",
+                    "commands": [
+                        ""
+                    ]
+                },
+                {
+                    "name": "nginx-production",
+                    "cwd": "/media/adam/storage/Code/Go/nginx",
+                    "icon": "server",
+                    "color": "terminal.ansiGreen",
+                    "commands": [
+                        ""
+                    ]
+                }
+            ]
+        ],
+        "saved-session": [
+            {
+                "name": "connect",
+                "commands": [
+                    ""
+                ]
+            }
+        ]
+    }
+}

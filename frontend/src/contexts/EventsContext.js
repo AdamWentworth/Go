@@ -85,7 +85,10 @@ import React, {
         };
   
         eventSource.onerror = (error) => {
-          console.error('SSE connection encountered an error, closing...', error);
+          // Suppress error log if the page is unloading/reloading (common Firefox behavior)
+          if (document.readyState !== 'loading' && document.visibilityState === 'visible') {
+            console.error('SSE connection encountered an error, closing...', error);
+          }
           eventSource.close();
           sseRef.current = null;
         };

@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  pokemon_data:
+    image: adamwentworth/pokemon_data:latest
+    container_name: pokemon_data_container
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env.production
+    volumes:
+      - ./data:/usr/src/app/data
+    restart: unless-stopped
