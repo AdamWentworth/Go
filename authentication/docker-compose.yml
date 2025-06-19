@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  mongo_auth:
+    image: mongo:6
+    container_name: mongo_auth
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_auth_data:/data/db           # persistent volume for DB
+      - ./backups:/backups                 # mount your local backups dir
+
+  auth_service:
+    image: adamwentworth/authentication:latest
+    container_name: authentication_container
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env.production
+    depends_on:
+      - mongo_auth
+    restart: no
+    volumes:
+      - ./backups:/usr/src/app/backups     # optional, only if needed
+
+volumes:
+  mongo_auth_data:
