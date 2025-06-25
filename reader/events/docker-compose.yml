@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  events_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: adamwentworth/events_service:latest
+    container_name: events_service
+    env_file:
+      - .env
+    ports:
+      - "3008:3008"
+    networks:
+      - kafka_default  # same external network used by MySQL and Kafka
+
+networks:
+  kafka_default:
+    external: true

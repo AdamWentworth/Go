@@ -1,6 +1,7 @@
 # app_conf.yml
 events:
-  port: "9093"
+  hostname: kafka
+  port: "9092"
   topic: "batchedUpdates"
   max_retries: 5
   retry_interval: 3  # seconds
