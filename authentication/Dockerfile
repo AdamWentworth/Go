@@ -1,23 +1,29 @@
 # Use the official lightweight Node.js 18 Alpine base image
 FROM node:18-alpine
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Copy only package files first to leverage Docker caching for dependencies
+# Install required packages including mongodump
+RUN apk add --no-cache \
+    bash \
+    curl \
+    mongodb-tools
+
+# Copy package files first
 COPY package*.json ./
 
-# Install only production dependencies (no dev dependencies)
+# Install only production dependencies
 RUN npm install --only=production
 
-# Copy the rest of your app's source code
+# Copy source code
 COPY . .
 
-# Set environment variable inside the container
+# Set environment variable
 ENV NODE_ENV=production
 
-# Expose port 3002 (your app runs on this port internally)
+# Expose port
 EXPOSE 3002
 
-# Define the default command to start your Node.js app
+# Default command
 CMD ["node", "app.js"]
