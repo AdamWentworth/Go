@@ -1,19 +1,17 @@
-version: '3.8'
-
 services:
   location_db:
     image: postgis/postgis:17-3.4
     container_name: location_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: locations
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 'REMOVED_PASSWORD'
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${POST_PASSSWORD}
     ports:
       - "5432:5432"
     volumes:
       - location_pgdata:/var/lib/postgresql/data
-      - ./init-sql:/docker-entrypoint-initdb.d  # Optional: seed DB or create extensions
+      - ./init-sql:/docker-entrypoint-initdb.d
 
   location_service:
     image: adamwentworth/location_service:latest
@@ -24,11 +22,11 @@ services:
     depends_on:
       - location_db
     environment:
-      DB_USER: postgres
-      DB_PASSWORD: 'REMOVED_PASSWORD'
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_HOST: location_db
-      DB_PORT: 5432
-      DB_NAME: locations
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
       SERVER_PORT: 3007
 
 volumes:
