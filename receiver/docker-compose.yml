@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  receiver_service:
+    image: adamwentworth/receiver_service:latest
+    container_name: receiver_service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    networks:
+      - kafka_default
+
+networks:
+  kafka_default:
+    external: true

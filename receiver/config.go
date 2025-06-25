@@ -27,9 +27,9 @@ var jwtSecret string
 
 // Load environment variables (JWT_SECRET, HOST_IP)
 func loadEnv() error {
-	err := godotenv.Load(".env.development")
+	err := godotenv.Load(".env")
 	if err != nil {
-		logger.Warnf("Error loading .env.development: %v", err)
+		logger.Warnf("Error loading .env: %v", err)
 	}
 
 	// Load JWT Secret from .env
