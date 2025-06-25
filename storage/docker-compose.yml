@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  storage_service:
+    image: adamwentworth/storage_service:latest
+    container_name: storage_service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - mysql_storage
+    env_file:
+      - .env
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./backups:/app/backups
+    networks:
+      - kafka_default
+
+  mysql_storage:
+    image: mysql:8.3
+    container_name: mysql_storage
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - storage_mysql_data:/var/lib/mysql
+    networks:
+      - kafka_default
+
+networks:
+  kafka_default:
+    external: true
+
+volumes:
+  storage_mysql_data:

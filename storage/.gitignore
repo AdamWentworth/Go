@@ -1,4 +1,4 @@
-.env.development
+.env
 app.log
 my.cnf
 failed_messages

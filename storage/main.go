@@ -19,7 +19,7 @@ func main() {
 	}
 
 	// 2) Load environment + app configs
-	if err := LoadAppConfig(".env.development"); err != nil {
+	if err := LoadAppConfig(".env"); err != nil {
 		logrus.Fatalf("Failed to load config: %v", err)
 	}
 
