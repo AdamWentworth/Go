@@ -58,7 +58,7 @@ func initDB() {
 // Load environment variables from .env
 func initEnv() {
 	// Load environment variables from .env
-	err := godotenv.Load(".env.development") // Load from .env.development
+	err := godotenv.Load(".env") // Load from .env
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}

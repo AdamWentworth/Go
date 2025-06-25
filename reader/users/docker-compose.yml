@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  users_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: adamwentworth/users_service:latest
+    container_name: users_service
+    env_file:
+      - .env
+    ports:
+      - "3005:3005"
+    networks:
+      - kafka_default
+    volumes:
+      - ./app.log:/app/app.log  # Optional: persist logs
+
+networks:
+  kafka_default:
+    external: true
