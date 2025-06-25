@@ -1,0 +1,24 @@
+node_modules
+npm-debug.log
+Dockerfile
+.dockerignore
+.env*
+*.sqlite
+*.db-journal
+# Ignore backup files
+backups/
+*.gz
+
+# Ignore environment files
+.env
+.env.*
+
+# Ignore local config or logs
+*.log
+logs/
+tmp/
+
+# Ignore Git and IDE stuff
+.git/
+.vscode/
+.idea/
