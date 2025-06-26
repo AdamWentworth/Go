@@ -11,3 +11,9 @@ services:
     volumes:
       - ./data:/usr/src/app/data
     restart: unless-stopped
+    networks:
+      - kafka_default
+
+networks:
+  kafka_default:
+    external: true

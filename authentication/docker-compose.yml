@@ -8,8 +8,10 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - mongo_auth_data:/data/db           # persistent volume for DB
-      - ./backups:/backups                 # mount your local backups dir
+      - mongo_auth_data:/data/db
+      - ./backups:/backups
+    networks:
+      - kafka_default
 
   auth_service:
     image: adamwentworth/authentication:latest
@@ -22,7 +24,13 @@ services:
       - mongo_auth
     restart: no
     volumes:
-      - ./backups:/usr/src/app/backups     # optional, only if needed
+      - ./backups:/usr/src/app/backups
+    networks:
+      - kafka_default
 
 volumes:
   mongo_auth_data:
+
+networks:
+  kafka_default:
+    external: true
