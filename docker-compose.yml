@@ -1,0 +1,216 @@
+services:
+
+  # ========== FRONTEND ==========
+  frontend_nginx:
+    image: adamwentworth/frontend-nginx:latest
+    container_name: frontend_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    networks:
+      - kafka_default
+
+  # ========== KAFKA ==========
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+    volumes:
+      - ./kafka/data/zookeeper:/opt/zookeeper-3.4.13/data
+    networks:
+      - kafka_default
+
+  kafka:
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_CREATE_TOPICS: "batchedUpdates:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://kafka:9092,PLAINTEXT_EXTERNAL://127.0.0.1:9093
+      KAFKA_LISTENERS: PLAINTEXT_INTERNAL://0.0.0.0:9092,PLAINTEXT_EXTERNAL://0.0.0.0:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_BROKER_ID: 1
+      KAFKA_MESSAGE_MAX_BYTES: 3145728
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 3145728
+    volumes:
+      - ./kafka/data/kafka:/kafka
+    env_file:
+      - ./kafka/.env
+    networks:
+      - kafka_default
+
+  # ========== POKEMON DATA ==========
+  pokemon_data:
+    image: adamwentworth/pokemon_data:latest
+    container_name: pokemon_data_container
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./pokemon_data/.env.production
+    volumes:
+      - ./pokemon_data/data:/usr/src/app/data
+    restart: unless-stopped
+    networks:
+      - kafka_default
+
+  # ========== AUTHENTICATION ==========
+  mongo_auth:
+    image: mongo:6
+    container_name: mongo_auth
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./authentication/mongo_auth_data:/data/db
+      - ./authentication/backups:/backups
+    networks:
+      - kafka_default
+
+  auth_service:
+    image: adamwentworth/authentication:latest
+    container_name: authentication_container
+    ports:
+      - "3002:3002"
+    env_file:
+      - ./authentication/.env.production
+    depends_on:
+      - mongo_auth
+    volumes:
+      - ./authentication/backups:/usr/src/app/backups
+    networks:
+      - kafka_default
+
+  # ========== LOCATION ==========
+  location_db:
+    image: postgis/postgis:17-3.4
+    container_name: location_db
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./location/.env
+    volumes:
+      - ./location/init-sql:/docker-entrypoint-initdb.d
+      - location_pgdata:/var/lib/postgresql/data
+    networks:
+      - kafka_default
+
+  location_service:
+    image: adamwentworth/location_service:latest
+    container_name: location_service
+    ports:
+      - "3007:3007"
+    depends_on:
+      - location_db
+    env_file:
+      - ./location/.env
+    networks:
+      - kafka_default
+
+  # ========== RECEIVER ==========
+  receiver_service:
+    image: adamwentworth/receiver_service:latest
+    container_name: receiver_service
+    build:
+      context: ./receiver
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    env_file:
+      - ./receiver/.env
+    networks:
+      - kafka_default
+
+  # ========== STORAGE ==========
+  mysql_storage:
+    image: mysql:8.3
+    container_name: mysql_storage
+    ports:
+      - "3306:3306"
+    env_file:
+      - ./storage/.env
+    volumes:
+      - ./storage/storage_mysql_data:/var/lib/mysql
+    networks:
+      - kafka_default
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u$${DB_USER}", "-p$${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  storage_service:
+    image: adamwentworth/storage_service:latest
+    container_name: storage_service
+    build:
+      context: ./storage
+      dockerfile: Dockerfile
+    depends_on:
+      mysql_storage:
+        condition: service_healthy
+    env_file:
+      - ./storage/.env
+    ports:
+      - "3004:3004"
+    volumes:
+      - ./storage/backups:/app/backups
+    networks:
+      - kafka_default
+
+  # ========== USERS ==========
+  users_service:
+    image: adamwentworth/users_service:latest
+    container_name: users_service
+    build:
+      context: ./reader/users
+      dockerfile: Dockerfile
+    env_file:
+      - ./reader/users/.env
+    ports:
+      - "3005:3005"
+    volumes:
+      - ./reader/users/app.log:/app/app.log
+    networks:
+      - kafka_default
+
+  # ========== DISCOVER ==========
+  discover_service:
+    image: adamwentworth/discover_service:latest
+    container_name: discover_service
+    build:
+      context: ./reader/discover
+      dockerfile: Dockerfile
+    env_file:
+      - ./reader/discover/.env
+    ports:
+      - "3006:3006"
+    networks:
+      - kafka_default
+
+  # ========== EVENTS ==========
+  events_service:
+    image: adamwentworth/events_service:latest
+    container_name: events_service
+    build:
+      context: ./reader/events
+      dockerfile: Dockerfile
+    env_file:
+      - ./reader/events/.env
+    ports:
+      - "3008:3008"
+    networks:
+      - kafka_default
+
+volumes:
+  location_pgdata:
+  storage_mysql_data:
+  mongo_auth_data:
+
+networks:
+  kafka_default:
+    external: true

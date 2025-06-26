@@ -4,3 +4,4 @@ node_modules
 .env.test
 app.log
 backups
+mongo_auth_data

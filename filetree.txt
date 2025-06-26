@@ -1,0 +1,183 @@
+.
+├── authentication
+│   ├── app.js
+│   ├── backups
+│   ├── config
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   ├── .env.development
+│   ├── .env.production
+│   ├── .env.test
+│   ├── .gitignore
+│   ├── middlewares
+│   ├── models
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── README.md
+│   ├── routes
+│   ├── services
+│   ├── strategies
+│   ├── tasks
+│   └── utils
+├── docker-compose.yml
+├── editor
+│   ├── database
+│   ├── database_manager.py
+│   ├── details_window
+│   ├── frames
+│   ├── .gitignore
+│   ├── main.py
+│   ├── pokemon_database_app.py
+│   ├── pokemon_details_window.py
+│   ├── __pycache__
+│   └── README.md
+├── filetree.txt
+├── frontend
+│   ├── babel.config.js
+│   ├── build
+│   ├── .env.development
+│   ├── .env.production
+│   ├── .env.test
+│   ├── .gitignore
+│   ├── jest.config.js
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── public
+│   ├── README.md
+│   └── src
+├── Go.code-workspace
+├── kafka
+│   ├── data
+│   ├── docker-compose.yml
+│   ├── .env
+│   ├── .gitignore
+│   ├── mysql-apt-config_0.8.29-1_all.deb
+│   └── README.md
+├── location
+│   ├── autocomplete.go
+│   ├── backup_database_dump.py
+│   ├── backup_database_sql.py
+│   ├── backups
+│   ├── config.go
+│   ├── db.go
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   ├── .env
+│   ├── export_shapefile.py
+│   ├── geocode.go
+│   ├── .gitignore
+│   ├── go.mod
+│   ├── go.sum
+│   ├── init-sql
+│   ├── logging.go
+│   ├── main.go
+│   ├── models.go
+│   ├── output_polygons.py
+│   ├── populate_boundaries.py
+│   ├── README.md
+│   ├── restore_database.py
+│   ├── reverse.go
+│   ├── static
+│   ├── update_search_sets.sql
+│   ├── viewer.go
+│   └── view_polygons.py
+├── nginx
+│   ├── build
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   ├── .gitignore
+│   ├── nginx.bat
+│   ├── nginx.conf
+│   ├── nginx.sh
+│   ├── proxy_params
+│   └── README.md
+├── notes
+│   ├── cloud_deployment_strategy.md
+│   ├── frontend-cross-platform-plan.txt
+│   ├── languages.txt
+│   ├── location_service_query_notes.txt
+│   ├── ML_idea.txt
+│   ├── notes_user_pokemon_management.txt
+│   ├── rarity.txt
+│   ├── session_token_security.txt
+│   ├── tech_stack_service_overview.txt
+│   └── user_pokemon_management stack.txt
+├── pokemon_data
+│   ├── config
+│   ├── data
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   ├── .env.production
+│   ├── .gitignore
+│   ├── middlewares
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── README.md
+│   ├── routes
+│   ├── server.js
+│   ├── services
+│   └── utils
+├── reader
+│   ├── discover
+│   ├── events
+│   └── users
+├── README.md
+├── receiver
+│   ├── auth.go
+│   ├── config
+│   ├── config.go
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   ├── .env
+│   ├── .gitignore
+│   ├── go.mod
+│   ├── go.sum
+│   ├── handler.go
+│   ├── kafka.go
+│   ├── logging.go
+│   ├── main.go
+│   ├── README.md
+│   └── retry.go
+├── storage
+│   ├── backup.go
+│   ├── backups
+│   ├── config
+│   ├── config.go
+│   ├── consumer.go
+│   ├── database.go
+│   ├── docker-compose.yml
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   ├── .env
+│   ├── .gitignore
+│   ├── go.mod
+│   ├── go.sum
+│   ├── helpers.go
+│   ├── logging.go
+│   ├── main.go
+│   ├── message_handler.go
+│   ├── models.go
+│   ├── my.cnf
+│   ├── pokemon_handler.go
+│   ├── README.md
+│   ├── scheduler.go
+│   └── trade_handler.go
+├── tests
+│   ├── deleteFakeUsers.js
+│   ├── fakePokemon
+│   ├── generateFakePokemon.js
+│   ├── generateFakeUsers.js
+│   ├── .gitignore
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── pokemon.json
+│   ├── pokemonKeys.json
+│   └── pokemonVariants.json
+└── .vscode
+    └── sessions.json
+
+47 directories, 133 files

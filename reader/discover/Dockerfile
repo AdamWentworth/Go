@@ -1,3 +1,5 @@
+# discover reader dockerfile
+
 # syntax=docker/dockerfile:1
 
 FROM golang:1.22-alpine AS builder

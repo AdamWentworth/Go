@@ -3,3 +3,4 @@ app.log
 my.cnf
 failed_messages
 backups
+storage_mysql_data
