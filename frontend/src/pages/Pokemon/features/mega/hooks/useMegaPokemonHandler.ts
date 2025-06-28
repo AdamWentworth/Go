@@ -1,0 +1,166 @@
+// useMegaPokemonHandler.ts
+
+import { useState } from 'react';
+import { getAllFromDB, getFromDB } from '@/db/indexedDB';
+import { parsePokemonKey } from '@/utils/PokemonIDUtils';
+import type { PokemonInstance } from '@/types/pokemonInstance';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+
+export interface MegaSelectionData {
+  ownedPokemon: (PokemonInstance & { variantData: PokemonVariant | null })[];
+  variantKey: string;
+  megaForm?: string;
+  resolve: (value: string) => void;
+  reject: (reason?: any) => void;
+}
+
+function useMegaPokemonHandler() {
+  const [isMegaSelectionOpen, setIsMegaSelectionOpen] = useState<boolean>(false);
+  const [megaSelectionData, setMegaSelectionData] = useState<MegaSelectionData | null>(null);
+
+  const parseBaseKey = (baseKey: string): string | null => {
+    const match = baseKey.match(/^\d+/);
+    return match ? match[0] : null;
+  };
+
+  const parseShinyStatus = (baseKey: string): boolean => {
+    return baseKey.includes('shiny');
+  };
+
+  const getOwnedPokemon = async (baseNumber: string, isShiny: boolean): Promise<PokemonInstance[]> => {
+    const rawData = await getAllFromDB('pokemonOwnership');
+    if (!rawData || !Array.isArray(rawData)) {
+      throw new Error("Invalid data retrieved from IndexedDB");
+    }
+  
+    const allData = rawData as PokemonInstance[];
+  
+    const filteredPokemon = allData.filter((entry) => {
+      if (!entry.instance_id || typeof entry.instance_id !== 'string') {
+        console.warn("Skipping entry with invalid instance_id:", entry);
+        return false;
+      }
+      const parsed = parsePokemonKey(entry.instance_id);
+      if (!parsed) {
+        console.warn("Failed to parse instance_id:", entry.instance_id);
+        return false;
+      }
+      const { baseKey } = parsed;
+      if (!baseKey) return false;
+  
+      const entryBaseKey = entry.instance_id.split('-')[0];
+      return (
+        entryBaseKey === baseNumber &&
+        entry.is_owned &&
+        entry.shiny === isShiny &&
+        !entry.is_mega &&
+        !baseKey.includes('clone') &&
+        !baseKey.includes('shadow') &&
+        !baseKey.includes('mega')
+      );
+    });
+  
+    return filteredPokemon;
+  };  
+  
+
+  const handleMegaPokemon = async (baseKey: string) => {
+    try {
+      const baseNumber = parseBaseKey(baseKey);
+      if (!baseNumber) {
+        throw new Error(`Invalid baseKey format: ${baseKey}`);
+      }
+
+      const isShiny = parseShinyStatus(baseKey);
+      const ownedPokemon = await getOwnedPokemon(baseNumber, isShiny);
+      console.log("Owned Pokémon matching requirements:", ownedPokemon);
+
+      const ownedPokemonWithVariants = await Promise.all(
+        ownedPokemon.map(async (pokemon) => {
+          const { instance_id } = pokemon;
+          if (!instance_id) {
+            console.warn(`Missing instance_id for pokemon`, pokemon);
+            return { ...pokemon, variantData: null };
+          }
+          const parsed = parsePokemonKey(instance_id);
+          if (!parsed) {
+            console.warn(`Invalid instance_id format: ${instance_id}`);
+            return { ...pokemon, variantData: null };
+          }
+          const { baseKey: variantKey } = parsed;
+          if (!variantKey) {
+            console.warn(`No valid baseKey parsed for instance_id: ${instance_id}`);
+            return { ...pokemon, variantData: null };
+          }
+          try {
+            const variantData = await getFromDB<PokemonVariant>('pokemonVariants', variantKey);
+            if (!variantData) {
+              throw new Error(`Variant data not found for baseKey: ${variantKey}`);
+            }
+            return { ...pokemon, variantData };
+          } catch (error) {
+            console.error(`Error fetching variant data for ${variantKey}:`, error);
+            return { ...pokemon, variantData: null };
+          }
+        })
+      );      
+
+      return ownedPokemonWithVariants;
+    } catch (error) {
+      console.error("Error handling Mega Pokémon:", error);
+      throw error;
+    }
+  };
+
+  const promptMegaPokemonSelection = (baseKey: string, megaForm?: string): Promise<string> => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const ownedPokemonWithVariants = await handleMegaPokemon(baseKey);
+        const baseNumber = parseBaseKey(baseKey);
+        if (!baseNumber) {
+          throw new Error(`Invalid baseKey format: ${baseKey}`);
+        }
+        const isShiny = parseShinyStatus(baseKey);
+        const variantKey = isShiny ? `${baseNumber}-shiny` : `${baseNumber}-default`;
+
+        setMegaSelectionData({
+          ownedPokemon: ownedPokemonWithVariants,
+          variantKey,
+          megaForm,
+          resolve,
+          reject,
+        });
+
+        setIsMegaSelectionOpen(true);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  };
+
+  const handleMegaSelectionResolve = (selectedOption: string) => {
+    if (megaSelectionData && megaSelectionData.resolve) {
+      megaSelectionData.resolve(selectedOption);
+    }
+    setIsMegaSelectionOpen(false);
+    setMegaSelectionData(null);
+  };
+
+  const handleMegaSelectionReject = (error: any) => {
+    if (megaSelectionData && megaSelectionData.reject) {
+      megaSelectionData.reject(error);
+    }
+    setIsMegaSelectionOpen(false);
+    setMegaSelectionData(null);
+  };
+
+  return {
+    promptMegaPokemonSelection,
+    isMegaSelectionOpen,
+    megaSelectionData,
+    handleMegaSelectionResolve,
+    handleMegaSelectionReject,
+  };
+}
+
+export default useMegaPokemonHandler;

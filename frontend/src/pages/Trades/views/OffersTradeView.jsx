@@ -1,12 +1,12 @@
 // OffersTradeView.jsx
 
 import React, { useState, useEffect } from 'react';
-import LoadingSpinner from '../../../components/LoadingSpinner';
-import MoveDisplay from '../../../components/pokemonComponents/MoveDisplay';
-import IV from '../../../components/pokemonComponents/IV';
-import FriendshipLevel from '../../../components/pokemonComponents/FriendshipLevel';
+import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
+import MoveDisplay from '../../../components/pokemonComponents/MoveDisplay.jsx';
+import IV from '../../../components/pokemonComponents/IV.jsx';
+import FriendshipLevel from '../../../components/pokemonComponents/FriendshipLevel.jsx';
 import Gender from '../../../components/pokemonComponents/Gender';
-import { TRADE_FRIENDSHIP_LEVELS } from '../../../services/indexedDB';
+import { TRADE_FRIENDSHIP_LEVELS } from '../../../db/indexedDB';
 import './OffersTradeView.css';
 import { formatDate } from '../../../utils/formattingHelpers';
 import { hasDetails } from '../helpers/hasDetails';
@@ -118,7 +118,7 @@ const OffersTradeView = ({
                     {trade.is_lucky_trade ? (
                         <div className="lucky-backdrop-wrapper">
                           <img
-                            src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                            src={`/images/lucky.png`}
                             alt="Lucky backdrop"
                             className="lucky-backdrop"
                           />
@@ -127,7 +127,7 @@ const OffersTradeView = ({
                     {/* Dynamax Icon */}
                     {details.variantType?.includes('dynamax') && (
                       <img
-                          src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
+                          src={`/images/dynamax.png`}
                           alt="Dynamax"
                           style={{
                               position: 'absolute',
@@ -142,7 +142,7 @@ const OffersTradeView = ({
                     {/* Gigantamax Icon */}
                     {details.variantType?.includes('gigantamax') && (
                         <img
-                            src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
+                            src={`/images/gigantamax.png`}
                             alt="Gigantamax"
                             style={{
                                 position: 'absolute',

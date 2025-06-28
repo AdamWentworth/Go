@@ -24,3 +24,7 @@ yarn-error.log*
 .env
 
 package-lock.json
+
+tests/.vitest/
+tests/coverage/
+tests/reports/

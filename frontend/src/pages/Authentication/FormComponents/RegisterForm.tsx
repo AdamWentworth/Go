@@ -1,0 +1,241 @@
+// RegisterForm.tsx
+
+import React, { FC } from 'react';
+import RegisterSocialButtons from '../Auth0Components/RegisterSocialButtons';
+import CoordinateSelector from '../CoordinateSelector';
+import LocationOptionsOverlay from '../LocationOptionsOverlay';
+import './RegisterForm.css';
+import type { RegisterFormValues, RegisterFormErrors } from '../../../types/auth';
+import type { LocationSuggestion } from '../../../types/location';
+
+interface RegisterFormProps {
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  errors: RegisterFormErrors;
+  values: RegisterFormValues;
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleCheckboxChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleAllowLocationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleCoordinatesSelect: (coordinates: { latitude: number; longitude: number }) => void;
+  handleLocationInputFocus: () => void;
+  handleLocationInputBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
+  selectSuggestion: (suggestion: LocationSuggestion) => void;
+  handleLocationUpdate: (location: LocationSuggestion) => void;
+  handleOverlayLocationSelect: (location: LocationSuggestion) => void;
+  isMapVisible: boolean;
+  setIsMapVisible: (visible: boolean) => void;
+  selectedCoordinates: { latitude: number; longitude: number } | null;
+  showLocationWarning: boolean;
+  suggestions: LocationSuggestion[];
+  showOptionsOverlay: boolean;
+  setShowOptionsOverlay: (show: boolean) => void;
+  locationOptions: LocationSuggestion[];
+}
+
+const RegisterForm: FC<RegisterFormProps> = ({
+  onSubmit,
+  errors,
+  values,
+  handleInputChange,
+  handleCheckboxChange,
+  handleAllowLocationChange,
+  handleCoordinatesSelect,
+  handleLocationInputFocus,
+  handleLocationInputBlur,
+  selectSuggestion,
+  handleLocationUpdate,
+  handleOverlayLocationSelect,
+  isMapVisible,
+  setIsMapVisible,
+  selectedCoordinates,
+  showLocationWarning,
+  suggestions,
+  showOptionsOverlay,
+  setShowOptionsOverlay,
+  locationOptions,
+}) => {
+  return (
+    <div className="register-page">
+      <div className="register-form">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault(); // Prevent default form submission
+            onSubmit(e); // Trigger the centralized handleSubmit
+          }}
+          noValidate // Disable built-in browser validation
+        >
+          {/* Left Form Section */}
+          <div className="form-left">
+            <div className="form-group">
+              <input
+                type="text"
+                name="username"
+                value={values.username}
+                onChange={handleInputChange}
+                placeholder="Username (must be unique)"
+              />
+              {errors.username && (
+                <div style={{ color: 'red', marginTop: '4px' }}>{errors.username}</div>
+              )}
+            </div>
+
+            <div className="checkbox-inline">
+              <input
+                id="pokemonGoNameDisabled"
+                type="checkbox"
+                name="pokemonGoNameDisabled"
+                checked={values.pokemonGoNameDisabled}
+                onChange={handleCheckboxChange}
+              />
+              <label htmlFor="pokemonGoNameDisabled">
+                Username matches my Pokémon GO account name
+              </label>
+            </div>
+
+            <div className="form-group">
+              <input
+                type="email"
+                name="email"
+                value={values.email}
+                onChange={handleInputChange}
+                placeholder="Email (must be unique)"
+                required
+              />
+              {errors.email && (
+                <div style={{ color: 'red', marginTop: '4px' }}>{errors.email}</div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <input
+                type="password"
+                name="password"
+                value={values.password}
+                onChange={handleInputChange}
+                placeholder="Password"
+                required
+              />
+              {errors.password && (
+                <div style={{ color: 'red', marginTop: '4px' }}>{errors.password}</div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Form Section */}
+          <div className="form-right">
+            <div className="form-group">
+              <input
+                type="text"
+                name="pokemonGoName"
+                value={values.pokemonGoName}
+                onChange={handleInputChange}
+                placeholder="Pokémon GO name (optional)"
+                disabled={values.pokemonGoNameDisabled}
+                aria-label="Pokémon GO Name"
+              />
+              {errors.pokemonGoName && (
+                <div style={{ color: 'red', marginTop: '4px' }}>{errors.pokemonGoName}</div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <input
+                type="text"
+                name="trainerCode"
+                value={values.trainerCode}
+                onChange={handleInputChange}
+                placeholder="Trainer Code (optional)"
+                data-testid="trainer-code-input"
+              />
+              {errors.trainerCode && (
+                <div style={{ color: 'red', marginTop: '4px' }}>{errors.trainerCode}</div>
+              )}
+            </div>
+
+            <div className="checkbox-inline">
+              <input
+                id="allowLocation"
+                type="checkbox"
+                name="allowLocation"
+                checked={values.allowLocation}
+                onChange={handleAllowLocationChange}
+              />
+              <label htmlFor="allowLocation">
+                Enable collection of your device's GPS location data
+              </label>
+            </div>
+
+            <button
+              type="button"
+              className="set-coordinates-button"
+              onClick={() => setIsMapVisible(true)}
+              disabled={values.allowLocation}
+            >
+              {selectedCoordinates
+                ? `Coordinates Set: (${selectedCoordinates.latitude}, ${selectedCoordinates.longitude})`
+                : 'Set Coordinates'}
+            </button>
+          </div>
+
+          {/* Location Input Section */}
+          <div className="form-location" style={{ position: 'relative' }}>
+            <input
+              type="text"
+              name="locationInput"
+              value={values.locationInput}
+              onFocus={handleLocationInputFocus}
+              onBlur={handleLocationInputBlur}
+              onChange={handleInputChange}
+              placeholder="City / Place, State / Province / Region, Country (optional)"
+            />
+            {showLocationWarning && (
+              <div className="location-warning">
+                Modifying this resets coordinates and permissions.
+              </div>
+            )}
+            {suggestions.length > 0 && (
+              <div className="suggestions-dropdown">
+                {suggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    className="suggestion-item"
+                    onClick={() => selectSuggestion(suggestion)}
+                  >
+                    {suggestion.displayName}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <div className="form-submit">
+            <button className="submit-button" type="submit" data-testid="register-button">
+              Register
+            </button>
+          </div>
+
+          {/* Social Buttons */}
+          <RegisterSocialButtons />
+        </form>
+      </div>
+
+      {/* Coordinate Selector */}
+      {isMapVisible && (
+        <CoordinateSelector
+          onCoordinatesSelect={handleCoordinatesSelect}
+          onLocationSelect={handleLocationUpdate}
+          onClose={() => setIsMapVisible(false)}
+        />
+      )}
+      {showOptionsOverlay && (
+        <LocationOptionsOverlay
+          locations={locationOptions}
+          onLocationSelect={handleOverlayLocationSelect}
+          onDismiss={() => setShowOptionsOverlay(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default RegisterForm;

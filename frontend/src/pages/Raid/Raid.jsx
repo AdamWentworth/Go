@@ -1,22 +1,23 @@
 // Raid.jsx
 import React, { useState, useEffect } from 'react';
 import './Raid.css';
-import { usePokemonData } from '../../contexts/PokemonDataContext';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import { useVariantsStore } from '@/stores/useVariantsStore';
+import LoadingSpinner from '../../components/LoadingSpinner.jsx';
 import { getMoveCombinations } from './utils/moveCombinations';
-import Pagination from './Pagination';
-import Table from './Table';
+import Pagination from './Pagination.jsx';
+import Table from './Table.jsx';
 import useRaidBossesData from './hooks/useRaidBossesData';
 import { DEFAULT_RAID_BOSS_STATS, TYPE_MAPPING } from './utils/constants';
 import { calculateRaidBossDPS } from './utils/calculateRaidBossDPS';
-import RaidBossSelector from './RaidBossSelector';
-import MoveSelector from './MoveSelector';
+import RaidBossSelector from './RaidBossSelector.jsx';
+import MoveSelector from './MoveSelector.jsx';
 
 const LEVEL_40_CP_MULTIPLIER = 0.79030001;
 const LEVEL_50_CP_MULTIPLIER = 0.84029999;
 
 function Raid() {
-    const { variants, loading } = usePokemonData();
+    const variants = useVariantsStore((s) => s.variants);
+    const loading = useVariantsStore((s) => s.variantsLoading);
     const { raidBossesData, raidLoading } = useRaidBossesData(variants, loading);
     const [currentPage, setCurrentPage] = useState(0);
     const [selectedRaidBoss, setSelectedRaidBoss] = useState(null);

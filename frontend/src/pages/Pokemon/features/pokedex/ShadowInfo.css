@@ -1,0 +1,47 @@
+/* Ensure the entire column content is centered */
+.shadow-info-column {
+    display: flex;
+    flex-direction: column;  /* Stack elements vertically */
+    align-items: center;  /* Center all child elements horizontally */
+    text-align: center; /* Ensures all text content is centered */
+    width: 100%; /* Ensures it takes up the full available width */
+}
+
+/* Centering the title */
+.shadow-info-column h1 {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 10px; /* Space below title */
+    margin-block-start: 0px;
+    margin-block-end: 0px;
+}
+
+/* Ensure the images container is centered */
+.images-container {
+    display: flex;
+    justify-content: center; /* Centers images horizontally */
+    align-items: center;
+    flex-wrap: wrap; /* Allows wrapping if needed */
+    gap: 10px; /* Space between images */
+    width: 100%;
+    margin: 0 auto; /* Centers the entire container */
+}
+
+/* Ensure images are centered */
+.images-container img {
+    max-width: 180px; /* Set a max width */
+    height: auto; /* Maintain aspect ratio */
+    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
+}
+
+/* Ensure the Shiny Shadow Rarity text is centered */
+.shiny-rarity-info {
+    text-align: center;
+    width: 100%;
+}
+
+/* Ensure bold labels (Shiny Shadow Rarity) are centered */
+.shiny-rarity-info strong {
+    display: block; /* Makes the label take full width */
+    text-align: center;
+}

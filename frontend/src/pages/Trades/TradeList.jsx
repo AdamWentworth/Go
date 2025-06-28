@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import './TradeList.css';
-import TradeCard from './TradeCard';
+import TradeCard from './TradeCard.jsx';
 
 function TradeList({
   trades,

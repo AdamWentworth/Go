@@ -19,13 +19,13 @@ import { getCenter } from 'ol/extent';
 import { buffer as bufferExtent } from 'ol/extent';
 import { WKT } from 'ol/format'; // Add the WKT format parser
 import './MapView.css';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { useTheme } from '../../../contexts/ThemeContext.jsx';
 
-import OwnedPopup from './MapViewComponents/OwnedPopup';
-import TradePopup from './MapViewComponents/TradePopup';
-import WantedPopup from './MapViewComponents/WantedPopup';
+import OwnedPopup from './MapViewComponents/OwnedPopup.jsx';
+import TradePopup from './MapViewComponents/TradePopup.jsx';
+import WantedPopup from './MapViewComponents/WantedPopup.jsx';
 
-const MapView = ({ data, ownershipStatus, pokemonCache }) => {
+const MapView = ({ data, instanceData, pokemonCache }) => {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const popupRef = useRef(null);
@@ -44,8 +44,8 @@ const MapView = ({ data, ownershipStatus, pokemonCache }) => {
     return pokemonVariants.find((pokemon) => pokemon.pokemonKey === baseKey);
   };
 
-  const navigateToUserCatalog = (username, instanceId, ownershipStatus) => {
-    navigate(`/collection/${username}`, { state: { instanceId, ownershipStatus } });
+  const navigateToUserCatalog = (username, instanceId, instanceData) => {
+    navigate(`/pokemon/${username}`, { state: { instanceId, instanceData } });
   };
 
   useEffect(() => {
@@ -61,8 +61,8 @@ const MapView = ({ data, ownershipStatus, pokemonCache }) => {
       if (longitude && latitude) {
         const coordinates = fromLonLat([parseFloat(longitude), parseFloat(latitude)]);
         let pointColor = '#00AAFF';
-        if (ownershipStatus === 'trade') pointColor = '#4cae4f';
-        else if (ownershipStatus === 'wanted') pointColor = '#FF0000';
+        if (instanceData === 'trade') pointColor = '#4cae4f';
+        else if (instanceData === 'wanted') pointColor = '#FF0000';
 
         const pointFeature = new Feature({
           geometry: new Point(coordinates),
@@ -86,10 +86,10 @@ const MapView = ({ data, ownershipStatus, pokemonCache }) => {
           featureProjection: 'EPSG:3857'
         });
       
-        // Set the color for the boundary based on ownershipStatus
+        // Set the color for the boundary based on instanceData
         let boundaryColor = '#00AAFF'; // Default blue
-        if (ownershipStatus === 'trade') boundaryColor = '#4cae4f'; // Green for trade
-        else if (ownershipStatus === 'wanted') boundaryColor = '#FF0000'; // Red for wanted
+        if (instanceData === 'trade') boundaryColor = '#4cae4f'; // Green for trade
+        else if (instanceData === 'wanted') boundaryColor = '#FF0000'; // Red for wanted
       
         polygonFeature.setStyle(
           new Style({
@@ -163,9 +163,9 @@ const MapView = ({ data, ownershipStatus, pokemonCache }) => {
           featureFound = true;
     
           let PopupComponent;
-          if (ownershipStatus === 'trade') {
+          if (instanceData === 'trade') {
             PopupComponent = TradePopup;
-          } else if (ownershipStatus === 'wanted') {
+          } else if (instanceData === 'wanted') {
             PopupComponent = WantedPopup;
           } else {
             PopupComponent = OwnedPopup;
@@ -211,7 +211,7 @@ const MapView = ({ data, ownershipStatus, pokemonCache }) => {
         mapRef.current.setTarget(null);
       }
     };
-  }, [data, isLightMode, ownershipStatus, pokemonVariants]);
+  }, [data, isLightMode, instanceData, pokemonVariants]);
 
   return (
     <div>

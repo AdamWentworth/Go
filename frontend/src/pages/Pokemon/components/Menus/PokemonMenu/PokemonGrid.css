@@ -1,0 +1,46 @@
+/* PokemonGrid.css */
+
+.pokemon-grid {
+  width: 100%;
+}
+
+.pokemon-grid {
+  width: 100%;
+}
+
+.pokemon-grid-row {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(9, 1fr);
+}
+
+.pokemon-grid-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0; /* Start invisible */
+  transition: opacity 0.05s ease-in; /* Smooth transition */
+}
+
+.pokemon-grid-cell.visible {
+  opacity: 1; /* Become visible */
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 480px) {
+  .pokemon-grid-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 481px) and (max-width: 1023px) {
+  .pokemon-grid-row {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .pokemon-grid-row {
+    grid-template-columns: repeat(9, 1fr);
+  }
+}

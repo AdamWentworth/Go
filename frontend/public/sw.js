@@ -22,13 +22,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // ✅ Bypass EventSource/SSE requests so the browser can handle them natively
-  if (event.request.headers.get('accept') === 'text/event-stream') {
-    console.log('[Service Worker] Skipping SSE request:', event.request.url);
-    return; // Don’t intercept SSE
-  }
-
-  // Same-origin: cache-first fallback
+  // If it's same-origin, attempt to serve from cache first, fallback to fetch
   if (url.origin === self.location.origin) {
     event.respondWith(
       caches.match(event.request).then(async (cachedResponse) => {
@@ -38,14 +32,15 @@ self.addEventListener('fetch', (event) => {
         try {
           return await fetch(event.request, { credentials: 'include' });
         } catch (error) {
+          // Return a fallback or empty response to prevent errors
           return new Response('', { status: 200, statusText: 'OK' });
         }
       })
     );
   } else {
-    // Cross-origin: direct fetch with fallback
+    // For cross-origin requests, just do a normal fetch with fallback
     event.respondWith(
-      fetch(event.request).catch(() => {
+      fetch(event.request).catch((error) => {
         return new Response('', { status: 200, statusText: 'OK' });
       })
     );

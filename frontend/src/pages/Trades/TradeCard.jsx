@@ -1,18 +1,18 @@
 // TradeCard.jsx
 
 import React from 'react';
-import { useTradeData } from '../../contexts/TradeDataContext';
-import { useModal } from '../../contexts/ModalContext'; // Import the useModal hook
+import { useTradeStore } from '@/features/trades/store/useTradeStore';
+import { useModal } from '../../contexts/ModalContext.jsx'; // Import the useModal hook
 
 // hooks
 import { usePokemonDetails } from './hooks/usePokemonDetails';
 
 // views
-import ProposedTradeView from './views/ProposedTradeView';
-import OffersTradeView from './views/OffersTradeView';
-import PendingTradeView from './views/PendingTradeView';
-import CancelledTradeView from './views/CancelledTradeView';
-import CompletedTradeView from './views/CompletedTradeView';
+import ProposedTradeView from './views/ProposedTradeView.jsx';
+import OffersTradeView from './views/OffersTradeView.jsx';
+import PendingTradeView from './views/PendingTradeView.jsx';
+import CancelledTradeView from './views/CancelledTradeView.jsx';
+import CompletedTradeView from './views/CompletedTradeView.jsx';
 
 // handlers
 import { handleAcceptTrade } from './handlers/handleAcceptTrade';
@@ -35,7 +35,8 @@ function TradeCard({
   loading,
   periodicUpdates
 }) {
-  const { setTradeData, trades } = useTradeData();
+  const setTradeData = useTradeStore((s) => s.setTradeData);
+  const trades = useTradeStore((s) => s.trades);
   const { confirm } = useModal(); // Destructure confirm from useModal
 
   // Grab the current user's username from local storage.

@@ -1,0 +1,272 @@
+// src/contexts/AuthContext.tsx
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  ReactNode,
+  useState,
+} from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  logoutUser,
+  updateUserDetails as updateUserService,
+  deleteAccount as deleteAccountService,
+  refreshTokenService,
+  updateUserInSecondaryDB,
+} from '../services/authService';
+import { toast } from 'react-toastify';
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import { useTagsStore } from '@/features/tags/store/useTagsStore';
+import { useTradeStore } from '@/features/trades/store/useTradeStore';
+import { useAuthStore } from '../stores/useAuthStore';
+import {
+  clearStore,
+  clearListsStore,
+  clearTradesStore,
+} from '../db/indexedDB';
+
+import type { User, RefreshTokenPayload } from '../types/auth';
+import type { ApiResponse } from '../types/common';
+import type { AuthContextType } from '../types/authContext';
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within <AuthProvider>');
+  return ctx;
+};
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const setIsLoggedIn = useAuthStore.getState().setIsLoggedIn;
+
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore.getState().setUser;
+  const resetTags = useTagsStore((s) => s.resetTags);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const userRef = useRef<User | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const navigate = useNavigate();
+  const { resetInstances } = useInstancesStore();
+  const resetTradeData = useTradeStore((s) => s.resetTradeData);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      const userData = JSON.parse(stored) as User;
+      setUser(userData);
+      userRef.current = userData;
+      setIsLoggedIn(true);
+
+      const now = Date.now();
+      const accessExp = new Date(userData.accessTokenExpiry).getTime();
+      const refreshExp = new Date(userData.refreshTokenExpiry).getTime();
+      const msUntilRefresh = accessExp - now - 60_000;
+
+      if (refreshExp > now) {
+        if (msUntilRefresh > 0) {
+          refreshTimeoutRef.current = setTimeout(checkAndRefreshToken, msUntilRefresh);
+        } else {
+          void checkAndRefreshToken();
+        }
+        startTokenExpirationCheck();
+      } else {
+        void clearSession(true);
+      }
+    }
+
+    setIsLoading(false);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+    };
+  }, []);
+
+  const startTokenExpirationCheck = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      const current = userRef.current;
+      if (!current) return;
+      if (Date.now() >= new Date(current.refreshTokenExpiry).getTime()) {
+        void clearSession(true);
+      }
+    }, 60_000);
+  };
+
+  const checkAndRefreshToken = async () => {
+    const current = userRef.current;
+    if (!current) return;
+
+    const now = Date.now();
+    const accessExp = new Date(current.accessTokenExpiry).getTime();
+    const refreshExp = new Date(current.refreshTokenExpiry).getTime();
+    const msUntilRefresh = accessExp - now - 60_000;
+
+    if (now >= refreshExp) {
+      await clearSession(true);
+      return;
+    }
+
+    if (msUntilRefresh <= 0) {
+      await refreshToken();
+    } else {
+      scheduleTokenRefresh(new Date(accessExp));
+    }
+  };
+
+  const refreshToken = async () => {
+    try {
+      const { accessTokenExpiry, refreshTokenExpiry } =
+        (await refreshTokenService()) as RefreshTokenPayload;
+
+      const newUser: User = {
+        ...userRef.current!,
+        accessTokenExpiry,
+        refreshTokenExpiry,
+      };
+
+      setUser(newUser);
+      userRef.current = newUser;
+      localStorage.setItem('user', JSON.stringify(newUser));
+      scheduleTokenRefresh(new Date(accessTokenExpiry));
+    } catch {
+      await clearSession(true);
+    }
+  };
+
+  const scheduleTokenRefresh = (accessExp: Date) => {
+    if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+    const msUntilRefresh = accessExp.getTime() - Date.now() - 60_000;
+    refreshTimeoutRef.current = setTimeout(checkAndRefreshToken, Math.max(msUntilRefresh, 0));
+  };
+
+  const login = (userData: User) => {
+    localStorage.setItem('user', JSON.stringify(userData));
+    setIsLoggedIn(true);
+    setUser(userData);
+    userRef.current = userData;
+    startTokenExpirationCheck();
+    scheduleTokenRefresh(new Date(userData.accessTokenExpiry));
+  };
+
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch (err: unknown) {
+      if ((err as { response?: { status: number } }).response?.status !== 404) {
+        toast.error('An error occurred during logout. Please try again.');
+        return;
+      }
+    } finally {
+      await clearSession(false);
+    }
+  };
+
+  const clearSession = async (forced: boolean) => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('pokemonOwnership');
+    localStorage.removeItem('ownershipTimestamp');
+    localStorage.removeItem('listsTimestamp');
+
+    setIsLoggedIn(false);
+    setUser(null);
+    userRef.current = null;
+
+    resetInstances();
+    resetTradeData();
+    resetTags();
+
+    try {
+      await clearStore('pokemonOwnership');
+      for (const listName of ['owned', 'unowned', 'wanted', 'trade']) {
+        await clearListsStore(listName);
+      }
+      await clearTradesStore('pokemonTrades');
+      await clearTradesStore('relatedInstances');
+    } catch (err) {
+      console.error('Error clearing IndexedDB data:', err);
+    }
+
+    navigate('/login', { replace: true });
+    if (forced) {
+      setTimeout(() => alert('Your session has expired, please log in again.'), 1_000);
+    }
+  };
+
+  const updateUserDetails = async (
+    userId: string,
+    newDetails: Partial<User>,
+  ): Promise<ApiResponse<User>> => {
+    try {
+      const response = (await updateUserService(
+        userId,
+        newDetails,
+      )) as ApiResponse<{ data: Partial<User> }>;
+
+      if (!response.success) {
+        return { success: false, error: response.error };
+      }
+
+      const prev = userRef.current!;
+      const updated = { ...prev, ...response.data.data } as User;
+
+      setUser(updated);
+      userRef.current = updated;
+      localStorage.setItem('user', JSON.stringify(updated));
+
+      const { username, coordinates } = updated;
+      const needsSync =
+        prev.username !== username ||
+        prev.coordinates?.latitude !== coordinates?.latitude ||
+        prev.coordinates?.longitude !== coordinates?.longitude;
+
+      if (needsSync) {
+        const secondary = await updateUserInSecondaryDB(userId, {
+          username,
+          ...(coordinates && {
+            latitude: coordinates.latitude,
+            longitude: coordinates.longitude,
+          }),
+        });
+        if (!secondary.success) {
+          toast.error('User was updated in main DB, but failed to update in secondary DB.');
+        }
+      }
+
+      return { success: true, data: updated };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      toast.error(`Failed to update account details: ${msg}`);
+      return { success: false, error: msg };
+    }
+  };
+
+  const deleteAccount = async (userId: string) => {
+    await deleteAccountService(userId);
+    await clearSession(false);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoggedIn,
+        isLoading,
+        login,
+        logout,
+        updateUserDetails,
+        deleteAccount,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export default AuthProvider;

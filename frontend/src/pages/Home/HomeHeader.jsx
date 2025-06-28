@@ -1,7 +1,7 @@
 // HomeHeader.jsx
 
 import React from 'react';
-import AuthButtons from '../../components/AuthButtons';
+import AuthButtons from '../../components/AuthButtons.jsx';
 import './HomeHeader.css';
 
 const HomeHeader = ({ logoUrl, isLoggedIn }) => {

@@ -2,12 +2,12 @@
 
 import React, { useState } from 'react'; // Import useState
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import MiniMap from './MiniMap';
-import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
+import MiniMap from './MiniMap.jsx';
+import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay.jsx';
 import Gender from '../../../../components/pokemonComponents/Gender';
-import CP from '../../../../components/pokemonComponents/CP';
-import FriendshipLevel from '../../../../components/pokemonComponents/FriendshipLevel';
-import ConfirmationOverlay from '../ConfirmationOverlay'; // Import ConfirmationOverlay
+import CP from '../../../../components/pokemonComponents/CP.jsx';
+import FriendshipLevel from '../../../../components/pokemonComponents/FriendshipLevel.jsx';
+import ConfirmationOverlay from '../ConfirmationOverlay.jsx'; // Import ConfirmationOverlay
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
 import { parsePokemonKey } from '../../../../utils/PokemonIDUtils';
@@ -42,9 +42,9 @@ const WantedListView = ({ item, findPokemonByKey }) => {
     setShowConfirmation(true);
   };
 
-  // Confirm and navigate to user's catalog with "Wanted" ownershipStatus
+  // Confirm and navigate to user's catalog with "Wanted" instanceData
   const handleConfirmNavigation = () => {
-    navigate(`/collection/${item.username}`, { state: { instanceId: item.instance_id, ownershipStatus: "Wanted" } });
+    navigate(`/pokemon/${item.username}`, { state: { instanceId: item.instance_id, instanceData: "Wanted" } });
     setShowConfirmation(false);
   };
 
@@ -61,7 +61,7 @@ const WantedListView = ({ item, findPokemonByKey }) => {
         <MiniMap
           latitude={item.latitude}
           longitude={item.longitude}
-          ownershipStatus="wanted"
+          instanceData="wanted"
         />
       </div>
 
@@ -80,7 +80,7 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                   {item.pref_lucky && (
                   <div className="lucky-backdrop-wrapper">
                     <img
-                      src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                      src={`/images/lucky.png`}
                       alt="Lucky backdrop"
                       className="lucky-backdrop"
                     />
@@ -95,14 +95,14 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                   )}
                   {dynamax && (
                     <img 
-                      src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+                      src={'/images/dynamax.png'} 
                       alt="Dynamax Badge" 
                       className="max-badge" 
                     />
                   )}
                   {gigantamax && (
                     <img 
-                      src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+                      src={'/images/gigantamax.png'} 
                       alt="Gigantamax Badge" 
                       className="max-badge" 
                     />
@@ -183,7 +183,7 @@ const WantedListView = ({ item, findPokemonByKey }) => {
               <div className="pokemon-image-container">
                 {item.pref_lucky && (
                   <img
-                    src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                    src={`/images/lucky.png`}
                     alt="Lucky backdrop"
                     className="lucky-backdrop"
                   />
@@ -197,14 +197,14 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                 )}
                 {dynamax && (
                   <img 
-                    src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+                    src={'/images/dynamax.png'} 
                     alt="Dynamax Badge" 
                     className="max-badge" 
                   />
                 )}
                 {gigantamax && (
                   <img 
-                    src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+                    src={'/images/gigantamax.png'} 
                     alt="Gigantamax Badge" 
                     className="max-badge" 
                   />
@@ -241,7 +241,7 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                     {/* Dynamax Icon */}
                     {tradeListPokemon.dynamax && (
                       <img
-                        src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
+                        src={`/images/dynamax.png`}
                         alt="Dynamax"
                         style={{
                           position: 'absolute',
@@ -257,7 +257,7 @@ const WantedListView = ({ item, findPokemonByKey }) => {
                     {/* Gigantamax Icon */}
                     {tradeListPokemon.gigantamax && (
                       <img
-                        src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
+                        src={`/images/gigantamax.png`}
                         alt="Gigantamax"
                         style={{
                           position: 'absolute',

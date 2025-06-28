@@ -1,23 +1,23 @@
 // Search.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
-import PokemonSearchBar from './PokemonSearchBar';
-import ListView from './views/ListView';
-import MapView from './views/MapView';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import PokemonSearchBar from './PokemonSearchBar.jsx';
+import ListView from './views/ListView.jsx';
+import MapView from './views/MapView.jsx';
+import LoadingSpinner from '../../components/LoadingSpinner.jsx';
 import axios from 'axios';
 
 // Import contexts
-import { usePokemonData } from '../../contexts/PokemonDataContext';
-import { useModal } from '../../contexts/ModalContext';
+import { useVariantsStore } from '@/features/variants/store/useVariantsStore.js';
+import { useModal } from '../../contexts/ModalContext.jsx';
 
 // Import the reusable ActionMenu (adjust the path if necessary)
-import ActionMenu from '../../components/ActionMenu';
+import ActionMenu from '../../components/ActionMenu.jsx';
 
 const Search = () => {
   const [view, setView] = useState('list');
   const [searchResults, setSearchResults] = useState([]);
-  const [ownershipStatus, setOwnershipStatus] = useState('owned');
+  const [instanceData, setinstanceData] = useState('owned');
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -26,7 +26,8 @@ const Search = () => {
   const [scrollToTopTrigger, setScrollToTopTrigger] = useState(0);
 
   // Get pokedexLists from the PokemonDataContext
-  const { variants, pokedexLists } = usePokemonData();
+  const variants = useVariantsStore((s) => s.variants);
+  const pokedexLists = useVariantsStore((s) => s.pokedexLists);
   const { alert } = useModal();
 
   // Refs for scrolling
@@ -62,12 +63,12 @@ const Search = () => {
     setErrorMessage('');
     setIsLoading(true);
     setHasSearched(true);
-    setOwnershipStatus(queryParams.ownership);
+    setinstanceData(queryParams.ownership);
     shouldScrollRef.current = true;
 
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_DISCOVER_API_URL}/discoverPokemon`,
+        `${import.meta.env.VITE_DISCOVER_API_URL}/discoverPokemon`,
         {
           params: queryParams,
           withCredentials: true,
@@ -160,7 +161,7 @@ const Search = () => {
         ) : view === 'list' ? (
           <ListView
             data={searchResults}
-            ownershipStatus={ownershipStatus}
+            instanceData={instanceData}
             hasSearched={hasSearched}
             pokemonCache={variants}
             scrollToTopTrigger={scrollToTopTrigger}
@@ -168,7 +169,7 @@ const Search = () => {
         ) : (
           <MapView 
             data={searchResults} 
-            ownershipStatus={ownershipStatus} 
+            instanceData={instanceData} 
             pokemonCache={variants} 
           />
         )}

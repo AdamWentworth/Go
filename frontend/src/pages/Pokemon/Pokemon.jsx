@@ -1,83 +1,210 @@
 // Pokemon.jsx
-import React, { useState, useMemo, useContext, useEffect, useRef, useCallback } from 'react';
+// ============================
+// 📦 Imports
+// ============================
+
+// 🔁 React & Routing
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
+
+// 🎨 Styles
 import './Pokemon.css';
 
-import HeaderUI from './HeaderUI';
-import PokemonMenu from './PokemonMenu/PokemonMenu';
-import HighlightActionButton from './PokemonMenu/HighlightActionButton';
-import PokedexFiltersMenu from './PokedexMenu/PokedexListsMenu';
-import TagsMenu from './TagsMenu/TagsMenu';
+// 🧩 UI Components
+import HeaderUI from './components/Header/HeaderUI.jsx';
+import PokemonMenu from './components/Menus/PokemonMenu/PokemonMenu.jsx';
+import HighlightActionButton from './components/Menus/PokemonMenu/HighlightActionButton.jsx';
+import PokedexFiltersMenu from './components/Menus/PokedexMenu/PokedexListsMenu.jsx';
+import TagsMenu from './components/Menus/TagsMenu/TagsMenu.jsx';
+import LoadingSpinner from '../../components/LoadingSpinner.jsx';
+import ActionMenu from '../../components/ActionMenu.jsx';
+import CloseButton from '../../components/CloseButton.jsx';
 
-import { usePokemonData } from '../../contexts/PokemonDataContext';
-import UserSearchContext from '../../contexts/UserSearchContext';
-import { initializePokemonLists } from '../../contexts/PokemonData/PokemonTradeListOperations';
+import FusionPokemonModal from './features/fusion/components/FusionPokemonModal';
+import MegaPokemonModal from './features/mega/components/MegaPokemonModal';
 
-import { multiFormPokedexNumbers } from '../../utils/constants';
+// 🏪 Stores & Contexts
+import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import { useTagsStore } from '@/features/tags/store/useTagsStore';
+import { useUserSearchStore } from '@/stores/useUserSearchStore';
+import { useModal } from '@/contexts/ModalContext';
+import {
+    emptyTagBuckets,
+  } from '@/features/tags/utils/initializePokemonTags';
 
-import useUserDataLoader from './hooks/useUserDataLoader';
+// 🧠 Custom Hooks
 import useInstanceIdProcessor from './hooks/useInstanceIdProcessor';
-import useSearchFilters from '../../hooks/search/useSearchFilters';
-import { useUIControls } from './hooks/useUIControls';
-import useUIHandlers from './hooks/useUIHandlers';
-import useHandleMoveToFilter from './hooks/useHandleMoveToFilter';
+import useUIControls from './hooks/useUIControls';
+import useHandleChangeTags from './services/changeInstanceTag/hooks/useHandleChangeTags';
 import usePokemonProcessing from './hooks/usePokemonProcessing';
-import useMegaPokemonHandler from './hooks/useMegaPokemonHandler';
-import useFusionPokemonHandler from './hooks/useFusionPokemonHandler';
-
-import LoadingSpinner from '../../components/LoadingSpinner';
-import ActionMenu from '../../components/ActionMenu';
-import CloseButton from '../../components/CloseButton';
-
-// Import the centralized swipe mapping function
-import { getNextActiveView } from './utils/swipeNavigation';
+import useMegaPokemonHandler from './features/mega/hooks/useMegaPokemonHandler';
+import useFusionPokemonHandler from './features/fusion/hooks/useFusionPokemonHandler';
 import useSwipeHandler from './hooks/useSwipeHandler';
+
+// 🧰 Utilities
+import { getNextActiveView } from './utils/swipeNavigation';
+
+// ============================
+// 🧠 Component Memoization
+// ============================
 
 const PokemonMenuMemo = React.memo(PokemonMenu);
 const HeaderUIMemo = React.memo(HeaderUI);
 
+// ============================
+// 🧩 Main Component
+// ============================
+
 function Pokemon({ isOwnCollection }) {
+
+  // ----------------------------
+  // 📍 Router & Context Setup
+  // ----------------------------
+
   const { username: urlUsername } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const isUsernamePath = !isOwnCollection && Boolean(urlUsername);
 
-  const {
-    viewedOwnershipData,
-    userExists,
-    viewedLoading,
-    fetchUserOwnershipData,
-    setUserExists,
-    setViewedOwnershipData,
-    canonicalUsername,
-  } = useContext(UserSearchContext);
+  const { alert } = useModal(); // ✅ safe: inside a component
 
-  const {
-    variants,
-    ownershipData: contextOwnershipData,
-    lists: defaultLists,
-    loading,
-    pokedexLists,
-    updateOwnership,
-  } = usePokemonData();
+  const foreignInstances       = useInstancesStore(s => s.foreignInstances);
+  const userExists             = useUserSearchStore(s => s.userExists);
+  const viewedLoading          = useUserSearchStore(s => s.foreignInstancesLoading);
+  const loadForeignProfile    = useUserSearchStore(s => s.loadForeignProfile);
+  const canonicalUsername      = useUserSearchStore(s => s.canonicalUsername);
 
-  const ownershipData = isOwnCollection
-    ? contextOwnershipData
-    : viewedOwnershipData || contextOwnershipData;
+  // ----------------------------
+  // 🗃️ State Stores
+  // ----------------------------
 
-  const [ownershipFilter, setOwnershipFilter] = useState('');
+  const variants = useVariantsStore((s) => s.variants);
+  const pokedexLists = useVariantsStore((s) => s.pokedexLists);
+  const loading = useVariantsStore((s) => s.variantsLoading);
+  const updateInstanceStatus = useInstancesStore((s) => s.updateInstanceStatus);
+  const contextInstanceData = useInstancesStore((s) => s.instances);
+  const tags = useTagsStore(s => s.tags)
+
+  const foreignTags = useTagsStore(s => s.foreignTags);
+
+  const instances = isOwnCollection
+    ? contextInstanceData
+    : foreignInstances || contextInstanceData;
+
+  // ----------------------------
+  // 🧪 Component State
+  // ----------------------------
+
+  const [tagFilter, setTagFilter] = useState('');
   const [selectedPokemon, setSelectedPokemon] = useState(null);
   const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState(false);
-  const [highlightedCards, setHighlightedCards] = useState(new Set());
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedPokedexList, setSelectedPokedexList] = useState([]);
-  // "pokedex" or "ownership"; default to "pokedex"
   const [lastMenu, setLastMenu] = useState('pokedex');
-
-  // New state to indicate the default list has been loaded
   const [defaultListLoaded, setDefaultListLoaded] = useState(false);
-
   const [showActionMenu, setShowActionMenu] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeView, setActiveView] = useState('pokemon');
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false);
+
+  // ----------------------------
+  // 📏 UI Controls Hook
+  // ----------------------------
+
+  const {
+    showEvolutionaryLine,
+    toggleEvolutionaryLine,
+    isFastSelectEnabled,
+    setIsFastSelectEnabled,
+    sortType,
+    setSortType,
+    sortMode,
+    setSortMode,
+    highlightedCards,
+    setHighlightedCards, 
+    toggleCardHighlight,
+  } = useUIControls({
+    showEvolutionaryLine: false,
+    isFastSelectEnabled: false,
+    sortType: 'number',
+    sortMode: 'ascending',
+  });
+
+  // ----------------------------
+  // 📦 Side Effects
+  // ----------------------------
+
+  useEffect(() => {
+    if (isUsernamePath) {
+      setSelectedPokedexList(variants);
+      setDefaultListLoaded(true);
+    } else if (variants) {
+      setSelectedPokedexList(variants);
+      setDefaultListLoaded(true);
+    }
+  }, [isUsernamePath, variants, pokedexLists]);
+
+  useEffect(() => {
+    if (isUsernamePath) {
+      setHighlightedCards(new Set());
+      setActiveView('pokemon');
+    }
+  }, [isUsernamePath, urlUsername]);
+
+  useEffect(() => {
+   if (process.env.NODE_ENV === 'development') {
+      console.log('Active view changed to:', activeView);
+    }
+  }, [activeView]);
+
+  // ----------------------------
+  // 🔍 Data Loaders & Processing
+  // ----------------------------
+
+  // 🔍 Foreign‑profile loader
+  useEffect(() => {
+    if (!isUsernamePath || !urlUsername) return;
+    loadForeignProfile(urlUsername, () => setTagFilter('Owned'));
+  }, [isUsernamePath, urlUsername, loadForeignProfile, setTagFilter]);
+
+  const activeTags = isUsernamePath ? foreignTags ?? emptyTagBuckets : tags;
+
+  const baseVariants = lastMenu === 'pokedex' ? selectedPokedexList : variants;
+
+  const { filteredVariants, sortedPokemons } = usePokemonProcessing(
+    baseVariants, instances, tagFilter, activeTags, searchTerm, showEvolutionaryLine, sortType, sortMode
+  );
+
+  useInstanceIdProcessor({
+    variantsLoading: loading,
+    filteredVariants,
+    location,
+    selectedPokemon,
+    isOwnCollection,
+    hasProcessedInstanceId,
+    navigate,
+    setSelectedPokemon,
+    setHasProcessedInstanceId,
+  });
+
+  // ----------------------------
+  // ✋ Event Handlers
+  // ----------------------------
+
+  const handlePokedexMenuClick = (listData) => {
+    setSelectedPokedexList(listData);
+    setLastMenu('pokedex');
+  };
+
+  const handleOwnershipListClick = (filter) => {
+    setHighlightedCards(new Set());
+    setTagFilter(filter);
+    setLastMenu('ownership');
+    setActiveView('pokemon');
+  };
 
   const handleActionMenuToggle = () => {
     setShowActionMenu((prev) => !prev);
@@ -89,243 +216,87 @@ function Pokemon({ isOwnCollection }) {
   };
 
   const handleSelectAll = () => {
-    // Use pokemon.pokemonKey (not pokemon.id)
     const allIds = sortedPokemons.map((pokemon) => pokemon.pokemonKey);
     setHighlightedCards(new Set(allIds));
     setIsFastSelectEnabled(true);
   };
 
-  useEffect(() => {
-    if (isUsernamePath) {
-      setSelectedPokedexList(variants);
-      setDefaultListLoaded(true);
-    } else if (variants) {
-      setSelectedPokedexList(variants);
-      setDefaultListLoaded(true);
-    }
-  }, [isUsernamePath, variants, pokedexLists]);  
-
-  const handlePokedexMenuClick = (listData) => {
-    setSelectedPokedexList(listData);
-    setLastMenu('pokedex');
+  const handleListsButtonClick = () => {
+    setActiveView((prev) => (prev === 'tags' ? 'pokemon' : 'tags'));
   };
 
-  const handleOwnershipListClick = (filter) => {
-    setHighlightedCards(new Set());
-    setOwnershipFilter(filter);
-    setLastMenu('ownership');
-    setActiveView('pokemon'); // updated from 'pokemonList'
-  };
+  // ----------------------------
+  // 🧠 Handlers & Modals
+  // ----------------------------
 
   const {
-    showEvolutionaryLine,
-    toggleEvolutionaryLine,
-    isFastSelectEnabled,
-    setIsFastSelectEnabled,
-    sortType,
-    setSortType,
-    sortMode,
-    toggleSortMode,
-  } = useUIControls({
-    showEvolutionaryLine: false,
-    isFastSelectEnabled: false,
-    sortType: 'number',
-    sortMode: 'ascending',
-  });
-
-  const {
-    selectedGeneration,
-    setSelectedGeneration,
-    searchTerm,
-    setSearchTerm,
-    generations,
-    pokemonTypes,
-    filteredPokemonList,
-    isTypeSearch,
-    isGenerationSearch,
-  } = useSearchFilters(variants);
-
-  useUserDataLoader({
-    isUsernamePath,
-    username: urlUsername,
-    location,
-    setUserExists,
-    setViewedOwnershipData,
-    setOwnershipFilter,
-    fetchUserOwnershipData,
-  });
-
-  const activeLists = useMemo(() => {
-    return isUsernamePath && viewedOwnershipData
-      ? initializePokemonLists(viewedOwnershipData, variants, true)
-      : defaultLists;
-  }, [isUsernamePath, viewedOwnershipData, variants, defaultLists]);
-
-  const filters = useMemo(
-    () => ({
-      selectedGeneration,
-      searchTerm,
-      multiFormPokedexNumbers,
-      pokemonTypes,
-      generations,
-    }),
-    [selectedGeneration, searchTerm, pokemonTypes, generations]
-  );
-
-  const baseVariants = lastMenu === 'pokedex' ? selectedPokedexList : variants;
-
-  const { filteredVariants, sortedPokemons } = usePokemonProcessing(
-    baseVariants,
-    ownershipData,
-    ownershipFilter,
-    activeLists,
-    filters,
-    showEvolutionaryLine,
-    sortType,
-    sortMode
-  );
-
-  useInstanceIdProcessor({
-    viewedOwnershipData,
-    viewedLoading,
-    filteredVariants,
-    location,
-    selectedPokemon,
-    isOwnCollection,
-    hasProcessedInstanceId,
-    navigate,
-    setSelectedPokemon,
-    setHasProcessedInstanceId,
-  });
-
-  const { toggleCardHighlight } = useUIHandlers({
-    setHighlightedCards,
-    setIsFastSelectEnabled,
-  });
-
-  const { promptMegaPokemonSelection, MegaPokemonModal } = useMegaPokemonHandler();
-  const { promptFusionPokemonSelection, FusionPokemonModal } = useFusionPokemonHandler();
-
-  const { handleConfirmMoveToFilter } = useHandleMoveToFilter({
-    setOwnershipFilter,
-    setHighlightedCards,
-    highlightedCards,
-    updateOwnership,
-    variants,
-    ownershipData,
-    setIsUpdating,
     promptMegaPokemonSelection,
+    isMegaSelectionOpen,
+    megaSelectionData,
+    handleMegaSelectionResolve,
+    handleMegaSelectionReject,
+  } = useMegaPokemonHandler();
+  const {
     promptFusionPokemonSelection,
-    setIsFastSelectEnabled,
+    isFusionSelectionOpen,
+    fusionSelectionData,
+    handleFusionSelectionResolve,
+    handleFusionSelectionReject,
+    closeFusionSelection,
+    handleCreateNewLeft,
+    handleCreateNewRight,
+  } = useFusionPokemonHandler();  
+
+  const { handleConfirmChangeTags } = useHandleChangeTags({
+    setTagFilter, setHighlightedCards, highlightedCards, updateInstanceStatus,
+    variants, instances, setIsUpdating,
+    promptMegaPokemonSelection, promptFusionPokemonSelection,
+    setIsFastSelectEnabled
   });
 
-  // --- Sliding view state ---
-  // Default view is now "pokemon" (the middle panel)
-  const [activeView, setActiveView] = useState('pokemon');
+  // ----------------------------
+  // 🧭 Swipe Handler Logic
+  // ----------------------------
 
-  useEffect(() => {
-    console.log('Active view changed to:', activeView);
-  }, [activeView]);
-
-  // Add these new state variables
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const containerRef = useRef(null);
-
-  const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false);
-
+  const containerRef     = useRef(null);
   const MAX_PEEK_DISTANCE = 0.3;
 
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
-  // Update swipe handler initialization
   const swipeHandlers = useSwipeHandler({
-    onSwipe: (direction) => {
-      if (direction) {
-        const nextView = getNextActiveView(activeView, direction);
-        setActiveView(nextView);
-      }
+    onSwipe: (dir) => {
+      if (dir) setActiveView(getNextActiveView(activeView, dir));
       setDragOffset(0);
       setIsDragging(false);
     },
     onDrag: (dx) => {
       if (!containerRef.current) return;
-      const containerWidth = containerRef.current.offsetWidth;
-      const maxOffset = containerWidth * MAX_PEEK_DISTANCE;
-      const limitedDx = Math.max(-maxOffset, Math.min(maxOffset, dx));
-      setDragOffset(limitedDx);
+      const w   = containerRef.current.offsetWidth;
+      const max = w * MAX_PEEK_DISTANCE;
+      setDragOffset(Math.max(-max, Math.min(max, dx)));
       setIsDragging(true);
-    }
+    },
   });
 
   const getTransform = () => {
-    const viewIndex = ['pokedex', 'pokemon', 'tags'].indexOf(activeView);
-    const baseTransform = -viewIndex * 100;
-    const offsetPercentage = (dragOffset / (containerRef.current?.offsetWidth || window.innerWidth)) * 100;
-    
-    return `translate3d(${baseTransform + offsetPercentage}%, 0, 0)`;
-  };
-  
-  // Then modify the swipeEventHandlers creation to:
-  const swipeEventHandlers = {
-    onTouchStart: swipeHandlers.handleTouchStart,
-    onTouchMove: swipeHandlers.handleTouchMove,
-    onTouchEnd: swipeHandlers.handleTouchEnd,
-    ...(isDevelopment ? {
-      onMouseDown: swipeHandlers.handleMouseDown,
-      onMouseMove: swipeHandlers.handleMouseMove,
-      onMouseUp: swipeHandlers.handleMouseUp
-    } : {})
+    const idx     = ['pokedex', 'pokemon', 'tags'].indexOf(activeView);
+    const basePct = -idx * 100;
+    const offset  =
+      (dragOffset / (containerRef.current?.offsetWidth || window.innerWidth)) *
+      100;
+    return `translate3d(${basePct + offset}%,0,0)`;
   };
 
-  const pokedexPanelRef = useRef(null);
-  const mainListPanelRef = useRef(null);
-  const ownershipPanelRef = useRef(null);
-
-  const handleListsButtonClick = () => {
-    setActiveView((prev) => (prev === 'tags' ? 'pokemon' : 'tags'));
-  };
-
-  useEffect(() => {
-    if (isUsernamePath) {
-      setHighlightedCards(new Set());
-      setActiveView('pokemon');
-    }
-  }, [isUsernamePath, urlUsername]);
-
-  useEffect(() => {
-    if (!isOwnCollection && urlUsername) {
-      const updateUsername = async () => {
-        const canonical = urlUsername;
-        if (canonical && canonical !== urlUsername) {
-          window.history.replaceState(
-            {},
-            '',
-            location.pathname.replace(urlUsername, canonical)
-          );
-        }
-      };
-      updateUsername();
-    }
-  }, [urlUsername, isOwnCollection, location.pathname]);
+  // ----------------------------
+  // 🧱 Render Logic
+  // ----------------------------
 
   const displayUsername = canonicalUsername || urlUsername;
   const isEditable = isOwnCollection;
 
-  const contextText =
-    ownershipFilter === ''
-      ? 'Pokédex View'
-      : isEditable
+  const contextText = tagFilter === ''
+    ? 'Pokédex View'
+    : isEditable
       ? 'Editing your Collection'
-      : (
-        <>
-          Viewing{' '}
-          <span className="username">
-            <strong>{displayUsername}</strong>
-          </span>
-          's Collection
-        </>
-      );
+      : <>Viewing <span className="username"><strong>{displayUsername}</strong></span>'s Collection</>;
 
   if (loading || viewedLoading || isUpdating || !defaultListLoaded) {
     return <LoadingSpinner />;
@@ -350,73 +321,81 @@ function Pokemon({ isOwnCollection }) {
       />
 
       {/* Horizontal slider container */}
-      <div 
+      <div
         className="view-slider-container"
         ref={containerRef}
-        {...swipeEventHandlers}
-        style={{ 
-          overflow: 'hidden',
-          touchAction: 'pan-y', // Allow vertical scrolling
-          willChange: 'transform'
+        {...swipeHandlers}
+        style={{
+          overflow   : 'hidden',
+          touchAction: 'pan-y',
+          willChange : 'transform',
         }}
       >
         <div
           className="view-slider"
           style={{
-            transform: getTransform(),
-            transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+            transform : getTransform(),
+            transition: isDragging
+              ? 'none'
+              : 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)',
           }}
         >
-          {/* LEFT panel - Pokedex */}
-          <div className="slider-panel" ref={pokedexPanelRef}>
+          {/* LEFT – Pokédex panel */}
+          <div className="slider-panel">
             <PokedexFiltersMenu
-              setOwnershipFilter={setOwnershipFilter}
-              setHighlightedCards={setHighlightedCards}
-              setActiveView={setActiveView}
-              onListSelect={handlePokedexMenuClick}
-              pokedexLists={pokedexLists}
-              variants={variants}
-            />
-          </div>
-
-          {/* MIDDLE panel - Main Pokémon List */}
-          <div className="slider-panel" ref={mainListPanelRef}>
-            <PokemonMenuMemo
-              isEditable={isEditable}
-              sortedPokemons={sortedPokemons}
-              allPokemons={variants}
-              loading={loading}
-              selectedPokemon={selectedPokemon}
-              setSelectedPokemon={setSelectedPokemon}
-              isFastSelectEnabled={isFastSelectEnabled}
-              toggleCardHighlight={toggleCardHighlight}
-              highlightedCards={highlightedCards}
-              multiFormPokedexNumbers={multiFormPokedexNumbers}
-              ownershipFilter={ownershipFilter}
-              lists={activeLists}
-              ownershipData={ownershipData}
-              sortType={sortType}
-              setSortType={setSortType}
-              sortMode={sortMode}
-              toggleSortMode={toggleSortMode}
-              variants={variants}
-              username={displayUsername}
-              setIsFastSelectEnabled={setIsFastSelectEnabled}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              showEvolutionaryLine={showEvolutionaryLine}
-              toggleEvolutionaryLine={toggleEvolutionaryLine}
-              onSearchMenuStateChange={(open) => {
-                setIsSearchMenuOpen(open);
+              setTagFilter        ={setTagFilter}
+              setHighlightedCards ={setHighlightedCards}
+              setActiveView       ={setActiveView}
+              onListSelect        ={(list) => {
+                setSelectedPokedexList(list);
+                setLastMenu('pokedex');
               }}
+              pokedexLists        ={pokedexLists}
+              variants            ={variants}
             />
           </div>
 
-          {/* RIGHT panel - Tags */}
-          <div className="slider-panel" ref={ownershipPanelRef}>
+          {/* MIDDLE – Pokémon list */}
+          <div className="slider-panel">
+            <PokemonMenuMemo
+              isEditable             ={isEditable}
+              sortedPokemons         ={sortedPokemons}
+              allPokemons            ={variants}
+              loading                ={loading}
+              selectedPokemon        ={selectedPokemon}
+              setSelectedPokemon     ={setSelectedPokemon}
+              isFastSelectEnabled    ={isFastSelectEnabled}
+              toggleCardHighlight    ={toggleCardHighlight}
+              highlightedCards       ={highlightedCards}
+              tagFilter              ={tagFilter}
+              lists                  ={activeTags}
+              instances              ={instances}
+              sortType               ={sortType}
+              setSortType            ={setSortType}
+              sortMode               ={sortMode}
+              setSortMode            ={setSortMode}
+              variants               ={variants}
+              username               ={displayUsername}
+              setIsFastSelectEnabled ={setIsFastSelectEnabled}
+              searchTerm             ={searchTerm}
+              setSearchTerm          ={setSearchTerm}
+              showEvolutionaryLine   ={showEvolutionaryLine}
+              toggleEvolutionaryLine ={toggleEvolutionaryLine}
+              onSearchMenuStateChange={(o) => setIsSearchMenuOpen(o)}
+              activeView             ={activeView}
+            />
+          </div>
+
+          {/* RIGHT – Tags */}
+          <div className="slider-panel">
             <TagsMenu
-              onSelectList={handleOwnershipListClick}
-              activeLists={activeLists}
+              onSelectList={(filter) => {
+                setHighlightedCards(new Set());
+                setTagFilter(filter);
+                setLastMenu('ownership');
+                setActiveView('pokemon');
+              }}
+              activeLists={activeTags}
               variants={variants}
             />
           </div>
@@ -426,8 +405,8 @@ function Pokemon({ isOwnCollection }) {
       {isEditable && highlightedCards.size > 0 && (
         <HighlightActionButton
           highlightedCards={highlightedCards}
-          handleConfirmMoveToFilter={handleConfirmMoveToFilter}
-          ownershipFilter={ownershipFilter}
+          handleConfirmChangeTags={handleConfirmChangeTags}
+          tagFilter={tagFilter}
           isUpdating={isUpdating}
         />
       )}
@@ -444,8 +423,22 @@ function Pokemon({ isOwnCollection }) {
       </div>
       <ActionMenu />
 
-      <MegaPokemonModal />
-      <FusionPokemonModal />
+      <MegaPokemonModal
+        open={isMegaSelectionOpen}
+        data={megaSelectionData}
+        onResolve={handleMegaSelectionResolve}
+        onReject={handleMegaSelectionReject}
+      />
+      {isFusionSelectionOpen && fusionSelectionData && (
+        <FusionPokemonModal
+          isOpen={isFusionSelectionOpen}
+          fusionSelectionData={fusionSelectionData}
+          onConfirm={handleFusionSelectionResolve}
+          onCancel={closeFusionSelection}
+          onCreateNewLeft={handleCreateNewLeft}
+          onCreateNewRight={handleCreateNewRight}
+        />
+      )}
     </div>
   );
 }

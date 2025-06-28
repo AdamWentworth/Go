@@ -39,7 +39,7 @@
 
 /* Base .card styling shared among all card components */
 .card {
-  background-color: #1a1a1a;
+  /* background-color: #1a1a1a; */
   border: 1px solid #333;
   border-radius: clamp(5px, 1vw, 10px);
   padding: clamp(0.8rem, 2vw, 2rem);

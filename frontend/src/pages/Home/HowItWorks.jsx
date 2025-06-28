@@ -1,9 +1,9 @@
 // HowItWorks.jsx
 
 import React from 'react';
-import NavigationSection from './HowItWorks/NavigationSection';
-import PokemonSection from './HowItWorks/PokemonSection';
-import SearchSection from './HowItWorks/SearchSection';
+import NavigationSection from './HowItWorks/NavigationSection.jsx';
+import PokemonSection from './HowItWorks/PokemonSection.jsx';
+import SearchSection from './HowItWorks/SearchSection.jsx';
 import './HowItWorks.css';
 
 const HowItWorks = () => {

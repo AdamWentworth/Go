@@ -2,11 +2,11 @@
 
 import React from 'react';
 import './PokemonSection.css';
-import PokedexCard from './PokemonSection/PokedexCard';
-import CaughtCard from './PokemonSection/CaughtCard';
-import TradeCard from './PokemonSection/TradeCard';
-import WantedCard from './PokemonSection/WantedCard';
-import FindTradesCard from './PokemonSection/FindTradesCard';
+import PokedexCard from './PokemonSection/PokedexCard.jsx';
+import CaughtCard from './PokemonSection/CaughtCard.jsx';
+import TradeCard from './PokemonSection/TradeCard.jsx';
+import WantedCard from './PokemonSection/WantedCard.jsx';
+import FindTradesCard from './PokemonSection/FindTradesCard.jsx';
 
 const PokemonSection = () => {
   return (

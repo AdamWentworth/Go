@@ -1,0 +1,138 @@
+// src/pages/Pokemon/hooks/useInstanceIdProcessor.ts
+//--------------------------------------------------
+// Handles deep‑links like “…?instanceId=xxx” by opening
+// the overlay for that instance once all data is ready.
+//--------------------------------------------------
+
+import { useEffect, useState } from 'react';
+
+import { useUserSearchStore } from '@/stores/useUserSearchStore';
+import { useVariantsStore   } from '@/features/variants/store/useVariantsStore';
+
+import type { PokemonVariant  } from '@/types/pokemonVariants';
+import type { PokemonInstance } from '@/types/pokemonInstance';
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
+
+interface LocationState {
+  instanceId?: string | null;
+  [key: string]: unknown;
+}
+interface AppLocation {
+  state?: LocationState;
+  pathname: string;
+}
+
+type SelectedPokemon = {
+  pokemon: PokemonVariant;
+  overlayType: 'instance';
+};
+
+export interface UseInstanceIdProcessorProps {
+  /** Are the base variants still loading? */
+  variantsLoading: boolean;
+
+  /** List already filtered/search‑sorted by the parent */
+  filteredVariants: PokemonVariant[];
+
+  /* router bits */
+  location: AppLocation;
+  navigate: (
+    pathname: string,
+    opts: { replace: boolean; state: LocationState }
+  ) => void;
+
+  /* UI state setters */
+  selectedPokemon: SelectedPokemon | null;
+  setSelectedPokemon: (p: SelectedPokemon) => void;
+  hasProcessedInstanceId: boolean;
+  setHasProcessedInstanceId: (b: boolean) => void;
+
+  /* misc */
+  isOwnCollection: boolean;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Hook                                                               */
+/* ------------------------------------------------------------------ */
+export default function useInstanceIdProcessor({
+  variantsLoading,
+  filteredVariants,
+  location,
+  navigate,
+  selectedPokemon,
+  setSelectedPokemon,
+  hasProcessedInstanceId,
+  setHasProcessedInstanceId,
+  isOwnCollection,
+}: UseInstanceIdProcessorProps): void {
+  const [retryCounter, setRetryCounter] = useState(0);
+
+  // 🔎  Pull loader state straight from the stores (no prop‑drilling)
+  const { foreignInstancesLoading, viewedOwnershipData } =
+    useUserSearchStore.getState();
+
+  useEffect(() => {
+    if (variantsLoading || foreignInstancesLoading) return;
+    if (!viewedOwnershipData || filteredVariants.length === 0) return;
+    if (isOwnCollection || hasProcessedInstanceId) return;
+
+    const instanceId = location.state?.instanceId;
+    if (!instanceId || selectedPokemon) return;
+
+    /* -------------------------------------------------------------- */
+    /* 1) Try to find it in the already‑filtered list                 */
+    /* -------------------------------------------------------------- */
+    let combined: PokemonVariant | null =
+      filteredVariants.find(p => p.pokemonKey === instanceId) ?? null;
+
+    /* -------------------------------------------------------------- */
+    /* 2) Fallback: enrich base variant with raw instance data        */
+    /* -------------------------------------------------------------- */
+    if (!combined) {
+      const raw = viewedOwnershipData[instanceId];
+      if (raw) {
+        const variant = filteredVariants.find(
+          p => p.pokemon_id === raw.pokemon_id
+        );
+        if (variant) {
+          combined = { ...variant, pokemonKey: instanceId, instanceData: raw };
+        }
+      }
+    }
+
+    /* -------------------------------------------------------------- */
+    /* 3) Open overlay if we found something                          */
+    /* -------------------------------------------------------------- */
+    if (combined) {
+      setSelectedPokemon({ pokemon: combined, overlayType: 'instance' });
+      setHasProcessedInstanceId(true);
+
+      // Clean the param to avoid reopening on navigation/back‑button
+      setTimeout(() => {
+        navigate(location.pathname, {
+          replace: true,
+          state: { ...location.state, instanceId: null },
+        });
+      }, 100);
+    } else {
+      // Still missing — try again shortly (rare race condition)
+      setTimeout(() => setRetryCounter(c => c + 1), 500);
+    }
+  }, [
+    variantsLoading,
+    foreignInstancesLoading,
+    viewedOwnershipData,
+    filteredVariants,
+    location,
+    selectedPokemon,
+    isOwnCollection,
+    hasProcessedInstanceId,
+    navigate,
+    setSelectedPokemon,
+    setHasProcessedInstanceId,
+    retryCounter,
+  ]);
+}

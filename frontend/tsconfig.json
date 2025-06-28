@@ -1,0 +1,33 @@
+// tsconfig.json
+
+{
+  "compilerOptions": {
+    "baseUrl": "src",
+    "paths": {
+      "@/*": ["*"],
+      "#tests/*": ["tests/*"]
+    },
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["DOM", "ESNext"],
+    "jsx": "react-jsx",
+    "moduleResolution": "Node",
+    "allowJs": true,
+    "checkJs": false,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "types": ["jest", "node", "web-streams-polyfill", "vitest/globals"],
+  },
+  "include": [
+    "src",
+    "src/vite-env.d.ts",
+    "vite.config.mjs",
+    "tests/setupTests.ts", 
+    "tests"
+  ]
+}

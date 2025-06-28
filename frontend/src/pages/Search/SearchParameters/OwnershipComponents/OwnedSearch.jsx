@@ -1,6 +1,6 @@
 // OwnedSearch.jsx
 import React from 'react';
-import IV from '../../../../components/pokemonComponents/IV';
+import IV from '../../../../components/pokemonComponents/IV.jsx';
 import './OwnedSearch.css';
 
 const OwnedSearch = ({ ivs, onIvChange, isHundo, setIsHundo }) => {

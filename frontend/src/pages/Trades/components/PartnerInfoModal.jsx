@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import './PartnerInfoModal.css'; // external CSS file
-import CloseButton from '../../../components/CloseButton';
+import CloseButton from '../../../components/CloseButton.jsx';
 
 // --- Additional OL imports for map ---
 import 'ol/ol.css';
@@ -16,7 +16,7 @@ import Point from 'ol/geom/Point';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Style, Circle, Fill } from 'ol/style';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { useTheme } from '../../../contexts/ThemeContext.jsx';
 
 // Utility function to format the trainer code into groups of 4 digits.
 function formatTrainerCode(code) {

@@ -1,0 +1,103 @@
+/*costumes.css*/
+
+.costume-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align to the start to place the content at the top */
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+    z-index: 1000; /* Ensure it's above other content */
+  }
+  
+.costume-column {
+    border-radius: 10px;
+    width: auto; /* This will make the column only as wide as its content */
+    max-height: 80vh;
+    max-width: 100%;
+    z-index: 1010; /* Above the overlay background */
+    padding-left: 5px;
+    padding-right: 5px;
+    position: relative;
+  }
+
+.costume-column h1 {
+  text-align: center;
+  width: 100%;
+  padding-bottom: 15px !important;
+  margin-block-start: 0px;
+  margin-block-end: 0px;
+}
+
+.overlay-costumes {
+  overflow-y: auto !important;
+}
+  
+.costume-item {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center items vertically and horizontally */
+  }
+  
+
+.costume-images {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center; /* This will center the images */
+    gap: 10px;
+  }
+  
+  /* Adjust the size of the images to be smaller and fit side by side, with a maximum height of 180px */
+.costume-images img {
+    max-width: 100%;
+    max-height: 180px; /* Set the maximum height for the images */
+    height: auto; /* Maintain aspect ratio */
+    object-fit: contain; /* Ensure the image is contained within the box without being cropped */
+    margin-right: -10px;
+    margin-left: -10px;
+    filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3)); /* Adds a more prominent shadow to the non-transparent parts */
+  }
+
+.costume-column ul {
+    list-style-type: none;
+    padding-left: 0;
+  }
+
+  .costume-column ul.has-view-all li:last-child {
+    padding-bottom: 15px; /* Adds 15px padding to the bottom of the last list item */
+}
+
+.costume-column .button-container {
+  display: flex; /* creates a flex container */
+  justify-content: center; /* aligns children (the button) to the start */
+}
+
+.fullscreen-toggle {
+  background-color: #111;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  z-index: 1002;
+  margin-top: -10px;
+  margin-bottom: -5px
+}
+
+.costume-column.no-view-all ul li:first-child {
+  margin-top: -30px;
+}
+
+/* Prevent horizontal overflow */
+.costume-overlay, .costume-column {
+  overflow-x: hidden;
+}
+
+.costume-column ul li strong {
+  text-align: center;
+  display: block; /* Ensure it spans full width */
+  width: 100%;
+}

@@ -2,13 +2,13 @@
 
 import React, { useEffect } from 'react';
 import './OwnershipSearch.css'; 
-import OwnedSearch from './OwnershipComponents/OwnedSearch';
-import TradeSearch from './OwnershipComponents/TradeSearch';
-import WantedSearch from './OwnershipComponents/WantedSearch';
+import OwnedSearch from './OwnershipComponents/OwnedSearch.jsx';
+import TradeSearch from './OwnershipComponents/TradeSearch.jsx';
+import WantedSearch from './OwnershipComponents/WantedSearch.jsx';
 
 const OwnershipSearch = ({
-  ownershipStatus,
-  setOwnershipStatus,
+  instanceData,
+  setinstanceData,
   ivs,
   setIvs,
   isHundo,
@@ -31,33 +31,33 @@ const OwnershipSearch = ({
   };  
 
   useEffect(() => {
-    if (ownershipStatus !== 'owned') {
+    if (instanceData !== 'owned') {
       setIvs({ Attack: null, Defense: null, Stamina: null });
       setIsHundo(false);
     }
-  }, [ownershipStatus, setIvs, setIsHundo]);
+  }, [instanceData, setIvs, setIsHundo]);
 
   useEffect(() => {
-    if (ownershipStatus !== 'trade') {
+    if (instanceData !== 'trade') {
       setOnlyMatchingTrades(false);
     }
-  }, [ownershipStatus, setOnlyMatchingTrades]);
+  }, [instanceData, setOnlyMatchingTrades]);
 
   useEffect(() => {
-    if (ownershipStatus !== 'wanted') {
+    if (instanceData !== 'wanted') {
       setPrefLucky(false);
       setAlreadyRegistered(false);
       setTradeInWantedList(false);
       setFriendshipLevel(0);
     }
-  }, [ownershipStatus, setPrefLucky, setAlreadyRegistered, setTradeInWantedList, setFriendshipLevel]);
+  }, [instanceData, setPrefLucky, setAlreadyRegistered, setTradeInWantedList, setFriendshipLevel]);
 
   return (
     <div className="ownership-status-container">
       <h3 className="ownership-header">Ownership Status</h3>
       <div className="ownership-row">
         <div className="ownership-content">
-          {ownershipStatus === 'owned' && (
+          {instanceData === 'owned' && (
             <OwnedSearch
               ivs={ivs}
               onIvChange={handleIvChange}
@@ -66,14 +66,14 @@ const OwnershipSearch = ({
             />
           )}
   
-          {ownershipStatus === 'trade' && (
+          {instanceData === 'trade' && (
             <TradeSearch
               onlyMatchingTrades={onlyMatchingTrades}
               setOnlyMatchingTrades={setOnlyMatchingTrades}
             />
           )}
   
-          {ownershipStatus === 'wanted' && (
+          {instanceData === 'wanted' && (
             <WantedSearch
               prefLucky={prefLucky}
               setPrefLucky={setPrefLucky}
@@ -92,8 +92,8 @@ const OwnershipSearch = ({
             {options.map((option) => (
               <button
                 key={option}
-                className={`ownership-button ${ownershipStatus === option ? 'active ' + option : 'inactive ' + option}`}
-                onClick={() => setOwnershipStatus(option)}
+                className={`ownership-button ${instanceData === option ? 'active ' + option : 'inactive ' + option}`}
+                onClick={() => setinstanceData(option)}
               >
                 {option.charAt(0).toUpperCase() + option.slice(1)}
               </button>

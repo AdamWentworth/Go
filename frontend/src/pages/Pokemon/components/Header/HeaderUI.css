@@ -1,0 +1,102 @@
+/* HeaderUI.css */
+
+/* Base header styles */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: #111;
+  color: #fff;
+  box-shadow: 2px -4px 2px 2px #111;
+
+  display: flex;
+  flex-direction: column; /* So the underline can be absolutely placed inside */
+  padding: 20px 20px 10px;
+  position: relative;
+}
+
+.header-fast-select {
+  background-color: #34807d;
+  filter: drop-shadow(0 6px 6px rgba(0,0,0,0.3));
+}
+
+/* The row that holds three columns */
+.controls-row {
+  display: flex;
+  align-items: flex-start;  /* top-aligned so each column’s top edges line up */
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+}
+
+/* Each "column" or "tab" is equally spaced using flex: 1 */
+.toggle-col {
+  flex: 1;
+  display: flex;
+  justify-content: center; /* horizontally center the content */
+}
+
+/* The toggle-button itself can be stacked if needed */
+.toggle-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* Free-toggle states (X or SELECT ALL) */
+.free-toggle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.free-toggle-text {
+  font-size: 1.25rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* Base font style for all toggles */
+.toggle-text {
+  font-size: 1.25rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #abbbb8; /* inactive gray */
+  margin: 0;
+  padding: 0;
+}
+
+/* Active = white */
+.toggle-text.active,
+.free-toggle-text.active {
+  color: #fff;
+}
+
+/* Underline styling */
+.header-underline {
+  position: absolute;
+  bottom: 0;
+  height: 6px;           /* slightly thicker */
+  background-color: #fff;
+  border-radius: 3px;    /* rounded corners */
+  transition: left 0.3s ease, transform 0.3s ease, width 0.3s ease;
+  width: clamp(100px, 10vw, 10vw);
+  transform: translateX(-50%);
+}
+
+/* Optional smaller/larger text on certain screens */
+@media (max-width: 480px) {
+  .toggle-text,
+  .free-toggle-text {
+    font-size: 0.7rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .toggle-text,
+  .free-toggle-text {
+    font-size: 1.25rem;
+  }
+}

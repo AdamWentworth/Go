@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import './ListView.css';
-import OwnedListView from './ListViewComponents/OwnedListView';
-import TradeListView from './ListViewComponents/TradeListView';
-import WantedListView from './ListViewComponents/WantedListView';
+import OwnedListView from './ListViewComponents/OwnedListView.jsx';
+import TradeListView from './ListViewComponents/TradeListView.jsx';
+import WantedListView from './ListViewComponents/WantedListView.jsx';
 
-const ListView = ({ data, ownershipStatus, hasSearched, pokemonCache, scrollToTopTrigger }) => {
+const ListView = ({ data, instanceData, hasSearched, pokemonCache, scrollToTopTrigger }) => {
   const [pokemonVariants, setPokemonVariants] = useState([]);
   const listViewRef = useRef(null);
 
@@ -52,11 +52,11 @@ const ListView = ({ data, ownershipStatus, hasSearched, pokemonCache, scrollToTo
   return (
     <div className="list-view-container">
       {data.map((item, index) => {
-        if (ownershipStatus === 'owned') {
+        if (instanceData === 'owned') {
           return <OwnedListView key={index} item={item} />;
-        } else if (ownershipStatus === 'trade') {
+        } else if (instanceData === 'trade') {
           return <TradeListView key={index} item={item} findPokemonByKey={findPokemonByKey} />;
-        } else if (ownershipStatus === 'wanted') {
+        } else if (instanceData === 'wanted') {
           return <WantedListView key={index} item={item} findPokemonByKey={findPokemonByKey} />;
         }
         return null;

@@ -25,7 +25,7 @@ const FriendshipSearch = ({ friendshipLevel, setFriendshipLevel, prefLucky, setP
     hearts.push(
       <img
         key={`heart-${i}`}
-        src={`${process.env.PUBLIC_URL}/images/${i < friendshipLevel ? 'heart-filled' : 'heart-unfilled'}.png`}
+        src={`/images/${i < friendshipLevel ? 'heart-filled' : 'heart-unfilled'}.png`}
         alt={`Friendship Level ${i < friendshipLevel ? 'Filled' : 'Unfilled'}`}
         className="heart"
       />
@@ -39,7 +39,7 @@ const FriendshipSearch = ({ friendshipLevel, setFriendshipLevel, prefLucky, setP
           {hearts}
         </div>
         <img
-          src={`${process.env.PUBLIC_URL}/images/lucky_friend_icon.png`}
+          src={`/images/lucky_friend_icon.png`}
           alt="Lucky Friend"
           className={`lucky-icon ${prefLucky ? '' : 'grey-out'}`}
           onClick={toggleLucky}

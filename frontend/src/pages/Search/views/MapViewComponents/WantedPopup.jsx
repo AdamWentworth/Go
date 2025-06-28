@@ -1,11 +1,11 @@
 // WantedPopup.jsx
 
 import React, { useState } from 'react';
-import IV from '../../../../components/pokemonComponents/IV';
-import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
+import IV from '../../../../components/pokemonComponents/IV.jsx';
+import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay.jsx';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
-import ConfirmationOverlay from '../ConfirmationOverlay';
+import ConfirmationOverlay from '../ConfirmationOverlay.jsx';
 import { parsePokemonKey } from '../../../../utils/PokemonIDUtils';
 import './WantedPopup.css';
 

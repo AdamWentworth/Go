@@ -1,0 +1,404 @@
+
+--- File: changeInstanceTag\hooks\useHandleChangeTags.ts ---
+// useHandleChangeTags.ts
+
+import { useCallback } from 'react';
+import { useModal } from '../../../../../contexts/ModalContext.jsx';
+
+import { getStatusFromInstance, getTransitionMessage } from '../utils/transitionMessages.js';
+import { buildInstanceTagChangeMessage } from '../utils/buildInstanceTagChangeMessage.js';
+
+import { PokemonInstance } from '../../../../../types/pokemonInstance.js';
+import { PokemonVariant } from '../../../../../types/pokemonVariants.js';
+import type { InstanceStatus } from '@/types/instances';
+
+import { categorizePokemonKeys } from '../logic/categorizePokemonKeys.js';
+import { validateBlockedMoves } from '../logic/validateMoveToFilter.js';
+import { getDisplayName } from '../logic/getDisplayName.js';
+
+interface useHandleChangeTagsProps {
+  setTagFilter: (filter: InstanceStatus) => void;
+  setHighlightedCards: (cards: Set<string>) => void;
+  highlightedCards: Set<string>;
+  updateInstanceStatus: (keys: string[], filter: InstanceStatus) => Promise<void>;
+  variants: PokemonVariant[];
+  instances: Record<string, PokemonInstance>;
+  setIsUpdating: (value: boolean) => void;
+  promptMegaPokemonSelection: (baseKey: string, megaForm?: string) => Promise<string>;
+  promptFusionPokemonSelection: (baseKey: string) => Promise<string>;
+  setIsFastSelectEnabled: (enabled: boolean) => void;
+}
+
+function useHandleChangeTags({
+  setTagFilter,
+  setHighlightedCards,
+  highlightedCards,
+  updateInstanceStatus,
+  variants,
+  instances,
+  setIsUpdating,
+  promptMegaPokemonSelection,
+  promptFusionPokemonSelection,
+  setIsFastSelectEnabled,
+}: useHandleChangeTagsProps) {
+  const { confirm, alert } = useModal();
+
+  const handleMoveHighlightedToFilter = useCallback(
+    async (filter: InstanceStatus, cardsToMove: Set<string>) => {
+      try {
+        setIsUpdating(true);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        if (cardsToMove.size > 0) {
+          await updateInstanceStatus([...cardsToMove], filter);
+        }
+        if (filter !== 'Unowned') {
+          setTagFilter(filter);
+        }
+        setHighlightedCards(new Set());
+        setIsFastSelectEnabled(false);
+      } catch (error) {
+        console.error('Error updating instance:', error);
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [updateInstanceStatus, setHighlightedCards, setIsFastSelectEnabled, setIsUpdating, setTagFilter]
+  );
+
+  const handleConfirmChangeTags = useCallback(
+    async (filter: InstanceStatus) => {
+      const displayFilterText = filter === 'Owned' ? 'Caught' : filter;
+      const messageDetails: string[] = [];
+
+      const { regular, mega, fusion } = categorizePokemonKeys(highlightedCards);
+
+      const validation = validateBlockedMoves({
+        filter,
+        fusionKeys: fusion,
+        megaKeys: mega,
+        instances,
+        displayFilterText,
+        variants,
+      });
+
+      if (!validation.success && validation.message) {
+        await alert(validation.message);
+        return;
+      }
+
+      const skippedMegaPokemonKeys: string[] = [];
+      const skippedFusionPokemonKeys: string[] = [];
+      let remainingHighlightedCards = new Set(highlightedCards);
+
+      for (const { key, baseKey, megaForm } of mega) {
+        try {
+          const result = await promptMegaPokemonSelection(baseKey, megaForm);
+          if (result !== 'assignExisting' && result !== 'createNew') {
+            skippedMegaPokemonKeys.push(baseKey);
+          }
+          remainingHighlightedCards.delete(key);
+        } catch (error) {
+          console.error(`Error handling Mega Pokémon (${baseKey}):`, error);
+          skippedMegaPokemonKeys.push(baseKey);
+          remainingHighlightedCards.delete(key);
+        }
+      }
+
+      for (const { key, baseKey } of fusion) {
+        try {
+          const result = await promptFusionPokemonSelection(baseKey);
+          if (
+            result !== 'fuseThis' &&
+            result !== 'assignFusion' &&
+            result !== 'createNew'
+          ) {
+            skippedFusionPokemonKeys.push(baseKey);
+          }
+          remainingHighlightedCards.delete(key);
+        } catch (error) {
+          console.error(`Error handling Fusion Pokémon (${baseKey}):`, error);
+          skippedFusionPokemonKeys.push(baseKey);
+          remainingHighlightedCards.delete(key);
+        }
+      }
+
+      for (const { key, parsed } of regular) {
+        const { baseKey, hasUUID } = parsed;
+      
+        if (hasUUID) {
+          // Only access instances if hasUUID is true
+          const instance = instances[key];
+          if (instance) {
+            const currentStatus = getStatusFromInstance(instance);
+            const displayName = instance.nickname || getDisplayName(baseKey, variants);
+            const actionDetail = getTransitionMessage(currentStatus, filter, displayName);
+            messageDetails.push(actionDetail);
+          } else {
+            // Handle unexpected missing instance data gracefully
+            console.warn(`Missing instance data for key: ${key}`);
+            const displayName = getDisplayName(baseKey, variants);
+            messageDetails.push(`Generate ${displayName} from Pokédex to ${displayFilterText}`);
+          }
+        } else {
+          // Base key without UUID, handle safely without accessing instances
+          const displayName = getDisplayName(baseKey, variants);
+          messageDetails.push(`Generate ${displayName} from Pokédex to ${displayFilterText}`);
+        }
+      }      
+
+      if (messageDetails.length > 0) {
+        const messageContent = buildInstanceTagChangeMessage(messageDetails);
+        const userConfirmed = await confirm(messageContent);
+
+        if (userConfirmed) {
+          
+          handleMoveHighlightedToFilter(filter, remainingHighlightedCards).catch((error) => {
+            console.error('Error during instance update:', error);
+            alert('An error occurred while updating instance. Please try again.');
+          });
+        } else {
+          console.log('User canceled the operation.');
+        }
+      } else {
+        handleMoveHighlightedToFilter(filter, remainingHighlightedCards);
+      }
+
+      if (skippedMegaPokemonKeys.length > 0) {
+        const names = skippedMegaPokemonKeys.map((key) => getDisplayName(key, variants));
+        const msg = `Skipped handling of Mega Pokémon: ${names.join(', ')}`;
+        console.log(msg);
+        await alert(msg);
+      }
+      
+      if (skippedFusionPokemonKeys.length > 0) {
+        const names = skippedFusionPokemonKeys.map((key) => getDisplayName(key, variants));
+        const msg = `Skipped handling of Fusion Pokémon: ${names.join(', ')}`;
+        console.log(msg);
+        await alert(msg);
+      }      
+    },
+    [
+      highlightedCards,
+      instances,
+      variants,
+      confirm,
+      alert,
+      handleMoveHighlightedToFilter,
+      promptMegaPokemonSelection,
+      promptFusionPokemonSelection,
+    ]
+  );
+
+  return {
+    handleConfirmChangeTags,
+  };
+}
+
+export default useHandleChangeTags;
+
+
+--- File: changeInstanceTag\logic\categorizePokemonKeys.ts ---
+// categorizePokemonKeys.ts
+
+import { ParsedPokemonKey } from '@/types/keys';
+import { parsePokemonKey } from '@/utils/PokemonIDUtils';
+
+export interface CategorizedPokemonKeys {
+  regular: { key: string; parsed: ParsedPokemonKey }[];
+  mega: { key: string; baseKey: string; megaForm?: string }[];
+  fusion: { key: string; baseKey: string }[];
+}
+
+export function categorizePokemonKeys(
+  keys: Set<string>
+): CategorizedPokemonKeys {
+  const regular: CategorizedPokemonKeys['regular'] = [];
+  const mega: CategorizedPokemonKeys['mega'] = [];
+  const fusion: CategorizedPokemonKeys['fusion'] = [];
+
+  for (const key of keys) {
+    const parsed = parsePokemonKey(key);
+    if (!parsed) {
+      console.warn(`Invalid pokemonKey format: ${key}`);
+      continue;
+    }
+
+    const { baseKey } = parsed;
+
+    if (
+      baseKey.includes('_mega') ||
+      baseKey.includes('-mega') ||
+      baseKey.includes('_primal') ||
+      baseKey.includes('-primal')
+    ) {
+      let megaForm;
+      if (baseKey.includes('mega_x')) megaForm = 'X';
+      else if (baseKey.includes('mega_y')) megaForm = 'Y';
+      mega.push({ key, baseKey, megaForm });
+    } else if (baseKey.includes('fusion')) {
+      fusion.push({ key, baseKey });
+    } else {
+      regular.push({ key, parsed });
+    }
+  }
+
+  return { regular, mega, fusion };
+}
+
+
+--- File: changeInstanceTag\logic\getDisplayName.ts ---
+// getDisplayName.ts
+
+import { PokemonVariant } from '@/types/pokemonVariants';
+
+export function getDisplayName(baseKey: string, variants: PokemonVariant[]): string {
+  const variant = variants.find((v) => v.pokemonKey === baseKey);
+  return variant?.species_name || baseKey;
+}
+
+
+--- File: changeInstanceTag\logic\validateMoveToFilter.ts ---
+// validateMoveToFilter.ts
+
+import { PokemonInstance } from '@/types/pokemonInstance';
+import { InstanceStatus } from '@/types/instances';
+import { getDisplayName } from './getDisplayName';
+import { PokemonVariant } from '@/types/pokemonVariants';
+
+type ValidationResult = {
+  success: boolean;
+  message?: string;
+};
+
+export function validateBlockedMoves({
+  filter,
+  fusionKeys,
+  megaKeys,
+  instances,
+  displayFilterText,
+  variants,
+}: {
+  filter: InstanceStatus;
+  fusionKeys: { key: string; baseKey: string }[];
+  megaKeys: { key: string; baseKey: string; megaForm?: string }[];
+  instances: Record<string, PokemonInstance>;
+  displayFilterText: string;
+  variants: PokemonVariant[];
+}): ValidationResult {
+  const isTradeOrWanted = filter === 'Trade' || filter === 'Wanted';
+
+  if (isTradeOrWanted && megaKeys.length > 0) {
+    const msg = megaKeys
+      .map(({ key }) => {
+        const instance = instances[key];
+        return `• ${
+          instance?.nickname ||
+          getDisplayName(key, variants)
+        } (Mega) cannot be moved to ${displayFilterText}.`;
+      })
+      .join('\n');
+
+    return { success: false, message: msg };
+  }
+
+  if (isTradeOrWanted && fusionKeys.length > 0) {
+    const msg = fusionKeys
+      .map(({ key }) => {
+        const instance = instances[key];
+        return `• ${
+          instance?.nickname ||
+          getDisplayName(key, variants)
+        } (Fusion) cannot be moved to ${displayFilterText}.`;
+      })
+      .join('\n');
+
+    return { success: false, message: msg };
+  }
+
+  return { success: true };
+}
+
+
+--- File: changeInstanceTag\utils\buildInstanceTagChangeMessage.ts ---
+// buildInstanceTagChangeMessage.ts
+
+export function buildInstanceTagChangeMessage(details: string[]): string {
+    const maxDetails = 10;
+    const hasMore = details.length > maxDetails;
+    const displayedDetails = hasMore ? details.slice(0, maxDetails) : details;
+    const additionalCount = hasMore ? details.length - maxDetails : 0;
+  
+    const listedDetails = displayedDetails.map((detail) => `• ${detail}`);
+  
+    if (hasMore) {
+      listedDetails.push(`...and ${additionalCount} more items`);
+    }
+  
+    return `Are you sure you want to make the following changes?\n
+    ${listedDetails.join('\n')}`;
+  }
+  
+
+--- File: changeInstanceTag\utils\transitionMessages.ts ---
+// transitionMessages.ts
+
+import { PokemonInstance } from '@/types/pokemonInstance';
+
+// 1. A utility to figure out the status string from your ownership fields.
+import type { InstanceStatus } from '@/types/instances';
+
+export function getStatusFromInstance(instance: PokemonInstance): InstanceStatus {
+  if (instance.is_unowned) return 'Unowned';
+  if (instance.is_for_trade) return 'Trade';
+  if (instance.is_wanted) return 'Wanted';
+  if (instance.is_owned) return 'Owned';
+  return 'Unowned';
+}
+
+// 2. A dictionary of messages for each (from → to) combination.
+type TransitionFunction = (name: string) => string;
+
+type TransitionMessageMap = {
+  [from in Exclude<InstanceStatus, 'Unknown'>]?: {
+    [to in Exclude<InstanceStatus, 'Unknown'>]?: TransitionFunction;
+  };
+};
+
+const MESSAGES: TransitionMessageMap = {
+  Owned: {
+    Trade: (name) => `List ${name} for Trade?`,
+    Wanted: (name) => `Create a duplicate ${name} for your Wanted list?`,
+    Unowned: (name) => `Transfer ${name}?`,
+  },
+  Trade: {
+    Owned: (name) => `Remove ${name} from Trade Listing?`,
+    Wanted: (name) => `Create a duplicate ${name} for your Wanted list?`,
+    Unowned: (name) => `Transfer ${name}?`,
+  },
+  Wanted: {
+    Owned: (name) => `Caught ${name}?`,
+    Trade: (name) => `Caught ${name} and list for Trade?`,
+    Unowned: (name) => `Transfer ${name}?`,
+  },
+  Unowned: {
+    Owned: (name) => `Caught ${name}?`,
+    Trade: (name) => `Caught ${name} and list for Trade?`,
+    Wanted: (name) => `List ${name} as Wanted?`,
+  },
+};
+
+// 3. Function to return a custom transition message or a fallback
+export function getTransitionMessage(
+  fromStatus: InstanceStatus,
+  toStatus: InstanceStatus,
+  displayName: string
+): string {
+  const fromMap = MESSAGES[fromStatus as keyof typeof MESSAGES];
+  const transitionFn = fromMap?.[toStatus as keyof typeof fromMap];
+
+  if (transitionFn) {
+    return transitionFn(displayName);
+  }
+
+  return `Move ${displayName} from ${fromStatus} to ${toStatus}`;
+}

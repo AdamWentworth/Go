@@ -1,7 +1,7 @@
 // hasDetails.js
 
 // Function to check if a Pokémon has any details
-export const hasDetails = (pokemon, section) => {
+export const hasDetails = (pokemon) => {
     if (!pokemon) {
       return false;
     }

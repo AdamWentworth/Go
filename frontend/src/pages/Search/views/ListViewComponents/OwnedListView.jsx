@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CP from '../../../../components/pokemonComponents/CP';
-import MiniMap from './MiniMap';
-import IV from '../../../../components/pokemonComponents/IV';
-import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
+import CP from '../../../../components/pokemonComponents/CP.jsx';
+import MiniMap from './MiniMap.jsx';
+import IV from '../../../../components/pokemonComponents/IV.jsx';
+import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay.jsx';
 import Gender from '../../../../components/pokemonComponents/Gender';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
-import ConfirmationOverlay from '../ConfirmationOverlay';
+import ConfirmationOverlay from '../ConfirmationOverlay.jsx';
 import './OwnedListView.css';
 
 // Helper function to format date to YYYY-MM-DD
@@ -34,7 +34,7 @@ const OwnedListView = ({ item }) => {
 
   // Confirm navigation to the user's catalog
   const handleConfirmNavigation = () => {
-    navigate(`/collection/${item.username}`, { state: { instanceId: item.instance_id, ownershipStatus: "Owned" } });
+    navigate(`/pokemon/${item.username}`, { state: { instanceId: item.instance_id, instanceData: "Owned" } });
     setShowConfirmation(false);
   };
 
@@ -48,7 +48,7 @@ const OwnedListView = ({ item }) => {
       {/* Left Column: MiniMap */}
       <div className="left-column" onClick={(e) => e.stopPropagation()}>
         {item.distance > 0 && <p>Distance: {item.distance.toFixed(2)} km</p>}
-        <MiniMap latitude={item.latitude} longitude={item.longitude} ownershipStatus="owned" />
+        <MiniMap latitude={item.latitude} longitude={item.longitude} instanceData="owned" />
       </div>
 
       {/* Center Column: Pokémon Image and Info */}
@@ -60,7 +60,7 @@ const OwnedListView = ({ item }) => {
             <div className="pokemon-image-container">
               {item.lucky && (
                 <img
-                  src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                  src={`/images/lucky.png`}
                   alt="Lucky backdrop"
                   className="lucky-backdrop"
                 />
@@ -68,14 +68,14 @@ const OwnedListView = ({ item }) => {
               {imageUrl && <img src={imageUrl} alt={pokemonDisplayName} className="pokemon-image" />}
               {dynamax && (
                 <img 
-                  src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+                  src={'/images/dynamax.png'} 
                   alt="Dynamax Badge" 
                   className="max-badge" 
                 />
               )}
               {gigantamax && (
                 <img 
-                  src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+                  src={'/images/gigantamax.png'} 
                   alt="Gigantamax Badge" 
                   className="max-badge" 
                 />

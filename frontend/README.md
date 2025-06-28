@@ -47,32 +47,32 @@ If you're developing the frontend and don't need to run the backend locally, you
 ### 🛠️ `.env.development`
 
 ```env
-REACT_APP_POKEMON_API_URL=http://localhost:3001/pokemon
-REACT_APP_AUTH_API_URL=http://localhost:3002/auth
-REACT_APP_RECEIVER_API_URL=http://localhost:3003/api
-REACT_APP_USERS_API_URL=http://localhost:3005/api
-REACT_APP_DISCOVER_API_URL=http://localhost:3006/api
-REACT_APP_LOCATION_SERVICE_URL=http://localhost:3007
-REACT_APP_EVENTS_API_URL=http://localhost:3008/api
+VITE_POKEMON_API_URL=http://localhost:3001/pokemon
+VITE_AUTH_API_URL=http://localhost:3002/auth
+VITE_RECEIVER_API_URL=http://localhost:3003/api
+VITE_USERS_API_URL=http://localhost:3005/api
+VITE_DISCOVER_API_URL=http://localhost:3006/api
+VITE_LOCATION_SERVICE_URL=http://localhost:3007
+VITE_EVENTS_API_URL=http://localhost:3008/api
 
-REACT_APP_FORCED_REFRESH_TIMESTAMP=1740519179122
+VITE_FORCED_REFRESH_TIMESTAMP=1740519179122
 ```
 
 ### 🚀 `.env.production`
 
 ```env
-REACT_APP_POKEMON_API_URL=https://pokemongonexus.com/api/pokemon
-REACT_APP_AUTH_API_URL=https://pokemongonexus.com/api/auth
-REACT_APP_RECEIVER_API_URL=https://pokemongonexus.com/api/receiver
-REACT_APP_USERS_API_URL=https://pokemongonexus.com/api/users
-REACT_APP_DISCOVER_API_URL=https://pokemongonexus.com/api/discover
-REACT_APP_LOCATION_SERVICE_URL=https://pokemongonexus.com/api/location
-REACT_APP_EVENTS_API_URL=https://pokemongonexus.com/api/events
+VITE_POKEMON_API_URL=https://pokemongonexus.com/api/pokemon
+VITE_AUTH_API_URL=https://pokemongonexus.com/api/auth
+VITE_RECEIVER_API_URL=https://pokemongonexus.com/api/receiver
+VITE_USERS_API_URL=https://pokemongonexus.com/api/users
+VITE_DISCOVER_API_URL=https://pokemongonexus.com/api/discover
+VITE_LOCATION_SERVICE_URL=https://pokemongonexus.com/api/location
+VITE_EVENTS_API_URL=https://pokemongonexus.com/api/events
 
-REACT_APP_FORCED_REFRESH_TIMESTAMP=1741290124604
+VITE_FORCED_REFRESH_TIMESTAMP=1741290124604
 ```
 
-🧠 The REACT_APP_FORCED_REFRESH_TIMESTAMP can be set to override the standard 24-hour Pokémon data cache. When updated, it forces all clients to re-fetch fresh data even if their local cache is still considered valid. Update this value whenever a major data update occurs.
+🧠 The VITE_FORCED_REFRESH_TIMESTAMP can be set to override the standard 24-hour Pokémon data cache. When updated, it forces all clients to re-fetch fresh data even if their local cache is still considered valid. Update this value whenever a major data update occurs.
 
 Make sure to restart your dev server after changing `.env` values.
 

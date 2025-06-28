@@ -1,0 +1,43 @@
+/* CustomScrollbar.css */
+
+.custom-scrollbar {
+    width: 40px;
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    user-select: none;
+    opacity: 0; /* Start hidden */
+    visibility: hidden; /* Ensure it's not clickable when hidden */
+    transition: opacity 0.5s ease, visibility 0s 0.5s; /* Fade over 0.5s, visibility delayed */
+  }
+  
+  .custom-scrollbar.visible {
+    opacity: 1; /* Fully visible */
+    visibility: visible; /* Make clickable */
+    transition: opacity 0.5s ease; /* Fade in without delay */
+  }
+  
+  .custom-scrollbar.hidden {
+    opacity: 0; /* Explicit hidden state */
+    visibility: hidden; /* Not clickable */
+    transition: opacity 0.5s ease, visibility 0s 0.5s; /* Fade out, then hide */
+  }
+  
+  .scroll-thumb {
+    position: absolute;
+    width: 100%;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    transition: transform 0.2s ease, height 0.2s ease, opacity 0.5s ease; /* Add opacity transition */
+    overflow: hidden;
+  }
+  
+  .scroll-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+  }

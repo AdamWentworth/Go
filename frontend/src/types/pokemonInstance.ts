@@ -1,0 +1,55 @@
+// src/types/pokemonInstance.ts
+export interface PokemonInstance {
+  pokemonKey?: string;
+  username?: string;
+  pokemon_id: number;
+  nickname: string | null;
+  cp: number | null;
+  attack_iv: number | null;
+  defense_iv: number | null;
+  stamina_iv: number | null;
+  shiny: boolean;
+  costume_id: number | null;
+  lucky: boolean;
+  shadow: boolean; // always defined as a boolean
+  purified: boolean;
+  fast_move_id: number | null;
+  charged_move1_id: number | null;
+  charged_move2_id: number | null;
+  weight: number | null;
+  height: number | null;
+  gender: string | null;
+  mirror: boolean;
+  pref_lucky: boolean;
+  registered: boolean;
+  favorite: boolean;
+  location_card?: string | null;
+  location_caught: string | null;
+  friendship_level: number | null;
+  date_caught: string | null;
+  date_added: string;
+  last_update: number;
+  instance_id?: string;
+  is_unowned: boolean;
+  is_owned: boolean;
+  is_for_trade: boolean;
+  is_wanted: boolean;
+  not_trade_list: Record<string, unknown>;
+  not_wanted_list: Record<string, unknown>;
+  trade_filters: Record<string, unknown>;
+  wanted_filters: Record<string, unknown>;
+  gps: string | null;
+  mega: boolean;
+  mega_form?: string | null;
+  is_mega: boolean;
+  level: number | null;
+  fusion: Record<string, unknown>;
+  is_fused: boolean | null;
+  fusion_form: string | null;
+  dynamax: boolean | null;
+  gigantamax: boolean | null;
+  max_attack: number | null;
+  max_guard: number | null;
+  max_spirit: number | null;
+  [key: string]: unknown;
+}

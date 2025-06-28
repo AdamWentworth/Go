@@ -1,0 +1,138 @@
+/* ListImageDownload.css */
+.list-image-download {
+  text-align: center;
+}
+
+.list-image-download .capture-area {
+  display: block;
+  position: relative;
+  margin: 0 auto;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: var(--preview-bg-color, #e0f0e5); /* fallback for light mode */
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.list-image-download .capture-area h2 {
+  margin: 0;
+  padding: 0;
+  line-height: normal;
+  color: var(--h2-font-color, #000); /* fallback for light mode */
+  margin-bottom: 5px;
+}
+
+.list-image-download .section-block {
+  margin-bottom: 1rem;
+  background: var(--section-frame-bg-color, #f8fff9); /* fallback for light mode */
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.list-image-download .section-block:last-child {
+  margin-bottom: 0;
+}
+
+.list-image-download .pokemon-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+/* Inner glow for Wanted grid (red) */
+.section-block.wanted-section {
+  box-shadow: inset 0 0 clamp(6px, 1.5vw, 9px) clamp(1px, 0.5vw, 2px) red;
+}
+
+/* Inner glow for Trade grid (green) */
+.section-block.trade-section {
+  box-shadow: inset 0 0 clamp(6px, 1.5vw, 9px) clamp(1px, 0.5vw, 2px) green;
+}
+
+/* Ensure each preview container is relatively positioned */
+.list-image-download .pokemon-image-preview {
+  width: clamp(40px, 10vw, 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative; /* Needed for absolute positioning of variant icon */
+}
+
+/* Style the main Pokémon image specifically */
+.list-image-download .pokemon-image-preview .main-image {
+  width: clamp(40px, 10vw, 64px);
+  height: clamp(40px, 10vw, 64px);
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+/* Style for the variant icon overlay */
+.list-image-download .variant-icon {
+  position: absolute;
+  top: 0px;
+  right: 2px;
+  width: clamp(15px, 2vw, 20px); /* Uses clamp for responsive, small icon */
+  height: auto;
+  z-index: 1;
+}
+
+.list-image-download .pokemon-image-preview .pokemon-name {
+  margin-top: unset;
+  font-size: clamp(5px, 7px, 8px);
+  text-align: center;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+  color: var(--pokemon-name-color, #000);  /* Dynamic text color with fallback */
+}
+
+.list-image-download .image-container {
+  position: relative;
+  display: inline-block;
+  width: clamp(40px, 10vw, 64px);
+  height: clamp(40px, 10vw, 64px);
+}
+
+/* Location backdrop styling */
+.list-image-download .location-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensures the image covers the container */
+  z-index: 0; /* Lowest z-index so it's behind the lucky and main images */
+  border-radius: 4px; /* Same rounding as the main image */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* Apply a mask to round off the edges with a soft fade */
+  -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0.3) 70%, transparent 100%);
+  mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 45%, rgba(0, 0, 0, 0.3) 65%, transparent 70%);
+}
+
+/* Lucky backdrop remains unchanged but sits above the location backdrop */
+.list-image-download .lucky-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 1;
+  filter: brightness(0.85); /* Optional: adjust brightness */
+}
+
+/* Main image on top */
+.list-image-download .main-image {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}

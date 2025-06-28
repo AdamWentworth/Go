@@ -15,7 +15,7 @@ import { Style, Circle, Fill } from 'ol/style';
 import Zoom from 'ol/control/Zoom'; // Import Zoom control from OpenLayers
 import { useTheme } from '../../../../contexts/ThemeContext';  // Import useTheme
 
-const MiniMap = ({ latitude, longitude, ownershipStatus }) => {
+const MiniMap = ({ latitude, longitude, instanceData }) => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null); // To reference the OpenLayers map instance
   const { isLightMode } = useTheme();  // Use theme context to get isLightMode
@@ -32,9 +32,9 @@ const MiniMap = ({ latitude, longitude, ownershipStatus }) => {
     });
 
     let pointColor;
-    if (ownershipStatus === 'owned') {
+    if (instanceData === 'owned') {
       pointColor = '#00AAFF'; // Blue for owned
-    } else if (ownershipStatus === 'trade') {
+    } else if (instanceData === 'trade') {
       pointColor = '#4cae4f'; // Green for trade
     } else {
       pointColor = '#FF0000'; // Red for wanted (default)
@@ -90,7 +90,7 @@ const MiniMap = ({ latitude, longitude, ownershipStatus }) => {
       resizeObserver.disconnect(); // Clean up observer
       map.setTarget(null); // Clean up the map instance on unmount
     };
-  }, [latitude, longitude, isLightMode, ownershipStatus]);
+  }, [latitude, longitude, isLightMode, instanceData]);
 
   return (
     <div className="mini-map-wrapper">

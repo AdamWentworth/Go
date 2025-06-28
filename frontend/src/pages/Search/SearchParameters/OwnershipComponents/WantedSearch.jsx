@@ -1,7 +1,7 @@
 // WantedSearch.jsx
 import React from 'react';
 import './WantedSearch.css'; 
-import FriendshipSearch from './FriendshipSearch';
+import FriendshipSearch from './FriendshipSearch.jsx';
 
 const WantedSearch = ({ 
   prefLucky, 

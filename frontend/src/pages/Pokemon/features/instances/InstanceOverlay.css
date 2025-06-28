@@ -1,0 +1,117 @@
+/* InstanceOverlay.css */
+
+.instance-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.7);
+    overflow-y: auto;
+    z-index: 2000;
+    padding: 10px;
+    /* Hide scrollbar but enable scrolling */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+  
+.instance-overlay.owned-overlay {
+    align-items: center !important;
+}
+  
+.instance-overlay::-webkit-scrollbar {
+    display: none; /* For Chrome, Safari, and Opera */
+}  
+
+.instance-overlay .trade-instance-overlay {
+    margin: 0 auto;
+}
+
+@media (max-width: 767px) {
+    .instance-overlay .overlay-row {
+        display: flex;
+        flex-direction: row;
+        max-width: 100%;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .instance-overlay .overlay-row.column-layout {
+        flex-direction: column;
+        overflow-y: auto;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .instance-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.7); /* Dimming background */
+        z-index: 1001; /* Ensures overlay is on top */
+        flex-direction: column; 
+    }
+    
+    .trade-instance-overlay .overlay-row {
+        flex-direction: row;
+        display: flex;
+    }
+    .wanted-instance-overlay .overlay-row {
+        flex-direction: row;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+    .instance-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.7); /* Dimming background */
+        z-index: 1001; /* Ensures overlay is on top */
+        flex-direction: column; 
+    }
+    
+    .trade-instance-overlay .overlay-row {
+        flex-direction: row;
+        display: flex;
+    }
+}
+@media (min-width: 1440px) {
+    .instance-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.7); /* Dimming background */
+        z-index: 1001; /* Ensures overlay is on top */
+        flex-direction: column; 
+    }
+    
+    .trade-instance-overlay .overlay-row {
+        flex-direction: row;
+        display: flex;
+    }
+}
+

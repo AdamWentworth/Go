@@ -1,0 +1,65 @@
+/* ListItems.css */
+.list-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0.625rem 0;
+    border: 0.125rem solid #ccc;
+    border-radius: 0.9375rem;
+    padding: 0.625rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .list-item:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .list-header {
+    width: 100%;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    padding: 0.625rem 0;
+    border-bottom: 0.0625rem solid #ccc;
+    border-radius: 0.9375rem 0.9375rem 0 0;
+    color: white;
+  }
+  
+  .pokemon-preview {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 0.625rem;
+  }
+  
+  .pokemon-list-container {
+    position: relative;
+    display: inline-block;
+    margin: unset;
+    width: 3.5rem;
+    padding: 0.3125rem;
+  }
+  
+  .preview-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: 0.3125rem;
+  }
+  
+  .variant-overlay {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.2rem;
+    width: 1rem;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  .no-pokemon-text {
+    font-size: 0.875rem;
+    color: #666;
+    margin-top: 0.625rem;
+  }
+  

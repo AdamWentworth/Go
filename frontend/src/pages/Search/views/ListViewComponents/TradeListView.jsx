@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import MiniMap from './MiniMap';
-import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
+import MiniMap from './MiniMap.jsx';
+import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay.jsx';
 import Gender from '../../../../components/pokemonComponents/Gender';
-import CP from '../../../../components/pokemonComponents/CP';
-import ConfirmationOverlay from '../ConfirmationOverlay'; // Import ConfirmationOverlay
+import CP from '../../../../components/pokemonComponents/CP.jsx';
+import ConfirmationOverlay from '../ConfirmationOverlay.jsx'; // Import ConfirmationOverlay
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
 import { parsePokemonKey } from '../../../../utils/PokemonIDUtils';
@@ -40,9 +40,9 @@ const TradeListView = ({ item, findPokemonByKey }) => {
     setShowConfirmation(true);
   };
 
-  // Confirm and navigate to user's catalog with "Trade" ownershipStatus
+  // Confirm and navigate to user's catalog with "Trade" instanceData
   const handleConfirmNavigation = () => {
-    navigate(`/collection/${item.username}`, { state: { instanceId: item.instance_id, ownershipStatus: "Trade" } });
+    navigate(`/pokemon/${item.username}`, { state: { instanceId: item.instance_id, instanceData: "Trade" } });
     setShowConfirmation(false);
   };
 
@@ -59,7 +59,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
         <MiniMap
           latitude={item.latitude}
           longitude={item.longitude}
-          ownershipStatus="trade"
+          instanceData="trade"
         />
       </div>
 
@@ -76,7 +76,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
                 {item.cp && <CP cp={item.cp} />}
                 {item.lucky && (
                   <img
-                    src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                    src={`/images/lucky.png`}
                     alt="Lucky backdrop"
                     className="lucky-backdrop"
                   />
@@ -90,22 +90,22 @@ const TradeListView = ({ item, findPokemonByKey }) => {
                 )}
                 {dynamax && (
                   <img 
-                    src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+                    src={'/images/dynamax.png'} 
                     alt="Dynamax Badge" 
                     className="max-badge" 
                   />
                 )}
                 {gigantamax && (
                   <img 
-                    src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+                    src={'/images/gigantamax.png'} 
                     alt="Gigantamax Badge" 
                     className="max-badge" 
                   />
                 )}
-                <p className="pokemon-name">
-                  {pokemonDisplayName}
+                <div className="pokemon-name">
+                  <p>{pokemonDisplayName}</p>
                   <Gender gender={item.gender} />
-                </p>
+                </div>
                 </div>
               </div>
 
@@ -168,7 +168,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
               <div className="pokemon-image-container">
               {item.lucky && (
                 <img
-                  src={`${process.env.PUBLIC_URL}/images/lucky.png`}
+                  src={`/images/lucky.png`}
                   alt="Lucky backdrop"
                   className="lucky-backdrop"
                 />
@@ -182,14 +182,14 @@ const TradeListView = ({ item, findPokemonByKey }) => {
               )}
               {dynamax && (
                 <img 
-                  src={process.env.PUBLIC_URL + '/images/dynamax.png'} 
+                  src={'/images/dynamax.png'} 
                   alt="Dynamax Badge" 
                   className="max-badge" 
                 />
               )}
               {gigantamax && (
                 <img 
-                  src={process.env.PUBLIC_URL + '/images/gigantamax.png'} 
+                  src={'/images/gigantamax.png'} 
                   alt="Gigantamax Badge" 
                   className="max-badge" 
                 />
@@ -226,7 +226,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
                     {/* Dynamax Icon */}
                     {wantedListPokemon.dynamax && (
                       <img
-                        src={`${process.env.PUBLIC_URL}/images/dynamax.png`}
+                        src={`/images/dynamax.png`}
                         alt="Dynamax"
                         style={{
                           position: 'absolute',
@@ -242,7 +242,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
                     {/* Gigantamax Icon */}
                     {wantedListPokemon.gigantamax && (
                       <img
-                        src={`${process.env.PUBLIC_URL}/images/gigantamax.png`}
+                        src={`/images/gigantamax.png`}
                         alt="Gigantamax"
                         style={{
                           position: 'absolute',

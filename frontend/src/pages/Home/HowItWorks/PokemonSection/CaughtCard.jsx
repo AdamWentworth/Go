@@ -1,11 +1,11 @@
 // CaughtCard.jsx
 import React from 'react';
 import './CaughtCard.css';
-import CP from '../../../../components/pokemonComponents/CP';
-import Weight from '../../../../components/pokemonComponents/Weight';
+import CP from '../../../../components/pokemonComponents/CP.jsx';
+import Weight from '../../../../components/pokemonComponents/Weight.jsx';
 import Height from '../../../../components/pokemonComponents/Height';
-import Types from '../../../../components/pokemonComponents/Types';
-import IV from '../../../../components/pokemonComponents/IV';
+import Types from '../../../../components/pokemonComponents/Types.jsx';
+import IV from '../../../../components/pokemonComponents/IV.jsx';
 
 const CaughtCard = () => {
   return (
@@ -43,7 +43,7 @@ const CaughtCard = () => {
 
         {/* Stats row: Weight, Types, Height */}
         <div className="stats-row">
-          <Weight pokemon={{ ownershipStatus: { weight: 88 } }} />
+          <Weight pokemon={{ instanceData: { weight: 88 } }} />
 
           {/* Replace the old “type-row” div with the new <Types /> component */}
           <Types
@@ -55,7 +55,7 @@ const CaughtCard = () => {
             }}
           />
 
-          <Height pokemon={{ ownershipStatus: { height: 1.8 } }} />
+          <Height pokemon={{ instanceData: { height: 1.8 } }} />
         </div>
         
         {/* Move rows */}
