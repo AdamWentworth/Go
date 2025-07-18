@@ -111,7 +111,7 @@ const InstanceOverlay = ({
                 <WantedDetails
                   pokemon={selectedPokemon}
                   lists={lists}
-                  instances={instances}
+                  ownershipData={instances}
                   sortType={sortType}
                   sortMode={sortMode}
                   openTradeOverlay={handleOpenTradeOverlay}

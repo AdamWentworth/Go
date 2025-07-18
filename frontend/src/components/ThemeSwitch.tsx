@@ -14,7 +14,7 @@ const ThemeSwitch: React.FC = () => {
         const link = document.createElement('link');
         link.id = 'light-mode-stylesheet';
         link.rel = 'stylesheet';
-        link.href = '/light-mode.css';
+        link.href = '/Light-Mode.css';
         document.head.appendChild(link);
       }
     } else {

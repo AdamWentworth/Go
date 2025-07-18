@@ -71,7 +71,6 @@
 @media (min-width: 1024px) and (max-width: 1439px) {
     .trade-list-container.xxlarge-list {
         grid-template-columns: repeat(6, 1fr);
-        max-height: 450px;
     }
 
 }
