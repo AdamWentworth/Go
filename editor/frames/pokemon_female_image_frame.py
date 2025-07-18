@@ -1,213 +1,184 @@
-# pokemon_female_image_frame.py
+# frames/pokemon_female_image_frame.py
+import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
-from PIL import Image, ImageTk
-import os
-import requests
 from io import BytesIO
 
+from PIL import Image, ImageTk
+import requests
+
+
 class PokemonFemaleImageFrame:
-    def __init__(self, parent, female_image_url, shiny_female_image_url, shadow_female_image_url, shiny_shadow_female_image_url, pokemon_id, controller):
-        self.parent = parent
-        self.female_image_url = female_image_url
-        self.shiny_female_image_url = shiny_female_image_url
-        self.shadow_female_image_url = shadow_female_image_url
-        self.shiny_shadow_female_image_url = shiny_shadow_female_image_url
-        self.pokemon_id = pokemon_id
-        self.controller = controller
+    """
+    Displays up to four female-form images:
 
-        self.frame = tk.Frame(parent)
+        ┌───────────────────── LabelFrame “Female Images” ─────────────────────┐
+        │ [Default ♀]  [Shiny ♀]  [Shadow ♀]  [Shiny-Shadow ♀]  (+ DL buttons) │
+        └───────────────────────────────────────────────────────────────────────┘
+    """
 
-        # Path to the shiny, shadow icon, and shadow background images
-        self.shiny_icon_path = os.path.normpath(os.path.join(self.controller.relative_path_to_images, 'images', 'shiny_icon.png'))
-        self.shadow_icon_path = os.path.normpath(os.path.join(self.controller.relative_path_to_images, 'images', 'shadow_icon_middle_ground.png'))
-        self.shadow_background_path = os.path.normpath(os.path.join(self.controller.relative_path_to_images, 'images', 'shadow_effect.png'))
+    IMG_SIZE_UI = 150   # thumbnail size for on-screen preview
+    IMG_SIZE_DL = 240   # size saved to disk / combined
 
-        # Image labels placeholders
-        self.image_labels = {}
+    # ──────────────────────────────────────────────────────────────
+    def __init__(
+        self,
+        parent,
+        female_image_url,
+        shiny_female_image_url,
+        shadow_female_image_url,
+        shiny_shadow_female_image_url,
+        pokemon_id,
+        controller,
+    ):
+        self.parent     = parent
+        self.pid        = pokemon_id
+        self.ctrl       = controller
 
-        # Create all image frames
-        self.create_female_image_frame()
+        # root widget now a LabelFrame → border + title
+        self.frame = tk.LabelFrame(
+            parent,
+            text="Female Images",
+            bd=2,
+            relief=tk.GROOVE,
+            padx=8,
+            pady=8,
+        )
 
-    def create_female_image_frame(self):
-        """ Create a fixed frame to display female, shiny female, shadow female, and shiny shadow female images """
-        self.create_image_label(self.female_image_url, "Female Form", "female")
-        self.create_image_label(self.shiny_female_image_url, "Shiny Female Form", "shiny_female")
-        self.create_image_label(self.shadow_female_image_url, "Shadow Female Form", "shadow_female")
-        self.create_image_label(self.shiny_shadow_female_image_url, "Shiny Shadow Female Form", "shiny_shadow_female")
+        # assets
+        self.shiny_icon_path  = os.path.join(
+            self.ctrl.relative_path_to_images, "images", "shiny_icon.png"
+        )
+        self.shadow_icon_path = os.path.join(
+            self.ctrl.relative_path_to_images, "images", "shadow_icon_middle_ground.png"
+        )
+        self.shadow_bg_path   = os.path.join(
+            self.ctrl.relative_path_to_images, "images", "shadow_effect.png"
+        )
 
-    def create_image_label(self, image_url, label_text, image_type):
-        """ Helper method to create or update an image label with a description and download button """
-        if image_type not in self.image_labels:
-            # Create a new image label and download button only if not created
-            image_label_frame = tk.Frame(self.frame)
+        # keep refs to the four <Label>s so we can update them later
+        self.image_labels: dict[str, tk.Label] = {}
 
-            image_label = tk.Label(image_label_frame)
-            image_label.pack(side=tk.TOP)
+        # build UI
+        self._add_image_block(female_image_url,          "Female Form",        "female")
+        self._add_image_block(shiny_female_image_url,    "Shiny Female",       "shiny_female")
+        self._add_image_block(shadow_female_image_url,   "Shadow Female",      "shadow_female")
+        self._add_image_block(shiny_shadow_female_image_url,
+                              "Shiny Shadow Female",      "shiny_shadow_female")
 
-            description_label = tk.Label(image_label_frame, text=label_text)
-            description_label.pack(side=tk.BOTTOM)
+    # ──────────────────────────────────────────────────────────
+    # helpers to build/update a single “image card”
+    # ──────────────────────────────────────────────────────────
+    def _add_image_block(self, url, label_txt, key):
+        """
+        Create a mini-frame with thumbnail, description label and
+        a “Download Image” button (unless already created).
+        """
+        if key not in self.image_labels:
+            card = tk.Frame(self.frame)
+            card.pack(side=tk.LEFT, padx=10, pady=5, expand=True)
 
-            download_button = tk.Button(image_label_frame, text="Download Image", command=lambda: self.download_image(image_type))
-            download_button.pack(side=tk.BOTTOM)
+            img_lbl = tk.Label(card)
+            img_lbl.pack(side=tk.TOP)
+            tk.Label(card, text=label_txt).pack(side=tk.TOP, pady=(2, 0))
+            tk.Button(
+                card,
+                text="Download Image",
+                command=lambda k=key: self._download_image(k),
+            ).pack(side=tk.TOP, pady=(4, 0))
 
-            image_label_frame.pack(side=tk.LEFT, padx=10, pady=10)
+            self.image_labels[key] = img_lbl
 
-            # Store references to the image label and frame for updates
-            self.image_labels[image_type] = image_label
+        self._update_thumbnail(url, key)
 
-        # Update the image on the existing image label
-        self.update_image_label(image_url, image_type)
+    def _update_thumbnail(self, rel_url, key):
+        lbl = self.image_labels[key]
+        try:
+            path = os.path.join(self.ctrl.relative_path_to_images, rel_url.lstrip("/"))
+            img  = Image.open(path).resize((self.IMG_SIZE_UI, self.IMG_SIZE_UI), Image.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            lbl.configure(image=photo)
+            lbl.image = photo
+        except Exception:
+            lbl.configure(text="Image\nNot\nAvailable", justify="center")
+            lbl.image = None
 
-    def update_image_label(self, image_url, image_type):
-        """ Update an existing image label with a new image """
-        image_label = self.image_labels.get(image_type)
-        if image_label:
-            try:
-                image_path = os.path.join(self.controller.relative_path_to_images, image_url.lstrip('/'))  # Combine root and relative path
-                image = Image.open(image_path)
-                image = image.resize((150, 150), Image.ANTIALIAS)
-                photo = ImageTk.PhotoImage(image)
-
-                # Update the existing image label with the new photo
-                image_label.config(image=photo)
-                image_label.image = photo  # Keep a reference to avoid garbage collection
-            except Exception as e:
-                print(f"Error loading image for {image_type}: {e}")
-                image_label.config(text="Image Not Available")
-                image_label.image = None
-
-    def download_image(self, image_type):
-        """ Download an image from a URL input by the user """
-        # Prompt for the URL
-        url = simpledialog.askstring("Download Image", f"Enter the Image URL for {image_type}:")
-
-        if url:
-            try:
-                # Download and resize the image
-                response = requests.get(url)
-                response.raise_for_status()  # Raise an HTTPError if the request fails
-                image = Image.open(BytesIO(response.content)).resize((240, 240))
-                self.save_image(image, image_type)
-            except requests.exceptions.RequestException as e:
-                messagebox.showerror("Error", f"Failed to download the image: {e}", parent=self.controller.window)
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to process the image: {e}", parent=self.controller.window)
-
-    def save_image(self, image, image_type):
-        """ Save the image to the appropriate folder and update the database """
-        folder_map = {
-            "female": "female/default",
-            "shiny_female": "female/shiny",
-            "shadow_female": "female/shadow",
-            "shiny_shadow_female": "female/shiny_shadow"
-        }
-
-        save_folder = os.path.join(self.controller.relative_path_to_images, 'images', folder_map[image_type])
-        os.makedirs(save_folder, exist_ok=True)
-
-        # Define the file name and path
-        file_name = f"{image_type}_pokemon_{self.pokemon_id}.png"
-        save_path = os.path.join(save_folder, file_name)
+    # ──────────────────────────────────────────────────────────
+    # download / save helpers
+    # ──────────────────────────────────────────────────────────
+    def _download_image(self, key):
+        url = simpledialog.askstring("Download Image", f"Image URL for {key.replace('_', ' ')}:")
+        if not url:
+            return
 
         try:
-            # Normalize the path to ensure platform consistency
-            save_path = os.path.normpath(save_path)
+            resp = requests.get(url)
+            resp.raise_for_status()
+            img = Image.open(BytesIO(resp.content)).resize(
+                (self.IMG_SIZE_DL, self.IMG_SIZE_DL), Image.LANCZOS
+            )
 
-            # Combine images if necessary
-            if "shiny_shadow" in image_type:
-                image = self.combine_images(image, is_shiny=True, is_shadow=True)
-            elif "shiny" in image_type:
-                image = self.combine_images(image, is_shiny=True)
-            elif "shadow" in image_type:
-                image = self.combine_images(image, is_shadow=True)
+            is_shiny  = key.startswith("shiny")
+            is_shadow = "shadow" in key
 
-            # Save the image to the disk
-            image.save(save_path)
+            img = self._combine_overlays(img, is_shiny=is_shiny, is_shadow=is_shadow)
+            rel_path = self._save_to_disk(img, key)
+            self._update_thumbnail(rel_path, key)
+            self._update_db_field(key, rel_path)
 
-            # Normalize the relative path for database storage (URLs should use forward slashes)
-            relative_path = f"/images/{folder_map[image_type]}/{file_name}".replace("\\", "/")
-            self.update_female_pokemon_image_url(image_type, relative_path)
+            messagebox.showinfo("Saved", f"{key.replace('_', ' ').title()} saved.", parent=self.ctrl.window)
+        except Exception as exc:
+            messagebox.showerror("Error", str(exc), parent=self.ctrl.window)
 
-            # Update the UI to reflect the new image
-            self.update_image_label(relative_path, image_type)
-
-            # Show success message without affecting the window stack
-            messagebox.showinfo("Success", f"{image_type.replace('_', ' ').title()} image saved successfully!", parent=self.controller.window)
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to save the image: {e}", parent=self.controller.window)
-
-    def show_error_message(self, message):
-        """ Display error messages without flickering or changing window focus """
-        messagebox.showerror("Error", message)  # No need to force focus changes here
-
-    def combine_images(self, pokemon_image, is_shiny=False, is_shadow=False):
-        """ Combine the Pokémon image with the shiny, shadow icons, and shadow background """
+    # overlays shiny/star + shadow background/icon
+    def _combine_overlays(self, base, *, is_shiny=False, is_shadow=False):
         try:
-            # Create a base image with an alpha channel
-            base_image = Image.new("RGBA", (240, 240), (0, 0, 0, 0))
-
-            # Add shadow background if it's a shadow or shiny shadow image
+            canv = Image.new("RGBA", (self.IMG_SIZE_DL, self.IMG_SIZE_DL), (0, 0, 0, 0))
             if is_shadow:
-                shadow_background = Image.open(self.shadow_background_path).convert("RGBA")
-                target_width = 240
-                shadow_background = shadow_background.resize((target_width, int((target_width / shadow_background.width) * shadow_background.height)))
-
-                # Place shadow effect on the base image with a downward offset
-                se_width, se_height = shadow_background.size
-                vertical_offset = 20
-                se_position = ((base_image.width - se_width) // 2, (base_image.height - se_height) // 2 + vertical_offset)
-                base_image.paste(shadow_background, se_position, shadow_background)
-
-            # Now place the Pokémon image on top of the shadow background
-            pokemon_image = pokemon_image.convert("RGBA")  # Ensure Pokémon image has an alpha channel
-            base_image.paste(pokemon_image, (0, 0), pokemon_image)  # Paste Pokémon image
-
-            # Add shadow icon if it's a shadow or shiny shadow image
+                bg = Image.open(self.shadow_bg_path).convert("RGBA")
+                bg = bg.resize(
+                    (self.IMG_SIZE_DL, int(self.IMG_SIZE_DL / bg.width * bg.height)),
+                    Image.LANCZOS,
+                )
+                canv.paste(bg, ((canv.width - bg.width) // 2, 20), bg)
+            canv.paste(base.convert("RGBA"), (0, 0), base.convert("RGBA"))
             if is_shadow:
-                shadow_icon = Image.open(self.shadow_icon_path).convert("RGBA")
-
-                # Get shadow icon size and place it at the bottom left of the base image
-                si_width, si_height = shadow_icon.size
-                si_position = (0, base_image.height - si_height)
-                base_image.paste(shadow_icon, si_position, shadow_icon)
-
-            # Add shiny icon if it's a shiny or shiny shadow image
+                si = Image.open(self.shadow_icon_path).convert("RGBA")
+                canv.paste(si, (0, canv.height - si.height), si)
             if is_shiny:
-                shiny_icon = Image.open(self.shiny_icon_path).convert("RGBA")
-                base_image.paste(shiny_icon, (0, 0), shiny_icon)  # Paste shiny icon at top left
+                shiny = Image.open(self.shiny_icon_path).convert("RGBA")
+                canv.paste(shiny, (0, 0), shiny)
+            return canv
+        except Exception:
+            return base  # fallback
 
-            return base_image  # Return the combined image
-        except Exception as e:
-            print(f"Error combining images: {e}")
-            return pokemon_image  # Return the original image in case of failure
-        
-    def update_female_pokemon_image_url(self, image_type, relative_image_path):
-        """ Update the correct image URL field in the database based on the image type """
-        try:
-            # Fetch the existing image data from the database for this Pokémon ID
-            existing_data = self.controller.db_manager.fetch_female_pokemon_image_data(self.pokemon_id)
+    # save combined image and return relative URL
+    def _save_to_disk(self, img, key):
+        folder_map = {
+            "female":              "female/default",
+            "shiny_female":        "female/shiny",
+            "shadow_female":       "female/shadow",
+            "shiny_shadow_female": "female/shiny_shadow",
+        }
+        rel_dir = f"images/{folder_map[key]}"
+        abs_dir = os.path.join(self.ctrl.relative_path_to_images, rel_dir)
+        os.makedirs(abs_dir, exist_ok=True)
 
-            # Only update the relevant field and keep others unchanged
-            image_data = {
-                'image_url': existing_data['image_url'],
-                'shiny_image_url': existing_data['shiny_image_url'],
-                'shadow_image_url': existing_data['shadow_image_url'],
-                'shiny_shadow_image_url': existing_data['shiny_shadow_image_url']
-            }
+        fname = f"{key}_pokemon_{self.pid}.png"
+        abs_path = os.path.join(abs_dir, fname)
+        img.save(abs_path)
 
-            if image_type == "female":
-                image_data['image_url'] = relative_image_path
-            elif image_type == "shiny_female":
-                image_data['shiny_image_url'] = relative_image_path
-            elif image_type == "shadow_female":
-                image_data['shadow_image_url'] = relative_image_path
-            elif image_type == "shiny_shadow_female":
-                image_data['shiny_shadow_image_url'] = relative_image_path
+        return f"/{rel_dir}/{fname}".replace("\\", "/")
 
-            # Now update the database with the new values
-            self.controller.db_manager.update_female_pokemon_images(self.pokemon_id, image_data)
-
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to update the database: {e}")
+    # update DB and keep other columns intact
+    def _update_db_field(self, key, rel_path):
+        current = self.ctrl.db_manager.fetch_female_pokemon_image_data(self.pid)
+        payload = dict(current)  # shallow copy
+        field_map = {
+            "female":              "image_url",
+            "shiny_female":        "shiny_image_url",
+            "shadow_female":       "shadow_image_url",
+            "shiny_shadow_female": "shiny_shadow_image_url",
+        }
+        payload[field_map[key]] = rel_path
+        self.ctrl.db_manager.update_female_pokemon_images(self.pid, payload)

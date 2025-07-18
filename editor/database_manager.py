@@ -7,6 +7,8 @@ from database.costume_pokemon_manager import CostumePokemonManager
 from database.evolution_manager import EvolutionManager
 from database.mega_evolution_manager import MegaEvolutionManager
 from database.female_pokemon_manager import FemalePokemonManager
+from database.max_pokemon_manager   import MaxPokemonManager
+from database.size_pokemon_manager  import SizePokemonManager
 
 class DatabaseManager:
     def __init__(self, db_path):
@@ -17,6 +19,8 @@ class DatabaseManager:
         self.evolution_manager = EvolutionManager(self.conn)
         self.mega_evolution_manager = MegaEvolutionManager(self.conn)
         self.female_pokemon_manager = FemalePokemonManager(self.conn)
+        self.max_pokemon_manager   = MaxPokemonManager(self.conn)
+        self.size_pokemon_manager  = SizePokemonManager(self.conn)
 
     def fetch_all_pokemon_sorted(self, sort_by='pokemon_id'):
         return self.pokemon_manager.fetch_all_pokemon_sorted(sort_by)
@@ -100,6 +104,24 @@ class DatabaseManager:
 
     def add_mega_evolution(self, pokemon_id):
         return self.mega_evolution_manager.add_mega_evolution(pokemon_id)
+    
+    # Max Pokémon-related methods
+    def fetch_max_pokemon(self, pokemon_id):
+        return self.max_pokemon_manager.fetch_max_pokemon(pokemon_id)
+
+    def insert_max_pokemon(self, pokemon_id):
+        return self.max_pokemon_manager.insert_max_pokemon(pokemon_id)
+
+    def update_max_pokemon(self, pokemon_id, data_tuple):
+        # data_tuple = (dyn, giga, dyn_dt, giga_dt, g_img, sg_img)
+        return self.max_pokemon_manager.update_max_pokemon(pokemon_id, *data_tuple)
+
+    # Pokémon size helpers
+    def fetch_size_data(self, pokemon_id):
+        return self.size_pokemon_manager.fetch_size_data(pokemon_id)
+
+    def update_size_data(self, pokemon_id, data_tuple):
+        return self.size_pokemon_manager.upsert_size_data(pokemon_id, data_tuple)
     
     # Female Pokémon-related methods
     def fetch_female_pokemon(self):

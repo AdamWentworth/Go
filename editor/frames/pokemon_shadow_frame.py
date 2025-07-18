@@ -1,47 +1,42 @@
+# frames/pokemon_shadow_frame.py
 import tkinter as tk
 from tkinter import ttk
+
 
 class PokemonShadowFrame(tk.Frame):
     def __init__(self, parent, pokemon_id, shadow_pokemon_data, db_manager):
         super().__init__(parent)
-        self.pokemon_id = pokemon_id
-        self.shadow_pokemon_data = shadow_pokemon_data
-        self.db_manager = db_manager
 
-        self.shadow_attributes = [
-            'Shiny Available', 'Apex', 'Date Available', 'Date Shiny Available', 
-            'Image URL Shadow', 'Image URL Shiny Shadow'
-        ]
+        self.pid = int(pokemon_id)
+        self.db  = db_manager
+        self.shadow_data = shadow_pokemon_data or [None] * 6
 
-        # Initialize the entry widgets dictionary
+        self.attributes = (
+            "Shiny Available", "Apex",
+            "Date Available", "Date Shiny Available",
+            "Image URL Shadow", "Image URL Shiny Shadow",
+        )
         self.entry_widgets = {}
 
-        # If shadow_pokemon_data is None, initialize it with default values
-        if not self.shadow_pokemon_data:
-            self.shadow_pokemon_data = [None] * len(self.shadow_attributes)
+        self._build()
 
-        self.create_shadow_frame()
+    # ──────────────────────────────────────────────────────────────
+    def _build(self):
+        outer = tk.LabelFrame(self, text="Shadow Info", padx=10, pady=10)
+        outer.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-    def create_shadow_frame(self):
-        self.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        self._create_shadow_info_frame(self)
+        # make the entry column stretchy
+        outer.columnconfigure(1, weight=1)
 
-    def _create_shadow_info_frame(self, container):
-        shadow_frame = tk.LabelFrame(container, text="Shadow Info", padx=10, pady=10)
-        shadow_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
+        for i, (label, value) in enumerate(zip(self.attributes, self.shadow_data)):
+            tk.Label(outer, text=f"{label}:").grid(row=i, column=0, sticky="e", padx=(0, 4), pady=2)
 
-        for i, attr in enumerate(self.shadow_attributes):
-            tk.Label(shadow_frame, text=f"{attr}:").grid(row=i, column=0, sticky='e')
-            entry = tk.Entry(shadow_frame)
+            ent = tk.Entry(outer)
+            ent.insert(0, "" if value is None else str(value))
+            ent.grid(row=i, column=1, sticky="ew", pady=2)   # ← fills width
+            self.entry_widgets[label] = ent
 
-            entry_value = self.shadow_pokemon_data[i] if self.shadow_pokemon_data and self.shadow_pokemon_data[i] is not None else ""
-            entry.insert(0, str(entry_value))
-            entry.grid(row=i, column=1, sticky='w')
-            self.entry_widgets[attr] = entry
-
+    # ──────────────────────────────────────────────────────────────
     def save_shadow_info(self):
-        updated_shadow_data = {
-            attr: self.entry_widgets[attr].get() for attr in self.shadow_attributes
-        }
-        # Now, use self.pokemon_id here
-        self.db_manager.update_shadow_pokemon_data(self.pokemon_id, updated_shadow_data)
+        data = {lbl: self.entry_widgets[lbl].get().strip() for lbl in self.attributes}
+        self.db.update_shadow_pokemon_data(self.pid, data)

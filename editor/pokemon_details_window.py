@@ -15,6 +15,7 @@ from frames.pokemon_costume_image_frame import PokemonCostumeImageFrame
 from frames.pokemon_shadow_costume_frame import PokemonShadowCostumeFrame
 from frames.pokemon_mega_frame import PokemonMegaFrame
 from frames.pokemon_female_image_frame import PokemonFemaleImageFrame
+from frames.pokemon_max_frame         import PokemonMaxFrame
 
 import os
 
@@ -26,6 +27,10 @@ class PokemonDetailsWindow:
         self.female_pokemon_data = self.db_manager.fetch_female_pokemon()
 
         self.shadow_pokemon_data = self.db_manager.fetch_shadow_pokemon_data(pokemon_id)
+
+        self.max_pokemon_row   = self.db_manager.fetch_max_pokemon(pokemon_id)
+
+        self.size_data        = self.db_manager.fetch_size_data(pokemon_id)
 
         self.type_ids = self.db_manager.fetch_type_ids()
         self.existing_move_ids = self.db_manager.fetch_pokemon_moves(pokemon_id)
@@ -50,12 +55,14 @@ class PokemonDetailsWindow:
 
         # Call methods to create frames while keeping the layout the same
         self.create_info_and_moves_frames(main_container)
-        self.create_evolutions_and_shadow_frames(main_container)
-        self.create_image_frames(main_container)
-        self.create_mega_frames(main_container)
-        self.create_shadow_costume_frames(main_container)
-        self.create_costume_frame(main_container)
+        self.create_evolution_and_images_row(main_container)
         self.create_female_image_frame(main_container)
+        self.create_size_frame(main_container)
+        self.create_shadow_row(main_container)
+        self.create_max_frame(main_container)
+        self.create_mega_frames(main_container)
+        self.create_costume_frame(main_container)
+        self.create_shadow_costume_frames(main_container)
 
         # Save Button
         save_button = tk.Button(self.window, text="Save Changes", command=self.save_changes)
@@ -76,6 +83,18 @@ class PokemonDetailsWindow:
         # Moves Frame
         self.moves_frame = PokemonMovesFrame(top_container, self.db_manager, self.moves)
         self.moves_frame.create_moves_frame()
+    
+    def create_size_frame(self, parent):
+        size_container = tk.Frame(parent)
+        size_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        from frames.pokemon_size_frame import PokemonSizeFrame
+        self.size_frame = PokemonSizeFrame(
+            size_container,
+            self.pokemon_id,
+            self.size_data,
+        )
+        self.size_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     def create_evolutions_and_shadow_frames(self, parent):
         """ Create second container for Evolutions and Shadow Frames """
@@ -118,7 +137,7 @@ class PokemonDetailsWindow:
 
     def create_mega_frames(self, parent):
         """ Create container for Mega Evolution Frames """
-        mega_container = tk.Frame(parent)
+        mega_container = tk.LabelFrame(parent, text="Mega Evolution Info", padx=10, pady=10)
         mega_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         mega_evolutions = self.db_manager.fetch_mega_pokemon_data(self.pokemon_id)
@@ -126,7 +145,7 @@ class PokemonDetailsWindow:
         for mega_data in mega_evolutions:
             mega_evolution_id = mega_data[0]
             mega_frame = PokemonMegaFrame(mega_container, mega_evolution_id, self.pokemon_id, mega_data[1:], self)
-            mega_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            mega_frame.frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
             self.mega_frames.append(mega_frame)
 
         # Add button to add a new Mega Evolution
@@ -170,7 +189,7 @@ class PokemonDetailsWindow:
             (0, 0, 0, 0, '', '', '', 'None', '', None, None),  # Default values
             self
         )
-        new_mega_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        new_mega_frame.frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.mega_frames.append(new_mega_frame)
 
     def create_female_image_frame(self, parent):
@@ -212,6 +231,70 @@ class PokemonDetailsWindow:
         # else:
             # print(f"[DEBUG] Pokémon ID {self.pokemon_id} does not have a unique female form")
 
+    # ── MAX POKÉMON frame ───────────────────────────────────────────────────
+    def create_max_frame(self, parent):
+        """One small frame just below the mega frames."""
+        max_container = tk.Frame(parent)
+        max_container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.max_frame = PokemonMaxFrame(
+            max_container,
+            self.pokemon_id,
+            self.max_pokemon_row,
+            self.db_manager,
+            self
+        )
+        self.max_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # ──────────────────────────────────────────────────────────────
+    def create_evolution_and_images_row(self, parent):
+        """Row 1 – Evolutions + default + shiny images."""
+        row1 = tk.Frame(parent)
+        row1.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        # Evolutions
+        self.evolutions_frame = PokemonEvolutionsFrame(
+            row1, self.db_manager, self.pokemon_id, self.evolutions
+        )
+        self.evolutions_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Default image
+        img_url = self.pokemon_data[3]
+        self.image_frame = PokemonImageFrame(row1, img_url, self.pokemon_id, self)
+        self.image_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Shiny image
+        shiny_url = self.pokemon_data[4]
+        self.shiny_image_frame = PokemonShinyImageFrame(
+            row1, shiny_url, self.pokemon_id, self
+        )
+        self.shiny_image_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+    # ──────────────────────────────────────────────────────────────
+    def create_shadow_row(self, parent):
+        """Row 2 – Shadow info + both shadow images."""
+        row2 = tk.Frame(parent)
+        row2.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        # Shadow info
+        self.shadow_frame = PokemonShadowFrame(
+            row2, self.pokemon_id, self.shadow_pokemon_data, self.db_manager
+        )
+        self.shadow_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Shadow image
+        shadow_url = self.shadow_pokemon_data[4] if len(self.shadow_pokemon_data) > 4 else None
+        self.shadow_image_frame = PokemonShadowImageFrame(
+            row2, shadow_url, self.pokemon_id, self
+        )
+        self.shadow_image_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Shiny-shadow image
+        shiny_shadow_url = self.shadow_pokemon_data[5] if len(self.shadow_pokemon_data) > 5 else None
+        self.shiny_shadow_image_frame = PokemonShinyShadowImageFrame(
+            row2, shiny_shadow_url, self.pokemon_id, self
+        )
+        self.shiny_shadow_image_frame.frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
     def save_changes(self):
         # Retrieve general and additional attributes from info_frames
         general_attributes = self.info_frames.general_attributes
@@ -252,6 +335,22 @@ class PokemonDetailsWindow:
         # Save mega evolution data
         mega_data_list = [mega_frame.get_mega_data() for mega_frame in self.mega_frames]
         self.db_manager.update_mega_evolution_data(mega_data_list)
+
+        # ── NEW: save max_pokemon data ────────────────────────────────────
+        if hasattr(self, "max_frame"):
+            mp_data = self.max_frame.get_data()   # may be None
+
+            if mp_data is not None:               # editor exists → update
+                self.db_manager.update_max_pokemon(self.pokemon_id, mp_data)
+        
+        if hasattr(self, "size_frame"):
+            size_tuple = self.size_frame.get_data()
+            self.db_manager.update_size_data(self.pokemon_id, size_tuple)
+
+        elif hasattr(self, "max_frame"):  # entry did not exist at first but user may have created it
+            # After the “Create…” button is pressed, max_frame.build_editor appears
+            mp_data = self.max_frame.get_data()
+            self.db_manager.update_max_pokemon(self.pokemon_id, mp_data)
 
         # Show a confirmation message
         tk.messagebox.showinfo("Update", "Pokemon data updated successfully")

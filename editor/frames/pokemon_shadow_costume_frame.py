@@ -1,212 +1,245 @@
-# pokemon_shadow_costume_frame.py
-
+# frames/pokemon_shadow_costume_frame.py
+import os
 import tkinter as tk
 from tkinter import ttk, filedialog, simpledialog, messagebox
 from PIL import Image, ImageTk
-import os
 import requests
 from io import BytesIO
 
+
 class PokemonShadowCostumeFrame(tk.Frame):
+    """
+    Shadow-costume editor.
+
+    • If data already exists → show populated editor.
+    • Otherwise show a single “Add Shadow Costume” button; clicking it loads the editor.
+    """
+
+    # ────────────────────────────────────────────────────────────
     def __init__(self, parent, db_manager, pokemon_id):
         super().__init__(parent)
         self.db_manager = db_manager
         self.pokemon_id = pokemon_id
-        self.create_widgets()
+
+        if self.db_manager.fetch_shadow_costume_data(self.pokemon_id):
+            self._show_editor()
+        else:
+            tk.Button(
+                self,
+                text="Add Shadow Costume",
+                command=self._show_editor,
+                width=25,
+                padx=10,
+                pady=10,
+            ).pack(padx=20, pady=20)
+
+    # ────────────────────────────────────────────────────────────
+    # Build the full editor (once)
+    # ────────────────────────────────────────────────────────────
+    def _show_editor(self):
+        for w in self.winfo_children():
+            w.destroy()
+
+        self._create_widgets()
+        self.refresh_data()
         self.load_existing_data()
 
-    def create_widgets(self):
-        tk.Label(self, text="Shadow Costume Pokémon Details", font=("Arial", 16)).pack(pady=(10, 5))
-        
-        self.shadow_dropdown = ttk.Combobox(self, width=50)
-        self.shadow_dropdown.pack(pady=5)
+    # ────────────────────────────────────────────────────────────
+    # Widget construction  (two-column grid)
+    # ────────────────────────────────────────────────────────────
+    def _create_widgets(self):
+        outer = tk.LabelFrame(self, text="Shadow Costume Info", padx=8, pady=8)
+        outer.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        self.costume_dropdown = ttk.Combobox(self, width=50)
-        self.costume_dropdown.pack(pady=5)
+        outer.columnconfigure(0, weight=1)
+        outer.columnconfigure(1, weight=1)
 
-        tk.Label(self, text="Date Available:").pack()
-        self.date_available_entry = ttk.Entry(self, width=50)
-        self.date_available_entry.pack(pady=5)
+        # ── column 0 : all fields ───────────────────────────────
+        left = tk.Frame(outer)
+        left.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
+        left.columnconfigure(1, weight=1)
 
-        tk.Label(self, text="Date Shiny Available:").pack()
-        self.date_shiny_available_entry = ttk.Entry(self, width=50)
-        self.date_shiny_available_entry.pack(pady=5)
+        r = 0
+        tk.Label(left, text="Shadow:").grid(row=r, column=0, sticky="e", pady=2)
+        self.shadow_dropdown = ttk.Combobox(left, width=45)
+        self.shadow_dropdown.grid(row=r, column=1, sticky="ew", pady=2)
+        r += 1
 
-        tk.Label(self, text="Image URL (Shadow Costume):").pack()
-        self.image_url_shadow_costume_entry = ttk.Entry(self, width=50)
-        self.image_url_shadow_costume_entry.pack(pady=5)
-        self.image_url_shadow_costume_entry.bind("<FocusOut>", lambda e: self.view_image(self.image_url_shadow_costume_entry.get(), 'shadow'))
+        tk.Label(left, text="Costume:").grid(row=r, column=0, sticky="e", pady=2)
+        self.costume_dropdown = ttk.Combobox(left, width=45)
+        self.costume_dropdown.grid(row=r, column=1, sticky="ew", pady=2)
+        r += 1
 
-        tk.Label(self, text="Image URL (Shiny Shadow Costume):").pack()
-        self.image_url_shiny_shadow_costume_entry = ttk.Entry(self, width=50)
-        self.image_url_shiny_shadow_costume_entry.pack(pady=5)
-        self.image_url_shiny_shadow_costume_entry.bind("<FocusOut>", lambda e: self.view_image(self.image_url_shiny_shadow_costume_entry.get(), 'shiny'))
+        tk.Label(left, text="Date Available:").grid(row=r, column=0, sticky="e", pady=2)
+        self.date_available_entry = ttk.Entry(left)
+        self.date_available_entry.grid(row=r, column=1, sticky="ew", pady=2)
+        r += 1
 
-        self.image_label = tk.Label(self)
-        self.image_label.pack(pady=20, fill=tk.BOTH, expand=True)
+        tk.Label(left, text="Date Shiny Available:").grid(row=r, column=0, sticky="e", pady=2)
+        self.date_shiny_available_entry = ttk.Entry(left)
+        self.date_shiny_available_entry.grid(row=r, column=1, sticky="ew", pady=2)
+        r += 1
 
-        self.btn_select_image = tk.Button(self, text="Select Image", command=self.select_image)
-        self.btn_select_image.pack(side=tk.BOTTOM)
+        tk.Label(left, text="Image URL (Shadow):").grid(row=r, column=0, sticky="e", pady=2)
+        self.image_url_shadow_costume_entry = ttk.Entry(left)
+        self.image_url_shadow_costume_entry.grid(row=r, column=1, sticky="ew", pady=2)
+        self.image_url_shadow_costume_entry.bind(
+            "<FocusOut>",
+            lambda e: self.view_image(self.image_url_shadow_costume_entry.get(), "shadow"),
+        )
+        r += 1
 
-        self.btn_download_image = tk.Button(self, text="Download Image", command=self.download_image)
-        self.btn_download_image.pack(side=tk.BOTTOM)
+        tk.Label(left, text="Image URL (Shiny Shadow):").grid(row=r, column=0, sticky="e", pady=2)
+        self.image_url_shiny_shadow_costume_entry = ttk.Entry(left)
+        self.image_url_shiny_shadow_costume_entry.grid(row=r, column=1, sticky="ew", pady=2)
+        self.image_url_shiny_shadow_costume_entry.bind(
+            "<FocusOut>",
+            lambda e: self.view_image(self.image_url_shiny_shadow_costume_entry.get(), "shiny"),
+        )
+        r += 1
 
-        self.save_button = tk.Button(self, text="Save Shadow Costume", command=self.save_shadow_costume)
-        self.save_button.pack(pady=10)
+        self.save_button = tk.Button(left, text="Save Shadow Costume",
+                                     command=self.save_shadow_costume)
+        self.save_button.grid(row=r, column=0, columnspan=2, pady=(8, 0))
 
-        self.refresh_data()  # Update dropdown lists on initialization
+        # ── column 1 : image preview + buttons ──────────────────
+        right = tk.Frame(outer)
+        right.grid(row=0, column=1, sticky="nsew")
+        right.rowconfigure(0, weight=1)
 
+        self.image_label = tk.Label(right, relief="groove")
+        self.image_label.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
+
+        btn_box = tk.Frame(right)
+        btn_box.grid(row=1, column=0, pady=4)
+
+        tk.Button(btn_box, text="Select Image",
+                  command=self.select_image).pack(side=tk.LEFT, padx=4)
+        tk.Button(btn_box, text="Download Image",
+                  command=self.download_image).pack(side=tk.LEFT, padx=4)
+
+    # ────────────────────────────────────────────────────────────
+    # (logic methods below are unchanged from previous version)
+    # ────────────────────────────────────────────────────────────
     def get_images_directory(self):
-        script_directory = os.path.dirname(os.path.realpath(__file__))
-        return os.path.join(script_directory, '../../frontend/public')
+        return os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                            '../../frontend/public')
 
-    def view_image(self, image_url, image_type):
+    def view_image(self, image_url, _kind):
         if image_url:
-            image_path = os.path.join(self.get_images_directory(), image_url.strip("/"))
-            self.display_image(image_path)
+            path = os.path.join(self.get_images_directory(), image_url.strip("/"))
+            self.display_image(path)
 
     def display_image(self, path):
         try:
-            image = Image.open(path)
-            photo = ImageTk.PhotoImage(image)
-            self.image_label.configure(image=photo)
-            self.image_label.image = photo  # Prevent garbage-collection
+            img = Image.open(path)
         except FileNotFoundError:
-            self.display_default_image()
-
-    def display_default_image(self):
-        default_image = Image.new('RGB', (200, 200), color='grey')
-        photo = ImageTk.PhotoImage(default_image)
+            img = Image.new("RGB", (240, 240), "grey")
+        photo = ImageTk.PhotoImage(img.resize((240, 240)))
         self.image_label.configure(image=photo)
-        self.image_label.image = photo  # Prevent garbage-collection
+        self.image_label.image = photo
 
     def select_image(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.bmp")])
-        if file_path:
-            image = Image.open(file_path)
-            combined_image = self.combine_images(image)
-            if combined_image:
-                photo = ImageTk.PhotoImage(combined_image)
-                self.image_label.configure(image=photo)
-                self.image_label.image = photo  # Update display immediately
-                
-                # Construct the full save path by appending the existing image_url to the base directory
-                existing_path = self.image_url_shadow_costume_entry.get().strip("/")
-                full_save_path = os.path.join(self.get_images_directory(), existing_path)
-                combined_image.save(full_save_path)  # Save combined image to the specified full path
+        fpath = filedialog.askopenfilename(
+            filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.bmp")]
+        )
+        if fpath:
+            img = Image.open(fpath)
+            combined = self.combine_images(img)
+            if combined:
+                self._update_preview_and_save(combined)
 
     def download_image(self):
         url = simpledialog.askstring("Download Image", "Enter the Image URL:")
         if url:
             try:
-                response = requests.get(url)
-                image = Image.open(BytesIO(response.content))
-                combined_image = self.combine_images(image)
-                if combined_image:
-                    photo = ImageTk.PhotoImage(combined_image)
-                    self.image_label.configure(image=photo)
-                    self.image_label.image = photo  # Update display immediately
-
-                    # Construct the full save path from the image URL entry field
-                    existing_path = self.image_url_shadow_costume_entry.get().strip("/")
-                    full_save_path = os.path.join(self.get_images_directory(), existing_path)
-                    combined_image.save(full_save_path)  # Save the image at the constructed path
+                rsp = requests.get(url)
+                rsp.raise_for_status()
+                img = Image.open(BytesIO(rsp.content))
+                combined = self.combine_images(img)
+                if combined:
+                    self._update_preview_and_save(combined)
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to download the image: {e}")
 
+    # helper used by select_image / download_image
+    def _update_preview_and_save(self, img):
+        photo = ImageTk.PhotoImage(img.resize((240, 240)))
+        self.image_label.configure(image=photo)
+        self.image_label.image = photo
+
+        rel_path = self.image_url_shadow_costume_entry.get().strip("/")
+        abs_path = os.path.join(self.get_images_directory(), rel_path)
+        os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+        img.save(abs_path)
+
     def combine_images(self, pokemon_image):
-        """
-        Combine the downloaded or selected Pokémon image with the shadow effect and shadow icon.
-        """
         try:
-            # Define paths to shadow effect and shadow icon images
-            shadow_effect_path = os.path.join(self.get_images_directory(), './images/shadow_effect.png')
-            shadow_icon_path = os.path.join(self.get_images_directory(), './images/shadow_icon_middle_ground.png')
+            base = Image.new("RGBA", (240, 240), (0, 0, 0, 0))
+            se_path = os.path.join(self.get_images_directory(), "images/shadow_effect.png")
+            si_path = os.path.join(self.get_images_directory(), "images/shadow_icon_middle_ground.png")
+            shadow_effect = Image.open(se_path).convert("RGBA")
+            shadow_icon = Image.open(si_path).convert("RGBA")
 
-            # Open all the images
-            base_image = Image.new("RGBA", (240,240), (0,0,0,0))
-            
-            shadow_effect = Image.open(shadow_effect_path).convert("RGBA")
-
-            shadow_icon = Image.open(shadow_icon_path).convert("RGBA")
-
-            # Resize the shadow_effect
-            target_width = 240
-            shadow_effect = shadow_effect.resize((target_width, int((target_width/shadow_effect.width)*shadow_effect.height)))
-
-            # Place shadow effect on the base image with a downward offset
-            se_width, se_height = shadow_effect.size
-            vertical_offset = 20
-            se_position = ((base_image.width - se_width) // 2, (base_image.height - se_height) // 2 + vertical_offset)
-            base_image.paste(shadow_effect, se_position, shadow_effect)
-
-            # Place Pokemon image on top of the shadow effect
-            base_image.paste(pokemon_image, (0, 0), pokemon_image)
-
-            # Place shadow icon at the bottom left on top of the Pokemon image
-            si_width, si_height = shadow_icon.size
-            si_position = (0, base_image.height - si_height)
-            base_image.paste(shadow_icon, si_position, shadow_icon)
-
-            return base_image
+            shadow_effect = shadow_effect.resize(
+                (240, int(240 / shadow_effect.width * shadow_effect.height))
+            )
+            base.paste(shadow_effect,
+                       ((base.width - shadow_effect.width) // 2,
+                        (base.height - shadow_effect.height) // 2 + 20),
+                       shadow_effect)
+            base.paste(pokemon_image, (0, 0), pokemon_image)
+            base.paste(shadow_icon,
+                       (0, base.height - shadow_icon.height),
+                       shadow_icon)
+            return base
         except Exception as e:
-            print(f"Failed to combine images: {e}")
+            print("Failed to combine images:", e)
             return None
-        
-    def save_shadow_costume(self):
-        shadow_id = self.shadow_dropdown.get().split(':')[0]
-        costume_id = self.costume_dropdown.get().split(':')[0]
-        date_available = self.date_available_entry.get()
-        date_shiny_available = self.date_shiny_available_entry.get()
-        image_url_shadow_costume = self.image_url_shadow_costume_entry.get()
-        image_url_shiny_shadow_costume = self.image_url_shiny_shadow_costume_entry.get()
 
-        # Attempt to save the costume data
-        self.db_manager.save_shadow_costume(shadow_id, costume_id, date_available, date_shiny_available, image_url_shadow_costume, image_url_shiny_shadow_costume)
+    def save_shadow_costume(self):
+        shadow_id = self.shadow_dropdown.get().split(":")[0]
+        costume_id = self.costume_dropdown.get().split(":")[0]
+        self.db_manager.save_shadow_costume(
+            shadow_id,
+            costume_id,
+            self.date_available_entry.get(),
+            self.date_shiny_available_entry.get(),
+            self.image_url_shadow_costume_entry.get(),
+            self.image_url_shiny_shadow_costume_entry.get(),
+        )
         messagebox.showinfo("Save Successful", "Shadow costume data saved successfully.")
         self.refresh_data()
 
+    # ---------- populate / clear ----------
     def load_existing_data(self):
         data = self.db_manager.fetch_shadow_costume_data(self.pokemon_id)
-        if data:
-            first_record = data[0]
-            # Assuming first_record is a tuple, access by index:
-            self.shadow_dropdown.set("{}: {}".format(first_record[0], first_record[0]))  # first_record[0] for shadow_id
-            self.costume_dropdown.set("{}: {}".format(first_record[2], first_record[2]))  # first_record[2] for costume_id
-
-            # Clear the fields before inserting new data to avoid duplication
-            self.date_available_entry.delete(0, tk.END)
-            self.date_available_entry.insert(0, first_record[3])  # date_available
-
-            self.date_shiny_available_entry.delete(0, tk.END)
-            self.date_shiny_available_entry.insert(0, first_record[4])  # date_shiny_available
-
-            self.image_url_shadow_costume_entry.delete(0, tk.END)
-            self.image_url_shadow_costume_entry.insert(0, first_record[5])  # image_url_shadow_costume
-
-            self.image_url_shiny_shadow_costume_entry.delete(0, tk.END)
-            self.image_url_shiny_shadow_costume_entry.insert(0, first_record[6])  # image_url_shiny_shadow_costume
-
-            self.view_image(first_record[5], 'shadow')
-            if first_record[6]:
-                self.view_image(first_record[6], 'shiny')
+        if not data:
+            return
+        d = data[0]
+        self.shadow_dropdown.set(f"{d[0]}: {d[0]}")
+        self.costume_dropdown.set(f"{d[2]}: {d[2]}")
+        self.date_available_entry.delete(0, tk.END);  self.date_available_entry.insert(0, d[3])
+        self.date_shiny_available_entry.delete(0, tk.END); self.date_shiny_available_entry.insert(0, d[4])
+        self.image_url_shadow_costume_entry.delete(0, tk.END); self.image_url_shadow_costume_entry.insert(0, d[5])
+        self.image_url_shiny_shadow_costume_entry.delete(0, tk.END); self.image_url_shiny_shadow_costume_entry.insert(0, d[6])
+        self.view_image(d[5], "shadow")
 
     def refresh_data(self):
         self.clear_entries()
-        shadow_options = self.db_manager.fetch_shadow_options(self.pokemon_id)
-        costume_options = self.db_manager.fetch_costume_options(self.pokemon_id)
-        self.shadow_dropdown['values'] = shadow_options
-        self.costume_dropdown['values'] = costume_options
-        if shadow_options:
-            self.shadow_dropdown.set(shadow_options[0])
-        if costume_options:
-            self.costume_dropdown.set(costume_options[0])
+        self.shadow_dropdown['values'] = self.db_manager.fetch_shadow_options(self.pokemon_id)
+        self.costume_dropdown['values'] = self.db_manager.fetch_costume_options(self.pokemon_id)
+        if self.shadow_dropdown['values']:
+            self.shadow_dropdown.set(self.shadow_dropdown['values'][0])
+        if self.costume_dropdown['values']:
+            self.costume_dropdown.set(self.costume_dropdown['values'][0])
         self.load_existing_data()
 
     def clear_entries(self):
-        self.shadow_dropdown.set('')
-        self.costume_dropdown.set('')
-        self.date_available_entry.delete(0, tk.END)
-        self.date_shiny_available_entry.delete(0, tk.END)
-        self.image_url_shadow_costume_entry.delete(0, tk.END)
-        self.image_url_shiny_shadow_costume_entry.delete(0, tk.END)
+        if hasattr(self, "shadow_dropdown"):
+            self.shadow_dropdown.set('')
+            self.costume_dropdown.set('')
+            self.date_available_entry.delete(0, tk.END)
+            self.date_shiny_available_entry.delete(0, tk.END)
+            self.image_url_shadow_costume_entry.delete(0, tk.END)
+            self.image_url_shiny_shadow_costume_entry.delete(0, tk.END)
