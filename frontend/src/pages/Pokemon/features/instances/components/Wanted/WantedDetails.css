@@ -108,11 +108,14 @@
     margin: 0 0 10px 0;
   }
   
+  .for-trade {
+    max-height: 625px;
+    overflow-y: auto;
+  }
+  
   .trade-list-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    overflow-y: auto;
-    max-height: 625px;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* Internet Explorer 10+ */
     margin-top: -5px;
