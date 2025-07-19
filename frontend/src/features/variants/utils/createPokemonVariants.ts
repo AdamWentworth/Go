@@ -132,7 +132,7 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
         gigantamaxVariant.name = getDisplayName(gigantamaxVariant);
         addVariant(gigantamaxVariant);
 
-        if (maxForm.shiny_gigantamax_image_url) {
+        if (pokemon.shiny_available && maxForm.shiny_gigantamax_image_url) {
           const shinyGigantamaxVariant: PokemonVariant = {
             ...defaultVariant,
             currentImage: maxForm.shiny_gigantamax_image_url,
