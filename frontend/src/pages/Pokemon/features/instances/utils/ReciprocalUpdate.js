@@ -1,46 +1,51 @@
-//RecriprocalUpdate.jsx
+/* ReciprocalUpdate.js
+   ------------------------------------------------------------------ */
+/**
+ * Return a **new** `not_trade_list` for `otherPokemonKey` without
+ * mutating the frozen instance object held in zustand/Immer.
+ */
+export const updateNotTradeList = (
+  instances,          // live map from the store
+  currentPokemonKey,  // instance we’re editing (the “parent”)
+  otherPokemonKey,    // partner whose list we patch
+  add,                // true = link, false = unlink
+) => {
+  const otherInst = instances[otherPokemonKey];
+  if (!otherInst) {
+    console.error(`No data found for ${otherPokemonKey}`);
+    return null;
+  }
 
-export const updateNotTradeList = (ownershipData, currentPokemonKey, otherPokemonKey, add, isMirror = false) => {
-    if (!ownershipData[otherPokemonKey]) {
-        console.error(`No data found for ${otherPokemonKey}`);
-        return null;
-    }
-
-    // console.log(`updateNotTradeList called for ${otherPokemonKey} with add=${add}`);
-
-    // Fetch the current not_trade_list from the ownership data
-    const notTradeList = ownershipData[otherPokemonKey].not_trade_list || {};
-
-    // Update the not_trade_list based on the 'add' parameter
-    if (add) {
-        notTradeList[currentPokemonKey] = true;
-    } else {
-        delete notTradeList[currentPokemonKey];  // Remove the entry if `add` is false
-    }
-
-    // Commit the updated not_trade_list back to the ownership data
-    ownershipData[otherPokemonKey].not_trade_list = notTradeList;
-
-    // console.log(`Final not_trade_list for ${otherPokemonKey}:`, notTradeList);
-
-    // Return the updated not_trade_list for further processing
-    return notTradeList;
+  /* clone -> modify -> return --------------------------------------- */
+  const next = { ...(otherInst.not_trade_list || {}) };
+  if (add) {
+    next[currentPokemonKey] = true;
+  } else {
+    delete next[currentPokemonKey];
+  }
+  return next;        // caller puts this into patchMap
 };
 
-export const updateNotWantedList = (ownershipData, currentPokemonKey, otherPokemonKey, add) => {
+/**
+ * Symmetric helper for the Wanted side.
+ */
+export const updateNotWantedList = (
+  instances,
+  currentPokemonKey,
+  otherPokemonKey,
+  add,
+) => {
+  const otherInst = instances[otherPokemonKey];
+  if (!otherInst) {
+    console.error(`No data found for ${otherPokemonKey}`);
+    return null;
+  }
 
-    if (!ownershipData[otherPokemonKey]) {
-        console.error(`No data found for ${otherPokemonKey}`);
-        return;
-    }
-
-    const notWantedList = ownershipData[otherPokemonKey].not_wanted_list || {};
-
-    // Update the not_wanted_list to reflect the currentPokemon's status
-    notWantedList[currentPokemonKey] = add;
-
-    ownershipData[otherPokemonKey].not_wanted_list = notWantedList;
-    // console.log(`Updated ${otherPokemonKey}'s not_wanted_list to include/exclude ${currentPokemonKey}`);
-
-    return notWantedList
+  const next = { ...(otherInst.not_wanted_list || {}) };
+  if (add) {
+    next[currentPokemonKey] = true;
+  } else {
+    delete next[currentPokemonKey];
+  }
+  return next;
 };

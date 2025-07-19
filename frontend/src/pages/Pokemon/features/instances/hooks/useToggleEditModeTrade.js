@@ -1,139 +1,133 @@
-// useToggleEditModeTrade.js
+/* -------------------------------------------------------------------------
+   useToggleEditModeTrade.js   —   “Trade” side of the reciprocal editor
+   ------------------------------------------------------------------------- */
 
 import { useState } from 'react';
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { updateNotTradeList } from '../utils/ReciprocalUpdate.js';
 import { updateDisplayedList } from '../utils/listUtils.js';
 
+/**
+ * Provides `editMode` state and `toggleEditMode` handler for the Trade ➜ Wanted
+ * card. When the user leaves edit‑mode it builds a **single patch‑map** (one
+ * entry per instance ID) and passes it to `updateInstanceDetails`, mirroring
+ * the behaviour of `useToggleEditModeWanted`.
+ */
 const useToggleEditModeTrade = (
-    pokemon,
-    ownershipData,
-    isMirror,
-    mirrorKey,
-    setMirrorKey,
-    setIsMirror,
-    lists,
-    listsState,
-    setListsState,
-    localNotWantedList,
-    setLocalNotWantedList,
-    localWantedFilters,
-    updateDetails,
-    filteredOutPokemon
+  /** the parent Pokémon object */                       pokemon,
+  /** true when displaying a “mirror” (1‑for‑1) list */  isMirror,
+  mirrorKey,
+  setMirrorKey,
+  setIsMirror,
+
+  /* list props / setters */
+  lists,
+  listsState,
+  setListsState,
+
+  /* editable local state */
+  localNotWantedList,
+  setLocalNotWantedList,
+  localWantedFilters,
+
+  /* actions */
+  updateDetails,
+
+  /* derived data from useWantedFiltering */
+  filteredOutPokemon,
 ) => {
-    const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
-    const toggleEditMode = () => {
-        // console.log('--- toggleEditMode TRIGGERED ---');
-        // console.log('Current editMode value:', editMode);
-        // console.log('pokemonKey:', pokemon.pokemonKey);
-        // console.log('instanceData.not_wanted_list BEFORE all changes:', pokemon.instanceData.not_wanted_list);
-        // console.log('localNotWantedList BEFORE all changes:', localNotWantedList);    
+  /* --------------------------------------------------------------------- */
+  /*  Source of truth for ALL instance data                                */
+  /* --------------------------------------------------------------------- */
+  const ownershipData = useInstancesStore.getState().instances;
 
-        if (editMode) {
-            const updatedNotWantedList = { ...localNotWantedList };
+  /* --------------------------------------------------------------------- */
+  /*  Main handler                                                         */
+  /* --------------------------------------------------------------------- */
+  const toggleEditMode = () => {
+    /* Leaving edit‑mode → build patch‑map & persist -------------------- */
+    if (editMode) {
+      /* 1. Compose updated not_wanted_list for the CURRENT Pokémon ------ */
+      const updatedNotWantedList = { ...localNotWantedList };
+      filteredOutPokemon.forEach(k => (updatedNotWantedList[k] = true));
 
-            // Make sure to log right here:
-            // console.log('updatedNotWantedList AFTER copy from localNotWantedList:', updatedNotWantedList);
+      /* 2. Keys that changed ------------------------------------------- */
+      const removedKeys = Object.keys(pokemon.instanceData.not_wanted_list)
+        .filter(k => !updatedNotWantedList[k]);
+      const addedKeys = Object.keys(updatedNotWantedList)
+        .filter(k => !pokemon.instanceData.not_wanted_list[k]);
 
-            filteredOutPokemon.forEach(key => {
-                updatedNotWantedList[key] = true;
-            });
+      /* 3. Build ONE patch‑map ----------------------------------------- */
+      const patchMap = {};
 
-            // console.log('updatedNotWantedList AFTER setting filteredOutPokemon to true:', updatedNotWantedList);
-    
+      /* 3a. Reciprocal edits on partner Pokémon ------------------------ */
+      removedKeys.forEach(k => {
+        const next = updateNotTradeList(
+          ownershipData,           // live store map
+          pokemon.pokemonKey,      // current Pokémon
+          k,                       // partner instance
+          false,                   // remove link
+          isMirror,
+        );
+        if (next) patchMap[k] = { not_trade_list: next };
+      });
 
-            const removedKeys = Object.keys(pokemon.instanceData.not_wanted_list).filter(
-                key => !updatedNotWantedList[key]
-              );
-              const addedKeys = Object.keys(updatedNotWantedList).filter(
-                key => !pokemon.instanceData.not_wanted_list[key]
-              );
-              
-            //   console.log('removedKeys:', removedKeys);
-            //   console.log('addedKeys:', addedKeys);              
+      addedKeys.forEach(k => {
+        const next = updateNotTradeList(
+          ownershipData,
+          pokemon.pokemonKey,
+          k,
+          true,                    // add link
+          isMirror,
+        );
+        if (next) patchMap[k] = { not_trade_list: next };
+      });
 
-            const updatesToApply = {};
+      /* 3b. Primary Pokémon’s own patch -------------------------------- */
+      patchMap[pokemon.pokemonKey] = {
+        not_wanted_list: updatedNotWantedList,
+        wanted_filters : localWantedFilters,
+        mirror         : isMirror,
+      };
 
-            removedKeys.forEach(key => {
-                // console.log(
-                //   'Removing Key from notWantedList -> updateNotTradeList with false:',
-                //   { key, pokemonKey: pokemon.pokemonKey }
-                // );
-                const updatedNotTradeList = updateNotTradeList(
-                  ownershipData,
-                  pokemon.pokemonKey,
-                  key,
-                  false,
-                  isMirror
-                );
-                // console.log('updatedNotTradeList (REMOVAL) returned:', updatedNotTradeList);
+      /* 4. Mirror housekeeping ----------------------------------------- */
+      if (!isMirror && mirrorKey) {
+        delete ownershipData[mirrorKey];
+        delete lists.wanted[mirrorKey];
+        updateDisplayedList(null, listsState, setListsState);
+        setMirrorKey(null);
+      }
 
-                if (updatedNotTradeList) {
-                    updatesToApply[key] = {
-                        not_trade_list: updatedNotTradeList,
-                    };
-                }
-            });
+      /* 5. Commit to store --------------------------------------------- */
+      /*    Single‑argument overload: updateDetails(patchMap)             */
+      console.log('[Trade → updateDetails] PATCH MAP ↓\n',
+        JSON.stringify(patchMap, null, 2));
 
-            addedKeys.forEach(key => {
-                // console.log(
-                //   'Adding Key to notWantedList -> updateNotTradeList with true:',
-                //   { key, pokemonKey: pokemon.pokemonKey }
-                // );
-                const updatedNotTradeList = updateNotTradeList(
-                  ownershipData,
-                  pokemon.pokemonKey,
-                  key,
-                  true,
-                  isMirror
-                );
-                // console.log('updatedNotTradeList (ADDITION) returned:', updatedNotTradeList);
+      updateDetails(patchMap)
+        .then(() => console.log('[Trade] updateDetails ✅ resolved'))
+        .catch(err => console.error('[Trade] updateDetails ❌', err));
 
-                if (updatedNotTradeList) {
-                    updatesToApply[key] = {
-                        not_trade_list: updatedNotTradeList,
-                    };
-                }
-            });
+      /* 6. Update local UI copy immediately ---------------------------- */
+      setLocalNotWantedList(updatedNotWantedList);
+    }
 
-            updatesToApply[pokemon.pokemonKey] = {
-                not_wanted_list: updatedNotWantedList,
-                wanted_filters: localWantedFilters,
-                mirror: isMirror,
-            };
+    /* ENTERING edit‑mode (or other misc exit tweaks) ------------------- */
+    else {
+      if (!isMirror && pokemon.instanceData.mirror) {
+        updateDetails(pokemon.pokemonKey, {
+          ...pokemon.instanceData,
+          mirror: false,
+        });
+      }
+    }
 
-            if (!isMirror && mirrorKey) {
-                // console.log('Handling Mirror Key Management');
-                delete ownershipData[mirrorKey];
-                delete lists.wanted[mirrorKey];
-                updateDisplayedList(null, listsState, setListsState);
-                setMirrorKey(null);
-            }
+    /* 7. Flip the flag ------------------------------------------------- */
+    setEditMode(!editMode);
+  };
 
-            // console.log('Final updatesToApply:', updatesToApply);
-
-            updateDetails([...removedKeys, ...addedKeys, pokemon.pokemonKey], updatesToApply);
-            // console.log('Called updateDetails with these keys:', [...removedKeys, ...addedKeys, pokemon.pokemonKey]);
-            setLocalNotWantedList(updatedNotWantedList);
-        } else {
-            if (!isMirror && pokemon.instanceData.mirror) {
-                updateDetails(pokemon.pokemonKey, {
-                    ...pokemon.instanceData,
-                    mirror: false,
-                });
-            }
-        }
-
-        // console.log('Local not_wanted_list after toggleEditMode:', localNotWantedList);
-        setEditMode(!editMode);
-        pokemon.instanceData.not_wanted_list = localNotWantedList;
-        // console.log(
-        //     'pokemon.instanceData.not_wanted_list AFTER assignment:',
-        //     pokemon.instanceData.not_wanted_list
-        //   );          
-    };
-
-    return { editMode, toggleEditMode };
+  return { editMode, toggleEditMode };
 };
 
 export default useToggleEditModeTrade;

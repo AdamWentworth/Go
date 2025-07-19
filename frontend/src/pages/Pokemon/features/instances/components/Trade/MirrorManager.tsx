@@ -48,16 +48,17 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
 
   useEffect(() => {
     if (!initialMount.current && editMode) {
-      if (pokemon.instanceData) {
-        pokemon.instanceData.mirror = isMirror;
-      }
+      /* 1️⃣ persist “mirror” flag via zustand */
+      updateDetails({ [pokemon.pokemonKey]: { mirror: isMirror } });
+
+      /* 2️⃣ update what the list actually displays */
       if (isMirror) {
         enableMirror();
       } else {
         disableMirror();
       }
     }
-  }, [isMirror]);
+  }, [isMirror, editMode]);           // ← keep deps the same
 
   const enableMirror = (): void => {
     const existingMirrorKey = findExistingMirrorKey();
