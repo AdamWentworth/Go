@@ -110,7 +110,7 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
     };
   }, [columns, sortedPokemons]);
 
-  const rowHeight = Math.max(measuredRowHeight, 150);
+  const rowHeight = Math.max(measuredRowHeight, 100);
   const totalRows = Math.ceil(sortedPokemons.filter(Boolean).length / columns);
   const totalHeight = totalRows * rowHeight;
 
