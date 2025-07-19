@@ -31,11 +31,11 @@ const TradeListDisplay = ({
   // -------------------------------------------------
   // Render‑time DEBUG info
   // -------------------------------------------------
-  console.log('[TradeListDisplay] render', {
-    pokemonInstanceId: pokemon?.instanceData?.instance_id,
-    localNotTradeList,
-    editMode,
-  });
+  // console.log('[TradeListDisplay] render', {
+  //   pokemonInstanceId: pokemon?.instanceData?.instance_id,
+  //   localNotTradeList,
+  //   editMode,
+  // });
 
   // Responsive breakpoint ---------------------------
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);

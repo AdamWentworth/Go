@@ -63,8 +63,8 @@ const WantedDetails = ({ pokemon, lists, ownershipData, sortType, sortMode, open
     }, [updatedLocalTradeFilters]);
 
     useEffect(() => {
-        setLocalNotTradeList({ ...not_trade_list });
-    }, []);
+        setLocalNotTradeList({ ...pokemon.instanceData.not_trade_list });
+    }, [pokemon.instanceData.not_trade_list]);
     
     const handleToggleEditMode = () => toggleEditMode({
         editMode,

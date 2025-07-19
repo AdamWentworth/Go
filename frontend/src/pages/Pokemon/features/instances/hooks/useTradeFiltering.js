@@ -160,12 +160,6 @@ export default function useTradeFiltering(
           changed = true;
         }
       });
-      memo.reappeared.forEach(k => {
-        if (k in next) {
-          delete next[k];
-          changed = true;
-        }
-      });
 
       return changed ? next : prev; // React bails if same reference
     });
