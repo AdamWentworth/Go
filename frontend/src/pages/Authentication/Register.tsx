@@ -12,6 +12,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ActionMenu from '../../components/ActionMenu';
 import { isApiError } from '../../utils/errors';
+import { updateUserInSecondaryDB } from "@/services/authService";
 
 // Import centralized types.
 import type { RegisterFormValues, User, LoginResponse } from '../../types/auth';
@@ -94,6 +95,20 @@ const Register: FC = () => {
             // Call login from AuthContext. Adjust the login function's signature
             // in AuthContext so that it accepts the user object as needed.
             login(user);
+
+            // ──► NEW: seed MySQL immediately
+           const coords = formValues.coordinates;
+           void updateUserInSecondaryDB(user.user_id, {
+             username: user.username,
+             ...(coords && {
+               latitude: coords.latitude,
+               longitude: coords.longitude
+             }),
+             ...(formValues.pokemonGoName && {
+               pokemonGoName: formValues.pokemonGoName
+             })
+           });
+
             setIsRegistered(true);
             setFeedback('Successfully Registered and Logged in');
           } else {

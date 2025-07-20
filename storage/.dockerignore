@@ -1,1 +1,5 @@
-backups
+# .dockerignore
+storage_mysql_data
+backups           # keep backups out of the image context
+*.sql             # any loose dumps
+*.log

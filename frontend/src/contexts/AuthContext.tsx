@@ -213,31 +213,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: response.error };
       }
 
-      const prev = userRef.current!;
-      const updated = { ...prev, ...response.data.data } as User;
+      /* merge the changes coming back from Auth‑API */
+      const prev     = userRef.current!;
+      const updated  = { ...prev, ...response.data.data } as User;
 
       setUser(updated);
       userRef.current = updated;
       localStorage.setItem('user', JSON.stringify(updated));
 
-      const { username, coordinates } = updated;
+      /* ------------------------------------------------------------------ */
+      /* decide if we need to sync the secondary MySQL DB                   */
+      const { username, pokemonGoName, coordinates } = updated;
+
       const needsSync =
-        prev.username !== username ||
-        prev.coordinates?.latitude !== coordinates?.latitude ||
+        prev.username       !== username       ||
+        prev.pokemonGoName  !== pokemonGoName  ||   // <‑‑ added
+        prev.coordinates?.latitude  !== coordinates?.latitude ||
         prev.coordinates?.longitude !== coordinates?.longitude;
 
       if (needsSync) {
         const secondary = await updateUserInSecondaryDB(userId, {
           username,
+          pokemonGoName,                           // <‑‑ added
           ...(coordinates && {
-            latitude: coordinates.latitude,
+            latitude:  coordinates.latitude,
             longitude: coordinates.longitude,
           }),
         });
+
         if (!secondary.success) {
-          toast.error('User was updated in main DB, but failed to update in secondary DB.');
+          toast.error(
+            'User updated in main DB, but failed to sync secondary DB.',
+          );
         }
       }
+      /* ------------------------------------------------------------------ */
 
       return { success: true, data: updated };
     } catch (err) {

@@ -108,6 +108,7 @@ interface UserDetails {
   username: string;
   latitude?: number;
   longitude?: number;
+  pokemonGoName?: string;
 }
 
 export const updateUserInSecondaryDB = async (
@@ -121,6 +122,7 @@ export const updateUserInSecondaryDB = async (
         username: userDetails.username,
         latitude: userDetails.latitude,
         longitude: userDetails.longitude,
+        pokemonGoName: userDetails.pokemonGoName,
       },
       {
         headers: { 'Content-Type': 'application/json' },
