@@ -15,7 +15,7 @@ import ActionMenu from '../../components/ActionMenu.jsx';
 import './Search.css';
 
 const Search = () => {
-  const [searchMode, setSearchMode] = useState(null); // Start with no mode selected
+  const [searchMode, setSearchMode] = useState(null);
   const [view, setView] = useState('list');
   const [searchResults, setSearchResults] = useState([]);
   const [instanceData, setinstanceData] = useState('owned');
@@ -115,7 +115,6 @@ const Search = () => {
     }
   };
 
-  // Initial screen before a mode is chosen
   if (!searchMode) {
     return (
       <div className="search-welcome-screen">
@@ -129,7 +128,6 @@ const Search = () => {
     );
   }
 
-  // Main app UI after mode is chosen
   return (
     <div>
       <SearchModeToggle searchMode={searchMode} setSearchMode={setSearchMode} />
@@ -150,7 +148,7 @@ const Search = () => {
       {searchMode === 'trainer' && <TrainerSearchBar />}
 
       {errorMessage && (
-        <div className="error-message" style={{ color: 'red', padding: '1rem', textAlign: 'center' }}>
+        <div className="search-error-message" style={{ color: 'red', padding: '1rem', textAlign: 'center' }}>
           {errorMessage}
         </div>
       )}

@@ -31,17 +31,14 @@ func main() {
 	// Use CORS middleware
 	app.Use(corsMiddleware)
 
-	// Define unprotected route first
-	// app.Get("/api/ownershipData/username/:username", GetPokemonInstancesByUsername)
+	// Unprotected routes
+	app.Get("/api/ownershipData/username/:username", GetPokemonInstancesByUsername)
+	app.Get("/api/autocomplete-trainers", AutocompleteTrainersHandler)
 
 	// Protected routes
 	protected := app.Group("/", verifyJWT) // JWT middleware to protect routes
 
-	// Existing protected routes
 	protected.Get("/api/ownershipData/:user_id", GetPokemonInstances)
-	protected.Get("/api/ownershipData/username/:username", GetPokemonInstancesByUsername)
-
-	// New protected route for updating username
 	protected.Put("/api/update-user/:user_id", UpdateUserHandler)
 
 	// Use fmt.Println for startup messages without time and log level
