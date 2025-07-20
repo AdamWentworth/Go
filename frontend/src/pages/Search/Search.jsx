@@ -2,19 +2,20 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import PokemonSearchBar from './PokemonSearchBar.jsx';
+import FriendSearchBar from './FriendSearchBar.jsx';
+import SearchModeToggle from './SearchModeToggle.jsx';
 import ListView from './views/ListView.jsx';
 import MapView from './views/MapView.jsx';
 import LoadingSpinner from '../../components/LoadingSpinner.jsx';
 import axios from 'axios';
 
-// Import contexts
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore.js';
 import { useModal } from '../../contexts/ModalContext.jsx';
-
-// Import the reusable ActionMenu (adjust the path if necessary)
 import ActionMenu from '../../components/ActionMenu.jsx';
+import './Search.css';
 
 const Search = () => {
+  const [searchMode, setSearchMode] = useState(null); // Start with no mode selected
   const [view, setView] = useState('list');
   const [searchResults, setSearchResults] = useState([]);
   const [instanceData, setinstanceData] = useState('owned');
@@ -25,28 +26,24 @@ const Search = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [scrollToTopTrigger, setScrollToTopTrigger] = useState(0);
 
-  // Get pokedexLists from the PokemonDataContext
   const variants = useVariantsStore((s) => s.variants);
   const pokedexLists = useVariantsStore((s) => s.pokedexLists);
   const { alert } = useModal();
 
-  // Refs for scrolling
   const containerRef = useRef(null);
   const shouldScrollRef = useRef(false);
 
   useEffect(() => {
     if (pokedexLists) {
       setPokemonCache(pokedexLists.default || []);
-      console.log('Using default store from pokedexLists in context:', pokedexLists.default);
     }
   }, [pokedexLists]);
 
-  // Handle scrolling when new results arrive
   useEffect(() => {
     if (shouldScrollRef.current && searchResults.length > 0) {
       setTimeout(() => {
         if (containerRef.current) {
-          const offset = 50; // adjust as needed
+          const offset = 50;
           const rect = containerRef.current.getBoundingClientRect();
           const absoluteTop = rect.top + window.pageYOffset - offset;
           window.scrollTo({
@@ -76,40 +73,29 @@ const Search = () => {
       );
 
       if (response.status === 200) {
-        let data = response.data;
-        const dataArray = Array.isArray(data) ? data : Object.values(data);
+        const dataArray = Array.isArray(response.data)
+          ? response.data
+          : Object.values(response.data);
 
-        if (dataArray && dataArray.length > 0) {
-          const enrichedData = [];
+        if (dataArray?.length > 0 && pokemonCache?.length > 0) {
+          const enrichedData = dataArray
+            .map((item) => {
+              const pokemonInfo = pokemonCache.find(
+                (p) => p.pokemon_id === item.pokemon_id
+              );
+              return pokemonInfo
+                ? { ...item, pokemonInfo, boundary: boundaryWKT }
+                : null;
+            })
+            .filter(Boolean);
 
-          if (pokemonCache && pokemonCache.length > 0) {
-            for (const item of dataArray) {
-              if (item.pokemon_id) {
-                const pokemonInfo = pokemonCache.find(
-                  (p) => p.pokemon_id === item.pokemon_id
-                );
-
-                if (pokemonInfo) {
-                  enrichedData.push({
-                    ...item,
-                    pokemonInfo,
-                    boundary: boundaryWKT,
-                  });
-                }
-              }
-            }
-
-            if (enrichedData.length > 0) {
-              enrichedData.sort((a, b) => a.distance - b.distance);
-              setSearchResults(enrichedData);
-              setScrollToTopTrigger((prev) => prev + 1);
-              setIsCollapsed(true);
-            } else {
-              setSearchResults([]);
-              setIsCollapsed(false);
-            }
+          if (enrichedData.length > 0) {
+            enrichedData.sort((a, b) => a.distance - b.distance);
+            setSearchResults(enrichedData);
+            setScrollToTopTrigger((prev) => prev + 1);
+            setIsCollapsed(true);
           } else {
-            setErrorMessage('No data found in the default store of PokemonDataContext.');
+            setSearchResults([]);
             setIsCollapsed(false);
           }
         } else {
@@ -121,63 +107,75 @@ const Search = () => {
         setIsCollapsed(false);
       }
     } catch (error) {
-      console.error('Error during API request:', error);
-      if (error.response?.status === 403) {
-        await alert('You must be logged in to perform this search.');
-      } else {
-        await alert('An error occurred while searching. Please try again.');
-      }
+      console.error('Search error:', error);
+      await alert('An error occurred while searching. Please try again.');
       setIsCollapsed(false);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Initial screen before a mode is chosen
+  if (!searchMode) {
+    return (
+      <div className="search-welcome-screen">
+        <h1 className="search-welcome-title">Which type of search would you like?</h1>
+        <SearchModeToggle
+          searchMode={searchMode}
+          setSearchMode={setSearchMode}
+          isWelcome={true}
+        />
+      </div>
+    );
+  }
+
+  // Main app UI after mode is chosen
   return (
     <div>
-      <PokemonSearchBar
-        onSearch={handleSearch}
-        isLoading={isLoading}
-        setErrorMessage={setErrorMessage}
-        view={view}
-        setView={setView}
-        isCollapsed={isCollapsed}
-        setIsCollapsed={setIsCollapsed}
-        pokemonCache={pokemonCache}
-      />
+      <SearchModeToggle searchMode={searchMode} setSearchMode={setSearchMode} />
+
+      {searchMode === 'pokemon' && (
+        <PokemonSearchBar
+          onSearch={handleSearch}
+          isLoading={isLoading}
+          setErrorMessage={setErrorMessage}
+          view={view}
+          setView={setView}
+          isCollapsed={isCollapsed}
+          setIsCollapsed={setIsCollapsed}
+          pokemonCache={pokemonCache}
+        />
+      )}
+
+      {searchMode === 'friends' && <FriendSearchBar />}
 
       {errorMessage && (
-        <div
-          className="error-message"
-          style={{ color: 'red', padding: '1rem', textAlign: 'center' }}
-        >
+        <div className="error-message" style={{ color: 'red', padding: '1rem', textAlign: 'center' }}>
           {errorMessage}
         </div>
       )}
 
       <div ref={containerRef}>
-        {isLoading ? (
-          <LoadingSpinner />
-        ) : view === 'list' ? (
-          <ListView
-            data={searchResults}
-            instanceData={instanceData}
-            hasSearched={hasSearched}
-            pokemonCache={variants}
-            scrollToTopTrigger={scrollToTopTrigger}
-          />
-        ) : (
-          <MapView 
-            data={searchResults} 
-            instanceData={instanceData} 
-            pokemonCache={variants} 
-          />
-        )}
+        {searchMode === 'pokemon' &&
+          (isLoading ? (
+            <LoadingSpinner />
+          ) : view === 'list' ? (
+            <ListView
+              data={searchResults}
+              instanceData={instanceData}
+              hasSearched={hasSearched}
+              pokemonCache={variants}
+              scrollToTopTrigger={scrollToTopTrigger}
+            />
+          ) : (
+            <MapView
+              data={searchResults}
+              instanceData={instanceData}
+              pokemonCache={variants}
+            />
+          ))}
       </div>
 
-      {errorMessage && <div className="error-message">{errorMessage}</div>}
-
-      {/* Simply render the ActionMenu component as in the Pokémon page */}
       <ActionMenu />
     </div>
   );

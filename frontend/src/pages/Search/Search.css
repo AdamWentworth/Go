@@ -1,4 +1,4 @@
-/* Discover.css */
+/* Search.css */
 
 .view-toggle-buttons {
     margin-top: 20px;
@@ -32,3 +32,19 @@
     height: 500px;
   }
   
+  .search-welcome-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .search-welcome-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    color: white; /* Tailwind gray-800 */
+  }
