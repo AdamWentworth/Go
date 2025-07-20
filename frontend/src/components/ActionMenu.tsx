@@ -1,7 +1,7 @@
 // ActionMenu.tsx
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import ActionMenuButton from './ActionMenuButton';
 import CloseButton from './CloseButton';
 import { useModal } from '../contexts/ModalContext';
@@ -14,6 +14,7 @@ const ActionMenu: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { alert } = useModal();
   const { isLoggedIn } = useAuth() ?? {};
   useTheme();
@@ -40,6 +41,14 @@ const ActionMenu: React.FC = () => {
         }
         setIsAnimating(false);
       }, 50);
+    }
+  };
+
+  const handleNavigation = (path: string) => {
+    if (location.pathname === path) {
+      toggleMenu();
+    } else {
+      navigate(path);
     }
   };
 
@@ -122,7 +131,7 @@ const ActionMenu: React.FC = () => {
 
             <button
               className="action-menu-item button-search"
-              onClick={() => navigate('/search')}
+              onClick={() => handleNavigation('/search')}
             >
               <div className="button-content">
                 <img src="/images/btn_search.png" alt="Search" className="button-icon" />
@@ -132,7 +141,7 @@ const ActionMenu: React.FC = () => {
 
             <button
               className="action-menu-item button-pokemon"
-              onClick={() => navigate('/pokemon')}
+              onClick={() => handleNavigation('/pokemon')}
             >
               <div className="button-content">
                 <img src="/images/btn_pokemon.png" alt="Pokémon" className="button-icon" />
@@ -142,7 +151,7 @@ const ActionMenu: React.FC = () => {
 
             <button
               className="action-menu-item button-home"
-              onClick={() => navigate('/')}
+              onClick={() => handleNavigation('/')}
             >
               <div className="button-content">
                 <img src="/images/btn_home.png" alt="Home" className="button-icon" />
@@ -162,7 +171,7 @@ const ActionMenu: React.FC = () => {
 
             <button
               className="action-menu-item button-trades"
-              onClick={() => navigate('/trades')}
+              onClick={() => handleNavigation('/trades')}
             >
               <div className="button-content">
                 <img src="/images/btn_trades.png" alt="Trades" className="button-icon" />
