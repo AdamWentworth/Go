@@ -46,10 +46,11 @@ func (j *JSON) Scan(src interface{}) error {
 
 // User struct for the users table
 type User struct {
-	UserID    string   `gorm:"column:user_id;primaryKey" json:"user_id"`
-	Username  string   `gorm:"column:username;unique" json:"username"`
-	Latitude  *float64 `gorm:"column:latitude" json:"latitude"`
-	Longitude *float64 `gorm:"column:longitude" json:"longitude"`
+	UserID        string   `gorm:"column:user_id;primaryKey" json:"user_id"`
+	Username      string   `gorm:"column:username;unique" json:"username"`
+	PokemonGoName *string  `gorm:"column:pokemon_go_name" json:"pokemonGoName,omitempty"`
+	Latitude      *float64 `gorm:"column:latitude" json:"latitude"`
+	Longitude     *float64 `gorm:"column:longitude" json:"longitude"`
 }
 
 // TableName sets the name of the table in the database

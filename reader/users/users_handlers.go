@@ -13,9 +13,10 @@ import (
 // UpdateUserRequest represents the expected request body for updating
 // username, latitude, and longitude.
 type UpdateUserRequest struct {
-	Username  string  `json:"username"`
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
+	Username      string  `json:"username"`
+	Latitude      float64 `json:"latitude"`
+	Longitude     float64 `json:"longitude"`
+	PokemonGoName *string `json:"pokemonGoName"`
 }
 
 // UpdateUserResponse represents the response after attempting to update the user
@@ -83,9 +84,10 @@ func UpdateUserHandler(c *fiber.Ctx) error {
 	}
 
 	updates := map[string]interface{}{
-		"username":  req.Username,
-		"latitude":  req.Latitude,
-		"longitude": req.Longitude,
+		"username":        req.Username,
+		"latitude":        req.Latitude,
+		"longitude":       req.Longitude,
+		"pokemon_go_name": req.PokemonGoName,
 	}
 
 	// ---------------------------
