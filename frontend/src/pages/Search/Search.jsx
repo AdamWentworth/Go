@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import PokemonSearchBar from './PokemonSearchBar.jsx';
-import FriendSearchBar from './FriendSearchBar.jsx';
+import TrainerSearchBar from './TrainerSearchBar.jsx';
 import SearchModeToggle from './SearchModeToggle.jsx';
 import ListView from './views/ListView.jsx';
 import MapView from './views/MapView.jsx';
@@ -147,7 +147,7 @@ const Search = () => {
         />
       )}
 
-      {searchMode === 'friends' && <FriendSearchBar />}
+      {searchMode === 'trainer' && <TrainerSearchBar />}
 
       {errorMessage && (
         <div className="error-message" style={{ color: 'red', padding: '1rem', textAlign: 'center' }}>

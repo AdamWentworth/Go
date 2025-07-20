@@ -7,10 +7,10 @@ const SearchModeToggle = ({ searchMode, setSearchMode, isWelcome = false }) => {
   return (
     <div className={`search-toggle-container ${isWelcome ? 'welcome' : ''}`}>
       <button
-        className={`toggle-btn friends-btn ${searchMode === 'friends' ? 'active' : ''} ${isWelcome ? 'large' : ''}`}
-        onClick={() => setSearchMode('friends')}
+        className={`toggle-btn trainer-btn ${searchMode === 'trainer' ? 'active' : ''} ${isWelcome ? 'large' : ''}`}
+        onClick={() => setSearchMode('trainer')}
       >
-        Friends
+        Trainer
       </button>
       <button
         className={`toggle-btn pokemon-btn ${searchMode === 'pokemon' ? 'active' : ''} ${isWelcome ? 'large' : ''}`}
@@ -23,3 +23,4 @@ const SearchModeToggle = ({ searchMode, setSearchMode, isWelcome = false }) => {
 };
 
 export default SearchModeToggle;
+

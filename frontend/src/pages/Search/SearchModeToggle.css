@@ -31,16 +31,18 @@
   min-width: 220px;
 }
 
-/* Friends button styling */
-.friends-btn {
-  background-color: #a7f3d0; /* Tailwind green-200 */
-  color: #065f46;
+/* Trainer button styling */
+.trainer-btn {
+  background-color: #bfdbfe; /* Tailwind blue-200 */
+  color: #1e3a8a; /* Tailwind blue-900 */
 }
-.friends-btn:hover {
-  background-color: #6ee7b7; /* Tailwind green-300 */
+
+.trainer-btn:hover {
+  background-color: #93c5fd; /* Tailwind blue-300 */
 }
-.friends-btn.active {
-  background-color: #059669; /* Tailwind green-600 */
+
+.trainer-btn.active {
+  background-color: #2563eb; /* Tailwind blue-600 */
   color: white;
 }
 
