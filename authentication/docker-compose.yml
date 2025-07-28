@@ -21,7 +21,7 @@ services:
     ports:
       - "3002:3002"
     env_file:
-      - .env.production
+      - .env
     depends_on:
       - mongo_auth
     restart: no
