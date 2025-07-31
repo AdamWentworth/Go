@@ -1,13 +1,13 @@
-// middleware/setAccessTokenCookie.js
+// middlewares/setAccessTokenCookie.js
 module.exports = (req, res, next) => {
-    const { accessToken } = req;
+  const { accessToken } = req;
 
-    res.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-        maxAge: 3600000  // 1 hour in milliseconds
-    });
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'None',
+    maxAge: 60 * 60 * 1000                // 1 h
+  });
 
-    next();
+  next();
 };

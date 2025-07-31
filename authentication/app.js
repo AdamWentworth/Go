@@ -17,125 +17,114 @@ const session = require('express-session');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const fs = require('fs');
-const path = require('path')
-const logger = require('./middlewares/logger'); // Assuming the logger is in the middlewares folder
-// const axios = require('axios');
-
+const path = require('path');
+const logger = require('./middlewares/logger');
 const cron = require('node-cron');
 const createBackup = require('./tasks/backup');
 
-// Ensure correct path and file reading
 const appConfigPath = path.join(__dirname, 'config', 'app_conf.yml');
 const appConfigContent = fs.readFileSync(appConfigPath, 'utf8');
 const appConfig = YAML.parse(appConfigContent);
 
-// Load OpenAPI specification
 const openAPIPath = path.join(__dirname, 'config', 'openapi.yml');
 const openAPIContent = fs.readFileSync(openAPIPath, 'utf8');
 const swaggerDocument = YAML.parse(openAPIContent);
 
-// Create an Express application
 const app = express();
 
-// Schedule task to run at Midnight every day
+// ─────────────────────────────────────────────────────────────
+// Schedule daily DB backup
+// ─────────────────────────────────────────────────────────────
 cron.schedule('0 0 * * *', () => {
-    console.log('Running daily database backup...');
-    createBackup();
+  console.log('Running daily database backup...');
+  createBackup();
 });
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const MongoStore = require('connect-mongo');
 
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.DATABASE_URL,
-    ttl: 14 * 24 * 60 * 60 // 14 days
-  }),
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
-  }
-}));
+// ─────────── Session cookie (now always SameSite=None; Secure) ───────────
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.DATABASE_URL,
+      ttl: 14 * 24 * 60 * 60 // 14 days
+    }),
+    cookie: {
+      secure: true,      // trust nginx TLS
+      httpOnly: true,
+      sameSite: 'None'   // allow localhost frontend to send cookie
+    }
+  })
+);
 
-// Initialize Passport and use sessions
+// Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Apply JSON parsing middleware
+// JSON, cookies, proxy
 app.use(express.json());
-
 app.use(cookieParser());
-
 app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
-// CORS setup
+// ─────────── CORS (added localhost:5173) ───────────
 const allowedOrigins = [
-    'http://localhost:3000',  // Local frontend
-    'https://pokemongonexus.com',
-    'https://www.pokemongonexus.com'
-  ];
-  
-  app.use(cors({
-      origin: (origin, callback) => {
-          if (!origin || allowedOrigins.includes(origin)) {
-              callback(null, true); // Allow the request
-          } else {
-              callback(new Error('CORS not allowed for this origin'));
-          }
-      },
-      credentials: true, // Allow cookies & credentials
-      optionsSuccessStatus: 200
-  }));
+  'http://localhost:3000',
+  'https://pokemongonexus.com',
+  'https://www.pokemongonexus.com'
+];
 
-// Security enhancements with Helmet
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS not allowed for this origin'));
+      }
+    },
+    credentials: true,
+    optionsSuccessStatus: 200
+  })
+);
+
+// Security headers
 app.use(helmet());
 
-// Custom Logger Middleware
+// Custom logger
 app.use((req, res, next) => {
-    logger.info(`${req.method} ${req.url}`);
-    next();
+  logger.info(`${req.method} ${req.url}`);
+  next();
 });
 
-// Connection to MongoDB with streamlined error handling
-mongoose.connect(process.env.DATABASE_URL)
-.then(() => {
-    logger.info('Connected to Database');
-})
-.catch((error) => {
-    logger.error('Connection error:', error);
-});
+// MongoDB
+mongoose
+  .connect(process.env.DATABASE_URL)
+  .then(() => logger.info('Connected to Database'))
+  .catch(error => logger.error('Connection error:', error));
 
-// Rate limiting configuration for auth routes
+// Rate limit auth routes
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100 // Limit each IP to 100 requests per window
+  windowMs: 15 * 60 * 1000,
+  max: 100
 });
-app.use('/auth', limiter); // Apply rate limiting to authentication routes
+app.use('/auth', limiter);
 
-// Importing authentication routes
-const authRoute = require('./routes/authRoute');
-app.use('/auth', authRoute);
+// Routes
+app.use('/auth', require('./routes/authRoute'));
+app.use('/auth', require('./routes/tradeRevealRoute'));
 
-const tradeRevealRoute = require('./routes/tradeRevealRoute');
-app.use('/auth', tradeRevealRoute);
-
-// Define port from configuration file or use a default value
+// Port
 const port = appConfig.app.port || 3002;
+app.listen(port, () => logger.info(`Auth-service listening on ${port}`));
 
-// Start the server
-app.listen(port, () => {
-    logger.info(`Server started at http://localhost:${port}`);
-});
-
-// Central error handling middleware
+// Central error handler
 app.use((err, req, res, next) => {
-    logger.error('Unhandled Error:', err);
-    const status = err.status || 500;
-    const message = status === 500 ? "Internal Server Error" : err.message;
-    res.status(status).send({ message });
+  logger.error('Unhandled Error:', err);
+  const status = err.status || 500;
+  res.status(status).send({ message: status === 500 ? 'Internal Server Error' : err.message });
 });

@@ -1,20 +1,22 @@
-// middleware/setCookies.js
+// middlewares/setCookies.js
 module.exports = (req, res, next) => {
-    const { accessToken, refreshToken } = req;
+  const { accessToken, refreshToken } = req;
 
-    res.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-        maxAge: 3600000  // 1 hour in milliseconds
-    });
+  // Access-token cookie (1 h)
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: true,          // ALWAYS send only over HTTPS
+    sameSite: 'None',      // Allow cross-site requests (dev frontend → prod API)
+    maxAge: 60 * 60 * 1000
+  });
 
-    res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000  // 7 days in milliseconds
-    });
+  // Refresh-token cookie (7 d)
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'None',
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
 
-    next();
+  next();
 };
