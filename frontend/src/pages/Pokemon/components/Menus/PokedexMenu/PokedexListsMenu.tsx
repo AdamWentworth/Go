@@ -11,7 +11,8 @@ export interface PokedexListsMenuProps {
   setActiveView?: (view: string) => void;
   pokedexLists: PokedexLists;
   variants: AllVariants;
-  onListSelect?: (list: PokemonVariant[]) => void;
+  /** now also provides the _key_ of the list that was clicked */
+  onListSelect?: (list: PokemonVariant[], key: string) => void;
 }
 
 const PokedexListsMenu: React.FC<PokedexListsMenuProps> = ({
@@ -68,9 +69,13 @@ const PokedexListsMenu: React.FC<PokedexListsMenuProps> = ({
   const handleListClick = (listName: string): void => {
     setTagFilter?.('');
     setHighlightedCards?.(new Set());
+
     if (onListSelect) {
-      onListSelect(listName === fullWidthList ? variants : pokedexLists[listName] || []);
+      const listData =
+        listName === fullWidthList ? variants : pokedexLists[listName] || [];
+      onListSelect(listData, listName);        // ← now passes the key
     }
+
     setActiveView?.('pokemon');
   };
 

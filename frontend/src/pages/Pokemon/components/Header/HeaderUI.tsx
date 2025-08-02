@@ -7,12 +7,16 @@ export interface HeaderUIProps {
   onListsButtonClick: () => void;
   onPokedexClick: () => void;
   onPokemonClick: () => void;
-  contextText: ReactNode;
+  contextText: React.ReactNode;
   totalPokemon: number;
   highlightedCards?: Set<number>;
   onClearSelection: () => void;
   onSelectAll: () => void;
   activeView: 'pokedex' | 'pokemon' | 'tags';
+  /** optional sub-label shown under “POKÉDEX” */
+  pokedexSubLabel?: string;
+  /** optional sub-label shown under “TAGS” */
+  tagsSubLabel?: string;                // NEW
 }
 
 const HeaderUI: React.FC<HeaderUIProps> = ({
@@ -25,6 +29,8 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
   onClearSelection,
   onSelectAll,
   activeView,
+  pokedexSubLabel,
+  tagsSubLabel,          // NEW
 }) => {
   const hasSelection = Boolean(highlightedCards && highlightedCards.size > 0);
   const isCustomContext = React.isValidElement(contextText);
@@ -88,6 +94,13 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
         <span className={`${textClass} ${isPokedexActive ? 'active' : ''}`}>
           {isCustomContext ? contextText : 'POKÉDEX'}
         </span>
+
+        {/* NEW — second line, only when supplied and not in custom context */}
+        {!isCustomContext && pokedexSubLabel && (
+          <span className={`${textClass} ${isPokedexActive ? 'active' : ''}`}>
+            {pokedexSubLabel}
+          </span>
+        )}
       </div>
     );
   };
@@ -105,6 +118,12 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
         <span className={`toggle-text ${isTagsActive ? 'active' : ''}`}>
           TAGS
         </span>
+        {/* NEW — second line under TAGS when supplied */}
+        {tagsSubLabel && (
+          <span className={`toggle-text ${isTagsActive ? 'active' : ''}`}>
+            {tagsSubLabel}
+          </span>
+        )}
       </div>
     );
   };

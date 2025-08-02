@@ -101,6 +101,7 @@ function Pokemon({ isOwnCollection }) {
   const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedPokedexList, setSelectedPokedexList] = useState([]);
+  const [selectedPokedexKey, setSelectedPokedexKey]   = useState('all');
   const [lastMenu, setLastMenu] = useState('pokedex');
   const [defaultListLoaded, setDefaultListLoaded] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
@@ -140,9 +141,11 @@ function Pokemon({ isOwnCollection }) {
   useEffect(() => {
     if (isUsernamePath) {
       setSelectedPokedexList(variants);
+      setSelectedPokedexKey('all');
       setDefaultListLoaded(true);
     } else if (variants) {
       setSelectedPokedexList(variants);
+      setSelectedPokedexKey('all');
       setDefaultListLoaded(true);
     }
   }, [isUsernamePath, variants, pokedexLists]);
@@ -312,12 +315,26 @@ function Pokemon({ isOwnCollection }) {
         onPokedexClick={() =>
           setActiveView((prev) => (prev === 'pokedex' ? 'pokemon' : 'pokedex'))
         }
-        onPokemonClick={() => setActiveView('pokemon')}  // NEW handler for Pokémon click
+        onPokemonClick={() => setActiveView('pokemon')}
         contextText={contextText}
         totalPokemon={sortedPokemons.length}
         highlightedCards={highlightedCards}
         onClearSelection={handleClearSelection}
         onSelectAll={handleSelectAll}
+        /** Show POKÉDEX sublabel only when we’re in a pokedex-driven context and not on a foreign profile */
+        pokedexSubLabel={
+          !isUsernamePath && lastMenu === 'pokedex'
+            ? `(${(selectedPokedexKey || 'all').toUpperCase()})`
+            : undefined
+        }
+        /** Show TAGS sublabel only when tags is the current context; map OWNED -> CAUGHT for display */
+        tagsSubLabel={
+          lastMenu === 'ownership' && tagFilter
+            ? `(${(
+                (String(tagFilter).toLowerCase() === 'owned' ? 'Caught' : String(tagFilter))
+              ).toUpperCase()})`
+            : undefined
+        }
       />
 
       {/* Horizontal slider container */}
@@ -346,8 +363,9 @@ function Pokemon({ isOwnCollection }) {
               setTagFilter        ={setTagFilter}
               setHighlightedCards ={setHighlightedCards}
               setActiveView       ={setActiveView}
-              onListSelect        ={(list) => {
+              onListSelect        ={(list, key) => { // ← receives key now
                 setSelectedPokedexList(list);
+                setSelectedPokedexKey(key || 'all');  // NEW
                 setLastMenu('pokedex');
               }}
               pokedexLists        ={pokedexLists}
