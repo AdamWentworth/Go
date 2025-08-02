@@ -15,6 +15,11 @@ type AppState = {
 
 /**
  * Update one or many Pokémon instance status flags (Owned ▸ Trade ▸ Wanted…).
+ *
+ * NOTE: When a release/transfer results in an "unowned-only" instance that gets
+ * pruned locally (because a sibling exists), we still enqueue a minimal update
+ * with is_unowned=true and the other three flags=false so the backend will drop
+ * the instance. This prevents "zombie" rows from coming back on fresh login.
  */
 export const updateInstanceStatus =
   (
@@ -28,6 +33,7 @@ export const updateInstanceStatus =
 
     // 1) Apply status changes and record which entries actually changed
     const changedKeys = new Set<string>();
+
     const tempData = produce(instancesDataRef.current, draft => {
       for (const key of keys) {
         const fullKey = updatePokemonInstanceStatus(key, newStatus, data.variants, draft);
@@ -38,7 +44,7 @@ export const updateInstanceStatus =
         const hasChanges =
           !original ||
           Object.keys(updated).some(
-            k => updated[k] !== original[k] || !original.hasOwnProperty(k)
+            k => updated[k] !== (original as any)[k] || !Object.prototype.hasOwnProperty.call(original, k)
           );
 
         if (hasChanges) {
@@ -47,11 +53,24 @@ export const updateInstanceStatus =
       }
     });
 
+    // 1b) Snapshot the changed rows BEFORE pruning — we may need these to send
+    // a "tombstone-like" unowned-only update even if we prune the row locally.
+    const beforePruneSnapshot = new Map<string, PokemonInstance>();
+    for (const k of changedKeys) {
+      const row = tempData[k];
+      if (row) {
+        // Shallow copy is fine; we will override flags later if needed
+        beforePruneSnapshot.set(k, { ...(row as PokemonInstance) });
+      }
+    }
+
     // 2) Commit immediately to React state (and sync our ref)
     setData(prev => ({ ...prev, instances: tempData }));
     instancesDataRef.current = tempData;
 
-    // 3) Prune redundant unowned rows
+    // 3) Prune redundant unowned rows, but remember which keys we removed
+    const prunedKeys = new Set<string>();
+
     const finalData = produce(tempData, draft => {
       for (const key of keys) {
         const entry = draft[key];
@@ -68,6 +87,7 @@ export const updateInstanceStatus =
             return prefix === basePrefix && k !== key;
           });
           if (hasSibling) {
+            prunedKeys.add(key);
             delete draft[key];
           }
         }
@@ -79,14 +99,46 @@ export const updateInstanceStatus =
     instancesDataRef.current = finalData;
 
     // 5) Build a clean, serializable updates map
-    const updates = new Map<string, PokemonInstance>();
-    for (const fullKey of changedKeys) {
-      // Skip any entries that got pruned away
-      const updated = finalData[fullKey];
-      if (!updated) continue;
+    //    - If the row still exists in finalData, send the full updated object.
+    //    - If it was pruned, send an "unowned-only" update so the backend drops it.
+    const updates = new Map<string, any>();
 
-      // `updated` is now a plain object—safe to spread and store
-      updates.set(fullKey, { ...updated, last_update: timestamp });
+    for (const fullKey of changedKeys) {
+      const updated = finalData[fullKey];
+
+      if (updated) {
+        // Normal path: row remains, send full updated payload
+        updates.set(fullKey, { ...updated, last_update: timestamp });
+      } else if (prunedKeys.has(fullKey)) {
+        // Use the full before-prune row and force unowned-only flags
+        const snapshot = beforePruneSnapshot.get(fullKey) || ({} as Partial<PokemonInstance>);
+
+        const fullPayload = {
+          // include EVERYTHING we knew about the instance before pruning
+          ...snapshot,
+
+          // make sure identifiers are present/consistent
+          key: fullKey,
+          instance_id: fullKey,
+
+          // force the four flags so backend drops it
+          is_owned: false,
+          is_for_trade: false,
+          is_wanted: false,
+          is_unowned: true,
+
+          last_update: timestamp,
+        };
+
+        updates.set(fullKey, fullPayload);
+
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.log('[BATCH] enqueued unowned-only (pruned, full payload) for', fullKey, fullPayload);
+        }
+      }
+      // else: changedKeys contains a key that neither exists nor was pruned
+      // (shouldn't happen in normal flow) → ignore
     }
 
     // 6) Background sync
