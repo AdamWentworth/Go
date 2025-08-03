@@ -114,6 +114,7 @@ func UpdateUserHandler(c *fiber.Ctx) error {
 	}
 
 	if opErr != nil {
+		logrus.Errorf("UpdateUserHandler: final DB error: %v", opErr)
 		return c.Status(fiber.StatusInternalServerError).JSON(UpdateUserResponse{
 			Success: false,
 			Message: "Failed to create or update user in secondary DB",

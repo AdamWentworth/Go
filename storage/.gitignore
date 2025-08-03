@@ -4,3 +4,4 @@ my.cnf
 failed_messages
 backups
 storage_mysql_data
+config/app_conf.yml

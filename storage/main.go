@@ -34,10 +34,16 @@ func main() {
 
 	// 5) Scheduler
 	c := cron.New(cron.WithLogger(cron.PrintfLogger(logrus.StandardLogger())))
-	// Schedule CreateBackup to run every day at midnight
-	_, err := c.AddFunc("0 0 * * *", CreateBackup) // 5-field cron expression
-	if err != nil {
-		logrus.Fatalf("Failed to schedule CreateBackup: %v", err)
+	// Daily DB backup is handled by host cron by default.
+	// If you ever need the app to run backups (dev box, emergency), set RUN_APP_BACKUPS=true.
+	if os.Getenv("RUN_APP_BACKUPS") == "true" {
+	    _, err := c.AddFunc("0 0 * * *", CreateBackup)
+	    if err != nil {
+	        logrus.Fatalf("Failed to schedule CreateBackup: %v", err)
+	    }
+	    logrus.Info("App-owned backups are ENABLED via RUN_APP_BACKUPS=true.")
+	} else {
+	    logrus.Info("App-owned backups are DISABLED (RUN_APP_BACKUPS!=true). Host cron is the source of truth.")
 	}
 	// Schedule ReprocessFailedMessages every 5 minutes
 	_, err = c.AddFunc("@every 5m", ReprocessFailedMessages)

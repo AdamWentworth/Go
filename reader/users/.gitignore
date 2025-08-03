@@ -1,2 +1,3 @@
 .env.development
 app.log
+.env
