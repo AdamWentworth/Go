@@ -5,7 +5,7 @@ import { logSize } from "@/utils/loggers";
 import createPokemonVariants from "@/features/variants/utils/createPokemonVariants";
 import { determinePokemonKey } from "@/utils/PokemonIDUtils";
 import { useImageStore } from '@/stores/useImageStore';
-import { putBulkIntoDB } from "@/db/pokemonDB";
+import { putVariantsBulk } from "@/db/variantsDB";
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -40,7 +40,7 @@ export async function fetchAndProcessVariants() {
   }
 
   const t2 = Date.now();
-  await putBulkIntoDB('pokemonVariants', variants);
+  await putVariantsBulk(variants);
   if (isDev) console.log(`Stored variants in IndexedDB in ${Date.now() - t2} ms`);
 
   localStorage.setItem('variantsTimestamp', Date.now().toString());

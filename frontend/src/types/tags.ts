@@ -44,10 +44,10 @@ export interface TagItem {
 
 /* full bucket collection */
 export interface TagBuckets {
-  owned   : Record<string, TagItem>;
+  caught   : Record<string, TagItem>;
   trade   : Record<string, TagItem>;
   wanted  : Record<string, TagItem>;
-  unowned : Record<string, TagItem>;
+  missing : Record<string, TagItem>;
   /** allow future custom buckets */
   [key: string]: Record<string, TagItem>;
 }

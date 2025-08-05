@@ -1,28 +1,31 @@
-// /features/fusion/services/resolveFusionDetails.ts
-
-import { getFromDB } from '@/db/indexedDB';
+// src/pages/Pokemon/features/fusion/services/resolveFusionDetails.ts
+import { getVariantByKey } from '@/db/indexedDB';
 import { parseBaseNumber, parseFusionId, parseShinyStatus } from '../utils/fusionParsing';
 import { getValidCandidates as getCandidatesForIdWithVariants } from '../core/getValidCandidates';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { Fusion } from '@/types/pokemonSubTypes';
 
 export async function resolveFusionDetails(baseKey: string) {
-  const baseNumber = parseBaseNumber(baseKey);
+  const baseNumber  = parseBaseNumber(baseKey);
   const fusionIdStr = parseFusionId(baseKey);
-  const isShiny = parseShinyStatus(baseKey);
+  const isShiny     = parseShinyStatus(baseKey);
 
   if (!baseNumber || !fusionIdStr) {
     throw new Error(`[Fusion Handler] Could not parse baseNumber/fusionId from key: ${baseKey}`);
   }
 
-  const variantKey = isShiny ? `${baseNumber}-shiny` : `${baseNumber}-default`;
-  const parentVariant = await getFromDB('pokemonVariants', variantKey);
+  const variantKey    = isShiny ? `${baseNumber}-shiny` : `${baseNumber}-default`;
+  const parentVariant = await getVariantByKey<PokemonVariant>(variantKey);
   if (!parentVariant) {
     throw new Error(`[Fusion Handler] No variant data found for key ${variantKey}`);
   }
 
-  const fusionList = Array.isArray(parentVariant.fusion)
-    ? parentVariant.fusion
-    : Object.values(parentVariant.fusion || {});
-  const fusionId = parseInt(fusionIdStr, 10);
+  // parentVariant.fusion may be an array or an object indexed by fusion_id
+  const fusionList: Fusion[] = Array.isArray(parentVariant.fusion)
+    ? (parentVariant.fusion as Fusion[])
+    : (Object.values(parentVariant.fusion ?? {}) as Fusion[]);
+
+  const fusionId   = Number.parseInt(fusionIdStr, 10);
   const fusionData = fusionList.find((f) => f.fusion_id === fusionId);
   if (!fusionData) {
     throw new Error(`[Fusion Handler] No matching fusion object for fusion_id=${fusionId}`);
@@ -30,16 +33,16 @@ export async function resolveFusionDetails(baseKey: string) {
 
   const { base_pokemon_id1, base_pokemon_id2 } = fusionData;
 
-  const leftCandidates = await getCandidatesForIdWithVariants(String(base_pokemon_id1), isShiny, false);
+  const leftCandidates  = await getCandidatesForIdWithVariants(String(base_pokemon_id1), isShiny, false);
   const rightCandidates = await getCandidatesForIdWithVariants(String(base_pokemon_id2), isShiny, true);
 
   return {
     fusionId: fusionIdStr,
     baseNumber,
     isShiny,
-    leftBaseId: base_pokemon_id1,
+    leftBaseId:  base_pokemon_id1,
     rightBaseId: base_pokemon_id2,
-    leftCandidatesList: leftCandidates,
+    leftCandidatesList:  leftCandidates,
     rightCandidatesList: rightCandidates,
     parentVariant,
     fusionData,

@@ -3,7 +3,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { enableLogging, testLogger }                 from '../../../setupTests';
 
 import { loadVariants }                              from '@/features/variants/utils/loadVariants';
-import { clearStore }                                from '@/db/pokemonDB';
+import { clearStore }                                from '@/db/instancesDB';
 import { useLiveVariants }                           from '../../../utils/liveVariantCache';
 import { useLivePokedexLists }                       from '../../../utils/livePokedexListsCache';
 

@@ -44,81 +44,156 @@ func (j *JSON) Scan(src interface{}) error {
 	return nil
 }
 
-// User struct for the users table
+// ---------------- users ----------------
+
 type User struct {
-	UserID        string   `gorm:"column:user_id;primaryKey" json:"user_id"`
-	Username      string   `gorm:"column:username;unique" json:"username"`
-	PokemonGoName *string  `gorm:"column:pokemon_go_name" json:"pokemonGoName,omitempty"`
-	Latitude      *float64 `gorm:"column:latitude" json:"latitude"`
-	Longitude     *float64 `gorm:"column:longitude" json:"longitude"`
+	UserID        string  `gorm:"column:user_id;primaryKey" json:"user_id"`
+	Username      string  `gorm:"column:username;unique"    json:"username"`
+	PokemonGoName *string `gorm:"column:pokemon_go_name"    json:"pokemonGoName,omitempty"`
+
+	TrainerCode   *string    `gorm:"column:trainer_code"       json:"trainer_code,omitempty"`
+	Team          *string    `gorm:"column:team"               json:"team,omitempty"` // 'Mystic','Valor','Instinct'
+	TrainerLevel  *uint8     `gorm:"column:trainer_level"      json:"trainer_level,omitempty"`
+	TotalXP       *uint64    `gorm:"column:total_xp"           json:"total_xp,omitempty"`
+	PogoStartedOn *time.Time `gorm:"column:pogo_started_on"  json:"pogo_started_on,omitempty"`
+	AppJoinedAt   time.Time  `gorm:"column:app_joined_at"    json:"app_joined_at"`
+
+	AllowLocation bool     `gorm:"column:allow_location"     json:"allow_location"`
+	Location      *string  `gorm:"column:location"           json:"location,omitempty"`
+	Latitude      *float64 `gorm:"column:latitude"           json:"latitude,omitempty"`
+	Longitude     *float64 `gorm:"column:longitude"          json:"longitude,omitempty"`
+
+	// Highlights
+	Highlight1InstanceID *string `gorm:"column:highlight1_instance_id" json:"highlight1_instance_id,omitempty"`
+	Highlight2InstanceID *string `gorm:"column:highlight2_instance_id" json:"highlight2_instance_id,omitempty"`
+	Highlight3InstanceID *string `gorm:"column:highlight3_instance_id" json:"highlight3_instance_id,omitempty"`
+	Highlight4InstanceID *string `gorm:"column:highlight4_instance_id" json:"highlight4_instance_id,omitempty"`
+	Highlight5InstanceID *string `gorm:"column:highlight5_instance_id" json:"highlight5_instance_id,omitempty"`
+	Highlight6InstanceID *string `gorm:"column:highlight6_instance_id" json:"highlight6_instance_id,omitempty"`
 }
 
-// TableName sets the name of the table in the database
-func (User) TableName() string {
-	return "users"
+func (User) TableName() string { return "users" }
+
+// what outsiders are allowed to see
+type PublicUser struct {
+	Username      string     `json:"username"`
+	PokemonGoName *string    `json:"pokemonGoName,omitempty"`
+	Team          *string    `json:"team,omitempty"`
+	TrainerLevel  *uint8     `json:"trainer_level,omitempty"`
+	TotalXP       *uint64    `json:"total_xp,omitempty"`
+	PogoStartedOn *time.Time `json:"pogo_started_on,omitempty"`
+	AppJoinedAt   time.Time  `json:"app_joined_at"`
+
+	Highlight1 *string `json:"highlight1_instance_id,omitempty"`
+	Highlight2 *string `json:"highlight2_instance_id,omitempty"`
+	Highlight3 *string `json:"highlight3_instance_id,omitempty"`
+	Highlight4 *string `json:"highlight4_instance_id,omitempty"`
+	Highlight5 *string `json:"highlight5_instance_id,omitempty"`
+	Highlight6 *string `json:"highlight6_instance_id,omitempty"`
 }
 
-// PokemonInstance struct for the instances table
+// ---------------- instances ----------------
+
 type PokemonInstance struct {
-	InstanceID      string         `gorm:"column:instance_id;primaryKey" json:"instance_id"`
-	UserID          string         `gorm:"column:user_id" json:"user_id"`
-	User            *User          `gorm:"foreignKey:UserID;references:UserID" json:"user,omitempty"`
-	PokemonID       int            `gorm:"column:pokemon_id" json:"pokemon_id"`
-	Nickname        *string        `gorm:"column:nickname" json:"nickname"`
-	CP              *int           `gorm:"column:cp" json:"cp"`
-	AttackIV        *int           `gorm:"column:attack_iv" json:"attack_iv"`
-	DefenseIV       *int           `gorm:"column:defense_iv" json:"defense_iv"`
-	StaminaIV       *int           `gorm:"column:stamina_iv" json:"stamina_iv"`
-	Shiny           bool           `gorm:"column:shiny" json:"shiny"`
-	CostumeID       *int           `gorm:"column:costume_id" json:"costume_id"`
-	Lucky           bool           `gorm:"column:lucky" json:"lucky"`
-	Shadow          bool           `gorm:"column:shadow" json:"shadow"`
-	Purified        bool           `gorm:"column:purified" json:"purified"`
-	FastMoveID      *int           `gorm:"column:fast_move_id" json:"fast_move_id"`
-	ChargedMove1ID  *int           `gorm:"column:charged_move1_id" json:"charged_move1_id"`
-	ChargedMove2ID  *int           `gorm:"column:charged_move2_id" json:"charged_move2_id"`
-	Weight          *float64       `gorm:"column:weight" json:"weight"`
-	Height          *float64       `gorm:"column:height" json:"height"`
-	Gender          *string        `gorm:"column:gender" json:"gender"`
-	Mirror          bool           `gorm:"column:mirror" json:"mirror"`
-	PrefLucky       bool           `gorm:"column:pref_lucky" json:"pref_lucky"`
-	Registered      bool           `gorm:"column:registered" json:"registered"`
-	Favorite        bool           `gorm:"column:favorite" json:"favorite"`
-	IsUnowned       bool           `gorm:"column:is_unowned" json:"is_unowned"`
-	IsOwned         bool           `gorm:"column:is_owned" json:"is_owned"`
-	IsForTrade      bool           `gorm:"column:is_for_trade" json:"is_for_trade"`
-	IsWanted        bool           `gorm:"column:is_wanted" json:"is_wanted"`
-	NotTradeList    datatypes.JSON `gorm:"column:not_trade_list;type:json" json:"not_trade_list"`
-	NotWantedList   datatypes.JSON `gorm:"column:not_wanted_list;type:json" json:"not_wanted_list"`
-	TraceID         *string        `gorm:"column:trace_id" json:"trace_id"`
-	LocationCaught  *string        `gorm:"column:location_caught" json:"location_caught"`
-	LocationCard    *int           `gorm:"column:location_card" json:"location_card"`
-	FriendshipLevel *int           `gorm:"column:friendship_level" json:"friendship_level"`
-	LastUpdate      *int64         `gorm:"column:last_update" json:"last_update"`
-	DateCaught      *string        `gorm:"column:date_caught" json:"date_caught"`
-	DateAdded       *string        `gorm:"column:date_added" json:"date_added"`
-	WantedFilters   JSON           `gorm:"column:wanted_filters;type:json" json:"wanted_filters"`
-	TradeFilters    JSON           `gorm:"column:trade_filters;type:json" json:"trade_filters"`
-	Mega            bool           `gorm:"column:mega;default:false"`
-	MegaForm        *string        `gorm:"column:mega_form"`
-	IsMega          bool           `gorm:"column:is_mega;default:false"`
-	Level           *float64       `gorm:"column:level"`
-	IsFused         bool           `gorm:"column:is_fused;default:false"`
-	Fusion          JSON           `gorm:"column:fusion;type:json;"`
-	FusionForm      *string        `gorm:"column:fusion_form"`
-	FusedWith       *string        `gorm:"column:fused_with"`
-	Disabled        bool           `gorm:"column:disabled;default:false"`
-	Dynamax         bool           `gorm:"column:dynamax;default:false"`
-	Gigantamax      bool           `gorm:"column:gigantamax;default:false"`
-	MaxAttack       *string        `gorm:"column:max_attack"`
-	MaxGuard        *string        `gorm:"column:max_guard"`
-	MaxSpirit       *string        `gorm:"column:max_spirit"`
+	InstanceID string `gorm:"column:instance_id;primaryKey" json:"instance_id"`
+	UserID     string `gorm:"column:user_id"                 json:"user_id"`
+	User       *User  `gorm:"foreignKey:UserID;references:UserID" json:"user,omitempty"`
+
+	VariantID *string `gorm:"column:variant_id" json:"variant_id,omitempty"`
+	PokemonID int     `gorm:"column:pokemon_id" json:"pokemon_id"`
+	Nickname  *string `gorm:"column:nickname"   json:"nickname"`
+	Gender    *string `gorm:"column:gender"     json:"gender"`
+
+	// Stats
+	CP        *int     `gorm:"column:cp"          json:"cp"`
+	AttackIV  *int     `gorm:"column:attack_iv"   json:"attack_iv"`
+	DefenseIV *int     `gorm:"column:defense_iv"  json:"defense_iv"`
+	StaminaIV *int     `gorm:"column:stamina_iv"  json:"stamina_iv"`
+	Level     *float64 `gorm:"column:level"       json:"level"`
+	Weight    *float64 `gorm:"column:weight"      json:"weight"`
+	Height    *float64 `gorm:"column:height"      json:"height"`
+
+	// Early form flags
+	Shiny     bool `gorm:"column:shiny"     json:"shiny"`
+	CostumeID *int `gorm:"column:costume_id" json:"costume_id"`
+	Lucky     bool `gorm:"column:lucky"     json:"lucky"`
+	Shadow    bool `gorm:"column:shadow"    json:"shadow"`
+	Purified  bool `gorm:"column:purified"  json:"purified"`
+
+	// Moves
+	FastMoveID     *int `gorm:"column:fast_move_id"     json:"fast_move_id"`
+	ChargedMove1ID *int `gorm:"column:charged_move1_id" json:"charged_move1_id"`
+	ChargedMove2ID *int `gorm:"column:charged_move2_id" json:"charged_move2_id"`
+
+	// Location & timestamps
+	Pokeball       *string    `gorm:"column:pokeball"        json:"pokeball"`
+	LocationCard   *string    `gorm:"column:location_card"   json:"location_card"`
+	LocationCaught *string    `gorm:"column:location_caught" json:"location_caught"`
+	DateCaught     *time.Time `gorm:"column:date_caught"    json:"date_caught"`
+	DateAdded      time.Time  `gorm:"column:date_added"     json:"date_added"`
+	LastUpdate     int64      `gorm:"column:last_update"    json:"last_update"`
+	Disabled       bool       `gorm:"column:disabled"       json:"disabled"`
+
+	// Trade provenance
+	IsTraded            bool       `gorm:"column:is_traded"              json:"is_traded"`
+	TradedDate          *time.Time `gorm:"column:traded_date"           json:"traded_date"`
+	OriginalTrainerID   *string    `gorm:"column:original_trainer_id"   json:"original_trainer_id"`
+	OriginalTrainerName *string    `gorm:"column:original_trainer_name" json:"original_trainer_name"`
+
+	// Mega / Dynamax / Crown + max stats
+	Mega       bool    `gorm:"column:mega"        json:"mega"`
+	MegaForm   *string `gorm:"column:mega_form"   json:"mega_form"`
+	IsMega     *bool   `gorm:"column:is_mega"     json:"is_mega"`
+	Dynamax    bool    `gorm:"column:dynamax"     json:"dynamax"`
+	Gigantamax bool    `gorm:"column:gigantamax"  json:"gigantamax"`
+	Crown      bool    `gorm:"column:crown"       json:"crown"`
+	MaxAttack  *string `gorm:"column:max_attack"  json:"max_attack"`
+	MaxGuard   *string `gorm:"column:max_guard"   json:"max_guard"`
+	MaxSpirit  *string `gorm:"column:max_spirit"  json:"max_spirit"`
+
+	// Other forms
+	IsFused    bool    `gorm:"column:is_fused"    json:"is_fused"`
+	Fusion     JSON    `gorm:"column:fusion;type:json"     json:"fusion"`
+	FusionForm *string `gorm:"column:fusion_form" json:"fusion_form"`
+	FusedWith  *string `gorm:"column:fused_with"  json:"fused_with"`
+
+	// Ownership & tags
+	IsCaught      bool           `gorm:"column:is_caught"      json:"is_caught"`
+	IsForTrade    bool           `gorm:"column:is_for_trade"   json:"is_for_trade"`
+	IsWanted      bool           `gorm:"column:is_wanted"      json:"is_wanted"`
+	MostWanted    bool           `gorm:"column:most_wanted"    json:"most_wanted"`
+	CaughtTags    datatypes.JSON `gorm:"column:caught_tags;type:json"  json:"caught_tags"`
+	TradeTags     datatypes.JSON `gorm:"column:trade_tags;type:json"   json:"trade_tags"`
+	WantedTags    datatypes.JSON `gorm:"column:wanted_tags;type:json"  json:"wanted_tags"`
+	NotTradeList  datatypes.JSON `gorm:"column:not_trade_list;type:json"  json:"not_trade_list"`
+	NotWantedList datatypes.JSON `gorm:"column:not_wanted_list;type:json" json:"not_wanted_list"`
+	TradeFilters  JSON           `gorm:"column:trade_filters;type:json"  json:"trade_filters"`
+	WantedFilters JSON           `gorm:"column:wanted_filters;type:json" json:"wanted_filters"`
+
+	// Misc
+	FriendshipLevel *int    `gorm:"column:friendship_level" json:"friendship_level"`
+	Mirror          bool    `gorm:"column:mirror"           json:"mirror"`
+	PrefLucky       bool    `gorm:"column:pref_lucky"       json:"pref_lucky"`
+	Registered      bool    `gorm:"column:registered"       json:"registered"`
+	Favorite        bool    `gorm:"column:favorite"         json:"favorite"`
+	TraceID         *string `gorm:"column:trace_id"        json:"trace_id"`
 }
 
-// TableName sets the name of the table in the database
-func (PokemonInstance) TableName() string {
-	return "instances" // Correct table name
+func (PokemonInstance) TableName() string { return "instances" }
+
+// ---------------- registrations ----------------
+
+type Registration struct {
+	UserID    string `gorm:"column:user_id;primaryKey"    json:"user_id"`
+	VariantID string `gorm:"column:variant_id;primaryKey" json:"variant_id"`
 }
+
+func (Registration) TableName() string {
+	// Adjust if your table is named just "registrations"
+	return "registrations"
+}
+
+// ---------------- trades ----------------
 
 type Trade struct {
 	TradeID                          string     `gorm:"column:trade_id;primaryKey" json:"trade_id"`

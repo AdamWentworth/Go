@@ -1,6 +1,5 @@
-// updatePokemonInstanceStatus.ts
-
-import { generateUUID, parsePokemonKey } from '@/utils/PokemonIDUtils';
+// src/features/instances/services/updatePokemonInstanceStatus.ts
+import { generateUUID, validateUUID } from '@/utils/PokemonIDUtils';
 import { createNewInstanceData } from '../utils/createNewInstanceData';
 import { updateRegistrationStatus } from '../utils/updateRegistrationStatus';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -8,250 +7,147 @@ import type { InstanceStatus } from '@/types/instances';
 import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
-/* -------------------------------------------------------------------------- */
-/*  Public API                                                                */
-/* -------------------------------------------------------------------------- */
-
 /**
- * Updates the status flags (owned / wanted / trade…) of a Pokémon instance.
+ * Updates status flags for a Pokémon instance.
+ * `target` may be an instance UUID or a variant_id (e.g. "0583-shiny").
  *
- * Returns the instance key that was actually updated (can be a brand‑new UUID)
- * or `null` if the operation was aborted.
+ * Returns the instance_id that was updated/created, or null on abort.
  */
 export function updatePokemonInstanceStatus(
-  pokemonKey: string,
-  newStatus: InstanceStatus,
+  target: string,
+  newStatus: InstanceStatus,           // still using "Owned"|"Trade"|"Wanted"|"Unowned" labels
   variants: PokemonVariant[],
   instances: Instances,
 ): string | null {
-  const { baseKey, hasUUID } = parsePokemonKey(pokemonKey);
-  const variantData = variants.find((v) => v.pokemonKey === baseKey);
+  const isUuid = validateUUID(target);
 
+  let instanceId: string | null = null;
+  let variantKey: string | null = null;
+  let instance: PokemonInstance | undefined;
+
+  if (isUuid) {
+    instanceId  = target;
+    instance    = instances[instanceId];
+    variantKey  = instance?.variant_id ?? null;
+  } else {
+    variantKey  = target; // treating input as variant_id
+    // Try to reuse a placeholder of the same variant (previously "unowned-only")
+    instanceId  = Object.keys(instances).find(
+      id => instances[id]?.variant_id === variantKey &&
+            !instances[id]?.registered &&
+            !instances[id]?.is_wanted && !instances[id]?.is_for_trade && !instances[id]?.is_caught
+    ) ?? null;
+    instance    = instanceId ? instances[instanceId] : undefined;
+  }
+
+  const variantData = variants.find(v => v.pokemonKey === variantKey) ?? null;
   if (!variantData) {
-    console.error('[updatePokemonInstanceStatus] No variant for', baseKey);
+    console.error('[updatePokemonInstanceStatus] No variant for', variantKey);
     return null;
   }
 
-  console.log('[updatePokemonInstanceStatus] Processing', pokemonKey);
-
-  return hasUUID
-    ? handleUuidEntry(pokemonKey, newStatus, instances, baseKey)
-    : handleBaseKeyEntry(pokemonKey, newStatus, instances, variantData);
-}
-
-/* -------------------------------------------------------------------------- */
-/*  Helper logic                                                              */
-/* -------------------------------------------------------------------------- */
-
-function handleBaseKeyEntry(
-  pokemonKey: string,
-  newStatus: InstanceStatus,
-  data: Instances,
-  variantData: PokemonVariant,
-): string {
-  let needNew = true;
-  let updated = '';
-
-  for (const key of Object.keys(data)) {
-    const prefix = key.split('_').slice(0, -1).join('_');
-    if (prefix === pokemonKey && data[key].is_unowned && !data[key].is_wanted) {
-      applyStatus(key, newStatus, data, pokemonKey);
-      updated = key;
-      needNew = false;
-    }
+  if (!instanceId) {
+    instanceId = generateUUID();
+    const base = createNewInstanceData(variantData);
+    base.instance_id = instanceId;
+    instances[instanceId] = base;
+    instance = base;
   }
 
-  if (needNew) {
-    const newKey = `${pokemonKey}_${generateUUID()}`;
-    data[newKey] = createNewInstanceData(variantData) as PokemonInstance;
-    applyStatus(newKey, newStatus, data, pokemonKey);
-    updated = newKey;
+  // Derive some flags from variantKey
+  const vkey = (variantKey ?? '').toLowerCase();
+  if (instance!.pokemon_id === 2301 || instance!.pokemon_id === 2302) {
+    instance!.purified = vkey.includes('default');
   }
+  instance!.dynamax    = vkey.includes('dynamax');
+  instance!.gigantamax = vkey.includes('gigantamax');
 
-  return updated;
-}
-
-function applyStatus(
-  pokemonKey: string,
-  newStatus: InstanceStatus,
-  data: Instances,
-  baseKey: string,
-): void {
-  const instance = data[pokemonKey];
-
-  // Purified flag only for shadow lines 2301/2302
-  if (baseKey.startsWith('2301') || baseKey.startsWith('2302')) {
-    instance.purified = baseKey.toLowerCase().includes('default');
-  }
-
-  instance.dynamax = baseKey.toLowerCase().includes('dynamax');
-  instance.gigantamax = baseKey.toLowerCase().includes('gigantamax');
-
+  // Constraints for moving into Trade/Wanted
   if (['Trade', 'Wanted'].includes(newStatus)) {
     if (
-      instance.lucky ||
-      instance.shadow ||
-      instance.is_mega ||
-      instance.mega ||
-      [2270, 2271].includes(instance.pokemon_id)
+      instance!.lucky ||
+      instance!.shadow ||
+      instance!.is_mega ||
+      instance!.mega ||
+      [2270, 2271].includes(instance!.pokemon_id) // fusions
     ) {
       alert(
-        `Cannot move ${pokemonKey} to ${newStatus} as it is ${
-          instance.lucky
-            ? 'lucky'
-            : instance.shadow
-            ? 'shadow'
-            : instance.is_mega || instance.mega
-            ? 'mega'
-            : 'a fusion Pokémon'
+        `Cannot move ${variantKey} to ${newStatus} as it is ${
+          instance!.lucky ? 'lucky'
+          : instance!.shadow ? 'shadow'
+          : (instance!.is_mega || instance!.mega) ? 'mega'
+          : 'a fusion Pokémon'
         }.`
       );
       console.log('[update] blocked due to special status');
-      return;
-    }
-  }
-
-  instance.is_unowned = newStatus === 'Unowned';
-  instance.is_owned = ['Owned', 'Trade'].includes(newStatus);
-  instance.is_for_trade = newStatus === 'Trade';
-  instance.is_wanted = newStatus === 'Wanted';
-
-  for (const key of Object.keys(data)) {
-    const prefix = key.split('_').slice(0, -1).join('_');
-    if (prefix === baseKey && key !== pokemonKey) {
-      switch (newStatus) {
-        case 'Unowned':
-          data[key].is_owned = false;
-          data[key].is_for_trade = false;
-          break;
-        case 'Owned':
-        case 'Trade':
-          data[key].is_unowned = false;
-          break;
-        case 'Wanted':
-          if (data[key].is_owned) instance.is_unowned = false;
-          break;
-      }
-    }
-  }
-
-  if (newStatus === 'Trade' && !instance.is_owned) instance.is_owned = true;
-
-  if (newStatus === 'Wanted') {
-    const anyOwned = Object.keys(data).some((k) => {
-      const prefix = k.split('_').slice(0, -1).join('_');
-      return data[k].is_owned && prefix === baseKey;
-    });
-    instance.is_unowned = !anyOwned;
-  }
-
-  instance.registered =
-    instance.is_owned ||
-    instance.is_for_trade ||
-    (instance.is_wanted && !instance.is_unowned);
-
-  updateRegistrationStatus(instance, data);
-}
-
-function handleUuidEntry(
-  pokemonKey: string,
-  newStatus: InstanceStatus,
-  data: Instances,
-  baseKey: string,
-): string {
-  const instance = data[pokemonKey];
-
-  // Purified flag only for shadow lines 2301/2302
-  if (baseKey.startsWith('2301') || baseKey.startsWith('2302')) {
-    instance.purified = baseKey.toLowerCase().includes('default');
-  }
-
-  instance.dynamax = baseKey.toLowerCase().includes('dynamax');
-  instance.gigantamax = baseKey.toLowerCase().includes('gigantamax');
-
-  if (['Trade', 'Wanted'].includes(newStatus)) {
-    if (
-      instance.lucky ||
-      instance.shadow ||
-      instance.is_mega ||
-      instance.mega ||
-      [2270, 2271].includes(instance.pokemon_id)
-    ) {
-      alert(
-        `Cannot move ${pokemonKey} to ${newStatus} as it is ${
-          instance.lucky
-            ? 'lucky'
-            : instance.shadow
-            ? 'shadow'
-            : instance.is_mega || instance.mega
-            ? 'mega'
-            : 'a fusion Pokémon'
-        }.`
-      );
-      console.log('[update] blocked due to special status');
-      return pokemonKey;
+      return instanceId;
     }
   }
 
   switch (newStatus) {
-    case 'Owned':
-      instance.is_owned = true;
-      instance.is_for_trade = false;
-      instance.is_unowned = false;
-      instance.is_wanted = false;
-      // Update siblings
-      for (const key of Object.keys(data)) {
-        const prefix = key.split('_').slice(0, -1).join('_');
-        if (prefix === baseKey && key !== pokemonKey) {
-          data[key].is_unowned = false;
+    case 'Owned': // maps to "caught" in the new model
+      instance!.is_caught    = true;
+      instance!.is_for_trade = false;
+      instance!.is_wanted    = false;
+      instance!.registered   = true;
+      // Turn off "missing" state on siblings of same variant (i.e., mark them registered=false only if truly missing)
+      for (const id of Object.keys(instances)) {
+        if (id === instanceId) continue;
+        const other = instances[id];
+        if (other?.variant_id === variantKey) {
+          // sibling exists; do not force registered here, just clear "missing" logic if your app tracks it elsewhere
         }
       }
       break;
+
     case 'Trade':
-      instance.is_owned = true;
-      instance.is_for_trade = true;
-      instance.is_unowned = false;
-      instance.is_wanted = false;
+      instance!.is_caught    = true;     // caught but flagged for trade
+      instance!.is_for_trade = true;
+      instance!.is_wanted    = false;
+      instance!.registered   = true;
       break;
+
     case 'Wanted':
-      if (instance.is_owned) {
-        const basePrefix = pokemonKey.split('_').slice(0, -1).join('_');
-        const newKey = `${basePrefix}_${generateUUID()}`;
-        instance.is_unowned = false; // Ensure original owned instance has is_unowned: false
-        data[newKey] = {
-          ...instance,
+      if (instance!.is_caught) {
+        // Duplicate into a new UUID row (same variant) flagged as wanted
+        const newId = generateUUID();
+        instances[newId] = {
+          ...instance!,
+          instance_id: newId,
           is_wanted: true,
-          is_owned: false,
+          is_caught: false,
           is_for_trade: false,
-          is_unowned: false,
-          registered: true,
+          registered: true,       // wanted entries are considered registered for tags logic
+          last_update: Date.now(),
         };
-        updateRegistrationStatus(data[newKey], data);
-        updateRegistrationStatus(instance, data); // Update registration for original instance
-        return newKey;
+        updateRegistrationStatus(instances[newId], instances);
+        updateRegistrationStatus(instance!, instances);
+        return newId;
       } else {
-        instance.is_wanted = true;
-        const prefix = pokemonKey.split('_').slice(0, -1).join('_');
-        const anyOwned = Object.values(data).some(
-          (d) => d.is_owned && d.pokemonKey?.startsWith(prefix),
+        instance!.is_wanted  = true;
+        // If any sibling of same variant is caught, we keep this registered as well
+        const anyCaught = Object.values(instances).some(
+          (d) => d?.variant_id === variantKey && d.is_caught
         );
-        instance.is_unowned = !anyOwned;
-        instance.registered = instance.is_owned || instance.is_for_trade || (instance.is_wanted && !instance.is_unowned);
-        return pokemonKey;
+        instance!.registered = instance!.is_caught || instance!.is_for_trade || instance!.is_wanted || anyCaught;
+        return instanceId!;
       }
-    case 'Unowned':
-      instance.is_unowned = true;
-      instance.is_owned = false;
-      instance.is_for_trade = false;
-      instance.is_wanted = false;
+
+    case 'Unowned': // legacy label — interpret as "missing/unregistered"
+      instance!.is_caught    = false;
+      instance!.is_for_trade = false;
+      instance!.is_wanted    = false;
+      instance!.registered   = false;
       break;
   }
 
-  instance.registered =
-    instance.is_owned ||
-    instance.is_for_trade ||
-    (instance.is_wanted && !instance.is_unowned);
+  // Registered when any of the “visible” states are set
+  instance!.registered =
+    instance!.is_caught ||
+    instance!.is_for_trade ||
+    instance!.is_wanted ||
+    !!instance!.registered;
 
-  updateRegistrationStatus(instance, data);
-  return pokemonKey;
+  updateRegistrationStatus(instance!, instances);
+  return instanceId!;
 }

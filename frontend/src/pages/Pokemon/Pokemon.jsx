@@ -219,7 +219,9 @@ function Pokemon({ isOwnCollection }) {
   };
 
   const handleSelectAll = () => {
-    const allIds = sortedPokemons.map((pokemon) => pokemon.pokemonKey);
+    const allIds = sortedPokemons.map(
+      (p) => p.instanceData?.instance_id ?? p.pokemonKey
+    );
     setHighlightedCards(new Set(allIds));
     setIsFastSelectEnabled(true);
   };

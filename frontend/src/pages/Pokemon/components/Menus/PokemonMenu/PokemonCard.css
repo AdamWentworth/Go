@@ -86,12 +86,12 @@
     filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
 }
 
-.pokemon-card.unowned img.pokemon-image {
+.pokemon-card.missing img.pokemon-image {
     filter: grayscale(100%) brightness(0.2) contrast(0.5) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
 }
 
-/* Glow effect for owned/trade/wanted cards */
-.pokemon-card.owned::before {
+/* Glow effect for caught/trade/wanted cards */
+.pokemon-card.caught::before {
     background: radial-gradient(circle, rgba(0, 119, 255, 0.4) 10%, transparent 50%);
     opacity: 1;
 }

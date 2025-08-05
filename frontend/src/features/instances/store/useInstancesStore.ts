@@ -1,13 +1,15 @@
-// store/useInstancesStore.ts
+// src/features/instances/store/useInstancesStore.ts
 
 import { create } from 'zustand';
-import { produce } from 'immer'; // Add Immer import
+import { produce } from 'immer';
 import { periodicUpdates as periodicFactory } from '@/stores/BatchedUpdates/periodicUpdates';
 import { mergeInstancesData } from '@/features/instances/utils/mergeInstancesData';
 import { updateInstanceStatus as makeUpdateStatus } from '@/features/instances/actions/updateInstanceStatus';
 import { updateInstanceDetails as makeUpdateDetails } from '@/features/instances/actions/updateInstanceDetails';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
+import { replaceInstancesData } from '@/features/instances/storage/instancesStorage';
+
 import type { Instances, MutableInstances, InstanceStatus } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
@@ -56,7 +58,7 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
         set({ instances: data, instancesLoading: false });
       } catch (error) {
         console.error('[InstancesStore] 🚨 Hydration failed:', error);
-        set({ instances: {}, instancesLoading: false }); // Changed from true to false to ensure loading state clears even on error
+        set({ instances: {}, instancesLoading: false });
       }
     },
 
@@ -65,47 +67,41 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
       console.log(`[InstancesStore] 🌍 Set foreignInstances with ${count} items`);
       set({ foreignInstances: data });
     },
-    
+
     resetForeignInstances() {
       console.log('[InstancesStore] 🌍 Reset foreignInstances');
       set({ foreignInstances: null });
     },
 
-    setInstances(incoming) {
+    async setInstances(incoming) {
       if (!incoming || !Object.keys(incoming).length) {
         console.log('[InstancesStore] ⚠️ No incoming data – skipping set');
         return;
       }
-    
+
       const current = get().instances;
       if (JSON.stringify(current) === JSON.stringify(incoming)) {
         console.log('[InstancesStore] 💤 No changes – incoming data matches current');
         return;
       }
-    
+
       const username = useAuthStore.getState().user?.username ?? '';
       const merged = mergeInstancesData(current, incoming, username);
-    
-      // Make sure timestamp is set before state update
-      const timestamp = Date.now().toString();
-      localStorage.setItem('ownershipTimestamp', timestamp);
-      
+
+      const ts = Date.now();
       set({ instances: merged });
       console.log(`[InstancesStore] ✅ Updated instances – now tracking ${Object.keys(merged).length} Pokémon`);
-    
-      // Fixed template string (changed [] to backticks)
-      navigator.serviceWorker.ready
-        .then(r =>
-          r.active?.postMessage({
-            action: 'syncData',
-            data: { data: merged, timestamp: Date.now() },
-          })
-        )
-        .catch(console.error);
+
+      // Authoritative replace of cache snapshot to avoid drift
+      try {
+        await replaceInstancesData(merged, ts);
+      } catch (e) {
+        console.error('[InstancesStore] Failed to persist merged snapshot:', e);
+      }
     },
 
     async updateInstanceStatus(pokemonKeys, newStatus) {
-      console.log(`[InstancesStore] 🔄 Updating status for ${pokemonKeys.length} Pokémon to "${newStatus}"`);
+      console.log(`[InstancesStore] 🔄 Updating status for ${Array.isArray(pokemonKeys) ? pokemonKeys.length : 1} Pokémon to "${newStatus}"`);
 
       const fn = makeUpdateStatus(
         { get variants() { return useVariantsStore.getState().variants; } } as any,
@@ -118,27 +114,17 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
           if (Array.isArray(pokemonKeys)) {
             const after = res.instances;
             for (const k of pokemonKeys) {
-              if (k.includes('0583-shiny') || k.includes('0584-shiny')) {
-                console.log('[DEBUG inst]', newStatus, k, after[k]);
+              const row = after[k];
+              if (row) {
+                console.log('[DEBUG flags]', newStatus, k, {
+                  caught  : row.is_caught,
+                  trade   : row.is_for_trade,
+                  wanted  : row.is_wanted,
+                  missing : !row.registered,
+                });
               }
             }
           }
-          if (Array.isArray(pokemonKeys)) {
-            const after = res.instances;
-            for (const k of pokemonKeys) {
-              if (k.includes('0583-shiny') || k.includes('0584-shiny')) {
-                const row = after[k];
-                if (row) {
-                  console.log('[DEBUG flags]', newStatus, k, {
-                    owned  : row.is_owned,
-                    trade  : row.is_for_trade,
-                    wanted : row.is_wanted,
-                    unowned: row.is_unowned,
-                  });
-                }
-              }
-            }
-          }      
           return res;
         },
         { current: get().instances }
@@ -152,15 +138,12 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
       console.log('[InstancesStore] 🛠 Updating details for', keyOrKeysOrMap);
 
       const fn = makeUpdateDetails(
-        { instances: get().instances }, // Pass current instances directly
+        { instances: get().instances },
         updater => {
           const res = updater({ instances: get().instances });
-          // Use Immer to update state immutably
-          set(
-            produce(state => {
-              state.instances = res.instances;
-            })
-          );
+          set(produce((state: any) => {
+            state.instances = res.instances;
+          }));
           return res;
         }
       );

@@ -28,6 +28,24 @@ export interface PokemonGridProps {
 
 const BUFFER_ROWS = 5;
 
+// Prefer instance UUIDs for React keys; fall back to variant key + index.
+function buildReactKey(pokemon: any, absoluteIndex: number): string {
+  // Use instance_id if available
+  if (pokemon?.instanceData?.instance_id) return pokemon.instanceData.instance_id;
+  if (pokemon?.instance_id) return pokemon.instance_id;
+
+  // Fallback: use variant_id or pokemonKey + index
+  const variantKey =
+    pokemon?.variant_id ?? pokemon?.pokemonKey ?? 'unknown';
+
+  return `${variantKey}#${absoluteIndex}`;
+}
+
+// Use instance id for highlighting if available; otherwise variant key
+function getHighlightKey(pokemon: any): string | undefined {
+  return pokemon?.instanceData?.instance_id ?? pokemon?.instance_id ?? pokemon?.pokemonKey;
+}
+
 const PokemonGrid: React.FC<PokemonGridProps> = memo(({
   sortedPokemons,
   highlightedCards,
@@ -60,7 +78,7 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
     setIsVisible(false);
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
-  }, [activeView]);  
+  }, [activeView]);
 
   useEffect(() => {
     const container = gridContainerRef.current;
@@ -86,7 +104,7 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
       gridContainerRef.current.scrollTop = 0;
     }
     setScrollTop(0);
-  }, [activeView, gridContainerRef]);  
+  }, [activeView, gridContainerRef]);
 
   useEffect(() => {
     const measureHeight = () => {
@@ -137,27 +155,34 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
         className="pokemon-grid-row"
         style={{ position: 'absolute', top: `${row * rowHeight}px`, width: '100%' }}
       >
-        {rowPokemons.map((pokemon, i) => (
-          <div
-            key={pokemon ? pokemon.pokemonKey : `empty-${startIndex + i}`}
-            className={`pokemon-grid-cell ${isVisible ? 'visible' : ''}`}
-          >
-            {pokemon && (
-              <PokemonCard
-                pokemon={pokemon}
-                onSelect={() => handleSelect(pokemon)}
-                isHighlighted={highlightedCards.has(pokemon.pokemonKey)}
-                tagFilter={tagFilter}
-                sortType={sortType}
-                isEditable={isEditable}
-                toggleCardHighlight={toggleCardHighlight}
-                setIsFastSelectEnabled={setIsFastSelectEnabled}
-                isFastSelectEnabled={isFastSelectEnabled}
-                variants={variants}
-              />
-            )}
-          </div>
-        ))}
+        {rowPokemons.map((pokemon, i) => {
+          const absoluteIndex = startIndex + i;
+          const reactKey = pokemon ? buildReactKey(pokemon, absoluteIndex) : `empty-${absoluteIndex}`;
+          const highlightKey = pokemon ? getHighlightKey(pokemon) : undefined;
+          const isHighlighted = !!(highlightKey && highlightedCards.has(highlightKey));
+
+          return (
+            <div
+              key={reactKey}
+              className={`pokemon-grid-cell ${isVisible ? 'visible' : ''}`}
+            >
+              {pokemon && (
+                <PokemonCard
+                  pokemon={pokemon}
+                  onSelect={() => handleSelect(pokemon)}
+                  isHighlighted={isHighlighted}
+                  tagFilter={tagFilter}
+                  sortType={sortType}
+                  isEditable={isEditable}
+                  toggleCardHighlight={toggleCardHighlight}
+                  setIsFastSelectEnabled={setIsFastSelectEnabled}
+                  isFastSelectEnabled={isFastSelectEnabled}
+                  variants={variants}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }

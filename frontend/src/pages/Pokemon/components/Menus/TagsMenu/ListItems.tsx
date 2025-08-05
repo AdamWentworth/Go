@@ -1,5 +1,4 @@
 // ListItems.tsx
-
 import React, { KeyboardEvent } from 'react';
 import type { TagItem } from '@/types/tags';
 import './ListItems.css';
@@ -10,24 +9,13 @@ export interface ListItemsProps {
   onSelectList: (listName: string) => void;
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Robust unique-key builder                                                 */
-/* -------------------------------------------------------------------------- */
 function buildKey(p: TagItem, idx: number, bucket: string): string {
-  /* 1⃣  Prefer the natural instance_id when present. */
   if (p.instance_id) return p.instance_id;
-
-  /* 2⃣  Fall back to a composite of known fields. */
-  const idPart   = p.pokemon_id ?? p.instance_id ?? 'unk';
-  const variant  = p.variantType ?? 'base';
-
-  /* 3⃣  Append bucket & index so keys are unique even across columns. */
+  const idPart  = p.pokemon_id ?? p.instance_id ?? 'unk';
+  const variant = p.variantType ?? 'base';
   return `${bucket}-${idPart}-${variant}-${idx}`;
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Component                                                                 */
-/* -------------------------------------------------------------------------- */
 const ListItems: React.FC<ListItemsProps> = ({
   listNames,
   sortedLists,
@@ -37,28 +25,27 @@ const ListItems: React.FC<ListItemsProps> = ({
     {listNames.map((listName) => {
       const listData = sortedLists[listName] ?? [];
 
-      /* ---------- preview thumbnails ----------------------------------- */
       const preview = listData.slice(0, 24).map((p, i) => {
         if (!p?.currentImage) return null;
 
-        const key   = buildKey(p, i, listName);        // <<<<<<<<  UNIQUE!
-        const gmax  = p.variantType?.includes('gigantamax');
-        const dmax  = p.variantType?.includes('dynamax');
-        const isUn  = listName === 'Unowned';
+        const key    = buildKey(p, i, listName);
+        const gmax   = p.variantType?.includes('gigantamax');
+        const dmax   = p.variantType?.includes('dynamax');
+        const isMiss = listName === 'Missing';
 
         return (
           <div key={key} className="pokemon-list-container">
             <img
               src={p.currentImage}
               alt={p.name ?? 'Unknown Pokémon'}
-              className={`preview-image ${isUn ? 'unowned' : ''}`}
+              className={`preview-image ${isMiss ? 'missing' : ''}`}
               draggable={false}
             />
             {(gmax || dmax) && (
               <img
                 src={gmax ? '/images/gigantamax.png' : '/images/dynamax.png'}
                 alt={gmax ? 'Gigantamax' : 'Dynamax'}
-                className={`variant-overlay ${isUn ? 'unowned' : ''}`}
+                className={`variant-overlay ${isMiss ? 'missing' : ''}`}
                 aria-hidden
                 draggable={false}
               />
@@ -67,16 +54,14 @@ const ListItems: React.FC<ListItemsProps> = ({
         );
       });
 
-      /* ---------- container -------------------------------------------- */
-      const filterName = listName === 'Caught' ? 'Owned' : listName;
-      const onKey      = (e: KeyboardEvent<HTMLDivElement>) =>
-        e.key === 'Enter' && onSelectList(filterName);
+      const onKey = (e: KeyboardEvent<HTMLDivElement>) =>
+        e.key === 'Enter' && onSelectList(listName); // no aliasing
 
       return (
         <div
           key={listName}
           className="list-item"
-          onClick={() => onSelectList(filterName)}
+          onClick={() => onSelectList(listName)}       // no aliasing
           tabIndex={0}
           onKeyPress={onKey}
         >
@@ -93,4 +78,3 @@ const ListItems: React.FC<ListItemsProps> = ({
 );
 
 export default ListItems;
-

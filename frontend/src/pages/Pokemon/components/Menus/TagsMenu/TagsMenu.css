@@ -58,7 +58,7 @@
 }
 
 /* Header Color Variants */
-.lists-menu .list-header.Unowned {
+.lists-menu .list-header.Missing {
   background-color: #ccc;
   color: black;
 }
@@ -83,8 +83,8 @@
   margin-top: 0.625rem;
 }
 
-.lists-menu .pokemon-preview img.preview-image.unowned,
-.lists-menu .pokemon-preview img.variant-overlay.unowned {
+.lists-menu .pokemon-preview img.preview-image.missing,
+.lists-menu .pokemon-preview img.variant-overlay.missing {
   filter: grayscale(100%) brightness(0.2) contrast(0.5)
     drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
   transition: filter 0.3s ease;

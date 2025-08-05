@@ -2,8 +2,10 @@
 
 export * from './constants';
 export * from './init';
-export * from './pokemonDB';
-export * from './listsDB';
+export * from './variantsDB';
+export * from './instancesDB';
+export * from './tagsDB';
 export * from './tradesDB';
 export * from './batchedUpdatesDB';
-export * from './pokedexListsDB';
+export * from './pokedexDB';
+export * from './registrationsDB';

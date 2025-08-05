@@ -1,5 +1,4 @@
 // main.go
-
 package main
 
 import (
@@ -32,14 +31,14 @@ func main() {
 	app.Use(corsMiddleware)
 
 	// Unprotected routes
-	app.Get("/api/ownershipData/username/:username", GetPokemonInstancesByUsername)
+	app.Get("/api/public/users/:username", GetPublicSnapshotByUsername)
 	app.Get("/api/autocomplete-trainers", AutocompleteTrainersHandler)
 
 	// Protected routes
 	protected := app.Group("/", verifyJWT) // JWT middleware to protect routes
 
-	protected.Get("/api/ownershipData/:user_id", GetPokemonInstances)
-	protected.Put("/api/update-user/:user_id", UpdateUserHandler)
+	protected.Get("/api/users/:user_id/overview", GetUserOverviewHandler)
+	protected.Put("/api/users/:user_id", UpdateUserHandler)
 
 	// Use fmt.Println for startup messages without time and log level
 	fmt.Println("Starting User Service at http://127.0.0.1:3005/")

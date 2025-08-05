@@ -6,7 +6,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import './UpdateForTradeModal.css';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
-import { getFromDB } from '@/db/pokemonDB';
+import { getVariantByKey } from '@/db/indexedDB';
 
 import OwnedInstance from '../../OwnedInstance';               // keep jsx/tsx default
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -56,7 +56,7 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
       setError(null);
 
       try {
-        const data = (await getFromDB('pokemonVariants', baseKey)) as PokemonVariant;
+        const data = (await getVariantByKey(baseKey)) as PokemonVariant;
         setVariantData(data);
       } catch (err) {
         console.error(err);

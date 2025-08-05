@@ -1,22 +1,17 @@
-// instancesStorage.ts
-
+// src/features/instances/storage/instancesStorage.ts
 import * as idb from '@/db/indexedDB';
-import { generateUUID, validateUUID } from '@/utils/PokemonIDUtils';
+import { generateUUID } from '@/utils/PokemonIDUtils';
 import { createNewInstanceData } from '../utils/createNewInstanceData';
 
-import type { Instances }   from '@/types/instances';
+import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
-import type { PokemonVariant }  from '@/types/pokemonVariants';
-
-/* -------------------------------------------------------------------------- */
-/*  Public API                                                                */
-/* -------------------------------------------------------------------------- */
+import type { PokemonVariant } from '@/types/pokemonVariants';
 
 export async function getInstancesData(): Promise<{
   data: Instances;
   timestamp: number;
 }> {
-  const data = await idb.getAllFromDB('pokemonOwnership');
+  const data = await idb.getAllInstances<PokemonInstance>();
   const instances: Instances = {};
 
   (data as PokemonInstance[]).forEach((item) => {
@@ -29,31 +24,61 @@ export async function getInstancesData(): Promise<{
 
   const rawTs = parseInt(localStorage.getItem('ownershipTimestamp') || '0', 10);
   const timestamp = rawTs > 0 ? rawTs : 0;
-
   return { data: instances, timestamp };
 }
 
+/**
+ * Upsert many items; used by initializer flows.
+ */
 export async function setInstancesData(payload: {
   data: Instances;
   timestamp: number;
 }): Promise<void> {
-  await idb.clearStore('pokemonOwnership');
-
   const t0 = performance.now();
   const items = Object.keys(payload.data).map((instance_id) => ({
     ...payload.data[instance_id],
     instance_id,
   })) as PokemonInstance[];
 
-  await idb.putBulkIntoDB('pokemonOwnership', items);
+  await idb.putInstancesBulk(items);
 
   if (process.env.NODE_ENV === 'development') {
-    console.log(
-      `Stored instances into IndexedDB in ${Math.round(performance.now() - t0)} ms`
-    );
+    console.log(`Stored instances into IndexedDB in ${Math.round(performance.now() - t0)} ms`);
   }
 
   localStorage.setItem('ownershipTimestamp', payload.timestamp.toString());
+}
+
+/**
+ * Authoritative REPLACE: clear store, then bulk put full snapshot.
+ * Use this right after mergeInstancesData so the cache matches UI exactly.
+ */
+export async function replaceInstancesData(
+  data: Instances,
+  timestamp: number,
+): Promise<void> {
+  const t0 = performance.now();
+  const db = await idb.initInstancesDB();
+  if (!db) return;
+
+  const tx = db.transaction(idb.INSTANCES_STORE, 'readwrite');
+  await tx.store.clear();
+
+  const items = Object.entries(data).map(([instance_id, row]) => ({
+    ...row,
+    instance_id,
+  })) as PokemonInstance[];
+
+  for (const item of items) {
+    await tx.store.put(item);
+  }
+  await tx.done;
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[replaceInstancesData] wrote ${items.length} rows in ${Math.round(performance.now() - t0)} ms`);
+  }
+
+  localStorage.setItem('ownershipTimestamp', String(timestamp));
 }
 
 export async function initializeOrUpdateInstancesData(
@@ -67,32 +92,30 @@ export async function initializeOrUpdateInstancesData(
     }
 
     let shouldUpdate = false;
-    const existingKeys = new Set(
-      Object.keys(stored).map((k) => {
-        const parts = k.split('_');
-        const maybeUUID = parts.pop()!;
-        return validateUUID(maybeUUID) ? parts.join('_') : k;
-      }),
+
+    const existingVariantIds = new Set(
+      Object.values(stored)
+        .map(v => v?.variant_id)
+        .filter((v): v is string => !!v)
     );
 
     const t0 = performance.now();
-    variants.forEach((variant, i) => {
-      const baseKey = keys[i];
-      if (existingKeys.has(baseKey)) return;
+    variants.forEach((variant) => {
+      const vkey = variant.pokemonKey;
+      if (!vkey || existingVariantIds.has(vkey)) return;
 
-      const fullKey = `${baseKey}_${generateUUID()}`;
+      const instance_id = generateUUID();
       const newEntry: PokemonInstance = {
         ...createNewInstanceData(variant),
-        instance_id: fullKey,
+        instance_id,
+        variant_id: vkey,
       };
-      stored[fullKey] = newEntry;
+      stored[instance_id] = newEntry;
       shouldUpdate = true;
     });
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[instancesStorage] Init/update pass took ${Math.round(performance.now() - t0)} ms`,
-      );
+      console.log(`[instancesStorage] Init/update pass took ${Math.round(performance.now() - t0)} ms`);
     }
 
     if (shouldUpdate) {

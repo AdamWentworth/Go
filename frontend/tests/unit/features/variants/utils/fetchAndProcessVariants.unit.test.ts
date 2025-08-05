@@ -57,7 +57,7 @@ import { getPokemons }         from '@/services/pokemonDataService';
 import { logSize }             from '@/utils/loggers';
 import createPokemonVariants   from '@/features/variants/utils/createPokemonVariants';
 import { determinePokemonKey } from '@/utils/PokemonIDUtils';
-import { putBulkIntoDB }       from '@/db/pokemonDB';
+import { putBulkIntoDB }       from '@/db/instancesDB';
 
 /* ──────────────────────────────────────────────────────────
  * 4.  Blob poly-fill for jsdom

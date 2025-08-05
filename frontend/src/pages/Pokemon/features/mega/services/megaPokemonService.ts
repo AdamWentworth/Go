@@ -1,6 +1,6 @@
 // megaPokemonService.ts
 
-import { getFromDB } from '@/db/pokemonDB';
+import { getVariantByKey } from '@/db/variantsDB';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { createNewInstanceData } from '@/features/instances/utils/createNewInstanceData';
@@ -34,7 +34,7 @@ export async function createNewMega(
   variantKey: string,
   megaForm?: string,
 ): Promise<string /* instance_id */> {
-  const variant = await getFromDB<PokemonVariant>('pokemonVariants', variantKey);
+  const variant = await getVariantByKey<PokemonVariant>(variantKey);
   if (!variant) throw new Error(`Variant data not found for key: ${variantKey}`);
 
   const data      = createNewInstanceData(variant);

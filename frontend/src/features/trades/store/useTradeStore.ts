@@ -1,6 +1,10 @@
 // src/features/trades/store/useTradeStore.ts
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
+import {
+  POKEMON_TRADES_STORE,
+  RELATED_INSTANCES_STORE,
+} from '@/db/indexedDB';
 
 import { proposeTrade as proposeTradeService } from '@/features/trades/actions/proposeTrade';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
@@ -68,7 +72,7 @@ export const useTradeStore = create<TradeStoreState>()(
       for (const [id, trade] of Object.entries(newTradesObj)) {
         if (trade?.trade_status === 'deleted') {
           // remove from DB
-          await deleteFromTradesDB('pokemonTrades', id);
+          await deleteFromTradesDB(POKEMON_TRADES_STORE, id);
           // strip from incoming object so it doesn't land in state later
           delete newTradesObj[id];
         }
@@ -81,7 +85,7 @@ export const useTradeStore = create<TradeStoreState>()(
           ...newTradesObj[trade_id],
           trade_id,                           // ✅ only explicit once
         }));
-        await setTradesinDB('pokemonTrades', array as any);
+        await setTradesinDB(POKEMON_TRADES_STORE, array as any);
       }
 
       // Merge into in‑memory state; deletions have been stripped already
@@ -189,13 +193,13 @@ export const useTradeStore = create<TradeStoreState>()(
     /** Hydrate store from IndexedDB at app start‑up */
     async hydrateFromDB() {
       try {
-        const tradesFromDB = await getAllFromTradesDB('pokemonTrades');
+        const tradesFromDB = await getAllFromTradesDB(POKEMON_TRADES_STORE);
         const tradesObj = tradesFromDB.reduce<Record<string, Trade>>((acc, trade: any) => {
           acc[trade.trade_id] = { ...trade };
           return acc;
         }, {});
 
-        const instancesFromDB = await getAllFromTradesDB('relatedInstances');
+        const instancesFromDB = await getAllFromTradesDB(RELATED_INSTANCES_STORE);
         const instancesObj = instancesFromDB.reduce<Record<string, Instance>>((acc, inst: any) => {
           acc[inst.instance_id] = { ...inst };
           return acc;

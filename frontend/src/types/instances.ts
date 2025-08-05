@@ -3,13 +3,13 @@
 import type { PokemonInstance } from './pokemonInstance';
 
 /* -------------------------------------------------------------------------- */
-/*  Instance‑centric types – the future canonical API                         */
+/*  Instance-centric helpers                                                 */
 /* -------------------------------------------------------------------------- */
 
 export type InstanceStatus = 'Owned' | 'Trade' | 'Wanted' | 'Unowned';
 
-export type Instances         = Record<string, PokemonInstance>;
-export type MutableInstances  = Record<string, Partial<PokemonInstance>>;
+export type Instances        = Record<string, PokemonInstance>;
+export type MutableInstances = Record<string, Partial<PokemonInstance>>;
 
 /* async helpers ----------------------------------------------------------- */
 export type UpdateInstanceStatusFn = (
@@ -27,4 +27,3 @@ export type SetInstancesFn = (
     prevData: { instances: MutableInstances }
   ) => { instances: MutableInstances }
 ) => void;
-

@@ -21,11 +21,11 @@ import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { useTradeStore } from '@/features/trades/store/useTradeStore';
 import { useAuthStore } from '../stores/useAuthStore';
 import {
-  clearStore,
-  clearListsStore,
+  clearInstancesStore,
+  clearTagsStore,
   clearTradesStore,
 } from '../db/indexedDB';
-
+import { TAG_STORE_NAMES } from '@/db/indexedDB';
 import type { User, RefreshTokenPayload } from '../types/auth';
 import type { ApiResponse } from '../types/common';
 import type { AuthContextType } from '../types/authContext';
@@ -183,9 +183,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     resetTags();
 
     try {
-      await clearStore('pokemonOwnership');
-      for (const listName of ['owned', 'unowned', 'wanted', 'trade']) {
-        await clearListsStore(listName);
+      await clearInstancesStore();
+      for (const tagName of TAG_STORE_NAMES) {
+        await clearTagsStore(tagName);
       }
       await clearTradesStore('pokemonTrades');
       await clearTradesStore('relatedInstances');

@@ -5,12 +5,12 @@ import { useRef } from 'react';
 interface UseTouchHandlersProps {
   onSelect: () => void;
   onSwipe?: (dir: 'left' | 'right') => void;
-  toggleCardHighlight: (key: string) => void;
+  toggleCardHighlight: (key: string) => void; // kept for API compatibility, not used here
   setIsFastSelectEnabled: (enabled: boolean) => void;
   isEditable: boolean;
   isFastSelectEnabled: boolean;
   isDisabled: boolean;
-  pokemonKey: string;
+  pokemonKey: string; // kept for API compatibility, not used here
 }
 
 const LONG_PRESS_MS = 300;
@@ -20,11 +20,13 @@ const MOVE_CANCEL_THRESHOLD = 10;
 export function usePokemonCardTouchHandlers({
   onSelect,
   onSwipe,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   toggleCardHighlight,
   setIsFastSelectEnabled,
   isEditable,
   isFastSelectEnabled,
   isDisabled,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   pokemonKey,
 }: UseTouchHandlersProps) {
   const touchStartX = useRef(0);
@@ -49,11 +51,13 @@ export function usePokemonCardTouchHandlers({
     touchStartY.current = touch.clientY;
     lastTouchX.current = touch.clientX;
 
+    // Long-press to enter fast-select mode and select this card via parent logic.
     if (isEditable) {
       longPressTimeout.current = setTimeout(() => {
         if (!isSwiping.current && !isScrolling.current && !isFastSelectEnabled) {
-          toggleCardHighlight(pokemonKey);
           setIsFastSelectEnabled(true);
+          // Defer so the state flip is visible to parent before it runs handleSelect
+          setTimeout(() => onSelect(), 0);
         }
         longPressTriggered.current = true;
       }, LONG_PRESS_MS);
@@ -93,28 +97,24 @@ export function usePokemonCardTouchHandlers({
       return;
     }
 
+    // If we already did a long-press action, do nothing more on touch end.
     if (isScrolling.current || longPressTriggered.current) return;
 
-    if (isFastSelectEnabled) {
-      toggleCardHighlight(pokemonKey);
-    } else {
-      onSelect();
-    }
+    // Always route selection/highlight through parent so it picks the correct key (instance_id vs variant).
+    onSelect();
     touchHandled.current = true;
   };
 
   const handleClick = () => {
+    // Suppress click that immediately follows a handled touch
     if (touchHandled.current) {
       touchHandled.current = false;
       return;
     }
     if (isDisabled) return;
 
-    if (isFastSelectEnabled) {
-      toggleCardHighlight(pokemonKey);
-    } else {
-      onSelect();
-    }
+    // Always defer to parent; it knows whether to open overlay or toggle highlight.
+    onSelect();
   };
 
   return {

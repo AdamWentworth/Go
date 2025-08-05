@@ -1,12 +1,16 @@
 // helpers.go
-
 package main
 
-import "strings"
+import "time"
 
-// isTransientError checks if the error message indicates a transient DB connection issue.
-// Adjust this logic to suit your DB driver's actual error strings or underlying error types.
-func isTransientError(err error) bool {
-	// Example: Look for "bad connection" in the error string
-	return err != nil && strings.Contains(err.Error(), "bad connection")
+// lastUpdateToTime converts an epoch value (seconds or milliseconds) to time.Time.
+// Heuristic: >= 1e12 => milliseconds; otherwise seconds.
+func lastUpdateToTime(v int64) time.Time {
+	if v <= 0 {
+		return time.Time{}
+	}
+	if v > 1_000_000_000_000 {
+		return time.UnixMilli(v)
+	}
+	return time.Unix(v, 0)
 }

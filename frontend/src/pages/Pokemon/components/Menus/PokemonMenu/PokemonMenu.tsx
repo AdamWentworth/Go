@@ -95,27 +95,47 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
 
   const handleSelect = useCallback(
     (pokemon: PokemonVariant) => {
+      const instanceId = pokemon?.instanceData;
+      const isInstance = !!instanceId || uuidValidate(pokemon?.pokemonKey ?? '');
+
+      console.log('  → From instanceData.instance_id:', pokemon.instanceData?.instance_id);
+      console.log('  → From pokemonKey:', pokemon.pokemonKey);
       if (!isEditable) {
-        setSelectedPokemon({ pokemon, overlayType: 'instance' });
+        setSelectedPokemon(
+          isInstance ? { pokemon, overlayType: 'instance' } : pokemon
+        );
         return;
       }
+
       if (isFastSelectEnabled) {
-        const was = highlightedCards.has(pokemon.pokemonKey);
-        toggleCardHighlight(pokemon.pokemonKey);
+        const key = pokemon.instanceData?.instance_id ?? pokemon.pokemonKey;
+
+
+        const was = highlightedCards.has(key);
+        toggleCardHighlight(key);
+
         if (was && highlightedCards.size === 1) {
           setIsFastSelectEnabled(false);
         }
         return;
       }
+
       if (pokemon.instanceData?.disabled) {
         alert('This Pokémon is fused and disabled until unfused.');
         return;
       }
-      const parts = pokemon.pokemonKey.split('_');
-      const instance = uuidValidate(parts[parts.length - 1]);
-      setOptionsSelectedPokemon({ pokemon, isInstance: instance });
+
+      setOptionsSelectedPokemon({ pokemon, isInstance });
     },
-    [isEditable, isFastSelectEnabled, highlightedCards, toggleCardHighlight, setIsFastSelectEnabled, alert, setSelectedPokemon]
+    [
+      isEditable,
+      isFastSelectEnabled,
+      highlightedCards,
+      toggleCardHighlight,
+      setIsFastSelectEnabled,
+      alert,
+      setSelectedPokemon,
+    ]
   );
 
   // Dismiss search menu when clicking outside
@@ -196,7 +216,12 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
           isInstance={optionsSelectedPokemon.isInstance}
           tagFilter={tagFilter}
           onClose={() => setOptionsSelectedPokemon(null)}
-          onHighlight={(poke) => { toggleCardHighlight(poke.pokemonKey); setIsFastSelectEnabled(true); setOptionsSelectedPokemon(null); }}
+          onHighlight={(poke) => {
+            const key = poke.instanceData?.instance_id ?? poke.pokemonKey; // prefer instance UUID
+            toggleCardHighlight(key);
+            setIsFastSelectEnabled(true);
+            setOptionsSelectedPokemon(null);
+          }}
           onOpenOverlay={(poke) => {
             const { isInstance } = optionsSelectedPokemon;
             setSelectedPokemon(isInstance ? { pokemon: poke, overlayType: 'instance' } : poke);

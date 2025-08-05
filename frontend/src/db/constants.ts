@@ -1,36 +1,43 @@
-// db/constants.ts
+// constants.ts
 
-export const isIOS: boolean =
+/* -------------------------------------------------------------------------- */
+/*  Device helper                                                             */
+/* -------------------------------------------------------------------------- */
+export const isIOS =
   /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window);
 
-if (isIOS) {
-  console.log(`Detected iOS device: ${isIOS}`);
-}
+/* -------------------------------------------------------------------------- */
+/*  Database names                                                            */
+/* -------------------------------------------------------------------------- */
+export const VARIANTS_DB_NAME      = 'variantsDB';
+export const INSTANCES_DB_NAME     = 'instancesDB';
+export const TAGS_DB_NAME          = 'tagsDB';
+export const TRADES_DB_NAME        = 'tradesDB';
+export const UPDATES_DB_NAME       = 'updatesDB';
+export const POKEDEX_DB_NAME       = 'pokedexDB';
+export const REGISTRATIONS_DB_NAME = 'registrationsDB';   // ← new
 
-// Database Names
-export const DB_NAME: string = 'pokemonDB';
-export const LISTS_DB_NAME: string = 'pokemonListsDB';
-export const TRADES_DB_NAME: string = 'tradesDB';
-export const UPDATES_DB_NAME: string = 'batchedUpdatesDB';
-export const POKEDEX_LISTS_DB_NAME: string = 'PokedexListsDB';
+/* -------------------------------------------------------------------------- */
+export const DB_VERSION = 1;
 
-// DB Version
-export const DB_VERSION: number = 1;
+/* Object stores ------------------------------------------------------------ */
+export const VARIANTS_STORE      = 'variants';
+export const INSTANCES_STORE     = 'instances';
+export const TAG_STORE_NAMES     = ['caught', 'wanted', 'trade', 'missing'] as const;
+export const POKEMON_TRADES_STORE   = 'trades';
+export const RELATED_INSTANCES_STORE = 'relatedInstances';
+export const REGISTRATIONS_STORE     = 'registrations';   // ← new
 
-// Store Names for Main DB (pokemonDB)
-export const VARIANTS_STORE: string = 'pokemonVariants';
-export const OWNERSHIP_DATA_STORE: string = 'pokemonOwnership';
+/* Batched-update stores ---------------------------------------------------- */
+export const BATCHED_POKEMON_UPDATES_STORE = 'batchedPokemonUpdates';
+export const BATCHED_TRADE_UPDATES_STORE   = 'batchedTradeUpdates';
 
-// Store Names for the Batched Updates DB
-export const BATCHED_POKEMON_UPDATES_STORE: string = 'batchedPokemonUpdates';
-export const BATCHED_TRADE_UPDATES_STORE: string = 'batchedTradeUpdates';
-
-// Store names for listsDB
-export const LIST_STORES: string[] = ['owned', 'unowned', 'wanted', 'trade'];
-
-// Trades DB Constants
-export const POKEMON_TRADES_STORE: string = 'pokemonTrades';
-export const RELATED_INSTANCES_STORE: string = 'relatedInstances';
+/* Pokedex category stores -------------------------------------------------- */
+export const POKEDEX_STORES = [
+  'default','shiny','costume','shadow','shiny costume','shiny shadow',
+  'shadow costume','mega','shiny mega','dynamax','shiny dynamax',
+  'gigantamax','shiny gigantamax','fusion','shiny fusion',
+] as const;
 
 // Enums for trades
 export const TRADE_STATUSES = {
@@ -48,22 +55,3 @@ export const TRADE_FRIENDSHIP_LEVELS: { [key: number]: string } = {
   3: 'Ultra',
   4: 'Best',
 };
-
-// Store names for pokedexListsDB
-export const POKEDEX_LISTS_STORES: string[] = [
-  'default',
-  'shiny',
-  'costume',
-  'shadow',
-  'shiny costume',
-  'shiny shadow',
-  'shadow costume',
-  'mega',
-  'shiny mega',
-  'dynamax',
-  'shiny dynamax',
-  'gigantamax',
-  'shiny gigantamax',
-  'fusion',
-  'shiny fusion',
-];

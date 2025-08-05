@@ -2,6 +2,7 @@
 
 import axios, { AxiosResponse } from 'axios';
 import { getDeviceId } from '../utils/deviceID';
+import type { UserOverview } from '@/types/user';
 
 axios.defaults.withCredentials = true;
 
@@ -174,29 +175,6 @@ export const refreshTokenService = async (): Promise<unknown> => {
       console.error('Error refreshing token:', error.response || error);
     } else {
       console.error('Error refreshing token:', error);
-    }
-    throw error;
-  }
-};
-
-// ==========================
-// fetchOwnershipData
-// ==========================
-export const fetchOwnershipData = async (userId: string): Promise<unknown> => {
-  try {
-    const deviceId = getDeviceId();
-    const response: AxiosResponse<unknown> = await readApi.get(`/ownershipData/${userId}`, {
-      params: { device_id: deviceId },
-      headers: { 'Content-Type': 'application/json' },
-      withCredentials: true,
-    });
-    // response.data now contains { pokemon_instances: { ... }, trades: [ ... ] }
-    return response.data;
-  } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      console.error('Error fetching ownership data:', error.response || error);
-    } else {
-      console.error('Error fetching ownership data:', error);
     }
     throw error;
   }

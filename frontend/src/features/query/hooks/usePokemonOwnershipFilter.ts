@@ -1,13 +1,18 @@
 // src/hooks/filtering/usePokemonOwnershipFilter.ts
 
-import { parsePokemonKey } from '@/utils/PokemonIDUtils';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { Instances } from '@/types/instances';
 import type { TagBuckets } from '@/types/tags';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
-const VALID_FILTERS = ['owned', 'trade', 'wanted', 'unowned'] as const;
+const VALID_FILTERS = ['caught', 'trade', 'wanted', 'missing'] as const;
 export type OwnershipFilter = typeof VALID_FILTERS[number];
+
+// Backward-compat aliases (old → new)
+const FILTER_ALIASES: Record<string, OwnershipFilter> = {
+  owned: 'caught',
+  unowned: 'missing',
+};
 
 export function getFilteredPokemonsByOwnership(
   variants: PokemonVariant[],
@@ -15,33 +20,38 @@ export function getFilteredPokemonsByOwnership(
   filter: string,
   tagBuckets: TagBuckets
 ): Array<PokemonVariant & { instanceData: PokemonInstance }> {
-  const filterKey = filter.toLowerCase() as OwnershipFilter;
+  const raw = (filter || '').toLowerCase().trim();
+  const filterKey = (FILTER_ALIASES[raw] ?? raw) as OwnershipFilter;
 
   if (!VALID_FILTERS.includes(filterKey)) {
-    console.warn(`Unknown filter: ${filter}. Returning empty array.`);
+    console.warn(`[usePokemonOwnershipFilter] Unknown filter "${filter}". Returning empty array.`);
     return [];
   }
 
   const bucket = tagBuckets[filterKey] ?? {};
-  const filteredKeys = Object.keys(bucket);
+  const instanceIds = Object.keys(bucket); // keys are instance_id (UUID)
 
-  return filteredKeys
-    .map((fullKey) => {
-      // use reusable parser to split off UUID suffix if present
-      const { baseKey } = parsePokemonKey(fullKey);
+  return instanceIds
+    .map((instanceId) => {
+      const instance = instancesData[instanceId];
+      if (!instance) return undefined;
 
-      const variant = variants.find((v) => v.pokemonKey === baseKey);
-      const instance = instancesData[fullKey];
+      const variantKey = instance.variant_id; // e.g. "0583-default" or "0583-shiny"
+      if (!variantKey) return undefined;
 
-      if (variant && instance) {
+      const variant = variants.find((v) => v.pokemonKey === variantKey);
+      if (!variant) return undefined;
+
+      // Keep variant.pokemonKey as the canonical variant key.
+      // Consumers can use instanceData.instance_id when they need the UUID.
         return {
-          ...variant,
-          // override pokemonKey so it includes the UUID suffix
-          pokemonKey: fullKey,
-          instanceData: instance,
-        };
-      }
-      return undefined;
+        ...variant,
+        pokemonKey: variantKey,
+        instanceData: {
+          ...instance,
+          instance_id: instanceId,
+        } as PokemonInstance,
+      };
     })
     .filter(
       (v): v is PokemonVariant & { instanceData: PokemonInstance } =>

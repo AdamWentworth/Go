@@ -5,43 +5,72 @@
 import { create } from 'zustand';
 
 import {
-  getAllListsFromDB,
-  storeListsInIndexedDB,
-} from '@/db/indexedDB';
+  getAllTagsFromDB,
+  storeTagsInIndexedDB,
+} from '@/db/tagsDB';
+
+import { TAG_STORE_NAMES } from '@/db/constants';
 
 import { initializePokemonTags } from '../utils/initializePokemonTags';
 import { coerceToTagBuckets }   from '@/features/tags/utils/tagHelpers';
 import { isDataFresh }          from '@/utils/cacheHelpers';
-import { formatTimeAgo }        from '@/utils/formattingHelpers';
 
 import { useVariantsStore }   from '@/features/variants/store/useVariantsStore';
 import { useInstancesStore }  from '@/features/instances/store/useInstancesStore';
 
-import type { TagBuckets, TagBucketsDB } from '@/types/tags';
-import type { Instances }                from '@/types/instances';
+import type { TagBuckets, TagItem } from '@/types/tags';
+import type { Instances }           from '@/types/instances';
+
+/**
+ * Derive TagStoreName union directly from the runtime array so we only have
+ * one single source-of-truth.
+ */
+type TagStoreName = typeof TAG_STORE_NAMES[number];
+
+/* ================================================================== */
+/*  Helpers                                                           */
+/* ================================================================== */
+
+const EMPTY_BUCKETS: TagBuckets = {
+  caught : {},
+  missing: {},
+  wanted : {},
+  trade  : {},
+};
+
+const toDBShape = (
+  buckets: TagBuckets,
+): Record<TagStoreName, Record<string, TagItem>> => {
+  return TAG_STORE_NAMES.reduce((acc, bucketName) => {
+    // ensure every store has *some* object—even if empty
+    acc[bucketName] = buckets[bucketName] ?? {};
+    return acc;
+  }, {} as Record<TagStoreName, Record<string, TagItem>>);
+};
 
 /* ================================================================== */
 /*  Store definition                                                  */
 /* ================================================================== */
 
 interface TagsStore {
-  tags            : TagBuckets;
-  tagsLoading     : boolean;
-  buildTags       : () => Promise<void>;   // heavy – persists to IDB / SW
-  refreshTags     : () => Promise<void>;
-  resetTags       : () => void;
-  hydrateFromCache: () => Promise<void>;
+  /* state */
+  tags        : TagBuckets;
+  tagsLoading : boolean;
+  foreignTags : TagBuckets | null;
 
-  /* foreign‑user view */
-  foreignTags     : TagBuckets | null;
-  buildForeignTags: (instances: Instances) => void;
+  /* actions */
+  buildTags       (): Promise<void>;   // heavy – persists to IndexedDB
+  refreshTags     (): Promise<void>;
+  resetTags       (): void;
+  hydrateFromCache(): Promise<void>;
+  buildForeignTags(instances: Instances): void;
 }
 
 export const useTagsStore = create<TagsStore>()((set, get) => ({
   /* -------------------------------------------------------------- */
   /* state                                                          */
   /* -------------------------------------------------------------- */
-  tags       : { owned: {}, trade: {}, wanted: {}, unowned: {} },
+  tags       : { ...EMPTY_BUCKETS },
   tagsLoading: true,
   foreignTags: null,
 
@@ -53,27 +82,15 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
     const { variants, variantsLoading }   = useVariantsStore.getState();
     const { instances, instancesLoading } = useInstancesStore.getState();
     if (variantsLoading || instancesLoading) return;
-  
+
     console.log('[TagsStore] Rebuilding tags from live data…');
     set({ tagsLoading: true });
-  
+
     const newTags = initializePokemonTags(instances, variants);
     set({ tags: newTags, tagsLoading: false });
-  
-    // 🚀 save for next launch (optional, fast)
-    const dbReady: TagBucketsDB = Object.fromEntries(
-      Object.entries(newTags).map(([bucket, rec]) => [
-        bucket,
-        Object.fromEntries(
-          Object.entries(rec).map(([id, item]) => [
-            id,
-            { ...item, instance_id: id },
-          ]),
-        ),
-      ]),
-    );
-    await storeListsInIndexedDB(dbReady);
-    localStorage.setItem('listsTimestamp', Date.now().toString());
+
+    await storeTagsInIndexedDB(toDBShape(newTags));
+    localStorage.setItem('tagsTimestamp', Date.now().toString());
   },
 
   /** Build buckets for a *foreign* user once. */
@@ -87,14 +104,14 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
 
   /** Hydrate from cache or rebuild if stale. */
   async hydrateFromCache() {
-    const tagsTS = Number(localStorage.getItem('listsTimestamp')   || 0);
+    const tagsTS = Number(localStorage.getItem('tagsTimestamp') || 0);
     const ownTS  = Number(localStorage.getItem('ownershipTimestamp') || 0);
-    const fresh       = tagsTS && isDataFresh(tagsTS);
-    const needRebuild = ownTS  > tagsTS;
+    const fresh       = !!tagsTS && isDataFresh(tagsTS);
+    const needRebuild = ownTS > tagsTS;
 
     if (fresh && !needRebuild) {
       console.log('[TagsStore] Hydrating tags from IndexedDB…');
-      const cached   = await getAllListsFromDB();
+      const cached   = await getAllTagsFromDB();
       const hydrated = coerceToTagBuckets(cached);
       set({ tags: hydrated, tagsLoading: false });
     } else {
@@ -109,11 +126,11 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
 
   resetTags() {
     set({
-      tags       : { owned: {}, trade: {}, wanted: {}, unowned: {} },
+      tags       : { ...EMPTY_BUCKETS },
       tagsLoading: true,
       foreignTags: null,
     });
-    localStorage.removeItem('listsTimestamp');
+    localStorage.removeItem('tagsTimestamp');
   },
 }));
 
@@ -130,19 +147,15 @@ const quickRebuild = (instances: Instances, dest: 'tags' | 'foreignTags') => {
 };
 
 /* ---- own collection --------------------------------------------- */
-/* fires on every change to `instances`                              */
 useInstancesStore.subscribe((state) => {
   quickRebuild(state.instances, 'tags');
 });
 
-/* ---- foreign‑user collections ----------------------------------- */
-/* fires on every change to `foreignInstances`                       */
+/* ---- foreign-user collections ----------------------------------- */
 useInstancesStore.subscribe((state) => {
   if (state.foreignInstances) {
     quickRebuild(state.foreignInstances, 'foreignTags');
   } else {
-    // clear when leaving a foreign profile
     useTagsStore.setState({ foreignTags: null });
   }
 });
-

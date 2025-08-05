@@ -1,6 +1,6 @@
 // src/features/fusion/services/createFusionInstance.ts
 
-import { getFromDB } from '@/db/indexedDB';
+import { getVariantByKey } from '@/db/indexedDB';
 import { createNewInstanceData } from '@/features/instances/utils/createNewInstanceData';
 import { generateUUID } from '@/utils/PokemonIDUtils';
 import { PokemonInstance } from '@/types/pokemonInstance';
@@ -20,7 +20,7 @@ export async function createFusionInstance({
   isShiny,
   updateDetails,
 }: CreateFusionInstanceParams) {
-  const variantData = await getFromDB('pokemonVariants', variantKey) as PokemonVariant;
+  const variantData = await getVariantByKey(variantKey) as PokemonVariant;
   if (!variantData) {
     throw new Error(`[Fusion] No variant data for key: ${variantKey}`);
   }
@@ -37,7 +37,7 @@ export async function createFusionInstance({
 
   await updateDetails(instanceId, newInstanceData);
 
-  const enriched = await getFromDB('pokemonVariants', variantKey) as PokemonVariant;
+  const enriched = await getVariantByKey(variantKey) as PokemonVariant;
   if (!enriched) {
     throw new Error(`[Fusion] Could not re-fetch variant data for ${variantKey}`);
   }

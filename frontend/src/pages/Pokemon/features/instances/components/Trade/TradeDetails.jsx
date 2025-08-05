@@ -27,7 +27,7 @@ import PokemonActionOverlay from './PokemonActionOverlay.js';
 import TradeProposal from './TradeProposal.js'; 
 
 import { parsePokemonKey } from '@/utils/PokemonIDUtils';
-import { getAllFromDB } from '@/db/pokemonDB';
+import { getAllInstances } from '@/db/instancesDB';
 import { getAllFromTradesDB } from '@/db/tradesDB';
 
 import UpdateForTradeModal from './UpdateForTradeModal.js';
@@ -178,7 +178,7 @@ const TradeDetails = ({
     // 3) Retrieve user ownership data from IndexedDB
     let userOwnershipData = [];
     try {
-      userOwnershipData = await getAllFromDB('pokemonOwnership');
+      userOwnershipData = await getAllInstances();
     } catch (error) {
       console.error(
         "Failed to fetch userOwnershipData from IndexedDB:",

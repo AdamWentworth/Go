@@ -1,7 +1,7 @@
 // useMegaPokemonHandler.ts
 
 import { useState } from 'react';
-import { getAllFromDB, getFromDB } from '@/db/indexedDB';
+import { getAllInstances, getVariantByKey } from '@/db/indexedDB';
 import { parsePokemonKey } from '@/utils/PokemonIDUtils';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -28,7 +28,7 @@ function useMegaPokemonHandler() {
   };
 
   const getOwnedPokemon = async (baseNumber: string, isShiny: boolean): Promise<PokemonInstance[]> => {
-    const rawData = await getAllFromDB('pokemonOwnership');
+    const rawData = await getAllInstances();
     if (!rawData || !Array.isArray(rawData)) {
       throw new Error("Invalid data retrieved from IndexedDB");
     }
@@ -93,7 +93,7 @@ function useMegaPokemonHandler() {
             return { ...pokemon, variantData: null };
           }
           try {
-            const variantData = await getFromDB<PokemonVariant>('pokemonVariants', variantKey);
+            const variantData = await getVariantByKey(variantKey);
             if (!variantData) {
               throw new Error(`Variant data not found for baseKey: ${variantKey}`);
             }

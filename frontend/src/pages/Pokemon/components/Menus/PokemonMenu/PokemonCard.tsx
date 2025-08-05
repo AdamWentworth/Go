@@ -98,6 +98,11 @@ const PokemonCard = memo(({
     return name;
   };      
 
+  // inside PokemonCard component, before calling the hook
+  const highlightKey =
+    pokemon.instanceData?.instance_id ?? // prefer instance UUID
+    pokemon.pokemonKey;                  // fallback to variant key
+
   const {
     handleTouchStart,
     handleTouchMove,
@@ -111,23 +116,24 @@ const PokemonCard = memo(({
     isEditable,
     isFastSelectEnabled,
     isDisabled,
-    pokemonKey: pokemon.pokemonKey,
+    // ⬇️ use the highlight key, not the raw pokemonKey
+    selectKey: highlightKey,
   });
 
   const getOwnershipClass = () => {
     const f = (tagFilter || '').toLowerCase();
     switch (f) {
-      case 'owned': return 'owned';
+      case 'caught': return 'caught';
       case 'trade': return 'trade';
       case 'wanted': return 'wanted';
-      case 'unowned': return 'unowned';
+      case 'missing': return 'missing';
       default: return '';
     }
   };
 
   const shouldDisplayLuckyBackdrop =
     (tagFilter.toLowerCase() === 'wanted' && pokemon.instanceData?.pref_lucky) ||
-    (tagFilter.toLowerCase() === 'owned' && pokemon.instanceData?.lucky);
+    (tagFilter.toLowerCase() === 'caught' && pokemon.instanceData?.lucky);
 
   let locationBackground: VariantBackground | null = null;
   if (pokemon.instanceData?.location_card) {

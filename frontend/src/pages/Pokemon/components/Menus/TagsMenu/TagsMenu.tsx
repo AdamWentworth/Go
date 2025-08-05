@@ -22,9 +22,6 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
 }) => {
   const { isLightMode } = useTheme();
 
-  // console.log(activeLists)
-
-  /* ----- default colours ----------------------------------------- */
   const defaultColors = isLightMode
     ? {
         previewBgColor      : '#e0f0e5',
@@ -40,8 +37,8 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
       };
 
   /* ----- list sorting --------------------------------------------- */
-  const sortedOwnedPokemons = useFavoriteList(
-    activeLists.owned ? Object.values(activeLists.owned) : [],
+  const sortedCaughtPokemons = useFavoriteList(
+    activeLists.caught ? Object.values(activeLists.caught) : [],
   );
 
   const sortedTradePokemons = useMemo<TagItem[]>(() => {
@@ -58,18 +55,18 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
     );
   }, [activeLists.wanted]);
 
-  const sortedUnownedPokemons = useMemo<TagItem[]>(() => {
-    if (!activeLists.unowned) return [];
-    return Object.values(activeLists.unowned).sort(
+  const sortedMissingPokemons = useMemo<TagItem[]>(() => {
+    if (!activeLists.missing) return [];
+    return Object.values(activeLists.missing).sort(
       (a, b) => a.pokedex_number - b.pokedex_number,
     );
-  }, [activeLists.unowned]);
+  }, [activeLists.missing]);
 
   const sortedLists: Record<string, TagItem[]> = {
-    Caught : sortedOwnedPokemons,
+    Caught : sortedCaughtPokemons,
     Trade  : sortedTradePokemons,
     Wanted : sortedWantedPokemons,
-    Unowned: sortedUnownedPokemons,
+    Missing: sortedMissingPokemons,
   };
 
   /* ----- preview / download state --------------------------------- */
@@ -155,7 +152,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
             </div>
             <div className="column">
               <ListItems
-                listNames   ={['Wanted', 'Unowned']}
+                listNames   ={['Wanted', 'Missing']}
                 sortedLists ={sortedLists}
                 onSelectList={onSelectList}
               />
