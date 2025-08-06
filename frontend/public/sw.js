@@ -2,6 +2,7 @@
 
 let RECEIVER_API_URL = null;
 let DEBUG_SW = true; // can be toggled via SET_CONFIG
+let IS_LOGGED_IN = false; // <-- NEW
 
 /* ------------------------------- Logging --------------------------------- */
 function log(tag, obj) {
@@ -15,11 +16,22 @@ function log(tag, obj) {
 self.addEventListener('message', (event) => {
   const { type, payload, action, data } = event.data || {};
 
-  // Config (e.g., { type: 'SET_CONFIG', payload: { RECEIVER_API_URL, DEBUG_SW } })
+  // Config (e.g., { type: 'SET_CONFIG', payload: { RECEIVER_API_URL, DEBUG_SW, IS_LOGGED_IN } })
   if (type === 'SET_CONFIG' && payload) {
     if (payload.RECEIVER_API_URL) RECEIVER_API_URL = payload.RECEIVER_API_URL;
     if (typeof payload.DEBUG_SW === 'boolean') DEBUG_SW = payload.DEBUG_SW;
-    log('Config', { RECEIVER_API_URL, DEBUG_SW });
+    if (typeof payload.IS_LOGGED_IN === 'boolean') IS_LOGGED_IN = payload.IS_LOGGED_IN; // <-- NEW
+    log('Config', { RECEIVER_API_URL, DEBUG_SW, IS_LOGGED_IN });
+    return;
+  }
+
+  // Auth state updates (explicit)
+  // e.g., { type: 'AUTH_STATE', payload: { isLoggedIn: true/false } }
+  if (type === 'AUTH_STATE' && payload) {
+    if (typeof payload.isLoggedIn === 'boolean') {
+      IS_LOGGED_IN = payload.isLoggedIn;
+      log('AuthState', { IS_LOGGED_IN });
+    }
     return;
   }
 
@@ -32,7 +44,7 @@ self.addEventListener('message', (event) => {
           await sendBatchedUpdatesToBackend(data);
           break;
 
-        // Intentionally unsupported (we no longer write IDB from SW)
+        // Intentionally unsupported
         case 'syncData':
         case 'syncLists':
           log('skip', { action, reason: 'SW no longer writes IndexedDB' });
@@ -130,6 +142,11 @@ async function clearStore(db, storeName) {
    ========================================================================= */
 async function sendBatchedUpdatesToBackend(location) {
   try {
+    if (!IS_LOGGED_IN) {
+      log('batchedUpdates:skip', { reason: 'not logged in' });
+      return;
+    }
+
     const db = await openUpdatesDB();
     const [pokemonUpdates, tradeUpdates] = await Promise.all([
       getAllFromStore(db, 'batchedPokemonUpdates'),

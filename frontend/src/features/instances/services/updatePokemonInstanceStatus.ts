@@ -9,13 +9,13 @@ import type { PokemonInstance } from '@/types/pokemonInstance';
 
 /**
  * Updates status flags for a Pokémon instance.
- * `target` may be an instance UUID or a variant_id (e.g. "0583-shiny").
+ * target may be an instance UUID or a variant_id (e.g. "0583-shiny").
  *
  * Returns the instance_id that was updated/created, or null on abort.
  */
 export function updatePokemonInstanceStatus(
   target: string,
-  newStatus: InstanceStatus,           // still using "Owned"|"Trade"|"Wanted"|"Unowned" labels
+  newStatus: InstanceStatus, // "Caught" | "Trade" | "Wanted" | "Missing"
   variants: PokemonVariant[],
   instances: Instances,
 ): string | null {
@@ -27,17 +27,20 @@ export function updatePokemonInstanceStatus(
 
   if (isUuid) {
     instanceId  = target;
-    instance    = instances[instanceId];
+    instance    = (instances as any)[instanceId];
     variantKey  = instance?.variant_id ?? null;
   } else {
     variantKey  = target; // treating input as variant_id
-    // Try to reuse a placeholder of the same variant (previously "unowned-only")
-    instanceId  = Object.keys(instances).find(
-      id => instances[id]?.variant_id === variantKey &&
-            !instances[id]?.registered &&
-            !instances[id]?.is_wanted && !instances[id]?.is_for_trade && !instances[id]?.is_caught
-    ) ?? null;
-    instance    = instanceId ? instances[instanceId] : undefined;
+    // Try to reuse a placeholder of the same variant (baseline row)
+    for (const id in instances) {
+      const row = (instances as any)[id];
+      if (!row) continue;
+      if (row.variant_id === variantKey && !row.registered && !row.is_wanted && !row.is_for_trade && !row.is_caught) {
+        instanceId = id;
+        break;
+      }
+    }
+    instance    = instanceId ? (instances as any)[instanceId] : undefined;
   }
 
   const variantData = variants.find(v => v.pokemonKey === variantKey) ?? null;
@@ -50,32 +53,32 @@ export function updatePokemonInstanceStatus(
     instanceId = generateUUID();
     const base = createNewInstanceData(variantData);
     base.instance_id = instanceId;
-    instances[instanceId] = base;
+    (instances as any)[instanceId] = base;
     instance = base;
   }
 
   // Derive some flags from variantKey
   const vkey = (variantKey ?? '').toLowerCase();
-  if (instance!.pokemon_id === 2301 || instance!.pokemon_id === 2302) {
-    instance!.purified = vkey.includes('default');
+  if ((instance as any).pokemon_id === 2301 || (instance as any).pokemon_id === 2302) {
+    (instance as any).purified = vkey.includes('default');
   }
-  instance!.dynamax    = vkey.includes('dynamax');
-  instance!.gigantamax = vkey.includes('gigantamax');
+  (instance as any).dynamax    = vkey.includes('dynamax');
+  (instance as any).gigantamax = vkey.includes('gigantamax');
 
   // Constraints for moving into Trade/Wanted
   if (['Trade', 'Wanted'].includes(newStatus)) {
     if (
-      instance!.lucky ||
-      instance!.shadow ||
-      instance!.is_mega ||
-      instance!.mega ||
-      [2270, 2271].includes(instance!.pokemon_id) // fusions
+      (instance as any).lucky ||
+      (instance as any).shadow ||
+      (instance as any).is_mega ||
+      (instance as any).mega ||
+      [2270, 2271].includes((instance as any).pokemon_id) // fusions
     ) {
       alert(
         `Cannot move ${variantKey} to ${newStatus} as it is ${
-          instance!.lucky ? 'lucky'
-          : instance!.shadow ? 'shadow'
-          : (instance!.is_mega || instance!.mega) ? 'mega'
+          (instance as any).lucky ? 'lucky'
+          : (instance as any).shadow ? 'shadow'
+          : ((instance as any).is_mega || (instance as any).mega) ? 'mega'
           : 'a fusion Pokémon'
         }.`
       );
@@ -85,69 +88,60 @@ export function updatePokemonInstanceStatus(
   }
 
   switch (newStatus) {
-    case 'Owned': // maps to "caught" in the new model
-      instance!.is_caught    = true;
-      instance!.is_for_trade = false;
-      instance!.is_wanted    = false;
-      instance!.registered   = true;
-      // Turn off "missing" state on siblings of same variant (i.e., mark them registered=false only if truly missing)
-      for (const id of Object.keys(instances)) {
-        if (id === instanceId) continue;
-        const other = instances[id];
-        if (other?.variant_id === variantKey) {
-          // sibling exists; do not force registered here, just clear "missing" logic if your app tracks it elsewhere
-        }
-      }
+    case 'Caught':
+      (instance as any).is_caught    = true;
+      (instance as any).is_for_trade = false;
+      (instance as any).is_wanted    = false;
+      (instance as any).registered   = true;
       break;
 
     case 'Trade':
-      instance!.is_caught    = true;     // caught but flagged for trade
-      instance!.is_for_trade = true;
-      instance!.is_wanted    = false;
-      instance!.registered   = true;
+      (instance as any).is_caught    = true;     // caught but flagged for trade
+      (instance as any).is_for_trade = true;
+      (instance as any).is_wanted    = false;
+      (instance as any).registered   = true;
       break;
 
     case 'Wanted':
-      if (instance!.is_caught) {
-        // Duplicate into a new UUID row (same variant) flagged as wanted
+      if ((instance as any).is_caught) {
         const newId = generateUUID();
-        instances[newId] = {
-          ...instance!,
+        (instances as any)[newId] = {
+          ...(instance as any),
           instance_id: newId,
           is_wanted: true,
           is_caught: false,
           is_for_trade: false,
           registered: true,       // wanted entries are considered registered for tags logic
-          last_update: Date.now(),
+          last_update: new Date().toISOString(),
         };
-        updateRegistrationStatus(instances[newId], instances);
-        updateRegistrationStatus(instance!, instances);
+        updateRegistrationStatus((instances as any)[newId], instances);
+        updateRegistrationStatus(instance as any, instances);
         return newId;
       } else {
-        instance!.is_wanted  = true;
-        // If any sibling of same variant is caught, we keep this registered as well
+        (instance as any).is_wanted  = true;
         const anyCaught = Object.values(instances).some(
-          (d) => d?.variant_id === variantKey && d.is_caught
+          (d: any) => d?.variant_id === variantKey && d.is_caught
         );
-        instance!.registered = instance!.is_caught || instance!.is_for_trade || instance!.is_wanted || anyCaught;
+        (instance as any).registered =
+          (instance as any).is_caught || (instance as any).is_for_trade || (instance as any).is_wanted || anyCaught;
         return instanceId!;
       }
 
-    case 'Unowned': // legacy label — interpret as "missing/unregistered"
-      instance!.is_caught    = false;
-      instance!.is_for_trade = false;
-      instance!.is_wanted    = false;
-      instance!.registered   = false;
+    case 'Missing': // baseline / not registered
+      (instance as any).is_caught    = false;
+      (instance as any).is_for_trade = false;
+      (instance as any).is_wanted    = false;
+      (instance as any).registered   = false;
       break;
   }
 
   // Registered when any of the “visible” states are set
-  instance!.registered =
-    instance!.is_caught ||
-    instance!.is_for_trade ||
-    instance!.is_wanted ||
-    !!instance!.registered;
+  (instance as any).registered =
+    (instance as any).is_caught ||
+    (instance as any).is_for_trade ||
+    (instance as any).is_wanted ||
+    !!(instance as any).registered;
 
-  updateRegistrationStatus(instance!, instances);
+  updateRegistrationStatus(instance as any, instances);
   return instanceId!;
 }

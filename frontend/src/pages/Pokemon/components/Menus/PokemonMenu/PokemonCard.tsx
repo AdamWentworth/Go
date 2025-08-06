@@ -1,5 +1,3 @@
-// PokemonCard.tsx
-
 import { useEffect, useState, memo, useRef } from 'react';
 import CP from '@/components/pokemonComponents/CP';
 import PokemonImagePresentation from './PokemonImagePresentation';
@@ -121,13 +119,19 @@ const PokemonCard = memo(({
   });
 
   const getOwnershipClass = () => {
+    // Normalize terms used by CSS
     const f = (tagFilter || '').toLowerCase();
     switch (f) {
-      case 'caught': return 'caught';
-      case 'trade': return 'trade';
-      case 'wanted': return 'wanted';
-      case 'missing': return 'missing';
-      default: return '';
+      case 'caught':
+        return 'caught';
+      case 'trade':
+        return 'trade';
+      case 'wanted':
+        return 'wanted';
+      case 'missing':
+        return 'missing';
+      default:
+        return '';
     }
   };
 
@@ -147,7 +151,7 @@ const PokemonCard = memo(({
   const cpValue =
     tagFilter !== ''
       ? (pokemon.instanceData?.cp ?? '')
-      : (sortType === 'combatPower' && pokemon.cp50 != null ? pokemon.cp50 : '');
+      : (sortType === 'combatPower' && (pokemon as any).cp50 != null ? (pokemon as any).cp50 : '');
 
   const cardClass = `
     pokemon-card
@@ -185,11 +189,11 @@ const PokemonCard = memo(({
         isPurified={isPurified}
       />
 
-      <p>#{pokemon.pokedex_number}</p>
+      <p>#{(pokemon as any).pokedex_number}</p>
 
       <div className="type-icons">
-        {pokemon.type_1_icon && <img src={pokemon.type_1_icon} alt={pokemon.type1_name} loading="lazy" draggable={false} />}
-        {pokemon.type_2_icon && <img src={pokemon.type_2_icon} alt={pokemon.type2_name} loading="lazy" draggable={false} />}
+        {(pokemon as any).type_1_icon && <img src={(pokemon as any).type_1_icon} alt={(pokemon as any).type1_name} loading="lazy" draggable={false} />}
+        {(pokemon as any).type_2_icon && <img src={(pokemon as any).type_2_icon} alt={(pokemon as any).type2_name} loading="lazy" draggable={false} />}
       </div>
 
       <h2 className="pokemon-name-display"> 

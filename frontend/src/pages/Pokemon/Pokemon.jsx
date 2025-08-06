@@ -167,10 +167,10 @@ function Pokemon({ isOwnCollection }) {
   // 🔍 Data Loaders & Processing
   // ----------------------------
 
-  // 🔍 Foreign‑profile loader
+  // 🔍 Foreign-profile loader
   useEffect(() => {
     if (!isUsernamePath || !urlUsername) return;
-    loadForeignProfile(urlUsername, () => setTagFilter('Owned'));
+    loadForeignProfile(urlUsername, () => setTagFilter('Caught')); // Caught (was Owned)
   }, [isUsernamePath, urlUsername, loadForeignProfile, setTagFilter]);
 
   const activeTags = isUsernamePath ? foreignTags ?? emptyTagBuckets : tags;
@@ -253,9 +253,16 @@ function Pokemon({ isOwnCollection }) {
   } = useFusionPokemonHandler();  
 
   const { handleConfirmChangeTags } = useHandleChangeTags({
-    setTagFilter, setHighlightedCards, highlightedCards, updateInstanceStatus,
-    variants, instances, setIsUpdating,
-    promptMegaPokemonSelection, promptFusionPokemonSelection,
+    setTagFilter,
+    setLastMenu, // ensure header switches to TAGS sublabel
+    setHighlightedCards,
+    highlightedCards,
+    updateInstanceStatus,
+    variants,
+    instances,
+    setIsUpdating,
+    promptMegaPokemonSelection,
+    promptFusionPokemonSelection,
     setIsFastSelectEnabled
   });
 
@@ -329,12 +336,10 @@ function Pokemon({ isOwnCollection }) {
             ? `(${(selectedPokedexKey || 'all').toUpperCase()})`
             : undefined
         }
-        /** Show TAGS sublabel only when tags is the current context; map OWNED -> CAUGHT for display */
+        /** Show TAGS sublabel when tags is the current context */
         tagsSubLabel={
           lastMenu === 'ownership' && tagFilter
-            ? `(${(
-                (String(tagFilter).toLowerCase() === 'owned' ? 'Caught' : String(tagFilter))
-              ).toUpperCase()})`
+            ? `(${String(tagFilter).toUpperCase()})`
             : undefined
         }
       />
@@ -365,9 +370,9 @@ function Pokemon({ isOwnCollection }) {
               setTagFilter        ={setTagFilter}
               setHighlightedCards ={setHighlightedCards}
               setActiveView       ={setActiveView}
-              onListSelect        ={(list, key) => { // ← receives key now
+              onListSelect        ={(list, key) => {
                 setSelectedPokedexList(list);
-                setSelectedPokedexKey(key || 'all');  // NEW
+                setSelectedPokedexKey(key || 'all');
                 setLastMenu('pokedex');
               }}
               pokedexLists        ={pokedexLists}

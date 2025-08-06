@@ -7,6 +7,10 @@ import type { MutableInstances, SetInstancesFn } from '@/types/instances';
 type Patch = Partial<PokemonInstance>;
 type PatchMap = Record<string, Patch>;
 
+async function yieldToPaint() {
+  await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+}
+
 /**
  * Updates fields (e.g., IVs, nickname) on one or more Pokémon instances.
  *
@@ -34,11 +38,11 @@ export function updateInstanceDetails(
         if (!patch || Object.keys(patch).length === 0) return false;
 
         if (!draft[key]) {
-          console.warn(`[updateInstanceDetails] "${key}" missing – creating placeholder`);
-          draft[key] = {} as Partial<PokemonInstance>;
+          console.warn('[updateInstanceDetails] "%s" missing – creating placeholder', key);
+          (draft as any)[key] = {} as Partial<PokemonInstance>;
         }
-        draft[key] = {
-          ...draft[key],
+        (draft as any)[key] = {
+          ...(draft as any)[key],
           ...patch,
           last_update: timestamp,
         };
@@ -71,10 +75,15 @@ export function updateInstanceDetails(
     // Commit to React state
     setData(prev => ({ ...prev, instances: newMap }));
 
+    // Give the browser a frame to paint before heavy IO
+    await yieldToPaint();
+
     // Local cache: write only changed keys directly to instancesDB
     try {
-      const items = updatedKeys.map((id) => ({ ...newMap[id], instance_id: id })) as PokemonInstance[];
-      await putInstancesBulk(items);
+      const items = updatedKeys.map((id) => ({ ...(newMap as any)[id], instance_id: id })) as PokemonInstance[];
+      if (items.length) {
+        await putInstancesBulk(items);
+      }
     } catch (err) {
       console.error('[updateInstanceDetails] instancesDB write failed:', err);
     }
@@ -83,12 +92,11 @@ export function updateInstanceDetails(
     localStorage.setItem('ownershipTimestamp', String(timestamp));
 
     // Queue patches to updatesDB for SW network batching
-    for (const key of updatedKeys) {
-      try {
-        await putBatchedPokemonUpdates(key, newMap[key]);
-      } catch (err) {
-        console.error(`[updateInstanceDetails] updatesDB fail for ${key}:`, err);
-      }
+    try {
+      const promises = updatedKeys.map((key) => putBatchedPokemonUpdates(key, (newMap as any)[key]));
+      if (promises.length) await Promise.all(promises);
+    } catch (err) {
+      console.error('[updateInstanceDetails] updatesDB fail:', err);
     }
 
     // Dev logging
@@ -96,7 +104,7 @@ export function updateInstanceDetails(
       console.log('[updateInstanceDetails] patches saved', {
         timestamp,
         updatedKeys,
-        patches: Object.fromEntries(updatedKeys.map(key => [key, newMap[key]])),
+        patches: Object.fromEntries(updatedKeys.map(key => [key, (newMap as any)[key]])),
       });
     }
   };

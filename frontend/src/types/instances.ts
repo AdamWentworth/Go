@@ -6,7 +6,7 @@ import type { PokemonInstance } from './pokemonInstance';
 /*  Instance-centric helpers                                                 */
 /* -------------------------------------------------------------------------- */
 
-export type InstanceStatus = 'Owned' | 'Trade' | 'Wanted' | 'Unowned';
+export type InstanceStatus = 'Caught' | 'Trade' | 'Wanted' | 'Missing';
 
 export type Instances        = Record<string, PokemonInstance>;
 export type MutableInstances = Record<string, Partial<PokemonInstance>>;

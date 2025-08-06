@@ -55,6 +55,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { resetInstances } = useInstancesStore();
   const resetTradeData = useTradeStore((s) => s.resetTradeData);
 
+  function postAuthStateToSW(isLoggedIn: boolean) {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.ready.then((registration) => {
+      registration.active?.postMessage({
+        type: 'AUTH_STATE',
+        payload: { isLoggedIn },
+      });
+    });
+  }
+
   useEffect(() => {
     const stored = localStorage.getItem('user');
     if (stored) {
@@ -67,6 +77,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const accessExp = new Date(userData.accessTokenExpiry).getTime();
       const refreshExp = new Date(userData.refreshTokenExpiry).getTime();
       const msUntilRefresh = accessExp - now - 60_000;
+
+      postAuthStateToSW(true);
 
       if (refreshExp > now) {
         if (msUntilRefresh > 0) {
@@ -153,6 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     userRef.current = userData;
     startTokenExpirationCheck();
     scheduleTokenRefresh(new Date(userData.accessTokenExpiry));
+    postAuthStateToSW(true);
   };
 
   const logout = async () => {
@@ -181,6 +194,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     resetInstances();
     resetTradeData();
     resetTags();
+
+    postAuthStateToSW(false); 
 
     try {
       await clearInstancesStore();

@@ -1,62 +1,82 @@
 // transitionMessages.ts
 
 import { PokemonInstance } from '@/types/pokemonInstance';
-
-// 1. A utility to figure out the status string from your ownership fields.
 import type { InstanceStatus } from '@/types/instances';
 
-export function getStatusFromInstance(instance: PokemonInstance): InstanceStatus {
-  if (instance.is_unowned) return 'Unowned';
-  if (instance.is_for_trade) return 'Trade';
-  if (instance.is_wanted) return 'Wanted';
-  if (instance.is_owned) return 'Owned';
-  return 'Unowned';
+// Canonical statuses used app-wide
+type Canonical = 'Caught' | 'Trade' | 'Wanted' | 'Missing' | 'Unknown';
+
+function normalizeStatus(status: string | InstanceStatus): Canonical {
+  const s = String(status || '').trim().toLowerCase();
+  switch (s) {
+    case 'owned':
+    case 'caught':
+      return 'Caught';
+    case 'trade':
+      return 'Trade';
+    case 'wanted':
+      return 'Wanted';
+    case 'unowned':
+    case 'missing':
+      return 'Missing';
+    default:
+      return 'Unknown';
+  }
 }
 
-// 2. A dictionary of messages for each (from → to) combination.
+// 1) Derive status from instance flags, using canonical names.
+export function getStatusFromInstance(instance: PokemonInstance): InstanceStatus {
+  if (instance.is_caught) return 'Caught' as InstanceStatus;
+  if (instance.is_for_trade) return 'Trade' as InstanceStatus;
+  if (instance.is_wanted) return 'Wanted' as InstanceStatus;
+  return 'Missing' as InstanceStatus;
+}
+
+// 2) Transition copy per (from → to)
 type TransitionFunction = (name: string) => string;
 
 type TransitionMessageMap = {
-  [from in Exclude<InstanceStatus, 'Unknown'>]?: {
-    [to in Exclude<InstanceStatus, 'Unknown'>]?: TransitionFunction;
+  [from in Canonical]?: {
+    [to in Canonical]?: TransitionFunction;
   };
 };
 
 const MESSAGES: TransitionMessageMap = {
-  Owned: {
+  Caught: {
     Trade: (name) => `List ${name} for Trade?`,
     Wanted: (name) => `Create a duplicate ${name} for your Wanted list?`,
-    Unowned: (name) => `Transfer ${name}?`,
+    // Key line: show transfer/release language when going from Caught → Missing
+    Missing: (name) => `Transfer ${name}?`,
   },
   Trade: {
-    Owned: (name) => `Remove ${name} from Trade Listing?`,
+    Caught: (name) => `Remove ${name} from Trade Listing?`,
     Wanted: (name) => `Create a duplicate ${name} for your Wanted list?`,
-    Unowned: (name) => `Transfer ${name}?`,
+    Missing: (name) => `Transfer ${name}?`,
   },
   Wanted: {
-    Owned: (name) => `Caught ${name}?`,
+    Caught: (name) => `Caught ${name}?`,
     Trade: (name) => `Caught ${name} and list for Trade?`,
-    Unowned: (name) => `Transfer ${name}?`,
+    Missing: (name) => `Transfer ${name}?`,
   },
-  Unowned: {
-    Owned: (name) => `Caught ${name}?`,
+  Missing: {
+    Caught: (name) => `Caught ${name}?`,
     Trade: (name) => `Caught ${name} and list for Trade?`,
     Wanted: (name) => `List ${name} as Wanted?`,
   },
 };
 
-// 3. Function to return a custom transition message or a fallback
+// 3) Return custom transition message or a fallback (with normalized labels)
 export function getTransitionMessage(
   fromStatus: InstanceStatus,
   toStatus: InstanceStatus,
   displayName: string
 ): string {
-  const fromMap = MESSAGES[fromStatus as keyof typeof MESSAGES];
-  const transitionFn = fromMap?.[toStatus as keyof typeof fromMap];
+  const from = normalizeStatus(fromStatus);
+  const to = normalizeStatus(toStatus);
 
-  if (transitionFn) {
-    return transitionFn(displayName);
-  }
+  const fromMap = MESSAGES[from];
+  const transitionFn = fromMap?.[to];
 
-  return `Move ${displayName} from ${fromStatus} to ${toStatus}`;
+  if (transitionFn) return transitionFn(displayName);
+  return `Move ${displayName} from ${from} to ${to}`;
 }

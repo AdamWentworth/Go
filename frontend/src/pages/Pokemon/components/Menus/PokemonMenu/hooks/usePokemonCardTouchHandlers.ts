@@ -10,7 +10,17 @@ interface UseTouchHandlersProps {
   isEditable: boolean;
   isFastSelectEnabled: boolean;
   isDisabled: boolean;
-  pokemonKey: string; // kept for API compatibility, not used here
+
+  /**
+   * Preferred identifier for this card (usually instance_id, falling back to variant key).
+   * Optional because the hook does not currently use it directly; parent owns selection logic.
+   */
+  selectKey?: string;
+
+  /**
+   * Legacy prop kept for API compatibility. Prefer `selectKey`.
+   */
+  pokemonKey?: string;
 }
 
 const LONG_PRESS_MS = 300;
@@ -26,6 +36,8 @@ export function usePokemonCardTouchHandlers({
   isEditable,
   isFastSelectEnabled,
   isDisabled,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  selectKey,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   pokemonKey,
 }: UseTouchHandlersProps) {

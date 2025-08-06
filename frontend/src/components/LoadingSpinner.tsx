@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import './LoadingSpinner.css';
 
 const LoadingSpinner: React.FC = () => {
-  const spinnerVideoSrc = `/assets/loading_spinner.webm`;
+  const spinnerVideoSrc = "/assets/loading_spinner.webm";
   const [loadingText, setLoadingText] = useState('Loading');
 
   useEffect(() => {

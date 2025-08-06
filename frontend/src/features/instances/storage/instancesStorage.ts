@@ -7,6 +7,10 @@ import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
+async function yieldToPaint() {
+  await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+}
+
 export async function getInstancesData(): Promise<{
   data: Instances;
   timestamp: number;
@@ -16,7 +20,7 @@ export async function getInstancesData(): Promise<{
 
   (data as PokemonInstance[]).forEach((item) => {
     if (item.instance_id) {
-      instances[item.instance_id] = item;
+      (instances as any)[item.instance_id] = item;
     } else if (process.env.NODE_ENV === 'development') {
       console.warn('[getInstancesData] Skipped item without instance_id:', item);
     }
@@ -36,7 +40,7 @@ export async function setInstancesData(payload: {
 }): Promise<void> {
   const t0 = performance.now();
   const items = Object.keys(payload.data).map((instance_id) => ({
-    ...payload.data[instance_id],
+    ...(payload.data as any)[instance_id],
     instance_id,
   })) as PokemonInstance[];
 
@@ -52,6 +56,7 @@ export async function setInstancesData(payload: {
 /**
  * Authoritative REPLACE: clear store, then bulk put full snapshot.
  * Use this right after mergeInstancesData so the cache matches UI exactly.
+ * This version writes in chunks and yields between batches to avoid long tasks.
  */
 export async function replaceInstancesData(
   data: Instances,
@@ -65,13 +70,20 @@ export async function replaceInstancesData(
   await tx.store.clear();
 
   const items = Object.entries(data).map(([instance_id, row]) => ({
-    ...row,
+    ...(row as any),
     instance_id,
   })) as PokemonInstance[];
 
-  for (const item of items) {
-    await tx.store.put(item);
+  const CHUNK = 500;
+  for (let i = 0; i < items.length; i += CHUNK) {
+    const slice = items.slice(i, i + CHUNK);
+    for (const item of slice) {
+      await tx.store.put(item);
+    }
+    // Yield between chunks to let the UI breathe
+    await yieldToPaint();
   }
+
   await tx.done;
 
   if (process.env.NODE_ENV === 'development') {
@@ -94,9 +106,9 @@ export async function initializeOrUpdateInstancesData(
     let shouldUpdate = false;
 
     const existingVariantIds = new Set(
-      Object.values(stored)
-        .map(v => v?.variant_id)
-        .filter((v): v is string => !!v)
+      Object.values(stored as any)
+        .map((v: any) => v?.variant_id)
+        .filter((v: any): v is string => !!v)
     );
 
     const t0 = performance.now();
@@ -110,7 +122,7 @@ export async function initializeOrUpdateInstancesData(
         instance_id,
         variant_id: vkey,
       };
-      stored[instance_id] = newEntry;
+      (stored as any)[instance_id] = newEntry;
       shouldUpdate = true;
     });
 
