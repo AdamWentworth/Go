@@ -1,9 +1,8 @@
-// usePokemonProcessing.ts
-
+// src/pages/Pokemon/hooks/usePokemonProcessing.ts
 import { useMemo } from 'react';
 import useQueryPokemons from '@/features/query/hooks/useQueryPokemons';
 import useSortManager from '../../../hooks/sort/useSortManager';
-import { getFilteredPokemonsByOwnership } from '@/features/query/hooks/usePokemonOwnershipFilter';
+import { getFilteredPokemonsByOwnership } from '@/hooks/filtering/usePokemonOwnershipFilter';
 
 // ——— Your real types ———
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -28,13 +27,13 @@ function usePokemonProcessing(
   sortMode: SortMode
 ): UsePokemonProcessingResult {
 
-  // ownership‑style filtering via your new InstancesData/InstanceStatus/TagBuckets
+  // ownership-style filtering via your new InstancesData/InstanceStatus/TagBuckets
   const filteredVariants = useMemo<PokemonVariant[]>(() => {
     if (instanceStatus) {
       return getFilteredPokemonsByOwnership(
         variants,
         instancesData,
-        instanceStatus,
+        instanceStatus as unknown as string,
         tagBuckets
       );
     }

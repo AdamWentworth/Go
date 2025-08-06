@@ -66,25 +66,35 @@ export async function replaceInstancesData(
   const db = await idb.initInstancesDB();
   if (!db) return;
 
-  const tx = db.transaction(idb.INSTANCES_STORE, 'readwrite');
-  await tx.store.clear();
+  // 1) Clear in its own transaction
+  {
+    const tx = db.transaction(idb.INSTANCES_STORE, 'readwrite');
+    await tx.store.clear();
+    await tx.done;
+  }
 
+  // 2) Prepare items
   const items = Object.entries(data).map(([instance_id, row]) => ({
     ...(row as any),
     instance_id,
   })) as PokemonInstance[];
 
+  // 3) Write in chunks — a fresh tx per chunk — then yield
   const CHUNK = 500;
   for (let i = 0; i < items.length; i += CHUNK) {
     const slice = items.slice(i, i + CHUNK);
-    for (const item of slice) {
-      await tx.store.put(item);
-    }
-    // Yield between chunks to let the UI breathe
-    await yieldToPaint();
-  }
 
-  await tx.done;
+    const tx = db.transaction(idb.INSTANCES_STORE, 'readwrite');
+    const store = tx.store;
+    for (const item of slice) {
+      await store.put(item);
+    }
+    await tx.done;
+
+    await new Promise<void>(r =>
+      requestAnimationFrame(() => requestAnimationFrame(() => r()))
+    );
+  }
 
   if (process.env.NODE_ENV === 'development') {
     console.log(`[replaceInstancesData] wrote ${items.length} rows in ${Math.round(performance.now() - t0)} ms`);
@@ -94,7 +104,7 @@ export async function replaceInstancesData(
 }
 
 export async function initializeOrUpdateInstancesData(
-  keys: string[],
+  _keys: string[], // still passed in, but not required for computation below
   variants: PokemonVariant[],
 ): Promise<Instances> {
   try {
@@ -113,7 +123,7 @@ export async function initializeOrUpdateInstancesData(
 
     const t0 = performance.now();
     variants.forEach((variant) => {
-      const vkey = variant.pokemonKey;
+      const vkey = variant.variant_id;
       if (!vkey || existingVariantIds.has(vkey)) return;
 
       const instance_id = generateUUID();

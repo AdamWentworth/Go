@@ -158,7 +158,7 @@ const PokedexListsMenu: React.FC<PokedexListsMenuProps> = ({
         : '';
 
       return (
-        <div key={pokemon.pokemonKey} className="pokedex-pokemon-list-container">
+        <div key={pokemon.variant_id} className="pokedex-pokemon-list-container">
           <img
             src={pokemon.currentImage}
             alt={pokemon.species_name}

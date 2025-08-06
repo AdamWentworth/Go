@@ -1,14 +1,13 @@
 // useMegaPokemonHandler.ts
-
 import { useState } from 'react';
-import { getAllInstances, getVariantByKey } from '@/db/indexedDB';
-import { parsePokemonKey } from '@/utils/PokemonIDUtils';
+import { getAllInstances, getVariantById } from '@/db/indexedDB';
+import { parseVariantId } from '@/utils/PokemonIDUtils';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 export interface MegaSelectionData {
   ownedPokemon: (PokemonInstance & { variantData: PokemonVariant | null })[];
-  variantKey: string;
+  variantKey: string; // kept prop name for now
   megaForm?: string;
   resolve: (value: string) => void;
   reject: (reason?: any) => void;
@@ -32,22 +31,22 @@ function useMegaPokemonHandler() {
     if (!rawData || !Array.isArray(rawData)) {
       throw new Error("Invalid data retrieved from IndexedDB");
     }
-  
+
     const allData = rawData as PokemonInstance[];
-  
+
     const filteredPokemon = allData.filter((entry) => {
       if (!entry.instance_id || typeof entry.instance_id !== 'string') {
         console.warn("Skipping entry with invalid instance_id:", entry);
         return false;
       }
-      const parsed = parsePokemonKey(entry.instance_id);
+      const parsed = parseVariantId(entry.instance_id);
       if (!parsed) {
         console.warn("Failed to parse instance_id:", entry.instance_id);
         return false;
       }
       const { baseKey } = parsed;
       if (!baseKey) return false;
-  
+
       const entryBaseKey = entry.instance_id.split('-')[0];
       return (
         entryBaseKey === baseNumber &&
@@ -59,10 +58,9 @@ function useMegaPokemonHandler() {
         !baseKey.includes('mega')
       );
     });
-  
+
     return filteredPokemon;
-  };  
-  
+  };
 
   const handleMegaPokemon = async (baseKey: string) => {
     try {
@@ -82,7 +80,7 @@ function useMegaPokemonHandler() {
             console.warn(`Missing instance_id for pokemon`, pokemon);
             return { ...pokemon, variantData: null };
           }
-          const parsed = parsePokemonKey(instance_id);
+          const parsed = parseVariantId(instance_id);
           if (!parsed) {
             console.warn(`Invalid instance_id format: ${instance_id}`);
             return { ...pokemon, variantData: null };
@@ -93,7 +91,7 @@ function useMegaPokemonHandler() {
             return { ...pokemon, variantData: null };
           }
           try {
-            const variantData = await getVariantByKey(variantKey);
+            const variantData = await getVariantById(variantKey);
             if (!variantData) {
               throw new Error(`Variant data not found for baseKey: ${variantKey}`);
             }
@@ -103,7 +101,7 @@ function useMegaPokemonHandler() {
             return { ...pokemon, variantData: null };
           }
         })
-      );      
+      );
 
       return ownedPokemonWithVariants;
     } catch (error) {

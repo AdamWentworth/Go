@@ -114,7 +114,7 @@ const PokemonOptionsOverlay: React.FC<PokemonOptionsOverlayProps> = ({
             <div className="preview-column" onClick={() => onHighlight(pokemon)}>
               <div className="preview-card-container">
                 <PokemonCard
-                  key={pokemon.pokemonKey}
+                  key={pokemon.variant_id}
                   pokemon={cardPokemon}
                   onSelect={() => {}}
                   onSwipe={() => {}}

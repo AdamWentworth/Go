@@ -1,13 +1,12 @@
 // src/features/fusion/services/createFusionInstance.ts
-
-import { getVariantByKey } from '@/db/indexedDB';
+import { getVariantById } from '@/db/indexedDB';
 import { createNewInstanceData } from '@/features/instances/utils/createNewInstanceData';
 import { generateUUID } from '@/utils/PokemonIDUtils';
 import { PokemonInstance } from '@/types/pokemonInstance';
 import { PokemonVariant } from '@/types/pokemonVariants';
 
 type CreateFusionInstanceParams = {
-  variantKey: string;
+  variantKey: string; // kept param name for route compatibility
   isShiny: boolean;
   updateDetails: (id: string, data: PokemonInstance) => Promise<void>;
 };
@@ -20,14 +19,14 @@ export async function createFusionInstance({
   isShiny,
   updateDetails,
 }: CreateFusionInstanceParams) {
-  const variantData = await getVariantByKey(variantKey) as PokemonVariant;
+  const variantData = (await getVariantById(variantKey)) as PokemonVariant;
   if (!variantData) {
     throw new Error(`[Fusion] No variant data for key: ${variantKey}`);
   }
 
   const newInstanceData: PokemonInstance = createNewInstanceData(variantData);
   const uuid = generateUUID();
-  const instanceId = `${variantData.pokemonKey}_${uuid}`;
+  const instanceId = `${variantData.variant_id}_${uuid}`;
 
   newInstanceData.instance_id = instanceId;
   newInstanceData.is_owned = true;
@@ -37,7 +36,7 @@ export async function createFusionInstance({
 
   await updateDetails(instanceId, newInstanceData);
 
-  const enriched = await getVariantByKey(variantKey) as PokemonVariant;
+  const enriched = (await getVariantById(variantKey)) as PokemonVariant;
   if (!enriched) {
     throw new Error(`[Fusion] Could not re-fetch variant data for ${variantKey}`);
   }

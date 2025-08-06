@@ -99,7 +99,7 @@ const PokemonCard = memo(({
   // inside PokemonCard component, before calling the hook
   const highlightKey =
     pokemon.instanceData?.instance_id ?? // prefer instance UUID
-    pokemon.pokemonKey;                  // fallback to variant key
+    pokemon.variant_id;                  // fallback to variant key
 
   const {
     handleTouchStart,

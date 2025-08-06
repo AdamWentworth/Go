@@ -1,6 +1,5 @@
-// PokemonMenu.tsx
+// src/pages/Pokemon/components/Menus/PokemonMenu/PokemonMenu.tsx
 import React, { useState, useEffect, useRef, useCallback, useMemo, useTransition } from 'react';
-import { validate as uuidValidate } from 'uuid';
 
 // Types
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -95,11 +94,12 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
 
   const handleSelect = useCallback(
     (pokemon: PokemonVariant) => {
-      const instanceId = pokemon?.instanceData;
-      const isInstance = !!instanceId || uuidValidate(pokemon?.pokemonKey ?? '');
+      const instanceId = pokemon?.instanceData?.instance_id;
+      const isInstance = !!instanceId;
 
-      console.log('  → From instanceData.instance_id:', pokemon.instanceData?.instance_id);
-      console.log('  → From pokemonKey:', pokemon.pokemonKey);
+      console.log('  → instance_id:', pokemon.instanceData?.instance_id);
+      console.log('  → variant_id:', (pokemon as any).variant_id);
+
       if (!isEditable) {
         setSelectedPokemon(
           isInstance ? { pokemon, overlayType: 'instance' } : pokemon
@@ -108,8 +108,7 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
       }
 
       if (isFastSelectEnabled) {
-        const key = pokemon.instanceData?.instance_id ?? pokemon.pokemonKey;
-
+        const key = pokemon.instanceData?.instance_id ?? (pokemon as any).variant_id;
 
         const was = highlightedCards.has(key);
         toggleCardHighlight(key);
@@ -217,7 +216,7 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
           tagFilter={tagFilter}
           onClose={() => setOptionsSelectedPokemon(null)}
           onHighlight={(poke) => {
-            const key = poke.instanceData?.instance_id ?? poke.pokemonKey; // prefer instance UUID
+            const key = poke.instanceData?.instance_id ?? (poke as any).variant_id; // prefer instance UUID
             toggleCardHighlight(key);
             setIsFastSelectEnabled(true);
             setOptionsSelectedPokemon(null);
@@ -256,4 +255,3 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
 };
 
 export default React.memo(PokemonMenu);
-

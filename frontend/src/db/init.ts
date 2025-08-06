@@ -12,6 +12,7 @@ import {
   REGISTRATIONS_STORE,
   BATCHED_POKEMON_UPDATES_STORE, BATCHED_TRADE_UPDATES_STORE,
   POKEDEX_STORES,
+  TAG_DEFS_STORE, INSTANCE_TAGS_STORE,
 } from './constants';
 
 interface Doc { [k: string]: unknown; }
@@ -37,7 +38,7 @@ function makeInit(
 /* individual DB initialisers ---------------------------------------------- */
 export const initVariantsDB = makeInit(VARIANTS_DB_NAME, (db) => {
   if (!db.objectStoreNames.contains(VARIANTS_STORE)) {
-    db.createObjectStore(VARIANTS_STORE, { keyPath: 'pokemonKey' });
+    db.createObjectStore(VARIANTS_STORE, { keyPath: 'variant_id' });
   }
 });
 
@@ -47,12 +48,28 @@ export const initInstancesDB = makeInit(INSTANCES_DB_NAME, (db) => {
   }
 });
 
+/** Tags database: legacy bucket stores + new normalized stores */
 export const initTagsDB = makeInit(TAGS_DB_NAME, (db) => {
+  // Legacy per-bucket stores (keep for compatibility; harmless to keep empty)
   TAG_STORE_NAMES.forEach((s) => {
     if (!db.objectStoreNames.contains(s)) {
       db.createObjectStore(s, { keyPath: 'instance_id' });
     }
   });
+
+  // NEW: custom tag definitions
+  if (!db.objectStoreNames.contains(TAG_DEFS_STORE)) {
+    const s = db.createObjectStore(TAG_DEFS_STORE, { keyPath: 'tag_id' });
+    s.createIndex('by_user_parent', ['user_id', 'parent']);
+  }
+
+  // NEW: instance-tag memberships (many-to-many)
+  if (!db.objectStoreNames.contains(INSTANCE_TAGS_STORE)) {
+    const s = db.createObjectStore(INSTANCE_TAGS_STORE, { keyPath: 'key' }); // `${tag_id}:${instance_id}`
+    s.createIndex('by_tag', 'tag_id');
+    s.createIndex('by_instance', 'instance_id');
+    s.createIndex('by_user', 'user_id');
+  }
 });
 
 export const initTradesDB = makeInit(TRADES_DB_NAME, (db) => {
@@ -76,7 +93,7 @@ export const initUpdatesDB = makeInit(UPDATES_DB_NAME, (db) => {
 export const initPokedexDB = makeInit(POKEDEX_DB_NAME, (db) => {
   POKEDEX_STORES.forEach((s) => {
     if (!db.objectStoreNames.contains(s)) {
-      db.createObjectStore(s, { keyPath: 'pokemonKey' });
+      db.createObjectStore(s, { keyPath: 'variant_id' });
     }
   });
 });

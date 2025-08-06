@@ -1,6 +1,6 @@
 // src/types/pokemonInstance.ts
 /* -------------------------------------------------------------------------- */
-/*  Pokémon instance - canonical                                             */
+/*  Pokémon instance - canonical                                              */
 /* -------------------------------------------------------------------------- */
 
 export interface PokemonInstance {
@@ -11,11 +11,11 @@ export interface PokemonInstance {
   nickname: string | null;
 
   /* stats & IVs ------------------------------------------------------------ */
-  cp: number;
-  level: number;
-  attack_iv: number;
-  defense_iv: number;
-  stamina_iv: number;
+  cp: number | null;
+  level: number | null;
+  attack_iv: number | null;
+  defense_iv: number | null;
+  stamina_iv: number | null;
 
   /* appearance / forms ----------------------------------------------------- */
   shiny: boolean;
@@ -32,14 +32,14 @@ export interface PokemonInstance {
   charged_move2_id: number | null;
 
   /* physical attributes ---------------------------------------------------- */
-  weight: number;
-  height: number;
+  weight: number | null;
+  height: number | null;
   gender: string | null;
 
   /* mega / dynamax / crown ------------------------------------------------- */
   mega: boolean;
   mega_form: string | null;
-  is_mega: boolean;
+  is_mega: boolean;              // keep boolean; initialize to false
   dynamax: boolean;
   gigantamax: boolean;
   crown: boolean;
@@ -85,10 +85,10 @@ export interface PokemonInstance {
   location_caught: string | null;
   date_caught: string | null;
   date_added: string;            // ISO 8601
-  last_update: string;           // ISO 8601
+  last_update: number;           // epoch ms (standardize on number)
 
   /* optional convenience props used only by the client -------------------- */
-  pokemonKey?: string;
+  pokemonKey?: string;           // legacy
   username?: string;
   gps?: string | null;
 

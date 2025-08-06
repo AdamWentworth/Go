@@ -71,15 +71,15 @@ const InstanceOverlay = ({
 
   const renderContent = () => {
     switch (currentOverlay) {
-      case 'Owned':
+      case 'caught':
         return (
           <WindowOverlay onClose={handleCloseOverlay} className="owned-instance-window">
             <OwnedInstance pokemon={selectedPokemon} isEditable={isEditable} />
           </WindowOverlay>
         );
-      case 'Unowned':
+      case 'missing':
         return <div>Unowned Instance Component</div>;
-      case 'Trade':
+      case 'trade':
         return (
           <div className={`trade-instance-overlay ${isSmallScreen ? 'small-screen' : ''}`}>
             <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
@@ -103,7 +103,7 @@ const InstanceOverlay = ({
             </div>
           </div>
         );
-      case 'Wanted':
+      case 'wanted':
         return (
           <div className="wanted-instance-overlay">
             <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>

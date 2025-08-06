@@ -43,7 +43,7 @@ export function updatePokemonInstanceStatus(
     instance    = instanceId ? (instances as any)[instanceId] : undefined;
   }
 
-  const variantData = variants.find(v => v.pokemonKey === variantKey) ?? null;
+  const variantData = variants.find(v => v.variant_id === variantKey) ?? null;
   if (!variantData) {
     console.error('[updatePokemonInstanceStatus] No variant for', variantKey);
     return null;

@@ -1,4 +1,4 @@
-// TagsMenu.tsx
+// src/pages/Pokemon/components/Menus/TagsMenu/TagsMenu.tsx
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import './TagsMenu.css';
@@ -147,14 +147,14 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
               <ListItems
                 listNames   ={['Caught', 'Trade']}
                 sortedLists ={sortedLists}
-                onSelectList={onSelectList}
+                onSelectList={(name) => onSelectList(name.toLowerCase())}
               />
             </div>
             <div className="column">
               <ListItems
                 listNames   ={['Wanted', 'Missing']}
                 sortedLists ={sortedLists}
-                onSelectList={onSelectList}
+                onSelectList={(name) => onSelectList(name.toLowerCase())}
               />
             </div>
           </div>

@@ -32,13 +32,12 @@ export interface VariantCommon {
 }
 
 // Omit base fields that get transformed in variants
-export type PokemonVariant = Omit<BasePokemon, 
-  'variantType' | 'currentImage' | 'pokemonKey'
-> & VariantCommon & {
-  // Additional variant-only properties
-  raid_boss?: BasePokemon['raid_boss'];
-  backgrounds?: BasePokemon['backgrounds'];
-  pokemonKey: string;
-};
+export type PokemonVariant = Omit<BasePokemon, 'variantType' | 'currentImage'> &
+  VariantCommon & {
+    // Additional variant-only properties
+    raid_boss?: BasePokemon['raid_boss'];
+    backgrounds?: BasePokemon['backgrounds'];
+    variant_id: string; // ← formerly pokemonKey
+  };
 
 export type AllVariants = PokemonVariant[];

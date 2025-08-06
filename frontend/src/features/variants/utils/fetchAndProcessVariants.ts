@@ -1,9 +1,8 @@
-// fetchAndProcessVariants.ts
-
+// src/features/variants/utils/fetchAndProcessVariants.ts
 import { getPokemons } from "@/services/pokemonDataService";
 import { logSize } from "@/utils/loggers";
 import createPokemonVariants from "@/features/variants/utils/createPokemonVariants";
-import { determinePokemonKey } from "@/utils/PokemonIDUtils";
+import { determineVariantId } from "@/utils/PokemonIDUtils";
 import { useImageStore } from '@/stores/useImageStore';
 import { putVariantsBulk } from "@/db/variantsDB";
 
@@ -16,18 +15,18 @@ export async function fetchAndProcessVariants() {
   const pokemons = await getPokemons();
   if (isDev) console.log(`Fetched new Pokémon data from API in ${Date.now() - t0} ms`);
 
-  logSize('newly fetched Pokémon data', pokemons); // you can make logSize respect NODE_ENV too if needed
+  logSize('newly fetched Pokémon data', pokemons);
 
   const t1 = Date.now();
   const variants = createPokemonVariants(pokemons);
 
   const { preload } = useImageStore.getState();
   variants.forEach(v => {
-    v.pokemonKey = determinePokemonKey(v);
+    v.variant_id = determineVariantId(v);
 
     if (v.currentImage) preload(v.currentImage, v.currentImage);
-    if (v.type_1_icon) preload(v.type_1_icon, v.type_1_icon);
-    if (v.type_2_icon) preload(v.type_2_icon, v.type_2_icon);
+    if ((v as any).type_1_icon) preload((v as any).type_1_icon, (v as any).type_1_icon);
+    if ((v as any).type_2_icon) preload((v as any).type_2_icon, (v as any).type_2_icon);
   });
 
   if (isDev) console.log(`Processed Pokémon into variants in ${Date.now() - t1} ms`);

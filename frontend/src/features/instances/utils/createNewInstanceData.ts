@@ -4,13 +4,13 @@ import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant  } from '@/types/pokemonVariants';
 
 export function createNewInstanceData(variant: PokemonVariant): PokemonInstance {
-  const keyParts       = getKeyParts(variant.pokemonKey);
+  const keyParts       = getKeyParts(variant.variant_id);
   const matchedCostume = variant.costumes?.find(c => c.name === keyParts.costumeName);
   const costumeId      = matchedCostume ? matchedCostume.costume_id : null;
 
   return {
     instance_id: undefined,
-    variant_id : variant.pokemonKey,
+    variant_id : variant.variant_id,
     pokemon_id : variant.pokemon_id,
     nickname   : null,
     gender     : null,
@@ -39,7 +39,7 @@ export function createNewInstanceData(variant: PokemonVariant): PokemonInstance 
     location_caught: null,
     date_caught    : null,
     date_added     : new Date().toISOString(),
-    last_update    : Date.now(),
+    last_update    : Date.now(),          // number per interface
     disabled       : false,
 
     is_traded            : false,
@@ -66,7 +66,7 @@ export function createNewInstanceData(variant: PokemonVariant): PokemonInstance 
 
     mega      : false,
     mega_form : null,
-    is_mega   : null,
+    is_mega   : false,            // ← was null; make it boolean
     dynamax   : false,
     gigantamax: false,
     crown     : false,

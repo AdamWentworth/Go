@@ -1,4 +1,4 @@
-// useBootstrapTags.ts
+// src/features/tags/hooks/useBootstrapTags.ts
 import { useEffect } from 'react';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
@@ -11,11 +11,11 @@ import { useTagsStore } from '../store/useTagsStore';
  * 2. Rebuilds tags whenever both instances and variants are available.
  */
 export function useBootstrapTags() {
-  // Selectors subscribe to store and ensure we always have the latest handlers
   const hydrateFromCache = useTagsStore(state => state.hydrateFromCache);
-  const buildTags = useTagsStore(state => state.buildTags);
+  const buildTags        = useTagsStore(state => state.buildTags);
+
   const instances = useInstancesStore(state => state.instances);
-  const variants = useVariantsStore(state => state.variants);
+  const variants  = useVariantsStore(state => state.variants);
 
   // Hydrate tags from the cache on mount
   useEffect(() => {

@@ -1,5 +1,4 @@
 // src/utils/PokemonIDUtils.ts
-
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import type { PokemonVariant } from '../types/pokemonVariants';
 import type { ParsedKeyParts } from '../types/keys';
@@ -21,7 +20,7 @@ export function getKeyParts(key: string): ParsedKeyParts {
     costumeName: null,
     isShiny: key.includes('_shiny') || key.includes('-shiny'),
     isDefault: key.includes('_default') || key.includes('-default'),
-    isShadow: key.includes('_shadow') || key.includes('-shadow')
+    isShadow: key.includes('_shadow') || key.includes('-shadow'),
   };
 
   if (variantPart) {
@@ -35,11 +34,12 @@ export function getKeyParts(key: string): ParsedKeyParts {
   return parts;
 }
 
-export function parsePokemonKey(pokemonKey: string): {
+/** Parse a string that may be a pure variant_id or an instance_id ("{variant_id}_{uuid}") */
+export function parseVariantId(input: string): {
   baseKey: string;
   hasUUID: boolean;
 } {
-  const keyParts = pokemonKey.split('_');
+  const keyParts = input.split('_');
   const lastPart = keyParts[keyParts.length - 1];
   const hasUUID = validateUUID(lastPart);
 
@@ -47,17 +47,17 @@ export function parsePokemonKey(pokemonKey: string): {
 
   return {
     baseKey: keyParts.join('_'),
-    hasUUID
+    hasUUID,
   };
 }
 
-export function determinePokemonKey(pokemon: PokemonVariant): string {
+export function determineVariantId(pokemon: PokemonVariant): string {
   const paddedId = pokemon.pokemon_id.toString().padStart(4, '0');
   const vt = pokemon.variantType;
 
   // Quick match for costume-related images
-  if (pokemon.costumes) {
-    for (const costume of pokemon.costumes) {
+  if ((pokemon as any).costumes) {
+    for (const costume of (pokemon as any).costumes) {
       const { name, image_url, image_url_shiny, shadow_costume } = costume;
 
       if (pokemon.currentImage === image_url) {
@@ -82,9 +82,12 @@ export function determinePokemonKey(pokemon: PokemonVariant): string {
 
   // Check variantType suffix matches
   const explicitSuffixTypes = new Set([
-    'gigantamax', 'shiny_gigantamax',
-    'dynamax', 'shiny_dynamax',
-    'primal', 'shiny_primal'
+    'gigantamax',
+    'shiny_gigantamax',
+    'dynamax',
+    'shiny_dynamax',
+    'primal',
+    'shiny_primal',
   ]);
 
   if (vt) {
@@ -100,16 +103,22 @@ export function determinePokemonKey(pokemon: PokemonVariant): string {
   }
 
   // Check standard image match fallback
-  if (pokemon.currentImage === pokemon.image_url) {
+  const any = pokemon as any;
+  if (pokemon.currentImage === any.image_url) {
     return `${paddedId}-default`;
-  } else if (pokemon.currentImage === pokemon.image_url_shadow) {
+  } else if (pokemon.currentImage === any.image_url_shadow) {
     return `${paddedId}-shadow`;
-  } else if (pokemon.currentImage === pokemon.image_url_shiny) {
+  } else if (pokemon.currentImage === any.image_url_shiny) {
     return `${paddedId}-shiny`;
-  } else if (pokemon.currentImage === pokemon.image_url_shiny_shadow) {
+  } else if (pokemon.currentImage === any.image_url_shiny_shadow) {
     return `${paddedId}-shiny_shadow`;
   }
 
   // Final fallback: just use the ID if no image match
   return paddedId;
 }
+
+/* --------------------------- Back-compat shims --------------------------- */
+// Temporary aliases to avoid breaking imports during rollout.
+export const parsePokemonKey = parseVariantId;
+export const determinePokemonKey = determineVariantId;

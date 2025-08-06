@@ -34,16 +34,15 @@ function buildReactKey(pokemon: any, absoluteIndex: number): string {
   if (pokemon?.instanceData?.instance_id) return pokemon.instanceData.instance_id;
   if (pokemon?.instance_id) return pokemon.instance_id;
 
-  // Fallback: use variant_id or pokemonKey + index
-  const variantKey =
-    pokemon?.variant_id ?? pokemon?.pokemonKey ?? 'unknown';
+  // Fallback: use variant_id + index
+  const variantKey = pokemon?.variant_id;
 
   return `${variantKey}#${absoluteIndex}`;
 }
 
 // Use instance id for highlighting if available; otherwise variant key
 function getHighlightKey(pokemon: any): string | undefined {
-  return pokemon?.instanceData?.instance_id ?? pokemon?.instance_id ?? pokemon?.pokemonKey;
+  return pokemon?.instanceData?.instance_id ?? pokemon?.instance_id ?? pokemon?.variant_id;
 }
 
 const PokemonGrid: React.FC<PokemonGridProps> = memo(({

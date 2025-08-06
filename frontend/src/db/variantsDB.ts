@@ -18,9 +18,9 @@ export async function getAllVariants<T>() {
   return db ? (db.getAll(VARIANTS_STORE) as Promise<T[]>) : [];
 }
 
-export async function getVariantByKey<
+export async function getVariantById<
   T extends PokemonVariant = PokemonVariant
->(key: string): Promise<T | null> {
+>(variantId: string): Promise<T | null> {
   const db = await initVariantsDB();
-  return db ? (db.get(VARIANTS_STORE, key) as Promise<T | null>) : null;
+  return db ? (db.get(VARIANTS_STORE, variantId) as Promise<T | null>) : null;
 }

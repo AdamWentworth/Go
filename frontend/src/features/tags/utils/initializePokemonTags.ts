@@ -24,11 +24,12 @@ export function initializePokemonTags(
 ): TagBuckets {
   const tags = freshBuckets();
 
+  // Build lookups keyed by variant_id (not pokemonKey)
   const byKey = new Map<string, PokemonVariant>();
   const byPidShiny = new Map<string, PokemonVariant>();
   for (const v of variants) {
-    byKey.set(v.pokemonKey, v);
-    const shinyFlag = v.variantType?.includes('shiny') ? 1 : 0;
+    byKey.set(v.variant_id, v);
+    const shinyFlag = v.variantType?.toLowerCase().includes('shiny') ? 1 : 0;
     const pid = String(v.pokemon_id);
     const k = `${pid}|${shinyFlag}`;
     if (!byPidShiny.has(k)) byPidShiny.set(k, v);
@@ -43,7 +44,7 @@ export function initializePokemonTags(
       if (byKey.has(guess)) variantKey = guess;
       else {
         const alt = byPidShiny.get(`${inst.pokemon_id}|${inst.shiny ? 1 : 0}`);
-        if (alt) variantKey = alt.pokemonKey;
+        if (alt) variantKey = alt.variant_id;
       }
     }
 
@@ -78,10 +79,10 @@ export function initializePokemonTags(
 
     const item = buildTagItem(instanceId, inst, { ...variant, currentImage: img });
 
-    if (!inst.registered) tags.missing[instanceId]   = item;
-    if (inst.is_caught)   tags.caught [instanceId]   = item;
-    if (inst.is_for_trade)tags.trade  [instanceId]   = item;
-    if (inst.is_wanted)   tags.wanted [instanceId]   = item;
+    if (!inst.registered) tags.missing[instanceId]    = item;
+    if (inst.is_caught)   tags.caught [instanceId]    = item;
+    if (inst.is_for_trade)tags.trade  [instanceId]    = item;
+    if (inst.is_wanted)   tags.wanted [instanceId]    = item;
   });
 
   if (process.env.NODE_ENV === 'development' && missing.size) {

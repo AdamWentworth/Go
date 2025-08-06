@@ -1,53 +1,37 @@
-/* ------------------------------------------------------------------ */
-/*  UpdateForTradeModal.tsx                                           */
-/* ------------------------------------------------------------------ */
-
+// src/features/instances/components/UpdateForTradeModal.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import './UpdateForTradeModal.css';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
-import { getVariantByKey } from '@/db/indexedDB';
+import { getVariantById } from '@/db/indexedDB';
 
-import OwnedInstance from '../../OwnedInstance';               // keep jsx/tsx default
+import OwnedInstance from '../../OwnedInstance';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
-/* -------------------- props -------------------------------------- */
 interface UpdateForTradeModalProps {
-  /** Array of *raw* instance rows coming from Indexed-DB / API        */
   ownedInstances: PokemonInstance[];
-  /** Base-variant key for DB lookup (e.g. "6_0") – may be null        */
   baseKey?: string | null;
-  /** Close the modal                                                  */
   onClose: () => void;
-  /** Optional confirm callback – not used inside, but preserved        */
   onConfirm?: () => void;
 }
 
-/* -------------------- helper types ------------------------------- */
 type VariantWithInstance = PokemonVariant & { instanceData: PokemonInstance };
 
-/* -------------------- component ---------------------------------- */
 const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
   ownedInstances,
   baseKey = null,
   onClose,
 }) => {
-  /* store actions ------------------------------------------------- */
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
 
-  /* state --------------------------------------------------------- */
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [variantData, setVariantData] = useState<PokemonVariant | null>(null);
-  const [restructuredData, setRestructuredData] = useState<VariantWithInstance[]>(
-    [],
-  );
+  const [restructuredData, setRestructuredData] = useState<VariantWithInstance[]>([]);
 
-  /* refs ---------------------------------------------------------- */
   const modalContentRef = useRef<HTMLDivElement | null>(null);
 
-  /* -------------------- fetch variant by key -------------------- */
   useEffect(() => {
     const fetchVariant = async () => {
       if (!baseKey) return;
@@ -56,7 +40,7 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
       setError(null);
 
       try {
-        const data = (await getVariantByKey(baseKey)) as PokemonVariant;
+        const data = (await getVariantById(baseKey)) as PokemonVariant;
         setVariantData(data);
       } catch (err) {
         console.error(err);
@@ -69,7 +53,6 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
     fetchVariant();
   }, [baseKey]);
 
-  /* -------------------- merge variant + instances --------------- */
   useEffect(() => {
     if (!variantData || ownedInstances.length === 0) return;
 
@@ -81,28 +64,23 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
     setRestructuredData(merged);
   }, [variantData, ownedInstances]);
 
-  /* -------------------- mark instance “for trade” --------------- */
   const handleUpdateToTrade = async (instanceId: string | undefined) => {
     if (!instanceId) return;
 
     try {
-      /* find the full instance so we can send a complete object */
       const current = restructuredData.find(
         (p) => p.instanceData.instance_id === instanceId,
       )?.instanceData;
 
       if (!current) return;
 
-      /* clone + mutate the one flag */
       const updatedInstance: PokemonInstance = {
         ...current,
         is_for_trade: true,
       };
 
-      /* store expects a record keyed by ID */
-      await updateDetails({ [instanceId]: updatedInstance });
+      await updateDetails({ [instanceId]: updatedInstance } as any);
 
-      /* reflect the change locally */
       setRestructuredData((prev) =>
         prev.map((p) =>
           p.instanceData.instance_id === instanceId
@@ -116,13 +94,9 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
     }
   };
 
-  /* -------------------- close on outside click ------------------ */
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        modalContentRef.current &&
-        !modalContentRef.current.contains(e.target as Node)
-      ) {
+      if (modalContentRef.current && !modalContentRef.current.contains(e.target as Node)) {
         onClose();
       }
     };
@@ -130,7 +104,6 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
-  /* -------------------- render ---------------------------------- */
   return (
     <div
       className="update-for-trade-modal-overlay"

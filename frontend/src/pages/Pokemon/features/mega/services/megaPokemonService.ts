@@ -1,6 +1,5 @@
 // megaPokemonService.ts
-
-import { getVariantByKey } from '@/db/variantsDB';
+import { getVariantById } from '@/db/variantsDB';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { createNewInstanceData } from '@/features/instances/utils/createNewInstanceData';
@@ -17,15 +16,14 @@ export async function megaEvolveExisting(
   const updateTags   = useTagsStore.getState().buildTags;
 
   const payload: Record<string, Partial<PokemonInstance>> = {
-        [instanceId]: {
-          mega      : true,
-          is_mega   : true,
-          ...(megaForm && { mega_form: megaForm }),
-        },
-      };
-    
-      // cast because updateDetails is still declared to need a full PokemonInstance
-      await updateDetails(payload as unknown as Record<string, PokemonInstance>);
+    [instanceId]: {
+      mega      : true,
+      is_mega   : true,
+      ...(megaForm && { mega_form: megaForm }),
+    },
+  };
+
+  await updateDetails(payload as unknown as Record<string, PokemonInstance>);
   await updateTags();
 }
 
@@ -34,12 +32,12 @@ export async function createNewMega(
   variantKey: string,
   megaForm?: string,
 ): Promise<string /* instance_id */> {
-  const variant = await getVariantByKey<PokemonVariant>(variantKey);
+  const variant = await getVariantById<PokemonVariant>(variantKey);
   if (!variant) throw new Error(`Variant data not found for key: ${variantKey}`);
 
-  const data      = createNewInstanceData(variant);
-  const uuid      = generateUUID();
-  const instanceId= `${variant.pokemonKey}_${uuid}`;
+  const data       = createNewInstanceData(variant);
+  const uuid       = generateUUID();
+  const instanceId = `${variant.variant_id}_${uuid}`;
 
   Object.assign(data, {
     instance_id  : instanceId,

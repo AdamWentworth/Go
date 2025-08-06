@@ -1,4 +1,4 @@
-// constants.ts
+// db/constants.ts
 
 /* -------------------------------------------------------------------------- */
 /*  Device helper                                                             */
@@ -11,22 +11,30 @@ export const isIOS =
 /* -------------------------------------------------------------------------- */
 export const VARIANTS_DB_NAME      = 'variantsDB';
 export const INSTANCES_DB_NAME     = 'instancesDB';
-export const TAGS_DB_NAME          = 'tagsDB';
+export const TAGS_DB_NAME          = 'tagsDB';         // single DB for all tag data
 export const TRADES_DB_NAME        = 'tradesDB';
 export const UPDATES_DB_NAME       = 'updatesDB';
 export const POKEDEX_DB_NAME       = 'pokedexDB';
-export const REGISTRATIONS_DB_NAME = 'registrationsDB';   // ← new
+export const REGISTRATIONS_DB_NAME = 'registrationsDB';
 
+/* -------------------------------------------------------------------------- */
+/*  IMPORTANT: do not change the version (not deployed yet)                   */
 /* -------------------------------------------------------------------------- */
 export const DB_VERSION = 1;
 
 /* Object stores ------------------------------------------------------------ */
-export const VARIANTS_STORE      = 'variants';
-export const INSTANCES_STORE     = 'instances';
-export const TAG_STORE_NAMES     = ['caught', 'wanted', 'trade', 'missing'] as const;
-export const POKEMON_TRADES_STORE   = 'trades';
+export const VARIANTS_STORE       = 'variants';
+export const INSTANCES_STORE      = 'instances';
+
+/** Legacy per-bucket stores (kept for compatibility during transition) */
+export const TAG_STORE_NAMES = ['caught', 'wanted', 'trade', 'missing'] as const;
+/** New normalized tag stores (custom tags + memberships) */
+export const TAG_DEFS_STORE      = 'tagDefs';       // keyPath: 'tag_id'
+export const INSTANCE_TAGS_STORE = 'instanceTags';  // keyPath: 'key' = `${tag_id}:${instance_id}`
+
+export const POKEMON_TRADES_STORE    = 'trades';
 export const RELATED_INSTANCES_STORE = 'relatedInstances';
-export const REGISTRATIONS_STORE     = 'registrations';   // ← new
+export const REGISTRATIONS_STORE     = 'registrations';
 
 /* Batched-update stores ---------------------------------------------------- */
 export const BATCHED_POKEMON_UPDATES_STORE = 'batchedPokemonUpdates';

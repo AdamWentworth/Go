@@ -1,5 +1,4 @@
 // src/hooks/filtering/usePokemonOwnershipFilter.ts
-
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { Instances } from '@/types/instances';
 import type { TagBuckets } from '@/types/tags';
@@ -39,14 +38,12 @@ export function getFilteredPokemonsByOwnership(
       const variantKey = instance.variant_id; // e.g. "0583-default" or "0583-shiny"
       if (!variantKey) return undefined;
 
-      const variant = variants.find((v) => v.pokemonKey === variantKey);
+
+      const variant = variants.find((v) => (v as any).variant_id === variantKey);
       if (!variant) return undefined;
 
-      // Keep variant.pokemonKey as the canonical variant key.
-      // Consumers can use instanceData.instance_id when they need the UUID.
-        return {
+      return {
         ...variant,
-        pokemonKey: variantKey,
         instanceData: {
           ...instance,
           instance_id: instanceId,

@@ -1,5 +1,5 @@
 // src/pages/Pokemon/features/fusion/services/resolveFusionDetails.ts
-import { getVariantByKey } from '@/db/indexedDB';
+import { getVariantById } from '@/db/indexedDB';
 import { parseBaseNumber, parseFusionId, parseShinyStatus } from '../utils/fusionParsing';
 import { getValidCandidates as getCandidatesForIdWithVariants } from '../core/getValidCandidates';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -14,10 +14,10 @@ export async function resolveFusionDetails(baseKey: string) {
     throw new Error(`[Fusion Handler] Could not parse baseNumber/fusionId from key: ${baseKey}`);
   }
 
-  const variantKey    = isShiny ? `${baseNumber}-shiny` : `${baseNumber}-default`;
-  const parentVariant = await getVariantByKey<PokemonVariant>(variantKey);
+  const variantId    = isShiny ? `${baseNumber}-shiny` : `${baseNumber}-default`;
+  const parentVariant = await getVariantById<PokemonVariant>(variantId);
   if (!parentVariant) {
-    throw new Error(`[Fusion Handler] No variant data found for key ${variantKey}`);
+    throw new Error(`[Fusion Handler] No variant data found for key ${variantId}`);
   }
 
   // parentVariant.fusion may be an array or an object indexed by fusion_id

@@ -220,7 +220,7 @@ function Pokemon({ isOwnCollection }) {
 
   const handleSelectAll = () => {
     const allIds = sortedPokemons.map(
-      (p) => p.instanceData?.instance_id ?? p.pokemonKey
+      (p) => p.instanceData?.instance_id ?? p.variant_id
     );
     setHighlightedCards(new Set(allIds));
     setIsFastSelectEnabled(true);

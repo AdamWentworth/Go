@@ -14,7 +14,7 @@ export async function loadInstances(
     const hasCache = !!cached && Object.keys(cached).length > 0;
     if (hasCache) {
       // Optionally (non-blocking) reconcile in the background
-      // void initializeOrUpdateInstancesData(variants.map(v => v.pokemonKey).filter(Boolean) as string[], variants)
+      // void initializeOrUpdateInstancesData(variants.map(v => v.variant_id).filter(Boolean) as string[], variants)
       //   .catch(err => console.error('[loadInstances] BG reconcile failed:', err));
       return cached;
     }
@@ -27,7 +27,7 @@ export async function loadInstances(
     }
 
     // 3) First run (or totally stale): initialize
-    const keys = variants.map(v => v.pokemonKey).filter(Boolean) as string[];
+    const keys = variants.map(v => v.variant_id).filter(Boolean) as string[];
     const data = await initializeOrUpdateInstancesData(keys, variants);
     return data;
   } catch (err) {
