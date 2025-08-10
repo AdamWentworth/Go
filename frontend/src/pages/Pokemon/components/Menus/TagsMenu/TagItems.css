@@ -1,0 +1,142 @@
+/* =======================
+   TagItems (per-card)
+   ======================= */
+
+/* Card wrapper */
+.tags-menu .tag-item {
+  /* spacing variables so the gradient can extend under padding cleanly */
+  --tag-item-pad: 0.625rem;
+  --tag-card-radius: 0.9375rem;
+
+  position: relative;          /* anchor for clipping the gradient */
+  overflow: hidden;            /* clip pseudo background to rounded corners */
+  display: flex;
+  flex-direction: column-reverse; /* show preview first, footer last */
+  align-items: center;
+  margin: 0.625rem 0;
+  border: 0.125rem solid #444;
+  border-radius: var(--tag-card-radius);
+  padding: var(--tag-item-pad);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  background: transparent;
+  color: #fff;
+}
+.tags-menu .tag-item:hover { background-color: #1e1e1e; }
+
+/* Neutral footer (no color) sits above the gradient */
+.tags-menu .tag-footer {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 0.5rem 0.6rem;
+  border-top: 0.0625rem solid #333;
+  border-radius: 0 0 0.75rem 0.75rem;
+  color: #fff;
+  background: transparent;
+}
+
+/* Thumbnails area (gradient target) */
+.tags-menu .tag-preview {
+  /* padding lives INSIDE the colored area */
+  --tag-preview-pad-v: 0.5rem;
+  --tag-preview-pad-h: 0.35rem;
+
+  position: relative;  /* anchor for the ::before gradient */
+  z-index: 1;          /* keep content above the gradient layer */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 0;          /* no gaps that would show neutral card background */
+  width: 100%;
+  padding: var(--tag-preview-pad-v) var(--tag-preview-pad-h);
+  border-radius: 0.75rem 0.75rem 0 0; /* visual rounding at the top */
+}
+
+/* Gradient layer: extend to the card edges despite padding */
+.tags-menu .tag-preview::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  /* extend left/right/top by the card padding so color reaches edges */
+  inset: calc(-1 * var(--tag-item-pad)) calc(-1 * var(--tag-item-pad)) 0 calc(-1 * var(--tag-item-pad));
+  border-radius: var(--tag-card-radius) var(--tag-card-radius) 0 0;
+  pointer-events: none;
+  /* background is set by tag type selectors below */
+  background: transparent;
+}
+
+/* The ONLY colors: set the gradient on the ::before layer based on tag */
+.tags-menu .tag-footer.Caught + .tag-preview::before {
+  background: linear-gradient(180deg, rgba(33,150,243,0.25), rgba(100,181,246,0.12));
+}
+.tags-menu .tag-footer.Trade + .tag-preview::before {
+  background: linear-gradient(180deg, rgba(76,175,80,0.28), rgba(129,199,132,0.14));
+}
+.tags-menu .tag-footer.Wanted + .tag-preview::before {
+  background: linear-gradient(180deg, rgba(244,67,54,0.28), rgba(239,83,80,0.14));
+}
+.tags-menu .tag-footer.Missing + .tag-preview::before {
+  background: linear-gradient(180deg, rgba(97,97,97,0.28), rgba(158,158,158,0.14));
+}
+.tags-menu .tag-footer.Favorites + .tag-preview::before {
+  background: linear-gradient(180deg, rgba(212,175,55,0.35), rgba(255,215,102,0.18));
+}
+.tags-menu .tag-footer.Most.Wanted + .tag-preview::before {
+  background: linear-gradient(180deg, rgba(255,143,0,0.32), rgba(255,179,0,0.16));
+}
+
+/* Sprite containers */
+.tags-menu .tag-sprite {
+  position: relative;
+  display: inline-block;
+  margin: 0;
+  width: 3.5rem;
+  padding: 0.3125rem;
+}
+.tags-menu .preview-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 0.3125rem;
+}
+.tags-menu .tag-variant-overlay {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.2rem;
+  width: 1rem;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Empty message */
+.tags-menu .tag-empty-text {
+  font-size: 0.875rem;
+  color: #999;
+  margin-top: 0.625rem;
+}
+
+/* Missing look */
+.tags-menu .tag-preview img.preview-image.missing,
+.tags-menu .tag-preview img.tag-variant-overlay.missing {
+  filter: grayscale(100%) brightness(0.2) contrast(0.5)
+          drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
+  transition: filter 0.3s ease;
+}
+
+/* Responsive (item-level only) */
+@media (max-width: 650px) {
+  .tags-menu .tag-sprite { width: 2.8125rem; }
+  .tags-menu .tag-variant-overlay { width: 0.75rem; top: 0.15rem; right: 0.15rem; }
+}
+@media (min-width: 1024px) {
+  .tags-menu .tag-sprite { width: 3.75rem; }
+  .tags-menu .tag-variant-overlay { width: 1.25rem; top: 0.25rem; right: 0.25rem; }
+}
+@media (min-width: 1440px) {
+  .tags-menu .tag-sprite { width: 4.05rem; }
+  .tags-menu .tag-variant-overlay { width: 1.5rem; top: 0.3rem; right: 0.3rem; }
+}

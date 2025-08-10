@@ -12,6 +12,10 @@ import {
   getAllTagDefs,
   getInstanceTagsForUser,
   type TagDef,
+  // NEW: persisted system-children snapshot
+  getSystemChildrenSnapshot,
+  setSystemChildrenSnapshot,
+  type SystemChildrenSnapshot,
 } from '@/db/tagsDB';
 
 import { TAG_STORE_NAMES } from '@/db/constants';
@@ -28,10 +32,6 @@ import type { TagBuckets, TagItem } from '@/types/tags';
 import type { Instances }           from '@/types/instances';
 import type { PokemonVariant }      from '@/types/pokemonVariants';
 
-/**
- * Derive TagStoreName union directly from the runtime array so we only have
- * one single source-of-truth.
- */
 type TagStoreName = typeof TAG_STORE_NAMES[number];
 
 /* ================================================================== */
@@ -52,8 +52,18 @@ export interface CustomTagsTree {
 }
 
 /* ================================================================== */
-/*  Helpers                                                           */
+/*  Computed system children                                          */
 /* ================================================================== */
+
+export interface SystemChildren {
+  caught: {
+    favorite: Record<string, TagItem>; // favorite === true
+    trade   : Record<string, TagItem>; // union of tags.trade + caught w/ is_for_trade
+  };
+  wanted: {
+    mostWanted: Record<string, TagItem>; // most_wanted === true
+  };
+}
 
 const EMPTY_BUCKETS: TagBuckets = {
   caught : {},
@@ -66,6 +76,11 @@ const EMPTY_CUSTOM: CustomTagsTree = {
   caught: {},
   trade : {},
   wanted: {},
+};
+
+const EMPTY_SYSTEM_CHILDREN: SystemChildren = {
+  caught: { favorite: {}, trade: {} },
+  wanted: { mostWanted: {} },
 };
 
 const toDBShape = (
@@ -86,13 +101,66 @@ function buildIndexByVariant(variants: PokemonVariant[]) {
 }
 
 /* ================================================================== */
+/*  Helpers                                                           */
+/* ================================================================== */
+
+function computeSystemChildren(tags: TagBuckets): SystemChildren {
+  const favorite: Record<string, TagItem> = {};
+  const trade: Record<string, TagItem> = {};
+  const mostWanted: Record<string, TagItem> = {};
+
+  // Favorite + Trade from caught
+  for (const [id, item] of Object.entries(tags.caught)) {
+    if ((item as any).favorite) favorite[id] = item;
+    if ((item as any).is_for_trade) trade[id] = item; // caught marked for trade
+  }
+
+  // Ensure trade set includes explicit trade bucket too (source of truth for trade subset)
+  for (const [id, item] of Object.entries(tags.trade)) {
+    trade[id] = item;
+  }
+
+  // Most Wanted from wanted bucket
+  for (const [id, item] of Object.entries(tags.wanted)) {
+    if ((item as any).most_wanted) mostWanted[id] = item;
+  }
+
+  return {
+    caught: { favorite, trade },
+    wanted: { mostWanted },
+  };
+}
+
+function toSnapshot(sys: SystemChildren): SystemChildrenSnapshot {
+  return {
+    caught_favorite : sys.caught.favorite,
+    caught_trade    : sys.caught.trade,
+    wanted_mostWanted: sys.wanted.mostWanted,
+  };
+}
+
+function fromSnapshot(snap: SystemChildrenSnapshot | null): SystemChildren | null {
+  if (!snap) return null;
+  return {
+    caught: {
+      favorite: snap.caught_favorite || {},
+      trade   : snap.caught_trade    || {},
+    },
+    wanted: {
+      mostWanted: snap.wanted_mostWanted || {},
+    },
+  };
+}
+
+/* ================================================================== */
 /*  Store definition                                                  */
 /* ================================================================== */
 
 interface TagsStore {
   /* state */
   tags             : TagBuckets;       // system buckets
-  customTags       : CustomTagsTree;   // children per system parent
+  customTags       : CustomTagsTree;   // children per system parent (custom only)
+  systemChildren   : SystemChildren;   // computed children (Favorite, Trade, Most Wanted)
   tagsLoading      : boolean;
   customTagsLoading: boolean;
   foreignTags      : TagBuckets | null;
@@ -100,8 +168,8 @@ interface TagsStore {
   /* actions */
   buildTags       (): Promise<void>;   // heavy – persists system buckets to IndexedDB
   refreshTags     (): Promise<void>;
-  resetTags       (): void;
-  hydrateFromCache(): Promise<void>;
+  resetTags       : () => void;
+  hydrateFromCache: () => Promise<void>;
   buildForeignTags(instances: Instances): void;
 
   /* internal helpers */
@@ -114,6 +182,7 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
   /* -------------------------------------------------------------- */
   tags             : { ...EMPTY_BUCKETS },
   customTags       : { ...EMPTY_CUSTOM },
+  systemChildren   : { ...EMPTY_SYSTEM_CHILDREN },
   tagsLoading      : true,
   customTagsLoading: true,
   foreignTags      : null,
@@ -152,23 +221,9 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
       }
 
       // Build lookup tables
-      const byVariant = buildIndexByVariant(variants);
+      buildIndexByVariant(variants); // currently unused; kept for future join optimizations
       const systemBuckets = initializePokemonTags(instances, variants); // reuse builder for TagItem creation
-      // We'll use its TagItem builder logic for consistent visuals
-      // but we still need to compute TagItems for arbitrary instance ids:
-      const toTagItem = (instanceId: string): TagItem | null => {
-        const inst = (instances as any)[instanceId];
-        if (!inst) return null;
-        const v = byVariant.get(inst.variant_id);
-        if (!v) return null;
 
-        // Reuse the same calculation as initializePokemonTags via tagHelpers.buildTagItem
-        // but importing it directly here would cause a circular dep for some setups.
-        // So we mimic the minimal fields utilized by TagItem. We will import the builder.
-        return null; // Placeholder, replaced by batch below
-      };
-
-      // We will rebuild TagItems by leveraging systemBuckets (since it already computed items for every instance)
       // Build a quick flat lookup: instance_id -> TagItem (pick from any bucket)
       const itemByInstance: Record<string, TagItem> = {};
       for (const b of Object.values(systemBuckets)) {
@@ -194,7 +249,13 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
         out[parentKey][def.tag_id] = { tag: def, items };
       }
 
-      set({ customTags: out, customTagsLoading: false });
+      // Update both custom tags and computed system children
+      const currentTags = get().tags;
+      set({
+        customTags: out,
+        customTagsLoading: false,
+        systemChildren: computeSystemChildren(currentTags),
+      });
     } catch (e) {
       console.error('[TagsStore] rebuildCustomTags failed:', e);
       set({ customTags: { ...EMPTY_CUSTOM }, customTagsLoading: false });
@@ -210,11 +271,20 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
     set({ tagsLoading: true });
 
     const newTags = initializePokemonTags(instances, variants);
-    set({ tags: newTags, tagsLoading: false });
+    const sys = computeSystemChildren(newTags);
+
+    set({
+      tags: newTags,
+      tagsLoading: false,
+      systemChildren: sys,
+    });
 
     // Persist system buckets (legacy cache) for quick startup
     await storeTagsInIndexedDB(toDBShape(newTags));
     localStorage.setItem('tagsTimestamp', Date.now().toString());
+
+    // Persist children snapshot too
+    await setSystemChildrenSnapshot(toSnapshot(sys));
 
     // Also rebuild custom children once system buckets are ready
     await get().rebuildCustomTags();
@@ -240,7 +310,17 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
       console.log('[TagsStore] Hydrating tags from IndexedDB (system buckets)…');
       const cached   = await getAllTagsFromDB();
       const hydrated = coerceToTagBuckets(cached);
-      set({ tags: hydrated, tagsLoading: false });
+
+      // Try to hydrate system-children from snapshot; fallback to compute
+      const snap = await getSystemChildrenSnapshot();
+      const sys  = fromSnapshot(snap) ?? computeSystemChildren(hydrated);
+
+      set({
+        tags: hydrated,
+        tagsLoading: false,
+        systemChildren: sys,
+      });
+
       // Custom children are normalized; rebuild them on the fly
       await get().rebuildCustomTags();
     } else {
@@ -257,6 +337,7 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
     set({
       tags             : { ...EMPTY_BUCKETS },
       customTags       : { ...EMPTY_CUSTOM },
+      systemChildren   : { ...EMPTY_SYSTEM_CHILDREN },
       tagsLoading      : true,
       customTagsLoading: true,
       foreignTags      : null,
@@ -274,7 +355,22 @@ const quickRebuild = (instances: Instances, dest: 'tags' | 'foreignTags') => {
   if (variantsLoading || !variants.length) return;
 
   const buckets = initializePokemonTags(instances, variants);
-  useTagsStore.setState({ [dest]: buckets } as Partial<ReturnType<typeof useTagsStore.getState>>);
+
+  if (dest === 'tags') {
+    const sys = computeSystemChildren(buckets);
+    useTagsStore.setState({
+      tags: buckets,
+      systemChildren: sys,
+    });
+    // Persist updated system-children snapshot opportunistically
+    setSystemChildrenSnapshot((() => ({
+      caught_favorite : sys.caught.favorite,
+      caught_trade    : sys.caught.trade,
+      wanted_mostWanted: sys.wanted.mostWanted,
+    }))()).catch(() => {});
+  } else {
+    useTagsStore.setState({ foreignTags: buckets });
+  }
 };
 
 // ---- own collection ------------------------------------------------

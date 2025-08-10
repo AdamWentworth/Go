@@ -2,7 +2,7 @@
 import React, { CSSProperties } from 'react';
 import './PreviewContainer.css';
 import ColorSettingsOverlay from './ColorSettingsOverlay';
-import ListImageDownload, { ListImageDownloadRef } from './ListImageDownload';
+import TagImageDownload, { TagImageDownloadRef } from './TagImageDownload';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import type { AllVariants } from '@/types/pokemonVariants';
 import type { TagBuckets } from '@/types/tags';
@@ -13,15 +13,20 @@ export interface PreviewContainerProps {
   setIsPreviewMode: (value: boolean) => void;
   setShowColorSettings: (value: boolean) => void;
   showColorSettings: boolean;
-  downloadRef: React.Ref<ListImageDownloadRef>;
+  downloadRef: React.Ref<TagImageDownloadRef>;
   handleDownload: () => void;
-  previewBgColor: string;
-  sectionFrameBgColor: string;
-  h2FontColor: string;
-  pokemonNameColor: string;
-  activeLists: Pick<TagBuckets, 'wanted' | 'trade'>;
-  // Accept actual ColorPreset objects
-  onSelectPreset: (preset: ColorPreset) => void;
+
+  // ⬇️ Make these optional — we’ll rely on CSS fallbacks if absent.
+  previewBgColor?: string;
+  sectionFrameBgColor?: string;
+  h2FontColor?: string;
+  pokemonNameColor?: string;
+
+  activeTags: Pick<TagBuckets, 'wanted' | 'trade'>;
+
+  // ⬇️ Optional too; we’ll hide the Customize button when not provided.
+  onSelectPreset?: (preset: ColorPreset) => void;
+
   variants: AllVariants;
 }
 
@@ -34,33 +39,40 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
   handleDownload,
   previewBgColor,
   sectionFrameBgColor,
-  activeLists,
+  activeTags,
   onSelectPreset,
   h2FontColor,
   pokemonNameColor,
   variants,
 }) => {
-  // CSS custom properties require casting
-  const captureStyles = {
-    '--preview-bg-color': previewBgColor,
-    '--section-frame-bg-color': sectionFrameBgColor,
-    '--h2-font-color': h2FontColor,
-    '--pokemon-name-color': pokemonNameColor,
-  } as unknown as CSSProperties;
+  // Only set CSS vars that were provided; everything else falls back in CSS.
+  const captureStyles: CSSProperties = {
+    ...(previewBgColor       ? ({ ['--preview-bg-color' as any]: previewBgColor } as CSSProperties) : {}),
+    ...(sectionFrameBgColor  ? ({ ['--section-frame-bg-color' as any]: sectionFrameBgColor } as CSSProperties) : {}),
+    ...(h2FontColor          ? ({ ['--h2-font-color' as any]: h2FontColor } as CSSProperties) : {}),
+    ...(pokemonNameColor     ? ({ ['--pokemon-name-color' as any]: pokemonNameColor } as CSSProperties) : {}),
+  };
 
   return (
     <div className="preview-container">
       <div className="preview-header">
-        <button onClick={() => setIsPreviewMode(false)}>Back to Lists</button>
+        <button onClick={() => setIsPreviewMode(false)}>Back to Tags</button>
         <button onClick={handleDownload}>
           <img src="/images/download-icon.png" alt="Download Icon" className="button-icon" />
           Download Preview Image
         </button>
-        <button onClick={() => setShowColorSettings(true)}>Customize Colors</button>
+
+        {/* Hide Customize Colors if there’s no onSelectPreset handler */}
+        {onSelectPreset && (
+          <button onClick={() => setShowColorSettings(true)}>Customize Colors</button>
+        )}
       </div>
 
-      {showColorSettings && (
-        <ColorSettingsOverlay onClose={() => setShowColorSettings(false)} onSelectPreset={onSelectPreset} />
+      {showColorSettings && onSelectPreset && (
+        <ColorSettingsOverlay
+          onClose={() => setShowColorSettings(false)}
+          onSelectPreset={onSelectPreset}
+        />
       )}
 
       <div className="preview-content-wrapper">
@@ -68,13 +80,14 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
           className={`capture-container ${isDownloading ? 'hidden-capture' : ''}`}
           style={captureStyles}
         >
-          <ListImageDownload
+          <TagImageDownload
             ref={downloadRef}
-            wantedPokemons={activeLists.wanted ? Object.values(activeLists.wanted) : []}
-            tradePokemons={activeLists.trade ? Object.values(activeLists.trade) : []}
+            wantedPokemons={activeTags.wanted ? Object.values(activeTags.wanted) : []}
+            tradePokemons={activeTags.trade ? Object.values(activeTags.trade) : []}
             variants={variants}
           />
         </div>
+
         {isDownloading && (
           <div className="spinner-overlay">
             <LoadingSpinner />

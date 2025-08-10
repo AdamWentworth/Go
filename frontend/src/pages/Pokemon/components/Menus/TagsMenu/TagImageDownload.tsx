@@ -1,27 +1,26 @@
-// ListImageDownload.tsx
+// TagImageDownload.tsx
 
 import React, { forwardRef, useRef, useImperativeHandle, useMemo } from 'react';
 import type { TagItem } from '@/types/tags';
 import type { AllVariants } from '@/types/pokemonVariants';
 import type { VariantBackground } from '@/types/pokemonSubTypes';
-import './ListImageDownload.css';
+import './TagImageDownload.css';
 
-export interface ListImageDownloadProps {
+export interface TagImageDownloadProps {
   wantedPokemons?: TagItem[];
   tradePokemons?: TagItem[];
   variants: AllVariants;
 }
 
-export interface ListImageDownloadRef {
+export interface TagImageDownloadRef {
   getCaptureRef: () => HTMLDivElement | null;
 }
 
-const ListImageDownload = forwardRef<ListImageDownloadRef, ListImageDownloadProps>(
+const TagImageDownload = forwardRef<TagImageDownloadRef, TagImageDownloadProps>(
   ({ wantedPokemons = [], tradePokemons = [], variants }, ref) => {
     const captureRef = useRef<HTMLDivElement>(null);
     useImperativeHandle(ref, () => ({ getCaptureRef: () => captureRef.current }));
 
-    // Local sorting by pokedex_number
     const sortedWanted = useMemo(
       () => [...wantedPokemons].sort((a, b) => a.pokedex_number - b.pokedex_number),
       [wantedPokemons]
@@ -48,13 +47,13 @@ const ListImageDownload = forwardRef<ListImageDownloadRef, ListImageDownloadProp
       const key = pokemon.key ?? pokemon.instance_id ?? idx;
 
       return (
-        <div key={key} className="pokemon-image-preview">
-          <div className="image-container">
+        <div key={key} className="tag-image-preview">
+          <div className="tag-image-container">
             {locationBackground && (
               <img
                 src={locationBackground.image_url}
                 alt={`Location backdrop for ${locationBackground.name}`}
-                className="location-backdrop"
+                className="tag-location-backdrop"
                 draggable={false}
               />
             )}
@@ -62,12 +61,12 @@ const ListImageDownload = forwardRef<ListImageDownloadRef, ListImageDownloadProp
               <img
                 src="/images/lucky.png"
                 alt="Lucky backdrop"
-                className="lucky-backdrop"
+                className="tag-lucky-backdrop"
                 draggable={false}
               />
             )}
             <img
-              className="main-image"
+              className="tag-main-image"
               src={pokemon.currentImage}
               alt={pokemon.name ?? 'Unknown Pokémon'}
               draggable={false}
@@ -75,29 +74,29 @@ const ListImageDownload = forwardRef<ListImageDownloadRef, ListImageDownloadProp
           </div>
           {(isGigantamax || isDynamax) && (
             <img
-              className="variant-icon"
+              className="tag-variant-icon"
               src={isGigantamax ? '/images/gigantamax.png' : '/images/dynamax.png'}
               alt={isGigantamax ? 'Gigantamax' : 'Dynamax'}
             />
           )}
-          <div className="pokemon-name">{pokemon.name ?? 'Unknown Pokémon'}</div>
+          <div className="tag-pokemon-name">{pokemon.name ?? 'Unknown Pokémon'}</div>
         </div>
       );
     };
 
     return (
-      <div className="list-image-download">
-        <div ref={captureRef} className="capture-area">
+      <div className="tag-image-download">
+        <div ref={captureRef} className="tag-capture-area">
           <h2>Wanted</h2>
-          <section className="section-block wanted-section">
-            <div className="pokemon-grid">
+          <section className="tag-section-block wanted-section">
+            <div className="tag-pokemon-grid">
               {sortedWanted.map(renderPokemon)}
             </div>
           </section>
 
           <h2>Trade</h2>
-          <section className="section-block trade-section">
-            <div className="pokemon-grid">
+          <section className="tag-section-block trade-section">
+            <div className="tag-pokemon-grid">
               {sortedTrade.map(renderPokemon)}
             </div>
           </section>
@@ -107,4 +106,4 @@ const ListImageDownload = forwardRef<ListImageDownloadRef, ListImageDownloadProp
   }
 );
 
-export default ListImageDownload;
+export default TagImageDownload;

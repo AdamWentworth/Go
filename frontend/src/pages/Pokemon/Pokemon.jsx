@@ -30,8 +30,8 @@ import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { useUserSearchStore } from '@/stores/useUserSearchStore';
 import { useModal } from '@/contexts/ModalContext';
 import {
-    emptyTagBuckets,
-  } from '@/features/tags/utils/initializePokemonTags';
+  emptyTagBuckets,
+} from '@/features/tags/utils/initializePokemonTags';
 
 // 🧠 Custom Hooks
 import useInstanceIdProcessor from './hooks/useInstanceIdProcessor';
@@ -72,7 +72,7 @@ function Pokemon({ isOwnCollection }) {
   const foreignInstances       = useInstancesStore(s => s.foreignInstances);
   const userExists             = useUserSearchStore(s => s.userExists);
   const viewedLoading          = useUserSearchStore(s => s.foreignInstancesLoading);
-  const loadForeignProfile    = useUserSearchStore(s => s.loadForeignProfile);
+  const loadForeignProfile     = useUserSearchStore(s => s.loadForeignProfile);
   const canonicalUsername      = useUserSearchStore(s => s.canonicalUsername);
 
   // ----------------------------
@@ -84,9 +84,26 @@ function Pokemon({ isOwnCollection }) {
   const loading = useVariantsStore((s) => s.variantsLoading);
   const updateInstanceStatus = useInstancesStore((s) => s.updateInstanceStatus);
   const contextInstanceData = useInstancesStore((s) => s.instances);
-  const tags = useTagsStore(s => s.tags)
 
+  // Tags (system buckets) + computed children (Favorites, Caught▸Trade, Most Wanted)
+  const tags = useTagsStore(s => s.tags);
+  const systemChildren = useTagsStore(s => s.systemChildren);
   const foreignTags = useTagsStore(s => s.foreignTags);
+
+  // DEV visibility: show both the big 4 and the computed children so you can verify cache/hydration
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    const counts = Object.fromEntries(
+      Object.entries(tags || {}).map(([k, v]) => [k, Object.keys(v || {}).length])
+    );
+    const childCounts = {
+      favorites: Object.keys(systemChildren.caught?.favorite || {}).length,
+      caughtTradeUnion: Object.keys(systemChildren.caught?.trade || {}).length,
+      mostWanted: Object.keys(systemChildren.wanted?.mostWanted || {}).length,
+    };
+    console.log('[Pokemon] Tags buckets:', counts, tags);
+    console.log('[Pokemon] System children (Favorites / Caught▸Trade / Most Wanted):', childCounts, systemChildren);
+  }, [tags, systemChildren]);
 
   const instances = isOwnCollection
     ? contextInstanceData
@@ -414,13 +431,13 @@ function Pokemon({ isOwnCollection }) {
           {/* RIGHT – Tags */}
           <div className="slider-panel">
             <TagsMenu
-              onSelectList={(filter) => {
+              onSelectTag={(filter) => {
                 setHighlightedCards(new Set());
                 setTagFilter(filter);
                 setLastMenu('ownership');
                 setActiveView('pokemon');
               }}
-              activeLists={activeTags}
+              activeTags={activeTags}
               variants={variants}
             />
           </div>

@@ -16,6 +16,10 @@ export interface TagItem {
   cp           : number | null;
   hp           : number;
   favorite     : boolean;
+  most_wanted  : boolean;
+  is_caught    : boolean;
+  is_for_trade : boolean;
+  is_wanted    : boolean;
 
   /* optional meta -------------------------------------------------------- */
   name?        : string;
