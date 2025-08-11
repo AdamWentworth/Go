@@ -7,11 +7,11 @@ import type { TagBuckets } from '@/types/tags';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 export const emptyTagBuckets = {
-  caught: {}, trade: {}, wanted: {},
+  caught: {}, wanted: {},
 } as const;
 
 function freshBuckets(): TagBuckets {
-  return { caught: {}, trade: {}, wanted: {} };
+  return { caught: {}, wanted: {} };
 }
 
 function pad4(n: number): string {
@@ -72,7 +72,6 @@ export function initializePokemonTags(
     const item = buildTagItem(instanceId, inst, { ...variant, currentImage: img });
 
     if (inst.is_caught)     tags.caught[instanceId]  = item;
-    if (inst.is_for_trade)  tags.trade [instanceId]  = item;
     if (inst.is_wanted)     tags.wanted[instanceId]  = item;
   });
 

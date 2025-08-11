@@ -1,13 +1,11 @@
-// useTagsStore.ts
+// src/features/tags/store/useTagsStore.ts
 
 import { create } from 'zustand';
 
 import {
-  // normalized custom tags
   getAllTagDefs,
-  getInstanceTagsForUser,
+  getAllInstanceTags,
   persistSystemMembershipsFromBuckets,
-  // lean ids snapshot
   getSystemChildrenSnapshot,
   setSystemChildrenSnapshot,
   type SystemChildrenIdsSnapshot,
@@ -21,29 +19,13 @@ import { isDataFresh }          from '@/utils/cacheHelpers';
 
 import { useVariantsStore }  from '@/features/variants/store/useVariantsStore';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
-import { useAuthStore }      from '@/stores/useAuthStore';
 
 import type { TagBuckets, TagItem } from '@/types/tags';
 import type { Instances }           from '@/types/instances';
 import type { PokemonVariant }      from '@/types/pokemonVariants';
+import type { TagDef }              from '@/db/tagsDB';
 
-const PERSIST_SYSTEM_MEMBERSHIPS = true;
-
-/* ------------ Types for custom tag tree ------------ */
-
-export type ParentKind = 'caught' | 'trade' | 'wanted';
-
-export interface TagDef {
-  tag_id: string;
-  user_id: string;
-  parent: ParentKind;
-  name: string;
-  color?: string | null;
-  sort?: number | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-  deleted_at?: string | null;
-}
+/* ------------ Types for custom tag tree (NO trade parent) ------------ */
 
 export interface CustomTagBucket {
   tag: TagDef;
@@ -52,7 +34,6 @@ export interface CustomTagBucket {
 
 export interface CustomTagsTree {
   caught: Record<string, CustomTagBucket>;
-  trade : Record<string, CustomTagBucket>;
   wanted: Record<string, CustomTagBucket>;
 }
 
@@ -63,32 +44,36 @@ export interface SystemChildren {
   wanted: { mostWanted: Record<string, TagItem>; };
 }
 
+// We keep TagBuckets.trade in memory for backward-compat,
+// but we DO NOT treat it as a parent or read it to compute children/UI.
 const EMPTY_BUCKETS: TagBuckets = { caught: {}, wanted: {}, trade: {} };
-const EMPTY_CUSTOM  : CustomTagsTree = { caught: {}, trade: {}, wanted: {} };
+const EMPTY_CUSTOM  : CustomTagsTree = { caught: {}, wanted: {} };
 
 function computeSystemChildren(tags: TagBuckets): SystemChildren {
-  const favorite: Record<string, TagItem>   = {};
-  const trade   : Record<string, TagItem>   = {};
-  const mostWanted: Record<string, TagItem> = {};
+  const favorite   : Record<string, TagItem> = {};
+  const tradeChild : Record<string, TagItem> = {};
+  const mostWanted : Record<string, TagItem> = {};
 
+  // Favorite + Trade strictly from CAUGHT
   for (const [id, item] of Object.entries(tags.caught)) {
-    if ((item as any).favorite) favorite[id] = item;
-    if ((item as any).is_for_trade) trade[id] = item;
+    if ((item as any).favorite)     favorite[id]   = item;
+    if ((item as any).is_for_trade) tradeChild[id] = item;
   }
-  for (const [id, item] of Object.entries(tags.trade)) trade[id] = item;
+
+  // Most Wanted strictly from WANTED
   for (const [id, item] of Object.entries(tags.wanted)) {
     if ((item as any).most_wanted) mostWanted[id] = item;
   }
 
-  return { caught: { favorite, trade }, wanted: { mostWanted } };
+  return { caught: { favorite, trade: tradeChild }, wanted: { mostWanted } };
 }
 
 function toSnapshotIds(sys: SystemChildren): SystemChildrenIdsSnapshot {
   return {
-    caught_favorite_ids: Object.keys(sys.caught.favorite),
-    caught_trade_ids:    Object.keys(sys.caught.trade),
-    wanted_mostWanted_ids: Object.keys(sys.wanted.mostWanted),
-    version: 2,
+    caught_favorite_ids   : Object.keys(sys.caught.favorite),
+    caught_trade_ids      : Object.keys(sys.caught.trade),
+    wanted_mostWanted_ids : Object.keys(sys.wanted.mostWanted),
+    version: 1,
   };
 }
 
@@ -98,18 +83,17 @@ function idsToChildren(snap: SystemChildrenIdsSnapshot, buckets: TagBuckets): Sy
     for (const id of ids) if (src[id]) out[id] = src[id];
     return out;
   };
-  const child = {
+
+  // Rehydrate purely from their parent buckets
+  return {
     caught: {
       favorite: pick(snap.caught_favorite_ids, buckets.caught),
-      trade:    pick(snap.caught_trade_ids,    buckets.caught),
+      trade   : pick(snap.caught_trade_ids,    buckets.caught),
     },
     wanted: {
       mostWanted: pick(snap.wanted_mostWanted_ids, buckets.wanted),
     },
   };
-  // union explicit trade bucket
-  for (const [id, item] of Object.entries(buckets.trade)) child.caught.trade[id] = item;
-  return child;
 }
 
 /* ------------ Store ------------ */
@@ -128,7 +112,7 @@ interface TagsStore {
   hydrateFromCache: () => Promise<void>;
   buildForeignTags(instances: Instances): void;
 
-  rebuildCustomTags(userId?: string): Promise<void>;
+  rebuildCustomTags(): Promise<void>;
 }
 
 export const useTagsStore = create<TagsStore>()((set, get) => ({
@@ -139,49 +123,51 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
   customTagsLoading: true,
   foreignTags      : null,
 
-  async rebuildCustomTags(userId) {
+  async rebuildCustomTags() {
     const { variants, variantsLoading }   = useVariantsStore.getState();
     const { instances, instancesLoading } = useInstancesStore.getState();
     if (variantsLoading || instancesLoading) return;
-
-    const uid = userId ?? (useAuthStore.getState().user?.user_id ?? '');
-    if (!uid) { set({ customTags: { ...EMPTY_CUSTOM }, customTagsLoading: false }); return; }
 
     set({ customTagsLoading: true });
 
     try {
       const [defs, memberships] = await Promise.all([
         getAllTagDefs(),
-        getInstanceTagsForUser(uid),
+        getAllInstanceTags(),
       ]);
 
-      // Build quick lookup from current system buckets
+      // quick lookup from system buckets
       const itemByInstance: Record<string, TagItem> = {};
       const sysBuckets = get().tags;
       for (const b of Object.values(sysBuckets)) {
         for (const [iid, item] of Object.entries(b)) if (!itemByInstance[iid]) itemByInstance[iid] = item;
       }
 
-      const out: CustomTagsTree = { caught: {}, trade: {}, wanted: {} };
+      const out: CustomTagsTree = { caught: {}, wanted: {} };
 
       // group memberships by tag_id
       const byTag = new Map<string, string[]>();
       for (const m of memberships) {
-        if (m.user_id !== uid) continue;
         const arr = byTag.get(m.tag_id) || [];
         arr.push(m.instance_id);
         byTag.set(m.tag_id, arr);
       }
 
       for (const def of defs) {
-        if (def.user_id !== uid || def.deleted_at) continue;
-        if (!['caught','trade','wanted'].includes(def.parent as any)) continue;
+        if (def.deleted_at) continue;
+
+        // Only allow 'caught' | 'wanted' as parents (Trade is NOT a parent)
+        const parent: 'caught' | 'wanted' | null =
+          def.parent === 'caught' ? 'caught'
+        : def.parent === 'wanted' ? 'wanted'
+        : null;
+        if (!parent) continue; // ignore any legacy 'trade' parents
 
         const instIds = byTag.get(def.tag_id) || [];
         const items: Record<string, TagItem> = {};
         for (const iid of instIds) if (itemByInstance[iid]) items[iid] = itemByInstance[iid];
 
-        out[def.parent as ParentKind][def.tag_id] = { tag: def, items };
+        out[parent][def.tag_id] = { tag: def, items };
       }
 
       set({ customTags: out, customTagsLoading: false });
@@ -203,12 +189,10 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
 
     set({ tags: newTags, tagsLoading: false, systemChildren: sys });
 
-    // keep lean snapshot for fast boot
     await setSystemChildrenSnapshot(toSnapshotIds(sys));
 
-    if (PERSIST_SYSTEM_MEMBERSHIPS) {
-      await persistSystemMembershipsFromBuckets(newTags).catch(() => {});
-    }
+    // Mirrors derived children (favorites, caught▸trade, most_wanted).
+    await persistSystemMembershipsFromBuckets(newTags).catch(() => {});
 
     await get().rebuildCustomTags();
   },
@@ -220,10 +204,7 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
   },
 
   async hydrateFromCache() {
-    // We no longer depend on legacy per-bucket caches.
-    // Strategy: use in-memory if ready; else fetch from IndexedDB (variants + instances),
-    // then compute buckets and rehydrate children using snapshot ids.
-    const tagsTS = Number(localStorage.getItem('tagsTimestamp') || 0); // optional; left for UX heuristics
+    const tagsTS = Number(localStorage.getItem('tagsTimestamp') || 0);
     const ownTS  = Number(localStorage.getItem('ownershipTimestamp') || 0);
     const fresh       = !!tagsTS && isDataFresh(tagsTS);
     const needRebuild = ownTS > tagsTS;
@@ -244,7 +225,6 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
       }
 
       if (!variants?.length || !Object.keys(instancesMap || {}).length) {
-        // Not enough data to hydrate; leave loading true and let buildTags() finish later
         return;
       }
 
@@ -259,20 +239,15 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
         tagsLoading: false,
       });
 
-      if (PERSIST_SYSTEM_MEMBERSHIPS) {
-        await persistSystemMembershipsFromBuckets(buckets).catch(() => {});
-      }
+      await persistSystemMembershipsFromBuckets(buckets).catch(() => {});
 
-      // mark hydrated time
       localStorage.setItem('tagsTimestamp', Date.now().toString());
 
-      // Optionally rebuild custom children once user id is known
       await get().rebuildCustomTags();
     } catch (e) {
       console.warn('[TagsStore] hydrateFromCache failed; will rebuild later:', e);
     }
 
-    // If data was outdated, trigger a rebuild pass (non-blocking)
     if (!fresh || needRebuild) {
       await get().buildTags();
     }
@@ -306,7 +281,7 @@ const quickRebuild = (instances: Instances, dest: 'tags' | 'foreignTags') => {
     const sys = computeSystemChildren(buckets);
     useTagsStore.setState({ tags: buckets, systemChildren: sys });
     setSystemChildrenSnapshot(toSnapshotIds(sys)).catch(() => {});
-    if (PERSIST_SYSTEM_MEMBERSHIPS) persistSystemMembershipsFromBuckets(buckets).catch(() => {});
+    persistSystemMembershipsFromBuckets(buckets).catch(() => {});
   } else {
     useTagsStore.setState({ foreignTags: buckets });
   }

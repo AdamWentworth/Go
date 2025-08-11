@@ -1,4 +1,4 @@
-// src/pages/Pokemon/components/Menus/TagsMenu/TagsMenu.tsx
+// TagsMenu.tsx
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import './TagsMenu.css';
@@ -30,9 +30,9 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
       Object.entries(activeTags).map(([k, v]) => [k, Object.keys(v || {}).length])
     );
     const childCounts = {
-      favorites      : Object.keys(systemChildren.caught.favorite || {}).length,
-      tradeFromCaught: Object.keys(systemChildren.caught.trade || {}).length,
-      mostWanted     : Object.keys(systemChildren.wanted.mostWanted || {}).length,
+      favorites  : Object.keys(systemChildren.caught.favorite || {}).length,
+      trade      : Object.keys(systemChildren.caught.trade || {}).length,
+      mostWanted : Object.keys(systemChildren.wanted.mostWanted || {}).length,
     };
     console.log('[TagsMenu] System buckets:', counts, activeTags);
     console.log('[TagsMenu] System children:', childCounts, systemChildren);
@@ -48,12 +48,11 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
     return arr.sort((a, b) => a.pokedex_number - b.pokedex_number);
   }, [systemChildren.caught.favorite]);
 
+  // ✅ Trade is ALWAYS a child of Caught
   const sortedTrade = useMemo<TagItem[]>(() => {
-    if (!activeTags.trade) return [];
-    return Object.values(activeTags.trade).sort(
-      (a, b) => a.pokedex_number - b.pokedex_number,
-    );
-  }, [activeTags.trade]);
+    const obj = systemChildren.caught.trade || {};
+    return Object.values(obj).sort((a, b) => a.pokedex_number - b.pokedex_number);
+  }, [systemChildren.caught.trade]);
 
   const sortedWanted = useMemo<TagItem[]>(() => {
     if (!activeTags.wanted) return [];
@@ -70,16 +69,13 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   // Public names → arrays to feed TagItems (no Missing here)
   const sortedTags: Record<string, TagItem[]> = {
     Favorites    : sortedFavorites,
-    Caught       : sortedCaught,     // ← “See all inventory”
-    Trade        : sortedTrade,
-    Wanted       : sortedWanted,     // ← “See all wanted”
+    Caught       : sortedCaught,     // “See all inventory”
+    Trade        : sortedTrade,      // child list from Caught only
+    Wanted       : sortedWanted,     // “See all wanted”
     'Most Wanted': sortedMostWanted,
   };
 
-  // Keep the clicked label as-is so header shows FAVORITES / MOST WANTED
-  const handleSelectTagInternal = (name: string) => {
-    onSelectTag(name);
-  };
+  const handleSelectTagInternal = (name: string) => onSelectTag(name);
 
   /* ----- expand/collapse state ------------------------------------ */
   const [isCaughtOpen , setIsCaughtOpen ] = useState(true);
@@ -101,6 +97,15 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
       : 'wanted-trade-pokemons.png';
     downloadImage(captureArea, filename);
   };
+
+  // ✅ Force preview to use derived Trade (child of Caught)
+  const previewTags = useMemo(
+    () => ({
+      wanted: activeTags.wanted ?? {},
+      trade : systemChildren.caught.trade ?? {},
+    }),
+    [activeTags.wanted, systemChildren.caught.trade]
+  );
 
   /* ----- counts for footers --------------------------------------- */
   const counts = {
@@ -142,7 +147,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
           h2FontColor="#000000"
           pokemonNameColor="#000000"
           onSelectPreset={() => {}}
-          activeTags={activeTags}
+          activeTags={previewTags as any}
           variants={variants}
         />
       ) : (

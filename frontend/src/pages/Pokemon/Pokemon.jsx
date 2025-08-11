@@ -91,19 +91,19 @@ function Pokemon({ isOwnCollection }) {
   const foreignTags = useTagsStore(s => s.foreignTags);
 
   // DEV visibility: show both the big 4 and the computed children so you can verify cache/hydration
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'development') return;
-    const counts = Object.fromEntries(
-      Object.entries(tags || {}).map(([k, v]) => [k, Object.keys(v || {}).length])
-    );
-    const childCounts = {
-      favorites: Object.keys(systemChildren.caught?.favorite || {}).length,
-      caughtTradeUnion: Object.keys(systemChildren.caught?.trade || {}).length,
-      mostWanted: Object.keys(systemChildren.wanted?.mostWanted || {}).length,
-    };
-    console.log('[Pokemon] Tags buckets:', counts, tags);
-    console.log('[Pokemon] System children (Favorites / Caught▸Trade / Most Wanted):', childCounts, systemChildren);
-  }, [tags, systemChildren]);
+  // useEffect(() => {
+  //   if (process.env.NODE_ENV !== 'development') return;
+  //   const counts = Object.fromEntries(
+  //     Object.entries(tags || {}).map(([k, v]) => [k, Object.keys(v || {}).length])
+  //   );
+  //   const childCounts = {
+  //     favorites: Object.keys(systemChildren.caught?.favorite || {}).length,
+  //     caughtTradeUnion: Object.keys(systemChildren.caught?.trade || {}).length,
+  //     mostWanted: Object.keys(systemChildren.wanted?.mostWanted || {}).length,
+  //   };
+  //   console.log('[Pokemon] Tags buckets:', counts, tags);
+  //   console.log('[Pokemon] System children (Favorites / Caught▸Trade / Most Wanted):', childCounts, systemChildren);
+  // }, [tags, systemChildren]);
 
   const instances = isOwnCollection
     ? contextInstanceData

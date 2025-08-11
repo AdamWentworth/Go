@@ -48,7 +48,6 @@ export interface TagItem {
  */
 export interface TagBuckets {
   caught : Record<string, TagItem>; // "Inventory" (see all caught)
-  trade  : Record<string, TagItem>; // subset of caught (for trade)
   wanted : Record<string, TagItem>; // wanted
   /** allow future custom buckets */
   [key: string]: Record<string, TagItem>;

@@ -1,5 +1,3 @@
-// db/constants.ts
-
 export const isIOS =
   /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window);
 
@@ -12,6 +10,7 @@ export const UPDATES_DB_NAME       = 'updatesDB';
 export const POKEDEX_DB_NAME       = 'pokedexDB';
 export const REGISTRATIONS_DB_NAME = 'registrationsDB';
 
+/** bump for index changes */
 export const DB_VERSION = 1;
 
 /* Stores */

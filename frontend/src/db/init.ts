@@ -1,5 +1,11 @@
-// db/init.ts
-import { openDB, IDBPDatabase } from 'idb';
+// init.ts
+
+import {
+  openDB,
+  IDBPDatabase,
+  IDBPTransaction,
+  IDBPObjectStore,
+} from 'idb';
 import {
   DB_VERSION,
   VARIANTS_DB_NAME, INSTANCES_DB_NAME, TAGS_DB_NAME,
@@ -16,9 +22,29 @@ import {
 
 interface Doc { [k: string]: unknown; }
 
+/** normalize index presence check across DOMStringList / string[] */
+function storeHasIndex<S extends string>(
+  store: IDBPObjectStore<Doc, ArrayLike<string>, S, 'versionchange'>,
+  name: string
+) {
+  const names = (store as any).indexNames;
+  if (!names) return false;
+  if (typeof (names as any).contains === 'function') {
+    return (names as any).contains(name);
+  }
+  return Array.from(names as string[]).includes(name);
+}
+
+/** init factory with typed upgrade callback */
 function makeInit(
   dbName: string,
-  upgrade: (db: IDBPDatabase<Doc>) => void
+  upgrade: (
+    db: IDBPDatabase<Doc>,
+    oldV: number,
+    newV: number | null,
+    tx: IDBPTransaction<Doc, ArrayLike<string>, 'versionchange'>,
+    ev?: IDBVersionChangeEvent
+  ) => void
 ) {
   let ref: IDBPDatabase<Doc> | null = null;
   return async () => {
@@ -45,20 +71,43 @@ export const initInstancesDB = makeInit(INSTANCES_DB_NAME, (db) => {
   }
 });
 
-/** Tags DB: normalized + lean snapshot (no legacy per-bucket stores) */
-export const initTagsDB = makeInit(TAGS_DB_NAME, (db) => {
+/** Tags DB: single instanceTags store + per-tag indexes (no user_id anywhere) */
+export const initTagsDB = makeInit(TAGS_DB_NAME, (db, _oldV, _newV, tx) => {
+  // --- tag definitions ---
   if (!db.objectStoreNames.contains(TAG_DEFS_STORE)) {
     const s = db.createObjectStore(TAG_DEFS_STORE, { keyPath: 'tag_id' });
-    s.createIndex('by_user_parent', ['user_id', 'parent']);
+    s.createIndex('by_parent', 'parent');
+  } else {
+    const s = tx.objectStore(TAG_DEFS_STORE);
+    if (!storeHasIndex(s, 'by_parent')) s.createIndex('by_parent', 'parent');
   }
 
-  if (!db.objectStoreNames.contains(INSTANCE_TAGS_STORE)) {
-    const s = db.createObjectStore(INSTANCE_TAGS_STORE, { keyPath: 'key' }); // `${tag_id}:${instance_id}`
-    s.createIndex('by_tag', 'tag_id');
-    s.createIndex('by_instance', 'instance_id');
-    s.createIndex('by_user', 'user_id');
-  }
+  // --- instance tag memberships (ONE store) ---
+  let it =
+    !db.objectStoreNames.contains(INSTANCE_TAGS_STORE)
+      ? db.createObjectStore(INSTANCE_TAGS_STORE, { keyPath: 'key' }) // `${tag_id}:${instance_id}`
+      : tx.objectStore(INSTANCE_TAGS_STORE);
 
+  const ensureIndex = <S extends string>(
+    store: IDBPObjectStore<Doc, ArrayLike<string>, S, 'versionchange'>,
+    name: string,
+    keyPath: string
+  ) => {
+    if (!storeHasIndex(store, name)) store.createIndex(name, keyPath);
+  };
+
+  // general indexes
+  ensureIndex(it, 'by_tag', 'tag_id');
+  ensureIndex(it, 'by_instance', 'instance_id');
+
+  // ✅ per-system-tag indexes
+  ensureIndex(it, 'by_caught',      'caught_iid');
+  ensureIndex(it, 'by_trade',       'trade_iid');
+  ensureIndex(it, 'by_wanted',      'wanted_iid');
+  ensureIndex(it, 'by_favorite',    'favorite_iid');
+  ensureIndex(it, 'by_most_wanted', 'most_wanted_iid');
+
+  // --- lean snapshot ---
   if (!db.objectStoreNames.contains(SYSTEM_CHILDREN_STORE)) {
     db.createObjectStore(SYSTEM_CHILDREN_STORE, { keyPath: 'key' });
   }

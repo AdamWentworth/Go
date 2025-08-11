@@ -1,22 +1,22 @@
-// src/hooks/filtering/usePokemonOwnershipFilter.ts
+// usePokemonOwnershipFilter.ts
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { Instances } from '@/types/instances';
 import type { TagBuckets } from '@/types/tags';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
-// Valid filters we expose in the Tags UI
-const VALID_FILTERS = ['caught', 'trade', 'wanted'] as const;
+// Base filters the UI should treat as parents
+const VALID_FILTERS = ['caught', 'wanted'] as const;
 export type OwnershipFilter = typeof VALID_FILTERS[number];
 
-// Derived tag filters (computed from base buckets)
-const SPECIAL_FILTERS = ['favorites', 'most wanted'] as const;
+// Derived (children) – treat 'trade' like 'favorites' / 'most wanted'
+const SPECIAL_FILTERS = ['favorites', 'most wanted', 'trade'] as const;
 type SpecialFilter = typeof SPECIAL_FILTERS[number];
 
-// Backward-compat aliases
+// Back-compat
 const FILTER_ALIASES: Record<string, OwnershipFilter | 'missing'> = {
   owned: 'caught',
-  unowned: 'missing', // kept to avoid breaking old links; we'll treat it as empty
+  unowned: 'missing',
 };
 
 export function getFilteredPokemonsByOwnership(
@@ -28,28 +28,27 @@ export function getFilteredPokemonsByOwnership(
   const raw = (filter || '').toLowerCase().trim();
   const mapped = FILTER_ALIASES[raw] ?? raw;
   if (mapped === 'missing') {
-    // No longer a public bucket in Tags; return empty list silently.
     return [] as Array<PokemonVariant & { instanceData: PokemonInstance }>;
   }
 
-  // helper to map instance_ids -> hydrated variant+instance rows
+  // helper: instance_ids -> hydrated rows
   const mapIds = (ids: string[]) =>
     ids
       .map((instanceId) => {
         const instance = instancesData[instanceId];
         if (!instance) return undefined;
-
         const variantKey = instance.variant_id;
         if (!variantKey) return undefined;
-
         const variant = variants.find((v) => (v as any).variant_id === variantKey);
         if (!variant) return undefined;
-
-        return { ...variant, instanceData: { ...instance, instance_id: instanceId } as PokemonInstance };
+        return {
+          ...variant,
+          instanceData: { ...instance, instance_id: instanceId } as PokemonInstance,
+        };
       })
       .filter((v): v is PokemonVariant & { instanceData: PokemonInstance } => v !== undefined);
 
-  // Derived filters
+  // ---- derived children ----
   if ((mapped as SpecialFilter) === 'favorites') {
     const bucket = tagBuckets.caught ?? {};
     const ids = Object.entries(bucket)
@@ -57,6 +56,7 @@ export function getFilteredPokemonsByOwnership(
       .map(([id]) => id);
     return mapIds(ids);
   }
+
   if ((mapped as SpecialFilter) === 'most wanted') {
     const bucket = tagBuckets.wanted ?? {};
     const ids = Object.entries(bucket)
@@ -65,9 +65,17 @@ export function getFilteredPokemonsByOwnership(
     return mapIds(ids);
   }
 
-  // Base buckets
-  const filterKey = mapped as OwnershipFilter;
+  if ((mapped as SpecialFilter) === 'trade') {
+    // ✅ Trade is derived strictly from Caught
+    const bucket = tagBuckets.caught ?? {};
+    const ids = Object.entries(bucket)
+      .filter(([, item]) => (item as any).is_for_trade)
+      .map(([id]) => id);
+    return mapIds(ids);
+  }
 
+  // ---- base parents ----
+  const filterKey = mapped as OwnershipFilter;
   if (!VALID_FILTERS.includes(filterKey)) {
     console.warn(`[usePokemonOwnershipFilter] Unknown filter "${filter}". Returning empty array.`);
     return [];
