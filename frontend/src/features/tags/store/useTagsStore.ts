@@ -1,195 +1,143 @@
-/* ------------------------------------------------------------------ */
-/*  src/features/tags/store/useTagsStore.ts                           */
-/* ------------------------------------------------------------------ */
+// useTagsStore.ts
 
 import { create } from 'zustand';
 
 import {
-  // legacy cache (system buckets)
-  getAllTagsFromDB,
-  storeTagsInIndexedDB,
   // normalized custom tags
   getAllTagDefs,
   getInstanceTagsForUser,
-  type TagDef,
-  // NEW: persisted system-children snapshot
+  persistSystemMembershipsFromBuckets,
+  // lean ids snapshot
   getSystemChildrenSnapshot,
   setSystemChildrenSnapshot,
-  type SystemChildrenSnapshot,
+  type SystemChildrenIdsSnapshot,
 } from '@/db/tagsDB';
 
-import { TAG_STORE_NAMES } from '@/db/constants';
+import { getAllVariants }  from '@/db/variantsDB';
+import { getAllInstances } from '@/db/instancesDB';
 
 import { initializePokemonTags } from '../utils/initializePokemonTags';
-import { coerceToTagBuckets }   from '@/features/tags/utils/tagHelpers';
 import { isDataFresh }          from '@/utils/cacheHelpers';
 
-import { useVariantsStore }   from '@/features/variants/store/useVariantsStore';
-import { useInstancesStore }  from '@/features/instances/store/useInstancesStore';
-import { useAuthStore }       from '@/stores/useAuthStore';
+import { useVariantsStore }  from '@/features/variants/store/useVariantsStore';
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import { useAuthStore }      from '@/stores/useAuthStore';
 
 import type { TagBuckets, TagItem } from '@/types/tags';
 import type { Instances }           from '@/types/instances';
 import type { PokemonVariant }      from '@/types/pokemonVariants';
 
-type TagStoreName = typeof TAG_STORE_NAMES[number];
+const PERSIST_SYSTEM_MEMBERSHIPS = true;
 
-/* ================================================================== */
-/*  Types for custom tag tree                                         */
-/* ================================================================== */
+/* ------------ Types for custom tag tree ------------ */
 
 export type ParentKind = 'caught' | 'trade' | 'wanted';
 
+export interface TagDef {
+  tag_id: string;
+  user_id: string;
+  parent: ParentKind;
+  name: string;
+  color?: string | null;
+  sort?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  deleted_at?: string | null;
+}
+
 export interface CustomTagBucket {
   tag: TagDef;
-  items: Record<string /* instance_id */, TagItem>;
+  items: Record<string, TagItem>;
 }
 
 export interface CustomTagsTree {
-  caught: Record<string /* tag_id */, CustomTagBucket>;
-  trade : Record<string /* tag_id */, CustomTagBucket>;
-  wanted: Record<string /* tag_id */, CustomTagBucket>;
+  caught: Record<string, CustomTagBucket>;
+  trade : Record<string, CustomTagBucket>;
+  wanted: Record<string, CustomTagBucket>;
 }
 
-/* ================================================================== */
-/*  Computed system children                                          */
-/* ================================================================== */
+/* ------------ System children (computed) ------------ */
 
 export interface SystemChildren {
-  caught: {
-    favorite: Record<string, TagItem>; // favorite === true
-    trade   : Record<string, TagItem>; // union of tags.trade + caught w/ is_for_trade
-  };
-  wanted: {
-    mostWanted: Record<string, TagItem>; // most_wanted === true
-  };
+  caught: { favorite: Record<string, TagItem>; trade: Record<string, TagItem>; };
+  wanted: { mostWanted: Record<string, TagItem>; };
 }
 
-const EMPTY_BUCKETS: TagBuckets = {
-  caught : {},
-  missing: {},
-  wanted : {},
-  trade  : {},
-};
-
-const EMPTY_CUSTOM: CustomTagsTree = {
-  caught: {},
-  trade : {},
-  wanted: {},
-};
-
-const EMPTY_SYSTEM_CHILDREN: SystemChildren = {
-  caught: { favorite: {}, trade: {} },
-  wanted: { mostWanted: {} },
-};
-
-const toDBShape = (
-  buckets: TagBuckets,
-): Record<TagStoreName, Record<string, TagItem>> => {
-  return TAG_STORE_NAMES.reduce((acc, bucketName) => {
-    acc[bucketName] = buckets[bucketName] ?? {};
-    return acc;
-  }, {} as Record<TagStoreName, Record<string, TagItem>>);
-};
-
-function buildIndexByVariant(variants: PokemonVariant[]) {
-  const byKey = new Map<string, PokemonVariant>();
-  for (const v of variants) {
-    byKey.set(v.variant_id, v);
-  }
-  return byKey;
-}
-
-/* ================================================================== */
-/*  Helpers                                                           */
-/* ================================================================== */
+const EMPTY_BUCKETS: TagBuckets = { caught: {}, wanted: {}, trade: {} };
+const EMPTY_CUSTOM  : CustomTagsTree = { caught: {}, trade: {}, wanted: {} };
 
 function computeSystemChildren(tags: TagBuckets): SystemChildren {
-  const favorite: Record<string, TagItem> = {};
-  const trade: Record<string, TagItem> = {};
+  const favorite: Record<string, TagItem>   = {};
+  const trade   : Record<string, TagItem>   = {};
   const mostWanted: Record<string, TagItem> = {};
 
-  // Favorite + Trade from caught
   for (const [id, item] of Object.entries(tags.caught)) {
     if ((item as any).favorite) favorite[id] = item;
-    if ((item as any).is_for_trade) trade[id] = item; // caught marked for trade
+    if ((item as any).is_for_trade) trade[id] = item;
   }
-
-  // Ensure trade set includes explicit trade bucket too (source of truth for trade subset)
-  for (const [id, item] of Object.entries(tags.trade)) {
-    trade[id] = item;
-  }
-
-  // Most Wanted from wanted bucket
+  for (const [id, item] of Object.entries(tags.trade)) trade[id] = item;
   for (const [id, item] of Object.entries(tags.wanted)) {
     if ((item as any).most_wanted) mostWanted[id] = item;
   }
 
+  return { caught: { favorite, trade }, wanted: { mostWanted } };
+}
+
+function toSnapshotIds(sys: SystemChildren): SystemChildrenIdsSnapshot {
   return {
-    caught: { favorite, trade },
-    wanted: { mostWanted },
+    caught_favorite_ids: Object.keys(sys.caught.favorite),
+    caught_trade_ids:    Object.keys(sys.caught.trade),
+    wanted_mostWanted_ids: Object.keys(sys.wanted.mostWanted),
+    version: 2,
   };
 }
 
-function toSnapshot(sys: SystemChildren): SystemChildrenSnapshot {
-  return {
-    caught_favorite : sys.caught.favorite,
-    caught_trade    : sys.caught.trade,
-    wanted_mostWanted: sys.wanted.mostWanted,
+function idsToChildren(snap: SystemChildrenIdsSnapshot, buckets: TagBuckets): SystemChildren {
+  const pick = (ids: string[], src: Record<string, TagItem>) => {
+    const out: Record<string, TagItem> = {};
+    for (const id of ids) if (src[id]) out[id] = src[id];
+    return out;
   };
-}
-
-function fromSnapshot(snap: SystemChildrenSnapshot | null): SystemChildren | null {
-  if (!snap) return null;
-  return {
+  const child = {
     caught: {
-      favorite: snap.caught_favorite || {},
-      trade   : snap.caught_trade    || {},
+      favorite: pick(snap.caught_favorite_ids, buckets.caught),
+      trade:    pick(snap.caught_trade_ids,    buckets.caught),
     },
     wanted: {
-      mostWanted: snap.wanted_mostWanted || {},
+      mostWanted: pick(snap.wanted_mostWanted_ids, buckets.wanted),
     },
   };
+  // union explicit trade bucket
+  for (const [id, item] of Object.entries(buckets.trade)) child.caught.trade[id] = item;
+  return child;
 }
 
-/* ================================================================== */
-/*  Store definition                                                  */
-/* ================================================================== */
+/* ------------ Store ------------ */
 
 interface TagsStore {
-  /* state */
-  tags             : TagBuckets;       // system buckets
-  customTags       : CustomTagsTree;   // children per system parent (custom only)
-  systemChildren   : SystemChildren;   // computed children (Favorite, Trade, Most Wanted)
+  tags             : TagBuckets;
+  customTags       : CustomTagsTree;
+  systemChildren   : SystemChildren;
   tagsLoading      : boolean;
   customTagsLoading: boolean;
   foreignTags      : TagBuckets | null;
 
-  /* actions */
-  buildTags       (): Promise<void>;   // heavy – persists system buckets to IndexedDB
+  buildTags       (): Promise<void>;
   refreshTags     (): Promise<void>;
   resetTags       : () => void;
   hydrateFromCache: () => Promise<void>;
   buildForeignTags(instances: Instances): void;
 
-  /* internal helpers */
   rebuildCustomTags(userId?: string): Promise<void>;
 }
 
 export const useTagsStore = create<TagsStore>()((set, get) => ({
-  /* -------------------------------------------------------------- */
-  /* state                                                          */
-  /* -------------------------------------------------------------- */
   tags             : { ...EMPTY_BUCKETS },
   customTags       : { ...EMPTY_CUSTOM },
-  systemChildren   : { ...EMPTY_SYSTEM_CHILDREN },
+  systemChildren   : computeSystemChildren(EMPTY_BUCKETS),
   tagsLoading      : true,
   customTagsLoading: true,
   foreignTags      : null,
-
-  /* -------------------------------------------------------------- */
-  /* heavy rebuilds (startup, manual refresh)                       */
-  /* -------------------------------------------------------------- */
 
   async rebuildCustomTags(userId) {
     const { variants, variantsLoading }   = useVariantsStore.getState();
@@ -197,11 +145,7 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
     if (variantsLoading || instancesLoading) return;
 
     const uid = userId ?? (useAuthStore.getState().user?.user_id ?? '');
-    if (!uid) {
-      // No user id yet—treat as empty; UI can retry later
-      set({ customTags: { ...EMPTY_CUSTOM }, customTagsLoading: false });
-      return;
-    }
+    if (!uid) { set({ customTags: { ...EMPTY_CUSTOM }, customTagsLoading: false }); return; }
 
     set({ customTagsLoading: true });
 
@@ -211,51 +155,36 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
         getInstanceTagsForUser(uid),
       ]);
 
-      // Group memberships by tag_id
-      const byTagId = new Map<string, string[]>(); // tag_id -> instance_ids
-      for (const m of memberships) {
-        if (m.user_id !== uid) continue;
-        const arr = byTagId.get(m.tag_id) || [];
-        arr.push(m.instance_id);
-        byTagId.set(m.tag_id, arr);
-      }
-
-      // Build lookup tables
-      buildIndexByVariant(variants); // currently unused; kept for future join optimizations
-      const systemBuckets = initializePokemonTags(instances, variants); // reuse builder for TagItem creation
-
-      // Build a quick flat lookup: instance_id -> TagItem (pick from any bucket)
+      // Build quick lookup from current system buckets
       const itemByInstance: Record<string, TagItem> = {};
-      for (const b of Object.values(systemBuckets)) {
-        for (const [iid, item] of Object.entries(b)) {
-          if (!itemByInstance[iid]) itemByInstance[iid] = item;
-        }
+      const sysBuckets = get().tags;
+      for (const b of Object.values(sysBuckets)) {
+        for (const [iid, item] of Object.entries(b)) if (!itemByInstance[iid]) itemByInstance[iid] = item;
       }
 
       const out: CustomTagsTree = { caught: {}, trade: {}, wanted: {} };
-      for (const def of defs) {
-        if (def.user_id !== uid) continue;
-        if (def.deleted_at) continue;
-        if (!['caught', 'trade', 'wanted'].includes(def.parent as any)) continue;
 
-        const instIds = byTagId.get(def.tag_id) || [];
-        const items: Record<string, TagItem> = {};
-        for (const iid of instIds) {
-          const item = itemByInstance[iid];
-          if (item) items[iid] = item;
-        }
-
-        const parentKey = def.parent as ParentKind;
-        out[parentKey][def.tag_id] = { tag: def, items };
+      // group memberships by tag_id
+      const byTag = new Map<string, string[]>();
+      for (const m of memberships) {
+        if (m.user_id !== uid) continue;
+        const arr = byTag.get(m.tag_id) || [];
+        arr.push(m.instance_id);
+        byTag.set(m.tag_id, arr);
       }
 
-      // Update both custom tags and computed system children
-      const currentTags = get().tags;
-      set({
-        customTags: out,
-        customTagsLoading: false,
-        systemChildren: computeSystemChildren(currentTags),
-      });
+      for (const def of defs) {
+        if (def.user_id !== uid || def.deleted_at) continue;
+        if (!['caught','trade','wanted'].includes(def.parent as any)) continue;
+
+        const instIds = byTag.get(def.tag_id) || [];
+        const items: Record<string, TagItem> = {};
+        for (const iid of instIds) if (itemByInstance[iid]) items[iid] = itemByInstance[iid];
+
+        out[def.parent as ParentKind][def.tag_id] = { tag: def, items };
+      }
+
+      set({ customTags: out, customTagsLoading: false });
     } catch (e) {
       console.error('[TagsStore] rebuildCustomTags failed:', e);
       set({ customTags: { ...EMPTY_CUSTOM }, customTagsLoading: false });
@@ -267,64 +196,84 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
     const { instances, instancesLoading } = useInstancesStore.getState();
     if (variantsLoading || instancesLoading) return;
 
-    console.log('[TagsStore] Rebuilding tags from live data…');
     set({ tagsLoading: true });
 
     const newTags = initializePokemonTags(instances, variants);
-    const sys = computeSystemChildren(newTags);
+    const sys     = computeSystemChildren(newTags);
 
-    set({
-      tags: newTags,
-      tagsLoading: false,
-      systemChildren: sys,
-    });
+    set({ tags: newTags, tagsLoading: false, systemChildren: sys });
 
-    // Persist system buckets (legacy cache) for quick startup
-    await storeTagsInIndexedDB(toDBShape(newTags));
-    localStorage.setItem('tagsTimestamp', Date.now().toString());
+    // keep lean snapshot for fast boot
+    await setSystemChildrenSnapshot(toSnapshotIds(sys));
 
-    // Persist children snapshot too
-    await setSystemChildrenSnapshot(toSnapshot(sys));
+    if (PERSIST_SYSTEM_MEMBERSHIPS) {
+      await persistSystemMembershipsFromBuckets(newTags).catch(() => {});
+    }
 
-    // Also rebuild custom children once system buckets are ready
     await get().rebuildCustomTags();
   },
 
-  /** Build buckets for a *foreign* user once. */
   buildForeignTags(instances) {
     const { variants, variantsLoading } = useVariantsStore.getState();
     if (variantsLoading || !variants.length) return;
-
-    const newTags = initializePokemonTags(instances, variants);
-    set({ foreignTags: newTags });
+    set({ foreignTags: initializePokemonTags(instances, variants) });
   },
 
-  /** Hydrate from cache or rebuild if stale. */
   async hydrateFromCache() {
-    const tagsTS = Number(localStorage.getItem('tagsTimestamp') || 0);
+    // We no longer depend on legacy per-bucket caches.
+    // Strategy: use in-memory if ready; else fetch from IndexedDB (variants + instances),
+    // then compute buckets and rehydrate children using snapshot ids.
+    const tagsTS = Number(localStorage.getItem('tagsTimestamp') || 0); // optional; left for UX heuristics
     const ownTS  = Number(localStorage.getItem('ownershipTimestamp') || 0);
     const fresh       = !!tagsTS && isDataFresh(tagsTS);
     const needRebuild = ownTS > tagsTS;
 
-    if (fresh && !needRebuild) {
-      console.log('[TagsStore] Hydrating tags from IndexedDB (system buckets)…');
-      const cached   = await getAllTagsFromDB();
-      const hydrated = coerceToTagBuckets(cached);
+    try {
+      let variants = useVariantsStore.getState().variants;
+      let instancesMap = useInstancesStore.getState().instances;
 
-      // Try to hydrate system-children from snapshot; fallback to compute
+      if (!variants?.length) {
+        variants = await getAllVariants<PokemonVariant>();
+      }
+      if (!Object.keys(instancesMap || {}).length) {
+        const instArr = await getAllInstances<any>();
+        instancesMap = (instArr || []).reduce((acc: any, row: any) => {
+          if (row?.instance_id) acc[row.instance_id] = row;
+          return acc;
+        }, {} as Instances);
+      }
+
+      if (!variants?.length || !Object.keys(instancesMap || {}).length) {
+        // Not enough data to hydrate; leave loading true and let buildTags() finish later
+        return;
+      }
+
+      const buckets = initializePokemonTags(instancesMap, variants);
       const snap = await getSystemChildrenSnapshot();
-      const sys  = fromSnapshot(snap) ?? computeSystemChildren(hydrated);
+
+      const sys = snap ? idsToChildren(snap, buckets) : computeSystemChildren(buckets);
 
       set({
-        tags: hydrated,
-        tagsLoading: false,
+        tags: buckets,
         systemChildren: sys,
+        tagsLoading: false,
       });
 
-      // Custom children are normalized; rebuild them on the fly
+      if (PERSIST_SYSTEM_MEMBERSHIPS) {
+        await persistSystemMembershipsFromBuckets(buckets).catch(() => {});
+      }
+
+      // mark hydrated time
+      localStorage.setItem('tagsTimestamp', Date.now().toString());
+
+      // Optionally rebuild custom children once user id is known
       await get().rebuildCustomTags();
-    } else {
-      console.log('[TagsStore] Tags stale or outdated — rebuilding.');
+    } catch (e) {
+      console.warn('[TagsStore] hydrateFromCache failed; will rebuild later:', e);
+    }
+
+    // If data was outdated, trigger a rebuild pass (non-blocking)
+    if (!fresh || needRebuild) {
       await get().buildTags();
     }
   },
@@ -335,21 +284,18 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
 
   resetTags() {
     set({
-      tags             : { ...EMPTY_BUCKETS },
-      customTags       : { ...EMPTY_CUSTOM },
-      systemChildren   : { ...EMPTY_SYSTEM_CHILDREN },
-      tagsLoading      : true,
+      tags: { ...EMPTY_BUCKETS },
+      customTags: { ...EMPTY_CUSTOM },
+      systemChildren: computeSystemChildren(EMPTY_BUCKETS),
+      tagsLoading: true,
       customTagsLoading: true,
-      foreignTags      : null,
+      foreignTags: null,
     });
     localStorage.removeItem('tagsTimestamp');
   },
 }));
 
-/* ------------------------------------------------------------------ */
-/*  ✨  LIVE  ✨  lightweight rebuilds                                 */
-/* ------------------------------------------------------------------ */
-
+/* live lightweight rebuilds */
 const quickRebuild = (instances: Instances, dest: 'tags' | 'foreignTags') => {
   const { variants, variantsLoading } = useVariantsStore.getState();
   if (variantsLoading || !variants.length) return;
@@ -358,35 +304,20 @@ const quickRebuild = (instances: Instances, dest: 'tags' | 'foreignTags') => {
 
   if (dest === 'tags') {
     const sys = computeSystemChildren(buckets);
-    useTagsStore.setState({
-      tags: buckets,
-      systemChildren: sys,
-    });
-    // Persist updated system-children snapshot opportunistically
-    setSystemChildrenSnapshot((() => ({
-      caught_favorite : sys.caught.favorite,
-      caught_trade    : sys.caught.trade,
-      wanted_mostWanted: sys.wanted.mostWanted,
-    }))()).catch(() => {});
+    useTagsStore.setState({ tags: buckets, systemChildren: sys });
+    setSystemChildrenSnapshot(toSnapshotIds(sys)).catch(() => {});
+    if (PERSIST_SYSTEM_MEMBERSHIPS) persistSystemMembershipsFromBuckets(buckets).catch(() => {});
   } else {
     useTagsStore.setState({ foreignTags: buckets });
   }
 };
 
-// ---- own collection ------------------------------------------------
 useInstancesStore.subscribe((state) => {
   quickRebuild(state.instances, 'tags');
-  // custom tags depend on TagItem details (cp, flags…) -> rebuild children too
-  useTagsStore.getState().rebuildCustomTags().catch((e) =>
-    console.warn('[TagsStore] custom quick rebuild skipped:', e)
-  );
+  useTagsStore.getState().rebuildCustomTags().catch(() => {});
 });
 
-// ---- foreign-user collections -------------------------------------
 useInstancesStore.subscribe((state) => {
-  if (state.foreignInstances) {
-    quickRebuild(state.foreignInstances, 'foreignTags');
-  } else {
-    useTagsStore.setState({ foreignTags: null });
-  }
+  if (state.foreignInstances) quickRebuild(state.foreignInstances, 'foreignTags');
+  else useTagsStore.setState({ foreignTags: null });
 });

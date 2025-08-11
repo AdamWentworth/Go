@@ -7,11 +7,11 @@ import type { TagBuckets } from '@/types/tags';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 export const emptyTagBuckets = {
-  caught: {}, trade: {}, wanted: {}, missing: {},
+  caught: {}, trade: {}, wanted: {},
 } as const;
 
 function freshBuckets(): TagBuckets {
-  return { caught: {}, trade: {}, wanted: {}, missing: {} };
+  return { caught: {}, trade: {}, wanted: {} };
 }
 
 function pad4(n: number): string {
@@ -24,7 +24,7 @@ export function initializePokemonTags(
 ): TagBuckets {
   const tags = freshBuckets();
 
-  // Build lookups keyed by variant_id (not pokemonKey)
+  // lookups
   const byKey = new Map<string, PokemonVariant>();
   const byPidShiny = new Map<string, PokemonVariant>();
   for (const v of variants) {
@@ -34,8 +34,6 @@ export function initializePokemonTags(
     const k = `${pid}|${shinyFlag}`;
     if (!byPidShiny.has(k)) byPidShiny.set(k, v);
   }
-
-  const missing = new Set<string>();
 
   Object.entries(instances).forEach(([instanceId, inst]) => {
     let variantKey = inst.variant_id ?? '';
@@ -49,16 +47,10 @@ export function initializePokemonTags(
     }
 
     const variant = variantKey ? byKey.get(variantKey) : undefined;
-    if (!variant) {
-      missing.add(variantKey || `(pid:${inst.pokemon_id} shiny:${!!inst.shiny})`);
-      return;
-    }
+    if (!variant) return; // silently ignore; no public "missing" bucket anymore
 
     let img: string | undefined = variant.currentImage;
-    const {
-      gender, is_mega, mega_form,
-      is_fused, fusion_form, purified,
-    } = inst as any;
+    const { gender, is_mega, mega_form, is_fused, fusion_form, purified } = inst as any;
 
     if (
       (gender === 'Female' && variant.female_data) ||
@@ -79,15 +71,11 @@ export function initializePokemonTags(
 
     const item = buildTagItem(instanceId, inst, { ...variant, currentImage: img });
 
-    if (!inst.registered) tags.missing[instanceId]    = item;
-    if (inst.is_caught)   tags.caught [instanceId]    = item;
-    if (inst.is_for_trade)tags.trade  [instanceId]    = item;
-    if (inst.is_wanted)   tags.wanted [instanceId]    = item;
+    if (inst.is_caught)     tags.caught[instanceId]  = item;
+    if (inst.is_for_trade)  tags.trade [instanceId]  = item;
+    if (inst.is_wanted)     tags.wanted[instanceId]  = item;
   });
 
-  if (process.env.NODE_ENV === 'development' && missing.size) {
-    console.warn('[initializePokemonTags] missing variants:', [...missing]);
-  }
   return tags;
 }
 

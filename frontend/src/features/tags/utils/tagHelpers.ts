@@ -57,10 +57,9 @@ export function coerceToTagBuckets(
   obj: Record<string, Record<string, TagItem>>,
 ): TagBuckets {
   return {
-    caught  : obj.caught  ?? {},
-    trade   : obj.trade   ?? {},
-    wanted  : obj.wanted  ?? {},
-    missing : obj.missing ?? {},
-    ...obj,
+    caught : obj.caught  ?? {},
+    trade  : obj.trade   ?? {},
+    wanted : obj.wanted  ?? {},
+    ...obj, // allow extra custom buckets, but no "missing"
   };
 }

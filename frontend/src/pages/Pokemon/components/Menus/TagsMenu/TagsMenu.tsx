@@ -1,4 +1,4 @@
-// TagsMenu.tsx
+// src/pages/Pokemon/components/Menus/TagsMenu/TagsMenu.tsx
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import './TagsMenu.css';
@@ -67,44 +67,30 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
     return Object.values(obj).sort((a, b) => a.pokedex_number - b.pokedex_number);
   }, [systemChildren.wanted.mostWanted]);
 
-  const sortedMissing = useMemo<TagItem[]>(() => {
-    if (!activeTags.missing) return [];
-    return Object.values(activeTags.missing).sort(
-      (a, b) => a.pokedex_number - b.pokedex_number,
-    );
-  }, [activeTags.missing]);
-
+  // Public names → arrays to feed TagItems (no Missing here)
   const sortedTags: Record<string, TagItem[]> = {
     Favorites    : sortedFavorites,
-    Caught       : sortedCaught,
+    Caught       : sortedCaught,     // ← “See all inventory”
     Trade        : sortedTrade,
-    Wanted       : sortedWanted,
+    Wanted       : sortedWanted,     // ← “See all wanted”
     'Most Wanted': sortedMostWanted,
-    Missing      : sortedMissing,
   };
 
-  // Click mapping: Favorites/Most Wanted map to their parents for filter logic
+  // Keep the clicked label as-is so header shows FAVORITES / MOST WANTED
   const handleSelectTagInternal = (name: string) => {
-    const key = name.toLowerCase();
-    const mapped =
-      key === 'favorites' ? 'caught'
-      : key === 'most wanted' ? 'wanted'
-      : key;
-    onSelectTag(mapped);
+    onSelectTag(name);
   };
 
   /* ----- expand/collapse state ------------------------------------ */
   const [isCaughtOpen , setIsCaughtOpen ] = useState(true);
   const [isWantedOpen , setIsWantedOpen ] = useState(true);
-  const [isMissingOpen, setIsMissingOpen] = useState(false);
 
   const toggleCaught  = () => setIsCaughtOpen(v => !v);
   const toggleWanted  = () => setIsWantedOpen(v => !v);
-  const toggleMissing = () => setIsMissingOpen(v => !v);
 
   /* ----- preview / download --------------------------------------- */
-  const [isPreviewMode     , setIsPreviewMode]      = useState(false);
-  const [showColorSettings , setShowColorSettings]  = useState(false);
+  const [isPreviewMode     , setIsPreviewMode]     = useState(false);
+  const [showColorSettings , setShowColorSettings] = useState(false);
   const { isDownloading, downloadImage } = useDownloadImage();
   const downloadRef = useRef<any>(null);
 
@@ -122,7 +108,6 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
     trade  : sortedTags.Trade.length,
     wanted : sortedTags.Wanted.length,
     mostW  : sortedTags['Most Wanted'].length,
-    missing: sortedTags.Missing.length,
     favs   : sortedTags.Favorites.length,
   };
 
@@ -178,7 +163,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
 
           {/* TAG TREE */}
           <div className="tag-tree">
-            {/* Caught */}
+            {/* Inventory (Caught) */}
             <div className="tag-folder">
               <button
                 className="tag-folder-header Caught"
@@ -197,14 +182,14 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
                 {isCaughtOpen ? (
                   <div className="tag-sublist">
                     <TagGroup tagNames={['Favorites']} onSelect={handleSelectTagInternal} />
-                    <TagGroup tagNames={['Trade']} onSelect={() => onSelectTag('trade')} />
+                    <TagGroup tagNames={['Trade']} onSelect={handleSelectTagInternal} />
                     <TagGroup tagNames={['Caught']} onSelect={handleSelectTagInternal} />
                   </div>
                 ) : (
                   <div className="tag-peek-row">
                     <button
                       className="tag-footer tag-footer-button"
-                      onClick={() => onSelectTag('trade')}
+                      onClick={() => handleSelectTagInternal('Trade')}
                       aria-label="Open Trade tag"
                     >
                       <span>Trade</span>
@@ -235,30 +220,6 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
                   <div className="tag-sublist">
                     <TagGroup tagNames={['Most Wanted']} onSelect={handleSelectTagInternal} />
                     <TagGroup tagNames={['Wanted']} onSelect={handleSelectTagInternal} />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Missing */}
-            <div className="tag-folder">
-              <button
-                className="tag-folder-header Missing"
-                onClick={toggleMissing}
-                aria-expanded={isMissingOpen}
-                aria-controls="tag-folder-missing"
-              >
-                <span className="tag-folder-title">Missing</span>
-                <span className="tag-folder-meta">
-                  <span className="tag-count-badge dark">{counts.missing}</span>
-                  <span className={`tag-chev ${isMissingOpen ? 'open' : ''}`} />
-                </span>
-              </button>
-
-              <div id="tag-folder-missing" className="tag-folder-body">
-                {isMissingOpen && (
-                  <div className="tag-sublist">
-                    <TagGroup tagNames={['Missing']} onSelect={handleSelectTagInternal} />
                   </div>
                 )}
               </div>

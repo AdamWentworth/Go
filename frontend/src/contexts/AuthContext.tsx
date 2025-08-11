@@ -22,10 +22,9 @@ import { useTradeStore } from '@/features/trades/store/useTradeStore';
 import { useAuthStore } from '../stores/useAuthStore';
 import {
   clearInstancesStore,
-  clearTagsStore,
   clearTradesStore,
+  clearAllTagsDB,
 } from '../db/indexedDB';
-import { TAG_STORE_NAMES } from '@/db/indexedDB';
 import type { User, RefreshTokenPayload } from '../types/auth';
 import type { ApiResponse } from '../types/common';
 import type { AuthContextType } from '../types/authContext';
@@ -199,9 +198,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       await clearInstancesStore();
-      for (const tagName of TAG_STORE_NAMES) {
-        await clearTagsStore(tagName);
-      }
+      await clearAllTagsDB();
       await clearTradesStore('pokemonTrades');
       await clearTradesStore('relatedInstances');
     } catch (err) {

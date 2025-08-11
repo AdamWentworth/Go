@@ -1,258 +1,216 @@
 // db/tagsDB.ts
-/* -------------------------------------------------------------------------- */
-/*  Tags IndexedDB helpers                                                    */
-/* -------------------------------------------------------------------------- */
-
 import { initTagsDB } from './init';
 import {
-  TAG_STORE_NAMES,
-  TAG_DEFS_STORE,
-  INSTANCE_TAGS_STORE,
-  SYSTEM_CHILDREN_STORE,
+  TAG_DEFS_STORE,
+  INSTANCE_TAGS_STORE,
+  SYSTEM_CHILDREN_STORE,
 } from './constants';
 
-import type { TagItem } from '@/types/tags';
+import type { TagBuckets } from '@/types/tags';
 
-/** Literal union of the valid legacy tag stores */
-export type TagStoreName = typeof TAG_STORE_NAMES[number];
+/* ---------- System Children Snapshot (ids only) ---------- */
 
-/* ========================================================================== */
-/*  System Children Snapshot (for fast hydration)                            */
-/* ========================================================================== */
-
-export interface SystemChildrenSnapshot {
-  key?: 'snapshot';
-  caught_favorite: Record<string, TagItem>;
-  caught_trade: Record<string, TagItem>;
-  wanted_mostWanted: Record<string, TagItem>;
+export interface SystemChildrenIdsSnapshot {
+  key?: 'snapshot';
+  caught_favorite_ids: string[];
+  caught_trade_ids: string[];
+  wanted_mostWanted_ids: string[];
+  version?: 2;
 }
 
 const SNAPSHOT_KEY = 'snapshot';
 
 export async function setSystemChildrenSnapshot(
-  snapshot: Omit<SystemChildrenSnapshot, 'key'>,
+  snapshot: Omit<SystemChildrenIdsSnapshot, 'key'>
 ): Promise<void> {
-  const db = await initTagsDB();
-  if (!db) return;
-  await db.put(SYSTEM_CHILDREN_STORE, { ...snapshot, key: SNAPSHOT_KEY });
+  const db = await initTagsDB();
+  if (!db) return;
+  await db.put(SYSTEM_CHILDREN_STORE, { ...snapshot, key: SNAPSHOT_KEY, version: 2 });
 }
 
-export async function getSystemChildrenSnapshot(): Promise<SystemChildrenSnapshot | null> {
-  const db = await initTagsDB();
-  if (!db) return null;
-  return (db.get(SYSTEM_CHILDREN_STORE, SNAPSHOT_KEY) as Promise<SystemChildrenSnapshot | null>) ?? null;
+export async function getSystemChildrenSnapshot(): Promise<SystemChildrenIdsSnapshot | null> {
+  const db = await initTagsDB();
+  if (!db) return null;
+
+  const raw = (await db.get(SYSTEM_CHILDREN_STORE, SNAPSHOT_KEY)) as any;
+  if (!raw) return null;
+  if (raw.version === 2) return raw as SystemChildrenIdsSnapshot;
+
+  const toIds = (obj: Record<string, unknown> | undefined) => obj ? Object.keys(obj) : [];
+  const normalized: SystemChildrenIdsSnapshot = {
+    caught_favorite_ids: toIds(raw?.caught_favorite),
+    caught_trade_ids: toIds(raw?.caught_trade),
+    wanted_mostWanted_ids: toIds(raw?.wanted_mostWanted),
+    version: 2,
+  };
+  try { await setSystemChildrenSnapshot(normalized); } catch {}
+  return normalized;
 }
 
-/* ========================================================================== */
-/*  NEW NORMALIZED TAG API (custom tags + memberships)                        */
-/* ========================================================================== */
+/* ---------- Normalized Tag API ---------- */
 
 export type ParentKind = 'caught' | 'trade' | 'wanted';
 
 export interface TagDef {
-  tag_id: string;
-  user_id: string;
-  parent: ParentKind;
-  name: string;
-  color?: string | null;
-  sort?: number | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-  deleted_at?: string | null;
+  tag_id: string;
+  user_id: string;
+  parent: ParentKind;
+  name: string;
+  color?: string | null;
+  sort?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  deleted_at?: string | null;
 }
 
 export interface InstanceTag {
-  /** compound key `${tag_id}:${instance_id}` */
-  key: string;
-  tag_id: string;
-  instance_id: string;
-  user_id: string;
-  created_at?: string | null;
+  key: string; // `${tag_id}:${instance_id}`
+  tag_id: string;
+  instance_id: string;
+  user_id: string; // 'sys' for system memberships; actual user for custom
+  created_at?: string | null;
+  tag_label?: string | null; // for DevTools readability
 }
 
-/** Replace ALL tag definitions (authoritative snapshot). */
 export async function replaceTagDefs(defs: TagDef[]): Promise<void> {
-  const db = await initTagsDB();
-  if (!db) return;
-  const tx = db.transaction(TAG_DEFS_STORE, 'readwrite');
-  await tx.store.clear();
-  for (const d of defs) {
-    await tx.store.put(d);
-  }
-  await tx.done;
+  const db = await initTagsDB();
+  if (!db) return;
+  const tx = db.transaction(TAG_DEFS_STORE, 'readwrite');
+  await tx.store.clear();
+  for (const d of defs) await tx.store.put(d);
+  await tx.done;
 }
 
 export async function getAllTagDefs(): Promise<TagDef[]> {
-  const db = await initTagsDB();
-  if (!db) return [];
-  return db.getAll(TAG_DEFS_STORE) as Promise<TagDef[]>;
+  const db = await initTagsDB();
+  if (!db) return [];
+  return db.getAll(TAG_DEFS_STORE) as Promise<TagDef[]>;
 }
 
 export async function getTagDefsByParent(user_id: string, parent: ParentKind): Promise<TagDef[]> {
-  const db = await initTagsDB();
-  if (!db) return [];
-  const tx = db.transaction(TAG_DEFS_STORE, 'readonly');
-  const idx = tx.store.index('by_user_parent');
-  const range = IDBKeyRange.only([user_id, parent]);
-  const rows = await idx.getAll(range) as TagDef[];
-  await tx.done;
-  return rows;
+  const db = await initTagsDB();
+  if (!db) return [];
+  const tx = db.transaction(TAG_DEFS_STORE, 'readonly');
+  const idx = tx.store.index('by_user_parent');
+  const rows = (await idx.getAll(IDBKeyRange.only([user_id, parent]))) as TagDef[];
+  await tx.done;
+  return rows;
 }
 
-/** Replace ALL instance-tag memberships (authoritative snapshot). */
 export async function replaceInstanceTags(memberships: InstanceTag[]): Promise<void> {
-  const db = await initTagsDB();
-  if (!db) return;
-  const tx = db.transaction(INSTANCE_TAGS_STORE, 'readwrite');
-  await tx.store.clear();
-  for (const m of memberships) {
-    const key = m.key || `${m.tag_id}:${m.instance_id}`;
-    await tx.store.put({ ...m, key });
-  }
-  await tx.done;
+  const db = await initTagsDB();
+  if (!db) return;
+  const tx = db.transaction(INSTANCE_TAGS_STORE, 'readwrite');
+  await tx.store.clear();
+  for (const m of memberships) {
+    const key = m.key || `${m.tag_id}:${m.instance_id}`;
+    await tx.store.put({ ...m, key });
+  }
+  await tx.done;
 }
 
-/** Add a single custom tag to an instance. Idempotent. */
-export async function addInstanceTag(tag_id: string, instance_id: string, user_id: string): Promise<void> {
-  const db = await initTagsDB();
-  if (!db) return;
-  const tx = db.transaction(INSTANCE_TAGS_STORE, 'readwrite');
-  const key = `${tag_id}:${instance_id}`;
-  await tx.store.put({ key, tag_id, instance_id, user_id, created_at: new Date().toISOString() } as InstanceTag);
-  await tx.done;
+export async function addInstanceTag(tag_id: string, instance_id: string, user_id: string, tag_label?: string): Promise<void> {
+  const db = await initTagsDB();
+  if (!db) return;
+  const tx = db.transaction(INSTANCE_TAGS_STORE, 'readwrite');
+  await tx.store.put({
+    key: `${tag_id}:${instance_id}`,
+    tag_id, instance_id, user_id,
+    tag_label: tag_label ?? null,
+    created_at: new Date().toISOString(),
+  } as InstanceTag);
+  await tx.done;
 }
 
-/** Remove a single custom tag from an instance. */
 export async function removeInstanceTag(tag_id: string, instance_id: string): Promise<void> {
-  const db = await initTagsDB();
-  if (!db) return;
-  const tx = db.transaction(INSTANCE_TAGS_STORE, 'readwrite');
-  const key = `${tag_id}:${instance_id}`;
-  await tx.store.delete(key);
-  await tx.done;
+  const db = await initTagsDB();
+  if (!db) return;
+  const tx = db.transaction(INSTANCE_TAGS_STORE, 'readwrite');
+  await tx.store.delete(`${tag_id}:${instance_id}`);
+  await tx.done;
 }
 
-/** Get all instance_ids in a given custom tag. */
 export async function getInstanceIdsByTag(tag_id: string): Promise<string[]> {
-  const db = await initTagsDB();
-  if (!db) return [];
-  const tx = db.transaction(INSTANCE_TAGS_STORE, 'readonly');
-  const idx = tx.store.index('by_tag');
-  const rows = await idx.getAll(IDBKeyRange.only(tag_id)) as InstanceTag[];
-  await tx.done;
-  return rows.map(r => r.instance_id);
+  const db = await initTagsDB();
+  if (!db) return [];
+  const tx = db.transaction(INSTANCE_TAGS_STORE, 'readonly');
+  const rows = (await tx.store.index('by_tag').getAll(IDBKeyRange.only(tag_id))) as InstanceTag[];
+  await tx.done;
+  return rows.map((r) => r.instance_id);
 }
 
-/** Get all tag_ids (custom) for a given instance. */
 export async function getTagIdsByInstance(instance_id: string): Promise<string[]> {
-  const db = await initTagsDB();
-  if (!db) return [];
-  const tx = db.transaction(INSTANCE_TAGS_STORE, 'readonly');
-  const idx = tx.store.index('by_instance');
-  const rows = await idx.getAll(IDBKeyRange.only(instance_id)) as InstanceTag[];
-  await tx.done;
-  return rows.map(r => r.tag_id);
+  const db = await initTagsDB();
+  if (!db) return [];
+  const tx = db.transaction(INSTANCE_TAGS_STORE, 'readonly');
+  const rows = (await tx.store.index('by_instance').getAll(IDBKeyRange.only(instance_id))) as InstanceTag[];
+  await tx.done;
+  return rows.map((r) => r.tag_id);
 }
 
-/** Get all memberships for a user (useful for quick in-memory joins). */
 export async function getInstanceTagsForUser(user_id: string): Promise<InstanceTag[]> {
-  const db = await initTagsDB();
-  if (!db) return [];
-  const tx = db.transaction(INSTANCE_TAGS_STORE, 'readonly');
-  const idx = tx.store.index('by_user');
-  const rows = await idx.getAll(IDBKeyRange.only(user_id)) as InstanceTag[];
-  await tx.done;
-  return rows;
+  const db = await initTagsDB();
+  if (!db) return [];
+  const tx = db.transaction(INSTANCE_TAGS_STORE, 'readonly');
+  const rows = (await tx.store.index('by_user').getAll(IDBKeyRange.only(user_id))) as InstanceTag[];
+  await tx.done;
+  return rows;
 }
 
-/* ========================================================================== */
-/*  LEGACY per-bucket API (kept so existing code compiles/runs)               */
-/* ========================================================================== */
+/** Optional: mirror system buckets into instanceTags with user_id='sys' so DevTools has rows to inspect. */
+export async function persistSystemMembershipsFromBuckets(buckets: TagBuckets): Promise<void> {
+  const db = await initTagsDB();
+  if (!db) return;
 
-export async function getFromTagsDB(
-  storeName: TagStoreName,
-  key: string,
-): Promise<TagItem | null> {
-  const db = await initTagsDB();
-  return db ? (db.get(storeName, key) as Promise<TagItem | null>) : null;
+  const tx = db.transaction(INSTANCE_TAGS_STORE, 'readwrite');
+  const store = tx.objectStore(INSTANCE_TAGS_STORE);
+
+  // wipe previous sys rows
+  try {
+    const existing = (await store.index('by_user').getAll(IDBKeyRange.only('sys'))) as InstanceTag[];
+    for (const row of existing) await store.delete(row.key);
+  } catch {}
+
+  const putMany = (tagId: string, ids: string[]) => {
+    for (const instance_id of ids) {
+      store.put({
+        key: `${tagId}:${instance_id}`,
+        tag_id: tagId,
+        instance_id,
+        user_id: 'sys',
+        tag_label: tagId,
+        created_at: new Date().toISOString(),
+      } as InstanceTag);
+    }
+  };
+
+  putMany('caught', Object.keys(buckets.caught));
+  putMany('trade', Object.keys(buckets.trade));
+  putMany('wanted', Object.keys(buckets.wanted));
+
+  const favoriteIds = Object.entries(buckets.caught)
+    .filter(([, item]) => (item as any).favorite)
+    .map(([id]) => id);
+  const mostWantedIds = Object.entries(buckets.wanted)
+    .filter(([, item]) => (item as any).most_wanted)
+    .map(([id]) => id);
+
+  putMany('favorite', favoriteIds);
+  putMany('most_wanted', mostWantedIds);
+
+  await tx.done;
 }
 
-export async function putIntoTagsDB(
-  storeName: TagStoreName,
-  data: TagItem,
-): Promise<void> {
-  const db = await initTagsDB();
-  if (db) await db.put(storeName, data);
-}
+export async function clearAllTagsDB(): Promise<void> {
+  const db = await initTagsDB();
+  if (!db) return;
 
-export async function getAllFromTagsDB(
-  storeName: TagStoreName,
-): Promise<TagItem[]> {
-  const db = await initTagsDB();
-  if (!db) {
-    console.warn('TagsDB not available; cannot read data.');
-    return [];
-  }
-
-  const tx    = db.transaction(storeName, 'readonly');
-  const items = await tx.objectStore(storeName).getAll() as TagItem[];
-  await tx.done;
-
-  return items;
-}
-
-export async function clearTagsStore(storeName: TagStoreName): Promise<void> {
-  const db = await initTagsDB();
-  if (db) await db.clear(storeName);
-}
-
-export async function getAllTagsFromDB(): Promise<
-  Record<TagStoreName, Record<string, TagItem>>
-> {
-  const db = await initTagsDB();
-  if (!db) {
-    console.warn('TagsDB not available; cannot read tags data.');
-    return { caught: {}, wanted: {}, trade: {} } as Record<TagStoreName, Record<string, TagItem>>;
-  }
-
-  const tx  = db.transaction(TAG_STORE_NAMES, 'readonly');
-  const out = { caught: {}, wanted: {}, trade: {} } as Record<TagStoreName, Record<string, TagItem>>;
-
-  for (const store of TAG_STORE_NAMES) {
-    const rows = await tx.objectStore(store).getAll() as TagItem[];
-    for (const item of rows) {
-      out[store][item.instance_id] = item;
-    }
-  }
-
-  await tx.done;
-  return out;
-}
-
-export async function storeTagsInIndexedDB(
-  tagSets: Record<TagStoreName, Record<string, TagItem>>,
-): Promise<void> {
-  const db = await initTagsDB();
-  if (!db) {
-    console.warn('TagsDB not available; cannot store tags data.');
-    return;
-  }
-
-  const tx = db.transaction(TAG_STORE_NAMES, 'readwrite');
-
-  for (const storeName of TAG_STORE_NAMES) {
-    const store = tx.objectStore(storeName);
-    await store.clear();
-
-    const items = Object.keys(tagSets[storeName]).map<TagItem>((id) => ({
-      ...tagSets[storeName][id],
-      instance_id: id,
-    }));
-
-    for (const item of items) {
-      await store.put(item);
-    }
-  }
-
-  await tx.done;
+  const tx = db.transaction(
+    [TAG_DEFS_STORE, INSTANCE_TAGS_STORE, SYSTEM_CHILDREN_STORE],
+    'readwrite'
+  );
+  await tx.objectStore(TAG_DEFS_STORE).clear();
+  await tx.objectStore(INSTANCE_TAGS_STORE).clear();
+  await tx.objectStore(SYSTEM_CHILDREN_STORE).clear();
+  await tx.done;
 }
