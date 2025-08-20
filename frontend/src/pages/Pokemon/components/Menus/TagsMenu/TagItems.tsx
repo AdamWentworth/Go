@@ -75,7 +75,7 @@ const TagItems: React.FC<TagItemsProps> = ({
           <div className="tag-footer">
             <span className="tag-title">{tagName}</span>
             <span className="tag-subtitle">
-              {tagData.length} Pokémon have this tag
+              {tagData.length} Pokémon have this tag.
             </span>
             {tagName === 'Favorites' && (
               <img
@@ -91,7 +91,7 @@ const TagItems: React.FC<TagItemsProps> = ({
             {previewEls.length ? (
               previewEls
             ) : (
-              <p className="tag-empty-text">No Pokémon in this tag</p>
+              <p className="tag-empty-text">No Pokémon in this tag.</p>
             )}
           </div>
         </div>

@@ -1,5 +1,5 @@
 // InstanceOverlay.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './InstanceOverlay.css';
 import OverlayPortal from '@/components/OverlayPortal';
 import WindowOverlay from '@/components/WindowOverlay';
@@ -9,6 +9,27 @@ import TradeDetails from './components/Trade/TradeDetails';
 import WantedInstance from './WantedInstance';
 import WantedDetails from './components/Wanted/WantedDetails';
 import CloseButton from '@/components/CloseButton.jsx';
+
+const toKey = (v) => (v ?? '').toString().trim().toLowerCase();
+// map aliases/synonyms to canonical keys used by the switch
+const CANON = (k) => {
+  const key = toKey(k);
+  if (key === 'owned') return 'caught';
+  if (key === 'unowned') return 'missing';
+  return key;
+};
+
+const deriveInitialOverlay = (tagFilter, pokemon) => {
+  const fromTag = CANON(tagFilter);
+  if (['caught', 'missing', 'trade', 'wanted'].includes(fromTag)) return fromTag;
+
+  // Fallback to instance status if available
+  const status = CANON(pokemon?.instanceData?.status || pokemon?.status);
+  if (['caught', 'missing', 'trade', 'wanted'].includes(status)) return status;
+
+  // Sensible default
+  return 'caught';
+};
 
 const InstanceOverlay = ({
   pokemon,
@@ -22,44 +43,49 @@ const InstanceOverlay = ({
   isEditable,
   username,
 }) => {
-  // console.log("Rendering InstanceOverlay for pokemon:", pokemon);
-  const [currentOverlay, setCurrentOverlay] = useState(tagFilter);
   const [selectedPokemon, setSelectedPokemon] = useState(pokemon);
-  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 686);
 
-  // NEW: State to disable pointer events briefly after mount
+  // Screen size (SSR-safe)
+  const [isSmallScreen, setIsSmallScreen] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= 686 : false
+  );
+  useEffect(() => {
+    const handleResize = () => setIsSmallScreen(window.innerWidth <= 686);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Briefly ignore pointer events after mount
   const [ignorePointerEvents, setIgnorePointerEvents] = useState(true);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIgnorePointerEvents(false);
-    }, 300); // 300ms delay; adjust as needed
+    const timer = setTimeout(() => setIgnorePointerEvents(false), 300);
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsSmallScreen(window.innerWidth <= 686);
-    };
+  // Compute current overlay canonically from tagFilter/pokemon
+  const [currentOverlay, setCurrentOverlay] = useState(() =>
+    deriveInitialOverlay(tagFilter, pokemon)
+  );
 
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
+  // Keep overlay in sync if tagFilter or selectedPokemon changes
+  useEffect(() => {
+    setCurrentOverlay(deriveInitialOverlay(tagFilter, selectedPokemon));
+  }, [tagFilter, selectedPokemon]);
 
   const handleOpenWantedOverlay = (pokemonData) => {
     setSelectedPokemon(pokemonData);
-    setCurrentOverlay('Wanted');
+    setCurrentOverlay('wanted');
   };
 
   const handleOpenTradeOverlay = (pokemonData) => {
     setSelectedPokemon(pokemonData);
-    setCurrentOverlay('Trade');
+    setCurrentOverlay('trade');
   };
 
   const handleCloseOverlay = () => {
     onClose();
-    setCurrentOverlay(tagFilter);
+    // When closing, reset to tag-derived view for next open
+    setCurrentOverlay(deriveInitialOverlay(tagFilter, null));
     setSelectedPokemon(null);
   };
 
@@ -130,10 +156,11 @@ const InstanceOverlay = ({
     }
   };
 
+  // Note: className check now uses canonical key 'caught'
   return (
     <OverlayPortal>
-      <div 
-        className={`instance-overlay ${currentOverlay === 'Owned' ? 'owned-overlay' : ''}`} 
+      <div
+        className={`instance-overlay ${currentOverlay === 'caught' ? 'owned-overlay' : ''}`}
         style={{ pointerEvents: ignorePointerEvents ? 'none' : 'auto' }}
       >
         {renderContent()}
