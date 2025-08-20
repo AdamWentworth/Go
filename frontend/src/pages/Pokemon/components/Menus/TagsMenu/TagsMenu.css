@@ -104,45 +104,97 @@
 /* Tag-folder body */
 .tag-folder-body {
   padding: 0.5rem 0.75rem 0.8rem;
-  background: #151515;
+  background: #333;
 }
 
 /* Sublist container */
 .tag-sublist {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
 }
 
-/* Peek row (neutral look) */
+/* ─────────────────────────────────────────────────────────────
+   Collapsed peek row with colored child-tag buttons
+   ───────────────────────────────────────────────────────────── */
 .tag-peek-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.5rem;
   border: 2px dashed #3a3a3a;
   border-radius: 10px;
-  padding: 0.35rem 0.4rem;
+  padding: 0.35rem;
   background: #1a1a1a;
 }
 
-/* Footer-only peek button (neutral) */
-.tag-footer-button {
+/* Base peek button */
+.tag-peek-button {
+  position: relative;
+  overflow: hidden;
   width: 100%;
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  align-items: center;
-  padding: 0.5rem 0.65rem;
-  border: none;
-  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.18);
   border-radius: 10px;
-  font-weight: 700;
-  background: transparent;
-  color: #fff;
+  cursor: pointer;
+
+  /* content */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+
+  padding: 0.55rem 0.7rem;
+  background: #222; /* fallback */
+  color: #111;      /* better contrast on lightened gradients */
+  font-weight: 800;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
-/* Hidden Capture Area (if used by PreviewContainer) */
-.hidden-capture {
+.tag-peek-button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  border-color: rgba(255,255,255,0.7);
+}
+.tag-peek-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+}
+
+/* Gradient layer inside the button */
+.tag-peek-button::before {
+  content: "";
   position: absolute;
-  top: -9999px;
-  left: -9999px;
-  opacity: 0;
-  pointer-events: none;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(180deg, #444, #222);
+}
+.tag-peek-button > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Title span (for potential future styling) */
+.tag-peek-title {}
+
+/* Use the same palettes you use on TagItems (lightest at bottom) */
+.tag-peek-button[data-tag="Favorites"]::before {
+  background: linear-gradient(180deg, #ffd77aff 0%, #fff1aaff 45%, #fff9dcff 100%);
+}
+.tag-peek-button[data-tag="Trade"]::before {
+  background: linear-gradient(180deg, #3aa85fff 0%, #7fdc9eff 45%, #eaf8f1ff 100%);
+}
+.tag-peek-button[data-tag="Caught"]::before {
+  background: linear-gradient(180deg, #3f89ffff 0%, #9bc5ffff 45%, #e6f1ffff 100%);
+}
+.tag-peek-button[data-tag="Most Wanted"]::before {
+  background: linear-gradient(180deg, #ff6f61ff 0%, #ff9b89ff 45%, #ffe4dcff 100%);
+}
+.tag-peek-button[data-tag="Wanted"]::before {
+  background: linear-gradient(180deg, #dd5260ff 0%, #fd9090ff 45%, #ffc5cc 100%);
+}
+
+/* Make the badge readable on colorful backgrounds */
+.tag-peek-button .tag-count-badge {
+  backdrop-filter: saturate(1.2) blur(0px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25) inset;
 }

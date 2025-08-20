@@ -39,40 +39,41 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   }, [activeTags, systemChildren]);
 
   /* ----- tag sorting ---------------------------------------------- */
-  const sortedCaught = useFavoriteList(
-    activeTags.caught ? Object.values(activeTags.caught) : [],
+  const unsortedCaught = useMemo<TagItem[]>(() => {
+    if (!activeTags.caught) return [];
+    return Object.values(activeTags.caught);
+  }, [activeTags.caught]);
+
+  const sortedFavorites = useFavoriteList(
+    Object.values(systemChildren.caught.favorite || {})
   );
 
-  const sortedFavorites = useMemo<TagItem[]>(() => {
-    const arr = Object.values(systemChildren.caught.favorite || {});
-    return arr.sort((a, b) => a.pokedex_number - b.pokedex_number);
-  }, [systemChildren.caught.favorite]);
-
-  // ✅ Trade is ALWAYS a child of Caught
-  const sortedTrade = useMemo<TagItem[]>(() => {
+  // Trade (child of Caught) — unsorted
+  const unsortedTrade = useMemo<TagItem[]>(() => {
     const obj = systemChildren.caught.trade || {};
-    return Object.values(obj).sort((a, b) => a.pokedex_number - b.pokedex_number);
+    return Object.values(obj);
   }, [systemChildren.caught.trade]);
 
-  const sortedWanted = useMemo<TagItem[]>(() => {
+  // Wanted — unsorted
+  const unsortedWanted = useMemo<TagItem[]>(() => {
     if (!activeTags.wanted) return [];
-    return Object.values(activeTags.wanted).sort(
-      (a, b) => a.pokedex_number - b.pokedex_number,
-    );
+    return Object.values(activeTags.wanted);
   }, [activeTags.wanted]);
 
-  const sortedMostWanted = useMemo<TagItem[]>(() => {
+  // Most Wanted — unsorted
+  const unsortedMostWanted = useMemo<TagItem[]>(() => {
     const obj = systemChildren.wanted.mostWanted || {};
-    return Object.values(obj).sort((a, b) => a.pokedex_number - b.pokedex_number);
+    return Object.values(obj);
   }, [systemChildren.wanted.mostWanted]);
+
 
   // Public names → arrays to feed TagItems (no Missing here)
   const sortedTags: Record<string, TagItem[]> = {
-    Favorites    : sortedFavorites,
-    Caught       : sortedCaught,     // “See all inventory”
-    Trade        : sortedTrade,      // child list from Caught only
-    Wanted       : sortedWanted,     // “See all wanted”
-    'Most Wanted': sortedMostWanted,
+    Favorites    : sortedFavorites,   // keep favorite-based sorting
+    Caught       : unsortedCaught,    // raw / insertion order
+    Trade        : unsortedTrade,     // raw / insertion order
+    Wanted       : unsortedWanted,    // raw / insertion order
+    'Most Wanted': unsortedMostWanted // raw / insertion order
   };
 
   const handleSelectTagInternal = (name: string) => onSelectTag(name);
@@ -191,14 +192,39 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
                     <TagGroup tagNames={['Caught']} onSelect={handleSelectTagInternal} />
                   </div>
                 ) : (
+                  /* ⬇ Collapsed: show all child tags as colored peek buttons */
                   <div className="tag-peek-row">
                     <button
-                      className="tag-footer tag-footer-button"
+                      className="tag-peek-button"
+                      data-tag="Favorites"
+                      onClick={() => handleSelectTagInternal('Favorites')}
+                      title="Open Favorites"
+                      aria-label="Open Favorites tag"
+                    >
+                      <span className="tag-peek-title">Favorites</span>
+                      <span className="tag-count-badge dark">{counts.favs}</span>
+                    </button>
+
+                    <button
+                      className="tag-peek-button"
+                      data-tag="Trade"
                       onClick={() => handleSelectTagInternal('Trade')}
+                      title="Open Trade"
                       aria-label="Open Trade tag"
                     >
-                      <span>Trade</span>
-                      <span className="tag-count-badge light">{counts.trade}</span>
+                      <span className="tag-peek-title">Trade</span>
+                      <span className="tag-count-badge dark">{counts.trade}</span>
+                    </button>
+
+                    <button
+                      className="tag-peek-button"
+                      data-tag="Caught"
+                      onClick={() => handleSelectTagInternal('Caught')}
+                      title="Open Caught"
+                      aria-label="Open Caught tag"
+                    >
+                      <span className="tag-peek-title">Caught</span>
+                      <span className="tag-count-badge dark">{counts.caught}</span>
                     </button>
                   </div>
                 )}
@@ -221,10 +247,35 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
               </button>
 
               <div id="tag-folder-wanted" className="tag-folder-body">
-                {isWantedOpen && (
+                {isWantedOpen ? (
                   <div className="tag-sublist">
                     <TagGroup tagNames={['Most Wanted']} onSelect={handleSelectTagInternal} />
                     <TagGroup tagNames={['Wanted']} onSelect={handleSelectTagInternal} />
+                  </div>
+                ) : (
+                  /* ⬇ Collapsed: show both child tags as colored peek buttons */
+                  <div className="tag-peek-row">
+                    <button
+                      className="tag-peek-button"
+                      data-tag="Most Wanted"
+                      onClick={() => handleSelectTagInternal('Most Wanted')}
+                      title="Open Most Wanted"
+                      aria-label="Open Most Wanted tag"
+                    >
+                      <span className="tag-peek-title">Most Wanted</span>
+                      <span className="tag-count-badge dark">{counts.mostW}</span>
+                    </button>
+
+                    <button
+                      className="tag-peek-button"
+                      data-tag="Wanted"
+                      onClick={() => handleSelectTagInternal('Wanted')}
+                      title="Open Wanted"
+                      aria-label="Open Wanted tag"
+                    >
+                      <span className="tag-peek-title">Wanted</span>
+                      <span className="tag-count-badge dark">{counts.wanted}</span>
+                    </button>
                   </div>
                 )}
               </div>

@@ -4,120 +4,238 @@
 
 /* Card wrapper */
 .tags-menu .tag-item {
-  /* spacing variables so the gradient can extend under padding cleanly */
-  --tag-item-pad: 0.625rem;
+  --tag-item-pad: 0.625rem;     /* ~10px */
   --tag-card-radius: 0.9375rem;
 
-  position: relative;          /* anchor for clipping the gradient */
-  overflow: hidden;            /* clip pseudo background to rounded corners */
+  position: relative;
+  overflow: hidden;
   display: flex;
-  flex-direction: column-reverse; /* show preview first, footer last */
+  flex-direction: column-reverse; /* visual: preview above footer */
   align-items: center;
   margin: 0.625rem 0;
-  border: 0.125rem solid #444;
   border-radius: var(--tag-card-radius);
   padding: var(--tag-item-pad);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  background: transparent;
+  background: #222;
   color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 20px rgba(255,255,255,0.10);
 }
-.tags-menu .tag-item:hover { background-color: #1e1e1e; }
+.tags-menu .tag-item:hover {
+  background-color: #1e1e1e;
+  box-shadow: 0 12px 28px rgba(255,255,255,0.25);
+}
 
-/* Neutral footer (no color) sits above the gradient */
+/* Footer (title + subtitle, icon on right) */
 .tags-menu .tag-footer {
   position: relative;
   z-index: 2;
   width: 100%;
-  text-align: center;
+  padding: 0.5rem 0.6rem;
+  border-radius: 0 0 0.75rem 0.75rem;
+  background: transparent;
+  color: #fff;
+
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "title icon"
+    "subtitle icon";
+  column-gap: 0.5rem;
+  row-gap: 0.125rem;
+}
+.tags-menu .tag-footer .tag-title {
+  grid-area: title;
+  justify-self: start;
+  text-align: left;
   font-size: 1.1rem;
   font-weight: 700;
-  padding: 0.5rem 0.6rem;
-  border-top: 0.0625rem solid #333;
-  border-radius: 0 0 0.75rem 0.75rem;
-  color: #fff;
-  background: transparent;
+}
+.tags-menu .tag-footer .tag-subtitle {
+  grid-area: subtitle;
+  justify-self: start;
+  text-align: left;
+  font-size: 0.9rem;
+  line-height: 1.1;
+  color: #ddd;
+  opacity: 0.95;
+}
+.tags-menu .tag-footer .tag-footer-icon {
+  grid-area: icon;
+  justify-self: end;
+  align-self: center;
+  width: 1.1rem;
+  height: auto;
+  image-rendering: -webkit-optimize-contrast;
+  pointer-events: none;
 }
 
 /* Thumbnails area (gradient target) */
 .tags-menu .tag-preview {
-  /* padding lives INSIDE the colored area */
-  --tag-preview-pad-v: 0.5rem;
-  --tag-preview-pad-h: 0.35rem;
+  /* gutters + padding */
+  --pad-inline: clamp(12px, 5vw, 24px); /* side space at all widths */
+  --pad-block : 0.5rem;
 
-  position: relative;  /* anchor for the ::before gradient */
-  z-index: 1;          /* keep content above the gradient layer */
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin: 0;          /* no gaps that would show neutral card background */
+  /* cell sizing (small screens: 6 cols) */
+  --cell-min: 34px;               /* small enough to fit 6 across @320px */
+  --cell-max: 54px;               /* cap so they don’t balloon */
+  --gap     : clamp(10px, 2.5vw, 16px); /* space between sprites */
+
+  position: relative;
+  z-index: 1;
+  display: grid;
+
+  grid-template-columns: repeat(6, minmax(var(--cell-min), var(--cell-max)));
+  gap: var(--gap);
+
+  /* Fill width with space between columns; side gutters handled by padding */
+  justify-content: space-between;
+  align-content: start;
+
   width: 100%;
-  padding: var(--tag-preview-pad-v) var(--tag-preview-pad-h);
-  border-radius: 0.75rem 0.75rem 0 0; /* visual rounding at the top */
+  margin: 0;
+  padding: var(--pad-block) var(--pad-inline);
+  border-radius: 0.75rem 0.75rem 0 0;
+
+  /* Ensure gradient pseudo sits behind content reliably */
+  isolation: isolate;
+
+  /* Keep preview area a consistent height: exactly two rows worth */
+  min-height: calc(2 * var(--cell-min) + var(--gap) + 2 * var(--pad-block));
 }
 
-/* Gradient layer: extend to the card edges despite padding */
+/* Larger screens: 9 per row (still 2 rows) */
+@media (min-width: 767px) {
+  .tags-menu .tag-preview {
+    --cell-min: 38px;
+    --cell-max: 60px;
+    --gap     : clamp(12px, 2vw, 18px);
+
+    grid-template-columns: repeat(9, minmax(var(--cell-min), var(--cell-max)));
+    /* same visual height target at larger sizes */
+    min-height: calc(2 * var(--cell-max) + var(--gap) + 2 * var(--pad-block));
+  }
+}
+
+/* Show only two rows worth of sprites */
+.tags-menu .tag-preview .tag-sprite:nth-child(n+13) { display: none; }
+@media (min-width: 767px) {
+  .tags-menu .tag-preview .tag-sprite:nth-child(n+13) { display: block; }
+  .tags-menu .tag-preview .tag-sprite:nth-child(n+19) { display: none; }
+}
+
+/* Gradient layer: extend under the preview to card edges */
 .tags-menu .tag-preview::before {
   content: "";
   position: absolute;
   z-index: 0;
-  /* extend left/right/top by the card padding so color reaches edges */
   inset: calc(-1 * var(--tag-item-pad)) calc(-1 * var(--tag-item-pad)) 0 calc(-1 * var(--tag-item-pad));
   border-radius: var(--tag-card-radius) var(--tag-card-radius) 0 0;
   pointer-events: none;
-  /* background is set by tag type selectors below */
-  background: transparent;
+  background: transparent; /* set by tag-type rules below */
 }
 
-/* The ONLY colors: set the gradient on the ::before layer based on tag */
-.tags-menu .tag-footer.Caught + .tag-preview::before {
-  background: linear-gradient(180deg, rgba(33,150,243,0.25), rgba(100,181,246,0.12));
-}
-.tags-menu .tag-footer.Trade + .tag-preview::before {
-  background: linear-gradient(180deg, rgba(76,175,80,0.28), rgba(129,199,132,0.14));
-}
-.tags-menu .tag-footer.Wanted + .tag-preview::before {
-  background: linear-gradient(180deg, rgba(244,67,54,0.28), rgba(239,83,80,0.14));
-}
-.tags-menu .tag-footer.Missing + .tag-preview::before {
-  background: linear-gradient(180deg, rgba(97,97,97,0.28), rgba(158,158,158,0.14));
-}
-.tags-menu .tag-footer.Favorites + .tag-preview::before {
-  background: linear-gradient(180deg, rgba(212,175,55,0.35), rgba(255,215,102,0.18));
-}
-.tags-menu .tag-footer.Most.Wanted + .tag-preview::before {
-  background: linear-gradient(180deg, rgba(255,143,0,0.32), rgba(255,179,0,0.16));
+/* ★ Empty state: center text in the exact gradient area */
+.tags-menu .tag-item[data-empty="true"] .tag-preview > .tag-empty-text {
+  position: absolute;
+  z-index: 1;
+  /* match the gradient rectangle exactly */
+  inset: calc(-1 * var(--tag-item-pad)) calc(-1 * var(--tag-item-pad)) 0 calc(-1 * var(--tag-item-pad));
+  display: grid;
+  place-items: center;
+  margin: 0;
+  width: auto;   /* fill via inset */
+  height: auto;  /* fill via inset */
+  text-align: center;
+  font-size: 0.95rem;
+  color: #525252ff;
+  opacity: 0.9;
+  pointer-events: none; /* let clicks through to the card */
 }
 
-/* Sprite containers */
+/* ── Tag-based gradients (lightest at bottom) ───────────────── */
+
+/* Favorites: lighter golden */
+.tags-menu .tag-item[data-tag="Favorites"] .tag-preview::before {
+  background: linear-gradient(
+    180deg,
+    #ffd77aff 0%,
+    #fff1aaff 45%,
+    #fff9dcff 100%
+  );
+}
+
+/* Trade: lighter green */
+.tags-menu .tag-item[data-tag="Trade"] .tag-preview::before {
+  background: linear-gradient(
+    180deg,
+    #3aa85fff 0%,
+    #7fdc9eff 45%,
+    #eaf8f1ff 100%
+  );
+}
+
+/* Caught: lighter blue */
+.tags-menu .tag-item[data-tag="Caught"] .tag-preview::before {
+  background: linear-gradient(
+    180deg,
+    #3f89ffff 0%,
+    #9bc5ffff 45%,
+    #e6f1ffff 100%
+  );
+}
+
+/* Most Wanted: lighter, more red with a touch of orange */
+.tags-menu .tag-item[data-tag="Most Wanted"] .tag-preview::before {
+  background: linear-gradient(
+    180deg,
+    #ff6f61ff 0%,
+    #ff9b89ff 45%,
+    #ffe4dcff 100%
+  );
+}
+
+/* Wanted: lighter red */
+.tags-menu .tag-item[data-tag="Wanted"] .tag-preview::before {
+  background: linear-gradient(
+    180deg,
+    #dd5260ff 0%,
+    #fd9090ff 45%,
+    #ffc5cc 100%
+  );
+}
+
+/* Grid item (sprite box) */
 .tags-menu .tag-sprite {
   position: relative;
-  display: inline-block;
+  box-sizing: border-box;  /* prevent padding from overflowing the track */
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  padding: clamp(2px, 0.5vw, 6px);
   margin: 0;
-  width: 3.5rem;
-  padding: 0.3125rem;
 }
+
+/* Image fills the square cell */
 .tags-menu .preview-image {
   width: 100%;
   height: 100%;
+  object-fit: contain;
   display: block;
   border-radius: 0.3125rem;
 }
+
+/* Variant overlay scales with the cell */
 .tags-menu .tag-variant-overlay {
   position: absolute;
-  top: 0.2rem;
-  right: 0.2rem;
-  width: 1rem;
+  top: clamp(2px, 0.5vw, 6px);
+  right: clamp(2px, 0.5vw, 6px);
+  width: clamp(12px, 22%, 20px);
   pointer-events: none;
   z-index: 1;
 }
 
-/* Empty message */
-.tags-menu .tag-empty-text {
-  font-size: 0.875rem;
-  color: #999;
-  margin-top: 0.625rem;
-}
+/* (Non-empty) we don't need any special rules; the grid defines the height */
 
 /* Missing look */
 .tags-menu .tag-preview img.preview-image.missing,
@@ -125,18 +243,4 @@
   filter: grayscale(100%) brightness(0.2) contrast(0.5)
           drop-shadow(0 6px 6px rgba(0, 0, 0, 0.3));
   transition: filter 0.3s ease;
-}
-
-/* Responsive (item-level only) */
-@media (max-width: 650px) {
-  .tags-menu .tag-sprite { width: 2.8125rem; }
-  .tags-menu .tag-variant-overlay { width: 0.75rem; top: 0.15rem; right: 0.15rem; }
-}
-@media (min-width: 1024px) {
-  .tags-menu .tag-sprite { width: 3.75rem; }
-  .tags-menu .tag-variant-overlay { width: 1.25rem; top: 0.25rem; right: 0.25rem; }
-}
-@media (min-width: 1440px) {
-  .tags-menu .tag-sprite { width: 4.05rem; }
-  .tags-menu .tag-variant-overlay { width: 1.5rem; top: 0.3rem; right: 0.3rem; }
 }

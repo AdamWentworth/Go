@@ -19,11 +19,13 @@
 .partner-modal-overlay .modal-content,
 .pokemon-options-overlay .option-card,
 .pokemon-options-overlay .pokemon-card,
-.fusion-pokemon-selection-overlay .fusion-modal-content {
+.fusion-pokemon-selection-overlay .fusion-modal-content,
+.tag-folder-body {
     background-color: #e0f0e5;
 }
 
-.pokemon-options-overlay .option-card:hover {
+.pokemon-options-overlay .option-card:hover,
+.tags-menu .tag-item:hover {
     background-color: #ffffff;
 }
 
@@ -49,7 +51,8 @@
 .confirmation-content,
 .header-section.search-section,
 .search-menu,
-.search-header {
+.search-header,
+.tags-menu .tag-item {
     background-color: #f8fff9;
 }
 
@@ -107,7 +110,8 @@ background-color: #e7f3df;
 .fusion-pokemon-selection-overlay .fusion-modal-content,
 .header .free-toggle-text,
 .pokemon-card,
-.search-menu .section-title{
+.search-menu .section-title,
+.tags-menu .tag-footer .tag-title {
     color: #48615e;
 }
 
@@ -120,7 +124,8 @@ p,
 .add-move-button,
 .favorite-component,
 .move-select,
-.move-select option {
+.move-select option,
+.tags-menu .tag-footer .tag-subtitle {
     color: #48615e;
 }
 
@@ -153,8 +158,13 @@ p,
     background: linear-gradient(to bottom right, #e0f0e5, #34807d);
 }
 
-.action-menu-button-image, .sort-button {
-    filter: drop-shadow(0 0 3px #000000); /* Adds blue glow around opaque parts */
+.action-menu-button-image, .sort-button,
+.tags-menu .tag-item {
+    filter: drop-shadow(0 0 3px #565656ff); /* Adds blue glow around opaque parts */
+}
+
+.tags-menu .tag-item:hover {
+    filter: drop-shadow(0 0 3px #282828ff); /* Adds blue glow around opaque parts */
 }
 
 /* Hover Effects */
