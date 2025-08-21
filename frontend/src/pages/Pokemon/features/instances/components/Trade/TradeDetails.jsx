@@ -7,7 +7,7 @@ import { useModal } from '@/contexts/ModalContext';
 
 import WantedListDisplay from './WantedListDisplay';
 
-import MirrorManager from './MirrorManager.js';
+import MirrorManager from './MirrorManager';
 
 import FilterImages from '../../FilterImages';
 import useImageSelection from '../../utils/useImageSelection';
@@ -418,7 +418,7 @@ const TradeDetails = ({
           <div className="mirror">
             <MirrorManager
               pokemon={pokemon}
-              ownershipData={ownershipData}
+              instances={ownershipData}
               lists={lists}
               isMirror={isMirror}
               setIsMirror={setIsMirror}

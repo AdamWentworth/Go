@@ -24,19 +24,19 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   const systemChildren = useTagsStore(s => s.systemChildren);
 
   // DEV visibility: verify cache/store contents
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'development') return;
-    const counts = Object.fromEntries(
-      Object.entries(activeTags).map(([k, v]) => [k, Object.keys(v || {}).length])
-    );
-    const childCounts = {
-      favorites  : Object.keys(systemChildren.caught.favorite || {}).length,
-      trade      : Object.keys(systemChildren.caught.trade || {}).length,
-      mostWanted : Object.keys(systemChildren.wanted.mostWanted || {}).length,
-    };
-    console.log('[TagsMenu] System buckets:', counts, activeTags);
-    console.log('[TagsMenu] System children:', childCounts, systemChildren);
-  }, [activeTags, systemChildren]);
+  // useEffect(() => {
+  //   if (process.env.NODE_ENV !== 'development') return;
+  //   const counts = Object.fromEntries(
+  //     Object.entries(activeTags).map(([k, v]) => [k, Object.keys(v || {}).length])
+  //   );
+  //   const childCounts = {
+  //     favorites  : Object.keys(systemChildren.caught.favorite || {}).length,
+  //     trade      : Object.keys(systemChildren.caught.trade || {}).length,
+  //     mostWanted : Object.keys(systemChildren.wanted.mostWanted || {}).length,
+  //   };
+  //   console.log('[TagsMenu] System buckets:', counts, activeTags);
+  //   console.log('[TagsMenu] System children:', childCounts, systemChildren);
+  // }, [activeTags, systemChildren]);
 
   /* ----- tag sorting ---------------------------------------------- */
   const unsortedCaught = useMemo<TagItem[]>(() => {
