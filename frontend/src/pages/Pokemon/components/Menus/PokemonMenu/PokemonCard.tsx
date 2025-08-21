@@ -1,3 +1,4 @@
+// PokemonCard.tsx
 import { useEffect, useState, memo, useRef } from 'react';
 import CP from '@/components/pokemonComponents/CP';
 import PokemonImagePresentation from './PokemonImagePresentation';
@@ -5,6 +6,7 @@ import './PokemonCard.css';
 import { usePokemonCardTouchHandlers } from './hooks/usePokemonCardTouchHandlers';
 import { usePokemonAttributes } from './hooks/usePokemonAttributes';
 import { usePokemonImage } from './hooks/usePokemonImage';
+import SelectChip from './SelectChip';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -36,24 +38,17 @@ const PokemonCard = memo(({
   isEditable,
   isFastSelectEnabled,
   isHighlighted,
-  tagFilter ='',
+  tagFilter = '',
   sortType,
   variants,
 }: Props) => {
   const [shouldJiggle, setShouldJiggle] = useState(false);
   const prevIsHighlighted = useRef(isHighlighted);
   const {
-    isDisabled,
-    isFemale,
-    isMega,
-    megaForm,
-    isFused,
-    fusionForm,
-    isPurified,
-    isDynamax,
-    isGigantamax
-  } = usePokemonAttributes(pokemon);  
-  
+    isDisabled, isFemale, isMega, megaForm,
+    isFused, fusionForm, isPurified, isDynamax, isGigantamax
+  } = usePokemonAttributes(pokemon);
+
   useEffect(() => {
     if (prevIsHighlighted.current !== isHighlighted) {
       setShouldJiggle(true);
@@ -62,7 +57,7 @@ const PokemonCard = memo(({
     }
     prevIsHighlighted.current = isHighlighted;
   }, [isHighlighted]);
-  
+
   const currentImage = usePokemonImage({
     pokemon,
     isDisabled,
@@ -72,79 +67,59 @@ const PokemonCard = memo(({
     isFused,
     fusionForm,
     isPurified
-  });  
+  });
 
   const getDisplayName = () => {
-    if (pokemon.instanceData?.nickname) {
-      return pokemon.instanceData.nickname;
-    }
-  
+    if (pokemon.instanceData?.nickname) return pokemon.instanceData.nickname;
+
     let name = pokemon.name;
-  
     if (isFused && fusionForm) {
-      name = pokemon.instanceData?.shiny
-        ? `Shiny ${fusionForm}`
-        : fusionForm;
+      name = pokemon.instanceData?.shiny ? `Shiny ${fusionForm}` : fusionForm;
     }
-  
     if (isMega && megaForm) {
       name = pokemon.instanceData?.shiny
         ? `Shiny Mega ${name} ${pokemon.instanceData?.mega_form}`
         : `Mega ${name} ${pokemon.instanceData?.mega_form}`;
     }
-  
     return name;
-  };      
+  };
 
-  // inside PokemonCard component, before calling the hook
-  const highlightKey =
-    pokemon.instanceData?.instance_id ?? // prefer instance UUID
-    pokemon.variant_id;                  // fallback to variant key
+  // Prefer instance UUID, fallback to variant key
+  const highlightKey = pokemon.instanceData?.instance_id ?? (pokemon as any).variant_id;
 
-  const {
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
-    handleClick
-  } = usePokemonCardTouchHandlers({
-    onSelect,
-    onSwipe,
-    toggleCardHighlight,
-    setIsFastSelectEnabled,
-    isEditable,
-    isFastSelectEnabled,
-    isDisabled,
-    // ⬇️ use the highlight key, not the raw pokemonKey
-    selectKey: highlightKey,
-  });
+  const { handleTouchStart, handleTouchMove, handleTouchEnd, handleClick } =
+    usePokemonCardTouchHandlers({
+      onSelect,
+      onSwipe,
+      toggleCardHighlight,
+      setIsFastSelectEnabled,
+      isEditable,
+      isFastSelectEnabled,
+      isDisabled,
+      selectKey: highlightKey,
+    });
 
   const getOwnershipClass = () => {
-    // Normalize terms used by CSS
     const f = (tagFilter || '').toLowerCase();
     switch (f) {
-      case 'caught':
-        return 'caught';
-      case 'trade':
-        return 'trade';
-      case 'wanted':
-        return 'wanted';
-      case 'missing':
-        return 'missing';
-      default:
-        return '';
+      case 'caught': return 'caught';
+      case 'trade': return 'trade';
+      case 'wanted': return 'wanted';
+      case 'missing': return 'missing';
+      default: return '';
     }
   };
 
   const shouldDisplayLuckyBackdrop =
     (tagFilter.toLowerCase() === 'wanted' && pokemon.instanceData?.pref_lucky) ||
-    (tagFilter.toLowerCase() === 'caught' && pokemon.instanceData?.lucky);
+    pokemon.instanceData?.lucky;
 
   let locationBackground: VariantBackground | null = null;
   if (pokemon.instanceData?.location_card) {
-    const variant = variants.find(v => v.pokemon_id === pokemon.pokemon_id);
+    const variant = variants.find((v) => v.pokemon_id === pokemon.pokemon_id);
     const locationCardId = Number(pokemon.instanceData?.location_card);
     if (!isNaN(locationCardId)) {
-      locationBackground = variant?.backgrounds.find(bg => bg.background_id === locationCardId) || null;
+      locationBackground = variant?.backgrounds.find((bg) => bg.background_id === locationCardId) || null;
     }
   }
 
@@ -161,21 +136,71 @@ const PokemonCard = memo(({
     ${shouldJiggle ? 'jiggle' : ''}
   `.trim();
 
+  // Modifier-click toggles selection on desktop; normal click opens details
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isEditable) {
+        setIsFastSelectEnabled(true);
+        toggleCardHighlight(highlightKey);
+      }
+      return;
+    }
+    handleClick();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === ' ') {
+      e.preventDefault();
+      if (isEditable) {
+        setIsFastSelectEnabled(true);
+        toggleCardHighlight(highlightKey);
+      }
+    } else if (e.key === 'Enter') {
+      onSelect();
+    }
+  };
+
   return (
     <div
-      className={cardClass}
+      className={`${cardClass} ${isFastSelectEnabled ? 'hide-select-chip' : ''}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onClick={handleClick}
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`View ${pokemon.name} details`}
     >
+      {/* Select chip (desktop hover only before fast-select is enabled) */}
+      {isEditable && (
+        <SelectChip
+          selected={isHighlighted}
+          delayMs={300}
+          onToggle={() => {
+            // enter fast-select only when selecting via chip
+            if (!isHighlighted && !isFastSelectEnabled) {
+              setIsFastSelectEnabled(true);
+            }
+            toggleCardHighlight(highlightKey);
+          }}
+        />
+      )}
+
       <div className="cp-container">
         <CP cp={cpValue} editMode={false} onCPChange={() => {}} />
       </div>
 
       <div className="fav-container">
         {pokemon.instanceData?.favorite && (
-          <img src="/images/fav_pressed.png" alt="Favorite" className="favorite-icon" draggable={false} />
+          <img
+            src="/images/fav_pressed.png"
+            alt="Favorite"
+            className="favorite-icon"
+            draggable={false}
+          />
         )}
       </div>
 
@@ -192,13 +217,25 @@ const PokemonCard = memo(({
       <p>#{(pokemon as any).pokedex_number}</p>
 
       <div className="type-icons">
-        {(pokemon as any).type_1_icon && <img src={(pokemon as any).type_1_icon} alt={(pokemon as any).type1_name} loading="lazy" draggable={false} />}
-        {(pokemon as any).type_2_icon && <img src={(pokemon as any).type_2_icon} alt={(pokemon as any).type2_name} loading="lazy" draggable={false} />}
+        {(pokemon as any).type_1_icon && (
+          <img
+            src={(pokemon as any).type_1_icon}
+            alt={(pokemon as any).type1_name}
+            loading="lazy"
+            draggable={false}
+          />
+        )}
+        {(pokemon as any).type_2_icon && (
+          <img
+            src={(pokemon as any).type_2_icon}
+            alt={(pokemon as any).type2_name}
+            loading="lazy"
+            draggable={false}
+          />
+        )}
       </div>
 
-      <h2 className="pokemon-name-display"> 
-        {getDisplayName()}
-      </h2>
+      <h2 className="pokemon-name-display">{getDisplayName()}</h2>
     </div>
   );
 });

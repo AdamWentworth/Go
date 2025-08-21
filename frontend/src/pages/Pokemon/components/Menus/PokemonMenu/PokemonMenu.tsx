@@ -9,18 +9,12 @@ import type { SortType, SortMode } from '@/types/sort';
 import PokemonGrid from './PokemonGrid';
 import PokedexOverlay from '@/pages/Pokemon/features/pokedex/PokedexOverlay';
 import InstanceOverlay from '@/pages/Pokemon/features/instances/InstanceOverlay';
-import PokemonOptionsOverlay from './PokemonOptionsOverlay';
 import CustomScrollbar from './CustomScrollbar';
 import './PokemonMenu.css';
 import { useModal } from '@/contexts/ModalContext';
 import SearchUI from './SearchUI';
 import SearchMenu from './SearchMenu';
 import SortMenu from './SortMenu';
-
-interface OptionsSelected {
-  pokemon: PokemonVariant;
-  isInstance: boolean;
-}
 
 type SelectedPokemon =
   | PokemonVariant
@@ -83,7 +77,6 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
 }) => {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const { alert } = useModal();
-  const [optionsSelectedPokemon, setOptionsSelectedPokemon] = useState<OptionsSelected | null>(null);
 
   // Use non-nullable ref for grid container
   const searchAreaRef = useRef<HTMLDivElement>(null);
@@ -94,25 +87,17 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
 
   const handleSelect = useCallback(
     (pokemon: PokemonVariant) => {
-      const instanceId = pokemon?.instanceData?.instance_id;
-      const isInstance = !!instanceId;
-
-      console.log('  → instance_id:', pokemon.instanceData?.instance_id);
-      console.log('  → variant_id:', (pokemon as any).variant_id);
+      const isInstance = !!pokemon?.instanceData?.instance_id;
 
       if (!isEditable) {
-        setSelectedPokemon(
-          isInstance ? { pokemon, overlayType: 'instance' } : pokemon
-        );
+        setSelectedPokemon(isInstance ? { pokemon, overlayType: 'instance' } : pokemon);
         return;
       }
 
       if (isFastSelectEnabled) {
         const key = pokemon.instanceData?.instance_id ?? (pokemon as any).variant_id;
-
         const was = highlightedCards.has(key);
         toggleCardHighlight(key);
-
         if (was && highlightedCards.size === 1) {
           setIsFastSelectEnabled(false);
         }
@@ -124,7 +109,8 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
         return;
       }
 
-      setOptionsSelectedPokemon({ pokemon, isInstance });
+      // default: open details immediately
+      setSelectedPokemon(isInstance ? { pokemon, overlayType: 'instance' } : pokemon);
     },
     [
       isEditable,
@@ -178,16 +164,21 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
           showEvolutionaryLine={showEvolutionaryLine}
           toggleEvolutionaryLine={toggleEvolutionaryLine}
           onFocusChange={(focus) => focus && setIsMenuVisible(true)}
-          onArrowClick={() => { setIsMenuVisible(false); setSearchTerm(''); }}
+          onArrowClick={() => {
+            setIsMenuVisible(false);
+            setSearchTerm('');
+          }}
         />
-        {isMenuVisible && <SearchMenu onFilterClick={handleFilterClick} onCloseMenu={() => setIsMenuVisible(false)} />}
+        {isMenuVisible && (
+          <SearchMenu onFilterClick={handleFilterClick} onCloseMenu={() => setIsMenuVisible(false)} />
+        )}
       </header>
 
       {!isMenuVisible && (
         <div className="grid-wrapper">
           <div className="grid-container" ref={gridContainerRef}>
             <PokemonGrid
-              sortedPokemons={memoizedSorted.map(v => ({ ...v, currentImage: v.currentImage! }))}
+              sortedPokemons={memoizedSorted.map((v) => ({ ...v, currentImage: v.currentImage! }))}
               highlightedCards={highlightedCards}
               handleSelect={handleSelect}
               tagFilter={tagFilter}
@@ -206,26 +197,11 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
       )}
 
       {!highlightedCards.size && (
-        <SortMenu sortType={sortType} setSortType={setSortType} sortMode={sortMode} setSortMode={setSortMode} />
-      )}
-
-      {isEditable && optionsSelectedPokemon && (
-        <PokemonOptionsOverlay
-          pokemon={optionsSelectedPokemon.pokemon}
-          isInstance={optionsSelectedPokemon.isInstance}
-          tagFilter={tagFilter}
-          onClose={() => setOptionsSelectedPokemon(null)}
-          onHighlight={(poke) => {
-            const key = poke.instanceData?.instance_id ?? (poke as any).variant_id; // prefer instance UUID
-            toggleCardHighlight(key);
-            setIsFastSelectEnabled(true);
-            setOptionsSelectedPokemon(null);
-          }}
-          onOpenOverlay={(poke) => {
-            const { isInstance } = optionsSelectedPokemon;
-            setSelectedPokemon(isInstance ? { pokemon: poke, overlayType: 'instance' } : poke);
-            setOptionsSelectedPokemon(null);
-          }}
+        <SortMenu
+          sortType={sortType}
+          setSortType={setSortType}
+          sortMode={sortMode}
+          setSortMode={setSortMode}
         />
       )}
 
@@ -255,3 +231,4 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
 };
 
 export default React.memo(PokemonMenu);
+

@@ -1,0 +1,87 @@
+/* SelectChip.css */
+
+/* chip lives inside .pokemon-card, which should be position: relative */
+.select-chip {
+  /* Use the same highlight color as the card; fallback to #34807d */
+  --hl: var(--highlight-color, #34807d);
+  --reveal-delay: 300ms; /* can be overridden inline */
+
+  position: absolute;
+  top: 75%;
+  left: 50%;
+  transform: translate(-50%, -4px); /* centered; subtle slide-in */
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1;
+  border-radius: 14px;
+
+  /* Solid highlight background + white text */
+  background: var(--hl);
+  color: #fff;
+
+  /* A slightly darker rim for contrast */
+  border: 1px solid #2b6e6b; /* fallback */
+  border: 1px solid color-mix(in srgb, var(--hl) 85%, black);
+
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity .15s ease,
+    transform .15s ease,
+    background .2s ease,
+    border-color .2s ease,
+    color .2s ease;
+  pointer-events: none; /* hidden by default so underlying click still works */
+  z-index: 6;
+}
+
+.select-chip .select-chip-icon { font-weight: 700; }
+.select-chip .select-chip-text { user-select: none; }
+
+/* show on hover (delayed) for desktop pointers; keyboard focus handled with :focus-visible */
+@media (hover: hover) and (pointer: fine) {
+  .pokemon-card:not(.hide-select-chip):hover .select-chip {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    pointer-events: auto;
+    transition-delay: var(--reveal-delay), var(--reveal-delay), 0s, 0s, 0s;
+  }
+
+  .pokemon-card:not(.hide-select-chip) .select-chip:focus-visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    pointer-events: auto;
+    transition-delay: 0s, 0s, 0s, 0s, 0s;
+    outline: 2px solid color-mix(in srgb, var(--hl) 60%, white);
+    outline-offset: 2px;
+  }
+}
+
+/* Hover: brighten the same highlight color a bit */
+.select-chip:hover {
+  background: #3fa89f; /* fallback brightened approximation */
+  background: color-mix(in srgb, var(--hl) 85%, white);
+  border-color: color-mix(in srgb, var(--hl) 90%, white);
+}
+
+/* Selected: same styling (keeps solid highlight); you can add a subtle glow if desired */
+.select-chip.selected {
+  background: var(--hl);
+  border-color: color-mix(in srgb, var(--hl) 85%, black);
+  color: #fff;
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+  /* optional glow—uncomment if you like
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--hl) 25%, transparent);
+  */
+}
+
+/* Hide chips entirely once fast-select is active (if you add this class in JSX) */
+.pokemon-card.hide-select-chip .select-chip {
+  display: none !important;
+}
