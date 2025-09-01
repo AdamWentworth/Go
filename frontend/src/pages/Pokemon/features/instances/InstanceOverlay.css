@@ -1,117 +1,128 @@
 /* InstanceOverlay.css */
 
 .instance-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  /* keep the overlay itself as the scroller, but lock it to viewport height */
+  height: 100dvh;                 /* handles iOS dynamic bars better than 100vh */
+  overflow-y: auto;
+  overscroll-behavior: contain;   /* avoid overscroll bounce stealing space */
+  z-index: 2000;
+  padding: 0;                     /* move spacing into the inner scroller */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.instance-overlay::-webkit-scrollbar { display: none; }
+
+/* BACKGROUND LAYER (video replaces solid color, but color remains a fallback) */
+.io-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;                     /* content stacks above this */
+  background: var(--io-bg, #0f2b2b); /* fallback when video can’t play */
+  overflow: hidden;               /* ensure video doesn't overflow on odd aspect ratios */
+}
+
+/* the actual video */
+.io-bg-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;              /* like background-size: cover */
+  pointer-events: none;           /* don’t intercept clicks/scroll */
+}
+
+/* respect users that prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .io-bg-video { display: none; }
+}
+
+.instance-overlay > *:not(.io-bg) { position: relative; z-index: 1; }
+
+/* caught mode layout */
+.instance-overlay.caught-mode { align-items: stretch; }
+
+/* container that fills full viewport; no extra padding here */
+.caught-fullscreen {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* SCROLL AREA: add safe padding so content is never hidden under the close button */
+.caught-fullscreen .caught-scroll {
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  overflow: visible;
+  /* make sure top is always visible (accounts for close btn + safe area) */
+  padding-top: calc(24px + env(safe-area-inset-bottom));
+  /* give bottom breathing room for any iOS home indicator / fab etc. */
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  min-height: 100dvh;  /* so the padding is always respected in view */
+}
+
+/* the centered content column/panel */
+.caught-column {
+  width: min(90%, 900px);
+  height: 100%;
+  margin: 0 auto;                /* remove top margin so it can't slide under the top */
+  background: #333;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.35);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* keep trade/wanted rules as-is... */
+.instance-overlay .trade-instance-overlay { margin: 0 auto; }
+
+/* responsive rules (unchanged) */
+@media (max-width: 767px) {
+  .instance-overlay .overlay-row {
+    display: flex;
+    flex-direction: row;
+    max-width: 100%;
+    gap: 10px;
+    align-items: center;
+  }
+  .instance-overlay .overlay-row.column-layout {
+    flex-direction: column;
+    overflow-y: auto;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px),
+       (min-width: 1024px) and (max-width: 1439px),
+       (min-width: 1440px) {
+  .instance-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     display: flex;
     justify-content: center;
+    align-items: center; /* center trade/wanted windows */
     background-color: rgba(0, 0, 0, 0.7);
-    overflow-y: auto;
-    z-index: 2000;
-    padding: 10px;
-    /* Hide scrollbar but enable scrolling */
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+    z-index: 1001;
+    flex-direction: column;
+  }
+  .trade-instance-overlay .overlay-row,
+  .wanted-instance-overlay .overlay-row {
+    flex-direction: row;
+    display: flex;
+  }
 }
-  
-.instance-overlay.owned-overlay {
-    align-items: center !important;
-}
-  
-.instance-overlay::-webkit-scrollbar {
-    display: none; /* For Chrome, Safari, and Opera */
-}  
-
-.instance-overlay .trade-instance-overlay {
-    margin: 0 auto;
-}
-
-@media (max-width: 767px) {
-    .instance-overlay .overlay-row {
-        display: flex;
-        flex-direction: row;
-        max-width: 100%;
-        gap: 10px;
-        align-items: center;
-    }
-    
-    .instance-overlay .overlay-row.column-layout {
-        flex-direction: column;
-        overflow-y: auto;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 10px;
-    }
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
-    .instance-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: rgba(0, 0, 0, 0.7); /* Dimming background */
-        z-index: 1001; /* Ensures overlay is on top */
-        flex-direction: column; 
-    }
-    
-    .trade-instance-overlay .overlay-row {
-        flex-direction: row;
-        display: flex;
-    }
-    .wanted-instance-overlay .overlay-row {
-        flex-direction: row;
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-}
-
-@media (min-width: 1024px) and (max-width: 1439px) {
-    .instance-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: rgba(0, 0, 0, 0.7); /* Dimming background */
-        z-index: 1001; /* Ensures overlay is on top */
-        flex-direction: column; 
-    }
-    
-    .trade-instance-overlay .overlay-row {
-        flex-direction: row;
-        display: flex;
-    }
-}
-@media (min-width: 1440px) {
-    .instance-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: rgba(0, 0, 0, 0.7); /* Dimming background */
-        z-index: 1001; /* Ensures overlay is on top */
-        flex-direction: column; 
-    }
-    
-    .trade-instance-overlay .overlay-row {
-        flex-direction: row;
-        display: flex;
-    }
-}
-

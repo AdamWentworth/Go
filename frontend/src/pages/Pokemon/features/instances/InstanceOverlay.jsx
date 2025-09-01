@@ -1,17 +1,18 @@
 // InstanceOverlay.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import './InstanceOverlay.css';
 import OverlayPortal from '@/components/OverlayPortal';
 import WindowOverlay from '@/components/WindowOverlay';
-import OwnedInstance from './OwnedInstance';
+import CaughtInstance from './CaughtInstance';
 import TradeInstance from './TradeInstance';
 import TradeDetails from './components/Trade/TradeDetails';
 import WantedInstance from './WantedInstance';
 import WantedDetails from './components/Wanted/WantedDetails';
 import CloseButton from '@/components/CloseButton.jsx';
 
+const BG_VIDEO_SRC = '/assets/bug_bg.mp4';
+
 const toKey = (v) => (v ?? '').toString().trim().toLowerCase();
-// map aliases/synonyms to canonical keys used by the switch
 const CANON = (k) => {
   const key = toKey(k);
   if (key === 'owned') return 'caught';
@@ -23,13 +24,14 @@ const deriveInitialOverlay = (tagFilter, pokemon) => {
   const fromTag = CANON(tagFilter);
   if (['caught', 'missing', 'trade', 'wanted'].includes(fromTag)) return fromTag;
 
-  // Fallback to instance status if available
   const status = CANON(pokemon?.instanceData?.status || pokemon?.status);
   if (['caught', 'missing', 'trade', 'wanted'].includes(status)) return status;
 
-  // Sensible default
   return 'caught';
 };
+
+// placeholder; later you can compute a color from pokemon type, shiny, etc.
+const getCaughtBgColor = (pokemon) => '#0f2b2b';
 
 const InstanceOverlay = ({
   pokemon,
@@ -45,7 +47,6 @@ const InstanceOverlay = ({
 }) => {
   const [selectedPokemon, setSelectedPokemon] = useState(pokemon);
 
-  // Screen size (SSR-safe)
   const [isSmallScreen, setIsSmallScreen] = useState(
     typeof window !== 'undefined' ? window.innerWidth <= 686 : false
   );
@@ -55,19 +56,16 @@ const InstanceOverlay = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Briefly ignore pointer events after mount
   const [ignorePointerEvents, setIgnorePointerEvents] = useState(true);
   useEffect(() => {
     const timer = setTimeout(() => setIgnorePointerEvents(false), 300);
     return () => clearTimeout(timer);
   }, []);
 
-  // Compute current overlay canonically from tagFilter/pokemon
   const [currentOverlay, setCurrentOverlay] = useState(() =>
     deriveInitialOverlay(tagFilter, pokemon)
   );
 
-  // Keep overlay in sync if tagFilter or selectedPokemon changes
   useEffect(() => {
     setCurrentOverlay(deriveInitialOverlay(tagFilter, selectedPokemon));
   }, [tagFilter, selectedPokemon]);
@@ -84,7 +82,6 @@ const InstanceOverlay = ({
 
   const handleCloseOverlay = () => {
     onClose();
-    // When closing, reset to tag-derived view for next open
     setCurrentOverlay(deriveInitialOverlay(tagFilter, null));
     setSelectedPokemon(null);
   };
@@ -99,12 +96,19 @@ const InstanceOverlay = ({
     switch (currentOverlay) {
       case 'caught':
         return (
-          <WindowOverlay onClose={handleCloseOverlay} className="owned-instance-window">
-            <OwnedInstance pokemon={selectedPokemon} isEditable={isEditable} />
-          </WindowOverlay>
+          <div className="caught-fullscreen">
+            <div className="caught-scroll">
+              {/* column wrapper so most content flows in a single centered column */}
+              <div className="caught-column">
+                <CaughtInstance pokemon={selectedPokemon} isEditable={isEditable} />
+              </div>
+            </div>
+          </div>
         );
+
       case 'missing':
-        return <div>Unowned Instance Component</div>;
+        return <div className="missing-placeholder">Unowned Instance Component</div>;
+
       case 'trade':
         return (
           <div className={`trade-instance-overlay ${isSmallScreen ? 'small-screen' : ''}`}>
@@ -129,6 +133,7 @@ const InstanceOverlay = ({
             </div>
           </div>
         );
+
       case 'wanted':
         return (
           <div className="wanted-instance-overlay">
@@ -151,18 +156,36 @@ const InstanceOverlay = ({
             </div>
           </div>
         );
+
       default:
         return null;
     }
   };
 
-  // Note: className check now uses canonical key 'caught'
+  const bgColor = currentOverlay === 'caught' ? getCaughtBgColor(selectedPokemon) : null;
+
   return (
     <OverlayPortal>
       <div
-        className={`instance-overlay ${currentOverlay === 'caught' ? 'owned-overlay' : ''}`}
+        className={`instance-overlay ${currentOverlay === 'caught' ? 'caught-mode' : ''}`}
         style={{ pointerEvents: ignorePointerEvents ? 'none' : 'auto' }}
       >
+        {/* BACKGROUND: fixed video behind everything in the overlay */}
+        {currentOverlay === 'caught' && (
+          <div className="io-bg" style={{ ['--io-bg']: bgColor }}>
+            <video
+              className="io-bg-video"
+              src={BG_VIDEO_SRC}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              aria-hidden="true"
+            />
+          </div>
+        )}
+
         {renderContent()}
         {renderCloseButton()}
       </div>
