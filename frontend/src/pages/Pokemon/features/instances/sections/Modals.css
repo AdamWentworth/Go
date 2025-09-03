@@ -1,0 +1,33 @@
+/* Modals.css */
+
+/* ---------------------- Background Modal ---------------------- */
+.background-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999; /* above everything else */
+}
+
+.background-overlay-content {
+  background: #122016;
+  border-radius: 12px;
+  padding: 16px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow: auto;
+}
+
+.close-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  color: #e0f0e5;
+  border-radius: 8px;
+  cursor: pointer;
+}

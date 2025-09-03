@@ -1,5 +1,5 @@
 // InstanceOverlay.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './InstanceOverlay.css';
 import OverlayPortal from '@/components/OverlayPortal';
 import WindowOverlay from '@/components/WindowOverlay';
@@ -10,7 +10,8 @@ import WantedInstance from './WantedInstance';
 import WantedDetails from './components/Wanted/WantedDetails';
 import CloseButton from '@/components/CloseButton.jsx';
 
-const BG_VIDEO_SRC = '/assets/bug_bg.mp4';
+const DEBUG_BG = true; // set to false to silence the single debug log
+const dbg = (...args) => { if (DEBUG_BG) console.log('[BG]', ...args); };
 
 const toKey = (v) => (v ?? '').toString().trim().toLowerCase();
 const CANON = (k) => {
@@ -31,7 +32,73 @@ const deriveInitialOverlay = (tagFilter, pokemon) => {
 };
 
 // placeholder; later you can compute a color from pokemon type, shiny, etc.
-const getCaughtBgColor = (pokemon) => '#0f2b2b';
+const getCaughtBgColor = () => '#0f2b2b';
+
+/** ---- Background image picker (no noisy logs) ---- **/
+const TYPE_SET = new Set([
+  'bug','dark','dragon','electric','fairy','fighting','fire','flying','ghost',
+  'grass','ground','ice','normal','poison','psychic','rock','steel','water'
+]);
+
+const normalizeTypeName = (candidate) => {
+  if (!candidate) return null;
+  if (typeof candidate === 'string' || typeof candidate === 'number') {
+    return String(candidate).toLowerCase();
+  }
+  if (typeof candidate === 'object') {
+    if (typeof candidate?.name === 'string') return candidate.name.toLowerCase();
+    if (typeof candidate?.type?.name === 'string') return candidate.type.name.toLowerCase();
+    if (typeof candidate?.typeName === 'string') return candidate.typeName.toLowerCase();
+  }
+  return null;
+};
+
+const getPrimaryTypeName = (p) => {
+  if (!p) return 'normal';
+
+  // Prefer explicit string fields if present
+  const prioritized = [p?.instanceData?.type1_name, p?.type1_name];
+  for (const v of prioritized) {
+    const norm = normalizeTypeName(v);
+    if (norm && TYPE_SET.has(norm)) return norm;
+  }
+
+  // Fallbacks for common shapes
+  const candidates = [
+    p?.primaryType?.name ?? p?.primaryType,
+    p?.primary_type?.name ?? p?.primary_type,
+    p?.type1?.name ?? p?.type1,
+    Array.isArray(p?.types) ? p.types[0] : null,
+    Array.isArray(p?.type) ? p.type[0] : null,
+    Array.isArray(p?.types) ? p.types[0]?.type?.name : null, // PokeAPI-ish
+  ];
+  for (const v of candidates) {
+    const norm = normalizeTypeName(v);
+    if (norm && TYPE_SET.has(norm)) return norm;
+  }
+
+  // Last-ditch: parse variantType like "type_bug"
+  const vt = p?.variantType?.toString().toLowerCase();
+  if (vt) {
+    const maybe = vt.replace(/^type_/, '');
+    if (TYPE_SET.has(maybe)) return maybe;
+  }
+
+  return 'normal';
+};
+
+const getBackgroundImageSrc = (p) => {
+  if (!p) return '/images/backgrounds/bg_normal.png';
+  const isShadow = !!p?.instanceData?.shadow;
+  const isLucky  = !!p?.instanceData?.lucky;
+
+  if (isShadow) return '/images/backgrounds/bg_shadow.png';
+  if (isLucky)  return '/images/backgrounds/bg_lucky.png';
+
+  const typeName = getPrimaryTypeName(p);
+  return `/images/backgrounds/bg_${typeName}.png`;
+};
+/** ---------------------------------------------- **/
 
 const InstanceOverlay = ({
   pokemon,
@@ -98,17 +165,14 @@ const InstanceOverlay = ({
         return (
           <div className="caught-fullscreen">
             <div className="caught-scroll">
-              {/* column wrapper so most content flows in a single centered column */}
               <div className="caught-column">
                 <CaughtInstance pokemon={selectedPokemon} isEditable={isEditable} />
               </div>
             </div>
           </div>
         );
-
       case 'missing':
         return <div className="missing-placeholder">Unowned Instance Component</div>;
-
       case 'trade':
         return (
           <div className={`trade-instance-overlay ${isSmallScreen ? 'small-screen' : ''}`}>
@@ -133,7 +197,6 @@ const InstanceOverlay = ({
             </div>
           </div>
         );
-
       case 'wanted':
         return (
           <div className="wanted-instance-overlay">
@@ -156,7 +219,6 @@ const InstanceOverlay = ({
             </div>
           </div>
         );
-
       default:
         return null;
     }
@@ -164,24 +226,34 @@ const InstanceOverlay = ({
 
   const bgColor = currentOverlay === 'caught' ? getCaughtBgColor(selectedPokemon) : null;
 
+  // recompute the background image whenever the selected pokemon changes
+  const bgImageSrc = useMemo(
+    () => (currentOverlay === 'caught' ? getBackgroundImageSrc(selectedPokemon) : null),
+    [currentOverlay, selectedPokemon]
+  );
+
+  // SINGLE debug log for this file
+  useEffect(() => {
+    if (currentOverlay === 'caught') {
+      dbg('Background image:', bgImageSrc, 'for', selectedPokemon?.name ?? '(unknown)');
+    }
+  }, [currentOverlay, bgImageSrc, selectedPokemon?.name]);
+
   return (
     <OverlayPortal>
       <div
         className={`instance-overlay ${currentOverlay === 'caught' ? 'caught-mode' : ''}`}
         style={{ pointerEvents: ignorePointerEvents ? 'none' : 'auto' }}
       >
-        {/* BACKGROUND: fixed video behind everything in the overlay */}
         {currentOverlay === 'caught' && (
           <div className="io-bg" style={{ ['--io-bg']: bgColor }}>
-            <video
-              className="io-bg-video"
-              src={BG_VIDEO_SRC}
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
+            <img
+              className="io-bg-img"
+              src={bgImageSrc ?? '/images/backgrounds/bg_normal.png'}
+              alt=""
               aria-hidden="true"
+              decoding="async"
+              loading="eager"
             />
           </div>
         )}

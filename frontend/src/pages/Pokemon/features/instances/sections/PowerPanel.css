@@ -1,0 +1,12 @@
+/* PowerPanel.css */
+
+/* ---------------------- Max / Mega ---------------------- */
+.max-mega-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.max-component, .mega-component {
+  flex: 1;
+}

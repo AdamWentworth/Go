@@ -1,0 +1,48 @@
+/* LevelArc.css */
+
+/* ---------- Full-width LevelArc with invariant baseline + clamped apex ---------- */
+
+.level-arc-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--panel-offset) - var(--arc-baseline-offset, 6px));
+
+  --arc-top-gap: 4px;
+  --arc-horizontal-inset: clamp(12px, 2.25vw, 36px);
+  --arc-vertical-scale: 0.94;
+
+  /* NEW: colors you asked for */
+  --arc-complete: rgba(255, 255, 255, 0.95);   /* white segment up to the dot */
+  --arc-remaining: rgba(180, 180, 180, 0.45);  /* grey, slightly transparent */
+
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+}
+
+.level-arc-overlay {
+  position: relative;
+  width: calc(100% - (var(--arc-horizontal-inset) * 2));
+  margin: 0 auto;
+  height: var(--arc-height, 120px);
+  transform: translateY(-100%);
+  overflow: visible;
+}
+
+.level-arc-overlay .level-arc-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+  transform-box: fill-box;
+  transform-origin: top center;
+  transform: scaleY(var(--arc-vertical-scale));
+}
+
+/* No shadows */
+.level-arc-svg {
+  display: block;
+  pointer-events: none;
+  overflow: visible;
+}

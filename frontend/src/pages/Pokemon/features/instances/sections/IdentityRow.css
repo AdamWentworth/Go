@@ -1,0 +1,22 @@
+/* IdentityRow.css */
+
+/* ---------------------- Name / Lucky / Purify Row ---------------------- */
+.purify-name-shadow-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+  height: 2rem;
+}
+
+.lucky-component { flex: 0 0 auto; margin-right: auto; }
+.purify-component { flex: 0 0 auto; margin-left: auto; }
+
+.name-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+}

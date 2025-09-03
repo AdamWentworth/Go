@@ -1,0 +1,18 @@
+/* StatsRow.css */
+
+/* ---------------------- Weight / Types / Height ---------------------- */
+.weight-type-height-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: center;
+}
+
+.weight-container, .height-container { flex: 1; }
+
+.weight-type-height-container.only-type .weight-container,
+.weight-type-height-container.only-type .height-container { display: none; }
+
+.weight-component, .type-component, .height-component {
+  display: flex; align-items: center;
+}

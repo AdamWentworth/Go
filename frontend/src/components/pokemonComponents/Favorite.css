@@ -7,8 +7,8 @@
 }
 
 .favorite-component img {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     cursor: default; /* Default cursor for image outside edit mode */
 }
 

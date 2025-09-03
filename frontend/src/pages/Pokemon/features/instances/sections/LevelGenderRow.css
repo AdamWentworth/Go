@@ -1,0 +1,29 @@
+/* LevelGenderRow.css */
+
+/* ---------------------- Level / Gender ---------------------- */
+.level-gender-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+  margin-bottom: 10px;
+}
+
+/* The Level component renders .level-component internally */
+.level-gender-row .level-component {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.gender-wrapper {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.level-component label { font-weight: bold; }
+.level-component input { padding: 2px; font-size: 1rem; }
+.level-component .error { color: red; font-size: 0.8rem; }

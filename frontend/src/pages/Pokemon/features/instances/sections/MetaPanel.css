@@ -1,0 +1,7 @@
+/* MetaPanel.css */
+
+/* ---------------------- Meta (Location & Date) ---------------------- */
+.location-caught-component,
+.date-caught-component {
+  width: 100%;
+}

@@ -1,58 +1,68 @@
 // CaughtInstance.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+  useLayoutEffect,
+} from 'react';
 import './CaughtInstance.css';
 
-// Contexts and Hooks
+// Contexts & Stores
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useModal } from '@/contexts/ModalContext';
-import useValidation from './hooks/useValidation';
-
-// Components
-import EditSaveComponent from '@/components/EditSaveComponent';
-
-// Pokemon Components
-import CP from '@/components/pokemonComponents/CP';
-import FavoriteComponent from '@/components/pokemonComponents/Favorite';
-import NameComponent from './components/Owned/NameComponent';
-import LuckyComponent from './components/Owned/LuckyComponent';
-import PurifyComponent from './components/Owned/PurifyComponent';
-import Gender from '@/components/pokemonComponents/Gender';
-import Weight from '@/components/pokemonComponents/Weight';
-import Types from '@/components/pokemonComponents/Types';
-import Height from '@/components/pokemonComponents/Height';
-import Moves from '@/components/pokemonComponents/Moves';
-import IV from '@/components/pokemonComponents/IV';
-import LocationCaught from '@/components/pokemonComponents/LocationCaught';
-import DateCaughtComponent from '@/components/pokemonComponents/DateCaught';
-import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
-import MegaComponent from './components/Owned/MegaComponent';
-import Level from '@/components/pokemonComponents/Level';
-import FusionComponent from './components/Owned/FusionComponent';
-import FuseOverlay from './components/Owned/FuseOverlay';
-import MaxComponent from './components/Owned/MaxComponent.jsx';
-import MaxMovesComponent from "./components/Owned/MaxMovesComponent.jsx";
-
-// Utilities and Constants
-import { determineImageUrl } from '@/utils/imageHelpers';
-import { calculateBaseStats } from '@/utils/calculateBaseStats';
 
 // Hooks
+import useValidation from './hooks/useValidation';
 import { useFusion } from './hooks/useFusion';
 import { useCalculatedCP } from './hooks/useCalculatedCP';
+import { useBackgrounds } from './hooks/useBackgrounds';
+import { useSprite } from './hooks/useSprite';
+import { useEditWorkflow } from './hooks/useEditWorkflow';
+
+// Utils
+import { calculateBaseStats } from '@/utils/calculateBaseStats';
+import { buildInstanceChanges } from './utils/buildInstanceChanges';
+
+// Sections
+import HeaderRow from './sections/HeaderRow';
+import BackgroundSelector from './sections/BackgroundSelector';
+import ImageStage from './sections/ImageStage';
+import LevelArc from './components/Owned/LevelArc'; // full-width arc
+import IdentityRow from './sections/IdentityRow';
+import LevelGenderRow from './sections/LevelGenderRow';
+import StatsRow from './sections/StatsRow';
+import PowerPanel from './sections/PowerPanel';
+import MovesAndIV from './sections/MovesAndIV';
+import MetaPanel from './sections/MetaPanel';
+import Modals from './sections/Modals';
 
 const CaughtInstance = ({ pokemon, isEditable }) => {
+  const {
+    instanceData,
+    megaEvolutions,
+    backgrounds,
+    name,
+    variantType,
+    pokemonKey,
+  } = pokemon;
+
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const { alert } = useModal();
   const { errors: validationErrors, validate, resetErrors } = useValidation();
 
+  // Mega
   const [megaData, setMegaData] = useState({
-    isMega: pokemon.instanceData.is_mega || false,
-    mega: pokemon.instanceData.mega || false,
-    megaForm: (pokemon.instanceData.mega && pokemon.megaEvolutions?.length > 0)
-      ? (pokemon.instanceData.mega_form || pokemon.megaEvolutions[0].form)
-      : null,
+    isMega: instanceData.is_mega || false,
+    mega: instanceData.mega || false,
+    megaForm:
+      instanceData.mega && megaEvolutions?.length > 0
+        ? (instanceData.mega_form || megaEvolutions[0].form)
+        : null,
   });
 
+  // Fusion
   const {
     fusion,
     setFusion,
@@ -60,385 +70,370 @@ const CaughtInstance = ({ pokemon, isEditable }) => {
     handleFuseProceed,
     handleUndoFusion,
   } = useFusion(pokemon, alert);
-
   const [originalFusedWith, setOriginalFusedWith] = useState(fusion.fusedWith);
 
-  const [isFemale, setIsFemale] = useState(pokemon.instanceData.gender === 'Female');
-  const [isLucky, setIsLucky] = useState(pokemon.instanceData.lucky);
-  const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon, megaData.isMega, megaData.megaForm));
-  const [editMode, setEditMode] = useState(false);
-  const [nickname, setNickname] = useState(pokemon.instanceData.nickname);
-  const [cp, setCP] = useState(pokemon.instanceData.cp ? pokemon.instanceData.cp.toString() : '');
-  const [isFavorite, setIsFavorite] = useState(pokemon.instanceData.favorite);
-  const [gender, setGender] = useState(pokemon.instanceData.gender);
-  const [weight, setWeight] = useState(Number(pokemon.instanceData.weight));
-  const [height, setHeight] = useState(Number(pokemon.instanceData.height));
+  // Basics
+  const [gender, setGender] = useState(instanceData.gender);
+  const [isFemale, setIsFemale] = useState(instanceData.gender === 'Female');
+  const [nickname, setNickname] = useState(instanceData.nickname);
+  const [isFavorite, setIsFavorite] = useState(instanceData.favorite);
+  const [isLucky, setIsLucky] = useState(instanceData.lucky);
+
+  const [cp, setCP] = useState(instanceData.cp ? instanceData.cp.toString() : '');
+  const [weight, setWeight] = useState(Number(instanceData.weight));
+  const [height, setHeight] = useState(Number(instanceData.height));
+  const [level, setLevel] = useState(instanceData.level || null);
+
   const [moves, setMoves] = useState({
-    fastMove: pokemon.instanceData.fast_move_id,
-    chargedMove1: pokemon.instanceData.charged_move1_id,
-    chargedMove2: pokemon.instanceData.charged_move2_id,
+    fastMove: instanceData.fast_move_id,
+    chargedMove1: instanceData.charged_move1_id,
+    chargedMove2: instanceData.charged_move2_id,
   });
+
   const [ivs, setIvs] = useState({
-    Attack: pokemon.instanceData.attack_iv != null ? Number(pokemon.instanceData.attack_iv) : '',
-    Defense: pokemon.instanceData.defense_iv != null ? Number(pokemon.instanceData.defense_iv) : '',
-    Stamina: pokemon.instanceData.stamina_iv != null ? Number(pokemon.instanceData.stamina_iv) : '',
+    Attack: instanceData.attack_iv != null ? Number(instanceData.attack_iv) : '',
+    Defense: instanceData.defense_iv != null ? Number(instanceData.defense_iv) : '',
+    Stamina: instanceData.stamina_iv != null ? Number(instanceData.stamina_iv) : '',
   });
-  const areIVsEmpty =
-    (ivs.Attack === '' || ivs.Attack === null) &&
-    (ivs.Defense === '' || ivs.Defense === null) &&
-    (ivs.Stamina === '' || ivs.Stamina === null);
 
-  const [locationCaught, setLocationCaught] = useState(pokemon.instanceData.location_caught);
-  const [dateCaught, setDateCaught] = useState(pokemon.instanceData.date_caught);
-  const [showBackgrounds, setShowBackgrounds] = useState(false);
-  const [selectedBackground, setSelectedBackground] = useState(null);
-  const [level, setLevel] = useState(pokemon.instanceData.level || null);
-  const [isShadow, setIsShadow] = useState(!!pokemon.instanceData.shadow);
-  const [isPurified, setIsPurified] = useState(!!pokemon.instanceData.purified);
+  const areIVsEmpty = useMemo(
+    () =>
+      (ivs.Attack === '' || ivs.Attack === null) &&
+      (ivs.Defense === '' || ivs.Defense === null) &&
+      (ivs.Stamina === '' || ivs.Stamina === null),
+    [ivs]
+  );
 
-  // Extract max moves
-  const [maxAttack, setMaxAttack] = useState(pokemon.instanceData.max_attack || '');
-  const [maxGuard, setMaxGuard] = useState(pokemon.instanceData.max_guard || '');
-  const [maxSpirit, setMaxSpirit] = useState(pokemon.instanceData.max_spirit || '');
+  const [locationCaught, setLocationCaught] = useState(instanceData.location_caught);
+  const [dateCaught, setDateCaught] = useState(instanceData.date_caught);
+
+  const [isShadow, setIsShadow] = useState(!!instanceData.shadow);
+  const [isPurified, setIsPurified] = useState(!!instanceData.purified);
+
+  // Max options
+  const [maxAttack, setMaxAttack] = useState(instanceData.max_attack || '');
+  const [maxGuard, setMaxGuard] = useState(instanceData.max_guard || '');
+  const [maxSpirit, setMaxSpirit] = useState(instanceData.max_spirit || '');
   const [showMaxOptions, setShowMaxOptions] = useState(false);
 
-  const dynamax = !!pokemon.instanceData.dynamax;
-  const gigantamax = !!pokemon.instanceData.gigantamax;
+  const dynamax = !!instanceData.dynamax;
+  const gigantamax = !!instanceData.gigantamax;
 
+  // Backgrounds
+  const {
+    showBackgrounds,
+    setShowBackgrounds,
+    selectedBackground,
+    handleBackgroundSelect,
+    selectableBackgrounds,
+  } = useBackgrounds(backgrounds, variantType, instanceData.location_card);
+
+  // Base stats + sprite url
   const currentBaseStats = useMemo(
     () => calculateBaseStats(pokemon, megaData, fusion),
     [pokemon, megaData, fusion]
   );
 
+  const currentImage = useSprite({
+    isFemale,
+    pokemon,
+    isMega: megaData.isMega,
+    megaForm: megaData.megaForm,
+    isFused: fusion.is_fused,
+    fusionForm: fusion.fusion_form,
+    isPurified,
+    gigantamax,
+  });
+
   useCalculatedCP({ currentBaseStats, level, ivs, setCP });
 
-  useEffect(() => {
-    if (pokemon.instanceData.location_card !== null) {
-      const locationCardId = parseInt(pokemon.instanceData.location_card, 10);
-      const background = pokemon.backgrounds.find(bg => bg.background_id === locationCardId);
-      if (background) setSelectedBackground(background);
+  // Handlers
+  const handleGenderChange = useCallback((g) => {
+    setGender(g);
+    setIsFemale(g === 'Female');
+  }, []);
+  const handleCPChange = useCallback((v) => setCP(v), []);
+  const handleLuckyToggle = useCallback((v) => setIsLucky(v), []);
+  const handleNicknameChange = useCallback((v) => setNickname(v), []);
+  const handleFavoriteChange = useCallback((v) => setIsFavorite(v), []);
+  const handleWeightChange = useCallback((v) => setWeight(Number(v)), []);
+  const handleHeightChange = useCallback((v) => setHeight(Number(v)), []);
+  const handleMovesChange = useCallback((v) => setMoves(v), []);
+  const handleIvChange = useCallback((v) => setIvs(v), []);
+  const handleLocationCaughtChange = useCallback((v) => setLocationCaught(v), []);
+  const handleDateCaughtChange = useCallback((v) => setDateCaught(v), []);
+  const handleLevelChange = useCallback((v) => setLevel(v !== '' ? Number(v) : null), []);
+  const handlePurifyToggle = useCallback((v) => {
+    if (v) {
+      setIsPurified(true);
+      setIsShadow(false);
+    } else {
+      setIsPurified(false);
+      setIsShadow(true);
     }
-  }, [pokemon.backgrounds, pokemon.instanceData.location_card]);
+  }, []);
+  const handleMaxAttackChange = useCallback((v) => setMaxAttack(v), []);
+  const handleMaxGuardChange = useCallback((v) => setMaxGuard(v), []);
+  const handleMaxSpiritChange = useCallback((v) => setMaxSpirit(v), []);
+  const handleToggleMaxOptions = useCallback(() => setShowMaxOptions((p) => !p), []);
+
+  // --- Arc sizing: lock baseline to panel top & clamp apex under header ---
+  const arcLayerRef = useRef(null);
+
+  const recalcArcHeight = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const layer = arcLayerRef.current;
+    if (!layer) return;
+
+    const column = layer.closest('.caught-column');
+    if (!column) return;
+
+    const columnRect = column.getBoundingClientRect();
+
+    // panel top (relative to .caught-column), from ::before { top: var(--panel-offset) }
+    const before = window.getComputedStyle(column, '::before');
+    const panelTopPx = parseFloat(before.top) || 0;
+
+    // baseline lift (arc endpoints sit a hair above the panel)
+    const css = window.getComputedStyle(layer);
+    const baselineLift = parseFloat(css.getPropertyValue('--arc-baseline-offset')) || 6;
+    const topGap = parseFloat(css.getPropertyValue('--arc-top-gap')) || 0;
+
+    const baselineY = panelTopPx - baselineLift; // px from column top
+
+    // header bottom = bottom edge of the area above the arc (top-row plus optional background row)
+    const tops = [];
+    const topRow = column.querySelector('.top-row');
+    if (topRow) tops.push(topRow.getBoundingClientRect().bottom - columnRect.top);
+    const bgRow = column.querySelector('.background-select-row');
+    if (bgRow && bgRow.offsetParent !== null) {
+      tops.push(bgRow.getBoundingClientRect().bottom - columnRect.top);
+    }
+    const headerBottomY = tops.length ? Math.max(...tops) : 0;
+
+    // desired arc "box" height = distance between header bottom and baseline (minus top gap)
+    const desired = Math.max(0, Math.round(baselineY - headerBottomY - topGap));
+    layer.style.setProperty('--arc-height', `${desired}px`);
+  }, []);
+
+  useLayoutEffect(() => {
+    recalcArcHeight();
+  }, [recalcArcHeight]);
 
   useEffect(() => {
-    const updatedImage = determineImageUrl(
-      isFemale,
-      pokemon,
-      megaData.isMega,
-      megaData.megaForm,
-      fusion.is_fused,
-      fusion.fusion_form,
-      isPurified,
-      gigantamax
-    );
-    setCurrentImage(updatedImage);
-  }, [isFemale, megaData.isMega, megaData.megaForm, fusion.is_fused, fusion.fusion_form, pokemon, isPurified, gigantamax]);
+    const onResize = () => recalcArcHeight();
+    window.addEventListener('resize', onResize);
 
-  const handleGenderChange = (g) => { setGender(g); setIsFemale(g === 'Female'); };
-  const handleCPChange = (v) => setCP(v);
-  const handleLuckyToggle = (v) => setIsLucky(v);
-  const handleNicknameChange = (v) => setNickname(v);
-  const handleFavoriteChange = (v) => setIsFavorite(v);
-  const handleWeightChange = (v) => setWeight(Number(v));
-  const handleHeightChange = (v) => setHeight(Number(v));
-  const handleMovesChange = (v) => setMoves(v);
-  const handleIvChange = (v) => setIvs(v);
-  const handleLocationCaughtChange = (v) => setLocationCaught(v);
-  const handleDateCaughtChange = (v) => setDateCaught(v);
-  const handleLevelChange = (v) => setLevel(v !== '' ? Number(v) : null);
+    // Resize observers for dynamic header changes
+    const layer = arcLayerRef.current;
+    const column = layer ? layer.closest('.caught-column') : null;
+    const ro = 'ResizeObserver' in window ? new ResizeObserver(recalcArcHeight) : null;
 
-  const handlePurifyToggle = (v) => {
-    if (v) { setIsPurified(true); setIsShadow(false); }
-    else { setIsPurified(false); setIsShadow(true); }
-  };
+    if (ro && column) {
+      ro.observe(column);
+      const topRow = column.querySelector('.top-row');
+      const bgRow = column.querySelector('.background-select-row');
+      if (topRow) ro.observe(topRow);
+      if (bgRow) ro.observe(bgRow);
+    }
 
-  const handleMaxAttackChange = (v) => setMaxAttack(v);
-  const handleMaxGuardChange = (v) => setMaxGuard(v);
-  const handleMaxSpiritChange = (v) => setMaxSpirit(v);
-  const handleToggleMaxOptions = () => setShowMaxOptions(p => !p);
+    // settle after fonts/images
+    const t = setTimeout(recalcArcHeight, 0);
 
-  useEffect(() => { if (!editMode) setShowMaxOptions(false); }, [editMode]);
-  useEffect(() => { if (editMode) setOriginalFusedWith(fusion.fusedWith); }, [editMode]);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('resize', onResize);
+      if (ro) ro.disconnect();
+    };
+  }, [recalcArcHeight]);
 
-  const toggleEditMode = async () => {
-    if (editMode) {
-      const fieldsToValidate = {
-        level,
-        cp: cp !== '' ? Number(cp) : null,
-        ivs,
+  // Edit workflow (validate + persist)
+  const { editMode, toggleEditMode } = useEditWorkflow({
+    validate,
+    currentBaseStats,
+    alert,
+    onPersist: async ({ newComputedValues }) => {
+      const computedCP = newComputedValues.cp ?? (cp !== '' ? Number(cp) : null);
+      const computedLevel = newComputedValues.level ?? level;
+      const computedIvs = newComputedValues.ivs ?? ivs;
+
+      // Apply locally
+      if ('level' in newComputedValues) setLevel(newComputedValues.level);
+      if ('cp' in newComputedValues) setCP((newComputedValues.cp ?? '').toString());
+      if ('ivs' in newComputedValues) setIvs(newComputedValues.ivs);
+
+      const base = buildInstanceChanges({
+        pokemonKey,
+        nickname,
+        isLucky,
+        isFavorite,
+        gender,
         weight,
         height,
-      };
+        computedCP,
+        computedLevel,
+        moves,
+        ivs: computedIvs,
+        locationCaught,
+        dateCaught,
+        selectedBackgroundId: selectedBackground ? selectedBackground.background_id : null,
+        megaData,
+        fusion,
+        isShadow,
+        isPurified,
+        maxAttack,
+        maxGuard,
+        maxSpirit,
+      });
 
-      const { validationErrors, computedValues: newComputedValues } =
-        validate(fieldsToValidate, currentBaseStats);
-
-      const isValid = Object.keys(validationErrors).length === 0;
-      if (!isValid) {
-        const errorMessages = Object.values(validationErrors).join('\n');
-        alert(errorMessages);
-        return;
-      }
-
-      try {
-        // Apply computed values locally if provided
-        if (newComputedValues.level !== undefined) setLevel(newComputedValues.level);
-        if (newComputedValues.cp !== undefined) setCP((newComputedValues.cp ?? '').toString());
-        if (newComputedValues.ivs !== undefined) setIvs(newComputedValues.ivs);
-
-        const changes = {};
-        changes[pokemon.pokemonKey] = {
-          nickname,
-          lucky: isLucky,
-          cp:
-            newComputedValues.cp !== undefined
-              ? newComputedValues.cp ?? null
-              : cp !== '' ? Number(cp) : null,
-          favorite: isFavorite,
-          gender,
-          weight,
-          height,
-          fast_move_id: moves.fastMove,
-          charged_move1_id: moves.chargedMove1,
-          charged_move2_id: moves.chargedMove2,
-          attack_iv:
-            newComputedValues.ivs !== undefined
-              ? newComputedValues.ivs.Attack === '' ? null : newComputedValues.ivs.Attack
-              : ivs.Attack === '' ? null : ivs.Attack,
-          defense_iv:
-            newComputedValues.ivs !== undefined
-              ? newComputedValues.ivs.Defense === '' ? null : newComputedValues.ivs.Defense
-              : ivs.Defense === '' ? null : ivs.Defense,
-          stamina_iv:
-            newComputedValues.ivs !== undefined
-              ? newComputedValues.ivs.Stamina === '' ? null : newComputedValues.ivs.Stamina
-              : ivs.Stamina === '' ? null : ivs.Stamina,
-          location_caught: locationCaught,
-          date_caught: dateCaught,
-          location_card: selectedBackground ? selectedBackground.background_id : null,
-          mega: megaData.mega,
-          is_mega: megaData.isMega,
-          mega_form: megaData.isMega ? megaData.megaForm : null,
-          level:
-            newComputedValues.level !== undefined ? newComputedValues.level : level,
-          fusion: fusion.storedFusionObject,
-          is_fused: fusion.is_fused,
-          fused_with: fusion.fusedWith,
-          fusion_form: fusion.fusion_form,
-          shadow: isShadow,
-          purified: isPurified,
-          max_attack: maxAttack,
-          max_guard: maxGuard,
-          max_spirit: maxSpirit,
+      const { is_fused, fusion_form, fusedWith: newFusedWith } = fusion;
+      if (originalFusedWith && originalFusedWith !== newFusedWith) {
+        base[originalFusedWith] = {
+          disabled: false,
+          fused_with: null,
+          is_fused: false,
+          fusion_form: null,
         };
-
-        // Fusion partner updates
-        const { is_fused, fusion_form, fusedWith: newFusedWith } = fusion;
-        if (originalFusedWith && originalFusedWith !== newFusedWith) {
-          changes[originalFusedWith] = {
-            disabled: false,
-            fused_with: null,
-            is_fused: false,
-            fusion_form: null,
-          };
-        }
-        if (newFusedWith && is_fused && newFusedWith !== originalFusedWith) {
-          changes[newFusedWith] = {
-            disabled: true,
-            fused_with: pokemon.pokemonKey,
-            is_fused: true,
-            fusion_form,
-          };
-        }
-
-        await updateDetails(changes);
-        resetErrors();
-      } catch (err) {
-        console.error('Error updating details:', err);
-        alert('An error occurred while updating the Pokémon details. Please try again.');
-        return;
       }
-    }
-    setEditMode(!editMode);
-  };
+      if (newFusedWith && is_fused && newFusedWith !== originalFusedWith) {
+        base[newFusedWith] = {
+          disabled: true,
+          fused_with: pokemonKey,
+          is_fused: true,
+          fusion_form,
+        };
+      }
 
-  const handleBackgroundSelect = (background) => {
-    setSelectedBackground(background);
-    setShowBackgrounds(false);
-  };
-
-  const selectableBackgrounds = pokemon.backgrounds.filter((background) => {
-    if (!background.costume_id) return true;
-    const variantTypeId = pokemon.variantType.split('_')[1];
-    return background.costume_id === parseInt(variantTypeId, 10);
+      await updateDetails(base);
+      resetErrors();
+      // Recompute arc in case header content height changed after save
+      recalcArcHeight();
+    },
+    onStartEditing: () => setOriginalFusedWith(fusion.fusedWith),
   });
+
+  const handleToggleEditClick = useCallback(() => {
+    return toggleEditMode({
+      level,
+      cp: cp !== '' ? Number(cp) : null,
+      ivs,
+      weight,
+      height,
+    });
+  }, [toggleEditMode, level, cp, ivs, weight, height]);
 
   return (
     <div className="caught-instance">
-      <div className="top-row">
-        <EditSaveComponent
-          editMode={editMode}
-          toggleEditMode={toggleEditMode}
-          isEditable={isEditable}
-        />
-        <div className="cp-component-container">
-          <CP
-            pokemon={pokemon}
-            editMode={editMode}
-            onCPChange={handleCPChange}
-            cp={cp}
-            errors={validationErrors}
-          />
-        </div>
-        <FavoriteComponent
-          pokemon={pokemon}
-          editMode={editMode}
-          onFavoriteChange={handleFavoriteChange}
-        />
-      </div>
-
-      {selectableBackgrounds.length > 0 && (
-        <div className={`background-select-row ${editMode ? 'active' : ''}`}>
-          <img
-            src={'/images/location.png'}
-            alt="Background Selector"
-            className="background-icon"
-            onClick={editMode ? () => setShowBackgrounds(!showBackgrounds) : null}
-          />
-        </div>
-      )}
-
-      <div className="image-container">
-        {selectedBackground && (
-          <div className="background-container">
-            <div
-              className="background-image"
-              style={{ backgroundImage: `url(${selectedBackground.image_url})` }}
-            />
-            <div className="brightness-overlay" />
-          </div>
-        )}
-
-        <div className="pokemon-image-container">
-          {isLucky && <img src={'/images/lucky.png'} alt="Lucky Backdrop" className="lucky-backdrop" />}
-          <img src={currentImage} alt={pokemon.name} className="pokemon-image" />
-          {dynamax && <img src={'/images/dynamax.png'} alt="Dynamax Badge" className="max-badge" />}
-          {gigantamax && <img src={'/images/gigantamax.png'} alt="Gigantamax Badge" className="max-badge" />}
-          {isPurified && <img src={'/images/purified.png'} alt="Purified Badge" className="purified-badge" />}
-        </div>
-      </div>
-
-      <div className="purify-name-shadow-container">
-        <LuckyComponent pokemon={pokemon} onToggleLucky={handleLuckyToggle} isLucky={isLucky} editMode={editMode} isShadow={isShadow}/>
-        <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange}/>
-        <PurifyComponent isShadow={isShadow} isPurified={isPurified} editMode={editMode} onTogglePurify={handlePurifyToggle}/>
-      </div>
-
-      <div className="level-gender-row">
-        <Level
-          pokemon={pokemon}
-          editMode={editMode}
-          level={level}
-          onLevelChange={handleLevelChange}
-          errors={validationErrors}
-        />
-        {(editMode || (gender !== null && gender !== '')) && (
-          <div className="gender-wrapper">
-            <Gender pokemon={pokemon} editMode={editMode} onGenderChange={handleGenderChange} />
-          </div>
-        )}
-      </div>
-
-      <div className="weight-type-height-container">
-        <Weight pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
-        <Types pokemon={pokemon} />
-        <Height pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
-      </div>
-
-      <FusionComponent
-        fusion={pokemon.fusion}
+      <HeaderRow
         editMode={editMode}
+        toggleEditMode={handleToggleEditClick}
+        isEditable={isEditable}
         pokemon={pokemon}
-        fusionState={fusion}
-        onFusionToggle={handleFusionToggle}
-        onUndoFusion={handleUndoFusion}
+        cp={cp}
+        onCPChange={handleCPChange}
+        errors={validationErrors}
+        onFavoriteChange={handleFavoriteChange}
       />
 
-      <div className="max-mega-container">
-        <MaxComponent
-          pokemon={pokemon}
-          editMode={editMode}
-          dynamax={dynamax}
-          gigantamax={gigantamax}
-          onToggleMax={handleToggleMaxOptions}
-          showMaxOptions={showMaxOptions}
-        />
-        <MegaComponent
-          megaData={megaData}
-          setMegaData={setMegaData}
-          editMode={editMode}
-          megaEvolutions={pokemon.megaEvolutions}
-          isShadow={isShadow}
-          name={pokemon.name}
-        />
+      <BackgroundSelector
+        canPick={selectableBackgrounds.length > 0}
+        editMode={editMode}
+        onToggle={() => setShowBackgrounds((v) => !v)}
+      />
+
+      {/* Full-width arc: baseline anchored to panel top; apex clamped under header */}
+      <div className="level-arc-layer" aria-hidden="true" ref={arcLayerRef}>
+        <div className="level-arc-overlay">
+          <LevelArc level={level ?? 1} fitToContainer />
+        </div>
       </div>
 
-      <MaxMovesComponent
+      <ImageStage
+        level={level ?? 1}
+        selectedBackground={selectedBackground}
+        isLucky={isLucky}
+        currentImage={currentImage}
+        name={name}
+        dynamax={dynamax}
+        gigantamax={gigantamax}
+        isPurified={isPurified}
+      />
+
+      <IdentityRow
+        pokemon={pokemon}
+        isLucky={isLucky}
+        isShadow={isShadow}
+        isPurified={isPurified}
+        editMode={editMode}
+        onToggleLucky={handleLuckyToggle}
+        onNicknameChange={handleNicknameChange}
+        onTogglePurify={handlePurifyToggle}
+      />
+
+      <LevelGenderRow
         pokemon={pokemon}
         editMode={editMode}
+        level={level}
+        onLevelChange={handleLevelChange}
+        errors={validationErrors}
+        gender={gender}
+        onGenderChange={handleGenderChange}
+      />
+
+      <StatsRow
+        pokemon={pokemon}
+        editMode={editMode}
+        onWeightChange={handleWeightChange}
+        onHeightChange={handleHeightChange}
+      />
+
+      <PowerPanel
+        pokemon={pokemon}
+        editMode={editMode}
+        megaData={megaData}
+        setMegaData={setMegaData}
+        megaEvolutions={megaEvolutions}
+        isShadow={isShadow}
+        name={name}
+        dynamax={dynamax}
+        gigantamax={gigantamax}
         showMaxOptions={showMaxOptions}
-        setShowMaxOptions={setShowMaxOptions}
+        onToggleMax={handleToggleMaxOptions}
         maxAttack={maxAttack}
         maxGuard={maxGuard}
         maxSpirit={maxSpirit}
-        handleMaxAttackChange={handleMaxAttackChange}
-        handleMaxGuardChange={handleMaxGuardChange}
-        handleMaxSpiritChange={handleMaxSpiritChange}
+        onMaxAttackChange={handleMaxAttackChange}
+        onMaxGuardChange={handleMaxGuardChange}
+        onMaxSpiritChange={handleMaxSpiritChange}
       />
 
-      <div className="moves-content">
-        <Moves
-          pokemon={pokemon}
-          editMode={editMode}
-          onMovesChange={handleMovesChange}
-          isShadow={isShadow}
-          isPurified={isPurified}
-        />
-      </div>
+      <MovesAndIV
+        pokemon={pokemon}
+        editMode={editMode}
+        onMovesChange={handleMovesChange}
+        isShadow={isShadow}
+        isPurified={isPurified}
+        ivs={ivs}
+        onIvChange={handleIvChange}
+        areIVsEmpty={areIVsEmpty}
+      />
 
-      {(editMode || !areIVsEmpty) && (
-        <div className="iv-component">
-          <IV editMode={editMode} onIvChange={handleIvChange} ivs={ivs} />
-        </div>
-      )}
+      <MetaPanel
+        pokemon={pokemon}
+        editMode={editMode}
+        onLocationChange={handleLocationCaughtChange}
+        onDateChange={handleDateCaughtChange}
+      />
 
-      <div className="location-caught-component">
-        <LocationCaught pokemon={pokemon} editMode={editMode} onLocationChange={handleLocationCaughtChange} />
-      </div>
-
-      <div className="date-caught-component">
-        <DateCaughtComponent pokemon={pokemon} editMode={editMode} onDateChange={handleDateCaughtChange} />
-      </div>
-
-      {showBackgrounds && (
-        <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
-          <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-button" onClick={() => setShowBackgrounds(false)}>Close</button>
-            <BackgroundLocationCard
-              pokemon={pokemon}
-              onSelectBackground={handleBackgroundSelect}
-            />
-          </div>
-        </div>
-      )}
-
-      {fusion.overlayPokemon && (
-        <FuseOverlay
-          pokemon={fusion.overlayPokemon}
-          onClose={() => setFusion(prev => ({ ...prev, overlayPokemon: null }))}
-          onFuse={handleFuseProceed}
-        />
-      )}
+      <Modals
+        showBackgrounds={showBackgrounds}
+        setShowBackgrounds={setShowBackgrounds}
+        pokemon={pokemon}
+        onSelectBackground={handleBackgroundSelect}
+        overlayPokemon={fusion.overlayPokemon}
+        onCloseOverlay={() => setFusion((prev) => ({ ...prev, overlayPokemon: null }))}
+        onFuse={handleFuseProceed}
+      />
     </div>
   );
 };

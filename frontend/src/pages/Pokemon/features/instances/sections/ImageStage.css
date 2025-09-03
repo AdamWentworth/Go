@@ -1,0 +1,99 @@
+/* ImageStage.css */
+
+/* ---------------------- Image + Arc Stack ---------------------- */
+.image-container {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  overflow: visible;            /* allow arc to render outside box */
+  z-index: 1;
+}
+
+.background-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.background-image {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1), rgba(0,0,0,0.7) 50%, rgba(0,0,0,0.3) 70%, transparent 100%);
+  mask-image: radial-gradient(circle, rgba(0,0,0,1), rgba(0,0,0,0.7) 45%, rgba(0,0,0,0.3) 65%, transparent 70%);
+}
+
+.brightness-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 70%);
+  z-index: 2;
+}
+
+.pokemon-image-container {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  z-index: 3;
+}
+
+.pokemon-image-container img {
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+}
+
+.pokemon-image {
+  position: relative;
+  z-index: 5;
+  max-width: 100%;
+  height: auto;
+}
+
+.max-badge {
+  position: absolute;
+  top: 2%;
+  right: 2%;
+  width: 35%;
+  z-index: 5;
+}
+
+.purified-badge {
+  position: absolute;
+  bottom: 2%;
+  left: 2%;
+  width: 20%;
+  z-index: 4;
+}
+
+.lucky-backdrop {
+  position: absolute;
+  inset: 0;
+  object-fit: contain;
+  z-index: 4;
+}
+
+/* Arc wrapper: centered; bottom sits exactly on image top */
+.level-arc-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  width: var(--arc-width);
+  height: calc(var(--arc-width) / 2);
+  pointer-events: none;
+  z-index: 2; /* bg container is 1, sprite is 5 */
+}
+
+/* Responsive arc SVG (component supplies .level-arc-svg) */
+.level-arc-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* On very small screens, reduce arc width slightly */
+@media (max-width: 480px) {
+  .image-container { --arc-width: 270px; }
+}

@@ -6,41 +6,49 @@
   display: flex;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.7);
-  /* keep the overlay itself as the scroller, but lock it to viewport height */
-  height: 100dvh;                 /* handles iOS dynamic bars better than 100vh */
+  height: 100dvh;
   overflow-y: auto;
-  overscroll-behavior: contain;   /* avoid overscroll bounce stealing space */
+  overscroll-behavior: contain;
   z-index: 2000;
-  padding: 0;                     /* move spacing into the inner scroller */
+  padding: 0;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 .instance-overlay::-webkit-scrollbar { display: none; }
 
-/* BACKGROUND LAYER (video replaces solid color, but color remains a fallback) */
+/* BACKGROUND LAYER */
 .io-bg {
   position: fixed;
   inset: 0;
-  z-index: 0;                     /* content stacks above this */
-  background: var(--io-bg, #0f2b2b); /* fallback when video can’t play */
-  overflow: hidden;               /* ensure video doesn't overflow on odd aspect ratios */
+  z-index: 0;
+  background: var(--io-bg, #0f2b2b);
+  overflow: hidden;
+
+  /* tunables (defaults) */
+  --bg-blur: 2.5px;      /* how out-of-focus */
+  --bg-dim: 1;          /* keep at 1 = no dimming */
+  --bg-saturate: 0.95;  /* optional pop control */
+  --bg-scale: 1.06;     /* counteract blur edge-crop */
 }
 
-/* the actual video */
-.io-bg-video {
+/* full-bleed background image, now filtered */
+.io-bg-img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;              /* like background-size: cover */
-  pointer-events: none;           /* don’t intercept clicks/scroll */
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+
+  /* blur + slight desat; NO brightness reduction */
+  filter: blur(var(--bg-blur)) saturate(var(--bg-saturate));
+  transform: scale(var(--bg-scale));
+  transform-origin: center;
+  will-change: transform, filter;
 }
 
-/* respect users that prefer reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .io-bg-video { display: none; }
-}
-
+/* ensure all other overlay content sits above the background */
 .instance-overlay > *:not(.io-bg) { position: relative; z-index: 1; }
 
 /* caught mode layout */
@@ -65,25 +73,45 @@
   display: flex;
   justify-content: center;
   overflow: visible;
-  /* make sure top is always visible (accounts for close btn + safe area) */
   padding-top: calc(24px + env(safe-area-inset-bottom));
-  /* give bottom breathing room for any iOS home indicator / fab etc. */
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
-  min-height: 100dvh;  /* so the padding is always respected in view */
+  min-height: 100dvh;
 }
 
 /* the centered content column/panel */
 .caught-column {
-  width: min(90%, 900px);
+  /* keep your tuned offset */
+  --panel-offset: calc(240px * 0.95);
+
+  width: 92.5%;
   height: 100%;
-  margin: 0 auto;                /* remove top margin so it can't slide under the top */
-  background: #333;
+  margin: 0 auto;
+  background: transparent;              /* was: #333 */
   border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 8px 20px rgba(0,0,0,.35);
   display: flex;
   flex-direction: column;
   gap: 12px;
+  position: relative;
+}
+
+/* draw the #333 panel starting lower down, exposing the image above */
+.caught-column::before {
+  content: "";
+  position: absolute;
+  top: var(--panel-offset);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #333;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.35);
+  z-index: 0;
+}
+
+/* keep all content above the pseudo background */
+.caught-column > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* keep trade/wanted rules as-is... */

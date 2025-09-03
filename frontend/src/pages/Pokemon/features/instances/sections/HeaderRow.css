@@ -1,0 +1,32 @@
+/* HeaderRow.css */
+
+/* ---------------------- Top Row ---------------------- */
+.top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  z-index: 5; /* ensure the header paints above the arc at all widths */
+}
+
+/* CP centered above image, stays on top */
+.top-row .cp-component-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10; /* ensure above arc/sprite */
+}
+
+.cp-display {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  margin-top: -10px;
+  font-weight: bold;
+}
+
+.top-row .favorite-component {
+  margin-left: auto;
+}

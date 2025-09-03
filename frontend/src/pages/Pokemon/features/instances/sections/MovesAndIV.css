@@ -1,0 +1,7 @@
+/* MovesAndIV.css */
+
+/* ---------------------- Other full-width sections ---------------------- */
+.moves-content,
+.iv-component {
+  width: 100%;
+}
