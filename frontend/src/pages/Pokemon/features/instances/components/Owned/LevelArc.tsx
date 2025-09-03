@@ -1,6 +1,7 @@
 // LevelArc.tsx
 import React from 'react';
 import './LevelArc.css';
+import { cpMultipliers } from '@/utils/constants';
 
 export interface LevelArcProps {
   level?: number | null;
@@ -15,7 +16,29 @@ export interface LevelArcProps {
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
-/** Build a circular arc path using SVG 'A' commands from angle a1 -> a2 (clockwise on the top half). */
+/** Get CP Multiplier at any level (supports 0.5 steps, with linear interpolation if needed). */
+function getCPM(level: number): number {
+  // Round to nearest 0.5 grid bounds
+  const lo = Math.floor(level * 2) / 2;
+  const hi = Math.ceil(level * 2) / 2;
+
+  const cLo = (cpMultipliers as any)[lo];
+  const cHi = (cpMultipliers as any)[hi];
+
+  if (cLo != null && cHi != null) {
+    if (hi === lo) return cLo;
+    const t = (level - lo) / (hi - lo);
+    return cLo + (cHi - cLo) * t;
+  }
+  // Fallbacks if a key is missing (shouldn’t happen with your map)
+  if (cLo != null) return cLo;
+  if (cHi != null) return cHi;
+
+  // Very defensive default
+  return 0;
+}
+
+/** Build a circular arc path using SVG 'A' command from angle a1 -> a2 (clockwise on top half). */
 function arcPath(cx: number, cy: number, r: number, a1: number, a2: number): string {
   const x1 = cx + r * Math.cos(a1);
   const y1 = cy + r * Math.sin(a1);
@@ -25,7 +48,7 @@ function arcPath(cx: number, cy: number, r: number, a1: number, a2: number): str
   let delta = Math.abs(a2 - a1);
   delta = ((delta % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
   const largeArc = delta > Math.PI ? 1 : 0;
-  const sweep = 1; // <-- CLOCKWISE sweep so left->right follows the TOP semicircle
+  const sweep = 1; // CLOCKWISE sweep so left->right follows the TOP semicircle
 
   return `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} ${sweep} ${x2} ${y2}`;
 }
@@ -33,10 +56,10 @@ function arcPath(cx: number, cy: number, r: number, a1: number, a2: number): str
 const LevelArc: React.FC<LevelArcProps> = ({
   level = 1,
   min = 1,
-  max = 50,
+  max = 50,            // ignored for power mapping, kept for API parity
   size = 240,
-  strokeWidth = 3,
-  dotRadius = 12,
+  strokeWidth = 3,     // your thicker default
+  dotRadius = 12,      // bigger dot
   fitToContainer = false,
   className = '',
 }) => {
@@ -47,25 +70,28 @@ const LevelArc: React.FC<LevelArcProps> = ({
   const cx = r;
   const cy = r;
 
-  // Progress along the top semicircle from left (π) → right (2π)
-  const L = typeof level === 'number' ? level : min;
-  const span = max - min;
-  const tRaw = span !== 0 ? (clamp(L, min, max) - min) / span : 0;
+  // --- Relative power mapping ---------------------------------------------
+  // Treat anything >= 50 as "max" (same as 50 / 50.5 / 51).
+  const LVL_MIN = 1;
+  const LVL_MAX = 50;
+  const L = clamp(typeof level === 'number' ? level : LVL_MIN, LVL_MIN, LVL_MAX);
 
-  // Shift so the integer midpoint sits exactly at the apex
-  const midInt = Math.floor((min + max) / 2);
-  const tAtMidInt = span !== 0 ? (midInt - min) / span : 0.5;
-  const tShift = 0.5 - tAtMidInt;
-  const progress = clamp(tRaw + tShift, 0, 1);
+  const cpmL = getCPM(L);
+  const cpmMax = getCPM(LVL_MAX) || 1; // ~0.84029999
+  let p = clamp(cpmL / cpmMax, 0, 1);  // normalized relative power
 
-  // Angles
-  const leftA = Math.PI;         // left end
-  const rightA = 2 * Math.PI;    // right end
-  const dotA = leftA + progress * (rightA - leftA);
+  // Optional easing to fine-tune feel of the compression near high levels.
+  const POWER_GAMMA = 1.0; // try 0.9 (more right-compression) or 1.1 (less)
+  if (POWER_GAMMA !== 1.0) p = Math.pow(p, POWER_GAMMA);
+
+  // Angles along the top semicircle (left π → right 2π)
+  const leftA = Math.PI;
+  const rightA = 2 * Math.PI;
+  const dotA = leftA + p * (rightA - leftA);
 
   // Paths: completed (left → dot) and remaining (dot → right)
-  const completedD = progress > 0 ? arcPath(cx, cy, r, leftA, dotA) : '';
-  const remainingD = progress < 1 ? arcPath(cx, cy, r, dotA, rightA) : '';
+  const completedD = p > 0 ? arcPath(cx, cy, r, leftA, dotA) : '';
+  const remainingD = p < 1 ? arcPath(cx, cy, r, dotA, rightA) : '';
 
   // Dot position
   const dotX = cx + r * Math.cos(dotA);
