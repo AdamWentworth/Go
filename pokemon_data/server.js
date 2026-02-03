@@ -10,7 +10,7 @@ const path = require('path');
 const dotenv = require('dotenv');
 
 // Load environment variables with fallback
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : process.env.NODE_ENV === 'development' ? '.env.development' : '.env';
+const envFile = '.env';
 dotenv.config({ path: envFile });
 
 const app = express();

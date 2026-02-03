@@ -1,7 +1,3 @@
-# storage docker compose
-
-version: '3.8'
-
 services:
   storage_service:
     image: adamwentworth/storage_service:latest
@@ -10,7 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      - mysql_storage
+      mysql_storage:
+        condition: service_healthy
     env_file:
       - .env
     ports:
@@ -19,6 +16,7 @@ services:
       - ./backups:/app/backups
     networks:
       - kafka_default
+    restart: unless-stopped
 
   mysql_storage:
     image: mysql:8.3
@@ -38,6 +36,12 @@ services:
       - ./backups:/backups
     networks:
       - kafka_default
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
 
 networks:
   kafka_default:

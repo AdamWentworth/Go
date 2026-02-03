@@ -19,9 +19,9 @@ var failedMessagesFile = "failed_messages.jsonl"
 
 func StartConsumer(ctx context.Context) {
     // Use Kafka details from the loaded configuration
-    kafkaHost := os.Getenv("HOST_IP")
+    kafkaHost := AppConfig.Events.Hostname
     if kafkaHost == "" {
-        logrus.Fatal("Required Kafka HOST_IP environment variable is not set")
+        logrus.Fatal("Kafka hostname is not configured in app_conf.yml")
     }
 
     kafkaPort := AppConfig.Events.Port

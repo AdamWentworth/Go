@@ -13,6 +13,7 @@ import (
 
 // Existing config structures
 type EventsConfig struct {
+    Hostname      string `yaml:"hostname"`
     Port          string `yaml:"port"`
     Topic         string `yaml:"topic"`
     MaxRetries    int    `yaml:"max_retries"`

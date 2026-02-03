@@ -2,6 +2,7 @@
 
 services:
   frontend_nginx:
+    build: .
     image: adamwentworth/frontend-nginx:latest
     container_name: frontend_nginx
     ports:
@@ -9,7 +10,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro  # 🔥 this gives container access to certs
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - kafka_default
 

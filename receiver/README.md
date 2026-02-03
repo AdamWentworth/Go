@@ -20,7 +20,7 @@ This Go-based microservice accepts batched client updates (Pokémon ownership, t
 
 ```
 receiver/
-├── .env.development          # Environment config
+├── .env                      # Environment config
 ├── config/
 │   └── app_conf.yml          # Kafka config and other app settings
 ├── main.go                   # Entry point
@@ -106,7 +106,7 @@ Supports cookies and credentials.
 
 ## 🧪 Running Locally
 
-### 1. Setup `.env.development`
+### 1. Setup `.env`
 
 ```
 JWT_SECRET=your_jwt_secret

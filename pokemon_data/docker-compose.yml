@@ -9,7 +9,7 @@ services:
     ports:
       - "3001:3001"
     env_file:
-      - .env.production
+      - .env
     volumes:
       - ./data:/usr/src/app/data
     restart: unless-stopped

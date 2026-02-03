@@ -1,20 +1,16 @@
 version: '3.8'
 
-networks:
-  appnet:
-    driver: bridge
-
 services:
   zookeeper:
     image: wurstmeister/zookeeper
     volumes:
       - ./data/zookeeper:/opt/zookeeper-3.4.13/data
-    networks: [appnet]
+    networks:
+      - kafka_default
 
   kafka:
     image: wurstmeister/kafka
     depends_on: [zookeeper]
-    # Host-only exposure for local/non-container tools
     ports:
       - "127.0.0.1:9093:9093"
     environment:
@@ -26,11 +22,17 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
 
-      # Your existing settings
       KAFKA_CREATE_TOPICS: "batchedUpdates:1:1"
       KAFKA_BROKER_ID: 1
       KAFKA_MESSAGE_MAX_BYTES: "3145728"
       KAFKA_REPLICA_FETCH_MAX_BYTES: "3145728"
     volumes:
       - ./data/kafka:/kafka
-    networks: [appnet]
+    networks:
+      kafka_default:
+        aliases:
+          - kafka
+
+networks:
+  kafka_default:
+    external: true
