@@ -1,12 +1,13 @@
 module pokemon_data
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.23.1
+toolchain go1.24.12
 
 require (
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/prometheus/client_golang v1.23.2
+	golang.org/x/time v0.14.0
 	modernc.org/sqlite v1.33.1
 )
 

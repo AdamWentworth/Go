@@ -9,8 +9,8 @@ import (
 )
 
 type Config struct {
-	Port              int
-	Env               string
+	Port               int
+	Env                string
 	SQLitePath         string
 	CachePrewarm       bool
 	CacheRefreshToken  string
@@ -18,6 +18,16 @@ type Config struct {
 	AllowedOrigins     []string
 	AllowCloudflareSub bool
 	LogLevel           slog.Level
+
+	// Rate limiting (per-client, in-process) for the heavy endpoint.
+	RateLimitEnabled bool
+	RateLimitRPS     float64
+	RateLimitBurst   int
+
+	// Internal-only endpoints (/metrics and /internal/*) guarded by CIDR allowlist.
+	// This is intentionally "simple + local" so you can roll it out across services easily.
+	InternalOnlyEnabled bool
+	InternalOnlyCIDRs   []string
 }
 
 func Load() Config {
@@ -37,16 +47,34 @@ func Load() Config {
 
 	logLevel := parseLogLevel(getString("LOG_LEVEL", "INFO"))
 
+	rlEnabled := getBool("RATE_LIMIT_ENABLED", env == "production")
+	rlRPS := getFloat("RATE_LIMIT_RPS", 5.0)
+	rlBurst := getInt("RATE_LIMIT_BURST", 10)
+
+	// Default: enabled in production, disabled elsewhere.
+	internalOnlyEnabled := getBool("INTERNAL_ONLY_ENABLED", env == "production")
+
+	// Default CIDRs allow:
+	// - loopback
+	// - RFC1918 private IPv4 ranges (includes docker bridge ranges)
+	// - IPv6 ULA (fd00::/8)
+	internalCIDRs := splitCSV(getString("INTERNAL_ONLY_CIDRS", "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fd00::/8"))
+
 	return Config{
-		Port:              port,
-		Env:               env,
-		SQLitePath:         sqlitePath,
-		CachePrewarm:       cachePrewarm,
-		CacheRefreshToken:  cacheToken,
-		CacheBuildTimeout:  cacheBuildTimeout,
-		AllowedOrigins:     allowed,
-		AllowCloudflareSub: allowCF,
-		LogLevel:           logLevel,
+		Port:                port,
+		Env:                 env,
+		SQLitePath:          sqlitePath,
+		CachePrewarm:        cachePrewarm,
+		CacheRefreshToken:   cacheToken,
+		CacheBuildTimeout:   cacheBuildTimeout,
+		AllowedOrigins:      allowed,
+		AllowCloudflareSub:  allowCF,
+		LogLevel:            logLevel,
+		RateLimitEnabled:    rlEnabled,
+		RateLimitRPS:        rlRPS,
+		RateLimitBurst:      rlBurst,
+		InternalOnlyEnabled: internalOnlyEnabled,
+		InternalOnlyCIDRs:   internalCIDRs,
 	}
 }
 
@@ -79,6 +107,18 @@ func getInt(key string, def int) int {
 		return def
 	}
 	return n
+}
+
+func getFloat(key string, def float64) float64 {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return def
+	}
+	f, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return def
+	}
+	return f
 }
 
 func getBool(key string, def bool) bool {

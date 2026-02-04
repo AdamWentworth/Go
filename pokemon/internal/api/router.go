@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -37,20 +36,72 @@ func NewRouter(deps RouterDeps) http.Handler {
 
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RealIP)
+
+	// Adds X-Request-Id and stores it in context. If caller supplies X-Request-Id, chi will reuse it.
+	r.Use(middleware.RequestID)
+
 	r.Use(middleware.Timeout(120 * time.Second))
 
-	// CORS (same allowlist behavior as original code)
+	// CORS allowlist middleware (cors.go)
 	r.Use(corsMiddleware(deps.Cfg, log))
 
-	// Prometheus request metrics
+	// Prometheus request metrics (metrics_http.go)
 	r.Use(metrics.Middleware())
 
-	// Node-like request logs
-	r.Use(nodeRequestLogMiddleware(log))
+	// Structured request logs (includes req_id)
+	r.Use(requestLogMiddleware(log))
 
-	// Metrics endpoint (Prometheus scrape target).
-	// IMPORTANT: do not expose this publicly; restrict via network / reverse proxy if needed.
-	r.Handle("/metrics", promhttp.Handler())
+	// Internal endpoints: /metrics, /internal/*, /debug/pprof/*
+	// Mounted exactly once to avoid chi panics.
+	if deps.Cfg.InternalOnlyEnabled {
+		guard, err := NewCIDRGuard(deps.Cfg.InternalOnlyCIDRs, log)
+		if err != nil {
+			// Fail safe: if config is invalid, do NOT start up with a broken guard.
+			log.Error("invalid INTERNAL_ONLY_CIDRS; internal guard disabled", slog.String("err", err.Error()))
+		} else {
+			r.Group(func(ir chi.Router) {
+				ir.Use(InternalOnlyMiddleware(guard, clientIP))
+				ir.Handle("/metrics", promhttp.Handler())
+				MountPprof(ir)
+
+				// Cache stats
+				ir.Get("/internal/cache/stats", func(w http.ResponseWriter, r *http.Request) {
+					writeJSON(w, deps.PayloadCache.Stats())
+				})
+
+				// Cache refresh
+				ir.Post("/internal/cache/refresh", func(w http.ResponseWriter, r *http.Request) {
+					if deps.Cfg.CacheRefreshToken != "" {
+						if r.Header.Get("X-Cache-Refresh-Token") != deps.Cfg.CacheRefreshToken {
+							w.WriteHeader(http.StatusForbidden)
+							return
+						}
+					}
+					deps.PayloadCache.Invalidate()
+					w.WriteHeader(http.StatusNoContent)
+				})
+			})
+		}
+	} else {
+		// Unrestricted internal endpoints (dev/local use).
+		r.Handle("/metrics", promhttp.Handler())
+		MountPprof(r)
+
+		r.Get("/internal/cache/stats", func(w http.ResponseWriter, r *http.Request) {
+			writeJSON(w, deps.PayloadCache.Stats())
+		})
+
+		r.Post("/internal/cache/refresh", func(w http.ResponseWriter, r *http.Request) {
+			if deps.Cfg.CacheRefreshToken != "" {
+				if r.Header.Get("X-Cache-Refresh-Token") != deps.Cfg.CacheRefreshToken {
+					w.WriteHeader(http.StatusForbidden)
+					return
+				}
+			}
+			deps.PayloadCache.Invalidate()
+			w.WriteHeader(http.StatusNoContent)
+		})
+	}
 
 	// Liveness: process is up.
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -104,13 +155,13 @@ func NewRouter(deps RouterDeps) http.Handler {
 		writeJSON(w, resp)
 	})
 
-	// Main endpoint
-	r.Get("/pokemon/pokemons", func(w http.ResponseWriter, r *http.Request) {
+	// Main endpoint (optionally rate-limited via RATE_LIMIT_* envs)
+	var pokemonHandler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), deps.Cfg.CacheBuildTimeout)
 		defer cancel()
 
 		if err := deps.PayloadCache.EnsureBuilt(ctx); err != nil {
-			log.Info("Error serving /pokemon/pokemons: cache ensure failed: " + err.Error())
+			log.Error("cache ensure failed", slog.String("err", err.Error()))
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -118,22 +169,11 @@ func NewRouter(deps RouterDeps) http.Handler {
 		_, _, _, _ = deps.PayloadCache.Send(w, r)
 	})
 
-	// Cache stats
-	r.Get("/internal/cache/stats", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, deps.PayloadCache.Stats())
-	})
-
-	// Cache refresh
-	r.Post("/internal/cache/refresh", func(w http.ResponseWriter, r *http.Request) {
-		if deps.Cfg.CacheRefreshToken != "" {
-			if r.Header.Get("X-Cache-Refresh-Token") != deps.Cfg.CacheRefreshToken {
-				w.WriteHeader(http.StatusForbidden)
-				return
-			}
-		}
-		deps.PayloadCache.Invalidate()
-		w.WriteHeader(http.StatusNoContent)
-	})
+	if deps.Cfg.RateLimitEnabled {
+		lim := NewIPRateLimiter(deps.Cfg.RateLimitRPS, deps.Cfg.RateLimitBurst, 5*time.Minute)
+		pokemonHandler = RateLimitMiddleware(lim, clientIP)(pokemonHandler)
+	}
+	r.Method(http.MethodGet, "/pokemon/pokemons", pokemonHandler)
 
 	return r
 }
@@ -148,6 +188,7 @@ func writeJSON(w http.ResponseWriter, v any) {
 type statusRecorder struct {
 	http.ResponseWriter
 	status int
+	bytes  int
 }
 
 func (sr *statusRecorder) WriteHeader(code int) {
@@ -155,18 +196,38 @@ func (sr *statusRecorder) WriteHeader(code int) {
 	sr.ResponseWriter.WriteHeader(code)
 }
 
-func nodeRequestLogMiddleware(log *slog.Logger) func(http.Handler) http.Handler {
+func (sr *statusRecorder) Write(p []byte) (int, error) {
+	n, err := sr.ResponseWriter.Write(p)
+	sr.bytes += n
+	return n, err
+}
+
+func requestLogMiddleware(log *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ip := clientIP(r)
-			log.Info("Incoming request: " + r.Method + " " + r.URL.Path + " from " + ip)
-
 			start := time.Now()
 			sr := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
-			next.ServeHTTP(sr, r)
-			totalMs := time.Since(start).Milliseconds()
 
-			log.Info("Response " + r.URL.Path + ": status=" + strconv.Itoa(sr.status) + " totalMs=" + strconv.FormatInt(totalMs, 10) + "ms")
+			next.ServeHTTP(sr, r)
+
+			dur := time.Since(start)
+			reqID := middleware.GetReqID(r.Context())
+			route := chi.RouteContext(r.Context()).RoutePattern()
+			if route == "" {
+				route = "unknown"
+			}
+
+			log.Info("http_request",
+				slog.String("req_id", reqID),
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+				slog.String("route", route),
+				slog.String("ip", clientIP(r)),
+				slog.Int("status", sr.status),
+				slog.Int("bytes", sr.bytes),
+				slog.Int64("duration_ms", dur.Milliseconds()),
+				slog.String("ua", r.UserAgent()),
+			)
 		})
 	}
 }
@@ -184,48 +245,4 @@ func clientIP(r *http.Request) string {
 		return host
 	}
 	return r.RemoteAddr
-}
-
-// corsMiddleware implements the same allowlist behavior as the original Go code:
-// - allow if origin is in cfg.AllowedOrigins OR (AllowCloudflareSub and origin ends with .cloudflare.com)
-// - set headers for allowed origins
-// - block and log unauthorized origins with 403
-func corsMiddleware(cfg config.Config, log *slog.Logger) func(http.Handler) http.Handler {
-	allowed := make(map[string]struct{}, len(cfg.AllowedOrigins))
-	for _, o := range cfg.AllowedOrigins {
-		allowed[o] = struct{}{}
-	}
-
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			origin := r.Header.Get("Origin")
-			if origin == "" {
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			if _, ok := allowed[origin]; ok || (cfg.AllowCloudflareSub && strings.HasSuffix(origin, ".cloudflare.com")) {
-				w.Header().Set("Access-Control-Allow-Origin", origin)
-				w.Header().Set("Vary", "Origin, Accept-Encoding")
-				w.Header().Set("Access-Control-Allow-Credentials", "true")
-				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-
-				// Cache preflight response for 10 minutes.
-				w.Header().Set("Access-Control-Max-Age", "600")
-
-				if r.Method == http.MethodOptions {
-					w.WriteHeader(http.StatusNoContent)
-					return
-				}
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			if log != nil {
-				log.Warn("Unauthorized CORS access attempt from origin: " + origin)
-			}
-			http.Error(w, "CORS forbidden", http.StatusForbidden)
-		})
-	}
 }
