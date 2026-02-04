@@ -118,9 +118,84 @@ func TestSend_GzipAndETagAnd304(t *testing.T) {
 		t.Fatalf("expected 304, got %d", status2)
 	}
 	if n2 != 0 {
-		t.Fatalf("expected 0 bytes for 304, got %d", n2)
+		t.Fatalf("expected 0 bytesOut for 304, got %d", n2)
 	}
 	if enc2 != "none" {
-		t.Fatalf("expected encoding 'none' for 304, got %q", enc2)
+		t.Fatalf("expected encoding none for 304, got %q", enc2)
+	}
+	if rr2.Body.Len() != 0 {
+		t.Fatalf("expected empty body for 304, got %d bytes", rr2.Body.Len())
+	}
+}
+
+func TestSend_IfNoneMatch_ListAndWeakETag(t *testing.T) {
+	build := func(ctx context.Context) (any, error) {
+		return map[string]any{"ok": true}, nil
+	}
+
+	c := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
+		Name:         "/pokemon/pokemons",
+		BuildPayload: build,
+		GzipLevel:    6,
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if err := c.EnsureBuilt(ctx); err != nil {
+		t.Fatalf("EnsureBuilt: %v", err)
+	}
+
+	// First request to get ETag.
+	req1 := httptest.NewRequest(http.MethodGet, "/pokemon/pokemons", nil)
+	rr1 := httptest.NewRecorder()
+	c.Send(rr1, req1)
+	etag := rr1.Header().Get("ETag")
+	if etag == "" {
+		t.Fatalf("expected ETag set")
+	}
+
+	// Client sends a list of etags including a weak match.
+	req2 := httptest.NewRequest(http.MethodGet, "/pokemon/pokemons", nil)
+	req2.Header.Set("If-None-Match", `"nope", W/`+etag+`, "also-nope"`)
+	rr2 := httptest.NewRecorder()
+	status, _, _, _ := c.Send(rr2, req2)
+	if status != http.StatusNotModified {
+		t.Fatalf("expected 304, got %d", status)
+	}
+}
+
+func TestSend_GzipAcceptEncoding_RespectsQ(t *testing.T) {
+	build := func(ctx context.Context) (any, error) {
+		return map[string]any{"ok": true}, nil
+	}
+
+	c := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
+		Name:         "/pokemon/pokemons",
+		BuildPayload: build,
+		GzipLevel:    6,
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if err := c.EnsureBuilt(ctx); err != nil {
+		t.Fatalf("EnsureBuilt: %v", err)
+	}
+
+	// gzip explicitly refused => should NOT gzip.
+	req1 := httptest.NewRequest(http.MethodGet, "/pokemon/pokemons", nil)
+	req1.Header.Set("Accept-Encoding", "gzip;q=0, br;q=1")
+	rr1 := httptest.NewRecorder()
+	_, _, enc1, _ := c.Send(rr1, req1)
+	if enc1 != "identity" {
+		t.Fatalf("expected identity when gzip q=0, got %q", enc1)
+	}
+
+	// gzip not listed but "*" allowed => should gzip.
+	req2 := httptest.NewRequest(http.MethodGet, "/pokemon/pokemons", nil)
+	req2.Header.Set("Accept-Encoding", "br;q=1, *;q=1")
+	rr2 := httptest.NewRecorder()
+	_, _, enc2, _ := c.Send(rr2, req2)
+	if enc2 != "gzip" {
+		t.Fatalf("expected gzip when *;q=1, got %q", enc2)
 	}
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"log/slog"
 	"net"
@@ -20,6 +21,7 @@ import (
 type RouterDeps struct {
 	Cfg          config.Config
 	Logger       *slog.Logger
+	DB           *sql.DB
 	PayloadCache *cache.JSONGzipCache
 }
 
@@ -35,16 +37,62 @@ func NewRouter(deps RouterDeps) http.Handler {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Timeout(120 * time.Second))
 
-	// CORS (matches existing Go behavior and Node intent)
+	// CORS (same allowlist behavior as original code)
 	r.Use(corsMiddleware(deps.Cfg, log))
 
 	// Node-like request logs
 	r.Use(nodeRequestLogMiddleware(log))
 
-	// Health
+	// Liveness: process is up.
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
+	})
+
+	// Readiness: dependencies are usable.
+	// - DB must respond to a ping.
+	// - If CACHE_PREWARM is enabled, require the payload cache to already be built.
+	r.Get("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		type readyResp struct {
+			OK         bool   `json:"ok"`
+			DB         bool   `json:"db"`
+			CacheReady bool   `json:"cacheReady"`
+			Message    string `json:"message,omitempty"`
+		}
+
+		resp := readyResp{OK: false, DB: false, CacheReady: false}
+
+		// DB ping with a short timeout so readiness isn't sticky.
+		if deps.DB != nil {
+			ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
+			defer cancel()
+			if err := deps.DB.PingContext(ctx); err == nil {
+				resp.DB = true
+			} else {
+				resp.Message = "db not ready"
+			}
+		} else {
+			resp.Message = "db not configured"
+		}
+
+		cacheStats := deps.PayloadCache.Stats()
+		if deps.Cfg.CachePrewarm {
+			resp.CacheReady = cacheStats.HasCache
+			if !resp.CacheReady && resp.Message == "" {
+				resp.Message = "cache not ready"
+			}
+		} else {
+			// If not prewarming, cache can be built on-demand.
+			resp.CacheReady = true
+		}
+
+		resp.OK = resp.DB && resp.CacheReady
+		if !resp.OK {
+			w.WriteHeader(http.StatusServiceUnavailable)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+		writeJSON(w, resp)
 	})
 
 	// Main endpoint
@@ -53,7 +101,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 		defer cancel()
 
 		if err := deps.PayloadCache.EnsureBuilt(ctx); err != nil {
-			log.Info("Error serving /pokemon/pokemons: cache ensure failed")
+			log.Info("Error serving /pokemon/pokemons: cache ensure failed: " + err.Error())
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -153,6 +201,9 @@ func corsMiddleware(cfg config.Config, log *slog.Logger) func(http.Handler) http
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
 				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+
+				// Optional: cache preflight response for 10 minutes.
+				w.Header().Set("Access-Control-Max-Age", "600")
 
 				if r.Method == http.MethodOptions {
 					w.WriteHeader(http.StatusNoContent)

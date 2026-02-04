@@ -4,12 +4,11 @@ FROM golang:1.22-alpine AS build
 WORKDIR /src
 RUN apk add --no-cache ca-certificates tzdata
 
-COPY go.mod ./
-# go.sum will be generated after you run 'go mod tidy' locally; we vendor in container build anyway
+COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 go build -o /out/pokemon_data ./cmd/pokemon_data
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/pokemon_data ./cmd/pokemon
 
 # Runtime stage
 FROM alpine:3.20

@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -94,45 +95,44 @@ func (c *JSONGzipCache) EnsureBuilt(ctx context.Context) error {
 		return nil
 	}
 
+	// Single-flight-ish: only one builder runs at a time.
 	c.buildMu.Lock()
 	defer c.buildMu.Unlock()
 
-	// Double-check after acquiring lock
 	c.mu.RLock()
 	has = len(c.jsonB) > 0 && len(c.gzipB) > 0 && c.etag != ""
 	c.mu.RUnlock()
 	if has {
 		return nil
 	}
+
 	if c.buildPayload == nil {
-		return errors.New("no BuildPayload configured")
+		return errors.New("BuildPayload is nil")
 	}
 
-	tStart := time.Now()
-
-	t0 := time.Now()
+	totalStart := time.Now()
+	buildStart := time.Now()
 	payload, err := c.buildPayload(ctx)
 	if err != nil {
 		return err
 	}
-	buildMs := time.Since(t0)
+	buildMs := time.Since(buildStart)
 
-	t1 := time.Now()
+	marshalStart := time.Now()
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
-	marshalMs := time.Since(t1)
+	marshalMs := time.Since(marshalStart)
 
-	t2 := time.Now()
-	etag := computeStrongETag(body)
+	gzipStart := time.Now()
 	gz, err := gzipBytes(body, c.gzipLevel)
 	if err != nil {
 		return err
 	}
-	gzipMs := time.Since(t2)
-
-	totalMs := time.Since(tStart)
+	etag := computeStrongETag(body)
+	gzipMs := time.Since(gzipStart)
+	totalMs := time.Since(totalStart)
 
 	var countPtr *int
 	if arr, ok := payload.([]any); ok {
@@ -160,7 +160,7 @@ func (c *JSONGzipCache) EnsureBuilt(ctx context.Context) error {
 	c.lastBuild = stats
 	c.mu.Unlock()
 
-	// Node-identical log line format (see utils/responseCache.js). fileciteturn24file0
+	// Node-identical log line format (see utils/responseCache.js).
 	count := 0
 	if stats.Count != nil {
 		count = *stats.Count
@@ -190,8 +190,8 @@ func (c *JSONGzipCache) Send(w http.ResponseWriter, r *http.Request) (status int
 
 	cacheHit = len(body) > 0 && etag != ""
 
-	// Conditional GET
-	if inm := r.Header.Get("If-None-Match"); inm != "" && inm == etag {
+	// Conditional GET (RFC 9110: header can be "*" or a list; weak validators allowed)
+	if inm := r.Header.Get("If-None-Match"); inm != "" && ifNoneMatch(etag, inm) {
 		setCommonHeaders(w, etag, builtAt)
 		w.WriteHeader(http.StatusNotModified)
 		return http.StatusNotModified, 0, "none", cacheHit
@@ -235,9 +235,88 @@ func computeStrongETag(body []byte) string {
 	return `"` + b64 + `"`
 }
 
+func ifNoneMatch(currentETag, headerVal string) bool {
+	if currentETag == "" {
+		return false
+	}
+	h := strings.TrimSpace(headerVal)
+	if h == "*" {
+		return true
+	}
+	// List of entity-tags: ETag / W/ETag
+	for _, part := range strings.Split(h, ",") {
+		tok := strings.TrimSpace(part)
+		if tok == "" {
+			continue
+		}
+		if strings.HasPrefix(tok, "W/") {
+			tok = strings.TrimSpace(strings.TrimPrefix(tok, "W/"))
+		}
+		if tok == currentETag {
+			return true
+		}
+	}
+	return false
+}
+
+// acceptsGzip returns true only if gzip is allowed with q>0.
+// - If gzip is explicitly present: respect its q.
+// - Else if "*" is present: respect its q.
+// - Else false.
 func acceptsGzip(r *http.Request) bool {
 	ae := r.Header.Get("Accept-Encoding")
-	return strings.Contains(strings.ToLower(ae), "gzip")
+	if ae == "" {
+		return false
+	}
+
+	gzipQ := -1.0
+	starQ := -1.0
+
+	for _, part := range strings.Split(ae, ",") {
+		p := strings.TrimSpace(part)
+		if p == "" {
+			continue
+		}
+		coding, params, _ := strings.Cut(p, ";")
+		coding = strings.ToLower(strings.TrimSpace(coding))
+
+		q := 1.0
+		if params != "" {
+			for _, prm := range strings.Split(params, ";") {
+				prm = strings.TrimSpace(prm)
+				if prm == "" {
+					continue
+				}
+				k, v, ok := strings.Cut(prm, "=")
+				if !ok {
+					continue
+				}
+				if strings.ToLower(strings.TrimSpace(k)) != "q" {
+					continue
+				}
+				f, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
+				if err == nil {
+					q = f
+				}
+				break
+			}
+		}
+
+		switch coding {
+		case "gzip":
+			gzipQ = q
+		case "*":
+			starQ = q
+		}
+	}
+
+	if gzipQ >= 0 {
+		return gzipQ > 0
+	}
+	if starQ >= 0 {
+		return starQ > 0
+	}
+	return false
 }
 
 func setCommonHeaders(w http.ResponseWriter, etag string, builtAt time.Time) {

@@ -50,6 +50,7 @@ func main() {
 	router := api.NewRouter(api.RouterDeps{
 		Cfg:          cfg,
 		Logger:       logger,
+		DB:           sqlDB,
 		PayloadCache: payloadCache,
 	})
 
@@ -68,7 +69,7 @@ func main() {
 	// Prewarm cache (non-blocking)
 	if cfg.CachePrewarm {
 		go func() {
-			logger.Info("Prewarming /pokemon/pokemons cache at startup...")
+			logger.Info("Prewarming /pokemon/pokemons cache at startup.")
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.CacheBuildTimeout)
 			defer cancel()
 			if err := payloadCache.EnsureBuilt(ctx); err != nil {
