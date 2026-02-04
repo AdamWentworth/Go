@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.22-alpine AS build
+FROM golang:1.23-alpine AS build
 
 WORKDIR /src
 RUN apk add --no-cache ca-certificates tzdata

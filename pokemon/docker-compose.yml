@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  pokemon_data_go:
+  pokemon_data:
     build: .
-    container_name: pokemon_data_go_container
-    ports:
-      - "3001:3001"
+    container_name: pokemon_data_container
+    expose:
+      - "3001"
     env_file:
       - .env
     volumes:

@@ -13,9 +13,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"pokemon_data/internal/cache"
 	"pokemon_data/internal/config"
+	"pokemon_data/internal/metrics"
 )
 
 type RouterDeps struct {
@@ -40,8 +42,15 @@ func NewRouter(deps RouterDeps) http.Handler {
 	// CORS (same allowlist behavior as original code)
 	r.Use(corsMiddleware(deps.Cfg, log))
 
+	// Prometheus request metrics
+	r.Use(metrics.Middleware())
+
 	// Node-like request logs
 	r.Use(nodeRequestLogMiddleware(log))
+
+	// Metrics endpoint (Prometheus scrape target).
+	// IMPORTANT: do not expose this publicly; restrict via network / reverse proxy if needed.
+	r.Handle("/metrics", promhttp.Handler())
 
 	// Liveness: process is up.
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -202,7 +211,7 @@ func corsMiddleware(cfg config.Config, log *slog.Logger) func(http.Handler) http
 				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 
-				// Optional: cache preflight response for 10 minutes.
+				// Cache preflight response for 10 minutes.
 				w.Header().Set("Access-Control-Max-Age", "600")
 
 				if r.Method == http.MethodOptions {
