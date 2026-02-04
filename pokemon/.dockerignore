@@ -1,0 +1,9 @@
+bin/
+*.exe
+*.test
+*.out
+node_modules
+npm-debug.log
+.env*
+*.sqlite
+*.db-journal

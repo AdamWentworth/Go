@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  pokemon_data_go:
+    build: .
+    container_name: pokemon_data_go_container
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/usr/src/app/data
+    restart: unless-stopped
+    networks:
+      - kafka_default
+
+networks:
+  kafka_default:
+    external: true
