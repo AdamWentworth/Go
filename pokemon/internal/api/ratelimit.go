@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"sync"
 	"time"
@@ -70,16 +71,36 @@ func (l *ipRateLimiter) cleanup() {
 	l.mu.Unlock()
 }
 
-// RateLimitMiddleware applies a token bucket limiter per client key.
-// When limited, it returns HTTP 429.
-func RateLimitMiddleware(l *ipRateLimiter, keyFn func(*http.Request) string) func(http.Handler) http.Handler {
-	// Light background cleanup.
-	ticker := time.NewTicker(1 * time.Minute)
+// startCleanup runs a periodic cleanup loop until ctx is done.
+// Safe to call multiple times; callers should generally call it once per limiter.
+func (l *ipRateLimiter) startCleanup(ctx context.Context, interval time.Duration) {
+	if interval <= 0 {
+		interval = 1 * time.Minute
+	}
+	ticker := time.NewTicker(interval)
 	go func() {
-		for range ticker.C {
-			l.cleanup()
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				l.cleanup()
+			}
 		}
 	}()
+}
+
+// RateLimitMiddleware applies a token bucket limiter per client key.
+// When limited, it returns HTTP 429.
+//
+// IMPORTANT: This middleware starts a background cleanup goroutine that stops when ctx is done.
+func RateLimitMiddleware(ctx context.Context, l *ipRateLimiter, keyFn func(*http.Request) string) func(http.Handler) http.Handler {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	// Light background cleanup tied to ctx lifetime.
+	l.startCleanup(ctx, 1*time.Minute)
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -1,102 +1,112 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"fmt"
-	"log/slog"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+    "context"
+    "errors"
+    "fmt"
+    "log/slog"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
 
-	"pokemon_data/internal/api"
-	"pokemon_data/internal/builder"
-	"pokemon_data/internal/cache"
-	"pokemon_data/internal/config"
-	"pokemon_data/internal/db"
-	"pokemon_data/internal/logging"
+    "pokemon_data/internal/api"
+    "pokemon_data/internal/builder"
+    "pokemon_data/internal/cache"
+    "pokemon_data/internal/config"
+    "pokemon_data/internal/db"
+    "pokemon_data/internal/logging"
 )
 
 func main() {
-	cfg := config.Load()
+    cfg := config.Load()
 
-	// Node-like log formatting: "YYYY-MM-DD HH:MM:SS - INFO - message"
-	logger := slog.New(logging.NewNodeFmtHandler(os.Stdout, cfg.LogLevel))
-	slog.SetDefault(logger)
+    // Node-like log formatting: "YYYY-MM-DD HH:MM:SS - INFO - message"
+    logger := slog.New(logging.NewNodeFmtHandler(os.Stdout, cfg.LogLevel))
+    slog.SetDefault(logger)
 
-	dsn := cfg.SQLitePath
-	if dsn == "" {
-		dsn = "./data/pokego.db"
-	}
+    dsn := cfg.SQLitePath
+    if dsn == "" {
+        dsn = "./data/pokego.db"
+    }
 
-	sqlDB, err := db.OpenSQLite(dsn)
-	if err != nil {
-		logger.Error(fmt.Sprintf("db open failed: %v", err))
-		os.Exit(1)
-	}
-	defer sqlDB.Close()
+    sqlDB, err := db.OpenSQLite(dsn)
+    if err != nil {
+        logger.Error(fmt.Sprintf("db open failed: %v", err))
+        os.Exit(1)
+    }
+    defer sqlDB.Close()
 
-	payloadBuilder := builder.New(sqlDB, logger)
+    payloadBuilder := builder.New(sqlDB, logger)
 
-	payloadCache := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
-		Name:         "/pokemon/pokemons",
-		BuildPayload: payloadBuilder.BuildFullPokemonPayload,
-		Logger:       logger,
-		GzipLevel:    6,
-	})
+    payloadCache := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
+        Name:         "/pokemon/pokemons",
+        BuildPayload: payloadBuilder.BuildFullPokemonPayload,
+        Logger:       logger,
+        GzipLevel:    6,
+    })
 
-	router := api.NewRouter(api.RouterDeps{
-		Cfg:          cfg,
-		Logger:       logger,
-		DB:           sqlDB,
-		PayloadCache: payloadCache,
-	})
+    // Base context for background goroutines started by the router/middleware.
+    // Cancel it before shutting down the HTTP server.
+    baseCtx, baseCancel := context.WithCancel(context.Background())
+    defer baseCancel()
 
-	srv := &http.Server{
-		Addr:              fmt.Sprintf("0.0.0.0:%d", cfg.Port),
-		Handler:           router,
-		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      60 * time.Second,
-		IdleTimeout:       120 * time.Second,
-	}
+    router := api.NewRouter(api.RouterDeps{
+        BaseContext:  baseCtx,
+        Cfg:          cfg,
+        Logger:       logger,
+        DB:           sqlDB,
+        PayloadCache: payloadCache,
+    })
 
-	// Startup log line to match Node.
-	logger.Info(fmt.Sprintf("Server is running on http://0.0.0.0:%d and accessible on the network", cfg.Port))
+    srv := &http.Server{
+        Addr:              fmt.Sprintf("0.0.0.0:%d", cfg.Port),
+        Handler:           router,
+        ReadHeaderTimeout: 5 * time.Second,
+        ReadTimeout:       30 * time.Second,
+        WriteTimeout:      60 * time.Second,
+        IdleTimeout:       120 * time.Second,
+    }
 
-	// Prewarm cache (non-blocking)
-	if cfg.CachePrewarm {
-		go func() {
-			logger.Info("Prewarming /pokemon/pokemons cache at startup.")
-			ctx, cancel := context.WithTimeout(context.Background(), cfg.CacheBuildTimeout)
-			defer cancel()
-			if err := payloadCache.EnsureBuilt(ctx); err != nil {
-				logger.Error(fmt.Sprintf("Prewarm failed: %v", err))
-				return
-			}
-			logger.Info("Prewarm complete")
-		}()
-	}
+    // Startup log line to match Node.
+    logger.Info(fmt.Sprintf("Server is running on http://0.0.0.0:%d and accessible on the network", cfg.Port))
 
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error(fmt.Sprintf("server error: %v", err))
-			os.Exit(1)
-		}
-	}()
+    // Prewarm cache (non-blocking)
+    if cfg.CachePrewarm {
+        go func() {
+            logger.Info("Prewarming /pokemon/pokemons cache at startup.")
+            ctx, cancel := context.WithTimeout(context.Background(), cfg.CacheBuildTimeout)
+            defer cancel()
+            if err := payloadCache.EnsureBuilt(ctx); err != nil {
+                logger.Error(fmt.Sprintf("Prewarm failed: %v", err))
+                return
+            }
+            logger.Info("Prewarm complete")
+        }()
+    }
 
-	// Graceful shutdown
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-	<-stop
+    go func() {
+        if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+            logger.Error(fmt.Sprintf("server error: %v", err))
+            os.Exit(1)
+        }
+    }()
 
-	logger.Info("shutdown requested")
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		logger.Error(fmt.Sprintf("shutdown error: %v", err))
-	}
-	logger.Info("shutdown complete")
+    // Graceful shutdown
+    stop := make(chan os.Signal, 1)
+    signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+    <-stop
+
+    logger.Info("shutdown requested")
+
+    // Stop background goroutines owned by middleware/router.
+    baseCancel()
+
+    ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+    defer cancel()
+    if err := srv.Shutdown(ctx); err != nil {
+        logger.Error(fmt.Sprintf("shutdown error: %v", err))
+    }
+    logger.Info("shutdown complete")
 }

@@ -20,6 +20,10 @@ import (
 )
 
 type RouterDeps struct {
+	// BaseContext is used to tie background goroutines (e.g., rate-limiter cleanup) to process lifetime.
+	// If nil, context.Background() is used.
+	BaseContext context.Context
+
 	Cfg          config.Config
 	Logger       *slog.Logger
 	DB           *sql.DB
@@ -32,6 +36,11 @@ func NewRouter(deps RouterDeps) http.Handler {
 	log := deps.Logger
 	if log == nil {
 		log = slog.Default()
+	}
+
+	baseCtx := deps.BaseContext
+	if baseCtx == nil {
+		baseCtx = context.Background()
 	}
 
 	r.Use(middleware.Recoverer)
@@ -171,7 +180,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 
 	if deps.Cfg.RateLimitEnabled {
 		lim := NewIPRateLimiter(deps.Cfg.RateLimitRPS, deps.Cfg.RateLimitBurst, 5*time.Minute)
-		pokemonHandler = RateLimitMiddleware(lim, clientIP)(pokemonHandler)
+		pokemonHandler = RateLimitMiddleware(baseCtx, lim, clientIP)(pokemonHandler)
 	}
 	r.Method(http.MethodGet, "/pokemon/pokemons", pokemonHandler)
 
@@ -214,34 +223,56 @@ func requestLogMiddleware(log *slog.Logger) func(http.Handler) http.Handler {
 			reqID := middleware.GetReqID(r.Context())
 			route := chi.RouteContext(r.Context()).RoutePattern()
 			if route == "" {
-				route = "unknown"
+				route = r.URL.Path
 			}
 
-			log.Info("http_request",
-				slog.String("req_id", reqID),
+			ip := clientIP(r)
+			ua := r.Header.Get("User-Agent")
+
+			// Parse host without port if present, for cleaner logs.
+			host := r.Host
+			if h, _, err := net.SplitHostPort(r.Host); err == nil && h != "" {
+				host = h
+			}
+
+			log.Info("request",
 				slog.String("method", r.Method),
-				slog.String("path", r.URL.Path),
 				slog.String("route", route),
-				slog.String("ip", clientIP(r)),
+				slog.String("path", r.URL.Path),
 				slog.Int("status", sr.status),
 				slog.Int("bytes", sr.bytes),
-				slog.Int64("duration_ms", dur.Milliseconds()),
-				slog.String("ua", r.UserAgent()),
+				slog.Duration("duration", dur),
+				slog.String("req_id", reqID),
+				slog.String("ip", ip),
+				slog.String("host", host),
+				slog.String("ua", ua),
 			)
 		})
 	}
 }
 
+// clientIP returns the best-guess client IP.
+// Assumes chi/middleware.RealIP ran earlier.
 func clientIP(r *http.Request) string {
-	ip := r.Header.Get("X-Forwarded-For")
-	if ip != "" {
-		parts := strings.Split(ip, ",")
-		if len(parts) > 0 && strings.TrimSpace(parts[0]) != "" {
-			return strings.TrimSpace(parts[0])
+	// Prefer X-Forwarded-For (first entry).
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		// Take the first IP in the list.
+		parts := strings.Split(xff, ",")
+		if len(parts) > 0 {
+			ip := strings.TrimSpace(parts[0])
+			if ip != "" {
+				return ip
+			}
 		}
 	}
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err == nil && host != "" {
+
+	// Fall back to X-Real-IP.
+	if xr := strings.TrimSpace(r.Header.Get("X-Real-IP")); xr != "" {
+		return xr
+	}
+
+	// Finally, RemoteAddr (may include port).
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil && host != "" {
 		return host
 	}
 	return r.RemoteAddr
