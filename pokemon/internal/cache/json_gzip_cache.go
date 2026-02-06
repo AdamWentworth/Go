@@ -5,16 +5,17 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
-	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
+
+	"strings"
+
+	"golang.org/x/sync/singleflight"
 )
 
 type JSONGzipCacheConfig struct {
@@ -24,40 +25,36 @@ type JSONGzipCacheConfig struct {
 	GzipLevel    int
 }
 
-type BuildStats struct {
-	Name      string    `json:"name"`
-	TotalMs   int64     `json:"totalMs"`
-	BuildMs   int64     `json:"buildMs"`
-	MarshalMs int64     `json:"marshalMs"`
-	GzipMs    int64     `json:"gzipMs"`
-	Count     *int      `json:"count,omitempty"`
-	JSONBytes int       `json:"jsonBytes"`
-	GzipBytes int       `json:"gzipBytes"`
-	BuiltAt   time.Time `json:"builtAt"`
-}
-
 type Stats struct {
-	Name      string      `json:"name"`
-	HasCache  bool        `json:"hasCache"`
-	ETag      string      `json:"etag,omitempty"`
-	BuiltAt   *time.Time  `json:"builtAt,omitempty"`
-	LastBuild *BuildStats `json:"lastBuild,omitempty"`
+	HasCache        bool      `json:"hasCache"`
+	LastBuiltAt     time.Time `json:"lastBuiltAt,omitempty"`
+	LastBuildError  string    `json:"lastBuildError,omitempty"`
+	BuildCount      int64     `json:"buildCount"`
+	BuildErrorCount int64     `json:"buildErrorCount"`
+	BytesJSON       int       `json:"bytesJson"`
+	BytesGzip       int       `json:"bytesGzip"`
+	ETag            string    `json:"etag,omitempty"`
 }
 
+// JSONGzipCache caches a JSON payload (and its gzip-compressed form) with an ETag.
+// It uses singleflight to ensure at most one build is in-flight at a time.
 type JSONGzipCache struct {
 	name         string
 	buildPayload func(ctx context.Context) (any, error)
 	log          *slog.Logger
 	gzipLevel    int
 
-	mu        sync.RWMutex
-	jsonB     []byte
-	gzipB     []byte
+	mu sync.RWMutex
+	// cached response data
+	jsonBytes []byte
+	gzipBytes []byte
 	etag      string
-	builtAt   time.Time
-	lastBuild *BuildStats
 
-	buildMu sync.Mutex
+	// stats
+	stats Stats
+
+	// coalesce concurrent builds
+	sf singleflight.Group
 }
 
 func NewJSONGzipCache(cfg JSONGzipCacheConfig) *JSONGzipCache {
@@ -67,268 +64,198 @@ func NewJSONGzipCache(cfg JSONGzipCacheConfig) *JSONGzipCache {
 	}
 	level := cfg.GzipLevel
 	if level == 0 {
-		level = gzip.BestSpeed
+		level = gzip.DefaultCompression
 	}
 	return &JSONGzipCache{
 		name:         cfg.Name,
 		buildPayload: cfg.BuildPayload,
 		log:          l,
 		gzipLevel:    level,
+		stats: Stats{
+			HasCache: false,
+		},
 	}
-}
-
-func (c *JSONGzipCache) Invalidate() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.jsonB = nil
-	c.gzipB = nil
-	c.etag = ""
-	c.builtAt = time.Time{}
-	c.lastBuild = nil
-}
-
-func (c *JSONGzipCache) EnsureBuilt(ctx context.Context) error {
-	c.mu.RLock()
-	has := len(c.jsonB) > 0 && len(c.gzipB) > 0 && c.etag != ""
-	c.mu.RUnlock()
-	if has {
-		return nil
-	}
-
-	c.buildMu.Lock()
-	defer c.buildMu.Unlock()
-
-	c.mu.RLock()
-	has = len(c.jsonB) > 0 && len(c.gzipB) > 0 && c.etag != ""
-	c.mu.RUnlock()
-	if has {
-		return nil
-	}
-
-	if c.buildPayload == nil {
-		return errors.New("BuildPayload is nil")
-	}
-
-	totalStart := time.Now()
-	buildStart := time.Now()
-	payload, err := c.buildPayload(ctx)
-	if err != nil {
-		return err
-	}
-	buildMs := time.Since(buildStart)
-
-	marshalStart := time.Now()
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-	marshalMs := time.Since(marshalStart)
-
-	gzipStart := time.Now()
-	gz, err := gzipBytes(body, c.gzipLevel)
-	if err != nil {
-		return err
-	}
-	etag := computeStrongETag(body)
-	gzipMs := time.Since(gzipStart)
-	totalMs := time.Since(totalStart)
-
-	var countPtr *int
-	if arr, ok := payload.([]any); ok {
-		n := len(arr)
-		countPtr = &n
-	}
-
-	stats := &BuildStats{
-		Name:      c.name,
-		TotalMs:   totalMs.Milliseconds(),
-		BuildMs:   buildMs.Milliseconds(),
-		MarshalMs: marshalMs.Milliseconds(),
-		GzipMs:    gzipMs.Milliseconds(),
-		Count:     countPtr,
-		JSONBytes: len(body),
-		GzipBytes: len(gz),
-		BuiltAt:   time.Now(),
-	}
-
-	c.mu.Lock()
-	c.jsonB = body
-	c.gzipB = gz
-	c.etag = etag
-	c.builtAt = stats.BuiltAt
-	c.lastBuild = stats
-	c.mu.Unlock()
-
-	count := 0
-	if stats.Count != nil {
-		count = *stats.Count
-	}
-	c.log.Info(fmt.Sprintf(
-		"Cache build complete (%s): total=%dms (db+compose=%dms, stringify=%dms, gzip+etag=%dms), count=%d, json=%dB, gz=%dB",
-		c.name,
-		stats.TotalMs,
-		stats.BuildMs,
-		stats.MarshalMs,
-		stats.GzipMs,
-		count,
-		stats.JSONBytes,
-		stats.GzipBytes,
-	))
-
-	return nil
-}
-
-func (c *JSONGzipCache) Send(w http.ResponseWriter, r *http.Request) (status int, bytesOut int, encoding string, cacheHit bool, err error) {
-	c.mu.RLock()
-	body := c.jsonB
-	gz := c.gzipB
-	etag := c.etag
-	builtAt := c.builtAt
-	c.mu.RUnlock()
-
-	cacheHit = len(body) > 0 && etag != ""
-	if !cacheHit {
-		http.Error(w, "cache not ready", http.StatusServiceUnavailable)
-		return http.StatusServiceUnavailable, 0, "none", false, errors.New("cache not ready")
-	}
-
-	if inm := r.Header.Get("If-None-Match"); inm != "" && ifNoneMatch(etag, inm) {
-		setCommonHeaders(w, etag, builtAt)
-		w.WriteHeader(http.StatusNotModified)
-		return http.StatusNotModified, 0, "none", true, nil
-	}
-
-	setCommonHeaders(w, etag, builtAt)
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-
-	if acceptsGzip(r) && len(gz) > 0 {
-		w.Header().Set("Content-Encoding", "gzip")
-		w.WriteHeader(http.StatusOK)
-		n, werr := w.Write(gz)
-		if werr != nil {
-			return http.StatusOK, n, "gzip", true, werr
-		}
-		return http.StatusOK, n, "gzip", true, nil
-	}
-
-	w.WriteHeader(http.StatusOK)
-	n, werr := w.Write(body)
-	if werr != nil {
-		return http.StatusOK, n, "identity", true, werr
-	}
-	return http.StatusOK, n, "identity", true, nil
 }
 
 func (c *JSONGzipCache) Stats() Stats {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	var bt *time.Time
-	if !c.builtAt.IsZero() {
-		t := c.builtAt
-		bt = &t
-	}
-	return Stats{
-		Name:      c.name,
-		HasCache:  len(c.jsonB) > 0 && len(c.gzipB) > 0 && c.etag != "",
-		ETag:      c.etag,
-		BuiltAt:   bt,
-		LastBuild: c.lastBuild,
-	}
+	return c.stats
 }
 
-func computeStrongETag(body []byte) string {
-	sum := sha256.Sum256(body)
-	b64 := base64.StdEncoding.EncodeToString(sum[:])
-	return `"` + b64 + `"`
+func (c *JSONGzipCache) Invalidate() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.jsonBytes = nil
+	c.gzipBytes = nil
+	c.etag = ""
+	c.stats.HasCache = false
+	c.stats.BytesJSON = 0
+	c.stats.BytesGzip = 0
+	c.stats.ETag = ""
 }
 
-func ifNoneMatch(currentETag, headerVal string) bool {
-	if currentETag == "" {
-		return false
+// EnsureBuilt ensures the cache is built exactly once per invalidation.
+// If multiple goroutines call EnsureBuilt concurrently, only one build executes.
+func (c *JSONGzipCache) EnsureBuilt(ctx context.Context) error {
+	if c == nil {
+		return errors.New("cache is nil")
 	}
-	h := strings.TrimSpace(headerVal)
-	if h == "*" {
-		return true
+	if ctx == nil {
+		ctx = context.Background()
 	}
-	for _, part := range strings.Split(h, ",") {
-		tok := strings.TrimSpace(part)
-		if tok == "" {
-			continue
-		}
-		if strings.HasPrefix(tok, "W/") {
-			tok = strings.TrimSpace(strings.TrimPrefix(tok, "W/"))
-		}
-		if tok == currentETag {
-			return true
-		}
+
+	// Fast path: already built
+	c.mu.RLock()
+	has := c.stats.HasCache
+	c.mu.RUnlock()
+	if has {
+		return nil
 	}
-	return false
+
+	_, err, _ := c.sf.Do("build", func() (any, error) {
+		// Re-check under lock (another build might have completed while we waited for singleflight).
+		c.mu.RLock()
+		has2 := c.stats.HasCache
+		c.mu.RUnlock()
+		if has2 {
+			return nil, nil
+		}
+		return nil, c.build(ctx)
+	})
+	return err
 }
 
-func acceptsGzip(r *http.Request) bool {
-	ae := r.Header.Get("Accept-Encoding")
-	if ae == "" {
-		return false
-	}
+func (c *JSONGzipCache) build(ctx context.Context) error {
+	start := time.Now()
 
-	gzipQ := -1.0
-	starQ := -1.0
+	payload, err := c.buildPayload(ctx)
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
-	for _, part := range strings.Split(ae, ",") {
-		p := strings.TrimSpace(part)
-		if p == "" {
-			continue
-		}
-		coding, params, _ := strings.Cut(p, ";")
-		coding = strings.ToLower(strings.TrimSpace(coding))
-		q := 1.0
-		if params != "" {
-			for _, param := range strings.Split(params, ";") {
-				param = strings.TrimSpace(param)
-				if strings.HasPrefix(param, "q=") {
-					if v, err := strconv.ParseFloat(strings.TrimPrefix(param, "q="), 64); err == nil {
-						q = v
-					}
-				}
-			}
-		}
-
-		if coding == "gzip" {
-			gzipQ = q
-		} else if coding == "*" {
-			starQ = q
-		}
-	}
-
-	if gzipQ >= 0 {
-		return gzipQ > 0
-	}
-	if starQ >= 0 {
-		return starQ > 0
-	}
-	return false
-}
-
-func setCommonHeaders(w http.ResponseWriter, etag string, builtAt time.Time) {
-	w.Header().Set("Cache-Control", "public, max-age=60")
-	w.Header().Set("ETag", etag)
-	if !builtAt.IsZero() {
-		w.Header().Set("Last-Modified", builtAt.UTC().Format(http.TimeFormat))
-	}
-}
-
-func gzipBytes(b []byte, level int) ([]byte, error) {
-	var buf bytes.Buffer
-	zw, err := gzip.NewWriterLevel(&buf, level)
+	c.stats.BuildCount++
 	if err != nil {
-		return nil, err
+		c.stats.BuildErrorCount++
+		c.stats.LastBuildError = err.Error()
+		// Keep cache invalid on build failures
+		c.stats.HasCache = false
+		c.log.Error("cache build failed", slog.String("name", c.name), slog.String("err", err.Error()))
+		return err
 	}
-	if _, err := zw.Write(b); err != nil {
-		_ = zw.Close()
-		return nil, err
+
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		c.stats.BuildErrorCount++
+		c.stats.LastBuildError = err.Error()
+		c.stats.HasCache = false
+		c.log.Error("cache json marshal failed", slog.String("name", c.name), slog.String("err", err.Error()))
+		return err
 	}
-	if err := zw.Close(); err != nil {
-		return nil, err
+
+	var gzBuf bytes.Buffer
+	gzw, err := gzip.NewWriterLevel(&gzBuf, c.gzipLevel)
+	if err != nil {
+		c.stats.BuildErrorCount++
+		c.stats.LastBuildError = err.Error()
+		c.stats.HasCache = false
+		c.log.Error("cache gzip writer failed", slog.String("name", c.name), slog.String("err", err.Error()))
+		return err
 	}
-	return buf.Bytes(), nil
+	if _, err := gzw.Write(raw); err != nil {
+		_ = gzw.Close()
+		c.stats.BuildErrorCount++
+		c.stats.LastBuildError = err.Error()
+		c.stats.HasCache = false
+		c.log.Error("cache gzip write failed", slog.String("name", c.name), slog.String("err", err.Error()))
+		return err
+	}
+	if err := gzw.Close(); err != nil {
+		c.stats.BuildErrorCount++
+		c.stats.LastBuildError = err.Error()
+		c.stats.HasCache = false
+		c.log.Error("cache gzip close failed", slog.String("name", c.name), slog.String("err", err.Error()))
+		return err
+	}
+
+	sum := sha256.Sum256(raw)
+	etag := `"` + hex.EncodeToString(sum[:]) + `"`
+
+	c.jsonBytes = raw
+	c.gzipBytes = gzBuf.Bytes()
+	c.etag = etag
+
+	c.stats.HasCache = true
+	c.stats.LastBuiltAt = time.Now()
+	c.stats.LastBuildError = ""
+	c.stats.BytesJSON = len(raw)
+	c.stats.BytesGzip = len(c.gzipBytes)
+	c.stats.ETag = etag
+
+	c.log.Info("cache built",
+		slog.String("name", c.name),
+		slog.Duration("duration", time.Since(start)),
+		slog.Int("bytes_json", len(raw)),
+		slog.Int("bytes_gzip", len(c.gzipBytes)),
+	)
+	return nil
 }
+
+// Send serves the cached payload.
+//
+// Returns:
+// - status: the HTTP status written (200/304/503)
+// - etag: the cache ETag (if available)
+// - gz: whether gzip was served
+// - bytes: number of body bytes written
+// - err: any write error (e.g., client disconnect)
+func (c *JSONGzipCache) Send(w http.ResponseWriter, r *http.Request) (status int, etag string, gz bool, bytes int, err error) {
+	if c == nil {
+		http.Error(w, "cache not configured", http.StatusServiceUnavailable)
+		return http.StatusServiceUnavailable, "", false, 0, nil
+	}
+
+	c.mu.RLock()
+	has := c.stats.HasCache
+	etag = c.etag
+	jsonBytes := c.jsonBytes
+	gzipBytes := c.gzipBytes
+	c.mu.RUnlock()
+
+	if !has || len(jsonBytes) == 0 {
+		http.Error(w, "cache not ready", http.StatusServiceUnavailable)
+		return http.StatusServiceUnavailable, "", false, 0, nil
+	}
+
+	// ETag handling
+	if inm := r.Header.Get("If-None-Match"); inm != "" && etag != "" && inm == etag {
+		w.Header().Set("ETag", etag)
+		w.WriteHeader(http.StatusNotModified)
+		return http.StatusNotModified, etag, false, 0, nil
+	}
+
+	acceptsGzip := false
+	if ae := r.Header.Get("Accept-Encoding"); ae != "" {
+		// Accept-Encoding can include q-values; substring match is sufficient for gzip.
+		if strings.Contains(strings.ToLower(ae), "gzip") {
+			acceptsGzip = true
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("ETag", etag)
+
+	if acceptsGzip && len(gzipBytes) > 0 {
+		w.Header().Set("Content-Encoding", "gzip")
+		w.Header().Set("Vary", "Accept-Encoding")
+		w.WriteHeader(http.StatusOK)
+		n, e := w.Write(gzipBytes)
+		return http.StatusOK, etag, true, n, e
+	}
+
+	w.Header().Set("Vary", "Accept-Encoding")
+	w.WriteHeader(http.StatusOK)
+	n, e := w.Write(jsonBytes)
+	return http.StatusOK, etag, false, n, e
+}
+
