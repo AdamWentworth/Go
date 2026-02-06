@@ -37,13 +37,13 @@ jobs:
           go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Test
-        run: go test ./.
+        run: go test ./...
 
       - name: Vet
-        run: go vet ./.
+        run: go vet ./...
 
       - name: Lint
         run: golangci-lint run
 
       - name: Govulncheck
-        run: govulncheck ./.
+        run: govulncheck ./...
