@@ -12,13 +12,12 @@ test-integration:
 vet:
 	go vet ./...
 
-# Lint via golangci-lint v2 (runs staticcheck + govet + many others).
 lint:
 	golangci-lint run
 
 # Vulnerability scan (Go official).
+# Use go run to avoid stale govulncheck binaries built with an older toolchain.
 govulncheck:
-	govulncheck ./...
+	go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
 
-# CI target for local parity with GitHub Actions.
 ci: test vet lint govulncheck
