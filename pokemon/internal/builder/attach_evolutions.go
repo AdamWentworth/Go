@@ -17,15 +17,15 @@ func (b *Builder) attachEvolutions(ctx context.Context, orderedIDs []int, pokemo
 
 	// First pass: ensure keys exist for pokemon_id and evolves_to targets (Node does this).
 	for _, e := range evoRows {
-		from := asInt(e["pokemon_id"])
-		to := asInt(e["evolves_to"])
+		from, okFrom := asIntOK(e["pokemon_id"])
+		to, okTo := asIntOK(e["evolves_to"])
 
-		if from != 0 {
+		if okFrom && from != 0 {
 			if _, ok := evolutionMap[from]; !ok {
 				evolutionMap[from] = map[string]any{"evolves_to": []any{}, "evolves_from": []any{}}
 			}
 		}
-		if to != 0 {
+		if okTo && to != 0 {
 			if _, ok := evolutionMap[to]; !ok {
 				evolutionMap[to] = map[string]any{"evolves_to": []any{}, "evolves_from": []any{}}
 			}
@@ -34,18 +34,20 @@ func (b *Builder) attachEvolutions(ctx context.Context, orderedIDs []int, pokemo
 
 	// Second pass: fill arrays.
 	for _, e := range evoRows {
-		from := asInt(e["pokemon_id"])
-		to := asInt(e["evolves_to"])
-		if from == 0 {
+		from, okFrom := asIntOK(e["pokemon_id"])
+		if !okFrom || from == 0 {
 			continue
 		}
-		if to != 0 {
-			if m, ok := evolutionMap[from]; ok {
-				m["evolves_to"] = append(m["evolves_to"].([]any), to)
-			}
-			if m, ok := evolutionMap[to]; ok {
-				m["evolves_from"] = append(m["evolves_from"].([]any), from)
-			}
+		to, okTo := asIntOK(e["evolves_to"])
+		if !okTo || to == 0 {
+			continue
+		}
+
+		if m, ok := evolutionMap[from]; ok {
+			m["evolves_to"] = append(m["evolves_to"].([]any), to)
+		}
+		if m, ok := evolutionMap[to]; ok {
+			m["evolves_from"] = append(m["evolves_from"].([]any), from)
 		}
 	}
 

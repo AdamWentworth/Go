@@ -57,8 +57,8 @@ func (b *Builder) loadBasePokemon(ctx context.Context) ([]int, map[int]map[strin
 	}
 
 	for _, row := range pokemonRows {
-		id := asInt(row["pokemon_id"])
-		if id == 0 {
+		id, ok := asIntOK(row["pokemon_id"])
+		if !ok || id == 0 {
 			continue
 		}
 		if _, exists := pokemonByID[id]; !exists {

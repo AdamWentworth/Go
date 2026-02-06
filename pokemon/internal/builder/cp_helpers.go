@@ -20,9 +20,17 @@ WHERE level_id IN (40,50)
 	}
 	out := make(map[int]cpPair, 1024)
 	for _, r := range rows {
-		id := asInt(r["id"])
+		id, ok := asIntOK(r["id"])
+		if !ok || id == 0 {
+			continue
+		}
 		p := out[id]
-		switch asInt(r["level_id"]) {
+
+		lvl, ok := asIntOK(r["level_id"])
+		if !ok {
+			continue
+		}
+		switch lvl {
 		case 40:
 			p.cp40 = r["cp"]
 		case 50:
@@ -43,7 +51,10 @@ ORDER BY level_id ASC
 		return nil, nil, err
 	}
 	for _, r := range rows {
-		lvl := asInt(r["level_id"])
+		lvl, ok := asIntOK(r["level_id"])
+		if !ok {
+			continue
+		}
 		if lvl == 40 {
 			cp40 = r["cp"]
 		} else if lvl == 50 {

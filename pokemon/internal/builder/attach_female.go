@@ -21,7 +21,11 @@ func (b *Builder) attachFemaleData(ctx context.Context, orderedIDs []int, pokemo
 	}
 	fm := make(map[int]map[string]any, len(rows))
 	for _, r := range rows {
-		fm[asInt(r["pokemon_id"])] = r
+		id, ok := asIntOK(r["pokemon_id"])
+		if !ok || id == 0 {
+			continue
+		}
+		fm[id] = r
 	}
 	for _, id := range femaleIDs {
 		if v, ok := fm[id]; ok {
