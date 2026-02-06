@@ -20,7 +20,6 @@ func TestEnsureBuilt_BuildsOnceUnderConcurrency(t *testing.T) {
 	var calls int32
 	build := func(ctx context.Context) (any, error) {
 		atomic.AddInt32(&calls, 1)
-		// Add a tiny delay to increase contention.
 		time.Sleep(10 * time.Millisecond)
 		return []any{map[string]any{"ok": true}}, nil
 	}
@@ -68,11 +67,13 @@ func TestSend_GzipAndETagAnd304(t *testing.T) {
 		t.Fatalf("EnsureBuilt: %v", err)
 	}
 
-	// First request with gzip accepted.
 	req1 := httptest.NewRequest(http.MethodGet, "/pokemon/pokemons", nil)
 	req1.Header.Set("Accept-Encoding", "gzip")
 	rr1 := httptest.NewRecorder()
-	status, _, enc, hit := c.Send(rr1, req1)
+	status, _, enc, hit, err := c.Send(rr1, req1)
+	if err != nil {
+		t.Fatalf("Send: %v", err)
+	}
 
 	if !hit {
 		t.Fatalf("expected cacheHit=true")
@@ -105,11 +106,13 @@ func TestSend_GzipAndETagAnd304(t *testing.T) {
 		t.Fatalf("invalid json after gunzip: %v", err)
 	}
 
-	// Second request with If-None-Match should be 304.
 	req2 := httptest.NewRequest(http.MethodGet, "/pokemon/pokemons", nil)
 	req2.Header.Set("If-None-Match", etag)
 	rr2 := httptest.NewRecorder()
-	status2, n2, enc2, hit2 := c.Send(rr2, req2)
+	status2, n2, enc2, hit2, err := c.Send(rr2, req2)
+	if err != nil {
+		t.Fatalf("Send 304: %v", err)
+	}
 
 	if !hit2 {
 		t.Fatalf("expected cacheHit=true")
@@ -145,20 +148,18 @@ func TestSend_IfNoneMatch_ListAndWeakETag(t *testing.T) {
 		t.Fatalf("EnsureBuilt: %v", err)
 	}
 
-	// First request to get ETag.
 	req1 := httptest.NewRequest(http.MethodGet, "/pokemon/pokemons", nil)
 	rr1 := httptest.NewRecorder()
-	c.Send(rr1, req1)
+	_, _, _, _, _ = c.Send(rr1, req1)
 	etag := rr1.Header().Get("ETag")
 	if etag == "" {
 		t.Fatalf("expected ETag set")
 	}
 
-	// Client sends a list of etags including a weak match.
 	req2 := httptest.NewRequest(http.MethodGet, "/pokemon/pokemons", nil)
 	req2.Header.Set("If-None-Match", `"nope", W/`+etag+`, "also-nope"`)
 	rr2 := httptest.NewRecorder()
-	status, _, _, _ := c.Send(rr2, req2)
+	status, _, _, _, _ := c.Send(rr2, req2)
 	if status != http.StatusNotModified {
 		t.Fatalf("expected 304, got %d", status)
 	}
@@ -181,21 +182,41 @@ func TestSend_GzipAcceptEncoding_RespectsQ(t *testing.T) {
 		t.Fatalf("EnsureBuilt: %v", err)
 	}
 
-	// gzip explicitly refused => should NOT gzip.
 	req1 := httptest.NewRequest(http.MethodGet, "/pokemon/pokemons", nil)
 	req1.Header.Set("Accept-Encoding", "gzip;q=0, br;q=1")
 	rr1 := httptest.NewRecorder()
-	_, _, enc1, _ := c.Send(rr1, req1)
+	_, _, enc1, _, _ := c.Send(rr1, req1)
 	if enc1 != "identity" {
 		t.Fatalf("expected identity when gzip q=0, got %q", enc1)
 	}
 
-	// gzip not listed but "*" allowed => should gzip.
 	req2 := httptest.NewRequest(http.MethodGet, "/pokemon/pokemons", nil)
 	req2.Header.Set("Accept-Encoding", "br;q=1, *;q=1")
 	rr2 := httptest.NewRecorder()
-	_, _, enc2, _ := c.Send(rr2, req2)
+	_, _, enc2, _, _ := c.Send(rr2, req2)
 	if enc2 != "gzip" {
-		t.Fatalf("expected gzip when *;q=1, got %q", enc2)
+		t.Fatalf("expected gzip when * allows it, got %q", enc2)
+	}
+}
+
+func TestSend_CacheNotReady_Returns503(t *testing.T) {
+	c := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
+		Name:         "/pokemon/pokemons",
+		BuildPayload: func(ctx context.Context) (any, error) { return map[string]any{"ok": true}, nil },
+		GzipLevel:    6,
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/pokemon/pokemons", nil)
+	rr := httptest.NewRecorder()
+	status, _, _, hit, err := c.Send(rr, req)
+
+	if hit {
+		t.Fatalf("expected cacheHit=false when not built")
+	}
+	if err == nil {
+		t.Fatalf("expected error when cache not ready")
+	}
+	if status != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503, got %d", status)
 	}
 }

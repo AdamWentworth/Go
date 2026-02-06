@@ -18,8 +18,6 @@ import (
 )
 
 type RouterDeps struct {
-	// BaseContext is used to tie background goroutines (e.g., rate-limiter cleanup) to process lifetime.
-	// If nil, context.Background() is used.
 	BaseContext context.Context
 
 	Cfg          config.Config
@@ -41,11 +39,10 @@ func NewRouter(deps RouterDeps) http.Handler {
 		baseCtx = context.Background()
 	}
 
-	// Safe client IP resolver (does NOT trust XFF unless RemoteAddr is a trusted proxy).
 	ipr, err := NewIPResolver(deps.Cfg.TrustedProxyCIDRs, log)
 	if err != nil {
 		log.Error("invalid TRUSTED_PROXY_CIDRS; forwarding headers will be ignored", slog.String("err", err.Error()))
-		ipr = &IPResolver{} // no trusted proxies
+		ipr = &IPResolver{}
 	}
 
 	prettyJSON := deps.Cfg.JSONPretty
@@ -169,7 +166,10 @@ func NewRouter(deps RouterDeps) http.Handler {
 			return
 		}
 
-		_, _, _, _ = deps.PayloadCache.Send(w, r)
+		_, _, _, _, sendErr := deps.PayloadCache.Send(w, r)
+		if sendErr != nil {
+			log.Warn("cache send write error", slog.String("err", sendErr.Error()))
+		}
 	})
 
 	if deps.Cfg.RateLimitEnabled {

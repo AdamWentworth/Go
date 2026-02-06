@@ -95,7 +95,6 @@ func (c *JSONGzipCache) EnsureBuilt(ctx context.Context) error {
 		return nil
 	}
 
-	// Single-flight-ish: only one builder runs at a time.
 	c.buildMu.Lock()
 	defer c.buildMu.Unlock()
 
@@ -160,7 +159,6 @@ func (c *JSONGzipCache) EnsureBuilt(ctx context.Context) error {
 	c.lastBuild = stats
 	c.mu.Unlock()
 
-	// Node-identical log line format (see utils/responseCache.js).
 	count := 0
 	if stats.Count != nil {
 		count = *stats.Count
@@ -180,7 +178,7 @@ func (c *JSONGzipCache) EnsureBuilt(ctx context.Context) error {
 	return nil
 }
 
-func (c *JSONGzipCache) Send(w http.ResponseWriter, r *http.Request) (status int, bytesOut int, encoding string, cacheHit bool) {
+func (c *JSONGzipCache) Send(w http.ResponseWriter, r *http.Request) (status int, bytesOut int, encoding string, cacheHit bool, err error) {
 	c.mu.RLock()
 	body := c.jsonB
 	gz := c.gzipB
@@ -189,12 +187,15 @@ func (c *JSONGzipCache) Send(w http.ResponseWriter, r *http.Request) (status int
 	c.mu.RUnlock()
 
 	cacheHit = len(body) > 0 && etag != ""
+	if !cacheHit {
+		http.Error(w, "cache not ready", http.StatusServiceUnavailable)
+		return http.StatusServiceUnavailable, 0, "none", false, errors.New("cache not ready")
+	}
 
-	// Conditional GET (RFC 9110: header can be "*" or a list; weak validators allowed)
 	if inm := r.Header.Get("If-None-Match"); inm != "" && ifNoneMatch(etag, inm) {
 		setCommonHeaders(w, etag, builtAt)
 		w.WriteHeader(http.StatusNotModified)
-		return http.StatusNotModified, 0, "none", cacheHit
+		return http.StatusNotModified, 0, "none", true, nil
 	}
 
 	setCommonHeaders(w, etag, builtAt)
@@ -203,13 +204,19 @@ func (c *JSONGzipCache) Send(w http.ResponseWriter, r *http.Request) (status int
 	if acceptsGzip(r) && len(gz) > 0 {
 		w.Header().Set("Content-Encoding", "gzip")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(gz)
-		return http.StatusOK, len(gz), "gzip", cacheHit
+		n, werr := w.Write(gz)
+		if werr != nil {
+			return http.StatusOK, n, "gzip", true, werr
+		}
+		return http.StatusOK, n, "gzip", true, nil
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(body)
-	return http.StatusOK, len(body), "identity", cacheHit
+	n, werr := w.Write(body)
+	if werr != nil {
+		return http.StatusOK, n, "identity", true, werr
+	}
+	return http.StatusOK, n, "identity", true, nil
 }
 
 func (c *JSONGzipCache) Stats() Stats {
@@ -243,7 +250,6 @@ func ifNoneMatch(currentETag, headerVal string) bool {
 	if h == "*" {
 		return true
 	}
-	// List of entity-tags: ETag / W/ETag
 	for _, part := range strings.Split(h, ",") {
 		tok := strings.TrimSpace(part)
 		if tok == "" {
@@ -259,10 +265,6 @@ func ifNoneMatch(currentETag, headerVal string) bool {
 	return false
 }
 
-// acceptsGzip returns true only if gzip is allowed with q>0.
-// - If gzip is explicitly present: respect its q.
-// - Else if "*" is present: respect its q.
-// - Else false.
 func acceptsGzip(r *http.Request) bool {
 	ae := r.Header.Get("Accept-Encoding")
 	if ae == "" {
@@ -279,33 +281,21 @@ func acceptsGzip(r *http.Request) bool {
 		}
 		coding, params, _ := strings.Cut(p, ";")
 		coding = strings.ToLower(strings.TrimSpace(coding))
-
 		q := 1.0
 		if params != "" {
-			for _, prm := range strings.Split(params, ";") {
-				prm = strings.TrimSpace(prm)
-				if prm == "" {
-					continue
+			for _, param := range strings.Split(params, ";") {
+				param = strings.TrimSpace(param)
+				if strings.HasPrefix(param, "q=") {
+					if v, err := strconv.ParseFloat(strings.TrimPrefix(param, "q="), 64); err == nil {
+						q = v
+					}
 				}
-				k, v, ok := strings.Cut(prm, "=")
-				if !ok {
-					continue
-				}
-				if strings.ToLower(strings.TrimSpace(k)) != "q" {
-					continue
-				}
-				f, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
-				if err == nil {
-					q = f
-				}
-				break
 			}
 		}
 
-		switch coding {
-		case "gzip":
+		if coding == "gzip" {
 			gzipQ = q
-		case "*":
+		} else if coding == "*" {
 			starQ = q
 		}
 	}
@@ -320,22 +310,20 @@ func acceptsGzip(r *http.Request) bool {
 }
 
 func setCommonHeaders(w http.ResponseWriter, etag string, builtAt time.Time) {
+	w.Header().Set("Cache-Control", "public, max-age=60")
 	w.Header().Set("ETag", etag)
-	w.Header().Set("Cache-Control", "public, max-age=0, must-revalidate")
-	if builtAt.IsZero() {
-		builtAt = time.Now()
+	if !builtAt.IsZero() {
+		w.Header().Set("Last-Modified", builtAt.UTC().Format(http.TimeFormat))
 	}
-	w.Header().Set("Last-Modified", builtAt.UTC().Format(http.TimeFormat))
-	w.Header().Set("Vary", "Origin, Accept-Encoding")
 }
 
-func gzipBytes(body []byte, level int) ([]byte, error) {
+func gzipBytes(b []byte, level int) ([]byte, error) {
 	var buf bytes.Buffer
 	zw, err := gzip.NewWriterLevel(&buf, level)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := zw.Write(body); err != nil {
+	if _, err := zw.Write(b); err != nil {
 		_ = zw.Close()
 		return nil, err
 	}
