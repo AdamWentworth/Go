@@ -35,7 +35,7 @@ func main() {
 		logger.Error(fmt.Sprintf("db open failed: %v", err))
 		os.Exit(1)
 	}
-	defer sqlDB.Close()
+	defer func() { _ = sqlDB.Close() }()
 
 	payloadBuilder := builder.New(sqlDB, logger)
 

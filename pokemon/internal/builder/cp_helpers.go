@@ -40,26 +40,3 @@ WHERE level_id IN (40,50)
 	}
 	return out, nil
 }
-
-func (b *Builder) getCP(ctx context.Context, table string, idCol string, id int) (cp40 any, cp50 any, err error) {
-	rows, err := b.queryRows(ctx, fmt.Sprintf(`
-SELECT level_id, cp FROM %s
-WHERE %s = ? AND level_id IN (40,50)
-ORDER BY level_id ASC
-`, table, idCol), id)
-	if err != nil {
-		return nil, nil, err
-	}
-	for _, r := range rows {
-		lvl, ok := asIntOK(r["level_id"])
-		if !ok {
-			continue
-		}
-		if lvl == 40 {
-			cp40 = r["cp"]
-		} else if lvl == 50 {
-			cp50 = r["cp"]
-		}
-	}
-	return cp40, cp50, nil
-}

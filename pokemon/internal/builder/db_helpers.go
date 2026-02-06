@@ -9,6 +9,6 @@ func (b *Builder) queryRows(ctx context.Context, q string, args ...any) ([]map[s
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	return scanRowsToMaps(rows)
 }
