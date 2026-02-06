@@ -29,7 +29,9 @@ func corsMiddleware(cfg config.Config, log *slog.Logger) func(http.Handler) http
 
 			if _, ok := allowed[origin]; ok || (cfg.AllowCloudflareSub && strings.HasSuffix(origin, ".cloudflare.com")) {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
-				w.Header().Set("Vary", "Origin, Accept-Encoding")
+				appendVary(w.Header(), "Origin")
+				appendVary(w.Header(), "Accept-Encoding")
+
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
 				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -50,4 +52,38 @@ func corsMiddleware(cfg config.Config, log *slog.Logger) func(http.Handler) http
 			http.Error(w, "CORS forbidden", http.StatusForbidden)
 		})
 	}
+}
+
+// appendVary adds a value to the Vary header without clobbering existing values.
+func appendVary(h http.Header, value string) {
+	if value == "" {
+		return
+	}
+	existing := h.Values("Vary")
+	// Fast path: nothing set
+	if len(existing) == 0 {
+		h.Set("Vary", value)
+		return
+	}
+
+	// Merge into a token set (case-insensitive)
+	tokens := make(map[string]struct{}, 8)
+	for _, v := range existing {
+		for _, t := range strings.Split(v, ",") {
+			t = strings.TrimSpace(t)
+			if t == "" {
+				continue
+			}
+			tokens[strings.ToLower(t)] = struct{}{}
+		}
+	}
+	if _, ok := tokens[strings.ToLower(value)]; ok {
+		return
+	}
+	existingJoined := strings.Join(existing, ",")
+	if strings.TrimSpace(existingJoined) == "" {
+		h.Set("Vary", value)
+		return
+	}
+	h.Set("Vary", existingJoined+", "+value)
 }

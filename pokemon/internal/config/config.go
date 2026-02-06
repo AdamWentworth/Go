@@ -19,20 +19,21 @@ type Config struct {
 	AllowCloudflareSub bool
 	LogLevel           slog.Level
 
+	// If true, JSON debug endpoints respond with pretty-printed JSON.
+	// Default is true for non-production environments.
+	JSONPretty bool
+
 	// Rate limiting (per-client, in-process) for the heavy endpoint.
 	RateLimitEnabled bool
 	RateLimitRPS     float64
 	RateLimitBurst   int
 
 	// Internal-only endpoints (/metrics and /internal/*) guarded by CIDR allowlist.
-	// This is intentionally "simple + local" so you can roll it out across services easily.
 	InternalOnlyEnabled bool
 	InternalOnlyCIDRs   []string
 
 	// Trusted proxy ranges (CIDRs) used to decide whether to trust X-Forwarded-For / X-Real-IP.
 	// If empty, forwarded headers are ignored and RemoteAddr is used as the client IP.
-	// Example (local reverse proxy): "127.0.0.0/8"
-	// Example (VPC/LB): your load balancer/proxy subnet CIDRs
 	TrustedProxyCIDRs []string
 }
 
@@ -53,21 +54,17 @@ func Load() Config {
 
 	logLevel := parseLogLevel(getString("LOG_LEVEL", "INFO"))
 
+	// Pretty JSON: default on for non-production.
+	jsonPretty := getBool("JSON_PRETTY", env != "production")
+
 	rlEnabled := getBool("RATE_LIMIT_ENABLED", env == "production")
 	rlRPS := getFloat("RATE_LIMIT_RPS", 5.0)
 	rlBurst := getInt("RATE_LIMIT_BURST", 10)
 
-	// Default: enabled in production, disabled elsewhere.
 	internalOnlyEnabled := getBool("INTERNAL_ONLY_ENABLED", env == "production")
 
-	// Default CIDRs allow:
-	// - loopback
-	// - RFC1918 private IPv4 ranges (includes docker bridge ranges)
-	// - IPv6 ULA (fd00::/8)
 	internalCIDRs := splitCSV(getString("INTERNAL_ONLY_CIDRS", "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fd00::/8"))
 
-	// IMPORTANT: empty by default; forwarded headers are unsafe unless you explicitly
-	// define which peers are trusted proxies.
 	trustedProxyCIDRs := splitCSV(getString("TRUSTED_PROXY_CIDRS", ""))
 
 	return Config{
@@ -80,6 +77,7 @@ func Load() Config {
 		AllowedOrigins:      allowed,
 		AllowCloudflareSub:  allowCF,
 		LogLevel:            logLevel,
+		JSONPretty:          jsonPretty,
 		RateLimitEnabled:    rlEnabled,
 		RateLimitRPS:        rlRPS,
 		RateLimitBurst:      rlBurst,

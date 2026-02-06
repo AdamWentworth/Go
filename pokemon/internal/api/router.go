@@ -48,28 +48,28 @@ func NewRouter(deps RouterDeps) http.Handler {
 		ipr = &IPResolver{} // no trusted proxies
 	}
 
+	prettyJSON := deps.Cfg.JSONPretty
+
+	writeJSON := func(w http.ResponseWriter, v any) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		enc := json.NewEncoder(w)
+		if prettyJSON {
+			enc.SetIndent("", "  ")
+		}
+		_ = enc.Encode(v)
+	}
+
 	r.Use(middleware.Recoverer)
-
-	// Adds X-Request-Id and stores it in context. If caller supplies X-Request-Id, chi will reuse it.
 	r.Use(middleware.RequestID)
-
 	r.Use(middleware.Timeout(120 * time.Second))
 
-	// CORS allowlist middleware (cors.go)
 	r.Use(corsMiddleware(deps.Cfg, log))
-
-	// Prometheus request metrics (metrics_http.go)
 	r.Use(metrics.Middleware())
-
-	// Structured request logs (includes req_id)
 	r.Use(requestLogMiddleware(log, ipr.ClientIP))
 
-	// Internal endpoints: /metrics, /internal/*, /debug/pprof/*
-	// Mounted exactly once to avoid chi panics.
 	if deps.Cfg.InternalOnlyEnabled {
 		guard, err := NewCIDRGuard(deps.Cfg.InternalOnlyCIDRs, log)
 		if err != nil {
-			// Fail safe: if config is invalid, do NOT start up with a broken guard.
 			log.Error("invalid INTERNAL_ONLY_CIDRS; internal guard disabled", slog.String("err", err.Error()))
 		} else {
 			r.Group(func(ir chi.Router) {
@@ -77,12 +77,10 @@ func NewRouter(deps RouterDeps) http.Handler {
 				ir.Handle("/metrics", promhttp.Handler())
 				MountPprof(ir)
 
-				// Cache stats
 				ir.Get("/internal/cache/stats", func(w http.ResponseWriter, r *http.Request) {
 					writeJSON(w, deps.PayloadCache.Stats())
 				})
 
-				// Cache refresh
 				ir.Post("/internal/cache/refresh", func(w http.ResponseWriter, r *http.Request) {
 					if deps.Cfg.CacheRefreshToken != "" {
 						if r.Header.Get("X-Cache-Refresh-Token") != deps.Cfg.CacheRefreshToken {
@@ -96,7 +94,6 @@ func NewRouter(deps RouterDeps) http.Handler {
 			})
 		}
 	} else {
-		// Unrestricted internal endpoints (dev/local use).
 		r.Handle("/metrics", promhttp.Handler())
 		MountPprof(r)
 
@@ -116,15 +113,11 @@ func NewRouter(deps RouterDeps) http.Handler {
 		})
 	}
 
-	// Liveness: process is up.
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
 
-	// Readiness: dependencies are usable.
-	// - DB must respond to a ping.
-	// - If CACHE_PREWARM is enabled, require the payload cache to already be built.
 	r.Get("/readyz", func(w http.ResponseWriter, r *http.Request) {
 		type readyResp struct {
 			OK         bool   `json:"ok"`
@@ -135,7 +128,6 @@ func NewRouter(deps RouterDeps) http.Handler {
 
 		resp := readyResp{OK: false, DB: false, CacheReady: false}
 
-		// DB ping with a short timeout so readiness isn't sticky.
 		if deps.DB != nil {
 			ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
 			defer cancel()
@@ -155,7 +147,6 @@ func NewRouter(deps RouterDeps) http.Handler {
 				resp.Message = "cache not ready"
 			}
 		} else {
-			// If not prewarming, cache can be built on-demand.
 			resp.CacheReady = true
 		}
 
@@ -168,7 +159,6 @@ func NewRouter(deps RouterDeps) http.Handler {
 		writeJSON(w, resp)
 	})
 
-	// Main endpoint (optionally rate-limited via RATE_LIMIT_* envs)
 	var pokemonHandler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), deps.Cfg.CacheBuildTimeout)
 		defer cancel()
@@ -189,13 +179,6 @@ func NewRouter(deps RouterDeps) http.Handler {
 	r.Method(http.MethodGet, "/pokemon/pokemons", pokemonHandler)
 
 	return r
-}
-
-func writeJSON(w http.ResponseWriter, v any) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	_ = enc.Encode(v)
 }
 
 type statusRecorder struct {
