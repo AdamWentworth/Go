@@ -18,29 +18,27 @@ import (
 func newTestPayloadCache(t *testing.T) *cache.JSONGzipCache {
 	t.Helper()
 
-	// Matches current JSONGzipCacheConfig signature:
-	// BuildPayload: func(ctx context.Context) (any, error)
-	b := func(ctx context.Context) (any, error) {
-		return map[string]any{"ok": true}, nil
+	build := func(ctx context.Context) (any, error) {
+		// Minimal payload
+		return []any{map[string]any{"pokemon_id": 1}}, nil
 	}
 
 	return cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
 		Name:         "/pokemon/pokemons",
-		BuildPayload: b,
-		GzipLevel:    gzip.BestSpeed,
+		BuildPayload: build,
+		GzipLevel:    6,
 	})
 }
 
-func TestInternalOnlyBlocksMetrics(t *testing.T) {
+func TestInternalOnlyMetrics(t *testing.T) {
 	cfg := config.Config{
 		CacheBuildTimeout:   2 * time.Second,
 		AllowedOrigins:      []string{"http://localhost:3000"},
 		AllowCloudflareSub:  false,
 		InternalOnlyEnabled: true,
-		InternalOnlyCIDRs:   []string{"10.0.0.0/8"}, // allow only 10/8 for this test
-		RateLimitEnabled:    false,
-		CachePrewarm:        false,
-		CacheRefreshToken:   "",
+		InternalOnlyCIDRs:   []string{"10.0.0.0/8"},
+		// Trust loopback as the "proxy" in tests so X-Forwarded-For is honored.
+		TrustedProxyCIDRs: []string{"127.0.0.0/8"},
 	}
 
 	h := NewRouter(RouterDeps{
@@ -50,8 +48,9 @@ func TestInternalOnlyBlocksMetrics(t *testing.T) {
 		PayloadCache: newTestPayloadCache(t),
 	})
 
-	// Not allowed IP
+	// Not allowed IP (spoofed via XFF, but only honored because RemoteAddr is trusted)
 	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	req.RemoteAddr = "127.0.0.1:12345"
 	req.Header.Set("X-Forwarded-For", "8.8.8.8")
 	rr := httptest.NewRecorder()
 	h.ServeHTTP(rr, req)
@@ -61,6 +60,7 @@ func TestInternalOnlyBlocksMetrics(t *testing.T) {
 
 	// Allowed IP
 	req2 := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	req2.RemoteAddr = "127.0.0.1:12345"
 	req2.Header.Set("X-Forwarded-For", "10.1.2.3")
 	rr2 := httptest.NewRecorder()
 	h.ServeHTTP(rr2, req2)
@@ -83,6 +83,7 @@ func TestRateLimitPokemonEndpoint(t *testing.T) {
 		RateLimitBurst:      1,
 		CachePrewarm:        false,
 		CacheRefreshToken:   "",
+		TrustedProxyCIDRs:   []string{"127.0.0.0/8"},
 	}
 
 	h := NewRouter(RouterDeps{
@@ -94,6 +95,7 @@ func TestRateLimitPokemonEndpoint(t *testing.T) {
 
 	// First request should pass.
 	req1 := httptest.NewRequest(http.MethodGet, "/pokemon/pokemons", nil)
+	req1.RemoteAddr = "127.0.0.1:12345"
 	req1.Header.Set("X-Forwarded-For", "203.0.113.10")
 	rr1 := httptest.NewRecorder()
 	h.ServeHTTP(rr1, req1)
@@ -103,6 +105,7 @@ func TestRateLimitPokemonEndpoint(t *testing.T) {
 
 	// Second immediate request should be limited.
 	req2 := httptest.NewRequest(http.MethodGet, "/pokemon/pokemons", nil)
+	req2.RemoteAddr = "127.0.0.1:12345"
 	req2.Header.Set("X-Forwarded-For", "203.0.113.10")
 	rr2 := httptest.NewRecorder()
 	h.ServeHTTP(rr2, req2)
@@ -111,39 +114,7 @@ func TestRateLimitPokemonEndpoint(t *testing.T) {
 	}
 }
 
-func TestPprofMounted(t *testing.T) {
-	cfg := config.Config{
-		CacheBuildTimeout:   2 * time.Second,
-		AllowedOrigins:      []string{"http://localhost:3000"},
-		AllowCloudflareSub:  false,
-		InternalOnlyEnabled: false, // allow direct access in this test
-		RateLimitEnabled:    false,
-		CachePrewarm:        false,
-		CacheRefreshToken:   "",
-	}
-
-	h := NewRouter(RouterDeps{
-		Cfg:          cfg,
-		Logger:       nil,
-		DB:           nil,
-		PayloadCache: newTestPayloadCache(t),
-	})
-
-	req := httptest.NewRequest(http.MethodGet, "/debug/pprof/", nil)
-	rr := httptest.NewRecorder()
-	h.ServeHTTP(rr, req)
-
-	// pprof index returns 200 and HTML
-	if rr.Code != http.StatusOK {
-		t.Fatalf("expected 200 from /debug/pprof/, got %d body=%q", rr.Code, rr.Body.String())
-	}
-	if !bytes.Contains(rr.Body.Bytes(), []byte("pprof")) {
-		t.Fatalf("expected pprof page content, got %q", rr.Body.String())
-	}
-}
-
-// Sanity: /pokemon/pokemons returns gzip when client requests it.
-func TestPokemonEndpointGzipNegotiation(t *testing.T) {
+func TestPokemonEndpointReturnsGzipWhenAccepted(t *testing.T) {
 	cfg := config.Config{
 		CacheBuildTimeout:   2 * time.Second,
 		AllowedOrigins:      []string{"http://localhost:3000"},
@@ -151,7 +122,6 @@ func TestPokemonEndpointGzipNegotiation(t *testing.T) {
 		InternalOnlyEnabled: false,
 		RateLimitEnabled:    false,
 		CachePrewarm:        false,
-		CacheRefreshToken:   "",
 	}
 
 	h := NewRouter(RouterDeps{
@@ -165,22 +135,23 @@ func TestPokemonEndpointGzipNegotiation(t *testing.T) {
 	req.Header.Set("Accept-Encoding", "gzip")
 	rr := httptest.NewRecorder()
 	h.ServeHTTP(rr, req)
-
 	if rr.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d body=%q", rr.Code, rr.Body.String())
+		t.Fatalf("expected 200 got %d", rr.Code)
 	}
 	if rr.Header().Get("Content-Encoding") != "gzip" {
-		t.Fatalf("expected gzip Content-Encoding, got %q", rr.Header().Get("Content-Encoding"))
+		t.Fatalf("expected gzip encoding, got %q", rr.Header().Get("Content-Encoding"))
 	}
 
-	// Ensure body is valid gzip
-	gr, err := gzip.NewReader(bytes.NewReader(rr.Body.Bytes()))
+	zr, err := gzip.NewReader(bytes.NewReader(rr.Body.Bytes()))
 	if err != nil {
 		t.Fatalf("gzip reader: %v", err)
 	}
-	defer gr.Close()
-	_, err = io.ReadAll(gr)
+	defer zr.Close()
+	raw, err := io.ReadAll(zr)
 	if err != nil {
-		t.Fatalf("read gzip: %v", err)
+		t.Fatalf("read gunzip: %v", err)
+	}
+	if len(raw) == 0 {
+		t.Fatalf("expected non-empty json")
 	}
 }

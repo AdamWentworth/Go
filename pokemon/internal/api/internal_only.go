@@ -56,7 +56,7 @@ func (g *cidrGuard) allowed(ipStr string) bool {
 		return false
 	}
 
-	// If clientIP() accidentally returns "IP:port", strip port.
+	// If ipStr accidentally includes ":port", strip port.
 	if host, _, err := net.SplitHostPort(ipStr); err == nil && host != "" {
 		ipStr = host
 	}
@@ -74,9 +74,9 @@ func (g *cidrGuard) allowed(ipStr string) bool {
 	return false
 }
 
-// InternalOnlyMiddleware blocks requests unless client IP is inside the allowed CIDRs.
-// This is a *network* control (no tokens). Use it for /metrics and /internal/*.
-// It assumes your reverse proxy sets X-Forwarded-For correctly.
+// InternalOnlyMiddleware blocks requests unless the resolved client IP is inside the allowed CIDRs.
+// The ipFn should be a "safe" resolver (see IPResolver) that does not trust forwarded headers
+// unless the immediate peer is a configured trusted proxy.
 func InternalOnlyMiddleware(g *cidrGuard, ipFn func(*http.Request) string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

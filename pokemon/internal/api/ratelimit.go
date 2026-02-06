@@ -9,8 +9,6 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// ipRateLimiter keeps an in-memory rate limiter per client key (typically IP).
-// It also does periodic cleanup so the map doesn't grow forever.
 type ipRateLimiter struct {
 	rps   rate.Limit
 	burst int
@@ -71,8 +69,6 @@ func (l *ipRateLimiter) cleanup() {
 	l.mu.Unlock()
 }
 
-// startCleanup runs a periodic cleanup loop until ctx is done.
-// Safe to call multiple times; callers should generally call it once per limiter.
 func (l *ipRateLimiter) startCleanup(ctx context.Context, interval time.Duration) {
 	if interval <= 0 {
 		interval = 1 * time.Minute
@@ -91,15 +87,10 @@ func (l *ipRateLimiter) startCleanup(ctx context.Context, interval time.Duration
 	}()
 }
 
-// RateLimitMiddleware applies a token bucket limiter per client key.
-// When limited, it returns HTTP 429.
-//
-// IMPORTANT: This middleware starts a background cleanup goroutine that stops when ctx is done.
 func RateLimitMiddleware(ctx context.Context, l *ipRateLimiter, keyFn func(*http.Request) string) func(http.Handler) http.Handler {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	// Light background cleanup tied to ctx lifetime.
 	l.startCleanup(ctx, 1*time.Minute)
 
 	return func(next http.Handler) http.Handler {

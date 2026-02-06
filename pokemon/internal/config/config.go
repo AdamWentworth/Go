@@ -28,6 +28,12 @@ type Config struct {
 	// This is intentionally "simple + local" so you can roll it out across services easily.
 	InternalOnlyEnabled bool
 	InternalOnlyCIDRs   []string
+
+	// Trusted proxy ranges (CIDRs) used to decide whether to trust X-Forwarded-For / X-Real-IP.
+	// If empty, forwarded headers are ignored and RemoteAddr is used as the client IP.
+	// Example (local reverse proxy): "127.0.0.0/8"
+	// Example (VPC/LB): your load balancer/proxy subnet CIDRs
+	TrustedProxyCIDRs []string
 }
 
 func Load() Config {
@@ -60,6 +66,10 @@ func Load() Config {
 	// - IPv6 ULA (fd00::/8)
 	internalCIDRs := splitCSV(getString("INTERNAL_ONLY_CIDRS", "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fd00::/8"))
 
+	// IMPORTANT: empty by default; forwarded headers are unsafe unless you explicitly
+	// define which peers are trusted proxies.
+	trustedProxyCIDRs := splitCSV(getString("TRUSTED_PROXY_CIDRS", ""))
+
 	return Config{
 		Port:                port,
 		Env:                 env,
@@ -75,6 +85,7 @@ func Load() Config {
 		RateLimitBurst:      rlBurst,
 		InternalOnlyEnabled: internalOnlyEnabled,
 		InternalOnlyCIDRs:   internalCIDRs,
+		TrustedProxyCIDRs:   trustedProxyCIDRs,
 	}
 }
 

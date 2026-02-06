@@ -5,9 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log/slog"
-	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -43,8 +41,14 @@ func NewRouter(deps RouterDeps) http.Handler {
 		baseCtx = context.Background()
 	}
 
+	// Safe client IP resolver (does NOT trust XFF unless RemoteAddr is a trusted proxy).
+	ipr, err := NewIPResolver(deps.Cfg.TrustedProxyCIDRs, log)
+	if err != nil {
+		log.Error("invalid TRUSTED_PROXY_CIDRS; forwarding headers will be ignored", slog.String("err", err.Error()))
+		ipr = &IPResolver{} // no trusted proxies
+	}
+
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.RealIP)
 
 	// Adds X-Request-Id and stores it in context. If caller supplies X-Request-Id, chi will reuse it.
 	r.Use(middleware.RequestID)
@@ -58,7 +62,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 	r.Use(metrics.Middleware())
 
 	// Structured request logs (includes req_id)
-	r.Use(requestLogMiddleware(log))
+	r.Use(requestLogMiddleware(log, ipr.ClientIP))
 
 	// Internal endpoints: /metrics, /internal/*, /debug/pprof/*
 	// Mounted exactly once to avoid chi panics.
@@ -69,7 +73,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 			log.Error("invalid INTERNAL_ONLY_CIDRS; internal guard disabled", slog.String("err", err.Error()))
 		} else {
 			r.Group(func(ir chi.Router) {
-				ir.Use(InternalOnlyMiddleware(guard, clientIP))
+				ir.Use(InternalOnlyMiddleware(guard, ipr.ClientIP))
 				ir.Handle("/metrics", promhttp.Handler())
 				MountPprof(ir)
 
@@ -180,7 +184,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 
 	if deps.Cfg.RateLimitEnabled {
 		lim := NewIPRateLimiter(deps.Cfg.RateLimitRPS, deps.Cfg.RateLimitBurst, 5*time.Minute)
-		pokemonHandler = RateLimitMiddleware(baseCtx, lim, clientIP)(pokemonHandler)
+		pokemonHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(pokemonHandler)
 	}
 	r.Method(http.MethodGet, "/pokemon/pokemons", pokemonHandler)
 
@@ -211,7 +215,7 @@ func (sr *statusRecorder) Write(p []byte) (int, error) {
 	return n, err
 }
 
-func requestLogMiddleware(log *slog.Logger) func(http.Handler) http.Handler {
+func requestLogMiddleware(log *slog.Logger, ipFn func(*http.Request) string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
@@ -226,14 +230,12 @@ func requestLogMiddleware(log *slog.Logger) func(http.Handler) http.Handler {
 				route = r.URL.Path
 			}
 
-			ip := clientIP(r)
-			ua := r.Header.Get("User-Agent")
-
-			// Parse host without port if present, for cleaner logs.
-			host := r.Host
-			if h, _, err := net.SplitHostPort(r.Host); err == nil && h != "" {
-				host = h
+			ip := ""
+			if ipFn != nil {
+				ip = ipFn(r)
 			}
+
+			ua := r.Header.Get("User-Agent")
 
 			log.Info("request",
 				slog.String("method", r.Method),
@@ -244,36 +246,8 @@ func requestLogMiddleware(log *slog.Logger) func(http.Handler) http.Handler {
 				slog.Duration("duration", dur),
 				slog.String("req_id", reqID),
 				slog.String("ip", ip),
-				slog.String("host", host),
 				slog.String("ua", ua),
 			)
 		})
 	}
-}
-
-// clientIP returns the best-guess client IP.
-// Assumes chi/middleware.RealIP ran earlier.
-func clientIP(r *http.Request) string {
-	// Prefer X-Forwarded-For (first entry).
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		// Take the first IP in the list.
-		parts := strings.Split(xff, ",")
-		if len(parts) > 0 {
-			ip := strings.TrimSpace(parts[0])
-			if ip != "" {
-				return ip
-			}
-		}
-	}
-
-	// Fall back to X-Real-IP.
-	if xr := strings.TrimSpace(r.Header.Get("X-Real-IP")); xr != "" {
-		return xr
-	}
-
-	// Finally, RemoteAddr (may include port).
-	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil && host != "" {
-		return host
-	}
-	return r.RemoteAddr
 }
