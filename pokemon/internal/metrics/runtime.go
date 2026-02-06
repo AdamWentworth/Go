@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"log/slog"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -11,9 +12,11 @@ var registerRuntimeOnce sync.Once
 
 // RegisterRuntimeCollectors registers Go runtime + process metrics with Prometheus.
 //
-// Safe to call multiple times. It avoids panics by tolerating collectors that
-// are already registered (common in tests or when multiple packages register
-// default collectors).
+// Safe to call multiple times. It tolerates collectors that are already registered
+// (common in tests or when multiple packages register default collectors).
+//
+// NOTE: This function does not panic on registration failures; it logs errors and continues.
+// A metrics registration failure should not crash the service.
 func RegisterRuntimeCollectors() {
 	registerRuntimeOnce.Do(func() {
 		tryRegister(collectors.NewGoCollector())
@@ -27,12 +30,10 @@ func init() {
 
 func tryRegister(c prometheus.Collector) {
 	if err := prometheus.Register(c); err != nil {
-		// Avoid panicking if the same (or an equivalent) collector was already
-		// registered.
+		// Avoid failing when already registered.
 		if _, ok := err.(prometheus.AlreadyRegisteredError); ok {
 			return
 		}
-		// For other errors, keep the previous "fail fast" behavior.
-		panic(err)
+		slog.Default().Error("prometheus collector registration failed", slog.String("err", err.Error()))
 	}
 }
