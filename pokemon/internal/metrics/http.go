@@ -3,6 +3,7 @@ package metrics
 import (
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -30,39 +31,51 @@ var (
 	)
 )
 
+var registerHTTPOnce sync.Once
+
+// RegisterHTTPCollectors registers HTTP metrics collectors.
+//
+// Safe to call multiple times. It tolerates collectors that are already registered.
+// A metrics wiring issue should not crash the service.
+func RegisterHTTPCollectors() {
+	registerHTTPOnce.Do(func() {
+		tryRegister(httpRequestsTotal)
+		tryRegister(httpRequestDurationSeconds)
+	})
+}
+
 func init() {
-	// MustRegister panics if called twice with same collector; this init runs once per process.
-	prometheus.MustRegister(httpRequestsTotal, httpRequestDurationSeconds)
+	RegisterHTTPCollectors()
 }
 
-type statusRecorder struct {
-	http.ResponseWriter
-	status int
-}
-
-func (sr *statusRecorder) WriteHeader(code int) {
-	sr.status = code
-	sr.ResponseWriter.WriteHeader(code)
-}
-
-// Middleware records request count + latency histogram.
-// It uses chi's RoutePattern() to avoid high-cardinality labels.
 func Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
-			sr := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 
-			next.ServeHTTP(sr, r)
+			ww := &statusWriter{ResponseWriter: w, status: http.StatusOK}
+			next.ServeHTTP(ww, r)
+
+			dur := time.Since(start).Seconds()
 
 			route := chi.RouteContext(r.Context()).RoutePattern()
 			if route == "" {
-				route = "unknown"
+				route = r.URL.Path
 			}
-			status := strconv.Itoa(sr.status)
 
+			status := strconv.Itoa(ww.status)
 			httpRequestsTotal.WithLabelValues(r.Method, route, status).Inc()
-			httpRequestDurationSeconds.WithLabelValues(r.Method, route, status).Observe(time.Since(start).Seconds())
+			httpRequestDurationSeconds.WithLabelValues(r.Method, route, status).Observe(dur)
 		})
 	}
+}
+
+type statusWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (w *statusWriter) WriteHeader(code int) {
+	w.status = code
+	w.ResponseWriter.WriteHeader(code)
 }
