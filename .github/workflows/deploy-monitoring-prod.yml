@@ -85,6 +85,23 @@ jobs:
           fi
 
           mkdir -p "${DATA_DIR}" "${ALERT_DATA_DIR}"
+          docker run --rm \
+            -v "${DATA_DIR}:/promdata" \
+            -v "${ALERT_DATA_DIR}:/alertdata" \
+            alpine:3.20 sh -ec '
+              chown -R 65534:65534 /promdata /alertdata || true
+              find /promdata /alertdata -type d -exec chmod 775 {} +
+              find /promdata /alertdata -type f -exec chmod 664 {} +
+            '
+
+          if ! docker run --rm --user 65534:65534 -v "${DATA_DIR}:/promdata" alpine:3.20 sh -ec 'touch /promdata/.rw_test && rm -f /promdata/.rw_test'; then
+            echo "Prometheus data dir is not writable by UID 65534: ${DATA_DIR}" >&2
+            exit 1
+          fi
+          if ! docker run --rm --user 65534:65534 -v "${ALERT_DATA_DIR}:/alertdata" alpine:3.20 sh -ec 'touch /alertdata/.rw_test && rm -f /alertdata/.rw_test'; then
+            echo "Alertmanager data dir is not writable by UID 65534: ${ALERT_DATA_DIR}" >&2
+            exit 1
+          fi
 
           if ! docker network inspect "${KAFKA_NETWORK}" >/dev/null 2>&1; then
             echo "Required external network missing: ${KAFKA_NETWORK}" >&2
