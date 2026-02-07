@@ -1,7 +1,0 @@
-node_modules
-/app.log
-data/pokego - Copy.db
-data/editor/__pycache__
-data/editor/frames/__pycache__
-
-.env
