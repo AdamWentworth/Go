@@ -123,6 +123,7 @@ jobs:
           TARGET_IMAGE=""
           COMPOSE_FILE="${DEPLOY_ROOT}/pokemon/docker-compose.yml"
           ENV_FILE="${DEPLOY_ROOT}/pokemon/.env"
+          DATA_DIR="${DEPLOY_ROOT}/pokemon/data"
           CONTAINER_NAME="pokemon_data_container"
           COMPOSE_PROJECT_NAME="pokemon"
 
@@ -154,6 +155,24 @@ jobs:
 
           echo "Pulling target image: ${TARGET_IMAGE}"
           docker pull "${TARGET_IMAGE}"
+
+          # Ensure the bind-mounted SQLite directory is writable by the image runtime user.
+          APP_UID="$(docker run --rm --entrypoint /bin/sh "${TARGET_IMAGE}" -c 'id -u app 2>/dev/null || id -u')"
+          APP_GID="$(docker run --rm --entrypoint /bin/sh "${TARGET_IMAGE}" -c 'id -g app 2>/dev/null || id -g')"
+          echo "Preparing ${DATA_DIR} for container uid:gid ${APP_UID}:${APP_GID}"
+
+          mkdir -p "${DATA_DIR}"
+          docker run --rm -v "${DATA_DIR}:/data" alpine:3.20 sh -ec "
+            mkdir -p /data
+            chown -R ${APP_UID}:${APP_GID} /data || true
+            find /data -type d -exec chmod 775 {} +
+            find /data -type f -exec chmod 664 {} +
+          "
+
+          if ! docker run --rm --user "${APP_UID}:${APP_GID}" -v "${DATA_DIR}:/data" alpine:3.20 sh -ec 'touch /data/.write_test && rm -f /data/.write_test'; then
+            echo "Data directory is not writable for runtime uid:gid ${APP_UID}:${APP_GID}: ${DATA_DIR}" >&2
+            exit 1
+          fi
 
           # If an existing container with the same fixed name was created by another
           # compose project (for example old node pokemon_data stack), remove it first.
