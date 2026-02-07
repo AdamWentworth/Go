@@ -12,8 +12,13 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
-      - kafka_default
+      kafka_default: {}
+      pokemon_edge:
+        ipv4_address: 172.30.0.10
 
 networks:
   kafka_default:
     external: true
+  pokemon_edge:
+    external: true
+    name: pokemon_edge

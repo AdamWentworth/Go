@@ -7,6 +7,8 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -21,8 +23,14 @@ import (
 //
 //	go test -tags=integration ./...
 func TestPokemonPayload_StableShape(t *testing.T) {
-	// Use the same default path as config.Load()
-	const sqlitePath = "./data/pokego.db"
+	_, arr := buildIntegrationPayload(t)
+	assertStableShape(t, arr)
+}
+
+func buildIntegrationPayload(t *testing.T) ([]byte, []map[string]any) {
+	t.Helper()
+
+	sqlitePath := resolveIntegrationSQLitePath()
 	if _, err := os.Stat(sqlitePath); err != nil {
 		t.Skipf("sqlite db not found at %s (skipping integration contract test): %v", sqlitePath, err)
 	}
@@ -56,6 +64,22 @@ func TestPokemonPayload_StableShape(t *testing.T) {
 	if len(arr) == 0 {
 		t.Fatalf("expected non-empty pokemon array")
 	}
+	return raw, arr
+}
 
-	assertStableShape(t, arr)
+func resolveIntegrationSQLitePath() string {
+	if p := strings.TrimSpace(os.Getenv("SQLITE_PATH")); p != "" {
+		return p
+	}
+
+	candidates := []string{
+		"./data/pokego.db",
+		filepath.Join("..", "..", "data", "pokego.db"),
+	}
+	for _, p := range candidates {
+		if _, err := os.Stat(p); err == nil {
+			return p
+		}
+	}
+	return candidates[len(candidates)-1]
 }

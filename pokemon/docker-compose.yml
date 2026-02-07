@@ -12,8 +12,10 @@ services:
       - ./data:/usr/src/app/data
     restart: unless-stopped
     networks:
-      - kafka_default
+      pokemon_edge:
+        ipv4_address: 172.30.0.12
 
 networks:
-  kafka_default:
+  pokemon_edge:
     external: true
+    name: pokemon_edge

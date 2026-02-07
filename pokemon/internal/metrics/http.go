@@ -13,6 +13,8 @@ import (
 // Keep labels low-cardinality: method + route pattern + status.
 // Do NOT use raw URL paths as labels.
 var (
+	unmatchedRouteLabel = "_unmatched"
+
 	httpRequestsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "http_requests_total",
@@ -58,9 +60,11 @@ func Middleware() func(http.Handler) http.Handler {
 
 			dur := time.Since(start).Seconds()
 
-			route := chi.RouteContext(r.Context()).RoutePattern()
-			if route == "" {
-				route = r.URL.Path
+			route := unmatchedRouteLabel
+			if rc := chi.RouteContext(r.Context()); rc != nil {
+				if p := rc.RoutePattern(); p != "" {
+					route = p
+				}
 			}
 
 			status := strconv.Itoa(ww.status)

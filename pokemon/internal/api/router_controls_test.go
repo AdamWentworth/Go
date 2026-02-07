@@ -37,8 +37,6 @@ func TestInternalOnlyMetrics(t *testing.T) {
 		AllowCloudflareSub:  false,
 		InternalOnlyEnabled: true,
 		InternalOnlyCIDRs:   []string{"10.0.0.0/8"},
-		// Trust loopback as the "proxy" in tests so X-Forwarded-For is honored.
-		TrustedProxyCIDRs: []string{"127.0.0.0/8"},
 	}
 
 	h := NewRouter(RouterDeps{
@@ -48,20 +46,20 @@ func TestInternalOnlyMetrics(t *testing.T) {
 		PayloadCache: newTestPayloadCache(t),
 	})
 
-	// Not allowed IP (spoofed via XFF, but only honored because RemoteAddr is trusted)
+	// Not allowed: forwarded headers are ignored for internal-only checks.
 	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
-	req.RemoteAddr = "127.0.0.1:12345"
-	req.Header.Set("X-Forwarded-For", "8.8.8.8")
+	req.RemoteAddr = "8.8.8.8:12345"
+	req.Header.Set("X-Forwarded-For", "10.1.2.3")
 	rr := httptest.NewRecorder()
 	h.ServeHTTP(rr, req)
 	if rr.Code != http.StatusForbidden {
 		t.Fatalf("expected 403 for non-internal ip, got %d", rr.Code)
 	}
 
-	// Allowed IP
+	// Allowed by immediate peer IP.
 	req2 := httptest.NewRequest(http.MethodGet, "/metrics", nil)
-	req2.RemoteAddr = "127.0.0.1:12345"
-	req2.Header.Set("X-Forwarded-For", "10.1.2.3")
+	req2.RemoteAddr = "10.1.2.3:12345"
+	req2.Header.Set("X-Forwarded-For", "8.8.8.8")
 	rr2 := httptest.NewRecorder()
 	h.ServeHTTP(rr2, req2)
 	if rr2.Code != http.StatusOK {

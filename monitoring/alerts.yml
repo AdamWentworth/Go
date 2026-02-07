@@ -1,0 +1,63 @@
+groups:
+  - name: pokemon-data-alerts
+    rules:
+      - alert: PokemonDataTargetDown
+        expr: up{job="pokemon_data"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: pokemon_data
+        annotations:
+          summary: "pokemon_data target is down"
+          description: "Prometheus cannot scrape pokemon_data for at least 2 minutes."
+
+      - alert: PokemonDataHigh5xxRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="pokemon_data",status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total{job="pokemon_data"}[5m])), 1)
+          ) > 0.02
+        for: 10m
+        labels:
+          severity: warning
+          service: pokemon_data
+        annotations:
+          summary: "pokemon_data 5xx rate is high"
+          description: "5xx responses exceed 2% for 10 minutes."
+
+      - alert: PokemonDataHighP95Latency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (
+              rate(http_request_duration_seconds_bucket{job="pokemon_data",route="/pokemon/pokemons"}[5m])
+            )
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          service: pokemon_data
+        annotations:
+          summary: "pokemon_data /pokemon/pokemons p95 latency is high"
+          description: "p95 latency for /pokemon/pokemons exceeds 1 second for 10 minutes."
+
+      - alert: PokemonDataHighRateLimitedRequests
+        expr: sum(rate(http_requests_total{job="pokemon_data",route="/pokemon/pokemons",status="429"}[5m])) > 2
+        for: 10m
+        labels:
+          severity: warning
+          service: pokemon_data
+        annotations:
+          summary: "pokemon_data is rate limiting heavily"
+          description: "429 responses for /pokemon/pokemons exceed 2 req/s over 10 minutes."
+
+      - alert: PokemonDataMetricsMissing
+        expr: absent(http_requests_total{job="pokemon_data"})
+        for: 10m
+        labels:
+          severity: warning
+          service: pokemon_data
+        annotations:
+          summary: "pokemon_data request metrics are missing"
+          description: "http_requests_total has been absent for 10 minutes."

@@ -44,6 +44,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 		log.Error("invalid TRUSTED_PROXY_CIDRS; forwarding headers will be ignored", slog.String("err", err.Error()))
 		ipr = &IPResolver{}
 	}
+	peerIP := remoteIP
 
 	prettyJSON := deps.Cfg.JSONPretty
 
@@ -70,7 +71,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 			log.Error("invalid INTERNAL_ONLY_CIDRS; internal guard disabled", slog.String("err", err.Error()))
 		} else {
 			r.Group(func(ir chi.Router) {
-				ir.Use(InternalOnlyMiddleware(guard, ipr.ClientIP))
+				ir.Use(InternalOnlyMiddleware(guard, peerIP))
 				ir.Handle("/metrics", promhttp.Handler())
 				MountPprof(ir)
 

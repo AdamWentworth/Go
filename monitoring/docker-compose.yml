@@ -6,13 +6,19 @@ services:
       - "127.0.0.1:9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerts.yml:/etc/prometheus/alerts.yml:ro
       - ./data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
     networks:
-      - kafka_default
+      kafka_default: {}
+      pokemon_edge:
+        ipv4_address: 172.30.0.11
 
 networks:
   kafka_default:
     external: true
+  pokemon_edge:
+    external: true
+    name: pokemon_edge

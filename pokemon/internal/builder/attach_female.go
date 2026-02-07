@@ -15,7 +15,15 @@ func (b *Builder) attachFemaleData(ctx context.Context, orderedIDs []int, pokemo
 	}
 
 	q, args := inClause("pokemon_id", femaleIDs)
-	rows, err := b.queryRows(ctx, "SELECT * FROM female_pokemon WHERE "+q, args...)
+	rows, err := b.queryRows(ctx, `
+	SELECT
+	  pokemon_id,
+	  image_url,
+	  shiny_image_url,
+	  shadow_image_url,
+	  shiny_shadow_image_url
+	FROM female_pokemon
+	WHERE `+q, args...)
 	if err != nil {
 		return err
 	}
