@@ -35,10 +35,16 @@ jobs:
             exit 1
           fi
 
-          if [[ -n "$(git -C "${DEPLOY_ROOT}" status --porcelain)" ]]; then
-            echo "Deploy root has local uncommitted changes: ${DEPLOY_ROOT}" >&2
-            echo "Commit/stash/revert local changes before using automated deploy." >&2
+          if ! git -C "${DEPLOY_ROOT}" diff --quiet || ! git -C "${DEPLOY_ROOT}" diff --cached --quiet; then
+            echo "Deploy root has local tracked changes: ${DEPLOY_ROOT}" >&2
+            git -C "${DEPLOY_ROOT}" status --short || true
+            echo "Commit/stash/revert tracked changes before using automated deploy." >&2
             exit 1
+          fi
+
+          UNTRACKED_COUNT="$(git -C "${DEPLOY_ROOT}" ls-files --others --exclude-standard | wc -l | tr -d ' ')"
+          if [[ "${UNTRACKED_COUNT}" != "0" ]]; then
+            echo "Warning: ${UNTRACKED_COUNT} untracked files present in deploy root; continuing."
           fi
 
           echo "Syncing ${DEPLOY_ROOT} to origin/${DEPLOY_REF}"
