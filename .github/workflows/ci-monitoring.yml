@@ -1,0 +1,73 @@
+name: monitoring-ci
+
+on:
+  pull_request:
+    paths:
+      - "monitoring/**"
+      - ".github/workflows/ci-monitoring.yml"
+      - ".github/workflows/deploy-monitoring-prod.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "monitoring/**"
+      - ".github/workflows/ci-monitoring.yml"
+      - ".github/workflows/deploy-monitoring-prod.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  validate-monitoring:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Prometheus Config And Rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$PWD/monitoring:/work:ro" \
+            --workdir /work \
+            --entrypoint promtool \
+            prom/prometheus:latest \
+            check config prometheus.yml
+
+          docker run --rm \
+            -v "$PWD/monitoring:/work:ro" \
+            --workdir /work \
+            --entrypoint promtool \
+            prom/prometheus:latest \
+            check rules alerts.yml
+
+      - name: Validate Alertmanager Template
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p monitoring/.tmp
+
+          sed \
+            -e 's|${ALERT_EMAIL_FROM}|alerts@example.com|g' \
+            -e 's|${ALERT_EMAIL_USER}|alerts@example.com|g' \
+            -e 's|${ALERT_EMAIL_PASS}|example-app-password|g' \
+            monitoring/alertmanager.yml > monitoring/.tmp/alertmanager.rendered.yml
+
+          docker run --rm \
+            -v "$PWD/monitoring/.tmp:/work:ro" \
+            --workdir /work \
+            --entrypoint amtool \
+            prom/alertmanager:latest \
+            check-config alertmanager.rendered.yml
+
+          rm -rf monitoring/.tmp
+
+      - name: Validate Monitoring Compose
+        shell: bash
+        run: |
+          set -euo pipefail
+          ALERT_EMAIL_FROM=alerts@example.com \
+          ALERT_EMAIL_USER=alerts@example.com \
+          ALERT_EMAIL_PASS=example-app-password \
+          docker compose -f monitoring/docker-compose.yml config >/dev/null

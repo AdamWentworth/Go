@@ -1,0 +1,160 @@
+name: deploy-monitoring-prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_root:
+        description: "Absolute path to the Go repo on prod runner"
+        required: false
+        default: "/media/adam/storage/Code/Go"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Monitoring To Prod
+    runs-on: [self-hosted, linux, x64, prod]
+    environment: production
+    concurrency:
+      group: deploy-monitoring-prod
+      cancel-in-progress: false
+
+    steps:
+      - name: Sync Deploy Repo
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEPLOY_ROOT="${{ inputs.deploy_root }}"
+          DEPLOY_REF="${{ github.ref_name }}"
+
+          if [[ ! -d "${DEPLOY_ROOT}/.git" ]]; then
+            echo "Deploy root is not a git repo: ${DEPLOY_ROOT}" >&2
+            exit 1
+          fi
+
+          if [[ -n "$(git -C "${DEPLOY_ROOT}" status --porcelain)" ]]; then
+            echo "Deploy root has local uncommitted changes: ${DEPLOY_ROOT}" >&2
+            echo "Commit/stash/revert local changes before using automated deploy." >&2
+            exit 1
+          fi
+
+          echo "Syncing ${DEPLOY_ROOT} to origin/${DEPLOY_REF}"
+          git -C "${DEPLOY_ROOT}" fetch --prune origin
+          git -C "${DEPLOY_ROOT}" checkout "${DEPLOY_REF}"
+          git -C "${DEPLOY_ROOT}" pull --ff-only origin "${DEPLOY_REF}"
+
+      - name: Preflight Checks
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEPLOY_ROOT="${{ inputs.deploy_root }}"
+          COMPOSE_FILE="${DEPLOY_ROOT}/monitoring/docker-compose.yml"
+          ENV_FILE="${DEPLOY_ROOT}/monitoring/.env"
+          DATA_DIR="${DEPLOY_ROOT}/monitoring/data"
+          ALERT_DATA_DIR="${DEPLOY_ROOT}/monitoring/alertmanager-data"
+
+          EDGE_NETWORK="pokemon_edge"
+          EDGE_SUBNET="172.30.0.0/24"
+          EDGE_GATEWAY="172.30.0.1"
+          KAFKA_NETWORK="kafka_default"
+
+          if [[ ! -d "${DEPLOY_ROOT}" ]]; then
+            echo "Deploy root not found: ${DEPLOY_ROOT}" >&2
+            exit 1
+          fi
+
+          if [[ ! -f "${COMPOSE_FILE}" ]]; then
+            echo "Compose file not found: ${COMPOSE_FILE}" >&2
+            exit 1
+          fi
+
+          if [[ ! -f "${ENV_FILE}" ]]; then
+            echo "Env file not found: ${ENV_FILE}" >&2
+            echo "Create monitoring/.env on prod with ALERT_EMAIL_FROM/USER/PASS." >&2
+            exit 1
+          fi
+
+          mkdir -p "${DATA_DIR}" "${ALERT_DATA_DIR}"
+
+          if ! docker network inspect "${KAFKA_NETWORK}" >/dev/null 2>&1; then
+            echo "Required external network missing: ${KAFKA_NETWORK}" >&2
+            exit 1
+          fi
+
+          if ! docker network inspect "${EDGE_NETWORK}" >/dev/null 2>&1; then
+            echo "External docker network ${EDGE_NETWORK} not found; creating it now."
+            docker network create \
+              --driver bridge \
+              --subnet "${EDGE_SUBNET}" \
+              --gateway "${EDGE_GATEWAY}" \
+              "${EDGE_NETWORK}"
+          fi
+
+          NETWORK_SUBNET="$(docker network inspect -f '{{(index .IPAM.Config 0).Subnet}}' "${EDGE_NETWORK}")"
+          if [[ "${NETWORK_SUBNET}" != "${EDGE_SUBNET}" ]]; then
+            echo "Network ${EDGE_NETWORK} exists but subnet is ${NETWORK_SUBNET}; expected ${EDGE_SUBNET}." >&2
+            exit 1
+          fi
+
+          docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" config >/dev/null
+
+      - name: Deploy Monitoring Stack
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEPLOY_ROOT="${{ inputs.deploy_root }}"
+          COMPOSE_FILE="${DEPLOY_ROOT}/monitoring/docker-compose.yml"
+          ENV_FILE="${DEPLOY_ROOT}/monitoring/.env"
+
+          docker compose \
+            -f "${COMPOSE_FILE}" \
+            --env-file "${ENV_FILE}" \
+            up -d --force-recreate prometheus alertmanager
+
+      - name: Health Checks
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEPLOY_ROOT="${{ inputs.deploy_root }}"
+          COMPOSE_FILE="${DEPLOY_ROOT}/monitoring/docker-compose.yml"
+          ENV_FILE="${DEPLOY_ROOT}/monitoring/.env"
+
+          wait_http_200() {
+            local url="$1"
+            local name="$2"
+            for _ in $(seq 1 30); do
+              if curl -fsS --max-time 2 "$url" >/dev/null; then
+                echo "${name} healthy: ${url}"
+                return 0
+              fi
+              sleep 2
+            done
+            echo "${name} failed health check: ${url}" >&2
+            return 1
+          }
+
+          if ! wait_http_200 "http://127.0.0.1:9090/-/healthy" "prometheus"; then
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" logs --tail=200 prometheus || true
+            exit 1
+          fi
+
+          if ! wait_http_200 "http://127.0.0.1:9093/-/healthy" "alertmanager"; then
+            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" logs --tail=200 alertmanager || true
+            exit 1
+          fi
+
+          # Informational check: do not fail deploy if pokemon target is temporarily down.
+          QUERY_JSON="$(curl -fsS --get --data-urlencode 'query=up{job="pokemon_data"}' http://127.0.0.1:9090/api/v1/query || true)"
+          if [[ "${QUERY_JSON}" == *'"result":[]'* ]]; then
+            echo "Warning: no active 'pokemon_data' scrape target found in Prometheus yet."
+          elif [[ "${QUERY_JSON}" == *'"1"'* ]]; then
+            echo "Prometheus target check: pokemon_data is up."
+          else
+            echo "Warning: pokemon_data scrape target exists but is not currently up."
+          fi
