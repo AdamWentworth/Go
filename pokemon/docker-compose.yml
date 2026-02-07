@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   pokemon_data:
-    build: .
+    image: ${POKEMON_IMAGE:-pokemon_data:local}
+    build:
+      context: .
     container_name: pokemon_data_container
     expose:
       - "3001"
