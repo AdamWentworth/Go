@@ -1,0 +1,136 @@
+name: deploy-pokemon-prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_ref:
+        description: "Full image reference to deploy (example: adamwentworth/pokemon_service_go:sha-<commit>)"
+        required: true
+        type: string
+      deploy_root:
+        description: "Absolute path to the Go repo on prod runner"
+        required: false
+        default: "/media/adam/storage/Code/Go"
+        type: string
+      service_name:
+        description: "Compose service to deploy"
+        required: false
+        default: "pokemon_data"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Pokemon To Prod
+    runs-on: [self-hosted, linux, x64, prod]
+    environment: production
+    concurrency:
+      group: deploy-pokemon-prod
+      cancel-in-progress: false
+
+    steps:
+      - name: Sync Deploy Repo
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEPLOY_ROOT="${{ inputs.deploy_root }}"
+          DEPLOY_REF="${{ github.ref_name }}"
+
+          if [[ ! -d "${DEPLOY_ROOT}/.git" ]]; then
+            echo "Deploy root is not a git repo: ${DEPLOY_ROOT}" >&2
+            exit 1
+          fi
+
+          if [[ -n "$(git -C "${DEPLOY_ROOT}" status --porcelain)" ]]; then
+            echo "Deploy root has local uncommitted changes: ${DEPLOY_ROOT}" >&2
+            echo "Commit/stash/revert local changes before using automated deploy." >&2
+            exit 1
+          fi
+
+          echo "Syncing ${DEPLOY_ROOT} to origin/${DEPLOY_REF}"
+          git -C "${DEPLOY_ROOT}" fetch --prune origin
+          git -C "${DEPLOY_ROOT}" checkout "${DEPLOY_REF}"
+          git -C "${DEPLOY_ROOT}" pull --ff-only origin "${DEPLOY_REF}"
+
+      - name: Preflight Checks
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEPLOY_ROOT="${{ inputs.deploy_root }}"
+          COMPOSE_FILE="${DEPLOY_ROOT}/pokemon_data/docker-compose.yml"
+          ENV_FILE="${DEPLOY_ROOT}/pokemon_data/.env"
+
+          if [[ ! -d "${DEPLOY_ROOT}" ]]; then
+            echo "Deploy root not found: ${DEPLOY_ROOT}" >&2
+            exit 1
+          fi
+
+          if [[ ! -f "${COMPOSE_FILE}" ]]; then
+            echo "Compose file not found: ${COMPOSE_FILE}" >&2
+            exit 1
+          fi
+
+          if [[ ! -f "${ENV_FILE}" ]]; then
+            echo "Env file not found: ${ENV_FILE}" >&2
+            exit 1
+          fi
+
+          docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" config >/dev/null
+
+      - name: Deploy With Health Check And Rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEPLOY_ROOT="${{ inputs.deploy_root }}"
+          SERVICE_NAME="${{ inputs.service_name }}"
+          TARGET_IMAGE="${{ inputs.image_ref }}"
+          COMPOSE_FILE="${DEPLOY_ROOT}/pokemon_data/docker-compose.yml"
+          ENV_FILE="${DEPLOY_ROOT}/pokemon_data/.env"
+          CONTAINER_NAME="pokemon_data_container"
+
+          PREVIOUS_IMAGE="$(docker inspect --format '{{.Config.Image}}' "${CONTAINER_NAME}" 2>/dev/null || true)"
+          if [[ -n "${PREVIOUS_IMAGE}" ]]; then
+            echo "Previous image: ${PREVIOUS_IMAGE}"
+          else
+            echo "No existing container image found for ${CONTAINER_NAME}; rollback image will be unavailable."
+          fi
+
+          echo "Pulling target image: ${TARGET_IMAGE}"
+          docker pull "${TARGET_IMAGE}"
+
+          echo "Deploying ${SERVICE_NAME} with image ${TARGET_IMAGE}"
+          POKEMON_IMAGE="${TARGET_IMAGE}" docker compose \
+            -f "${COMPOSE_FILE}" \
+            --env-file "${ENV_FILE}" \
+            up -d --no-deps --force-recreate "${SERVICE_NAME}"
+
+          echo "Waiting for /readyz on 127.0.0.1:3001"
+          HEALTH_OK=0
+          for _ in $(seq 1 30); do
+            if curl -fsS --max-time 2 http://127.0.0.1:3001/readyz >/dev/null; then
+              HEALTH_OK=1
+              break
+            fi
+            sleep 2
+          done
+
+          if [[ "${HEALTH_OK}" -ne 1 ]]; then
+            echo "New deployment failed readiness checks." >&2
+            if [[ -n "${PREVIOUS_IMAGE}" ]]; then
+              echo "Rolling back to ${PREVIOUS_IMAGE}"
+              POKEMON_IMAGE="${PREVIOUS_IMAGE}" docker compose \
+                -f "${COMPOSE_FILE}" \
+                --env-file "${ENV_FILE}" \
+                up -d --no-deps --force-recreate "${SERVICE_NAME}"
+            else
+              echo "Rollback skipped: previous image not found." >&2
+            fi
+            exit 1
+          fi
+
+          echo "Deployment succeeded."

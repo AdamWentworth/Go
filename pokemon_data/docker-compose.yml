@@ -4,7 +4,7 @@ version: '3.8'
 
 services:
   pokemon_data:
-    image: adamwentworth/pokemon_data:latest
+    image: ${POKEMON_IMAGE:-adamwentworth/pokemon_data:latest}
     container_name: pokemon_data_container
     ports:
       - "3001:3001"
