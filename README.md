@@ -14,12 +14,15 @@ Go/
 ├── location/           # Go + PostGIS location microservice
 ├── nginx/              # Reverse proxy config and SSL setup
 ├── notes/              # Technical notes and architecture
-├── pokemon_data/       # Pokémon API powered by enriched SQLite
+├── pokemon/            # Pokémon API (Go) powered by enriched SQLite
 ├── reader/             # Read microservices: discover, users, events
 ├── receiver/           # Kafka producer, ingest client updates
 ├── storage/            # Kafka consumer, persist to MySQL, backup jobs
 ├── tests/              # Data mocks, fake user generators
 ```
+
+Legacy Node `pokemon_data` service has been moved to archive outside this repo.
+Use `pokemon/` for all current Pokemon API development and deployment.
 
 ---
 
@@ -29,7 +32,7 @@ Go/
 |---------------|---------------------------------------------------|
 | Frontend      | React 18, Context API, SSE, IndexedDB             |
 | Auth          | Node.js + Express + MongoDB + JWT                 |
-| Pokémon API   | Express + SQLite + Custom Editor (Tkinter)        |
+| Pokémon API   | Go (`net/http` + `chi`) + SQLite + cache layer     |
 | Location      | Go + PostgreSQL/PostGIS                           |
 | Event Sync    | Kafka (Docker) + Go consumers/producers           |
 | Search        | Go + MySQL + Haversine filters                    |
@@ -56,12 +59,12 @@ npm start
 
 ---
 
-### 📦 2. Pokémon Data API
+### 📦 2. Pokémon Data API (Go)
 
 ```bash
-cd Go/pokemon_data
-npm install
-npm start
+cd Go/pokemon
+go mod tidy
+go run ./cmd/pokemon
 ```
 
 - Powered by `pokego.db`  
@@ -210,7 +213,7 @@ Events Service → Notifies connected clients via SSE
 
 | Service         | Port  | Language | Notes                                                  |
 |-----------------|-------|----------|--------------------------------------------------------|
-| Pokémon API     | 3001  | Node.js  | Shiny, Mega, IV, moves, costume, fusion data          |
+| Pokémon API     | 3001  | Go       | Shiny, Mega, IV, moves, costume, fusion data          |
 | Auth            | 3002  | Node.js  | JWT, cookie-based auth, per-device sessions           |
 | Receiver        | 3003  | Go       | Kafka producer, client update ingest                  |
 | Storage         | 3004  | Go       | Kafka consumer, MySQL writer, backup jobs             |
@@ -277,7 +280,7 @@ This project is built with scalability, structure, and flexibility in mind. It s
 
 If you're contributing:
 
-- Start with `frontend/src/pages/Pokemon/` or `pokemon_data/services/`
+- Start with `frontend/src/pages/Pokemon/` or `pokemon/internal/`
 - Kafka event schema is your friend
 - For data changes, use the Editor or scripts carefully
 - Always **back up** before making major changes
