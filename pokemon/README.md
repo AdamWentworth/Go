@@ -1,45 +1,103 @@
-# Pokémon Go Nexus Pokemon Data API (Go)
+# Pokemon Data Service (Go) 🐉
 
-Go rewrite of the Node service using `net/http` + `chi` with:
-- In-memory cache of the full `/pokemon/pokemons` payload (JSON + gzip + ETag)
-- Optional cache prewarm on startup
-- Manual cache refresh endpoint
-- Simple CORS allowlist compatible with your current setup
+Production Pokemon API service for Pokemon Go Nexus, implemented in Go (`net/http` + `chi`) as the replacement for the legacy Node `pokemon_data` runtime.
 
-## Endpoints
+## ✨ Highlights
+
+- Fast in-memory response cache for `/pokemon/pokemons` (JSON + gzip + ETag)
+- Startup prewarm support for lower first-request latency
+- Health and readiness probes for deployment safety
+- Internal endpoint protection via CIDR allowlist
+- Production-focused CI/CD gates and rollback-ready deploy flow
+
+## 🔌 Endpoints
 
 - `GET /pokemon/pokemons`
 - `GET /healthz`
-- `GET /internal/cache/stats`
-- `POST /internal/cache/refresh` (optional token header)
+- `GET /readyz`
+- `GET /metrics` (internal-only when enabled)
+- `GET /internal/cache/stats` (internal-only when enabled)
+- `POST /internal/cache/refresh` (internal-only when enabled, optional token)
 
-## Environment
+## ⚙️ Environment Variables
 
-- `PORT` (default 3001)
+### Core
+
+- `PORT` (default `3001`)
 - `SQLITE_PATH` (default `./data/pokego.db`)
-- `CACHE_PREWARM` (default 1)
-- `CACHE_BUILD_TIMEOUT` (default 60s)
-- `CACHE_REFRESH_TOKEN` (optional; if set, require `X-Cache-Refresh-Token`)
-- `ALLOWED_ORIGINS` (csv)
-- `ALLOW_CLOUDFLARE_SUBDOMAINS` (default true)
-- `LOG_LEVEL` (DEBUG/INFO/WARN/ERROR)
+- `LOG_LEVEL` (`DEBUG`, `INFO`, `WARN`, `ERROR`)
 
-## Notes
+### Cache
 
-The builder uses explicit column selection for contract-sensitive tables and still scans rows dynamically into maps for stable JSON assembly.
+- `CACHE_PREWARM` (default `true`)
+- `CACHE_BUILD_TIMEOUT` (default `60s`)
+- `CACHE_REFRESH_TOKEN` (optional)
 
-## Network Prerequisite
+### CORS
 
-`pokemon/docker-compose.yml`, `nginx/docker-compose.yml`, and `monitoring/docker-compose.yml` share a dedicated external Docker network named `pokemon_edge`.
+- `ALLOWED_ORIGINS` (CSV list)
+- `ALLOW_CLOUDFLARE_SUBDOMAINS` (default `true`)
 
-Create it once on each host before starting those services:
+### Internal Access Controls
+
+- `INTERNAL_ONLY_ENABLED` (default enabled in production)
+- `INTERNAL_ONLY_CIDRS` (CSV CIDR list for `/metrics` and `/internal/*`)
+- `TRUSTED_PROXY_CIDRS` (CSV CIDR list for trusted proxy hops)
+
+### Rate Limiting
+
+- `RATE_LIMIT_ENABLED`
+- `RATE_LIMIT_RPS`
+- `RATE_LIMIT_BURST`
+
+## 🧪 Local Run
+
+```bash
+cd Go/pokemon
+go mod tidy
+go run ./cmd/pokemon
+```
+
+Service default URL:
+
+- `http://localhost:3001/pokemon/pokemons`
+
+## 🐳 Docker + Networking
+
+`pokemon`, `nginx`, and `monitoring` share a dedicated external Docker network named `pokemon_edge`.
+
+Create once per host:
 
 ```bash
 docker network create --driver bridge --subnet 172.30.0.0/24 --gateway 172.30.0.1 pokemon_edge
 ```
 
-## Operations
+Compose:
 
-- Deployment/rollback/backup drill procedures: `pokemon/RUNBOOK.md`
+```bash
+cd Go/pokemon
+docker compose up -d
+```
+
+## 🚀 Deployment Notes
+
+- Current production deploy is automated via GitHub Actions manual CD (`deploy-pokemon-prod`).
+- Service is deployed from `Go/pokemon` and replaces the runtime container name `pokemon_data_container`.
+- Legacy Node `pokemon_data` code/image can still be used for rollback if needed.
+
+## 🩺 Troubleshooting
+
+- `502` via frontend usually means nginx upstream/network mismatch.
+- Failing readiness often means DB path/permissions issue on `./data/pokego.db`.
+- Confirm health quickly:
+
+```bash
+curl -i http://localhost:3001/healthz
+curl -i http://localhost:3001/readyz
+```
+
+## 📚 Operations
+
+- Runbook: `pokemon/RUNBOOK.md`
 - SQLite backup script: `pokemon/scripts/sqlite_backup.ps1`
-- SQLite restore drill script: `pokemon/scripts/sqlite_restore_drill.ps1`
+- SQLite restore drill: `pokemon/scripts/sqlite_restore_drill.ps1`
