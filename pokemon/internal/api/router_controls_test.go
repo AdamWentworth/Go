@@ -4,14 +4,18 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"database/sql"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"pokemon_data/internal/cache"
 	"pokemon_data/internal/config"
+
+	_ "modernc.org/sqlite"
 )
 
 // helper: make a cache that can serve /pokemon/pokemons successfully.
@@ -151,5 +155,108 @@ func TestPokemonEndpointReturnsGzipWhenAccepted(t *testing.T) {
 	}
 	if len(raw) == 0 {
 		t.Fatalf("expected non-empty json")
+	}
+}
+
+func newReadyzTestDB(t *testing.T) *sql.DB {
+	t.Helper()
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("open sqlite memory db: %v", err)
+	}
+	return db
+}
+
+func TestReadyzCacheNotReadyWhenPrewarmEnabled(t *testing.T) {
+	cfg := config.Config{
+		CacheBuildTimeout: 2 * time.Second,
+		CachePrewarm:      true,
+	}
+
+	db := newReadyzTestDB(t)
+	defer db.Close()
+
+	h := NewRouter(RouterDeps{
+		Cfg:          cfg,
+		Logger:       nil,
+		DB:           db,
+		PayloadCache: newTestPayloadCache(t),
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+	if rr.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503, got %d body=%q", rr.Code, rr.Body.String())
+	}
+	if !strings.Contains(rr.Body.String(), "cache not ready") {
+		t.Fatalf("expected cache not ready message, got %q", rr.Body.String())
+	}
+}
+
+func TestReadyzOKWhenDBAndCacheReady(t *testing.T) {
+	cfg := config.Config{
+		CacheBuildTimeout: 2 * time.Second,
+		CachePrewarm:      true,
+	}
+
+	db := newReadyzTestDB(t)
+	defer db.Close()
+
+	c := newTestPayloadCache(t)
+	if err := c.EnsureBuilt(context.Background()); err != nil {
+		t.Fatalf("prebuild cache: %v", err)
+	}
+
+	h := NewRouter(RouterDeps{
+		Cfg:          cfg,
+		Logger:       nil,
+		DB:           db,
+		PayloadCache: c,
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%q", rr.Code, rr.Body.String())
+	}
+	if !strings.Contains(rr.Body.String(), `"ok":true`) {
+		t.Fatalf("expected ok=true in response, got %q", rr.Body.String())
+	}
+}
+
+func TestInternalCacheRefreshRequiresToken(t *testing.T) {
+	cfg := config.Config{
+		CacheBuildTimeout:   2 * time.Second,
+		InternalOnlyEnabled: true,
+		InternalOnlyCIDRs:   []string{"127.0.0.0/8"},
+		CacheRefreshToken:   "secret-token",
+	}
+
+	h := NewRouter(RouterDeps{
+		Cfg:          cfg,
+		Logger:       nil,
+		DB:           nil,
+		PayloadCache: newTestPayloadCache(t),
+	})
+
+	// Missing token => forbidden.
+	req1 := httptest.NewRequest(http.MethodPost, "/internal/cache/refresh", nil)
+	req1.RemoteAddr = "127.0.0.1:12345"
+	rr1 := httptest.NewRecorder()
+	h.ServeHTTP(rr1, req1)
+	if rr1.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 without token, got %d", rr1.Code)
+	}
+
+	// Correct token => no content.
+	req2 := httptest.NewRequest(http.MethodPost, "/internal/cache/refresh", nil)
+	req2.RemoteAddr = "127.0.0.1:12345"
+	req2.Header.Set("X-Cache-Refresh-Token", "secret-token")
+	rr2 := httptest.NewRecorder()
+	h.ServeHTTP(rr2, req2)
+	if rr2.Code != http.StatusNoContent {
+		t.Fatalf("expected 204 with token, got %d", rr2.Code)
 	}
 }

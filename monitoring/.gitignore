@@ -1,1 +1,3 @@
 data
+alertmanager-data
+.env

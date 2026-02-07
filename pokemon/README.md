@@ -26,7 +26,7 @@ Go rewrite of the Node service using `net/http` + `chi` with:
 
 ## Notes
 
-This builder intentionally uses dynamic row scanning (`SELECT *`) for many tables so it can preserve extra DB columns without hard-coding the entire schema.
+The builder uses explicit column selection for contract-sensitive tables and still scans rows dynamically into maps for stable JSON assembly.
 
 ## Network Prerequisite
 
@@ -37,3 +37,9 @@ Create it once on each host before starting those services:
 ```bash
 docker network create --driver bridge --subnet 172.30.0.0/24 --gateway 172.30.0.1 pokemon_edge
 ```
+
+## Operations
+
+- Deployment/rollback/backup drill procedures: `pokemon/RUNBOOK.md`
+- SQLite backup script: `pokemon/scripts/sqlite_backup.ps1`
+- SQLite restore drill script: `pokemon/scripts/sqlite_restore_drill.ps1`

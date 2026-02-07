@@ -16,6 +16,27 @@ services:
       pokemon_edge:
         ipv4_address: 172.30.0.11
 
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    entrypoint:
+      - /bin/sh
+      - /etc/alertmanager/entrypoint.sh
+    ports:
+      - "127.0.0.1:9093:9093"
+    environment:
+      ALERT_EMAIL_FROM: ${ALERT_EMAIL_FROM:-alerts@pokemongonexus.com}
+      ALERT_EMAIL_USER: ${ALERT_EMAIL_USER:-}
+      ALERT_EMAIL_PASS: ${ALERT_EMAIL_PASS:-}
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.tmpl.yml:ro
+      - ./alertmanager-entrypoint.sh:/etc/alertmanager/entrypoint.sh:ro
+      - ./alertmanager-data:/alertmanager
+    restart: unless-stopped
+    networks:
+      pokemon_edge:
+        ipv4_address: 172.30.0.13
+
 networks:
   kafka_default:
     external: true
