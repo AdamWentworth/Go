@@ -4,8 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       image_ref:
-        description: "Full image reference to deploy (example: adamwentworth/pokemon_service_go:sha-<commit> or :latest)"
-        required: true
+        description: "Image to deploy: full ref, or just tag (latest / sha-<commit>). Empty defaults to latest."
+        required: false
+        default: "latest"
         type: string
       deploy_root:
         description: "Absolute path to the Go repo on prod runner"
@@ -88,11 +89,32 @@ jobs:
 
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
           SERVICE_NAME="${{ inputs.service_name }}"
-          TARGET_IMAGE="${{ inputs.image_ref }}"
+          IMAGE_REPO="adamwentworth/pokemon_service_go"
+          RAW_IMAGE_INPUT="${{ inputs.image_ref }}"
+          TARGET_IMAGE=""
           COMPOSE_FILE="${DEPLOY_ROOT}/pokemon/docker-compose.yml"
           ENV_FILE="${DEPLOY_ROOT}/pokemon/.env"
           CONTAINER_NAME="pokemon_data_container"
           COMPOSE_PROJECT_NAME="pokemon"
+
+          # Accept either:
+          # - full ref: adamwentworth/pokemon_service_go:sha-abc...
+          # - bare tag: latest or sha-abc...
+          # - accidental ":latest" (treated as latest on IMAGE_REPO)
+          if [[ -z "${RAW_IMAGE_INPUT}" ]]; then
+            TARGET_IMAGE="${IMAGE_REPO}:latest"
+          elif [[ "${RAW_IMAGE_INPUT}" == :* ]]; then
+            TARGET_IMAGE="${IMAGE_REPO}${RAW_IMAGE_INPUT}"
+          elif [[ "${RAW_IMAGE_INPUT}" == */* ]]; then
+            TARGET_IMAGE="${RAW_IMAGE_INPUT}"
+          else
+            TARGET_IMAGE="${IMAGE_REPO}:${RAW_IMAGE_INPUT}"
+          fi
+
+          # If full ref omitted tag/digest, default to latest.
+          if [[ "${TARGET_IMAGE}" == */* && "${TARGET_IMAGE}" != *:* && "${TARGET_IMAGE}" != *@* ]]; then
+            TARGET_IMAGE="${TARGET_IMAGE}:latest"
+          fi
 
           PREVIOUS_IMAGE="$(docker inspect --format '{{.Config.Image}}' "${CONTAINER_NAME}" 2>/dev/null || true)"
           if [[ -n "${PREVIOUS_IMAGE}" ]]; then
