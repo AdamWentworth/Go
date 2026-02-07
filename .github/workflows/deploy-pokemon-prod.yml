@@ -64,6 +64,9 @@ jobs:
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
           COMPOSE_FILE="${DEPLOY_ROOT}/pokemon/docker-compose.yml"
           ENV_FILE="${DEPLOY_ROOT}/pokemon/.env"
+          NEW_DB_DIR="${DEPLOY_ROOT}/pokemon/data"
+          OLD_DB_DIR="${DEPLOY_ROOT}/pokemon_data/data"
+          DB_FILE="pokego.db"
           EDGE_NETWORK="pokemon_edge"
           EDGE_SUBNET="172.30.0.0/24"
           EDGE_GATEWAY="172.30.0.1"
@@ -81,6 +84,14 @@ jobs:
           if [[ ! -f "${ENV_FILE}" ]]; then
             echo "Env file not found: ${ENV_FILE}" >&2
             exit 1
+          fi
+
+          mkdir -p "${NEW_DB_DIR}"
+          if [[ ! -f "${NEW_DB_DIR}/${DB_FILE}" && -f "${OLD_DB_DIR}/${DB_FILE}" ]]; then
+            echo "Seeding pokemon SQLite DB from ${OLD_DB_DIR}/${DB_FILE}"
+            cp "${OLD_DB_DIR}/${DB_FILE}" "${NEW_DB_DIR}/${DB_FILE}"
+            [[ -f "${OLD_DB_DIR}/${DB_FILE}-wal" ]] && cp "${OLD_DB_DIR}/${DB_FILE}-wal" "${NEW_DB_DIR}/${DB_FILE}-wal" || true
+            [[ -f "${OLD_DB_DIR}/${DB_FILE}-shm" ]] && cp "${OLD_DB_DIR}/${DB_FILE}-shm" "${NEW_DB_DIR}/${DB_FILE}-shm" || true
           fi
 
           if ! docker network inspect "${EDGE_NETWORK}" >/dev/null 2>&1; then
@@ -158,10 +169,17 @@ jobs:
             --env-file "${ENV_FILE}" \
             up -d --no-deps --force-recreate "${SERVICE_NAME}"
 
-          echo "Waiting for in-container /readyz"
+          CONTAINER_IP="$(docker inspect -f '{{with index .NetworkSettings.Networks "pokemon_edge"}}{{.IPAddress}}{{end}}' "${CONTAINER_NAME}" 2>/dev/null || true)"
+          if [[ -z "${CONTAINER_IP}" ]]; then
+            echo "Failed to determine container IP on pokemon_edge for ${CONTAINER_NAME}" >&2
+            docker logs --tail 200 "${CONTAINER_NAME}" || true
+            exit 1
+          fi
+
+          echo "Waiting for /readyz on ${CONTAINER_IP}:3001"
           HEALTH_OK=0
           for _ in $(seq 1 30); do
-            if docker exec "${CONTAINER_NAME}" /bin/sh -c 'wget -q -O /dev/null http://127.0.0.1:3001/readyz' >/dev/null 2>&1; then
+            if curl -fsS --max-time 2 "http://${CONTAINER_IP}:3001/readyz" >/dev/null 2>&1; then
               HEALTH_OK=1
               break
             fi
@@ -170,6 +188,12 @@ jobs:
 
           if [[ "${HEALTH_OK}" -ne 1 ]]; then
             echo "New deployment failed readiness checks." >&2
+            echo "Container status:"
+            docker ps -a --filter "name=${CONTAINER_NAME}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" || true
+            echo "Recent container logs:"
+            docker logs --tail 200 "${CONTAINER_NAME}" || true
+            echo "Current /readyz payload (if reachable):"
+            curl -sS --max-time 3 "http://${CONTAINER_IP}:3001/readyz" || true
             if [[ -n "${PREVIOUS_IMAGE}" ]]; then
               echo "Rolling back to ${PREVIOUS_IMAGE}"
               POKEMON_IMAGE="${PREVIOUS_IMAGE}" docker compose \
@@ -178,6 +202,7 @@ jobs:
                 up -d --no-deps --force-recreate "${SERVICE_NAME}"
             else
               echo "Rollback skipped: previous image not found." >&2
+              echo "Manual rollback option: deploy adamwentworth/pokemon_data:latest"
             fi
             exit 1
           fi
