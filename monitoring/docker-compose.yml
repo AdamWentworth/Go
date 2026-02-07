@@ -23,7 +23,7 @@ services:
       - /bin/sh
       - /etc/alertmanager/entrypoint.sh
     ports:
-      - "127.0.0.1:9093:9093"
+      - "127.0.0.1:19093:9093"
     environment:
       ALERT_EMAIL_FROM: ${ALERT_EMAIL_FROM:-alerts@pokemongonexus.com}
       ALERT_EMAIL_USER: ${ALERT_EMAIL_USER:-}

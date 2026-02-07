@@ -45,3 +45,8 @@ docker compose -f monitoring/docker-compose.yml --env-file monitoring/.env up -d
   - Ensures required Docker networks exist
   - Deploys `prometheus` + `alertmanager`
   - Checks health endpoints before success
+
+Host ports used by monitoring stack:
+
+- Prometheus: `127.0.0.1:9090`
+- Alertmanager: `127.0.0.1:19093` (container port remains `9093`)
