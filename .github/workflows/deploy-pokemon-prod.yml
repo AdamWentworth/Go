@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       image_ref:
-        description: "Full image reference to deploy (example: adamwentworth/pokemon_service_go:sha-<commit>)"
+        description: "Full image reference to deploy (example: adamwentworth/pokemon_service_go:sha-<commit> or :latest)"
         required: true
         type: string
       deploy_root:
@@ -92,6 +92,7 @@ jobs:
           COMPOSE_FILE="${DEPLOY_ROOT}/pokemon/docker-compose.yml"
           ENV_FILE="${DEPLOY_ROOT}/pokemon/.env"
           CONTAINER_NAME="pokemon_data_container"
+          COMPOSE_PROJECT_NAME="pokemon"
 
           PREVIOUS_IMAGE="$(docker inspect --format '{{.Config.Image}}' "${CONTAINER_NAME}" 2>/dev/null || true)"
           if [[ -n "${PREVIOUS_IMAGE}" ]]; then
@@ -103,16 +104,24 @@ jobs:
           echo "Pulling target image: ${TARGET_IMAGE}"
           docker pull "${TARGET_IMAGE}"
 
+          # If an existing container with the same fixed name was created by another
+          # compose project (for example old node pokemon_data stack), remove it first.
+          EXISTING_PROJECT="$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project" }}' "${CONTAINER_NAME}" 2>/dev/null || true)"
+          if [[ -n "${EXISTING_PROJECT}" && "${EXISTING_PROJECT}" != "${COMPOSE_PROJECT_NAME}" ]]; then
+            echo "Removing existing ${CONTAINER_NAME} from compose project ${EXISTING_PROJECT} before deploy."
+            docker rm -f "${CONTAINER_NAME}"
+          fi
+
           echo "Deploying ${SERVICE_NAME} with image ${TARGET_IMAGE}"
           POKEMON_IMAGE="${TARGET_IMAGE}" docker compose \
             -f "${COMPOSE_FILE}" \
             --env-file "${ENV_FILE}" \
             up -d --no-deps --force-recreate "${SERVICE_NAME}"
 
-          echo "Waiting for /readyz on 127.0.0.1:3001"
+          echo "Waiting for in-container /readyz"
           HEALTH_OK=0
           for _ in $(seq 1 30); do
-            if curl -fsS --max-time 2 http://127.0.0.1:3001/readyz >/dev/null; then
+            if docker exec "${CONTAINER_NAME}" /bin/sh -c 'wget -q -O /dev/null http://127.0.0.1:3001/readyz' >/dev/null 2>&1; then
               HEALTH_OK=1
               break
             fi

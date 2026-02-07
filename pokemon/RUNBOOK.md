@@ -16,17 +16,15 @@ Avoid building directly on prod unless you are troubleshooting.
 
 Set these in GitHub Actions:
 
-- Secret: `DOCKERHUB_USERNAME`
 - Secret: `DOCKERHUB_TOKEN` (DockerHub access token)
-- Repository variable: `DOCKERHUB_REPO` (for example `pokemon_service_go`)
 
-DockerHub stores each image as its own repository under your namespace
-(for example `adamwentworth/pokemon_service_go`).
+The CI workflow currently pushes to a hardcoded image repository:
+`adamwentworth/pokemon_service_go`.
 
 The workflow tags and pushes:
 
-- `USERNAME/REPO:sha-<git-sha>`
-- `USERNAME/REPO:latest`
+- `adamwentworth/pokemon_service_go:sha-<git-sha>`
+- `adamwentworth/pokemon_service_go:latest`
 
 ## Deploy By Digest
 
