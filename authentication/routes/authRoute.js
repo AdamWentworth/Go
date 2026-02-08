@@ -499,9 +499,7 @@ router.put('/update/:id', requireAuth, async (req, res) => {
                 trainerCode: updatedUser.trainerCode || '',
                 allowLocation: updatedUser.allowLocation || false,
                 location: updatedUser.location || '',
-                coordinates: updatedUser.coordinates || '',
-                accessTokenExpiry: null,
-                refreshTokenExpiry: null
+                coordinates: updatedUser.coordinates || ''
             },
             passwordUpdated, // Indicates if the password was changed
             message: passwordUpdated

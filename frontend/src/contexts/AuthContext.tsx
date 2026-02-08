@@ -225,9 +225,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: response.error };
       }
 
-      /* merge the changes coming back from Auth‑API */
-      const prev     = userRef.current!;
-      const updated  = { ...prev, ...response.data.data } as User;
+      /* Merge account fields from Auth API, but preserve existing token-expiry
+         values unless the API explicitly returns non-empty replacements. */
+      const prev = userRef.current!;
+      const incoming = (response.data?.data || {}) as Partial<User>;
+      const updated = {
+        ...prev,
+        ...incoming,
+        accessTokenExpiry:
+          incoming.accessTokenExpiry && String(incoming.accessTokenExpiry).trim() !== ''
+            ? String(incoming.accessTokenExpiry)
+            : prev.accessTokenExpiry,
+        refreshTokenExpiry:
+          incoming.refreshTokenExpiry && String(incoming.refreshTokenExpiry).trim() !== ''
+            ? String(incoming.refreshTokenExpiry)
+            : prev.refreshTokenExpiry,
+      } as User;
 
       setUser(updated);
       userRef.current = updated;
