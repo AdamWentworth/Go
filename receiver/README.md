@@ -213,7 +213,7 @@ govulncheck ./...
 
 Workflows:
 
-- CI: `.github/workflows/receiver-ci.yml`
+- CI: `.github/workflows/ci-receiver.yml`
 - Deploy: `.github/workflows/deploy-receiver-prod.yml`
 
 Deploy workflow behavior:

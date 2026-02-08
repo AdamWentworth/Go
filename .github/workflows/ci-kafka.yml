@@ -1,15 +1,15 @@
-name: kafka-ci
+name: ci-kafka
 
 on:
   pull_request:
     paths:
       - "kafka/**"
-      - ".github/workflows/kafka-ci.yml"
+      - ".github/workflows/ci-kafka.yml"
   push:
     branches: ["main", "master"]
     paths:
       - "kafka/**"
-      - ".github/workflows/kafka-ci.yml"
+      - ".github/workflows/ci-kafka.yml"
   workflow_dispatch: {}
 
 permissions:

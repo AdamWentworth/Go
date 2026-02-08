@@ -1,15 +1,15 @@
-name: receiver-ci
+name: ci-receiver
 
 on:
   pull_request:
     paths:
       - "receiver/**"
-      - ".github/workflows/receiver-ci.yml"
+      - ".github/workflows/ci-receiver.yml"
   push:
     branches: ["main", "master"]
     paths:
       - "receiver/**"
-      - ".github/workflows/receiver-ci.yml"
+      - ".github/workflows/ci-receiver.yml"
   workflow_dispatch: {}
 
 permissions:

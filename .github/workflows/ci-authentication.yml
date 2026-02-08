@@ -1,15 +1,15 @@
-﻿name: authentication-ci
+name: ci-authentication
 
 on:
   pull_request:
     paths:
       - "authentication/**"
-      - ".github/workflows/authentication-ci.yml"
+      - ".github/workflows/ci-authentication.yml"
   push:
     branches: ["main", "master"]
     paths:
       - "authentication/**"
-      - ".github/workflows/authentication-ci.yml"
+      - ".github/workflows/ci-authentication.yml"
   workflow_dispatch: {}
 
 permissions:

@@ -135,7 +135,7 @@ Kafka is not part of the Pokemon service request/data path. This service reads d
 
 ```mermaid
 flowchart LR
-  Change[Push or PR touching pokemon/**] --> CI[pokemon-data-ci]
+  Change[Push or PR touching pokemon/**] --> CI[ci-pokemon-data]
   CI --> Quality[Tests + SLO + Coverage + Lint + Vet + Govulncheck]
   Quality --> Security[Docker build + Trivy scans + SBOM]
   Security --> PushGate{DOCKERHUB_TOKEN set?}
