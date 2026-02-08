@@ -1,16 +1,23 @@
 # receiver docker compose
 
-version: '3.8'
-
 services:
   receiver_service:
-    image: adamwentworth/receiver_service:latest
+    image: ${RECEIVER_IMAGE:-adamwentworth/receiver_service:latest}
     container_name: receiver_service
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3003:3003"
+      - "127.0.0.1:3003:3003"
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3003/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     networks:
       - kafka_default
 

@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"time"
 )
@@ -9,34 +10,54 @@ import (
 const retryFile = "pending_kafka_data.json"
 
 func saveToLocalStorage(data []byte) {
-	err := os.WriteFile(retryFile, data, 0644)
+	tmpFile := retryFile + ".tmp"
+	err := os.WriteFile(tmpFile, data, 0o600)
 	if err != nil {
 		logger.Errorf("Failed to write to local storage: %v", err)
+		return
+	}
+	if err := os.Rename(tmpFile, retryFile); err != nil {
+		logger.Errorf("Failed to rotate retry storage file: %v", err)
 		return
 	}
 	logger.Info("Data saved to local storage for retry")
 }
 
-func retrySendingToKafka() {
-	for {
-		if _, err := os.Stat(retryFile); err == nil {
-			data, err := os.ReadFile(retryFile)
-			if err == nil {
-				err = produceToKafka(data)
-				if err == nil {
-					logger.Info("Successfully sent pending data to Kafka")
-					os.Remove(retryFile)
-				} else {
-					logger.Warnf("Failed to resend data to Kafka: %v", err)
-				}
-			} else {
-				logger.Errorf("Failed to read from local storage: %v", err)
+func startRetryWorker(ctx context.Context) {
+	interval := time.Duration(kafkaConfig.RetryInterval) * time.Second
+	if interval <= 0 {
+		interval = 60 * time.Second
+	}
+
+	ticker := time.NewTicker(interval)
+	go func() {
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				retrySendingToKafka()
 			}
 		}
-		time.Sleep(60 * time.Second) // Retry every 60 seconds
-	}
+	}()
 }
 
-func init() {
-	go retrySendingToKafka() // Start the retry goroutine
+func retrySendingToKafka() {
+	if _, err := os.Stat(retryFile); err != nil {
+		return
+	}
+	data, err := os.ReadFile(retryFile)
+	if err != nil {
+		logger.Errorf("Failed to read from local storage: %v", err)
+		return
+	}
+
+	err = produceToKafka(data)
+	if err == nil {
+		logger.Info("Successfully sent pending data to Kafka")
+		_ = os.Remove(retryFile)
+		return
+	}
+	logger.Warnf("Failed to resend data to Kafka: %v", err)
 }

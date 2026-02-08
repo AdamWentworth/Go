@@ -2,9 +2,13 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
+	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -197,6 +201,9 @@ func detectSuspiciousPatterns(c *fiber.Ctx) bool {
 // ------------------------------------------------------------
 
 func main() {
+	shutdownCtx, shutdownCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer shutdownCancel()
+
 	// 1. Initialize the logger
 	initLogger()
 
@@ -212,16 +219,23 @@ func main() {
 
 	// 4. Initialize Kafka producer
 	initializeKafkaProducer()
+	startRetryWorker(shutdownCtx)
 
 	// 5. Create new Fiber app with custom error handler and body limit
 	app := fiber.New(fiber.Config{
-		ErrorHandler: errorHandler,     // your custom error handler
-		BodyLimit:    50 * 1024 * 1024, // 50 MB
+		ErrorHandler:          errorHandler,
+		BodyLimit:             10 * 1024 * 1024, // 10 MB
+		ReadTimeout:           10 * time.Second,
+		WriteTimeout:          30 * time.Second,
+		IdleTimeout:           60 * time.Second,
+		DisableStartupMessage: true,
 	})
 
 	// 6. Register custom logger and recovery middleware
+	registerMetrics()
 	app.Use(requestLogger)
 	app.Use(recoverMiddleware)
+	app.Use(metricsMiddleware)
 
 	// 7. Set up Security Middleware
 	securityConfig := NewSecurityConfig()
@@ -229,23 +243,54 @@ func main() {
 	// securityConfig.BlockedIPs["192.168.1.100"] = true
 	app.Use(SecurityMiddleware(securityConfig))
 
-	// 8. Set up CORS (allow requests from http://localhost:3000)
+	// 8. Set up CORS
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://localhost:3000",
+		AllowOrigins:     strings.Join(allowedOrigins, ","),
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Content-Type,Authorization,X-Requested-With",
 		AllowCredentials: true,
 	}))
 
-	// 9. Log server start
-	port := "3003"
-	logger.Infof("Server started on port %s", port)
+	// 9. Health/readiness endpoints
+	app.Get("/healthz", func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
+	})
+	app.Get("/readyz", func(c *fiber.Ctx) error {
+		if !kafkaProducerReady() {
+			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+				"ok":      false,
+				"message": "kafka producer not ready",
+			})
+		}
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
+	})
+	app.Get("/metrics", metricsHandler())
 
 	// 10. Define application routes
 	app.Post("/api/batchedUpdates", handleBatchedUpdates)
 
-	// 11. Start the Fiber server
-	if err := app.Listen(":" + port); err != nil {
-		logger.Fatal("Error starting server:", err)
+	// 11. Start the Fiber server with graceful shutdown
+	errCh := make(chan error, 1)
+	go func() {
+		logger.Infof("Server started on port %s", serverPort)
+		if err := app.Listen(":" + serverPort); err != nil {
+			errCh <- err
+		}
+	}()
+
+	select {
+	case err := <-errCh:
+		if err != nil && !(shutdownCtx.Err() != nil && strings.Contains(err.Error(), "closed")) {
+			logger.Fatal("Error starting server:", err)
+		}
+	case <-shutdownCtx.Done():
+		logger.Info("Shutdown signal received")
+	}
+
+	if err := app.ShutdownWithTimeout(10 * time.Second); err != nil {
+		logger.Errorf("Fiber shutdown error: %v", err)
+	}
+	if err := closeKafkaProducer(); err != nil {
+		logger.Errorf("Kafka producer close error: %v", err)
 	}
 }

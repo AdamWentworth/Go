@@ -1,13 +1,27 @@
-# Dockerfile receiver
-FROM golang:1.22-alpine
+FROM golang:1.23-alpine AS build
 
-WORKDIR /app
+WORKDIR /src
+
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . .
 
-RUN go build -o receiver_service
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/receiver_service .
 
-# Copy the env file if needed
-COPY .env .
+FROM alpine:3.20
 
-CMD ["./receiver_service"]
+RUN apk add --no-cache ca-certificates tzdata \
+    && addgroup -S app \
+    && adduser -S -G app app \
+    && mkdir -p /app \
+    && chown -R app:app /app
+
+WORKDIR /app
+COPY --from=build /out/receiver_service /usr/local/bin/receiver_service
+
+USER app
+EXPOSE 3003
+
+CMD ["receiver_service"]
+

@@ -1,0 +1,112 @@
+name: receiver-ci
+
+on:
+  pull_request:
+    paths:
+      - "receiver/**"
+      - ".github/workflows/receiver-ci.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "receiver/**"
+      - ".github/workflows/receiver-ci.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: receiver
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.6"
+          cache: true
+          cache-dependency-path: receiver/go.sum
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Test
+        run: go test ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Govulncheck
+        run: govulncheck ./...
+
+  container-security-build:
+    runs-on: ubuntu-latest
+    needs: quality-gates
+    env:
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      IMAGE_REPO: adamwentworth/receiver_service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Container Image
+        run: docker build -t receiver_service:ci-${{ github.sha }} ./receiver
+
+      - name: Trivy Filesystem Scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: ./receiver
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Trivy Image Scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: receiver_service:ci-${{ github.sha }}
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Generate SBOM (CycloneDX)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: receiver_service:ci-${{ github.sha }}
+          format: cyclonedx
+          output: receiver_image_sbom.cdx.json
+          exit-code: "0"
+
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: receiver-image-sbom
+          path: receiver_image_sbom.cdx.json
+          if-no-files-found: error
+
+      - name: DockerHub Login
+        if: ${{ github.event_name != 'pull_request' && env.DOCKERHUB_TOKEN != '' }}
+        run: |
+          echo "${DOCKERHUB_TOKEN}" | docker login -u "adamwentworth" --password-stdin
+
+      - name: Push Image To DockerHub
+        if: ${{ github.event_name != 'pull_request' && env.DOCKERHUB_TOKEN != '' }}
+        run: |
+          docker tag receiver_service:ci-${{ github.sha }} ${IMAGE_REPO}:sha-${{ github.sha }}
+          docker tag receiver_service:ci-${{ github.sha }} ${IMAGE_REPO}:latest
+          docker push ${IMAGE_REPO}:sha-${{ github.sha }}
+          docker push ${IMAGE_REPO}:latest
+
+      - name: DockerHub Push Skipped
+        if: ${{ github.event_name != 'pull_request' && env.DOCKERHUB_TOKEN == '' }}
+        run: |
+          echo "DockerHub push skipped. Set DOCKERHUB_TOKEN repository secret."
+

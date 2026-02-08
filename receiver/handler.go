@@ -3,22 +3,25 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
-	"net/http"
+	"io"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
 
-func handleBatchedUpdates(c *fiber.Ctx) error {
-	if c.Method() == http.MethodOptions {
-		c.Set("Access-Control-Allow-Origin", "http://localhost:3000, https://pokemongonexus.com, https://www.pokemongonexus.com")
-		c.Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		c.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-		c.Set("Access-Control-Allow-Credentials", "true")
-		return c.SendStatus(http.StatusOK)
-	}
+const maxUpdatesPerRequest = 5000
 
+var kafkaProducerFunc = produceToKafka
+
+type BatchedUpdatesRequest struct {
+	Location       map[string]any `json:"location"`
+	PokemonUpdates []any          `json:"pokemonUpdates"`
+	TradeUpdates   []any          `json:"tradeUpdates"`
+}
+
+func handleBatchedUpdates(c *fiber.Ctx) error {
 	traceID := uuid.New().String()
 	// Store trace_id in context for middleware logging
 	c.Locals("trace_id", traceID)
@@ -36,28 +39,46 @@ func handleBatchedUpdates(c *fiber.Ctx) error {
 	// Store user_id in context for middleware logging
 	c.Locals("user_id", userID)
 
-	// Parse incoming request data
-	var requestData map[string]interface{}
-	if err := c.BodyParser(&requestData); err != nil {
+	var requestData BatchedUpdatesRequest
+	body := c.Body()
+	if len(body) > 0 {
+		dec := json.NewDecoder(bytes.NewReader(body))
+		dec.UseNumber()
+		if err := dec.Decode(&requestData); err != nil {
+			logger.WithFields(map[string]interface{}{
+				"trace_id": traceID,
+				"user_id":  userID,
+				"error":    err.Error(),
+			}).Errorf("Failed to decode request body: %v", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Bad Request"})
+		}
+
+		if err := dec.Decode(&struct{}{}); err != io.EOF {
+			logger.WithFields(map[string]interface{}{
+				"trace_id": traceID,
+				"user_id":  userID,
+				"error":    "multiple JSON values in body",
+			}).Warn("Rejected malformed request body")
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Bad Request"})
+		}
+	}
+
+	// If they're missing or empty, default to empty arrays.
+	if requestData.PokemonUpdates == nil {
+		requestData.PokemonUpdates = []any{}
+	}
+	if requestData.TradeUpdates == nil {
+		requestData.TradeUpdates = []any{}
+	}
+
+	if len(requestData.PokemonUpdates) > maxUpdatesPerRequest || len(requestData.TradeUpdates) > maxUpdatesPerRequest {
 		logger.WithFields(map[string]interface{}{
 			"trace_id": traceID,
 			"user_id":  userID,
-			"error":    err.Error(),
-		}).Errorf("Failed to parse request body: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Bad Request"})
-	}
-
-	// Extract the top-level fields from the requestData
-	location, _ := requestData["location"].(map[string]interface{})
-
-	// If they're missing or empty, default to empty arrays
-	rawPokemonUpdates, okPoke := requestData["pokemonUpdates"].([]interface{})
-	if !okPoke {
-		rawPokemonUpdates = []interface{}{} // default
-	}
-	rawTradeUpdates, okTrade := requestData["tradeUpdates"].([]interface{})
-	if !okTrade {
-		rawTradeUpdates = []interface{}{} // default
+			"pokemon":  len(requestData.PokemonUpdates),
+			"trade":    len(requestData.TradeUpdates),
+		}).Warn("Rejected oversized updates batch")
+		return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{"message": "Too many updates in a single request"})
 	}
 
 	// Prepare data to send to Kafka
@@ -66,9 +87,9 @@ func handleBatchedUpdates(c *fiber.Ctx) error {
 		"username":       username,
 		"device_id":      deviceID,
 		"trace_id":       traceID,
-		"location":       location,
-		"pokemonUpdates": rawPokemonUpdates,
-		"tradeUpdates":   rawTradeUpdates,
+		"location":       requestData.Location,
+		"pokemonUpdates": requestData.PokemonUpdates,
+		"tradeUpdates":   requestData.TradeUpdates,
 	}
 
 	message, err := json.Marshal(data)
@@ -82,7 +103,7 @@ func handleBatchedUpdates(c *fiber.Ctx) error {
 	}
 
 	// Produce to Kafka
-	err = produceToKafka(message)
+	err = kafkaProducerFunc(message)
 	if err != nil {
 		logger.WithFields(map[string]interface{}{
 			"trace_id": traceID,
@@ -93,20 +114,17 @@ func handleBatchedUpdates(c *fiber.Ctx) error {
 	}
 
 	// Respond to the client
-	c.Set("Access-Control-Allow-Origin", "http://localhost:3000")
-	c.Set("Access-Control-Allow-Credentials", "true")
-
 	// Log successful operation with detailed fields but keeping the same terminal message
 	logger.WithFields(map[string]interface{}{
 		"trace_id":       traceID,
 		"user_id":        userID,
 		"device_id":      deviceID,
-		"pokemonUpdates": rawPokemonUpdates,
-		"tradeUpdates":   rawTradeUpdates,
-		"has_location":   location != nil,
+		"pokemonUpdates": requestData.PokemonUpdates,
+		"tradeUpdates":   requestData.TradeUpdates,
+		"has_location":   requestData.Location != nil,
 	}).Infof(
 		"User %s sent %d Pokemon updates + %d Trade updates to Kafka",
-		username, len(rawPokemonUpdates), len(rawTradeUpdates),
+		username, len(requestData.PokemonUpdates), len(requestData.TradeUpdates),
 	)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Batched updates successfully processed"})

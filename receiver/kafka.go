@@ -3,7 +3,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"bytes"
@@ -15,6 +17,7 @@ import (
 const maxMessageSize = 3145728 // 3 MB in bytes
 
 var writer *kafka.Writer
+var writerMu sync.RWMutex
 
 // Initialize Kafka Producer using kafka-go
 func initializeKafkaProducer() {
@@ -27,6 +30,9 @@ func initializeKafkaProducer() {
 	}
 
 	// Create the Kafka writer with optimized settings
+	writerMu.Lock()
+	defer writerMu.Unlock()
+
 	writer = &kafka.Writer{
 		Addr:         kafka.TCP(kafkaConfig.Hostname + ":" + kafkaConfig.Port),
 		Topic:        kafkaConfig.Topic,
@@ -62,51 +68,65 @@ func produceToKafka(data []byte) error {
 		return err
 	}
 
-	// Check the compressed message size
-	maxChunkSize := maxMessageSize - 1024 // leave some buffer
-	if len(compressedData) > maxChunkSize {
-		logger.Warnf("Splitting large compressed message of size %d bytes", len(compressedData))
+	if len(compressedData) > maxMessageSize {
+		err := fmt.Errorf("compressed message too large: %d bytes (max %d)", len(compressedData), maxMessageSize)
+		logger.Error(err)
+		saveToLocalStorage(data)
+		return err
+	}
 
-		// Split the message into chunks if it's too large
-		for i := 0; i < len(compressedData); i += maxChunkSize {
-			end := i + maxChunkSize
-			if end > len(compressedData) {
-				end = len(compressedData)
-			}
+	msg := kafka.Message{
+		Key:   []byte("Key"),
+		Value: compressedData,
+		Time:  time.Now().UTC(),
+	}
 
-			chunk := compressedData[i:end]
-			msg := kafka.Message{
-				Key:   []byte(fmt.Sprintf("Key-%d", i)),
-				Value: chunk,
-			}
+	maxRetries := kafkaConfig.MaxRetries
+	if maxRetries < 1 {
+		maxRetries = 1
+	}
+	retryDelay := time.Duration(kafkaConfig.RetryInterval) * time.Second
 
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-
-			err := writer.WriteMessages(ctx, msg)
-			if err != nil {
-				logger.Errorf("Failed to write chunked message to Kafka: %v", err)
-				saveToLocalStorage(data) // Save original data for retry, in case it fails
-				return err
-			}
-		}
-	} else {
-		// Send the compressed message if it's under the size limit
-		msg := kafka.Message{
-			Key:   []byte("Key"),
-			Value: compressedData,
+	var writeErr error
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		writerMu.RLock()
+		w := writer
+		writerMu.RUnlock()
+		if w == nil {
+			writeErr = errors.New("kafka writer not initialized")
+			break
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		err := writer.WriteMessages(ctx, msg)
-		if err != nil {
-			logger.Errorf("Failed to write message to Kafka: %v", err)
-			saveToLocalStorage(data) // Save original data for retry, in case it fails
-			return err
+		writeErr = w.WriteMessages(ctx, msg)
+		cancel()
+		if writeErr == nil {
+			return nil
+		}
+		if attempt < maxRetries {
+			logger.Warnf("Kafka write attempt %d/%d failed: %v", attempt, maxRetries, writeErr)
+			time.Sleep(retryDelay)
 		}
 	}
 
-	return nil
+	logger.Errorf("Failed to write message to Kafka: %v", writeErr)
+	saveToLocalStorage(data)
+	return writeErr
+}
+
+func kafkaProducerReady() bool {
+	writerMu.RLock()
+	defer writerMu.RUnlock()
+	return writer != nil
+}
+
+func closeKafkaProducer() error {
+	writerMu.Lock()
+	defer writerMu.Unlock()
+	if writer == nil {
+		return nil
+	}
+	err := writer.Close()
+	writer = nil
+	return err
 }

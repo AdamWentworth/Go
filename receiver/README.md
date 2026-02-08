@@ -1,164 +1,118 @@
-# 📦 Receiver Service — Pokémon Go Nexus
+﻿# Receiver Service (Go + Fiber) 📦
 
-This Go-based microservice accepts batched client updates (Pokémon ownership, trade updates, and optional location) and forwards them to Kafka for further processing.
+Receives batched client updates and publishes them to Kafka topic `batchedUpdates`.
 
----
+## ✅ Current Production Posture
 
-## 🧩 Overview
+- Dependency vulnerabilities remediated (`fiber`, `jwt/v4`, `x/net`)
+- Strict JWT verification (HS256, `exp` required, required user claims)
+- Safer JSON decoding using Go stdlib (no `BodyParser` path)
+- Request body limit (`10MB`) and per-batch update limits (`5000`)
+- Health and readiness endpoints for deploy automation
+- Graceful shutdown and Kafka producer close on SIGTERM/SIGINT
+- Retry worker for unsent payload file (`pending_kafka_data.json`)
+- CI with tests, vet, govulncheck, Trivy, and SBOM
+- Manual CD with health-check + rollback workflow
 
-| Feature                     | Description                                       |
-|----------------------------|---------------------------------------------------|
-| 🛡️ Security                | Rate limiting, TLS version/cipher validation, basic XSS/SQLi detection |
-| 🔐 Auth                    | Verifies JWT access token and extracts user metadata |
-| 🛰️ Kafka Integration       | Publishes parsed update payloads to `batchedUpdates` topic |
-| 🌐 CORS Enabled            | Accepts requests from React frontend domains     |
-| 🪵 Logging                 | Includes trace ID, user ID, device ID, and full update metadata |
+## 🔌 Endpoints
 
----
+- `POST /api/batchedUpdates`
+- `GET /healthz`
+- `GET /readyz`
+- `GET /metrics`
 
-## 📁 Project Structure
+## 🔐 Authentication
 
-```
-receiver/
-├── .env                      # Environment config
-├── config/
-│   └── app_conf.yml          # Kafka config and other app settings
-├── main.go                   # Entry point
-├── handler.go                # Handles /api/batchedUpdates route
-├── auth.go                   # JWT token verification
-├── kafka.go                  # Kafka producer logic
-├── config.go                 # Loads app_conf.yml
-├── logging.go                # Sets up logger
-├── retry.go                  # Kafka retry logic
-├── go.mod / go.sum           # Go modules
-└── app.log                   # Runtime logs
-```
+The service validates `accessToken` cookie and requires:
 
----
+- valid HS256 signature
+- `exp` claim present and valid
+- `user_id`, `username`, and `device_id` claims
 
-## 🔐 Security Features
+Invalid tokens return `401 Unauthorized`.
 
-Custom middleware enforces:
-
-- 📈 **Rate limiting**: 60 requests per minute per IP
-- 🔐 **TLS**: Only accepts TLS 1.2 / 1.3 with strong cipher suites
-- 🚫 **Blocked IP list**
-- 🧪 **Pattern detection**: Basic SQL injection / XSS heuristics
-- 📏 **Header size limit**: 8KB
-
----
-
-## 🔁 API Endpoint
-
-### `POST /api/batchedUpdates`
-
-**Headers:**
-
-- `Authorization: Bearer <JWT>`
-- `Content-Type: application/json`
-
-**Payload:**
+## 📨 Batch Request Shape
 
 ```json
 {
-  "location": { "latitude": ..., "longitude": ... },
-  "pokemonUpdates": [ ... ],
-  "tradeUpdates": [ ... ]
+  "location": { "latitude": 0, "longitude": 0 },
+  "pokemonUpdates": [],
+  "tradeUpdates": []
 }
 ```
 
-Fields are optional but default to empty arrays if missing.
+Notes:
 
----
+- `location`, `pokemonUpdates`, and `tradeUpdates` are optional.
+- Missing update arrays are normalized to empty arrays.
+- Requests with >`5000` entries in either update array are rejected (`413`).
 
-## 🔄 Kafka Integration
+## ⚙️ Configuration
 
-- Connects to Kafka broker defined in `config/app_conf.yml`
-- Publishes message as a JSON blob with metadata:
+### Environment (`receiver/.env`)
 
-```json
-{
-  "user_id": "abc123",
-  "username": "trainer",
-  "device_id": "xyz456",
-  "trace_id": "uuid-v4",
-  "location": {...},
-  "pokemonUpdates": [...],
-  "tradeUpdates": [...]
-}
-```
+Required:
 
-- Topic: `batchedUpdates`
+- `JWT_SECRET`
 
----
+Optional:
 
-## 🌍 CORS Settings
+- `PORT` (default `3003`)
+- `ALLOWED_ORIGINS` (comma-separated CORS list)
+- `HOST_IP` (overrides Kafka hostname from config file)
 
-Allows requests from:
-
-- `http://localhost:3000`
-- `https://pokemongonexus.com`
-- `https://www.pokemongonexus.com`
-
-Supports cookies and credentials.
-
----
-
-## 🧪 Running Locally
-
-### 1. Setup `.env`
-
-```
-JWT_SECRET=your_jwt_secret
-HOST_IP=<your-host-ip>  # e.g. 192.168.1.42
-```
-
-### 2. Run Kafka
-
-Start Kafka + Zookeeper via Docker (see [kafka service](../kafka/)).
-
-### 3. Start the Receiver
-
-```bash
-go run .
-```
-
-Server will start on port `3003`.
-
----
-
-## 🔧 Configuration
-
-### `config/app_conf.yml`
+### Kafka config (`receiver/config/app_conf.yml`)
 
 ```yaml
 events:
-  port: "9093"
+  hostname: "kafka"
+  port: "9092"
   topic: "batchedUpdates"
   max_retries: 5
   retry_interval: 3
 ```
 
----
+If config file is missing, safe defaults are used.
 
-## 📄 Logging
+## 🐳 Docker
 
-Logs are written to `app.log` with traceable fields:
-
-```
-INFO User ash sent 3 Pokemon updates + 1 Trade updates to Kafka
-trace_id=1234 user_id=abc device_id=xyz has_location=true ...
+```bash
+cd Go/receiver
+docker compose up -d
 ```
 
-Errors also include trace ID for debugging.
+Container:
 
----
+- listens on `3003`
+- host exposure is loopback-only: `127.0.0.1:3003`
+- joins `kafka_default` network
 
-## 🧠 Notes
+## 🧪 Local Checks
 
-- Fails gracefully on invalid/missing data
-- Request body is limited to 50MB
-- Uses `uuid` for traceability across logs and messages
-- Designed to be robust, secure, and lightweight for event ingestion
+```bash
+cd Go/receiver
+go test ./...
+go vet ./...
+govulncheck ./...
+```
 
----
+## 🚀 CI/CD
+
+Workflows:
+
+- CI: `.github/workflows/receiver-ci.yml`
+- Deploy: `.github/workflows/deploy-receiver-prod.yml`
+
+Deploy workflow behavior:
+
+- syncs prod repo to selected branch
+- validates `receiver/.env` (`JWT_SECRET` required)
+- pulls selected image
+- recreates `receiver_service`
+- verifies `GET /readyz` on `127.0.0.1:3003`
+- rolls back to previous image on failure (if available)
+
+## 📈 Fiber Decision
+
+Fiber is still a valid production choice in 2026.
+What matters is operational hardening (tests, vuln patching, health checks, resource limits, and observability), which this service now has.

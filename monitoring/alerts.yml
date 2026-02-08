@@ -52,6 +52,59 @@ groups:
           summary: "auth_service request metrics are missing"
           description: "http_requests_total has been absent for 10 minutes."
 
+  - name: receiver-service-alerts
+    rules:
+      - alert: ReceiverServiceTargetDown
+        expr: up{job="receiver_service"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: receiver_service
+        annotations:
+          summary: "receiver_service target is down"
+          description: "Prometheus cannot scrape receiver_service for at least 2 minutes."
+
+      - alert: ReceiverServiceHigh5xxRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="receiver_service",status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total{job="receiver_service"}[5m])), 1)
+          ) > 0.02
+        for: 10m
+        labels:
+          severity: warning
+          service: receiver_service
+        annotations:
+          summary: "receiver_service 5xx rate is high"
+          description: "5xx responses exceed 2% for 10 minutes."
+
+      - alert: ReceiverServiceHighP95Latency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (
+              rate(http_request_duration_seconds_bucket{job="receiver_service"}[5m])
+            )
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          service: receiver_service
+        annotations:
+          summary: "receiver_service p95 latency is high"
+          description: "p95 latency exceeds 1 second for 10 minutes."
+
+      - alert: ReceiverServiceMetricsMissing
+        expr: absent(http_requests_total{job="receiver_service"})
+        for: 10m
+        labels:
+          severity: warning
+          service: receiver_service
+        annotations:
+          summary: "receiver_service request metrics are missing"
+          description: "http_requests_total has been absent for 10 minutes."
+
   - name: pokemon-data-alerts
     rules:
       - alert: PokemonDataTargetDown

@@ -2,9 +2,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
-	"time"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v2"
@@ -24,6 +25,15 @@ type AppConfig struct {
 
 var kafkaConfig KafkaConfig
 var jwtSecret string
+var serverPort string
+var allowedOrigins []string
+
+var defaultAllowedOrigins = []string{
+	"http://localhost:3000",
+	"http://127.0.0.1:3000",
+	"https://pokemongonexus.com",
+	"https://www.pokemongonexus.com",
+}
 
 // Load environment variables (JWT_SECRET, HOST_IP)
 func loadEnv() error {
@@ -32,8 +42,20 @@ func loadEnv() error {
 		logger.Warnf("Error loading .env: %v", err)
 	}
 
-	// Load JWT Secret from .env
-	jwtSecret = os.Getenv("JWT_SECRET")
+	jwtSecret = strings.TrimSpace(os.Getenv("JWT_SECRET"))
+	if jwtSecret == "" {
+		return fmt.Errorf("missing required environment variable: JWT_SECRET")
+	}
+
+	serverPort = strings.TrimSpace(os.Getenv("PORT"))
+	if serverPort == "" {
+		serverPort = "3003"
+	}
+
+	allowedOrigins = parseCSV(os.Getenv("ALLOWED_ORIGINS"))
+	if len(allowedOrigins) == 0 {
+		allowedOrigins = append([]string(nil), defaultAllowedOrigins...)
+	}
 	return nil
 }
 
@@ -41,6 +63,12 @@ func loadEnv() error {
 func loadConfigFile(filePath string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			logger.Warnf("Config file not found at %s, using defaults", filePath)
+			kafkaConfig = KafkaConfig{}
+			applyKafkaDefaults()
+			return nil
+		}
 		return fmt.Errorf("failed to read configuration file: %v", err)
 	}
 
@@ -52,11 +80,53 @@ func loadConfigFile(filePath string) error {
 	}
 
 	kafkaConfig = appConfig.Events
-	hostIP := os.Getenv("HOST_IP")
+	applyKafkaDefaults()
+	return nil
+}
+
+func applyKafkaDefaults() {
+	hostIP := strings.TrimSpace(os.Getenv("HOST_IP"))
 	if hostIP != "" {
 		kafkaConfig.Hostname = hostIP
 	}
 
-	kafkaConfig.RetryInterval = kafkaConfig.RetryInterval * int(time.Second)
-	return nil
+	if strings.TrimSpace(kafkaConfig.Hostname) == "" {
+		kafkaConfig.Hostname = "kafka"
+	}
+	if strings.TrimSpace(kafkaConfig.Port) == "" {
+		kafkaConfig.Port = "9092"
+	}
+	if strings.TrimSpace(kafkaConfig.Topic) == "" {
+		kafkaConfig.Topic = "batchedUpdates"
+	}
+	if kafkaConfig.MaxRetries <= 0 {
+		kafkaConfig.MaxRetries = 5
+	}
+	if kafkaConfig.RetryInterval <= 0 {
+		kafkaConfig.RetryInterval = 3
+	}
+}
+
+func parseCSV(raw string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+
+	for _, p := range parts {
+		v := strings.TrimSpace(p)
+		if v == "" {
+			continue
+		}
+		if _, exists := seen[v]; exists {
+			continue
+		}
+		seen[v] = struct{}{}
+		out = append(out, v)
+	}
+	return out
 }
