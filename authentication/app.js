@@ -81,8 +81,11 @@ app.use(
 
 app.use(helmet());
 
+const quietRequestLogPaths = new Set(['/metrics', '/healthz', '/readyz']);
 app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.url}`);
+  if (!quietRequestLogPaths.has(req.path)) {
+    logger.info(`${req.method} ${req.url}`);
+  }
   next();
 });
 app.use(httpMetricsMiddleware);

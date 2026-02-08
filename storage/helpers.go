@@ -175,3 +175,26 @@ func safeJSON(value interface{}) *string {
 	}
 	return &str
 }
+
+// safeJSONArray stores an empty JSON array when the input is missing/invalid
+// or not an array-shaped payload.
+func safeJSONArray(value interface{}) *string {
+	empty := "[]"
+	if value == nil {
+		return &empty
+	}
+
+	bytes, err := json.Marshal(value)
+	if err != nil {
+		return &empty
+	}
+
+	str := strings.TrimSpace(string(bytes))
+	if str == "" || str == "null" || str == `""` || str == "{}" {
+		return &empty
+	}
+	if !strings.HasPrefix(str, "[") {
+		return &empty
+	}
+	return &str
+}

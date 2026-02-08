@@ -82,6 +82,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 		isMega := parseOptionalBool(pm["is_mega"])
 		mega := parseOptionalBool(pm["mega"])
 		isFused := parseOptionalBool(pm["is_fused"])
+		mostWanted := parseOptionalBool(pm["most_wanted"])
 		disabled := parseOptionalBool(pm["disabled"])
 		dynamax := parseOptionalBool(pm["dynamax"])
 		gigantamax := parseOptionalBool(pm["gigantamax"])
@@ -122,6 +123,9 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 		tradeFilters := safeJSON(pm["trade_filters"])
 		wantedFilters := safeJSON(pm["wanted_filters"])
 		fusionJSON := safeJSON(pm["fusion"])
+		caughtTags := safeJSONArray(pm["caught_tags"])
+		tradeTags := safeJSONArray(pm["trade_tags"])
+		wantedTags := safeJSONArray(pm["wanted_tags"])
 
 		// Prepare a map for updates
 		updates := map[string]interface{}{
@@ -153,6 +157,10 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			"last_update":      msgLastUpdate,
 			"is_for_trade":     isForTrade,
 			"is_wanted":        isWanted,
+			"most_wanted":      mostWanted,
+			"caught_tags":      *caughtTags,
+			"trade_tags":       *tradeTags,
+			"wanted_tags":      *wantedTags,
 			"not_trade_list":   *notTradeList,
 			"not_wanted_list":  *notWantedList,
 			"trade_filters":    tradeFilters,

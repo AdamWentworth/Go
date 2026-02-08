@@ -29,8 +29,9 @@ func main() {
 	}
 	resolveInstanceUnownedColumn()
 
-	// 4) Start Kafka Consumer
+	// 4) Start observability server + Kafka Consumer
 	ctx, cancel := context.WithCancel(context.Background())
+	go startObservabilityServer(ctx)
 	go StartConsumer(ctx)
 
 	// 5) Scheduler

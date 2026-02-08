@@ -48,6 +48,8 @@ func StartConsumer(ctx context.Context) {
 
 	reader := newKafkaReader(events, retryInterval)
 	defer reader.Close()
+	setConsumerReady(true)
+	defer setConsumerReady(false)
 
 	logrus.Infof("Kafka consumer subscribed to topic: %s", events.Topic)
 
@@ -97,28 +99,41 @@ func newKafkaReader(events EventsConfig, retryInterval time.Duration) *kafka.Rea
 }
 
 func processMessage(ctx context.Context, committer messageCommitter, message kafka.Message) error {
+	start := time.Now()
+	result := "processed"
+	defer func() {
+		observeKafkaMessage(result, time.Since(start))
+	}()
+
 	decompressed, err := decompressMessage(message.Value)
 	if err != nil {
+		result = "decompress_failed"
 		return fmt.Errorf("decompress message: %w", err)
 	}
 
 	var data map[string]interface{}
 	if err := json.Unmarshal(decompressed, &data); err != nil {
+		result = "unmarshal_failed"
 		return fmt.Errorf("unmarshal message: %w", err)
 	}
 
 	if err := handleMessageFn(data); err != nil {
+		result = "handle_failed"
 		// Persist-and-skip poison messages so they don't block the partition forever.
 		persistFailedMessageFn(data)
 		if commitErr := committer.CommitMessages(ctx, message); commitErr != nil {
+			result = "handle_failed_commit_failed"
 			return fmt.Errorf("handle message failed (%v) and commit-after-failure failed (%w)", err, commitErr)
 		}
+		result = "handle_failed_persisted"
 		return fmt.Errorf("handle message failed and was persisted to retry file: %w", err)
 	}
 
 	if err := committer.CommitMessages(ctx, message); err != nil {
+		result = "commit_failed"
 		return fmt.Errorf("commit message: %w", err)
 	}
+	result = "processed"
 	return nil
 }
 

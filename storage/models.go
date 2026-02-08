@@ -53,6 +53,10 @@ type PokemonInstance struct {
 	IsOwned         bool       `gorm:"column:is_owned;default:false;not null"`
 	IsForTrade      bool       `gorm:"column:is_for_trade;default:false;not null"`
 	IsWanted        bool       `gorm:"column:is_wanted;default:false;not null"`
+	MostWanted      bool       `gorm:"column:most_wanted;default:false;not null"`
+	CaughtTags      string     `gorm:"column:caught_tags;type:json;default:'[]'"`
+	TradeTags       string     `gorm:"column:trade_tags;type:json;default:'[]'"`
+	WantedTags      string     `gorm:"column:wanted_tags;type:json;default:'[]'"`
 	NotTradeList    string     `gorm:"column:not_trade_list;type:json;default:'{}'"`
 	NotWantedList   string     `gorm:"column:not_wanted_list;type:json;default:'{}'"`
 	TraceID         *string    `gorm:"column:trace_id"`

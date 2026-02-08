@@ -152,6 +152,9 @@ func requestLogger(c *fiber.Ctx) error {
 	if c.Method() == "OPTIONS" {
 		return err
 	}
+	if shouldSkipRequestLog(c.Path()) {
+		return err
+	}
 
 	latency := stop.Sub(start).Milliseconds()
 	method := c.Method()
@@ -171,6 +174,15 @@ func requestLogger(c *fiber.Ctx) error {
 	}).Infof("%s - %s %s - %d - %dms", ip, method, path, status, latency)
 
 	return err
+}
+
+func shouldSkipRequestLog(path string) bool {
+	switch path {
+	case "/metrics", "/healthz", "/readyz":
+		return true
+	default:
+		return false
+	}
 }
 
 // Recovery middleware for Fiber to handle panics

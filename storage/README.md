@@ -12,6 +12,7 @@ This service listens to a Kafka topic for batched Pokémon and trade updates, pe
 - Detects and resolves data conflicts
 - Performs automatic SQL backups daily at midnight
 - Re-attempts failed Kafka messages every 5 minutes
+- Exposes observability endpoints: `GET /healthz`, `GET /readyz`, `GET /metrics`
 - Logs everything to `app.log` using `logrus`
 
 ---
@@ -114,6 +115,11 @@ KAFKA_TOPIC=batchedUpdates
 KAFKA_MAX_RETRIES=5
 KAFKA_RETRY_INTERVAL=3
 
+# Optional observability port (default 3004)
+PORT=3004
+# or
+STORAGE_HTTP_PORT=3004
+
 # Legacy fallback (kept for backward compatibility)
 HOST_IP=<legacy-kafka-host>
 ```
@@ -121,6 +127,19 @@ HOST_IP=<legacy-kafka-host>
 ### `config/app_conf.yml` (optional)
 
 If present, YAML config is loaded first, then `.env` values override it.
+
+---
+
+## 📈 Monitoring
+
+- `GET /healthz`: liveness probe
+- `GET /readyz`: readiness probe (DB + Kafka consumer readiness)
+- `GET /metrics`: Prometheus metrics
+  - `http_requests_total`
+  - `http_request_duration_seconds`
+  - `storage_kafka_messages_total`
+  - `storage_kafka_message_processing_duration_seconds`
+  - `storage_kafka_consumer_ready`
 
 ---
 

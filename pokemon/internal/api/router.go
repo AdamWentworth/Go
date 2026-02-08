@@ -213,6 +213,9 @@ func requestLogMiddleware(log *slog.Logger, ipFn func(*http.Request) string) fun
 			if route == "" {
 				route = r.URL.Path
 			}
+			if shouldSkipRequestLog(route, r.URL.Path) {
+				return
+			}
 
 			ip := ""
 			if ipFn != nil {
@@ -234,4 +237,16 @@ func requestLogMiddleware(log *slog.Logger, ipFn func(*http.Request) string) fun
 			)
 		})
 	}
+}
+
+func shouldSkipRequestLog(route, path string) bool {
+	switch route {
+	case "/metrics", "/healthz", "/readyz":
+		return true
+	}
+	switch path {
+	case "/metrics", "/healthz", "/readyz":
+		return true
+	}
+	return false
 }

@@ -105,6 +105,38 @@ groups:
           summary: "receiver_service request metrics are missing"
           description: "http_requests_total has been absent for 10 minutes."
 
+  - name: storage-service-alerts
+    rules:
+      - alert: StorageServiceTargetDown
+        expr: up{job="storage_service"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: storage_service
+        annotations:
+          summary: "storage_service target is down"
+          description: "Prometheus cannot scrape storage_service for at least 2 minutes."
+
+      - alert: StorageServiceMetricsMissing
+        expr: absent(http_requests_total{job="storage_service"})
+        for: 10m
+        labels:
+          severity: warning
+          service: storage_service
+        annotations:
+          summary: "storage_service request metrics are missing"
+          description: "http_requests_total has been absent for 10 minutes."
+
+      - alert: StorageKafkaConsumerNotReady
+        expr: storage_kafka_consumer_ready{job="storage_service"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: storage_service
+        annotations:
+          summary: "storage_service Kafka consumer is not ready"
+          description: "storage_kafka_consumer_ready has been 0 for at least 2 minutes."
+
   - name: pokemon-data-alerts
     rules:
       - alert: PokemonDataTargetDown
