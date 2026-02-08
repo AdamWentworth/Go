@@ -2,52 +2,61 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 )
 
 var (
-	instanceUnownedColumn = "is_unowned"
-	instanceUnownedInvert bool
-	instanceColumns       = map[string]bool{}
+	instanceColumns = map[string]bool{}
 )
 
-func resolveInstanceUnownedColumn() {
+func resolveInstanceSchema() error {
 	if err := loadInstanceColumns(); err != nil {
-		logrus.Warnf("Could not load instances table columns: %v", err)
+		return fmt.Errorf("load instances columns: %w", err)
 	}
 
-	columnName, err := detectInstanceUnownedColumn()
-	if err != nil {
-		logrus.Warnf("Could not detect instances ownership column, defaulting to %q: %v", instanceUnownedColumn, err)
-		return
+	missing := requiredMissingInstanceColumns()
+	if len(missing) > 0 {
+		sort.Strings(missing)
+		return fmt.Errorf("instances schema missing required columns: %s", strings.Join(missing, ", "))
 	}
 
-	if columnName == "is_caught" {
-		instanceUnownedColumn = "is_caught"
-		instanceUnownedInvert = true
-		logrus.Infof("Using instances ownership column %q (inverse semantics of unowned/missing).", instanceUnownedColumn)
-		return
-	}
-
-	instanceUnownedColumn = columnName
-	instanceUnownedInvert = false
-	logrus.Infof("Using instances ownership column %q for unowned/missing flag.", instanceUnownedColumn)
+	logrus.Info("instances schema validated; canonical ownership column is_caught")
+	return nil
 }
 
-func detectInstanceUnownedColumn() (string, error) {
-	candidates := []string{"is_unowned", "is_missing", "is_caught"}
-	for _, candidate := range candidates {
-		exists, err := columnExists("instances", candidate)
-		if err != nil {
-			return "", err
-		}
-		if exists {
-			return candidate, nil
+func requiredMissingInstanceColumns() []string {
+	required := []string{
+		"instance_id",
+		"user_id",
+		"pokemon_id",
+		"variant_id",
+		"registered",
+		"is_caught",
+		"is_for_trade",
+		"is_wanted",
+		"most_wanted",
+		"caught_tags",
+		"trade_tags",
+		"wanted_tags",
+		"not_trade_list",
+		"not_wanted_list",
+		"trade_filters",
+		"wanted_filters",
+		"fusion",
+		"last_update",
+		"date_added",
+	}
+
+	missing := make([]string, 0)
+	for _, col := range required {
+		if !instanceHasColumn(col) {
+			missing = append(missing, col)
 		}
 	}
-	return "", fmt.Errorf("no ownership indicator column found on instances table (checked is_unowned, is_missing, is_caught)")
+	return missing
 }
 
 func columnExists(tableName, columnName string) (bool, error) {
@@ -64,38 +73,6 @@ func columnExists(tableName, columnName string) (bool, error) {
 		return false, err
 	}
 	return count > 0, nil
-}
-
-func instanceUnownedFieldName() string {
-	return instanceUnownedColumn
-}
-
-func parseUnownedFlag(payload map[string]interface{}) bool {
-	if v, ok := payload["is_unowned"]; ok {
-		return parseOptionalBool(v)
-	}
-	if v, ok := payload["is_missing"]; ok {
-		return parseOptionalBool(v)
-	}
-	if v, ok := payload["is_caught"]; ok {
-		return !parseOptionalBool(v)
-	}
-	if v, ok := payload["is_owned"]; ok {
-		return !parseOptionalBool(v)
-	}
-	return false
-}
-
-func setUnownedValue(fields map[string]interface{}, isUnowned bool) {
-	if strings.TrimSpace(instanceUnownedColumn) == "" {
-		return
-	}
-
-	v := isUnowned
-	if instanceUnownedInvert {
-		v = !isUnowned
-	}
-	fields[instanceUnownedColumn] = v
 }
 
 func loadInstanceColumns() error {

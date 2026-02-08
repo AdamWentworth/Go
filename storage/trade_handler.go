@@ -370,16 +370,16 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				proposedInstance.UserID = oldAcceptingUserID
 				acceptingInstance.UserID = oldProposedUserID
 
-				// 4) Update the ownership flags
-				proposedInstance.IsOwned = true
-				proposedInstance.IsUnowned = false
+				// 4) Update ownership state
+				proposedInstance.IsCaught = true
 				proposedInstance.IsForTrade = false
 				proposedInstance.IsWanted = false
+				proposedInstance.MostWanted = false
 
-				acceptingInstance.IsOwned = true
-				acceptingInstance.IsUnowned = false
+				acceptingInstance.IsCaught = true
 				acceptingInstance.IsForTrade = false
 				acceptingInstance.IsWanted = false
+				acceptingInstance.MostWanted = false
 
 				// 5) Update last_update for both instances
 				nowTs := time.Now().UnixMilli()
@@ -389,17 +389,16 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				// 6) Save changes
 				proposedUpdates := map[string]interface{}{
 					"user_id":      proposedInstance.UserID,
+					"is_caught":    proposedInstance.IsCaught,
 					"is_for_trade": proposedInstance.IsForTrade,
 					"is_wanted":    proposedInstance.IsWanted,
+					"most_wanted":  proposedInstance.MostWanted,
+					"registered":   true,
 					"last_update":  nowTs,
-				}
-				if instanceHasColumn("is_owned") {
-					proposedUpdates["is_owned"] = proposedInstance.IsOwned
 				}
 				if instanceHasColumn("is_traded") {
 					proposedUpdates["is_traded"] = true
 				}
-				setUnownedValue(proposedUpdates, proposedInstance.IsUnowned)
 				proposedUpdates = filterInstanceColumns(proposedUpdates)
 
 				if err := tx.Model(&PokemonInstance{}).
@@ -411,23 +410,73 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 
 				acceptingUpdates := map[string]interface{}{
 					"user_id":      acceptingInstance.UserID,
+					"is_caught":    acceptingInstance.IsCaught,
 					"is_for_trade": acceptingInstance.IsForTrade,
 					"is_wanted":    acceptingInstance.IsWanted,
+					"most_wanted":  acceptingInstance.MostWanted,
+					"registered":   true,
 					"last_update":  nowTs,
-				}
-				if instanceHasColumn("is_owned") {
-					acceptingUpdates["is_owned"] = acceptingInstance.IsOwned
 				}
 				if instanceHasColumn("is_traded") {
 					acceptingUpdates["is_traded"] = true
 				}
-				setUnownedValue(acceptingUpdates, acceptingInstance.IsUnowned)
 				acceptingUpdates = filterInstanceColumns(acceptingUpdates)
 
 				if err := tx.Model(&PokemonInstance{}).
 					Where("instance_id = ?", acceptingInstanceID).
 					Updates(acceptingUpdates).Error; err != nil {
 					logrus.Errorf("Failed to update acceptingInstance %s after trade completion: %v", acceptingInstanceID, err)
+					return err
+				}
+
+				proposedVariant := normalizeOptionalString(proposedInstance.VariantID)
+				acceptingVariant := normalizeOptionalString(acceptingInstance.VariantID)
+
+				if err := syncRegistrationForVariant(tx, oldProposedUserID, proposedVariant); err != nil {
+					logrus.Errorf("Failed to sync registration for old proposed owner %s variant %s: %v", oldProposedUserID, proposedVariant, err)
+					return err
+				}
+				if err := syncRegistrationForVariant(tx, proposedInstance.UserID, proposedVariant); err != nil {
+					logrus.Errorf("Failed to sync registration for new proposed owner %s variant %s: %v", proposedInstance.UserID, proposedVariant, err)
+					return err
+				}
+				if err := syncRegistrationForVariant(tx, oldAcceptingUserID, acceptingVariant); err != nil {
+					logrus.Errorf("Failed to sync registration for old accepting owner %s variant %s: %v", oldAcceptingUserID, acceptingVariant, err)
+					return err
+				}
+				if err := syncRegistrationForVariant(tx, acceptingInstance.UserID, acceptingVariant); err != nil {
+					logrus.Errorf("Failed to sync registration for new accepting owner %s variant %s: %v", acceptingInstance.UserID, acceptingVariant, err)
+					return err
+				}
+
+				if err := syncInstanceTagsForInstance(
+					tx,
+					proposedInstance.UserID,
+					proposedInstanceID,
+					proposedInstance.CaughtTags,
+					proposedInstance.TradeTags,
+					proposedInstance.WantedTags,
+					proposedInstance.Favorite,
+					proposedInstance.IsForTrade,
+					proposedInstance.IsWanted,
+					proposedInstance.MostWanted,
+				); err != nil {
+					logrus.Errorf("Failed to sync instance_tags for proposed instance %s: %v", proposedInstanceID, err)
+					return err
+				}
+				if err := syncInstanceTagsForInstance(
+					tx,
+					acceptingInstance.UserID,
+					acceptingInstanceID,
+					acceptingInstance.CaughtTags,
+					acceptingInstance.TradeTags,
+					acceptingInstance.WantedTags,
+					acceptingInstance.Favorite,
+					acceptingInstance.IsForTrade,
+					acceptingInstance.IsWanted,
+					acceptingInstance.MostWanted,
+				); err != nil {
+					logrus.Errorf("Failed to sync instance_tags for accepting instance %s: %v", acceptingInstanceID, err)
 					return err
 				}
 

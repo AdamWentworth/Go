@@ -27,7 +27,9 @@ func main() {
 	if err := InitDB(); err != nil {
 		logrus.Fatalf("Failed to initialize db: %v", err)
 	}
-	resolveInstanceUnownedColumn()
+	if err := resolveInstanceSchema(); err != nil {
+		logrus.Fatalf("Failed to validate instances schema: %v", err)
+	}
 
 	// 4) Start observability server + Kafka Consumer
 	ctx, cancel := context.WithCancel(context.Background())

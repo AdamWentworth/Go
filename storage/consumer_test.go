@@ -108,24 +108,6 @@ func TestProcessMessageCommitFailureReturnsError(t *testing.T) {
 	}
 }
 
-func TestParseUnownedFlag(t *testing.T) {
-	if !parseUnownedFlag(map[string]interface{}{"is_unowned": true}) {
-		t.Fatal("expected is_unowned=true to be true")
-	}
-	if !parseUnownedFlag(map[string]interface{}{"is_missing": "true"}) {
-		t.Fatal("expected is_missing=true to be true")
-	}
-	if !parseUnownedFlag(map[string]interface{}{"is_caught": false}) {
-		t.Fatal("expected is_caught=false to imply unowned=true")
-	}
-	if !parseUnownedFlag(map[string]interface{}{"is_owned": false}) {
-		t.Fatal("expected is_owned=false to imply unowned=true")
-	}
-	if parseUnownedFlag(map[string]interface{}{"is_missing": "false"}) {
-		t.Fatal("expected is_missing=false to be false")
-	}
-}
-
 func mustGzipJSON(t *testing.T, payload map[string]interface{}) []byte {
 	t.Helper()
 

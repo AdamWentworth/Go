@@ -29,16 +29,68 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			continue
 		}
 
-		// Deletion logic supports legacy "is_unowned" and newer "is_missing".
-		isUnowned := parseUnownedFlag(pm)
-		isOwned := parseOptionalBool(pm["is_owned"])
+		variantID := parseNullableString(pm["variant_id"])
+		variantForRegistration := normalizeOptionalString(variantID)
+
+		rawIsCaught, hasIsCaught := pm["is_caught"]
+		if !hasIsCaught || rawIsCaught == nil {
+			logrus.Warnf("Missing required is_caught for instance %s; skipping.", instanceID)
+			continue
+		}
+		isCaught := parseOptionalBool(rawIsCaught)
 		isWanted := parseOptionalBool(pm["is_wanted"])
 		isForTrade := parseOptionalBool(pm["is_for_trade"])
-		if isUnowned && !isOwned && !isWanted && !isForTrade {
+		registered := parseOptionalBool(pm["registered"])
+		mostWanted := parseOptionalBool(pm["most_wanted"])
+
+		origIsCaught := isCaught
+		origIsWanted := isWanted
+		origIsForTrade := isForTrade
+		origRegistered := registered
+		origMostWanted := mostWanted
+
+		isCaught, isWanted, isForTrade, registered, mostWanted = normalizeOwnershipState(
+			isCaught,
+			isWanted,
+			isForTrade,
+			registered,
+			mostWanted,
+		)
+		if origIsCaught != isCaught ||
+			origIsWanted != isWanted ||
+			origIsForTrade != isForTrade ||
+			origRegistered != registered ||
+			origMostWanted != mostWanted {
+			logrus.Warnf(
+				"Normalized ownership flags for instance %s: caught %t->%t, wanted %t->%t, for_trade %t->%t, registered %t->%t, most_wanted %t->%t",
+				instanceID,
+				origIsCaught, isCaught,
+				origIsWanted, isWanted,
+				origIsForTrade, isForTrade,
+				origRegistered, registered,
+				origMostWanted, mostWanted,
+			)
+		}
+
+		// Canonical deletion path: explicitly uncaught, and not tracked for trade/wanted.
+		if !isCaught && !isWanted && !isForTrade {
+			if variantForRegistration == "" {
+				if resolvedVariant, errLookup := lookupInstanceVariantID(DB, instanceID); errLookup != nil {
+					logrus.Warnf("Failed to resolve variant_id for deleted instance %s: %v", instanceID, errLookup)
+				} else {
+					variantForRegistration = resolvedVariant
+				}
+			}
 			if errDel := DB.Delete(&PokemonInstance{}, "instance_id = ?", instanceID).Error; errDel != nil {
 				logrus.Warnf("Failed to delete instance_id %s: %v", instanceID, errDel)
 			} else {
 				deletedCount++
+				if errRel := cleanupInstanceTags(DB, instanceID); errRel != nil {
+					logrus.Warnf("Failed to clean instance_tags for deleted instance %s: %v", instanceID, errRel)
+				}
+				if errReg := syncRegistrationForVariant(DB, userID, variantForRegistration); errReg != nil {
+					logrus.Warnf("Failed to sync registration after delete for user %s variant %s: %v", userID, variantForRegistration, errReg)
+				}
 			}
 			continue
 		}
@@ -58,6 +110,9 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 				logrus.Infof("Ignored older or same update for instance %s", instanceID)
 				continue
 			}
+			if variantForRegistration == "" {
+				variantForRegistration = normalizeOptionalString(existingInstance.VariantID)
+			}
 		} else if !errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			logrus.Errorf("Error finding instance %s: %v", instanceID, tx.Error)
 			continue
@@ -70,6 +125,11 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			continue
 		}
 
+		// Optional identity/provenance
+		pokeball := parseNullableString(pm["pokeball"])
+		originalTrainerName := parseNullableString(pm["original_trainer_name"])
+		originalTrainerID := parseNullableString(pm["original_trainer_id"])
+
 		// Booleans
 		shiny := parseOptionalBool(pm["shiny"])
 		lucky := parseOptionalBool(pm["lucky"])
@@ -77,15 +137,15 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 		purified := parseOptionalBool(pm["purified"])
 		mirror := parseOptionalBool(pm["mirror"])
 		prefLucky := parseOptionalBool(pm["pref_lucky"])
-		registered := parseOptionalBool(pm["registered"])
 		favorite := parseOptionalBool(pm["favorite"])
 		isMega := parseOptionalBool(pm["is_mega"])
 		mega := parseOptionalBool(pm["mega"])
 		isFused := parseOptionalBool(pm["is_fused"])
-		mostWanted := parseOptionalBool(pm["most_wanted"])
 		disabled := parseOptionalBool(pm["disabled"])
 		dynamax := parseOptionalBool(pm["dynamax"])
 		gigantamax := parseOptionalBool(pm["gigantamax"])
+		crown := parseOptionalBool(pm["crown"])
+		isTraded := parseOptionalBool(pm["is_traded"])
 
 		// Nullable ints/floats
 		cp := parseNullableInt(pm["cp"])
@@ -116,6 +176,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 
 		// Date
 		dateCaught := parseOptionalDate(pm["date_caught"])
+		tradedDate := parseOptionalDate(pm["traded_date"])
 
 		// JSON => "{}" if missing/empty
 		notTradeList := safeJSON(pm["not_trade_list"])
@@ -129,62 +190,68 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 
 		// Prepare a map for updates
 		updates := map[string]interface{}{
-			"pokemon_id":       pokemonID,
-			"nickname":         nickname,
-			"cp":               cp,
-			"attack_iv":        attackIV,
-			"defense_iv":       defenseIV,
-			"stamina_iv":       staminaIV,
-			"shiny":            shiny,
-			"costume_id":       costumeID,
-			"lucky":            lucky,
-			"shadow":           shadow,
-			"purified":         purified,
-			"fast_move_id":     fastMoveID,
-			"charged_move1_id": chargedMove1ID,
-			"charged_move2_id": chargedMove2ID,
-			"weight":           weight,
-			"height":           height,
-			"gender":           gender,
-			"mirror":           mirror,
-			"pref_lucky":       prefLucky,
-			"registered":       registered,
-			"favorite":         favorite,
-			"location_card":    locationCard,
-			"location_caught":  locationCaught,
-			"friendship_level": friendshipLevel,
-			"date_caught":      dateCaught,
-			"last_update":      msgLastUpdate,
-			"is_for_trade":     isForTrade,
-			"is_wanted":        isWanted,
-			"most_wanted":      mostWanted,
-			"caught_tags":      *caughtTags,
-			"trade_tags":       *tradeTags,
-			"wanted_tags":      *wantedTags,
-			"not_trade_list":   *notTradeList,
-			"not_wanted_list":  *notWantedList,
-			"trade_filters":    tradeFilters,
-			"wanted_filters":   wantedFilters,
-			"trace_id":         messageTraceID,
-			"mega":             mega,
-			"mega_form":        megaForm,
-			"is_mega":          isMega,
-			"level":            level,
-			"is_fused":         isFused,
-			"fusion":           *fusionJSON,
-			"fusion_form":      fusionForm,
-			"fused_with":       fusedWith,
-			"disabled":         disabled,
-			"dynamax":          dynamax,
-			"gigantamax":       gigantamax,
-			"max_attack":       maxAttack,
-			"max_guard":        maxGuard,
-			"max_spirit":       maxSpirit,
+			"variant_id":            variantID,
+			"pokemon_id":            pokemonID,
+			"nickname":              nickname,
+			"cp":                    cp,
+			"attack_iv":             attackIV,
+			"defense_iv":            defenseIV,
+			"stamina_iv":            staminaIV,
+			"shiny":                 shiny,
+			"costume_id":            costumeID,
+			"lucky":                 lucky,
+			"shadow":                shadow,
+			"purified":              purified,
+			"fast_move_id":          fastMoveID,
+			"charged_move1_id":      chargedMove1ID,
+			"charged_move2_id":      chargedMove2ID,
+			"pokeball":              pokeball,
+			"weight":                weight,
+			"height":                height,
+			"gender":                gender,
+			"mirror":                mirror,
+			"pref_lucky":            prefLucky,
+			"registered":            registered,
+			"favorite":              favorite,
+			"location_card":         locationCard,
+			"location_caught":       locationCaught,
+			"friendship_level":      friendshipLevel,
+			"date_caught":           dateCaught,
+			"is_traded":             isTraded,
+			"traded_date":           tradedDate,
+			"original_trainer_name": originalTrainerName,
+			"last_update":           msgLastUpdate,
+			"is_for_trade":          isForTrade,
+			"is_wanted":             isWanted,
+			"most_wanted":           mostWanted,
+			"caught_tags":           *caughtTags,
+			"trade_tags":            *tradeTags,
+			"wanted_tags":           *wantedTags,
+			"not_trade_list":        *notTradeList,
+			"not_wanted_list":       *notWantedList,
+			"trade_filters":         tradeFilters,
+			"wanted_filters":        wantedFilters,
+			"trace_id":              messageTraceID,
+			"mega":                  mega,
+			"mega_form":             megaForm,
+			"is_mega":               isMega,
+			"level":                 level,
+			"is_fused":              isFused,
+			"fusion":                *fusionJSON,
+			"fusion_form":           fusionForm,
+			"fused_with":            fusedWith,
+			"disabled":              disabled,
+			"dynamax":               dynamax,
+			"gigantamax":            gigantamax,
+			"crown":                 crown,
+			"max_attack":            maxAttack,
+			"max_guard":             maxGuard,
+			"max_spirit":            maxSpirit,
 		}
-		if instanceHasColumn("is_owned") {
-			updates["is_owned"] = isOwned
+		if originalTrainerID != nil && *originalTrainerID != "" {
+			updates["original_trainer_id"] = originalTrainerID
 		}
-		setUnownedValue(updates, isUnowned)
+		updates["is_caught"] = isCaught
 		updates = filterInstanceColumns(updates)
 
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
@@ -209,6 +276,24 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 				continue
 			}
 			updatedCount++
+		}
+
+		if errReg := syncRegistrationForVariant(DB, userID, variantForRegistration); errReg != nil {
+			logrus.Warnf("Failed to sync registrations for user %s variant %s: %v", userID, variantForRegistration, errReg)
+		}
+		if errTags := syncInstanceTagsForInstance(
+			DB,
+			userID,
+			instanceID,
+			*caughtTags,
+			*tradeTags,
+			*wantedTags,
+			favorite,
+			isForTrade,
+			isWanted,
+			mostWanted,
+		); errTags != nil {
+			logrus.Warnf("Failed to sync instance_tags for instance %s: %v", instanceID, errTags)
 		}
 	}
 	return

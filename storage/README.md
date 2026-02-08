@@ -1,178 +1,387 @@
-# 🗃️ Storage Service - Pokemon Go Nexus
+# Storage Service (Go Worker + Observability) 🗃️
 
-This service listens to a Kafka topic for batched Pokémon and trade updates, persists them to a MySQL database, and performs scheduled backups. It also manages conflict resolution, ownership logic, and secure data validation for each update.
+Consumes batched updates from Kafka, applies ownership/trade mutations, and persists to MySQL.
 
----
+## ✅ Current Production Scope
 
-## 📦 Features
+- Kafka consumer for `batchedUpdates`
+- Upsert/delete logic for Pokemon instances
+- Trade upsert + conflict handling
+- Auto-sync for `registrations` and `instance_tags`
+- Retry file for failed poison messages
+- Optional in-app backup schedule (`RUN_APP_BACKUPS=true`)
+- Health/readiness/metrics HTTP server (`:3004` by default)
 
-- Listens to the `batchedUpdates` Kafka topic
-- Processes and upserts Pokémon ownership and metadata
-- Handles bidirectional trade processing and validation
-- Detects and resolves data conflicts
-- Performs automatic SQL backups daily at midnight
-- Re-attempts failed Kafka messages every 5 minutes
-- Exposes observability endpoints: `GET /healthz`, `GET /readyz`, `GET /metrics`
-- Logs everything to `app.log` using `logrus`
+## 🔌 Endpoints
 
----
+- `GET /healthz`
+- `GET /readyz`
+- `GET /metrics`
 
-## 🚀 Getting Started
+## 🧭 Architecture (Mermaid)
 
-### Prerequisites
+### Service Context
 
-- Go 1.25+
-- MySQL 8+
-- Kafka running with a `batchedUpdates` topic
-- `.env` configured (`config/app_conf.yml` is optional)
+```mermaid
+flowchart LR
+  Receiver[receiver_service] -->|Kafka: batchedUpdates| Storage[storage_service]
+  Storage --> MySQL[(mysql_storage)]
+  Storage --> RetryFile[(failed_messages.jsonl)]
+  Prometheus[prometheus] -->|Scrape /metrics| Storage
+```
 
-### Install dependencies
+### Consume + Persist Flow
+
+```mermaid
+sequenceDiagram
+  participant K as Kafka
+  participant S as Storage
+  participant D as MySQL
+  participant F as failed_messages.jsonl
+
+  K->>S: Fetch message
+  S->>S: Decompress + unmarshal payload
+  S->>D: Upsert user/location
+  S->>D: Upsert/delete pokemon instances
+  S->>D: Upsert trades
+
+  alt success
+    S->>K: Commit offset
+  else handler error
+    S->>F: Persist failed payload
+    S->>K: Commit offset (skip poison)
+  end
+```
+
+### Startup + Readiness
+
+```mermaid
+flowchart TD
+  Start[Service start] --> Log[Init logger]
+  Log --> Config[Load .env + app_conf]
+  Config --> DB[Init DB]
+  DB --> Schema[Resolve live instance schema]
+  Schema --> Obs[Start HTTP observability server]
+  Obs --> Consumer[Start Kafka consumer loop]
+  Consumer --> Scheduler[Start cron jobs]
+  Scheduler --> Ready[readyz = DB ready + consumer ready]
+```
+
+## 📐 UML Views
+
+| Diagram | Purpose |
+| --- | --- |
+| Component UML | Core runtime modules and dependencies |
+| Payload UML | Kafka message contract |
+| Data UML | Main persisted entities |
+
+### Component UML (Mermaid Class Diagram)
+
+```mermaid
+classDiagram
+  class Main {
+    +main()
+  }
+
+  class Consumer {
+    +StartConsumer(ctx)
+    +processMessage()
+  }
+
+  class MessageHandler {
+    +HandleMessage(data)
+    +parseAndUpsertPokemon()
+    +parseAndUpsertTrades()
+  }
+
+  class Database {
+    +InitDB()
+    +resolveInstanceSchema()
+  }
+
+  class Observability {
+    +startObservabilityServer(ctx)
+    +setConsumerReady(bool)
+    +observeKafkaMessage(result,duration)
+  }
+
+  class Scheduler {
+    +CreateBackup()
+    +ReprocessFailedMessages()
+  }
+
+  Main --> Database
+  Main --> Observability
+  Main --> Consumer
+  Main --> Scheduler
+  Consumer --> MessageHandler
+  MessageHandler --> Database
+```
+
+### Payload UML (Mermaid Class Diagram)
+
+```mermaid
+classDiagram
+  class BatchedMessage {
+    +user_id: string
+    +username: string
+    +device_id: string
+    +trace_id: string
+    +location: Location optional
+    +pokemonUpdates: PokemonUpdate[]
+    +tradeUpdates: TradeUpdate[]
+  }
+
+  class Location {
+    +latitude: number
+    +longitude: number
+  }
+
+  class PokemonUpdate {
+    +key: string
+    +pokemon_id: number
+    +last_update: number
+    +cp: number nullable
+    +attack_iv: number nullable
+    +defense_iv: number nullable
+    +stamina_iv: number nullable
+    +costume_id: number nullable
+    +fast_move_id: number nullable
+    +charged_move1_id: number nullable
+    +charged_move2_id: number nullable
+    +weight: number nullable
+    +height: number nullable
+    +friendship_level: number nullable
+    +level: number nullable
+    +nickname: string nullable
+    +gender: string nullable
+    +location_card: string nullable
+    +location_caught: string nullable
+    +mega_form: string nullable
+    +fusion_form: string nullable
+    +fused_with: string nullable
+    +max_attack: string nullable
+    +max_guard: string nullable
+    +max_spirit: string nullable
+    +date_caught: date_or_rfc3339 nullable
+    +shiny: bool
+    +lucky: bool
+    +shadow: bool
+    +purified: bool
+    +mirror: bool
+    +pref_lucky: bool
+    +registered: bool
+    +favorite: bool
+    +is_caught: bool
+    +is_for_trade: bool
+    +is_wanted: bool
+    +is_mega: bool
+    +mega: bool
+    +is_fused: bool
+    +disabled: bool
+    +dynamax: bool
+    +gigantamax: bool
+    +most_wanted: bool
+    +caught_tags: json_array
+    +trade_tags: json_array
+    +wanted_tags: json_array
+    +not_trade_list: json_object
+    +not_wanted_list: json_object
+    +trade_filters: json_object
+    +wanted_filters: json_object
+    +fusion: json_object
+  }
+
+  class TradeUpdate {
+    +trade_id: string
+    +trade_status: string
+    +last_update: number
+  }
+
+  BatchedMessage --> Location
+  BatchedMessage --> PokemonUpdate
+  BatchedMessage --> TradeUpdate
+```
+
+### Pokemon Instance Write Contract (Storage Parse Surface)
+
+The storage worker currently parses/persists the following Pokemon instance fields.
+
+| Category | Fields |
+| --- | --- |
+| Identity and ordering | `key` (maps to `instance_id`), `variant_id`, `pokemon_id`, `last_update` |
+| Ownership flags | `is_caught`, `is_for_trade`, `is_wanted`, `most_wanted` |
+| Core stats | `cp`, `attack_iv`, `defense_iv`, `stamina_iv`, `level` |
+| Base attributes | `nickname`, `gender`, `shiny`, `costume_id`, `lucky`, `shadow`, `purified` |
+| Moves | `fast_move_id`, `charged_move1_id`, `charged_move2_id` |
+| Dimensions | `weight`, `height` |
+| Trade preferences | `mirror`, `pref_lucky`, `registered`, `favorite`, `friendship_level` |
+| Tags and lists | `caught_tags`, `trade_tags`, `wanted_tags`, `not_trade_list`, `not_wanted_list`, `trade_filters`, `wanted_filters` |
+| Mega, fusion, max | `mega`, `mega_form`, `is_mega`, `is_fused`, `fusion`, `fusion_form`, `fused_with`, `dynamax`, `gigantamax`, `max_attack`, `max_guard`, `max_spirit` |
+| Location and dates | `location_card`, `location_caught`, `date_caught`, `traded_date` |
+| Provenance and lifecycle | `pokeball`, `is_traded`, `original_trainer_name`, `original_trainer_id`, `crown` |
+| Service metadata | `trace_id` (from top-level message), `user_id` (from top-level message), `date_added` (set by storage on create) |
+
+Behavior notes:
+
+- Deletion path is triggered only when `is_caught=false` and both `is_wanted` and `is_for_trade` are false.
+- `is_caught` is required in incoming `pokemonUpdates`; rows missing it are skipped.
+- Wanted rows are retained when `is_caught=false` and `is_wanted=true`.
+- `is_for_trade` is automatically forced to `false` when `is_caught=false`.
+- `registered` is automatically forced to `true` when `is_caught=true`.
+- Storage enforces canonical ownership semantics using `is_caught` only.
+- `registrations` is synchronized per `(user_id, variant_id)` from persisted instance state.
+- `instance_tags` is synchronized from `caught_tags` + `trade_tags` + `wanted_tags` (filtered to valid user tag IDs).
+- Unknown columns are filtered out at runtime via live `instances` schema inspection.
+- JSON object fields default to `{}` when missing/invalid.
+- JSON array tag fields default to `[]` when missing/invalid.
+
+Fields that may appear from clients but are currently ignored by storage include:
+none in the current canonical payload surface.
+
+### Data UML (Mermaid Class Diagram)
+
+```mermaid
+classDiagram
+  class User {
+    +user_id: string PK
+    +username: string
+    +latitude: float
+    +longitude: float
+  }
+
+  class PokemonInstance {
+    +instance_id: string PK
+    +user_id: string FK
+    +pokemon_id: int
+    +nickname: string nullable
+    +cp: int nullable
+    +attack_iv: int nullable
+    +defense_iv: int nullable
+    +stamina_iv: int nullable
+    +shiny: bool
+    +costume_id: int nullable
+    +lucky: bool
+    +shadow: bool
+    +purified: bool
+    +fast_move_id: int nullable
+    +charged_move1_id: int nullable
+    +charged_move2_id: int nullable
+    +weight: float nullable
+    +height: float nullable
+    +gender: string nullable
+    +mirror: bool
+    +pref_lucky: bool
+    +registered: bool
+    +favorite: bool
+    +location_card: string nullable
+    +location_caught: string nullable
+    +friendship_level: int nullable
+    +date_caught: datetime nullable
+    +date_added: datetime
+    +is_caught: bool
+    +is_for_trade: bool
+    +is_wanted: bool
+    +most_wanted: bool
+    +caught_tags: json
+    +trade_tags: json
+    +wanted_tags: json
+    +not_trade_list: json
+    +not_wanted_list: json
+    +trade_filters: json
+    +wanted_filters: json
+    +mega: bool
+    +mega_form: string nullable
+    +is_mega: bool
+    +is_fused: bool
+    +fusion: json
+    +fusion_form: string nullable
+    +fused_with: string nullable
+    +disabled: bool
+    +dynamax: bool
+    +gigantamax: bool
+    +max_attack: string nullable
+    +max_guard: string nullable
+    +max_spirit: string nullable
+    +trace_id: string nullable
+    +last_update: bigint
+  }
+
+  class Trade {
+    +trade_id: string PK
+    +user_id_proposed: string
+    +user_id_accepting: string
+    +trade_status: string
+    +last_update: bigint
+  }
+
+  User --> PokemonInstance
+```
+
+## ⚙️ Configuration
+
+### Required (`storage/.env`)
+
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_HOSTNAME`
+- `DB_PORT`
+- `DB_NAME`
+- `KAFKA_HOSTNAME`
+- `KAFKA_PORT`
+- `KAFKA_TOPIC`
+
+### Recommended
+
+- `KAFKA_MAX_RETRIES` (default `5`)
+- `KAFKA_RETRY_INTERVAL` (default `3`)
+- `PORT` or `STORAGE_HTTP_PORT` (default `3004`)
+- `RUN_APP_BACKUPS=true` only if app-managed backups are desired
+
+### Optional YAML
+
+- `storage/config/app_conf.yml` can define Kafka defaults.
+- `.env` values override YAML values.
+
+## 🐳 Docker
 
 ```bash
-go mod download
+cd Go/storage
+docker compose up -d
 ```
 
-### Run locally
+Notes:
 
-```bash
-go run .
-```
+- `storage_service` joins `kafka_default`
+- `mysql_storage` runs in same compose
+- storage healthcheck uses `http://127.0.0.1:3004/readyz`
 
-This will:
+## 📈 Metrics
 
-- Connect to MySQL
-- Start consuming Kafka messages
-- Begin scheduling backups and retry logic
+Application metrics:
 
----
+- `http_requests_total`
+- `http_request_duration_seconds`
+- `storage_kafka_messages_total{result=...}`
+- `storage_kafka_message_processing_duration_seconds{result=...}`
+- `storage_kafka_consumer_ready`
 
-## 🗄️ Database Schema
+## 🚀 CI/CD
 
-The service stores:
+- CI: `.github/workflows/ci-storage.yml`
+- Deploy: `.github/workflows/deploy-storage-prod.yml`
 
-- Pokémon instance data (`instances` table)
-- Trade data (`trades` table)
-- User location metadata (`users` table)
+Deploy workflow includes:
 
-See `models.go` for GORM definitions.
+- prod repo sync
+- preflight env/compose/network checks
+- deploy with selected image
+- process-health validation
+- rollback on failure
 
----
+## 🔐 Security Notes
 
-## 🧠 How It Works
-
-### 🔁 Kafka Message Flow
-
-The service consumes `batchedUpdates` messages from Kafka. Each message may contain:
-
-- `pokemonUpdates`: array of Pokémon instances (ownership, IVs, level, etc.)
-- `tradeUpdates`: array of trade records (statuses, confirmations, etc.)
-- `location`: optional user location update
-- `trace_id`: request-level correlation ID for logging
-
-### 🔄 Pokémon Handling
-
-- Ownership changes, moves, level, IVs, tags, etc. are persisted
-- Deletions are triggered when marked unowned (`is_unowned` or `is_missing`) and not owned/wanted/traded
-- Only newer updates (based on `last_update`) are accepted
-- Invalid or unauthorized updates are skipped with a warning
-
-### 🔄 Trade Handling
-
-- Handles proposed, pending, completed, denied, and cancelled trades
-- Enforces valid status transitions
-- Automatically deletes conflicting trades on confirmed swaps
-- Swaps Pokémon ownership on completion
-- Ensures both parties confirm before finalizing trades
-
----
-
-## 📅 Scheduled Jobs
-
-| Job                     | Schedule      | Description                                |
-|------------------------|---------------|--------------------------------------------|
-| `CreateBackup()`       | Daily @ 00:00 | Exports the full `user_pokemon_backup_YYYY-MM-DD.sql` |
-| `ReprocessFailedMessages()` | Every 5m   | Retries any failed Kafka messages           |
-
-See `scheduler.go` and `backup.go`.
-
----
-
-## 🛠 Configuration
-
-### `.env`
-
-```env
-DB_USER=root
-DB_PASSWORD=yourpassword
-DB_HOSTNAME=mysql_storage  # use localhost if running MySQL directly on host
-DB_PORT=3306
-DB_NAME=pokemon_storage
-
-# Preferred Kafka settings (override app_conf when present)
-KAFKA_HOSTNAME=kafka
-KAFKA_PORT=9092
-KAFKA_TOPIC=batchedUpdates
-KAFKA_MAX_RETRIES=5
-KAFKA_RETRY_INTERVAL=3
-
-# Optional observability port (default 3004)
-PORT=3004
-# or
-STORAGE_HTTP_PORT=3004
-
-# Legacy fallback (kept for backward compatibility)
-HOST_IP=<legacy-kafka-host>
-```
-
-### `config/app_conf.yml` (optional)
-
-If present, YAML config is loaded first, then `.env` values override it.
-
----
-
-## 📈 Monitoring
-
-- `GET /healthz`: liveness probe
-- `GET /readyz`: readiness probe (DB + Kafka consumer readiness)
-- `GET /metrics`: Prometheus metrics
-  - `http_requests_total`
-  - `http_request_duration_seconds`
-  - `storage_kafka_messages_total`
-  - `storage_kafka_message_processing_duration_seconds`
-  - `storage_kafka_consumer_ready`
-
----
-
-## 🗃️ Backups
-
-SQL backups are stored in `./backups/` and rotated daily.
-
-Example:
-
-```
-user_pokemon_backup_2025-04-07.sql
-```
-
-Use `restore_database.go` (coming soon) or standard MySQL CLI to restore.
-
----
-
-## 📜 Logging
-
-All logs are stored in:
-
-```
-app.log
-```
-
-Each message is tagged with `trace_id` for easy correlation between Kafka, Pokémon, and trade activity.
-
----
-
-## 🔐 Security
-
-- All incoming updates are validated before processing
-- Unauthorized modifications (e.g. tampering with another user’s data) are skipped and logged
-- No external access is exposed (Kafka consumer only)
-
----
+- No public ingress required for core worker path (Kafka + MySQL only)
+- Message processing validates schema and ownership constraints
+- Poison messages are persisted and skipped to avoid partition deadlock
+- Service logs retain `trace_id` for cross-service correlation
