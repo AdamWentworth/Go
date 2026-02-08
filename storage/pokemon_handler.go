@@ -29,8 +29,8 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			continue
 		}
 
-		// Deletion logic
-		isUnowned := parseOptionalBool(pm["is_unowned"])
+		// Deletion logic supports legacy "is_unowned" and newer "is_missing".
+		isUnowned := parseUnownedFlag(pm)
 		isOwned := parseOptionalBool(pm["is_owned"])
 		isWanted := parseOptionalBool(pm["is_wanted"])
 		isForTrade := parseOptionalBool(pm["is_for_trade"])
@@ -151,7 +151,6 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			"friendship_level": friendshipLevel,
 			"date_caught":      dateCaught,
 			"last_update":      msgLastUpdate,
-			"is_unowned":       isUnowned,
 			"is_owned":         isOwned,
 			"is_for_trade":     isForTrade,
 			"is_wanted":        isWanted,
@@ -175,64 +174,18 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			"max_guard":        maxGuard,
 			"max_spirit":       maxSpirit,
 		}
+		updates[instanceUnownedFieldName()] = isUnowned
 
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
-			newInstance := PokemonInstance{
-				InstanceID:      instanceID,
-				UserID:          userID,
-				PokemonID:       pokemonID,
-				Shiny:           shiny,
-				Lucky:           lucky,
-				Shadow:          shadow,
-				Purified:        purified,
-				Mirror:          mirror,
-				PrefLucky:       prefLucky,
-				Registered:      registered,
-				Favorite:        favorite,
-				NotTradeList:    *notTradeList,
-				NotWantedList:   *notWantedList,
-				TradeFilters:    tradeFilters,
-				WantedFilters:   wantedFilters,
-				LastUpdate:      msgLastUpdate,
-				IsUnowned:       isUnowned,
-				IsOwned:         isOwned,
-				IsForTrade:      isForTrade,
-				IsWanted:        isWanted,
-				Nickname:        nickname,
-				CP:              cp,
-				AttackIV:        attackIV,
-				DefenseIV:       defenseIV,
-				StaminaIV:       staminaIV,
-				CostumeID:       costumeID,
-				FastMoveID:      fastMoveID,
-				ChargedMove1ID:  chargedMove1ID,
-				ChargedMove2ID:  chargedMove2ID,
-				Weight:          weight,
-				Height:          height,
-				Gender:          gender,
-				LocationCard:    locationCard,
-				LocationCaught:  locationCaught,
-				FriendshipLevel: friendshipLevel,
-				DateCaught:      dateCaught,
-				TraceID:         &messageTraceID,
-				DateAdded:       time.Now(),
-				Mega:            mega,
-				MegaForm:        megaForm,
-				IsMega:          isMega,
-				Level:           level,
-				IsFused:         isFused,
-				Fusion:          *fusionJSON,
-				FusionForm:      fusionForm,
-				FusedWith:       fusedWith,
-				Disabled:        disabled,
-				Dynamax:         dynamax,
-				Gigantamax:      gigantamax,
-				MaxAttack:       maxAttack,
-				MaxGuard:        maxGuard,
-				MaxSpirit:       maxSpirit,
+			createFields := make(map[string]interface{}, len(updates)+3)
+			for k, v := range updates {
+				createFields[k] = v
 			}
+			createFields["instance_id"] = instanceID
+			createFields["user_id"] = userID
+			createFields["date_added"] = time.Now()
 
-			if errCreate := DB.Create(&newInstance).Error; errCreate != nil {
+			if errCreate := DB.Table((PokemonInstance{}).TableName()).Create(createFields).Error; errCreate != nil {
 				logrus.Warnf("Failed to create instance %s for user %s: %v", instanceID, userID, errCreate)
 				continue
 			}

@@ -20,10 +20,10 @@ This service listens to a Kafka topic for batched Pokémon and trade updates, pe
 
 ### Prerequisites
 
-- Go 1.21+
+- Go 1.25+
 - MySQL 8+
 - Kafka running with a `batchedUpdates` topic
-- `.env.development` and `config/app_conf.yml` set up
+- `.env` configured (`config/app_conf.yml` is optional)
 
 ### Install dependencies
 
@@ -71,7 +71,7 @@ The service consumes `batchedUpdates` messages from Kafka. Each message may cont
 ### 🔄 Pokémon Handling
 
 - Ownership changes, moves, level, IVs, tags, etc. are persisted
-- Deletions are triggered if marked `is_unowned` and not owned/wanted/traded
+- Deletions are triggered when marked unowned (`is_unowned` or `is_missing`) and not owned/wanted/traded
 - Only newer updates (based on `last_update`) are accepted
 - Invalid or unauthorized updates are skipped with a warning
 
@@ -98,7 +98,7 @@ See `scheduler.go` and `backup.go`.
 
 ## 🛠 Configuration
 
-### `.env.development`
+### `.env`
 
 ```env
 DB_USER=root
@@ -107,12 +107,20 @@ DB_HOSTNAME=localhost
 DB_PORT=3306
 DB_NAME=pokemon_storage
 
-HOST_IP=<your-host-ip>  # e.g. 192.168.1.42
+# Preferred Kafka settings (override app_conf when present)
+KAFKA_HOSTNAME=kafka
+KAFKA_PORT=9092
+KAFKA_TOPIC=batchedUpdates
+KAFKA_MAX_RETRIES=5
+KAFKA_RETRY_INTERVAL=3
+
+# Legacy fallback (kept for backward compatibility)
+HOST_IP=<legacy-kafka-host>
 ```
 
-### `config/app_conf.yml`
+### `config/app_conf.yml` (optional)
 
-Stores additional configuration such as batch size, retry policies, logging options, etc.
+If present, YAML config is loaded first, then `.env` values override it.
 
 ---
 

@@ -387,30 +387,34 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				acceptingInstance.LastUpdate = nowTs
 
 				// 6) Save changes
+				proposedUpdates := map[string]interface{}{
+					"user_id":      proposedInstance.UserID,
+					"is_owned":     proposedInstance.IsOwned,
+					"is_for_trade": proposedInstance.IsForTrade,
+					"is_wanted":    proposedInstance.IsWanted,
+					"last_update":  nowTs,
+				}
+				proposedUpdates[instanceUnownedFieldName()] = proposedInstance.IsUnowned
+
 				if err := tx.Model(&PokemonInstance{}).
 					Where("instance_id = ?", proposedInstanceID).
-					Updates(map[string]interface{}{
-						"user_id":      proposedInstance.UserID,
-						"is_owned":     proposedInstance.IsOwned,
-						"is_unowned":   proposedInstance.IsUnowned,
-						"is_for_trade": proposedInstance.IsForTrade,
-						"is_wanted":    proposedInstance.IsWanted,
-						"last_update":  nowTs,
-					}).Error; err != nil {
+					Updates(proposedUpdates).Error; err != nil {
 					logrus.Errorf("Failed to update proposedInstance %s after trade completion: %v", proposedInstanceID, err)
 					return err
 				}
 
+				acceptingUpdates := map[string]interface{}{
+					"user_id":      acceptingInstance.UserID,
+					"is_owned":     acceptingInstance.IsOwned,
+					"is_for_trade": acceptingInstance.IsForTrade,
+					"is_wanted":    acceptingInstance.IsWanted,
+					"last_update":  nowTs,
+				}
+				acceptingUpdates[instanceUnownedFieldName()] = acceptingInstance.IsUnowned
+
 				if err := tx.Model(&PokemonInstance{}).
 					Where("instance_id = ?", acceptingInstanceID).
-					Updates(map[string]interface{}{
-						"user_id":      acceptingInstance.UserID,
-						"is_owned":     acceptingInstance.IsOwned,
-						"is_unowned":   acceptingInstance.IsUnowned,
-						"is_for_trade": acceptingInstance.IsForTrade,
-						"is_wanted":    acceptingInstance.IsWanted,
-						"last_update":  nowTs,
-					}).Error; err != nil {
+					Updates(acceptingUpdates).Error; err != nil {
 					logrus.Errorf("Failed to update acceptingInstance %s after trade completion: %v", acceptingInstanceID, err)
 					return err
 				}

@@ -10,8 +10,6 @@ services:
         condition: service_healthy
     env_file:
       - .env
-    ports:
-      - "3004:3004"
     volumes:
       - ./backups:/app/backups
     networks:
@@ -29,8 +27,6 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
       TZ: America/Vancouver
     command: --default-authentication-plugin=mysql_native_password
-    ports:
-      - "3306:3306"
     volumes:
       - storage_mysql_data:/var/lib/mysql
       - ./backups:/backups

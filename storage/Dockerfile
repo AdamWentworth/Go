@@ -1,16 +1,24 @@
-# Dockerfile storage
-FROM golang:1.22-alpine
+# syntax=docker/dockerfile:1
+FROM golang:1.25-alpine AS build
 
-WORKDIR /app
+WORKDIR /src
 
-# Copy Go modules first to cache better
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy rest of the source
 COPY . .
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/storage_service .
 
-# Build the binary
-RUN go build -o storage_service
+FROM alpine:3.20
+WORKDIR /app
 
-CMD ["./storage_service"]
+RUN apk add --no-cache ca-certificates tzdata \
+    && addgroup -S app \
+    && adduser -S -G app app \
+    && mkdir -p /app/backups \
+    && chown -R app:app /app
+
+COPY --from=build /out/storage_service /usr/local/bin/storage_service
+
+USER app
+CMD ["storage_service"]

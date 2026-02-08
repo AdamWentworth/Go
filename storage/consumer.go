@@ -2,138 +2,145 @@
 package main
 
 import (
-    "compress/gzip"
-    "context"
-    "encoding/json"
-    "fmt"
-    "io"
-    "os"
-    "strings"
-    "time"
+	"bytes"
+	"compress/gzip"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"time"
 
-    "github.com/segmentio/kafka-go"
-    "github.com/sirupsen/logrus"
+	"github.com/segmentio/kafka-go"
+	"github.com/sirupsen/logrus"
 )
 
 var failedMessagesFile = "failed_messages.jsonl"
 
-func StartConsumer(ctx context.Context) {
-    // Use Kafka details from the loaded configuration
-    kafkaHost := AppConfig.Events.Hostname
-    if kafkaHost == "" {
-        logrus.Fatal("Kafka hostname is not configured in app_conf.yml")
-    }
+// These are package vars to make behavior testable without Kafka/DB.
+var (
+	handleMessageFn        = HandleMessage
+	persistFailedMessageFn = saveFailedMessage
+)
 
-    kafkaPort := AppConfig.Events.Port
-    topic := AppConfig.Events.Topic
-    maxRetries := AppConfig.Events.MaxRetries
-    retryInterval := time.Duration(AppConfig.Events.RetryInterval) * time.Second
-
-    if topic == "" {
-        logrus.Fatal("Kafka topic is not configured in app_conf.yml")
-    }
-
-    var reader *kafka.Reader
-    retryAttempt := 0
-
-    for retryAttempt < maxRetries {
-        // Create a new Kafka reader
-        reader = kafka.NewReader(kafka.ReaderConfig{
-            Brokers:           []string{fmt.Sprintf("%s:%s", kafkaHost, kafkaPort)},
-            Topic:             topic,
-            GroupID:           "event_group",
-            MinBytes:          10e3, // 10KB
-            MaxBytes:          10e6, // 10MB
-            CommitInterval:    0,    // Commit manually
-            StartOffset:       kafka.FirstOffset,
-            ReadBackoffMin:    retryInterval,
-            ReadBackoffMax:    retryInterval * 2,
-            MaxWait:           500 * time.Millisecond,
-            SessionTimeout:    10 * time.Second,
-            RebalanceTimeout:  30 * time.Second,
-        })
-
-        // If the reader is created successfully, break the retry loop
-        break
-    }
-
-    if reader == nil {
-        logrus.Fatal("Failed to establish Kafka reader after maximum retries")
-    }
-    defer reader.Close()
-
-    logrus.Infof("Kafka consumer subscribed to topic: %s", topic)
-
-    for {
-        select {
-        case <-ctx.Done():
-            logrus.Info("Kafka consumer shutting down.")
-            return
-        default:
-            message, err := reader.ReadMessage(ctx)
-            if err != nil {
-                if err == context.Canceled {
-                    return
-                }
-                logrus.Errorf("Failed to read message: %v", err)
-                // Implement exponential backoff or other retry strategies if needed
-                time.Sleep(retryInterval)
-                continue
-            }
-
-            if err := processMessage(ctx, reader, message); err != nil {
-                logrus.Errorf("Error processing message: %v", err)
-            }
-        }
-    }
+type messageCommitter interface {
+	CommitMessages(ctx context.Context, msgs ...kafka.Message) error
 }
 
-func processMessage(ctx context.Context, reader *kafka.Reader, message kafka.Message) error {
-    decompressed, err := decompressMessage(message.Value)
-    if err != nil {
-        logrus.Errorf("Failed to decompress message: %v", err)
-        return err
-    }
+func StartConsumer(ctx context.Context) {
+	events := AppConfig.Events
+	if events.Hostname == "" {
+		logrus.Fatal("Kafka hostname is not configured")
+	}
+	if events.Topic == "" {
+		logrus.Fatal("Kafka topic is not configured")
+	}
 
-    var data map[string]interface{}
-    if err := json.Unmarshal(decompressed, &data); err != nil {
-        logrus.Errorf("Failed to unmarshal JSON: %v", err)
-        return err
-    }
+	retryInterval := time.Duration(events.RetryInterval) * time.Second
+	if retryInterval <= 0 {
+		retryInterval = 3 * time.Second
+	}
+	maxRetries := events.MaxRetries
+	if maxRetries <= 0 {
+		maxRetries = 5
+	}
 
-    if err := HandleMessage(data); err != nil {
-        logrus.Errorf("Error handling message: %v", err)
-        saveFailedMessage(data)
-        return err
-    }
+	reader := newKafkaReader(events, retryInterval)
+	defer reader.Close()
 
-    if err := reader.CommitMessages(ctx, message); err != nil {
-        logrus.Errorf("Failed to commit message: %v", err)
-        return err
-    }
+	logrus.Infof("Kafka consumer subscribed to topic: %s", events.Topic)
 
-    return nil
+	consecutiveReadErrors := 0
+	for {
+		message, err := reader.FetchMessage(ctx)
+		if err != nil {
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				logrus.Info("Kafka consumer shutting down.")
+				return
+			}
+
+			consecutiveReadErrors++
+			logrus.Errorf("Failed to fetch message: %v (retry %d/%d)", err, consecutiveReadErrors, maxRetries)
+			if consecutiveReadErrors >= maxRetries {
+				logrus.Warn("Kafka read retries exhausted, recreating reader.")
+				_ = reader.Close()
+				reader = newKafkaReader(events, retryInterval)
+				consecutiveReadErrors = 0
+			}
+			time.Sleep(retryInterval)
+			continue
+		}
+
+		consecutiveReadErrors = 0
+		if err := processMessage(ctx, reader, message); err != nil {
+			logrus.Errorf("Error processing message (partition=%d offset=%d): %v", message.Partition, message.Offset, err)
+		}
+	}
+}
+
+func newKafkaReader(events EventsConfig, retryInterval time.Duration) *kafka.Reader {
+	return kafka.NewReader(kafka.ReaderConfig{
+		Brokers:          []string{fmt.Sprintf("%s:%s", events.Hostname, events.Port)},
+		Topic:            events.Topic,
+		GroupID:          "event_group",
+		MinBytes:         10e3, // 10KB
+		MaxBytes:         10e6, // 10MB
+		CommitInterval:   0,    // Explicit commit only.
+		StartOffset:      kafka.FirstOffset,
+		ReadBackoffMin:   retryInterval,
+		ReadBackoffMax:   retryInterval * 2,
+		MaxWait:          500 * time.Millisecond,
+		SessionTimeout:   10 * time.Second,
+		RebalanceTimeout: 30 * time.Second,
+	})
+}
+
+func processMessage(ctx context.Context, committer messageCommitter, message kafka.Message) error {
+	decompressed, err := decompressMessage(message.Value)
+	if err != nil {
+		return fmt.Errorf("decompress message: %w", err)
+	}
+
+	var data map[string]interface{}
+	if err := json.Unmarshal(decompressed, &data); err != nil {
+		return fmt.Errorf("unmarshal message: %w", err)
+	}
+
+	if err := handleMessageFn(data); err != nil {
+		// Persist-and-skip poison messages so they don't block the partition forever.
+		persistFailedMessageFn(data)
+		if commitErr := committer.CommitMessages(ctx, message); commitErr != nil {
+			return fmt.Errorf("handle message failed (%v) and commit-after-failure failed (%w)", err, commitErr)
+		}
+		return fmt.Errorf("handle message failed and was persisted to retry file: %w", err)
+	}
+
+	if err := committer.CommitMessages(ctx, message); err != nil {
+		return fmt.Errorf("commit message: %w", err)
+	}
+	return nil
 }
 
 func decompressMessage(compressed []byte) ([]byte, error) {
-    r, err := gzip.NewReader(strings.NewReader(string(compressed)))
-    if err != nil {
-        return nil, err
-    }
-    defer r.Close()
+	r, err := gzip.NewReader(bytes.NewReader(compressed))
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
 
-    return io.ReadAll(r)
+	return io.ReadAll(r)
 }
 
 func saveFailedMessage(data interface{}) {
-    f, err := os.OpenFile(failedMessagesFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-    if err != nil {
-        logrus.Errorf("Failed to open failedMessagesFile: %v", err)
-        return
-    }
-    defer f.Close()
+	f, err := os.OpenFile(failedMessagesFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		logrus.Errorf("Failed to open failedMessagesFile: %v", err)
+		return
+	}
+	defer f.Close()
 
-    b, _ := json.Marshal(data)
-    _, _ = f.WriteString(string(b) + "\n")
-    logrus.Infof("Message saved to %s for later reprocessing.", failedMessagesFile)
+	b, _ := json.Marshal(data)
+	_, _ = f.WriteString(string(b) + "\n")
+	logrus.Infof("Message saved to %s for later reprocessing.", failedMessagesFile)
 }

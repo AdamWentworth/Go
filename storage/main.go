@@ -27,6 +27,7 @@ func main() {
 	if err := InitDB(); err != nil {
 		logrus.Fatalf("Failed to initialize db: %v", err)
 	}
+	resolveInstanceUnownedColumn()
 
 	// 4) Start Kafka Consumer
 	ctx, cancel := context.WithCancel(context.Background())
