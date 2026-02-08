@@ -389,12 +389,18 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				// 6) Save changes
 				proposedUpdates := map[string]interface{}{
 					"user_id":      proposedInstance.UserID,
-					"is_owned":     proposedInstance.IsOwned,
 					"is_for_trade": proposedInstance.IsForTrade,
 					"is_wanted":    proposedInstance.IsWanted,
 					"last_update":  nowTs,
 				}
-				proposedUpdates[instanceUnownedFieldName()] = proposedInstance.IsUnowned
+				if instanceHasColumn("is_owned") {
+					proposedUpdates["is_owned"] = proposedInstance.IsOwned
+				}
+				if instanceHasColumn("is_traded") {
+					proposedUpdates["is_traded"] = true
+				}
+				setUnownedValue(proposedUpdates, proposedInstance.IsUnowned)
+				proposedUpdates = filterInstanceColumns(proposedUpdates)
 
 				if err := tx.Model(&PokemonInstance{}).
 					Where("instance_id = ?", proposedInstanceID).
@@ -405,12 +411,18 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 
 				acceptingUpdates := map[string]interface{}{
 					"user_id":      acceptingInstance.UserID,
-					"is_owned":     acceptingInstance.IsOwned,
 					"is_for_trade": acceptingInstance.IsForTrade,
 					"is_wanted":    acceptingInstance.IsWanted,
 					"last_update":  nowTs,
 				}
-				acceptingUpdates[instanceUnownedFieldName()] = acceptingInstance.IsUnowned
+				if instanceHasColumn("is_owned") {
+					acceptingUpdates["is_owned"] = acceptingInstance.IsOwned
+				}
+				if instanceHasColumn("is_traded") {
+					acceptingUpdates["is_traded"] = true
+				}
+				setUnownedValue(acceptingUpdates, acceptingInstance.IsUnowned)
+				acceptingUpdates = filterInstanceColumns(acceptingUpdates)
 
 				if err := tx.Model(&PokemonInstance{}).
 					Where("instance_id = ?", acceptingInstanceID).

@@ -103,7 +103,7 @@ See `scheduler.go` and `backup.go`.
 ```env
 DB_USER=root
 DB_PASSWORD=yourpassword
-DB_HOSTNAME=localhost
+DB_HOSTNAME=mysql_storage  # use localhost if running MySQL directly on host
 DB_PORT=3306
 DB_NAME=pokemon_storage
 

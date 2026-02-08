@@ -151,7 +151,6 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			"friendship_level": friendshipLevel,
 			"date_caught":      dateCaught,
 			"last_update":      msgLastUpdate,
-			"is_owned":         isOwned,
 			"is_for_trade":     isForTrade,
 			"is_wanted":        isWanted,
 			"not_trade_list":   *notTradeList,
@@ -174,7 +173,11 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			"max_guard":        maxGuard,
 			"max_spirit":       maxSpirit,
 		}
-		updates[instanceUnownedFieldName()] = isUnowned
+		if instanceHasColumn("is_owned") {
+			updates["is_owned"] = isOwned
+		}
+		setUnownedValue(updates, isUnowned)
+		updates = filterInstanceColumns(updates)
 
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			createFields := make(map[string]interface{}, len(updates)+3)
@@ -184,6 +187,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			createFields["instance_id"] = instanceID
 			createFields["user_id"] = userID
 			createFields["date_added"] = time.Now()
+			createFields = filterInstanceColumns(createFields)
 
 			if errCreate := DB.Table((PokemonInstance{}).TableName()).Create(createFields).Error; errCreate != nil {
 				logrus.Warnf("Failed to create instance %s for user %s: %v", instanceID, userID, errCreate)
