@@ -109,7 +109,11 @@ jobs:
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
           COMPOSE_FILE="${DEPLOY_ROOT}/kafka/docker-compose.yml"
 
-          docker compose -f "${COMPOSE_FILE}" up -d --force-recreate zookeeper kafka kafka_init
+          if ! docker compose -f "${COMPOSE_FILE}" up -d --force-recreate zookeeper kafka; then
+            echo "Kafka stack failed to start. Recent logs:" >&2
+            docker compose -f "${COMPOSE_FILE}" logs --tail=200 zookeeper kafka || true
+            exit 1
+          fi
 
       - name: Health Checks
         shell: bash
@@ -137,6 +141,16 @@ jobs:
 
           wait_container_healthy "kafka-zookeeper-1"
           wait_container_healthy "kafka-kafka-1"
+
+          # Ensure required topic exists after broker is healthy.
+          docker exec kafka-kafka-1 \
+            kafka-topics \
+            --bootstrap-server 127.0.0.1:9092 \
+            --create \
+            --if-not-exists \
+            --topic batchedUpdates \
+            --partitions 1 \
+            --replication-factor 1 >/dev/null
 
           if ! docker exec kafka-kafka-1 kafka-topics --bootstrap-server 127.0.0.1:9092 --list | grep -qx 'batchedUpdates'; then
             echo "Topic batchedUpdates missing after deploy." >&2
