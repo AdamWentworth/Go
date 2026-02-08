@@ -42,6 +42,7 @@ Other routes:
 - `GET /api-docs`
 - `GET /healthz`
 - `GET /readyz`
+- `GET /metrics`
 
 ## ⚙ Environment Variables
 

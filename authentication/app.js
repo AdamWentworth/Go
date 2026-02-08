@@ -15,6 +15,7 @@ const fs = require('fs');
 const path = require('path');
 const logger = require('./middlewares/logger');
 const csrfOriginGuard = require('./middlewares/csrfOriginGuard');
+const { httpMetricsMiddleware, metricsHandler } = require('./metrics/http');
 const cron = require('node-cron');
 const createBackup = require('./tasks/backup');
 const isTest = process.env.NODE_ENV === 'test';
@@ -84,6 +85,7 @@ app.use((req, res, next) => {
   logger.info(`${req.method} ${req.url}`);
   next();
 });
+app.use(httpMetricsMiddleware);
 
 const mongoConnectionPromise = mongoose
   .connect(process.env.DATABASE_URL)
@@ -110,6 +112,8 @@ app.get('/readyz', async (req, res) => {
     return res.status(503).json({ ok: false, message: 'db not ready' });
   }
 });
+
+app.get('/metrics', metricsHandler);
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,

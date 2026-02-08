@@ -277,4 +277,15 @@ describe('authentication service integration', () => {
     expect(res.status).toBe(501);
     expect(res.body.message).toBe('Password reset is not enabled for this environment.');
   });
+
+  test('metrics endpoint exposes Prometheus metrics', async () => {
+    await registerUser();
+
+    const res = await request(app).get('/metrics');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('text/plain');
+    expect(res.text).toContain('http_requests_total');
+    expect(res.text).toContain('http_request_duration_seconds');
+  });
 });

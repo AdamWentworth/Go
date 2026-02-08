@@ -16,6 +16,35 @@ services:
       pokemon_edge:
         ipv4_address: 172.30.0.11
 
+  node_exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node_exporter
+    command:
+      - "--path.rootfs=/host"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($|/)"
+    volumes:
+      - "/:/host:ro,rslave"
+    pid: host
+    restart: unless-stopped
+    networks:
+      - pokemon_edge
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    command:
+      - "--housekeeping_interval=30s"
+      - "--docker_only=true"
+    volumes:
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:ro"
+      - "/sys:/sys:ro"
+      - "/var/lib/docker:/var/lib/docker:ro"
+      - "/dev/disk:/dev/disk:ro"
+    restart: unless-stopped
+    networks:
+      - pokemon_edge
+
   alertmanager:
     image: prom/alertmanager:latest
     container_name: alertmanager

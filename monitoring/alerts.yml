@@ -1,4 +1,57 @@
 groups:
+  - name: auth-service-alerts
+    rules:
+      - alert: AuthServiceTargetDown
+        expr: up{job="auth_service"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: auth_service
+        annotations:
+          summary: "auth_service target is down"
+          description: "Prometheus cannot scrape auth_service for at least 2 minutes."
+
+      - alert: AuthServiceHigh5xxRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="auth_service",status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total{job="auth_service"}[5m])), 1)
+          ) > 0.02
+        for: 10m
+        labels:
+          severity: warning
+          service: auth_service
+        annotations:
+          summary: "auth_service 5xx rate is high"
+          description: "5xx responses exceed 2% for 10 minutes."
+
+      - alert: AuthServiceHighP95Latency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (
+              rate(http_request_duration_seconds_bucket{job="auth_service"}[5m])
+            )
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          service: auth_service
+        annotations:
+          summary: "auth_service p95 latency is high"
+          description: "p95 latency exceeds 1 second for 10 minutes."
+
+      - alert: AuthServiceMetricsMissing
+        expr: absent(http_requests_total{job="auth_service"})
+        for: 10m
+        labels:
+          severity: warning
+          service: auth_service
+        annotations:
+          summary: "auth_service request metrics are missing"
+          description: "http_requests_total has been absent for 10 minutes."
+
   - name: pokemon-data-alerts
     rules:
       - alert: PokemonDataTargetDown
@@ -61,3 +114,55 @@ groups:
         annotations:
           summary: "pokemon_data request metrics are missing"
           description: "http_requests_total has been absent for 10 minutes."
+
+  - name: host-and-container-alerts
+    rules:
+      - alert: HostHighCPU
+        expr: (100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 85
+        for: 10m
+        labels:
+          severity: warning
+          service: host
+        annotations:
+          summary: "Host CPU usage is high"
+          description: "CPU usage is above 85% for at least 10 minutes."
+
+      - alert: HostHighMemory
+        expr: ((1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100) > 90
+        for: 10m
+        labels:
+          severity: warning
+          service: host
+        annotations:
+          summary: "Host memory usage is high"
+          description: "Memory usage is above 90% for at least 10 minutes."
+
+      - alert: HostLowDisk
+        expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"}) * 100 < 10
+        for: 15m
+        labels:
+          severity: warning
+          service: host
+        annotations:
+          summary: "Host disk space is low"
+          description: "A filesystem has less than 10% free space for at least 15 minutes."
+
+      - alert: ContainerHighCPU
+        expr: sum by (name) (rate(container_cpu_usage_seconds_total{name!=""}[5m])) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          service: containers
+        annotations:
+          summary: "Container CPU usage is high"
+          description: "Container {{ $labels.name }} is using more than 0.8 CPU cores for at least 10 minutes."
+
+      - alert: ContainerHighMemory
+        expr: (container_memory_working_set_bytes{name!="",image!=""} / 1024 / 1024) > 1024
+        for: 10m
+        labels:
+          severity: warning
+          service: containers
+        annotations:
+          summary: "Container memory usage is high"
+          description: "Container {{ $labels.name }} is using more than 1 GiB memory for at least 10 minutes."

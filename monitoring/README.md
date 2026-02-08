@@ -1,6 +1,11 @@
 # Monitoring Stack
 
-This folder runs Prometheus + Alertmanager for the Pokemon service.
+This folder runs Prometheus + Alertmanager for the Pokemon and authentication services.
+
+It now also includes host and container telemetry via:
+
+- `node_exporter` (host CPU, memory, disk, filesystem, load)
+- `cadvisor` (per-container CPU, memory, filesystem, network)
 
 ## Severe Email Alerts
 
@@ -50,3 +55,21 @@ Host ports used by monitoring stack:
 
 - Prometheus: `127.0.0.1:9090`
 - Alertmanager: `127.0.0.1:19093` (container port remains `9093`)
+
+## What You Can Monitor
+
+- App-level metrics: request rate, latency, status codes (`pokemon_data`)
+- App-level metrics: request rate, latency, status codes (`pokemon_data`, `auth_service`)
+- Host-level metrics: CPU %, RAM %, disk free %, filesystem pressure (`node_exporter`)
+- Container-level metrics: per-container CPU/memory/network/filesystem (`cadvisor`)
+
+Common quick PromQL checks:
+
+- Host CPU %:
+  - `100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)`
+- Host memory % used:
+  - `(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100`
+- Container CPU cores used:
+  - `sum by (name) (rate(container_cpu_usage_seconds_total{name!=""}[5m]))`
+- Container memory MiB:
+  - `(container_memory_working_set_bytes{name!="",image!=""} / 1024 / 1024)`
