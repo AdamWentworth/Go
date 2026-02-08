@@ -1,112 +1,82 @@
-# 🦉 Kafka Microservice — Pokémon Go Nexus
+﻿# Kafka Service (Docker) 🦉
 
-This service provides a lightweight Kafka + Zookeeper setup using Docker, used for asynchronous event handling — especially batched Pokémon ownership updates.
+Single-broker Kafka + Zookeeper stack used by this repo for async event flow.
 
----
+## 📦 What This Service Does
 
-## 📦 Overview
+- Hosts Kafka topic `batchedUpdates`
+- Accepts producer writes from `receiver_service`
+- Supports internal container traffic on `kafka:9092`
+- Supports host-only local access on `127.0.0.1:9093`
 
-Kafka helps facilitate:
+## ✅ Current Production Profile
 
-- Batched Pokémon data updates
-- Efficient inter-service event syncing
-- Potential pub-sub expansion in the microservice ecosystem
-
----
+- Single broker, single Zookeeper node
+- Topic auto-created: `batchedUpdates:1:1`
+- Message size limit: `3MB`
+- Loopback-only host exposure for external listener (`127.0.0.1:9093`)
+- Health checks on both Kafka and Zookeeper
 
 ## 🚀 Quick Start
 
-### 1. Set environment variable
-
-Create a `.env` file in the `kafka/` directory with the following:
-
-```env
-HOST_IP=127.0.0.1
-```
-
-> Replace with your actual IP if needed to expose Kafka to external services.
-
----
-
-### 2. Start Kafka + Zookeeper
+1. Ensure the shared external network exists:
 
 ```bash
-docker-compose up -d
+docker network create kafka_default || true
 ```
 
-This launches:
-- **Zookeeper** on port `2181`
-- **Kafka Broker** on ports `9092` (internal) and `9093` (external)
+1. Start Kafka stack:
 
-Kafka is set up to automatically create the topic `batchedUpdates` with 1 partition and 1 replica.
-
----
-
-## 🧱 docker-compose.yml
-
-```yaml
-version: '3.8'
-services:
-  zookeeper:
-    image: wurstmeister/zookeeper
-    ports:
-      - "2181:2181"
-    volumes:
-      - ./data/zookeeper:/opt/zookeeper-3.4.13/data
-
-  kafka:
-    image: wurstmeister/kafka
-    ports:
-      - "9092:9092"
-      - "9093:9093"
-    environment:
-      KAFKA_CREATE_TOPICS: "batchedUpdates:1:1"
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://kafka:9092,PLAINTEXT_EXTERNAL://${HOST_IP}:9093
-      KAFKA_LISTENERS: PLAINTEXT_INTERNAL://0.0.0.0:9092,PLAINTEXT_EXTERNAL://0.0.0.0:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
-      KAFKA_BROKER_ID: 1
-      KAFKA_MESSAGE_MAX_BYTES: 3145728
-      KAFKA_REPLICA_FETCH_MAX_BYTES: 3145728
-    volumes:
-      - ./data/kafka:/kafka
-    env_file:
-      - .env
+```bash
+cd Go/kafka
+docker compose up -d
 ```
 
----
+1. Verify status:
 
-## 🧪 Testing & Debugging
-
-- Check broker status:
-  ```bash
-  docker-compose logs kafka
-  ```
-
-- Inspect Zookeeper:
-  ```bash
-  docker-compose logs zookeeper
-  ```
-
----
-
-## 🗂 Directory Structure
-
+```bash
+docker compose ps
+docker compose logs --tail=100 kafka
+docker compose logs --tail=100 zookeeper
 ```
+
+## 🔌 Connection Modes
+
+- From other containers on `kafka_default`: `kafka:9092`
+- From host machine (local tooling only): `127.0.0.1:9093`
+
+`9092` is intentionally not published to the host.
+
+## ⚙️ Key Kafka Settings
+
+- `KAFKA_CREATE_TOPICS="batchedUpdates:1:1"`
+- `KAFKA_LISTENERS="INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093"`
+- `KAFKA_ADVERTISED_LISTENERS="INTERNAL://kafka:9092,EXTERNAL://127.0.0.1:9093"`
+- `KAFKA_MESSAGE_MAX_BYTES=3145728`
+- `KAFKA_REPLICA_FETCH_MAX_BYTES=3145728`
+
+## 🛡️ Durability and Scale Notes
+
+- `1` partition = simple single-lane throughput.
+- `1` replica = no broker redundancy (expected with one broker).
+- To increase fault tolerance, you need a multi-broker Kafka deployment.
+
+## 🗂️ Directory Layout
+
+```text
 kafka/
-├── .env
-├── .gitignore
-├── docker-compose.yml
-└── data/
-    ├── kafka/
-    └── zookeeper/
+|-- .gitignore
+|-- docker-compose.yml
+`-- data/
+    |-- kafka/
+    `-- zookeeper/
 ```
 
----
+## 🧪 Troubleshooting
 
-## 🧠 Notes
-
-- `KAFKA_CREATE_TOPICS` auto-creates the topic `batchedUpdates` on container start.
-- Message size limits are set to 3MB to support large batched payloads.
-- Services can consume from or produce to this Kafka broker via `localhost:9092` (internal) or `localhost:9093` (external).
+- Kafka not healthy:
+  - `docker compose logs kafka`
+  - confirm `kafka_default` exists
+- Producers cannot connect:
+  - verify producer uses `kafka:9092` (container-to-container)
+  - verify service is attached to `kafka_default`

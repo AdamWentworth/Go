@@ -14,6 +14,119 @@ Receives batched client updates and publishes them to Kafka topic `batchedUpdate
 - CI with tests, vet, govulncheck, Trivy, and SBOM
 - Manual CD with health-check + rollback workflow
 
+## 🧭 Architecture (Mermaid)
+
+### Service Context
+
+```mermaid
+flowchart LR
+  Client[Frontend Client] --> Nginx[frontend_nginx]
+  Nginx --> Receiver[receiver_service]
+  Receiver --> Kafka[(kafka topic: batchedUpdates)]
+  Receiver --> Metrics["/metrics"]
+  Prometheus[prometheus] --> Metrics
+```
+
+### Ingest + Publish Flow
+
+```mermaid
+sequenceDiagram
+  participant U as User Client
+  participant N as Nginx
+  participant R as Receiver API
+  participant K as Kafka
+
+  U->>N: POST /api/receiver/batchedUpdates
+  N->>R: POST /api/batchedUpdates
+  R->>R: Verify accessToken cookie (HS256 + claims)
+  R->>R: Validate JSON + enforce limits
+  R->>K: Write compressed event payload
+  K-->>R: Ack
+  R-->>N: 200 OK
+  N-->>U: 200 OK
+```
+
+## 📐 UML Views
+
+| Diagram | Purpose |
+| --- | --- |
+| Component UML | High-level module responsibilities |
+| Payload UML | Ingest contract structure |
+
+### Component UML (Mermaid Class Diagram)
+
+```mermaid
+classDiagram
+  class Router {
+    +POST /api/batchedUpdates
+    +GET /healthz
+    +GET /readyz
+    +GET /metrics
+  }
+
+  class AuthVerifier {
+    +verifyAccessToken()
+  }
+
+  class BatchHandler {
+    +handleBatchedUpdates()
+  }
+
+  class KafkaProducer {
+    +initializeKafkaProducer()
+    +produceToKafka()
+    +closeKafkaProducer()
+  }
+
+  class RetryWorker {
+    +startRetryWorker()
+    +retrySendingToKafka()
+    +saveToLocalStorage()
+  }
+
+  class Metrics {
+    +registerMetrics()
+    +metricsMiddleware()
+    +metricsHandler()
+  }
+
+  Router --> AuthVerifier
+  Router --> BatchHandler
+  BatchHandler --> KafkaProducer
+  KafkaProducer --> RetryWorker
+  Router --> Metrics
+```
+
+### Payload UML (Mermaid Class Diagram)
+
+```mermaid
+classDiagram
+  class BatchedRequest {
+    +location: Location optional
+    +pokemonUpdates: PokemonUpdate[] optional
+    +tradeUpdates: TradeUpdate[] optional
+  }
+
+  class Location {
+    +latitude: float64
+    +longitude: float64
+  }
+
+  class PokemonUpdate {
+    +operation: string
+    +pokemonData: object
+  }
+
+  class TradeUpdate {
+    +operation: string
+    +tradeData: object
+  }
+
+  BatchedRequest --> Location
+  BatchedRequest --> PokemonUpdate
+  BatchedRequest --> TradeUpdate
+```
+
 ## 🔌 Endpoints
 
 - `POST /api/batchedUpdates`
@@ -59,7 +172,7 @@ Optional:
 
 - `PORT` (default `3003`)
 - `ALLOWED_ORIGINS` (comma-separated CORS list)
-- `HOST_IP` (overrides Kafka hostname from config file)
+- `HOST_IP` (advanced override for Kafka hostname; usually not needed in Docker)
 
 ### Kafka config (`receiver/config/app_conf.yml`)
 

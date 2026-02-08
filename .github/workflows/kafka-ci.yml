@@ -1,0 +1,50 @@
+name: kafka-ci
+
+on:
+  pull_request:
+    paths:
+      - "kafka/**"
+      - ".github/workflows/kafka-ci.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "kafka/**"
+      - ".github/workflows/kafka-ci.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  compose-guards:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Render Compose Config
+        run: |
+          docker compose -f kafka/docker-compose.yml config > /tmp/kafka-compose.rendered.yml
+
+      - name: Verify External Listener Is Loopback-Only
+        run: |
+          set -euo pipefail
+          grep -q "host_ip: 127.0.0.1" /tmp/kafka-compose.rendered.yml
+          if grep -q "host_ip: 0.0.0.0" /tmp/kafka-compose.rendered.yml; then
+            echo "Kafka external listener must not bind to 0.0.0.0" >&2
+            exit 1
+          fi
+
+      - name: Verify Health Checks And Restart Policy
+        run: |
+          set -euo pipefail
+          HEALTHCHECK_COUNT="$(grep -c "healthcheck:" /tmp/kafka-compose.rendered.yml || true)"
+          RESTART_COUNT="$(grep -c "restart: unless-stopped" /tmp/kafka-compose.rendered.yml || true)"
+          if [[ "${HEALTHCHECK_COUNT}" -lt 2 ]]; then
+            echo "Expected health checks for zookeeper and kafka." >&2
+            exit 1
+          fi
+          if [[ "${RESTART_COUNT}" -lt 2 ]]; then
+            echo "Expected restart policy on zookeeper and kafka." >&2
+            exit 1
+          fi
