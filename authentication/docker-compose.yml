@@ -1,7 +1,5 @@
 # authentication docker-compose
 
-version: '3.8'
-
 services:
   mongo_auth:
     image: mongo:6
@@ -16,7 +14,7 @@ services:
       - kafka_default
 
   auth_service:
-    image: adamwentworth/authentication:latest
+    image: ${AUTH_IMAGE:-adamwentworth/authentication:latest}
     container_name: authentication_container
     ports:
       - "3002:3002"
@@ -24,7 +22,7 @@ services:
       - .env
     depends_on:
       - mongo_auth
-    restart: no
+    restart: unless-stopped
     volumes:
       - ./backups:/usr/src/app/backups
     networks:

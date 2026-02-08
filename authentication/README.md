@@ -1,233 +1,105 @@
-# Pokémon Go Nexus Authentication Service
+﻿# Authentication Service (Node.js)
 
-This service handles user registration, login, secure token-based authentication, refresh logic, and account management for the Pokémon Go Nexus ecosystem.
+Authentication API for Pokemon Go Nexus.
 
-## 🔐 Overview
+## What It Handles
 
-It manages:
-- Secure password hashing with `bcrypt`
-- JWT access and refresh tokens (stored per-device)
-- CORS and cookie-based token delivery
-- User updates, logout, and password reset flows
-- A rotating backup system for user records
+- User registration and login
+- JWT access and refresh token issuance
+- Refresh token rotation and logout
+- Account update and delete flows
+- Trade partner reveal endpoint for authenticated users
+- Daily MongoDB backup task (`mongodump`)
 
-> 🧠 **Note:** This service is designed to support multiple user devices and sessions, and implements refresh token cleanup and token reuse prevention.
+## Current Scope
 
----
+- OAuth/social login is intentionally disabled for now.
+- Email delivery is intentionally disabled for now (no SMTP integration in this service).
 
-## 📁 Project Structure
+## Routes
 
-```plaintext
-authentication/
-├── .env.*                  # Environment configs
-├── app.js                  # Express app entry point
-├── backups/                # Rotating gzipped MongoDB backups
-├── config/                 # YAML-based app and logging config
-├── middlewares/            # Express middleware (logging, cookies, DB)
-├── models/                 # Mongoose models
-├── routes/                 # Express routes for authentication
-├── services/               # Token and email logic
-├── strategies/             # Passport setup
-├── tasks/                  # Backup and manual scripts
-├── utils/                  # Utility functions (e.g. token sanitizing)
-└── package.json            # Project dependencies
-```
+Mounted under `/auth`:
 
-<!-- 💡 Suggestion: Consider adding where the Mongo connection is initialized (likely in mongoose.js), and whether any admin scripts exist for batch cleanup. -->
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+- `PUT /auth/update/:id`
+- `DELETE /auth/delete/:id`
+- `POST /auth/reset-password/`
+- `POST /auth/reveal-partner-info`
 
----
+API docs:
 
-## 🚀 Setup Instructions
+- `GET /api-docs`
 
-1. **Install dependencies**
+## Environment Variables
+
+### Required
+
+- `DATABASE_URL` MongoDB connection string
+- `JWT_SECRET` JWT signing secret
+
+### Recommended
+
+- `FRONTEND_URL` frontend origin used by CORS (for example `http://localhost:3000`)
+- `NODE_ENV` (`development` or `production`)
+
+## Local Run
 
 ```bash
-npm install
+cd Go/authentication
+npm ci
+npm start
 ```
 
-2. **Environment setup**
+Dev mode with auto-reload:
 
-Create a `.env.development` file (or use the existing one) and configure the following environment variables:
-
-| Key               | Required | Description                                                                 |
-|--------------------|----------|-----------------------------------------------------------------------------|
-| `NODE_ENV`         | ✅       | Set to `development` or `production`                                       |
-| `DATABASE_URL`     | ✅       | MongoDB connection string                                                  |
-| `JWT_SECRET`       | ✅       | Used to sign and verify JWT access and refresh tokens                      |
-| `SESSION_SECRET`   | ✅       | Secret used by `express-session` to manage session integrity               |
-| `FRONTEND_URL`     | ✅       | Used for setting CORS and cookie domain behavior (e.g. `http://localhost:3000`) |
-
-These are the only environment variables required for the current server functionality.
-
-> 💡 You can safely ignore or remove any unused keys like `EMAIL_USER`, `EMAIL_PASS`, or `GOOGLE_CLIENT_ID` — they aren’t active in this service yet.
-
-
-3. **Run the server**
-   ```bash
-   npm start
-   ```
-
-The server's package.json is configured to run with nodemon, so you don’t need to run nodemon manually.
-
----
-
-## 🔑 Authentication Flows
-
-### 📥 Register
-
-```
-POST /register
+```bash
+npm run dev
 ```
 
-Registers a user with:
-- `username`
-- `email`
-- Optional: `pokemonGoName`, `trainerCode`, `location`, `coordinates`
+Run tests:
 
-- Checks uniqueness for all identifying fields
-- Passwords are securely hashed
-- Tokens are returned and stored in cookies
-
-### 🔓 Login
-
-```
-POST /login
+```bash
+npm test
 ```
 
-Login using either `username` or `email` with password.
+## Docker
 
-- Device ID required (to track token uniqueness)
-- Old tokens for the same device are revoked before adding new ones
-
-### 🔄 Refresh Token
-
-```
-POST /refresh
+```bash
+cd Go/authentication
+docker compose up -d
 ```
 
-- Requires a valid `refreshToken` cookie
-- Creates a new access token for an existing valid session
-- Rejects expired or revoked tokens
+Notes:
 
----
+- Uses `mongo:6` for local compose DB.
+- Container includes `mongodb-tools` for backup tasks.
 
-## ⚙️ Additional Routes
+## Production Deploy (Manual CD)
 
-### 🛠 Update User
+GitHub Actions workflow:
 
-```
-PUT /update/:id
-```
+- `deploy-auth-prod`
 
-- Accepts most fields including password (auto-hashed if different)
-- Checks for duplicates in key fields
-- Rejects updates to token expiry fields
+Manual inputs:
 
-### ❌ Delete User
+- `image_ref` (for example `latest` or `sha-<commit>`)
+- `deploy_root` (default `/media/adam/storage/Code/Go`)
+- `service_name` (default `auth_service`)
 
-```
-DELETE /delete/:id
-```
+Deployment behavior:
 
-Deletes a user by their ID.
+- Syncs prod repo to the selected branch ref
+- Validates `authentication/.env` contains `DATABASE_URL` and `JWT_SECRET`
+- Ensures `kafka_default` network exists
+- Pulls target image and recreates `auth_service`
+- Health checks with `POST /auth/login` (expects `404` or `401`)
+- Rolls back to previous image on failure when available
 
-### 🚪 Logout
+## Maintenance Notes
 
-```
-POST /logout
-```
-
-Removes the refresh token tied to the current session/device. Clears cookies.
-
-### 🔁 Reset Password
-
-```
-POST /reset-password/
-```
-
-- Uses a password reset token (via email flow)
-- Hashes and saves the new password
-
-*This is currently not in use as the frontend blocks hitting this endpoint. There is not yet a password reset email so we do not yet have password resetting*
-
-### 🤝 Reveal Trade Partner Info
-
-```
-POST /reveal-partner-info
-```
-
-Used during a trade between users to **reveal the partner’s trainer code, Pokémon Go name, and location**.
-
-- Requires the access token via cookie
-- Accepts a `trade` object in the request body (including both usernames)
-- Confirms that the requester is part of the trade before revealing the other player’s info
-
-Returns:
-```json
-{
-  "trainerCode": "1234 5678 9012",
-  "pokemonGoName": "TrainerName",
-  "location": "City, State",
-  "coordinates": {
-    "latitude": 12.34,
-    "longitude": 56.78
-  }
-}
-```
-
----
-
-## 📦 Backup System
-
-The `backups/` folder contains daily gzipped MongoDB exports that backup at midnight.
-
-> These are generated via `tasks/backup.js`.  
-> Files are named using the format: `PoGo_App_Users_YYYY_MM_DD.gz`
-
----
-
-## 🔐 Token Strategy
-
-Tokens are generated per device:
-
-- `accessToken`: Short-lived, returned in response
-- `refreshToken`: Stored in user DB entry and cookie, rotated per login or refresh
-- Multiple tokens can exist per user but are cleaned per device or on expiration
-
-> On login or refresh, tokens with expired timestamps or matching `device_id` are pruned before inserting a new one.
-
----
-
-## 📄 OpenAPI & Swagger
-
-The API is documented (but may not be up-to-date):
-
-```
-GET /api-docs
-```
-
-Spec file is found at:
-```
-config/openapi.yml
-```
-
----
-
-## 🧠 Notes
-
-- The `sanitizeLogging.js` util helps avoid logging sensitive data
-- `mongoose.js` handles DB connection and is reused across services
-- Passport is configured but not heavily used beyond token handling
-
----
-
-## 🧭 Future Work
-
-- Password Resetting
-- Auth0 Logins and Registrations
-
----
-
-## 👨‍💻 Author Notes
-
-This service powers the authentication for the Pokémon Go Nexus app and website. It was designed to scale securely across devices while staying flexible for frontend needs. While it works as-is, future optimization around token/session cleanup, rate limiting, and abuse prevention may be needed as the userbase grows.
+- Inactive social auth dependencies were removed to reduce attack surface.
+- Vulnerability remediation was applied at patch level where non-breaking.
+- CI workflow now validates install, JS syntax, integration tests, high-severity audit gate, and container security scan.

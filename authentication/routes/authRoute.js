@@ -9,11 +9,6 @@ const tokenService = require('../services/tokenService'); // Adjust the path as 
 const setCookies = require('../middlewares/setCookies'); // Adjust the path as necessary
 const setAccessTokenCookie = require('../middlewares/setAccessTokenCookie');
 const sanitizeForLogging= require ('../utils/sanitizeLogging');
-// Import the token utility
-const { generateResetToken } = require('../utils/tokenUtils');
-
-// Import the email sending function (to be created in the next section)
-const { sendResetPasswordEmail } = require('../services/emailService');
 
 // Function to handle token response more dynamically
 function handleTokenResponse(req, res, user, tokens) {
