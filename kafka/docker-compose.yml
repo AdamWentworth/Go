@@ -1,6 +1,6 @@
 services:
   zookeeper:
-    image: wurstmeister/zookeeper
+    image: confluentinc/cp-zookeeper:7.6.1
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "bash -ec '</dev/tcp/127.0.0.1/2181'"]
@@ -8,13 +8,17 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     volumes:
-      - ./data/zookeeper:/opt/zookeeper-3.4.13/data
+      - ./data/confluent/zookeeper/data:/var/lib/zookeeper/data
+      - ./data/confluent/zookeeper/log:/var/lib/zookeeper/log
     networks:
       - kafka_default
 
   kafka:
-    image: wurstmeister/kafka
+    image: confluentinc/cp-kafka:7.6.1
     restart: unless-stopped
     depends_on:
       zookeeper:
@@ -22,7 +26,7 @@ services:
     ports:
       - "127.0.0.1:9093:9093"
     healthcheck:
-      test: ["CMD-SHELL", "bash -ec '</dev/tcp/127.0.0.1/9092'"]
+      test: ["CMD-SHELL", "bash -ec 'kafka-topics --bootstrap-server 127.0.0.1:9092 --list >/dev/null 2>&1'"]
       interval: 15s
       timeout: 5s
       retries: 10
@@ -36,16 +40,32 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
 
-      KAFKA_CREATE_TOPICS: "batchedUpdates:1:1"
       KAFKA_BROKER_ID: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_MESSAGE_MAX_BYTES: "3145728"
       KAFKA_REPLICA_FETCH_MAX_BYTES: "3145728"
     volumes:
-      - ./data/kafka:/kafka
+      - ./data/confluent/kafka:/var/lib/kafka/data
     networks:
       kafka_default:
         aliases:
           - kafka
+
+  kafka_init:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: "no"
+    command:
+      - bash
+      - -ec
+      - kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic batchedUpdates --partitions 1 --replication-factor 1
+    networks:
+      - kafka_default
 
 networks:
   kafka_default:

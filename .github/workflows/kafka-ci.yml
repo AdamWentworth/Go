@@ -35,6 +35,16 @@ jobs:
             exit 1
           fi
 
+      - name: Verify Maintained Kafka Images
+        run: |
+          set -euo pipefail
+          grep -q "image: confluentinc/cp-kafka:7.6.1" /tmp/kafka-compose.rendered.yml
+          grep -q "image: confluentinc/cp-zookeeper:7.6.1" /tmp/kafka-compose.rendered.yml
+          if grep -qi "wurstmeister/" /tmp/kafka-compose.rendered.yml; then
+            echo "Legacy wurstmeister images are not allowed." >&2
+            exit 1
+          fi
+
       - name: Verify Health Checks And Restart Policy
         run: |
           set -euo pipefail

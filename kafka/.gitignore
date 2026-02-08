@@ -1,3 +1,4 @@
 data/kafka
 data/zookeeper
+data/confluent
 .env

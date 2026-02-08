@@ -6,16 +6,46 @@ Single-broker Kafka + Zookeeper stack used by this repo for async event flow.
 
 - Hosts Kafka topic `batchedUpdates`
 - Accepts producer writes from `receiver_service`
+- Delivers the same stream to `storage_service` and `events_service`
 - Supports internal container traffic on `kafka:9092`
 - Supports host-only local access on `127.0.0.1:9093`
 
-## ✅ Current Production Profile
+## 🧭 Topology (Mermaid)
 
-- Single broker, single Zookeeper node
-- Topic auto-created: `batchedUpdates:1:1`
-- Message size limit: `3MB`
-- Loopback-only host exposure for external listener (`127.0.0.1:9093`)
-- Health checks on both Kafka and Zookeeper
+```mermaid
+flowchart LR
+  Receiver[receiver_service producer] --> Topic[(Kafka topic batchedUpdates)]
+  Topic --> Storage[storage_service consumer]
+  Topic --> Events[events_service consumer]
+```
+
+## ✅ Hardening Phase 2 (Now Applied)
+
+- Migrated from legacy `wurstmeister/*` images to maintained Confluent images:
+  - `confluentinc/cp-zookeeper:7.6.1`
+  - `confluentinc/cp-kafka:7.6.1`
+- Added broker/zookeeper health checks and restart policy
+- Kept listener behavior the same:
+  - internal `kafka:9092`
+  - host loopback `127.0.0.1:9093`
+- Added `kafka_init` bootstrap job to create topic `batchedUpdates` if missing
+- Added CI guardrails to block legacy images and insecure host binding
+
+## ⚠️ Migration Note
+
+This migration uses new Confluent data paths to avoid legacy data collisions:
+
+- `./data/confluent/zookeeper/...`
+- `./data/confluent/kafka/...`
+
+Recommended rollout:
+
+1. Stop old Kafka stack.
+2. Back up existing `kafka/data/`.
+3. Start new Kafka stack.
+4. Validate producer/consumer flow.
+
+For this MVP environment, topic recreation is acceptable if needed.
 
 ## 🚀 Quick Start
 
@@ -49,9 +79,9 @@ docker compose logs --tail=100 zookeeper
 
 ## ⚙️ Key Kafka Settings
 
-- `KAFKA_CREATE_TOPICS="batchedUpdates:1:1"`
 - `KAFKA_LISTENERS="INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093"`
 - `KAFKA_ADVERTISED_LISTENERS="INTERNAL://kafka:9092,EXTERNAL://127.0.0.1:9093"`
+- `KAFKA_AUTO_CREATE_TOPICS_ENABLE=true`
 - `KAFKA_MESSAGE_MAX_BYTES=3145728`
 - `KAFKA_REPLICA_FETCH_MAX_BYTES=3145728`
 
@@ -59,7 +89,7 @@ docker compose logs --tail=100 zookeeper
 
 - `1` partition = simple single-lane throughput.
 - `1` replica = no broker redundancy (expected with one broker).
-- To increase fault tolerance, you need a multi-broker Kafka deployment.
+- To increase fault tolerance, you need multi-broker Kafka.
 
 ## 🗂️ Directory Layout
 
@@ -68,8 +98,11 @@ kafka/
 |-- .gitignore
 |-- docker-compose.yml
 `-- data/
-    |-- kafka/
-    `-- zookeeper/
+    `-- confluent/
+        |-- kafka/
+        `-- zookeeper/
+            |-- data/
+            `-- log/
 ```
 
 ## 🧪 Troubleshooting
@@ -80,3 +113,5 @@ kafka/
 - Producers cannot connect:
   - verify producer uses `kafka:9092` (container-to-container)
   - verify service is attached to `kafka_default`
+- Host tooling cannot connect:
+  - verify `127.0.0.1:9093` is not in use by another process
