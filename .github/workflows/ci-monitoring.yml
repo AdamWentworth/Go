@@ -1,4 +1,4 @@
-name: monitoring-ci
+name: ci-monitoring
 
 on:
   pull_request:
