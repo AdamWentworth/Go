@@ -97,6 +97,7 @@ sequenceDiagram
 | --- | --- |
 | Use Case | High-level user interactions with auth endpoints |
 | Class | Core modules and relationships in the service |
+| User Model | Full persisted `User` document shape in MongoDB |
 
 ### Use Case (Mermaid UML)
 
@@ -162,6 +163,53 @@ classDiagram
   AuthRoute --> UserModel
   AuthRoute --> RefreshTokenHash
 ```
+
+### User Persistence Model (Mermaid UML)
+
+```mermaid
+classDiagram
+  class User {
+    +_id: ObjectId
+    +username: string
+    +email: string nullable
+    +password: string nullable
+    +pokemonGoName: string nullable
+    +trainerCode: string nullable
+    +location: string nullable
+    +allowLocation: bool
+    +googleId: string nullable
+    +facebookId: string nullable
+    +twitterId: string nullable
+    +nintendoId: string nullable
+    +discordId: string nullable
+    +refreshToken: RefreshTokenSession[]
+    +coordinates: Coordinates
+    +resetPasswordToken: string nullable
+    +resetPasswordExpires: Date nullable
+  }
+
+  class RefreshTokenSession {
+    +tokenHash: string
+    +expires: Date
+    +device_id: string
+  }
+
+  class Coordinates {
+    +latitude: number nullable
+    +longitude: number nullable
+  }
+
+  User --> RefreshTokenSession
+  User --> Coordinates
+```
+
+Constraints:
+
+- `username` is required, unique, min length 3, max length 36.
+- `email` is unique when present, min length 6, max length 255.
+- `trainerCode` must be 12 digits when present and is unique via partial index.
+- `pokemonGoName` is unique when present via partial index.
+- Empty-string normalization in pre-save middleware converts string fields like `pokemonGoName`, `trainerCode`, and social IDs to `null`.
 
 ## 🧪 Local Development
 
@@ -231,3 +279,4 @@ Deploy behavior:
 - Inactive social auth dependencies were removed to reduce attack surface.
 - Vulnerability remediation was applied at patch level where non-breaking.
 - CI validates install, JS syntax, tests, audit gate, and container security scan.
+

@@ -219,6 +219,205 @@ classDiagram
   PayloadBuilder --> SQLiteRepo : fetch data
 ```
 
+### 6) UML Data Model: `GET /pokemon/pokemons` (Mermaid UML-style)
+
+```mermaid
+classDiagram
+  class Pokemon {
+    +pokemon_id: number
+    +name: string
+    +pokedex_number: number
+    +image_url: string
+    +image_url_shiny: string
+    +sprite_url: string
+    +attack: number
+    +defense: number
+    +stamina: number
+    +type_1_id: number
+    +type_2_id: number nullable
+    +type1_name: string
+    +type2_name: string nullable
+    +generation: number
+    +available: number
+    +shiny_available: number
+    +shiny_rarity: string nullable
+    +date_available: string nullable
+    +date_shiny_available: string nullable
+    +female_unique: number
+    +type_1_icon: string
+    +type_2_icon: string nullable
+    +cp40: number nullable
+    +cp50: number nullable
+    +shadow_shiny_available: number nullable
+    +shadow_apex: number nullable
+    +date_shadow_available: string nullable
+    +date_shiny_shadow_available: string nullable
+    +shiny_shadow_rarity: string nullable
+    +image_url_shadow: string nullable
+    +image_url_shiny_shadow: string nullable
+    +female_data: FemaleData nullable
+    +costumes: Costume[]
+    +moves: Move[]
+    +fusion: Fusion[]
+    +backgrounds: Background[]
+    +evolutionData: EvolutionData
+    +megaEvolutions: MegaEvolution[]
+    +raid_boss: RaidBoss[]
+    +max: MaxEntry[]
+    +sizes: Sizes nullable
+  }
+
+  class FemaleData {
+    +image_url: string
+    +shiny_image_url: string
+    +shadow_image_url: string
+    +shiny_shadow_image_url: string
+  }
+
+  class Costume {
+    +costume_id: number
+    +name: string
+    +image_url: string
+    +image_url_shiny: string
+    +image_url_female: string nullable
+    +image_url_shiny_female: string nullable
+    +shiny_available: number
+    +date_available: string nullable
+    +date_shiny_available: string nullable
+    +shadow_costume: ShadowCostume nullable
+  }
+
+  class ShadowCostume {
+    +date_available: string nullable
+    +date_shiny_available: string nullable
+    +image_url_shadow_costume: string
+    +image_url_shiny_shadow_costume: string
+    +image_url_female_shadow_costume: string nullable
+    +image_url_female_shiny_shadow_costume: string nullable
+  }
+
+  class Move {
+    +move_id: number
+    +move_name: string
+    +type: string
+    +legacy: bool
+  }
+
+  class Fusion {
+    +fusion_id: number
+    +base_pokemon_id1: number
+    +base_pokemon_id2: number
+    +name: string
+    +pokedex_number: number
+    +image_url: string
+    +image_url_shiny: string
+    +sprite_url: string
+    +attack: number
+    +defense: number
+    +stamina: number
+    +type_1_id: number
+    +type_2_id: number nullable
+    +type1_name: string
+    +type2_name: string nullable
+    +generation: number
+    +available: number
+    +shiny_available: number
+    +shiny_rarity: string nullable
+    +date_available: string nullable
+    +date_shiny_available: string nullable
+    +cp40: number nullable
+    +cp50: number nullable
+  }
+
+  class Background {
+    +background_id: number
+    +name: string
+    +location: string
+    +image_url: string
+    +date: string nullable
+    +costume_id: number nullable
+  }
+
+  class EvolutionData {
+    +evolves_to: number[]
+    +evolves_from: number[]
+  }
+
+  class MegaEvolution {
+    +id: number
+    +mega_energy_cost: number
+    +attack: number
+    +defense: number
+    +stamina: number
+    +image_url: string
+    +image_url_shiny: string
+    +sprite_url: string
+    +primal: scalar
+    +form: string nullable
+    +type_1_id: number
+    +type_2_id: number nullable
+    +date_available: string nullable
+    +type1_name: string
+    +type2_name: string nullable
+    +cp40: number nullable
+    +cp50: number nullable
+  }
+
+  class RaidBoss {
+    +id: number
+    +pokemon_id: number
+    +name: string
+    +form: string nullable
+    +type: string nullable
+    +boosted_weather: string nullable
+    +max_boosted_cp: number nullable
+    +max_unboosted_cp: number nullable
+    +min_boosted_cp: number nullable
+    +min_unboosted_cp: number nullable
+    +possible_shiny: scalar
+    +tier: scalar
+  }
+
+  class MaxEntry {
+    +pokemon_id: number
+    +dynamax: scalar
+    +gigantamax: scalar
+    +dynamax_release_date: string nullable
+    +gigantamax_release_date: string nullable
+    +gigantamax_image_url: string nullable
+    +shiny_gigantamax_image_url: string nullable
+  }
+
+  class Sizes {
+    +pokedex_height: number
+    +pokedex_weight: number
+    +height_standard_deviation: number
+    +weight_standard_deviation: number
+    +height_xxs_threshold: number
+    +height_xs_threshold: number
+    +height_xl_threshold: number
+    +height_xxl_threshold: number
+    +weight_xxs_threshold: number
+    +weight_xs_threshold: number
+    +weight_xl_threshold: number
+    +weight_xxl_threshold: number
+  }
+
+  Pokemon --> FemaleData
+  Pokemon --> Costume
+  Costume --> ShadowCostume
+  Pokemon --> Move
+  Pokemon --> Fusion
+  Pokemon --> Background
+  Pokemon --> EvolutionData
+  Pokemon --> MegaEvolution
+  Pokemon --> RaidBoss
+  Pokemon --> MaxEntry
+  Pokemon --> Sizes
+```
+
+`moves` objects include additional columns from the underlying `moves` table; the diagram shows guaranteed/normalized keys used by clients (`move_id`, `move_name`, `type`, `legacy`).
+
 ## 🚀 Deployment Notes
 
 - Production deploy is automated via GitHub Actions manual CD (`deploy-pokemon-prod`).
