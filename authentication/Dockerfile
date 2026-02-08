@@ -10,7 +10,10 @@ RUN apk add --no-cache mongodb-tools
 COPY package*.json ./
 
 ENV NODE_ENV=production
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev \
+    && npm cache clean --force \
+    && rm -rf /usr/local/lib/node_modules/npm \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx
 
 COPY . .
 

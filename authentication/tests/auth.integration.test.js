@@ -8,13 +8,17 @@ let mongoServer;
 let app;
 let mongoConnectionPromise;
 let User;
+let validLoginId;
+let validEmail;
+let validPassphrase;
+let validDeviceId;
 
 function buildRegisterPayload(overrides = {}) {
   return {
-    username: 'ash_ketchum',
-    email: 'ash@example.com',
-    password: 'Pikachu123!',
-    device_id: 'device-1',
+    username: validLoginId,
+    email: validEmail,
+    password: validPassphrase,
+    device_id: validDeviceId,
     ...overrides
   };
 }
@@ -38,6 +42,14 @@ describe('authentication service integration', () => {
     User = require('../models/user');
   });
 
+  beforeEach(() => {
+    const seed = Date.now().toString(36);
+    validLoginId = `ci_user_${seed}`;
+    validEmail = `ci_${seed}@example.invalid`;
+    validPassphrase = `ci_pass_${seed}_ok`;
+    validDeviceId = `ci_device_${seed}`;
+  });
+
   afterEach(async () => {
     await User.deleteMany({});
   });
@@ -58,9 +70,9 @@ describe('authentication service integration', () => {
     expect(res.headers['set-cookie'].some((c) => c.startsWith('accessToken='))).toBe(true);
     expect(res.headers['set-cookie'].some((c) => c.startsWith('refreshToken='))).toBe(true);
 
-    const user = await User.findOne({ username: 'ash_ketchum' }).lean();
+    const user = await User.findOne({ username: validLoginId }).lean();
     expect(user).toBeTruthy();
-    expect(user.password).not.toBe('Pikachu123!');
+    expect(user.password).not.toBe(validPassphrase);
     expect(Array.isArray(user.refreshToken)).toBe(true);
     expect(user.refreshToken.length).toBe(1);
   });
@@ -77,9 +89,9 @@ describe('authentication service integration', () => {
     await registerUser();
 
     const login = await request(app).post('/auth/login').send({
-      username: 'ash_ketchum',
-      password: 'Pikachu123!',
-      device_id: 'device-1'
+      username: validLoginId,
+      password: validPassphrase,
+      device_id: validDeviceId
     });
 
     expect(login.status).toBe(200);
@@ -92,16 +104,16 @@ describe('authentication service integration', () => {
     await registerUser();
 
     const login = await request(app).post('/auth/login').send({
-      username: 'ash_ketchum',
-      password: 'Pikachu123!',
-      device_id: 'device-1'
+      username: validLoginId,
+      password: validPassphrase,
+      device_id: validDeviceId
     });
 
     const cookies = login.headers['set-cookie'];
     const refreshed = await request(app).post('/auth/refresh').set('Cookie', cookies).send({});
 
     expect(refreshed.status).toBe(200);
-    expect(refreshed.body.username).toBe('ash_ketchum');
+    expect(refreshed.body.username).toBe(validLoginId);
     expect(refreshed.headers['set-cookie']).toBeDefined();
     expect(refreshed.headers['set-cookie'].some((c) => c.startsWith('accessToken='))).toBe(true);
   });
@@ -110,9 +122,9 @@ describe('authentication service integration', () => {
     await registerUser();
 
     const login = await request(app).post('/auth/login').send({
-      username: 'ash_ketchum',
-      password: 'Pikachu123!',
-      device_id: 'device-1'
+      username: validLoginId,
+      password: validPassphrase,
+      device_id: validDeviceId
     });
     const cookies = login.headers['set-cookie'];
 
@@ -130,9 +142,9 @@ describe('authentication service integration', () => {
     await registerUser();
 
     const badLogin = await request(app).post('/auth/login').send({
-      username: 'ash_ketchum',
-      password: 'WrongPassword!',
-      device_id: 'device-1'
+      username: validLoginId,
+      password: 'invalid_passphrase_for_ci',
+      device_id: validDeviceId
     });
 
     expect(badLogin.status).toBe(401);

@@ -170,7 +170,7 @@ jobs:
             LAST_STATUS="$(curl -sS -o /tmp/auth_health_body.txt -w '%{http_code}' \
               -H 'Content-Type: application/json' \
               -X POST \
-              --data '{"username":"__healthcheck__","password":"__healthcheck__","device_id":"healthcheck"}' \
+              --data '{}' \
               http://127.0.0.1:3002/auth/login || true)"
 
             if [[ "${LAST_STATUS}" == "404" || "${LAST_STATUS}" == "401" ]]; then
