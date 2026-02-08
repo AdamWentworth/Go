@@ -55,7 +55,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build Container Image
-        run: docker build -t receiver_service:ci-${{ github.sha }} ./receiver
+        run: docker build --pull -t receiver_service:ci-${{ github.sha }} ./receiver
 
       - name: Trivy Filesystem Scan
         uses: aquasecurity/trivy-action@0.28.0
