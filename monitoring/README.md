@@ -2,13 +2,15 @@
 
 This folder runs Prometheus + Alertmanager for the Pokemon, authentication, and receiver services.
 
-It now also includes host and container telemetry via:
+It also includes Kafka, host, and container telemetry via:
 
+- `kafka_exporter` (Kafka broker/topic/consumer lag metrics)
 - `node_exporter` (host CPU, memory, disk, filesystem, load)
 - `cadvisor` (per-container CPU, memory, filesystem, network)
 
 What these are:
 
+- `kafka_exporter`: reads Kafka broker metadata and consumer lag so Prometheus can alert on broker/topic/lag health.
 - `node_exporter`: reads Linux host stats from `/proc` and `/sys` so Prometheus can graph host CPU/RAM/disk pressure.
 - `cadvisor`: reads Docker container runtime stats so Prometheus can graph per-container CPU/RAM/network/fs usage.
 
@@ -53,7 +55,7 @@ docker compose -f monitoring/docker-compose.yml --env-file monitoring/.env up -d
   - Runs on your self-hosted prod runner
   - Pulls latest repo changes on prod
   - Ensures required Docker networks exist
-  - Deploys `prometheus` + `alertmanager`
+  - Deploys `prometheus` + `alertmanager` + `node_exporter` + `cadvisor` + `kafka_exporter`
   - Checks health endpoints before success
 
 Host ports used by monitoring stack:
@@ -63,8 +65,8 @@ Host ports used by monitoring stack:
 
 ## What You Can Monitor
 
-- App-level metrics: request rate, latency, status codes (`pokemon_data`)
 - App-level metrics: request rate, latency, status codes (`pokemon_data`, `auth_service`, `receiver_service`)
+- Kafka-level metrics: broker availability, topic visibility, consumer lag (`kafka_exporter`)
 - Host-level metrics: CPU %, RAM %, disk free %, filesystem pressure (`node_exporter`)
 - Container-level metrics: per-container CPU/memory/network/filesystem (`cadvisor`)
 
@@ -78,3 +80,7 @@ Common quick PromQL checks:
   - `sum by (name) (rate(container_cpu_usage_seconds_total{name!=""}[5m]))`
 - Container memory MiB:
   - `(container_memory_working_set_bytes{name!="",image!=""} / 1024 / 1024)`
+- Kafka brokers up:
+  - `kafka_brokers`
+- Kafka consumer lag (receiver + events readers):
+  - `kafka_consumergroup_lag_sum{consumergroup=~"event_group|sse_consumer_group"}`

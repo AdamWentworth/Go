@@ -168,6 +168,48 @@ groups:
           summary: "pokemon_data request metrics are missing"
           description: "http_requests_total has been absent for 10 minutes."
 
+  - name: kafka-alerts
+    rules:
+      - alert: KafkaExporterTargetDown
+        expr: up{job="kafka_exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: kafka
+        annotations:
+          summary: "kafka_exporter target is down"
+          description: "Prometheus cannot scrape kafka_exporter for at least 2 minutes."
+
+      - alert: KafkaBrokerUnavailable
+        expr: kafka_brokers < 1
+        for: 2m
+        labels:
+          severity: critical
+          service: kafka
+        annotations:
+          summary: "Kafka broker is unavailable"
+          description: "kafka_exporter reports fewer than 1 active broker."
+
+      - alert: KafkaTopicMissingBatchedUpdates
+        expr: absent(kafka_topic_partitions{topic="batchedUpdates"})
+        for: 5m
+        labels:
+          severity: warning
+          service: kafka
+        annotations:
+          summary: "Kafka topic batchedUpdates is missing"
+          description: "kafka_exporter cannot find the batchedUpdates topic for at least 5 minutes."
+
+      - alert: KafkaConsumerLagHigh
+        expr: max(kafka_consumergroup_lag_sum{consumergroup=~"event_group|sse_consumer_group"}) > 1000
+        for: 10m
+        labels:
+          severity: warning
+          service: kafka
+        annotations:
+          summary: "Kafka consumer lag is high"
+          description: "Kafka consumer lag exceeded 1000 messages for 10 minutes."
+
   - name: host-and-container-alerts
     rules:
       - alert: HostHighCPU

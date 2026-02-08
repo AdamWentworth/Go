@@ -45,6 +45,16 @@ services:
     networks:
       - pokemon_edge
 
+  kafka_exporter:
+    image: danielqsj/kafka-exporter:v1.8.0
+    container_name: kafka_exporter
+    command:
+      - "--kafka.server=kafka:9092"
+      - "--web.listen-address=:9308"
+    restart: unless-stopped
+    networks:
+      - kafka_default
+
   alertmanager:
     image: prom/alertmanager:latest
     container_name: alertmanager
