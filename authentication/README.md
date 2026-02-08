@@ -1,59 +1,169 @@
-﻿# Authentication Service (Node.js)
+﻿# Authentication Service (Node.js) 🔒
 
 Authentication API for Pokemon Go Nexus.
 
-## What It Handles
+## 📌 Overview
 
-- User registration and login
-- JWT access and refresh token issuance
+This service handles:
+
+- Account registration and login
+- JWT access/refresh token issuance
 - Refresh token rotation and logout
-- Account update and delete flows
-- Trade partner reveal endpoint for authenticated users
+- Account update and delete (owner-only)
+- Transitional trade reveal endpoint
 - Daily MongoDB backup task (`mongodump`)
 
-## Current Scope
+## ✅ Current Scope
 
-- OAuth/social login is intentionally disabled for now.
-- Email delivery is intentionally disabled for now (no SMTP integration in this service).
-- Password reset completion is intentionally disabled for now.
-- Cookie-authenticated mutating routes enforce an Origin check against allowed frontend origins.
+- OAuth/social login is intentionally disabled.
+- Email delivery is intentionally disabled.
+- Password reset completion is intentionally disabled (`501` by design).
+- Cookie-authenticated mutating routes enforce Origin checks.
 - Refresh tokens are stored as one-way hashes and rotated on refresh.
-- `tradeRevealRoute` is transitional and can be removed once that capability moves to a dedicated service.
+- `tradeRevealRoute` is transitional and can be removed after replacement.
 
-## Routes
+## 🧭 API Routes
 
 Mounted under `/auth`:
 
-- `POST /auth/register`
-- `POST /auth/login`
-- `POST /auth/refresh`
-- `POST /auth/logout`
-- `PUT /auth/update/:id`
-- `DELETE /auth/delete/:id`
-- `POST /auth/reset-password/` (currently returns `501 Not Implemented` by design)
-- `POST /auth/reveal-partner-info`
+| Method | Route | Notes |
+| --- | --- | --- |
+| `POST` | `/auth/register` | Creates account + issues cookies |
+| `POST` | `/auth/login` | Issues access + refresh cookies |
+| `POST` | `/auth/refresh` | Verifies refresh JWT + hash, rotates both tokens |
+| `POST` | `/auth/logout` | Revokes current refresh session |
+| `PUT` | `/auth/update/:id` | Requires auth, owner-only |
+| `DELETE` | `/auth/delete/:id` | Requires auth, owner-only |
+| `POST` | `/auth/reset-password/` | Intentionally disabled (`501`) |
+| `POST` | `/auth/reveal-partner-info` | Transitional endpoint |
 
-API docs:
+Other routes:
 
 - `GET /api-docs`
+- `GET /healthz`
+- `GET /readyz`
 
-## Environment Variables
+## ⚙ Environment Variables
 
 ### Required
 
 - `DATABASE_URL` MongoDB connection string
-- `JWT_SECRET` JWT signing secret
+- `JWT_SECRET` base JWT secret (fallback)
 
 ### Recommended
 
-- `FRONTEND_URL` frontend origin used by CORS (for example `http://localhost:3000`)
+- `FRONTEND_URL` CORS frontend origin (for example `http://localhost:3000`)
 - `NODE_ENV` (`development` or `production`)
-- `ACCESS_TOKEN_SECRET` optional dedicated secret for access-token signing/verification
-- `REFRESH_TOKEN_SECRET` optional dedicated secret for refresh-token signing/verification
-- `JWT_ISSUER` optional JWT issuer claim (defaults to `pokemongonexus-auth`)
-- `JWT_AUDIENCE` optional JWT audience claim (defaults to `pokemongonexus-clients`)
+- `ACCESS_TOKEN_SECRET` optional dedicated secret for access tokens
+- `REFRESH_TOKEN_SECRET` optional dedicated secret for refresh tokens
+- `JWT_ISSUER` optional JWT issuer (default `pokemongonexus-auth`)
+- `JWT_AUDIENCE` optional JWT audience (default `pokemongonexus-clients`)
 
-## Local Run
+## 🏗 Architecture (Mermaid)
+
+### Service Context
+
+```mermaid
+flowchart LR
+  Client[Frontend Client] --> Nginx[frontend_nginx]
+  Nginx --> Auth[authentication_container]
+  Auth --> Mongo[(mongo_auth)]
+  Auth --> KafkaNet[kafka_default network]
+```
+
+### Login + Refresh Rotation Flow
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant A as Auth API
+  participant D as MongoDB
+
+  U->>A: POST /auth/login
+  A->>D: Validate user + password
+  A->>D: Store refresh token hash
+  A-->>U: Set accessToken + refreshToken cookies
+
+  U->>A: POST /auth/refresh
+  A->>A: Verify refresh JWT claims/signature
+  A->>D: Match refresh token hash
+  A->>D: Remove old hash + save new hash
+  A-->>U: Set rotated accessToken + refreshToken cookies
+```
+
+## 📐 UML Diagrams
+
+| Diagram | Purpose |
+| --- | --- |
+| Use Case | High-level user interactions with auth endpoints |
+| Class | Core modules and relationships in the service |
+
+### Use Case (Mermaid UML)
+
+```mermaid
+flowchart LR
+  User([User])
+  subgraph AuthSvc[Authentication Service]
+    UC1((Register))
+    UC2((Login))
+    UC3((Refresh Session))
+    UC4((Logout))
+    UC5((Update Own Profile))
+    UC6((Delete Own Account))
+  end
+  User --> UC1
+  User --> UC2
+  User --> UC3
+  User --> UC4
+  User --> UC5
+  User --> UC6
+```
+
+### Class Summary (Table)
+
+| Class | Key Members | Responsibility |
+| --- | --- | --- |
+| `AuthRoute` | `register`, `login`, `refresh`, `logout`, `update`, `delete` | Handles auth HTTP routes and orchestration |
+| `TokenService` | `createTokens`, `verifyAccessToken`, `verifyRefreshToken` | JWT generation and validation |
+| `UserModel` | `username`, `email`, `password`, `refreshToken[]` | Persisted user account model |
+| `RefreshTokenHash` | `hashRefreshToken` | One-way hashing of refresh tokens |
+
+### Class View (Mermaid UML)
+
+```mermaid
+classDiagram
+  class AuthRoute {
+    +register()
+    +login()
+    +refresh()
+    +logout()
+    +update()
+    +delete()
+  }
+
+  class TokenService {
+    +createTokens()
+    +verifyAccessToken()
+    +verifyRefreshToken()
+  }
+
+  class UserModel {
+    +username
+    +email
+    +password
+    +refreshToken[]
+  }
+
+  class RefreshTokenHash {
+    +hashRefreshToken()
+  }
+
+  AuthRoute --> TokenService
+  AuthRoute --> UserModel
+  AuthRoute --> RefreshTokenHash
+```
+
+## 🧪 Local Development
 
 ```bash
 cd Go/authentication
@@ -61,19 +171,19 @@ npm ci
 npm start
 ```
 
-Dev mode with auto-reload:
+Dev mode:
 
 ```bash
 npm run dev
 ```
 
-Run tests:
+Tests:
 
 ```bash
 npm test
 ```
 
-## Docker
+## 🐳 Docker
 
 ```bash
 cd Go/authentication
@@ -84,12 +194,13 @@ Notes:
 
 - Uses `mongo:6` for local compose DB.
 - Container includes `mongodb-tools` for backup tasks.
-- MongoDB is no longer host-exposed by default.
-- Auth service host exposure is loopback-only (`127.0.0.1:3002`).
+- Service runs as non-root user `adam` in container.
+- MongoDB is not host-exposed by default.
+- Auth host exposure is loopback-only (`127.0.0.1:3002`).
 
-## Production Deploy (Manual CD)
+## 🚀 Production Deploy (Manual CD)
 
-GitHub Actions workflow:
+Workflow:
 
 - `deploy-auth-prod`
 
@@ -99,17 +210,24 @@ Manual inputs:
 - `deploy_root` (default `/media/adam/storage/Code/Go`)
 - `service_name` (default `auth_service`)
 
-Deployment behavior:
+Deploy behavior:
 
-- Syncs prod repo to the selected branch ref
-- Validates `authentication/.env` contains `DATABASE_URL` and `JWT_SECRET`
+- Syncs prod repo to selected branch
+- Validates `authentication/.env` keys (`DATABASE_URL`, `JWT_SECRET`)
 - Ensures `kafka_default` network exists
 - Pulls target image and recreates `auth_service`
-- Health checks with `GET /readyz` (expects `200`)
-- Rolls back to previous image on failure when available
+- Health-checks with `GET /readyz` (`200` expected)
+- Rolls back on failure (when previous image exists)
 
-## Maintenance Notes
+## 🛡 Security Notes
+
+- Login uses generic invalid-credentials responses.
+- Update/delete are owner-only and require auth.
+- JWT verification enforces algorithm, issuer, and audience.
+- Refresh token replay window is reduced by rotation + hash storage.
+
+## 🧰 Maintenance Notes
 
 - Inactive social auth dependencies were removed to reduce attack surface.
 - Vulnerability remediation was applied at patch level where non-breaking.
-- CI workflow now validates install, JS syntax, integration tests, high-severity audit gate, and container security scan.
+- CI validates install, JS syntax, tests, audit gate, and container security scan.
