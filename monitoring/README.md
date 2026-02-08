@@ -7,6 +7,11 @@ It now also includes host and container telemetry via:
 - `node_exporter` (host CPU, memory, disk, filesystem, load)
 - `cadvisor` (per-container CPU, memory, filesystem, network)
 
+What these are:
+
+- `node_exporter`: reads Linux host stats from `/proc` and `/sys` so Prometheus can graph host CPU/RAM/disk pressure.
+- `cadvisor`: reads Docker container runtime stats so Prometheus can graph per-container CPU/RAM/network/fs usage.
+
 ## Severe Email Alerts
 
 Alertmanager is configured to email only `severity="critical"` alerts to:
