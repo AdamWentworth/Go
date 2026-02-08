@@ -3,33 +3,16 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
-const tokenService = require('../services/tokenService'); // your custom token utilities
 const logger = require('../middlewares/logger');
+const requireAuth = require('../middlewares/requireAuth');
 
 // POST /api/trade/reveal-partner-info
-router.post('/reveal-partner-info', async (req, res) => {
+router.post('/reveal-partner-info', requireAuth, async (req, res) => {
   try {
+    // Transitional route: expected to move out to a dedicated service later.
     // We'll expect the entire `trade` object in req.body
     const { trade } = req.body;
-
-    // Extract the access token from cookies
-    // (assuming your front-end sets "accessToken" cookie via setAccessTokenCookie or similar)
-    const accessToken = req.cookies?.accessToken;
-    if (!accessToken) {
-      logger.error('Reveal Partner Info: No access token provided in cookies');
-      return res.status(401).json({ message: 'No access token provided.' });
-    }
-
-    // Validate the token (parse it, verify signature, etc.)
-    // Depending on your token structure, 'verifyAccessToken' might return the decoded payload
-    const decoded = tokenService.verifyAccessToken(accessToken);
-    if (!decoded) {
-      logger.error('Reveal Partner Info: Invalid or expired token');
-      return res.status(401).json({ message: 'Invalid or expired token.' });
-    }
-
-    // `decoded` should contain something like { sub: userId, iat, exp, ... }
-    const userId = decoded.user_id;
+    const userId = req.auth.userId;
 
     // Find the user in MongoDB
     const currentUser = await User.findById(userId).exec();

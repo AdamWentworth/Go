@@ -165,15 +165,12 @@ jobs:
           LAST_STATUS="000"
           rm -f /tmp/auth_health_body.txt
 
-          # Health check: auth route that requires DB lookup.
+          # Health check: readiness route verifies DB is reachable.
           for _ in $(seq 1 30); do
             LAST_STATUS="$(curl -sS -o /tmp/auth_health_body.txt -w '%{http_code}' \
-              -H 'Content-Type: application/json' \
-              -X POST \
-              --data '{}' \
-              http://127.0.0.1:3002/auth/login || true)"
+              http://127.0.0.1:3002/readyz || true)"
 
-            if [[ "${LAST_STATUS}" == "404" || "${LAST_STATUS}" == "401" ]]; then
+            if [[ "${LAST_STATUS}" == "200" ]]; then
               HEALTH_OK=1
               break
             fi

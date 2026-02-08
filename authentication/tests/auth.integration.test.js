@@ -110,12 +110,23 @@ describe('authentication service integration', () => {
     });
 
     const cookies = login.headers['set-cookie'];
-    const refreshed = await request(app).post('/auth/refresh').set('Cookie', cookies).send({});
+    const refreshed = await request(app)
+      .post('/auth/refresh')
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', cookies)
+      .send({});
 
     expect(refreshed.status).toBe(200);
     expect(refreshed.body.username).toBe(validLoginId);
     expect(refreshed.headers['set-cookie']).toBeDefined();
     expect(refreshed.headers['set-cookie'].some((c) => c.startsWith('accessToken='))).toBe(true);
+
+    const refreshUsingOldCookie = await request(app)
+      .post('/auth/refresh')
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', cookies)
+      .send({});
+    expect(refreshUsingOldCookie.status).toBe(401);
   });
 
   test('logout revokes refresh token and blocks future refresh', async () => {
@@ -128,11 +139,16 @@ describe('authentication service integration', () => {
     });
     const cookies = login.headers['set-cookie'];
 
-    const logout = await request(app).post('/auth/logout').set('Cookie', cookies).send({});
+    const logout = await request(app)
+      .post('/auth/logout')
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', cookies)
+      .send({});
     expect(logout.status).toBe(200);
 
     const refreshAfterLogout = await request(app)
       .post('/auth/refresh')
+      .set('Origin', 'http://localhost:3000')
       .set('Cookie', cookies)
       .send({});
     expect(refreshAfterLogout.status).toBe(401);
@@ -148,6 +164,117 @@ describe('authentication service integration', () => {
     });
 
     expect(badLogin.status).toBe(401);
-    expect(badLogin.body.message).toBe('Invalid password');
+    expect(badLogin.body.message).toBe('Invalid credentials');
+  });
+
+  test('update rejects unauthenticated request', async () => {
+    await registerUser();
+    const user = await User.findOne({ username: validLoginId }).lean();
+
+    const update = await request(app).put(`/auth/update/${user._id}`).send({
+      location: 'Pallet Town'
+    });
+
+    expect(update.status).toBe(401);
+    expect(update.body.message).toBe('Authentication required');
+  });
+
+  test('update forbids modifying another user', async () => {
+    await registerUser();
+    const firstUser = await User.findOne({ username: validLoginId }).lean();
+
+    const secondUsername = `${validLoginId}_other`;
+    const secondEmail = `other_${Date.now().toString(36)}@example.invalid`;
+    const secondPass = `${validPassphrase}_x`;
+    const secondDevice = `${validDeviceId}_other`;
+
+    await registerUser({
+      username: secondUsername,
+      email: secondEmail,
+      password: secondPass,
+      device_id: secondDevice
+    });
+
+    const secondUser = await User.findOne({ username: secondUsername }).lean();
+
+    const login = await request(app).post('/auth/login').send({
+      username: firstUser.username,
+      password: validPassphrase,
+      device_id: validDeviceId
+    });
+    const cookies = login.headers['set-cookie'];
+
+    const update = await request(app)
+      .put(`/auth/update/${secondUser._id}`)
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', cookies)
+      .send({ location: 'Viridian City' });
+
+    expect(update.status).toBe(403);
+    expect(update.body.message).toBe('Forbidden');
+  });
+
+  test('delete forbids removing another user', async () => {
+    await registerUser();
+    const firstUser = await User.findOne({ username: validLoginId }).lean();
+
+    const secondUsername = `${validLoginId}_target`;
+    const secondEmail = `target_${Date.now().toString(36)}@example.invalid`;
+    const secondPass = `${validPassphrase}_target`;
+    const secondDevice = `${validDeviceId}_target`;
+
+    await registerUser({
+      username: secondUsername,
+      email: secondEmail,
+      password: secondPass,
+      device_id: secondDevice
+    });
+
+    const secondUser = await User.findOne({ username: secondUsername }).lean();
+
+    const login = await request(app).post('/auth/login').send({
+      username: firstUser.username,
+      password: validPassphrase,
+      device_id: validDeviceId
+    });
+    const cookies = login.headers['set-cookie'];
+
+    const deletion = await request(app)
+      .delete(`/auth/delete/${secondUser._id}`)
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', cookies)
+      .send();
+
+    expect(deletion.status).toBe(403);
+    expect(deletion.body.message).toBe('Forbidden');
+  });
+
+  test('csrf origin guard blocks mutating auth-cookie request without origin', async () => {
+    await registerUser();
+
+    const login = await request(app).post('/auth/login').send({
+      username: validLoginId,
+      password: validPassphrase,
+      device_id: validDeviceId
+    });
+    const cookies = login.headers['set-cookie'];
+
+    const refreshNoOrigin = await request(app)
+      .post('/auth/refresh')
+      .set('Cookie', cookies)
+      .send({});
+
+    expect(refreshNoOrigin.status).toBe(403);
+    expect(refreshNoOrigin.body.message).toBe('CSRF origin check failed');
+  });
+
+  test('reset-password endpoint remains intentionally disabled', async () => {
+    const res = await request(app).post('/auth/reset-password/').send({
+      token: 'unused',
+      newPassword: 'unused-password'
+    });
+
+    expect(res.status).toBe(501);
+    expect(res.body.message).toBe('Password reset is not enabled for this environment.');
   });
 });

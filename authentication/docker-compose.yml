@@ -5,8 +5,6 @@ services:
     image: mongo:6
     container_name: mongo_auth
     restart: unless-stopped
-    ports:
-      - "27017:27017"
     volumes:
       - mongo_auth_data:/data/db
       - ./backups:/backups
@@ -17,7 +15,7 @@ services:
     image: ${AUTH_IMAGE:-adamwentworth/authentication:latest}
     container_name: authentication_container
     ports:
-      - "3002:3002"
+      - "127.0.0.1:3002:3002"
     env_file:
       - .env
     depends_on:

@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema({
     nintendoId: { type: String, default: "" },
     discordId: { type: String, default: "" },
     refreshToken: [{
-        token: String,
+        tokenHash: String,
         expires: Date,
         device_id: String
     }],

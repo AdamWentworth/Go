@@ -7,8 +7,101 @@ const bcrypt = require('bcrypt');
 const logger = require('../middlewares/logger'); // Ensure logger is imported correctly
 const tokenService = require('../services/tokenService'); // Adjust the path as necessary
 const setCookies = require('../middlewares/setCookies'); // Adjust the path as necessary
-const setAccessTokenCookie = require('../middlewares/setAccessTokenCookie');
-const sanitizeForLogging= require ('../utils/sanitizeLogging');
+const requireAuth = require('../middlewares/requireAuth');
+const { hashRefreshToken } = require('../utils/refreshTokenHash');
+const sanitizeForLogging = require('../utils/sanitizeLogging');
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const TRAINER_CODE_RE = /^\d{12}$/;
+
+const isNonEmptyString = (value, min = 1, max = 255) => {
+    if (typeof value !== 'string') return false;
+    const trimmed = value.trim();
+    return trimmed.length >= min && trimmed.length <= max;
+};
+
+const normalizeOptionalString = (value, max = 255) => {
+    if (value === null || value === undefined) return null;
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (trimmed.length > max) return null;
+    return trimmed;
+};
+
+const parseCoordinates = (value) => {
+    if (value === undefined) return { ok: true, value: undefined };
+    if (value === null) return { ok: true, value: null };
+    if (typeof value !== 'object') return { ok: false, message: 'coordinates must be an object' };
+
+    const { latitude, longitude } = value;
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return { ok: false, message: 'coordinates latitude/longitude must be numbers' };
+    }
+    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        return { ok: false, message: 'coordinates are out of range' };
+    }
+
+    return { ok: true, value: { latitude, longitude } };
+};
+
+const buildSafeUpdatePayload = (input) => {
+    const updates = {};
+
+    if (Object.prototype.hasOwnProperty.call(input, 'username')) {
+        if (!isNonEmptyString(input.username, 3, 36)) return { ok: false, message: 'Invalid username' };
+        updates.username = input.username.trim();
+    }
+
+    if (Object.prototype.hasOwnProperty.call(input, 'email')) {
+        if (!isNonEmptyString(input.email, 6, 255)) return { ok: false, message: 'Invalid email' };
+        const email = input.email.trim().toLowerCase();
+        if (!EMAIL_RE.test(email)) return { ok: false, message: 'Invalid email' };
+        updates.email = email;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(input, 'pokemonGoName')) {
+        const pokemonGoName = normalizeOptionalString(input.pokemonGoName, 64);
+        if (input.pokemonGoName !== null && input.pokemonGoName !== undefined && !pokemonGoName) {
+            return { ok: false, message: 'Invalid pokemonGoName' };
+        }
+        updates.pokemonGoName = pokemonGoName;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(input, 'trainerCode')) {
+        const trainerCode = normalizeOptionalString(input.trainerCode, 12);
+        if (trainerCode && !TRAINER_CODE_RE.test(trainerCode)) {
+            return { ok: false, message: 'Invalid trainerCode' };
+        }
+        updates.trainerCode = trainerCode;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(input, 'password')) {
+        if (!isNonEmptyString(input.password, 6, 128)) return { ok: false, message: 'Invalid password' };
+        updates.password = input.password;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(input, 'allowLocation')) {
+        if (typeof input.allowLocation !== 'boolean') return { ok: false, message: 'allowLocation must be boolean' };
+        updates.allowLocation = input.allowLocation;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(input, 'location')) {
+        const location = normalizeOptionalString(input.location, 255);
+        if (input.location !== null && input.location !== undefined && !location) {
+            return { ok: false, message: 'Invalid location' };
+        }
+        updates.location = location;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(input, 'coordinates')) {
+        const coordResult = parseCoordinates(input.coordinates);
+        if (!coordResult.ok) return { ok: false, message: coordResult.message };
+        updates.coordinates = coordResult.value;
+    }
+
+    return { ok: true, updates };
+};
 
 // Function to handle token response more dynamically
 function handleTokenResponse(req, res, user, tokens) {
@@ -20,7 +113,43 @@ function handleTokenResponse(req, res, user, tokens) {
 
 router.post('/register', async (req, res, next) => {
     try {
-        const { username, email, pokemonGoName, trainerCode, password, device_id, location } = req.body;
+        const username = typeof req.body?.username === 'string' ? req.body.username.trim() : '';
+        const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+        const password = typeof req.body?.password === 'string' ? req.body.password : '';
+        const device_id = typeof req.body?.device_id === 'string' ? req.body.device_id.trim() : '';
+        const pokemonGoName = normalizeOptionalString(req.body?.pokemonGoName, 64);
+        const trainerCode = normalizeOptionalString(req.body?.trainerCode, 12);
+        const location = normalizeOptionalString(req.body?.location, 255);
+        const allowLocation = req.body?.allowLocation === true;
+        const coordResult = parseCoordinates(req.body?.coordinates);
+
+        if (!isNonEmptyString(username, 3, 36)) {
+            return res.status(400).json({ message: 'Invalid username' });
+        }
+        if (!isNonEmptyString(email, 6, 255) || !EMAIL_RE.test(email)) {
+            return res.status(400).json({ message: 'Invalid email' });
+        }
+        if (!isNonEmptyString(password, 6, 128)) {
+            return res.status(400).json({ message: 'Invalid password' });
+        }
+        if (!isNonEmptyString(device_id, 3, 128)) {
+            return res.status(400).json({ message: 'Invalid device_id' });
+        }
+        if (req.body?.pokemonGoName !== undefined && req.body?.pokemonGoName !== null && !pokemonGoName) {
+            return res.status(400).json({ message: 'Invalid pokemonGoName' });
+        }
+        if (trainerCode && !TRAINER_CODE_RE.test(trainerCode)) {
+            return res.status(400).json({ message: 'Invalid trainerCode' });
+        }
+        if (req.body?.allowLocation !== undefined && typeof req.body.allowLocation !== 'boolean') {
+            return res.status(400).json({ message: 'allowLocation must be boolean' });
+        }
+        if (req.body?.location !== undefined && req.body?.location !== null && !location) {
+            return res.status(400).json({ message: 'Invalid location' });
+        }
+        if (!coordResult.ok) {
+            return res.status(400).json({ message: coordResult.message });
+        }
 
         // Check for existing unique fields
         if (await User.findOne({ username })) {
@@ -50,12 +179,12 @@ router.post('/register', async (req, res, next) => {
         const newUser = new User({
             username,
             email,
-            pokemonGoName: pokemonGoName || null, // Ensure null for empty string
-            trainerCode: trainerCode || null,    // Ensure null for empty string
+            pokemonGoName,
+            trainerCode,
             password: hashedPassword,
-            ...req.body.coordinates && { coordinates: req.body.coordinates }, // Add coordinates if present
-            allowLocation: req.body.allowLocation || false,
-            location: location || null // Add location field
+            ...(coordResult.value !== undefined && { coordinates: coordResult.value }),
+            allowLocation,
+            location
         });
 
         // Save user with writeConcern for reliability
@@ -82,7 +211,7 @@ router.post('/register', async (req, res, next) => {
         await User.findByIdAndUpdate(savedUser._id, {
             $push: {
                 refreshToken: {
-                    token: tokens.refreshToken,
+                    tokenHash: hashRefreshToken(tokens.refreshToken),
                     expires: tokens.refreshTokenExpiry,
                     device_id
                 }
@@ -118,25 +247,31 @@ router.post('/register', async (req, res, next) => {
 
 router.post('/login', async (req, res, next) => {
     try {
+        const loginId = typeof req.body?.username === 'string' ? req.body.username.trim() : '';
+        const password = typeof req.body?.password === 'string' ? req.body.password : '';
+        const device_id = typeof req.body?.device_id === 'string' ? req.body.device_id.trim() : '';
+
+        if (!isNonEmptyString(loginId, 3, 255) || !isNonEmptyString(password, 6, 128) || !isNonEmptyString(device_id, 3, 128)) {
+            return res.status(400).json({ message: 'Invalid login payload' });
+        }
+
         const user = await User.findOne({
             $or: [
-                { username: req.body.username },
-                { email: req.body.username }
+                { username: loginId },
+                { email: loginId.toLowerCase() }
             ]
         }).exec();
 
         if (!user) {
-            logger.error(`Login failed: User not found with status ${404}`);
-            return res.status(404).json({ message: 'User not found' });
+            logger.warn('Login failed: Invalid credentials');
+            return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const validPassword = await bcrypt.compare(req.body.password, user.password);
+        const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
-            logger.error(`Login failed: Invalid password with status ${401}`);
-            return res.status(401).json({ message: 'Invalid password' });
+            logger.warn('Login failed: Invalid credentials');
+            return res.status(401).json({ message: 'Invalid credentials' });
         }
-
-        const device_id = req.body.device_id;  // Get device_id from the request body
 
         // Clean up expired refresh tokens and tokens with the same device_id before adding a new one
         await User.findByIdAndUpdate(user._id, {
@@ -155,7 +290,7 @@ router.post('/login', async (req, res, next) => {
         // Update user with new refresh token details by adding to the array
         await User.findByIdAndUpdate(user._id, {
             $push: {'refreshToken': {
-                token: tokens.refreshToken,
+                tokenHash: hashRefreshToken(tokens.refreshToken),
                 expires: tokens.refreshTokenExpiry,
                 device_id: device_id
             }}
@@ -193,14 +328,22 @@ router.post('/refresh', async (req, res, next) => {
     }
 
     try {
-        // Clean up expired refresh tokens
-        await User.updateOne(
-            { 'refreshToken.token': refreshToken },
-            { $pull: { 'refreshToken': { expires: { $lte: new Date() } } } }
-        );
+        const now = new Date();
+        const decodedRefresh = tokenService.verifyRefreshToken(refreshToken);
+        if (!decodedRefresh || !decodedRefresh.user_id) {
+            logger.error('Refresh failed: Invalid refresh token signature/claims');
+            return res.status(401).json({ message: 'Invalid or expired refresh token' });
+        }
+
+        const refreshTokenHash = hashRefreshToken(refreshToken);
 
         const user = await User.findOne({
-            'refreshToken': { $elemMatch: { token: refreshToken, expires: { $gt: new Date() } } }
+            refreshToken: {
+                $elemMatch: {
+                    expires: { $gt: now },
+                    tokenHash: refreshTokenHash
+                }
+            }
         }).exec();
 
         if (!user) {
@@ -208,25 +351,45 @@ router.post('/refresh', async (req, res, next) => {
             return res.status(401).json({ message: 'Invalid or expired refresh token' });
         }
 
-        req.tokenIndex = user.refreshToken.findIndex(rt => rt.token === refreshToken);
-        if (req.tokenIndex === -1 || user.refreshToken[req.tokenIndex].expires <= new Date()) {
+        if (String(user._id) !== String(decodedRefresh.user_id)) {
+            logger.error('Refresh failed: Token subject mismatch');
+            return res.status(401).json({ message: 'Invalid or expired refresh token' });
+        }
+
+        req.tokenIndex = user.refreshToken.findIndex(rt => {
+            if (!rt || rt.expires <= now) return false;
+            return rt.tokenHash === refreshTokenHash;
+        });
+        if (req.tokenIndex === -1 || user.refreshToken[req.tokenIndex].expires <= now) {
             logger.error('Refresh failed: Token not found or expired');
             return res.status(401).json({ message: 'Invalid or expired refresh token' });
         }
 
         const device_id = user.refreshToken[req.tokenIndex].device_id;  // Retrieve device_id from the stored refresh token
 
-        logger.debug(`User ${user.username} found with valid refresh token. Proceeding to create new access token.`);
+        logger.debug(`User ${user.username} found with valid refresh token. Rotating session tokens.`);
 
-        const tokens = tokenService.createAccessToken(user, device_id);  // Include device_id in access token
+        user.refreshToken = user.refreshToken.filter(rt => {
+            if (!rt || rt.expires <= now) return false;
+            return rt.tokenHash !== refreshTokenHash;
+        });
 
+        const tokens = tokenService.createTokens(user, device_id);  // Rotate both access and refresh tokens
+        user.refreshToken.push({
+            tokenHash: hashRefreshToken(tokens.refreshToken),
+            expires: tokens.refreshTokenExpiry,
+            device_id
+        });
+        await user.save({ validateModifiedOnly: true });
+
+        req.tokenIndex = user.refreshToken.length - 1;
         handleTokenResponse(req, res, user, tokens);
         next();
     } catch (err) {
         logger.error(`Refresh token error: ${err.message}`);
         res.status(500).json({ message: 'Failed to refresh tokens', error: err.toString() });
     }
-}, setAccessTokenCookie, (req, res) => {
+}, setCookies, (req, res) => {
     const { user, tokens } = res.locals;
     res.status(200).json({
         user_id: user._id.toString(),
@@ -244,11 +407,16 @@ router.post('/refresh', async (req, res, next) => {
 });
 
 // Update user details
-router.put('/update/:id', async (req, res) => {
+router.put('/update/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
     if (!id) {
         logger.error('No ID provided in the request parameters');
         return res.status(400).json({ success: false, message: 'Request must include an ID' });
+    }
+
+    if (req.auth.userId !== id) {
+        logger.warn(`Update forbidden: token user ${req.auth.userId} attempted to update ${id}`);
+        return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
     try {
@@ -259,12 +427,15 @@ router.put('/update/:id', async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
-        const updates = { ...req.body };
+        const updateResult = buildSafeUpdatePayload(req.body || {});
+        if (!updateResult.ok) {
+            return res.status(400).json({ success: false, message: updateResult.message });
+        }
 
-        // Remove token expiry fields from updates to prevent them from being modified
-        const { accessTokenExpiry, refreshTokenExpiry } = updates;
-        delete updates.accessTokenExpiry;
-        delete updates.refreshTokenExpiry;
+        const updates = updateResult.updates;
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({ success: false, message: 'No valid fields to update' });
+        }
 
         // Initialize password update flag
         let passwordUpdated = false;
@@ -309,7 +480,7 @@ router.put('/update/:id', async (req, res) => {
         logger.info(`Updating user details for User ID: ${id} with data: ${JSON.stringify(sanitizedUpdates)}`);
 
         // Perform the update
-        const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true });
+        const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
         if (!updatedUser) {
             logger.error(`Update failed: User not found with ID: ${id} with status 404`);
             return res.status(404).json({ success: false, message: 'User not found' });
@@ -329,8 +500,8 @@ router.put('/update/:id', async (req, res) => {
                 allowLocation: updatedUser.allowLocation || false,
                 location: updatedUser.location || '',
                 coordinates: updatedUser.coordinates || '',
-                accessTokenExpiry: accessTokenExpiry,
-                refreshTokenExpiry: refreshTokenExpiry
+                accessTokenExpiry: null,
+                refreshTokenExpiry: null
             },
             passwordUpdated, // Indicates if the password was changed
             message: passwordUpdated
@@ -345,8 +516,13 @@ router.put('/update/:id', async (req, res) => {
     }
 });
 
-router.delete('/delete/:id', async (req, res) => {
+router.delete('/delete/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
+    if (req.auth.userId !== id) {
+        logger.warn(`Delete forbidden: token user ${req.auth.userId} attempted to delete ${id}`);
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
     try {
         const user = await User.findByIdAndDelete(id);
         if (!user) {
@@ -370,9 +546,22 @@ router.post('/logout', async (req, res) => {
     }
 
     try {
+        const refreshTokenHash = hashRefreshToken(refreshToken);
         const user = await User.findOneAndUpdate(
-            { 'refreshToken.token': refreshToken },
-            { $pull: {'refreshToken': { token: refreshToken }}}
+            {
+                refreshToken: {
+                    $elemMatch: {
+                        tokenHash: refreshTokenHash
+                    }
+                }
+            },
+            {
+                $pull: {
+                    refreshToken: {
+                        tokenHash: refreshTokenHash
+                    }
+                }
+            }
         );
 
         res.clearCookie('accessToken');
@@ -391,53 +580,9 @@ router.post('/logout', async (req, res) => {
     }
 });
 
-// POST /reset-password/:token
+// Password reset flow is intentionally disabled in this environment.
 router.post('/reset-password/', async (req, res) => {
-    const { token } = req.params;
-    const { newPassword } = req.body;
-
-    if (!token) {
-        logger.error('Reset Password Confirmation failed: No token provided');
-        return res.status(400).json({ message: 'Reset token is required' });
-    }
-
-    if (!newPassword) {
-        logger.error('Reset Password Confirmation failed: No new password provided');
-        return res.status(400).json({ message: 'New password is required' });
-    }
-
-    try {
-        // Find the user by reset token and ensure token is not expired
-        const user = await User.findOne({
-            resetPasswordToken: token,
-            resetPasswordExpires: { $gt: Date.now() }, // Token is not expired
-        });
-
-        if (!user) {
-            logger.warn(`Reset Password Confirmation failed: Invalid or expired token`);
-            return res.status(400).json({ message: 'Invalid or expired reset token' });
-        }
-
-        // Hash the new password
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-        // Update user's password and remove reset token fields
-        user.password = hashedPassword;
-        user.resetPasswordToken = null;
-        user.resetPasswordExpires = null;
-
-        await user.save();
-
-        // Optionally, send a confirmation email
-        // await sendPasswordResetConfirmationEmail(user.email);
-
-        logger.info(`Password updated successfully for user ${user.email}`);
-
-        res.status(200).json({ message: 'Password has been reset successfully.' });
-    } catch (error) {
-        logger.error(`Reset Password Confirmation error: ${error.message}`);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
+    return res.status(501).json({ message: 'Password reset is not enabled for this environment.' });
 });
 
 module.exports = router;

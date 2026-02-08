@@ -14,6 +14,7 @@ const yaml = require('js-yaml');
 const fs = require('fs');
 const path = require('path');
 const logger = require('./middlewares/logger');
+const csrfOriginGuard = require('./middlewares/csrfOriginGuard');
 const cron = require('node-cron');
 const createBackup = require('./tasks/backup');
 const isTest = process.env.NODE_ENV === 'test';
@@ -27,6 +28,13 @@ const openAPIContent = fs.readFileSync(openAPIPath, 'utf8');
 const swaggerDocument = yaml.load(openAPIContent);
 
 const app = express();
+
+const requiredEnv = ['DATABASE_URL', 'JWT_SECRET'];
+for (const key of requiredEnv) {
+  if (!process.env[key]) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+}
 
 // Schedule daily DB backup.
 if (!isTest) {
@@ -48,6 +56,7 @@ const allowedOrigins = Array.from(
   new Set([
     ...configuredFrontendOrigin,
     'http://localhost:3000',
+    'http://127.0.0.1:3000',
     'https://pokemongonexus.com',
     'https://www.pokemongonexus.com'
   ])
@@ -59,7 +68,9 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error('CORS not allowed for this origin'));
+        const err = new Error('CORS not allowed for this origin');
+        err.status = 403;
+        callback(err);
       }
     },
     credentials: true,
@@ -82,11 +93,46 @@ const mongoConnectionPromise = mongoose
     throw error;
   });
 
+app.get('/healthz', (req, res) => {
+  res.status(200).json({ ok: true });
+});
+
+app.get('/readyz', async (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ ok: false, message: 'db not connected' });
+  }
+
+  try {
+    await mongoose.connection.db.admin().ping();
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    logger.error(`Readiness check failed: ${err.message}`);
+    return res.status(503).json({ ok: false, message: 'db not ready' });
+  }
+});
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false
 });
 app.use('/auth', limiter);
+app.use('/auth/login', loginLimiter);
+app.use('/auth/register', registerLimiter);
+app.use('/auth', csrfOriginGuard(allowedOrigins));
 
 app.use('/auth', require('./routes/authRoute'));
 app.use('/auth', require('./routes/tradeRevealRoute'));

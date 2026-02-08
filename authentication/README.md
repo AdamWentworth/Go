@@ -15,6 +15,10 @@ Authentication API for Pokemon Go Nexus.
 
 - OAuth/social login is intentionally disabled for now.
 - Email delivery is intentionally disabled for now (no SMTP integration in this service).
+- Password reset completion is intentionally disabled for now.
+- Cookie-authenticated mutating routes enforce an Origin check against allowed frontend origins.
+- Refresh tokens are stored as one-way hashes and rotated on refresh.
+- `tradeRevealRoute` is transitional and can be removed once that capability moves to a dedicated service.
 
 ## Routes
 
@@ -26,7 +30,7 @@ Mounted under `/auth`:
 - `POST /auth/logout`
 - `PUT /auth/update/:id`
 - `DELETE /auth/delete/:id`
-- `POST /auth/reset-password/`
+- `POST /auth/reset-password/` (currently returns `501 Not Implemented` by design)
 - `POST /auth/reveal-partner-info`
 
 API docs:
@@ -44,6 +48,10 @@ API docs:
 
 - `FRONTEND_URL` frontend origin used by CORS (for example `http://localhost:3000`)
 - `NODE_ENV` (`development` or `production`)
+- `ACCESS_TOKEN_SECRET` optional dedicated secret for access-token signing/verification
+- `REFRESH_TOKEN_SECRET` optional dedicated secret for refresh-token signing/verification
+- `JWT_ISSUER` optional JWT issuer claim (defaults to `pokemongonexus-auth`)
+- `JWT_AUDIENCE` optional JWT audience claim (defaults to `pokemongonexus-clients`)
 
 ## Local Run
 
@@ -76,6 +84,8 @@ Notes:
 
 - Uses `mongo:6` for local compose DB.
 - Container includes `mongodb-tools` for backup tasks.
+- MongoDB is no longer host-exposed by default.
+- Auth service host exposure is loopback-only (`127.0.0.1:3002`).
 
 ## Production Deploy (Manual CD)
 
@@ -95,7 +105,7 @@ Deployment behavior:
 - Validates `authentication/.env` contains `DATABASE_URL` and `JWT_SECRET`
 - Ensures `kafka_default` network exists
 - Pulls target image and recreates `auth_service`
-- Health checks with `POST /auth/login` (expects `404` or `401`)
+- Health checks with `GET /readyz` (expects `200`)
 - Rolls back to previous image on failure when available
 
 ## Maintenance Notes

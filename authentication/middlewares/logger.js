@@ -1,9 +1,11 @@
 const winston = require('winston');
 const fs = require('fs');
 const yaml = require('js-yaml');
+const path = require('path');
 
 // Load YAML logging configuration
-const logConfigYAML = fs.readFileSync('./config/log_conf.yml', 'utf8');
+const logConfigPath = path.join(__dirname, '..', 'config', 'log_conf.yml');
+const logConfigYAML = fs.readFileSync(logConfigPath, 'utf8');
 const logConfig = yaml.load(logConfigYAML);
 
 // Create the loggers defined in the YAML
