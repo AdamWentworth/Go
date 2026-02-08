@@ -27,7 +27,8 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.23.6"
+          # Pin patch to avoid govulncheck failing on older stdlib CVEs
+          go-version: "1.24.13"
           cache: true
           cache-dependency-path: receiver/go.sum
 
@@ -109,4 +110,3 @@ jobs:
         if: ${{ github.event_name != 'pull_request' && env.DOCKERHUB_TOKEN == '' }}
         run: |
           echo "DockerHub push skipped. Set DOCKERHUB_TOKEN repository secret."
-
