@@ -53,6 +53,7 @@ services:
       kafka_default:
         aliases:
           - kafka
+          - kafka-kafka-1
 
   kafka_init:
     image: confluentinc/cp-kafka:7.6.1
