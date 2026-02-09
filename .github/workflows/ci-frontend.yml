@@ -22,6 +22,15 @@ permissions:
 jobs:
   quality-gates:
     runs-on: ubuntu-latest
+    env:
+      VITE_POKEMON_API_URL: ${{ vars.VITE_POKEMON_API_URL || 'https://pokemongonexus.com/api/pokemon' }}
+      VITE_AUTH_API_URL: ${{ vars.VITE_AUTH_API_URL || 'https://pokemongonexus.com/api/auth' }}
+      VITE_RECEIVER_API_URL: ${{ vars.VITE_RECEIVER_API_URL || 'https://pokemongonexus.com/api/receiver' }}
+      VITE_USERS_API_URL: ${{ vars.VITE_USERS_API_URL || 'https://pokemongonexus.com/api/users' }}
+      VITE_SEARCH_API_URL: ${{ vars.VITE_SEARCH_API_URL || 'https://pokemongonexus.com/api/search' }}
+      VITE_LOCATION_SERVICE_URL: ${{ vars.VITE_LOCATION_SERVICE_URL || 'https://pokemongonexus.com/api/location' }}
+      VITE_EVENTS_API_URL: ${{ vars.VITE_EVENTS_API_URL || 'https://pokemongonexus.com/api/events' }}
+      VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1741290124604' }}
     defaults:
       run:
         working-directory: frontend
@@ -41,6 +50,45 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Validate Build Environment Inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in \
+            VITE_POKEMON_API_URL \
+            VITE_AUTH_API_URL \
+            VITE_RECEIVER_API_URL \
+            VITE_USERS_API_URL \
+            VITE_SEARCH_API_URL \
+            VITE_LOCATION_SERVICE_URL \
+            VITE_EVENTS_API_URL; do
+            if [[ -z "${!key:-}" ]]; then
+              echo "Missing required CI env: ${key}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Validate Built API Base URLs
+        shell: bash
+        run: |
+          set -euo pipefail
+          js_file="$(find dist/assets -maxdepth 1 -type f -name 'index-*.js' | head -n 1)"
+          if [[ -z "${js_file}" ]]; then
+            echo "Frontend bundle not found in dist/assets" >&2
+            exit 1
+          fi
+
+          for expected in \
+            "${VITE_AUTH_API_URL}" \
+            "${VITE_USERS_API_URL}" \
+            "${VITE_SEARCH_API_URL}" \
+            "${VITE_POKEMON_API_URL}"; do
+            if ! grep -q "${expected}" "${js_file}"; then
+              echo "Expected API base URL not found in bundle: ${expected}" >&2
+              exit 1
+            fi
+          done
+
       - name: Audit (Prod + Dev)
         run: npm audit --audit-level=moderate
 
@@ -50,6 +98,14 @@ jobs:
     env:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       IMAGE_REPO: adamwentworth/frontend-nginx
+      VITE_POKEMON_API_URL: ${{ vars.VITE_POKEMON_API_URL || 'https://pokemongonexus.com/api/pokemon' }}
+      VITE_AUTH_API_URL: ${{ vars.VITE_AUTH_API_URL || 'https://pokemongonexus.com/api/auth' }}
+      VITE_RECEIVER_API_URL: ${{ vars.VITE_RECEIVER_API_URL || 'https://pokemongonexus.com/api/receiver' }}
+      VITE_USERS_API_URL: ${{ vars.VITE_USERS_API_URL || 'https://pokemongonexus.com/api/users' }}
+      VITE_SEARCH_API_URL: ${{ vars.VITE_SEARCH_API_URL || 'https://pokemongonexus.com/api/search' }}
+      VITE_LOCATION_SERVICE_URL: ${{ vars.VITE_LOCATION_SERVICE_URL || 'https://pokemongonexus.com/api/location' }}
+      VITE_EVENTS_API_URL: ${{ vars.VITE_EVENTS_API_URL || 'https://pokemongonexus.com/api/events' }}
+      VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1741290124604' }}
 
     steps:
       - uses: actions/checkout@v4
