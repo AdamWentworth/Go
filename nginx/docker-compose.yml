@@ -3,7 +3,7 @@
 services:
   frontend_nginx:
     build: .
-    image: adamwentworth/frontend-nginx:latest
+    image: ${FRONTEND_NGINX_IMAGE:-adamwentworth/frontend-nginx:latest}
     container_name: frontend_nginx
     ports:
       - "80:80"

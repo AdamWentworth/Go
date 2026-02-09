@@ -36,6 +36,41 @@ The app supports:
 ```bash
 npm install
 ```
+---
+
+## CI/CD (GitHub Actions)
+
+This service now has dedicated frontend workflows:
+
+- `ci-frontend` (`.github/workflows/ci-frontend.yml`)
+- `deploy-frontend-prod` (`.github/workflows/deploy-frontend-prod.yml`)
+
+### What `ci-frontend` does
+
+- Runs on changes under `frontend/**`, `nginx/**`, and the frontend workflow files.
+- Installs deps with `npm ci`.
+- Builds with `npm run build`.
+- Enforces audit gate with `npm audit --audit-level=moderate`.
+- Builds nginx image after staging `frontend/dist` into `nginx/build`.
+- Runs Trivy scans and publishes an SBOM artifact.
+- Pushes `adamwentworth/frontend-nginx` tags (`sha-<commit>` + `latest`) when `DOCKERHUB_TOKEN` is set.
+
+### What `deploy-frontend-prod` does
+
+- Manual trigger (`workflow_dispatch`) on your self-hosted prod runner.
+- Fast-forwards repo at deploy root (default `/media/adam/storage/Code/Go`).
+- Validates compose and required Docker networks (`kafka_default`, `pokemon_edge`).
+- Pulls requested image and recreates `frontend_nginx` with rollback on failed health check.
+
+### Deploy input examples
+
+- `image_ref=latest`
+- `image_ref=sha-<commit>`
+- `image_ref=adamwentworth/frontend-nginx:sha-<commit>`
+
+### Required repository secret
+
+- `DOCKERHUB_TOKEN` (used by CI for DockerHub login/push)
 
 ---
 
@@ -79,7 +114,7 @@ Make sure to restart your dev server after changing `.env` values.
 ### 3. Start the dev server
 
 ```bash
-npm start
+npm run dev
 ```
 
 ---
@@ -211,4 +246,5 @@ This frontend was designed to be modular, touch-friendly, and scale as features 
 The current codebase is large, but **structured for rapid iteration**, with clean folder grouping and reusable UI components.
 
 > If you're working on a section or need help tracking data flow — `contexts/`, `hooks/`, and `pages/Pokemon/` are the best starting points.
+
 
