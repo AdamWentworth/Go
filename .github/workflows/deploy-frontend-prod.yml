@@ -140,6 +140,7 @@ jobs:
 
           HEALTH_OK=0
           LAST_STATUS="000"
+          HTTPS_STATUS="000"
           rm -f /tmp/frontend_health_body.txt
 
           for _ in $(seq 1 30); do
@@ -149,6 +150,21 @@ jobs:
             if [[ "${LAST_STATUS}" == "200" ]]; then
               HEALTH_OK=1
               break
+            fi
+
+            # HTTP can legitimately redirect to HTTPS in this stack.
+            if [[ "${LAST_STATUS}" == "301" || "${LAST_STATUS}" == "302" ]]; then
+              HTTPS_STATUS="$(curl -k -sS \
+                -H 'Host: pokemongonexus.com' \
+                -o /tmp/frontend_health_body.txt \
+                -w '%{http_code}' \
+                https://127.0.0.1/ || true)"
+
+              if [[ "${HTTPS_STATUS}" == "200" ]]; then
+                HEALTH_OK=1
+                LAST_STATUS="${LAST_STATUS}->${HTTPS_STATUS}"
+                break
+              fi
             fi
 
             sleep 2
