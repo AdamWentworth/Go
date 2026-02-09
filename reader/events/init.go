@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -37,12 +38,24 @@ func initDB() {
 		log.New(file, "\r\n", log.LstdFlags), // Use the file for GORM logs
 		logger.Config{
 			SlowThreshold: time.Second, // Log slow SQL queries if needed (optional)
-			LogLevel:      logger.Info, // Log everything to file
+			LogLevel:      logger.Warn, // Keep SQL logs focused on warnings/errors
 			Colorful:      false,       // Disable color output
 		},
 	)
 
-	dsn := os.Getenv("DB_USER") + ":" + os.Getenv("DB_PASSWORD") + "@tcp(" + os.Getenv("DB_HOSTNAME") + ")/" + os.Getenv("DB_NAME") + "?parseTime=true"
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASSWORD")
+	dbHost := os.Getenv("DB_HOSTNAME")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+	if dbPort == "" {
+		dbPort = "3306"
+	}
+	if dbUser == "" || dbPass == "" || dbHost == "" || dbName == "" {
+		logrus.Fatal("DB_USER, DB_PASSWORD, DB_HOSTNAME, and DB_NAME are required")
+	}
+
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", dbUser, dbPass, dbHost, dbPort, dbName)
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: newLogger, // Use the custom logger for GORM logs
 	})
@@ -57,10 +70,10 @@ func initDB() {
 
 // Load environment variables from .env
 func initEnv() {
-	// Load environment variables from .env
-	err := godotenv.Load(".env") // Load from .env
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+	// Load environment variables from .env when present.
+	if err := godotenv.Load(".env"); err != nil {
+		logrus.Infof("No .env file found at .env, relying on OS environment")
+		return
 	}
 	logrus.Info("Environment variables loaded successfully.")
 }

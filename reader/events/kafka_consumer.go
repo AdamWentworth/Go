@@ -36,7 +36,8 @@ func startKafkaConsumer() {
 				logrus.Errorf("Error fetching message from Kafka: %v", err)
 				retryCount++
 				if retryCount > config.Events.MaxRetries {
-					logrus.Fatalf("Max retries reached while reading from Kafka")
+					logrus.Errorf("Max retries reached while reading from Kafka; continuing retry loop")
+					retryCount = 0
 				}
 				time.Sleep(time.Duration(config.Events.RetryInterval) * time.Second)
 				continue
@@ -279,15 +280,13 @@ func doCompletedTradeSwap(tradeData map[string]interface{}, pokemonMapPtr *map[s
 
 	// Proposed instance -> belongs to username_accepting
 	propInstance.LastUpdate = &nowTs
-	propInstance.IsOwned = true
-	propInstance.IsUnowned = false
+	propInstance.IsCaught = true
 	propInstance.IsForTrade = false
 	propInstance.IsWanted = false
 
 	// Accepting instance -> belongs to username_proposed
 	accInstance.LastUpdate = &nowTs
-	accInstance.IsOwned = true
-	accInstance.IsUnowned = false
+	accInstance.IsCaught = true
 	accInstance.IsForTrade = false
 	accInstance.IsWanted = false
 

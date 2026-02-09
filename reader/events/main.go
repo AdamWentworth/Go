@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -11,39 +12,59 @@ import (
 var db *gorm.DB
 var jwtSecret []byte
 
+func dbReady() bool {
+	if db == nil {
+		return false
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		return false
+	}
+	return sqlDB.Ping() == nil
+}
+
 func main() {
 	// Initialize configuration, environment, and logging
-	initLogging()   // Initialize logging early
-	initEnv()       // Load environment variables
-	loadConfig()    // Load app_conf.yml configuration
-	initJWTSecret() // Load the JWT_SECRET environment variable
-	initDB()        // Connect to the database
+	initLogging()
+	initEnv()
+	loadConfig()
+	initJWTSecret()
+	initAllowedOrigins()
+	initDB()
 
-	// Initialize Fiber app
 	app := fiber.New(fiber.Config{
-		ErrorHandler: errorHandler, // Custom error handler
+		ErrorHandler:          errorHandler,
+		DisableStartupMessage: true,
 	})
 
-	// Use request logging middleware
 	app.Use(requestLogger)
-
-	// Use CORS middleware
 	app.Use(corsMiddleware)
 
-	// Protected routes
-	protected := app.Group("/", verifyJWT) // JWT middleware to protect routes
+	app.Get("/healthz", func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
+	})
+	app.Get("/readyz", func(c *fiber.Ctx) error {
+		if !dbReady() {
+			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"ok": false, "message": "db not ready"})
+		}
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
+	})
+
+	protected := app.Group("/", verifyJWT)
 	protected.Get("/api/sse", sseHandler)
 	protected.Get("/api/getUpdates", GetUpdates)
 
-	// Start the Kafka consumer
 	startKafkaConsumer()
 
-	// Use fmt.Println for startup messages without time and log level
-	fmt.Println("Starting Events Service at http://127.0.0.1:3008/")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3008"
+	}
+
+	fmt.Printf("Starting Events Service at http://127.0.0.1:%s/\n", port)
 	fmt.Println("Quit the server with CTRL-C")
 
-	// Start server
-	if err := app.Listen(":3008"); err != nil {
+	if err := app.Listen(":" + port); err != nil {
 		log.Fatal("Events Service failed to start", err)
 	}
 }

@@ -1,135 +1,109 @@
-# 📡 Events Service (SSE + Kafka Consumer)
+# Events Service (SSE + Kafka)
 
-This service handles real-time updates and change tracking via **Server-Sent Events (SSE)** for Pokémon and Trade data. It also consumes updates from Kafka and pushes them to connected clients in real time.
+Real-time reader service that:
 
----
+- Consumes `batchedUpdates` from Kafka
+- Streams live deltas to clients over Server-Sent Events (SSE)
+- Serves pull-based update snapshots for reconnect/sync flows
 
-## ⚙️ Features
+## Why Fiber here
 
-- 🔐 **JWT-Protected** endpoints (`/api/sse`, `/api/getUpdates`)
-- 📤 **SSE Streaming** for real-time updates
-- 🔄 **Pull-based** `/getUpdates` endpoint to fetch deltas since last timestamp
-- 📨 **Kafka consumer** that listens to backend updates
-- 🧠 In-memory diffing and swap logic for completed trades
-- 🧩 Related data enrichment (trades, Pokémon, filters)
-- 🔁 Automatic reconnection logic on the frontend (via SSE)
+Fiber is a good fit for this service because it is SSE-heavy and already integrated with your current middleware/runtime patterns. Migrating to chi/net/http would add risk with little immediate value for this path.
 
----
+## Features
 
-## 🚀 Running Locally
+- JWT-protected routes using access token cookie (`accessToken`)
+- SSE stream endpoint for real-time updates
+- Pull endpoint (`getUpdates`) for timestamp-based sync
+- In-memory trade-completion swap projection
+- CORS allowlist via env (`ALLOWED_ORIGINS`)
+- Health/readiness endpoints for deploy checks
 
-### 1. Prerequisites
+## Endpoints
 
-- Go 1.21+
-- Kafka broker running (see `config/app_conf.yml`)
-- Database with Pokémon/trade schema
-- `.env.development` with valid values:
-    ```
-    DB_USER=
-    DB_PASS=
-    DB_HOST=
-    DB_PORT=
-    DB_NAME=
-    JWT_SECRET=
-    ```
+- `GET /healthz`
+- `GET /readyz`
+- `GET /api/sse?device_id=...` (JWT required)
+- `GET /api/getUpdates?timestamp=...&device_id=...` (JWT required)
 
-### 2. Install dependencies
+## Runtime Flow
 
-```bash
-go mod tidy
+```mermaid
+flowchart LR
+  Kafka[(Kafka: batchedUpdates)] --> Events[events_service]
+  Events --> MySQL[(user_pokemon_management)]
+  Events --> SSE[SSE clients]
+  Events --> Pull[GET /api/getUpdates]
 ```
 
-### 3. Start the service
+## Environment
+
+Create `reader/events/.env`:
+
+```env
+PORT=3008
+ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,https://pokemongonexus.com,https://www.pokemongonexus.com
+
+JWT_SECRET=...
+
+DB_USER=adam
+DB_PASSWORD=...
+DB_HOSTNAME=mysql_storage
+DB_PORT=3306
+DB_NAME=user_pokemon_management
+
+KAFKA_HOSTNAME=kafka
+KAFKA_PORT=9092
+KAFKA_TOPIC=batchedUpdates
+KAFKA_MAX_RETRIES=5
+KAFKA_RETRY_INTERVAL=3
+
+LOG_LEVEL=info
+```
+
+Notes:
+
+- `HOST_IP` is still accepted as a backward-compatible fallback for Kafka host.
+- Config defaults can come from `config/app_conf.yml`; env vars override those values.
+
+## Local Run
 
 ```bash
+cd reader/events
+go mod tidy
 go run .
 ```
 
----
+## Docker Run
 
-## 🔐 Authentication
-
-- All endpoints require a valid **JWT**.
-- Extracted claims (`user_id`, `device_id`, `username`) are used in SSE and Kafka logic.
-
----
-
-## 📡 SSE Endpoint
-
-### `GET /api/sse?device_id=...`
-
-**Headers:**
-
-```
-Authorization: Bearer <your_jwt>
+```bash
+cd reader/events
+docker compose up -d
 ```
 
-- Opens a persistent connection streaming updates.
-- Each message includes `pokemon`, `trade`, and `relatedInstance` maps.
-- Reconnection handled automatically by frontend using standard `EventSource`.
+Compose notes:
 
----
+- Binds service on `127.0.0.1:3008`
+- Uses external Docker network `kafka_default`
+- Includes container healthcheck against `/readyz`
 
-## 🕵️‍♂️ Polling Endpoint
+## Security + Hardening
 
-### `GET /api/getUpdates?timestamp=...&device_id=...`
+- Updated to patched `github.com/gofiber/fiber/v2` and `github.com/golang-jwt/jwt/v4`
+- Updated `golang.org/x/net` indirect dependency
+- JWT parsing uses `ParseWithClaims` + strict HMAC method validation
+- Rejects oversized token cookies
+- Non-root runtime container image
 
-- Returns Pokémon and trades for the current user updated since the provided **Unix timestamp (ms)**.
-- Used by clients for initial sync after app open.
+## Basic Verification
 
----
+```bash
+# Unit/build checks
+go test ./...
+go vet ./...
+go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
-## 🔄 Kafka Consumer
-
-- Subscribes to the Kafka topic configured in `app_conf.yml` under `events.topic`.
-- Accepts compressed, batched updates and:
-  - Parses `pokemonUpdates` and `tradeUpdates`
-  - Handles trade completion swaps (in-memory)
-  - Gathers `relatedInstance` metadata
-  - Sends deltas to all **connected SSE clients**, excluding the initiating device
-
----
-
-## 🧠 In-Memory Swap (Trade Completion)
-
-When a trade reaches `status="completed"`:
-- Pokémon ownership is virtually swapped (without DB write)
-- The `pokemonMap` in the SSE payload reflects this change immediately
-- Ensures both parties see their updated collections in real time
-
----
-
-## 📁 Project Structure
-
-```
-events/
-├── main.go              # Entry point
-├── sse_handler.go       # SSE stream logic
-├── update_handler.go    # Pull endpoint logic
-├── kafka_consumer.go    # Kafka streaming + routing
-├── client_manager.go    # SSE connection state
-├── auth.go              # JWT helpers
-├── init.go              # Bootstrap config/env
-├── config/
-│   └── app_conf.yml     # Kafka config
-├── models.go            # Shared GORM models
-├── logging.go
-├── middleware.go        # CORS and JWT middleware
-├── .env.development
-├── app.log
-```
-
----
-
-## 📬 Kafka Message Schema
-
-Expected fields in Kafka messages (compressed JSON):
-
-```json
-{
-  "user_id": "abc123",
-  "device_id": "ios_001",
-  "pokemonUpdates": [...],
-  "tradeUpdates": [...]
-}
+# Health checks
+curl -i http://127.0.0.1:3008/healthz
+curl -i http://127.0.0.1:3008/readyz
 ```

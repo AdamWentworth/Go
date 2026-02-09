@@ -3,64 +3,59 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/sirupsen/logrus"
 )
 
-// Middleware to verify the JWT
+type AccessTokenClaims struct {
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
+	DeviceID string `json:"device_id"`
+	jwt.RegisteredClaims
+}
+
+// Middleware to verify the access token from cookie.
 func verifyJWT(c *fiber.Ctx) error {
-	// Ensure jwtSecret has been initialized
 	if len(jwtSecret) == 0 {
-		logrus.Fatal("JWT secret is not initialized") // Fails if not set
+		logrus.Error("JWT secret is not initialized")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Server configuration error"})
 	}
 
-	tokenString := c.Cookies("accessToken") // Get token from cookie
+	tokenString := c.Cookies("accessToken")
 	if tokenString == "" {
-		logrus.Error("Authentication failed: JWT token is missing in cookies")
+		logrus.Warn("Authentication failed: accessToken cookie missing")
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Authentication failed"})
+	}
+	if len(tokenString) > 8192 {
+		logrus.Warn("Authentication failed: accessToken cookie too large")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Authentication failed"})
 	}
 
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Validate the signing method
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
+	claims := &AccessTokenClaims{}
+	parser := jwt.NewParser(jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+
+	token, err := parser.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return jwtSecret, nil
 	})
-
-	if err != nil {
-		logrus.Error("Authentication failed: JWT token parsing failed")
+	if err != nil || !token.Valid {
+		logrus.Warnf("Authentication failed: invalid JWT (%v)", err)
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Authentication failed"})
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		logrus.Info("Token decoded successfully")
+	if claims.ExpiresAt == nil {
+		logrus.Warn("Authentication failed: JWT missing exp")
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Authentication failed"})
+	}
+	if claims.UserID == "" {
+		logrus.Warn("Authentication failed: JWT missing user_id")
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Authentication failed"})
+	}
 
-		// Extract user_id from token
-		if userID, ok := claims["user_id"].(string); ok {
-			c.Locals("user_id", userID)
-		} else {
-			logrus.Error("Authentication failed: user_id claim missing")
-			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Authentication failed"})
-		}
-
-		// Extract username from token
-		if username, ok := claims["username"].(string); ok {
-			c.Locals("username", username)
-		} else {
-			// Optionally handle the missing username case without failing the request.
-			logrus.Warn("username claim missing in token; proceeding without username")
-			c.Locals("username", "")
-		}
-
-		// Optionally, if you need device_id and it exists in the token:
-		if deviceID, ok := claims["device_id"].(string); ok {
-			c.Locals("device_id", deviceID)
-		}
+	c.Locals("user_id", claims.UserID)
+	c.Locals("username", claims.Username)
+	if claims.DeviceID != "" {
+		c.Locals("device_id", claims.DeviceID)
 	}
 
 	return c.Next()

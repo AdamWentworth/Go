@@ -1,42 +1,25 @@
-# events dockerfile
-
 # syntax=docker/dockerfile:1
+FROM golang:1.25-alpine AS build
 
-# --- Build Stage ---
-FROM golang:1.22-alpine AS builder
+WORKDIR /src
 
-WORKDIR /app
-
-# Enable Go modules
-ENV GO111MODULE=on
-
-# Install git (and curl for debugging, optional)
-RUN apk add --no-cache git
-
-# Copy Go mod files
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy app source
 COPY . .
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/events_service .
 
-# Build the app
-RUN go build -o events_service .
-
-# --- Runtime Stage ---
-FROM alpine:latest
-
+FROM alpine:3.20
 WORKDIR /app
 
-# Install root certs (important for Kafka + MySQL)
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates tzdata \
+    && addgroup -S app \
+    && adduser -S -G app app \
+    && chown -R app:app /app
 
-# Copy app binary and supporting files
-COPY --from=builder /app/events_service .
-COPY --from=builder /app/.env .
-COPY --from=builder /app/app.log ./app.log
-COPY --from=builder /app/config ./config
+COPY --from=build /out/events_service /usr/local/bin/events_service
 
+USER app
 EXPOSE 3008
 
-CMD ["./events_service"]
+CMD ["events_service"]
