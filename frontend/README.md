@@ -51,7 +51,7 @@ VITE_POKEMON_API_URL=http://localhost:3001/pokemon
 VITE_AUTH_API_URL=http://localhost:3002/auth
 VITE_RECEIVER_API_URL=http://localhost:3003/api
 VITE_USERS_API_URL=http://localhost:3005/api
-VITE_DISCOVER_API_URL=http://localhost:3006/api
+VITE_SEARCH_API_URL=http://localhost:3006/api
 VITE_LOCATION_SERVICE_URL=http://localhost:3007
 VITE_EVENTS_API_URL=http://localhost:3008/api
 
@@ -65,7 +65,7 @@ VITE_POKEMON_API_URL=https://pokemongonexus.com/api/pokemon
 VITE_AUTH_API_URL=https://pokemongonexus.com/api/auth
 VITE_RECEIVER_API_URL=https://pokemongonexus.com/api/receiver
 VITE_USERS_API_URL=https://pokemongonexus.com/api/users
-VITE_DISCOVER_API_URL=https://pokemongonexus.com/api/discover
+VITE_SEARCH_API_URL=https://pokemongonexus.com/api/search
 VITE_LOCATION_SERVICE_URL=https://pokemongonexus.com/api/location
 VITE_EVENTS_API_URL=https://pokemongonexus.com/api/events
 
@@ -211,3 +211,4 @@ This frontend was designed to be modular, touch-friendly, and scale as features 
 The current codebase is large, but **structured for rapid iteration**, with clean folder grouping and reusable UI components.
 
 > If you're working on a section or need help tracking data flow — `contexts/`, `hooks/`, and `pages/Pokemon/` are the best starting points.
+

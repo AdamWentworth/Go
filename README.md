@@ -15,7 +15,7 @@ Go/
 ├── nginx/              # Reverse proxy config and SSL setup
 ├── notes/              # Technical notes and architecture
 ├── pokemon/            # Pokémon API (Go) powered by enriched SQLite
-├── reader/             # Read microservices: discover, users, events
+├── reader/             # Read microservices: search, users, events
 ├── receiver/           # Kafka producer, ingest client updates
 ├── storage/            # Kafka consumer, persist to MySQL, backup jobs
 ├── tests/              # Data mocks, fake user generators
@@ -122,10 +122,10 @@ go run .
 
 ---
 
-### 🔎 7. Discover (Search)
+### 🔎 7. Search
 
 ```bash
-cd Go/reader/discover
+cd Go/reader/search
 go run .
 ```
 
@@ -218,7 +218,7 @@ Events Service → Notifies connected clients via SSE
 | Receiver        | 3003  | Go       | Kafka producer, client update ingest                  |
 | Storage         | 3004  | Go       | Kafka consumer, MySQL writer, backup jobs             |
 | Users           | 3005  | Go       | Pokémon ownership per user                            |
-| Discover        | 3006  | Go       | Pokémon matchmaking and filters                       |
+| Search          | 3006  | Go       | Pokémon matchmaking and filters                       |
 | Location        | 3007  | Go       | Geocoding, reverse, autocomplete                      |
 | Events (SSE)    | 3008  | Go       | SSE feed, Kafka consumer, diff push                   |
 
@@ -321,3 +321,4 @@ If you're contributing:
 This monorepo is built by a passionate trainer/dev and is not affiliated with Niantic or Pokémon.
 
 **Gotta catch 'em all!** 🧢✨
+

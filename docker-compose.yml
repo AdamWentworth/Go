@@ -178,15 +178,15 @@ services:
     networks:
       - kafka_default
 
-  # ========== DISCOVER ==========
-  discover_service:
-    image: adamwentworth/discover_service:latest
-    container_name: discover_service
+  # ========== SEARCH ==========
+  search_service:
+    image: adamwentworth/search_service:latest
+    container_name: search_service
     build:
-      context: ./reader/discover
+      context: ./reader/search
       dockerfile: Dockerfile
     env_file:
-      - ./reader/discover/.env
+      - ./reader/search/.env
     ports:
       - "3006:3006"
     networks:
@@ -214,3 +214,4 @@ volumes:
 networks:
   kafka_default:
     external: true
+

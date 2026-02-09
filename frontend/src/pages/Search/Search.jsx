@@ -65,7 +65,7 @@ const Search = () => {
 
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_DISCOVER_API_URL}/discoverPokemon`,
+        `${import.meta.env.VITE_SEARCH_API_URL}/searchPokemon`,
         {
           params: queryParams,
           withCredentials: true,
@@ -180,3 +180,4 @@ const Search = () => {
 };
 
 export default Search;
+

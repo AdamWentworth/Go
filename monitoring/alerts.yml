@@ -243,6 +243,59 @@ groups:
           summary: "users_service request metrics are missing"
           description: "http_requests_total has been absent for 10 minutes."
 
+  - name: search-service-alerts
+    rules:
+      - alert: SearchServiceTargetDown
+        expr: up{job="search_service"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: search_service
+        annotations:
+          summary: "search_service target is down"
+          description: "Prometheus cannot scrape search_service for at least 2 minutes."
+
+      - alert: SearchServiceHigh5xxRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="search_service",status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total{job="search_service"}[5m])), 1)
+          ) > 0.02
+        for: 10m
+        labels:
+          severity: warning
+          service: search_service
+        annotations:
+          summary: "search_service 5xx rate is high"
+          description: "5xx responses exceed 2% for 10 minutes."
+
+      - alert: SearchServiceHighP95Latency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (
+              rate(http_request_duration_seconds_bucket{job="search_service"}[5m])
+            )
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          service: search_service
+        annotations:
+          summary: "search_service p95 latency is high"
+          description: "p95 latency exceeds 1 second for 10 minutes."
+
+      - alert: SearchServiceMetricsMissing
+        expr: absent(http_requests_total{job="search_service"})
+        for: 10m
+        labels:
+          severity: warning
+          service: search_service
+        annotations:
+          summary: "search_service request metrics are missing"
+          description: "http_requests_total has been absent for 10 minutes."
+
   - name: pokemon-data-alerts
     rules:
       - alert: PokemonDataTargetDown
@@ -399,3 +452,4 @@ groups:
         annotations:
           summary: "Container memory usage is high"
           description: "Container {{ $labels.name }} is using more than 1 GiB memory for at least 10 minutes."
+

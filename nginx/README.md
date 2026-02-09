@@ -34,7 +34,7 @@ All backend services are routed under `/api/` to local development ports:
 | Auth API            | `/api/auth/`           | `http://localhost:3002/auth/`    |
 | Receiver API        | `/api/receiver/`       | `http://localhost:3003/api/`     |
 | Users API           | `/api/users/`          | `http://localhost:3005/api/`     |
-| Discover API        | `/api/discover/`       | `http://localhost:3006/api/`     |
+| Search API        | `/api/search/`       | `http://localhost:3006/api/`     |
 | Location Service    | `/api/location/`       | `http://localhost:3007/`         |
 | Events (SSE)        | `/api/events/`         | `http://localhost:3008/api/`     |
 
@@ -144,3 +144,4 @@ Restart nginx after renewal.
 ## 👨‍💻 Author Notes
 
 This config was optimized for the Pokémon Go Nexus platform, enabling smooth local development and production deployment using NGINX as a central routing layer. It supports hot-swapping backend services and handles SSE without hitches.
+

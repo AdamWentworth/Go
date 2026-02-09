@@ -82,8 +82,7 @@ type PokemonInstance struct {
 	PrefLucky       bool           `gorm:"column:pref_lucky" json:"pref_lucky"`
 	Registered      bool           `gorm:"column:registered" json:"registered"`
 	Favorite        bool           `gorm:"column:favorite" json:"favorite"`
-	IsUnowned       bool           `gorm:"column:is_unowned" json:"is_unowned"`
-	IsOwned         bool           `gorm:"column:is_owned" json:"is_owned"`
+	IsCaught        bool           `gorm:"column:is_caught" json:"is_caught"`
 	IsForTrade      bool           `gorm:"column:is_for_trade" json:"is_for_trade"`
 	IsWanted        bool           `gorm:"column:is_wanted" json:"is_wanted"`
 	NotTradeList    datatypes.JSON `gorm:"column:not_trade_list;type:json" json:"not_trade_list"`
