@@ -1,9 +1,9 @@
-# Users Service
+# 👤 Users Service
 
 The users service provides profile and ownership-read APIs for the Pokemon app.
-It runs as a JWT-protected API for user-specific endpoints and exposes public trainer snapshots.
+It runs as a JWT-protected API for user-specific endpoints and also exposes public trainer snapshots.
 
-## Responsibilities
+## 🎯 Responsibilities
 
 - Serve authenticated user overview payloads (`user`, `pokemon_instances`, `trades`, `registrations`).
 - Upsert user profile fields in MySQL.
@@ -11,15 +11,87 @@ It runs as a JWT-protected API for user-specific endpoints and exposes public tr
 - Provide autocomplete suggestions for trainer search.
 - Expose health and metrics endpoints for operations.
 
-## Runtime
+## 🏗️ Service Topology (Mermaid)
 
-- Language: Go
-- HTTP framework: Fiber v2
-- ORM: GORM (MySQL)
-- Auth: JWT (cookie `accessToken`, HS256)
-- Metrics: Prometheus (`/metrics`)
+```mermaid
+flowchart LR
+  FE[Frontend]
+  NGINX[Nginx]
+  USERS[Users Service]
+  MYSQL[(MySQL)]
+  PROM[Prometheus]
 
-## Endpoints
+  FE -->|HTTPS| NGINX
+  NGINX -->|/api/users/*| USERS
+  USERS -->|read and write| MYSQL
+  PROM -->|scrape /metrics| USERS
+```
+
+## 🔐 Protected Update Flow (Mermaid Sequence)
+
+```mermaid
+sequenceDiagram
+  participant FE as Frontend
+  participant US as Users Service
+  participant DB as MySQL
+
+  FE->>US: PUT /api/users/:user_id
+  US->>US: verifyJWT
+  US->>US: rate limit and body limit
+  US->>DB: UPDATE users ... WHERE user_id=?
+  DB-->>US: rows affected
+  US->>DB: SELECT user by user_id
+  DB-->>US: user row
+  US-->>FE: 200 { success, user }
+```
+
+## 🧬 UML Domain Model (Mermaid Class Diagram)
+
+```mermaid
+classDiagram
+  class User {
+    +string user_id
+    +string username
+    +string pokemon_go_name
+    +string team
+    +int trainer_level
+    +int total_xp
+    +bool allow_location
+    +float latitude
+    +float longitude
+  }
+
+  class PokemonInstance {
+    +string instance_id
+    +string user_id
+    +string variant_id
+    +int pokemon_id
+    +bool is_caught
+    +bool is_for_trade
+    +bool is_wanted
+    +bool registered
+    +int64 last_update
+  }
+
+  class Trade {
+    +string trade_id
+    +string user_id_proposed
+    +string user_id_accepting
+    +string trade_status
+    +int64 last_update
+  }
+
+  class Registration {
+    +string user_id
+    +string variant_id
+  }
+
+  User "1" --> "0..*" PokemonInstance : owns
+  User "1" --> "0..*" Trade : proposes or accepts
+  User "1" --> "0..*" Registration : has
+```
+
+## 🌐 Endpoints
 
 ### Public
 
@@ -44,7 +116,7 @@ Compatibility:
 - `PUT /api/update-user/:user_id`
 - `PUT /api/users/update-user/:user_id`
 
-## Security and Guardrails
+## 🛡️ Security and Guardrails
 
 - JWT parser restricts signing method to HS256 and validates required claims.
 - Oversized auth cookie guard rejects very large `accessToken` values.
@@ -53,7 +125,7 @@ Compatibility:
 - Per-user/IP rate limiting via `RATE_LIMIT_MAX` and `RATE_LIMIT_WINDOW_SEC`.
 - Container runs as non-root user.
 
-## Environment Variables
+## ⚙️ Environment Variables
 
 Required:
 
@@ -80,13 +152,7 @@ DB pool tuning optional:
 - `DB_CONN_MAX_LIFETIME_SEC` (default `300`)
 - `DB_CONN_MAX_IDLE_TIME_SEC` (default `120`)
 
-## Local Development
-
-Run service:
-
-```bash
-go run .
-```
+## 🧪 Testing
 
 Run tests:
 
@@ -95,15 +161,13 @@ go test ./...
 go vet ./...
 ```
 
-## Smoke Scripts
-
-Linux/macOS:
+Smoke checks (Linux or macOS):
 
 ```bash
 BASE_URL=http://127.0.0.1:3005 ./scripts/smoke-users.sh
 ```
 
-PowerShell:
+Smoke checks (PowerShell):
 
 ```powershell
 .\scripts\smoke-users.ps1 -BaseUrl "http://127.0.0.1:3005"
@@ -114,19 +178,21 @@ Optional protected checks:
 - Provide `USER_ID` and `ACCESS_TOKEN` in bash.
 - Provide `-UserId` and `-AccessToken` in PowerShell.
 
-## Docker
-
-Compose:
+## 🐳 Docker
 
 ```bash
 docker compose up -d users_service
 ```
 
-Default local port bind:
+Default local bind:
 
 - `127.0.0.1:3005:3005`
 
-## Notes
+## 📈 Monitoring
+
+- Prometheus should scrape `users_service:3005/metrics`.
+- Alert rules for users service live in `monitoring/alerts.yml`.
+
+## 📝 Notes
 
 - Compatibility routes exist to support current frontend and nginx rewrite behavior.
-- Monitoring stack should scrape `users_service:3005/metrics`.
