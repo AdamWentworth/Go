@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -19,20 +20,39 @@ type Config struct {
 	ServerPort string
 }
 
-func LoadConfig() *Config {
-	err := godotenv.Load()
-	if err != nil {
-		logrus.Warn("No .env file found, using environment variables if set.")
+func initEnv() {
+	if err := godotenv.Load(".env"); err != nil {
+		logrus.Infof("No .env file found at .env, relying on OS environment")
+		return
 	}
+	logrus.Info("Environment variables loaded successfully.")
+}
 
-	// Set defaults or load from env
-	serverPort := os.Getenv("SERVER_PORT")
+func readPort() string {
+	serverPort := os.Getenv("PORT")
+	if serverPort == "" {
+		serverPort = os.Getenv("SERVER_PORT")
+	}
 	if serverPort == "" {
 		serverPort = "3007"
-		logrus.Infof("No SERVER_PORT set, defaulting to %s", serverPort)
-	} else {
-		logrus.Infof("SERVER_PORT set to %s", serverPort)
 	}
+	return serverPort
+}
+
+func readEnvIntWithDefault(key string, fallback int) int {
+	raw := os.Getenv(key)
+	if raw == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n <= 0 {
+		return fallback
+	}
+	return n
+}
+
+func LoadConfig() *Config {
+	serverPort := readPort()
 
 	config := &Config{
 		DBUser:     os.Getenv("DB_USER"),
@@ -41,6 +61,10 @@ func LoadConfig() *Config {
 		DBPassword: os.Getenv("DB_PASSWORD"),
 		DBPort:     os.Getenv("DB_PORT"),
 		ServerPort: serverPort,
+	}
+
+	if config.DBPort == "" {
+		config.DBPort = "5432"
 	}
 
 	logrus.Infof("Configuration loaded: DBUser=%s DBHost=%s DBName=%s DBPort=%s ServerPort=%s",

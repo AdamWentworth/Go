@@ -14,12 +14,25 @@ import (
 func GeocodeHandler(db *pgxpool.Pool) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		query := c.Query("q", "")
+		if query == "" {
+			query = c.Query("query", "")
+		}
 
 		logrus.Infof("Geocode request received for q=%s", query)
 
 		if query == "" {
 			logrus.Warn("q query parameter is required")
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"features": []interface{}{},
+			})
+		}
+		if len(query) > 256 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"features": []interface{}{},
+			})
+		}
+		if db == nil {
+			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
 				"features": []interface{}{},
 			})
 		}

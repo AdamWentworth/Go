@@ -33,6 +33,17 @@ func AutocompleteHandler(db *pgxpool.Pool) fiber.Handler {
 				"error": "query parameter must be at least 3 characters",
 			})
 		}
+		if len(queryParam) > 128 {
+			logrus.Warn("Query parameter exceeds maximum length")
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "query parameter must be 128 characters or fewer",
+			})
+		}
+		if db == nil {
+			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+				"error": "database unavailable",
+			})
+		}
 
 		// Update the latest query
 		state.mu.Lock()

@@ -1,0 +1,126 @@
+name: ci-location
+
+on:
+  pull_request:
+    paths:
+      - "location/**"
+      - ".github/workflows/ci-location.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "location/**"
+      - ".github/workflows/ci-location.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: location
+    env:
+      LOCATION_COVERAGE_MIN: "30.0"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.7"
+          cache: true
+          cache-dependency-path: location/go.sum
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Test
+        run: go test ./...
+
+      - name: Coverage Gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          go test -coverprofile=coverage.out ./...
+          coverage=$(go tool cover -func=coverage.out | awk '/^total:/ {gsub("%","",$3); print $3}')
+          echo "location coverage: ${coverage}% (min ${LOCATION_COVERAGE_MIN}%)"
+          awk -v cov="${coverage}" -v min="${LOCATION_COVERAGE_MIN}" 'BEGIN { exit (cov+0 >= min+0) ? 0 : 1 }'
+          rm -f coverage.out
+
+      - name: Test Race
+        run: go test -race ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Govulncheck
+        run: govulncheck ./...
+
+  container-security-build:
+    runs-on: ubuntu-latest
+    needs: quality-gates
+    env:
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      IMAGE_REPO: adamwentworth/location_service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Container Image
+        run: docker build --pull -t location_service:ci-${{ github.sha }} ./location
+
+      - name: Trivy Filesystem Scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: ./location
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Trivy Image Scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: location_service:ci-${{ github.sha }}
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Generate SBOM (CycloneDX)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: location_service:ci-${{ github.sha }}
+          format: cyclonedx
+          output: location_image_sbom.cdx.json
+          exit-code: "0"
+
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: location-image-sbom
+          path: location_image_sbom.cdx.json
+          if-no-files-found: error
+
+      - name: DockerHub Login
+        if: ${{ github.event_name != 'pull_request' && env.DOCKERHUB_TOKEN != '' }}
+        run: |
+          echo "${DOCKERHUB_TOKEN}" | docker login -u "adamwentworth" --password-stdin
+
+      - name: Push Image To DockerHub
+        if: ${{ github.event_name != 'pull_request' && env.DOCKERHUB_TOKEN != '' }}
+        run: |
+          docker tag location_service:ci-${{ github.sha }} ${IMAGE_REPO}:sha-${{ github.sha }}
+          docker tag location_service:ci-${{ github.sha }} ${IMAGE_REPO}:latest
+          docker push ${IMAGE_REPO}:sha-${{ github.sha }}
+          docker push ${IMAGE_REPO}:latest
+
+      - name: DockerHub Push Skipped
+        if: ${{ github.event_name != 'pull_request' && env.DOCKERHUB_TOKEN == '' }}
+        run: |
+          echo "DockerHub push skipped. Set DOCKERHUB_TOKEN repository secret."

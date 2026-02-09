@@ -8,10 +8,14 @@ load_dotenv()
 
 def backup_database(database_name, output_file, host="localhost", port=5432, username="postgres"):
     try:
-        # Set the password from the .env file
-        os.environ["PGPASSWORD"] = os.getenv("POST_PASSSWORD")
+        # Prefer POST_PASSWORD, then DB_PASSWORD, then legacy typo POST_PASSSWORD.
+        os.environ["PGPASSWORD"] = (
+            os.getenv("POST_PASSWORD")
+            or os.getenv("DB_PASSWORD")
+            or os.getenv("POST_PASSSWORD")
+        )
         if not os.environ["PGPASSWORD"]:
-            raise ValueError("DB_PASSWORD is not set in the .env file.")
+            raise ValueError("POST_PASSWORD or DB_PASSWORD is not set in the .env file.")
 
         # Construct the pg_dump command for plain SQL format
         command = [

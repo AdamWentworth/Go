@@ -1,144 +1,143 @@
-# 📍 Location Microservice — Pokémon Go Nexus
+# 📍 Location Service (`location`)
 
-This Go-based microservice provides location-based utilities including geocoding, reverse geocoding, and autocomplete. It’s primarily used to support location tagging and queries within the Pokémon Go Nexus platform.
+Geospatial lookup service for Pokémon Go Nexus.  
+Provides autocomplete, geocode, reverse geocode, and city boundary lookups from PostGIS.
 
----
+## ✅ What It Does
 
-## 🚀 Features
+- 🔎 `GET /autocomplete?query=<text>`
+- 🧭 `GET /geocode?q=<text>` (also supports `query=<text>`)
+- 🌐 `GET /reverse?lat=<float>&lon=<float>`
+- 🗺️ `GET /city/:country/:state?/:name?`
+- ❤️ `GET /healthz`
+- 🚦 `GET /readyz`
+- 📈 `GET /metrics`
 
-- 🔍 `/autocomplete`: Suggest locations as users type
-- 🧭 `/geocode`: Convert addresses to coordinates
-- 📌 `/reverse`: Reverse geocode coordinates into readable places
-- 🏙 `/city/:country/:state?/:name?`: Query location metadata and polygons
-- 🌐 CORS support, static file serving, structured logging
-- 🗺 Optional CLI tools for viewing/exporting boundaries and backups
+## 🔐 Hardening Applied
 
----
+- Upgraded Fiber to `v2.52.11` and pgx to `v5.8.0`
+- Replaced wildcard CORS with allow-list CORS (`ALLOWED_ORIGINS`)
+- Added request size limit (`MAX_BODY_BYTES`) and IP rate limiting
+- Added readiness probe that verifies DB connectivity
+- Added Prometheus metrics and endpoint
+- Added request validation guards (length/range checks)
+- Docker image now runs as non-root on Alpine
 
-## ⚙️ Tech Stack
+## ⚙️ Environment
 
-- **Go Fiber** — HTTP server
-- **PostgreSQL + PostGIS** — spatial data storage
-- **Logrus** — logging
-- 🐍 Python scripts for backup/export
+Use `location/.env.example` as template.
 
----
+| Variable | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `PORT` | No | `3007` | Service port |
+| `SERVER_PORT` | No | `3007` | Backward-compatible port var |
+| `DB_USER` | Yes | - | Postgres user |
+| `DB_PASSWORD` | Yes | - | Postgres password |
+| `DB_HOST` | Yes | - | Postgres host |
+| `DB_PORT` | No | `5432` | Postgres port |
+| `DB_NAME` | Yes | - | Postgres DB name |
+| `POST_PASSWORD` | No | `DB_PASSWORD` | Password used by backup/restore Python scripts |
+| `ALLOWED_ORIGINS` | No | localhost + prod domains | CORS allow list |
+| `LOG_LEVEL` | No | `info` | `trace/debug/info/warn/error` |
+| `RATE_LIMIT_MAX` | No | `180` | Requests per window per IP |
+| `RATE_LIMIT_WINDOW_SEC` | No | `60` | Rate-limit window |
+| `MAX_BODY_BYTES` | No | `1048576` | Request body limit |
+| `DB_MAX_OPEN_CONNS` | No | `25` | DB pool max open |
+| `DB_MIN_IDLE_CONNS` | No | `2` | DB pool min idle |
+| `DB_CONN_MAX_IDLE_MIN` | No | `10` | DB conn idle lifetime |
+| `DB_CONN_MAX_LIFETIME_MIN` | No | `60` | DB conn max lifetime |
+| `DB_CONNECT_TIMEOUT_SEC` | No | `5` | DB connect timeout |
 
-## 📁 Directory Structure
-
-```
-location/
-├── main.go                  # Entry point
-├── config.go                # Loads env vars / config
-├── db.go                    # DB connection logic
-├── models.go                # Structs for location data
-├── logging.go               # Sets up logrus and middleware
-├── autocomplete.go          # Handler for /autocomplete
-├── geocode.go               # Handler for /geocode
-├── reverse.go               # Handler for /reverse
-├── viewer.go                # Handler for /city
-├── .env                     # Environment variables
-├── go.mod / go.sum          # Go dependencies
-├── backups/                 # Backup .sql and .dump files
-├── backup_database_sql.py   # Export as SQL
-├── backup_database_dump.py  # Export as .dump
-├── restore_database.py      # Restore from backup
-├── output_polygons.py       # Outputs polygons as JSON
-├── view_polygons.py         # Visual viewer (optional)
-├── export_shapefile.py      # Export shapefiles (optional)
-└── update_search_sets.sql   # Helper SQL for faster autocomplete
-```
-
----
-
-## 🔧 .env Example
-
-```env
-DB_USER=postgres
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=locations
-DB_PASSWORD=yourpassword
-POST_PASSWORD=yourpassword
-```
-
-*one password for connecting to database while running server, the other is for running backups, but they are the same password*
-
----
-
-## 🧪 Running the Service
-
-1. **Install Go dependencies**
+## 🧪 Run Locally
 
 ```bash
+cd location
 go mod tidy
-```
-
-2. **Start the server**
-
-```bash
+go test ./...
 go run .
 ```
 
-It runs on `http://localhost:3007` by default.
+Service default URL: `http://localhost:3007`
 
----
-
-## 🛠 Endpoints
-
-| Route                        | Method | Description                              |
-|-----------------------------|--------|------------------------------------------|
-| `/autocomplete`             | GET    | Returns location suggestions by query    |
-| `/geocode`                  | GET    | Converts place names to coordinates      |
-| `/reverse`                  | GET    | Converts coordinates to location name    |
-| `/city/:country/:state?/:name?` | GET | Returns metadata + polygon for city     |
-
-> All endpoints use the connected PostGIS database for querying.
-
----
-
-## 💾 Backups
-
-There are Python scripts to dump and restore the PostgreSQL database:
-- `backup_database_sql.py` → Creates `.sql` files
-- `backup_database_dump.py` → Creates `.dump` files
-- `restore_database.py` → Restores from those backups
-
-Run any of them with Python 3 installed.
-
----
-
-## 📊 Polygon Viewer
-
-For debugging or visual confirmation of city boundary shapes:
+## 🐳 Docker Compose
 
 ```bash
-viewer.html
+cd location
+docker compose --env-file .env up -d
 ```
 
-A simple map viewer. Right click and click view in browser to test location polygons.
+- `location_service` binds `127.0.0.1:3007`
+- `location_db` binds `127.0.0.1:5432`
+- both join `kafka_default` network
 
----
+## 💾 Backup Scripts
 
-## 🧠 Notes
+Python backup helpers in this folder read:
 
-- Requires a properly set up PostGIS database with place + boundary data
-- All routes log structured output with timestamps using Logrus
-- CORS is enabled to allow requests from the frontend
+1. `POST_PASSWORD`
+2. `DB_PASSWORD`
+3. legacy `POST_PASSSWORD` (backward compatibility)
 
----
+## 🔁 CI/CD
 
-## 🧭 Example Usage
+- CI: `.github/workflows/ci-location.yml`
+- CD: `.github/workflows/deploy-location-prod.yml`
 
-```bash
-curl "http://localhost:3007/autocomplete?q=San+Fran"
-curl "http://localhost:3007/geocode?query=Tokyo"
-curl "http://localhost:3007/reverse?lat=34.05&lon=-118.25"
-curl "http://localhost:3007/city/US/CA/Los%20Angeles"
+CD preflight checks:
+
+- `location/.env` exists on prod
+- required DB keys are present
+- `kafka_default` Docker network exists
+- compose renders cleanly
+
+## 📊 Monitoring
+
+Prometheus target:
+
+- `job="location_service"` scraping `location_service:3007/metrics`
+
+Alert rules added:
+
+- `LocationServiceTargetDown`
+- `LocationServiceHigh5xxRate`
+- `LocationServiceHighP95Latency`
+- `LocationServiceMetricsMissing`
+
+## 🧭 Service Context (Mermaid)
+
+```mermaid
+flowchart LR
+  Frontend[Frontend via Nginx] --> API[/api/location/*/]
+  API --> Location[location_service:3007]
+  Location --> PostGIS[(location_db / PostGIS)]
+  Prometheus -->|/metrics| Location
 ```
 
----
+## 🧱 Data Model (UML)
 
-## 👨‍💻 Author Notes
+```plantuml
+@startuml
+class Country {
+  +id: int64
+  +name: string
+  +country_code: string
+  +centroid: string
+  +boundary: string
+}
 
-This service was built to support  Pokémon across the Pokémon Go Nexus platform; however, can be used with any tech stack that can benefit from location data.
+class Place {
+  +id: int64
+  +name: string
+  +country_id: int64
+  +latitude: float64
+  +longitude: float64
+  +state_or_province: string
+  +boundary: string
+  +osm_id: int64
+  +population: int64
+  +admin_level: int64
+}
+
+Country "1" <-- "many" Place : country_id
+@enduml
+```

@@ -33,6 +33,17 @@ func ReverseGeocodeHandler(db *pgxpool.Pool) fiber.Handler {
 				"error": "invalid lat or lon values",
 			})
 		}
+		if lat < -90 || lat > 90 || lon < -180 || lon > 180 {
+			logrus.Warn("lat/lon values out of range")
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "lat or lon values are out of range",
+			})
+		}
+		if db == nil {
+			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+				"error": "database unavailable",
+			})
+		}
 
 		sql := `
 			SELECT p.name, p.state_or_province, c.name AS country, p.admin_level

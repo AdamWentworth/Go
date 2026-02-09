@@ -26,6 +26,17 @@ func ViewerHandler(db *pgxpool.Pool) fiber.Handler {
 		originalState := c.Params("state")
 		originalCity := c.Params("name")
 
+		if len(originalCountry) > 128 || len(originalState) > 128 || len(originalCity) > 128 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "path parameters too long",
+			})
+		}
+		if db == nil {
+			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+				"error": "database unavailable",
+			})
+		}
+
 		// Decode URL-encoded parameters
 		countryName, err := url.QueryUnescape(originalCountry)
 		if err != nil {

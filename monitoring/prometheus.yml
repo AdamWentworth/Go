@@ -40,6 +40,11 @@ scrape_configs:
     static_configs:
       - targets: ["search_service:3006"]
 
+  - job_name: "location_service"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["location_service:3007"]
+
   - job_name: "pokemon_data"
     metrics_path: /metrics
     static_configs:

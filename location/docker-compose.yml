@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - location_pgdata:/var/lib/postgresql/data
       - ./init-sql:/docker-entrypoint-initdb.d
@@ -17,20 +17,31 @@ services:
       - kafka_default
 
   location_service:
-    image: adamwentworth/location_service:latest
+    image: ${LOCATION_IMAGE:-adamwentworth/location_service:latest}
     container_name: location_service
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
-      - "3007:3007"
+      - "127.0.0.1:3007:3007"
     depends_on:
-      - location_db
+      location_db:
+        condition: service_started
     environment:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_HOST: location_db
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       SERVER_PORT: 3007
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3007/readyz"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     networks:
       - kafka_default
 

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -51,7 +52,20 @@ func initLogging() {
 
 	multiWriter := io.MultiWriter(os.Stdout, file)
 	logrus.SetOutput(multiWriter)
-	logrus.SetLevel(logrus.TraceLevel)
+
+	level := strings.ToLower(strings.TrimSpace(os.Getenv("LOG_LEVEL")))
+	switch level {
+	case "trace":
+		logrus.SetLevel(logrus.TraceLevel)
+	case "debug":
+		logrus.SetLevel(logrus.DebugLevel)
+	case "warn", "warning":
+		logrus.SetLevel(logrus.WarnLevel)
+	case "error":
+		logrus.SetLevel(logrus.ErrorLevel)
+	default:
+		logrus.SetLevel(logrus.InfoLevel)
+	}
 }
 
 // Custom error handler for Fiber
@@ -69,6 +83,11 @@ func errorHandler(c *fiber.Ctx, err error) error {
 
 // Custom request logging middleware
 func requestLogger(c *fiber.Ctx) error {
+	switch c.Path() {
+	case "/metrics", "/healthz", "/readyz":
+		return c.Next()
+	}
+
 	start := time.Now()
 	err := c.Next() // Capture the error from c.Next()
 	stop := time.Now()
