@@ -1,7 +1,7 @@
 // generateFakeUsers.js
 
 const mongoose = require('../authentication/middlewares/mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { faker } = require('@faker-js/faker');
 const User = require('../authentication/models/user');
 
