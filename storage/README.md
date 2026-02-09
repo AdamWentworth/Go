@@ -9,7 +9,7 @@ Consumes batched updates from Kafka, applies ownership/trade mutations, and pers
 - Trade upsert + conflict handling
 - Auto-sync for `registrations` and `instance_tags`
 - Retry file for failed poison messages
-- Optional in-app backup schedule (`RUN_APP_BACKUPS=true`)
+- In-app daily backup schedule at midnight (enabled by default)
 - Health/readiness/metrics HTTP server (`:3004` by default)
 
 ## 🔌 Endpoints
@@ -336,7 +336,7 @@ classDiagram
 - `KAFKA_MAX_RETRIES` (default `5`)
 - `KAFKA_RETRY_INTERVAL` (default `3`)
 - `PORT` or `STORAGE_HTTP_PORT` (default `3004`)
-- `RUN_APP_BACKUPS=true` only if app-managed backups are desired
+- `RUN_APP_BACKUPS` (default enabled; set `false` to disable app-managed backups)
 
 ### Optional YAML
 

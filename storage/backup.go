@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,9 +16,19 @@ import (
 
 // CreateBackup - runs daily backup
 func CreateBackup() {
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASSWORD")
+	dbHost := os.Getenv("DB_HOSTNAME")
+	dbPort := os.Getenv("DB_PORT")
 	dbName := os.Getenv("DB_NAME")
-	if dbName == "" {
-		logrus.Error("DB_NAME environment variable is not set")
+	if dbUser == "" || dbPass == "" || dbHost == "" || dbPort == "" || dbName == "" {
+		logrus.Error("database backup skipped: DB_USER/DB_PASSWORD/DB_HOSTNAME/DB_PORT/DB_NAME must all be set")
+		return
+	}
+
+	dumpBinary, err := findDumpBinary()
+	if err != nil {
+		logrus.Errorf("database backup skipped: %v", err)
 		return
 	}
 
@@ -26,30 +37,22 @@ func CreateBackup() {
 	backupFilename := fmt.Sprintf("user_pokemon_backup_%s.sql", dateStr)
 
 	backupsDir := "backups"
-	err := os.MkdirAll(backupsDir, os.ModePerm)
+	err = os.MkdirAll(backupsDir, os.ModePerm)
 	if err != nil {
 		logrus.Errorf("Failed to create backups directory: %v", err)
 		return
 	}
 
-	backupFilePath := filepath.Join(backupsDir, backupFilename)
-	backupFilePath = filepath.ToSlash(backupFilePath) // Ensure forward slashes
+	backupFilePath := filepath.ToSlash(filepath.Join(backupsDir, backupFilename)) // Ensure forward slashes
+	tmpBackupFilePath := backupFilePath + ".tmp"
 
-	myCnfPath := filepath.Join(".", "my.cnf")
-	if _, err := os.Stat(myCnfPath); os.IsNotExist(err) {
-		logrus.Errorf("my.cnf file does not exist at path: %s", myCnfPath)
+	if err := createMySQLDump(dumpBinary, dbUser, dbPass, dbHost, dbPort, dbName, tmpBackupFilePath); err != nil {
+		logrus.Errorf("Failed to create backup: %v", err)
 		return
 	}
-
-	// Use --result-file option instead of shell redirection
-	dumpCmd := fmt.Sprintf("mysqldump --defaults-extra-file=%s %s --result-file=%s",
-		escapeShellArg(myCnfPath),
-		escapeShellArg(dbName),
-		escapeShellArg(backupFilePath))
-
-	logrus.Infof("Executing backup command: %s", dumpCmd)
-	if err := runShellCommand(dumpCmd); err != nil {
-		logrus.Errorf("Failed to create backup: %v", err)
+	if err := os.Rename(tmpBackupFilePath, backupFilePath); err != nil {
+		_ = os.Remove(tmpBackupFilePath)
+		logrus.Errorf("Failed to finalize backup file: %v", err)
 		return
 	}
 
@@ -57,22 +60,57 @@ func CreateBackup() {
 	manageRetention()
 }
 
-// escapeShellArg safely escapes shell arguments to prevent injection and parsing issues
-func escapeShellArg(arg string) string {
-	return "'" + strings.ReplaceAll(arg, "'", `'"'"'`) + "'"
+func findDumpBinary() (string, error) {
+	for _, candidate := range []string{"mysqldump", "mariadb-dump"} {
+		if path, err := exec.LookPath(candidate); err == nil {
+			return path, nil
+		}
+	}
+	return "", fmt.Errorf("mysqldump/mariadb-dump not found in PATH")
 }
 
-// runShellCommand executes the given shell command and logs output
-func runShellCommand(cmd string) error {
-	// Execute the command using /bin/sh
-	execCmd := exec.Command("sh", "-c", cmd)
-	output, err := execCmd.CombinedOutput()
+func createMySQLDump(
+	dumpBinary string,
+	dbUser string,
+	dbPass string,
+	dbHost string,
+	dbPort string,
+	dbName string,
+	targetPath string,
+) error {
+	outFile, err := os.Create(targetPath)
 	if err != nil {
-		logrus.Errorf("Command execution failed: %v\nOutput: %s", err, string(output))
+		return err
+	}
+	defer outFile.Close()
+
+	args := []string{
+		"--user=" + dbUser,
+		"--host=" + dbHost,
+		"--port=" + dbPort,
+		"--single-transaction",
+		"--quick",
+		"--no-tablespaces",
+		dbName,
+	}
+	cmd := exec.Command(dumpBinary, args...)
+	cmd.Stdout = outFile
+
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	cmd.Env = append(os.Environ(), "MYSQL_PWD="+dbPass)
+
+	if err := cmd.Run(); err != nil {
+		_ = os.Remove(targetPath)
+		if stderr.Len() > 0 {
+			logrus.Errorf("Dump command stderr: %s", stderr.String())
+		}
 		return err
 	}
 
-	logrus.Infof("Command output: %s", string(output))
+	if stderr.Len() > 0 {
+		logrus.Warnf("Dump command stderr: %s", stderr.String())
+	}
 	return nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/robfig/cron/v3"
@@ -39,16 +40,16 @@ func main() {
 	// 5) Scheduler
 	var err error // Declare err in function scope
 	c := cron.New(cron.WithLogger(cron.PrintfLogger(logrus.StandardLogger())))
-	// Daily DB backup is handled by host cron by default.
-	// If you ever need the app to run backups (dev box, emergency), set RUN_APP_BACKUPS=true.
-	if os.Getenv("RUN_APP_BACKUPS") == "true" {
+	// Daily DB backups are enabled by default.
+	// Set RUN_APP_BACKUPS=false to disable and delegate to host cron.
+	if appBackupsEnabled() {
 		_, err = c.AddFunc("0 0 * * *", CreateBackup)
 		if err != nil {
 			logrus.Fatalf("Failed to schedule CreateBackup: %v", err)
 		}
-		logrus.Info("App-owned backups are ENABLED via RUN_APP_BACKUPS=true.")
+		logrus.Info("App-owned backups are ENABLED (daily at midnight local container time).")
 	} else {
-		logrus.Info("App-owned backups are DISABLED (RUN_APP_BACKUPS!=true). Host cron is the source of truth.")
+		logrus.Info("App-owned backups are DISABLED via RUN_APP_BACKUPS=false. Host cron is the source of truth.")
 	}
 	// Schedule ReprocessFailedMessages every 5 minutes
 	_, err = c.AddFunc("@every 5m", ReprocessFailedMessages)
@@ -68,4 +69,14 @@ func main() {
 	cancel()
 	c.Stop()
 	logrus.Info("All background services stopped. Exiting now.")
+}
+
+func appBackupsEnabled() bool {
+	raw := strings.TrimSpace(strings.ToLower(os.Getenv("RUN_APP_BACKUPS")))
+	switch raw {
+	case "false", "0", "no", "off":
+		return false
+	default:
+		return true
+	}
 }
