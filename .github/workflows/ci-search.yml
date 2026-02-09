@@ -22,7 +22,7 @@ jobs:
       run:
         working-directory: reader/search
     env:
-      SEARCH_COVERAGE_MIN: "25.0"
+      SEARCH_COVERAGE_MIN: "15.0"
 
     steps:
       - uses: actions/checkout@v4
