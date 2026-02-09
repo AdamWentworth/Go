@@ -37,8 +37,10 @@ func main() {
 		DisableStartupMessage: true,
 	})
 
+	registerMetrics()
 	app.Use(requestLogger)
 	app.Use(corsMiddleware)
+	app.Use(metricsMiddleware)
 
 	app.Get("/healthz", func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
@@ -49,6 +51,7 @@ func main() {
 		}
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
 	})
+	app.Get("/metrics", metricsHandler())
 
 	protected := app.Group("/", verifyJWT)
 	protected.Get("/api/sse", sseHandler)

@@ -1,44 +1,145 @@
-# Events Service (SSE + Kafka)
+# 📡 Events Service (SSE + Kafka Reader)
 
-Real-time reader service that:
+Real-time reader service for client sync and live updates.
 
-- Consumes `batchedUpdates` from Kafka
-- Streams live deltas to clients over Server-Sent Events (SSE)
-- Serves pull-based update snapshots for reconnect/sync flows
+It:
 
-## Why Fiber here
+- consumes `batchedUpdates` from Kafka
+- streams live deltas to connected clients over SSE
+- serves pull-based updates for reconnect/sync flows
 
-Fiber is a good fit for this service because it is SSE-heavy and already integrated with your current middleware/runtime patterns. Migrating to chi/net/http would add risk with little immediate value for this path.
+## ✅ What This Service Does
 
-## Features
+- 🔐 Protects API routes with JWT cookie auth (`accessToken`)
+- 🌐 Enforces CORS allowlist from `ALLOWED_ORIGINS`
+- ❤️ Exposes `GET /healthz`, `GET /readyz`, and `GET /metrics`
+- 📥 Consumes Kafka updates from topic `batchedUpdates`
+- 📤 Broadcasts transformed updates to active SSE clients
+- 🧠 Applies in-memory trade completion swap projection for SSE output
+- 🐳 Runs as a loopback-bound container (`127.0.0.1:3008`)
 
-- JWT-protected routes using access token cookie (`accessToken`)
-- SSE stream endpoint for real-time updates
-- Pull endpoint (`getUpdates`) for timestamp-based sync
-- In-memory trade-completion swap projection
-- CORS allowlist via env (`ALLOWED_ORIGINS`)
-- Health/readiness endpoints for deploy checks
+## 🛣️ API Endpoints
 
-## Endpoints
+| Method | Path | Auth | Purpose |
+| --- | --- | --- | --- |
+| GET | `/healthz` | No | Liveness check |
+| GET | `/readyz` | No | Readiness check (DB ping) |
+| GET | `/metrics` | No | Prometheus metrics endpoint |
+| GET | `/api/sse?device_id=<id>` | Yes | Open SSE stream |
+| GET | `/api/getUpdates?timestamp=<ms>&device_id=<id>` | Yes | Pull updates since timestamp |
 
-- `GET /healthz`
-- `GET /readyz`
-- `GET /api/sse?device_id=...` (JWT required)
-- `GET /api/getUpdates?timestamp=...&device_id=...` (JWT required)
-
-## Runtime Flow
+## 🧭 Service Context (Mermaid)
 
 ```mermaid
 flowchart LR
-  Kafka[(Kafka: batchedUpdates)] --> Events[events_service]
-  Events --> MySQL[(user_pokemon_management)]
-  Events --> SSE[SSE clients]
-  Events --> Pull[GET /api/getUpdates]
+  Client[Web or Mobile Client]
+  Nginx[frontend_nginx]
+  Events[events_service]
+  Receiver[receiver_service]
+  Kafka[(Kafka topic batchedUpdates)]
+  MySQL[(MySQL user_pokemon_management)]
+
+  Client -->|GET /api/sse| Nginx
+  Client -->|GET /api/getUpdates| Nginx
+  Nginx --> Events
+
+  Receiver -->|produce updates| Kafka
+  Kafka -->|consume as sse_consumer_group| Events
+  Events -->|read users, instances, trades| MySQL
+  Events -->|SSE data| Client
 ```
 
-## Environment
+## 🔄 Live Update Flow (UML Sequence)
 
-Create `reader/events/.env`:
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant N as frontend_nginx
+  participant E as events_service
+  participant K as Kafka
+  participant R as receiver_service
+  participant D as MySQL
+
+  C->>N: GET /api/sse?device_id=...
+  N->>E: Forward request with JWT cookie
+  E-->>C: SSE connected event
+
+  R->>K: Produce batchedUpdates (gzip payload)
+  K-->>E: FetchMessage
+  E->>E: Decompress + transform message
+  E->>D: Query users/instances/trades as needed
+  E-->>C: SSE data event (excluding same device_id)
+
+  C->>N: GET /api/getUpdates?timestamp=...
+  N->>E: Forward request
+  E->>D: Query deltas by user_id and last_update
+  E-->>C: JSON response with pokemon, trade, relatedInstances
+```
+
+## 🧱 Domain Model (UML Class)
+
+```mermaid
+classDiagram
+  class AccessTokenClaims {
+    +string UserID
+    +string Username
+    +string DeviceID
+    +RegisteredClaims
+  }
+
+  class Client {
+    +string UserID
+    +string DeviceID
+    +chan Channel
+    +bool Connected
+  }
+
+  class User {
+    +string UserID
+    +string Username
+    +float64 Latitude
+    +float64 Longitude
+  }
+
+  class PokemonInstance {
+    +string InstanceID
+    +string UserID
+    +int PokemonID
+    +bool IsCaught
+    +bool IsForTrade
+    +bool IsWanted
+    +bool MostWanted
+    +int64 LastUpdate
+  }
+
+  class Trade {
+    +string TradeID
+    +string UserIDProposed
+    +string UserIDAccepting
+    +string TradeStatus
+    +int64 LastUpdate
+  }
+
+  class Config {
+    +EventsConfig Events
+  }
+
+  class EventsConfig {
+    +string Hostname
+    +string Port
+    +string Topic
+    +int MaxRetries
+    +int RetryInterval
+  }
+
+  Config --> EventsConfig
+  Client --> AccessTokenClaims
+  PokemonInstance --> User
+```
+
+## ⚙️ Configuration
+
+Set `reader/events/.env`:
 
 ```env
 PORT=3008
@@ -52,58 +153,78 @@ DB_HOSTNAME=mysql_storage
 DB_PORT=3306
 DB_NAME=user_pokemon_management
 
+LOG_LEVEL=info
+
 KAFKA_HOSTNAME=kafka
 KAFKA_PORT=9092
 KAFKA_TOPIC=batchedUpdates
 KAFKA_MAX_RETRIES=5
 KAFKA_RETRY_INTERVAL=3
 
-LOG_LEVEL=info
+# Backward-compatible fallback for older config readers
+HOST_IP=127.0.0.1
 ```
 
 Notes:
 
-- `HOST_IP` is still accepted as a backward-compatible fallback for Kafka host.
-- Config defaults can come from `config/app_conf.yml`; env vars override those values.
+- `KAFKA_*` env vars override values from `config/app_conf.yml`.
+- `HOST_IP` is only a backward-compatible fallback for Kafka hostname.
+- `JWT_SECRET` is required for protected routes.
 
-## Local Run
+## 🧪 Quality Gates
+
+Local checks:
 
 ```bash
 cd reader/events
-go mod tidy
+go test ./...
+go test -cover ./...
+go vet ./...
+go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+```
+
+CI:
+
+- workflow: `.github/workflows/ci-events.yml`
+- includes test, coverage gate, vet, govulncheck, Trivy scans, SBOM, optional DockerHub push
+
+## 🚀 Run Locally
+
+```bash
+cd reader/events
 go run .
 ```
 
-## Docker Run
+## 🐳 Run With Docker Compose
 
 ```bash
 cd reader/events
 docker compose up -d
 ```
 
-Compose notes:
+Compose behavior:
 
-- Binds service on `127.0.0.1:3008`
-- Uses external Docker network `kafka_default`
-- Includes container healthcheck against `/readyz`
+- binds to `127.0.0.1:3008`
+- healthcheck hits `/readyz`
+- joins external network `kafka_default`
 
-## Security + Hardening
+## 🛠️ CD Workflow
 
-- Updated to patched `github.com/gofiber/fiber/v2` and `github.com/golang-jwt/jwt/v4`
-- Updated `golang.org/x/net` indirect dependency
-- JWT parsing uses `ParseWithClaims` + strict HMAC method validation
-- Rejects oversized token cookies
-- Non-root runtime container image
+- workflow: `.github/workflows/deploy-events-prod.yml`
+- dispatch inputs:
+  - `image_ref` (`latest`, `sha-<commit>`, or full image ref)
+  - `deploy_root` (default `/media/adam/storage/Code/Go`)
+  - `service_name` (default `events_service`)
+- deploy behavior:
+  - sync git repo on prod runner
+  - preflight env/network checks
+  - rollout with readiness check (`http://127.0.0.1:3008/readyz`)
+  - auto rollback to previous image on failure
 
-## Basic Verification
+## 🔍 Quick Verification
 
 ```bash
-# Unit/build checks
-go test ./...
-go vet ./...
-go run golang.org/x/vuln/cmd/govulncheck@latest ./...
-
-# Health checks
 curl -i http://127.0.0.1:3008/healthz
 curl -i http://127.0.0.1:3008/readyz
+curl -i http://127.0.0.1:3008/metrics
 ```

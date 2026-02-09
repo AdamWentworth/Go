@@ -93,7 +93,7 @@ func errorHandler(c *fiber.Ctx, err error) error {
 // Custom request logging middleware
 func requestLogger(c *fiber.Ctx) error {
 	switch c.Path() {
-	case "/healthz", "/readyz":
+	case "/metrics", "/healthz", "/readyz":
 		return c.Next()
 	}
 
