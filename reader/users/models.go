@@ -76,6 +76,7 @@ func (User) TableName() string { return "users" }
 
 // what outsiders are allowed to see
 type PublicUser struct {
+	UserID        string     `json:"user_id"`
 	Username      string     `json:"username"`
 	PokemonGoName *string    `json:"pokemonGoName,omitempty"`
 	Team          *string    `json:"team,omitempty"`

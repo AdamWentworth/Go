@@ -1,7 +1,5 @@
 # users dockercompose
 
-version: '3.8'
-
 services:
   users_service:
     build:
@@ -12,7 +10,14 @@ services:
     env_file:
       - .env
     ports:
-      - "3005:3005"
+      - "127.0.0.1:3005:3005"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3005/readyz"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     networks:
       - kafka_default
     volumes:

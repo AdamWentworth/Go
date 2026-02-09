@@ -1,121 +1,132 @@
-# 👤 Users Service
+# Users Service
 
-This service provides **authenticated access** to user-specific Pokémon ownership data, trade history, and user profile management.
+The users service provides profile and ownership-read APIs for the Pokemon app.
+It runs as a JWT-protected API for user-specific endpoints and exposes public trainer snapshots.
 
----
+## Responsibilities
 
-## 🔍 Overview
+- Serve authenticated user overview payloads (`user`, `pokemon_instances`, `trades`, `registrations`).
+- Upsert user profile fields in MySQL.
+- Serve public trainer snapshot data by username.
+- Provide autocomplete suggestions for trainer search.
+- Expose health and metrics endpoints for operations.
 
-The Users service exposes endpoints to:
+## Runtime
 
-- Retrieve a user's Pokémon instances and related trade data
-- Fetch ownership data by either `user_id` or `username`
-- Update a user’s profile (username and location)
-- Return trade-aware Pokémon ownership status
-- Support cache-friendly `ETag` headers for data freshness
+- Language: Go
+- HTTP framework: Fiber v2
+- ORM: GORM (MySQL)
+- Auth: JWT (cookie `accessToken`, HS256)
+- Metrics: Prometheus (`/metrics`)
 
----
+## Endpoints
 
-## 📦 Endpoints
+### Public
 
-### 🔐 Protected Routes (JWT Required)
+- `GET /healthz`
+- `GET /readyz`
+- `GET /metrics`
+- `GET /api/public/users/:username`
+- `GET /api/users/public/users/:username` (compatibility path)
+- `GET /api/autocomplete-trainers?q=<prefix>`
 
-#### `GET /api/ownershipData/:user_id`
-Fetch all Pokémon instances, trades, and related instances for the given `user_id`.
+### Protected (JWT cookie required)
 
-#### `GET /api/ownershipData/username/:username`
-Fetch Pokémon instances for a user by username.
+Canonical:
 
-- Adds `ETag` support for client-side cache invalidation.
-- Filters out Pokémon currently involved in **pending trades**.
+- `GET /api/users/:user_id/overview?device_id=<id>`
+- `PUT /api/users/:user_id`
 
-#### `PUT /api/update-user/:user_id`
-Update a user’s profile (username, latitude, longitude).
+Compatibility:
 
-**Body (JSON):**
-```json
-{
-  "username": "newUsername",
-  "latitude": 37.7749,
-  "longitude": -122.4194
-}
-```
+- `GET /api/:user_id/overview?device_id=<id>`
+- `PUT /api/:user_id`
+- `PUT /api/update-user/:user_id`
+- `PUT /api/users/update-user/:user_id`
 
----
+## Security and Guardrails
 
-## 🛠 Setup
+- JWT parser restricts signing method to HS256 and validates required claims.
+- Oversized auth cookie guard rejects very large `accessToken` values.
+- CORS allow-list via `ALLOWED_ORIGINS`.
+- Request body-size guard via `MAX_BODY_BYTES`.
+- Per-user/IP rate limiting via `RATE_LIMIT_MAX` and `RATE_LIMIT_WINDOW_SEC`.
+- Container runs as non-root user.
 
-### Prerequisites
+## Environment Variables
 
-- Go 1.21+
-- `.env.development` file:
-  ```
-  DB_USER=
-  DB_PASS=
-  DB_HOST=
-  DB_PORT=
-  DB_NAME=
-  JWT_SECRET=
-  ```
+Required:
 
-### Install deps
+- `JWT_SECRET`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_HOSTNAME`
+- `DB_PORT`
+- `DB_NAME`
 
-```bash
-go mod tidy
-```
+Common optional:
 
-### Run locally
+- `PORT` (default `3005`)
+- `LOG_LEVEL` (default `info`)
+- `ALLOWED_ORIGINS` (comma-separated)
+- `MAX_BODY_BYTES` (default `1048576`)
+- `RATE_LIMIT_MAX` (default `120`)
+- `RATE_LIMIT_WINDOW_SEC` (default `60`)
+
+DB pool tuning optional:
+
+- `DB_MAX_OPEN_CONNS` (default `25`)
+- `DB_MAX_IDLE_CONNS` (default `10`)
+- `DB_CONN_MAX_LIFETIME_SEC` (default `300`)
+- `DB_CONN_MAX_IDLE_TIME_SEC` (default `120`)
+
+## Local Development
+
+Run service:
 
 ```bash
 go run .
 ```
 
-Service runs on:  
-**http://127.0.0.1:3005**
+Run tests:
 
----
-
-## 🗂 Directory Structure
-
-```
-users/
-├── main.go               # Entry point
-├── pokemon_handlers.go   # Ownership + related data handlers
-├── users_handlers.go     # Update user endpoint
-├── auth.go               # JWT helpers
-├── middleware.go         # JWT + CORS
-├── helpers.go            # Utility helpers
-├── init.go               # DB, env init
-├── logging.go
-├── models.go             # GORM models
-├── .env.development
-├── app.log
+```bash
+go test ./...
+go vet ./...
 ```
 
----
+## Smoke Scripts
 
-## 🧠 Notable Behaviors
+Linux/macOS:
 
-- Ownership and trade data are deeply structured by `instance_id` or `trade_id`.
-- Related Pokémon in trades are fetched for full context.
-- Pending trades suppress Pokémon from being marked as "for trade."
-- `PUT /update-user` includes retry logic for transient DB issues.
-- Username changes are validated and de-duped.
-
----
-
-## 🧪 Example Response: `GET /api/ownershipData/username/:username`
-
-```json
-{
-  "username": "ashketchum",
-  "instances": {
-    "instance_abc": {
-      "pokemon_id": 25,
-      "nickname": "Pika",
-      "shiny": true,
-      ...
-    }
-  }
-}
+```bash
+BASE_URL=http://127.0.0.1:3005 ./scripts/smoke-users.sh
 ```
+
+PowerShell:
+
+```powershell
+.\scripts\smoke-users.ps1 -BaseUrl "http://127.0.0.1:3005"
+```
+
+Optional protected checks:
+
+- Provide `USER_ID` and `ACCESS_TOKEN` in bash.
+- Provide `-UserId` and `-AccessToken` in PowerShell.
+
+## Docker
+
+Compose:
+
+```bash
+docker compose up -d users_service
+```
+
+Default local port bind:
+
+- `127.0.0.1:3005:3005`
+
+## Notes
+
+- Compatibility routes exist to support current frontend and nginx rewrite behavior.
+- Monitoring stack should scrape `users_service:3005/metrics`.

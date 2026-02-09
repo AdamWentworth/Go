@@ -1,6 +1,6 @@
 # Monitoring Stack
 
-This folder runs Prometheus + Alertmanager for the Pokemon, authentication, receiver, storage, and events services.
+This folder runs Prometheus + Alertmanager for the Pokemon, authentication, receiver, storage, events, and users services.
 
 It also includes Kafka, host, and container telemetry via:
 
@@ -65,7 +65,7 @@ Host ports used by monitoring stack:
 
 ## What You Can Monitor
 
-- App-level metrics: request rate, latency, status codes (`pokemon_data`, `auth_service`, `receiver_service`, `storage_service`, `events_service`)
+- App-level metrics: request rate, latency, status codes (`pokemon_data`, `auth_service`, `receiver_service`, `storage_service`, `events_service`, `users_service`)
 - Kafka-level metrics: broker availability, topic visibility, consumer lag (`kafka_exporter`)
 - Host-level metrics: CPU %, RAM %, disk free %, filesystem pressure (`node_exporter`)
 - Container-level metrics: per-container CPU/memory/network/filesystem (`cadvisor`)

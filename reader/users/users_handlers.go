@@ -149,7 +149,7 @@ func UpdateUserHandler(c *fiber.Ctx) error {
 	if res.RowsAffected == 0 {
 		// create new row with the same map + PK
 		update["user_id"] = userID
-		if err := db.Create(update).Error; err != nil {
+		if err := db.Table("users").Create(update).Error; err != nil {
 			logrus.Errorf("insert user: %v", err)
 			return c.Status(500).JSON(UpdateUserResponse{Success: false, Message: "DB insert failed"})
 		}

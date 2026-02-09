@@ -3,19 +3,35 @@
 package main
 
 import (
+	"os"
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 )
 
-func corsMiddleware(c *fiber.Ctx) error {
-	allowedOrigins := map[string]bool{
-		"http://localhost:3000":          true,
-		"https://pokemongonexus.com":     true,
-		"https://www.pokemongonexus.com": true,
+var allowedOrigins map[string]struct{}
+
+func initAllowedOrigins() {
+	originsCSV := strings.TrimSpace(os.Getenv("ALLOWED_ORIGINS"))
+	if originsCSV == "" {
+		originsCSV = "http://localhost:3000,http://127.0.0.1:3000,https://pokemongonexus.com,https://www.pokemongonexus.com"
 	}
 
+	allowedOrigins = make(map[string]struct{})
+	for _, origin := range strings.Split(originsCSV, ",") {
+		o := strings.TrimSpace(origin)
+		if o != "" {
+			allowedOrigins[o] = struct{}{}
+		}
+	}
+}
+
+func corsMiddleware(c *fiber.Ctx) error {
 	origin := c.Get("Origin")
-	if allowedOrigins[origin] {
-		c.Set("Access-Control-Allow-Origin", origin)
+	if origin != "" {
+		if _, ok := allowedOrigins[origin]; ok {
+			c.Set("Access-Control-Allow-Origin", origin)
+		}
 	}
 
 	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")

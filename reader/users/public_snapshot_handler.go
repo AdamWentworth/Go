@@ -15,7 +15,7 @@ func GetPublicSnapshotByUsername(c *fiber.Ctx) error {
 	var u PublicUser
 	if err := db.
 		Table("users").
-		Select(`username, pokemon_go_name, team, trainer_level, total_xp,
+		Select(`user_id, username, pokemon_go_name, team, trainer_level, total_xp,
 		        pogo_started_on, app_joined_at,
 		        highlight1_instance_id  AS highlight1,
 		        highlight2_instance_id  AS highlight2,
@@ -28,9 +28,9 @@ func GetPublicSnapshotByUsername(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
 	}
 
-	// fetch that trainer’s instances only
+	// fetch that trainer's instances only
 	var inst []PokemonInstance
-	if err := db.Where("user_id = ?", u.Username).Find(&inst).Error; err != nil {
+	if err := db.Where("user_id = ?", u.UserID).Find(&inst).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve instances"})
 	}
 

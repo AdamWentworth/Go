@@ -1,0 +1,8 @@
+.git
+.gitignore
+app.log
+.env
+README.md
+Dockerfile
+docker-compose.yml
+*_test.go

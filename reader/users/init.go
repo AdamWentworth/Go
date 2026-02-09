@@ -3,8 +3,11 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -37,18 +40,65 @@ func initDB() {
 		log.New(file, "\r\n", log.LstdFlags), // Use the file for GORM logs
 		logger.Config{
 			SlowThreshold: time.Second, // Log slow SQL queries if needed (optional)
-			LogLevel:      logger.Info, // Log everything to file
+			LogLevel:      logger.Warn, // Keep SQL logging focused on warnings/errors
 			Colorful:      false,       // Disable color output
 		},
 	)
 
-	dsn := os.Getenv("DB_USER") + ":" + os.Getenv("DB_PASSWORD") + "@tcp(" + os.Getenv("DB_HOSTNAME") + ")/" + os.Getenv("DB_NAME") + "?parseTime=true"
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASSWORD")
+	dbHost := os.Getenv("DB_HOSTNAME")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+	if dbPort == "" {
+		dbPort = "3306"
+	}
+	if dbUser == "" || dbPass == "" || dbHost == "" || dbName == "" {
+		log.Fatal("DB_USER, DB_PASSWORD, DB_HOSTNAME, and DB_NAME are required")
+	}
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", dbUser, dbPass, dbHost, dbPort, dbName)
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: newLogger, // Use the custom logger for GORM logs
 	})
 	if err != nil {
 		log.Fatal("Failed to connect to the database: ", err)
 	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatal("Failed to access sql.DB: ", err)
+	}
+
+	maxOpen := 25
+	maxIdle := 10
+	connLifetime := 5 * time.Minute
+	connIdleTime := 2 * time.Minute
+
+	if v := os.Getenv("DB_MAX_OPEN_CONNS"); v != "" {
+		if n, parseErr := strconv.Atoi(v); parseErr == nil && n > 0 {
+			maxOpen = n
+		}
+	}
+	if v := os.Getenv("DB_MAX_IDLE_CONNS"); v != "" {
+		if n, parseErr := strconv.Atoi(v); parseErr == nil && n >= 0 {
+			maxIdle = n
+		}
+	}
+	if v := os.Getenv("DB_CONN_MAX_LIFETIME_SEC"); v != "" {
+		if n, parseErr := strconv.Atoi(v); parseErr == nil && n > 0 {
+			connLifetime = time.Duration(n) * time.Second
+		}
+	}
+	if v := os.Getenv("DB_CONN_MAX_IDLE_TIME_SEC"); v != "" {
+		if n, parseErr := strconv.Atoi(v); parseErr == nil && n > 0 {
+			connIdleTime = time.Duration(n) * time.Second
+		}
+	}
+
+	sqlDB.SetMaxOpenConns(maxOpen)
+	sqlDB.SetMaxIdleConns(maxIdle)
+	sqlDB.SetConnMaxLifetime(connLifetime)
+	sqlDB.SetConnMaxIdleTime(connIdleTime)
 
 	// Log that the system checks have completed
 	logrus.Info("Performing system checks...")
@@ -57,10 +107,13 @@ func initDB() {
 
 // Load environment variables from .env
 func initEnv() {
-	// Load environment variables from .env
-	err := godotenv.Load(".env") // Load from .env
+	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		if !errors.Is(err, os.ErrNotExist) {
+			log.Fatalf("Error loading .env file: %v", err)
+		}
+		logrus.Infof("No .env file found at .env, relying on OS environment")
+		return
 	}
 	logrus.Info("Environment variables loaded successfully.")
 }

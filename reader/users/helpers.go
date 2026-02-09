@@ -9,7 +9,7 @@ func lastUpdateToTime(v int64) time.Time {
 	if v <= 0 {
 		return time.Time{}
 	}
-	if v > 1_000_000_000_000 {
+	if v >= 1_000_000_000_000 {
 		return time.UnixMilli(v)
 	}
 	return time.Unix(v, 0)
