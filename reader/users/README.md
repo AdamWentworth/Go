@@ -291,6 +291,8 @@ erDiagram
 - `GET /metrics`
 - `GET /api/public/users/:username`
 - `GET /api/users/public/users/:username` (compatibility path)
+- `GET /api/instances/by-username/:username`
+- `GET /api/users/instances/by-username/:username` (compatibility path)
 - `GET /api/autocomplete-trainers?q=<prefix>`
 
 ### Protected (JWT cookie required)

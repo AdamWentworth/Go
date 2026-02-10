@@ -100,22 +100,19 @@ func newApp() *fiber.App {
 	// Keep these outside JWT middleware so users can browse profiles while logged out.
 	publicRead := app.Group("/", newRateLimiter())
 	publicRead.Get("/api/instances/by-username/:username", GetInstancesByUsername)
-	publicRead.Get("/api/ownershipData/username/:username", GetOwnershipDataByUsername)
 	// Compatibility paths for /api/users prefix + nginx rewrite behavior.
 	publicRead.Get("/api/users/instances/by-username/:username", GetInstancesByUsername)
-	publicRead.Get("/api/users/ownershipData/username/:username", GetOwnershipDataByUsername)
 
-	// Protected routes
-	protected := app.Group("/", verifyJWT, newRateLimiter())
-
+	// Protected routes (explicit auth binding so public routes never require JWT).
+	protectedLimiter := newRateLimiter()
 	// Canonical paths.
-	protected.Get("/api/users/:user_id/overview", GetUserOverviewHandler)
-	protected.Put("/api/users/:user_id", UpdateUserHandler)
+	app.Get("/api/users/:user_id/overview", verifyJWT, protectedLimiter, GetUserOverviewHandler)
+	app.Put("/api/users/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 	// Compatibility paths for current frontend/nginx behavior.
-	protected.Get("/api/:user_id/overview", GetUserOverviewHandler)
-	protected.Put("/api/:user_id", UpdateUserHandler)
-	protected.Put("/api/update-user/:user_id", UpdateUserHandler)
-	protected.Put("/api/users/update-user/:user_id", UpdateUserHandler)
+	app.Get("/api/:user_id/overview", verifyJWT, protectedLimiter, GetUserOverviewHandler)
+	app.Put("/api/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
+	app.Put("/api/update-user/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
+	app.Put("/api/users/update-user/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 
 	return app
 }

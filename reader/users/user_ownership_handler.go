@@ -67,9 +67,3 @@ func GetInstancesByUsername(c *fiber.Ctx) error {
 		"instances": out,
 	})
 }
-
-// Backward-compat alias while frontend migrates naming.
-// GET /api/ownershipData/username/:username (public alias)
-func GetOwnershipDataByUsername(c *fiber.Ctx) error {
-	return GetInstancesByUsername(c)
-}

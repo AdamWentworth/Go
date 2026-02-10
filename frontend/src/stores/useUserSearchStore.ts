@@ -16,10 +16,20 @@ type SearchCacheRecord = {
 };
 
 function replaceAddressBar(oldName: string, newName: string) {
-  if (oldName !== newName) {
-    const url = window.location.pathname.replace(oldName, newName);
-    window.history.replaceState({}, '', url);
-  }
+	if (oldName !== newName) {
+		const path = window.location.pathname;
+		const segments = path.split('/');
+		const last = segments[segments.length - 1];
+		if (last && last.toLowerCase() === oldName.toLowerCase()) {
+			segments[segments.length - 1] = newName;
+			const nextPath = segments.join('/');
+			window.history.replaceState(
+				{},
+				'',
+				`${nextPath}${window.location.search}${window.location.hash}`
+			);
+		}
+	}
 }
 
 function getCachedInstances(record: SearchCacheRecord | null): Instances | null {

@@ -80,6 +80,43 @@ describe.sequential('useUserSearchStore', () => {
     expect(useInstancesStore.getState().foreignInstances).toEqual(instances);
   });
 
+  it('normalizes mixed-case username input to lowercase for instance lookup', async () => {
+    const instances = {
+      i9: { instance_id: 'i9', pokemon_id: 9, variant_id: '0009-default' },
+    } as any;
+
+    fetchMock.mockResolvedValueOnce(
+      makeResponse(200, { username: 'ChernoB8ta', instances }, { ETag: 'v9' }),
+    );
+
+    const canonical = await useUserSearchStore
+      .getState()
+      .fetchUserInstancesByUsername('ChernoB8ta');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `${USERS_API_URL}/instances/by-username/chernob8ta`,
+    );
+    expect(canonical).toBe('ChernoB8ta');
+    expect(useUserSearchStore.getState().userExists).toBe(true);
+  });
+
+  it('normalizes URL casing to canonical username on foreign profile load', async () => {
+    const instances = {
+      i10: { instance_id: 'i10', pokemon_id: 10, variant_id: '0010-default' },
+    } as any;
+
+    window.history.replaceState({}, '', '/pokemon/ChernoB8ta');
+
+    fetchMock.mockResolvedValueOnce(
+      makeResponse(200, { username: 'chernob8ta', instances }, { ETag: 'v10' }),
+    );
+
+    await useUserSearchStore.getState().fetchUserInstancesByUsername('ChernoB8ta');
+
+    expect(window.location.pathname).toBe('/pokemon/chernob8ta');
+  });
+
   it('falls back to public snapshot endpoint when canonical endpoint returns 404', async () => {
     const instances = {
       i2: { instance_id: 'i2', pokemon_id: 2, variant_id: '0002-default' },

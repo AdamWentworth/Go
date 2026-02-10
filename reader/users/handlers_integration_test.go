@@ -58,8 +58,6 @@ func newHandlerTestApp(authUserID string) *fiber.App {
 	app.Get("/api/users/:user_id/overview", GetUserOverviewHandler)
 	app.Get("/api/instances/by-username/:username", GetInstancesByUsername)
 	app.Get("/api/users/instances/by-username/:username", GetInstancesByUsername)
-	app.Get("/api/ownershipData/username/:username", GetOwnershipDataByUsername)
-	app.Get("/api/users/ownershipData/username/:username", GetOwnershipDataByUsername)
 
 	// Public endpoints used in tests.
 	app.Get("/api/public/users/:username", GetPublicSnapshotByUsername)
@@ -289,7 +287,7 @@ func TestGetInstancesByUsername_Found_CaseInsensitive(t *testing.T) {
 			false, true, false, false, false, false, false, true, false,
 		))
 
-	req := makeJSONRequest(t, http.MethodGet, "/api/instances/by-username/fakeuser0632", nil)
+	req := makeJSONRequest(t, http.MethodGet, "/api/users/instances/by-username/FakeUser0632", nil)
 	resp, err := app.Test(req, -1)
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
