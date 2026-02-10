@@ -1,5 +1,5 @@
 // hooks/usePokemonImage.ts
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { determineImageUrl } from '@/utils/imageHelpers';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
@@ -26,15 +26,12 @@ export function usePokemonImage({
   isPurified,
   isGigantamax
 }: UsePokemonImageParams) {
-  const [image, setImage] = useState<string | undefined>(pokemon.currentImage);
-
-  useEffect(() => {
+  return useMemo(() => {
     if (isDisabled) {
-      setImage(`/images/disabled/disabled_${pokemon.pokemon_id}.png`);
-      return;
+      return `/images/disabled/disabled_${pokemon.pokemon_id}.png`;
     }
 
-    const updatedImage = determineImageUrl(
+    return determineImageUrl(
       isFemale,
       pokemon,
       isMega,
@@ -44,8 +41,6 @@ export function usePokemonImage({
       isPurified,
       isGigantamax
     );
-
-    setImage(updatedImage);
   }, [
     isDisabled,
     isFemale,
@@ -57,6 +52,4 @@ export function usePokemonImage({
     isGigantamax,
     pokemon
   ]);
-
-  return image;
 }

@@ -13,16 +13,6 @@ expect.extend(matchers);
 vi.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
-// Mock localStorage
-const mockLocalStorage = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  clear: vi.fn()
-};
-Object.defineProperty(window, 'localStorage', {
-  value: mockLocalStorage
-});
-
 describe('Pokemon Data Service Unit Tests', () => {
   const suiteStartTime = Date.now();
 
@@ -42,10 +32,9 @@ describe('Pokemon Data Service Unit Tests', () => {
   });
 
   beforeEach(() => {
-    mockLocalStorage.clear.mockClear();
-    mockLocalStorage.getItem.mockClear();
-    mockLocalStorage.setItem.mockClear();
+    localStorage.clear();
     vi.clearAllMocks();
+    mockedAxios.get.mockReset();
   });
 
   afterEach(() => {
@@ -69,7 +58,11 @@ describe('Pokemon Data Service Unit Tests', () => {
       testLogger.assertion('Response data matches expected');
 
       expect(mockedAxios.get).toHaveBeenCalledWith(
-        expect.stringContaining('/pokemons')
+        expect.stringContaining('/pokemons'),
+        expect.objectContaining({
+          headers: {},
+          validateStatus: expect.any(Function)
+        })
       );
       testLogger.assertion('API endpoint called correctly');
 
@@ -85,7 +78,7 @@ describe('Pokemon Data Service Unit Tests', () => {
     try {
       testLogger.testStep('1. Setting up cache and mock response');
       const cachedData = { data: mockPokemonData };
-      mockLocalStorage.getItem.mockReturnValueOnce(JSON.stringify(cachedData));
+      localStorage.setItem('pokemonData', JSON.stringify(cachedData));
       
       mockedAxios.get.mockResolvedValueOnce({
         status: 304,
@@ -99,9 +92,6 @@ describe('Pokemon Data Service Unit Tests', () => {
       expect(result).toEqual(mockPokemonData);
       testLogger.assertion('Cached data retrieved successfully');
 
-      expect(mockLocalStorage.getItem).toHaveBeenCalledWith('pokemonData');
-      testLogger.assertion('LocalStorage accessed correctly');
-
       testLogger.metric('Response time', Date.now() - testStart);
     } catch (error) {
       testLogger.errorDetail(error);
@@ -109,19 +99,20 @@ describe('Pokemon Data Service Unit Tests', () => {
     }
   });
 
-  it('throws error when 304 received but no cache exists', async () => {
+  it('supports legacy raw-array cache shape on 304 response', async () => {
     const testStart = Date.now();
     try {
-      testLogger.testStep('1. Setting up mock responses');
-      mockLocalStorage.getItem.mockReturnValueOnce(null);
+      testLogger.testStep('1. Setting up legacy cache shape and 304 response');
+      localStorage.setItem('pokemonData', JSON.stringify(mockPokemonData));
       mockedAxios.get.mockResolvedValueOnce({
         status: 304,
         data: null
       });
 
-      testLogger.testStep('2. Executing and verifying error');
-      await expect(getPokemons()).rejects.toThrow('No cached data available');
-      testLogger.assertion('Error thrown as expected');
+      testLogger.testStep('2. Executing and verifying fallback');
+      const result = await getPokemons();
+      expect(result).toEqual(mockPokemonData);
+      testLogger.assertion('Legacy raw-array cache handled correctly');
 
       testLogger.metric('Response time', Date.now() - testStart);
     } catch (error) {
@@ -180,8 +171,7 @@ describe('Pokemon Data Service Unit Tests', () => {
     const testStart = Date.now();
     try {
       testLogger.testStep('1. Setting up invalid cache data');
-      // Mock localStorage to return invalid data
-      mockLocalStorage.getItem.mockReturnValueOnce('{"invalid": "structure"}');
+      localStorage.setItem('pokemonData', '{"invalid": "structure"}');
       
       // Mock axios to return 304 to trigger cache usage
       mockedAxios.get.mockResolvedValueOnce({
@@ -226,10 +216,44 @@ describe('Pokemon Data Service Unit Tests', () => {
 
       testLogger.testStep('3. Verifying URL construction');
       expect(mockedAxios.get).toHaveBeenCalledWith(
-        expect.stringMatching(/^https?:\/\/.*\/pokemons$/)
+        expect.stringMatching(/^https?:\/\/.*\/pokemons$/),
+        expect.objectContaining({
+          headers: {},
+          validateStatus: expect.any(Function)
+        })
       );
       testLogger.assertion('API URL properly constructed');
 
+      testLogger.metric('Response time', Date.now() - testStart);
+    } catch (error) {
+      testLogger.errorDetail(error);
+      throw error;
+    }
+  });
+
+  it('sends If-None-Match header when cached ETag exists', async () => {
+    const testStart = Date.now();
+    try {
+      testLogger.testStep('1. Setting up cached ETag and mock response');
+      localStorage.setItem('pokemonDataEtag', '"abc123"');
+      mockedAxios.get.mockResolvedValueOnce({
+        status: 200,
+        data: mockPokemonData,
+        headers: { etag: '"abc123"' },
+      });
+
+      testLogger.testStep('2. Executing getPokemons');
+      await getPokemons();
+
+      testLogger.testStep('3. Verifying conditional request header');
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        expect.stringContaining('/pokemons'),
+        expect.objectContaining({
+          headers: { 'If-None-Match': '"abc123"' },
+          validateStatus: expect.any(Function),
+        }),
+      );
+      testLogger.assertion('If-None-Match header sent');
       testLogger.metric('Response time', Date.now() - testStart);
     } catch (error) {
       testLogger.errorDetail(error);

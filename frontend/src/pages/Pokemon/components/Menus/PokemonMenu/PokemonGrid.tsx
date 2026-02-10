@@ -1,6 +1,6 @@
 // PokemonGrid.tsx
 
-import React, { useState, useEffect, useRef, memo } from 'react';
+import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
 import PokemonCard from './PokemonCard';
 import './PokemonGrid.css';
 
@@ -73,6 +73,21 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
   };
   const columns = getColumns();
 
+  const nonNullPokemons = useMemo(
+    () => sortedPokemons.filter((p): p is CardPokemon => Boolean(p)),
+    [sortedPokemons]
+  );
+
+  const variantByPokemonId = useMemo(() => {
+    const map = new Map<number, AllVariants[number]>();
+    for (const variant of variants) {
+      if (!map.has(variant.pokemon_id)) {
+        map.set(variant.pokemon_id, variant);
+      }
+    }
+    return map;
+  }, [variants]);
+
   useEffect(() => {
     setIsVisible(false);
     const timer = setTimeout(() => setIsVisible(true), 50);
@@ -128,7 +143,7 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
   }, [columns, sortedPokemons]);
 
   const rowHeight = Math.max(measuredRowHeight, 100);
-  const totalRows = Math.ceil(sortedPokemons.filter(Boolean).length / columns);
+  const totalRows = Math.ceil(nonNullPokemons.length / columns);
   const totalHeight = totalRows * rowHeight;
 
   const startRow = Math.max(0, Math.floor(scrollTop / rowHeight) - BUFFER_ROWS);
@@ -140,7 +155,7 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
   const visibleRows: React.ReactNode[] = [];
   for (let row = startRow; row < endRow; row++) {
     const startIndex = row * columns;
-    const slice = sortedPokemons.slice(startIndex, startIndex + columns);
+    const slice = nonNullPokemons.slice(startIndex, startIndex + columns);
     const rowPokemons: Array<CardPokemon | null> = [...slice];
 
     while (rowPokemons.length < columns) {
@@ -176,7 +191,7 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
                   toggleCardHighlight={toggleCardHighlight}
                   setIsFastSelectEnabled={setIsFastSelectEnabled}
                   isFastSelectEnabled={isFastSelectEnabled}
-                  variants={variants}
+                  variantByPokemonId={variantByPokemonId}
                 />
               )}
             </div>

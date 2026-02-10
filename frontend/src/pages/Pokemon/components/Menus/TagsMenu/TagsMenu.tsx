@@ -5,7 +5,7 @@ import './TagsMenu.css';
 import useDownloadImage from './hooks/useDownloadImage';
 import PreviewContainer from './PreviewContainer';
 import useFavoriteList from '@/hooks/sort/useFavoriteList';
-import TagItems from './TagItems';
+import TagItems, { type TagSummary } from './TagItems';
 import type { TagBuckets, TagItem } from '@/types/tags';
 import type { AllVariants } from '@/types/pokemonVariants';
 
@@ -13,6 +13,38 @@ export interface TagsMenuProps {
   onSelectTag: (tagName: string) => void;
   activeTags : TagBuckets;
   variants   : AllVariants;
+}
+
+const PREVIEW_LIMIT = 18;
+
+function summarizeRecord(record: Record<string, TagItem> | undefined): TagSummary {
+  if (!record) return { count: 0, preview: [] };
+
+  const preview: TagItem[] = [];
+  let count = 0;
+
+  for (const item of Object.values(record)) {
+    count += 1;
+    if (preview.length < PREVIEW_LIMIT && item?.currentImage) {
+      preview.push(item);
+    }
+  }
+
+  return { count, preview };
+}
+
+function summarizeArray(items: TagItem[]): TagSummary {
+  const preview: TagItem[] = [];
+  let count = 0;
+
+  for (const item of items) {
+    count += 1;
+    if (preview.length < PREVIEW_LIMIT && item?.currentImage) {
+      preview.push(item);
+    }
+  }
+
+  return { count, preview };
 }
 
 const TagsMenu: React.FC<TagsMenuProps> = ({
@@ -42,43 +74,27 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
     return { caught: { favorite, trade }, wanted: { mostWanted } };
   }, [activeTags]);
 
-  /* ----- tag sorting ---------------------------------------------- */
-  const unsortedCaught = useMemo<TagItem[]>(() => {
-    if (!activeTags.caught) return [];
-    return Object.values(activeTags.caught);
-  }, [activeTags.caught]);
-
+  /* ----- tag summaries -------------------------------------------- */
   const sortedFavorites = useFavoriteList(
     Object.values(derivedChildren.caught.favorite || {})
   );
 
-  // Trade (child of Caught) — unsorted
-  const unsortedTrade = useMemo<TagItem[]>(() => {
-    const obj = derivedChildren.caught.trade || {};
-    return Object.values(obj);
-  }, [derivedChildren.caught.trade]);
-
-  // Wanted — unsorted
-  const unsortedWanted = useMemo<TagItem[]>(() => {
-    if (!activeTags.wanted) return [];
-    return Object.values(activeTags.wanted);
-  }, [activeTags.wanted]);
-
-  // Most Wanted — unsorted
-  const unsortedMostWanted = useMemo<TagItem[]>(() => {
-    const obj = derivedChildren.wanted.mostWanted || {};
-    return Object.values(obj);
-  }, [derivedChildren.wanted.mostWanted]);
-
-
-  // Public names → arrays to feed TagItems (no Missing here)
-  const sortedTags: Record<string, TagItem[]> = {
-    Favorites    : sortedFavorites,   // keep favorite-based sorting
-    Caught       : unsortedCaught,    // raw / insertion order
-    Trade        : unsortedTrade,     // raw / insertion order
-    Wanted       : unsortedWanted,    // raw / insertion order
-    'Most Wanted': unsortedMostWanted // raw / insertion order
-  };
+  const tagSummaries = useMemo<Record<string, TagSummary>>(
+    () => ({
+      Favorites: summarizeArray(sortedFavorites), // keep favorite ordering
+      Caught: summarizeRecord(activeTags.caught),
+      Trade: summarizeRecord(derivedChildren.caught.trade),
+      Wanted: summarizeRecord(activeTags.wanted),
+      'Most Wanted': summarizeRecord(derivedChildren.wanted.mostWanted),
+    }),
+    [
+      activeTags.caught,
+      activeTags.wanted,
+      derivedChildren.caught.trade,
+      derivedChildren.wanted.mostWanted,
+      sortedFavorites,
+    ]
+  );
 
   const handleSelectTagInternal = (name: string) => onSelectTag(name);
 
@@ -114,11 +130,11 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
 
   /* ----- counts for footers --------------------------------------- */
   const counts = {
-    caught : sortedTags.Caught.length,
-    trade  : sortedTags.Trade.length,
-    wanted : sortedTags.Wanted.length,
-    mostW  : sortedTags['Most Wanted'].length,
-    favs   : sortedTags.Favorites.length,
+    caught : tagSummaries.Caught?.count ?? 0,
+    trade  : tagSummaries.Trade?.count ?? 0,
+    wanted : tagSummaries.Wanted?.count ?? 0,
+    mostW  : tagSummaries['Most Wanted']?.count ?? 0,
+    favs   : tagSummaries.Favorites?.count ?? 0,
   };
 
   const TagGroup = ({
@@ -130,7 +146,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   }) => (
     <TagItems
       tagNames={tagNames}
-      sortedTags={sortedTags}
+      tagSummaries={tagSummaries}
       onSelectTag={onSelect}
     />
   );
@@ -292,3 +308,5 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
 };
 
 export default TagsMenu;
+
+

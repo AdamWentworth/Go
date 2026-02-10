@@ -8,10 +8,10 @@ import TradeListDisplay from './TradeListDisplay.jsx';
 
 import { toggleEditMode } from '../../hooks/useToggleEditModeWanted.js';
 import FilterImages from '../../FilterImages.jsx';
-import useImageSelection from '../../utils/useImageSelection.js';
+import useImageSelection from '../../utils/useImageSelection';
 
-import { EXCLUDE_IMAGES_trade, INCLUDE_IMAGES_trade, FILTER_NAMES } from '../../utils/constants.js';
-import { TOOLTIP_TEXTS } from '../../utils/tooltipTexts.js';
+import { EXCLUDE_IMAGES_trade, INCLUDE_IMAGES_trade, FILTER_NAMES } from '../../utils/constants';
+import { TOOLTIP_TEXTS } from '../../utils/tooltipTexts';
 
 import useTradeFiltering from '../../hooks/useTradeFiltering.js';
 

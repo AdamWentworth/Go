@@ -31,22 +31,40 @@ export function getFilteredPokemonsByOwnership(
     return [] as Array<PokemonVariant & { instanceData: PokemonInstance }>;
   }
 
+  const variantsByKey = new Map<string, PokemonVariant>();
+  for (const variant of variants) {
+    const key = String((variant as any).variant_id ?? '');
+    if (key) variantsByKey.set(key, variant);
+
+    // Keep legacy lookup while pokemonKey -> variant_id migration finishes.
+    const legacyKey = String((variant as any).pokemonKey ?? '');
+    if (legacyKey && !variantsByKey.has(legacyKey)) {
+      variantsByKey.set(legacyKey, variant);
+    }
+  }
+
   // helper: instance_ids -> hydrated rows
-  const mapIds = (ids: string[]) =>
-    ids
-      .map((instanceId) => {
-        const instance = instancesData[instanceId];
-        if (!instance) return undefined;
-        const variantKey = instance.variant_id;
-        if (!variantKey) return undefined;
-        const variant = variants.find((v) => (v as any).variant_id === variantKey);
-        if (!variant) return undefined;
-        return {
-          ...variant,
-          instanceData: { ...instance, instance_id: instanceId } as PokemonInstance,
-        };
-      })
-      .filter((v): v is PokemonVariant & { instanceData: PokemonInstance } => v !== undefined);
+  const mapIds = (ids: string[]) => {
+    const mapped: Array<PokemonVariant & { instanceData: PokemonInstance }> = [];
+
+    for (const instanceId of ids) {
+      const instance = instancesData[instanceId];
+      if (!instance) continue;
+
+      const variantKey = String((instance as any).variant_id ?? (instance as any).pokemonKey ?? '');
+      if (!variantKey) continue;
+
+      const variant = variantsByKey.get(variantKey);
+      if (!variant) continue;
+
+      mapped.push({
+        ...variant,
+        instanceData: { ...instance, instance_id: instanceId } as PokemonInstance,
+      });
+    }
+
+    return mapped;
+  };
 
   // ---- derived children ----
   if ((mapped as SpecialFilter) === 'favorites') {

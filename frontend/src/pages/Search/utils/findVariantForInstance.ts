@@ -56,11 +56,30 @@ export function findVariantForInstance(
 ): PokemonVariant | null {
   if (!Array.isArray(variants) || variants.length === 0) return null;
 
+  const variantByKey = new Map<string, PokemonVariant>();
+  const variantsByPokemonId = new Map<number, PokemonVariant[]>();
+
+  for (const variant of variants) {
+    const variantId = String((variant as any).variant_id ?? '');
+    if (variantId) variantByKey.set(variantId, variant);
+
+    // Legacy lookup during pokemonKey -> variant_id migration.
+    const legacyKey = String((variant as any).pokemonKey ?? '');
+    if (legacyKey && !variantByKey.has(legacyKey)) {
+      variantByKey.set(legacyKey, variant);
+    }
+
+    const pokemonId = Number((variant as any).pokemon_id);
+    if (Number.isFinite(pokemonId)) {
+      const arr = variantsByPokemonId.get(pokemonId);
+      if (arr) arr.push(variant);
+      else variantsByPokemonId.set(pokemonId, [variant]);
+    }
+  }
+
   // Source of truth for display image mapping is instance.variant_id when present.
   if (inst?.variant_id) {
-    const byVariantID = variants.find(
-      (v: any) => v?.variant_id === inst.variant_id || v?.pokemonKey === inst.variant_id,
-    );
+    const byVariantID = variantByKey.get(inst.variant_id);
     if (byVariantID) return byVariantID;
   }
 
@@ -73,16 +92,14 @@ export function findVariantForInstance(
   }
 
   for (const key of keyCandidates) {
-    const hit = variants.find(
-      (v: any) => v?.variant_id === key || v?.pokemonKey === key,
-    );
+    const hit = variantByKey.get(key);
     if (hit) return hit;
   }
 
   const pokemonID = Number(inst?.pokemon_id);
   if (!Number.isFinite(pokemonID)) return null;
 
-  const candidates = variants.filter((v: any) => Number(v?.pokemon_id) === pokemonID);
+  const candidates = variantsByPokemonId.get(pokemonID) ?? [];
   if (candidates.length === 0) return null;
   if (candidates.length === 1) return candidates[0];
 

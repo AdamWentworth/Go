@@ -1,211 +1,134 @@
-// tests/instances/unit/updateInstanceDetails.unit.test.ts
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { updateInstanceDetails } from '@/features/instances/actions/updateInstanceDetails';
 import * as db from '@/db/indexedDB';
-import { enableLogging, testLogger } from '../../setupTests';
 
-type PokemonInstance = Record<string, any>;
+type MapState = Record<string, Record<string, unknown>>;
+
+const TS = 1_700_000_000_123;
+
+function createHarness(initial: MapState) {
+  const data = { instances: { ...initial } };
+  let latest = data.instances;
+
+  const setData = vi.fn((updater: any) => {
+    const next = updater({ instances: latest });
+    latest = next.instances;
+    data.instances = latest;
+    return next;
+  });
+
+  const updater = updateInstanceDetails(data as any, setData as any);
+
+  return {
+    updater,
+    setData,
+    getInstances: () => latest,
+  };
+}
 
 describe('updateInstanceDetails', () => {
-  beforeAll(() => {
-    enableLogging('verbose');
-    testLogger.fileStart('updateInstanceDetails');
-    testLogger.suiteStart('updateInstanceDetails unit tests');
-  });
-
-  afterAll(() => {
-    testLogger.suiteComplete();
-    testLogger.fileEnd();
-  });
-
-  let setData: (updater: (prev: any) => any) => any;
-  let updatedState: any;
-
-  const initialData = {
-    instances: {
-      a: { foo: 1, last_update: 0 },
-      b: { bar: 2, last_update: 0 },
-    } as Record<string, PokemonInstance>,
-  };
+  let setItemSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    testLogger.suiteStart('reset mocks and spies');
     vi.restoreAllMocks();
-    vi.spyOn(Date, 'now').mockReturnValue(1234);
 
-    const fakeReg: Partial<ServiceWorkerRegistration> = {
-      active: { postMessage: vi.fn() } as any,
-    };
-    (navigator as any).serviceWorker = {
-      ready: Promise.resolve(fakeReg as ServiceWorkerRegistration),
-    };
+    vi.spyOn(Date, 'now').mockReturnValue(TS);
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      cb(0);
+      return 1;
+    });
 
-    vi.spyOn(localStorage, 'setItem').mockImplementation(() => {});
+    setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {});
+    vi.spyOn(db, 'putInstancesBulk').mockResolvedValue(undefined);
     vi.spyOn(db, 'putBatchedPokemonUpdates').mockResolvedValue(undefined);
-
-    updatedState = undefined;
-    setData = vi.fn((updater: (prev: any) => any) => {
-      const prev = { instances: { ...initialData.instances } };
-      updatedState = updater(prev);
-      return updatedState;
-    });
-
-    testLogger.suiteComplete();
   });
 
-  it('applies a full per-key patch map and persists each', async () => {
-    testLogger.suiteStart('applies a full per-key patch map and persists each');
+  it('applies patch map updates and creates placeholders for missing keys', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    testLogger.testStep('stubbing console.warn');
-    console.warn = vi.fn();
+    const { updater, getInstances, setData } = createHarness({
+      a: { cp: 10, last_update: 1 },
+      b: { nickname: 'old', last_update: 1 },
+    });
 
-    testLogger.testStep('creating updater');
-    const updater = updateInstanceDetails(initialData, setData);
+    await updater({
+      a: { cp: 1500 },
+      c: { nickname: 'new' },
+    });
 
-    testLogger.testStep('running updater with patches for a and c');
-    await updater({ a: { foo: 42 }, c: { baz: 99 } });
-
-    testLogger.testStep('asserting setData was called once');
+    const out = getInstances();
     expect(setData).toHaveBeenCalledTimes(1);
-    testLogger.assertion('setData called once');
+    expect(out.a).toMatchObject({ cp: 1500, last_update: TS });
+    expect(out.c).toMatchObject({ nickname: 'new', last_update: TS });
 
-    testLogger.testStep('verifying updatedState contents');
-    const newMap = updatedState.instances;
-    expect(newMap).toMatchObject({
-      a: { foo: 42, last_update: 1234 },
-      b: { bar: 2, last_update: 0 },
-      c: { baz: 99, last_update: 1234 },
-    });
-    testLogger.assertion('newMap keys and values correct');
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('missing'), 'c');
 
-    testLogger.testStep('checking placeholder warning for c');
-    expect(console.warn).toHaveBeenCalledWith(
-      '[updateInstanceDetails] "c" missing – creating placeholder'
+    expect(db.putInstancesBulk).toHaveBeenCalled();
+    const bulkItems = (db.putInstancesBulk as any).mock.calls.flatMap((c: any[]) => c[0] ?? []);
+    expect(bulkItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ instance_id: 'a', cp: 1500 }),
+        expect.objectContaining({ instance_id: 'c', nickname: 'new' }),
+      ]),
     );
-    testLogger.assertion('placeholder warning logged');
 
-    testLogger.testStep('asserting IndexedDB persistence calls');
-    expect(db.putBatchedPokemonUpdates).toHaveBeenCalledTimes(2);
-    expect(db.putBatchedPokemonUpdates).toHaveBeenCalledWith('a', newMap.a);
-    expect(db.putBatchedPokemonUpdates).toHaveBeenCalledWith('c', newMap.c);
-    testLogger.assertion('putBatchedPokemonUpdates called for a and c');
-
-    testLogger.testStep('asserting localStorage and SW sync');
-    expect(localStorage.setItem).toHaveBeenCalledWith('ownershipTimestamp', '1234');
-    const swReady = (navigator as any).serviceWorker.ready as Promise<ServiceWorkerRegistration>;
-    await swReady;
-    testLogger.assertion('serviceWorker.ready eventually resolves');
-
-    testLogger.suiteComplete();
-  });
-
-  it('applies a shared patch to a single key', async () => {
-    testLogger.suiteStart('applies a shared patch to a single key');
-
-    testLogger.testStep('creating updater');
-    const updater = updateInstanceDetails(initialData, setData);
-
-    testLogger.testStep('running updater with patch for a');
-    await updater('a', { foo: 100 });
-
-    testLogger.testStep('verifying updatedState.a');
-    const newMap = updatedState.instances;
-    expect(newMap.a).toMatchObject({ foo: 100, last_update: 1234 });
-    testLogger.assertion('newMap.a patched correctly');
-
-    testLogger.testStep('asserting single IndexedDB call');
-    expect(db.putBatchedPokemonUpdates).toHaveBeenCalledTimes(1);
-    expect(db.putBatchedPokemonUpdates).toHaveBeenCalledWith('a', newMap.a);
-    testLogger.assertion('one putBatchedPokemonUpdates call');
-
-    testLogger.suiteComplete();
+    expect(db.putBatchedPokemonUpdates).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({ cp: 1500 }),
+    );
+    expect(db.putBatchedPokemonUpdates).toHaveBeenCalledWith(
+      'c',
+      expect.objectContaining({ nickname: 'new' }),
+    );
+    expect(setItemSpy).toHaveBeenCalledWith('ownershipTimestamp', String(TS));
   });
 
   it('applies a shared patch to multiple keys', async () => {
-    testLogger.suiteStart('applies a shared patch to multiple keys');
+    const { updater, getInstances } = createHarness({
+      a: { favorite: false, last_update: 1 },
+      b: { favorite: false, last_update: 1 },
+    });
 
-    testLogger.testStep('creating updater');
-    const updater = updateInstanceDetails(initialData, setData);
+    await updater(['a', 'b'], { favorite: true });
 
-    testLogger.testStep('running updater with patch for [a, b]');
-    await updater(['a', 'b'], { bar: 77 });
-
-    testLogger.testStep('verifying both a and b updated');
-    const newMap = updatedState.instances;
-    expect(newMap.a.bar).toBe(77);
-    expect(newMap.b.bar).toBe(77);
-    expect(newMap.a.last_update).toBe(1234);
-    expect(newMap.b.last_update).toBe(1234);
-    testLogger.assertion('both keys patched correctly');
-
-    testLogger.testStep('asserting two IndexedDB calls');
-    expect(db.putBatchedPokemonUpdates).toHaveBeenCalledTimes(2);
-    testLogger.assertion('two putBatchedPokemonUpdates calls');
-
-    testLogger.suiteComplete();
+    const out = getInstances();
+    expect(out.a).toMatchObject({ favorite: true, last_update: TS });
+    expect(out.b).toMatchObject({ favorite: true, last_update: TS });
+    expect(db.putBatchedPokemonUpdates).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({ favorite: true }),
+    );
+    expect(db.putBatchedPokemonUpdates).toHaveBeenCalledWith(
+      'b',
+      expect.objectContaining({ favorite: true }),
+    );
   });
 
-  it('does not bump last_update or persist if patch is empty', async () => {
-    testLogger.suiteStart('empty patch does not trigger updates');
-
-    const updater = updateInstanceDetails(initialData, setData);
+  it('no-ops for empty patch payloads', async () => {
+    const { updater, setData } = createHarness({
+      a: { cp: 10, last_update: 1 },
+    });
 
     await updater('a', {});
 
-    // Assert that setData was not called
     expect(setData).not.toHaveBeenCalled();
-
-    // Verify initial data remains unchanged
-    expect(initialData.instances.a.foo).toBe(1);
-    expect(initialData.instances.a.last_update).toBe(0); // Should not update timestamp
-
-    // Assert no DB writes
+    expect(db.putInstancesBulk).not.toHaveBeenCalled();
     expect(db.putBatchedPokemonUpdates).not.toHaveBeenCalled();
-
-    testLogger.suiteComplete();
   });
 
-  it('logs error but continues when one putBatchedPokemonUpdates call fails', async () => {
-    testLogger.suiteStart('handle IndexedDB failure gracefully');
+  it('logs updatesDB failures without throwing', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    (db.putBatchedPokemonUpdates as any).mockRejectedValueOnce(new Error('queue down'));
 
-    console.error = vi.fn(); // Spy on console.error
+    const { updater } = createHarness({
+      a: { cp: 10, last_update: 1 },
+    });
 
-    const updater = updateInstanceDetails(initialData, setData);
-
-    // Mock failure on first call
-    (db.putBatchedPokemonUpdates as any)
-      .mockRejectedValueOnce(new Error('fail a'))
-      .mockResolvedValueOnce(undefined);
-
-    await updater({ a: { foo: 42 }, b: { bar: 88 } });
-
-    // Still calls DB twice
-    expect(db.putBatchedPokemonUpdates).toHaveBeenCalledTimes(2);
-
-    // Error logged
-    expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining('cache fail for a'),
-      expect.any(Error)
+    await expect(updater('a', { cp: 99 })).resolves.toBeUndefined();
+    expect(errSpy).toHaveBeenCalledWith(
+      '[updateInstanceDetails] updatesDB fail:',
+      expect.any(Error),
     );
-
-    testLogger.suiteComplete();
-  });
-
-  it('naturally overwrites duplicate keys before reaching updater', async () => {
-    testLogger.suiteStart('natural overwrite behavior in patch map');
-
-    const updater = updateInstanceDetails(initialData, setData);
-
-    const duplicatePatches: Record<string, any> = {};
-    duplicatePatches['a'] = { foo: 10 };
-    duplicatePatches['a'] = { foo: 20 }; // overwrites
-
-    await updater(duplicatePatches);
-
-    const newMap = updatedState.instances;
-    expect(newMap.a.foo).toBe(20); // The last one naturally applies
-
-    testLogger.suiteComplete();
   });
 });

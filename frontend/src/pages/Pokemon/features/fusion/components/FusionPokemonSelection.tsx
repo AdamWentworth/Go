@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import CloseButton from '@/components/CloseButton';
-import OwnedInstance from '../../instances/OwnedInstance';
+import CaughtInstance from '../../instances/CaughtInstance';
 import './FusionPokemonSelection.css';
 
 import { Fusion } from '@/types/pokemonSubTypes';
@@ -76,7 +76,7 @@ const FusionPokemonSelection: React.FC<FusionPokemonSelectionProps> = ({
                     }
                     style={{ cursor: 'pointer' }}
                   >
-                    <OwnedInstance pokemon={c} isEditable={false} />
+                    <CaughtInstance pokemon={c} isEditable={false} />
                   </div>
                 );
               })
@@ -103,7 +103,7 @@ const FusionPokemonSelection: React.FC<FusionPokemonSelectionProps> = ({
                     }
                     style={{ cursor: 'pointer' }}
                   >
-                    <OwnedInstance pokemon={c} isEditable={false} />
+                    <CaughtInstance pokemon={c} isEditable={false} />
                   </div>
                 );
               })

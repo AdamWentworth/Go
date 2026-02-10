@@ -1,9 +1,10 @@
 import { getPokemons } from "@/services/pokemonDataService";
 import { logSize } from "@/utils/loggers";
 import createPokemonVariants from "@/features/variants/utils/createPokemonVariants";
-import { useImageStore } from '@/stores/useImageStore';
-import { putVariantsBulk } from "@/db/variantsDB";
+import { getAllVariants, queueVariantsPersist } from "@/db/variantsDB";
+import { recordVariantPipelineMetrics } from "@/utils/perfTelemetry";
 import type { PokemonVariant } from "@/types/pokemonVariants";
+import { computePayloadHash } from "@/features/variants/utils/payloadHash";
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -36,9 +37,11 @@ function assertVariantIds(variants: PokemonVariant[]): void {
 
 export async function fetchAndProcessVariants() {
   if (isDev) console.log('Fetching new data from API');
+  const pipelineStart = performance.now();
 
   const t0 = Date.now();
   const pokemons = await getPokemons();
+  const fetchedMs = performance.now() - pipelineStart;
   if (isDev) console.log(`Fetched new Pokemon data from API in ${Date.now() - t0} ms`);
 
   if (!Array.isArray(pokemons)) {
@@ -49,15 +52,36 @@ export async function fetchAndProcessVariants() {
 
   logSize('newly fetched Pokemon data', pokemons);
 
-  const t1 = Date.now();
-  const variants = createPokemonVariants(pokemons);
+  const payloadHash = computePayloadHash(pokemons);
+  const previousPayloadHash = localStorage.getItem('variantsPayloadHash');
+  const payloadUnchanged = previousPayloadHash != null && previousPayloadHash === payloadHash;
 
-  const { preload } = useImageStore.getState();
-  variants.forEach(v => {
-    if (v.currentImage) preload(v.currentImage, v.currentImage);
-    if ((v as any).type_1_icon) preload((v as any).type_1_icon, (v as any).type_1_icon);
-    if ((v as any).type_2_icon) preload((v as any).type_2_icon, (v as any).type_2_icon);
-  });
+  if (payloadUnchanged) {
+    const cachedVariants = await getAllVariants<PokemonVariant>();
+    if (cachedVariants.length > 0) {
+      // We confirmed API payload equivalence with cached data.
+      localStorage.setItem('variantsTimestamp', String(Date.now()));
+      const totalMs = performance.now() - pipelineStart;
+
+      recordVariantPipelineMetrics({
+        fetchedMs,
+        transformMs: 0,
+        persistMs: 0,
+        totalMs,
+        variantCount: cachedVariants.length,
+      });
+
+      if (isDev) {
+        console.log(`[variants] payload unchanged (hash=${payloadHash}), using cached variants`);
+      }
+      return cachedVariants;
+    }
+  }
+
+  const t1 = Date.now();
+  const transformStart = performance.now();
+  const variants = createPokemonVariants(pokemons);
+  const transformMs = performance.now() - transformStart;
 
   // Guard before persistence: variant_id must be non-empty and unique.
   assertVariantIds(variants as PokemonVariant[]);
@@ -72,11 +96,19 @@ export async function fetchAndProcessVariants() {
   }
 
   const t2 = Date.now();
-  await putVariantsBulk(variants);
-  if (isDev) console.log(`Stored variants in IndexedDB in ${Date.now() - t2} ms`);
+  const persistStart = performance.now();
+  queueVariantsPersist(variants, Date.now(), payloadHash);
+  const persistMs = performance.now() - persistStart;
+  if (isDev) console.log(`Queued variants persistence in ${Date.now() - t2} ms`);
+  const totalMs = performance.now() - pipelineStart;
 
-  localStorage.setItem('variantsTimestamp', Date.now().toString());
-  if (isDev) console.log('Stored updated variants in IndexedDB');
+  recordVariantPipelineMetrics({
+    fetchedMs,
+    transformMs,
+    persistMs,
+    totalMs,
+    variantCount: variants.length,
+  });
 
   return variants;
 }

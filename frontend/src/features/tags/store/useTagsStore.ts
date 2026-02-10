@@ -305,12 +305,31 @@ const quickRebuild = (instances: Instances, dest: 'tags' | 'foreignTags') => {
   }
 };
 
+let prevLocalInstancesRef = useInstancesStore.getState().instances;
+let prevForeignInstancesRef = useInstancesStore.getState().foreignInstances;
+let customRebuildQueued = false;
+
+const scheduleCustomTagsRebuild = () => {
+  if (customRebuildQueued) return;
+  customRebuildQueued = true;
+  Promise.resolve()
+    .then(() => useTagsStore.getState().rebuildCustomTags())
+    .catch(() => {})
+    .finally(() => {
+      customRebuildQueued = false;
+    });
+};
+
 useInstancesStore.subscribe((state) => {
+  if (state.instances === prevLocalInstancesRef) return;
+  prevLocalInstancesRef = state.instances;
   quickRebuild(state.instances, 'tags');
-  useTagsStore.getState().rebuildCustomTags().catch(() => {});
+  scheduleCustomTagsRebuild();
 });
 
 useInstancesStore.subscribe((state) => {
+  if (state.foreignInstances === prevForeignInstancesRef) return;
+  prevForeignInstancesRef = state.foreignInstances;
   if (state.foreignInstances) quickRebuild(state.foreignInstances, 'foreignTags');
   else useTagsStore.setState({ foreignTags: null });
 });

@@ -49,7 +49,7 @@ export function useFusion(pokemon: PokemonVariant, alert: (msg: string) => void)
     console.log('handleFusionToggle called with fusionId:', fusionId);
 
     if (!ownership?.is_owned) {
-      alert('This Pokémon is not owned. You cannot fuse with a non-owned instance.');
+      alert('This Pokémon is not caught. You cannot fuse with a non-caught instance.');
       return;
     }
     if (ownership.is_for_trade) {

@@ -26,7 +26,7 @@ interface Props {
   isHighlighted: boolean;
   tagFilter: string;
   sortType: string;
-  variants: { pokemon_id: number; backgrounds: VariantBackground[] }[];
+  variantByPokemonId: Map<number, { backgrounds?: VariantBackground[] }>;
 }
 
 const PokemonCard = memo(({
@@ -40,7 +40,7 @@ const PokemonCard = memo(({
   isHighlighted,
   tagFilter = '',
   sortType,
-  variants,
+  variantByPokemonId,
 }: Props) => {
   const [shouldJiggle, setShouldJiggle] = useState(false);
   const prevIsHighlighted = useRef(isHighlighted);
@@ -116,10 +116,10 @@ const PokemonCard = memo(({
 
   let locationBackground: VariantBackground | null = null;
   if (pokemon.instanceData?.location_card) {
-    const variant = variants.find((v) => v.pokemon_id === pokemon.pokemon_id);
+    const variant = variantByPokemonId.get(pokemon.pokemon_id);
     const locationCardId = Number(pokemon.instanceData?.location_card);
     if (!isNaN(locationCardId)) {
-      locationBackground = variant?.backgrounds.find((bg) => bg.background_id === locationCardId) || null;
+      locationBackground = variant?.backgrounds?.find((bg) => bg.background_id === locationCardId) || null;
     }
   }
 

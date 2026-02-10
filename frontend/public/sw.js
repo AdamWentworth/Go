@@ -1,4 +1,4 @@
-/* sw.js — lean: network batching only (no IndexedDB writes) */
+/* sw.js - lean: network batching only (no IndexedDB writes) */
 
 let RECEIVER_API_URL = null;
 let DEBUG_SW = true; // can be toggled via SET_CONFIG
@@ -70,9 +70,12 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin === self.location.origin) {
     event.respondWith(
-      caches.match(event.request).then(async (cached) => {
-        if (cached) return cached;
-        return fetch(event.request, { credentials: 'include' });
+      fetch(event.request).catch((err) => {
+        log('fetch passthru failed', {
+          url: event.request.url,
+          message: err?.message || String(err),
+        });
+        throw err;
       })
     );
   } else {

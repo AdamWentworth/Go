@@ -4,6 +4,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { initPerfPaintObservers } from './utils/perfTelemetry';
 import './index.css';
 
 if ('serviceWorker' in navigator) {
@@ -38,5 +39,7 @@ if (!container) {
 
 const root = createRoot(container);
 root.render(<App />);
+
+initPerfPaintObservers();
 
 reportWebVitals();

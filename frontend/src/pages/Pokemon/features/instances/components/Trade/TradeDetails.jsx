@@ -17,8 +17,8 @@ import {
   EXCLUDE_IMAGES_wanted,
   INCLUDE_IMAGES_wanted,
   FILTER_NAMES,
-} from '../../utils/constants.js';
-import { TOOLTIP_TEXTS } from '../../utils/tooltipTexts.js';
+} from '../../utils/constants';
+import { TOOLTIP_TEXTS } from '../../utils/tooltipTexts';
 
 import useWantedFiltering from '../../hooks/useWantedFiltering.js';
 import useToggleEditModeTrade from '../../hooks/useToggleEditModeTrade.js';
@@ -427,7 +427,7 @@ const TradeDetails = ({
               // the toggle logic inside MirrorManager is disabled.
               editMode={isEditable}
               updateDisplayedList={(newData) =>
-                updateDisplayedList(newData, listsState, setListsState)
+                updateDisplayedList(newData, localNotWantedList, setListsState)
               }
               updateDetails={updateDetails}
             />

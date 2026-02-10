@@ -4,8 +4,8 @@
 
 import { useState } from 'react';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
-import { updateNotTradeList } from '../utils/ReciprocalUpdate.js';
-import { updateDisplayedList } from '../utils/listUtils.js';
+import { updateNotTradeList } from '../utils/ReciprocalUpdate';
+import { updateDisplayedList } from '../utils/listUtils';
 
 /**
  * Provides `editMode` state and `toggleEditMode` handler for the Trade ➜ Wanted
@@ -98,7 +98,7 @@ const useToggleEditModeTrade = (
       if (!isMirror && mirrorKey) {
         delete ownershipData[mirrorKey];
         delete lists.wanted[mirrorKey];
-        updateDisplayedList(null, listsState, setListsState);
+        updateDisplayedList(null, localNotWantedList, setListsState);
         setMirrorKey(null);
       }
 

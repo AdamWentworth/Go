@@ -3,11 +3,34 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import react from 'eslint-plugin-react';
+import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
 export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.jest,
+      },
+    },
+    plugins: {
+      react: react,
+      'react-hooks': reactHooks,
+    },
+    rules: {
+      'react/prop-types': 'off',
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+    },
+    settings: {
+      react: { version: 'detect' },
+    },
+  },
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
@@ -17,22 +40,12 @@ export default [
         sourceType: 'module',
         ecmaFeatures: { jsx: true },
       },
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-        ...globals.jest, // Optional: For test files
-      },
     },
     plugins: {
       '@typescript-eslint': tseslint.plugin,
-      react: react,
     },
     rules: {
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      'react/prop-types': 'off',
-    },
-    settings: {
-      react: { version: 'detect' },
     },
   },
 ];

@@ -5,7 +5,7 @@ import './UpdateForTradeModal.css';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { getVariantById } from '@/db/indexedDB';
 
-import OwnedInstance from '../../OwnedInstance';
+import CaughtInstance from '../../CaughtInstance';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
@@ -124,7 +124,7 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
                 className="instance-item"
                 key={pokemon.instanceData.instance_id}
               >
-                <OwnedInstance pokemon={pokemon} isEditable={false} />
+                <CaughtInstance pokemon={pokemon} isEditable={false} />
 
                 <button
                   onClick={() =>

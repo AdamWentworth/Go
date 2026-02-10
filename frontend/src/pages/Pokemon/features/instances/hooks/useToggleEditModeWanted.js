@@ -1,5 +1,5 @@
 // useToggleEditModeWanted.js
-import { updateNotWantedList } from '../utils/ReciprocalUpdate.js';
+import { updateNotWantedList } from '../utils/ReciprocalUpdate';
 
 /**
  * Toggle edit mode for a “Wanted” entry and, when leaving edit mode,

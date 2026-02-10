@@ -83,7 +83,14 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
   const gridContainerRef = useRef<HTMLDivElement>(null!);
 
   const [isPending, startTransition] = useTransition();
-  const memoizedSorted = useMemo(() => sortedPokemons, [sortedPokemons]);
+  const renderablePokemons = useMemo(
+    () =>
+      sortedPokemons.filter(
+        (pokemon): pokemon is PokemonVariant & { currentImage: string } =>
+          Boolean((pokemon as PokemonVariant).currentImage)
+      ),
+    [sortedPokemons]
+  );
 
   const handleSelect = useCallback(
     (pokemon: PokemonVariant) => {
@@ -178,7 +185,7 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
         <div className="grid-wrapper">
           <div className="grid-container" ref={gridContainerRef}>
             <PokemonGrid
-              sortedPokemons={memoizedSorted.map((v) => ({ ...v, currentImage: v.currentImage! }))}
+              sortedPokemons={renderablePokemons}
               highlightedCards={highlightedCards}
               handleSelect={handleSelect}
               tagFilter={tagFilter}
@@ -192,7 +199,7 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
               activeView={activeView}
             />
           </div>
-          <CustomScrollbar containerRef={gridContainerRef} totalItems={memoizedSorted.length} />
+          <CustomScrollbar containerRef={gridContainerRef} totalItems={renderablePokemons.length} />
         </div>
       )}
 

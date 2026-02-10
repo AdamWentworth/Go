@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchAndProcessVariants } from '@/features/variants/utils/fetchAndProcessVariants';
 import { getPokemons } from '@/services/pokemonDataService';
 import createPokemonVariants from '@/features/variants/utils/createPokemonVariants';
-import { useImageStore } from '@/stores/useImageStore';
-import { putVariantsBulk } from '@/db/variantsDB';
+import { getAllVariants, queueVariantsPersist } from '@/db/variantsDB';
+import { computePayloadHash } from '@/features/variants/utils/payloadHash';
 
 import pokemonsFixture from '@/../tests/__helpers__/fixtures/pokemons.json';
 import variantsFixture from '@/../tests/__helpers__/fixtures/variants.json';
@@ -17,18 +17,12 @@ vi.mock('@/features/variants/utils/createPokemonVariants', () => ({
   default: vi.fn(),
 }));
 
-vi.mock('@/stores/useImageStore', () => ({
-  useImageStore: {
-    getState: vi.fn(),
-  },
-}));
-
 vi.mock('@/db/variantsDB', () => ({
-  putVariantsBulk: vi.fn(),
+  getAllVariants: vi.fn(),
+  queueVariantsPersist: vi.fn(),
 }));
 
 describe.sequential('fetchAndProcessVariants (unit)', () => {
-  const preloadMock = vi.fn();
   const baseVariants = (variantsFixture as any[]).slice(0, 4).map((v, idx) => ({
     ...v,
     variant_id: (v as any).variant_id ?? (v as any).pokemonKey ?? `0000-default-${idx}`,
@@ -40,25 +34,24 @@ describe.sequential('fetchAndProcessVariants (unit)', () => {
 
     vi.mocked(getPokemons).mockResolvedValue((pokemonsFixture as any[]).slice(0, 2));
     vi.mocked(createPokemonVariants).mockReturnValue(baseVariants as any);
-    vi.mocked(useImageStore.getState).mockReturnValue({ preload: preloadMock } as any);
-    vi.mocked(putVariantsBulk).mockResolvedValue(undefined);
+    vi.mocked(getAllVariants).mockResolvedValue(baseVariants as any);
+    vi.mocked(queueVariantsPersist).mockImplementation(() => undefined);
   });
 
-  it('fetches API data, preloads images, validates variant_id uniqueness, and stores variants', async () => {
+  it('fetches API data, validates variant_id uniqueness, and queues persistence', async () => {
     const result = await fetchAndProcessVariants();
 
     expect(getPokemons).toHaveBeenCalled();
     expect(createPokemonVariants).toHaveBeenCalled();
-    expect(putVariantsBulk).toHaveBeenCalled();
-    expect(putVariantsBulk).toHaveBeenCalledWith(result);
-    expect(localStorage.getItem('variantsTimestamp')).toBeTruthy();
+    expect(queueVariantsPersist).toHaveBeenCalled();
+    expect(vi.mocked(queueVariantsPersist).mock.calls[0]?.[0]).toEqual(result);
+    expect(vi.mocked(queueVariantsPersist).mock.calls[0]?.[2]).toBeTruthy();
 
     expect(result.map((v) => v.variant_id)).toEqual(baseVariants.map((v) => v.variant_id));
     for (const variant of result) {
       expect(typeof variant.variant_id).toBe('string');
       expect(variant.variant_id.length).toBeGreaterThan(0);
     }
-    expect(preloadMock).toHaveBeenCalled();
   });
 
   it('produces stable variant_id values for identical input across calls', async () => {
@@ -77,6 +70,20 @@ describe.sequential('fetchAndProcessVariants (unit)', () => {
     ] as any);
 
     await expect(fetchAndProcessVariants()).rejects.toThrow(/invalid variant_id set/);
-    expect(putVariantsBulk).not.toHaveBeenCalled();
+    expect(queueVariantsPersist).not.toHaveBeenCalled();
+  });
+
+  it('skips transform/persist when API payload hash is unchanged and cache is present', async () => {
+    const payload = (pokemonsFixture as any[]).slice(0, 2);
+    vi.mocked(getPokemons).mockResolvedValue(payload);
+    localStorage.setItem('variantsPayloadHash', computePayloadHash(payload));
+
+    const result = await fetchAndProcessVariants();
+
+    expect(getAllVariants).toHaveBeenCalled();
+    expect(createPokemonVariants).not.toHaveBeenCalled();
+    expect(queueVariantsPersist).not.toHaveBeenCalled();
+    expect(result).toEqual(baseVariants);
+    expect(localStorage.getItem('variantsTimestamp')).toBeTruthy();
   });
 });

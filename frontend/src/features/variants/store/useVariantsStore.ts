@@ -7,7 +7,6 @@ import {
   VARIANTS_KEY,
   POKEDEX_LISTS_KEY,
   isCacheFresh,
-  setCacheTimestamp,
 } from '../utils/cache';
 
 interface VariantsState {
@@ -59,10 +58,6 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
       // Otherwise fetch from network
       const { variants, pokedexLists } = await variantsRepository.fetchFresh();
       set({ variants, pokedexLists, variantsLoading: false });
-
-      // Update cache timestamps
-      setCacheTimestamp(VARIANTS_KEY);
-      setCacheTimestamp(POKEDEX_LISTS_KEY);
     } catch (error) {
       console.error('[VariantsStore] refreshVariants failed:', error);
 

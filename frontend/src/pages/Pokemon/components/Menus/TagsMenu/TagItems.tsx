@@ -3,9 +3,14 @@ import React, { KeyboardEvent } from 'react';
 import type { TagItem } from '@/types/tags';
 import './TagItems.css';
 
+export interface TagSummary {
+  count: number;
+  preview: TagItem[];
+}
+
 export interface TagItemsProps {
   tagNames: string[];
-  sortedTags: Record<string, TagItem[]>;
+  tagSummaries: Record<string, TagSummary>;
   onSelectTag: (tagName: string) => void;
 }
 
@@ -18,15 +23,15 @@ function buildKey(p: TagItem, idx: number, bucket: string): string {
 
 const TagItems: React.FC<TagItemsProps> = ({
   tagNames,
-  sortedTags,
+  tagSummaries,
   onSelectTag,
 }) => (
   <>
     {tagNames.map((tagName) => {
-      const tagData = sortedTags[tagName] ?? [];
+      const summary = tagSummaries[tagName] ?? { count: 0, preview: [] };
 
       // Build preview elements and filter out nulls so empty-state logic is accurate
-      const previewEls = tagData.slice(0, 18)
+      const previewEls = summary.preview
         .map((p, i) => {
           if (!p?.currentImage) return null;
 
@@ -75,7 +80,7 @@ const TagItems: React.FC<TagItemsProps> = ({
           <div className="tag-footer">
             <span className="tag-title">{tagName}</span>
             <span className="tag-subtitle">
-              {tagData.length} Pokémon have this tag.
+              {summary.count} Pokémon have this tag.
             </span>
             {tagName === 'Favorites' && (
               <img
@@ -100,4 +105,5 @@ const TagItems: React.FC<TagItemsProps> = ({
   </>
 );
 
-export default TagItems;
+export default React.memo(TagItems);
+

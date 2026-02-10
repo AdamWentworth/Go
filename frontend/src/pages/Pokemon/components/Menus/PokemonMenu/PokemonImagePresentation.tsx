@@ -1,4 +1,7 @@
 // PokemonImagePresentation.tsx
+import { useEffect, useRef } from 'react';
+
+import { recordImageLoadError, recordImageLoadTimingMs } from '@/utils/perfTelemetry';
 import type { VariantBackground } from '@/types/pokemonSubTypes';
 
 interface Props {
@@ -20,6 +23,20 @@ const PokemonImagePresentation = ({
   isGigantamax,
   isPurified
 }: Props) => {
+  const imageStartRef = useRef<number>(performance.now());
+
+  useEffect(() => {
+    imageStartRef.current = performance.now();
+  }, [imageUrl]);
+
+  const handleImageLoad = () => {
+    recordImageLoadTimingMs(performance.now() - imageStartRef.current);
+  };
+
+  const handleImageError = () => {
+    recordImageLoadError();
+  };
+
   return (
     <div className="pokemon-image-container">
       {locationBackground && (
@@ -44,8 +61,11 @@ const PokemonImagePresentation = ({
         src={imageUrl}
         alt={altText}
         loading="lazy"
+        decoding="async"
         className="pokemon-image"
         draggable={false}
+        onLoad={handleImageLoad}
+        onError={handleImageError}
       />
       {isDynamax && (
         <img src="/images/dynamax.png" alt="Dynamax Badge" className="max-badge" draggable={false} />

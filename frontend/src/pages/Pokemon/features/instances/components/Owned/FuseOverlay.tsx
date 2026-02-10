@@ -1,6 +1,6 @@
 // FuseOverlay.tsx
 import React from 'react';
-import OwnedInstance from '../../OwnedInstance'; // Ensure OwnedInstance is typed properly too!
+import CaughtInstance from '../../CaughtInstance';
 import './FuseOverlay.css';
 import type { PokemonVariant } from '@/types/pokemonVariants'; // Adjust the path if needed
 
@@ -19,7 +19,7 @@ const FuseOverlay: React.FC<FuseOverlayProps> = ({ pokemon, onClose, onFuse }) =
   return (
     <div className="fuse-overlay">
       <div className="overlay-content">
-        <OwnedInstance pokemon={pokemon} isEditable={false} />
+        <CaughtInstance pokemon={pokemon} isEditable={false} />
         <button onClick={handleFuse} className="fuse-button">Fuse</button>
         <button onClick={onClose} className="close-overlay">Close</button>
       </div>

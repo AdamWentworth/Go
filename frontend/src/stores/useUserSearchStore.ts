@@ -79,17 +79,26 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
         },
       });
 
-      let canonicalKey: string | null = null;
-      for (const key of await db.getAllKeys(CACHE_NAME)) {
-        if (typeof key === 'string' && key.toLowerCase() === lower) {
-          canonicalKey = key;
-          break;
+      // Fast-path common lookups before a full key scan.
+      const exactCached = (await db.get(CACHE_NAME, searchedUsername)) as SearchCacheRecord | null;
+      const lowerCached =
+        searchedUsername === lower
+          ? exactCached
+          : ((await db.get(CACHE_NAME, lower)) as SearchCacheRecord | null);
+
+      let cached = exactCached ?? lowerCached ?? null;
+      let canonicalKey: string | null = cached?.username ?? null;
+
+      if (!cached) {
+        for (const key of await db.getAllKeys(CACHE_NAME)) {
+          if (typeof key === 'string' && key.toLowerCase() === lower) {
+            canonicalKey = key;
+            cached = (await db.get(CACHE_NAME, canonicalKey)) as SearchCacheRecord | null;
+            break;
+          }
         }
       }
 
-      const cached = canonicalKey
-        ? ((await db.get(CACHE_NAME, canonicalKey)) as SearchCacheRecord | null)
-        : null;
       const cachedInstances = getCachedInstances(cached);
       const cachedEtag = cached?.etag ?? null;
 
@@ -155,6 +164,8 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
         console.error('[UserSearchStore] fetch failed:', resp.status, resp.statusText);
       }
 
+      // Avoid leaking stale foreign profile data after failed lookups.
+      useInstancesStore.getState().resetForeignInstances();
       set({
         viewedInstances: null,
         viewedOwnershipData: null,
@@ -162,6 +173,7 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
       });
     } catch (err) {
       console.error('[UserSearchStore] fetch error:', err);
+      useInstancesStore.getState().resetForeignInstances();
       set({
         viewedInstances: null,
         viewedOwnershipData: null,
@@ -188,6 +200,7 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
   },
 
   resetUserSearch() {
+    useInstancesStore.getState().resetForeignInstances();
     set({
       viewedInstances: null,
       viewedOwnershipData: null,

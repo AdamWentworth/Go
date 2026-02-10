@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import './PokemonOptionsOverlay.css';
 import OverlayPortal from '@/components/OverlayPortal';
 import PokemonCard from './PokemonCard';
-import OwnedInstance from '@/pages/Pokemon/features/instances/OwnedInstance';
+import CaughtInstance from '@/pages/Pokemon/features/instances/CaughtInstance';
 import TradeInstance from '@/pages/Pokemon/features/instances/TradeInstance';
 import WantedInstance from '@/pages/Pokemon/features/instances/WantedInstance';
 import CloseButton from '@/components/CloseButton';
@@ -70,7 +70,7 @@ const PokemonOptionsOverlay: React.FC<PokemonOptionsOverlayProps> = ({
   }, []);
 
   // Determine which instance component to use
-  let InstanceComponent = OwnedInstance;
+  let InstanceComponent = CaughtInstance;
   if (isInstance) {
     const filter = tagFilter.toLowerCase();
     if (filter === 'trade') InstanceComponent = TradeInstance;

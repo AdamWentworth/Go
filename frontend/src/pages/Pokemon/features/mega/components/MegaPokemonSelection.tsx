@@ -1,6 +1,6 @@
 // MegaPokemonSelection.jsx
 import './MegaPokemonSelection.css';
-import OwnedInstance from '../../instances/OwnedInstance';
+import CaughtInstance from '../../instances/CaughtInstance';
 import CloseButton from '@/components/CloseButton';
 import { useMegaPokemonSelection } from '../hooks/useMegaPokemonSelection';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -45,7 +45,7 @@ export default function MegaPokemonSelection({
                   <button onClick={() => assignExisting(instance_id!)}>Mega Evolve</button>
                 </div>
                 {variantData ? (
-                  <OwnedInstance
+                  <CaughtInstance
                         pokemon={{ ...variantData, instanceData: { instance_id, ...rest } }}
                         isEditable={false}      // or whatever flag your UI needs
                     />
@@ -56,7 +56,7 @@ export default function MegaPokemonSelection({
             ))}
           </div>
         ) : (
-          <p>No owned Pokémon suitable for Mega evolution.</p>
+          <p>No caught Pokémon suitable for Mega evolution.</p>
         )}
       </div>
 
