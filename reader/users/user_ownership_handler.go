@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// GET /api/instances/by-username/:username (protected)
+// GET /api/instances/by-username/:username (public, rate-limited)
 func GetInstancesByUsername(c *fiber.Ctx) error {
 	raw := strings.TrimSpace(c.Params("username"))
 	if raw == "" {
@@ -69,7 +69,7 @@ func GetInstancesByUsername(c *fiber.Ctx) error {
 }
 
 // Backward-compat alias while frontend migrates naming.
-// GET /api/ownershipData/username/:username (protected)
+// GET /api/ownershipData/username/:username (public alias)
 func GetOwnershipDataByUsername(c *fiber.Ctx) error {
 	return GetInstancesByUsername(c)
 }

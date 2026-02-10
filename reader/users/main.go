@@ -96,18 +96,23 @@ func newApp() *fiber.App {
 	app.Get("/api/users/public/users/:username", GetPublicSnapshotByUsername)
 	app.Get("/api/autocomplete-trainers", AutocompleteTrainersHandler)
 
+	// Public read-only profile instance lookups (used by search/foreign profile pages).
+	// Keep these outside JWT middleware so users can browse profiles while logged out.
+	publicRead := app.Group("/", newRateLimiter())
+	publicRead.Get("/api/instances/by-username/:username", GetInstancesByUsername)
+	publicRead.Get("/api/ownershipData/username/:username", GetOwnershipDataByUsername)
+	// Compatibility paths for /api/users prefix + nginx rewrite behavior.
+	publicRead.Get("/api/users/instances/by-username/:username", GetInstancesByUsername)
+	publicRead.Get("/api/users/ownershipData/username/:username", GetOwnershipDataByUsername)
+
 	// Protected routes
 	protected := app.Group("/", verifyJWT, newRateLimiter())
 
 	// Canonical paths.
 	protected.Get("/api/users/:user_id/overview", GetUserOverviewHandler)
-	protected.Get("/api/instances/by-username/:username", GetInstancesByUsername)
-	protected.Get("/api/ownershipData/username/:username", GetOwnershipDataByUsername)
 	protected.Put("/api/users/:user_id", UpdateUserHandler)
 	// Compatibility paths for current frontend/nginx behavior.
 	protected.Get("/api/:user_id/overview", GetUserOverviewHandler)
-	protected.Get("/api/users/instances/by-username/:username", GetInstancesByUsername)
-	protected.Get("/api/users/ownershipData/username/:username", GetOwnershipDataByUsername)
 	protected.Put("/api/:user_id", UpdateUserHandler)
 	protected.Put("/api/update-user/:user_id", UpdateUserHandler)
 	protected.Put("/api/users/update-user/:user_id", UpdateUserHandler)

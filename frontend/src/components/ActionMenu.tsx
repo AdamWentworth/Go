@@ -1,6 +1,6 @@
 // ActionMenu.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import ActionMenuButton from './ActionMenuButton';
 import CloseButton from './CloseButton';
@@ -12,7 +12,6 @@ import './ActionMenu.css';
 
 const ActionMenu: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { alert } = useModal();
@@ -20,28 +19,7 @@ const ActionMenu: React.FC = () => {
   useTheme();
 
   const toggleMenu = () => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-    const container = document.querySelector('.action-menu-buttons-container');
-
-    if (isOpen) {
-      if (container) {
-        container.classList.remove('open');
-      }
-      setTimeout(() => {
-        setIsOpen(false);
-        setIsAnimating(false);
-      }, 350);
-    } else {
-      setIsOpen(true);
-      setTimeout(() => {
-        const container = document.querySelector('.action-menu-buttons-container');
-        if (container) {
-          container.classList.add('open');
-        }
-        setIsAnimating(false);
-      }, 50);
-    }
+    setIsOpen((prev) => !prev);
   };
 
   const handleNavigation = (path: string) => {
@@ -51,10 +29,6 @@ const ActionMenu: React.FC = () => {
       navigate(path);
     }
   };
-
-  useEffect(() => {
-    return () => setIsAnimating(false);
-  }, []);
 
   return (
     <>
@@ -118,7 +92,7 @@ const ActionMenu: React.FC = () => {
             )}
           </div>
 
-          <div className="action-menu-buttons-container">
+          <div className={`action-menu-buttons-container ${isOpen ? 'open' : ''}`}>
             <button
               className="action-menu-item button-raid"
               onClick={() => alert("Raid page is not implemented yet!")}

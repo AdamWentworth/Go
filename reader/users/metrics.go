@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,16 +19,16 @@ var (
 
 	httpRequestsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "http_requests_total",
-			Help: "Total number of HTTP requests processed.",
+			Name: "users_http_requests_total",
+			Help: "Total number of HTTP requests processed by users service.",
 		},
 		[]string{"method", "route", "status"},
 	)
 
 	httpRequestDurationSeconds = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "http_request_duration_seconds",
-			Help:    "HTTP request duration in seconds.",
+			Name:    "users_http_request_duration_seconds",
+			Help:    "HTTP request duration in seconds for users service.",
 			Buckets: prometheus.DefBuckets,
 		},
 		[]string{"method", "route", "status"},
@@ -87,5 +88,11 @@ func normalizeMetricLabel(value, fallback string, maxLen int) string {
 }
 
 func metricsHandler() fiber.Handler {
-	return adaptor.HTTPHandler(promhttp.Handler())
+	// Keep target availability stable even if one collector has a transient gather error.
+	// Prometheus will still record the scrape error details in logs/body.
+	handler := promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{
+		ErrorHandling: promhttp.ContinueOnError,
+		ErrorLog:      log.New(logrus.StandardLogger().Writer(), "promhttp: ", 0),
+	})
+	return adaptor.HTTPHandler(handler)
 }
