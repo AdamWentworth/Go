@@ -10,7 +10,6 @@ import FriendshipLevel from '../../../../components/pokemonComponents/Friendship
 import ConfirmationOverlay from '../ConfirmationOverlay.jsx'; // Import ConfirmationOverlay
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
-import { parsePokemonKey } from '../../../../utils/PokemonIDUtils';
 import './WantedListView.css';
 
 const formatDate = (dateString) => {
@@ -226,9 +225,8 @@ const WantedListView = ({ item, findPokemonByKey }) => {
             <h1>Trade Pokémon:</h1>
             <div className="trade-list">
               {Object.keys(item.trade_list).map((pokemonKeyWithUUID) => {
-                const { baseKey } = parsePokemonKey(pokemonKeyWithUUID);
                 const tradeListPokemon = item.trade_list[pokemonKeyWithUUID];
-                const matchedPokemon = findPokemonByKey(baseKey);
+                const matchedPokemon = findPokemonByKey(pokemonKeyWithUUID, tradeListPokemon);
 
                 if (!matchedPokemon) return null;
 

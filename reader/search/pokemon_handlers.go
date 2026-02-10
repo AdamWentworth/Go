@@ -619,6 +619,7 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 
 		instanceData := map[string]interface{}{
 			"instance_id":      instance.InstanceID,
+			"variant_id":       instance.VariantID,
 			"pokemon_id":       instance.PokemonID,
 			"nickname":         instance.Nickname,
 			"cp":               instance.CP,
@@ -702,6 +703,7 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 				for _, tradeInstance := range filteredTradeInstances {
 					tradeInstanceData := map[string]interface{}{
 						"instance_id":      tradeInstance.InstanceID,
+						"variant_id":       tradeInstance.VariantID,
 						"pokemon_id":       tradeInstance.PokemonID,
 						"nickname":         tradeInstance.Nickname,
 						"cp":               tradeInstance.CP,
@@ -809,6 +811,7 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 				for _, wantedInstance := range filteredWantedInstances {
 					wantedInstanceData := map[string]interface{}{
 						"instance_id":      wantedInstance.InstanceID,
+						"variant_id":       wantedInstance.VariantID,
 						"pokemon_id":       wantedInstance.PokemonID,
 						"nickname":         wantedInstance.Nickname,
 						"cp":               wantedInstance.CP,

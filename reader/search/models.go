@@ -59,6 +59,7 @@ func (User) TableName() string {
 // PokemonInstance struct for the instances table
 type PokemonInstance struct {
 	InstanceID      string         `gorm:"column:instance_id;primaryKey" json:"instance_id"`
+	VariantID       *string        `gorm:"column:variant_id" json:"variant_id"`
 	UserID          string         `gorm:"column:user_id" json:"user_id"`
 	User            *User          `gorm:"foreignKey:UserID;references:UserID" json:"user,omitempty"`
 	PokemonID       int            `gorm:"column:pokemon_id" json:"pokemon_id"`

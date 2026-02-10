@@ -5,6 +5,7 @@ import './ListView.css';
 import OwnedListView from './ListViewComponents/OwnedListView.jsx';
 import TradeListView from './ListViewComponents/TradeListView.jsx';
 import WantedListView from './ListViewComponents/WantedListView.jsx';
+import { findVariantForInstance } from '../utils/findVariantForInstance';
 
 const ListView = ({ data, instanceData, hasSearched, pokemonCache, scrollToTopTrigger }) => {
   const [pokemonVariants, setPokemonVariants] = useState([]);
@@ -29,11 +30,8 @@ const ListView = ({ data, instanceData, hasSearched, pokemonCache, scrollToTopTr
   }, [scrollToTopTrigger]);
 
   // Helper function to find Pokémon by key in the cache
-  const findPokemonByKey = (baseKey) => {
-    return pokemonVariants.find(
-      (pokemon) => (pokemon.variant_id ?? pokemon.pokemonKey) === baseKey,
-    );
-  };
+  const findPokemonByKey = (keyOrInstanceId, instanceLike) =>
+    findVariantForInstance(pokemonVariants, keyOrInstanceId, instanceLike);
 
   if (!hasSearched && data.length === 0) {
     return (

@@ -14,24 +14,33 @@ type Props = {
   fastMoveId: number | null;
   chargedMove1Id: number | null;
   chargedMove2Id: number | null;
-  moves: Move[];
+  moves?: Move[] | null;
 };
 
 const MoveDisplay: React.FC<Props> = ({ fastMoveId, chargedMove1Id, chargedMove2Id, moves }) => {
-  const findMove = (id: number | null) => moves.find((move) => move.move_id === id);
+  const safeMoves = Array.isArray(moves) ? moves : [];
+
+  const findMove = (id: number | null) => {
+    if (id === null || id === undefined) return null;
+    return safeMoves.find((move) => move.move_id === id) ?? null;
+  };
 
   const renderMoveName = (move: Move) => (
-    <p>{move.legacy ? <strong>{`${move.name}*`}</strong> : move.name}</p>
+    <p>{move.legacy ? <strong>{`${move.name ?? 'Unknown Move'}*`}</strong> : (move.name ?? 'Unknown Move')}</p>
   );
 
   const renderMove = (moveId: number | null) => {
     const move = findMove(moveId);
     if (!move) return null;
+    const moveType = String(move.type ?? '').toLowerCase();
+    const moveTypeName = move.type_name ?? move.type ?? 'Unknown';
+    const iconPath = moveType ? `/images/types/${moveType}.png` : '/images/types/normal.png';
+
     return (
       <div className="move">
         <img
-          src={`/images/types/${move.type.toLowerCase()}.png`}
-          alt={move.type_name}
+          src={iconPath}
+          alt={moveTypeName}
           className="move-type-icon"
         />
         {renderMoveName(move)}

@@ -24,6 +24,7 @@ import { useTheme } from '../../../contexts/ThemeContext.jsx';
 import OwnedPopup from './MapViewComponents/OwnedPopup.jsx';
 import TradePopup from './MapViewComponents/TradePopup.jsx';
 import WantedPopup from './MapViewComponents/WantedPopup.jsx';
+import { findVariantForInstance } from '../utils/findVariantForInstance';
 
 const MapView = ({ data, instanceData, pokemonCache }) => {
   const mapContainer = useRef(null);
@@ -40,11 +41,8 @@ const MapView = ({ data, instanceData, pokemonCache }) => {
     }
   }, [pokemonCache]);
 
-  const findPokemonByKey = (baseKey) => {
-    return pokemonVariants.find(
-      (pokemon) => (pokemon.variant_id ?? pokemon.pokemonKey) === baseKey,
-    );
-  };
+  const findPokemonByKey = (keyOrInstanceId, instanceLike) =>
+    findVariantForInstance(pokemonVariants, keyOrInstanceId, instanceLike);
 
   const navigateToUserCatalog = (username, instanceId, instanceData) => {
     navigate(`/pokemon/${username}`, { state: { instanceId, instanceData } });

@@ -6,7 +6,6 @@ import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay.js
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
 import ConfirmationOverlay from '../ConfirmationOverlay.jsx';
-import { parsePokemonKey } from '../../../../utils/PokemonIDUtils';
 import './WantedPopup.css';
 
 const WantedPopup = ({ item, navigateToUserCatalog, findPokemonByKey, onClose }) => {
@@ -68,9 +67,8 @@ const WantedPopup = ({ item, navigateToUserCatalog, findPokemonByKey, onClose })
             <h3>Trade Pokémon:</h3>
             <div className="trade-list">
               {Object.keys(item.trade_list).map((pokemonKeyWithUUID) => {
-                const { baseKey } = parsePokemonKey(pokemonKeyWithUUID);
                 const tradeListPokemon = item.trade_list[pokemonKeyWithUUID];
-                const matchedPokemon = findPokemonByKey(baseKey);
+                const matchedPokemon = findPokemonByKey(pokemonKeyWithUUID, tradeListPokemon);
 
                 return matchedPokemon ? (
                   <img
@@ -81,7 +79,7 @@ const WantedPopup = ({ item, navigateToUserCatalog, findPokemonByKey, onClose })
                     title={`${matchedPokemon.form ? `${matchedPokemon.form} ` : ''}${matchedPokemon.name}`}
                   />
                 ) : (
-                  <p key={pokemonKeyWithUUID}>No match found for {baseKey}</p>
+                  <p key={pokemonKeyWithUUID}>No match found</p>
                 );
               })}
             </div>
