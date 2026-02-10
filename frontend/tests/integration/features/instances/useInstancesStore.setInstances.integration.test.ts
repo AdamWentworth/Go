@@ -4,7 +4,7 @@ import { act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import type { Instances } from '@/types/instances';
-import { enableLogging, testLogger } from '../../setupTests';
+import { enableLogging, testLogger } from '../setupTests';
 
 describe('🏪 useInstancesStore.setInstances()', () => {
   beforeAll(() => {

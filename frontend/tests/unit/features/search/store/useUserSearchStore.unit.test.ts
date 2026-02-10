@@ -44,7 +44,6 @@ describe.sequential('useUserSearchStore', () => {
 
     useUserSearchStore.setState({
       viewedInstances: null,
-      viewedOwnershipData: null,
       canonicalUsername: null,
       foreignInstancesLoading: false,
       userExists: null,
@@ -147,7 +146,6 @@ describe.sequential('useUserSearchStore', () => {
     useInstancesStore.setState({ foreignInstances: stale });
     useUserSearchStore.setState({
       viewedInstances: stale,
-      viewedOwnershipData: stale,
       canonicalUsername: 'OldUser',
       userExists: true,
     });
@@ -161,7 +159,6 @@ describe.sequential('useUserSearchStore', () => {
     const state = useUserSearchStore.getState();
     expect(state.userExists).toBe(false);
     expect(state.viewedInstances).toBeNull();
-    expect(state.viewedOwnershipData).toBeNull();
     expect(state.canonicalUsername).toBeNull();
     expect(useInstancesStore.getState().foreignInstances).toBeNull();
   });
@@ -174,7 +171,6 @@ describe.sequential('useUserSearchStore', () => {
     useInstancesStore.setState({ foreignInstances: stale });
     useUserSearchStore.setState({
       viewedInstances: stale,
-      viewedOwnershipData: stale,
       canonicalUsername: 'AnyUser',
       foreignInstancesLoading: true,
       userExists: true,
@@ -184,7 +180,6 @@ describe.sequential('useUserSearchStore', () => {
 
     const state = useUserSearchStore.getState();
     expect(state.viewedInstances).toBeNull();
-    expect(state.viewedOwnershipData).toBeNull();
     expect(state.canonicalUsername).toBeNull();
     expect(state.foreignInstancesLoading).toBe(false);
     expect(state.userExists).toBeNull();

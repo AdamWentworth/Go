@@ -1,9 +1,9 @@
 // tests/integration/instancesStage.integration.test.ts
-import { useLiveInstances }                from "../../utils/liveInstancesCache";
+import { useLiveInstances }                from "../utils/liveInstancesCache";
 import * as idb                            from "@/db/indexedDB";
 import * as PokemonIDUtils                from "@/utils/PokemonIDUtils";
 import { vi }                              from "vitest";
-import { testLogger, enableLogging }      from "../../setupTests";
+import { testLogger, enableLogging }      from "../setupTests";
 
 describe("instancesStorage Integration", () => {
   beforeAll(() => {

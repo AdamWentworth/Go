@@ -3,8 +3,8 @@
 import { act } from '@testing-library/react';
 import { describe, it, beforeEach, beforeAll, afterAll, expect } from 'vitest';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
-import { useLiveInstances } from '../../utils/liveInstancesCache';
-import { enableLogging, testLogger } from '../../setupTests';
+import { useLiveInstances } from '../utils/liveInstancesCache';
+import { enableLogging, testLogger } from '../setupTests';
 
 describe('🏪 useInstancesStore.updateInstanceDetails()', () => {
   beforeAll(() => {

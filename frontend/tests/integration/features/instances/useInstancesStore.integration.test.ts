@@ -7,12 +7,12 @@ import { rest } from 'msw';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useLiveVariants } from '../../utils/liveVariantCache';
-import { useLiveInstances } from '../../utils/liveInstancesCache';
+import { useLiveVariants } from '../utils/liveVariantCache';
+import { useLiveInstances } from '../utils/liveInstancesCache';
 import * as idb from '@/db/indexedDB';
 import type { Instances } from '@/types/instances';
 import type { User } from '@/types/auth';
-import { enableLogging, testLogger } from '../../setupTests';
+import { enableLogging, testLogger } from '../setupTests';
 
 // Mock Service Worker
 const server = setupServer();

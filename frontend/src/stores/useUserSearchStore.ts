@@ -30,17 +30,10 @@ function getCachedInstances(record: SearchCacheRecord | null): Instances | null 
 
 interface UserSearchStore {
   viewedInstances: Instances | null;
-  viewedOwnershipData: Instances | null; // legacy alias
   canonicalUsername: string | null;
   foreignInstancesLoading: boolean;
   userExists: boolean | null;
   fetchUserInstancesByUsername: (
-    searchedUsername: string,
-    setOwnershipFilter?: (tag: string) => void,
-    defaultFilter?: string,
-    alertFn?: (msg: string) => Promise<void>
-  ) => Promise<string | void>;
-  fetchUserOwnershipData: (
     searchedUsername: string,
     setOwnershipFilter?: (tag: string) => void,
     defaultFilter?: string,
@@ -55,7 +48,6 @@ interface UserSearchStore {
 
 export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
   viewedInstances: null,
-  viewedOwnershipData: null,
   canonicalUsername: null,
   foreignInstancesLoading: false,
   userExists: null,
@@ -121,7 +113,6 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
         useInstancesStore.getState().setForeignInstances(cachedInstances);
         set({
           viewedInstances: cachedInstances,
-          viewedOwnershipData: cachedInstances,
           canonicalUsername: cached.username,
           userExists: true,
         });
@@ -139,7 +130,6 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
 
         set({
           viewedInstances: instances,
-          viewedOwnershipData: instances,
           canonicalUsername: actualUsername,
           userExists: true,
         });
@@ -168,7 +158,6 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
       useInstancesStore.getState().resetForeignInstances();
       set({
         viewedInstances: null,
-        viewedOwnershipData: null,
         canonicalUsername: null,
       });
     } catch (err) {
@@ -176,22 +165,11 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
       useInstancesStore.getState().resetForeignInstances();
       set({
         viewedInstances: null,
-        viewedOwnershipData: null,
         canonicalUsername: null,
       });
     } finally {
       set({ foreignInstancesLoading: false });
     }
-  },
-
-  // Legacy alias for older call sites.
-  fetchUserOwnershipData(searchedUsername, setOwnershipFilter, defaultFilter = 'Caught', alertFn) {
-    return get().fetchUserInstancesByUsername(
-      searchedUsername,
-      setOwnershipFilter,
-      defaultFilter,
-      alertFn
-    );
   },
 
   loadForeignProfile(username, resetTagFilter) {
@@ -203,7 +181,6 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
     useInstancesStore.getState().resetForeignInstances();
     set({
       viewedInstances: null,
-      viewedOwnershipData: null,
       canonicalUsername: null,
       foreignInstancesLoading: false,
       userExists: null,

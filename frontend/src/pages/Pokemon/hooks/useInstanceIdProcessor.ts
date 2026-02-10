@@ -72,9 +72,8 @@ export default function useInstanceIdProcessor({
   const [retryCounter, setRetryCounter] = useState(0);
 
   // 🔎  Pull loader state straight from the stores (no prop‑drilling)
-  const { foreignInstancesLoading, viewedInstances, viewedOwnershipData } =
-    useUserSearchStore.getState();
-  const searchInstances = viewedInstances ?? viewedOwnershipData;
+  const { foreignInstancesLoading, viewedInstances } = useUserSearchStore.getState();
+  const searchInstances = viewedInstances;
 
   useEffect(() => {
     if (variantsLoading || foreignInstancesLoading) return;
