@@ -77,9 +77,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          js_file="$(find dist/assets -maxdepth 1 -type f -name 'index-*.js' | head -n 1)"
-          if [[ -z "${js_file}" ]]; then
-            echo "Frontend bundle not found in dist/assets" >&2
+          if ! find dist/assets -maxdepth 1 -type f -name '*.js' | grep -q .; then
+            echo "No JS bundles found in dist/assets" >&2
             exit 1
           fi
 
@@ -88,7 +87,9 @@ jobs:
             "${VITE_USERS_API_URL}" \
             "${VITE_SEARCH_API_URL}" \
             "${VITE_POKEMON_API_URL}"; do
-            if ! grep -q "${expected}" "${js_file}"; then
+            # Frontend is code-split; env-backed URLs may live in lazy chunks (e.g. Search-*.js),
+            # not only in index-*.js.
+            if ! grep -R -q --include='*.js' "${expected}" dist/assets; then
               echo "Expected API base URL not found in bundle: ${expected}" >&2
               exit 1
             fi
