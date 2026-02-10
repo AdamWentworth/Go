@@ -2,6 +2,7 @@ package main
 
 import (
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -52,15 +53,37 @@ func metricsMiddleware(c *fiber.Ctx) error {
 	start := time.Now()
 	err := c.Next()
 
-	route := c.Path()
-	if r := c.Route(); r != nil && r.Path != "" {
+	route := "_unmatched"
+	if r := c.Route(); r != nil && r.Path != "" && r.Path != "/*" {
 		route = r.Path
 	}
-	status := strconv.Itoa(c.Response().StatusCode())
-	httpRequestsTotal.WithLabelValues(c.Method(), route, status).Inc()
-	httpRequestDurationSeconds.WithLabelValues(c.Method(), route, status).Observe(time.Since(start).Seconds())
+
+	// Normalize labels to avoid pathological / invalid values from unmatched paths.
+	methodLabel := normalizeMetricLabel(c.Method(), "_unknown_method", 16)
+	routeLabel := normalizeMetricLabel(route, "_unknown_route", 128)
+	statusLabel := normalizeMetricLabel(strconv.Itoa(c.Response().StatusCode()), "000", 3)
+
+	defer func() {
+		if rec := recover(); rec != nil {
+			logrus.Warnf("metrics label panic suppressed: %v", rec)
+		}
+	}()
+
+	httpRequestsTotal.WithLabelValues(methodLabel, routeLabel, statusLabel).Inc()
+	httpRequestDurationSeconds.WithLabelValues(methodLabel, routeLabel, statusLabel).Observe(time.Since(start).Seconds())
 
 	return err
+}
+
+func normalizeMetricLabel(value, fallback string, maxLen int) string {
+	clean := strings.TrimSpace(strings.ToValidUTF8(value, "?"))
+	if clean == "" {
+		clean = fallback
+	}
+	if maxLen > 0 && len(clean) > maxLen {
+		clean = clean[:maxLen]
+	}
+	return clean
 }
 
 func metricsHandler() fiber.Handler {

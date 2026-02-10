@@ -1,6 +1,6 @@
 // TagsMenu.tsx
 
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import './TagsMenu.css';
 import useDownloadImage from './hooks/useDownloadImage';
 import PreviewContainer from './PreviewContainer';
@@ -8,7 +8,6 @@ import useFavoriteList from '@/hooks/sort/useFavoriteList';
 import TagItems from './TagItems';
 import type { TagBuckets, TagItem } from '@/types/tags';
 import type { AllVariants } from '@/types/pokemonVariants';
-import { useTagsStore } from '@/features/tags/store/useTagsStore';
 
 export interface TagsMenuProps {
   onSelectTag: (tagName: string) => void;
@@ -21,22 +20,27 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   activeTags,
   variants,
 }) => {
-  const systemChildren = useTagsStore(s => s.systemChildren);
+  // Derive system-children from the currently active buckets (own or foreign).
+  // This prevents foreign profile views from accidentally using local-user children.
+  const derivedChildren = useMemo(() => {
+    const caught = activeTags.caught ?? {};
+    const wanted = activeTags.wanted ?? {};
 
-  // DEV visibility: verify cache/store contents
-  // useEffect(() => {
-  //   if (process.env.NODE_ENV !== 'development') return;
-  //   const counts = Object.fromEntries(
-  //     Object.entries(activeTags).map(([k, v]) => [k, Object.keys(v || {}).length])
-  //   );
-  //   const childCounts = {
-  //     favorites  : Object.keys(systemChildren.caught.favorite || {}).length,
-  //     trade      : Object.keys(systemChildren.caught.trade || {}).length,
-  //     mostWanted : Object.keys(systemChildren.wanted.mostWanted || {}).length,
-  //   };
-  //   console.log('[TagsMenu] System buckets:', counts, activeTags);
-  //   console.log('[TagsMenu] System children:', childCounts, systemChildren);
-  // }, [activeTags, systemChildren]);
+    const favorite: Record<string, TagItem> = {};
+    const trade: Record<string, TagItem> = {};
+    const mostWanted: Record<string, TagItem> = {};
+
+    for (const [id, item] of Object.entries(caught)) {
+      if ((item as any).favorite) favorite[id] = item;
+      if ((item as any).is_for_trade) trade[id] = item;
+    }
+
+    for (const [id, item] of Object.entries(wanted)) {
+      if ((item as any).most_wanted) mostWanted[id] = item;
+    }
+
+    return { caught: { favorite, trade }, wanted: { mostWanted } };
+  }, [activeTags]);
 
   /* ----- tag sorting ---------------------------------------------- */
   const unsortedCaught = useMemo<TagItem[]>(() => {
@@ -45,14 +49,14 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   }, [activeTags.caught]);
 
   const sortedFavorites = useFavoriteList(
-    Object.values(systemChildren.caught.favorite || {})
+    Object.values(derivedChildren.caught.favorite || {})
   );
 
   // Trade (child of Caught) — unsorted
   const unsortedTrade = useMemo<TagItem[]>(() => {
-    const obj = systemChildren.caught.trade || {};
+    const obj = derivedChildren.caught.trade || {};
     return Object.values(obj);
-  }, [systemChildren.caught.trade]);
+  }, [derivedChildren.caught.trade]);
 
   // Wanted — unsorted
   const unsortedWanted = useMemo<TagItem[]>(() => {
@@ -62,9 +66,9 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
 
   // Most Wanted — unsorted
   const unsortedMostWanted = useMemo<TagItem[]>(() => {
-    const obj = systemChildren.wanted.mostWanted || {};
+    const obj = derivedChildren.wanted.mostWanted || {};
     return Object.values(obj);
-  }, [systemChildren.wanted.mostWanted]);
+  }, [derivedChildren.wanted.mostWanted]);
 
 
   // Public names → arrays to feed TagItems (no Missing here)
@@ -103,9 +107,9 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   const previewTags = useMemo(
     () => ({
       wanted: activeTags.wanted ?? {},
-      trade : systemChildren.caught.trade ?? {},
+      trade : derivedChildren.caught.trade ?? {},
     }),
-    [activeTags.wanted, systemChildren.caught.trade]
+    [activeTags.wanted, derivedChildren.caught.trade]
   );
 
   /* ----- counts for footers --------------------------------------- */

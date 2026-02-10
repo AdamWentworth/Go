@@ -12,11 +12,15 @@ export interface MoveListProps {
   pokemon: PokemonVariant;
 }
 
-const getTypeIconPath = (typeName: string): string =>
-  `/images/types/${typeName.toLowerCase()}.png`;
+const getTypeIconPath = (typeName?: string | null): string => {
+  const safeType = String(typeName ?? '').trim().toLowerCase();
+  return safeType ? `/images/types/${safeType}.png` : '/images/types/normal.png';
+};
 
-const formatMoveName = (name: string, isLegacy: boolean): React.ReactNode =>
-  isLegacy ? <strong>{name}*</strong> : name;
+const formatMoveName = (name?: string | null, isLegacy?: boolean): React.ReactNode => {
+  const safeName = String(name ?? '').trim() || 'Unknown Move';
+  return isLegacy ? <strong>{safeName}*</strong> : safeName;
+};
 
 const MoveList: React.FC<MoveListProps> = ({ moves, pokemon }) => {
   // Determine fusionId from variantType if this is a fusion variant
@@ -59,8 +63,8 @@ const MoveList: React.FC<MoveListProps> = ({ moves, pokemon }) => {
                   <td>
                     <img
                       className="type-icon"
-                      src={getTypeIconPath(move.type_name)}
-                      alt={`${move.type_name} type`}
+                      src={getTypeIconPath(move.type_name ?? move.type)}
+                      alt={`${move.type_name ?? move.type ?? 'Unknown'} type`}
                     />
                   </td>
                   <td>{formatMoveName(move.name, move.legacy)}</td>
@@ -91,8 +95,8 @@ const MoveList: React.FC<MoveListProps> = ({ moves, pokemon }) => {
                   <td>
                     <img
                       className="type-icon"
-                      src={getTypeIconPath(move.type_name)}
-                      alt={`${move.type_name} type`}
+                      src={getTypeIconPath(move.type_name ?? move.type)}
+                      alt={`${move.type_name ?? move.type ?? 'Unknown'} type`}
                     />
                   </td>
                   <td>{formatMoveName(move.name, move.legacy)}</td>

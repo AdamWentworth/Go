@@ -349,6 +349,38 @@ groups:
           summary: "location_service request metrics are missing"
           description: "http_requests_total has been absent for 10 minutes."
 
+  - name: frontend-probe-alerts
+    rules:
+      - alert: FrontendProbeDown
+        expr: probe_success{job="frontend_probe"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: frontend
+        annotations:
+          summary: "frontend probe is down"
+          description: "Blackbox probe to https://pokemongonexus.com/ is failing for at least 2 minutes."
+
+      - alert: FrontendProbeHighLatency
+        expr: probe_duration_seconds{job="frontend_probe"} > 1.5
+        for: 10m
+        labels:
+          severity: warning
+          service: frontend
+        annotations:
+          summary: "frontend probe latency is high"
+          description: "Probe duration is above 1.5 seconds for at least 10 minutes."
+
+      - alert: FrontendTLSCertExpiringSoon
+        expr: (probe_ssl_earliest_cert_expiry{job="frontend_probe"} - time()) < 1209600
+        for: 1h
+        labels:
+          severity: warning
+          service: frontend
+        annotations:
+          summary: "frontend TLS certificate expires soon"
+          description: "Certificate for pokemongonexus.com expires in under 14 days."
+
   - name: pokemon-data-alerts
     rules:
       - alert: PokemonDataTargetDown

@@ -137,7 +137,7 @@ jobs:
           docker compose \
             -f "${COMPOSE_FILE}" \
             --env-file "${ENV_FILE}" \
-            up -d --force-recreate prometheus alertmanager node_exporter cadvisor kafka_exporter
+            up -d --force-recreate prometheus alertmanager node_exporter cadvisor kafka_exporter blackbox_exporter
 
       - name: Health Checks
         shell: bash
@@ -213,4 +213,13 @@ jobs:
             echo "Prometheus target check: kafka_exporter is up."
           else
             echo "Warning: kafka_exporter scrape target exists but is not currently up."
+          fi
+
+          FRONTEND_PROBE_JSON="$(curl -fsS --get --data-urlencode 'query=probe_success{job="frontend_probe"}' http://127.0.0.1:9090/api/v1/query || true)"
+          if [[ "${FRONTEND_PROBE_JSON}" == *'"result":[]'* ]]; then
+            echo "Warning: no active 'frontend_probe' target found in Prometheus yet."
+          elif [[ "${FRONTEND_PROBE_JSON}" == *'"1"'* ]]; then
+            echo "Prometheus target check: frontend_probe is up."
+          else
+            echo "Warning: frontend_probe target exists but is not currently up."
           fi

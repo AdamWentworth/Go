@@ -55,6 +55,17 @@ services:
     networks:
       - kafka_default
 
+  blackbox_exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    container_name: blackbox_exporter
+    command:
+      - "--config.file=/etc/blackbox_exporter/config.yml"
+    volumes:
+      - ./blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    restart: unless-stopped
+    networks:
+      - pokemon_edge
+
   alertmanager:
     image: prom/alertmanager:latest
     container_name: alertmanager
