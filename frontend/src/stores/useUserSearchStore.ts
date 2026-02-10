@@ -10,8 +10,7 @@ const CACHE_NAME = 'SearchCache';
 
 type SearchCacheRecord = {
   username: string;
-  instances?: Instances;
-  ownershipData?: Instances; // legacy cache field
+  instances: Instances;
   timestamp: number;
   etag: string | null;
 };
@@ -25,7 +24,7 @@ function replaceAddressBar(oldName: string, newName: string) {
 
 function getCachedInstances(record: SearchCacheRecord | null): Instances | null {
   if (!record) return null;
-  return record.instances ?? record.ownershipData ?? null;
+  return record.instances ?? null;
 }
 
 interface UserSearchStore {
@@ -100,12 +99,15 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
         headers,
       });
 
-      // Backward compatibility while older backend versions are still deployed.
-      if (resp.status === 404) {
-        resp = await fetch(`${USERS_API_URL}/ownershipData/username/${lower}`, {
+      // Resilience fallback: if instance endpoint returns 403/404, try public snapshot.
+      if (resp.status === 403 || resp.status === 404) {
+        const publicResp = await fetch(`${USERS_API_URL}/public/users/${lower}`, {
           credentials: 'include',
           headers,
         });
+        if (publicResp.ok || publicResp.status === 304 || publicResp.status === 404) {
+          resp = publicResp;
+        }
       }
 
       if (resp.status === 304 && cached && cachedInstances) {
@@ -122,7 +124,7 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
 
       if (resp.ok) {
         const result = await resp.json();
-        const actualUsername = result.username || searchedUsername;
+        const actualUsername = result.username || result.user?.username || searchedUsername;
         const instances: Instances = result.instances ?? {};
 
         replaceAddressBar(searchedUsername, actualUsername);

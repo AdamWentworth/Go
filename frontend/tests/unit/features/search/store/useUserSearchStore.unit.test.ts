@@ -80,14 +80,16 @@ describe.sequential('useUserSearchStore', () => {
     expect(useInstancesStore.getState().foreignInstances).toEqual(instances);
   });
 
-  it('falls back to legacy ownership endpoint when canonical endpoint returns 404', async () => {
+  it('falls back to public snapshot endpoint when canonical endpoint returns 404', async () => {
     const instances = {
       i2: { instance_id: 'i2', pokemon_id: 2, variant_id: '0002-default' },
     } as any;
 
     fetchMock
       .mockResolvedValueOnce(makeResponse(404))
-      .mockResolvedValueOnce(makeResponse(200, { username: 'LegacyUser', instances }));
+      .mockResolvedValueOnce(
+        makeResponse(200, { user: { username: 'LegacyUser' }, instances }),
+      );
 
     const canonical = await useUserSearchStore
       .getState()
@@ -98,9 +100,36 @@ describe.sequential('useUserSearchStore', () => {
       `${USERS_API_URL}/instances/by-username/legacyuser`,
     );
     expect(fetchMock.mock.calls[1][0]).toBe(
-      `${USERS_API_URL}/ownershipData/username/legacyuser`,
+      `${USERS_API_URL}/public/users/legacyuser`,
     );
     expect(canonical).toBe('LegacyUser');
+    expect(useUserSearchStore.getState().userExists).toBe(true);
+    expect(useInstancesStore.getState().foreignInstances).toEqual(instances);
+  });
+
+  it('falls back to public snapshot endpoint when canonical endpoint returns 403', async () => {
+    const instances = {
+      i7: { instance_id: 'i7', pokemon_id: 7, variant_id: '0007-default' },
+    } as any;
+
+    fetchMock
+      .mockResolvedValueOnce(makeResponse(403))
+      .mockResolvedValueOnce(
+        makeResponse(200, { user: { username: 'Chernob8ta' }, instances }, { ETag: 'pub-v1' }),
+      );
+
+    const canonical = await useUserSearchStore
+      .getState()
+      .fetchUserInstancesByUsername('chernob8ta');
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `${USERS_API_URL}/instances/by-username/chernob8ta`,
+    );
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      `${USERS_API_URL}/public/users/chernob8ta`,
+    );
+    expect(canonical).toBe('Chernob8ta');
     expect(useUserSearchStore.getState().userExists).toBe(true);
     expect(useInstancesStore.getState().foreignInstances).toEqual(instances);
   });
@@ -138,7 +167,7 @@ describe.sequential('useUserSearchStore', () => {
     expect(useInstancesStore.getState().foreignInstances).toEqual(instances);
   });
 
-  it('clears stale foreign state when both endpoints return 404', async () => {
+  it('clears stale foreign state when canonical and public endpoints return 404', async () => {
     const stale = {
       old: { instance_id: 'old', pokemon_id: 25, variant_id: '0025-default' },
     } as any;
@@ -155,6 +184,7 @@ describe.sequential('useUserSearchStore', () => {
       .mockResolvedValueOnce(makeResponse(404));
 
     await useUserSearchStore.getState().fetchUserInstancesByUsername('missinguser');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     const state = useUserSearchStore.getState();
     expect(state.userExists).toBe(false);

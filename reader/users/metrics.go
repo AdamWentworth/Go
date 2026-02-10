@@ -16,6 +16,7 @@ import (
 
 var (
 	metricsOnce sync.Once
+	metricsReg  = prometheus.NewRegistry()
 
 	httpRequestsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -37,13 +38,15 @@ var (
 
 func registerMetrics() {
 	metricsOnce.Do(func() {
-		tryRegister(httpRequestsTotal)
-		tryRegister(httpRequestDurationSeconds)
+		tryRegister(metricsReg, prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+		tryRegister(metricsReg, prometheus.NewGoCollector())
+		tryRegister(metricsReg, httpRequestsTotal)
+		tryRegister(metricsReg, httpRequestDurationSeconds)
 	})
 }
 
-func tryRegister(c prometheus.Collector) {
-	if err := prometheus.Register(c); err != nil {
+func tryRegister(reg prometheus.Registerer, c prometheus.Collector) {
+	if err := reg.Register(c); err != nil {
 		if _, ok := err.(prometheus.AlreadyRegisteredError); !ok {
 			logrus.Warnf("prometheus register collector failed: %v", err)
 		}
@@ -88,9 +91,8 @@ func normalizeMetricLabel(value, fallback string, maxLen int) string {
 }
 
 func metricsHandler() fiber.Handler {
-	// Keep target availability stable even if one collector has a transient gather error.
-	// Prometheus will still record the scrape error details in logs/body.
-	handler := promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{
+	// Use an isolated registry so unrelated default collectors cannot break /metrics.
+	handler := promhttp.HandlerFor(metricsReg, promhttp.HandlerOpts{
 		ErrorHandling: promhttp.ContinueOnError,
 		ErrorLog:      log.New(logrus.StandardLogger().Writer(), "promhttp: ", 0),
 	})
