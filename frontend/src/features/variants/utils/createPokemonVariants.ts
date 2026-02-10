@@ -14,11 +14,23 @@ const getTypeIcon = (typeName?: string) =>
 const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
   const generateVariants = (pokemon: BasePokemon): PokemonVariant[] => {
     const variants: PokemonVariant[] = [];
+    const raidForms = ((pokemon as any).raid_boss || []).map((rb: RaidBoss) => rb.form);
 
-    // Helper to add a variant and compute its variant_id
+    // Finalize in one place to avoid duplicate transform work.
     const addVariant = (variant: PokemonVariant) => {
       variant.variant_id = determineVariantId(variant);
-      variants.push(variant);
+      (variant as any).name = getDisplayName(variant);
+
+      const shouldKeepRaidBoss = raidForms.some((form: string) =>
+        matchFormsAndVariantType((variant as any).form, form, variant.variantType),
+      );
+
+      if (shouldKeepRaidBoss) {
+        variants.push(variant);
+      } else {
+        const { raid_boss, ...rest } = variant as any;
+        variants.push(rest as PokemonVariant);
+      }
     };
 
     /* ---------- default variant ---------- */
@@ -31,7 +43,6 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
       variantType: 'default',
       variant_id: '',
     } as unknown as PokemonVariant;
-    (defaultVariant as any).name = getDisplayName(defaultVariant);
     addVariant(defaultVariant);
 
     /* ---------- shiny variant ---------- */
@@ -41,7 +52,6 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
         currentImage: (pokemon as any).image_url_shiny,
         variantType: 'shiny',
       };
-      (shinyVariant as any).name = getDisplayName(shinyVariant);
       addVariant(shinyVariant);
     }
 
@@ -52,7 +62,6 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
         currentImage: (pokemon as any).image_url_shadow || (pokemon as any).image_url,
         variantType: 'shadow',
       };
-      (shadowVariant as any).name = getDisplayName(shadowVariant);
       addVariant(shadowVariant);
 
       if ((pokemon as any).date_shiny_shadow_available) {
@@ -61,7 +70,6 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
           currentImage: (pokemon as any).image_url_shiny_shadow || (pokemon as any).image_url_shiny,
           variantType: 'shiny_shadow',
         };
-        (shinyShadowVariant as any).name = getDisplayName(shinyShadowVariant);
         addVariant(shinyShadowVariant);
       }
     }
@@ -75,7 +83,6 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
         currentImage: costume.image_url,
         variantType: `costume_${costume.costume_id}` as VariantKind,
       };
-      (costumeVariant as any).name = getDisplayName(costumeVariant);
       addVariant(costumeVariant);
 
       if (costume.shiny_available && costume.image_url_shiny) {
@@ -84,7 +91,6 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
           currentImage: costume.image_url_shiny,
           variantType: `costume_${costume.costume_id}_shiny` as VariantKind,
         };
-        (costumeShinyVariant as any).name = getDisplayName(costumeShinyVariant);
         addVariant(costumeShinyVariant);
       }
 
@@ -94,7 +100,6 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
           currentImage: costume.shadow_costume.image_url_shadow_costume,
           variantType: `shadow_costume_${costume.costume_id}` as VariantKind,
         };
-        (shadowCostumeVariant as any).name = getDisplayName(shadowCostumeVariant);
         addVariant(shadowCostumeVariant);
       }
     });
@@ -108,7 +113,6 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
           currentImage: (defaultVariant as any).image_url,
           variantType: 'dynamax',
         };
-        (dynamaxVariant as any).name = getDisplayName(dynamaxVariant);
         addVariant(dynamaxVariant);
 
         if ((pokemon as any).shiny_available) {
@@ -117,7 +121,6 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
             currentImage: (defaultVariant as any).image_url_shiny,
             variantType: 'shiny_dynamax',
           };
-          (shinyDynamaxVariant as any).name = getDisplayName(shinyDynamaxVariant);
           addVariant(shinyDynamaxVariant);
         }
       }
@@ -128,7 +131,6 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
           currentImage: maxForm.gigantamax_image_url || (defaultVariant as any).image_url,
           variantType: 'gigantamax',
         };
-        (gigantamaxVariant as any).name = getDisplayName(gigantamaxVariant);
         addVariant(gigantamaxVariant);
 
         if ((pokemon as any).shiny_available && maxForm.shiny_gigantamax_image_url) {
@@ -137,7 +139,6 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
             currentImage: maxForm.shiny_gigantamax_image_url,
             variantType: 'shiny_gigantamax',
           };
-          (shinyGigantamaxVariant as any).name = getDisplayName(shinyGigantamaxVariant);
           addVariant(shinyGigantamaxVariant);
         }
       }
@@ -169,7 +170,6 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
         variant_id: '',
         species_name: (defaultVariant as any).species_name,
       } as unknown as PokemonVariant;
-      (base as any).name = getDisplayName(base);
       addVariant(base);
 
       if (mega.image_url_shiny && (pokemon as any).shiny_available) {
@@ -178,7 +178,6 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
           currentImage: mega.image_url_shiny,
           variantType: (mega.primal ? 'shiny_primal' : `shiny_mega${suffix}`) as VariantKind,
         };
-        (shinyMegaVariant as any).name = getDisplayName(shinyMegaVariant);
         addVariant(shinyMegaVariant);
       }
     });
@@ -201,9 +200,7 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
         variantType: `fusion_${fusion.fusion_id}` as VariantKind,
         species_name: fusion.name,
         variant_id: '',
-        // display name gets recomputed
       } as unknown as PokemonVariant;
-      (base as any).name = getDisplayName(base);
       addVariant(base);
 
       if (fusion.image_url_shiny) {
@@ -213,22 +210,10 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
           variantType: `shiny_fusion_${fusion.fusion_id}` as VariantKind,
           species_name: fusion.name,
         };
-        (shinyFusionVariant as any).name = getDisplayName(shinyFusionVariant);
         addVariant(shinyFusionVariant);
       }
     });
-
-    /* ---------- raid-boss filter ---------- */
-    return variants.map((v) => {
-      const raidForms = ((pokemon as any).raid_boss || []).map((rb: RaidBoss) => rb.form);
-      if (raidForms.some((f: string) => matchFormsAndVariantType((v as any).form, f, v.variantType))) {
-        return v;
-      } else {
-        // Remove the raid_boss property if no match, but return the variant
-        const { raid_boss, ...rest } = v as any;
-        return rest as PokemonVariant;
-      }
-    });
+    return variants;
   };
 
   return pokemons.flatMap(generateVariants);

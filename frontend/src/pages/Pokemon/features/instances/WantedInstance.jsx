@@ -20,6 +20,8 @@ import { determineImageUrl } from '@/utils/imageHelpers';
 const WantedInstance = ({ pokemon, isEditable }) => {
   // console.log(pokemon.pokemonKey)
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
+  const entityKey =
+    pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? pokemon.pokemonKey;
 
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState(pokemon.instanceData.nickname);
@@ -90,7 +92,7 @@ const WantedInstance = ({ pokemon, isEditable }) => {
 
   const toggleEditMode = () => {
     if (editMode) {
-      updateDetails(pokemon.pokemonKey, { 
+      updateDetails(entityKey, { 
         nickname, 
         favorite: isFavorite, 
         gender, 

@@ -72,16 +72,19 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.match(event.request).then(async (cached) => {
         if (cached) return cached;
-        try {
-          return await fetch(event.request, { credentials: 'include' });
-        } catch {
-          return new Response('', { status: 200, statusText: 'OK' });
-        }
+        return fetch(event.request, { credentials: 'include' });
       })
     );
   } else {
     event.respondWith(
-      fetch(event.request).catch(() => new Response('', { status: 200, statusText: 'OK' }))
+      fetch(event.request).catch((err) => {
+        log('fetch passthru failed', {
+          url: event.request.url,
+          message: err?.message || String(err),
+        });
+        // Propagate network/CORS failures to the app instead of returning a fake 200.
+        throw err;
+      })
     );
   }
 });

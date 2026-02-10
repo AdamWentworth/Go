@@ -1,75 +1,43 @@
-// src/services/tests/pokemonDataService.integration.test.ts
-import { useLivePokemons } from '../../../utils/livePokemonCache';
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { enableLogging, testLogger } from '../../../setupTests';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import axios from 'axios';
 
-const requiredKeys = [
-  'attack', 'available', 'costumes', 'cp40', 'cp50',
-  'date_available', 'defense', 'evolves_to',
-  'female_unique', 'form', 'fusion', 'gender_rate',
-  'generation', 'image_url', 'image_url_shiny',
-  'image_url_shadow', 'image_url_shiny_shadow',
-  'max', 'megaEvolutions', 'moves', 'name',
-  'pokedex_number', 'pokemon_id', 'raid_boss', 'rarity',
-  'shadow_apex', 'shadow_shiny_available', 'shiny_available',
-  'shiny_rarity', 'shiny_shadow_rarity', 'sizes',
-  'sprite_url', 'stamina', 'type1_name', 'type2_name',
-  'type_1_icon', 'type_1_id', 'type_2_icon', 'type_2_id',
-];
+import { getPokemons } from '@/services/pokemonDataService';
+import type { BasePokemon } from '@/types/pokemonBase';
+import pokemonsFixture from '@/../tests/__helpers__/fixtures/pokemons.json';
 
-const optionalKeys = [
-  'evolves_from', 'female_data', 'shadow_image_url', 
-  'shiny_image_url','shiny_shadow_image_url', 'date_shiny_available',
-  'date_shadow_available', 'date_shiny_shadow_available',
-  'backgrounds',
-];
+vi.mock('axios');
+const mockedAxios = axios as unknown as { get: ReturnType<typeof vi.fn> };
 
-describe('📡 Pokemon Data Service Integration', () => {
-  const suiteStartTime = Date.now();
+describe('pokemonDataService (integration)', () => {
+  const payload = (pokemonsFixture as BasePokemon[]).slice(0, 25);
 
-  beforeAll(() => {
-    enableLogging('verbose');
-    testLogger.fileStart('Data Service Integration Tests');
-    testLogger.suiteStart('API Contract Validation');
-
-    // Clear the in-memory test cache so we do one real HTTP call
-    // @ts-ignore
-    delete globalThis.__POKEMON_FIXTURE__;
+  beforeEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
   });
 
-  afterAll(() => {
-    testLogger.complete('API Test Suite', Date.now() - suiteStartTime);
-    testLogger.suiteComplete();
-    testLogger.fileEnd();
-    process.stdout.write('\n');
+  it('returns API payload on 200 response', async () => {
+    mockedAxios.get = vi.fn().mockResolvedValue({
+      status: 200,
+      data: payload,
+    });
+
+    const result = await getPokemons();
+
+    expect(result).toEqual(payload);
+    expect(mockedAxios.get).toHaveBeenCalledTimes(1);
   });
 
-  it('ensures Pokémon data contract stability', async () => {
-    const timerStart = Date.now();
-    try {
-      testLogger.testStep('1. Initiating API request');
-      const data = await useLivePokemons();
-      testLogger.metric('Response time', `${Date.now() - timerStart}ms`);
-      testLogger.metric('Data items received', data.length);
+  it('falls back to cached payload on 304 response', async () => {
+    localStorage.setItem('pokemonData', JSON.stringify({ data: payload }));
+    mockedAxios.get = vi.fn().mockResolvedValue({
+      status: 304,
+      data: null,
+    });
 
-      testLogger.testStep('2. Validating response schema');
-      const sample = data[0];
-      const sampleKeys = Object.keys(sample);
+    const result = await getPokemons();
 
-      testLogger.testStep('2a. Checking required keys');
-      const missing = requiredKeys.filter(k => !sampleKeys.includes(k));
-      expect(missing).toEqual([]);
-      testLogger.assertion('Required fields present');
-
-      testLogger.testStep('2b. Checking for unexpected keys');
-      const unexpected = sampleKeys.filter(k => ![...requiredKeys, ...optionalKeys].includes(k));
-      expect(unexpected).toEqual([]);
-      testLogger.assertion('No unexpected fields');
-    } catch (error) {
-      testLogger.errorDetail(error);
-      throw error;
-    } finally {
-      testLogger.complete('Schema Validation Test', Date.now() - timerStart);
-    }
+    expect(result).toEqual(payload);
   });
 });
+

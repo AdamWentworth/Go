@@ -155,7 +155,9 @@ const WantedDetails = ({
   const handlePokemonClick = (pokemonKey) => {
     const baseKey = extractBaseKey(pokemonKey);
     const variantData =
-      (variants || []).find((variant) => variant.pokemonKey === baseKey);
+      (variants || []).find(
+        (variant) => (variant.variant_id ?? variant.pokemonKey) === baseKey,
+      );
     if (!variantData) {
       console.error(`Variant not found for pokemonKey: ${pokemonKey}`);
       return;
@@ -167,7 +169,7 @@ const WantedDetails = ({
     }
     const mergedPokemonData = {
       ...variantData,
-      pokemonKey,
+      variant_id: variantData.variant_id ?? baseKey,
       ownershipStatus: {
         ...variantData.ownershipStatus,
         ...ownershipDataEntry

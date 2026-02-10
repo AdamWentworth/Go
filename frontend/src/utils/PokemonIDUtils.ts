@@ -37,18 +37,50 @@ export function getKeyParts(key: string): ParsedKeyParts {
 /** Parse a string that may be a pure variant_id or an instance_id ("{variant_id}_{uuid}") */
 export function parseVariantId(input: string): {
   baseKey: string;
+  // temporary alias for legacy call sites
+  pokemonKey: string;
   hasUUID: boolean;
 } {
+  if (!input) {
+    return { baseKey: '', pokemonKey: '', hasUUID: false };
+  }
+
   const keyParts = input.split('_');
   const lastPart = keyParts[keyParts.length - 1];
   const hasUUID = validateUUID(lastPart);
 
   if (hasUUID) keyParts.pop();
 
+  const baseKey = keyParts.join('_');
   return {
-    baseKey: keyParts.join('_'),
+    baseKey,
+    pokemonKey: baseKey,
     hasUUID,
   };
+}
+
+/** Canonical variant key accessor during pokemonKey -> variant_id migration. */
+export function getVariantIdFrom(input: {
+  variant_id?: string | null;
+  pokemonKey?: string | null;
+} | null | undefined): string {
+  return String(input?.variant_id ?? input?.pokemonKey ?? '');
+}
+
+/** Preferred entity key for mutations: instance_id first, variant_id second. */
+export function getEntityKeyFrom(input: {
+  instance_id?: string | null;
+  variant_id?: string | null;
+  pokemonKey?: string | null;
+  instanceData?: { instance_id?: string | null } | null;
+} | null | undefined): string {
+  return String(
+    input?.instanceData?.instance_id ??
+    input?.instance_id ??
+    input?.variant_id ??
+    input?.pokemonKey ??
+    '',
+  );
 }
 
 export function determineVariantId(pokemon: PokemonVariant): string {

@@ -30,7 +30,9 @@ const ListView = ({ data, instanceData, hasSearched, pokemonCache, scrollToTopTr
 
   // Helper function to find Pokémon by key in the cache
   const findPokemonByKey = (baseKey) => {
-    return pokemonVariants.find((pokemon) => pokemon.pokemonKey === baseKey);
+    return pokemonVariants.find(
+      (pokemon) => (pokemon.variant_id ?? pokemon.pokemonKey) === baseKey,
+    );
   };
 
   if (!hasSearched && data.length === 0) {

@@ -1,52 +1,47 @@
-// fetchAndProcessVariants.integration.test.ts
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { fetchAndProcessVariants } from '../../../../src/features/variants/utils/fetchAndProcessVariants';
-import { useLivePokemons } from '../../../utils/livePokemonCache';
-import { testLogger, enableLogging } from '../../../setupTests';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-describe('🔗 Integration – fetchAndProcessVariants', () => {
-  beforeAll(() => {
-    enableLogging('verbose');
-    testLogger.fileStart('End-to-End Integration Tests');
-    testLogger.suiteStart('Variant Processing Pipeline');
+import { fetchAndProcessVariants } from '@/features/variants/utils/fetchAndProcessVariants';
+import { getPokemons } from '@/services/pokemonDataService';
+import { getAllVariants } from '@/db/variantsDB';
+import { initVariantsDB } from '@/db/init';
+import { VARIANTS_STORE } from '@/db/constants';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { BasePokemon } from '@/types/pokemonBase';
+
+import pokemonsFixture from '@/../tests/__helpers__/fixtures/pokemons.json';
+
+vi.mock('@/services/pokemonDataService', () => ({
+  getPokemons: vi.fn(),
+}));
+
+async function clearVariantsStore() {
+  const db = await initVariantsDB();
+  if (!db) return;
+  await db.clear(VARIANTS_STORE);
+}
+
+describe.sequential('fetchAndProcessVariants (integration)', () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    vi.clearAllMocks();
+    await clearVariantsStore();
+    vi.mocked(getPokemons).mockResolvedValue((pokemonsFixture as BasePokemon[]).slice(0, 25));
   });
 
-  afterAll(() => {
-    testLogger.complete('End-to-End Test Suite', Date.now() - suiteStartTime);
-    testLogger.suiteComplete();  // Add suite completion
-    testLogger.fileEnd();        // Add file completion
-    process.stdout.write('\n');
+  it('persists generated variants into IndexedDB with variant_id populated', async () => {
+    const variants = await fetchAndProcessVariants();
+    const persisted = await getAllVariants<PokemonVariant>();
+
+    expect(variants.length).toBeGreaterThan(25);
+    expect(persisted.length).toBe(variants.length);
+    expect(variants.every((v) => typeof v.variant_id === 'string' && v.variant_id.length > 0)).toBe(true);
+    expect(localStorage.getItem('variantsTimestamp')).toBeTruthy();
   });
 
-  const suiteStartTime = Date.now();
+  it('is deterministic for identical payloads (same variant_id sequence)', async () => {
+    const first = await fetchAndProcessVariants();
+    const second = await fetchAndProcessVariants();
 
-  it('fetches from real API and transforms data end-to-end', async () => {
-    const timerStart = Date.now();
-    
-    try {
-      testLogger.testStep('1. Fetching original Pokémon data');
-      const original = await useLivePokemons();
-      testLogger.metric('Raw Pokémon count', original.length);
-      expect(original.length).toBeGreaterThan(0);
-
-      testLogger.testStep('2. Processing variants');
-      const variants = await fetchAndProcessVariants();
-      testLogger.metric('Generated variants', variants.length);
-      expect(Array.isArray(variants)).toBe(true);
-      testLogger.assertion('Received valid variants array');
-
-      testLogger.testStep('3. Validating variant structure');
-      const sample = variants[0];
-      expect(sample.name).toBeDefined();
-      expect(sample.variantType).toBeDefined();
-      expect(sample.currentImage).toBeDefined();
-      expect(sample.pokemonKey).toBeDefined();
-      testLogger.assertion('Sample variant validation passed');
-    } catch (error) {
-      testLogger.errorDetail(error);
-      throw error;
-    } finally {
-      testLogger.complete('End-to-End Test', Date.now() - timerStart);
-    }
-  }, 10000);
+    expect(second.map((v) => v.variant_id)).toEqual(first.map((v) => v.variant_id));
+  });
 });

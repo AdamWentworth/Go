@@ -34,6 +34,8 @@ import { calculateCP } from '@/utils/calculateCP';
 const TradeInstance = ({ pokemon, isEditable }) => {
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const { alert } = useModal(); // for showing validation errors
+  const entityKey =
+    pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? pokemon.pokemonKey;
 
   // --- 2) Extract validation objects from our hook
   const {
@@ -285,7 +287,7 @@ const TradeInstance = ({ pokemon, isEditable }) => {
       };
 
       try {
-        await updateDetails({ [pokemon.pokemonKey]: payload });
+        await updateDetails({ [entityKey]: payload });
       } catch (error) {
         console.error('Error updating trade details:', error);
         alert(

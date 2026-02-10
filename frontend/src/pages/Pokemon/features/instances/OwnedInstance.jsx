@@ -46,6 +46,8 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const { alert } = useModal();
   const { errors: validationErrors, validate, resetErrors } = useValidation();
+  const entityKey =
+    pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? pokemon.pokemonKey;
 
   // State declarations
   const [megaData, setMegaData] = useState({
@@ -269,7 +271,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           const changes = {};
 
           // Primary Pokémon changes
-          changes[pokemon.pokemonKey] = {
+          changes[entityKey] = {
             nickname: nickname,
             lucky: isLucky,
             cp:
@@ -345,7 +347,7 @@ const OwnedInstance = ({ pokemon, isEditable }) => {
           if (newFusedWith && is_fused && newFusedWith !== originalFusedWith) {
             changes[newFusedWith] = {
               disabled: true,
-              fused_with: pokemon.pokemonKey,
+              fused_with: entityKey,
               is_fused: true,
               fusion_form: fusion_form,  
             };

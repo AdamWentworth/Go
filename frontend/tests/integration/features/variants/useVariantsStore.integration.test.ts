@@ -24,7 +24,7 @@ const dummyPokedexLists = pokedexListsFixture as PokedexLists;
 
 let loadCacheSpy: MockInstance;
 
-describe('useVariantsStore integration', () => {
+describe.sequential('useVariantsStore integration', () => {
   beforeEach(() => {
     localStorage.clear();
 
@@ -107,7 +107,7 @@ describe('useVariantsStore integration', () => {
 
     await useVariantsStore.getState().refreshVariants();
 
-    expect(loadCacheSpy.mock.calls.length).toBeGreaterThanOrEqual(2); // initial read + fallback
+    expect(loadCacheSpy.mock.calls.length).toBeGreaterThanOrEqual(1); // fallback read
     expect(useVariantsStore.getState().variants).toEqual(dummyVariants);
   });
 

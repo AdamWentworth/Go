@@ -9,6 +9,7 @@ import { updateInstanceDetails as makeUpdateDetails } from '@/features/instances
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { replaceInstancesData } from '@/features/instances/storage/instancesStorage';
+import { areInstancesEqual } from '@/features/instances/utils/instancesEquality';
 
 import type { Instances, MutableInstances, InstanceStatus } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -80,7 +81,7 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
       }
 
       const current = get().instances;
-      if (JSON.stringify(current) === JSON.stringify(incoming)) {
+      if (areInstancesEqual(current, incoming)) {
         console.log('[InstancesStore] 💤 No changes – incoming data matches current');
         return;
       }

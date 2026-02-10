@@ -22,8 +22,10 @@ interface TradeData {
   is_lucky_trade?: boolean;
   trade_friendship_level?: 1 | 2 | 3 | 4;
   pokemon: {
-    pokemonKey: string;
-    instanceData: instanceData;
+    variant_id?: string;
+    pokemonKey?: string; // legacy
+    instance_id?: string;
+    instanceData?: instanceData;
   };
 }
 
@@ -131,8 +133,13 @@ export async function proposeTrade(tradeData: TradeData): Promise<{
   };
 
   const relatedInstanceData = {
-    instance_id: pokemon.pokemonKey,
-    ...pokemon.instanceData,
+    instance_id:
+      (pokemon.instanceData?.instance_id as string | undefined) ??
+      pokemon.instance_id ??
+      pokemon.variant_id ??
+      pokemon.pokemonKey ??
+      '',
+    ...(pokemon.instanceData ?? {}),
   };
 
   return {

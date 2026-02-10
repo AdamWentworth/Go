@@ -37,12 +37,20 @@ export function updateInstanceDetails(
       const apply = (key: string, patch: Patch) => {
         if (!patch || Object.keys(patch).length === 0) return false;
 
-        if (!draft[key]) {
+        const existing = (draft as any)[key];
+        if (!existing) {
           console.warn('[updateInstanceDetails] "%s" missing – creating placeholder', key);
           (draft as any)[key] = {} as Partial<PokemonInstance>;
         }
+
+        const current = (draft as any)[key] as Record<string, unknown>;
+        const hasActualChange = Object.entries(patch).some(
+          ([field, value]) => !Object.is(current[field], value)
+        );
+        if (!hasActualChange) return false;
+
         (draft as any)[key] = {
-          ...(draft as any)[key],
+          ...current,
           ...patch,
           last_update: timestamp,
         };

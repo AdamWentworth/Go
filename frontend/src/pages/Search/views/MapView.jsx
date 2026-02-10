@@ -41,7 +41,9 @@ const MapView = ({ data, instanceData, pokemonCache }) => {
   }, [pokemonCache]);
 
   const findPokemonByKey = (baseKey) => {
-    return pokemonVariants.find((pokemon) => pokemon.pokemonKey === baseKey);
+    return pokemonVariants.find(
+      (pokemon) => (pokemon.variant_id ?? pokemon.pokemonKey) === baseKey,
+    );
   };
 
   const navigateToUserCatalog = (username, instanceId, instanceData) => {

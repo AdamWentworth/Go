@@ -13,7 +13,8 @@ interface PokemonProps {
   max: MaxForm[];
   instanceData: instanceData;
   variantType?: string;
-  pokemonKey: string;
+  variant_id?: string;
+  pokemonKey?: string; // legacy
 }
 
 interface MaxComponentProps {
@@ -33,6 +34,7 @@ const MaxComponent: React.FC<MaxComponentProps> = ({
   onToggleMax,
   showMaxOptions
 }) => {
+  const key = pokemon.variant_id ?? pokemon.pokemonKey ?? '';
   const hasMaxVariant =
     pokemon.variantType &&
     (pokemon.variantType.includes('dynamax') || pokemon.variantType.includes('gigantamax'));
@@ -59,7 +61,7 @@ const MaxComponent: React.FC<MaxComponentProps> = ({
         onClick={onToggleMax}
         style={{ cursor: 'pointer' }}
         aria-expanded={showMaxOptions}
-        aria-controls={`max-options-${pokemon.pokemonKey}`}
+        aria-controls={`max-options-${key}`}
       >
         <img
           src={

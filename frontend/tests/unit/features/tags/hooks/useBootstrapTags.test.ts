@@ -1,87 +1,87 @@
-// File: tests/hooks/useBootstrapTags.test.ts
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useBootstrapTags } from '@/features/tags/hooks/useBootstrapTags';
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 
-import { testLogger, enableLogging } from '../../setupTests';
-import type { TagBuckets } from '@/types/tags';
-
-import { useLiveVariants } from '../../utils/liveVariantCache';
-import { useLiveInstances } from '../../utils/liveInstancesCache';
-
-describe('🪝 useBootstrapTags', () => {
-  let liveVariants: Awaited<ReturnType<typeof useLiveVariants>>;
-  let liveInstances: Awaited<ReturnType<typeof useLiveInstances>>;
-
-  beforeAll(async () => {
-    liveVariants = await useLiveVariants();
-    liveInstances = await useLiveInstances();
-
-    enableLogging('verbose');
-    testLogger.fileStart('Hook Tests');
-    testLogger.suiteStart('useBootstrapTags');
-  });
-
-  afterAll(() => {
-    testLogger.suiteComplete();
-    testLogger.fileEnd();
-    testLogger.fileSeparator();
-  });
-
+describe('useBootstrapTags', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
-    testLogger.suiteStart('reset store state');
+    vi.clearAllMocks();
 
-    // Seed stores with real data
     useVariantsStore.setState({
-      variants: liveVariants,
+      variants: [],
       variantsLoading: false,
+      pokedexLists: {} as any,
+      isRefreshing: false,
     });
+
     useInstancesStore.setState({
-      instances: liveInstances,
+      instances: {},
+      foreignInstances: null,
       instancesLoading: false,
     });
 
-    // Reset tags store
     useTagsStore.setState({
-      tags: { owned: {}, trade: {}, wanted: {}, unowned: {} } as TagBuckets,
+      tags: { caught: {}, wanted: {}, trade: {} } as any,
+      customTags: { caught: {}, wanted: {} },
+      systemChildren: {
+        caught: { favorite: {}, trade: {} },
+        wanted: { mostWanted: {} },
+      },
       tagsLoading: true,
-      hydrateFromCache: vi.fn().mockResolvedValue(undefined),
-      buildTags:        vi.fn().mockResolvedValue(undefined),
+      customTagsLoading: true,
+      foreignTags: null,
+      hydrateFromCache: vi.fn().mockResolvedValue(undefined) as any,
+      buildTags: vi.fn().mockResolvedValue(undefined) as any,
     });
-
-    testLogger.suiteComplete();
   });
 
-  // tests/hooks/useBootstrapTags.test.ts
-  it('hydrates from cache on mount', async () => {
-    // 1. Clear existing timestamps and set ownership newer than lists
-    localStorage.setItem('ownershipTimestamp', Date.now().toString());
-    localStorage.removeItem('listsTimestamp');
-  
-    // 2. Create direct reference to original implementation
-    const store = useTagsStore.getState();
-    const originalHydrate = store.hydrateFromCache;
-    
-    // 3. Spy on the ACTUAL implementation
-    const hydrateSpy = vi.spyOn(store, 'hydrateFromCache')
-      .mockImplementation(async () => {
-        console.log('[TEST] HydrateFromCache triggered');
-        return originalHydrate();
-      });
-  
-    // 4. Render with async act
-    await act(async () => {
-      renderHook(() => useBootstrapTags());
-    });
-  
-    // 5. Wait with extended timeout
+  it('hydrates tags from cache on mount', async () => {
+    const hydrateSpy = vi.spyOn(useTagsStore.getState(), 'hydrateFromCache');
+
+    renderHook(() => useBootstrapTags());
+
     await waitFor(() => {
       expect(hydrateSpy).toHaveBeenCalledTimes(1);
-    }, { timeout: 5000 });
+    });
+  });
+
+  it('builds tags once both instances and variants are available', async () => {
+    const buildSpy = vi.spyOn(useTagsStore.getState(), 'buildTags');
+
+    renderHook(() => useBootstrapTags());
+
+    await act(async () => {
+      useVariantsStore.setState({
+        variants: [
+          {
+            variant_id: '0001-default',
+            pokemon_id: 1,
+            name: 'Bulbasaur',
+            currentImage: '/images/default/pokemon_1.png',
+            stamina: 111,
+            moves: [],
+            pokedex_number: 1,
+          } as any,
+        ],
+      });
+      useInstancesStore.setState({
+        instances: {
+          'caught-1': {
+            instance_id: 'caught-1',
+            variant_id: '0001-default',
+            pokemon_id: 1,
+            is_caught: true,
+            is_wanted: false,
+          } as any,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(buildSpy).toHaveBeenCalled();
+    });
   });
 });

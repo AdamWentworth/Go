@@ -4,7 +4,8 @@ import React, { useEffect } from "react";
 import "./MaxMovesComponent.css";
 
 interface PokemonProps {
-  pokemonKey: string;
+  variant_id?: string;
+  pokemonKey?: string; // legacy
 }
 
 interface MaxMovesComponentProps {
@@ -32,6 +33,7 @@ const MaxMovesComponent: React.FC<MaxMovesComponentProps> = ({
   handleMaxGuardChange,
   handleMaxSpiritChange,
 }) => {
+  const key = pokemon.variant_id ?? pokemon.pokemonKey ?? '';
   useEffect(() => {
     if (!editMode) {
       setShowMaxOptions(false);
@@ -41,7 +43,7 @@ const MaxMovesComponent: React.FC<MaxMovesComponentProps> = ({
   return (
     <div
       className={`max-options-container ${showMaxOptions ? "show" : ""}`}
-      id={`max-options-${pokemon.pokemonKey}`}
+      id={`max-options-${key}`}
     >
       <div className="max-moves-row">
         {/* Max Attack */}

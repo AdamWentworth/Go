@@ -14,8 +14,11 @@ export function usePokemonDetails(instanceId, variants, relatedInstances, owners
     const parsed = parsePokemonKey(instanceId);
 
     const variantData =
-      variants[parsed.pokemonKey] ||
-      (Array.isArray(variants) && variants.find(v => v.pokemonKey === parsed.baseKey));
+      variants[parsed.baseKey] ||
+      (Array.isArray(variants) &&
+        variants.find(
+          v => (v.variant_id ?? v.pokemonKey) === parsed.baseKey,
+        ));
 
     // Check relatedInstances or ownershipData for the instance
     const instanceDetails =

@@ -3,70 +3,80 @@
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokedexLists } from '@/types/pokedex';
 
+const LIST_NAMES = [
+  'default',
+  'shiny',
+  'costume',
+  'shadow',
+  'shiny costume',
+  'shiny shadow',
+  'shadow costume',
+  'mega',
+  'shiny mega',
+  'dynamax',
+  'shiny dynamax',
+  'gigantamax',
+  'shiny gigantamax',
+  'fusion',
+  'shiny fusion',
+] as const;
+
+type ListName = (typeof LIST_NAMES)[number];
+
+const bucketCache = new Map<string, ListName>();
+const listsCacheByArray = new WeakMap<PokemonVariant[], PokedexLists>();
+
+function classifyVariantType(variantType: string): ListName {
+  const cached = bucketCache.get(variantType);
+  if (cached) return cached;
+
+  const vt = variantType.toLowerCase();
+  let bucket: ListName = 'default';
+
+  if (vt === 'shiny') {
+    bucket = 'shiny';
+  } else if (vt.includes('fusion')) {
+    bucket = vt.includes('shiny') ? 'shiny fusion' : 'fusion';
+  } else if (vt.includes('gigantamax')) {
+    bucket = vt.includes('shiny') ? 'shiny gigantamax' : 'gigantamax';
+  } else if (vt.includes('dynamax')) {
+    bucket = vt.includes('shiny') ? 'shiny dynamax' : 'dynamax';
+  } else if (vt.includes('mega') || vt.includes('primal')) {
+    bucket = vt.includes('shiny') ? 'shiny mega' : 'mega';
+  } else if (vt.includes('shiny') && vt.includes('costume')) {
+    bucket = 'shiny costume';
+  } else if (vt.includes('shiny') && vt.includes('shadow')) {
+    bucket = 'shiny shadow';
+  } else if (vt.includes('shadow') && vt.includes('costume')) {
+    bucket = 'shadow costume';
+  } else if (vt.includes('costume')) {
+    bucket = 'costume';
+  } else if (vt.includes('shadow')) {
+    bucket = 'shadow';
+  }
+
+  bucketCache.set(variantType, bucket);
+  return bucket;
+}
+
+function createEmptyLists(): PokedexLists {
+  return LIST_NAMES.reduce<PokedexLists>((acc, name) => {
+    acc[name] = [];
+    return acc;
+  }, {} as PokedexLists);
+}
+
 export default function sortPokedexLists(variants: PokemonVariant[]): PokedexLists {
-  const lists: PokedexLists = {
-    default: [],
-    shiny: [],
-    costume: [],
-    shadow: [],
-    'shiny costume': [],
-    'shiny shadow': [],
-    'shadow costume': [],
-    mega: [],
-    'shiny mega': [],
-    dynamax: [],
-    'shiny dynamax': [],
-    gigantamax: [],
-    'shiny gigantamax': [],
-    fusion: [],
-    'shiny fusion': []
-  };
+  const cached = listsCacheByArray.get(variants);
+  if (cached) return cached;
 
-  variants.forEach((variant: PokemonVariant) => {
-    const vt = variant.variantType.toLowerCase();
+  const lists: PokedexLists = createEmptyLists();
 
-    if (vt === 'default') {
-      lists.default.push(variant);
-    } else if (vt === 'shiny') {
-      lists.shiny.push(variant);
-    } else if (vt.includes('fusion')) {
-      if (vt.includes('shiny')) {
-        lists['shiny fusion'].push(variant);
-      } else {
-        lists.fusion.push(variant);
-      }
-    } else if (vt.includes('gigantamax')) {
-      if (vt.includes('shiny')) {
-        lists['shiny gigantamax'].push(variant);
-      } else {
-        lists.gigantamax.push(variant);
-      }
-    } else if (vt.includes('dynamax')) {
-      if (vt.includes('shiny')) {
-        lists['shiny dynamax'].push(variant);
-      } else {
-        lists.dynamax.push(variant);
-      }
-    } else if (vt.includes('mega') || vt.includes('primal')) {
-      if (vt.includes('shiny')) {
-        lists['shiny mega'].push(variant);
-      } else {
-        lists.mega.push(variant);
-      }
-    } else if (vt.includes('shiny') && vt.includes('costume')) {
-      lists['shiny costume'].push(variant);
-    } else if (vt.includes('shiny') && vt.includes('shadow')) {
-      lists['shiny shadow'].push(variant);
-    } else if (vt.includes('shadow') && vt.includes('costume') && !vt.includes('shiny')) {
-      lists['shadow costume'].push(variant);
-    } else if (vt.includes('costume') && !vt.includes('shiny')) {
-      lists.costume.push(variant);
-    } else if (vt.includes('shadow') && !vt.includes('shiny')) {
-      lists.shadow.push(variant);
-    } else {
-      lists.default.push(variant);
-    }
-  });
+  for (const variant of variants) {
+    const bucket = classifyVariantType(variant.variantType);
+    lists[bucket].push(variant);
+  }
 
+  listsCacheByArray.set(variants, lists);
   return lists;
 }

@@ -24,7 +24,14 @@ export const getPokemons = async (): Promise<Pokemons> => {
       throw new Error('No cached data available for 304 response');
     }
 
-    return response.data;
+    const payload = response.data as unknown;
+    if (!Array.isArray(payload)) {
+      throw new Error(
+        `[pokemonDataService] invalid payload shape: expected array, got ${typeof payload}`
+      );
+    }
+
+    return payload as Pokemons;
   } catch (error: unknown) {
     if (axios.isAxiosError(error) && error.response?.status === 304) {
       if (isDev) console.log('Caught 304 in error handler - Using cached data');

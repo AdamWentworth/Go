@@ -14,6 +14,8 @@ import { logSize } from '@/utils/loggers';
 import { fetchAndProcessVariants } from './fetchAndProcessVariants';
 import { POKEDEX_STORES } from '@/db/constants';
 
+let derivedListsMemo: { key: string; lists: PokedexLists } | null = null;
+
 /**
  * Store all generated Pokedex lists in IndexedDB (one object-store per category).
  */
@@ -25,6 +27,22 @@ async function storePokedexLists(lists: PokedexLists): Promise<void> {
     );
   }
   await Promise.all(ops);
+}
+
+function getDerivedListsMemoKey(variants: PokemonVariant[], variantsTimestamp: number): string {
+  // Timestamp changes whenever variants are refreshed; length is a cheap safety discriminator.
+  return `${variantsTimestamp}:${variants.length}`;
+}
+
+function getOrBuildPokedexLists(variants: PokemonVariant[], variantsTimestamp: number): PokedexLists {
+  const memoKey = getDerivedListsMemoKey(variants, variantsTimestamp);
+  if (derivedListsMemo?.key === memoKey) {
+    return derivedListsMemo.lists;
+  }
+
+  const lists = sortPokedexLists(variants);
+  derivedListsMemo = { key: memoKey, lists };
+  return lists;
 }
 
 export async function loadVariants() {
@@ -81,7 +99,9 @@ export async function loadVariants() {
     /*  Pokedex lists                                                 */
     /* -------------------------------------------------------------- */
     console.log('PokedexLists are stale or variants updated, regenerating...');
-    pokedexLists = sortPokedexLists(variants);
+    const currentVariantsTimestamp =
+      Number(localStorage.getItem('variantsTimestamp') || variantsTimestamp || 0);
+    pokedexLists = getOrBuildPokedexLists(variants, currentVariantsTimestamp);
 
     try {
       await storePokedexLists(pokedexLists);

@@ -37,6 +37,8 @@ const useToggleEditModeTrade = (
   filteredOutPokemon,
 ) => {
   const [editMode, setEditMode] = useState(false);
+  const currentKey =
+    pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? pokemon.pokemonKey;
 
   /* --------------------------------------------------------------------- */
   /*  Source of truth for ALL instance data                                */
@@ -66,7 +68,7 @@ const useToggleEditModeTrade = (
       removedKeys.forEach(k => {
         const next = updateNotTradeList(
           ownershipData,           // live store map
-          pokemon.pokemonKey,      // current Pokémon
+          currentKey,      // current Pokémon
           k,                       // partner instance
           false,                   // remove link
           isMirror,
@@ -77,7 +79,7 @@ const useToggleEditModeTrade = (
       addedKeys.forEach(k => {
         const next = updateNotTradeList(
           ownershipData,
-          pokemon.pokemonKey,
+          currentKey,
           k,
           true,                    // add link
           isMirror,
@@ -86,7 +88,7 @@ const useToggleEditModeTrade = (
       });
 
       /* 3b. Primary Pokémon’s own patch -------------------------------- */
-      patchMap[pokemon.pokemonKey] = {
+      patchMap[currentKey] = {
         not_wanted_list: updatedNotWantedList,
         wanted_filters : localWantedFilters,
         mirror         : isMirror,
@@ -116,7 +118,7 @@ const useToggleEditModeTrade = (
     /* ENTERING edit‑mode (or other misc exit tweaks) ------------------- */
     else {
       if (!isMirror && pokemon.instanceData.mirror) {
-        updateDetails(pokemon.pokemonKey, {
+        updateDetails(currentKey, {
           ...pokemon.instanceData,
           mirror: false,
         });
@@ -131,3 +133,4 @@ const useToggleEditModeTrade = (
 };
 
 export default useToggleEditModeTrade;
+

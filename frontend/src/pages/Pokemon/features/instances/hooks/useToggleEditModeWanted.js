@@ -20,9 +20,12 @@ export const toggleEditMode = ({
   /* ------------------------------------------------------------------ */
   // ENTER / EXIT
   /* ------------------------------------------------------------------ */
+  const currentKey =
+    pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? pokemon.pokemonKey;
+
   console.log('[Wanted] toggleEditMode – start', {
     enteringEdit: !editMode,
-    pokemonKey: pokemon.pokemonKey,
+    pokemonKey: currentKey,
   });
 
   /* ------------------------------------------------------------------ */
@@ -48,7 +51,7 @@ export const toggleEditMode = ({
     removedKeys.forEach(k => {
       const next = updateNotWantedList(
         ownershipData,
-        pokemon.pokemonKey,
+        currentKey,
         k,
         false,
       );
@@ -59,7 +62,7 @@ export const toggleEditMode = ({
     addedKeys.forEach(k => {
       const next = updateNotWantedList(
         ownershipData,
-        pokemon.pokemonKey,
+        currentKey,
         k,
         true,
       );
@@ -67,7 +70,7 @@ export const toggleEditMode = ({
     });
 
     //   3c. Primary Pokémon’s own patch
-    patchMap[pokemon.pokemonKey] = {
+    patchMap[currentKey] = {
       not_trade_list: updatedNotTradeList,
       trade_filters: localTradeFilters,
     };
@@ -91,3 +94,4 @@ export const toggleEditMode = ({
   /* ------------------------------------------------------------------ */
   setEditMode(!editMode);
 };
+

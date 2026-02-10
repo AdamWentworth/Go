@@ -30,7 +30,7 @@ jobs:
       VITE_SEARCH_API_URL: ${{ vars.VITE_SEARCH_API_URL || 'https://pokemongonexus.com/api/search' }}
       VITE_LOCATION_SERVICE_URL: ${{ vars.VITE_LOCATION_SERVICE_URL || 'https://pokemongonexus.com/api/location' }}
       VITE_EVENTS_API_URL: ${{ vars.VITE_EVENTS_API_URL || 'https://pokemongonexus.com/api/events' }}
-      VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1741290124604' }}
+      VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1770678424675' }}
     defaults:
       run:
         working-directory: frontend
@@ -105,7 +105,7 @@ jobs:
       VITE_SEARCH_API_URL: ${{ vars.VITE_SEARCH_API_URL || 'https://pokemongonexus.com/api/search' }}
       VITE_LOCATION_SERVICE_URL: ${{ vars.VITE_LOCATION_SERVICE_URL || 'https://pokemongonexus.com/api/location' }}
       VITE_EVENTS_API_URL: ${{ vars.VITE_EVENTS_API_URL || 'https://pokemongonexus.com/api/events' }}
-      VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1741290124604' }}
+      VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1770678424675' }}
 
     steps:
       - uses: actions/checkout@v4

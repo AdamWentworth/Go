@@ -45,8 +45,11 @@ const CaughtInstance = ({ pokemon, isEditable }) => {
     backgrounds,
     name,
     variantType,
-    pokemonKey,
+    variant_id,
+    pokemonKey: legacyPokemonKey,
   } = pokemon;
+  const pokemonKey =
+    instanceData?.instance_id ?? variant_id ?? legacyPokemonKey;
 
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const { alert } = useModal();

@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 
 import { useUserSearchStore } from '@/stores/useUserSearchStore';
 import { useVariantsStore   } from '@/features/variants/store/useVariantsStore';
+import { getEntityKeyFrom } from '@/utils/PokemonIDUtils';
 
 import type { PokemonVariant  } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -86,7 +87,9 @@ export default function useInstanceIdProcessor({
     /* 1) Try to find it in the already‑filtered list                 */
     /* -------------------------------------------------------------- */
     let combined: PokemonVariant | null =
-      filteredVariants.find(p => p.pokemonKey === instanceId) ?? null;
+      filteredVariants.find(
+        p => getEntityKeyFrom(p as any) === instanceId || p.variant_id === instanceId,
+      ) ?? null;
 
     /* -------------------------------------------------------------- */
     /* 2) Fallback: enrich base variant with raw instance data        */
@@ -98,7 +101,11 @@ export default function useInstanceIdProcessor({
           p => p.pokemon_id === raw.pokemon_id
         );
         if (variant) {
-          combined = { ...variant, pokemonKey: instanceId, instanceData: raw };
+          combined = {
+            ...variant,
+            variant_id: variant.variant_id || instanceId,
+            instanceData: raw,
+          };
         }
       }
     }

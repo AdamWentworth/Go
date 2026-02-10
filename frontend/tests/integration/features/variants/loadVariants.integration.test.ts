@@ -1,145 +1,106 @@
-// tests/variants/integration/loadVariants.integration.test.ts
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { enableLogging, testLogger }                 from '../../../setupTests';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { loadVariants }                              from '@/features/variants/utils/loadVariants';
-import { clearStore }                                from '@/db/instancesDB';
-import { useLiveVariants }                           from '../../../utils/liveVariantCache';
-import { useLivePokedexLists }                       from '../../../utils/livePokedexListsCache';
+vi.mock('@/features/variants/utils/fetchAndProcessVariants', () => ({
+  fetchAndProcessVariants: vi.fn(),
+}));
 
-/* helper – wipe both object stores + timestamps */
-async function wipePersistentCache() {
-  await Promise.all([
-    clearStore('pokemonVariants'),
-    clearStore('pokedexLists').catch(() => {}),         // ignore NotFound on first run
-  ]);
+import { loadVariants } from '@/features/variants/utils/loadVariants';
+import { fetchAndProcessVariants } from '@/features/variants/utils/fetchAndProcessVariants';
+import { initVariantsDB, initPokedexDB } from '@/db/init';
+import { VARIANTS_STORE, POKEDEX_STORES } from '@/db/constants';
+import { getAllPokedex } from '@/db/pokedexDB';
+import sortPokedexLists from '@/features/variants/utils/sortPokedexLists';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import variantsFixture from '@/../tests/__helpers__/fixtures/variants.json';
+
+async function clearVariantAndPokedexCaches() {
+  const variantsDB = await initVariantsDB();
+  if (variantsDB) await variantsDB.clear(VARIANTS_STORE);
+
+  const pokedexDB = await initPokedexDB();
+  if (pokedexDB) {
+    await Promise.all(POKEDEX_STORES.map((store) => pokedexDB.clear(store)));
+  }
+
   localStorage.removeItem('variantsTimestamp');
   localStorage.removeItem('pokedexListsTimestamp');
 }
 
-/*────────────────────────  TEST SUITE  ────────────────────────*/
-const suiteStart = Date.now();
+describe.sequential('loadVariants (integration)', () => {
+  const freshVariants = (variantsFixture as PokemonVariant[]).slice(0, 50).map((variant, idx) => ({
+    ...variant,
+    variant_id:
+      (variant as any).variant_id ??
+      (variant as any).pokemonKey ??
+      `${String(variant.pokemon_id).padStart(4, '0')}-${variant.variantType}-${idx}`,
+  }));
+  const staleTimestamp = Date.now() - 1000 * 60 * 60 * 48; // 48h
 
-describe('♻️ Integration - loadVariants', () => {
-  /* ───── suite header ───── */
-  beforeAll(() => {
-    enableLogging('verbose');                                           // turn on pretty logs
-    testLogger.fileStart('loadVariants live tests');
-    testLogger.suiteStart('Cold-start / warm-cache scenarios');
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    await clearVariantAndPokedexCaches();
+    vi.mocked(fetchAndProcessVariants).mockResolvedValue(freshVariants);
   });
 
-  afterAll(() => {
-    testLogger.complete('loadVariants live suite', Date.now() - suiteStart);
-    testLogger.suiteComplete();   // pop indent
-    testLogger.fileEnd();         // pop file indent
+  it('cold start: fetches/processes variants and builds pokedex lists', async () => {
+    const result = await loadVariants();
+    const persistedLists = await getAllPokedex();
+
+    expect(fetchAndProcessVariants).toHaveBeenCalled();
+    expect(result.variants.length).toBe(freshVariants.length);
+    expect(result.listsBuiltNow).toBe(true);
+    expect(Object.values(persistedLists).flat().length).toBe(freshVariants.length);
+    expect(localStorage.getItem('pokedexListsTimestamp')).toBeTruthy();
   });
 
-  /*───────────────────────────────────────────────────────────*/
-  it(
-    'cold-start → hydrates from network & builds lists',
-    async () => {
-      const t0 = Date.now();
-      try {
-        testLogger.testStep('wipe persistent cache');
-        await wipePersistentCache();
-        testLogger.assertion('IndexedDB + localStorage cleared');
+  it('warm cache: uses IndexedDB only and skips fetch path', async () => {
+    const lists = sortPokedexLists(freshVariants);
 
-        testLogger.testStep('invoke loadVariants() – cold path');
-        const { variants, pokedexLists, listsBuiltNow } = await loadVariants();
+    const variantsDB = await initVariantsDB();
+    if (variantsDB) {
+      const tx = variantsDB.transaction(VARIANTS_STORE, 'readwrite');
+      for (const variant of freshVariants) tx.store.put(variant);
+      await tx.done;
+    }
 
-        expect(variants.length).toBeGreaterThan(1_000);
-        expect(Object.keys(pokedexLists).length).toBeGreaterThan(0);
-        expect(listsBuiltNow).toBe(true);
-        testLogger.metric('Variants fetched', variants.length);
-        testLogger.metric('List keys', Object.keys(pokedexLists).length);
-        testLogger.assertion('Cold-start produced data & rebuilt lists');
+    const pokedexDB = await initPokedexDB();
+    if (pokedexDB) {
+      await Promise.all(
+        POKEDEX_STORES.map(async (store) => {
+          const tx = pokedexDB.transaction(store, 'readwrite');
+          await tx.store.clear();
+          for (const variant of lists[store] ?? []) tx.store.put(variant);
+          await tx.done;
+        }),
+      );
+    }
 
-        testLogger.testStep('verify fresh timestamps saved');
-        const tsVar  = Number(localStorage.getItem('variantsTimestamp'));
-        const tsList = Number(localStorage.getItem('pokedexListsTimestamp'));
-        expect(tsVar).toBeGreaterThan(0);
-        expect(tsList).toBeGreaterThan(0);
-        testLogger.assertion('Freshness timestamps present');
-      } catch (err) {
-        testLogger.errorDetail(err);
-        throw err;
-      } finally {
-        testLogger.complete('cold-start test', Date.now() - t0);
-      }
-    },
-    20_000,
-  );
+    localStorage.setItem('variantsTimestamp', Date.now().toString());
+    localStorage.setItem('pokedexListsTimestamp', Date.now().toString());
 
-  /*───────────────────────────────────────────────────────────*/
-  it(
-    'warm-cache → returns without rebuilding lists',
-    async () => {
-      const t0 = Date.now();
-      try {
-        testLogger.testStep('call loadVariants() – warm path');
-        const { listsBuiltNow } = await loadVariants();
+    const result = await loadVariants();
 
-        expect(listsBuiltNow).toBe(false);
-        testLogger.assertion('Returned via fast-path (IDB only)');
-      } catch (err) {
-        testLogger.errorDetail(err);
-        throw err;
-      } finally {
-        testLogger.complete('warm-cache test', Date.now() - t0);
-      }
-    },
-    20_000,    // give plenty of room for your environment
-  );
+    expect(fetchAndProcessVariants).not.toHaveBeenCalled();
+    expect(result.listsBuiltNow).toBe(false);
+    expect(result.variants.length).toBe(freshVariants.length);
+  });
 
-  /*───────────────────────────────────────────────────────────*/
-  it(
-    'stale lists → variants reused, lists rebuilt',
-    async () => {
-      const t0 = Date.now();
-      try {
-        testLogger.testStep('force lists timestamp 48 h old');
-        const now = Date.now();
-        localStorage.setItem('pokedexListsTimestamp', String(now - 1000 * 60 * 60 * 48));
+  it('stale lists only: rebuilds lists from cached variants without refetching variants', async () => {
+    const variantsDB = await initVariantsDB();
+    if (variantsDB) {
+      const tx = variantsDB.transaction(VARIANTS_STORE, 'readwrite');
+      for (const variant of freshVariants) tx.store.put(variant);
+      await tx.done;
+    }
 
-        const { listsBuiltNow } = await loadVariants();
+    localStorage.setItem('variantsTimestamp', Date.now().toString());
+    localStorage.setItem('pokedexListsTimestamp', staleTimestamp.toString());
 
-        expect(listsBuiltNow).toBe(true);
-        const newListsTS = Number(localStorage.getItem('pokedexListsTimestamp'));
-        expect(newListsTS).toBeGreaterThan(now);
-        testLogger.assertion('Lists were rebuilt & timestamp updated');
-      } catch (err) {
-        testLogger.errorDetail(err);
-        throw err;
-      } finally {
-        testLogger.complete('stale-lists test', Date.now() - t0);
-      }
-    },
-    15_000,
-  );
+    const result = await loadVariants();
 
-  /*───────────────────────────────────────────────────────────*/
-  it(
-    'live helpers reuse the newly built IndexedDB data',
-    async () => {
-      const t0 = Date.now();
-      try {
-        testLogger.testStep('obtain live variants via shared cache helper');
-        const variants = await useLiveVariants();
-        testLogger.metric('Cached variants', variants.length);
-
-        testLogger.testStep('obtain live pokedex lists via helper');
-        const pokedexLists = await useLivePokedexLists();
-        testLogger.metric('Default-list size', pokedexLists.default.length);
-
-        expect(variants.length).toBeGreaterThan(1_000);
-        expect(pokedexLists.default.length).toBeGreaterThan(800);
-        testLogger.assertion('Helpers returned consistent live data');
-      } catch (err) {
-        testLogger.errorDetail(err);
-        throw err;
-      } finally {
-        testLogger.complete('helper-cache test', Date.now() - t0);
-      }
-    },
-  );
+    expect(fetchAndProcessVariants).not.toHaveBeenCalled();
+    expect(result.listsBuiltNow).toBe(true);
+    expect(Object.values(result.pokedexLists).flat().length).toBe(freshVariants.length);
+    expect(Number(localStorage.getItem('pokedexListsTimestamp'))).toBeGreaterThan(staleTimestamp);
+  });
 });

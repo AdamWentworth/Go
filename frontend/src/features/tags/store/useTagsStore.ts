@@ -191,7 +191,7 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
 
     await setSystemChildrenSnapshot(toSnapshotIds(sys));
 
-    // Mirrors derived children (favorites, caught▸trade, most_wanted).
+    // Mirror derived children (favorites, caught->trade, most_wanted).
     await persistSystemMembershipsFromBuckets(newTags).catch(() => {});
 
     await get().rebuildCustomTags();
@@ -224,7 +224,25 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
         }, {} as Instances);
       }
 
-      if (!variants?.length || !Object.keys(instancesMap || {}).length) {
+      if (!variants?.length) {
+        set({ tagsLoading: false });
+        return;
+      }
+
+      if (!Object.keys(instancesMap || {}).length) {
+        const emptyBuckets: TagBuckets = { caught: {}, wanted: {}, trade: {} };
+        const emptySystem = computeSystemChildren(emptyBuckets);
+
+        set({
+          tags: emptyBuckets,
+          systemChildren: emptySystem,
+          tagsLoading: false,
+        });
+
+        await setSystemChildrenSnapshot(toSnapshotIds(emptySystem)).catch(() => {});
+        await persistSystemMembershipsFromBuckets(emptyBuckets).catch(() => {});
+        localStorage.setItem('tagsTimestamp', Date.now().toString());
+        await get().rebuildCustomTags();
         return;
       }
 

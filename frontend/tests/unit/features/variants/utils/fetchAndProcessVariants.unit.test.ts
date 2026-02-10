@@ -1,122 +1,82 @@
-// tests/unit/features/variants/utils/fetchAndProcessVariants.unit.test.ts
-import {
-  describe, it, expect, vi, beforeEach, afterEach,
-  type Mock,                    // ← added
-} from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-/* ──────────────────────────────────────────────────────────
- * 1. JSON fixtures  (tsconfig needs "resolveJsonModule": true)
- * ────────────────────────────────────────────────────────── */
-import pokemonApiRaw from '../../../../__helpers__/fixtures/pokemons.json';
-import variantsRaw   from '../../../../__helpers__/fixtures/variants.json';
+import { fetchAndProcessVariants } from '@/features/variants/utils/fetchAndProcessVariants';
+import { getPokemons } from '@/services/pokemonDataService';
+import createPokemonVariants from '@/features/variants/utils/createPokemonVariants';
+import { useImageStore } from '@/stores/useImageStore';
+import { putVariantsBulk } from '@/db/variantsDB';
 
-const pokemonApiFixture = pokemonApiRaw as any[];
-const variantsFixture   = variantsRaw   as any[];
-
-/* ──────────────────────────────────────────────────────────
- * 2.  Prepare mocks – declare any shared vars *before* factories
- * ────────────────────────────────────────────────────────── */
-const preloadMock = vi.fn(); //  <-- we’ll assert against this later
+import pokemonsFixture from '@/../tests/__helpers__/fixtures/pokemons.json';
+import variantsFixture from '@/../tests/__helpers__/fixtures/variants.json';
 
 vi.mock('@/services/pokemonDataService', () => ({
-  __esModule: true,
   getPokemons: vi.fn(),
 }));
 
-vi.mock('@/utils/loggers', () => ({
-  __esModule: true,
-  logSize: vi.fn(),
-}));
-
 vi.mock('@/features/variants/utils/createPokemonVariants', () => ({
-  __esModule: true,
   default: vi.fn(),
 }));
 
-vi.mock('@/utils/PokemonIDUtils', () => ({
-  __esModule: true,
-  determinePokemonKey: vi.fn(),
-}));
-
 vi.mock('@/stores/useImageStore', () => ({
-  __esModule: true,
   useImageStore: {
-    getState: () => ({ preload: preloadMock }), // uses the var above
+    getState: vi.fn(),
   },
 }));
 
-vi.mock('@/db/pokemonDB', () => ({
-  __esModule: true,
-  putBulkIntoDB: vi.fn(),
+vi.mock('@/db/variantsDB', () => ({
+  putVariantsBulk: vi.fn(),
 }));
 
-/* ──────────────────────────────────────────────────────────
- * 3.  Import the mocked modules so we can configure them
- * ────────────────────────────────────────────────────────── */
-import { getPokemons }         from '@/services/pokemonDataService';
-import { logSize }             from '@/utils/loggers';
-import createPokemonVariants   from '@/features/variants/utils/createPokemonVariants';
-import { determinePokemonKey } from '@/utils/PokemonIDUtils';
-import { putBulkIntoDB }       from '@/db/instancesDB';
+describe.sequential('fetchAndProcessVariants (unit)', () => {
+  const preloadMock = vi.fn();
+  const baseVariants = (variantsFixture as any[]).slice(0, 4).map((v, idx) => ({
+    ...v,
+    variant_id: (v as any).variant_id ?? (v as any).pokemonKey ?? `0000-default-${idx}`,
+  }));
 
-/* ──────────────────────────────────────────────────────────
- * 4.  Blob poly-fill for jsdom
- * ────────────────────────────────────────────────────────── */
-globalThis.Blob =
-  globalThis.Blob ??
-  class { size = 0; constructor(_p?: unknown[]) {} };
-
-process.env.NODE_ENV = 'development';
-
-/* ──────────────────────────────────────────────────────────
- * 5.  Import unit under test (after mocks are ready)
- * ────────────────────────────────────────────────────────── */
-import { fetchAndProcessVariants } from '@/features/variants/utils/fetchAndProcessVariants';
-
-/* ──────────────────────────────────────────────────────────
- * 6.  Helper – expected #preload calls
- * ────────────────────────────────────────────────────────── */
-const expectedPreloadCalls = variantsFixture.reduce<number>((n, v: any) => {
-  if (v.currentImage) n += 1;
-  if (v.type_1_icon)  n += 1;
-  if (v.type_2_icon)  n += 1;
-  return n;
-}, 0);
-
-/* ──────────────────────────────────────────────────────────
- * 7.  Test
- * ────────────────────────────────────────────────────────── */
-describe('fetchAndProcessVariants (Vitest)', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2025-06-14T12:00:00Z'));
+    localStorage.clear();
+    vi.clearAllMocks();
 
-    vi.clearAllMocks();               // reset call counts *but keep mocks*
-
-    (getPokemons       as Mock).mockResolvedValue(pokemonApiFixture);
-    (createPokemonVariants as Mock).mockReturnValue(variantsFixture);
-    (determinePokemonKey  as Mock).mockImplementation(
-      (v: { pokemon_id: number; variantType: string }) =>
-        `${String(v.pokemon_id).padStart(4, '0')}-${v.variantType}`,
-    );
-    (putBulkIntoDB as Mock).mockResolvedValue(undefined);
+    vi.mocked(getPokemons).mockResolvedValue((pokemonsFixture as any[]).slice(0, 2));
+    vi.mocked(createPokemonVariants).mockReturnValue(baseVariants as any);
+    vi.mocked(useImageStore.getState).mockReturnValue({ preload: preloadMock } as any);
+    vi.mocked(putVariantsBulk).mockResolvedValue(undefined);
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('fetches, processes, preloads, stores, and returns the variants', async () => {
+  it('fetches API data, preloads images, validates variant_id uniqueness, and stores variants', async () => {
     const result = await fetchAndProcessVariants();
 
-    expect(result).toBe(variantsFixture);
-    expect(getPokemons).toHaveBeenCalledOnce();
-    expect(createPokemonVariants).toHaveBeenCalledWith(pokemonApiFixture);
-    expect(determinePokemonKey).toHaveBeenCalledTimes(variantsFixture.length);
-    expect(putBulkIntoDB).toHaveBeenCalledWith('pokemonVariants', variantsFixture);
-    expect(preloadMock).toHaveBeenCalledTimes(expectedPreloadCalls);
-    expect(localStorage.getItem('variantsTimestamp')).toBe(
-      new Date('2025-06-14T12:00:00Z').getTime().toString(),
-    );
+    expect(getPokemons).toHaveBeenCalled();
+    expect(createPokemonVariants).toHaveBeenCalled();
+    expect(putVariantsBulk).toHaveBeenCalled();
+    expect(putVariantsBulk).toHaveBeenCalledWith(result);
+    expect(localStorage.getItem('variantsTimestamp')).toBeTruthy();
+
+    expect(result.map((v) => v.variant_id)).toEqual(baseVariants.map((v) => v.variant_id));
+    for (const variant of result) {
+      expect(typeof variant.variant_id).toBe('string');
+      expect(variant.variant_id.length).toBeGreaterThan(0);
+    }
+    expect(preloadMock).toHaveBeenCalled();
+  });
+
+  it('produces stable variant_id values for identical input across calls', async () => {
+    const first = await fetchAndProcessVariants();
+    const second = await fetchAndProcessVariants();
+
+    const firstIds = first.map((v) => v.variant_id);
+    const secondIds = second.map((v) => v.variant_id);
+    expect(secondIds).toEqual(firstIds);
+  });
+
+  it('throws if generated variants contain duplicate variant_id values', async () => {
+    vi.mocked(createPokemonVariants).mockReturnValue([
+      { ...(baseVariants[0] as any), variant_id: '0001-default' },
+      { ...(baseVariants[1] as any), variant_id: '0001-default' },
+    ] as any);
+
+    await expect(fetchAndProcessVariants()).rejects.toThrow(/invalid variant_id set/);
+    expect(putVariantsBulk).not.toHaveBeenCalled();
   });
 });

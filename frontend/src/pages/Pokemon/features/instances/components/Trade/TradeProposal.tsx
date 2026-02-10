@@ -136,7 +136,11 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
       username_proposed,
       username_accepting: username,
       pokemon_instance_id_user_proposed: selectedMatchedInstance.instanceData.instance_id,
-      pokemon_instance_id_user_accepting: passedInPokemon.pokemonKey ?? '',
+      pokemon_instance_id_user_accepting:
+        passedInPokemon.instanceData?.instance_id ??
+        passedInPokemon.variant_id ??
+        (passedInPokemon as any).pokemonKey ??
+        '',
       is_special_trade: isSpecialTrade,
       is_registered_trade: isRegisteredTrade,
       is_lucky_trade: pref_lucky,

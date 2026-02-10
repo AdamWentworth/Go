@@ -320,7 +320,7 @@ const TradeDetails = ({
 
     // 1) Find the variant data
     const variantData = variants.find(
-      (variant) => variant.pokemonKey === baseKey
+      (variant) => (variant.variant_id ?? variant.pokemonKey) === baseKey
     );
     if (!variantData) {
       console.error(`Variant not found for pokemonKey: ${pokemonKey}`);
@@ -336,7 +336,7 @@ const TradeDetails = ({
 
     const mergedPokemonData = {
       ...variantData,
-      pokemonKey: pokemonKey,
+      variant_id: variantData.variant_id ?? baseKey,
       instanceData: {
         ...variantData.instanceData,
         ...ownershipDataEntry,

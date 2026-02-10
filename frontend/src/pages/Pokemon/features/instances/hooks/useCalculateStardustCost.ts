@@ -59,7 +59,11 @@ export const useCalculateStardustCost = (
 
       setIsSpecialTrade(specialTrade);
 
-      const passedInInstanceId = passedInPokemon.pokemonKey;
+      const passedInInstanceId =
+        passedInPokemon.instanceData?.instance_id ??
+        passedInPokemon.variant_id ??
+        (passedInPokemon as any).pokemonKey ??
+        '';
       const selectedInstanceId = selectedMatchedInstance.instance_id ?? '';
 
       const passedInIsRegistered = isPokemonRegistered(passedInInstanceId, myOwnershipData);
