@@ -1,6 +1,6 @@
 // ActionMenu.tsx
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import ActionMenuButton from './ActionMenuButton';
 import CloseButton from './CloseButton';
@@ -11,29 +11,57 @@ import ThemeSwitch from './ThemeSwitch';
 import './ActionMenu.css';
 
 const ActionMenu: React.FC = () => {
+  const MENU_TRANSITION_MS = 300;
   const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { alert } = useModal();
   const { isLoggedIn } = useAuth() ?? {};
   useTheme();
 
+  useEffect(() => {
+    if (!isOpen && isVisible) {
+      const timeoutId = window.setTimeout(() => {
+        setIsVisible(false);
+      }, MENU_TRANSITION_MS);
+
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    return undefined;
+  }, [isOpen, isVisible]);
+
+  const openMenu = () => {
+    setIsVisible(true);
+    window.requestAnimationFrame(() => {
+      setIsOpen(true);
+    });
+  };
+
+  const closeMenu = () => {
+    setIsOpen(false);
+  };
+
   const toggleMenu = () => {
-    setIsOpen((prev) => !prev);
+    if (isOpen) {
+      closeMenu();
+      return;
+    }
+    openMenu();
   };
 
   const handleNavigation = (path: string) => {
-    if (location.pathname === path) {
-      toggleMenu();
-    } else {
+    if (location.pathname !== path) {
       navigate(path);
     }
+    closeMenu();
   };
 
   return (
     <>
-      {isOpen && (
-        <div className="action-menu-overlay active">
+      {isVisible && (
+        <div className={`action-menu-overlay ${isOpen ? 'active' : ''}`}>
           <CloseButton onClick={toggleMenu} />
 
           <button
