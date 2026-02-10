@@ -101,9 +101,13 @@ func newApp() *fiber.App {
 
 	// Canonical paths.
 	protected.Get("/api/users/:user_id/overview", GetUserOverviewHandler)
+	protected.Get("/api/instances/by-username/:username", GetInstancesByUsername)
+	protected.Get("/api/ownershipData/username/:username", GetOwnershipDataByUsername)
 	protected.Put("/api/users/:user_id", UpdateUserHandler)
 	// Compatibility paths for current frontend/nginx behavior.
 	protected.Get("/api/:user_id/overview", GetUserOverviewHandler)
+	protected.Get("/api/users/instances/by-username/:username", GetInstancesByUsername)
+	protected.Get("/api/users/ownershipData/username/:username", GetOwnershipDataByUsername)
 	protected.Put("/api/:user_id", UpdateUserHandler)
 	protected.Put("/api/update-user/:user_id", UpdateUserHandler)
 	protected.Put("/api/users/update-user/:user_id", UpdateUserHandler)

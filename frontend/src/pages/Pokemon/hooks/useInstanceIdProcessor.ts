@@ -72,12 +72,13 @@ export default function useInstanceIdProcessor({
   const [retryCounter, setRetryCounter] = useState(0);
 
   // 🔎  Pull loader state straight from the stores (no prop‑drilling)
-  const { foreignInstancesLoading, viewedOwnershipData } =
+  const { foreignInstancesLoading, viewedInstances, viewedOwnershipData } =
     useUserSearchStore.getState();
+  const searchInstances = viewedInstances ?? viewedOwnershipData;
 
   useEffect(() => {
     if (variantsLoading || foreignInstancesLoading) return;
-    if (!viewedOwnershipData || filteredVariants.length === 0) return;
+    if (!searchInstances || filteredVariants.length === 0) return;
     if (isOwnCollection || hasProcessedInstanceId) return;
 
     const instanceId = location.state?.instanceId;
@@ -95,7 +96,7 @@ export default function useInstanceIdProcessor({
     /* 2) Fallback: enrich base variant with raw instance data        */
     /* -------------------------------------------------------------- */
     if (!combined) {
-      const raw = viewedOwnershipData[instanceId];
+      const raw = searchInstances[instanceId];
       if (raw) {
         const variant = filteredVariants.find(
           p => p.pokemon_id === raw.pokemon_id
@@ -131,7 +132,7 @@ export default function useInstanceIdProcessor({
   }, [
     variantsLoading,
     foreignInstancesLoading,
-    viewedOwnershipData,
+    searchInstances,
     filteredVariants,
     location,
     selectedPokemon,

@@ -56,6 +56,10 @@ func newHandlerTestApp(authUserID string) *fiber.App {
 	app.Put("/api/update-user/:user_id", UpdateUserHandler)
 	app.Put("/api/users/update-user/:user_id", UpdateUserHandler)
 	app.Get("/api/users/:user_id/overview", GetUserOverviewHandler)
+	app.Get("/api/instances/by-username/:username", GetInstancesByUsername)
+	app.Get("/api/users/instances/by-username/:username", GetInstancesByUsername)
+	app.Get("/api/ownershipData/username/:username", GetOwnershipDataByUsername)
+	app.Get("/api/users/ownershipData/username/:username", GetOwnershipDataByUsername)
 
 	// Public endpoints used in tests.
 	app.Get("/api/public/users/:username", GetPublicSnapshotByUsername)
@@ -259,5 +263,74 @@ func TestGetUserOverviewHandler_RejectsUserMismatch(t *testing.T) {
 	}
 	if resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusForbidden)
+	}
+}
+
+func TestGetInstancesByUsername_Found_CaseInsensitive(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	app := newHandlerTestApp("auth-user")
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT user_id, username FROM `users` WHERE LOWER(username)=? ORDER BY `users`.`user_id` LIMIT ?")).
+		WithArgs("fakeuser0632", 1).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id", "username"}).AddRow("user-42", "fakeUser0632"))
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `instances` WHERE user_id = ?")).
+		WithArgs("user-42").
+		WillReturnRows(sqlmock.NewRows([]string{
+			"instance_id", "user_id", "variant_id", "pokemon_id", "shiny", "lucky", "shadow", "purified",
+			"date_added", "last_update", "disabled", "is_traded", "mega", "dynamax", "gigantamax", "crown",
+			"is_fused", "is_caught", "is_for_trade", "is_wanted", "most_wanted", "mirror", "pref_lucky",
+			"registered", "favorite",
+		}).AddRow(
+			"inst-1", "user-42", "0001-default", 1, false, false, false, false,
+			time.Now(), int64(1770686000000), false, false, false, false, false, false,
+			false, true, false, false, false, false, false, true, false,
+		))
+
+	req := makeJSONRequest(t, http.MethodGet, "/api/instances/by-username/fakeuser0632", nil)
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+
+	var body map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("decode body failed: %v", err)
+	}
+	if got := body["username"]; got != "fakeUser0632" {
+		t.Fatalf("unexpected canonical username: got %v, want %q", got, "fakeUser0632")
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet sqlmock expectations: %v", err)
+	}
+}
+
+func TestGetInstancesByUsername_NotFound(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	app := newHandlerTestApp("auth-user")
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT user_id, username FROM `users` WHERE LOWER(username)=? ORDER BY `users`.`user_id` LIMIT ?")).
+		WithArgs("missinguser", 1).
+		WillReturnError(gorm.ErrRecordNotFound)
+
+	req := makeJSONRequest(t, http.MethodGet, "/api/instances/by-username/missinguser", nil)
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusNotFound)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet sqlmock expectations: %v", err)
 	}
 }

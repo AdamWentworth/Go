@@ -90,7 +90,7 @@ const CancelledTradeView = ({
                 fastMoveId={details.fast_move_id}
                 chargedMove1Id={details.charged_move1_id}
                 chargedMove2Id={details.charged_move2_id}
-                moves={details.moves}
+                moves={details?.moves ?? []}
               />
             )}
             {details.height && (
