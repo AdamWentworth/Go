@@ -21,6 +21,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 14. P1.4 slice C: migrated periodic updates + location/search hot-path logging (`periodicUpdates`, `checkBatchedUpdates`, `useInitLocation`, `Search`, `PokemonSearchBar`) and added dedicated batched-updates regression tests.
 15. P1.4 slice D: migrated SSE/events, pokemon fetch service, and instances storage logging (`EventsContext`, `pokemonDataService`, `instancesStorage`) to scoped logger; production build strips `console`/`debugger` while preserving dev logging.
 16. P1.4 slice E (part 1): migrated trade handlers + instance edit hooks (`handle*Trade`, `useToggleEditModeWanted`, `useToggleEditModeTrade`) to scoped logger and added `useToggleEditModeTrade` regression tests.
+17. TS migration slice: converted `useToggleEditModeWanted` and `useToggleEditModeTrade` from `.js` to `.ts` and rewired call sites (`WantedDetails`, `TradeDetails`) with green typecheck/tests.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.

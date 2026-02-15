@@ -21,7 +21,7 @@ import {
 import { TOOLTIP_TEXTS } from '../../utils/tooltipTexts';
 
 import useWantedFiltering from '../../hooks/useWantedFiltering.js';
-import useToggleEditModeTrade from '../../hooks/useToggleEditModeTrade.js';
+import useToggleEditModeTrade from '../../hooks/useToggleEditModeTrade';
 
 import PokemonActionOverlay from './PokemonActionOverlay.js';
 import TradeProposal from './TradeProposal.js';

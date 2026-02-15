@@ -6,7 +6,7 @@ import EditSaveComponent from '@/components/EditSaveComponent';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import TradeListDisplay from './TradeListDisplay.jsx';
 
-import { toggleEditMode } from '../../hooks/useToggleEditModeWanted.js';
+import { toggleEditMode } from '../../hooks/useToggleEditModeWanted';
 import FilterImages from '../../FilterImages.jsx';
 import useImageSelection from '../../utils/useImageSelection';
 
