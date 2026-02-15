@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { parsePokemonKey } from '@/utils/PokemonIDUtils';
 import type { PokemonVariant } from '@/types/pokemonVariants';
-import type { InstancesData } from '@/types/instances';
+import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
 interface UseCalculateStardustCostResult {
@@ -16,8 +16,8 @@ export const useCalculateStardustCost = (
   friendshipLevel: number,
   passedInPokemon: PokemonVariant | null,
   selectedMatchedInstance: PokemonInstance | null,
-  myOwnershipData: InstancesData,
-  ownershipData: InstancesData
+  myInstances: Instances,
+  instances: Instances
 ): UseCalculateStardustCostResult => {
   const [stardustCost, setStardustCost] = useState(0);
   const [isSpecialTrade, setIsSpecialTrade] = useState(false);
@@ -66,8 +66,8 @@ export const useCalculateStardustCost = (
         '';
       const selectedInstanceId = selectedMatchedInstance.instance_id ?? '';
 
-      const passedInIsRegistered = isPokemonRegistered(passedInInstanceId, myOwnershipData);
-      const selectedIsRegistered = isPokemonRegistered(selectedInstanceId, ownershipData);
+      const passedInIsRegistered = isPokemonRegistered(passedInInstanceId, myInstances);
+      const selectedIsRegistered = isPokemonRegistered(selectedInstanceId, instances);
 
       setIsRegisteredTrade(passedInIsRegistered && selectedIsRegistered);
 
@@ -95,8 +95,8 @@ export const useCalculateStardustCost = (
     friendshipLevel,
     passedInPokemon,
     selectedMatchedInstance,
-    myOwnershipData,
-    ownershipData,
+    myInstances,
+    instances,
   ]);
 
   return { stardustCost, isSpecialTrade, isRegisteredTrade };
@@ -104,15 +104,15 @@ export const useCalculateStardustCost = (
 
 function isPokemonRegistered(
   instanceId: string,
-  ownershipObj: InstancesData
+  instances: Instances
 ): boolean {
-  if (!instanceId || !ownershipObj) {
+  if (!instanceId || !instances) {
     return false;
   }
 
   const { baseKey } = parsePokemonKey(instanceId);
 
-  return Object.entries(ownershipObj).some(([key, data]) => {
+  return Object.entries(instances).some(([key, data]) => {
     const { baseKey: thisBaseKey } = parsePokemonKey(key);
     return thisBaseKey === baseKey && Boolean(data.registered);
   });

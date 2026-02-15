@@ -21,18 +21,16 @@ interface AccountFormProps {
   errors?: FormErrors;
 }
 
+type AccountFormContentProps = Omit<AccountFormProps, 'user'> & {
+  user: User;
+};
+
 export interface AccountFormHandle {
   resetForm: () => void;
 }
 
-const AccountForm = forwardRef(
-  (
-    { user, handleUpdateUserDetails, onLogout, onDeleteAccount }: AccountFormProps,
-    ref
-  ) => {
-    // Check early for user existence.
-    if (!user) return <div>Please log in to view and edit account details.</div>;
-
+const AccountFormContent = forwardRef<AccountFormHandle, AccountFormContentProps>(
+  ({ user, handleUpdateUserDetails, onLogout, onDeleteAccount }, ref) => {
     const {
       values,
       errors,
@@ -59,7 +57,7 @@ const AccountForm = forwardRef(
       resetForm,
     } = useAccountForm(user, handleUpdateUserDetails);
 
-    useImperativeHandle(ref, () => ({ resetForm }));
+    useImperativeHandle(ref, () => ({ resetForm }), [resetForm]);
 
     return (
       <div className="account-page">
@@ -67,7 +65,6 @@ const AccountForm = forwardRef(
           <h1>Account Details</h1>
           <div className="user-details">
             <div className="left-column">
-              {/* Username */}
               <label className="grid-item username">
                 Username:
                 <input
@@ -80,7 +77,6 @@ const AccountForm = forwardRef(
                 {errors.username && <div className="error">{errors.username}</div>}
               </label>
 
-              {/* Checkbox for matching username */}
               <div className="grid-item checkbox-inline">
                 <input
                   type="checkbox"
@@ -91,11 +87,10 @@ const AccountForm = forwardRef(
                   disabled={!isEditable}
                 />
                 <label htmlFor="pokemonGoNameDisabled">
-                  Username matches my Pokémon GO account name
+                  Username matches my Pokemon GO account name
                 </label>
               </div>
 
-              {/* Email */}
               <label className="grid-item email">
                 Email:
                 <input
@@ -108,7 +103,6 @@ const AccountForm = forwardRef(
                 {errors.email && <div className="error">{errors.email}</div>}
               </label>
 
-              {/* Password */}
               <label className="grid-item password">
                 Change Password:
                 <input
@@ -122,7 +116,6 @@ const AccountForm = forwardRef(
                 {errors.password && <div className="error">{errors.password}</div>}
               </label>
 
-              {/* Confirm Password */}
               <label className="grid-item confirm-password">
                 Confirm Change Password:
                 <input
@@ -138,9 +131,8 @@ const AccountForm = forwardRef(
             </div>
 
             <div className="right-column">
-              {/* Pokémon GO name */}
               <label className="grid-item pokemon-go-name">
-                Pokémon Go Name:
+                Pokemon Go Name:
                 <input
                   type="text"
                   name="pokemonGoName"
@@ -151,7 +143,6 @@ const AccountForm = forwardRef(
                 {errors.pokemonGoName && <div className="error">{errors.pokemonGoName}</div>}
               </label>
 
-              {/* Trainer Code */}
               <label className="grid-item trainer-code">
                 Trainer Code:
                 <input
@@ -164,7 +155,6 @@ const AccountForm = forwardRef(
                 {errors.trainerCode && <div className="error">{errors.trainerCode}</div>}
               </label>
 
-              {/* Location checkbox */}
               <div className="grid-item checkbox-inline">
                 <input
                   type="checkbox"
@@ -179,7 +169,6 @@ const AccountForm = forwardRef(
                 </label>
               </div>
 
-              {/* Coordinates */}
               <label className="grid-item coordinates">
                 Coordinates:
                 {isEditable ? (
@@ -200,8 +189,8 @@ const AccountForm = forwardRef(
                       selectedCoordinates !== null
                         ? `(${selectedCoordinates.latitude}, ${selectedCoordinates.longitude})`
                         : prevCoordinates !== null
-                        ? `(${prevCoordinates.latitude}, ${prevCoordinates.longitude})`
-                        : ''
+                          ? `(${prevCoordinates.latitude}, ${prevCoordinates.longitude})`
+                          : ''
                     }
                     readOnly
                     placeholder="Coordinates not set"
@@ -211,7 +200,6 @@ const AccountForm = forwardRef(
                 {errors.coordinates && <div className="error">{errors.coordinates}</div>}
               </label>
 
-              {/* Location text input */}
               <label className="grid-item location">
                 Location:
                 <div className="location-input-wrapper">
@@ -285,5 +273,27 @@ const AccountForm = forwardRef(
     );
   }
 );
+
+AccountFormContent.displayName = 'AccountFormContent';
+
+const AccountForm = forwardRef<AccountFormHandle, AccountFormProps>(
+  ({ user, handleUpdateUserDetails, onLogout, onDeleteAccount }, ref) => {
+    if (!user) {
+      return <div>Please log in to view and edit account details.</div>;
+    }
+
+    return (
+      <AccountFormContent
+        ref={ref}
+        user={user}
+        handleUpdateUserDetails={handleUpdateUserDetails}
+        onLogout={onLogout}
+        onDeleteAccount={onDeleteAccount}
+      />
+    );
+  }
+);
+
+AccountForm.displayName = 'AccountForm';
 
 export default AccountForm;

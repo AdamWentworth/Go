@@ -1,104 +1,66 @@
-// tests/integration/instancesStage.integration.test.ts
-import { useLiveInstances }                from "../utils/liveInstancesCache";
-import * as idb                            from "@/db/indexedDB";
-import * as PokemonIDUtils                from "@/utils/PokemonIDUtils";
-import { vi }                              from "vitest";
-import { testLogger, enableLogging }      from "../setupTests";
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-describe("instancesStorage Integration", () => {
+import * as idb from '@/db/indexedDB';
+import { initializeOrUpdateInstancesData } from '@/features/instances/storage/instancesStorage';
+
+import type { PokemonVariant } from '@/types/pokemonVariants';
+
+import { enableLogging, testLogger } from '../setupTests';
+
+function makeVariant(overrides: Partial<PokemonVariant> = {}): PokemonVariant {
+  return {
+    variant_id: '0001-default',
+    pokemon_id: 1,
+    species_name: 'Bulbasaur',
+    variantType: 'default',
+    currentImage: '/images/default/pokemon_1.png',
+    costumes: [],
+    ...overrides,
+  } as PokemonVariant;
+}
+
+describe.sequential('instancesStorage Integration', () => {
   beforeAll(() => {
-    enableLogging("verbose");
-    testLogger.fileStart("Instances");
-    testLogger.suiteStart("instancesStorage instances initialization tests");
+    enableLogging('verbose');
+    testLogger.fileStart('Instances');
+    testLogger.suiteStart('instancesStorage initialization tests');
   });
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    Storage.prototype.getItem = vi.fn().mockReturnValue(null);
-    Storage.prototype.setItem = vi.fn();
-    // @ts-ignore
-    global.performance = { now: vi.fn().mockReturnValue(1000) };
-    // Spy on IndexedDB methods
-    vi.spyOn(idb, "clearStore").mockResolvedValue(undefined);
-    vi.spyOn(idb, "putBulkIntoDB").mockResolvedValue(undefined);
-    // Make validateUUID treat any suffix as valid for test consistency
-    vi.spyOn(PokemonIDUtils, "validateUUID").mockReturnValue(true);
+    localStorage.clear();
+
+    vi.spyOn(idb, 'getAllInstances').mockResolvedValue([]);
+    vi.spyOn(idb, 'putInstancesBulk').mockResolvedValue(undefined);
   });
 
-  it("creates one instance per variant when DB is empty", async () => {
-    testLogger.testStep("Mocking getAllFromDB to return an empty array");
-    vi.spyOn(idb, "getAllFromDB").mockResolvedValue([]);
+  it('creates one instance per missing variant when cache is empty', async () => {
+    const variants = [makeVariant(), makeVariant({ variant_id: '0002-default', pokemon_id: 2 })];
 
-    testLogger.testStep("Bootstrapping live instances");
-    const instances = await useLiveInstances();
-    const count     = Object.keys(instances).length;
-    testLogger.metric("Instances created", count);
+    const instances = await initializeOrUpdateInstancesData([], variants);
 
-    testLogger.testStep("Asserting IndexedDB store was cleared");
-    expect(idb.clearStore).toHaveBeenCalledWith("pokemonOwnership");
-    testLogger.assertion("clearStore called with 'pokemonOwnership'");
-
-    testLogger.testStep("Asserting new items were bulk inserted");
-    expect(idb.putBulkIntoDB).toHaveBeenCalledWith(
-      "pokemonOwnership",
-      expect.any(Array)
-    );
-    testLogger.assertion("putBulkIntoDB called with 'pokemonOwnership' and items array");
-
-    testLogger.testStep("Asserting ownershipTimestamp was set in localStorage");
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      "ownershipTimestamp",
-      expect.any(String)
-    );
-    testLogger.assertion("localStorage.setItem called for 'ownershipTimestamp'");
+    expect(Object.keys(instances)).toHaveLength(2);
+    expect(idb.putInstancesBulk).toHaveBeenCalled();
+    expect(localStorage.getItem('ownershipTimestamp')).not.toBeNull();
   });
 
-  it("does not modify storage when DB already has all instances", async () => {
-    testLogger.testStep("Mocking getAllFromDB to return existing instances with valid UUID suffixes");
-    const variants = Object.keys((await useLiveInstances())).map((instanceId) => {
-      // turn our live instances back into a list of "existing" DB records:
-      return { instance_id: instanceId };
-    });
-    vi.spyOn(idb, "getAllFromDB").mockResolvedValue(variants);
+  it('does not rewrite store when all variants are already present', async () => {
+    vi.spyOn(idb, 'getAllInstances').mockResolvedValue([
+      { instance_id: 'existing-1', variant_id: '0001-default', pokemon_id: 1 },
+    ]);
 
-    // Clear the cache so useLiveInstances will re-run initializeOrUpdate…
-    // (In practice you might restart the Vitest worker, but for here:)
-    // @ts-ignore
-    globalThis.__INSTANCE_FIXTURE__ = undefined;
+    const variants = [makeVariant()];
+    const out = await initializeOrUpdateInstancesData([], variants);
 
-    testLogger.testStep("Bootstrapping live instances again");
-    const instances = await useLiveInstances();
-    testLogger.metric("Variants reused", Object.keys(instances).length);
-
-    testLogger.testStep("Asserting no store clear occurred");
-    expect(idb.clearStore).not.toHaveBeenCalled();
-    testLogger.assertion("clearStore was not called");
-
-    testLogger.testStep("Asserting no bulk insert occurred");
-    expect(idb.putBulkIntoDB).not.toHaveBeenCalled();
-    testLogger.assertion("putBulkIntoDB was not called");
-
-    testLogger.testStep("Asserting the returned result has correct length");
-    expect(Object.keys(instances)).toHaveLength(Object.keys(instances).length);
-    testLogger.assertion(`Result has ${Object.keys(instances).length} entries`);
+    expect(Object.keys(out)).toContain('existing-1');
+    expect(idb.putInstancesBulk).not.toHaveBeenCalled();
   });
 
-  it("errors out when DB fetch fails", async () => {
-    testLogger.testStep("Mocking getAllFromDB to reject with an error");
-    vi.spyOn(idb, "getAllFromDB").mockRejectedValue(new Error("indexeddb fail"));
+  it('throws a stable error when IndexedDB read fails', async () => {
+    vi.spyOn(idb, 'getAllInstances').mockRejectedValue(new Error('indexeddb fail'));
 
-    // Clear cache so we actually hit our error path
-    // @ts-ignore
-    globalThis.__INSTANCE_FIXTURE__ = undefined;
-
-    testLogger.testStep("Bootstrapping live instances expecting a failure");
-    await expect(useLiveInstances()).rejects.toThrow("Failed to update instances data");
-    testLogger.assertion("Error thrown for failed DB fetch");
+    await expect(
+      initializeOrUpdateInstancesData([], [makeVariant()]),
+    ).rejects.toThrow('Failed to update instances data');
   });
-
-  // Suite-level end
-  testLogger.suiteComplete();
 });
-
-// File-level end
-testLogger.fileEnd();

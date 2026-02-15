@@ -6,56 +6,52 @@ import { toast } from 'react-toastify';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useLocationStore } from '@/features/location/store/useLocationStore';
+import { createScopedLogger } from '@/utils/logger';
 
-/* -------------------------------------------------------------------------- */
-/*  MAIN BOOTSTRAP HOOK                                                       */
-/* -------------------------------------------------------------------------- */
+const log = createScopedLogger('useInitLocation');
 
 /**
- * Bootstraps geolocation logic on app start‑up.
- * Replicates all console logs from the legacy LocationContext for parity.
- * Mount exactly once from `AppBootstrap`.
+ * Bootstraps geolocation logic on app startup.
+ * Mount once from App bootstrap.
  */
 export function useInitLocation() {
   const { isLoading: authLoading, updateUserDetails } = useAuth();
-  const user        = useAuthStore((s) => s.user);
+  const user = useAuthStore((s) => s.user);
   const setLocation = useLocationStore((s) => s.setLocation);
-  const setStatus   = useLocationStore((s) => s.setStatus);
+  const setStatus = useLocationStore((s) => s.setStatus);
 
   const didInitialRef = useRef(false);
-  const intervalRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  /* -------------------------------- HELPERS -------------------------------- */
   const storeAndLogCoords = (coords: { latitude: number; longitude: number }) => {
     setLocation(coords);
     setStatus('available');
     localStorage.setItem('location', JSON.stringify(coords));
-    console.log(
+    log.debug(
       `Location acquired and stored. Latitude: ${coords.latitude}, Longitude: ${coords.longitude}`,
     );
   };
 
-  /* -------------------------------- EFFECT --------------------------------- */
   useEffect(() => {
     const fetchLocation = () => {
-      /* 1. auth still loading */
+      // 1) auth still loading.
       if (authLoading) {
-        console.log('Still loading user info, skipping location fetching.');
+        log.debug('Still loading user info, skipping location fetching.');
         return;
       }
 
-      /* 2. no user */
+      // 2) no user.
       if (!user) {
-        console.log('User not logged in. Skipping location fetching.');
+        log.debug('User not logged in. Skipping location fetching.');
         setStatus('unavailable');
         setLocation(null);
         localStorage.removeItem('location');
         return;
       }
 
-      /* 3. automatic geo allowed */
+      // 3) automatic geo allowed.
       if (user.allowLocation) {
-        console.log('User has allowed automatic location acquisition.');
+        log.debug('User has allowed automatic location acquisition.');
 
         navigator.geolocation.getCurrentPosition(
           async (pos) => {
@@ -71,19 +67,19 @@ export function useInitLocation() {
               user.coordinates?.longitude !== coords.longitude;
 
             if (changed) {
-              console.log('Coordinates have changed, updating user in DB...');
+              log.debug('Coordinates changed; updating user in DB.');
               const res = await updateUserDetails(user.user_id, { coordinates: coords });
 
               if (!res.success) {
-                console.error('Failed to update user coordinates in DB:', res.error);
+                log.error('Failed to update user coordinates in DB', res.error);
                 toast.error('Failed to update your coordinates in the DB.');
               } else {
-                console.log('Coordinates updated in main & secondary DB!');
+                log.debug('Coordinates updated in main & secondary DB.');
               }
             }
           },
-          (err) => {
-            console.error('Error acquiring location:', err);
+          (error) => {
+            log.error('Error acquiring location', error);
             toast.error(
               'Location services are disabled or unavailable. Please enable location services in your browser.',
             );
@@ -95,10 +91,8 @@ export function useInitLocation() {
         return;
       }
 
-      /* 4. auto disallowed → manual coords */
-      console.log(
-        'User has disabled automatic location acquisition. Using manual coordinates if available.',
-      );
+      // 4) auto disallowed, use manual coords.
+      log.debug('User has disabled automatic location acquisition. Using manual coordinates if available.');
 
       if (
         user.coordinates &&
@@ -112,23 +106,23 @@ export function useInitLocation() {
         setLocation(manual);
         setStatus('available');
         localStorage.setItem('location', JSON.stringify(manual));
-        console.log(
+        log.debug(
           `Manual location set. Latitude: ${manual.latitude}, Longitude: ${manual.longitude}`,
         );
       } else {
-        console.log('No manual coordinates provided by user.');
+        log.debug('No manual coordinates provided by user.');
         setStatus('unavailable');
         setLocation(null);
         localStorage.removeItem('location');
       }
     };
 
-    /* -------------------- init + hourly refresh -------------------- */
+    // Initial + hourly refresh.
     if (!authLoading && user && !didInitialRef.current) {
       fetchLocation();
       didInitialRef.current = true;
       intervalRef.current = setInterval(() => {
-        console.log('Refreshing location...');
+        log.debug('Refreshing location...');
         fetchLocation();
       }, 60 * 60 * 1_000);
     }

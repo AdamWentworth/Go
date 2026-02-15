@@ -1,16 +1,21 @@
 // moveCombinations.ts
 
-import { calculateDPS } from './calculateDPS';
+import {
+  calculateDPS,
+  type Variant as DPSVariant,
+  type Move as DPSMove,
+  type SelectedRaidBoss,
+} from './calculateDPS';
 import { cpMultipliers } from './constants';
 
 const LEVEL_50_CP_MULTIPLIER = cpMultipliers["50.0"];
 
-export interface Move {
+export interface Move extends DPSMove {
   is_fast: number;
   name: string;
 }
 
-export interface Variant {
+export interface Variant extends DPSVariant {
   attack: number;
   defense: number;
   stamina: number;
@@ -34,7 +39,7 @@ export function getMoveCombinations(
   raidBossAttack: number,
   raidBossDefense: number,
   raidBossStamina: number,
-  selectedRaidBoss: unknown
+  selectedRaidBoss: SelectedRaidBoss | null
 ): MoveCombination[] {
   if (!variant || !variant.moves) {
     return []; // Return an empty array if variant or moves are undefined.

@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 
 import { useTradeStore } from '@/features/trades/store/useTradeStore';
-import { useVariantsStore } from '@/features/variants/store/useVariantsStore.js';
-import { useInstancesStore } from '@/features/instances/store/useInstancesStore.js';
-import { useTagsStore } from '@/features/tags/store/useTagsStore.js';
+import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import { useTagsStore } from '@/features/tags/store/useTagsStore';
 
 import TradeStatusButtons from './TradeStatusButtons.jsx';
 import TradeList          from './TradeList.jsx';
@@ -19,8 +19,8 @@ function Trades() {
 
   const variants = useVariantsStore((s) => s.variants);
   const variantsLoading = useVariantsStore((s) => s.variantsLoading);
-  const ownershipData = useInstancesStore((s) => s.instances);
-  const setOwnershipData = useInstancesStore((s) => s.setInstances);
+  const instances = useInstancesStore((s) => s.instances);
+  const setInstances = useInstancesStore((s) => s.setInstances);
   const periodicUpdates = useInstancesStore((s) => s.periodicUpdates);
 
   const { tags: lists } = useTagsStore();
@@ -42,9 +42,9 @@ function Trades() {
         selectedStatus={selectedStatus}
 
         /* props that TradeList already expects */
-        setOwnershipData={setOwnershipData}
+        setInstances={setInstances}
         variants={variants}
-        ownershipData={ownershipData}
+        instances={instances}
         lists={lists}
         loading={loading}
         periodicUpdates={periodicUpdates}

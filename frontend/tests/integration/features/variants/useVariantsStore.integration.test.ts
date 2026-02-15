@@ -19,8 +19,8 @@ import type { PokedexLists } from '@/types/pokedex';
 import variantsFixture from '@/../tests/__helpers__/fixtures/variants.json';
 import pokedexListsFixture from '@/../tests/__helpers__/fixtures/pokedexLists.json';
 
-const dummyVariants = variantsFixture as PokemonVariant[];
-const dummyPokedexLists = pokedexListsFixture as PokedexLists;
+const dummyVariants = variantsFixture as unknown as PokemonVariant[];
+const dummyPokedexLists = pokedexListsFixture as unknown as PokedexLists;
 
 let loadCacheSpy: MockInstance;
 

@@ -19,6 +19,7 @@ import { useInstancesStore } from '@/features/instances/store/useInstancesStore'
 
 import { fetchUpdates } from '../services/sseService';
 import { getDeviceId }  from '../utils/deviceID';
+import { createScopedLogger } from '@/utils/logger';
 
 /* ---------- type helpers ---------- */
 interface PokemonUpdateData { [key: string]: any }
@@ -34,6 +35,7 @@ interface EventsContextType {}          // (extend later if you expose helpers)
 
 const EventsContext = createContext<EventsContextType>({});
 export const useEvents = (): EventsContextType => useContext(EventsContext);
+const log = createScopedLogger('EventsContext');
 
 interface EventsProviderProps { children: ReactNode }
 
@@ -64,7 +66,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
   /* ──────────────────── handlers ──────────────────── */
   const handleIncomingUpdate = useCallback(
     (data: IncomingUpdateData) => {
-      console.log('[SSE] incoming:', data);
+      log.debug('incoming', data);
 
       if (data.pokemon) {
         setInstances(data.pokemon);
@@ -81,7 +83,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     if (sseRef.current) {
       sseRef.current.close();
       sseRef.current = null;
-      console.log('[SSE] connection closed');
+      log.debug('connection closed');
     }
   }, []);
 
@@ -95,18 +97,18 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       const es = new EventSource(url, { withCredentials: true });
       sseRef.current = es;
 
-      es.onopen    = () => console.log('[SSE] open');
-      es.onerror   = (e) => { console.error('[SSE] error', e); closeSSE(); };
+      es.onopen    = () => log.debug('open');
+      es.onerror   = (e) => { log.error('error', e); closeSSE(); };
       es.onmessage = (ev) => {
         try {
           const parsed = JSON.parse(ev.data) as IncomingUpdateData;
           handleIncomingUpdate(parsed);
         } catch (err) {
-          console.error('[SSE] JSON parse error', err);
+          log.error('JSON parse error', err);
         }
       };
     } catch (err) {
-      console.error('[SSE] failed to establish connection', err);
+      log.error('failed to establish connection', err);
     }
   }, [closeSSE, handleIncomingUpdate, user]);
 
@@ -118,7 +120,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       const proceed = async () => {
         if (isSessionNew) {
           try {
-            console.log('[SSE] fetching missed updates …');
+            log.debug('fetching missed updates');
             const updates = (await fetchUpdates(
               user.user_id,
               deviceIdRef.current,
@@ -131,7 +133,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
               updateTimestamp(new Date());
             }
           } catch (err) {
-            console.error('[SSE] fetchUpdates error', err);
+            log.error('fetchUpdates error', err);
           }
         }
         openSSE();
@@ -154,7 +156,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
   useEffect(() => {
     const id = setInterval(() => {
       if (user && !isAuthLoading && !isDataLoading && lastUpdateTimestamp && !sseRef.current) {
-        console.log('[SSE] lost connection, reconnecting …');
+        log.warn('lost connection, reconnecting');
         openSSE();
       }
     }, 30_000);

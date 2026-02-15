@@ -16,7 +16,7 @@ export interface BasePokemon {
   generation: number;
   available: number;
   shiny_available: number;
-  shiny_rarity: string;
+  shiny_rarity: string | null;
   date_available: string;
   date_shiny_available: string;
   female_unique: number;

@@ -4,6 +4,9 @@
 
 interface ImportMetaEnv {
     readonly VITE_FORCED_REFRESH_TIMESTAMP?: string;
+    readonly VITE_LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error' | 'silent';
+    readonly VITE_VERBOSE_LOGS?: string;
+    readonly VITE_DEBUG_LOGS?: string;
     // Add other custom VITE_ variables here
   }
   

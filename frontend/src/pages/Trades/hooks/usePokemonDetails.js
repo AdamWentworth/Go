@@ -3,7 +3,12 @@ import { useEffect, useState } from 'react';
 import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
 import { findVariantForInstance } from '../../Search/utils/findVariantForInstance';
 
-export function usePokemonDetails(instanceId, variants, relatedInstances, ownershipData) {
+export function usePokemonDetails(
+  instanceId,
+  variants,
+  relatedInstances,
+  instances
+) {
   const [details, setDetails] = useState(null);
 
   useEffect(() => {
@@ -12,10 +17,12 @@ export function usePokemonDetails(instanceId, variants, relatedInstances, owners
       return;
     }
 
-    // Check relatedInstances or ownershipData for the instance
+    const instancesMap = instances || {};
+
+    // Check relatedInstances or instances map for the instance
     const instanceDetails =
       (relatedInstances && relatedInstances[instanceId]) ||
-      (ownershipData && ownershipData[instanceId]) ||
+      (instancesMap && instancesMap[instanceId]) ||
       {};
 
     const parsed = parsePokemonKey(instanceId);
@@ -32,7 +39,7 @@ export function usePokemonDetails(instanceId, variants, relatedInstances, owners
     }
 
     setDetails(mergedDetails);
-  }, [instanceId, variants, relatedInstances, ownershipData]);
+  }, [instanceId, variants, relatedInstances, instances]);
 
   return details;
 }

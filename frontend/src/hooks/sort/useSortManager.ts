@@ -14,22 +14,29 @@ const useSortManager = (
   sortType: SortType,
   sortMode: SortMode
 ): PokemonVariant[] => {
+  // Hooks must run in a stable order; compute each candidate once and select below.
+  const recentSorted = useRecentPokemons(displayedPokemons, sortMode);
+  const numberSorted = useNumberPokemons(displayedPokemons, sortMode);
+  const hpSorted = useHPPokemons(displayedPokemons, sortMode);
+  const nameSorted = useNamePokemons(displayedPokemons, sortMode);
+  const cpSorted = useCPPokemons(displayedPokemons, sortMode);
+  const favoriteSorted = useFavoritePokemons(displayedPokemons, sortMode);
+
   switch (sortType) {
     case 'releaseDate':
-      return useRecentPokemons(displayedPokemons, sortMode);
+      return recentSorted;
     case 'number':
-      return useNumberPokemons(displayedPokemons, sortMode);
+      return numberSorted;
     case 'hp':
-      return useHPPokemons(displayedPokemons, sortMode);
+      return hpSorted;
     case 'name':
-      return useNamePokemons(displayedPokemons, sortMode);
+      return nameSorted;
     case 'combatPower':
-      return useCPPokemons(displayedPokemons, sortMode);
+      return cpSorted;
     case 'favorite':
-      return useFavoritePokemons(displayedPokemons, sortMode);
+      return favoriteSorted;
     default:
-      // Use type assertion since we've covered all cases
-      return displayedPokemons as PokemonVariant[];
+      return displayedPokemons;
   }
 };
 

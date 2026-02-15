@@ -2,11 +2,13 @@
 
 import axios, { AxiosResponse } from 'axios';
 import type { Pokemons } from '../types/pokemonBase';
+import { createScopedLogger, loggerInternals } from '@/utils/logger';
 
 const BASE_URL: string = import.meta.env.VITE_POKEMON_API_URL;
 axios.defaults.withCredentials = true;
 
-const isDev = process.env.NODE_ENV === 'development';
+const log = createScopedLogger('pokemonDataService');
+const canDebugLog = loggerInternals.shouldEmit('debug');
 const POKEMON_CACHE_KEY = 'pokemonData';
 const POKEMON_ETAG_KEY = 'pokemonDataEtag';
 
@@ -38,10 +40,10 @@ export const getPokemons = async (): Promise<Pokemons> => {
       validateStatus: (status) => (status >= 200 && status < 300) || status === 304,
     });
 
-    if (isDev) console.log('API Response:', response);
+    if (canDebugLog) log.debug('API response', response);
 
     if (response.status === 304) {
-      if (isDev) console.log('Server returned 304 - Using cached data');
+      if (canDebugLog) log.debug('Server returned 304 - using cached data');
       const cached = readCachedPokemons();
       if (cached) return cached;
       throw new Error('No cached data available for 304 response');
@@ -63,12 +65,12 @@ export const getPokemons = async (): Promise<Pokemons> => {
     return payload as Pokemons;
   } catch (error: unknown) {
     if (axios.isAxiosError(error) && error.response?.status === 304) {
-      if (isDev) console.log('Caught 304 in error handler - Using cached data');
+      if (canDebugLog) log.debug('Caught 304 in error handler - using cached data');
       const cached = readCachedPokemons();
       if (cached) return cached;
     }
 
-    console.error('Error fetching the Pokemon data: ', error);
+    log.error('Error fetching the Pokemon data', error);
     throw error;
   }
 };

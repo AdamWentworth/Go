@@ -4,9 +4,11 @@ import { openDB } from 'idb';
 import type { Instances } from '@/types/instances';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
+import { createScopedLogger } from '@/utils/logger';
 
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL;
 const CACHE_NAME = 'SearchCache';
+const log = createScopedLogger('UserSearchStore');
 
 type SearchCacheRecord = {
   username: string;
@@ -67,7 +69,7 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
     defaultFilter = 'Caught',
     alertFn
   ) {
-    console.log('[UserSearchStore] fetchUserInstancesByUsername ->', searchedUsername);
+    log.debug('fetchUserInstancesByUsername ->', searchedUsername);
     set({ foreignInstancesLoading: true, userExists: null });
 
     try {
@@ -103,7 +105,10 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
       const cachedInstances = getCachedInstances(cached);
       const cachedEtag = cached?.etag ?? null;
 
-      const headers = cachedEtag ? { 'If-None-Match': cachedEtag } : {};
+      const headers: Record<string, string> = {};
+      if (cachedEtag) {
+        headers['If-None-Match'] = cachedEtag;
+      }
       let resp = await fetch(`${USERS_API_URL}/instances/by-username/${lower}`, {
         credentials: 'include',
         headers,
@@ -121,7 +126,7 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
       }
 
       if (resp.status === 304 && cached && cachedInstances) {
-        console.log('[UserSearchStore] 304 - using cached data');
+        log.debug('304 - using cached data');
         useInstancesStore.getState().setForeignInstances(cachedInstances);
         set({
           viewedInstances: cachedInstances,
@@ -158,12 +163,12 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
       }
 
       if (resp.status === 404) {
-        console.warn('[UserSearchStore] 404 - user not found');
+        log.info('404 - user not found');
         set({ userExists: false });
       } else if (resp.status === 403) {
         if (alertFn) await alertFn('You must be logged in to perform this search.');
       } else {
-        console.error('[UserSearchStore] fetch failed:', resp.status, resp.statusText);
+        log.error('fetch failed', resp.status, resp.statusText);
       }
 
       // Avoid leaking stale foreign profile data after failed lookups.
@@ -173,7 +178,7 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
         canonicalUsername: null,
       });
     } catch (err) {
-      console.error('[UserSearchStore] fetch error:', err);
+      log.error('fetch error', err);
       useInstancesStore.getState().resetForeignInstances();
       set({
         viewedInstances: null,

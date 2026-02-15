@@ -1,6 +1,6 @@
 // src/pages/Pokemon/services/fusionSelection/resolveFusionSelection.ts
 
-import { InstancesData } from '@/types/instances';
+import type { Instances } from '@/types/instances';
 import { Fusion } from '@/types/pokemonSubTypes'; // ✅ reuse the shared type
 
 type ResolveFusionParams = {
@@ -8,7 +8,7 @@ type ResolveFusionParams = {
   leftInstanceId: string;
   rightInstanceId: string;
   fusionData: Fusion; // ✅ use shared Fusion type
-  ownershipData: InstancesData;
+  instances: Instances;
   updateDetails: (updates: Record<string, any>) => Promise<void>;
   resolve?: (result: string) => void;
 };
@@ -18,7 +18,7 @@ export async function resolveFusionSelection({
   leftInstanceId,
   rightInstanceId,
   fusionData,
-  ownershipData,
+  instances,
   updateDetails,
   resolve,
 }: ResolveFusionParams) {
@@ -37,7 +37,7 @@ export async function resolveFusionSelection({
           fused_with: rightInstanceId,
           fusion_form: fusionName,
           fusion: {
-            ...(ownershipData[leftInstanceId]?.fusion || {}),
+            ...(instances[leftInstanceId]?.fusion || {}),
             [fusionId]: true,
           },
         },

@@ -18,6 +18,12 @@ export default defineConfig({
   },
 
   build: {
+    // Keep logs during development, but strip console/debugger in production bundles.
+    minify: 'esbuild',
+    target: 'esnext',
+    esbuild: {
+      drop: ['console', 'debugger'],
+    },
     manifest: true,
     rollupOptions: {
       output: {
@@ -71,9 +77,9 @@ export default defineConfig({
       }
     },
     sequence       : {
-      shuffle: true,
-      concurrent: true,
-      hooks: 'parallel'
+      shuffle: false,
+      concurrent: false,
+      hooks: 'list'
     },
 
     include: [

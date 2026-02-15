@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokedexLists } from '@/types/pokedex';
 import { variantsRepository } from '../repositories/variantsRepository';
+import { createScopedLogger } from '@/utils/logger';
 import {
   VARIANTS_KEY,
   POKEDEX_LISTS_KEY,
@@ -17,6 +18,8 @@ interface VariantsState {
   hydrateFromCache(): Promise<void>;
   refreshVariants(): Promise<void>;
 }
+
+const log = createScopedLogger('VariantsStore');
 
 export const useVariantsStore = create<VariantsState>((set, get) => ({
   variants: [],
@@ -36,7 +39,7 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
         void get().refreshVariants();
       }
     } catch (error) {
-      console.error('[VariantsStore] hydrateFromCache failed:', error);
+      log.error('hydrateFromCache failed', error);
       void get().refreshVariants();
     }
   },
@@ -59,7 +62,7 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
       const { variants, pokedexLists } = await variantsRepository.fetchFresh();
       set({ variants, pokedexLists, variantsLoading: false });
     } catch (error) {
-      console.error('[VariantsStore] refreshVariants failed:', error);
+      log.error('refreshVariants failed', error);
 
       // Fallback to whatever cache we have
       try {
@@ -70,7 +73,7 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
           set({ variantsLoading: false });
         }
       } catch (fallbackErr) {
-        console.error('[VariantsStore] cache fallback failed:', fallbackErr);
+        log.error('cache fallback failed', fallbackErr);
         set({ variantsLoading: false });
       }
     } finally {

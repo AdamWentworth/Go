@@ -1,14 +1,15 @@
-// tests/instances/workflows/liveInstances.workflow.test.ts
-
 import { act } from '@testing-library/react';
-import { describe, it, beforeEach, beforeAll, afterAll, expect, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import * as idb from '@/db/indexedDB';
-import type { Instances } from '@/types/instances';
 
-// Mocks / Utilities
+import type { Instances } from '@/types/instances';
+import type { PokemonInstance } from '@/types/pokemonInstance';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+
 import { useLiveInstances } from '../../utils/liveInstancesCache';
 import { useLiveVariants } from '../../utils/liveVariantCache';
 import { enableLogging, testLogger } from '../../setupTests';
@@ -17,13 +18,88 @@ vi.mock('@/db/indexedDB', async () => {
   const actual = await vi.importActual('@/db/indexedDB');
   return {
     ...actual,
-    clearStore: vi.fn(() => Promise.resolve()),
-    putIntoDB: vi.fn((storeName: string, data: any) => Promise.resolve()),
-    getFromDB: vi.fn((storeName: string) => Promise.resolve({})),
+    clearInstancesStore: vi.fn(() => Promise.resolve()),
   };
 });
 
-describe('🌟 Workflow: Live Instances Cache + Store', () => {
+function makeVariant(overrides: Partial<PokemonVariant> = {}): PokemonVariant {
+  return {
+    variant_id: '0001-default',
+    pokemon_id: 1,
+    species_name: 'Bulbasaur',
+    variantType: 'default',
+    currentImage: '/images/default/pokemon_1.png',
+    costumes: [],
+    ...overrides,
+  } as PokemonVariant;
+}
+
+function makeInstance(overrides: Partial<PokemonInstance> = {}): PokemonInstance {
+  return {
+    instance_id: '11111111-1111-4111-8111-111111111111',
+    variant_id: '0001-default',
+    pokemon_id: 1,
+    nickname: null,
+    cp: null,
+    level: null,
+    attack_iv: null,
+    defense_iv: null,
+    stamina_iv: null,
+    shiny: false,
+    costume_id: null,
+    lucky: false,
+    shadow: false,
+    purified: false,
+    fast_move_id: null,
+    charged_move1_id: null,
+    charged_move2_id: null,
+    weight: null,
+    height: null,
+    gender: null,
+    mega: false,
+    mega_form: null,
+    is_mega: false,
+    dynamax: false,
+    gigantamax: false,
+    crown: false,
+    max_attack: null,
+    max_guard: null,
+    max_spirit: null,
+    is_fused: false,
+    fusion: null,
+    fusion_form: null,
+    fused_with: null,
+    is_traded: false,
+    traded_date: null,
+    original_trainer_id: null,
+    original_trainer_name: null,
+    is_caught: false,
+    is_for_trade: false,
+    is_wanted: false,
+    most_wanted: false,
+    caught_tags: [],
+    trade_tags: [],
+    wanted_tags: [],
+    not_trade_list: {},
+    not_wanted_list: {},
+    trade_filters: {},
+    wanted_filters: {},
+    mirror: false,
+    pref_lucky: false,
+    registered: false,
+    favorite: false,
+    disabled: false,
+    pokeball: null,
+    location_card: null,
+    location_caught: null,
+    date_caught: null,
+    date_added: '2026-01-01T00:00:00.000Z',
+    last_update: 0,
+    ...overrides,
+  };
+}
+
+describe.sequential('Workflow: live instances cache + store', () => {
   let liveInstances: Instances;
   let instanceKeys: string[];
 
@@ -39,17 +115,17 @@ describe('🌟 Workflow: Live Instances Cache + Store', () => {
   });
 
   beforeEach(async () => {
-    testLogger.testStep('Resetting stores and clearing storage');
     useInstancesStore.setState({ instances: {}, instancesLoading: true });
-    useAuthStore.setState({ user: { username: 'testuser', user_id: 'test123', email: 'test@example.com' } as any });
-    localStorage.clear();
-    await idb.clearStore('instances');
+    useAuthStore.setState({
+      user: { username: 'testuser', user_id: 'test123', email: 'test@example.com' } as any,
+    });
 
-    testLogger.testStep('Loading liveVariants into store');
+    localStorage.clear();
+    await idb.clearInstancesStore();
+
     const variants = await useLiveVariants();
     useVariantsStore.setState({ variants });
 
-    testLogger.testStep('Loading liveInstances and hydrating store');
     liveInstances = await useLiveInstances();
     instanceKeys = Object.keys(liveInstances);
     await act(async () => {
@@ -57,8 +133,7 @@ describe('🌟 Workflow: Live Instances Cache + Store', () => {
     });
   });
 
-  it('hydrates instances correctly from liveInstancesCache', () => {
-    testLogger.testStep('Verifying hydration from liveInstancesCache');
+  it('hydrates instances from live fixture', () => {
     const { instances, instancesLoading } = useInstancesStore.getState();
 
     expect(instancesLoading).toBe(false);
@@ -70,34 +145,64 @@ describe('🌟 Workflow: Live Instances Cache + Store', () => {
     }
   });
 
-  it('updates instance status after hydration', async () => {
-    testLogger.testStep('Updating instance status following hydration');
-    const targetId = instanceKeys[0];
-
-    await act(async () => {
-      await useInstancesStore.getState().updateInstanceStatus(targetId, 'Owned');
+  it('updates canonical status on a canonical instance', async () => {
+    const targetId = '11111111-1111-4111-8111-111111111111';
+    useVariantsStore.setState({ variants: [makeVariant()] });
+    useInstancesStore.setState({
+      instances: {
+        [targetId]: makeInstance({ instance_id: targetId }),
+      },
+      instancesLoading: false,
     });
 
-    const updatedInstance = useInstancesStore.getState().instances[targetId];
-    expect(updatedInstance.is_owned).toBe(true);
-    expect(updatedInstance.is_unowned).toBe(false);
+    await act(async () => {
+      await useInstancesStore.getState().updateInstanceStatus(targetId, 'Caught');
+    });
+
+    const updated = useInstancesStore.getState().instances[targetId];
+    expect(updated.is_caught).toBe(true);
+    expect(updated.is_for_trade).toBe(false);
+    expect(updated.is_wanted).toBe(false);
   });
 
   it('updates instance details after hydration', async () => {
-    testLogger.testStep('Updating instance details following hydration');
     const targetId = instanceKeys[0];
 
     await act(async () => {
       await useInstancesStore.getState().updateInstanceDetails(targetId, { nickname: 'Sparky' });
     });
 
-    const updatedInstance = useInstancesStore.getState().instances[targetId];
-    expect(updatedInstance.nickname).toBe('Sparky');
+    const updated = useInstancesStore.getState().instances[targetId];
+    expect(updated.nickname).toBe('Sparky');
   });
 
-  it('handles multiple updates to instances', async () => {
-    testLogger.testStep('Performing multiple updates to instances');
-    const ids = instanceKeys.slice(0, 2);
+  it('handles multiple canonical updates', async () => {
+    const ids = [
+      '33333333-3333-4333-8333-333333333333',
+      '44444444-4444-4444-8444-444444444444',
+    ];
+
+    useVariantsStore.setState({
+      variants: [
+        makeVariant({ variant_id: '0001-default', pokemon_id: 1 }),
+        makeVariant({ variant_id: '0002-default', pokemon_id: 2 }),
+      ],
+    });
+    useInstancesStore.setState({
+      instances: {
+        [ids[0]]: makeInstance({
+          instance_id: ids[0],
+          variant_id: '0001-default',
+          pokemon_id: 1,
+        }),
+        [ids[1]]: makeInstance({
+          instance_id: ids[1],
+          variant_id: '0002-default',
+          pokemon_id: 2,
+        }),
+      },
+      instancesLoading: false,
+    });
 
     await act(async () => {
       await useInstancesStore.getState().updateInstanceStatus(ids, 'Wanted');

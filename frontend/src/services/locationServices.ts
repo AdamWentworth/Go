@@ -28,13 +28,9 @@ export const fetchSuggestions = async (
 
     if (Array.isArray(data)) {
       const formattedSuggestions: LocationSuggestion[] = data.slice(0, 5).map((item: LocationBase) => {
-        const name = item.name || '';
-        const state = item.state_or_province || '';
-        const country = item.country || '';
-
-        let displayName = name;
-        if (state) displayName += `, ${state}`;
-        if (country) displayName += `, ${country}`;
+        const displayName = [item.name || item.city, item.state_or_province, item.country]
+          .filter(Boolean)
+          .join(', ');
 
         return {
           displayName,
@@ -58,7 +54,7 @@ export const fetchSuggestions = async (
 export const fetchLocationOptions = async (
   latitude: number,
   longitude: number
-): Promise<LocationBase[]> => {
+): Promise<LocationSuggestion[]> => {
   try {
     const response = await fetch(
       `${BASE_URL}/reverse?lat=${latitude}&lon=${longitude}`
@@ -69,7 +65,18 @@ export const fetchLocationOptions = async (
     }
 
     const data: LocationResponse = await response.json();
-    return data.locations || [];
+    const locations = data.locations || [];
+
+    return locations.map((item: LocationBase) => {
+      const displayName = [item.name || item.city, item.state_or_province, item.country]
+        .filter(Boolean)
+        .join(', ');
+
+      return {
+        displayName: displayName || 'Unknown location',
+        ...item,
+      };
+    });
   } catch (error) {
     if (error instanceof Error) {
       console.error('Error fetching location options:', error.message);

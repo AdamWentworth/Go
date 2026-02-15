@@ -12,11 +12,12 @@ export const toggleEditMode = ({
   localNotTradeList,
   setLocalNotTradeList,
   pokemon,
-  ownershipData,
+  instances,
   filteredOutPokemon,
   localTradeFilters,
   updateDetails,
 }) => {
+  const instancesMap = instances ?? {};
   /* ------------------------------------------------------------------ */
   // ENTER / EXIT
   /* ------------------------------------------------------------------ */
@@ -50,7 +51,7 @@ export const toggleEditMode = ({
     //   3a. Partners we *removed* from not_trade_list → update their not_wanted_list
     removedKeys.forEach(k => {
       const next = updateNotWantedList(
-        ownershipData,
+        instancesMap,
         currentKey,
         k,
         false,
@@ -61,7 +62,7 @@ export const toggleEditMode = ({
     //   3b. Partners we *added* → likewise
     addedKeys.forEach(k => {
       const next = updateNotWantedList(
-        ownershipData,
+        instancesMap,
         currentKey,
         k,
         true,

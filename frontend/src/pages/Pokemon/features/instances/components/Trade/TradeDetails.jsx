@@ -1,5 +1,5 @@
 // TradeDetails.jsx
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import './TradeDetails.css';
 import EditSaveComponent from '@/components/EditSaveComponent';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
@@ -23,27 +23,28 @@ import { TOOLTIP_TEXTS } from '../../utils/tooltipTexts';
 import useWantedFiltering from '../../hooks/useWantedFiltering.js';
 import useToggleEditModeTrade from '../../hooks/useToggleEditModeTrade.js';
 
-import PokemonActionOverlay from './PokemonActionOverlay.js'; 
-import TradeProposal from './TradeProposal.js'; 
+import PokemonActionOverlay from './PokemonActionOverlay.js';
+import TradeProposal from './TradeProposal.js';
 
 import { parsePokemonKey } from '@/utils/PokemonIDUtils';
 import { getAllInstances } from '@/db/instancesDB';
 import { getAllFromTradesDB } from '@/db/tradesDB';
+import { shouldUpdateTradeInstances } from './shouldUpdateTradeInstances';
 
 import UpdateForTradeModal from './UpdateForTradeModal.js';
 
 const TradeDetails = ({
   pokemon,
   lists,
-  ownershipData,
+  instances,
   sortType,
   sortMode,
-  onClose,
   openWantedOverlay,
   variants,
   isEditable,
   username
 }) => {
+  const instancesMap = instances ?? {};
   const { alert } = useModal();
   const { not_wanted_list, wanted_filters } = pokemon.instanceData;
   const [localNotWantedList, setLocalNotWantedList] = useState({
@@ -53,10 +54,11 @@ const TradeDetails = ({
     ...wanted_filters,
   });
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
+  const updateStatus = useInstancesStore((s) => s.updateInstanceStatus);
   const [isMirror, setIsMirror] = useState(pokemon.instanceData.mirror);
   const [mirrorKey, setMirrorKey] = useState(null);
   const [listsState, setListsState] = useState(lists);
-  const [pendingUpdates, setPendingUpdates] = useState({});
+  const [, setPendingUpdates] = useState({});
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
 
   // New state variables for UpdateForTradeModal
@@ -64,7 +66,7 @@ const TradeDetails = ({
   const [ownedInstancesToTrade, setOwnedInstancesToTrade] = useState([]);
   const [currentBaseKey, setCurrentBaseKey] = useState(null); // New state for baseKey
 
-  const [myOwnershipData, setMyOwnershipData] = useState();
+  const [myInstances, setMyInstances] = useState();
 
   const {
     selectedImages: selectedExcludeImages,
@@ -105,7 +107,12 @@ const TradeDetails = ({
       );
     }
     setIsMirror(pokemon.instanceData.mirror);
-  }, [pokemon.instanceData.mirror, wanted_filters]);
+  }, [
+    pokemon.instanceData.mirror,
+    setSelectedExcludeImages,
+    setSelectedIncludeOnlyImages,
+    wanted_filters,
+  ]);
 
   const { filteredWantedList, filteredOutPokemon, updatedLocalWantedFilters } =
     useWantedFiltering(
@@ -197,12 +204,13 @@ const TradeDetails = ({
     console.log(hashedOwnershipData)
 
     // Store that object in state for passing to TradeProposal
-    setMyOwnershipData(hashedOwnershipData);
+    setMyInstances(hashedOwnershipData);
 
-    // 4) Filter to find all instances where the baseKey matches and is_owned === true
+    // 4) Filter to find all instances where the baseKey matches and user owns/caught it
     const ownedInstances = userOwnershipData.filter((item) => {
       const parsedOwned = parsePokemonKey(item.instance_id);
-      return parsedOwned.baseKey === selectedBaseKey && item.is_owned === true;
+      const isCaught = (item.is_caught ?? item.is_owned) === true;
+      return parsedOwned.baseKey === selectedBaseKey && isCaught;
     });
 
     console.log("ownedInstances after filter =>", ownedInstances);
@@ -241,7 +249,8 @@ const TradeDetails = ({
         }
 
         // Build the "matchedInstances" array with only available instances
-        const { instanceData, ...baseData } = selectedPokemon;
+        const baseData = { ...selectedPokemon };
+        delete baseData.instanceData;
 
         const matchedInstances = availableInstances.map((instance) => ({
           ...baseData,
@@ -279,11 +288,13 @@ const TradeDetails = ({
 
   const handleConfirmTradeUpdate = async (selectedInstanceIds) => {
     try {
-      // Update each selected instance to be for trade
-      const updatePromises = selectedInstanceIds.map((instanceId) =>
-        updateDBEntry('pokemonOwnership', instanceId, { is_for_trade: true })
-      );
-      await Promise.all(updatePromises);
+      if (!shouldUpdateTradeInstances(selectedInstanceIds)) {
+        setIsUpdateForTradeModalOpen(false);
+        return;
+      }
+
+      // Use canonical store action so all tag/registration invariants stay consistent.
+      await updateStatus(selectedInstanceIds, 'Trade');
 
       // Close the modal
       setIsUpdateForTradeModalOpen(false);
@@ -327,10 +338,10 @@ const TradeDetails = ({
       return;
     }
 
-    // 2) Merge variant with ownershipData
-    const ownershipDataEntry = ownershipData[pokemonKey];
-    if (!ownershipDataEntry) {
-      console.error(`No ownership data found for key: ${pokemonKey}`);
+    // 2) Merge variant with instances
+    const instanceEntry = instancesMap[pokemonKey];
+    if (!instanceEntry) {
+      console.error(`No instance data found for key: ${pokemonKey}`);
       return;
     }
 
@@ -339,7 +350,7 @@ const TradeDetails = ({
       variant_id: variantData.variant_id ?? baseKey,
       instanceData: {
         ...variantData.instanceData,
-        ...ownershipDataEntry,
+        ...instanceEntry,
       },
     };
 
@@ -418,7 +429,7 @@ const TradeDetails = ({
           <div className="mirror">
             <MirrorManager
               pokemon={pokemon}
-              instances={ownershipData}
+              instances={instancesMap}
               lists={lists}
               isMirror={isMirror}
               setIsMirror={setIsMirror}
@@ -495,7 +506,6 @@ const TradeDetails = ({
             mirrorKey={mirrorKey}
             setLocalNotWantedList={setLocalNotWantedList}
             editMode={editMode}
-            ownershipData={ownershipData}
             toggleReciprocalUpdates={toggleReciprocalUpdates}
             sortType={sortType}
             sortMode={sortMode}
@@ -529,8 +539,8 @@ const TradeDetails = ({
             setIsTradeProposalOpen(false);
             setTradeClickedPokemon(null);
           }}
-          myOwnershipData={myOwnershipData}
-          ownershipData={ownershipData}
+          myInstances={myInstances}
+          instances={instancesMap}
           username={username}
         />
       )}

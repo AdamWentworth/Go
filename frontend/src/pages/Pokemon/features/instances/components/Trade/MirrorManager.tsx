@@ -26,9 +26,7 @@ interface MirrorManagerProps {
     image_url?: string;
   };
 
-  // Accept either prop name; we’ll use whichever is provided.
   instances?: Record<string, PokemonInstance>;
-  ownershipData?: Record<string, PokemonInstance>;
 
   lists: any;
   isMirror: boolean;
@@ -97,7 +95,6 @@ function safeUpdate(
 const MirrorManager: React.FC<MirrorManagerProps> = ({
   pokemon,
   instances,
-  ownershipData,
   lists,
   isMirror,
   setIsMirror,
@@ -110,8 +107,7 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
   const [hovered, setHovered] = useState<boolean>(false);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
 
-  // Support either prop name; default to empty map if neither provided.
-  const instanceMap: Record<string, PokemonInstance> = instances ?? ownershipData ?? {};
+  const instanceMap: Record<string, PokemonInstance> = instances ?? {};
 
   useEffect(() => {
     if (initialMount.current) {

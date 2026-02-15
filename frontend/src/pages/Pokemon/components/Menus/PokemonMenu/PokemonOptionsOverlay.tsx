@@ -125,7 +125,7 @@ const PokemonOptionsOverlay: React.FC<PokemonOptionsOverlayProps> = ({
                   isHighlighted={false}
                   tagFilter={tagFilter}
                   sortType=""
-                  variants={[]}
+                  variantByPokemonId={new Map([[pokemon.pokemon_id, { backgrounds: pokemon.backgrounds }]])}
                 />
               </div>
               <span ref={previewRef} className={`preview-text ${forceWrap ? 'force-wrap' : ''}`}>Highlight this Pokémon</span>

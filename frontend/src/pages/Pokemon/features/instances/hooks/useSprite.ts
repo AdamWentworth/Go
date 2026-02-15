@@ -14,8 +14,11 @@ type Inputs = {
 };
 
 export function useSprite(inputs: Inputs) {
+  const megaForm = inputs.megaForm ?? undefined;
+  const fusionForm = inputs.fusionForm ?? undefined;
+
   const [url, setUrl] = useState(
-    determineImageUrl(inputs.isFemale, inputs.pokemon, inputs.isMega, inputs.megaForm)
+    determineImageUrl(inputs.isFemale, inputs.pokemon, inputs.isMega, megaForm)
   );
 
   useEffect(() => {
@@ -24,14 +27,14 @@ export function useSprite(inputs: Inputs) {
         inputs.isFemale,
         inputs.pokemon,
         inputs.isMega,
-        inputs.megaForm,
+        megaForm,
         inputs.isFused,
-        inputs.fusionForm,
+        fusionForm,
         inputs.isPurified,
         inputs.gigantamax,
       )
     );
-  }, [inputs]);
+  }, [fusionForm, inputs.gigantamax, inputs.isFemale, inputs.isFused, inputs.isMega, inputs.isPurified, inputs.pokemon, megaForm]);
 
   return url;
 }

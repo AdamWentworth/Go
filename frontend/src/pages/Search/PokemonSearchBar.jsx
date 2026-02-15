@@ -6,6 +6,9 @@ import LocationSearch from './SearchParameters/LocationSearch.jsx';
 import OwnershipSearch from './SearchParameters/OwnershipSearch.jsx';
 import './PokemonSearchBar.css';
 import { FaChevronUp, FaChevronDown, FaList, FaGlobe } from 'react-icons/fa';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('PokemonSearchBar');
 
 const PokemonSearchBar = ({
   onSearch,
@@ -206,7 +209,7 @@ const PokemonSearchBar = ({
       queryParams.trade_in_wanted_list = null;
     }
 
-    console.log('Search Query Parameters:', queryParams);
+    log.debug('Search query parameters', queryParams);
     onSearch(queryParams, null);
     setIsCollapsed(true);
     searchTriggeredRef.current = true;

@@ -11,7 +11,7 @@ import './LoginForm.css';
 
 import { useModal } from '../../../contexts/ModalContext';
 import type { LoginFormValues } from '../../../types/auth';
-import type { FormErrors } from '../../../types/account';
+import type { FormErrors } from '../../../types/auth';
 
 interface LoginFormProps {
   values: LoginFormValues;

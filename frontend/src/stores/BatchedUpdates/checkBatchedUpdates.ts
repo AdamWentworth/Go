@@ -1,8 +1,10 @@
 // checkBatchedUpdates.ts
 
 import { getBatchedPokemonUpdates, getBatchedTradeUpdates } from '../../db/indexedDB';
+import { createScopedLogger } from '@/utils/logger';
 
 type PeriodicUpdatesFn = () => void;
+const log = createScopedLogger('checkBatchedUpdates');
 
 export const checkBatchedUpdates = async (periodicUpdates: PeriodicUpdatesFn): Promise<void> => {
   try {
@@ -15,12 +17,12 @@ export const checkBatchedUpdates = async (periodicUpdates: PeriodicUpdatesFn): P
     const hasTradeUpdates = Array.isArray(tradeBatchedUpdates) && tradeBatchedUpdates.length > 0;
 
     if (hasPokemonUpdates || hasTradeUpdates) {
-      console.log('Batched updates found in IndexedDB: Triggering periodic updates.');
+      log.debug('Batched updates found in IndexedDB: triggering periodic updates.');
       periodicUpdates();
     } else {
-      console.log('No batched updates found in IndexedDB.');
+      log.debug('No batched updates found in IndexedDB.');
     }
   } catch (error) {
-    console.error('Failed to check for batched updates in IndexedDB:', error);
+    log.error('Failed to check for batched updates in IndexedDB', error);
   }
 };

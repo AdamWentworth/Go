@@ -5,8 +5,9 @@ import { getAllVariants, queueVariantsPersist } from "@/db/variantsDB";
 import { recordVariantPipelineMetrics } from "@/utils/perfTelemetry";
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import { computePayloadHash } from "@/features/variants/utils/payloadHash";
+import { createScopedLogger } from "@/utils/logger";
 
-const isDev = process.env.NODE_ENV === 'development';
+const log = createScopedLogger('fetchAndProcessVariants');
 
 function assertVariantIds(variants: PokemonVariant[]): void {
   const seen = new Set<string>();
@@ -36,13 +37,13 @@ function assertVariantIds(variants: PokemonVariant[]): void {
 }
 
 export async function fetchAndProcessVariants() {
-  if (isDev) console.log('Fetching new data from API');
+  log.debug('Fetching new data from API');
   const pipelineStart = performance.now();
 
   const t0 = Date.now();
   const pokemons = await getPokemons();
   const fetchedMs = performance.now() - pipelineStart;
-  if (isDev) console.log(`Fetched new Pokemon data from API in ${Date.now() - t0} ms`);
+  log.debug(`Fetched new Pokemon data from API in ${Date.now() - t0} ms`);
 
   if (!Array.isArray(pokemons)) {
     throw new Error(
@@ -71,9 +72,7 @@ export async function fetchAndProcessVariants() {
         variantCount: cachedVariants.length,
       });
 
-      if (isDev) {
-        console.log(`[variants] payload unchanged (hash=${payloadHash}), using cached variants`);
-      }
+      log.debug(`[variants] payload unchanged (hash=${payloadHash}), using cached variants`);
       return cachedVariants;
     }
   }
@@ -86,20 +85,20 @@ export async function fetchAndProcessVariants() {
   // Guard before persistence: variant_id must be non-empty and unique.
   assertVariantIds(variants as PokemonVariant[]);
 
-  if (isDev) console.log(`Processed Pokemon into variants in ${Date.now() - t1} ms`);
+  log.debug(`Processed Pokemon into variants in ${Date.now() - t1} ms`);
 
   try {
     const size = new Blob([JSON.stringify(variants)]).size;
-    if (isDev) console.log(`Size of processed variants in bytes: ${size}`);
+    log.debug(`Size of processed variants in bytes: ${size}`);
   } catch (err) {
-    if (isDev) console.log('Error measuring size of processed variants:', err);
+    log.debug('Error measuring size of processed variants:', err);
   }
 
   const t2 = Date.now();
   const persistStart = performance.now();
   queueVariantsPersist(variants, Date.now(), payloadHash);
   const persistMs = performance.now() - persistStart;
-  if (isDev) console.log(`Queued variants persistence in ${Date.now() - t2} ms`);
+  log.debug(`Queued variants persistence in ${Date.now() - t2} ms`);
   const totalMs = performance.now() - pipelineStart;
 
   recordVariantPipelineMetrics({

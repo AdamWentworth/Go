@@ -2,10 +2,14 @@
 import * as idb from '@/db/indexedDB';
 import { generateUUID } from '@/utils/PokemonIDUtils';
 import { createNewInstanceData } from '../utils/createNewInstanceData';
+import { createScopedLogger, loggerInternals } from '@/utils/logger';
 
 import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+
+const log = createScopedLogger('instancesStorage');
+const canDebugLog = loggerInternals.shouldEmit('debug');
 
 async function yieldToPaint() {
   await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
@@ -21,8 +25,8 @@ export async function getInstancesData(): Promise<{
   (data as PokemonInstance[]).forEach((item) => {
     if (item.instance_id) {
       (instances as any)[item.instance_id] = item;
-    } else if (process.env.NODE_ENV === 'development') {
-      console.warn('[getInstancesData] Skipped item without instance_id:', item);
+    } else if (canDebugLog) {
+      log.warn('Skipped item without instance_id', item);
     }
   });
 
@@ -46,8 +50,8 @@ export async function setInstancesData(payload: {
 
   await idb.putInstancesBulk(items);
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`Stored instances into IndexedDB in ${Math.round(performance.now() - t0)} ms`);
+  if (canDebugLog) {
+    log.debug(`Stored instances into IndexedDB in ${Math.round(performance.now() - t0)} ms`);
   }
 
   localStorage.setItem('ownershipTimestamp', payload.timestamp.toString());
@@ -96,8 +100,8 @@ export async function replaceInstancesData(
     );
   }
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[replaceInstancesData] wrote ${items.length} rows in ${Math.round(performance.now() - t0)} ms`);
+  if (canDebugLog) {
+    log.debug(`[replaceInstancesData] wrote ${items.length} rows in ${Math.round(performance.now() - t0)} ms`);
   }
 
   localStorage.setItem('ownershipTimestamp', String(timestamp));
@@ -109,8 +113,8 @@ export async function initializeOrUpdateInstancesData(
 ): Promise<Instances> {
   try {
     const { data: stored } = await getInstancesData();
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[instancesStorage] Parsed instancesData:', stored);
+    if (canDebugLog) {
+      log.debug('Parsed instancesData', stored);
     }
 
     let shouldUpdate = false;
@@ -136,21 +140,19 @@ export async function initializeOrUpdateInstancesData(
       shouldUpdate = true;
     });
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[instancesStorage] Init/update pass took ${Math.round(performance.now() - t0)} ms`);
+    if (canDebugLog) {
+      log.debug(`Init/update pass took ${Math.round(performance.now() - t0)} ms`);
     }
 
     if (shouldUpdate) {
       await setInstancesData({ data: stored, timestamp: Date.now() });
-    } else if (process.env.NODE_ENV === 'development') {
-      console.log('[instancesStorage] No updates required.');
+    } else if (canDebugLog) {
+      log.debug('No updates required');
     }
 
     return stored;
   } catch (err) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[instancesStorage] Failed:', err);
-    }
+    log.error('Failed', err);
     throw new Error('Failed to update instances data');
   }
 }

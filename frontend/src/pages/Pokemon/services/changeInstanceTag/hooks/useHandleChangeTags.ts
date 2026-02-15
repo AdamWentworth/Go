@@ -4,16 +4,16 @@ import { useCallback } from 'react';
 import { flushSync } from 'react-dom';
 import { useModal } from '../../../../../contexts/ModalContext.jsx';
 
-import { getStatusFromInstance, getTransitionMessage } from '../utils/transitionMessages.js';
-import { buildInstanceTagChangeMessage } from '../utils/buildInstanceTagChangeMessage.js';
+import { getStatusFromInstance, getTransitionMessage } from '../utils/transitionMessages';
+import { buildInstanceTagChangeMessage } from '../utils/buildInstanceTagChangeMessage';
 
-import { PokemonInstance } from '../../../../../types/pokemonInstance.js';
-import { PokemonVariant } from '../../../../../types/pokemonVariants.js';
+import type { PokemonInstance } from '../../../../../types/pokemonInstance';
+import type { PokemonVariant } from '../../../../../types/pokemonVariants';
 import type { InstanceStatus } from '@/types/instances';
 
-import { categorizePokemonKeys } from '../logic/categorizePokemonKeys.js';
-import { validateBlockedMoves } from '../logic/validateMoveToFilter.js';
-import { getDisplayName } from '../logic/getDisplayName.js';
+import { categorizePokemonKeys } from '../logic/categorizePokemonKeys';
+import { validateBlockedMoves } from '../logic/validateMoveToFilter';
+import { getDisplayName } from '../logic/getDisplayName';
 
 interface useHandleChangeTagsProps {
   setTagFilter: (filter: InstanceStatus) => void;
@@ -122,7 +122,7 @@ function useHandleChangeTags({
 
       const skippedMegaPokemonKeys: string[] = [];
       const skippedFusionPokemonKeys: string[] = [];
-      let remainingHighlightedCards = new Set(highlightedCards);
+      const remainingHighlightedCards = new Set(highlightedCards);
 
       for (const { key, baseKey, megaForm } of mega) {
         try {

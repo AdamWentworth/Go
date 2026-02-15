@@ -26,6 +26,17 @@ export default [
       'react/prop-types': 'off',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features/**/*.js', '@/types/**/*.js', '**/changeInstanceTag/**/*.js'],
+              message: 'Use extensionless imports for local TypeScript modules.',
+            },
+          ],
+        },
+      ],
     },
     settings: {
       react: { version: 'detect' },

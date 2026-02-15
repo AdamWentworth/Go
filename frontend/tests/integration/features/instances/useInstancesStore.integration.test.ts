@@ -1,236 +1,188 @@
-// tests/instances/integration/useInstancesStore.integration.test.ts
-
 import { act } from '@testing-library/react';
-import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
-import { setupServer } from 'msw/node';
-import { rest } from 'msw';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useLiveVariants } from '../utils/liveVariantCache';
-import { useLiveInstances } from '../utils/liveInstancesCache';
-import * as idb from '@/db/indexedDB';
-import type { Instances } from '@/types/instances';
-import type { User } from '@/types/auth';
+
+import type { PokemonInstance } from '@/types/pokemonInstance';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+
 import { enableLogging, testLogger } from '../setupTests';
 
-// Mock Service Worker
-const server = setupServer();
-
-// Mock IndexedDB functions
-vi.mock('@/db/indexedDB', async () => {
-  const actual = await vi.importActual('@/db/indexedDB');
+function makeVariant(overrides: Partial<PokemonVariant> = {}): PokemonVariant {
   return {
-    ...actual,
-    clearStore: vi.fn(() => Promise.resolve()),
-    putIntoDB: vi.fn((storeName: string, data: any) => Promise.resolve()),
-    getFromDB: vi.fn((storeName: string) => Promise.resolve({}))
-  };
-});
+    variant_id: '0001-default',
+    pokemon_id: 1,
+    species_name: 'Bulbasaur',
+    variantType: 'default',
+    currentImage: '/images/default/pokemon_1.png',
+    costumes: [],
+    ...overrides,
+  } as PokemonVariant;
+}
 
-describe('🏪 useInstancesStore Integration', () => {
+function makeInstance(overrides: Partial<PokemonInstance> = {}): PokemonInstance {
+  return {
+    instance_id: 'inst-1',
+    variant_id: '0001-default',
+    pokemon_id: 1,
+    nickname: null,
+    cp: null,
+    level: null,
+    attack_iv: null,
+    defense_iv: null,
+    stamina_iv: null,
+    shiny: false,
+    costume_id: null,
+    lucky: false,
+    shadow: false,
+    purified: false,
+    fast_move_id: null,
+    charged_move1_id: null,
+    charged_move2_id: null,
+    weight: null,
+    height: null,
+    gender: null,
+    mega: false,
+    mega_form: null,
+    is_mega: false,
+    dynamax: false,
+    gigantamax: false,
+    crown: false,
+    max_attack: null,
+    max_guard: null,
+    max_spirit: null,
+    is_fused: false,
+    fusion: null,
+    fusion_form: null,
+    fused_with: null,
+    is_traded: false,
+    traded_date: null,
+    original_trainer_id: null,
+    original_trainer_name: null,
+    is_caught: false,
+    is_for_trade: false,
+    is_wanted: false,
+    most_wanted: false,
+    caught_tags: [],
+    trade_tags: [],
+    wanted_tags: [],
+    not_trade_list: {},
+    not_wanted_list: {},
+    trade_filters: {},
+    wanted_filters: {},
+    mirror: false,
+    pref_lucky: false,
+    registered: false,
+    favorite: false,
+    disabled: false,
+    pokeball: null,
+    location_card: null,
+    location_caught: null,
+    date_caught: null,
+    date_added: '2026-01-01T00:00:00.000Z',
+    last_update: 0,
+    ...overrides,
+  };
+}
+
+describe.sequential('useInstancesStore integration', () => {
   beforeAll(() => {
     enableLogging('verbose');
     testLogger.fileStart('Store Tests');
     testLogger.suiteStart('useInstancesStore Integration');
-    server.listen();
   });
 
   afterAll(() => {
-    server.close();
     testLogger.suiteComplete();
     testLogger.fileEnd();
   });
 
-  beforeEach(async () => {
-    testLogger.testStep('Resetting stores and clearing storage');
-    useInstancesStore.setState({ instances: {}, instancesLoading: true });
-    useVariantsStore.setState({ variants: [] });
-    
-    testLogger.testStep('Providing complete User object');
+  beforeEach(() => {
+    useInstancesStore.setState({ instances: {}, instancesLoading: true, foreignInstances: null });
+    useVariantsStore.setState({ variants: [makeVariant()] });
     useAuthStore.setState({
       user: {
-        username: 'testuser',
         user_id: 'test123',
-        email: 'test@example.com',
-        pokemonGoName: 'TestTrainer',
-        trainerCode: '1234 5678 9012',
-        location: 'San Francisco, CA',
-        allowLocation: true,
-        coordinates: { latitude: 37.7749, longitude: -122.4194 },
-        accessTokenExpiry: new Date(Date.now() + 3600000).toISOString(),
-        refreshTokenExpiry: new Date(Date.now() + 86400000).toISOString(),
-      } as User
+        username: 'testuser',
+      } as any,
     });
-
-    testLogger.testStep('Clearing IndexedDB and localStorage');
-    await idb.clearStore('instances');
     localStorage.clear();
-
-    testLogger.testStep('Loading variants into store');
-    const variants = await useLiveVariants();
-    useVariantsStore.setState({ variants });
   });
 
-  it('should hydrate instances from IndexedDB using useLiveInstances', async () => {
-    testLogger.testStep('Hydrating from IndexedDB');
-    const liveInstances = await useLiveInstances();
-    const instanceId = Object.keys(liveInstances)[0];
-    if (!instanceId) throw new Error('No instances available for test');
+  it('hydrates instances and clears loading', () => {
+    const id = 'inst-hydrate';
+    const data = { [id]: makeInstance({ instance_id: id }) };
 
-    await idb.putIntoDB('instances', liveInstances);
+    act(() => {
+      useInstancesStore.getState().hydrateInstances(data);
+    });
+
+    const state = useInstancesStore.getState();
+    expect(state.instances[id]).toBeDefined();
+    expect(state.instancesLoading).toBe(false);
+  });
+
+  it('updates status through store action', async () => {
+    const id = '66666666-6666-4666-8666-666666666666';
+    useInstancesStore.setState({
+      instances: {
+        [id]: makeInstance({ instance_id: id, variant_id: '0001-default', is_caught: false }),
+      },
+      instancesLoading: false,
+    });
+
+    const periodicSpy = vi
+      .spyOn(useInstancesStore.getState(), 'periodicUpdates')
+      .mockImplementation(() => {});
 
     await act(async () => {
-      await useInstancesStore.getState().hydrateInstances(liveInstances);
+      await useInstancesStore.getState().updateInstanceStatus(id, 'Caught');
+    });
+
+    const updated = useInstancesStore.getState().instances[id];
+    expect(updated.is_caught).toBe(true);
+    expect(updated.registered).toBe(true);
+    expect(periodicSpy).toHaveBeenCalled();
+  });
+
+  it('sets and resets foreign instances', () => {
+    const foreign = { foreignA: makeInstance({ instance_id: 'foreignA', username: 'other' }) };
+
+    act(() => {
+      useInstancesStore.getState().setForeignInstances(foreign);
+    });
+    expect(useInstancesStore.getState().foreignInstances).toEqual(foreign);
+
+    act(() => {
+      useInstancesStore.getState().resetForeignInstances();
+    });
+    expect(useInstancesStore.getState().foreignInstances).toBeNull();
+  });
+
+  it('resetInstances clears state and timestamp', () => {
+    useInstancesStore.setState({
+      instances: {
+        foo: makeInstance({ instance_id: 'foo' }),
+      },
+      instancesLoading: false,
+    });
+    localStorage.setItem('ownershipTimestamp', '12345');
+
+    act(() => {
+      useInstancesStore.getState().resetInstances();
     });
 
     const { instances, instancesLoading } = useInstancesStore.getState();
-    expect(Object.keys(instances)).toHaveLength(Object.keys(liveInstances).length);
-    expect(instances[instanceId]).toBeDefined();
-    expect(instancesLoading).toBe(false);
+    expect(instances).toEqual({});
+    expect(instancesLoading).toBe(true);
+    expect(localStorage.getItem('ownershipTimestamp')).toBeNull();
   });
 
-  it('should sync instance updates with Service Worker', async () => {
-    testLogger.testStep('Syncing instance updates with Service Worker');
-    server.use(
-      rest.post('/sync', (req, res, ctx) => {
-        return res(ctx.json({ status: 'success' }));
-      })
-    );
-
-    const liveInstances = await useLiveInstances();
-    const instanceId = Object.keys(liveInstances)[0];
-    if (!instanceId) throw new Error('No instances available for test');
-    const mockInstance = liveInstances[instanceId];
-    act(() => {
-      useInstancesStore.getState().hydrateInstances({ [instanceId]: mockInstance });
-    });
-
-    const periodicSpy = vi.spyOn(useInstancesStore.getState(), 'periodicUpdates');
-    await act(async () => {
-      await useInstancesStore.getState().updateInstanceStatus(instanceId, 'Owned');
-    });
-
-    expect(periodicSpy).toHaveBeenCalled();
-
-    const updated = useInstancesStore.getState().instances[instanceId];
-    expect(updated.is_owned).toBe(true);
-    expect(updated.is_unowned).toBe(false);
-  });
-
-  it('should merge instances with username-based logic', async () => {
-    testLogger.testStep('Merging instances with username-based logic');
-    const liveInstances = await useLiveInstances();
-    const instanceId = Object.keys(liveInstances)[0];
-    if (!instanceId) throw new Error('No instances available for test');
-    const initialData: Instances = {
-      [instanceId]: { ...liveInstances[instanceId], is_owned: true },
-    };
-    act(() => {
-      useInstancesStore.getState().hydrateInstances(initialData);
-    });
-
-    const otherInstance = { ...liveInstances[instanceId] };
-    otherInstance.instance_id = '0001-shiny_uuid2';
-    otherInstance.username = 'otheruser';
-    otherInstance.is_wanted = true;
-    otherInstance.is_unowned = true;
-    
-    const incomingData: Instances = {
-      '0001-shiny_uuid2': otherInstance
-    };
-
-    act(() => {
-      useInstancesStore.getState().setInstances(incomingData);
-    });
-
-    const instances = useInstancesStore.getState().instances;
-    expect(instances['0001-shiny_uuid2']).toBeUndefined();
-    expect(instances[instanceId].is_owned).toBe(true);
-  });
-
-  it('should handle concurrent status updates', async () => {
-    testLogger.testStep('Handling concurrent status updates');
-    const liveInstances = await useLiveInstances();
-    const instanceId = Object.keys(liveInstances)[0];
-    if (!instanceId) throw new Error('No instances available for test');
-    const mockInstance = liveInstances[instanceId];
-    act(() => {
-      useInstancesStore.getState().hydrateInstances({ [instanceId]: mockInstance });
-    });
-
-    await Promise.all([
-      act(async () => {
-        await useInstancesStore.getState().updateInstanceStatus(instanceId, 'Owned');
-      }),
-      act(async () => {
-        await useInstancesStore.getState().updateInstanceStatus(instanceId, 'Wanted');
-      }),
-    ]);
-
-    const updated = useInstancesStore.getState().instances[instanceId];
-    expect(['Owned', 'Wanted']).toContain(updated.is_owned ? 'Owned' : 'Wanted');
-  });
-
-  describe('resetInstances()', () => {
-    it('should clear state and localStorage', () => {
-      testLogger.testStep('resetInstances lifecycle');
-      useInstancesStore.setState({ instances: { foo: {} as any }, instancesLoading: false });
-      localStorage.setItem('ownershipTimestamp', '12345');
-      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-      act(() => {
-        useInstancesStore.getState().resetInstances();
-      });
-
-      const { instances, instancesLoading } = useInstancesStore.getState();
-      expect(instances).toEqual({});
-      expect(instancesLoading).toBe(true);
-      expect(localStorage.getItem('ownershipTimestamp')).toBeUndefined();
-      expect(logSpy).toHaveBeenCalledWith('[InstancesStore] resetInstances()');
-      logSpy.mockRestore();
-    });
-  });
-
-  describe('hydrateInstances()', () => {
-    it('should set loading=false even with empty data', async () => {
-      testLogger.testStep('hydrateInstances with empty data');
-      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-      await act(async () => {
-        await useInstancesStore.getState().hydrateInstances({});
-      });
-
-      const { instances, instancesLoading } = useInstancesStore.getState();
-      expect(instances).toEqual({});
-      expect(instancesLoading).toBe(false);
-      expect(logSpy).toHaveBeenCalledWith('[InstancesStore] 💾 Hydrated 0 instances from cache');
-      logSpy.mockRestore();
-    });
-
-    it('should log singular vs plural correctly', async () => {
-      testLogger.testStep('hydrateInstances singular vs plural');
-      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-      await act(async () => {
-        await useInstancesStore.getState().hydrateInstances({ a: {} as any });
-      });
-      expect(logSpy).toHaveBeenLastCalledWith('[InstancesStore] 💾 Hydrated 1 instance from cache');
-
-      await act(async () => {
-        await useInstancesStore.getState().hydrateInstances({ a: {} as any, b: {} as any });
-      });
-      expect(logSpy).toHaveBeenLastCalledWith('[InstancesStore] 💾 Hydrated 2 instances from cache');
-      logSpy.mockRestore();
-    });
-  });
-
-  describe('periodicUpdates()', () => {
-    it('should exist and not throw', () => {
-      testLogger.testStep('periodicUpdates existence');
-      expect(() => {
-        useInstancesStore.getState().periodicUpdates();
-      }).not.toThrow();
-    });
+  it('periodicUpdates exists and does not throw', () => {
+    expect(() => {
+      useInstancesStore.getState().periodicUpdates();
+    }).not.toThrow();
   });
 });

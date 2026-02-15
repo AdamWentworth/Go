@@ -18,13 +18,14 @@ import useTradeFiltering from '../../hooks/useTradeFiltering.js';
 const WantedDetails = ({
   pokemon,
   lists,
-  ownershipData,
+  instances,
   sortType,
   sortMode,
   openTradeOverlay,
   variants,
   isEditable
 }) => {
+  const instancesMap = instances ?? {};
   // Defensive defaults in case instanceData is not ready yet.
   const not_trade_list = pokemon?.instanceData?.not_trade_list ?? {};
   const trade_filters  = pokemon?.instanceData?.trade_filters  ?? {};
@@ -108,7 +109,7 @@ const WantedDetails = ({
       localNotTradeList,
       setLocalNotTradeList,
       pokemon,
-      ownershipData,
+      instances,
       filteredOutPokemon,
       localTradeFilters,
       updateDetails
@@ -162,9 +163,9 @@ const WantedDetails = ({
       console.error(`Variant not found for pokemonKey: ${pokemonKey}`);
       return;
     }
-    const ownershipDataEntry = ownershipData?.[pokemonKey];
-    if (!ownershipDataEntry) {
-      console.error(`Pokemon not found in ownershipData for key: ${pokemonKey}`);
+    const instanceEntry = instancesMap?.[pokemonKey];
+    if (!instanceEntry) {
+      console.error(`Pokemon instance not found for key: ${pokemonKey}`);
       return;
     }
     const mergedPokemonData = {
@@ -172,7 +173,7 @@ const WantedDetails = ({
       variant_id: variantData.variant_id ?? baseKey,
       ownershipStatus: {
         ...variantData.ownershipStatus,
-        ...ownershipDataEntry
+        ...instanceEntry
       }
     };
     openTradeOverlay(mergedPokemonData);
@@ -246,7 +247,6 @@ const WantedDetails = ({
           setLocalNotTradeList={setLocalNotTradeList}
           editMode={editMode}
           toggleReciprocalUpdates={toggleReciprocalUpdates}
-          ownershipData={ownershipData}
           sortType={sortType}
           sortMode={sortMode}
           onPokemonClick={handlePokemonClick}

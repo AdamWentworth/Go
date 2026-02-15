@@ -8,13 +8,14 @@ function TradeList({
   trades,
   relatedInstances,
   selectedStatus,
-  // New props from Trades.jsx
-  setOwnershipData,
+  setInstances,
   variants,
-  ownershipData,
+  instances,
   loading,
   periodicUpdates
 }) {
+  const resolvedInstances = instances ?? {};
+
   const storedUser = localStorage.getItem('user');
   const currentUsername = storedUser ? JSON.parse(storedUser).username : null;
 
@@ -62,10 +63,9 @@ function TradeList({
             trade={trade}
             relatedInstances={relatedInstances}
             selectedStatus={selectedStatus}
-            // Pass these props down to TradeCard
-            setOwnershipData={setOwnershipData}
+            setInstances={setInstances}
             variants={variants}
-            ownershipData={ownershipData}
+            instances={resolvedInstances}
             loading={loading}
             periodicUpdates={periodicUpdates}
           />

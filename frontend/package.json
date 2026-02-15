@@ -49,6 +49,7 @@
     "test:tags": "vitest run tests/unit/features/tags tests/integration/features/tags",
     "test:file": "vitest run",
     "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
     "lint:fix": "eslint src --ext .ts,.tsx --fix"
   },
   "browserslist": {

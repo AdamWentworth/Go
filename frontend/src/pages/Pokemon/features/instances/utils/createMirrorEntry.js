@@ -51,7 +51,7 @@ const safeUpdate = (updateDetails, id, data) => {
  * Create a mirror "wanted" instance for this variant.
  * NEW MODEL: instance_id is a UUID (no base prefix), variant_id stays as "0001-<suffix>".
  */
-export const createMirrorEntry = (pokemon, ownershipData, lists, updateDetails) => {
+export const createMirrorEntry = (pokemon, instances, lists, updateDetails) => {
   const rawVariant = (pokemon?.variant_id || pokemon?.instanceData?.variant_id || "");
   const variant_id = normalizeVariantId(String(rawVariant || ""));
   if (!variant_id) {
@@ -96,8 +96,8 @@ export const createMirrorEntry = (pokemon, ownershipData, lists, updateDetails) 
 
   // 1) Update in-memory map for immediate UI
   try {
-    if (ownershipData && typeof ownershipData === "object") {
-      ownershipData[newId] = newInstance;
+    if (instances && typeof instances === "object") {
+      instances[newId] = newInstance;
     }
   } catch {}
 

@@ -1,7 +1,7 @@
 // auth.ts
 
 import type { Coordinates } from './location';
-import { InstancesData } from './instances';
+import type { Instances } from './instances';
 
 export interface User {
   user_id: string;
@@ -11,7 +11,7 @@ export interface User {
   trainerCode: string;
   location: string;
   allowLocation: boolean;
-  coordinates?: Coordinates | null; // allow for null if not set
+  coordinates?: Coordinates | null;
   accessTokenExpiry: string;
   refreshTokenExpiry: string;
   [key: string]: unknown;
@@ -23,13 +23,13 @@ export interface RefreshTokenPayload {
   accessToken: string;
 }
 
-export interface LoginFormValues {
-  username: string;
-  password: string;
-}
-
 export interface GenericPayload {
   [key: string]: unknown;
+}
+
+export interface LoginFormValues extends GenericPayload {
+  username: string;
+  password: string;
 }
 
 export interface RegisterFormValues extends GenericPayload {
@@ -62,33 +62,27 @@ export interface LoginResponse {
   refreshTokenExpiry: string;
 }
 
-// And for the fetched ownership data:
 export interface OwnershipResponse {
-  pokemon_instances: InstancesData;
-  trades: any[];               // Replace with an appropriate Trade interface.
-  related_instances: any[];    // Replace with a more specific type if available.
-}
-
-export interface LoginFormValues extends GenericPayload {
-  username: string;
-  password: string;
+  pokemon_instances: Instances;
+  trades: unknown[];
+  related_instances: unknown[];
 }
 
 export interface AccountFormValues {
-    userId: string;
-    username: string;
-    email: string;
-    password: string;
-    confirmPassword: string;
-    pokemonGoName: string;
-    pokemonGoNameDisabled: boolean;
-    trainerCode: string;
-    allowLocation: boolean;
-    location: string;
-    coordinates: Coordinates | null;
-    accessTokenExpiry: string;
-    refreshTokenExpiry: string; 
-  }  
+  userId: string;
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  pokemonGoName: string;
+  pokemonGoNameDisabled: boolean;
+  trainerCode: string;
+  allowLocation: boolean;
+  location: string;
+  coordinates: Coordinates | null;
+  accessTokenExpiry: string;
+  refreshTokenExpiry: string;
+}
 
 export interface FormErrors {
   [key: string]: string;

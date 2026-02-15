@@ -10,6 +10,7 @@ import './App.css';
 import AppProviders  from './AppProviders';
 import AppBootstrap  from './AppBootstrap';
 import PerfTelemetryPanel from './components/dev/PerfTelemetryPanel';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const Home = lazy(() => import('./pages/Home/Home'));
 const Pokemon = lazy(() => import('./pages/Pokemon/Pokemon'));
@@ -44,7 +45,9 @@ const App: React.FC = () => (
   <Router future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
     <AppProviders>
       <AppBootstrap />
-      <AppContent />
+      <ErrorBoundary>
+        <AppContent />
+      </ErrorBoundary>
       <PerfTelemetryPanel />
     </AppProviders>
   </Router>

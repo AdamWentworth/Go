@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import type { LoginFormValues } from '../../../types/auth';
-import type { FormErrors } from '../../../types/account';
+import type { FormErrors } from '../../../types/auth';
 
 const useLoginForm = (
   initialValues: LoginFormValues,

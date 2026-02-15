@@ -43,7 +43,7 @@ const useToggleEditModeTrade = (
   /* --------------------------------------------------------------------- */
   /*  Source of truth for ALL instance data                                */
   /* --------------------------------------------------------------------- */
-  const ownershipData = useInstancesStore.getState().instances;
+  const instances = useInstancesStore.getState().instances;
 
   /* --------------------------------------------------------------------- */
   /*  Main handler                                                         */
@@ -67,7 +67,7 @@ const useToggleEditModeTrade = (
       /* 3a. Reciprocal edits on partner Pokémon ------------------------ */
       removedKeys.forEach(k => {
         const next = updateNotTradeList(
-          ownershipData,           // live store map
+          instances,           // live store map
           currentKey,      // current Pokémon
           k,                       // partner instance
           false,                   // remove link
@@ -78,7 +78,7 @@ const useToggleEditModeTrade = (
 
       addedKeys.forEach(k => {
         const next = updateNotTradeList(
-          ownershipData,
+          instances,
           currentKey,
           k,
           true,                    // add link
@@ -96,7 +96,7 @@ const useToggleEditModeTrade = (
 
       /* 4. Mirror housekeeping ----------------------------------------- */
       if (!isMirror && mirrorKey) {
-        delete ownershipData[mirrorKey];
+        delete instances[mirrorKey];
         delete lists.wanted[mirrorKey];
         updateDisplayedList(null, localNotWantedList, setListsState);
         setMirrorKey(null);

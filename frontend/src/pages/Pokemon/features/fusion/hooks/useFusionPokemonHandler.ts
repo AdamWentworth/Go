@@ -7,7 +7,7 @@ import { useFusionSelectionState } from './useFusionSelectionState';
 
 function useFusionPokemonHandler() {
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
-  const ownershipData = useInstancesStore((s) => s.instances);
+  const instances = useInstancesStore((s) => s.instances);
 
   const {
     isFusionSelectionOpen,
@@ -42,7 +42,7 @@ function useFusionPokemonHandler() {
       leftInstanceId,
       rightInstanceId,
       fusionData: fusionSelectionData.fusionData, // ✅ now it's guaranteed
-      ownershipData,
+      instances,
       updateDetails,
       resolve: fusionSelectionData.resolve,
     });

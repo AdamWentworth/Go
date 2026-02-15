@@ -1,5 +1,6 @@
 // periodicUpdates.ts
 import { getBatchedPokemonUpdates, getBatchedTradeUpdates } from '../../db/indexedDB';
+import { createScopedLogger } from '@/utils/logger';
 
 type Ref<T> = { current: T };
 type LocationType = {
@@ -8,6 +9,8 @@ type LocationType = {
   [key: string]: unknown;
 } | null;
 
+const log = createScopedLogger('periodicUpdates');
+
 function isUserLoggedIn(): boolean {
   try {
     const raw = localStorage.getItem('user');
@@ -15,7 +18,7 @@ function isUserLoggedIn(): boolean {
     const user = JSON.parse(raw);
     const now = Date.now();
     const refreshExp = new Date(user.refreshTokenExpiry).getTime();
-    // Consider logged in only if refresh token is still valid
+    // Consider logged in only if refresh token is still valid.
     return Number.isFinite(refreshExp) && refreshExp > now;
   } catch {
     return false;
@@ -24,7 +27,7 @@ function isUserLoggedIn(): boolean {
 
 export const periodicUpdates = (
   scheduledSyncRef: Ref<boolean | null>,
-  timerRef: Ref<NodeJS.Timeout | null>
+  timerRef: Ref<NodeJS.Timeout | null>,
 ): (() => void) => {
   return () => {
     const storedLocation = localStorage.getItem('location');
@@ -33,18 +36,18 @@ export const periodicUpdates = (
     if (storedLocation) {
       try {
         location = JSON.parse(storedLocation);
-      } catch (e) {
-        console.warn('Failed to parse stored location:', e);
+      } catch (error) {
+        log.warn('Failed to parse stored location', error);
       }
     }
 
-    // Helper: schedule next check in 60s
+    // Helper: schedule next check in 60s.
     const scheduleNext = (fn: () => void) => {
-      console.log('Setting another 60-second timer for the next update.');
+      log.debug('Setting another 60-second timer for the next update.');
       timerRef.current = setTimeout(fn, 60_000);
     };
 
-    // Helper: ask SW to send updates
+    // Helper: ask service worker to send updates.
     const requestSend = () => {
       navigator.serviceWorker?.ready
         .then((registration) => {
@@ -52,21 +55,21 @@ export const periodicUpdates = (
             action: 'sendBatchedUpdatesToBackend',
             data: location,
           });
-          console.log('Update request sent to service worker.');
+          log.debug('Update request sent to service worker.');
         })
-        .catch((e) => console.warn('Service worker not ready:', e));
+        .catch((error) => log.warn('Service worker not ready', error));
     };
 
     if (scheduledSyncRef.current == null) {
-      console.log('First call: Triggering immediate update.');
+      log.debug('First call: triggering immediate update.');
 
       if (isUserLoggedIn()) {
         requestSend();
         scheduledSyncRef.current = true;
 
-        // Begin periodic checks only while logged in
+        // Begin periodic checks only while logged in.
         timerRef.current = setTimeout(async function sendUpdates() {
-          console.log('Timer expired: Checking for batched updates in IndexedDB.');
+          log.debug('Timer expired: checking for batched updates in IndexedDB.');
 
           const [pokemonBatchedUpdates, tradeBatchedUpdates] = await Promise.all([
             getBatchedPokemonUpdates(),
@@ -79,33 +82,31 @@ export const periodicUpdates = (
             Array.isArray(tradeBatchedUpdates) && tradeBatchedUpdates.length > 0;
 
           if (!hasPokemonUpdates && !hasTradeUpdates) {
-            console.log('No updates in IndexedDB: Stopping periodic updates.');
+            log.debug('No updates in IndexedDB: stopping periodic updates.');
             scheduledSyncRef.current = null;
             timerRef.current = null;
             return;
           }
 
           if (isUserLoggedIn()) {
-            console.log('Updates found in IndexedDB and user is logged in: sending to backend.');
+            log.debug('Updates found in IndexedDB and user is logged in: sending to backend.');
             requestSend();
             scheduleNext(sendUpdates);
           } else {
-            console.log(
-              'Updates exist but user is not logged in: skipping send and pausing periodic updates.'
-            );
-            // 🛑 Do NOT loop when logged out; pause until the app calls periodicUpdates() again (e.g., on login or next user action)
+            log.debug('Updates exist but user is not logged in: pausing periodic updates.');
+            // Do not loop when logged out; pause until periodicUpdates() is called again.
             scheduledSyncRef.current = null;
             timerRef.current = null;
           }
         }, 60_000);
       } else {
-        console.log('Immediate update skipped (not logged in). Pausing periodic updates.');
-        // Do NOT start the 60s loop when logged out.
+        log.debug('Immediate update skipped (not logged in). Pausing periodic updates.');
+        // Do not start the 60s loop when logged out.
         scheduledSyncRef.current = null;
         timerRef.current = null;
       }
     } else {
-      console.log('Function called again but is currently waiting for the timer to expire.');
+      log.debug('Function called again while waiting for timer to expire.');
     }
   };
 };

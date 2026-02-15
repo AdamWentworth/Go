@@ -4,8 +4,8 @@ import { calculateDamage } from './calculateDamage';
 
 export interface Variant {
   variantType?: string;
-  type1_name: string;
-  type2_name: string;
+  type1_name?: string;
+  type2_name?: string;
 }
 
 export interface Move {
@@ -67,8 +67,8 @@ export function calculateDPS(
     playerAttackStat,
     raidBossDefense,
     fastMove.type_name,
-    variant.type1_name,
-    variant.type2_name,
+    variant.type1_name || '',
+    variant.type2_name || '',
     raidBossType1,
     raidBossType2
   );
@@ -77,8 +77,8 @@ export function calculateDPS(
     playerAttackStat,
     raidBossDefense,
     chargedMove.type_name,
-    variant.type1_name,
-    variant.type2_name,
+    variant.type1_name || '',
+    variant.type2_name || '',
     raidBossType1,
     raidBossType2
   );

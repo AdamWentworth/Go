@@ -28,14 +28,14 @@ describe('usePokemonDetails', () => {
         pokemon_id: 6,
       },
     };
-    const ownershipData = {};
+    const instances = {};
 
     const { result } = renderHook(() =>
       usePokemonDetails(
         '550e8400-e29b-41d4-a716-446655440000',
         variants as any,
         relatedInstances,
-        ownershipData,
+        instances,
       ),
     );
 
@@ -43,9 +43,10 @@ describe('usePokemonDetails', () => {
       expect(result.current).not.toBeNull();
     });
 
-    expect(result.current?.variant_id).toBe('0006-shiny');
-    expect(result.current?.currentImage).toBe('/images/shiny/shiny_pokemon_6.png');
-    expect(Array.isArray(result.current?.moves)).toBe(true);
+    const details = result.current as any;
+    expect(details?.variant_id).toBe('0006-shiny');
+    expect(details?.currentImage).toBe('/images/shiny/shiny_pokemon_6.png');
+    expect(Array.isArray(details?.moves)).toBe(true);
   });
 
   it('falls back to legacy parsed key when variant_id is absent', async () => {
@@ -60,18 +61,19 @@ describe('usePokemonDetails', () => {
     ];
 
     const relatedInstances = {};
-    const ownershipData = {};
+    const instances = {};
 
     const { result } = renderHook(() =>
-      usePokemonDetails(instanceId, variants as any, relatedInstances, ownershipData),
+      usePokemonDetails(instanceId, variants as any, relatedInstances, instances),
     );
 
     await waitFor(() => {
       expect(result.current).not.toBeNull();
     });
 
-    expect(result.current?.variant_id).toBe('0001-default');
-    expect(result.current?.currentImage).toBe('/images/default/pokemon_1.png');
+    const details = result.current as any;
+    expect(details?.variant_id).toBe('0001-default');
+    expect(details?.currentImage).toBe('/images/default/pokemon_1.png');
   });
 
   it('provides a safe empty moves list when no moves are available', async () => {
@@ -91,17 +93,55 @@ describe('usePokemonDetails', () => {
         pokemon_id: 25,
       },
     };
-    const ownershipData = {};
+    const instances = {};
 
     const { result } = renderHook(() =>
-      usePokemonDetails('abc', variants as any, relatedInstances, ownershipData),
+      usePokemonDetails('abc', variants as any, relatedInstances, instances),
     );
 
     await waitFor(() => {
       expect(result.current).not.toBeNull();
     });
 
-    expect(Array.isArray(result.current?.moves)).toBe(true);
-    expect(result.current?.moves).toHaveLength(0);
+    const details = result.current as any;
+    expect(Array.isArray(details?.moves)).toBe(true);
+    expect(details?.moves).toHaveLength(0);
+  });
+
+  it('resolves from instances map when relatedInstances does not include the key', async () => {
+    const variants = [
+      {
+        variant_id: '0133-default',
+        pokemon_id: 133,
+        name: 'Eevee',
+        currentImage: '/images/default/pokemon_133.png',
+      },
+    ];
+
+    const relatedInstances = {};
+    const instances = {
+      legacy001: {
+        instance_id: 'legacy001',
+        variant_id: '0133-default',
+        pokemon_id: 133,
+      },
+    };
+
+    const { result } = renderHook(() =>
+      usePokemonDetails(
+        'legacy001',
+        variants as any,
+        relatedInstances,
+        instances,
+      ),
+    );
+
+    await waitFor(() => {
+      expect(result.current).not.toBeNull();
+    });
+
+    const details = result.current as any;
+    expect(details?.variant_id).toBe('0133-default');
+    expect(details?.currentImage).toBe('/images/default/pokemon_133.png');
   });
 });

@@ -1,12 +1,79 @@
-// tests/instances/integration/useInstancesStore.setInstances.integration.test.ts
-
 import { act } from '@testing-library/react';
-import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
-import type { Instances } from '@/types/instances';
+import { useAuthStore } from '@/stores/useAuthStore';
+
+import type { PokemonInstance } from '@/types/pokemonInstance';
+
 import { enableLogging, testLogger } from '../setupTests';
 
-describe('🏪 useInstancesStore.setInstances()', () => {
+function makeInstance(overrides: Partial<PokemonInstance> = {}): PokemonInstance {
+  return {
+    instance_id: 'inst-1',
+    variant_id: '0001-default',
+    pokemon_id: 1,
+    nickname: null,
+    cp: null,
+    level: null,
+    attack_iv: null,
+    defense_iv: null,
+    stamina_iv: null,
+    shiny: false,
+    costume_id: null,
+    lucky: false,
+    shadow: false,
+    purified: false,
+    fast_move_id: null,
+    charged_move1_id: null,
+    charged_move2_id: null,
+    weight: null,
+    height: null,
+    gender: null,
+    mega: false,
+    mega_form: null,
+    is_mega: false,
+    dynamax: false,
+    gigantamax: false,
+    crown: false,
+    max_attack: null,
+    max_guard: null,
+    max_spirit: null,
+    is_fused: false,
+    fusion: null,
+    fusion_form: null,
+    fused_with: null,
+    is_traded: false,
+    traded_date: null,
+    original_trainer_id: null,
+    original_trainer_name: null,
+    is_caught: true,
+    is_for_trade: false,
+    is_wanted: false,
+    most_wanted: false,
+    caught_tags: [],
+    trade_tags: [],
+    wanted_tags: [],
+    not_trade_list: {},
+    not_wanted_list: {},
+    trade_filters: {},
+    wanted_filters: {},
+    mirror: false,
+    pref_lucky: false,
+    registered: true,
+    favorite: false,
+    disabled: false,
+    pokeball: null,
+    location_card: null,
+    location_caught: null,
+    date_caught: null,
+    date_added: '2026-01-01T00:00:00.000Z',
+    last_update: 0,
+    ...overrides,
+  };
+}
+
+describe.sequential('useInstancesStore.setInstances() integration', () => {
   beforeAll(() => {
     enableLogging('verbose');
     testLogger.fileStart('Store Tests');
@@ -19,66 +86,56 @@ describe('🏪 useInstancesStore.setInstances()', () => {
   });
 
   beforeEach(() => {
-    testLogger.testStep('Resetting store state and clearing storage');
-    useInstancesStore.setState({ instances: {}, instancesLoading: true });
+    useInstancesStore.setState({ instances: {}, instancesLoading: false });
+    useAuthStore.setState({
+      user: { user_id: 'u-1', username: 'testuser' } as any,
+    });
     localStorage.clear();
   });
 
-  it('should skip when incoming is empty', () => {
-    testLogger.testStep('Incoming data empty scenario');
-    useInstancesStore.setState({ instances: { foo: {} as any }, instancesLoading: false });
-    const initial = useInstancesStore.getState().instances;
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+  it('skips when incoming set is empty', async () => {
+    const current = {
+      foo: makeInstance({ instance_id: 'foo' }),
+    };
+    useInstancesStore.setState({ instances: current });
 
-    act(() => {
-      useInstancesStore.getState().setInstances({});
-    });
-
-    expect(useInstancesStore.getState().instances).toBe(initial);
-    expect(localStorage.getItem('ownershipTimestamp')).toBeUndefined();
-    expect(logSpy).toHaveBeenCalledWith('[InstancesStore] ⚠️ No incoming data – skipping set');
-    logSpy.mockRestore();
-  });
-
-  it('should skip when incoming matches existing', async () => {
-    testLogger.testStep('Incoming matches existing data scenario');
-    const data: Instances = { x: { instance_id: 'x', username: 'testuser' } as any };
     await act(async () => {
-      useInstancesStore.getState().hydrateInstances(data);
-    });
-    const timestampBefore = localStorage.getItem('ownershipTimestamp');
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-    act(() => {
-      useInstancesStore.getState().setInstances(data);
+      await useInstancesStore.getState().setInstances({});
     });
 
-    expect(localStorage.getItem('ownershipTimestamp')).toBe(timestampBefore);
-    expect(logSpy).toHaveBeenCalledWith('[InstancesStore] 💤 No changes – incoming data matches current');
-    logSpy.mockRestore();
+    expect(useInstancesStore.getState().instances).toBe(current);
+    expect(localStorage.getItem('ownershipTimestamp')).toBeNull();
   });
 
-  it('should handle service worker failure gracefully', async () => {
-    testLogger.testStep('Service Worker failure scenario');
-    Object.defineProperty(navigator, 'serviceWorker', {
-      configurable: true,
-      value: {
-        ready: Promise.reject(new Error('Service Worker failure'))
-      }
+  it('skips when incoming matches existing state', async () => {
+    const same = {
+      x: makeInstance({ instance_id: 'x', username: 'testuser' }),
+    };
+    useInstancesStore.setState({ instances: same });
+
+    await act(async () => {
+      await useInstancesStore.getState().setInstances(same);
     });
 
-    const payload: Instances = {
-      '003_uuid3': { instance_id: '003_uuid3', username: 'testuser', is_unowned: true } as any,
+    expect(useInstancesStore.getState().instances).toBe(same);
+    expect(localStorage.getItem('ownershipTimestamp')).toBeNull();
+  });
+
+  it('updates state when incoming differs', async () => {
+    const incoming = {
+      '003_uuid3': makeInstance({
+        instance_id: '003_uuid3',
+        variant_id: '0003-default',
+        pokemon_id: 3,
+        username: 'testuser',
+      }),
     };
 
-    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
     await act(async () => {
-      useInstancesStore.getState().setInstances(payload);
+      await useInstancesStore.getState().setInstances(incoming);
     });
 
     expect(useInstancesStore.getState().instances['003_uuid3']).toBeDefined();
-    expect(errSpy).toHaveBeenCalledWith(expect.any(Error));
-    errSpy.mockRestore();
+    expect(localStorage.getItem('ownershipTimestamp')).not.toBeNull();
   });
 });

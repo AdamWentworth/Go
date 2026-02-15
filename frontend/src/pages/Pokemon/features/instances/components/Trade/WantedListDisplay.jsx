@@ -4,13 +4,7 @@ import React, { useState, useEffect } from 'react';
 import './WantedListDisplay.css';
 import useSortManager from '@/hooks/sort/useSortManager';
 
-const extractBaseKey = (pokemonKey) => {
-    let keyParts = String(pokemonKey).split('_');
-    keyParts.pop(); // Remove the UUID part if present
-    return keyParts.join('_');
-};
-
-const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode, ownershipData, toggleReciprocalUpdates, sortType, sortMode, onPokemonClick }) => {
+const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWantedList, isMirror, mirrorKey, editMode, toggleReciprocalUpdates, sortType, sortMode, onPokemonClick }) => {
     const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
 
     useEffect(() => {
@@ -43,8 +37,6 @@ const WantedListDisplay = ({ pokemon, lists, localNotWantedList, setLocalNotWant
     };
 
     // Extract the baseKey of the current Pokémon
-    const baseKey = extractBaseKey(pokemon.instanceData.instance_id);
-
     // Filter the wanted list to display relevant items
     const wantedListToDisplay = Object.entries(lists.wanted)
         .filter(([key, details]) => {

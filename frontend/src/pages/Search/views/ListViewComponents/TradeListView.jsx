@@ -195,7 +195,7 @@ const TradeListView = ({ item, findPokemonByKey }) => {
               )}
               <p className="pokemon-name">
                 {pokemonDisplayName}
-                <GenderIcon gender={item.gender} />
+                <Gender gender={item.gender} />
               </p>
               </div>
             </div>

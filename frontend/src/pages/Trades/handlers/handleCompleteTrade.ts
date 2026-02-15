@@ -27,8 +27,8 @@ export interface HandleCompleteTradeArgs {
   setTradeData: (updatedTrades: Record<string, Trade>) => Promise<void>;
   periodicUpdates: () => void;
   relatedInstances: Record<string, InstanceData>;
-  ownershipData: Record<string, InstanceData>;
-  setOwnershipData: (updatedData: Record<string, InstanceData>) => void;
+  instances: Record<string, InstanceData>;
+  setInstances?: (updatedData: Record<string, InstanceData>) => void;
   currentUsername: string;
 }
 
@@ -46,10 +46,12 @@ export async function handleCompleteTrade({
   setTradeData,
   periodicUpdates,
   relatedInstances,
-  ownershipData,
-  setOwnershipData,
+  instances,
+  setInstances,
   currentUsername,
 }: HandleCompleteTradeArgs): Promise<Trade> {
+  const applyInstanceUpdates = setInstances;
+
   // Determine which confirmation field to update based on the current user.
   const isProposer = currentUsername === trade.username_proposed;
   const confirmationField = isProposer
@@ -78,9 +80,9 @@ export async function handleCompleteTrade({
     const idAccepting = trade.pokemon_instance_id_user_accepting;
 
     let instanceProposedData: InstanceData | undefined =
-      relatedInstances[idProposed] || ownershipData[idProposed];
+      relatedInstances[idProposed] || instances[idProposed];
     let instanceAcceptingData: InstanceData | undefined =
-      relatedInstances[idAccepting] || ownershipData[idAccepting];
+      relatedInstances[idAccepting] || instances[idAccepting];
 
     if (instanceProposedData && instanceAcceptingData) {
       // Swap the usernames.
@@ -92,7 +94,7 @@ export async function handleCompleteTrade({
         [idAccepting]: instanceAcceptingData,
       };
 
-      setOwnershipData(newDataForOwnership);
+      applyInstanceUpdates?.(newDataForOwnership);
     }
   }
 

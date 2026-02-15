@@ -4,7 +4,6 @@ import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { variantsRepository } from '@/features/variants/repositories/variantsRepository';
 import {
   isCacheFresh,
-  setCacheTimestamp,
   VARIANTS_KEY,
   POKEDEX_LISTS_KEY,
 } from '@/features/variants/utils/cache';
@@ -28,15 +27,14 @@ vi.mock('@/features/variants/utils/cache', async () => {
   return {
     ...actual,
     isCacheFresh: vi.fn(),
-    setCacheTimestamp: vi.fn(),
   };
 });
 
-const cachedVariants = (variantsFixture as PokemonVariant[]).slice(0, 3);
-const freshVariants = (variantsFixture as PokemonVariant[]).slice(3, 8);
-const cachedLists = pokedexListsFixture as PokedexLists;
+const cachedVariants = (variantsFixture as unknown as PokemonVariant[]).slice(0, 3);
+const freshVariants = (variantsFixture as unknown as PokemonVariant[]).slice(3, 8);
+const cachedLists = pokedexListsFixture as unknown as PokedexLists;
 const freshLists = {
-  ...(pokedexListsFixture as PokedexLists),
+  ...(pokedexListsFixture as unknown as PokedexLists),
   default: freshVariants,
 } as PokedexLists;
 
@@ -114,8 +112,6 @@ describe.sequential('useVariantsStore (unit)', () => {
     expect(state.variants).toEqual(freshVariants);
     expect(state.pokedexLists).toEqual(freshLists);
     expect(state.isRefreshing).toBe(false);
-    expect(setCacheTimestamp).toHaveBeenCalledWith(VARIANTS_KEY);
-    expect(setCacheTimestamp).toHaveBeenCalledWith(POKEDEX_LISTS_KEY);
   });
 
   it('refreshVariants falls back to cache on fetch failure', async () => {

@@ -29,9 +29,9 @@ function TradeCard({
   trade,
   relatedInstances,
   selectedStatus,
-  setOwnershipData,
+  setInstances,
   variants,
-  ownershipData,
+  instances,
   loading,
   periodicUpdates
 }) {
@@ -45,16 +45,7 @@ function TradeCard({
 
   // -- 1. Determine which side the current user is on (Proposer or Accepter) --
   const isCurrentUserProposer = trade.username_proposed === currentUsername;
-  const isCurrentUserAccepter = trade.username_accepting === currentUsername;
-
-  // This can be helpful for clarity if you need them:
-  const currentUserName = isCurrentUserProposer
-    ? trade.username_proposed
-    : trade.username_accepting;
-
-  const partnerName = isCurrentUserProposer
-    ? trade.username_accepting
-    : trade.username_proposed;
+  const resolvedInstances = instances ?? {};
 
   // -- 2. Derive the correct Pokémon instance IDs for the current user vs. the partner --
   // Here we pass the actual ID directly
@@ -71,14 +62,14 @@ function TradeCard({
     currentUserInstanceId,
     variants,
     relatedInstances,
-    ownershipData
+    resolvedInstances
   );
 
   const partnerDetails = usePokemonDetails(
     partnerInstanceId,
     variants,
     relatedInstances,
-    ownershipData
+    resolvedInstances
   );
 
   // -- 4. Handlers for various trade actions with confirmation --
@@ -112,8 +103,8 @@ function TradeCard({
         setTradeData,
         periodicUpdates,
         relatedInstances,
-        ownershipData,
-        setOwnershipData,
+        instances: resolvedInstances,
+        setInstances,
         currentUsername
       });
     }

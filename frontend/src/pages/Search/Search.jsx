@@ -9,10 +9,13 @@ import MapView from './views/MapView.jsx';
 import LoadingSpinner from '../../components/LoadingSpinner.jsx';
 import axios from 'axios';
 
-import { useVariantsStore } from '@/features/variants/store/useVariantsStore.js';
+import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useModal } from '../../contexts/ModalContext.jsx';
 import ActionMenu from '../../components/ActionMenu.jsx';
 import './Search.css';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('Search');
 
 const Search = () => {
   const [searchMode, setSearchMode] = useState(null);
@@ -107,7 +110,7 @@ const Search = () => {
         setIsCollapsed(false);
       }
     } catch (error) {
-      console.error('Search error:', error);
+      log.error('Search request failed', error);
       await alert('An error occurred while searching. Please try again.');
       setIsCollapsed(false);
     } finally {

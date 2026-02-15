@@ -10,12 +10,14 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { replaceInstancesData } from '@/features/instances/storage/instancesStorage';
 import { areInstancesEqual } from '@/features/instances/utils/instancesEquality';
+import { createScopedLogger } from '@/utils/logger';
 
-import type { Instances, MutableInstances, InstanceStatus } from '@/types/instances';
+import type { Instances, InstanceStatus } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
 type Patch = Partial<PokemonInstance>;
 type PatchMap = Record<string, Patch>;
+const log = createScopedLogger('InstancesStore');
 
 interface InstancesStore {
   instances: Instances;
@@ -42,7 +44,7 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
     instancesLoading: true,
 
     resetInstances() {
-      console.log('[InstancesStore] resetInstances()');
+      log.debug('resetInstances()');
       set({ instances: {}, instancesLoading: true });
       localStorage.removeItem('ownershipTimestamp');
     },
@@ -50,39 +52,39 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
     hydrateInstances(data) {
       try {
         if (!data) {
-          console.log('[InstancesStore] 💾 No data to hydrate');
+          log.debug('No data to hydrate');
           set({ instances: {}, instancesLoading: false });
           return;
         }
         const count = Object.keys(data).length;
-        console.log(`[InstancesStore] 💾 Hydrated ${count} instance${count === 1 ? '' : 's'} from cache`);
+        log.debug(`Hydrated ${count} instance${count === 1 ? '' : 's'} from cache`);
         set({ instances: data, instancesLoading: false });
       } catch (error) {
-        console.error('[InstancesStore] 🚨 Hydration failed:', error);
+        log.error('Hydration failed', error);
         set({ instances: {}, instancesLoading: false });
       }
     },
 
     setForeignInstances(data) {
       const count = Object.keys(data).length;
-      console.log(`[InstancesStore] 🌍 Set foreignInstances with ${count} items`);
+      log.debug(`Set foreignInstances with ${count} items`);
       set({ foreignInstances: data });
     },
 
     resetForeignInstances() {
-      console.log('[InstancesStore] 🌍 Reset foreignInstances');
+      log.debug('Reset foreignInstances');
       set({ foreignInstances: null });
     },
 
     async setInstances(incoming) {
       if (!incoming || !Object.keys(incoming).length) {
-        console.log('[InstancesStore] ⚠️ No incoming data – skipping set');
+        log.debug('No incoming data; skipping set');
         return;
       }
 
       const current = get().instances;
       if (areInstancesEqual(current, incoming)) {
-        console.log('[InstancesStore] 💤 No changes – incoming data matches current');
+        log.debug('No changes; incoming data matches current');
         return;
       }
 
@@ -91,18 +93,20 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
 
       const ts = Date.now();
       set({ instances: merged });
-      console.log(`[InstancesStore] ✅ Updated instances – now tracking ${Object.keys(merged).length} Pokémon`);
+      log.debug(`Updated instances; now tracking ${Object.keys(merged).length} records`);
 
-      // Authoritative replace of cache snapshot to avoid drift
+      // Authoritative replace of cache snapshot to avoid drift.
       try {
         await replaceInstancesData(merged, ts);
-      } catch (e) {
-        console.error('[InstancesStore] Failed to persist merged snapshot:', e);
+      } catch (error) {
+        log.warn('Failed to persist merged snapshot', error);
       }
     },
 
     async updateInstanceStatus(pokemonKeys, newStatus) {
-      console.log(`[InstancesStore] 🔄 Updating status for ${Array.isArray(pokemonKeys) ? pokemonKeys.length : 1} Pokémon to "${newStatus}"`);
+      log.debug(
+        `Updating status for ${Array.isArray(pokemonKeys) ? pokemonKeys.length : 1} records to "${newStatus}"`,
+      );
 
       const fn = makeUpdateStatus(
         { get variants() { return useVariantsStore.getState().variants; } } as any,
@@ -114,21 +118,21 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
           set({ instances: res.instances });
           if (Array.isArray(pokemonKeys)) {
             const after = res.instances;
-            for (const k of pokemonKeys) {
-              const row = after[k];
+            for (const key of pokemonKeys) {
+              const row = after[key];
               if (row) {
-                console.log('[DEBUG flags]', newStatus, k, {
-                  caught  : row.is_caught,
-                  trade   : row.is_for_trade,
-                  wanted  : row.is_wanted,
-                  missing : !row.registered,
+                log.debug('Post-status flags', newStatus, key, {
+                  caught: row.is_caught,
+                  trade: row.is_for_trade,
+                  wanted: row.is_wanted,
+                  missing: !row.registered,
                 });
               }
             }
           }
           return res;
         },
-        { current: get().instances }
+        { current: get().instances },
       );
 
       await fn(pokemonKeys, newStatus);
@@ -136,17 +140,19 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
     },
 
     async updateInstanceDetails(keyOrKeysOrMap, patch) {
-      console.log('[InstancesStore] 🛠 Updating details for', keyOrKeysOrMap);
+      log.debug('Updating details for', keyOrKeysOrMap);
 
       const fn = makeUpdateDetails(
         { instances: get().instances },
         updater => {
           const res = updater({ instances: get().instances });
-          set(produce((state: any) => {
-            state.instances = res.instances;
-          }));
+          set(
+            produce((state: any) => {
+              state.instances = res.instances;
+            }),
+          );
           return res;
-        }
+        },
       );
 
       await fn(keyOrKeysOrMap as any, patch as any);

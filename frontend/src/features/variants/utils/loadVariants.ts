@@ -13,8 +13,10 @@ import type { PokedexLists } from '@/types/pokedex';
 import { logSize } from '@/utils/loggers';
 import { fetchAndProcessVariants } from './fetchAndProcessVariants';
 import { POKEDEX_STORES } from '@/db/constants';
+import { createScopedLogger } from '@/utils/logger';
 
 let derivedListsMemo: { key: string; lists: PokedexLists } | null = null;
+const log = createScopedLogger('loadVariants');
 
 /**
  * Store all generated Pokedex lists in IndexedDB (one object-store per category).
@@ -46,7 +48,7 @@ function getOrBuildPokedexLists(variants: PokemonVariant[], variantsTimestamp: n
 }
 
 export async function loadVariants() {
-  console.log('Fetching data from API or cache...');
+  log.debug('Fetching data from API or cache...');
 
   const variantsTimestamp      = Number(localStorage.getItem('variantsTimestamp') || 0);
   const pokedexListsTimestamp  = Number(localStorage.getItem('pokedexListsTimestamp') || 0);
@@ -55,7 +57,7 @@ export async function loadVariants() {
   const pokedexFresh  = pokedexListsTimestamp && isDataFresh(pokedexListsTimestamp);
 
   const logAge = (label: string, t: number) =>
-    console.log(t ? `${label} Age: ${formatTimeAgo(t)}` : `${label} data is missing.`);
+    log.debug(t ? `${label} Age: ${formatTimeAgo(t)}` : `${label} data is missing.`);
 
   logAge('Cached Variants', variantsTimestamp);
   logAge('Cached PokedexLists', pokedexListsTimestamp);
@@ -65,7 +67,7 @@ export async function loadVariants() {
   let listsBuiltNow = false;
 
   if (variantsFresh && pokedexFresh) {
-    console.log('Using cached variants and PokedexLists...');
+    log.debug('Using cached variants and PokedexLists...');
     const t0 = Date.now();
 
     const [variantsFromDB, pokedexFromDB] = await Promise.all([
@@ -73,7 +75,7 @@ export async function loadVariants() {
       getAllPokedex(),
     ]);
 
-    console.log(`Retrieved both from IndexedDB in ${Date.now() - t0} ms`);
+    log.debug(`Retrieved both from IndexedDB in ${Date.now() - t0} ms`);
 
     variants     = variantsFromDB;
     pokedexLists = pokedexFromDB;
@@ -85,20 +87,20 @@ export async function loadVariants() {
     /*  Variants                                                      */
     /* -------------------------------------------------------------- */
     if (variantsFresh) {
-      console.log('Using cached variants');
+      log.debug('Using cached variants');
       const t0   = Date.now();
       variants   = await getAllVariants();
-      console.log(`Retrieved variants from IndexedDB in ${Date.now() - t0} ms`);
+      log.debug(`Retrieved variants from IndexedDB in ${Date.now() - t0} ms`);
       logSize('cached variants', variants);
     } else {
-      console.log('Variants are stale or missing, updating...');
+      log.debug('Variants are stale or missing, updating...');
       variants = await fetchAndProcessVariants();
     }
 
     /* -------------------------------------------------------------- */
     /*  Pokedex lists                                                 */
     /* -------------------------------------------------------------- */
-    console.log('PokedexLists are stale or variants updated, regenerating...');
+    log.debug('PokedexLists are stale or variants updated, regenerating...');
     const currentVariantsTimestamp =
       Number(localStorage.getItem('variantsTimestamp') || variantsTimestamp || 0);
     pokedexLists = getOrBuildPokedexLists(variants, currentVariantsTimestamp);
@@ -107,14 +109,14 @@ export async function loadVariants() {
       await storePokedexLists(pokedexLists);
       localStorage.setItem('pokedexListsTimestamp', Date.now().toString());
       listsBuiltNow = true;
-      console.log('Successfully stored new PokedexLists in IndexedDB');
+      log.debug('Successfully stored new PokedexLists in IndexedDB');
     } catch (error) {
-      console.error('Failed to store PokedexLists:', error);
+      log.error('Failed to store PokedexLists', error);
     }
 
     logSize('new pokedex lists', pokedexLists);
   }
 
-  console.log(`Returning ${variants.length} variants and corresponding pokedex lists.`);
+  log.debug(`Returning ${variants.length} variants and corresponding pokedex lists.`);
   return { variants, pokedexLists, listsBuiltNow };
 }
