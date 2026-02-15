@@ -27,6 +27,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 20. TS migration slice: converted `hasDetails.js` to `hasDetails.ts` and added helper regression coverage for moves/IVs/size/location/date paths.
 21. TS migration slice: converted `useErrorHandler.js` to `useErrorHandler.ts` and added hook regression coverage for set/clear behavior and payload compatibility.
 22. TS migration slice: converted `calculateDamage.js` to `calculateDamage.ts` and added raid damage regression coverage (neutral/STAB/type-effectiveness/case normalization + legacy empty-move behavior).
+23. TS migration slice: converted search display helpers (`formatCostumeName.js`, `getPokemonDisplayName.js`) to TypeScript with regression tests for naming/modifier formatting behavior.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
@@ -240,4 +241,4 @@ This backlog converts the current frontend audit into an execution plan focused 
 
 ## Immediate Next Step
 
-Continue P1.3 incremental JS->TS migration for low-risk helpers/hooks with tests-first slices (next candidates: `formatCostumeName.js`, `getPokemonDisplayName.js`), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.
+Continue P1.3 incremental JS->TS migration for low-risk helpers/hooks with tests-first slices (next candidates: `validatePokemon.js`, `updateImage.js`), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.
