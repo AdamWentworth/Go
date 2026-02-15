@@ -22,6 +22,8 @@ This backlog converts the current frontend audit into an execution plan focused 
 15. P1.4 slice D: migrated SSE/events, pokemon fetch service, and instances storage logging (`EventsContext`, `pokemonDataService`, `instancesStorage`) to scoped logger; production build strips `console`/`debugger` while preserving dev logging.
 16. P1.4 slice E (part 1): migrated trade handlers + instance edit hooks (`handle*Trade`, `useToggleEditModeWanted`, `useToggleEditModeTrade`) to scoped logger and added `useToggleEditModeTrade` regression tests.
 17. TS migration slice: converted `useToggleEditModeWanted` and `useToggleEditModeTrade` from `.js` to `.ts` and rewired call sites (`WantedDetails`, `TradeDetails`) with green typecheck/tests.
+18. TS migration slice: converted `createMirrorEntry.js` to `createMirrorEntry.ts` and kept mirror creation semantics with dedicated unit coverage.
+19. TS migration slice: converted `useFavoriteList.js` to `useFavoriteList.ts` and added sorting regression tests (favorites -> CP -> pokedex order).
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
@@ -235,4 +237,4 @@ This backlog converts the current frontend audit into an execution plan focused 
 
 ## Immediate Next Step
 
-Continue P1.4 with slice E (part 2) for remaining noisy `console.*` in auth/raid and legacy JS hooks, then reduce lint baseline so P0.1 can be fully enforced.
+Continue P1.3 incremental JS->TS migration for low-risk helpers/hooks with tests-first slices (next candidates: `hasDetails.js`, `useErrorHandler.js`), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.
