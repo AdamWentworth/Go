@@ -223,3 +223,12 @@ jobs:
           else
             echo "Warning: frontend_probe target exists but is not currently up."
           fi
+
+          FRONTEND_PROBE_EXTERNAL_JSON="$(curl -fsS --get --data-urlencode 'query=probe_success{job="frontend_probe_external"}' http://127.0.0.1:9090/api/v1/query || true)"
+          if [[ "${FRONTEND_PROBE_EXTERNAL_JSON}" == *'"result":[]'* ]]; then
+            echo "Warning: no active 'frontend_probe_external' target found in Prometheus yet."
+          elif [[ "${FRONTEND_PROBE_EXTERNAL_JSON}" == *'"1"'* ]]; then
+            echo "Prometheus target check: frontend_probe_external is up."
+          else
+            echo "Warning: frontend_probe_external target exists but is not currently up."
+          fi

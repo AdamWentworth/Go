@@ -7,14 +7,14 @@ It also includes Kafka, host, and container telemetry via:
 - `kafka_exporter` (Kafka broker/topic/consumer lag metrics)
 - `node_exporter` (host CPU, memory, disk, filesystem, load)
 - `cadvisor` (per-container CPU, memory, filesystem, network)
-- `blackbox_exporter` (synthetic HTTP probing for frontend availability/latency/TLS)
+- `blackbox_exporter` (synthetic HTTP probing for frontend internal and external availability/latency/TLS)
 
 What these are:
 
 - `kafka_exporter`: reads Kafka broker metadata and consumer lag so Prometheus can alert on broker/topic/lag health.
 - `node_exporter`: reads Linux host stats from `/proc` and `/sys` so Prometheus can graph host CPU/RAM/disk pressure.
 - `cadvisor`: reads Docker container runtime stats so Prometheus can graph per-container CPU/RAM/network/fs usage.
-- `blackbox_exporter`: probes `https://pokemongonexus.com/` from inside the monitoring stack and emits probe metrics.
+- `blackbox_exporter`: probes both `http://frontend_nginx/` (internal service health) and `https://pokemongonexus.com/` (external availability/TLS) from inside the monitoring stack.
 
 ## Severe Email Alerts
 
@@ -71,7 +71,9 @@ Host ports used by monitoring stack:
 - Kafka-level metrics: broker availability, topic visibility, consumer lag (`kafka_exporter`)
 - Host-level metrics: CPU %, RAM %, disk free %, filesystem pressure (`node_exporter`)
 - Container-level metrics: per-container CPU/memory/network/filesystem (`cadvisor`)
-- Frontend synthetic checks: uptime, probe latency, TLS expiry (`frontend_probe` via `blackbox_exporter`)
+- Frontend synthetic checks:
+  - Internal service uptime (`frontend_probe`)
+  - External availability/latency/TLS (`frontend_probe_external`)
 
 Common quick PromQL checks:
 
@@ -89,6 +91,8 @@ Common quick PromQL checks:
   - `kafka_consumergroup_lag_sum{consumergroup=~"event_group|sse_consumer_group"}`
 - Frontend probe success:
   - `probe_success{job="frontend_probe"}`
+- Frontend external probe success:
+  - `probe_success{job="frontend_probe_external"}`
 - Frontend probe duration:
-  - `probe_duration_seconds{job="frontend_probe"}`
+  - `probe_duration_seconds{job="frontend_probe_external"}`
 

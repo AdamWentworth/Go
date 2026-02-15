@@ -358,21 +358,31 @@ groups:
           severity: critical
           service: frontend
         annotations:
-          summary: "frontend probe is down"
-          description: "Blackbox probe to https://pokemongonexus.com/ is failing for at least 2 minutes."
+          summary: "frontend internal probe is down"
+          description: "Blackbox probe to http://frontend_nginx/ is failing for at least 2 minutes."
 
-      - alert: FrontendProbeHighLatency
-        expr: probe_duration_seconds{job="frontend_probe"} > 1.5
+      - alert: FrontendExternalProbeDown
+        expr: avg_over_time(probe_success{job="frontend_probe_external"}[5m]) < 1
         for: 10m
         labels:
           severity: warning
           service: frontend
         annotations:
-          summary: "frontend probe latency is high"
-          description: "Probe duration is above 1.5 seconds for at least 10 minutes."
+          summary: "frontend external probe is unstable/down"
+          description: "External blackbox probe to https://pokemongonexus.com/ has failures for at least 10 minutes."
+
+      - alert: FrontendProbeHighLatency
+        expr: probe_duration_seconds{job="frontend_probe_external"} > 1.5
+        for: 10m
+        labels:
+          severity: warning
+          service: frontend
+        annotations:
+          summary: "frontend external probe latency is high"
+          description: "External probe duration is above 1.5 seconds for at least 10 minutes."
 
       - alert: FrontendTLSCertExpiringSoon
-        expr: (probe_ssl_earliest_cert_expiry{job="frontend_probe"} - time()) < 1209600
+        expr: (probe_ssl_earliest_cert_expiry{job="frontend_probe_external"} - time()) < 1209600
         for: 1h
         labels:
           severity: warning
