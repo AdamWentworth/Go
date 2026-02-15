@@ -13,7 +13,7 @@ import useImageSelection from '../../utils/useImageSelection';
 import { EXCLUDE_IMAGES_trade, INCLUDE_IMAGES_trade, FILTER_NAMES } from '../../utils/constants';
 import { TOOLTIP_TEXTS } from '../../utils/tooltipTexts';
 
-import useTradeFiltering from '../../hooks/useTradeFiltering.js';
+import useTradeFiltering from '../../hooks/useTradeFiltering';
 
 const WantedDetails = ({
   pokemon,

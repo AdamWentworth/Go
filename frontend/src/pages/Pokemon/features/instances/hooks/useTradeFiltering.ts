@@ -1,8 +1,3 @@
-// useTradeFiltering.js – hardened version
-// Goal: eliminate update-depth loop by (a) removing cyclic deps and (b) only
-//       calling setLocalNotTradeList when the *result* differs, while also
-//       being fully null-safe against missing lists/trade.
-// ---------------------------------------------------------------------------
 import { useMemo, useEffect } from 'react';
 import filters from '../utils/tradeFilters';
 import {
@@ -10,13 +5,34 @@ import {
   FILTER_NAMES_TRADE,
 } from '../utils/constants';
 
-// -------- helpers -----------------------------------------------------------
-const deepClone = (obj) =>
+type TradeItem = Record<string, unknown> & {
+  variantType?: string;
+  shiny_rarity?: string;
+  rarity?: string;
+  location_card?: string | null;
+  greyedOut?: boolean;
+};
+
+type TradeMap = Record<string, TradeItem>;
+
+type ListsState = {
+  trade?: TradeMap;
+  [key: string]: unknown;
+} | null | undefined;
+
+type TradeFiltersState = Record<string, boolean>;
+type TradeFilterFn = (list: TradeMap) => TradeMap;
+const tradeFilterFns = filters as unknown as Record<string, TradeFilterFn>;
+
+const deepClone = <T>(obj: T): T =>
   typeof structuredClone === 'function'
     ? structuredClone(obj)
     : JSON.parse(JSON.stringify(obj));
 
-const shallowEqualObj = (a, b) => {
+const shallowEqualObj = (
+  a: Record<string, boolean> | null | undefined,
+  b: Record<string, boolean> | null | undefined,
+): boolean => {
   if (a === b) return true;
   if (!a || !b) return false;
   const aKeys = Object.keys(a);
@@ -26,50 +42,45 @@ const shallowEqualObj = (a, b) => {
   return true;
 };
 
-const safeKeys = (obj) =>
-  obj && typeof obj === 'object' ? Object.keys(obj) : [];
+const safeKeys = (obj: unknown): string[] =>
+  obj && typeof obj === 'object' ? Object.keys(obj as object) : [];
 
-const safeEntries = (obj) =>
-  obj && typeof obj === 'object' ? Object.entries(obj) : [];
+const safeArray = (a: unknown): boolean[] => (Array.isArray(a) ? (a as boolean[]) : []);
 
-const safeArray = (a) => (Array.isArray(a) ? a : []);
+type UseTradeFilteringResult = {
+  filteredTradeList: TradeMap;
+  filteredOutPokemon: string[];
+  updatedLocalTradeFilters: TradeFiltersState;
+};
 
-/* -------------------------------------------------------------------------- */
 export default function useTradeFiltering(
-  listsState,
-  selectedExcludeImages,
-  selectedIncludeOnlyImages,
-  localTradeFilters,
-  setLocalNotTradeList,
-  localNotTradeList,
-  editMode
-) {
-  /* ----------------------------------------------------------------------- */
-  // 1️⃣ Compute filtered data (memoised) — fully null-safe
-  /* ----------------------------------------------------------------------- */
+  listsState: ListsState,
+  selectedExcludeImages: boolean[],
+  selectedIncludeOnlyImages: boolean[],
+  localTradeFilters: TradeFiltersState,
+  setLocalNotTradeList: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
+  localNotTradeList: Record<string, boolean>,
+  editMode: boolean,
+): UseTradeFilteringResult {
   const memo = useMemo(() => {
-    // Base trade map: may be missing if tags haven’t materialized a top-level "trade".
     const baseTrade =
-      (listsState && listsState.trade && typeof listsState.trade === 'object')
+      listsState && listsState.trade && typeof listsState.trade === 'object'
         ? listsState.trade
         : {};
 
-    // Writable copy only
-    let updatedList = { ...baseTrade };
+    let updatedList: TradeMap = { ...baseTrade };
     const nextLocalTradeFilters = deepClone(localTradeFilters || {});
 
-    const newlyFiltered = [];
-    const reappeared = [];
+    const newlyFiltered: string[] = [];
+    const reappeared: string[] = [];
 
-    // Reset filter flags
     safeKeys(nextLocalTradeFilters).forEach((k) => {
       nextLocalTradeFilters[k] = false;
     });
 
-    // ---------------- Exclude filters ------------------------------------
     safeArray(selectedExcludeImages).forEach((isSelected, idx) => {
       const name = FILTER_NAMES_TRADE[idx];
-      const fn = filters[name];
+      const fn = tradeFilterFns[name];
       if (!fn) return;
 
       if (isSelected) {
@@ -83,18 +94,16 @@ export default function useTradeFiltering(
       }
     });
 
-    // Initially filtered by excludes
     safeKeys(baseTrade).forEach((k) => {
       if (!updatedList[k]) newlyFiltered.push(k);
     });
 
-    // ---------------- Include-only filters (union) ------------------------
     if (safeArray(selectedIncludeOnlyImages).some(Boolean)) {
-      const union = {};
+      const union: TradeMap = {};
       safeArray(selectedIncludeOnlyImages).forEach((isSelected, idx) => {
         const idxGlobal = EXCLUDE_IMAGES_trade.length + idx;
         const name = FILTER_NAMES_TRADE[idxGlobal];
-        const fn = filters[name];
+        const fn = tradeFilterFns[name];
         if (!isSelected || !fn) return;
 
         nextLocalTradeFilters[name] = true;
@@ -106,14 +115,12 @@ export default function useTradeFiltering(
       updatedList = union;
     }
 
-    // Added by include-only filters
     safeKeys(baseTrade).forEach((k) => {
       if (!updatedList[k] && !newlyFiltered.includes(k)) newlyFiltered.push(k);
     });
 
-    // Grey-out in view mode
     if (!editMode) {
-      safeArray(newlyFiltered).forEach((k) => {
+      newlyFiltered.forEach((k) => {
         if (!(localNotTradeList || {})[k]) {
           updatedList[k] = {
             ...baseTrade[k],
@@ -131,30 +138,22 @@ export default function useTradeFiltering(
       reappeared,
     };
   }, [
-    listsState && listsState.trade, // track trade map changes
+    listsState && listsState.trade,
     selectedExcludeImages,
     selectedIncludeOnlyImages,
     localTradeFilters,
     editMode,
-    // ❌ deliberately *omit* localNotTradeList to break the cyclic setState loop
   ]);
 
-  /* ----------------------------------------------------------------------- */
-  // 2️⃣ Stable localTradeFilters reference
-  /* ----------------------------------------------------------------------- */
   const stableTradeFilters = shallowEqualObj(
     memo.nextLocalTradeFilters,
-    localTradeFilters || {}
+    localTradeFilters || {},
   )
-    ? (localTradeFilters || {})
+    ? localTradeFilters || {}
     : memo.nextLocalTradeFilters;
 
-  /* ----------------------------------------------------------------------- */
-  // 3️⃣ Sync not-trade list only when it *really* changes
-  /* ----------------------------------------------------------------------- */
   useEffect(() => {
     if (editMode) return;
-
     if (memo.newlyFiltered.length === 0 && memo.reappeared.length === 0) return;
 
     setLocalNotTradeList((prev) => {
@@ -168,19 +167,15 @@ export default function useTradeFiltering(
         }
       });
 
-      return changed ? next : prev; // React bails if same reference
+      return changed ? next : prev;
     });
   }, [
     editMode,
     setLocalNotTradeList,
-    // Depend on the *values* instead of references
     memo.newlyFiltered.length,
     memo.reappeared.length,
   ]);
 
-  /* ----------------------------------------------------------------------- */
-  // 4️⃣ Public API
-  /* ----------------------------------------------------------------------- */
   return {
     filteredTradeList: memo.filteredTradeList,
     filteredOutPokemon: memo.filteredOutPokemon,
