@@ -1,11 +1,9 @@
-// hooks/useErrorHandler.js
-
 import { useState } from 'react';
 
-const useErrorHandler = () => {
-  const [error, setError] = useState(null);
+const useErrorHandler = <TError = string>() => {
+  const [error, setError] = useState<TError | null>(null);
 
-  const handleError = (newError) => {
+  const handleError = (newError: TError) => {
     setError(newError);
   };
 
