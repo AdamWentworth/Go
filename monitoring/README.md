@@ -14,7 +14,7 @@ What these are:
 - `kafka_exporter`: reads Kafka broker metadata and consumer lag so Prometheus can alert on broker/topic/lag health.
 - `node_exporter`: reads Linux host stats from `/proc` and `/sys` so Prometheus can graph host CPU/RAM/disk pressure.
 - `cadvisor`: reads Docker container runtime stats so Prometheus can graph per-container CPU/RAM/network/fs usage.
-- `blackbox_exporter`: probes both `http://frontend_nginx/` (internal service health) and `https://pokemongonexus.com/` (external availability/TLS) from inside the monitoring stack.
+- `blackbox_exporter`: probes both `http://frontend_nginx/` (internal service health, accepts redirect codes without leaving internal network) and `https://pokemongonexus.com/` (external availability/TLS) from inside the monitoring stack.
 
 ## Severe Email Alerts
 

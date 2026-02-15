@@ -64,6 +64,7 @@ services:
       - ./blackbox.yml:/etc/blackbox_exporter/config.yml:ro
     restart: unless-stopped
     networks:
+      - kafka_default
       - pokemon_edge
 
   alertmanager:
