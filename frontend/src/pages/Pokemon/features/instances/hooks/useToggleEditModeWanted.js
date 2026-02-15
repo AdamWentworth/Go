@@ -1,10 +1,11 @@
-// useToggleEditModeWanted.js
 import { updateNotWantedList } from '../utils/ReciprocalUpdate';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('useToggleEditModeWanted');
 
 /**
- * Toggle edit mode for a “Wanted” entry and, when leaving edit mode,
- * build a per‑instance patch map identical in shape to the one sent
- * by OwnedInstance.
+ * Toggle edit mode for a Wanted entry and, when leaving edit mode,
+ * build a per-instance patch map in the same shape used by OwnedInstance.
  */
 export const toggleEditMode = ({
   editMode,
@@ -18,81 +19,54 @@ export const toggleEditMode = ({
   updateDetails,
 }) => {
   const instancesMap = instances ?? {};
-  /* ------------------------------------------------------------------ */
-  // ENTER / EXIT
-  /* ------------------------------------------------------------------ */
   const currentKey =
     pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? pokemon.pokemonKey;
 
-  console.log('[Wanted] toggleEditMode – start', {
+  log.debug('toggleEditMode start', {
     enteringEdit: !editMode,
     pokemonKey: currentKey,
   });
 
-  /* ------------------------------------------------------------------ */
-  // LEAVING edit mode → construct patch map + save
-  /* ------------------------------------------------------------------ */
+  // Leaving edit mode: build patch map and persist.
   if (editMode) {
-    // 1. Compose new not‑trade list for the *current* Pokémon
     const updatedNotTradeList = { ...localNotTradeList };
-    filteredOutPokemon.forEach(k => {
+    filteredOutPokemon.forEach((k) => {
       updatedNotTradeList[k] = true;
     });
 
-    // 2. Detect which partner Pokémon need not_wanted_list changes
-    const removedKeys = Object.keys(pokemon.instanceData.not_trade_list)
-      .filter(k => !updatedNotTradeList[k]);
-    const addedKeys = Object.keys(updatedNotTradeList)
-      .filter(k => !pokemon.instanceData.not_trade_list[k]);
+    const removedKeys = Object.keys(pokemon.instanceData.not_trade_list).filter(
+      (k) => !updatedNotTradeList[k],
+    );
+    const addedKeys = Object.keys(updatedNotTradeList).filter(
+      (k) => !pokemon.instanceData.not_trade_list[k],
+    );
 
-    // 3. Build the patch map (one entry per instance ID)
     const patchMap = {};
 
-    //   3a. Partners we *removed* from not_trade_list → update their not_wanted_list
-    removedKeys.forEach(k => {
-      const next = updateNotWantedList(
-        instancesMap,
-        currentKey,
-        k,
-        false,
-      );
+    removedKeys.forEach((k) => {
+      const next = updateNotWantedList(instancesMap, currentKey, k, false);
       if (next) patchMap[k] = { not_wanted_list: next };
     });
 
-    //   3b. Partners we *added* → likewise
-    addedKeys.forEach(k => {
-      const next = updateNotWantedList(
-        instancesMap,
-        currentKey,
-        k,
-        true,
-      );
+    addedKeys.forEach((k) => {
+      const next = updateNotWantedList(instancesMap, currentKey, k, true);
       if (next) patchMap[k] = { not_wanted_list: next };
     });
 
-    //   3c. Primary Pokémon’s own patch
     patchMap[currentKey] = {
       not_trade_list: updatedNotTradeList,
       trade_filters: localTradeFilters,
     };
 
-    // 4.  Trace + send (single‑argument patch‑map, like OwnedInstance)
-    console.log(
-      '[Wanted → updateDetails] PATCH MAP ↓\n',
-      JSON.stringify(patchMap, null, 2),
-    );
+    log.debug('updateDetails patchMap', patchMap);
 
     updateDetails(patchMap)
-      .then(() => console.log('[Wanted] updateDetails ✅ resolved'))
-      .catch(err => console.error('[Wanted] updateDetails ❌', err));
+      .then(() => log.debug('updateDetails resolved'))
+      .catch((err) => log.error('updateDetails failed', err));
 
-    // 5.  Update local UI copy immediately
     setLocalNotTradeList(updatedNotTradeList);
   }
 
-  /* ------------------------------------------------------------------ */
-  // Flip editMode flag
-  /* ------------------------------------------------------------------ */
   setEditMode(!editMode);
 };
 

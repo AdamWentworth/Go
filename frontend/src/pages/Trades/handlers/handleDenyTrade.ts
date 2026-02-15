@@ -1,6 +1,9 @@
 // handleDenyTrade.ts
 
 import { putBatchedTradeUpdates } from "../../../db/indexedDB";
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('handleDenyTrade');
 
 export interface Trade {
   trade_id: string;
@@ -45,7 +48,7 @@ export async function handleDenyTrade({
   try {
     await setTradeData(updatedTrades);
   } catch (error) {
-    console.error("[handleDenyTrade] Error persisting trade data:", error);
+    log.error('Error persisting trade data', error);
     return;
   }
 
@@ -59,10 +62,10 @@ export async function handleDenyTrade({
   try {
     await putBatchedTradeUpdates(trade.trade_id, batchedUpdateData);
   } catch (error) {
-    console.error("[handleDeleteTrade] Error in putBatchedTradeUpdates:", error);
+    log.error('Error in putBatchedTradeUpdates', error);
   }
 
   // Trigger periodic updates after marking the trade as denied.
   periodicUpdates();
-  console.log("[handleDeleteTrade] Completed.");
+  log.debug('Completed');
 }

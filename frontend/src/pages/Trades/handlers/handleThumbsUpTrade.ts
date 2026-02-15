@@ -1,6 +1,9 @@
 // handleThumbsUpTrade.ts
 
 import { putBatchedTradeUpdates } from "../../../db/indexedDB";
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('handleThumbsUpTrade');
 
 interface Trade {
   trade_id: string;
@@ -54,8 +57,8 @@ export async function handleThumbsUpTrade({
     await putBatchedTradeUpdates(updatedTrade.trade_id, batchedUpdateData);
 
     periodicUpdates();
-    console.log("[handleThumbsUp] Trade satisfaction updated.");
+    log.debug('Trade satisfaction updated');
   } catch (error) {
-    console.error("[handleThumbsUp] Error updating trade satisfaction:", error);
+    log.error('Error updating trade satisfaction', error);
   }
 }

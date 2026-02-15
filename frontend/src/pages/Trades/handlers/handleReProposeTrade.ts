@@ -1,6 +1,9 @@
 // handleReProposeTrade.ts
 
 import { putBatchedTradeUpdates } from "../../../db/indexedDB";
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('handleReProposeTrade');
 
 export interface Trade {
   trade_id: string;
@@ -75,7 +78,7 @@ export async function handleReProposeTrade({
   try {
     await setTradeData(updatedTrades);
   } catch (error) {
-    console.error("[handleReProposeTrade] Error persisting trade data:", error);
+    log.error('Error persisting trade data', error);
     return;
   }
 
@@ -88,10 +91,10 @@ export async function handleReProposeTrade({
   try {
     await putBatchedTradeUpdates(trade.trade_id, batchedUpdateData);
   } catch (error) {
-    console.error("[handleReProposeTrade] Error in putBatchedTradeUpdates:", error);
+    log.error('Error in putBatchedTradeUpdates', error);
   }
 
   // Trigger periodic updates.
   periodicUpdates();
-  console.log("[handleReProposeTrade] Trade has been reset to 'proposed' with new proposal date.");
+  log.debug("Trade has been reset to 'proposed' with new proposal date");
 }

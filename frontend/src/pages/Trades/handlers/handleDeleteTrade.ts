@@ -1,6 +1,9 @@
 // handleDeleteTrade.ts
 
 import { putBatchedTradeUpdates } from "../../../db/indexedDB";
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('handleDeleteTrade');
 
 export interface Trade {
   trade_id: string;
@@ -43,7 +46,7 @@ export async function handleDeleteTrade({
     // 3) Persist the updated trades state.
     await setTradeData(updatedTrades);
   } catch (error) {
-    console.error("[handleDeleteTrade] Error persisting trade data:", error);
+    log.error('Error persisting trade data', error);
     return;
   }
 
@@ -63,9 +66,9 @@ export async function handleDeleteTrade({
   try {
     await putBatchedTradeUpdates(trade.trade_id, batchedUpdateData);
   } catch (error) {
-    console.error("[handleDeleteTrade] Error in putBatchedTradeUpdates:", error);
+    log.error('Error in putBatchedTradeUpdates', error);
   }
 
   periodicUpdates();
-  console.log("[handleDeleteTrade] Completed.");
+  log.debug('Completed');
 }

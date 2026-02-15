@@ -1,6 +1,9 @@
 // handleCancelTrade.ts
 
 import { putBatchedTradeUpdates } from "../../../db/indexedDB";
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('handleCancelTrade');
 
 export interface Trade {
   trade_id: string;
@@ -50,7 +53,7 @@ export async function handleCancelTrade({
   try {
     await setTradeData(updatedTrades);
   } catch (error) {
-    console.error("[handleCancelTrade] Error persisting trade data:", error);
+    log.error('Error persisting trade data', error);
     return;
   }
 
@@ -64,10 +67,10 @@ export async function handleCancelTrade({
   try {
     await putBatchedTradeUpdates(trade.trade_id, batchedUpdateData);
   } catch (error) {
-    console.error("[handleCancelTrade] Error in putBatchedTradeUpdates:", error);
+    log.error('Error in putBatchedTradeUpdates', error);
   }
 
   // Trigger periodic updates after marking trade as cancelled.
   periodicUpdates();
-  console.log("[handleCancelTrade] Completed.");
+  log.debug('Completed');
 }

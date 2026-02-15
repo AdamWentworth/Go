@@ -1,6 +1,9 @@
 // handleAcceptTrade.ts
 
 import { putBatchedTradeUpdates } from "../../../db/indexedDB";
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('handleAcceptTrade');
 
 export interface Trade {
   trade_id: string;
@@ -82,7 +85,7 @@ export async function handleAcceptTrade({
   try {
     await setTradeData(updatedTrades);
   } catch (error) {
-    console.error("[handleAcceptTrade] Error persisting trade data:", error);
+    log.error('Error persisting trade data', error);
     return;
   }
 
@@ -108,11 +111,11 @@ export async function handleAcceptTrade({
     try {
       await putBatchedTradeUpdates(update.tradeData.trade_id, update);
     } catch (error) {
-      console.error("[handleAcceptTrade] Error in putBatchedTradeUpdates:", error);
+      log.error('Error in putBatchedTradeUpdates', error);
     }
   }
 
   // 8. Refresh periodic data and finish up.
   periodicUpdates();
-  console.log("[handleAcceptTrade] Completed.");
+  log.debug('Completed');
 }

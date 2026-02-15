@@ -1,6 +1,9 @@
 // handleCompleteTrade.ts
 
 import { putBatchedTradeUpdates } from "../../../db/indexedDB";
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('handleCompleteTrade');
 
 export interface Trade {
   trade_id: string;
@@ -112,7 +115,7 @@ export async function handleCompleteTrade({
 
     await putBatchedTradeUpdates(updatedTrade.trade_id, batchedUpdateData);
   } catch (error) {
-    console.error("[handleCompleteTrade] Error updating trade:", error);
+    log.error('Error updating trade', error);
     throw error;
   }
 

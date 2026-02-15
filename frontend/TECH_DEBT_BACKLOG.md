@@ -20,6 +20,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 13. P1.4 slice B: migrated high-chatter variant/instance utility logs (`loadVariants`, `fetchAndProcessVariants`, `mergeInstancesData`, `logSize`) to scoped debug logging.
 14. P1.4 slice C: migrated periodic updates + location/search hot-path logging (`periodicUpdates`, `checkBatchedUpdates`, `useInitLocation`, `Search`, `PokemonSearchBar`) and added dedicated batched-updates regression tests.
 15. P1.4 slice D: migrated SSE/events, pokemon fetch service, and instances storage logging (`EventsContext`, `pokemonDataService`, `instancesStorage`) to scoped logger; production build strips `console`/`debugger` while preserving dev logging.
+16. P1.4 slice E (part 1): migrated trade handlers + instance edit hooks (`handle*Trade`, `useToggleEditModeWanted`, `useToggleEditModeTrade`) to scoped logger and added `useToggleEditModeTrade` regression tests.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
@@ -233,4 +234,4 @@ This backlog converts the current frontend audit into an execution plan focused 
 
 ## Immediate Next Step
 
-Continue P1.4 with slice E (remaining noisy `console.*` in trades/auth/raid and legacy JS hooks), then reduce lint baseline so P0.1 can be fully enforced.
+Continue P1.4 with slice E (part 2) for remaining noisy `console.*` in auth/raid and legacy JS hooks, then reduce lint baseline so P0.1 can be fully enforced.
