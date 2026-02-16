@@ -1,6 +1,4 @@
-// WantedInstance.jsx
-
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './WantedInstance.css';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
@@ -16,43 +14,68 @@ import FriendshipManager from './components/Wanted/FriendshipManager';
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
 
 import { determineImageUrl } from '@/utils/imageHelpers';
+import { getEntityKey } from './utils/getEntityKey';
+import type { PokemonInstance } from '@/types/pokemonInstance';
+import type { PokemonVariant } from '@/types/pokemonVariants';
 
-const WantedInstance = ({ pokemon, isEditable }) => {
+interface BackgroundOption {
+  background_id: number;
+  costume_id?: number;
+  image_url: string;
+  [key: string]: unknown;
+}
+
+type WantedPokemon = PokemonVariant & {
+  instanceData: PokemonInstance;
+  backgrounds: BackgroundOption[];
+};
+
+interface WantedInstanceProps {
+  pokemon: WantedPokemon;
+  isEditable: boolean;
+}
+
+const WantedInstance: React.FC<WantedInstanceProps> = ({ pokemon, isEditable }) => {
   // console.log(pokemon.pokemonKey)
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
-  const entityKey =
-    pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? pokemon.pokemonKey;
+  const entityKey = getEntityKey(pokemon);
 
-  const [editMode, setEditMode] = useState(false);
-  const [nickname, setNickname] = useState(pokemon.instanceData.nickname);
-  const [isFavorite, setIsFavorite] = useState(pokemon.instanceData.favorite);
-  const [gender, setGender] = useState(pokemon.instanceData.gender);
-  const [isFemale, setIsFemale] = useState(pokemon.instanceData.gender === 'Female');
-  const [currentImage, setCurrentImage] = useState(determineImageUrl(isFemale, pokemon));  // Set the initial image based on gender
-  const [weight, setWeight] = useState(pokemon.instanceData.weight);
-  const [height, setHeight] = useState(pokemon.instanceData.height);
-  const [moves, setMoves] = useState({
+  const [editMode, setEditMode] = useState<boolean>(false);
+  const [nickname, setNickname] = useState<string | null>(pokemon.instanceData.nickname);
+  const [isFavorite, setIsFavorite] = useState<boolean>(!!pokemon.instanceData.favorite);
+  const [gender, setGender] = useState<string | null>(pokemon.instanceData.gender);
+  const [isFemale, setIsFemale] = useState<boolean>(pokemon.instanceData.gender === 'Female');
+  const [currentImage, setCurrentImage] = useState<string>(determineImageUrl(isFemale, pokemon));  // Set the initial image based on gender
+  const [weight, setWeight] = useState<number | null>(pokemon.instanceData.weight);
+  const [height, setHeight] = useState<number | null>(pokemon.instanceData.height);
+  const [moves, setMoves] = useState<{
+    fastMove: number | null;
+    chargedMove1: number | null;
+    chargedMove2: number | null;
+  }>({
     fastMove: pokemon.instanceData.fast_move_id,
     chargedMove1: pokemon.instanceData.charged_move1_id,
     chargedMove2: pokemon.instanceData.charged_move2_id,
   });
-  const [friendship, setFriendship] = useState(pokemon.instanceData.friendship_level || 0);
-  const [isLucky, setIsLucky] = useState(pokemon.instanceData.pref_lucky);
+  const [friendship, setFriendship] = useState<number>(
+    Number((pokemon.instanceData.friendship_level as number | undefined) ?? 0),
+  );
+  const [isLucky, setIsLucky] = useState<boolean>(!!pokemon.instanceData.pref_lucky);
 
   // Background-related state
-  const [showBackgrounds, setShowBackgrounds] = useState(false);
-  const [selectedBackground, setSelectedBackground] = useState(null);
+  const [showBackgrounds, setShowBackgrounds] = useState<boolean>(false);
+  const [selectedBackground, setSelectedBackground] = useState<BackgroundOption | null>(null);
 
   // State to hold Dynamax and Gigantamax
-  const [dynamax] = useState(!!pokemon.instanceData.dynamax);
-  const [gigantamax] = useState(!!pokemon.instanceData.gigantamax);
+  const [dynamax] = useState<boolean>(!!pokemon.instanceData.dynamax);
+  const [gigantamax] = useState<boolean>(!!pokemon.instanceData.gigantamax);
 
   // On mount, set background if relevant
   useEffect(() => {
     if (pokemon.instanceData.location_card !== null) {
       const locationCardId = parseInt(pokemon.instanceData.location_card, 10);
       const background = pokemon.backgrounds.find(
-        (bg) => bg.background_id === locationCardId
+        (bg: BackgroundOption) => bg.background_id === locationCardId
       );
       if (background) {
         setSelectedBackground(background);
@@ -75,24 +98,24 @@ const WantedInstance = ({ pokemon, isEditable }) => {
     setCurrentImage(updatedImage);
   }, [isFemale, pokemon, dynamax, gigantamax]);
 
-  const handleNicknameChange = (newNickname) => setNickname(newNickname);
-  const handleFavoriteChange = (newFavoriteStatus) => setIsFavorite(newFavoriteStatus);
-  const handleGenderChange = (newGender) => {
+  const handleNicknameChange = (newNickname: string | null) => setNickname(newNickname);
+  const handleFavoriteChange = (newFavoriteStatus: boolean) => setIsFavorite(newFavoriteStatus);
+  const handleGenderChange = (newGender: string | null) => {
     setGender(newGender);
     setIsFemale(newGender === 'Female');  // Update gender state and isFemale flag
   };
-  const handleWeightChange = (newWeight) => setWeight(newWeight);
-  const handleHeightChange = (newHeight) => setHeight(newHeight);
-  const handleMovesChange = (newMoves) => setMoves(newMoves);
+  const handleWeightChange = (newWeight: string) => setWeight(newWeight === '' ? null : Number(newWeight));
+  const handleHeightChange = (newHeight: string) => setHeight(newHeight === '' ? null : Number(newHeight));
+  const handleMovesChange = (newMoves: { fastMove: number | null; chargedMove1: number | null; chargedMove2: number | null }) => setMoves(newMoves);
 
-  const handleBackgroundSelect = (background) => {
+  const handleBackgroundSelect = (background: BackgroundOption | null) => {
     setSelectedBackground(background);
     setShowBackgrounds(false);
   };
 
   const toggleEditMode = () => {
     if (editMode) {
-      updateDetails(entityKey, { 
+      void updateDetails(entityKey, { 
         nickname, 
         favorite: isFavorite, 
         gender, 
@@ -103,7 +126,7 @@ const WantedInstance = ({ pokemon, isEditable }) => {
         charged_move2_id: moves.chargedMove2,
         friendship_level: friendship,
         pref_lucky: isLucky,
-        location_card: selectedBackground ? selectedBackground.background_id : null,
+        location_card: selectedBackground ? String(selectedBackground.background_id) : null,
         dynamax: dynamax,
         gigantamax: gigantamax
       });
@@ -111,12 +134,12 @@ const WantedInstance = ({ pokemon, isEditable }) => {
     setEditMode(!editMode);
   };
 
-  const selectableBackgrounds = pokemon.backgrounds.filter((background) => {
+  const selectableBackgrounds = pokemon.backgrounds.filter((background: BackgroundOption) => {
     if (!background.costume_id) {
       return true;
     }
-    const variantTypeId = pokemon.variantType.split('_')[1];
-    return background.costume_id === parseInt(variantTypeId, 10);
+    const variantTypeId = pokemon.variantType?.split('_')[1];
+    return background.costume_id === parseInt(variantTypeId ?? '', 10);
   });
 
   return (
@@ -135,7 +158,7 @@ const WantedInstance = ({ pokemon, isEditable }) => {
               src={'/images/location.png'}
               alt="Background Selector"
               className="background-icon"
-              onClick={editMode ? () => setShowBackgrounds(!showBackgrounds) : null}
+              onClick={editMode ? () => setShowBackgrounds(!showBackgrounds) : undefined}
             />
           </div>
         </div>
@@ -187,14 +210,14 @@ const WantedInstance = ({ pokemon, isEditable }) => {
       </div>
 
       <div className="name-container">
-        <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
+        <NameComponent pokemon={pokemon as any} editMode={editMode} onNicknameChange={handleNicknameChange} />
       </div>
 
       <div className="gender-container">
       { (editMode || (gender !== null && gender !== '')) && (
           <div className="gender-wrapper">
             <Gender 
-              pokemon={pokemon} 
+              pokemon={pokemon as any} 
               editMode={editMode} 
               onGenderChange={handleGenderChange} 
             />
@@ -203,13 +226,19 @@ const WantedInstance = ({ pokemon, isEditable }) => {
       </div>
 
       <div className="stats-container">
-        <Weight pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
+        <Weight pokemon={pokemon as any} editMode={editMode} onWeightChange={handleWeightChange} />
         <Types pokemon={pokemon} />
-        <Height pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
+        <Height pokemon={pokemon as any} editMode={editMode} onHeightChange={handleHeightChange} />
       </div>
 
       <div className="moves-container">
-        <Moves pokemon={pokemon} editMode={editMode} onMovesChange={handleMovesChange} />
+        <Moves
+          pokemon={pokemon}
+          editMode={editMode}
+          onMovesChange={handleMovesChange}
+          isShadow={!!pokemon.instanceData.shadow}
+          isPurified={!!pokemon.instanceData.purified}
+        />
       </div>
 
       {showBackgrounds && (

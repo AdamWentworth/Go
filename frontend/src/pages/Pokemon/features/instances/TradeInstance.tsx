@@ -2,7 +2,7 @@
 
 // TradeInstance.jsx – fixed version
 
-import React, { useState, useContext, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './TradeInstance.css';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 
@@ -30,12 +30,32 @@ import { useModal } from '@/contexts/ModalContext';
 
 import { cpMultipliers } from '@/utils/constants';
 import { calculateCP } from '@/utils/calculateCP';
+import { getEntityKey } from './utils/getEntityKey';
+import type { PokemonInstance } from '@/types/pokemonInstance';
+import type { PokemonVariant } from '@/types/pokemonVariants';
 
-const TradeInstance = ({ pokemon, isEditable }) => {
+interface BackgroundOption {
+  background_id: number;
+  image_url: string;
+  costume_id?: number;
+  [key: string]: unknown;
+}
+
+type TradePokemon = PokemonVariant & {
+  instanceData: PokemonInstance;
+  backgrounds: BackgroundOption[];
+  max: unknown[];
+};
+
+interface TradeInstanceProps {
+  pokemon: TradePokemon;
+  isEditable: boolean;
+}
+
+const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) => {
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const { alert } = useModal(); // for showing validation errors
-  const entityKey =
-    pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? pokemon.pokemonKey;
+  const entityKey = getEntityKey(pokemon);
 
   // --- 2) Extract validation objects from our hook
   const {
@@ -49,54 +69,70 @@ const TradeInstance = ({ pokemon, isEditable }) => {
    * LOCAL STATE ------------------------------------------------------
    * ----------------------------------------------------------------*/
   // Gender / Image
-  const [isFemale, setIsFemale] = useState(
+  const [isFemale, setIsFemale] = useState<boolean>(
     pokemon.instanceData.gender === 'Female'
   );
-  const [currentImage, setCurrentImage] = useState(
+  const [currentImage, setCurrentImage] = useState<string>(
     determineImageUrl(isFemale, pokemon)
   );
 
   // Edit mode & core states
-  const [editMode, setEditMode] = useState(false);
-  const [nickname, setNickname] = useState(pokemon.instanceData.nickname);
+  const [editMode, setEditMode] = useState<boolean>(false);
+  const [nickname, setNickname] = useState<string | null>(
+    pokemon.instanceData.nickname
+  );
 
   // We’ll store CP as a string so that editing is simpler. Convert to number on save.
-  const [cp, setCP] = useState(
+  const [cp, setCP] = useState<string>(
     pokemon.instanceData.cp != null ? pokemon.instanceData.cp.toString() : ''
   );
 
-  const [gender, setGender] = useState(pokemon.instanceData.gender);
-  const [weight, setWeight] = useState(
+  const [gender, setGender] = useState<string | null>(pokemon.instanceData.gender);
+  const [weight, setWeight] = useState<number | ''>(
     Number(pokemon.instanceData.weight) || ''
   );
-  const [height, setHeight] = useState(
+  const [height, setHeight] = useState<number | ''>(
     Number(pokemon.instanceData.height) || ''
   );
 
   const dynamax = !!pokemon.instanceData.dynamax;
   const gigantamax = !!pokemon.instanceData.gigantamax;
-  const [showMaxOptions, setShowMaxOptions] = useState(false);
+  const [showMaxOptions, setShowMaxOptions] = useState<boolean>(false);
 
   // Extract max moves from instanceData
-  const [maxAttack, setMaxAttack] = useState(
-    pokemon.instanceData.max_attack || ''
+  const [maxAttack, setMaxAttack] = useState<string>(
+    pokemon.instanceData.max_attack != null
+      ? String(pokemon.instanceData.max_attack)
+      : ''
   );
-  const [maxGuard, setMaxGuard] = useState(
-    pokemon.instanceData.max_guard || ''
+  const [maxGuard, setMaxGuard] = useState<string>(
+    pokemon.instanceData.max_guard != null
+      ? String(pokemon.instanceData.max_guard)
+      : ''
   );
-  const [maxSpirit, setMaxSpirit] = useState(
-    pokemon.instanceData.max_spirit || ''
+  const [maxSpirit, setMaxSpirit] = useState<string>(
+    pokemon.instanceData.max_spirit != null
+      ? String(pokemon.instanceData.max_spirit)
+      : ''
   );
 
   // Moves
-  const [moves, setMoves] = useState({
+  const [moves, setMoves] = useState<{
+    fastMove: number | null;
+    chargedMove1: number | null;
+    chargedMove2: number | null;
+  }>({
     fastMove: pokemon.instanceData.fast_move_id,
     chargedMove1: pokemon.instanceData.charged_move1_id,
     chargedMove2: pokemon.instanceData.charged_move2_id,
   });
 
   // IVs & Level ------------------------------------------------------
-  const [ivs, setIvs] = useState({
+  const [ivs, setIvs] = useState<{
+    Attack: number | '' | null;
+    Defense: number | '' | null;
+    Stamina: number | '' | null;
+  }>({
     Attack:
       pokemon.instanceData.attack_iv != null
         ? Number(pokemon.instanceData.attack_iv)
@@ -116,21 +152,23 @@ const TradeInstance = ({ pokemon, isEditable }) => {
     (ivs.Defense === '' || ivs.Defense === null) &&
     (ivs.Stamina === '' || ivs.Stamina === null);
 
-  const [level, setLevel] = useState(
+  const [level, setLevel] = useState<number | null>(
     pokemon.instanceData.level != null ? Number(pokemon.instanceData.level) : null
   );
 
   // location / date --------------------------------------------------
-  const [locationCaught, setLocationCaught] = useState(
+  const [locationCaught, setLocationCaught] = useState<string | null>(
     pokemon.instanceData.location_caught
   );
-  const [dateCaught, setDateCaught] = useState(
+  const [dateCaught, setDateCaught] = useState<string | null>(
     pokemon.instanceData.date_caught
   );
 
   // Background-related ----------------------------------------------
-  const [showBackgrounds, setShowBackgrounds] = useState(false);
-  const [selectedBackground, setSelectedBackground] = useState(null);
+  const [showBackgrounds, setShowBackgrounds] = useState<boolean>(false);
+  const [selectedBackground, setSelectedBackground] = useState<BackgroundOption | null>(
+    null
+  );
 
   /* ------------------------------------------------------------------
    * MEMOS & EFFECTS --------------------------------------------------
@@ -147,7 +185,7 @@ const TradeInstance = ({ pokemon, isEditable }) => {
     if (pokemon.instanceData.location_card !== null) {
       const locationCardId = parseInt(pokemon.instanceData.location_card, 10);
       const background = pokemon.backgrounds.find(
-        (bg) => bg.background_id === locationCardId
+        (bg: BackgroundOption) => bg.background_id === locationCardId
       );
       if (background) {
         setSelectedBackground(background);
@@ -182,21 +220,27 @@ const TradeInstance = ({ pokemon, isEditable }) => {
       level != null &&
       !isNaN(level) &&
       atk !== '' &&
+      atk !== null &&
       def !== '' &&
+      def !== null &&
       sta !== '' &&
+      sta !== null &&
       !isNaN(atk) &&
       !isNaN(def) &&
       !isNaN(sta)
     ) {
-      const multiplier = cpMultipliers[level];
+      const multiplier = (cpMultipliers as Record<string, number>)[String(level)];
       if (multiplier) {
+        const atkValue = Number(atk);
+        const defValue = Number(def);
+        const staValue = Number(sta);
         const calculatedCP = calculateCP(
           attack,
           defense,
           stamina,
-          atk,
-          def,
-          sta,
+          atkValue,
+          defValue,
+          staValue,
           multiplier
         );
         setCP(calculatedCP.toString());
@@ -207,26 +251,30 @@ const TradeInstance = ({ pokemon, isEditable }) => {
   /* ------------------------------------------------------------------
    * HANDLERS ---------------------------------------------------------
    * ----------------------------------------------------------------*/
-  const handleGenderChange = (newGender) => {
+  const handleGenderChange = (newGender: string | null) => {
     setGender(newGender);
     setIsFemale(newGender === 'Female');
   };
-  const handleCPChange = (newCP) => setCP(newCP);
-  const handleNicknameChange = (newNickname) => setNickname(newNickname);
-  const handleWeightChange = (newWeight) => {
+  const handleCPChange = (newCP: string) => setCP(newCP);
+  const handleNicknameChange = (newNickname: string | null) => setNickname(newNickname);
+  const handleWeightChange = (newWeight: string) => {
     setWeight(newWeight === '' ? '' : Number(newWeight));
   };
-  const handleHeightChange = (newHeight) => {
+  const handleHeightChange = (newHeight: string) => {
     setHeight(newHeight === '' ? '' : Number(newHeight));
   };
-  const handleMovesChange = (newMoves) => setMoves(newMoves);
-  const handleIvChange = (newIvs) => setIvs(newIvs);
-  const handleLevelChange = (newLevel) => {
+  const handleMovesChange = (newMoves: { fastMove: number | null; chargedMove1: number | null; chargedMove2: number | null }) => setMoves(newMoves);
+  const handleIvChange = (newIvs: {
+    Attack: number | '' | null;
+    Defense: number | '' | null;
+    Stamina: number | '' | null;
+  }) => setIvs(newIvs);
+  const handleLevelChange = (newLevel: string) => {
     setLevel(newLevel !== '' ? Number(newLevel) : null);
   };
-  const handleLocationCaughtChange = (newLocation) => setLocationCaught(newLocation);
-  const handleDateCaughtChange = (newDate) => setDateCaught(newDate);
-  const handleBackgroundSelect = (background) => {
+  const handleLocationCaughtChange = (newLocation: string) => setLocationCaught(newLocation);
+  const handleDateCaughtChange = (newDate: string) => setDateCaught(newDate);
+  const handleBackgroundSelect = (background: BackgroundOption | null) => {
     setSelectedBackground(background);
     setShowBackgrounds(false);
   };
@@ -239,10 +287,18 @@ const TradeInstance = ({ pokemon, isEditable }) => {
     // leaving edit-mode ⇒ validate & save
     if (editMode) {
       // minimal set needed for validation hook
+      const validationIvs = {
+        Attack:
+          ivs.Attack === '' || ivs.Attack === null ? undefined : Number(ivs.Attack),
+        Defense:
+          ivs.Defense === '' || ivs.Defense === null ? undefined : Number(ivs.Defense),
+        Stamina:
+          ivs.Stamina === '' || ivs.Stamina === null ? undefined : Number(ivs.Stamina),
+      };
       const fieldsToValidate = {
-        level,
-        cp: cp !== '' ? Number(cp) : null,
-        ivs,
+        level: level ?? undefined,
+        cp: cp !== '' ? Number(cp) : undefined,
+        ivs: validationIvs,
         weight,
         height,
       };
@@ -269,8 +325,8 @@ const TradeInstance = ({ pokemon, isEditable }) => {
         nickname,
         cp: cp !== '' ? Number(cp) : null,
         gender,
-        weight: weight === '' || isNaN(weight) ? null : weight,
-        height: height === '' || isNaN(height) ? null : height,
+        weight: weight === '' || Number.isNaN(Number(weight)) ? null : Number(weight),
+        height: height === '' || Number.isNaN(Number(height)) ? null : Number(height),
         fast_move_id: moves.fastMove,
         charged_move1_id: moves.chargedMove1,
         charged_move2_id: moves.chargedMove2,
@@ -281,13 +337,13 @@ const TradeInstance = ({ pokemon, isEditable }) => {
         location_caught: locationCaught,
         date_caught: dateCaught,
         location_card: selectedBackground?.background_id ?? null,
-        max_attack: maxAttack,
-        max_guard: maxGuard,
-        max_spirit: maxSpirit,
+        max_attack: maxAttack === '' ? null : Number(maxAttack),
+        max_guard: maxGuard === '' ? null : Number(maxGuard),
+        max_spirit: maxSpirit === '' ? null : Number(maxSpirit),
       };
 
       try {
-        await updateDetails({ [entityKey]: payload });
+        await updateDetails({ [entityKey]: payload as Partial<PokemonInstance> });
       } catch (error) {
         console.error('Error updating trade details:', error);
         alert(
@@ -321,7 +377,6 @@ const TradeInstance = ({ pokemon, isEditable }) => {
       {/* CP --------------------------------------------------------- */}
       <div className="CPComponent">
         <CP
-          pokemon={pokemon}
           editMode={editMode}
           onCPChange={handleCPChange}
           cp={cp}
@@ -338,7 +393,7 @@ const TradeInstance = ({ pokemon, isEditable }) => {
             src={'/images/location.png'}
             alt="Background Selector"
             className="background-icon"
-            onClick={editMode ? () => setShowBackgrounds(!showBackgrounds) : null}
+            onClick={editMode ? () => setShowBackgrounds(!showBackgrounds) : undefined}
           />
         </div>
       )}
@@ -376,7 +431,7 @@ const TradeInstance = ({ pokemon, isEditable }) => {
       {/* NAME ------------------------------------------------------- */}
       <div className="name-container">
         <NameComponent
-          pokemon={pokemon}
+          pokemon={pokemon as any}
           editMode={editMode}
           onNicknameChange={handleNicknameChange}
         />
@@ -385,16 +440,14 @@ const TradeInstance = ({ pokemon, isEditable }) => {
       {/* LEVEL + GENDER -------------------------------------------- */}
       <div className="level-gender-container">
         <Level
-          pokemon={pokemon}
           editMode={editMode}
           level={level}
           onLevelChange={handleLevelChange}
-          errors={validationErrors}
         />
         {(editMode || (gender !== null && gender !== '')) && (
           <div className="gender-wrapper">
             <Gender
-              pokemon={pokemon}
+              pokemon={pokemon as any}
               editMode={editMode}
               onGenderChange={handleGenderChange}
             />
@@ -405,13 +458,13 @@ const TradeInstance = ({ pokemon, isEditable }) => {
       {/* STATS ------------------------------------------------------ */}
       <div className="stats-container">
         <Weight
-          pokemon={pokemon}
+          pokemon={pokemon as any}
           editMode={editMode}
           onWeightChange={handleWeightChange}
         />
         <Types pokemon={pokemon} />
         <Height
-          pokemon={pokemon}
+          pokemon={pokemon as any}
           editMode={editMode}
           onHeightChange={handleHeightChange}
         />
@@ -445,6 +498,8 @@ const TradeInstance = ({ pokemon, isEditable }) => {
           pokemon={pokemon}
           editMode={editMode}
           onMovesChange={handleMovesChange}
+          isShadow={!!pokemon.instanceData.shadow}
+          isPurified={!!pokemon.instanceData.purified}
         />
       </div>
 

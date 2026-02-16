@@ -70,11 +70,17 @@ const PokemonOptionsOverlay: React.FC<PokemonOptionsOverlayProps> = ({
   }, []);
 
   // Determine which instance component to use
-  let InstanceComponent = CaughtInstance;
+  let InstanceComponent: React.ComponentType<{ pokemon: unknown; isEditable: boolean }> =
+    CaughtInstance as React.ComponentType<{ pokemon: unknown; isEditable: boolean }>;
   if (isInstance) {
     const filter = tagFilter.toLowerCase();
-    if (filter === 'trade') InstanceComponent = TradeInstance;
-    else if (filter === 'wanted') InstanceComponent = WantedInstance;
+    if (filter === 'trade') {
+      InstanceComponent =
+        TradeInstance as React.ComponentType<{ pokemon: unknown; isEditable: boolean }>;
+    } else if (filter === 'wanted') {
+      InstanceComponent =
+        WantedInstance as React.ComponentType<{ pokemon: unknown; isEditable: boolean }>;
+    }
   }
   const instanceClass = isInstance ? `${tagFilter.toLowerCase()}-instance` : '';
 

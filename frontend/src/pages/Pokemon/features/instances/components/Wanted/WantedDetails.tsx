@@ -7,15 +7,39 @@ import { useInstancesStore } from '@/features/instances/store/useInstancesStore'
 import TradeListDisplay from './TradeListDisplay';
 
 import { toggleEditMode } from '../../hooks/useToggleEditModeWanted';
-import FilterImages from '../../FilterImages.jsx';
+import FilterImages from '../../FilterImages';
 import useImageSelection from '../../utils/useImageSelection';
 
 import { EXCLUDE_IMAGES_trade, INCLUDE_IMAGES_trade, FILTER_NAMES } from '../../utils/constants';
 import { TOOLTIP_TEXTS } from '../../utils/tooltipTexts';
 
 import useTradeFiltering from '../../hooks/useTradeFiltering';
+import type { Instances } from '@/types/instances';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { SortMode, SortType } from '@/types/sort';
 
-const WantedDetails = ({
+type BooleanMap = Record<string, boolean>;
+type GenericMap = Record<string, unknown>;
+
+interface WantedDetailsProps {
+  pokemon: PokemonVariant & {
+    instanceData?: {
+      not_trade_list?: BooleanMap;
+      trade_filters?: BooleanMap;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
+  lists: Record<string, Record<string, unknown>>;
+  instances: Instances;
+  sortType: SortType;
+  sortMode: SortMode;
+  openTradeOverlay: (pokemon: Record<string, unknown>) => void;
+  variants: PokemonVariant[];
+  isEditable: boolean;
+}
+
+const WantedDetails: React.FC<WantedDetailsProps> = ({
   pokemon,
   lists,
   instances,
@@ -40,7 +64,7 @@ const WantedDetails = ({
   const listsWithTrade = useMemo(() => {
     const caught = lists?.caught ?? {};
     const trade = lists?.trade ?? Object.fromEntries(
-      Object.entries(caught).filter(([, it]) => it?.is_for_trade)
+      Object.entries(caught).filter(([, it]) => (it as any)?.is_for_trade)
     );
     return { ...(lists || {}), trade };
   }, [lists]);
@@ -65,7 +89,7 @@ const WantedDetails = ({
     setSelectedImages: setSelectedIncludeOnlyImages
   } = useImageSelection(EXCLUDE_IMAGES_trade);
 
-  const initializeSelection = (filterNames, filters) => {
+  const initializeSelection = (filterNames: string[], filters: Record<string, unknown>) => {
     return filterNames.map((name) => !!filters[name]);
   };
 
@@ -85,14 +109,14 @@ const WantedDetails = ({
     filteredOutPokemon,
     updatedLocalTradeFilters
   } = useTradeFiltering(
-    listsState,
+    listsState as any,
     selectedExcludeImages,
     selectedIncludeOnlyImages,
     localTradeFilters,
     setLocalNotTradeList,
     localNotTradeList,
-    editMode
-  );
+      editMode,
+    );
 
   useEffect(() => {
     setLocalTradeFilters(updatedLocalTradeFilters);
@@ -109,19 +133,19 @@ const WantedDetails = ({
       localNotTradeList,
       setLocalNotTradeList,
       pokemon,
-      instances,
+      instances: instances as any,
       filteredOutPokemon,
       localTradeFilters,
-      updateDetails
+      updateDetails: updateDetails as any,
     });
 
-  const toggleReciprocalUpdates = (key, updatedNotTrade) => {
+  const [pendingUpdates, setPendingUpdates] = useState<Record<string, boolean>>({});
+
+  const toggleReciprocalUpdates = (key: string, updatedNotTrade: boolean) => {
     // Keep as-is for now; used by TradeListDisplay
     // eslint-disable-next-line no-unused-vars
     setPendingUpdates((prev) => ({ ...prev, [key]: updatedNotTrade }));
   };
-
-  const [pendingUpdates, setPendingUpdates] = useState({});
 
   const filteredTradeListCount = Object.keys(filteredTradeList || {}).filter(
     (key) => !(localNotTradeList || {})[key]
@@ -147,23 +171,23 @@ const WantedDetails = ({
     setLocalNotTradeList({});
   };
 
-  const extractBaseKey = (pokemonKey) => {
+  const extractBaseKey = (pokemonKey: string) => {
     const parts = String(pokemonKey).split('_');
     parts.pop(); // Remove UUID part if present
     return parts.join('_');
   };
 
-  const handlePokemonClick = (pokemonKey) => {
+  const handlePokemonClick = (pokemonKey: string) => {
     const baseKey = extractBaseKey(pokemonKey);
     const variantData =
       (variants || []).find(
-        (variant) => (variant.variant_id ?? variant.pokemonKey) === baseKey,
+        (variant) => (variant.variant_id ?? (variant as any).pokemonKey) === baseKey,
       );
     if (!variantData) {
       console.error(`Variant not found for pokemonKey: ${pokemonKey}`);
       return;
     }
-    const instanceEntry = instancesMap?.[pokemonKey];
+    const instanceEntry = (instancesMap as Record<string, GenericMap>)?.[pokemonKey];
     if (!instanceEntry) {
       console.error(`Pokemon instance not found for key: ${pokemonKey}`);
       return;
@@ -172,7 +196,7 @@ const WantedDetails = ({
       ...variantData,
       variant_id: variantData.variant_id ?? baseKey,
       ownershipStatus: {
-        ...variantData.ownershipStatus,
+        ...(variantData as any).ownershipStatus,
         ...instanceEntry
       }
     };
@@ -206,7 +230,7 @@ const WantedDetails = ({
         {/* -- EXCLUDE IMAGES -- */}
         <div className="exclude-images">
           <FilterImages
-            images={EXCLUDE_IMAGES_trade}
+            images={[...EXCLUDE_IMAGES_trade]}
             selectedImages={selectedExcludeImages}
             toggleImageSelection={toggleExcludeImageSelection}
             editMode={editMode}
@@ -217,7 +241,7 @@ const WantedDetails = ({
         {/* -- INCLUDE IMAGES -- */}
         <div className="include-images">
           <FilterImages
-            images={INCLUDE_IMAGES_trade}
+            images={[...INCLUDE_IMAGES_trade]}
             selectedImages={selectedIncludeOnlyImages}
             toggleImageSelection={toggleIncludeOnlyImageSelection}
             editMode={editMode}

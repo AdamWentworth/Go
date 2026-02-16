@@ -62,6 +62,8 @@ This backlog converts the current frontend audit into an execution plan focused 
 55. TS migration slice: converted `Trades/views/ProposedTradeView.jsx` and `Trades/views/PendingTradeView.jsx` to TypeScript, removed debug-only console noise, added shared trade-view types, and added regression tests for proposed/pending actions, detail toggles, loading state, and partner-info reveal flow.
 56. TS migration slice: converted `Trades/views/OffersTradeView.jsx`, `Trades/views/CancelledTradeView.jsx`, and `Trades/views/CompletedTradeView.jsx` to TypeScript, removed debug-era logs, standardized typed trade/detail rendering helpers, and added regression tests for accept/deny/re-propose/thumbs-up actions plus loading/detail-toggle behavior.
 57. TS migration slice: converted all `Pokemon/features/instances/sections/*.jsx` files to TypeScript (`BackgroundSelector`, `HeaderRow`, `IdentityRow`, `ImageStage`, `LevelGenderRow`, `MetaPanel`, `Modals`, `MovesAndIV`, `PowerPanel`, `StatsRow`) and added section-level regression tests covering callback wiring, conditional rendering, overlay handling, and badge/background presentation.
+58. TS migration slice: converted `TradeInstance.jsx` and `WantedInstance.jsx` to TypeScript (`.tsx`), centralized entity-key fallback with new `getEntityKey` helper + unit tests, and converted the legacy alias `OwnedInstance.jsx` to `OwnedInstance.ts`.
+59. TS migration slice: converted `components/Wanted/WantedDetails.jsx` to TypeScript (`WantedDetails.tsx`), fixed TS-safe filter/image typing and import hardening (`FilterImages` extensionless), and kept `useTradeFiltering`/edit-toggle behavior stable with green typecheck/tests/build.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
@@ -275,4 +277,4 @@ This backlog converts the current frontend audit into an execution plan focused 
 
 ## Immediate Next Step
 
-Continue P1.3 incremental JS->TS migration for low-risk UI slices with tests-first changes (next candidate: `pages/Raid/Raid.jsx` typing pass or `pages/Home` presentational JS set), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.
+Continue P1.3 incremental JS->TS migration for the remaining core instance files (`InstanceOverlay.jsx`, `CaughtInstance.jsx`, `TradeDetails.jsx`, `WantedDetails.jsx`) and route shell (`Pokemon.jsx`) with tests-first changes, while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.
