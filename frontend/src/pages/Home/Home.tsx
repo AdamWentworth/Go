@@ -1,11 +1,11 @@
 // Home.jsx
 
 import React from 'react';
-import Navbar from '../../components/Navbar.jsx';
-import ActionMenu from '../../components/ActionMenu.jsx';
-import HomeHeader from './HomeHeader.jsx';
-import HowItWorks from './HowItWorks.jsx';
-import { useAuth } from '../../contexts/AuthContext';
+import ActionMenu from '@/components/ActionMenu';
+import Navbar from '@/components/Navbar';
+import { useAuth } from '@/contexts/AuthContext';
+import HomeHeader from './HomeHeader';
+import HowItWorks from './HowItWorks';
 import './Home.css';
 
 const Home = () => {

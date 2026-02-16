@@ -5,22 +5,24 @@ import { useEffect, useState } from 'react';
 const CACHE_NAME = 'raidCache';
 const CACHE_KEY = 'raid_bosses';
 
-export interface RaidBoss {
+export interface RaidBossReference {
   id: number;
 }
 
-export interface RaidBossVariant {
-  raid_boss: RaidBoss[];
-  // Add any additional properties for a raid boss variant here.
-}
+type HasRaidBossData = {
+  raid_boss?: RaidBossReference[] | null;
+};
 
-interface UseRaidBossesDataReturn {
-  raidBossesData: RaidBossVariant[] | null;
+interface UseRaidBossesDataReturn<T extends HasRaidBossData> {
+  raidBossesData: T[] | null;
   raidLoading: boolean;
 }
 
-const useRaidBossesData = (variants: RaidBossVariant[], loading: boolean): UseRaidBossesDataReturn => {
-  const [raidBossesData, setRaidBossesData] = useState<RaidBossVariant[] | null>(null);
+const useRaidBossesData = <T extends HasRaidBossData>(
+  variants: T[],
+  loading: boolean,
+): UseRaidBossesDataReturn<T> => {
+  const [raidBossesData, setRaidBossesData] = useState<T[] | null>(null);
   const [raidLoading, setRaidLoading] = useState(true);
 
   useEffect(() => {
@@ -29,7 +31,7 @@ const useRaidBossesData = (variants: RaidBossVariant[], loading: boolean): UseRa
         const cache = await caches.open(CACHE_NAME);
         const response = await cache.match(CACHE_KEY);
         if (response) {
-          const cachedData = await response.json();
+          const cachedData = (await response.json()) as T[];
           console.log('Retrieved raid boss variants from cache:', cachedData);
           setRaidBossesData(cachedData);
           setRaidLoading(false);
@@ -52,9 +54,10 @@ const useRaidBossesData = (variants: RaidBossVariant[], loading: boolean): UseRa
       const allRaidBossIds = Array.from({ length: 643 }, (_, i) => i + 1);
 
       // Filter out variants that do not have a raid_boss property or where raid_boss is an empty array.
-      const raidBossVariants = variants.filter(variant => {
-        return Array.isArray(variant.raid_boss) && variant.raid_boss.length > 0;
-      });
+      const raidBossVariants = variants.filter(
+        (variant): variant is T & { raid_boss: RaidBossReference[] } =>
+          Array.isArray(variant.raid_boss) && variant.raid_boss.length > 0,
+      );
 
       // Increment count for each raid_boss item and track found IDs.
       raidBossVariants.forEach(variant => {

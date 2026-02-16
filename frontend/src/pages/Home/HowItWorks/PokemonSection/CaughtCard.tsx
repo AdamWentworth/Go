@@ -1,11 +1,11 @@
 // CaughtCard.jsx
 import React from 'react';
 import './CaughtCard.css';
-import CP from '../../../../components/pokemonComponents/CP.jsx';
-import Weight from '../../../../components/pokemonComponents/Weight.jsx';
+import CP from '../../../../components/pokemonComponents/CP';
+import Weight from '../../../../components/pokemonComponents/Weight';
 import Height from '../../../../components/pokemonComponents/Height';
-import Types from '../../../../components/pokemonComponents/Types.jsx';
-import IV from '../../../../components/pokemonComponents/IV.jsx';
+import Types from '../../../../components/pokemonComponents/Types';
+import IV from '../../../../components/pokemonComponents/IV';
 
 const CaughtCard = () => {
   return (
@@ -19,7 +19,7 @@ const CaughtCard = () => {
         {/* Top stats row */}
         <div className="stats-top">
           <div className="cp-container">
-            <CP cp={3266} />
+            <CP cp={3266} editMode={false} onCPChange={() => {}} />
           </div>
           <img src="/images/fav_pressed.png" alt="Favorite" className="fav-icon" />
         </div>
@@ -43,7 +43,11 @@ const CaughtCard = () => {
 
         {/* Stats row: Weight, Types, Height */}
         <div className="stats-row">
-          <Weight pokemon={{ instanceData: { weight: 88 } }} />
+          <Weight
+            pokemon={{ instanceData: { weight: 88 } }}
+            editMode={false}
+            onWeightChange={() => {}}
+          />
 
           {/* Replace the old “type-row” div with the new <Types /> component */}
           <Types
@@ -55,7 +59,7 @@ const CaughtCard = () => {
             }}
           />
 
-          <Height pokemon={{ instanceData: { height: 1.8 } }} />
+          <Height pokemon={{ instanceData: { height: 1.8 } }} editMode={false} />
         </div>
         
         {/* Move rows */}

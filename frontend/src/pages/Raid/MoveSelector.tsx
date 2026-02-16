@@ -2,7 +2,6 @@ import React from 'react';
 
 type RaidMove = {
   name: string;
-  [key: string]: unknown;
 };
 
 type MoveSelectorProps = {

@@ -55,6 +55,9 @@ This backlog converts the current frontend audit into an execution plan focused 
 48. TS migration slice: converted `Search/SearchParameters/VariantSearch.jsx` and `Search/SearchParameters/VariantComponents/MovesSearch.jsx` to TypeScript, hardened move-type icon rendering for missing metadata, and added regression tests for autocomplete selection, max toggle transitions, validation error propagation, costume reset behavior, move selection emission, and second charged-move autofill behavior.
 49. TS migration slice: converted the remaining Search JS files (`Search/components/Dropdown.jsx`, `Search/views/ListViewComponents/MiniMap.jsx`) to TypeScript, hardened minimap initialization for missing coordinates, rewired list-view imports/mocks, and added direct regression coverage for dropdown behavior and minimap lifecycle/color-path handling.
 50. TS migration slice: converted `Raid/MoveSelector.jsx` and `Raid/Pagination.jsx` to TypeScript, removed runtime PropTypes from pagination, hardened zero-page navigation behavior, rewired `Raid.jsx` imports, and added unit tests for move selection callbacks and pagination window/boundary behavior.
+51. TS migration slice: converted `Raid/RaidBossSelector.jsx` and `Raid/Table.jsx` to TypeScript, removed runtime PropTypes from table rendering, rewired `Raid.jsx` imports, and added regression tests for datalist input behavior and raid table rendering/empty-state rows.
+52. TS migration slice: converted `Trades/Trades.jsx`, `Trades/TradeStatusButtons.jsx`, and `Trades/TradeList.jsx` to TypeScript, introduced shared `Trades/types.ts` status typing, hardened current-user parsing for trade filtering, and added regression tests for status controls, list filtering behavior, and parent-to-child store wiring.
+53. TS migration slice: converted the Home page walkthrough stack (`Home`, `HomeHeader`, `HowItWorks`, navigation/search/pokemon sections, and Pokemon showcase cards) from `.jsx` to `.tsx`, standardized extensionless imports, and added regression tests for home rendering/auth-button visibility and How It Works section content.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
@@ -268,4 +271,4 @@ This backlog converts the current frontend audit into an execution plan focused 
 
 ## Immediate Next Step
 
-Continue P1.3 incremental JS->TS migration for low-risk UI slices with tests-first changes (next candidate: remaining `pages/Raid` UI files `RaidBossSelector.jsx` and `Table.jsx`), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.
+Continue P1.3 incremental JS->TS migration for low-risk UI slices with tests-first changes (next candidate: `pages/Raid/Raid.jsx` typing pass or `pages/Home` presentational JS set), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.

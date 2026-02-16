@@ -1,18 +1,26 @@
-import React from 'react';
-import './TradeStatusButtons.css';  // Reuse the same CSS file for styling
+import type { TradeStatusFilter } from './types';
 
-function TradeStatusButtons({ selectedStatus, setSelectedStatus }) {
-  // Use objects with value and label
-  const leftStatuses = [
-    { value: 'Accepting', label: 'Offers' },
-    { value: 'Proposed', label: 'Proposed' }
-  ];
-  const middleStatus = 'Pending';
-  const rightStatuses = ['Completed', 'Cancelled'];
+import './TradeStatusButtons.css';
 
+interface TradeStatusButtonsProps {
+  selectedStatus: TradeStatusFilter;
+  setSelectedStatus: (status: TradeStatusFilter) => void;
+}
+
+const leftStatuses: ReadonlyArray<{ value: TradeStatusFilter; label: string }> = [
+  { value: 'Accepting', label: 'Offers' },
+  { value: 'Proposed', label: 'Proposed' },
+];
+
+const middleStatus: TradeStatusFilter = 'Pending';
+const rightStatuses: ReadonlyArray<TradeStatusFilter> = ['Completed', 'Cancelled'];
+
+function TradeStatusButtons({
+  selectedStatus,
+  setSelectedStatus,
+}: TradeStatusButtonsProps) {
   return (
     <div className="status-buttons">
-      {/* Left vertical group */}
       <div className="button-group vertical-group">
         {leftStatuses.map(({ value, label }) => (
           <button
@@ -29,7 +37,6 @@ function TradeStatusButtons({ selectedStatus, setSelectedStatus }) {
         ))}
       </div>
 
-      {/* Middle single button group */}
       <div className="button-group middle-group">
         <button
           key={middleStatus}
@@ -44,7 +51,6 @@ function TradeStatusButtons({ selectedStatus, setSelectedStatus }) {
         </button>
       </div>
 
-      {/* Right vertical group */}
       <div className="button-group vertical-group right-group">
         {rightStatuses.map((status) => (
           <button

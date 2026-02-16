@@ -1,10 +1,15 @@
 // HomeHeader.jsx
 
 import React from 'react';
-import AuthButtons from '../../components/AuthButtons.jsx';
+import AuthButtons from '@/components/AuthButtons';
 import './HomeHeader.css';
 
-const HomeHeader = ({ logoUrl, isLoggedIn }) => {
+interface HomeHeaderProps {
+  logoUrl: string;
+  isLoggedIn: boolean;
+}
+
+const HomeHeader = ({ logoUrl, isLoggedIn }: HomeHeaderProps) => {
   return (
     <header className="homeHeader framed-section">
       <div className="logoContainer">

@@ -208,8 +208,8 @@ const TradeDetails = ({
 
     // 4) Filter to find all instances where the baseKey matches and is_caught=true
     const caughtInstances = userOwnershipData.filter((item) => {
-      const parsedOwned = parsePokemonKey(item.instance_id);
-      return parsedOwned.baseKey === selectedBaseKey && item.is_caught === true;
+      const parsedCaught = parsePokemonKey(item.instance_id);
+      return parsedCaught.baseKey === selectedBaseKey && item.is_caught === true;
     });
 
     console.log("caughtInstances after filter =>", caughtInstances);
