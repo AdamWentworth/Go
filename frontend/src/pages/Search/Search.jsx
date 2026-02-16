@@ -10,7 +10,7 @@ import LoadingSpinner from '../../components/LoadingSpinner.jsx';
 import axios from 'axios';
 
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
-import { useModal } from '../../contexts/ModalContext.jsx';
+import { useModal } from '../../contexts/ModalContext';
 import ActionMenu from '../../components/ActionMenu.jsx';
 import './Search.css';
 import { createScopedLogger } from '@/utils/logger';

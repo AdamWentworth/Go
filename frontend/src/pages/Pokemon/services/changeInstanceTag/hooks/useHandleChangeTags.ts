@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import { flushSync } from 'react-dom';
-import { useModal } from '../../../../../contexts/ModalContext.jsx';
+import { useModal } from '../../../../../contexts/ModalContext';
 
 import { getStatusFromInstance, getTransitionMessage } from '../utils/transitionMessages';
 import { buildInstanceTagChangeMessage } from '../utils/buildInstanceTagChangeMessage';

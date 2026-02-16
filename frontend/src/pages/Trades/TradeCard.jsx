@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useTradeStore } from '@/features/trades/store/useTradeStore';
-import { useModal } from '../../contexts/ModalContext.jsx'; // Import the useModal hook
+import { useModal } from '../../contexts/ModalContext'; // Import the useModal hook
 
 // hooks
 import { usePokemonDetails } from './hooks/usePokemonDetails';

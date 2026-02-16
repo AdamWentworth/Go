@@ -16,7 +16,7 @@ import Point from 'ol/geom/Point';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import { Style, Circle, Fill } from 'ol/style';
-import { useTheme } from '../../../contexts/ThemeContext.jsx';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 // Utility function to format the trainer code into groups of 4 digits.
 function formatTrainerCode(code) {

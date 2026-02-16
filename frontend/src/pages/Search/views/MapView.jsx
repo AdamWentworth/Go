@@ -19,7 +19,7 @@ import { getCenter } from 'ol/extent';
 import { buffer as bufferExtent } from 'ol/extent';
 import { WKT } from 'ol/format'; // Add the WKT format parser
 import './MapView.css';
-import { useTheme } from '../../../contexts/ThemeContext.jsx';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 import OwnedPopup from './MapViewComponents/OwnedPopup.jsx';
 import TradePopup from './MapViewComponents/TradePopup.jsx';
