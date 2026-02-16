@@ -5,9 +5,9 @@ import { render, screen } from '@testing-library/react';
 import ListView from '@/pages/Search/views/ListView';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
-vi.mock('@/pages/Search/views/ListViewComponents/OwnedListView', () => ({
+vi.mock('@/pages/Search/views/ListViewComponents/CaughtListView', () => ({
   default: ({ item }: { item: { instance_id?: string } }) => (
-    <div data-testid="owned-item">{item.instance_id}</div>
+    <div data-testid="caught-item">{item.instance_id}</div>
   ),
 }));
 
@@ -85,7 +85,7 @@ describe('ListView', () => {
     render(
       <ListView
         data={[]}
-        instanceData="owned"
+        instanceData="caught"
         hasSearched={false}
         pokemonCache={variants}
         scrollToTopTrigger={0}
@@ -101,7 +101,7 @@ describe('ListView', () => {
     render(
       <ListView
         data={[]}
-        instanceData="owned"
+        instanceData="caught"
         hasSearched
         pokemonCache={variants}
         scrollToTopTrigger={0}
@@ -119,17 +119,17 @@ describe('ListView', () => {
       { instance_id: 'inst-2', variant_id: 'variant-1', pokemon_id: 1 },
     ];
 
-    const owned = render(
+    const caught = render(
       <ListView
         data={data}
-        instanceData="owned"
+        instanceData="caught"
         hasSearched
         pokemonCache={variants}
         scrollToTopTrigger={0}
       />,
     );
-    expect(owned.getAllByTestId('owned-item')).toHaveLength(2);
-    owned.unmount();
+    expect(caught.getAllByTestId('caught-item')).toHaveLength(2);
+    caught.unmount();
 
     const trade = render(
       <ListView

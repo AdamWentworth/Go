@@ -69,7 +69,6 @@
     transition: background 0.3s ease;
 }
 .pokemon-options-overlay .caught-instance,
-.pokemon-options-overlay .owned-instance,
 .pokemon-options-overlay .trade-instance,
 .pokemon-options-overlay .wanted-instance {
     padding: 5px;

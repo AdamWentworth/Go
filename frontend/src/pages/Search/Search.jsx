@@ -14,6 +14,7 @@ import { useModal } from '../../contexts/ModalContext';
 import ActionMenu from '../../components/ActionMenu.jsx';
 import './Search.css';
 import { createScopedLogger } from '@/utils/logger';
+import { normalizeOwnershipMode } from './utils/ownershipMode';
 
 const log = createScopedLogger('Search');
 
@@ -21,7 +22,7 @@ const Search = () => {
   const [searchMode, setSearchMode] = useState(null);
   const [view, setView] = useState('list');
   const [searchResults, setSearchResults] = useState([]);
-  const [instanceData, setinstanceData] = useState('owned');
+  const [ownershipMode, setOwnershipMode] = useState('caught');
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -63,7 +64,7 @@ const Search = () => {
     setErrorMessage('');
     setIsLoading(true);
     setHasSearched(true);
-    setinstanceData(queryParams.ownership);
+    setOwnershipMode(normalizeOwnershipMode(queryParams.ownership));
     shouldScrollRef.current = true;
 
     try {
@@ -163,7 +164,7 @@ const Search = () => {
           ) : view === 'list' ? (
             <ListView
               data={searchResults}
-              instanceData={instanceData}
+              instanceData={ownershipMode}
               hasSearched={hasSearched}
               pokemonCache={variants}
               scrollToTopTrigger={scrollToTopTrigger}
@@ -171,7 +172,7 @@ const Search = () => {
           ) : (
             <MapView
               data={searchResults}
-              instanceData={instanceData}
+              instanceData={ownershipMode}
               pokemonCache={variants}
             />
           ))}

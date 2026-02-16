@@ -1,9 +1,9 @@
 // sections/IdentityRow.jsx
 import React from 'react';
 import './IdentityRow.css';
-import LuckyComponent from '../components/Owned/LuckyComponent';
-import NameComponent from '../components/Owned/NameComponent';
-import PurifyComponent from '../components/Owned/PurifyComponent';
+import LuckyComponent from '../components/Caught/LuckyComponent';
+import NameComponent from '../components/Caught/NameComponent';
+import PurifyComponent from '../components/Caught/PurifyComponent';
 
 const IdentityRow = ({
   pokemon,

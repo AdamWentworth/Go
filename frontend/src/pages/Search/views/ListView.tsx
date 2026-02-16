@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './ListView.css';
-import OwnedListView from './ListViewComponents/OwnedListView';
+import CaughtListView from './ListViewComponents/CaughtListView';
 import TradeListView from './ListViewComponents/TradeListView';
 import WantedListView from './ListViewComponents/WantedListView';
 import { findVariantForInstance } from '../utils/findVariantForInstance';
+import { normalizeOwnershipMode } from '../utils/ownershipMode';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
@@ -11,7 +12,7 @@ type ListViewItem = Record<string, unknown>;
 
 type ListViewProps = {
   data: ListViewItem[];
-  instanceData: 'owned' | 'trade' | 'wanted' | string;
+  instanceData: 'caught' | 'trade' | 'wanted' | string;
   hasSearched: boolean;
   pokemonCache: PokemonVariant[] | null;
   scrollToTopTrigger: number;
@@ -24,6 +25,9 @@ const ListView: React.FC<ListViewProps> = ({
   pokemonCache,
   scrollToTopTrigger,
 }) => {
+  const ownershipMode = normalizeOwnershipMode(instanceData as Parameters<
+    typeof normalizeOwnershipMode
+  >[0]);
   const [pokemonVariants, setPokemonVariants] = useState<PokemonVariant[]>([]);
   const listViewRef = useRef<HTMLDivElement | null>(null);
 
@@ -66,15 +70,15 @@ const ListView: React.FC<ListViewProps> = ({
   return (
     <div className="list-view-container" ref={listViewRef}>
       {data.map((item, index) => {
-        if (instanceData === 'owned') {
-          return <OwnedListView key={index} item={item} />;
+        if (ownershipMode === 'caught') {
+          return <CaughtListView key={index} item={item} />;
         }
-        if (instanceData === 'trade') {
+        if (ownershipMode === 'trade') {
           return (
             <TradeListView key={index} item={item} findPokemonByKey={findPokemonByKey} />
           );
         }
-        if (instanceData === 'wanted') {
+        if (ownershipMode === 'wanted') {
           return (
             <WantedListView key={index} item={item} findPokemonByKey={findPokemonByKey} />
           );

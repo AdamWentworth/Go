@@ -57,8 +57,7 @@ async function insertPokemonInstance(connection, instance) {
         instance.date_caught || null,
         instance.date_added || new Date(),
         instance.last_update || Date.now(),
-        instance.is_unowned,
-        instance.is_owned,
+        instance.is_caught,
         instance.is_for_trade,
         instance.is_wanted,
         instance.not_trade_list || '{}',
@@ -88,7 +87,7 @@ async function insertPokemonInstance(connection, instance) {
         shiny, costume_id, lucky, shadow, purified, fast_move_id, charged_move1_id, 
         charged_move2_id, weight, height, gender, mirror, pref_lucky, registered, 
         favorite, location_card, location_caught, friendship_level, date_caught, 
-        date_added, last_update, is_unowned, is_owned, is_for_trade, is_wanted, 
+        date_added, last_update, is_caught, is_for_trade, is_wanted, 
         not_trade_list, not_wanted_list, trace_id, user_id, trade_filters, wanted_filters,
         mega, mega_form, is_mega, level, is_fused, fusion, fusion_form, fused_with, 
         disabled, dynamax, gigantamax, max_attack, max_guard, max_spirit

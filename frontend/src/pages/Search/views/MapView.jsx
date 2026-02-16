@@ -21,7 +21,7 @@ import { WKT } from 'ol/format'; // Add the WKT format parser
 import './MapView.css';
 import { useTheme } from '../../../contexts/ThemeContext';
 
-import OwnedPopup from './MapViewComponents/OwnedPopup.jsx';
+import CaughtPopup from './MapViewComponents/CaughtPopup.jsx';
 import TradePopup from './MapViewComponents/TradePopup.jsx';
 import WantedPopup from './MapViewComponents/WantedPopup.jsx';
 import { findVariantForInstance } from '../utils/findVariantForInstance';
@@ -168,7 +168,7 @@ const MapView = ({ data, instanceData, pokemonCache }) => {
           } else if (instanceData === 'wanted') {
             PopupComponent = WantedPopup;
           } else {
-            PopupComponent = OwnedPopup;
+            PopupComponent = CaughtPopup;
           }
     
           if (pokemonVariants.length > 0) {

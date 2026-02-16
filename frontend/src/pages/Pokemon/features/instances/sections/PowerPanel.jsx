@@ -1,9 +1,9 @@
 // sections/PowerPanel.jsx
 import React from 'react';
 import './PowerPanel.css';
-import MaxComponent from '../components/Owned/MaxComponent.jsx';
-import MaxMovesComponent from '../components/Owned/MaxMovesComponent.jsx';
-import MegaComponent from '../components/Owned/MegaComponent';
+import MaxComponent from '../components/Caught/MaxComponent.jsx';
+import MaxMovesComponent from '../components/Caught/MaxMovesComponent.jsx';
+import MegaComponent from '../components/Caught/MegaComponent';
 
 const PowerPanel = ({
   pokemon,

@@ -32,8 +32,8 @@ const MiniMap = ({ latitude, longitude, instanceData }) => {
     });
 
     let pointColor;
-    if (instanceData === 'owned') {
-      pointColor = '#00AAFF'; // Blue for owned
+    if (instanceData === 'caught') {
+      pointColor = '#00AAFF'; // Blue for caught
     } else if (instanceData === 'trade') {
       pointColor = '#4cae4f'; // Green for trade
     } else {

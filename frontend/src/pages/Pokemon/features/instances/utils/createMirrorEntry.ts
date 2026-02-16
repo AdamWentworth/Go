@@ -29,11 +29,10 @@ interface MirrorInstance extends GenericMap {
   instance_id: string;
   variant_id?: string;
   pokemon_id?: number;
-  is_owned: boolean;
+  is_caught: boolean;
   is_for_trade: boolean;
   is_wanted: boolean;
   mirror: boolean;
-  is_unowned: boolean;
   pref_lucky: boolean;
   friendship_level: null;
   date_added: string;
@@ -136,11 +135,10 @@ export const createMirrorEntry = (
     instance_id: newId,
     variant_id: variant_id || undefined,
     pokemon_id,
-    is_owned: false,
+    is_caught: false,
     is_for_trade: false,
     is_wanted: true,
     mirror: true,
-    is_unowned: false,
     pref_lucky: false,
     friendship_level: null,
     date_added: new Date().toISOString(),

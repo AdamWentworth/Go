@@ -10,7 +10,7 @@ import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 interface UpdateForTradeModalProps {
-  ownedInstances: PokemonInstance[];
+  caughtInstances: PokemonInstance[];
   baseKey?: string | null;
   onClose: () => void;
   onConfirm?: () => void;
@@ -19,7 +19,7 @@ interface UpdateForTradeModalProps {
 type VariantWithInstance = PokemonVariant & { instanceData: PokemonInstance };
 
 const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
-  ownedInstances,
+  caughtInstances,
   baseKey = null,
   onClose,
 }) => {
@@ -54,15 +54,15 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
   }, [baseKey]);
 
   useEffect(() => {
-    if (!variantData || ownedInstances.length === 0) return;
+    if (!variantData || caughtInstances.length === 0) return;
 
-    const merged: VariantWithInstance[] = ownedInstances.map((inst) => ({
+    const merged: VariantWithInstance[] = caughtInstances.map((inst) => ({
       ...variantData,
       instanceData: { ...inst },
     }));
 
     setRestructuredData(merged);
-  }, [variantData, ownedInstances]);
+  }, [variantData, caughtInstances]);
 
   const handleUpdateToTrade = async (instanceId: string | undefined) => {
     if (!instanceId) return;

@@ -38,8 +38,9 @@ This backlog converts the current frontend audit into an execution plan focused 
 31. TS migration slice: converted `SearchModeToggle.jsx` to TypeScript and added unit coverage for welcome/active-mode/click dispatch behavior.
 32. TS migration slice: converted `ConfirmationOverlay.jsx` to TypeScript, rewired search popups/list views, and added regression tests for confirm/close/propagation behavior.
 33. TS migration slice: converted `Search/views/ListView.jsx` to TypeScript, removed noisy console logging, fixed scroll-to-top ref wiring, and added list view regression coverage.
-34. TS migration slice: converted `Search/views/ListViewComponents/OwnedListView.jsx` to TypeScript with safer optional move access and added regression tests for rendering + overlay navigation flows.
+34. TS migration slice: converted `Search/views/ListViewComponents/CaughtListView.jsx` to TypeScript with safer optional move access and added regression tests for rendering + overlay navigation flows.
 35. TS migration slice: converted `Search/views/ListViewComponents/TradeListView.jsx` to TypeScript and added regression tests for wanted-list image resolution and confirmation navigation behavior.
+36. Naming canonicalization slice: standardized Search status state and API values to canonical `caught` only, removed deprecated legacy request compatibility, and updated Search status tests/CSS to support `caught` active styling.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
@@ -167,7 +168,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 - Goal: unify model language for maintainability.
 - Target canonical terms:
 1. `instances` over `ownershipData`.
-2. `is_caught`/`Caught` and `Missing` over `is_owned`/`Owned` and `Unowned`.
+2. `is_caught`/`Caught` and `Missing` as the only canonical status model.
 3. `variant_id` over `pokemonKey`.
 - DoD:
 1. New code uses canonical terms only.
@@ -253,4 +254,4 @@ This backlog converts the current frontend audit into an execution plan focused 
 
 ## Immediate Next Step
 
-Continue P1.3 incremental JS->TS migration for low-risk UI/context slices with tests-first changes (next candidates: `Search/views/ListViewComponents/WantedListView.jsx`, `Search/views/MapViewComponents/OwnedPopup.jsx`), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.
+Continue P1.3 incremental JS->TS migration for low-risk UI/context slices with tests-first changes (next candidate: `Search/views/ListViewComponents/WantedListView.jsx`), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.

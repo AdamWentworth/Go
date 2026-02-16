@@ -7,7 +7,7 @@ import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 interface Props {
-  ownedPokemon: (PokemonInstance & { variantData: PokemonVariant | null })[];
+  caughtPokemon: (PokemonInstance & { variantData: PokemonVariant | null })[];
   variantKey : string | undefined;
   megaForm   : string | undefined;
   onAssignExisting: (id: string) => void;
@@ -16,7 +16,7 @@ interface Props {
 }
 
 export default function MegaPokemonSelection({
-  ownedPokemon,
+  caughtPokemon,
   variantKey,
   megaForm,
   onAssignExisting,
@@ -37,9 +37,9 @@ export default function MegaPokemonSelection({
 
         {error && <p className="error">{error}</p>}
 
-        {ownedPokemon.length ? (
+        {caughtPokemon.length ? (
           <div className="mega-pokemon-list">
-            {ownedPokemon.map(({ instance_id, variantData, ...rest }) => (
+            {caughtPokemon.map(({ instance_id, variantData, ...rest }) => (
               <div key={instance_id} className="mega-pokemon-item">
                 <div className="mega-actions">
                   <button onClick={() => assignExisting(instance_id!)}>Mega Evolve</button>

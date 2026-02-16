@@ -29,8 +29,7 @@ export async function createFusionInstance({
   const instanceId = `${variantData.variant_id}_${uuid}`;
 
   newInstanceData.instance_id = instanceId;
-  newInstanceData.is_owned = true;
-  newInstanceData.is_unowned = false;
+  newInstanceData.is_caught = true;
   newInstanceData.is_for_trade = false;
   newInstanceData.shiny = isShiny;
 

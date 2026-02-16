@@ -56,12 +56,12 @@ async function generateFakeData() {
                 console.log(`User ${mongoUser.username} already exists in MySQL, skipping insertion.`);
             }
 
-            console.log(`Generating 20 wanted, 20 trade, and 20 owned Pokémon for user: ${mongoUser.username}`);
+            console.log(`Generating 20 wanted, 20 trade, and 20 caught Pokémon for user: ${mongoUser.username}`);
             const wantedInstances = [];
             const tradeInstances = [];
-            const ownedInstances = [];
+            const caughtInstances = [];
 
-            while (wantedInstances.length < 20 || tradeInstances.length < 20 || ownedInstances.length < 20) {
+            while (wantedInstances.length < 20 || tradeInstances.length < 20 || caughtInstances.length < 20) {
                 const randomPokemonKey = getRandomPokemonKey();
                 const pokemonInstance = generatePokemonInstance(randomPokemonKey, mongoUser._id.toString());
 
@@ -73,8 +73,8 @@ async function generateFakeData() {
                     wantedInstances.push(pokemonInstance);
                 } else if (pokemonInstance.is_for_trade && tradeInstances.length < 20) {
                     tradeInstances.push(pokemonInstance);
-                } else if (pokemonInstance.is_owned && !pokemonInstance.is_for_trade && !pokemonInstance.is_wanted && ownedInstances.length < 20) {
-                    ownedInstances.push(pokemonInstance);
+                } else if (pokemonInstance.is_caught && !pokemonInstance.is_for_trade && !pokemonInstance.is_wanted && caughtInstances.length < 20) {
+                    caughtInstances.push(pokemonInstance);
                 }
             }
 
@@ -89,8 +89,8 @@ async function generateFakeData() {
                 await insertPokemonInstance(mysqlConnection, tradeInstance);
             }
 
-            for (const ownedInstance of ownedInstances) {
-                await insertPokemonInstance(mysqlConnection, ownedInstance);
+            for (const caughtInstance of caughtInstances) {
+                await insertPokemonInstance(mysqlConnection, caughtInstance);
             }
         }
 

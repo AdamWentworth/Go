@@ -1,4 +1,4 @@
-// Owned/FusionComponent.tsx
+// Caught/FusionComponent.tsx
 import React from 'react';
 import './FusionComponent.css'; // Optional: create and style this as needed
 

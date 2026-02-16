@@ -6,7 +6,7 @@ import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 export interface MegaSelectionData {
-  ownedPokemon: (PokemonInstance & { variantData: PokemonVariant | null })[];
+  caughtPokemon: (PokemonInstance & { variantData: PokemonVariant | null })[];
   variantKey: string; // kept prop name for now
   megaForm?: string;
   resolve: (value: string) => void;
@@ -26,7 +26,7 @@ function useMegaPokemonHandler() {
     return baseKey.includes('shiny');
   };
 
-  const getOwnedPokemon = async (baseNumber: string, isShiny: boolean): Promise<PokemonInstance[]> => {
+  const getCaughtPokemon = async (baseNumber: string, isShiny: boolean): Promise<PokemonInstance[]> => {
     const rawData = await getAllInstances();
     if (!rawData || !Array.isArray(rawData)) {
       throw new Error("Invalid data retrieved from IndexedDB");
@@ -50,7 +50,7 @@ function useMegaPokemonHandler() {
       const entryBaseKey = entry.instance_id.split('-')[0];
       return (
         entryBaseKey === baseNumber &&
-        entry.is_owned &&
+        entry.is_caught &&
         entry.shiny === isShiny &&
         !entry.is_mega &&
         !baseKey.includes('clone') &&
@@ -70,11 +70,11 @@ function useMegaPokemonHandler() {
       }
 
       const isShiny = parseShinyStatus(baseKey);
-      const ownedPokemon = await getOwnedPokemon(baseNumber, isShiny);
-      console.log("Owned Pokémon matching requirements:", ownedPokemon);
+      const caughtPokemon = await getCaughtPokemon(baseNumber, isShiny);
+      console.log("Caught Pokemon matching requirements:", caughtPokemon);
 
-      const ownedPokemonWithVariants = await Promise.all(
-        ownedPokemon.map(async (pokemon) => {
+      const caughtPokemonWithVariants = await Promise.all(
+        caughtPokemon.map(async (pokemon) => {
           const { instance_id } = pokemon;
           if (!instance_id) {
             console.warn(`Missing instance_id for pokemon`, pokemon);
@@ -103,7 +103,7 @@ function useMegaPokemonHandler() {
         })
       );
 
-      return ownedPokemonWithVariants;
+      return caughtPokemonWithVariants;
     } catch (error) {
       console.error("Error handling Mega Pokémon:", error);
       throw error;
@@ -113,7 +113,7 @@ function useMegaPokemonHandler() {
   const promptMegaPokemonSelection = (baseKey: string, megaForm?: string): Promise<string> => {
     return new Promise(async (resolve, reject) => {
       try {
-        const ownedPokemonWithVariants = await handleMegaPokemon(baseKey);
+        const caughtPokemonWithVariants = await handleMegaPokemon(baseKey);
         const baseNumber = parseBaseKey(baseKey);
         if (!baseNumber) {
           throw new Error(`Invalid baseKey format: ${baseKey}`);
@@ -122,7 +122,7 @@ function useMegaPokemonHandler() {
         const variantKey = isShiny ? `${baseNumber}-shiny` : `${baseNumber}-default`;
 
         setMegaSelectionData({
-          ownedPokemon: ownedPokemonWithVariants,
+          caughtPokemon: caughtPokemonWithVariants,
           variantKey,
           megaForm,
           resolve,

@@ -17,7 +17,7 @@
     background-color: #333;
     padding: 20px;
     border-radius: 8px;
-    max-width: 900px; /* Increased max-width to accommodate multiple OwnedInstances */
+    max-width: 900px; /* Increased max-width to accommodate multiple CaughtInstance cards */
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
@@ -44,13 +44,13 @@
   .update-for-trade-modal-overlay .instances-list {
     display: flex;
     flex-wrap: wrap; /* Allows wrapping to new lines on smaller screens */
-    gap: 15px; /* Space between OwnedInstance components */
+    gap: 15px; /* Space between CaughtInstance components */
     justify-content: center; /* Center the instances horizontally */
   }
   
   .update-for-trade-modal-overlay .instance-item {
     display: flex;
-    flex-direction: column; /* Stack OwnedInstance and button vertically */
+    flex-direction: column; /* Stack CaughtInstance and button vertically */
     align-items: center; /* Center the contents horizontally */
     background-color: #444; /* Slightly lighter background for individual items */
     padding: 10px;

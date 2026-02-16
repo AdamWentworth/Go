@@ -17,7 +17,7 @@ export async function getValidCandidates(
 
   const filtered = ownership.filter((o) => {
     if (!o.instance_id?.startsWith(baseId.padStart(4, '0') + '-')) return false;
-    if (!o.is_owned || o.is_for_trade || o.is_fused || o.disabled)  return false;
+    if (!o.is_caught || o.is_for_trade || o.is_fused || o.disabled) return false;
     if (!ignoreShiny && (!!o.shiny) !== isShiny)                    return false;
     return true;
   });

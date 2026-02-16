@@ -63,7 +63,7 @@ const TradeDetails = ({
 
   // New state variables for UpdateForTradeModal
   const [isUpdateForTradeModalOpen, setIsUpdateForTradeModalOpen] = useState(false);
-  const [ownedInstancesToTrade, setOwnedInstancesToTrade] = useState([]);
+  const [caughtInstancesToTrade, setCaughtInstancesToTrade] = useState([]);
   const [currentBaseKey, setCurrentBaseKey] = useState(null); // New state for baseKey
 
   const [myInstances, setMyInstances] = useState();
@@ -206,23 +206,22 @@ const TradeDetails = ({
     // Store that object in state for passing to TradeProposal
     setMyInstances(hashedOwnershipData);
 
-    // 4) Filter to find all instances where the baseKey matches and user owns/caught it
-    const ownedInstances = userOwnershipData.filter((item) => {
+    // 4) Filter to find all instances where the baseKey matches and is_caught=true
+    const caughtInstances = userOwnershipData.filter((item) => {
       const parsedOwned = parsePokemonKey(item.instance_id);
-      const isCaught = (item.is_caught ?? item.is_owned) === true;
-      return parsedOwned.baseKey === selectedBaseKey && isCaught;
+      return parsedOwned.baseKey === selectedBaseKey && item.is_caught === true;
     });
 
-    console.log("ownedInstances after filter =>", ownedInstances);
+    console.log("caughtInstances after filter =>", caughtInstances);
 
-    // 5) If there are no matches, user does not own this Pokémon
-    if (ownedInstances.length === 0) {
-      alert("You do not own this Pokémon, so you cannot propose a trade.");
+    // 5) If there are no matches, user has no caught instance for this variant
+    if (caughtInstances.length === 0) {
+      alert("You do not have this Pokemon caught, so you cannot propose a trade.");
       return;
     }
 
     // 6) Check for instances that are also marked is_for_trade === true
-    const tradeableInstances = ownedInstances.filter(
+    const tradeableInstances = caughtInstances.filter(
       (item) => item.is_for_trade === true
     );
 
@@ -276,7 +275,7 @@ const TradeDetails = ({
     } else {
       // User owns it but it isn't listed for trade
       // Instead of alert, open the UpdateForTradeModal
-      setOwnedInstancesToTrade(ownedInstances);
+      setCaughtInstancesToTrade(caughtInstances);
       setCurrentBaseKey(selectedBaseKey); // Set the current baseKey
       setIsUpdateForTradeModalOpen(true);
     }
@@ -548,7 +547,7 @@ const TradeDetails = ({
       {/* Render the UpdateForTradeModal when needed */}
       {isUpdateForTradeModalOpen && (
         <UpdateForTradeModal
-          ownedInstances={ownedInstancesToTrade}
+          caughtInstances={caughtInstancesToTrade}
           baseKey={currentBaseKey} // Pass the baseKey here
           onClose={handleCancelTradeUpdate}
           onConfirm={handleConfirmTradeUpdate}

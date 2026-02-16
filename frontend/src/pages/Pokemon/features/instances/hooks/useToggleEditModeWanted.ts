@@ -37,7 +37,7 @@ const log = createScopedLogger('useToggleEditModeWanted');
 
 /**
  * Toggle edit mode for a Wanted entry and, when leaving edit mode,
- * build a per-instance patch map in the same shape used by OwnedInstance.
+ * build a per-instance patch map in the same shape used by CaughtInstance.
  */
 export const toggleEditMode = ({
   editMode,
@@ -102,4 +102,3 @@ export const toggleEditMode = ({
 
   setEditMode(!editMode);
 };
-

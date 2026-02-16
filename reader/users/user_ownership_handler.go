@@ -43,9 +43,6 @@ func GetInstancesByUsername(c *fiber.Ctx) error {
 		item["instance_id"] = in.InstanceID
 		item["user_id"] = user.UserID
 		item["username"] = user.Username
-		// Legacy aliases still used in parts of the frontend.
-		item["is_owned"] = in.IsCaught
-		item["is_unowned"] = !in.IsCaught
 		out[in.InstanceID] = item
 
 		if t := lastUpdateToTime(in.LastUpdate); t.After(latest) {

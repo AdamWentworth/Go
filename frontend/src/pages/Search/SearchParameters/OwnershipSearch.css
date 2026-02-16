@@ -23,7 +23,7 @@
   margin-top: -5px;
 }
 
-/* Dynamic content area (e.g., Owned, Trade, Wanted components) */
+/* Dynamic content area (e.g., Caught, Trade, Wanted components) */
 .ownership-content {
   flex: 1; /* Take up remaining space */
 }
@@ -62,8 +62,8 @@
 }
 
 /* Active button styles with their specific colors */
-.ownership-button.active.owned {
-  background-color: #2196F3; /* Blue for 'Owned' */
+.ownership-button.active.caught {
+  background-color: #2196F3; /* Blue for 'Caught' */
 }
 
 .ownership-button.active.trade {
@@ -74,8 +74,8 @@
   background-color: #F44336; /* Red for 'Wanted' */
 }
 
-.ownership-button.inactive.owned:hover,
-.ownership-button.active.owned:hover {
+.ownership-button.inactive.caught:hover,
+.ownership-button.active.caught:hover {
   background-color: #176bbe; /* Darker Blue */
 }
 

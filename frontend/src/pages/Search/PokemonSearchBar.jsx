@@ -7,6 +7,7 @@ import OwnershipSearch from './SearchParameters/OwnershipSearch.jsx';
 import './PokemonSearchBar.css';
 import { FaChevronUp, FaChevronDown, FaList, FaGlobe } from 'react-icons/fa';
 import { createScopedLogger } from '@/utils/logger';
+import { isCaughtOwnershipMode, toOwnershipApiValue } from './utils/ownershipMode';
 
 const log = createScopedLogger('PokemonSearchBar');
 
@@ -35,7 +36,7 @@ const PokemonSearchBar = ({
   const [gigantamax, setGigantamax] = useState(false);
   const [city, setCity] = useState('');
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
-  const [instanceData, setinstanceData] = useState('owned');
+  const [ownershipMode, setOwnershipMode] = useState('caught');
   const [coordinates, setCoordinates] = useState({ latitude: null, longitude: null });
   const [range, setRange] = useState(5);
   const [resultsLimit, setResultsLimit] = useState(5);
@@ -129,7 +130,7 @@ const PokemonSearchBar = ({
   const handleSearch = async () => {
     setErrorMessage('');
 
-    if (isShadow && (instanceData === 'trade' || instanceData === 'wanted')) {
+    if (isShadow && (ownershipMode === 'trade' || ownershipMode === 'wanted')) {
       setErrorMessage('Shadow Pokémon cannot be listed for trade or wanted');
       return;
     }
@@ -185,24 +186,24 @@ const PokemonSearchBar = ({
       trade_in_wanted_list: tradeInWantedList ? true : null,
       latitude: coordinates.latitude,
       longitude: coordinates.longitude,
-      ownership: instanceData,
+      ownership: toOwnershipApiValue(ownershipMode),
       range_km: range,
       limit: resultsLimit,
       dynamax,
       gigantamax,
     };
 
-    if (instanceData !== 'owned') {
+    if (!isCaughtOwnershipMode(ownershipMode)) {
       queryParams.attack_iv = null;
       queryParams.defense_iv = null;
       queryParams.stamina_iv = null;
     }
 
-    if (instanceData !== 'trade') {
+    if (ownershipMode !== 'trade') {
       queryParams.only_matching_trades = null;
     }
 
-    if (instanceData !== 'wanted') {
+    if (ownershipMode !== 'wanted') {
       queryParams.pref_lucky = null;
       queryParams.friendship_level = null;
       queryParams.already_registered = null;
@@ -271,8 +272,8 @@ const PokemonSearchBar = ({
 
               <div className="ownership-status">
                 <OwnershipSearch
-                  instanceData={instanceData}
-                  setinstanceData={setinstanceData}
+                  ownershipMode={ownershipMode}
+                  setOwnershipMode={setOwnershipMode}
                   ivs={ivs}
                   setIvs={setIvs}
                   isHundo={isHundo}
@@ -312,8 +313,8 @@ const PokemonSearchBar = ({
 
               <div className="ownership-status">
                 <OwnershipSearch
-                  instanceData={instanceData}
-                  setinstanceData={setinstanceData}
+                  ownershipMode={ownershipMode}
+                  setOwnershipMode={setOwnershipMode}
                   ivs={ivs}
                   setIvs={setIvs}
                   isHundo={isHundo}

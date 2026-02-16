@@ -48,7 +48,7 @@ export function useFusion(pokemon: PokemonVariant, alert: (msg: string) => void)
   const handleFusionToggle = async (fusionId: number) => {
     console.log('handleFusionToggle called with fusionId:', fusionId);
 
-    if (!ownership?.is_owned) {
+    if (!ownership?.is_caught) {
       alert('This Pokémon is not caught. You cannot fuse with a non-caught instance.');
       return;
     }

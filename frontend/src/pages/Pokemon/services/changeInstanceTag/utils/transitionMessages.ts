@@ -9,14 +9,12 @@ type Canonical = 'Caught' | 'Trade' | 'Wanted' | 'Missing' | 'Unknown';
 function normalizeStatus(status: string | InstanceStatus): Canonical {
   const s = String(status || '').trim().toLowerCase();
   switch (s) {
-    case 'owned':
     case 'caught':
       return 'Caught';
     case 'trade':
       return 'Trade';
     case 'wanted':
       return 'Wanted';
-    case 'unowned':
     case 'missing':
       return 'Missing';
     default:

@@ -17,8 +17,7 @@ export async function getCandidatesForIdWithVariants(
 
   const filtered = ownershipArray.filter((entry) => {
     if (!entry.instance_id?.startsWith(baseId.padStart(4, '0') + '-')) return false;
-    const isCaught = Boolean((entry as any).is_caught ?? (entry as any).is_owned);
-    if (!isCaught || entry.is_for_trade || entry.is_fused || entry.disabled) return false;
+    if (!entry.is_caught || entry.is_for_trade || entry.is_fused || entry.disabled) return false;
 
     if (!ignoreShiny) {
       const entryIsShiny = !!entry.shiny;

@@ -8,9 +8,9 @@ import Gender from '../../../../components/pokemonComponents/Gender';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
 import ConfirmationOverlay from '../ConfirmationOverlay';
-import './OwnedListView.css';
+import './CaughtListView.css';
 
-type OwnedListItem = {
+type CaughtListItem = {
   username?: string;
   instance_id?: string;
   distance?: number;
@@ -45,8 +45,8 @@ type OwnedListItem = {
   [key: string]: unknown;
 };
 
-type OwnedListViewProps = {
-  item: OwnedListItem;
+type CaughtListViewProps = {
+  item: CaughtListItem;
 };
 
 const formatDate = (dateString?: string): string => {
@@ -55,7 +55,7 @@ const formatDate = (dateString?: string): string => {
   return date.toISOString().split('T')[0];
 };
 
-const OwnedListView: React.FC<OwnedListViewProps> = ({ item }) => {
+const CaughtListView: React.FC<CaughtListViewProps> = ({ item }) => {
   const navigate = useNavigate();
   const imageUrl = URLSelect(
     item.pokemonInfo as Parameters<typeof URLSelect>[0],
@@ -83,7 +83,7 @@ const OwnedListView: React.FC<OwnedListViewProps> = ({ item }) => {
 
   const handleConfirmNavigation = () => {
     navigate(`/pokemon/${item.username ?? ''}`, {
-      state: { instanceId: item.instance_id ?? '', instanceData: 'Owned' },
+      state: { instanceId: item.instance_id ?? '', instanceData: 'Caught' },
     });
     setShowConfirmation(false);
   };
@@ -101,7 +101,7 @@ const OwnedListView: React.FC<OwnedListViewProps> = ({ item }) => {
         <MiniMap
           latitude={item.latitude}
           longitude={item.longitude}
-          instanceData="owned"
+          instanceData="caught"
         />
       </div>
 
@@ -210,4 +210,4 @@ const OwnedListView: React.FC<OwnedListViewProps> = ({ item }) => {
   );
 };
 
-export default OwnedListView;
+export default CaughtListView;

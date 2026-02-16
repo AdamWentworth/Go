@@ -33,8 +33,8 @@ const HighlightActionButton: React.FC<HighlightActionButtonProps> = ({
         {isExpanded && (
           <div className="filter-buttons">
             <button
-              className="filter-button Owned"
-              onClick={() => handleFilterClick('Owned')}
+              className="filter-button Caught"
+              onClick={() => handleFilterClick('Caught')}
               disabled={isUpdating}
             >
               Caught
@@ -67,7 +67,7 @@ const HighlightActionButton: React.FC<HighlightActionButtonProps> = ({
         {tagFilter !== '' && (
           <button
             className="transfer-button"
-            onClick={() => handleFilterClick('Unowned')}
+            onClick={() => handleFilterClick('Missing')}
             disabled={isUpdating}
           >
             Transfer ({highlightedCards.size})

@@ -19,7 +19,7 @@ export default function MegaPokemonModal({
 
   return (
     <MegaPokemonSelection
-      ownedPokemon={data.ownedPokemon}
+      caughtPokemon={data.caughtPokemon}
       variantKey={data.variantKey}
       megaForm={data.megaForm}
       onAssignExisting={() => onResolve('assignExisting')}

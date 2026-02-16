@@ -41,7 +41,7 @@
 }
 
 /* Updated styling for the location.png image (background-icon)
-   copied from OwnedInstance.css */
+   copied from CaughtInstance.css */
 .trade-instance .background-icon {
   position: absolute;
   top: 10px;         /* Push it down so it appears below the favorite icon */

@@ -29,7 +29,7 @@ import { buildInstanceChanges } from './utils/buildInstanceChanges';
 import HeaderRow from './sections/HeaderRow';
 import BackgroundSelector from './sections/BackgroundSelector';
 import ImageStage from './sections/ImageStage';
-import LevelArc from './components/Owned/LevelArc'; // full-width arc
+import LevelArc from './components/Caught/LevelArc'; // full-width arc
 import IdentityRow from './sections/IdentityRow';
 import LevelGenderRow from './sections/LevelGenderRow';
 import StatsRow from './sections/StatsRow';

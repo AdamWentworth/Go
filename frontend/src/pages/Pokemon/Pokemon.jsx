@@ -187,7 +187,7 @@ function Pokemon({ isOwnCollection }) {
   // 🔍 Foreign-profile loader
   useEffect(() => {
     if (!isUsernamePath || !urlUsername) return;
-    loadForeignProfile(urlUsername, () => setTagFilter('Caught')); // Caught (was Owned)
+    loadForeignProfile(urlUsername, () => setTagFilter('Caught'));
   }, [isUsernamePath, urlUsername, loadForeignProfile, setTagFilter]);
 
   const activeTags = isUsernamePath ? foreignTags ?? emptyTagBuckets : tags;

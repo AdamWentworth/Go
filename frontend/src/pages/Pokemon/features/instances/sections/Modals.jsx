@@ -2,7 +2,7 @@
 import React from 'react';
 import './Modals.css';
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
-import FuseOverlay from '../components/Owned/FuseOverlay';
+import FuseOverlay from '../components/Caught/FuseOverlay';
 
 const Modals = ({
   showBackgrounds,

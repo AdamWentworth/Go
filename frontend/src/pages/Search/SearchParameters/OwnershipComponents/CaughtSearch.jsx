@@ -1,16 +1,16 @@
-// OwnedSearch.jsx
+// CaughtSearch.jsx
 import React from 'react';
 import IV from '../../../../components/pokemonComponents/IV.jsx';
-import './OwnedSearch.css';
+import './CaughtSearch.css';
 
-const OwnedSearch = ({ ivs, onIvChange, isHundo, setIsHundo }) => {
+const CaughtSearch = ({ ivs, onIvChange, isHundo, setIsHundo }) => {
   // Pass changes directly via onIvChange.
   const handleChange = (newIvs) => {
     onIvChange(newIvs);
   };
 
   return (
-    <div className="owned-options-container">
+    <div className="caught-options-container">
       <div className="options-column">
         <IV
           mode="search"
@@ -24,4 +24,4 @@ const OwnedSearch = ({ ivs, onIvChange, isHundo, setIsHundo }) => {
   );
 };
 
-export default OwnedSearch;
+export default CaughtSearch;

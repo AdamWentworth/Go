@@ -310,7 +310,7 @@ function generatePokemonInstance(pokemonKey, userId) {
         }
 
         // ---------------------------
-        // 5. Decide the rest of your fields (moves, ownership, etc.)
+        // 5. Decide the rest of your fields (moves, caught/trade/wanted status, etc.)
         // ---------------------------
         let gender = 'Genderless';
 
@@ -360,32 +360,30 @@ function generatePokemonInstance(pokemonKey, userId) {
 
         let isForTrade = 0;
         let isWanted = 0;
-        let isOwned = 1;
-        let isUnowned = 0;
+        let isCaught = 1;
         let registered = 0;
 
         if (isShadow || form) {
             isForTrade = 0;
             isWanted = 0;
-            isOwned = 1;
+            isCaught = 1;
             registered = 1;
         } else {
             const tradeOrWantedRoll = faker.number.int({ min: 1, max: 100 });
             if (tradeOrWantedRoll <= 40) {
                 isForTrade = 1;
                 registered = 1;
-                isOwned = 1;
+                isCaught = 1;
             } else if (tradeOrWantedRoll > 40 && tradeOrWantedRoll <= 70) {
                 isWanted = 1;
-                isOwned = faker.datatype.boolean() ? 1 : 0;
-                isUnowned = isOwned === 0 ? 1 : 0;
+                isCaught = 0;
             } else {
-                isOwned = 1;
+                isCaught = 1;
                 registered = 1;
             }
         }
 
-        if (isOwned || isForTrade) {
+        if (isCaught || isForTrade) {
             registered = 1;
         }
 
@@ -429,8 +427,7 @@ function generatePokemonInstance(pokemonKey, userId) {
             charged_move1_id: selectedChargedMoves[0] ? selectedChargedMoves[0].move_id : 0,
             charged_move2_id: selectedChargedMoves[1] ? selectedChargedMoves[1].move_id : 0,
             gender,
-            is_unowned: isUnowned || 0,
-            is_owned: isOwned || 0,
+            is_caught: isCaught || 0,
             is_for_trade: isForTrade || 0,
             is_wanted: isWanted || 0,
             registered: registered || 0,

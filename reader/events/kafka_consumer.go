@@ -274,7 +274,7 @@ func doCompletedTradeSwap(tradeData map[string]interface{}, pokemonMapPtr *map[s
 		return
 	}
 
-	// 2) In memory, mark them as "owned" by the opposite user
+	// 2) In memory, mark them as "caught" by the opposite user
 	//    but do NOT save to DB. This is purely so the SSE shows them.
 	nowTs := time.Now().Unix()
 

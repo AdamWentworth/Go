@@ -13,21 +13,14 @@ export type OwnershipFilter = typeof VALID_FILTERS[number];
 const SPECIAL_FILTERS = ['favorites', 'most wanted', 'trade'] as const;
 type SpecialFilter = typeof SPECIAL_FILTERS[number];
 
-// Back-compat
-const FILTER_ALIASES: Record<string, OwnershipFilter | 'missing'> = {
-  owned: 'caught',
-  unowned: 'missing',
-};
-
 export function getFilteredPokemonsByOwnership(
   variants: PokemonVariant[],
   instancesData: Instances,
   filter: string,
   tagBuckets: TagBuckets
 ) {
-  const raw = (filter || '').toLowerCase().trim();
-  const mapped = FILTER_ALIASES[raw] ?? raw;
-  if (mapped === 'missing') {
+  const normalizedFilter = (filter || '').toLowerCase().trim();
+  if (normalizedFilter === 'missing') {
     return [] as Array<PokemonVariant & { instanceData: PokemonInstance }>;
   }
 
@@ -67,7 +60,7 @@ export function getFilteredPokemonsByOwnership(
   };
 
   // ---- derived children ----
-  if ((mapped as SpecialFilter) === 'favorites') {
+  if ((normalizedFilter as SpecialFilter) === 'favorites') {
     const bucket = tagBuckets.caught ?? {};
     const ids = Object.entries(bucket)
       .filter(([, item]) => (item as any).favorite)
@@ -75,7 +68,7 @@ export function getFilteredPokemonsByOwnership(
     return mapIds(ids);
   }
 
-  if ((mapped as SpecialFilter) === 'most wanted') {
+  if ((normalizedFilter as SpecialFilter) === 'most wanted') {
     const bucket = tagBuckets.wanted ?? {};
     const ids = Object.entries(bucket)
       .filter(([, item]) => (item as any).most_wanted)
@@ -83,7 +76,7 @@ export function getFilteredPokemonsByOwnership(
     return mapIds(ids);
   }
 
-  if ((mapped as SpecialFilter) === 'trade') {
+  if ((normalizedFilter as SpecialFilter) === 'trade') {
     // ✅ Trade is derived strictly from Caught
     const bucket = tagBuckets.caught ?? {};
     const ids = Object.entries(bucket)
@@ -93,7 +86,7 @@ export function getFilteredPokemonsByOwnership(
   }
 
   // ---- base parents ----
-  const filterKey = mapped as OwnershipFilter;
+  const filterKey = normalizedFilter as OwnershipFilter;
   if (!VALID_FILTERS.includes(filterKey)) {
     console.warn(`[usePokemonOwnershipFilter] Unknown filter "${filter}". Returning empty array.`);
     return [];

@@ -1,7 +1,7 @@
-/* OwnedSearch.css */
+/* CaughtSearch.css */
 
 /* Container styles for the options */
-.owned-options-container {
+.caught-options-container {
   display: flex;
   flex-direction: column; /* Arrange in a single column */
   align-items: flex-end; /* Align the items to the right */
@@ -38,7 +38,7 @@
 }
 
 @media (max-width: 480px) {
-  .owned-options-container {
+  .caught-options-container {
     width: 100%;
     align-items: flex-start;
   }
@@ -49,7 +49,7 @@
 }
 
 @media (min-width: 481px) and (max-width: 767px) {
-  .owned-options-container {
+  .caught-options-container {
     width: 100%;
     align-items: flex-start;
     height: 150px;
@@ -57,14 +57,14 @@
 }
 
 @media (min-width: 1024px) {
-  .ownership-row .owned-options-container {
+  .ownership-row .caught-options-container {
     align-items: center;
     margin-top: -30px;
   }
 }
 
 @media (min-width: 1024px) and (max-width: 1439px) {
-  .ownership-row .owned-options-container {
+  .ownership-row .caught-options-container {
     align-items: center;
     margin-top: -20px;
   }

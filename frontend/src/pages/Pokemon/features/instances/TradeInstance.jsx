@@ -8,7 +8,7 @@ import { useInstancesStore } from '@/features/instances/store/useInstancesStore'
 
 import EditSaveComponent from '@/components/EditSaveComponent';
 import CP from '@/components/pokemonComponents/CP';
-import NameComponent from './components/Owned/NameComponent';
+import NameComponent from './components/Caught/NameComponent';
 import Gender from '@/components/pokemonComponents/Gender';
 import Weight from '@/components/pokemonComponents/Weight';
 import Types from '@/components/pokemonComponents/Types';
@@ -19,8 +19,8 @@ import DateCaughtComponent from '@/components/pokemonComponents/DateCaught';
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
 import Level from '@/components/pokemonComponents/Level';
 import IV from '@/components/pokemonComponents/IV';
-import MaxComponent from './components/Owned/MaxComponent';
-import MaxMovesComponent from './components/Owned/MaxMovesComponent';
+import MaxComponent from './components/Caught/MaxComponent';
+import MaxMovesComponent from './components/Caught/MaxMovesComponent';
 
 import { determineImageUrl } from '@/utils/imageHelpers';
 

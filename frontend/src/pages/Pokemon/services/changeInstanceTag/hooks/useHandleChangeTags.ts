@@ -33,14 +33,12 @@ interface useHandleChangeTagsProps {
 function normalizeStatus(status: string | InstanceStatus): InstanceStatus {
   const s = String(status || '').trim().toLowerCase();
   switch (s) {
-    case 'owned':
     case 'caught':
       return 'Caught' as InstanceStatus;
     case 'trade':
       return 'Trade' as InstanceStatus;
     case 'wanted':
       return 'Wanted' as InstanceStatus;
-    case 'unowned':
     case 'missing':
       return 'Missing' as InstanceStatus;
     default:

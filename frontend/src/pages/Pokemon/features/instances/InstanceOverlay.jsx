@@ -16,8 +16,6 @@ const dbg = (...args) => { if (DEBUG_BG) console.log('[BG]', ...args); };
 const toKey = (v) => (v ?? '').toString().trim().toLowerCase();
 const CANON = (k) => {
   const key = toKey(k);
-  if (key === 'owned') return 'caught';
-  if (key === 'unowned') return 'missing';
   return key;
 };
 
@@ -172,7 +170,7 @@ const InstanceOverlay = ({
           </div>
         );
       case 'missing':
-        return <div className="missing-placeholder">Unowned Instance Component</div>;
+        return <div className="missing-placeholder">Missing Instance Component</div>;
       case 'trade':
         return (
           <div className={`trade-instance-overlay ${isSmallScreen ? 'small-screen' : ''}`}>

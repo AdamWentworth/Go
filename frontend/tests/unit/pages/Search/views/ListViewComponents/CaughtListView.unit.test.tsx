@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import OwnedListView from '@/pages/Search/views/ListViewComponents/OwnedListView';
+import CaughtListView from '@/pages/Search/views/ListViewComponents/CaughtListView';
 
 const navigateMock = vi.fn();
 
@@ -68,13 +68,13 @@ const baseItem = {
   pokemonInfo: { moves: [] },
 };
 
-describe('OwnedListView', () => {
+describe('CaughtListView', () => {
   beforeEach(() => {
     navigateMock.mockReset();
   });
 
-  it('renders key owned details', () => {
-    render(<OwnedListView item={baseItem} />);
+  it('renders key caught details', () => {
+    render(<CaughtListView item={baseItem} />);
 
     expect(screen.getByText('Distance: 1.23 km')).toBeInTheDocument();
     expect(screen.getByTestId('mini-map')).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe('OwnedListView', () => {
   });
 
   it('opens confirmation from center click and closes on No', () => {
-    const { container } = render(<OwnedListView item={baseItem} />);
+    const { container } = render(<CaughtListView item={baseItem} />);
 
     fireEvent.click(container.querySelector('.left-column') as Element);
     expect(
@@ -110,13 +110,13 @@ describe('OwnedListView', () => {
   });
 
   it('navigates to user catalog when confirmation is accepted', () => {
-    const { container } = render(<OwnedListView item={baseItem} />);
+    const { container } = render(<CaughtListView item={baseItem} />);
 
     fireEvent.click(container.querySelector('.center-column') as Element);
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
 
     expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash', {
-      state: { instanceId: 'inst-1', instanceData: 'Owned' },
+      state: { instanceId: 'inst-1', instanceData: 'Caught' },
     });
   });
 });

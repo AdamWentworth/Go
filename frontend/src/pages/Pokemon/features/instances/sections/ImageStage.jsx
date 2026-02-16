@@ -1,7 +1,7 @@
 // sections/ImageStage.jsx
 import React from 'react';
 import './ImageStage.css';
-import LevelArc from '../components/Owned/LevelArc';
+import LevelArc from '../components/Caught/LevelArc';
 
 const ImageStage = ({
   level,

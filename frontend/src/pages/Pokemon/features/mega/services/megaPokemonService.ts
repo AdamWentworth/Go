@@ -43,8 +43,7 @@ export async function createNewMega(
     instance_id  : instanceId,
     mega         : true,
     is_mega      : true,
-    is_owned     : true,
-    is_unowned   : false,
+    is_caught    : true,
     ...(megaForm && { mega_form: megaForm }),
   });
 

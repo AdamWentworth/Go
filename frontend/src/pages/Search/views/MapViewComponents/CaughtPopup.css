@@ -1,7 +1,7 @@
-/* OwnedPopup.css */
+/* CaughtPopup.css */
 
 /* General Styling for Popup Container */
-.owned-popup-container {
+.caught-popup-container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -9,7 +9,7 @@
 }
 
 /* Adjust the image styling */
-.owned-popup-container .pokemon-image {
+.caught-popup-container .pokemon-image {
     width: 50%;
     max-width: 150px;
     height: auto;
@@ -19,42 +19,42 @@
 }
 
 /* Ensure IVDisplay takes full width */
-.owned-popup-container .iv-display-container {
+.caught-popup-container .iv-display-container {
     width: 100%;
     box-sizing: border-box;
 }
 
 /* Header styling */
-.owned-popup-header {
+.caught-popup-header {
     font-size: 1.1em;
     margin-bottom: 5px;
 }
 
 /* Shiny indicator size */
-.owned-popup-container .shiny-indicator {
+.caught-popup-container .shiny-indicator {
     font-size: 1em;
 }
 
 /* Emphasis text at the bottom */
-.owned-popup-container em {
+.caught-popup-container em {
     font-size: 0.9em;
     margin-top: 10px;
 }
 
-.owned-popup-container p {
+.caught-popup-container p {
     margin-block-start: 5px;
     margin-block-end: 5px;
 }
 
 /* Adjust font size and spacing in details */
-.owned-popup-container .pokemon-details {
+.caught-popup-container .pokemon-details {
     font-size: 12px;
     line-height: 1.2;
     text-align: center;
 }
 
-/* MoveDisplay styling within OwnedPopup */
-.owned-popup-container .moves-container {
+/* MoveDisplay styling within CaughtPopup */
+.caught-popup-container .moves-container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -62,7 +62,7 @@
     margin-top: 0px;
 }
 
-.owned-popup-container .moves-container .move {
+.caught-popup-container .moves-container .move {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -70,7 +70,7 @@
     margin-bottom: 5px;
 }
 
-.owned-popup-container .moves-container .move p {
+.caught-popup-container .moves-container .move p {
     margin-left: 5px;
     font-size: 10px;
     margin-block-start: 0px;
@@ -87,10 +87,10 @@
 
 /* Small screens */
 @media (max-width: 480px) {
-    .owned-popup-container .moves-container .move p {
+    .caught-popup-container .moves-container .move p {
         font-size: 12px;
     }
-    .owned-popup-container .moves-container .move-type-icon {
+    .caught-popup-container .moves-container .move-type-icon {
         width: 16px;
         height: 16px;
     }
@@ -98,10 +98,10 @@
 
 /* Medium screens */
 @media (min-width: 481px) and (max-width: 767px) {
-    .owned-popup-container .moves-container .move p {
+    .caught-popup-container .moves-container .move p {
         font-size: 14px;
     }
-    .owned-popup-container .moves-container .move-type-icon {
+    .caught-popup-container .moves-container .move-type-icon {
         width: 18px;
         height: 18px;
     }
@@ -109,10 +109,10 @@
 
 /* Large screens */
 @media (min-width: 768px) and (max-width: 1023px) {
-    .owned-popup-container .moves-container .move p {
+    .caught-popup-container .moves-container .move p {
         font-size: 10px;
     }
-    .owned-popup-container .moves-container .move-type-icon {
+    .caught-popup-container .moves-container .move-type-icon {
         width: 14px;
         height: 14px;
     }
@@ -120,10 +120,10 @@
 
 /* Extra-large screens */
 @media (min-width: 1024px) {
-    .owned-popup-container .moves-container .move p {
+    .caught-popup-container .moves-container .move p {
         font-size: 12px;
     }
-    .owned-popup-container .moves-container .move-type-icon {
+    .caught-popup-container .moves-container .move-type-icon {
         width: 16px;
         height: 16px;
     }

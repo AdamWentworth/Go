@@ -385,7 +385,7 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 		switch ownership {
 		case "trade":
 			query = query.Where("is_for_trade = ?", true)
-		case "owned":
+		case "caught":
 			query = query.Where("is_caught = ?", true)
 		case "wanted":
 			query = query.Where("is_wanted = ?", true)
@@ -550,7 +550,7 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 
 			// If no match is found, skip this instance
 			if !matchFound {
-				logrus.Infof("No matching trade found for instance %s owned by user %s; skipping instance.", instance.InstanceID, instanceUserID)
+				logrus.Infof("No matching trade found for instance %s belonging to user %s; skipping instance.", instance.InstanceID, instanceUserID)
 				for _, reason := range mismatchReasons {
 					logrus.Info(reason)
 				}
@@ -609,7 +609,7 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 
 			// If no match is found, skip this instance
 			if !matchFound {
-				logrus.Infof("No matching trade found in trade_list for instance %s owned by user %s; skipping instance.", instance.InstanceID, instanceUserID)
+				logrus.Infof("No matching trade found in trade_list for instance %s belonging to user %s; skipping instance.", instance.InstanceID, instanceUserID)
 				for _, reason := range mismatchReasons {
 					logrus.Info(reason)
 				}
@@ -642,8 +642,6 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 			"registered":       instance.Registered,
 			"favorite":         instance.Favorite,
 			"is_caught":        instance.IsCaught,
-			"is_owned":         instance.IsCaught,
-			"is_unowned":       !instance.IsCaught,
 			"is_for_trade":     instance.IsForTrade,
 			"is_wanted":        instance.IsWanted,
 			"location_caught":  instance.LocationCaught,
@@ -726,8 +724,6 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 						"registered":       tradeInstance.Registered,
 						"favorite":         tradeInstance.Favorite,
 						"is_caught":        tradeInstance.IsCaught,
-						"is_owned":         tradeInstance.IsCaught,
-						"is_unowned":       !tradeInstance.IsCaught,
 						"is_for_trade":     tradeInstance.IsForTrade,
 						"is_wanted":        tradeInstance.IsWanted,
 						"location_caught":  tradeInstance.LocationCaught,
@@ -834,8 +830,6 @@ func SearchPokemonInstances(c *fiber.Ctx) error {
 						"registered":       wantedInstance.Registered,
 						"favorite":         wantedInstance.Favorite,
 						"is_caught":        wantedInstance.IsCaught,
-						"is_owned":         wantedInstance.IsCaught,
-						"is_unowned":       !wantedInstance.IsCaught,
 						"is_for_trade":     wantedInstance.IsForTrade,
 						"is_wanted":        wantedInstance.IsWanted,
 						"location_caught":  wantedInstance.LocationCaught,

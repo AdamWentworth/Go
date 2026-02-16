@@ -199,7 +199,7 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
 
   /**
    * Find an existing mirror by exact variant_id (normalized)
-   * and flags wanted/unowned/unlisted. No base-prefix matching.
+   * and flags wanted/not-caught/not-trade. No base-prefix matching.
    */
   const findExistingMirrorKey = (): string | undefined => {
     const targetVariant = getVariantId(pokemon);
@@ -221,11 +221,10 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
       if (instVariant !== targetVariant) return false;
 
       const wanted = !!(inst as any).is_wanted;
-      // Treat either is_owned or is_caught as “owned”
-      const ownedish = !!(inst as any).is_owned || !!(inst as any).is_caught;
+      const isCaught = !!(inst as any).is_caught;
       const forTrade = !!(inst as any).is_for_trade;
 
-      if (!(wanted && !ownedish && !forTrade)) return false;
+      if (!(wanted && !isCaught && !forTrade)) return false;
 
       const instPidNum = asNumber((inst as any).pokemon_id);
       if (pidNum != null && instPidNum != null && instPidNum !== pidNum) return false;

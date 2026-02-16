@@ -60,15 +60,15 @@ describe('getFilteredPokemonsByOwnership', () => {
     expect(result.map((r) => r.instanceData?.instance_id)).toEqual(['inst-1', 'inst-2']);
   });
 
-  it('supports owned alias -> caught', () => {
+  it('returns empty for deprecated/unknown aliases', () => {
     const result = getFilteredPokemonsByOwnership(
       makeVariants() as any,
       makeInstances(),
-      'owned',
+      'legacy-alias',
       makeTags(),
     );
 
-    expect(result).toHaveLength(2);
+    expect(result).toEqual([]);
   });
 
   it('returns trade as a derived filter from caught', () => {
@@ -107,13 +107,13 @@ describe('getFilteredPokemonsByOwnership', () => {
     expect(result[0].instanceData?.instance_id).toBe('inst-2');
   });
 
-  it('returns empty for unknown and unowned aliases', () => {
+  it('returns empty for unknown filters and missing', () => {
     expect(
       getFilteredPokemonsByOwnership(makeVariants() as any, makeInstances(), 'unknown', makeTags()),
     ).toEqual([]);
 
     expect(
-      getFilteredPokemonsByOwnership(makeVariants() as any, makeInstances(), 'unowned', makeTags()),
+      getFilteredPokemonsByOwnership(makeVariants() as any, makeInstances(), 'missing', makeTags()),
     ).toEqual([]);
   });
 });
