@@ -16,9 +16,9 @@ import {
 type SearchView = 'list' | 'map';
 
 type SelectedMoves = {
-  fastMove: number | string | null;
-  chargedMove1: number | string | null;
-  chargedMove2: number | string | null;
+  fastMove: number | '' | null;
+  chargedMove1: number | '' | null;
+  chargedMove2: number | '' | null;
 };
 
 type Coordinates = {
@@ -37,9 +37,9 @@ export type PokemonSearchQueryParams = {
   shiny: boolean;
   shadow: boolean;
   costume_id: number | null;
-  fast_move_id: number | string | null;
-  charged_move_1_id: number | string | null;
-  charged_move_2_id: number | string | null;
+  fast_move_id: number | '' | null;
+  charged_move_1_id: number | '' | null;
+  charged_move_2_id: number | '' | null;
   gender: string | null;
   background_id: number | null;
   attack_iv: number | null;
@@ -89,14 +89,14 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
   const [pokemon, setPokemon] = useState('');
   const [isShiny, setIsShiny] = useState(false);
   const [isShadow, setIsShadow] = useState(false);
-  const [costume, setCostume] = useState('');
+  const [costume, setCostume] = useState<string | null>('');
   const [selectedForm, setSelectedForm] = useState('');
   const [selectedMoves, setSelectedMoves] = useState<SelectedMoves>({
     fastMove: null,
     chargedMove1: null,
     chargedMove2: null,
   });
-  const [selectedGender, setSelectedGender] = useState('Any');
+  const [selectedGender, setSelectedGender] = useState<string | null>('Any');
   const [selectedBackgroundId, setSelectedBackgroundId] = useState<number | null>(
     null,
   );
