@@ -35,6 +35,11 @@ This backlog converts the current frontend audit into an execution plan focused 
 28. TS migration slice: converted `usePokemonDetails.js` to TypeScript and expanded hook regression coverage to include object-map variant resolution.
 29. TS migration slice: converted `reportWebVitals.js` to TypeScript and added regression coverage for callback/no-callback registration behavior.
 30. TS migration slice: converted `ThemeContext.jsx` to TypeScript, tightened provider typing/storage parsing, and added context regression tests for init/toggle/provider-guard behavior.
+31. TS migration slice: converted `SearchModeToggle.jsx` to TypeScript and added unit coverage for welcome/active-mode/click dispatch behavior.
+32. TS migration slice: converted `ConfirmationOverlay.jsx` to TypeScript, rewired search popups/list views, and added regression tests for confirm/close/propagation behavior.
+33. TS migration slice: converted `Search/views/ListView.jsx` to TypeScript, removed noisy console logging, fixed scroll-to-top ref wiring, and added list view regression coverage.
+34. TS migration slice: converted `Search/views/ListViewComponents/OwnedListView.jsx` to TypeScript with safer optional move access and added regression tests for rendering + overlay navigation flows.
+35. TS migration slice: converted `Search/views/ListViewComponents/TradeListView.jsx` to TypeScript and added regression tests for wanted-list image resolution and confirmation navigation behavior.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
@@ -248,4 +253,4 @@ This backlog converts the current frontend audit into an execution plan focused 
 
 ## Immediate Next Step
 
-Continue P1.3 incremental JS->TS migration for low-risk UI/context slices with tests-first changes (next candidates: `SearchModeToggle.jsx`, `ConfirmationOverlay.jsx`), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.
+Continue P1.3 incremental JS->TS migration for low-risk UI/context slices with tests-first changes (next candidates: `Search/views/ListViewComponents/WantedListView.jsx`, `Search/views/MapViewComponents/OwnedPopup.jsx`), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.

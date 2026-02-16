@@ -7,7 +7,7 @@ import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay.js
 import Gender from '../../../../components/pokemonComponents/Gender';
 import CP from '../../../../components/pokemonComponents/CP.jsx';
 import FriendshipLevel from '../../../../components/pokemonComponents/FriendshipLevel.jsx';
-import ConfirmationOverlay from '../ConfirmationOverlay.jsx'; // Import ConfirmationOverlay
+import ConfirmationOverlay from '../ConfirmationOverlay'; // Import ConfirmationOverlay
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
 import './WantedListView.css';

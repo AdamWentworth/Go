@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PokemonSearchBar from './PokemonSearchBar.jsx';
 import TrainerSearchBar from './TrainerSearchBar.jsx';
-import SearchModeToggle from './SearchModeToggle.jsx';
-import ListView from './views/ListView.jsx';
+import SearchModeToggle from './SearchModeToggle';
+import ListView from './views/ListView';
 import MapView from './views/MapView.jsx';
 import LoadingSpinner from '../../components/LoadingSpinner.jsx';
 import axios from 'axios';
