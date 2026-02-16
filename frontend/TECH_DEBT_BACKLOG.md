@@ -58,6 +58,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 51. TS migration slice: converted `Raid/RaidBossSelector.jsx` and `Raid/Table.jsx` to TypeScript, removed runtime PropTypes from table rendering, rewired `Raid.jsx` imports, and added regression tests for datalist input behavior and raid table rendering/empty-state rows.
 52. TS migration slice: converted `Trades/Trades.jsx`, `Trades/TradeStatusButtons.jsx`, and `Trades/TradeList.jsx` to TypeScript, introduced shared `Trades/types.ts` status typing, hardened current-user parsing for trade filtering, and added regression tests for status controls, list filtering behavior, and parent-to-child store wiring.
 53. TS migration slice: converted the Home page walkthrough stack (`Home`, `HomeHeader`, `HowItWorks`, navigation/search/pokemon sections, and Pokemon showcase cards) from `.jsx` to `.tsx`, standardized extensionless imports, and added regression tests for home rendering/auth-button visibility and How It Works section content.
+54. TS migration slice: converted `Trades/TradeCard.jsx` and `Trades/components/PartnerInfoModal.jsx` to TypeScript, standardized trade-card import wiring, typed partner-info map rendering/copy behavior, and added regression tests for trade status routing/confirmation gating and partner-info rendering/copy/location fallbacks.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.

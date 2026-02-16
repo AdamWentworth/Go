@@ -9,6 +9,7 @@ import type {
   TradeStatusFilter,
 } from './types';
 import type { Instances } from '@/types/instances';
+import type { PokemonVariant } from '@/types/pokemonVariants';
 
 import './TradeList.css';
 
@@ -17,7 +18,7 @@ interface TradeListProps {
   relatedInstances: RelatedInstancesMap;
   selectedStatus: TradeStatusFilter;
   setInstances: (updatedData: Instances) => void | Promise<void>;
-  variants: unknown[];
+  variants: PokemonVariant[];
   instances?: Instances | null;
   loading: boolean;
   periodicUpdates: () => void;

@@ -9,7 +9,7 @@ import { TRADE_FRIENDSHIP_LEVELS } from '../../../db/indexedDB';
 import { formatDate } from '../../../utils/formattingHelpers';
 import { hasDetails } from '../helpers/hasDetails';
 import { revealPartnerInfo } from '../../../services/tradeService';
-import PartnerInfoModal from '../components/PartnerInfoModal.jsx';
+import PartnerInfoModal from '../components/PartnerInfoModal';
 import './PendingTradeView.css';
 
 const PendingTradeView = ({
