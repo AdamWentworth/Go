@@ -44,6 +44,9 @@ This backlog converts the current frontend audit into an execution plan focused 
 37. Reliability slice: hardened `Trade/WantedListDisplay.jsx` and `Wanted/TradeListDisplay.jsx` against partial list payloads, removed debug-era noise/invalid sort args, and added unit regression coverage for filtering, fallback images, and click/toggle behavior.
 38. TS migration slice: converted `Trade/WantedListDisplay.jsx` and `Wanted/TradeListDisplay.jsx` to TypeScript (`.tsx`) with typed props/state and updated parent import wiring.
 39. TS migration slice: converted `Search/views/ListViewComponents/WantedListView.jsx` to TypeScript with typed search-row models, safer date handling, and dedicated list-view regression tests for trade-list rendering and confirmation navigation.
+40. TS migration slice: converted `Search/views/MapViewComponents/WantedPopup.jsx` to TypeScript (`.tsx`) with typed popup payloads and added popup regression tests for trade-match rendering, confirmation navigation, and outside-click close behavior.
+41. Compatibility hardening slice: updated `components/pokemonComponents/IV.tsx` to support legacy `item` payload callers while preserving typed `ivs` mode and preventing TS/runtime regressions across Search popups.
+42. TS migration slice: converted `Search/views/MapViewComponents/TradePopup.jsx` and `CaughtPopup.jsx` to TypeScript (`.tsx`), rewired `MapView` imports, and added regression tests for list rendering, confirmation navigation, and legacy move-id fallback behavior.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
@@ -257,4 +260,4 @@ This backlog converts the current frontend audit into an execution plan focused 
 
 ## Immediate Next Step
 
-Continue P1.3 incremental JS->TS migration for low-risk UI/context slices with tests-first changes (next candidate: `Search/views/ListViewComponents/WantedListView.jsx`), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.
+Continue P1.3 incremental JS->TS migration for low-risk UI/context slices with tests-first changes (next candidate: `Search/views/MapView.jsx` or Trades map/detail view components), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.

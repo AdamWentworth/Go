@@ -24,7 +24,7 @@ vi.mock('@/pages/Search/views/ListViewComponents/MiniMap.jsx', () => ({
   default: () => <div data-testid="mini-map" />,
 }));
 
-vi.mock('@/components/pokemonComponents/IV.jsx', () => ({
+vi.mock('@/components/pokemonComponents/IV', () => ({
   default: () => <div data-testid="ivs" />,
 }));
 

@@ -21,9 +21,9 @@ import { WKT } from 'ol/format'; // Add the WKT format parser
 import './MapView.css';
 import { useTheme } from '../../../contexts/ThemeContext';
 
-import CaughtPopup from './MapViewComponents/CaughtPopup.jsx';
-import TradePopup from './MapViewComponents/TradePopup.jsx';
-import WantedPopup from './MapViewComponents/WantedPopup.jsx';
+import CaughtPopup from './MapViewComponents/CaughtPopup';
+import TradePopup from './MapViewComponents/TradePopup';
+import WantedPopup from './MapViewComponents/WantedPopup';
 import { findVariantForInstance } from '../utils/findVariantForInstance';
 
 const MapView = ({ data, instanceData, pokemonCache }) => {

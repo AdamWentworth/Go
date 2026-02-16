@@ -5,17 +5,47 @@ import './IV.css';
 
 type StatKey = 'Attack' | 'Defense' | 'Stamina';
 
+type IvValues = Record<StatKey, number | '' | null>;
+
+type LegacyIvItem = {
+  attack_iv?: number | string | null;
+  defense_iv?: number | string | null;
+  stamina_iv?: number | string | null;
+};
+
 type Props = {
-  ivs?: Record<StatKey, number | '' | null>;
+  ivs?: IvValues;
+  // Compatibility for legacy callers that still pass full instance payloads.
+  item?: LegacyIvItem | null;
   editMode?: boolean;
-  onIvChange: (newIVs: Record<StatKey, number | '' | null>) => void;
+  onIvChange?: (newIVs: IvValues) => void;
   mode?: 'search' | 'edit' | string;
   isHundo?: boolean;
   setIsHundo?: (value: boolean) => void;
 };
 
+const DEFAULT_IVS: IvValues = { Attack: '', Defense: '', Stamina: '' };
+
+const toIvNumber = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = parseInt(value, 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+  return null;
+};
+
+const toLegacyIvs = (item?: LegacyIvItem | null): IvValues => ({
+  Attack: toIvNumber(item?.attack_iv),
+  Defense: toIvNumber(item?.defense_iv),
+  Stamina: toIvNumber(item?.stamina_iv),
+});
+
 const IV: React.FC<Props> = ({
-  ivs = { Attack: '', Defense: '', Stamina: '' },
+  ivs,
+  item,
   editMode = false,
   onIvChange,
   mode,
@@ -23,22 +53,25 @@ const IV: React.FC<Props> = ({
   setIsHundo = () => {},
 }) => {
   const isSearchMode = mode === 'search';
+  const emitIvChange = onIvChange ?? (() => {});
+  const activeIvs: IvValues = ivs ?? (item ? toLegacyIvs(item) : DEFAULT_IVS);
 
   const inputRefs: Record<StatKey, React.RefObject<HTMLInputElement | null>> = {
     Attack: useRef<HTMLInputElement>(null),
     Defense: useRef<HTMLInputElement>(null),
     Stamina: useRef<HTMLInputElement>(null),
-  };  
+  };
 
   const clampValue = (val: number | string | null): number => {
     const n = parseInt(String(val), 10);
-    return isNaN(n) ? 0 : Math.max(0, Math.min(15, n));
+    return Number.isNaN(n) ? 0 : Math.max(0, Math.min(15, n));
   };
 
-  const getBarWidth = (val: number | string | null): number => (clampValue(val) / 15) * 75;
+  const getBarWidth = (val: number | string | null): number =>
+    (clampValue(val) / 15) * 75;
 
   const sanitizedIvs = Object.fromEntries(
-    Object.entries(ivs).map(([key, val]) => [key, val === '' ? null : val])
+    Object.entries(activeIvs).map(([key, val]) => [key, val === '' ? null : val]),
   ) as Record<StatKey, number | null>;
 
   return (
@@ -78,7 +111,7 @@ const IV: React.FC<Props> = ({
               alt="Reset"
               className="iv-reset-image"
               onClick={() => {
-                onIvChange({ Attack: null, Defense: null, Stamina: null });
+                emitIvChange({ Attack: null, Defense: null, Stamina: null });
                 setIsHundo(false);
               }}
             />
@@ -90,19 +123,23 @@ const IV: React.FC<Props> = ({
                 const newVal = !isHundo;
                 setIsHundo(newVal);
                 if (newVal) {
-                  onIvChange({ Attack: 15, Defense: 15, Stamina: 15 });
+                  emitIvChange({ Attack: 15, Defense: 15, Stamina: 15 });
                 }
               }}
             />
           </div>
           {(['Attack', 'Defense', 'Stamina'] as StatKey[]).map((statKey) => {
             const label = statKey === 'Stamina' ? 'HP' : statKey;
-            const val = ivs[statKey];
+            const val = activeIvs[statKey];
             const barWidth = getBarWidth(val);
             const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
               const raw = e.target.value;
-              const parsed = raw === '' ? '' : Math.min(15, Math.max(0, parseInt(raw, 10)));
-              onIvChange({ ...ivs, [statKey]: isNaN(parsed as number) ? '' : parsed });
+              const parsed =
+                raw === '' ? '' : Math.min(15, Math.max(0, parseInt(raw, 10)));
+              emitIvChange({
+                ...activeIvs,
+                [statKey]: Number.isNaN(parsed as number) ? '' : parsed,
+              });
             };
 
             return (
@@ -142,8 +179,12 @@ const IV: React.FC<Props> = ({
 
             const handleIvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
               const raw = e.target.value;
-              const parsed = raw === '' ? null : Math.min(15, Math.max(0, parseInt(raw, 10)));
-              onIvChange({ ...sanitizedIvs, [type]: isNaN(parsed as number) ? null : parsed });
+              const parsed =
+                raw === '' ? null : Math.min(15, Math.max(0, parseInt(raw, 10)));
+              emitIvChange({
+                ...sanitizedIvs,
+                [type]: Number.isNaN(parsed as number) ? null : parsed,
+              });
             };
 
             const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -166,7 +207,7 @@ const IV: React.FC<Props> = ({
                     min={0}
                     max={15}
                     className="iv-input"
-                    placeholder="—"
+                    placeholder="-"
                   />
                 </div>
                 <div className="iv-display-bar-bg" />

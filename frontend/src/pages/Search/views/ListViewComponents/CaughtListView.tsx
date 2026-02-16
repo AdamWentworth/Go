@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CP from '../../../../components/pokemonComponents/CP.jsx';
 import MiniMap from './MiniMap.jsx';
-import IV from '../../../../components/pokemonComponents/IV.jsx';
+import IV from '../../../../components/pokemonComponents/IV';
 import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay.jsx';
 import Gender from '../../../../components/pokemonComponents/Gender';
 import { URLSelect } from '../../utils/URLSelect';
