@@ -3,14 +3,15 @@
 import axios from 'axios';
 
 interface Trade {
-  trade_id: string;
-  usernames: string[];
+  trade_id?: string;
+  usernames?: string[];
   [key: string]: unknown;
 }
 
-interface PartnerInfo {
-  trainerCode: string;
-  pokemonGoName: string;
+export interface PartnerInfo {
+  trainerCode?: string | null;
+  pokemonGoName?: string | null;
+  location?: string | null;
 }
 
 /**
