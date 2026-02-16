@@ -1,11 +1,30 @@
-// sections/PowerPanel.jsx
 import React from 'react';
 import './PowerPanel.css';
-import MaxComponent from '../components/Caught/MaxComponent.jsx';
-import MaxMovesComponent from '../components/Caught/MaxMovesComponent.jsx';
+import MaxComponent from '../components/Caught/MaxComponent';
+import MaxMovesComponent from '../components/Caught/MaxMovesComponent';
 import MegaComponent from '../components/Caught/MegaComponent';
 
-const PowerPanel = ({
+interface PowerPanelProps {
+  pokemon: Record<string, unknown>;
+  editMode: boolean;
+  megaData: Record<string, unknown>;
+  setMegaData: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
+  megaEvolutions: unknown[];
+  isShadow: boolean;
+  name: string;
+  dynamax: boolean;
+  gigantamax: boolean;
+  showMaxOptions: boolean;
+  onToggleMax: () => void;
+  maxAttack: string;
+  maxGuard: string;
+  maxSpirit: string;
+  onMaxAttackChange: (value: string) => void;
+  onMaxGuardChange: (value: string) => void;
+  onMaxSpiritChange: (value: string) => void;
+}
+
+const PowerPanel: React.FC<PowerPanelProps> = ({
   pokemon,
   editMode,
   megaData,
@@ -28,7 +47,7 @@ const PowerPanel = ({
     <div className="max-mega-container">
       <div className="max-component">
         <MaxComponent
-          pokemon={pokemon}
+          pokemon={pokemon as never}
           editMode={editMode}
           dynamax={dynamax}
           gigantamax={gigantamax}
@@ -38,10 +57,10 @@ const PowerPanel = ({
       </div>
       <div className="mega-component">
         <MegaComponent
-          megaData={megaData}
-          setMegaData={setMegaData}
+          megaData={megaData as never}
+          setMegaData={setMegaData as never}
           editMode={editMode}
-          megaEvolutions={megaEvolutions}
+          megaEvolutions={megaEvolutions as never}
           isShadow={isShadow}
           name={name}
         />
@@ -49,10 +68,12 @@ const PowerPanel = ({
     </div>
 
     <MaxMovesComponent
-      pokemon={pokemon}
+      pokemon={pokemon as never}
       editMode={editMode}
       showMaxOptions={showMaxOptions}
-      setShowMaxOptions={() => { /* kept for compatibility; no-op here */ }}
+      setShowMaxOptions={() => {
+        // Kept for compatibility; no-op here.
+      }}
       maxAttack={maxAttack}
       maxGuard={maxGuard}
       maxSpirit={maxSpirit}

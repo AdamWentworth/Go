@@ -1,11 +1,21 @@
-// sections/IdentityRow.jsx
 import React from 'react';
 import './IdentityRow.css';
 import LuckyComponent from '../components/Caught/LuckyComponent';
 import NameComponent from '../components/Caught/NameComponent';
 import PurifyComponent from '../components/Caught/PurifyComponent';
 
-const IdentityRow = ({
+interface IdentityRowProps {
+  pokemon: Record<string, unknown>;
+  isLucky: boolean;
+  isShadow: boolean;
+  isPurified: boolean;
+  editMode: boolean;
+  onToggleLucky: (value: boolean) => void;
+  onNicknameChange: (value: string | null) => void;
+  onTogglePurify: (value: boolean) => void;
+}
+
+const IdentityRow: React.FC<IdentityRowProps> = ({
   pokemon,
   isLucky,
   isShadow,
@@ -18,7 +28,7 @@ const IdentityRow = ({
   <div className="purify-name-shadow-container">
     <div className="lucky-component">
       <LuckyComponent
-        pokemon={pokemon}
+        pokemon={pokemon as never}
         onToggleLucky={onToggleLucky}
         isLucky={isLucky}
         editMode={editMode}
@@ -28,7 +38,7 @@ const IdentityRow = ({
 
     <div className="name-container">
       <NameComponent
-        pokemon={pokemon}
+        pokemon={pokemon as never}
         editMode={editMode}
         onNicknameChange={onNicknameChange}
       />

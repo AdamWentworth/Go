@@ -1,8 +1,17 @@
-// sections/BackgroundSelector.jsx
 import React from 'react';
 import './BackgroundSelector.css';
 
-const BackgroundSelector = ({ canPick, editMode, onToggle }) => {
+interface BackgroundSelectorProps {
+  canPick: boolean;
+  editMode: boolean;
+  onToggle: () => void;
+}
+
+const BackgroundSelector: React.FC<BackgroundSelectorProps> = ({
+  canPick,
+  editMode,
+  onToggle,
+}) => {
   if (!canPick) return null;
   return (
     <div className={`background-select-row ${editMode ? 'active' : ''}`}>
