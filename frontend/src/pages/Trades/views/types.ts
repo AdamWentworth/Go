@@ -6,6 +6,11 @@ export interface TradeViewTrade {
   username_accepting?: string | null;
   user_proposed_completion_confirmed?: boolean | null;
   user_accepting_completion_confirmed?: boolean | null;
+  user_1_trade_satisfaction?: boolean | number | null;
+  user_2_trade_satisfaction?: boolean | number | null;
+  trade_cancelled_date?: string | null;
+  trade_cancelled_by?: string | null;
+  trade_completed_date?: string | null;
   [key: string]: unknown;
 }
 
