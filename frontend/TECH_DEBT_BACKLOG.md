@@ -53,6 +53,8 @@ This backlog converts the current frontend audit into an execution plan focused 
 46. TS migration slice: converted `Search/SearchParameters/LocationSearch.jsx` to `LocationSearch.tsx`, replaced ad-hoc console logging with scoped logger usage, and added regression tests for suggestion fetch/selection, outside-click collapse, current-location toggle, and short-input behavior.
 47. TS migration slice: converted `Search/SearchParameters/OwnershipSearch.jsx` and ownership subcomponents (`CaughtSearch.jsx`, `TradeSearch.jsx`, `WantedSearch.jsx`, `FriendshipSearch.jsx`) to TypeScript, kept legacy alias compatibility (`trade_in_wanted_list`) while normalizing internal naming, and added regression tests for mode resets, checkbox/slider behavior, lucky-toggle behavior, and IV forwarding.
 48. TS migration slice: converted `Search/SearchParameters/VariantSearch.jsx` and `Search/SearchParameters/VariantComponents/MovesSearch.jsx` to TypeScript, hardened move-type icon rendering for missing metadata, and added regression tests for autocomplete selection, max toggle transitions, validation error propagation, costume reset behavior, move selection emission, and second charged-move autofill behavior.
+49. TS migration slice: converted the remaining Search JS files (`Search/components/Dropdown.jsx`, `Search/views/ListViewComponents/MiniMap.jsx`) to TypeScript, hardened minimap initialization for missing coordinates, rewired list-view imports/mocks, and added direct regression coverage for dropdown behavior and minimap lifecycle/color-path handling.
+50. TS migration slice: converted `Raid/MoveSelector.jsx` and `Raid/Pagination.jsx` to TypeScript, removed runtime PropTypes from pagination, hardened zero-page navigation behavior, rewired `Raid.jsx` imports, and added unit tests for move selection callbacks and pagination window/boundary behavior.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
@@ -266,4 +268,4 @@ This backlog converts the current frontend audit into an execution plan focused 
 
 ## Immediate Next Step
 
-Continue P1.3 incremental JS->TS migration for low-risk UI/context slices with tests-first changes (next candidate: remaining Search JS files `Search/components/Dropdown.jsx` and `Search/views/ListViewComponents/MiniMap.jsx`), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.
+Continue P1.3 incremental JS->TS migration for low-risk UI slices with tests-first changes (next candidate: remaining `pages/Raid` UI files `RaidBossSelector.jsx` and `Table.jsx`), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.

@@ -1,7 +1,6 @@
-// MiniMap.jsx
 import React, { useEffect, useRef } from 'react';
-import 'ol/ol.css'; // OpenLayers default styles
-import './MiniMap.css'; // Import custom CSS for MiniMap
+import 'ol/ol.css';
+import './MiniMap.css';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import { fromLonLat } from 'ol/proj';
@@ -12,15 +11,41 @@ import VectorSource from 'ol/source/Vector';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { Style, Circle, Fill } from 'ol/style';
-import Zoom from 'ol/control/Zoom'; // Import Zoom control from OpenLayers
-import { useTheme } from '../../../../contexts/ThemeContext';  // Import useTheme
+import Zoom from 'ol/control/Zoom';
+import { useTheme } from '../../../../contexts/ThemeContext';
 
-const MiniMap = ({ latitude, longitude, instanceData }) => {
-  const mapContainerRef = useRef(null);
-  const mapRef = useRef(null); // To reference the OpenLayers map instance
-  const { isLightMode } = useTheme();  // Use theme context to get isLightMode
+type MiniMapInstanceData = 'caught' | 'trade' | 'wanted';
+
+type MiniMapProps = {
+  latitude?: number;
+  longitude?: number;
+  instanceData: MiniMapInstanceData;
+};
+
+const getPointColor = (instanceData: MiniMapInstanceData): string => {
+  if (instanceData === 'caught') return '#00AAFF';
+  if (instanceData === 'trade') return '#4cae4f';
+  return '#FF0000';
+};
+
+const isFiniteCoordinate = (value: number | undefined): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
+const MiniMap: React.FC<MiniMapProps> = ({ latitude, longitude, instanceData }) => {
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<Map | null>(null);
+  const { isLightMode } = useTheme();
 
   useEffect(() => {
+    const mapContainer = mapContainerRef.current;
+    if (!mapContainer) {
+      return;
+    }
+
+    if (!isFiniteCoordinate(latitude) || !isFiniteCoordinate(longitude)) {
+      return;
+    }
+
     const coordinates = fromLonLat([longitude, latitude]);
 
     const baseTileLayer = new TileLayer({
@@ -30,15 +55,6 @@ const MiniMap = ({ latitude, longitude, instanceData }) => {
           : 'https://{1-4}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       }),
     });
-
-    let pointColor;
-    if (instanceData === 'caught') {
-      pointColor = '#00AAFF'; // Blue for caught
-    } else if (instanceData === 'trade') {
-      pointColor = '#4cae4f'; // Green for trade
-    } else {
-      pointColor = '#FF0000'; // Red for wanted (default)
-    }
 
     const vectorSource = new VectorSource({
       features: [
@@ -53,13 +69,13 @@ const MiniMap = ({ latitude, longitude, instanceData }) => {
       style: new Style({
         image: new Circle({
           radius: 6,
-          fill: new Fill({ color: pointColor }),
+          fill: new Fill({ color: getPointColor(instanceData) }),
         }),
       }),
     });
 
     const map = new Map({
-      target: mapContainerRef.current,
+      target: mapContainer,
       layers: [baseTileLayer, vectorLayer],
       view: new View({
         center: coordinates,
@@ -68,27 +84,23 @@ const MiniMap = ({ latitude, longitude, instanceData }) => {
       controls: [
         new Zoom({
           className: 'mini-map-zoom',
-          target: mapContainerRef.current,
+          target: mapContainer,
         }),
       ],
     });
 
-    mapRef.current = map; // Store map reference
+    mapRef.current = map;
 
-    // Resize observer to update OpenLayers map size when the container changes
     const resizeObserver = new ResizeObserver(() => {
-      if (mapRef.current) {
-        mapRef.current.updateSize(); // Update map size when container size changes
-      }
+      mapRef.current?.updateSize();
     });
 
-    if (mapContainerRef.current) {
-      resizeObserver.observe(mapContainerRef.current);
-    }
+    resizeObserver.observe(mapContainer);
 
     return () => {
-      resizeObserver.disconnect(); // Clean up observer
-      map.setTarget(null); // Clean up the map instance on unmount
+      resizeObserver.disconnect();
+      map.setTarget(undefined);
+      mapRef.current = null;
     };
   }, [latitude, longitude, isLightMode, instanceData]);
 

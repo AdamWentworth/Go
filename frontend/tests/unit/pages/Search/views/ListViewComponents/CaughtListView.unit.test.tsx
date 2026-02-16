@@ -20,7 +20,7 @@ vi.mock('@/components/pokemonComponents/CP.jsx', () => ({
   default: ({ cp }: { cp: number }) => <div data-testid="cp">CP:{cp}</div>,
 }));
 
-vi.mock('@/pages/Search/views/ListViewComponents/MiniMap.jsx', () => ({
+vi.mock('@/pages/Search/views/ListViewComponents/MiniMap', () => ({
   default: () => <div data-testid="mini-map" />,
 }));
 

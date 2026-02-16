@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import MiniMap from './MiniMap.jsx';
+import MiniMap from './MiniMap';
 import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay.jsx';
 import Gender from '../../../../components/pokemonComponents/Gender';
 import CP from '../../../../components/pokemonComponents/CP.jsx';

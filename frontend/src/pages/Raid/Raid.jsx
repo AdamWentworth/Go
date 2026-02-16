@@ -4,13 +4,13 @@ import './Raid.css';
 import { useVariantsStore } from '@/stores/useVariantsStore';
 import LoadingSpinner from '../../components/LoadingSpinner.jsx';
 import { getMoveCombinations } from './utils/moveCombinations';
-import Pagination from './Pagination.jsx';
+import Pagination from './Pagination';
 import Table from './Table.jsx';
 import useRaidBossesData from './hooks/useRaidBossesData';
 import { DEFAULT_RAID_BOSS_STATS, TYPE_MAPPING } from './utils/constants';
 import { calculateRaidBossDPS } from './utils/calculateRaidBossDPS';
 import RaidBossSelector from './RaidBossSelector.jsx';
-import MoveSelector from './MoveSelector.jsx';
+import MoveSelector from './MoveSelector';
 
 const LEVEL_40_CP_MULTIPLIER = 0.79030001;
 const LEVEL_50_CP_MULTIPLIER = 0.84029999;

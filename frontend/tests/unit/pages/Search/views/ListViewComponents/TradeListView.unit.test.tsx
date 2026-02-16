@@ -16,7 +16,7 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-vi.mock('@/pages/Search/views/ListViewComponents/MiniMap.jsx', () => ({
+vi.mock('@/pages/Search/views/ListViewComponents/MiniMap', () => ({
   default: () => <div data-testid="mini-map" />,
 }));
 
