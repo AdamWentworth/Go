@@ -1,6 +1,4 @@
-// constants.js
-
-export const cpMultipliers = {
+export const cpMultipliers: Record<string, number> = {
   "1.0": 0.094,
   "1.5": 0.135137432,
   "2.0": 0.16639787,
@@ -104,14 +102,19 @@ export const cpMultipliers = {
   "51.0": 0.84529999
 };
 
-export const DEFAULT_RAID_BOSS_STATS = {
+export const DEFAULT_RAID_BOSS_STATS: {
+  dps: number;
+  attack: number;
+  defense: number;
+  stamina: number;
+} = {
   dps: 20,
   attack: 200,
   defense: 160,
   stamina: 15000
 };
 
-export const TYPE_MAPPING = {
+export const TYPE_MAPPING: Record<number, { name: string }> = {
   1: { name: 'bug' },
   2: { name: 'dark' },
   3: { name: 'dragon' },
