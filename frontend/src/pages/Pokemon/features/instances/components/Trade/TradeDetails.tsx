@@ -4,6 +4,10 @@ import './TradeDetails.css';
 import EditSaveComponent from '@/components/EditSaveComponent';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useModal } from '@/contexts/ModalContext';
+import type { Instances } from '@/types/instances';
+import type { PokemonInstance } from '@/types/pokemonInstance';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { SortMode, SortType } from '@/types/sort';
 
 import WantedListDisplay from './WantedListDisplay';
 
@@ -23,17 +27,46 @@ import { TOOLTIP_TEXTS } from '../../utils/tooltipTexts';
 import useWantedFiltering from '../../hooks/useWantedFiltering';
 import useToggleEditModeTrade from '../../hooks/useToggleEditModeTrade';
 
-import PokemonActionOverlay from './PokemonActionOverlay.js';
-import TradeProposal from './TradeProposal.js';
+import PokemonActionOverlay from './PokemonActionOverlay';
+import TradeProposal from './TradeProposal';
 
 import { parsePokemonKey } from '@/utils/PokemonIDUtils';
 import { getAllInstances } from '@/db/instancesDB';
 import { getAllFromTradesDB } from '@/db/tradesDB';
 import { shouldUpdateTradeInstances } from './shouldUpdateTradeInstances';
 
-import UpdateForTradeModal from './UpdateForTradeModal.js';
+import UpdateForTradeModal from './UpdateForTradeModal';
 
-const TradeDetails = ({
+type BooleanMap = Record<string, boolean>;
+type GenericMap = Record<string, unknown>;
+type VariantWithKey = PokemonVariant & { pokemonKey?: string };
+type SelectedPokemon = GenericMap & {
+  key?: string;
+  name?: string;
+  variantType?: string;
+  instanceData?: Partial<PokemonInstance>;
+};
+
+interface TradeDetailsProps {
+  pokemon: VariantWithKey & {
+    instanceData: Partial<PokemonInstance> & {
+      not_wanted_list?: BooleanMap;
+      wanted_filters?: BooleanMap;
+      mirror?: boolean;
+    };
+  };
+  lists: Record<string, Record<string, unknown>>;
+  instances: Instances;
+  sortType: SortType;
+  sortMode: SortMode;
+  openWantedOverlay: (pokemon: Record<string, unknown>) => void;
+  variants: VariantWithKey[];
+  isEditable: boolean;
+  username: string;
+  onClose?: () => void;
+}
+
+const TradeDetails: React.FC<TradeDetailsProps> = ({
   pokemon,
   lists,
   instances,
@@ -42,11 +75,11 @@ const TradeDetails = ({
   openWantedOverlay,
   variants,
   isEditable,
-  username
+  username,
 }) => {
-  const instancesMap = instances ?? {};
+  const instancesMap = (instances ?? {}) as Record<string, PokemonInstance>;
   const { alert } = useModal();
-  const { not_wanted_list, wanted_filters } = pokemon.instanceData;
+  const { not_wanted_list = {}, wanted_filters = {} } = pokemon.instanceData;
   const [localNotWantedList, setLocalNotWantedList] = useState({
     ...not_wanted_list,
   });
@@ -56,17 +89,19 @@ const TradeDetails = ({
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const updateStatus = useInstancesStore((s) => s.updateInstanceStatus);
   const [isMirror, setIsMirror] = useState(pokemon.instanceData.mirror);
-  const [mirrorKey, setMirrorKey] = useState(null);
+  const [mirrorKey, setMirrorKey] = useState<string | null>(null);
   const [listsState, setListsState] = useState(lists);
-  const [, setPendingUpdates] = useState({});
-  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
+  const [, setPendingUpdates] = useState<Record<string, boolean>>({});
+  const [isSmallScreen, setIsSmallScreen] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 1024 : false,
+  );
 
   // New state variables for UpdateForTradeModal
   const [isUpdateForTradeModalOpen, setIsUpdateForTradeModalOpen] = useState(false);
-  const [caughtInstancesToTrade, setCaughtInstancesToTrade] = useState([]);
-  const [currentBaseKey, setCurrentBaseKey] = useState(null); // New state for baseKey
+  const [caughtInstancesToTrade, setCaughtInstancesToTrade] = useState<PokemonInstance[]>([]);
+  const [currentBaseKey, setCurrentBaseKey] = useState<string | null>(null); // New state for baseKey
 
-  const [myInstances, setMyInstances] = useState();
+  const [myInstances, setMyInstances] = useState<Instances | undefined>();
 
   const {
     selectedImages: selectedExcludeImages,
@@ -81,13 +116,13 @@ const TradeDetails = ({
   } = useImageSelection(INCLUDE_IMAGES_wanted);
 
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
-  const [selectedPokemon, setSelectedPokemon] = useState(null);
+  const [selectedPokemon, setSelectedPokemon] = useState<SelectedPokemon | null>(null);
 
   // We will set these when user actually proposes the trade
   const [isTradeProposalOpen, setIsTradeProposalOpen] = useState(false);
-  const [tradeClickedPokemon, setTradeClickedPokemon] = useState(null);
+  const [tradeClickedPokemon, setTradeClickedPokemon] = useState<Record<string, unknown> | null>(null);
 
-  const initializeSelection = (filterNames, filters) => {
+  const initializeSelection = (filterNames: string[], filters: Record<string, unknown>) => {
     return filterNames.map((name) => !!filters[name]);
   };
 
@@ -116,12 +151,13 @@ const TradeDetails = ({
 
   const { filteredWantedList, filteredOutPokemon, updatedLocalWantedFilters } =
     useWantedFiltering(
-      listsState,
+      listsState as any,
       selectedExcludeImages,
       selectedIncludeOnlyImages,
       localWantedFilters,
       setLocalNotWantedList,
-      localNotWantedList
+      localNotWantedList,
+      false,
     );
 
   useEffect(() => {
@@ -129,7 +165,7 @@ const TradeDetails = ({
   }, [updatedLocalWantedFilters]);
 
   useEffect(() => {
-    setLocalNotWantedList({ ...pokemon.instanceData.not_wanted_list });
+    setLocalNotWantedList({ ...(pokemon.instanceData.not_wanted_list ?? {}) });
   }, [pokemon.instanceData.not_wanted_list]);
 
   const { editMode, toggleEditMode } = useToggleEditModeTrade(
@@ -138,9 +174,9 @@ const TradeDetails = ({
     mirrorKey,
     setMirrorKey,
     setIsMirror,
-    lists,
-    listsState,
-    setListsState,
+    lists as any,
+    listsState as any,
+    setListsState as any,
     localNotWantedList,
     setLocalNotWantedList,
     localWantedFilters,
@@ -148,16 +184,16 @@ const TradeDetails = ({
     filteredOutPokemon
   );
 
-  const toggleReciprocalUpdates = (key, updatedNotTrade) => {
+  const toggleReciprocalUpdates = (key: string, updatedNotTrade: boolean) => {
     setPendingUpdates((prev) => ({ ...prev, [key]: updatedNotTrade }));
   };
 
   // Calculate the number of items in filteredWantedList excluding those in not_wanted_list
-  const filteredWantedListCount = Object.keys(filteredWantedList).filter(
+  const filteredWantedListCount = Object.keys(filteredWantedList as Record<string, unknown>).filter(
     (key) => !localNotWantedList[key]
   ).length;
 
-  const extractBaseKey = (pokemonKey) => {
+  const extractBaseKey = (pokemonKey: string) => {
     let keyParts = String(pokemonKey).split('_');
     keyParts.pop(); // Remove the UUID part if present
     return keyParts.join('_');
@@ -166,7 +202,7 @@ const TradeDetails = ({
   const handleViewWantedList = () => {
     if (selectedPokemon) {
       // If user chooses "View Wanted List" from the overlay, just do what you normally do:
-      handlePokemonClick(selectedPokemon.key); 
+      handlePokemonClick(String(selectedPokemon.key ?? '')); 
       closeOverlay();
     }
   };
@@ -179,11 +215,11 @@ const TradeDetails = ({
     }
 
     // 2) Parse the selected Pokémon's key to extract the baseKey
-    const parsedSelected = parsePokemonKey(selectedPokemon.key);
+    const parsedSelected = parsePokemonKey(String(selectedPokemon.key ?? ''));
     const { baseKey: selectedBaseKey } = parsedSelected;
 
     // 3) Retrieve user ownership data from IndexedDB
-    let userOwnershipData = [];
+    let userOwnershipData: PokemonInstance[] = [];
     try {
       userOwnershipData = await getAllInstances();
     } catch (error) {
@@ -197,9 +233,10 @@ const TradeDetails = ({
 
     // Convert the array into a keyed object using instance_id as key
     const hashedOwnershipData = userOwnershipData.reduce((acc, item) => {
-      acc[item.instance_id] = item;
+      const instanceId = String(item.instance_id ?? '');
+      acc[instanceId] = item;
       return acc;
-    }, {});
+    }, {} as Instances);
 
     console.log(hashedOwnershipData)
 
@@ -208,7 +245,7 @@ const TradeDetails = ({
 
     // 4) Filter to find all instances where the baseKey matches and is_caught=true
     const caughtInstances = userOwnershipData.filter((item) => {
-      const parsedCaught = parsePokemonKey(item.instance_id);
+      const parsedCaught = parsePokemonKey(String(item.instance_id ?? ''));
       return parsedCaught.baseKey === selectedBaseKey && item.is_caught === true;
     });
 
@@ -231,13 +268,13 @@ const TradeDetails = ({
         const allTrades = await getAllFromTradesDB('pokemonTrades');
         
         // Filter to only pending trades
-        const pendingTrades = allTrades.filter(trade => trade.trade_status === "pending");
+        const pendingTrades = allTrades.filter((trade) => (trade as any).trade_status === "pending");
         
         // Filter out instances that are already in pending trades
-        const availableInstances = tradeableInstances.filter(instance => {
-          const instanceIsInPendingTrade = pendingTrades.some(trade => 
-            trade.pokemon_instance_id_user_proposed === instance.instance_id ||
-            trade.pokemon_instance_id_user_accepting === instance.instance_id
+        const availableInstances = tradeableInstances.filter((instance) => {
+          const instanceIsInPendingTrade = pendingTrades.some((trade) => 
+            (trade as any).pokemon_instance_id_user_proposed === instance.instance_id ||
+            (trade as any).pokemon_instance_id_user_accepting === instance.instance_id
           );
           return !instanceIsInPendingTrade;
         });
@@ -260,7 +297,7 @@ const TradeDetails = ({
           matchedInstances,
         };
 
-        setTradeClickedPokemon(selectedPokemonWithMatches);
+        setTradeClickedPokemon(selectedPokemonWithMatches as Record<string, unknown>);
 
         // Close the overlay
         closeOverlay();
@@ -285,7 +322,7 @@ const TradeDetails = ({
     setIsOverlayOpen(false);
   };
 
-  const handleConfirmTradeUpdate = async (selectedInstanceIds) => {
+  const handleConfirmTradeUpdate = async (selectedInstanceIds: unknown) => {
     try {
       if (!shouldUpdateTradeInstances(selectedInstanceIds)) {
         setIsUpdateForTradeModalOpen(false);
@@ -293,7 +330,8 @@ const TradeDetails = ({
       }
 
       // Use canonical store action so all tag/registration invariants stay consistent.
-      await updateStatus(selectedInstanceIds, 'Trade');
+      const instanceIds = selectedInstanceIds.map((id) => String(id));
+      await updateStatus(instanceIds, 'Trade');
 
       // Close the modal
       setIsUpdateForTradeModalOpen(false);
@@ -314,7 +352,7 @@ const TradeDetails = ({
 
   // When not in edit mode, clicking a Pokémon's thumbnail
   // will open the PokemonActionOverlay
-  const handlePokemonClickModified = (pokemonKey, pokemonData) => {
+  const handlePokemonClickModified = (pokemonKey: string, pokemonData: SelectedPokemon) => {
     if (isEditable) {
       // If we can edit, do the default logic
       handlePokemonClick(pokemonKey);
@@ -325,12 +363,12 @@ const TradeDetails = ({
     }
   };
 
-  const handlePokemonClick = (pokemonKey) => {
+  const handlePokemonClick = (pokemonKey: string) => {
     const baseKey = extractBaseKey(pokemonKey);
 
     // 1) Find the variant data
     const variantData = variants.find(
-      (variant) => (variant.variant_id ?? variant.pokemonKey) === baseKey
+      (variant) => (variant.variant_id ?? (variant as any).pokemonKey) === baseKey
     );
     if (!variantData) {
       console.error(`Variant not found for pokemonKey: ${pokemonKey}`);
@@ -401,7 +439,7 @@ const TradeDetails = ({
                       width: '25px',
                       height: 'auto',
                     }}
-                    onClick={editMode ? handleResetFilters : null}
+                    onClick={editMode ? handleResetFilters : undefined}
                   />
                 </div>
               )}
@@ -437,7 +475,7 @@ const TradeDetails = ({
               // the toggle logic inside MirrorManager is disabled.
               editMode={isEditable}
               updateDisplayedList={(newData) =>
-                updateDisplayedList(newData, localNotWantedList, setListsState)
+                updateDisplayedList(newData, localNotWantedList, setListsState as any)
               }
               updateDetails={updateDetails}
             />
@@ -450,7 +488,7 @@ const TradeDetails = ({
             <div className="image-row-container">
               <div className="exclude-header-group image-group">
                 <FilterImages
-                  images={EXCLUDE_IMAGES_wanted}
+                  images={[...EXCLUDE_IMAGES_wanted]}
                   selectedImages={selectedExcludeImages}
                   toggleImageSelection={toggleExcludeImageSelection}
                   editMode={editMode}
@@ -459,7 +497,7 @@ const TradeDetails = ({
               </div>
               <div className="include-only-header-group image-group">
                 <FilterImages
-                  images={INCLUDE_IMAGES_wanted}
+                  images={[...INCLUDE_IMAGES_wanted]}
                   selectedImages={selectedIncludeOnlyImages}
                   toggleImageSelection={toggleIncludeOnlyImageSelection}
                   editMode={editMode}
@@ -473,7 +511,7 @@ const TradeDetails = ({
             <>
               <div className="exclude-header-group image-group exclude-few">
                 <FilterImages
-                  images={EXCLUDE_IMAGES_wanted}
+                  images={[...EXCLUDE_IMAGES_wanted]}
                   selectedImages={selectedExcludeImages}
                   toggleImageSelection={toggleExcludeImageSelection}
                   editMode={editMode}
@@ -483,7 +521,7 @@ const TradeDetails = ({
               <div className="include-only-header-group include-few">
                 <h3>Include</h3>
                 <FilterImages
-                  images={INCLUDE_IMAGES_wanted}
+                  images={[...INCLUDE_IMAGES_wanted]}
                   selectedImages={selectedIncludeOnlyImages}
                   toggleImageSelection={toggleIncludeOnlyImageSelection}
                   editMode={editMode}
@@ -511,10 +549,9 @@ const TradeDetails = ({
             onPokemonClick={(key) => {
               // We fetch the entire data for the clicked Pokémon
               // so we can store it in selectedPokemon
-              const pokemonData = filteredWantedList[key];
+              const pokemonData = (filteredWantedList as Record<string, SelectedPokemon>)[key];
               handlePokemonClickModified(key, pokemonData);
             }}
-            variants={variants}
           />
         </div>
       </div>
@@ -525,20 +562,20 @@ const TradeDetails = ({
         onClose={closeOverlay}
         onViewWantedList={handleViewWantedList}
         onProposeTrade={handleProposeTrade}
-        pokemon={selectedPokemon}
+        pokemon={selectedPokemon as any}
       />
 
       {/* If the user actually proposes a trade, open TradeProposal */}
       {isTradeProposalOpen && (
         <TradeProposal
           passedInPokemon={pokemon}      // The "parent" Pokémon from which we came
-          clickedPokemon={tradeClickedPokemon} // The user’s matches from their DB
-          wantedPokemon={selectedPokemon} // <--- We pass the *clicked* Pokémon as wantedPokemon
+          clickedPokemon={tradeClickedPokemon as any} // The user’s matches from their DB
+          wantedPokemon={selectedPokemon as any} // <--- We pass the *clicked* Pokémon as wantedPokemon
           onClose={() => {
             setIsTradeProposalOpen(false);
             setTradeClickedPokemon(null);
           }}
-          myInstances={myInstances}
+          myInstances={(myInstances ?? {}) as any}
           instances={instancesMap}
           username={username}
         />
@@ -550,7 +587,6 @@ const TradeDetails = ({
           caughtInstances={caughtInstancesToTrade}
           baseKey={currentBaseKey} // Pass the baseKey here
           onClose={handleCancelTradeUpdate}
-          onConfirm={handleConfirmTradeUpdate}
         />
       )}
     </div>

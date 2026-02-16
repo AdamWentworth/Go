@@ -64,6 +64,8 @@ This backlog converts the current frontend audit into an execution plan focused 
 57. TS migration slice: converted all `Pokemon/features/instances/sections/*.jsx` files to TypeScript (`BackgroundSelector`, `HeaderRow`, `IdentityRow`, `ImageStage`, `LevelGenderRow`, `MetaPanel`, `Modals`, `MovesAndIV`, `PowerPanel`, `StatsRow`) and added section-level regression tests covering callback wiring, conditional rendering, overlay handling, and badge/background presentation.
 58. TS migration slice: converted `TradeInstance.jsx` and `WantedInstance.jsx` to TypeScript (`.tsx`), centralized entity-key fallback with new `getEntityKey` helper + unit tests, and converted the legacy alias `OwnedInstance.jsx` to `OwnedInstance.ts`.
 59. TS migration slice: converted `components/Wanted/WantedDetails.jsx` to TypeScript (`WantedDetails.tsx`), fixed TS-safe filter/image typing and import hardening (`FilterImages` extensionless), and kept `useTradeFiltering`/edit-toggle behavior stable with green typecheck/tests/build.
+60. TS migration slice: converted `components/Trade/TradeDetails.jsx` and `instances/InstanceOverlay.jsx` to TypeScript (`TradeDetails.tsx`, `InstanceOverlay.tsx`), removed stale `.js` import suffixes, stabilized strict-null/readonly typing in trade-overlay flows, and validated with green typecheck/unit/build.
+61. TS migration slice: converted the final two JS entry files (`instances/CaughtInstance.jsx`, `Pokemon/Pokemon.jsx`) to TypeScript (`CaughtInstance.tsx`, `Pokemon.tsx`), aligned route/menu import paths to extensionless TS targets, and validated with green typecheck/unit/build.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
@@ -277,4 +279,4 @@ This backlog converts the current frontend audit into an execution plan focused 
 
 ## Immediate Next Step
 
-Continue P1.3 incremental JS->TS migration for the remaining core instance files (`InstanceOverlay.jsx`, `CaughtInstance.jsx`, `TradeDetails.jsx`, `WantedDetails.jsx`) and route shell (`Pokemon.jsx`) with tests-first changes, while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.
+Continue P1.3 naming canonicalization and P1.4 logging policy cleanup now that `frontend/src` JS/JSX migration is complete (`0` JS/JSX files remaining).
