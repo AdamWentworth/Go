@@ -47,6 +47,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 40. TS migration slice: converted `Search/views/MapViewComponents/WantedPopup.jsx` to TypeScript (`.tsx`) with typed popup payloads and added popup regression tests for trade-match rendering, confirmation navigation, and outside-click close behavior.
 41. Compatibility hardening slice: updated `components/pokemonComponents/IV.tsx` to support legacy `item` payload callers while preserving typed `ivs` mode and preventing TS/runtime regressions across Search popups.
 42. TS migration slice: converted `Search/views/MapViewComponents/TradePopup.jsx` and `CaughtPopup.jsx` to TypeScript (`.tsx`), rewired `MapView` imports, and added regression tests for list rendering, confirmation navigation, and legacy move-id fallback behavior.
+43. TS migration slice: converted `Search/views/MapView.jsx` to `MapView.tsx`, rewired `Search.jsx` import, and added OpenLayers-mocked regression tests for popup mode routing (`caught`/`trade`/`wanted`) and map cleanup on unmount.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
@@ -260,4 +261,4 @@ This backlog converts the current frontend audit into an execution plan focused 
 
 ## Immediate Next Step
 
-Continue P1.3 incremental JS->TS migration for low-risk UI/context slices with tests-first changes (next candidate: `Search/views/MapView.jsx` or Trades map/detail view components), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.
+Continue P1.3 incremental JS->TS migration for low-risk UI/context slices with tests-first changes (next candidate: remaining `Search`/`Trades` JS entry components), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.

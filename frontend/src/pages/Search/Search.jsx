@@ -5,7 +5,7 @@ import PokemonSearchBar from './PokemonSearchBar.jsx';
 import TrainerSearchBar from './TrainerSearchBar.jsx';
 import SearchModeToggle from './SearchModeToggle';
 import ListView from './views/ListView';
-import MapView from './views/MapView.jsx';
+import MapView from './views/MapView';
 import LoadingSpinner from '../../components/LoadingSpinner.jsx';
 import axios from 'axios';
 
