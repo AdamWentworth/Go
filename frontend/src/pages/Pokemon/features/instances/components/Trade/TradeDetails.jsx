@@ -20,7 +20,7 @@ import {
 } from '../../utils/constants';
 import { TOOLTIP_TEXTS } from '../../utils/tooltipTexts';
 
-import useWantedFiltering from '../../hooks/useWantedFiltering.js';
+import useWantedFiltering from '../../hooks/useWantedFiltering';
 import useToggleEditModeTrade from '../../hooks/useToggleEditModeTrade';
 
 import PokemonActionOverlay from './PokemonActionOverlay.js';
