@@ -1,40 +1,70 @@
-// Search.jsx
+import React, { useEffect, useRef, useState } from 'react';
+import axios from 'axios';
 
-import React, { useState, useEffect, useRef } from 'react';
-import PokemonSearchBar from './PokemonSearchBar.jsx';
-import TrainerSearchBar from './TrainerSearchBar.jsx';
+import PokemonSearchBar from './PokemonSearchBar';
+import TrainerSearchBar from './TrainerSearchBar';
 import SearchModeToggle from './SearchModeToggle';
 import ListView from './views/ListView';
 import MapView from './views/MapView';
-import LoadingSpinner from '../../components/LoadingSpinner.jsx';
-import axios from 'axios';
-
+import LoadingSpinner from '../../components/LoadingSpinner';
+import ActionMenu from '../../components/ActionMenu';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useModal } from '../../contexts/ModalContext';
-import ActionMenu from '../../components/ActionMenu.jsx';
-import './Search.css';
 import { createScopedLogger } from '@/utils/logger';
 import { normalizeOwnershipMode } from './utils/ownershipMode';
 
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import './Search.css';
+
+type SearchMode = 'pokemon' | 'trainer' | null;
+type SearchView = 'list' | 'map';
+
+type SearchQueryParams = {
+  ownership?: string;
+  [key: string]: string | number | boolean | null | undefined;
+};
+
+type SearchResultRow = {
+  pokemon_id?: number;
+  distance?: number;
+  [key: string]: unknown;
+};
+
+type EnrichedSearchResult = SearchResultRow & {
+  pokemonInfo: PokemonVariant;
+  boundary?: string | null;
+};
+
+const coerceOwnershipModeInput = (
+  value: unknown,
+): Parameters<typeof normalizeOwnershipMode>[0] => {
+  if (value === 'caught' || value === 'trade' || value === 'wanted') {
+    return value;
+  }
+  return undefined;
+};
+
 const log = createScopedLogger('Search');
 
-const Search = () => {
-  const [searchMode, setSearchMode] = useState(null);
-  const [view, setView] = useState('list');
-  const [searchResults, setSearchResults] = useState([]);
-  const [ownershipMode, setOwnershipMode] = useState('caught');
+const Search: React.FC = () => {
+  const [searchMode, setSearchMode] = useState<SearchMode>(null);
+  const [view, setView] = useState<SearchView>('list');
+  const [searchResults, setSearchResults] = useState<EnrichedSearchResult[]>([]);
+  const [ownershipMode, setOwnershipMode] = useState<
+    ReturnType<typeof normalizeOwnershipMode>
+  >('caught');
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [pokemonCache, setPokemonCache] = useState(null);
+  const [pokemonCache, setPokemonCache] = useState<PokemonVariant[] | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [scrollToTopTrigger, setScrollToTopTrigger] = useState(0);
 
-  const variants = useVariantsStore((s) => s.variants);
-  const pokedexLists = useVariantsStore((s) => s.pokedexLists);
+  const variants = useVariantsStore((state) => state.variants);
+  const pokedexLists = useVariantsStore((state) => state.pokedexLists);
   const { alert } = useModal();
 
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const shouldScrollRef = useRef(false);
 
   useEffect(() => {
@@ -60,41 +90,51 @@ const Search = () => {
     }
   }, [searchResults]);
 
-  const handleSearch = async (queryParams, boundaryWKT) => {
+  const handleSearch = async (
+    queryParams: SearchQueryParams,
+    boundaryWKT?: string | null,
+  ): Promise<void> => {
     setErrorMessage('');
     setIsLoading(true);
     setHasSearched(true);
-    setOwnershipMode(normalizeOwnershipMode(queryParams.ownership));
+    setOwnershipMode(normalizeOwnershipMode(coerceOwnershipModeInput(queryParams.ownership)));
     shouldScrollRef.current = true;
 
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_SEARCH_API_URL}/searchPokemon`,
-        {
-          params: queryParams,
-          withCredentials: true,
-        }
-      );
+      const response = await axios.get<
+        SearchResultRow[] | Record<string, SearchResultRow>
+      >(`${import.meta.env.VITE_SEARCH_API_URL}/searchPokemon`, {
+        params: queryParams,
+        withCredentials: true,
+      });
 
       if (response.status === 200) {
-        const dataArray = Array.isArray(response.data)
-          ? response.data
-          : Object.values(response.data);
+        const responseData = response.data;
+        const dataArray = Array.isArray(responseData)
+          ? responseData
+          : Object.values(responseData || {});
 
-        if (dataArray?.length > 0 && pokemonCache?.length > 0) {
-          const enrichedData = dataArray
-            .map((item) => {
-              const pokemonInfo = pokemonCache.find(
-                (p) => p.pokemon_id === item.pokemon_id
+        if (dataArray.length > 0 && (pokemonCache?.length || 0) > 0) {
+          const enrichedData = dataArray.reduce<EnrichedSearchResult[]>(
+            (acc, item) => {
+              const pokemonInfo = pokemonCache?.find(
+                (variant) => variant.pokemon_id === item.pokemon_id,
               );
-              return pokemonInfo
-                ? { ...item, pokemonInfo, boundary: boundaryWKT }
-                : null;
-            })
-            .filter(Boolean);
+
+              if (pokemonInfo) {
+                acc.push({
+                  ...item,
+                  pokemonInfo,
+                  boundary: boundaryWKT,
+                });
+              }
+              return acc;
+            },
+            [],
+          );
 
           if (enrichedData.length > 0) {
-            enrichedData.sort((a, b) => a.distance - b.distance);
+            enrichedData.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
             setSearchResults(enrichedData);
             setScrollToTopTrigger((prev) => prev + 1);
             setIsCollapsed(true);
@@ -122,7 +162,9 @@ const Search = () => {
   if (!searchMode) {
     return (
       <div className="search-welcome-screen">
-        <h1 className="search-welcome-title">Which type of search would you like?</h1>
+        <h1 className="search-welcome-title">
+          Which type of search would you like?
+        </h1>
         <SearchModeToggle
           searchMode={searchMode}
           setSearchMode={setSearchMode}
@@ -140,7 +182,6 @@ const Search = () => {
         <PokemonSearchBar
           onSearch={handleSearch}
           isLoading={isLoading}
-          setErrorMessage={setErrorMessage}
           view={view}
           setView={setView}
           isCollapsed={isCollapsed}
@@ -152,7 +193,10 @@ const Search = () => {
       {searchMode === 'trainer' && <TrainerSearchBar />}
 
       {errorMessage && (
-        <div className="search-error-message" style={{ color: 'red', padding: '1rem', textAlign: 'center' }}>
+        <div
+          className="search-error-message"
+          style={{ color: 'red', padding: '1rem', textAlign: 'center' }}
+        >
           {errorMessage}
         </div>
       )}
@@ -184,4 +228,3 @@ const Search = () => {
 };
 
 export default Search;
-

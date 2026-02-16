@@ -1,17 +1,80 @@
-// PokemonSearchBar.jsx
+import React, { useEffect, useRef, useState } from 'react';
+import { FaChevronDown, FaChevronUp, FaGlobe, FaList } from 'react-icons/fa';
 
-import React, { useState, useEffect, useRef } from 'react';
-import VariantSearch from './SearchParameters/VariantSearch.jsx';
-import LocationSearch from './SearchParameters/LocationSearch.jsx';
-import OwnershipSearch from './SearchParameters/OwnershipSearch.jsx';
+import VariantSearch from './SearchParameters/VariantSearch';
+import LocationSearch from './SearchParameters/LocationSearch';
+import OwnershipSearch from './SearchParameters/OwnershipSearch';
 import './PokemonSearchBar.css';
-import { FaChevronUp, FaChevronDown, FaList, FaGlobe } from 'react-icons/fa';
 import { createScopedLogger } from '@/utils/logger';
-import { isCaughtOwnershipMode, toOwnershipApiValue } from './utils/ownershipMode';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import {
+  isCaughtOwnershipMode,
+  toOwnershipApiValue,
+  type SearchOwnershipMode,
+} from './utils/ownershipMode';
+
+type SearchView = 'list' | 'map';
+
+type SelectedMoves = {
+  fastMove: number | string | null;
+  chargedMove1: number | string | null;
+  chargedMove2: number | string | null;
+};
+
+type Coordinates = {
+  latitude: number | null;
+  longitude: number | null;
+};
+
+type IvFilters = {
+  Attack: number | null;
+  Defense: number | null;
+  Stamina: number | null;
+};
+
+export type PokemonSearchQueryParams = {
+  pokemon_id: number;
+  shiny: boolean;
+  shadow: boolean;
+  costume_id: number | null;
+  fast_move_id: number | string | null;
+  charged_move_1_id: number | string | null;
+  charged_move_2_id: number | string | null;
+  gender: string | null;
+  background_id: number | null;
+  attack_iv: number | null;
+  defense_iv: number | null;
+  stamina_iv: number | null;
+  only_matching_trades: boolean | null;
+  pref_lucky: boolean | null;
+  friendship_level: number | null;
+  already_registered: boolean | null;
+  trade_in_wanted_list: boolean | null;
+  latitude: number | null;
+  longitude: number | null;
+  ownership: ReturnType<typeof toOwnershipApiValue>;
+  range_km: number;
+  limit: number;
+  dynamax: boolean;
+  gigantamax: boolean;
+};
+
+type PokemonSearchBarProps = {
+  onSearch: (
+    queryParams: PokemonSearchQueryParams,
+    boundaryWKT?: string | null,
+  ) => void | Promise<void>;
+  isLoading: boolean;
+  view: SearchView;
+  setView: React.Dispatch<React.SetStateAction<SearchView>>;
+  isCollapsed: boolean;
+  setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  pokemonCache: PokemonVariant[] | null;
+};
 
 const log = createScopedLogger('PokemonSearchBar');
 
-const PokemonSearchBar = ({
+const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
   onSearch,
   isLoading,
   view,
@@ -25,38 +88,46 @@ const PokemonSearchBar = ({
   const [isShadow, setIsShadow] = useState(false);
   const [costume, setCostume] = useState('');
   const [selectedForm, setSelectedForm] = useState('');
-  const [selectedMoves, setSelectedMoves] = useState({
+  const [selectedMoves, setSelectedMoves] = useState<SelectedMoves>({
     fastMove: null,
     chargedMove1: null,
     chargedMove2: null,
   });
   const [selectedGender, setSelectedGender] = useState('Any');
-  const [selectedBackgroundId, setSelectedBackgroundId] = useState(null);
+  const [selectedBackgroundId, setSelectedBackgroundId] = useState<number | null>(
+    null,
+  );
   const [dynamax, setDynamax] = useState(false);
   const [gigantamax, setGigantamax] = useState(false);
   const [city, setCity] = useState('');
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
-  const [ownershipMode, setOwnershipMode] = useState('caught');
-  const [coordinates, setCoordinates] = useState({ latitude: null, longitude: null });
+  const [ownershipMode, setOwnershipMode] = useState<SearchOwnershipMode>('caught');
+  const [coordinates, setCoordinates] = useState<Coordinates>({
+    latitude: null,
+    longitude: null,
+  });
   const [range, setRange] = useState(5);
   const [resultsLimit, setResultsLimit] = useState(5);
-  const [ivs, setIvs] = useState({ Attack: null, Defense: null, Stamina: null });
+  const [ivs, setIvs] = useState<IvFilters>({
+    Attack: null,
+    Defense: null,
+    Stamina: null,
+  });
   const [isHundo, setIsHundo] = useState(false);
   const [onlyMatchingTrades, setOnlyMatchingTrades] = useState(false);
 
-  // 'wanted' parameters
   const [prefLucky, setPrefLucky] = useState(false);
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const [tradeInWantedList, setTradeInWantedList] = useState(false);
   const [friendshipLevel, setFriendshipLevel] = useState(0);
 
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>('');
   const [isMidWidth, setIsMidWidth] = useState(false);
+  const [, setSelectedBoundary] = useState<string | null>(null);
 
-  const collapsibleRef = useRef(null);
+  const collapsibleRef = useRef<HTMLDivElement | null>(null);
   const searchTriggeredRef = useRef(false);
 
-  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       setIsMidWidth(window.innerWidth >= 1024 && window.innerWidth <= 1439);
@@ -66,7 +137,6 @@ const PokemonSearchBar = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Handle auto-resizing of collapsible container
   useEffect(() => {
     if (!collapsibleRef.current || isCollapsed) return;
 
@@ -83,7 +153,6 @@ const PokemonSearchBar = ({
     return () => observer.disconnect();
   }, [isCollapsed]);
 
-  // Animate open/close
   useEffect(() => {
     if (collapsibleRef.current) {
       if (!isCollapsed) {
@@ -100,7 +169,6 @@ const PokemonSearchBar = ({
     }
   }, [isCollapsed]);
 
-  // Collapse when scrolling
   const handleScroll = () => {
     const searchBar = collapsibleRef.current;
     const searchBarHeight = searchBar ? searchBar.offsetHeight : 0;
@@ -109,7 +177,10 @@ const PokemonSearchBar = ({
 
     if (window.scrollY > adjustedCollapsePoint) {
       setIsCollapsed(true);
-    } else if (window.scrollY === 0) {
+      return;
+    }
+
+    if (window.scrollY === 0) {
       if (searchTriggeredRef.current) {
         searchTriggeredRef.current = false;
         return;
@@ -124,19 +195,19 @@ const PokemonSearchBar = ({
   }, []);
 
   const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
+    setIsCollapsed((prev) => !prev);
   };
 
   const handleSearch = async () => {
     setErrorMessage('');
 
     if (isShadow && (ownershipMode === 'trade' || ownershipMode === 'wanted')) {
-      setErrorMessage('Shadow Pokémon cannot be listed for trade or wanted');
+      setErrorMessage('Shadow Pokemon cannot be listed for trade or wanted');
       return;
     }
 
     if (!pokemon) {
-      setErrorMessage('Please provide a Pokémon name.');
+      setErrorMessage('Please provide a Pokemon name.');
       return;
     }
 
@@ -146,39 +217,40 @@ const PokemonSearchBar = ({
     }
 
     if (!pokemonCache || pokemonCache.length === 0) {
-      setErrorMessage('No Pokémon data found in the default store.');
+      setErrorMessage('No Pokemon data found in the default store.');
       return;
     }
 
     const matchingPokemon = pokemonCache.find(
-      (p) =>
-        p.name?.toLowerCase() === pokemon.toLowerCase() &&
-        (!selectedForm || p.form?.toLowerCase() === selectedForm.toLowerCase())
+      (variant) =>
+        variant.name?.toLowerCase() === pokemon.toLowerCase() &&
+        (!selectedForm ||
+          (variant.form ?? '').toLowerCase() === selectedForm.toLowerCase()),
     );
 
     if (!matchingPokemon) {
-      setErrorMessage('No matching Pokémon found in the default list.');
+      setErrorMessage('No matching Pokemon found in the default list.');
       setIsCollapsed(false);
       return;
     }
 
-    const { pokemon_id } = matchingPokemon;
-    const matchingCostume = matchingPokemon.costumes?.find((c) => c.name === costume);
-    const costume_id = matchingCostume ? matchingCostume.costume_id : null;
+    const matchingCostume = matchingPokemon.costumes?.find(
+      (entry) => entry.name === costume,
+    );
 
-    const queryParams = {
-      pokemon_id,
+    const queryParams: PokemonSearchQueryParams = {
+      pokemon_id: matchingPokemon.pokemon_id,
       shiny: isShiny,
       shadow: isShadow,
-      costume_id,
+      costume_id: matchingCostume?.costume_id ?? null,
       fast_move_id: selectedMoves.fastMove,
       charged_move_1_id: selectedMoves.chargedMove1,
       charged_move_2_id: selectedMoves.chargedMove2,
       gender: selectedGender === 'Any' ? null : selectedGender,
       background_id: selectedBackgroundId,
-      attack_iv: ivs.Attack !== null ? ivs.Attack : null,
-      defense_iv: ivs.Defense !== null ? ivs.Defense : null,
-      stamina_iv: ivs.Stamina !== null ? ivs.Stamina : null,
+      attack_iv: ivs.Attack,
+      defense_iv: ivs.Defense,
+      stamina_iv: ivs.Stamina,
       only_matching_trades: onlyMatchingTrades ? true : null,
       pref_lucky: prefLucky ? true : null,
       friendship_level: friendshipLevel,
@@ -211,7 +283,7 @@ const PokemonSearchBar = ({
     }
 
     log.debug('Search query parameters', queryParams);
-    onSearch(queryParams, null);
+    await onSearch(queryParams, null);
     setIsCollapsed(true);
     searchTriggeredRef.current = true;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -267,6 +339,7 @@ const PokemonSearchBar = ({
                   isLoading={isLoading}
                   view={view}
                   setView={setView}
+                  setSelectedBoundary={setSelectedBoundary}
                 />
               </div>
 
@@ -308,6 +381,7 @@ const PokemonSearchBar = ({
                   isLoading={isLoading}
                   view={view}
                   setView={setView}
+                  setSelectedBoundary={setSelectedBoundary}
                 />
               </div>
 
@@ -339,13 +413,28 @@ const PokemonSearchBar = ({
       <div className="controls-container">
         <div className="error-message">{errorMessage}</div>
         <div className="view-controls">
-          <button className="view-button" onClick={() => setView('list')}>
+          <button
+            type="button"
+            className="view-button"
+            aria-label="List view"
+            onClick={() => setView('list')}
+          >
             <FaList />
           </button>
-          <div className="toggle-button" onClick={toggleCollapse}>
+          <button
+            type="button"
+            className="toggle-button"
+            aria-label="Toggle search filters"
+            onClick={toggleCollapse}
+          >
             {isCollapsed ? <FaChevronDown /> : <FaChevronUp />}
-          </div>
-          <button className="view-button" onClick={() => setView('globe')}>
+          </button>
+          <button
+            type="button"
+            className="view-button"
+            aria-label="Map view"
+            onClick={() => setView('map')}
+          >
             <FaGlobe />
           </button>
         </div>
