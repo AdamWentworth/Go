@@ -144,4 +144,38 @@ describe('usePokemonDetails', () => {
     expect(details?.variant_id).toBe('0133-default');
     expect(details?.currentImage).toBe('/images/default/pokemon_133.png');
   });
+
+  it('resolves variant details from object-map variants input', async () => {
+    const variants = {
+      '0150-default': {
+        variant_id: '0150-default',
+        pokemon_id: 150,
+        name: 'Mewtwo',
+        currentImage: '/images/default/pokemon_150.png',
+        moves: [{ move_id: 1, name: 'Confusion', type: 'psychic' }],
+      },
+    };
+
+    const relatedInstances = {
+      mapped001: {
+        instance_id: 'mapped001',
+        variant_id: '0150-default',
+        pokemon_id: 150,
+      },
+    };
+    const instances = {};
+
+    const { result } = renderHook(() =>
+      usePokemonDetails('mapped001', variants as any, relatedInstances, instances),
+    );
+
+    await waitFor(() => {
+      expect(result.current).not.toBeNull();
+    });
+
+    const details = result.current as any;
+    expect(details?.variant_id).toBe('0150-default');
+    expect(details?.currentImage).toBe('/images/default/pokemon_150.png');
+    expect(Array.isArray(details?.moves)).toBe(true);
+  });
 });
