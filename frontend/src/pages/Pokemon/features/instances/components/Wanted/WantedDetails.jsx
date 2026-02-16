@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import './WantedDetails.css';
 import EditSaveComponent from '@/components/EditSaveComponent';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
-import TradeListDisplay from './TradeListDisplay.jsx';
+import TradeListDisplay from './TradeListDisplay';
 
 import { toggleEditMode } from '../../hooks/useToggleEditModeWanted';
 import FilterImages from '../../FilterImages.jsx';

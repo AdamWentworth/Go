@@ -9,14 +9,26 @@ const useNamePokemons = (
   sortMode: SortMode
 ): PokemonVariant[] => {
   return useMemo(() => {
-    return [...displayedPokemons].sort((a, b) => {
-      // Function to extract the base name by slicing off everything before the last space
-      const getBaseName = (name: string) => {
-        return name.substring(name.lastIndexOf(' ') + 1);
-      };
+    const getBaseName = (value: unknown): string => {
+      if (typeof value !== 'string') {
+        return '';
+      }
 
-      const baseNameA = getBaseName(a.species_name);
-      const baseNameB = getBaseName(b.species_name);
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return '';
+      }
+
+      const lastSpaceIdx = trimmed.lastIndexOf(' ');
+      return lastSpaceIdx >= 0 ? trimmed.substring(lastSpaceIdx + 1) : trimmed;
+    };
+
+    const getSortName = (pokemon: PokemonVariant): string =>
+      getBaseName(pokemon.species_name ?? pokemon.name ?? '');
+
+    return [...displayedPokemons].sort((a, b) => {
+      const baseNameA = getSortName(a);
+      const baseNameB = getSortName(b);
 
       // Sort alphabetically by base name
       return sortMode === 'ascending' 

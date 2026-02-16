@@ -41,6 +41,8 @@ This backlog converts the current frontend audit into an execution plan focused 
 34. TS migration slice: converted `Search/views/ListViewComponents/CaughtListView.jsx` to TypeScript with safer optional move access and added regression tests for rendering + overlay navigation flows.
 35. TS migration slice: converted `Search/views/ListViewComponents/TradeListView.jsx` to TypeScript and added regression tests for wanted-list image resolution and confirmation navigation behavior.
 36. Naming canonicalization slice: standardized Search status state and API values to canonical `caught` only, removed deprecated legacy request compatibility, and updated Search status tests/CSS to support `caught` active styling.
+37. Reliability slice: hardened `Trade/WantedListDisplay.jsx` and `Wanted/TradeListDisplay.jsx` against partial list payloads, removed debug-era noise/invalid sort args, and added unit regression coverage for filtering, fallback images, and click/toggle behavior.
+38. TS migration slice: converted `Trade/WantedListDisplay.jsx` and `Wanted/TradeListDisplay.jsx` to TypeScript (`.tsx`) with typed props/state and updated parent import wiring.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.

@@ -111,4 +111,24 @@ describe('useSortManager', () => {
 
     expect(result.current).toBe(variants);
   });
+
+  it('falls back to name when species_name is missing for name sort', () => {
+    const missingSpeciesName = buildVariant('charizard', {
+      species_name: undefined as unknown as string,
+      name: 'Mega Charizard',
+    });
+    const bulbasaur = buildVariant('bulbasaur', {
+      species_name: 'Bulbasaur',
+      name: 'Bulbasaur',
+    });
+
+    const { result } = renderHook(() =>
+      useSortManager([missingSpeciesName, bulbasaur], 'name', 'ascending'),
+    );
+
+    expect(result.current.map((v) => v.variant_id)).toEqual([
+      'bulbasaur',
+      'charizard',
+    ]);
+  });
 });
