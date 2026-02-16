@@ -1,13 +1,44 @@
-// OwnershipSearch.jsx
-
 import React, { useEffect } from 'react';
-import './OwnershipSearch.css'; 
-import CaughtSearch from './OwnershipComponents/CaughtSearch.jsx';
-import TradeSearch from './OwnershipComponents/TradeSearch.jsx';
-import WantedSearch from './OwnershipComponents/WantedSearch.jsx';
-import { normalizeOwnershipMode } from '../utils/ownershipMode';
 
-const OwnershipSearch = ({
+import './OwnershipSearch.css';
+import CaughtSearch from './OwnershipComponents/CaughtSearch';
+import TradeSearch from './OwnershipComponents/TradeSearch';
+import WantedSearch from './OwnershipComponents/WantedSearch';
+import {
+  normalizeOwnershipMode,
+  type SearchOwnershipMode,
+  type SearchOwnershipModeInput,
+} from '../utils/ownershipMode';
+
+type IvValues = {
+  Attack: number | '' | null;
+  Defense: number | '' | null;
+  Stamina: number | '' | null;
+};
+
+type OwnershipSearchProps = {
+  ownershipMode: SearchOwnershipModeInput;
+  setOwnershipMode: React.Dispatch<React.SetStateAction<SearchOwnershipMode>>;
+  ivs: IvValues;
+  setIvs: React.Dispatch<React.SetStateAction<IvValues>>;
+  isHundo: boolean;
+  setIsHundo: React.Dispatch<React.SetStateAction<boolean>>;
+  onlyMatchingTrades: boolean;
+  setOnlyMatchingTrades: React.Dispatch<React.SetStateAction<boolean>>;
+  prefLucky: boolean;
+  setPrefLucky: React.Dispatch<React.SetStateAction<boolean>>;
+  alreadyRegistered: boolean;
+  setAlreadyRegistered: React.Dispatch<React.SetStateAction<boolean>>;
+  trade_in_wanted_list?: boolean;
+  tradeInWantedList?: boolean;
+  setTradeInWantedList: React.Dispatch<React.SetStateAction<boolean>>;
+  friendshipLevel: number;
+  setFriendshipLevel: React.Dispatch<React.SetStateAction<number>>;
+};
+
+const options: SearchOwnershipMode[] = ['caught', 'trade', 'wanted'];
+
+const OwnershipSearch: React.FC<OwnershipSearchProps> = ({
   ownershipMode,
   setOwnershipMode,
   ivs,
@@ -21,16 +52,18 @@ const OwnershipSearch = ({
   alreadyRegistered,
   setAlreadyRegistered,
   trade_in_wanted_list,
+  tradeInWantedList,
   setTradeInWantedList,
   friendshipLevel,
   setFriendshipLevel,
 }) => {
-  const options = ['caught', 'trade', 'wanted'];
   const activeMode = normalizeOwnershipMode(ownershipMode);
+  const activeTradeInWantedList =
+    tradeInWantedList ?? trade_in_wanted_list ?? false;
 
-  const handleIvChange = (newIvs) => {
+  const handleIvChange = (newIvs: IvValues) => {
     setIvs(newIvs);
-  };  
+  };
 
   useEffect(() => {
     if (activeMode !== 'caught') {
@@ -52,7 +85,13 @@ const OwnershipSearch = ({
       setTradeInWantedList(false);
       setFriendshipLevel(0);
     }
-  }, [activeMode, setPrefLucky, setAlreadyRegistered, setTradeInWantedList, setFriendshipLevel]);
+  }, [
+    activeMode,
+    setPrefLucky,
+    setAlreadyRegistered,
+    setTradeInWantedList,
+    setFriendshipLevel,
+  ]);
 
   return (
     <div className="ownership-status-container">
@@ -67,44 +106,47 @@ const OwnershipSearch = ({
               setIsHundo={setIsHundo}
             />
           )}
-  
+
           {activeMode === 'trade' && (
             <TradeSearch
               onlyMatchingTrades={onlyMatchingTrades}
               setOnlyMatchingTrades={setOnlyMatchingTrades}
             />
           )}
-  
+
           {activeMode === 'wanted' && (
             <WantedSearch
               prefLucky={prefLucky}
               setPrefLucky={setPrefLucky}
               alreadyRegistered={alreadyRegistered}
               setAlreadyRegistered={setAlreadyRegistered}
-              trade_in_wanted_list={trade_in_wanted_list}
+              tradeInWantedList={activeTradeInWantedList}
               setTradeInWantedList={setTradeInWantedList}
               friendshipLevel={friendshipLevel}
               setFriendshipLevel={setFriendshipLevel}
             />
           )}
         </div>
-  
+
         <div className="ownership-options-container">
           <div className="ownership-options">
             {options.map((option) => (
               <button
                 key={option}
-                className={`ownership-button ${activeMode === option ? 'active ' + option : 'inactive ' + option}`}
+                type="button"
+                className={`ownership-button ${activeMode === option ? `active ${option}` : `inactive ${option}`}`}
                 onClick={() => setOwnershipMode(option)}
               >
-                {option === 'caught' ? 'Caught' : option.charAt(0).toUpperCase() + option.slice(1)}
+                {option === 'caught'
+                  ? 'Caught'
+                  : option.charAt(0).toUpperCase() + option.slice(1)}
               </button>
             ))}
           </div>
         </div>
       </div>
     </div>
-  );  
+  );
 };
 
 export default OwnershipSearch;

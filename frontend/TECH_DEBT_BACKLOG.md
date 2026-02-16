@@ -51,6 +51,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 44. TS migration slice: converted `Search/Search.jsx` to `Search.tsx`, tightened search result typing and ownership normalization input handling, and added regression tests for welcome rendering, list enrichment/sorting, ownership-mode propagation, and map/list view switching.
 45. TS migration slice: converted `Search/PokemonSearchBar.jsx` to `PokemonSearchBar.tsx`, aligned view toggle output to canonical `list`/`map`, and added regression tests for shadow-trade validation, trade query normalization, and view-toggle dispatch.
 46. TS migration slice: converted `Search/SearchParameters/LocationSearch.jsx` to `LocationSearch.tsx`, replaced ad-hoc console logging with scoped logger usage, and added regression tests for suggestion fetch/selection, outside-click collapse, current-location toggle, and short-input behavior.
+47. TS migration slice: converted `Search/SearchParameters/OwnershipSearch.jsx` and ownership subcomponents (`CaughtSearch.jsx`, `TradeSearch.jsx`, `WantedSearch.jsx`, `FriendshipSearch.jsx`) to TypeScript, kept legacy alias compatibility (`trade_in_wanted_list`) while normalizing internal naming, and added regression tests for mode resets, checkbox/slider behavior, lucky-toggle behavior, and IV forwarding.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
@@ -264,4 +265,4 @@ This backlog converts the current frontend audit into an execution plan focused 
 
 ## Immediate Next Step
 
-Continue P1.3 incremental JS->TS migration for low-risk UI/context slices with tests-first changes (next candidate: `Search/SearchParameters/OwnershipSearch.jsx`), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.
+Continue P1.3 incremental JS->TS migration for low-risk UI/context slices with tests-first changes (next candidate: `Search/SearchParameters/VariantSearch.jsx` plus `VariantComponents/MovesSearch.jsx`), while keeping P1.4 log gating and P0.1 lint-baseline reduction in parallel.

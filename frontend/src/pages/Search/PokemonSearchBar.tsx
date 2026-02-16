@@ -27,9 +27,9 @@ type Coordinates = {
 };
 
 type IvFilters = {
-  Attack: number | null;
-  Defense: number | null;
-  Stamina: number | null;
+  Attack: number | '' | null;
+  Defense: number | '' | null;
+  Stamina: number | '' | null;
 };
 
 export type PokemonSearchQueryParams = {
@@ -73,6 +73,9 @@ type PokemonSearchBarProps = {
 };
 
 const log = createScopedLogger('PokemonSearchBar');
+
+const toNullableNumber = (value: number | '' | null): number | null =>
+  typeof value === 'number' ? value : null;
 
 const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
   onSearch,
@@ -248,9 +251,9 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
       charged_move_2_id: selectedMoves.chargedMove2,
       gender: selectedGender === 'Any' ? null : selectedGender,
       background_id: selectedBackgroundId,
-      attack_iv: ivs.Attack,
-      defense_iv: ivs.Defense,
-      stamina_iv: ivs.Stamina,
+      attack_iv: toNullableNumber(ivs.Attack),
+      defense_iv: toNullableNumber(ivs.Defense),
+      stamina_iv: toNullableNumber(ivs.Stamina),
       only_matching_trades: onlyMatchingTrades ? true : null,
       pref_lucky: prefLucky ? true : null,
       friendship_level: friendshipLevel,
