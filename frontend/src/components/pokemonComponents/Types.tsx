@@ -4,9 +4,9 @@ import './Types.css';
 
 type Props = {
   pokemon: {
-    type1_name: string;
+    type1_name?: string;
     type2_name?: string;
-    type_1_icon: string;
+    type_1_icon?: string;
     type_2_icon?: string;
   };
 };

@@ -2,18 +2,11 @@
 
 import React from 'react';
 import FusionPokemonSelection from './FusionPokemonSelection';
-import { PokemonVariant } from '@/types/pokemonVariants';
-import { Fusion } from '@/types/pokemonSubTypes';
+import type { FusionSelectionData } from '@/types/fusion';
 
 type FusionPokemonModalProps = {
   isOpen: boolean;
-  fusionSelectionData: {
-    leftCandidatesList: PokemonVariant[];
-    rightCandidatesList: PokemonVariant[];
-    fusionData: Fusion;
-    error?: string;
-    [key: string]: any; // includes resolve, reject, baseKey, etc.
-  } | null;
+  fusionSelectionData: FusionSelectionData | null;
 
   onConfirm: (choice: string, leftId: string, rightId: string) => void;
   onCancel: () => void;
@@ -36,6 +29,7 @@ const FusionPokemonModal: React.FC<FusionPokemonModalProps> = ({
       {...fusionSelectionData}
       leftCandidatesList={fusionSelectionData.leftCandidatesList}
       rightCandidatesList={fusionSelectionData.rightCandidatesList}
+      error={fusionSelectionData.error ?? undefined}
       onConfirm={onConfirm}
       onCancel={onCancel}
       onCreateNewLeft={onCreateNewLeft}

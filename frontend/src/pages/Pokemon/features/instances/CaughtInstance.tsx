@@ -12,6 +12,7 @@ import { useInstancesStore } from '@/features/instances/store/useInstancesStore'
 import { useModal } from '@/contexts/ModalContext';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
+import type { VariantBackground, MegaEvolution } from '@/types/pokemonSubTypes';
 
 import useValidation from './hooks/useValidation';
 import { useFusion } from './hooks/useFusion';
@@ -21,7 +22,13 @@ import { useSprite } from './hooks/useSprite';
 import { useEditWorkflow } from './hooks/useEditWorkflow';
 
 import { calculateBaseStats } from '@/utils/calculateBaseStats';
-import { buildInstanceChanges } from './utils/buildInstanceChanges';
+import {
+  buildInstanceChanges,
+  type IVs as InstanceIVs,
+  type MovesState,
+  type MegaData as PersistMegaData,
+  type FusionState as PersistFusionState,
+} from './utils/buildInstanceChanges';
 
 import HeaderRow from './sections/HeaderRow';
 import BackgroundSelector from './sections/BackgroundSelector';
@@ -35,32 +42,20 @@ import MovesAndIV from './sections/MovesAndIV';
 import MetaPanel from './sections/MetaPanel';
 import Modals from './sections/Modals';
 
-type InstanceData = Partial<PokemonInstance> & Record<string, unknown>;
-
-type CaughtPokemon = PokemonVariant & { pokemonKey?: string };
+type CaughtPokemon = PokemonVariant & {
+  instanceData?: PokemonInstance;
+  pokemonKey?: string;
+};
 
 interface CaughtInstanceProps {
   pokemon: CaughtPokemon;
   isEditable: boolean;
 }
 
-type IVValue = number | '';
-interface IVState {
-  Attack: IVValue;
-  Defense: IVValue;
-  Stamina: IVValue;
-}
-
-interface MoveState {
-  fastMove: unknown;
-  chargedMove1: unknown;
-  chargedMove2: unknown;
-}
-
 const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) => {
-  const instanceData = (pokemon.instanceData ?? {}) as InstanceData;
-  const megaEvolutions = pokemon.megaEvolutions ?? [];
-  const backgrounds = (pokemon.backgrounds ?? []) as any[];
+  const instanceData: Partial<PokemonInstance> = pokemon.instanceData ?? {};
+  const megaEvolutions: MegaEvolution[] = pokemon.megaEvolutions ?? [];
+  const backgrounds: VariantBackground[] = pokemon.backgrounds ?? [];
   const name = String(pokemon.name ?? pokemon.species_name ?? 'Pokemon');
   const variantType = pokemon.variantType;
   const variantId = pokemon.variant_id;
@@ -71,7 +66,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
   const { alert } = useModal();
   const { validate, resetErrors } = useValidation();
 
-  const [megaData, setMegaData] = useState({
+  const [megaData, setMegaData] = useState<PersistMegaData>({
     isMega: Boolean(instanceData.is_mega),
     mega: Boolean(instanceData.mega),
     megaForm:
@@ -80,17 +75,14 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
         : null,
   });
 
-  const { fusion, setFusion, handleFuseProceed } = useFusion(
-    pokemon as any,
-    alert as unknown as (msg: string) => void,
-  );
+  const { fusion, setFusion, handleFuseProceed } = useFusion(pokemon, alert);
   const [originalFusedWith, setOriginalFusedWith] = useState<string | null>(
-    (fusion as any).fusedWith ?? null,
+    fusion.fusedWith ?? null,
   );
 
-  const [gender, setGender] = useState<string | null>((instanceData.gender as string | null) ?? null);
+  const [gender, setGender] = useState<string | null>(instanceData.gender ?? null);
   const [isFemale, setIsFemale] = useState<boolean>(instanceData.gender === 'Female');
-  const [nickname, setNickname] = useState<string | null>((instanceData.nickname as string | null) ?? null);
+  const [nickname, setNickname] = useState<string | null>(instanceData.nickname ?? null);
   const [isFavorite, setIsFavorite] = useState<boolean>(Boolean(instanceData.favorite));
   const [isLucky, setIsLucky] = useState<boolean>(Boolean(instanceData.lucky));
 
@@ -101,13 +93,13 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
     instanceData.level != null ? Number(instanceData.level) : null,
   );
 
-  const [moves, setMoves] = useState<MoveState>({
+  const [moves, setMoves] = useState<MovesState>({
     fastMove: instanceData.fast_move_id ?? null,
     chargedMove1: instanceData.charged_move1_id ?? null,
     chargedMove2: instanceData.charged_move2_id ?? null,
   });
 
-  const [ivs, setIvs] = useState<IVState>({
+  const [ivs, setIvs] = useState<InstanceIVs>({
     Attack: instanceData.attack_iv != null ? Number(instanceData.attack_iv) : '',
     Defense: instanceData.defense_iv != null ? Number(instanceData.defense_iv) : '',
     Stamina: instanceData.stamina_iv != null ? Number(instanceData.stamina_iv) : '',
@@ -119,11 +111,9 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
   );
 
   const [locationCaught, setLocationCaught] = useState<string | null>(
-    (instanceData.location_caught as string | null) ?? null,
+    instanceData.location_caught ?? null,
   );
-  const [dateCaught, setDateCaught] = useState<string | null>(
-    (instanceData.date_caught as string | null) ?? null,
-  );
+  const [dateCaught, setDateCaught] = useState<string | null>(instanceData.date_caught ?? null);
 
   const [isShadow, setIsShadow] = useState<boolean>(Boolean(instanceData.shadow));
   const [isPurified, setIsPurified] = useState<boolean>(Boolean(instanceData.purified));
@@ -142,15 +132,22 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
     selectedBackground,
     handleBackgroundSelect,
     selectableBackgrounds,
-  } = useBackgrounds(
-    backgrounds as any[],
-    variantType,
-    (instanceData.location_card as string | number | null | undefined) ?? null,
-  );
+  } = useBackgrounds(backgrounds, variantType, instanceData.location_card ?? null);
 
   const currentBaseStats = useMemo(
-    () => calculateBaseStats(pokemon as any, megaData as any, fusion as any),
-    [pokemon, megaData, fusion],
+    () =>
+      calculateBaseStats(
+        pokemon,
+        {
+          isMega: megaData.isMega,
+          megaForm: megaData.megaForm ?? undefined,
+        },
+        {
+          is_fused: fusion.is_fused,
+          fusion_form: fusion.fusion_form ?? undefined,
+        },
+      ),
+    [pokemon, megaData.isMega, megaData.megaForm, fusion.is_fused, fusion.fusion_form],
   );
 
   const currentImage = useSprite({
@@ -158,8 +155,8 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
     pokemon,
     isMega: megaData.isMega,
     megaForm: megaData.megaForm,
-    isFused: (fusion as any).is_fused,
-    fusionForm: (fusion as any).fusion_form,
+    isFused: fusion.is_fused,
+    fusionForm: fusion.fusion_form,
     isPurified,
     gigantamax,
   });
@@ -176,10 +173,18 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
   const handleFavoriteChange = useCallback((value: boolean) => setIsFavorite(value), []);
   const handleWeightChange = useCallback((value: string | number) => setWeight(Number(value)), []);
   const handleHeightChange = useCallback((value: string | number) => setHeight(Number(value)), []);
-  const handleMovesChange = useCallback((value: unknown) => {
-    setMoves(value as MoveState);
+  const handleMovesChange = useCallback((value: MovesState) => {
+    setMoves(value);
   }, []);
-  const handleIvChange = useCallback((value: IVState) => setIvs(value), []);
+  const handleIvChange = useCallback(
+    (value: { Attack: number | '' | null; Defense: number | '' | null; Stamina: number | '' | null }) =>
+      setIvs({
+        Attack: value.Attack ?? '',
+        Defense: value.Defense ?? '',
+        Stamina: value.Stamina ?? '',
+      }),
+    [],
+  );
   const handleLocationCaughtChange = useCallback((value: string) => setLocationCaught(value), []);
   const handleDateCaughtChange = useCallback((value: string) => setDateCaught(value), []);
   const handleLevelChange = useCallback((value: string) => {
@@ -262,19 +267,49 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
   }, [recalcArcHeight]);
 
   const { editMode, toggleEditMode } = useEditWorkflow({
-    validate,
+    validate: (payload, baseStats) => {
+      const result = validate(
+        {
+          level: payload.level ?? undefined,
+          cp: payload.cp ?? undefined,
+          ivs: {
+            Attack: payload.ivs.Attack === '' ? undefined : payload.ivs.Attack,
+            Defense: payload.ivs.Defense === '' ? undefined : payload.ivs.Defense,
+            Stamina: payload.ivs.Stamina === '' ? undefined : payload.ivs.Stamina,
+          },
+        },
+        baseStats as { attack: number; defense: number; stamina: number },
+      );
+      return {
+        validationErrors: result.validationErrors as Record<string, string | undefined>,
+        computedValues: result.computedValues,
+      };
+    },
     currentBaseStats,
-    alert: alert as unknown as (msg: string) => void,
-    onPersist: async ({ newComputedValues }: { newComputedValues: Record<string, any> }) => {
+    alert,
+    onPersist: async ({ newComputedValues }) => {
       const computedCP = newComputedValues.cp ?? (cp !== '' ? Number(cp) : null);
       const computedLevel = newComputedValues.level ?? level;
-      const computedIvs = (newComputedValues.ivs ?? ivs) as IVState;
+      const computedIvs = newComputedValues.ivs ?? ivs;
 
-      if ('level' in newComputedValues) setLevel(newComputedValues.level);
-      if ('cp' in newComputedValues) setCP(String(newComputedValues.cp ?? ''));
-      if ('ivs' in newComputedValues) setIvs(newComputedValues.ivs);
+      if (typeof newComputedValues.level === 'number') {
+        setLevel(newComputedValues.level);
+      }
+      if (newComputedValues.cp !== undefined) {
+        setCP(newComputedValues.cp == null ? '' : String(newComputedValues.cp));
+      }
+      if (newComputedValues.ivs) {
+        setIvs(newComputedValues.ivs);
+      }
 
-      const base = buildInstanceChanges({
+      const persistFusion: PersistFusionState = {
+        storedFusionObject: fusion.storedFusionObject,
+        is_fused: fusion.is_fused,
+        fusedWith: fusion.fusedWith,
+        fusion_form: fusion.fusion_form,
+      };
+
+      const patchMap: Record<string, Partial<PokemonInstance>> = buildInstanceChanges({
         pokemonKey,
         nickname,
         isLucky,
@@ -284,43 +319,42 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
         height,
         computedCP,
         computedLevel,
-        moves: moves as any,
+        moves,
         ivs: computedIvs,
         locationCaught,
         dateCaught,
-        selectedBackgroundId: selectedBackground ? (selectedBackground as any).background_id : null,
-        megaData: megaData as any,
-        fusion: fusion as any,
+        selectedBackgroundId: selectedBackground?.background_id ?? null,
+        megaData,
+        fusion: persistFusion,
         isShadow,
         isPurified,
         maxAttack,
         maxGuard,
         maxSpirit,
-      }) as Record<string, Record<string, unknown>>;
+      });
 
-      const { is_fused, fusion_form, fusedWith: newFusedWith } = fusion as any;
-      if (originalFusedWith && originalFusedWith !== newFusedWith) {
-        base[originalFusedWith] = {
+      if (originalFusedWith && originalFusedWith !== fusion.fusedWith) {
+        patchMap[originalFusedWith] = {
           disabled: false,
           fused_with: null,
           is_fused: false,
           fusion_form: null,
         };
       }
-      if (newFusedWith && is_fused && newFusedWith !== originalFusedWith) {
-        base[newFusedWith] = {
+      if (fusion.fusedWith && fusion.is_fused && fusion.fusedWith !== originalFusedWith) {
+        patchMap[fusion.fusedWith] = {
           disabled: true,
           fused_with: pokemonKey,
           is_fused: true,
-          fusion_form,
+          fusion_form: fusion.fusion_form,
         };
       }
 
-      await updateDetails(base as any);
+      await updateDetails(patchMap);
       resetErrors();
       recalcArcHeight();
     },
-    onStartEditing: () => setOriginalFusedWith((fusion as any).fusedWith ?? null),
+    onStartEditing: () => setOriginalFusedWith(fusion.fusedWith ?? null),
   });
 
   const handleToggleEditClick = useCallback(async () => {
@@ -340,6 +374,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
         toggleEditMode={handleToggleEditClick}
         isEditable={isEditable}
         cp={cp}
+        isFavorite={isFavorite}
         onCPChange={handleCPChange}
         onFavoriteChange={handleFavoriteChange}
       />
@@ -368,7 +403,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
       />
 
       <IdentityRow
-        pokemon={pokemon as any}
+        pokemon={pokemon}
         isLucky={isLucky}
         isShadow={isShadow}
         isPurified={isPurified}
@@ -379,7 +414,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
       />
 
       <LevelGenderRow
-        pokemon={pokemon as any}
+        pokemon={pokemon}
         editMode={editMode}
         level={level}
         onLevelChange={handleLevelChange}
@@ -388,18 +423,18 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
       />
 
       <StatsRow
-        pokemon={pokemon as any}
+        pokemon={pokemon}
         editMode={editMode}
         onWeightChange={handleWeightChange}
         onHeightChange={handleHeightChange}
       />
 
       <PowerPanel
-        pokemon={pokemon as any}
+        pokemon={pokemon}
         editMode={editMode}
         megaData={megaData}
-        setMegaData={setMegaData as any}
-        megaEvolutions={megaEvolutions as any[]}
+        setMegaData={setMegaData}
+        megaEvolutions={megaEvolutions}
         isShadow={isShadow}
         name={name}
         dynamax={dynamax}
@@ -415,18 +450,18 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
       />
 
       <MovesAndIV
-        pokemon={pokemon as any}
+        pokemon={pokemon}
         editMode={editMode}
-        onMovesChange={handleMovesChange as any}
+        onMovesChange={handleMovesChange}
         isShadow={isShadow}
         isPurified={isPurified}
         ivs={ivs}
-        onIvChange={handleIvChange as any}
+        onIvChange={handleIvChange}
         areIVsEmpty={areIVsEmpty}
       />
 
       <MetaPanel
-        pokemon={pokemon as any}
+        pokemon={pokemon}
         editMode={editMode}
         onLocationChange={handleLocationCaughtChange}
         onDateChange={handleDateCaughtChange}
@@ -435,11 +470,11 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
       <Modals
         showBackgrounds={showBackgrounds}
         setShowBackgrounds={setShowBackgrounds}
-        pokemon={pokemon as any}
+        pokemon={pokemon}
         onSelectBackground={handleBackgroundSelect}
-        overlayPokemon={(fusion as any).overlayPokemon}
+        overlayPokemon={fusion.overlayPokemon}
         onCloseOverlay={() =>
-          setFusion((prev: any) => ({ ...prev, overlayPokemon: null }))
+          setFusion((prev) => ({ ...prev, overlayPokemon: null }))
         }
         onFuse={handleFuseProceed}
       />

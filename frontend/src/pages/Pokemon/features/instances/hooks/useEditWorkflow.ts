@@ -1,11 +1,26 @@
 // hooks/useEditWorkflow.ts
 import { useCallback, useEffect, useState } from 'react';
 
+export type EditWorkflowPayload = {
+  level: number | null;
+  cp: number | null;
+  ivs: { Attack: number | ''; Defense: number | ''; Stamina: number | '' };
+  weight: number;
+  height: number;
+};
+
+export type EditWorkflowComputed = Partial<EditWorkflowPayload> & {
+  ivs?: EditWorkflowPayload['ivs'];
+};
+
 type Args = {
-  validate: Function;
-  currentBaseStats: any;
-  alert: (msg: string) => void;
-  onPersist: (computed: { newComputedValues: any }) => Promise<void>;
+  validate: (
+    payload: EditWorkflowPayload,
+    currentBaseStats: unknown,
+  ) => { validationErrors: Record<string, string | undefined>; computedValues: EditWorkflowComputed };
+  currentBaseStats: unknown;
+  alert: (msg: string) => void | Promise<void>;
+  onPersist: (computed: { newComputedValues: EditWorkflowComputed }) => Promise<void>;
   onStartEditing?: () => void;
   onStopEditing?: () => void;
 };
@@ -15,7 +30,7 @@ export function useEditWorkflow({ validate, currentBaseStats, alert, onPersist, 
 
   useEffect(() => { if (editMode) onStartEditing?.(); }, [editMode, onStartEditing]);
 
-  const toggleEditMode = useCallback(async (payload: { level: any; cp: any; ivs: any; weight: any; height: any }) => {
+  const toggleEditMode = useCallback(async (payload: EditWorkflowPayload) => {
     if (editMode) {
       const { validationErrors: vErrors, computedValues } = validate(payload, currentBaseStats);
       if (Object.keys(vErrors).length > 0) {

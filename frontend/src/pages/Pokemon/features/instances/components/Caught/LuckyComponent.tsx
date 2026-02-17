@@ -7,8 +7,8 @@ import type { PokemonInstance } from '@/types/pokemonInstance';
 
 interface LuckyComponentProps {
     pokemon: {
-        instanceData: PokemonInstance;
-        rarity: PokemonVariant['rarity'];
+        instanceData?: Partial<PokemonInstance>;
+        rarity?: PokemonVariant['rarity'];
     };
     onToggleLucky: (newState: boolean) => void;
     isLucky: boolean;
@@ -25,7 +25,7 @@ const LuckyComponent: React.FC<LuckyComponentProps> = ({
 }) => {
     if (
         isShadow || 
-        pokemon.instanceData.is_for_trade || 
+        pokemon.instanceData?.is_for_trade || 
         pokemon.rarity === "Mythic" || 
         !editMode
     ) {

@@ -3,19 +3,15 @@
 import React from 'react';
 import './MaxComponent.css';
 import type { MaxForm } from '@/types/pokemonSubTypes';
+import type { PokemonInstance } from '@/types/pokemonInstance';
 
-interface instanceData {
-  shadow: boolean;
-  purified: boolean;
-}
-
-interface PokemonProps {
-  max: MaxForm[];
-  instanceData: instanceData;
+type PokemonProps = {
+  max?: MaxForm[];
+  instanceData?: Partial<Pick<PokemonInstance, 'shadow' | 'purified'>>;
   variantType?: string;
   variant_id?: string;
-  pokemonKey?: string; // legacy
-}
+  pokemonKey?: string;
+};
 
 interface MaxComponentProps {
   pokemon: PokemonProps;
@@ -44,8 +40,8 @@ const MaxComponent: React.FC<MaxComponentProps> = ({
     !hasMaxVariant ||
     !Array.isArray(pokemon.max) ||
     pokemon.max.length === 0 ||
-    pokemon.instanceData.shadow ||
-    pokemon.instanceData.purified ||
+    pokemon.instanceData?.shadow ||
+    pokemon.instanceData?.purified ||
     (pokemon.variantType && pokemon.variantType.includes('costume'))
   ) {
     return null;

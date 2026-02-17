@@ -2,9 +2,14 @@ import React from 'react';
 import './MetaPanel.css';
 import LocationCaught from '@/components/pokemonComponents/LocationCaught';
 import DateCaughtComponent from '@/components/pokemonComponents/DateCaught';
+import type { PokemonInstance } from '@/types/pokemonInstance';
+
+type PokemonWithInstance = {
+  instanceData?: Pick<PokemonInstance, 'location_caught' | 'date_caught'>;
+};
 
 interface MetaPanelProps {
-  pokemon: Record<string, unknown>;
+  pokemon: PokemonWithInstance;
   editMode: boolean;
   onLocationChange: (value: string) => void;
   onDateChange: (value: string) => void;
@@ -19,7 +24,7 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
   <>
     <div className="location-caught-component">
       <LocationCaught
-        pokemon={pokemon as never}
+        pokemon={pokemon}
         editMode={editMode}
         onLocationChange={onLocationChange}
       />
@@ -27,7 +32,7 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
 
     <div className="date-caught-component">
       <DateCaughtComponent
-        pokemon={pokemon as never}
+        pokemon={pokemon}
         editMode={editMode}
         onDateChange={onDateChange}
       />
@@ -36,3 +41,4 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
 );
 
 export default MetaPanel;
+

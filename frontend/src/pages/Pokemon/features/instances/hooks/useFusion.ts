@@ -1,8 +1,8 @@
 // useFusion.ts
 import { useState } from 'react';
 import { getValidCandidates } from '../../fusion/core/getValidCandidates';
-import { PokemonVariant } from '@/types/pokemonVariants';
-import { PokemonInstance } from '@/types/pokemonInstance';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { PokemonInstance } from '@/types/pokemonInstance';
 
 interface FusionEntry {
   fusion_id: number;
@@ -10,7 +10,7 @@ interface FusionEntry {
   name?: string;
 }
 
-interface FusionState {
+export interface FusionState {
   is_fused: boolean;
   fusion_form: string | null;
   fusedWith: string | null;
@@ -32,7 +32,7 @@ function arrayToRecord(arr?: FusionEntry[] | Record<number, boolean>): Record<nu
   }, {});
 }
 
-export function useFusion(pokemon: PokemonVariant, alert: (msg: string) => void) {
+export function useFusion(pokemon: PokemonVariant, alert: (msg: string) => void | Promise<void>) {
   const ownership = pokemon.instanceData as PokemonInstance | undefined;
 
   const [fusion, setFusion] = useState<FusionState>({

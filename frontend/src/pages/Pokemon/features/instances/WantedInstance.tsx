@@ -17,13 +17,9 @@ import { determineImageUrl } from '@/utils/imageHelpers';
 import { getEntityKey } from './utils/getEntityKey';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { VariantBackground } from '@/types/pokemonSubTypes';
 
-interface BackgroundOption {
-  background_id: number;
-  costume_id?: number;
-  image_url: string;
-  [key: string]: unknown;
-}
+type BackgroundOption = VariantBackground;
 
 type WantedPokemon = PokemonVariant & {
   instanceData: PokemonInstance;

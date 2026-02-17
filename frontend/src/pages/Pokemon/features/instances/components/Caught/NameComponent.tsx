@@ -3,22 +3,22 @@ import React, { useState, useRef, useEffect } from 'react';
 import './NameComponent.css';
 import { getLastWord } from '@/utils/formattingHelpers';
 
-interface Pokemon {
-  name: string;
-  instanceData: {
-    nickname?: string;
+type PokemonForName = {
+  name?: string;
+  instanceData?: {
+    nickname?: string | null;
   };
-}
+};
 
 interface NameComponentProps {
-  pokemon: Pokemon;
+  pokemon: PokemonForName;
   editMode: boolean;
   onNicknameChange: (nickname: string | null) => void;
 }
 
 const NameComponent: React.FC<NameComponentProps> = ({ pokemon, editMode, onNicknameChange }) => {
   const initialNickname = (): string =>
-    pokemon.instanceData.nickname && pokemon.instanceData.nickname.trim() !== ''
+    pokemon.instanceData?.nickname && pokemon.instanceData.nickname.trim() !== ''
       ? pokemon.instanceData.nickname
       : '';
 
@@ -28,11 +28,11 @@ const NameComponent: React.FC<NameComponentProps> = ({ pokemon, editMode, onNick
 
   useEffect(() => {
     setNicknameState(initialNickname());
-  }, [pokemon.instanceData.nickname, pokemon.name]);
+  }, [pokemon.instanceData?.nickname, pokemon.name]);
 
   useEffect(() => {
     if (editMode && editableRef.current) {
-      const defaultName = getLastWord(pokemon.name);
+      const defaultName = getLastWord(pokemon.name ?? '');
       const displayName = nickname || defaultName;
       // Update textContent when entering edit mode or when nickname is non-empty
       if (!userFocus) {
@@ -102,7 +102,7 @@ const NameComponent: React.FC<NameComponentProps> = ({ pokemon, editMode, onNick
             </span>
           ) : (
             <span className="name-editable-content">
-              {nickname || getLastWord(pokemon.name)}
+              {nickname || getLastWord(pokemon.name ?? '')}
             </span>
           )}
         </div>

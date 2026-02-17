@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import './HighlightActionButton.css';
+import type { InstanceStatus } from '@/types/instances';
 
 export interface HighlightActionButtonProps {
   highlightedCards: Set<string>;
-  handleConfirmChangeTags: (filter: string) => void;
-  tagFilter: string;
+  handleConfirmChangeTags: (filter: InstanceStatus) => void;
+  tagFilter: InstanceStatus | '';
   isUpdating: boolean;
 }
 
@@ -22,7 +23,7 @@ const HighlightActionButton: React.FC<HighlightActionButtonProps> = ({
     setIsExpanded(prev => !prev);
   };
 
-  const handleFilterClick = (filter: string): void => {
+  const handleFilterClick = (filter: InstanceStatus): void => {
     handleConfirmChangeTags(filter);
     setIsExpanded(false);
   };

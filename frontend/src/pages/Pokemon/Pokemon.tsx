@@ -25,6 +25,7 @@ import type { InstanceStatus } from '@/types/instances';
 import type { TagBuckets } from '@/types/tags';
 
 import useInstanceIdProcessor from './hooks/useInstanceIdProcessor';
+import type { PokemonOverlaySelection } from './hooks/useInstanceIdProcessor';
 import useUIControls from './hooks/useUIControls';
 import useHandleChangeTags from './services/changeInstanceTag/hooks/useHandleChangeTags';
 import usePokemonProcessing from './hooks/usePokemonProcessing';
@@ -35,10 +36,6 @@ import { getNextActiveView } from './utils/swipeNavigation';
 
 type ActiveView = 'pokedex' | 'pokemon' | 'tags';
 type LastMenu = 'pokedex' | 'ownership';
-type SelectedPokemon =
-  | PokemonVariant
-  | { pokemon: PokemonVariant; overlayType: 'instance' }
-  | null;
 
 interface PokemonProps {
   isOwnCollection: boolean;
@@ -49,6 +46,8 @@ const HeaderUIMemo = React.memo(HeaderUI);
 
 const isActiveView = (value: string): value is ActiveView =>
   value === 'pokedex' || value === 'pokemon' || value === 'tags';
+const isInstanceStatus = (value: string): value is InstanceStatus =>
+  value === 'Caught' || value === 'Trade' || value === 'Wanted' || value === 'Missing';
 
 function Pokemon({ isOwnCollection }: PokemonProps) {
   const { username: urlUsername } = useParams<{ username: string }>();
@@ -76,7 +75,7 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
     : foreignInstances || contextInstanceData;
 
   const [tagFilter, setTagFilter] = useState<string>('');
-  const [selectedPokemon, setSelectedPokemon] = useState<SelectedPokemon>(null);
+  const [selectedPokemon, setSelectedPokemon] = useState<PokemonOverlaySelection>(null);
   const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [selectedPokedexList, setSelectedPokedexList] = useState<PokemonVariant[]>([]);
@@ -135,27 +134,28 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
   ) as TagBuckets;
 
   const baseVariants = lastMenu === 'pokedex' ? selectedPokedexList : variants;
+  const activeStatusFilter: InstanceStatus | null = isInstanceStatus(tagFilter) ? tagFilter : null;
 
   const { filteredVariants, sortedPokemons } = usePokemonProcessing(
     baseVariants,
     instances,
-    tagFilter as any,
+    activeStatusFilter,
     activeTags,
     searchTerm,
     showEvolutionaryLine,
-    sortType as any,
-    sortMode as any,
+    sortType,
+    sortMode,
   );
 
   useInstanceIdProcessor({
     variantsLoading: loading,
     filteredVariants,
-    location: location as any,
-    selectedPokemon: selectedPokemon as any,
+    location,
+    selectedPokemon,
     isOwnCollection,
     hasProcessedInstanceId,
-    navigate: navigate as any,
-    setSelectedPokemon: setSelectedPokemon as any,
+    navigate,
+    setSelectedPokemon,
     setHasProcessedInstanceId,
   });
 
@@ -208,7 +208,7 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
 
   const { handleConfirmChangeTags } = useHandleChangeTags({
     setTagFilter: setStatusFilter,
-    setLastMenu: (menu: string) => setLastMenu(menu as LastMenu),
+    setLastMenu,
     setHighlightedCards,
     highlightedCards,
     updateInstanceStatus: updateInstanceStatusBatch,
@@ -276,7 +276,7 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         onPokemonClick={() => setActiveView('pokemon')}
         contextText={contextText}
         totalPokemon={sortedPokemons.length}
-        highlightedCards={highlightedCards as unknown as Set<number>}
+        highlightedCards={highlightedCards}
         onClearSelection={handleClearSelection}
         onSelectAll={handleSelectAll}
         pokedexSubLabel={
@@ -335,18 +335,18 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
               sortedPokemons={sortedPokemons}
               allPokemons={variants}
               loading={loading}
-              selectedPokemon={selectedPokemon as any}
-              setSelectedPokemon={setSelectedPokemon as any}
+              selectedPokemon={selectedPokemon}
+              setSelectedPokemon={setSelectedPokemon}
               isFastSelectEnabled={isFastSelectEnabled}
               toggleCardHighlight={toggleCardHighlight}
               highlightedCards={highlightedCards}
               tagFilter={tagFilter}
               lists={activeTags}
               instances={instances}
-              sortType={sortType as any}
-              setSortType={setSortType as any}
-              sortMode={sortMode as any}
-              setSortMode={setSortMode as any}
+              sortType={sortType}
+              setSortType={setSortType}
+              sortMode={sortMode}
+              setSortMode={setSortMode}
               variants={variants}
               username={displayUsername}
               setIsFastSelectEnabled={setIsFastSelectEnabled}
@@ -376,8 +376,8 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
       {isEditable && highlightedCards.size > 0 && (
         <HighlightActionButton
           highlightedCards={highlightedCards}
-          handleConfirmChangeTags={handleConfirmChangeTags as any}
-          tagFilter={tagFilter}
+          handleConfirmChangeTags={handleConfirmChangeTags}
+          tagFilter={activeStatusFilter ?? ''}
           isUpdating={isUpdating}
         />
       )}
@@ -404,7 +404,7 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
       {isFusionSelectionOpen && fusionSelectionData && (
         <FusionPokemonModal
           isOpen={isFusionSelectionOpen}
-          fusionSelectionData={fusionSelectionData as any}
+          fusionSelectionData={fusionSelectionData}
           onConfirm={handleFusionSelectionResolve}
           onCancel={closeFusionSelection}
           onCreateNewLeft={handleCreateNewLeft}

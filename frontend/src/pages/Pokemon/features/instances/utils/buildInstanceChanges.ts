@@ -1,9 +1,9 @@
 // utils/buildInstanceChanges.ts
 export type MegaData = { isMega: boolean; mega: boolean; megaForm: string | null };
 export type IVs = { Attack: number | '' ; Defense: number | '' ; Stamina: number | '' };
-export type MovesState = { fastMove: string | null; chargedMove1: string | null; chargedMove2: string | null };
+export type MovesState = { fastMove: number | null; chargedMove1: number | null; chargedMove2: number | null };
 export type FusionState = {
-  storedFusionObject: unknown;
+  storedFusionObject: Record<string, unknown> | null;
   is_fused: boolean;
   fusedWith: string | null;
   fusion_form: string | null;
@@ -35,6 +35,11 @@ type BuildArgs = {
 
 export function buildInstanceChanges(a: BuildArgs) {
   const iv = (v: number | '') => (v === '' ? null : v);
+  const maxValue = (v: string | number | '') => {
+    if (v === '' || v === null || v === undefined) return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
 
   return {
     [a.pokemonKey]: {
@@ -53,7 +58,7 @@ export function buildInstanceChanges(a: BuildArgs) {
       stamina_iv: iv(a.ivs.Stamina),
       location_caught: a.locationCaught,
       date_caught: a.dateCaught,
-      location_card: a.selectedBackgroundId,
+      location_card: a.selectedBackgroundId == null ? null : String(a.selectedBackgroundId),
       mega: a.megaData.mega,
       is_mega: a.megaData.isMega,
       mega_form: a.megaData.isMega ? a.megaData.megaForm : null,
@@ -64,9 +69,9 @@ export function buildInstanceChanges(a: BuildArgs) {
       fusion_form: a.fusion.fusion_form,
       shadow: a.isShadow,
       purified: a.isPurified,
-      max_attack: a.maxAttack,
-      max_guard: a.maxGuard,
-      max_spirit: a.maxSpirit,
+      max_attack: maxValue(a.maxAttack),
+      max_guard: maxValue(a.maxGuard),
+      max_spirit: maxValue(a.maxSpirit),
     }
   };
 }

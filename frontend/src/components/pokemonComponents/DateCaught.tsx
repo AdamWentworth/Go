@@ -7,16 +7,17 @@ import { enUS } from 'date-fns/locale';
 import 'react-datepicker/dist/react-datepicker.css';
 import './DateCaught.css';
 
-import type { PokemonVariant } from '@/types/pokemonVariants';
-import type { PokemonInstance } from '@/types/pokemonInstance';
-
 registerLocale('en-US', enUS);
 
 /* -------------------- typing helpers ----------------------------- */
-type VariantWithInstance = PokemonVariant & { instanceData: PokemonInstance };
+type PokemonWithDate = {
+  instanceData?: {
+    date_caught?: string | null;
+  };
+};
 
 export interface DateCaughtProps {
-  pokemon: VariantWithInstance;
+  pokemon: PokemonWithDate;
   editMode: boolean;
   onDateChange: (formatted: string) => void;
 }
@@ -29,7 +30,7 @@ const DateCaughtComponent: React.FC<DateCaughtProps> = ({
 }) => {
   /* initial parse ------------------------------------------------- */
   const parseInitial = (): Date | null => {
-    const raw = pokemon.instanceData.date_caught; // string | null
+    const raw = pokemon.instanceData?.date_caught; // string | null
     if (!raw) return null;
 
     let d = parse(raw, 'yyyy-MM-dd', new Date());

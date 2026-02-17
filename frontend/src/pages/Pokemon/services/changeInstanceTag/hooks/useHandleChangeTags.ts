@@ -15,9 +15,11 @@ import { categorizePokemonKeys } from '../logic/categorizePokemonKeys';
 import { validateBlockedMoves } from '../logic/validateMoveToFilter';
 import { getDisplayName } from '../logic/getDisplayName';
 
+type MenuContext = 'pokedex' | 'ownership';
+
 interface useHandleChangeTagsProps {
   setTagFilter: (filter: InstanceStatus) => void;
-  setLastMenu: (menu: string) => void; // ensure header switches to TAGS sublabel
+  setLastMenu: (menu: MenuContext) => void; // ensure header switches to TAGS sublabel
   setHighlightedCards: (cards: Set<string>) => void;
   highlightedCards: Set<string>;
   updateInstanceStatus: (keys: string[], filter: InstanceStatus) => Promise<void>;

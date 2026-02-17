@@ -33,13 +33,9 @@ import { calculateCP } from '@/utils/calculateCP';
 import { getEntityKey } from './utils/getEntityKey';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { VariantBackground } from '@/types/pokemonSubTypes';
 
-interface BackgroundOption {
-  background_id: number;
-  image_url: string;
-  costume_id?: number;
-  [key: string]: unknown;
-}
+type BackgroundOption = VariantBackground;
 
 type TradePokemon = PokemonVariant & {
   instanceData: PokemonInstance;

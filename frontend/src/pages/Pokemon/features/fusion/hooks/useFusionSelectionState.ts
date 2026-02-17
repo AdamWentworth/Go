@@ -7,7 +7,7 @@ export function useFusionSelectionState() {
   const [isFusionSelectionOpen, setIsFusionSelectionOpen] = useState(false);
   const [fusionSelectionData, setFusionSelectionData] = useState<FusionSelectionData | null>(null);
 
-  async function promptFusionPokemonSelection(baseKey: string): Promise<any> {
+  async function promptFusionPokemonSelection(baseKey: string): Promise<string> {
     return new Promise(async (resolve, reject) => {
       try {
         const fusionDetails = await resolveFusionDetails(baseKey);
@@ -25,7 +25,7 @@ export function useFusionSelectionState() {
     });
   }
 
-  function rejectSelection(error: any) {
+  function rejectSelection(error: unknown) {
     fusionSelectionData?.reject?.(error);
     setFusionSelectionData(null);
     setIsFusionSelectionOpen(false);

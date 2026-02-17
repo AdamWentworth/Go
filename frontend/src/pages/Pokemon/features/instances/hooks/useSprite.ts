@@ -1,10 +1,11 @@
 // hooks/useSprite.ts
 import { useEffect, useState } from 'react';
 import { determineImageUrl } from '@/utils/imageHelpers';
+import type { PokemonVariant } from '@/types/pokemonVariants';
 
 type Inputs = {
   isFemale: boolean;
-  pokemon: any;
+  pokemon: PokemonVariant;
   isMega: boolean;
   megaForm: string | null;
   isFused: boolean;

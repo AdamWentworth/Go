@@ -1,14 +1,19 @@
 // hooks/useBackgrounds.ts
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import type { VariantBackground } from '@/types/pokemonSubTypes';
 
-export function useBackgrounds(backgrounds: any[], variantType?: string, locationCard?: string | number | null) {
+export function useBackgrounds(
+  backgrounds: VariantBackground[],
+  variantType?: string,
+  locationCard?: string | number | null,
+) {
   const [showBackgrounds, setShowBackgrounds] = useState(false);
-  const [selectedBackground, setSelectedBackground] = useState<any | null>(null);
+  const [selectedBackground, setSelectedBackground] = useState<VariantBackground | null>(null);
 
   useEffect(() => {
     if (locationCard !== null && locationCard !== undefined) {
       const id = parseInt(String(locationCard), 10);
-      const bg = backgrounds.find(b => b.background_id === id);
+      const bg = backgrounds.find((b) => b.background_id === id);
       if (bg) setSelectedBackground(bg);
     }
   }, [backgrounds, locationCard]);
@@ -21,7 +26,7 @@ export function useBackgrounds(backgrounds: any[], variantType?: string, locatio
     });
   }, [backgrounds, variantType]);
 
-  const handleBackgroundSelect = useCallback((bg: any) => {
+  const handleBackgroundSelect = useCallback((bg: VariantBackground | null) => {
     setSelectedBackground(bg);
     setShowBackgrounds(false);
   }, []);

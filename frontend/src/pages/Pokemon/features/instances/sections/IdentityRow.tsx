@@ -3,9 +3,17 @@ import './IdentityRow.css';
 import LuckyComponent from '../components/Caught/LuckyComponent';
 import NameComponent from '../components/Caught/NameComponent';
 import PurifyComponent from '../components/Caught/PurifyComponent';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { PokemonInstance } from '@/types/pokemonInstance';
+
+type PokemonWithInstance = {
+  name?: string;
+  rarity?: PokemonVariant['rarity'];
+  instanceData?: Partial<PokemonInstance>;
+};
 
 interface IdentityRowProps {
-  pokemon: Record<string, unknown>;
+  pokemon: PokemonWithInstance;
   isLucky: boolean;
   isShadow: boolean;
   isPurified: boolean;
@@ -28,7 +36,7 @@ const IdentityRow: React.FC<IdentityRowProps> = ({
   <div className="purify-name-shadow-container">
     <div className="lucky-component">
       <LuckyComponent
-        pokemon={pokemon as never}
+        pokemon={pokemon}
         onToggleLucky={onToggleLucky}
         isLucky={isLucky}
         editMode={editMode}
@@ -38,7 +46,7 @@ const IdentityRow: React.FC<IdentityRowProps> = ({
 
     <div className="name-container">
       <NameComponent
-        pokemon={pokemon as never}
+        pokemon={pokemon}
         editMode={editMode}
         onNicknameChange={onNicknameChange}
       />

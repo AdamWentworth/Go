@@ -3,13 +3,25 @@ import './PowerPanel.css';
 import MaxComponent from '../components/Caught/MaxComponent';
 import MaxMovesComponent from '../components/Caught/MaxMovesComponent';
 import MegaComponent from '../components/Caught/MegaComponent';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { MegaEvolution } from '@/types/pokemonSubTypes';
+import type { MegaData } from '../utils/buildInstanceChanges';
+import type { PokemonInstance } from '@/types/pokemonInstance';
+
+type PokemonWithInstance = {
+  variantType?: PokemonVariant['variantType'];
+  variant_id?: PokemonVariant['variant_id'];
+  max?: PokemonVariant['max'];
+  pokemonKey?: string;
+  instanceData?: Partial<PokemonInstance>;
+};
 
 interface PowerPanelProps {
-  pokemon: Record<string, unknown>;
+  pokemon: PokemonWithInstance;
   editMode: boolean;
-  megaData: Record<string, unknown>;
-  setMegaData: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
-  megaEvolutions: unknown[];
+  megaData?: MegaData | Partial<MegaData>;
+  setMegaData?: React.Dispatch<React.SetStateAction<MegaData>>;
+  megaEvolutions?: MegaEvolution[];
   isShadow: boolean;
   name: string;
   dynamax: boolean;
@@ -27,9 +39,9 @@ interface PowerPanelProps {
 const PowerPanel: React.FC<PowerPanelProps> = ({
   pokemon,
   editMode,
-  megaData,
-  setMegaData,
-  megaEvolutions,
+  megaData = { isMega: false, mega: false, megaForm: null },
+  setMegaData = () => undefined,
+  megaEvolutions = [],
   isShadow,
   name,
   dynamax,
@@ -42,46 +54,58 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
   onMaxAttackChange,
   onMaxGuardChange,
   onMaxSpiritChange,
-}) => (
-  <>
-    <div className="max-mega-container">
-      <div className="max-component">
-        <MaxComponent
-          pokemon={pokemon as never}
-          editMode={editMode}
-          dynamax={dynamax}
-          gigantamax={gigantamax}
-          onToggleMax={onToggleMax}
-          showMaxOptions={showMaxOptions}
-        />
-      </div>
-      <div className="mega-component">
-        <MegaComponent
-          megaData={megaData as never}
-          setMegaData={setMegaData as never}
-          editMode={editMode}
-          megaEvolutions={megaEvolutions as never}
-          isShadow={isShadow}
-          name={name}
-        />
-      </div>
-    </div>
+}) => {
+  const normalizedMegaData: MegaData = {
+    isMega: Boolean(megaData?.isMega),
+    mega: Boolean(megaData?.mega),
+    megaForm: megaData?.megaForm ?? null,
+  };
 
-    <MaxMovesComponent
-      pokemon={pokemon as never}
-      editMode={editMode}
-      showMaxOptions={showMaxOptions}
-      setShowMaxOptions={() => {
-        // Kept for compatibility; no-op here.
-      }}
-      maxAttack={maxAttack}
-      maxGuard={maxGuard}
-      maxSpirit={maxSpirit}
-      handleMaxAttackChange={onMaxAttackChange}
-      handleMaxGuardChange={onMaxGuardChange}
-      handleMaxSpiritChange={onMaxSpiritChange}
-    />
-  </>
-);
+  const normalizedMegaEvolutions = megaEvolutions.filter(
+    (entry): entry is MegaEvolution & { form: string } => typeof entry.form === 'string',
+  );
+
+  return (
+    <>
+      <div className="max-mega-container">
+        <div className="max-component">
+          <MaxComponent
+            pokemon={pokemon}
+            editMode={editMode}
+            dynamax={dynamax}
+            gigantamax={gigantamax}
+            onToggleMax={onToggleMax}
+            showMaxOptions={showMaxOptions}
+          />
+        </div>
+        <div className="mega-component">
+          <MegaComponent
+            megaData={normalizedMegaData}
+            setMegaData={setMegaData}
+            editMode={editMode}
+            megaEvolutions={normalizedMegaEvolutions}
+            isShadow={isShadow}
+            name={name}
+          />
+        </div>
+      </div>
+
+      <MaxMovesComponent
+        pokemon={pokemon}
+        editMode={editMode}
+        showMaxOptions={showMaxOptions}
+        setShowMaxOptions={() => {
+          // Kept for compatibility; no-op here.
+        }}
+        maxAttack={maxAttack}
+        maxGuard={maxGuard}
+        maxSpirit={maxSpirit}
+        handleMaxAttackChange={onMaxAttackChange}
+        handleMaxGuardChange={onMaxGuardChange}
+        handleMaxSpiritChange={onMaxSpiritChange}
+      />
+    </>
+  );
+};
 
 export default PowerPanel;

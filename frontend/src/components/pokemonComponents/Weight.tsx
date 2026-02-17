@@ -2,25 +2,27 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './Weight.css';
 
-type Props = {
-  pokemon: {
-    instanceData: {
-      weight?: number;
-    };
-    sizes?: {
-      weight_xxs_threshold: number;
-      weight_xs_threshold: number;
-      weight_xl_threshold: number;
-      weight_xxl_threshold: number;
-    };
+type PokemonWithWeight = {
+  instanceData?: {
+    weight?: number | null;
   };
+  sizes?: {
+    weight_xxs_threshold: number;
+    weight_xs_threshold: number;
+    weight_xl_threshold: number;
+    weight_xxl_threshold: number;
+  };
+};
+
+type Props = {
+  pokemon: PokemonWithWeight;
   editMode: boolean;
   onWeightChange: (newWeight: string) => void;
 };
 
 const Weight: React.FC<Props> = ({ pokemon, editMode, onWeightChange }) => {
   const [weight, setWeight] = useState<string>(
-    pokemon.instanceData.weight ? String(pokemon.instanceData.weight) : ''
+    pokemon.instanceData?.weight ? String(pokemon.instanceData.weight) : ''
   );
   const [userFocus, setUserFocus] = useState(false);
   const editableRef = useRef<HTMLSpanElement>(null);

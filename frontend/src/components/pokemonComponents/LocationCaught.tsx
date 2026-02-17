@@ -3,14 +3,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './LocationCaught.css';
 import { fetchSuggestions } from '../../services/locationServices';
-
-import type { PokemonVariant } from '@/types/pokemonVariants';
-import type { PokemonInstance } from '@/types/pokemonInstance';
-
-type VariantWithInstance = PokemonVariant & { instanceData: PokemonInstance };
+type PokemonWithLocation = {
+  instanceData?: {
+    location_caught?: string | null;
+  };
+};
 
 export interface LocationCaughtProps {
-  pokemon: VariantWithInstance;
+  pokemon: PokemonWithLocation;
   editMode: boolean;
   onLocationChange: (location: string) => void;
 }
@@ -21,7 +21,7 @@ const LocationCaught: React.FC<LocationCaughtProps> = ({
   onLocationChange,
 }) => {
   const [location, setLocation] = useState(
-    pokemon.instanceData.location_caught ?? '',
+    pokemon.instanceData?.location_caught ?? '',
   );
   const [suggestions, setSuggestions] = useState<{ displayName: string }[]>([]);
   const [userFocus, setUserFocus] = useState(false);
@@ -31,7 +31,7 @@ const LocationCaught: React.FC<LocationCaughtProps> = ({
 
   /* keep local state in sync with prop */
   useEffect(() => {
-    setLocation(pokemon.instanceData.location_caught ?? '');
+    setLocation(pokemon.instanceData?.location_caught ?? '');
   }, [pokemon]);
 
   /* close suggestions on outside click */

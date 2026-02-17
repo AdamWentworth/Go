@@ -3,19 +3,19 @@ import React, { useEffect, useState } from 'react';
 import './Moves.css';
 
 import type { Move } from '@/types/pokemonSubTypes';
-import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
-/* ------------------------------------------------------------------ */
-/* Narrow Variant so we always have instanceData                      */
-/* ------------------------------------------------------------------ */
-type VariantWithInstance = PokemonVariant & { instanceData: PokemonInstance };
+type VariantWithOptionalInstance = {
+  moves?: Move[];
+  fusion?: Array<{ name?: string; fusion_id?: number | null }>;
+  instanceData?: Partial<PokemonInstance>;
+};
 
 /* ------------------------------------------------------------------ */
 /* Props                                                               */
 /* ------------------------------------------------------------------ */
 export interface MovesProps {
-  pokemon: VariantWithInstance;
+  pokemon: VariantWithOptionalInstance;
   editMode: boolean;
   onMovesChange: (moves: {
     fastMove: number | null;
@@ -36,25 +36,26 @@ const Moves: React.FC<MovesProps> = ({
   isShadow,
   isPurified,
 }) => {
-  const allMoves = pokemon.moves;
+  const allMoves = pokemon.moves ?? [];
+  const instanceData: Partial<PokemonInstance> = pokemon.instanceData ?? {};
 
   /* local state mirrors instanceData so UI can edit it -------------- */
   const [fastMove, setFastMove] = useState<number | null>(
-    pokemon.instanceData.fast_move_id ?? null,
+    instanceData.fast_move_id ?? null,
   );
   const [chargedMove1, setChargedMove1] = useState<number | null>(
-    pokemon.instanceData.charged_move1_id ?? null,
+    instanceData.charged_move1_id ?? null,
   );
   const [chargedMove2, setChargedMove2] = useState<number | null>(
-    pokemon.instanceData.charged_move2_id ?? null,
+    instanceData.charged_move2_id ?? null,
   );
 
   /* sync prop → state when `pokemon` object changes ----------------- */
   useEffect(() => {
-    setFastMove(pokemon.instanceData.fast_move_id ?? null);
-    setChargedMove1(pokemon.instanceData.charged_move1_id ?? null);
-    setChargedMove2(pokemon.instanceData.charged_move2_id ?? null);
-  }, [pokemon]);
+    setFastMove(pokemon.instanceData?.fast_move_id ?? null);
+    setChargedMove1(pokemon.instanceData?.charged_move1_id ?? null);
+    setChargedMove2(pokemon.instanceData?.charged_move2_id ?? null);
+  }, [pokemon.instanceData?.fast_move_id, pokemon.instanceData?.charged_move1_id, pokemon.instanceData?.charged_move2_id]);
 
   /* shadow / purified swap logic ------------------------------------ */
   useEffect(() => {
@@ -131,8 +132,8 @@ const Moves: React.FC<MovesProps> = ({
       : null;
 
   const fusionId =
-    pokemon.instanceData.fusion_form &&
-    pokemon.fusion?.find((f) => f.name === pokemon.instanceData.fusion_form)
+    pokemon.instanceData?.fusion_form &&
+    pokemon.fusion?.find((f) => f.name === pokemon.instanceData?.fusion_form)
       ?.fusion_id;
 
   /* event handlers -------------------------------------------------- */

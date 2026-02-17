@@ -2,25 +2,27 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './Height.css';
 
-type Props = {
-  pokemon: {
-    instanceData: {
-      height: number | null;
-    };
-    sizes?: {
-      height_xxs_threshold: number;
-      height_xs_threshold: number;
-      height_xl_threshold: number;
-      height_xxl_threshold: number;
-    };
+type PokemonWithHeight = {
+  instanceData?: {
+    height?: number | null;
   };
+  sizes?: {
+    height_xxs_threshold: number;
+    height_xs_threshold: number;
+    height_xl_threshold: number;
+    height_xxl_threshold: number;
+  };
+};
+
+type Props = {
+  pokemon: PokemonWithHeight;
   editMode: boolean;
   onHeightChange?: (height: string) => void;
 };
 
 const Height: React.FC<Props> = ({ pokemon, editMode, onHeightChange }) => {
   const [height, setHeight] = useState<string>(
-    pokemon.instanceData.height ? String(pokemon.instanceData.height) : ''
+    pokemon.instanceData?.height ? String(pokemon.instanceData.height) : ''
   );
   const [userFocus, setUserFocus] = useState(false);
   const editableRef = useRef<HTMLSpanElement>(null);

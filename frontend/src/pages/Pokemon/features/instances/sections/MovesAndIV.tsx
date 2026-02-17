@@ -1,8 +1,15 @@
 import React from 'react';
 import './MovesAndIV.css';
-import Moves from '@/components/pokemonComponents/Moves';
+import Moves, { type MovesProps } from '@/components/pokemonComponents/Moves';
 import IV from '@/components/pokemonComponents/IV';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { PokemonInstance } from '@/types/pokemonInstance';
 
+type PokemonWithInstance = {
+  moves?: PokemonVariant['moves'];
+  fusion?: PokemonVariant['fusion'];
+  instanceData?: Partial<PokemonInstance>;
+};
 interface IvValues {
   Attack: number | '' | null;
   Defense: number | '' | null;
@@ -10,9 +17,9 @@ interface IvValues {
 }
 
 interface MovesAndIVProps {
-  pokemon: Record<string, unknown>;
+  pokemon: PokemonWithInstance;
   editMode: boolean;
-  onMovesChange: (value: unknown) => void;
+  onMovesChange: MovesProps['onMovesChange'];
   isShadow: boolean;
   isPurified: boolean;
   ivs: IvValues;
@@ -33,9 +40,9 @@ const MovesAndIV: React.FC<MovesAndIVProps> = ({
   <>
     <div className="moves-content">
       <Moves
-        pokemon={pokemon as never}
+        pokemon={pokemon}
         editMode={editMode}
-        onMovesChange={onMovesChange as never}
+        onMovesChange={onMovesChange}
         isShadow={isShadow}
         isPurified={isPurified}
       />

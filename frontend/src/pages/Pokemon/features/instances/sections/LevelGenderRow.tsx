@@ -2,9 +2,16 @@ import React from 'react';
 import './LevelGenderRow.css';
 import Level from '@/components/pokemonComponents/Level';
 import Gender from '@/components/pokemonComponents/Gender';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { PokemonInstance } from '@/types/pokemonInstance';
+
+type PokemonWithInstance = {
+  gender_rate?: PokemonVariant['gender_rate'];
+  instanceData?: Pick<PokemonInstance, 'gender'>;
+};
 
 interface LevelGenderRowProps {
-  pokemon: Record<string, unknown>;
+  pokemon: PokemonWithInstance;
   editMode: boolean;
   level: number | null;
   onLevelChange: (value: string) => void;
@@ -29,7 +36,7 @@ const LevelGenderRow: React.FC<LevelGenderRowProps> = ({
     {(editMode || (gender !== null && gender !== '')) && (
       <div className="gender-wrapper">
         <Gender
-          pokemon={pokemon as never}
+          pokemon={pokemon}
           editMode={editMode}
           onGenderChange={onGenderChange}
         />
@@ -39,3 +46,4 @@ const LevelGenderRow: React.FC<LevelGenderRowProps> = ({
 );
 
 export default LevelGenderRow;
+

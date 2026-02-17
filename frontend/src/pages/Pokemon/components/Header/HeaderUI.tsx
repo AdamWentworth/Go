@@ -9,7 +9,7 @@ export interface HeaderUIProps {
   onPokemonClick: () => void;
   contextText: React.ReactNode;
   totalPokemon: number;
-  highlightedCards?: Set<number>;
+  highlightedCards?: Set<string | number>;
   onClearSelection: () => void;
   onSelectAll: () => void;
   activeView: 'pokedex' | 'pokemon' | 'tags';

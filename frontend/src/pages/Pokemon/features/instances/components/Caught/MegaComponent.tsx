@@ -2,20 +2,12 @@
 
 import React from 'react';
 import './MegaComponent.css';
-
-interface MegaData {
-  isMega: boolean;
-  mega: boolean;
-  megaForm: string | null;
-}
-
-interface MegaEvolution {
-  form: string;
-}
+import type { MegaData } from '../../utils/buildInstanceChanges';
+import type { MegaEvolution } from '@/types/pokemonSubTypes';
 
 interface MegaComponentProps {
   megaData: MegaData;
-  setMegaData: (data: MegaData) => void;
+  setMegaData: React.Dispatch<React.SetStateAction<MegaData>>;
   editMode: boolean;
   megaEvolutions?: MegaEvolution[];
   isShadow: boolean;
@@ -49,7 +41,7 @@ const MegaComponent: React.FC<MegaComponentProps> = ({
       setMegaData({
         isMega: true,
         mega: true,
-        megaForm: megaEvolutions.length > 0 ? megaEvolutions[0].form : null,
+        megaForm: megaEvolutions.length > 0 ? megaEvolutions[0].form ?? null : null,
       });
     } else {
       if (megaEvolutions.length === 1) {
@@ -62,7 +54,7 @@ const MegaComponent: React.FC<MegaComponentProps> = ({
       } else {
         // Cycle through Mega Forms
         const currentIndex = megaEvolutions.findIndex(
-          (me) => me.form.toLowerCase() === megaForm?.toLowerCase()
+          (me) => (me.form ?? '').toLowerCase() === (megaForm ?? '').toLowerCase()
         );
         const nextIndex = (currentIndex + 1) % (megaEvolutions.length + 1); // +1 to include deactivation
         if (nextIndex === megaEvolutions.length) {
@@ -78,7 +70,7 @@ const MegaComponent: React.FC<MegaComponentProps> = ({
           setMegaData({
             isMega: true,
             mega: true,
-            megaForm: nextForm,
+            megaForm: nextForm ?? null,
           });
         }
       }

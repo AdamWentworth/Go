@@ -5,13 +5,12 @@
 //--------------------------------------------------
 
 import { useEffect, useState } from 'react';
+import type { NavigateFunction } from 'react-router-dom';
 
 import { useUserSearchStore } from '@/stores/useUserSearchStore';
-import { useVariantsStore   } from '@/features/variants/store/useVariantsStore';
 import { getEntityKeyFrom } from '@/utils/PokemonIDUtils';
 
 import type { PokemonVariant  } from '@/types/pokemonVariants';
-import type { PokemonInstance } from '@/types/pokemonInstance';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -26,10 +25,10 @@ interface AppLocation {
   pathname: string;
 }
 
-type SelectedPokemon = {
-  pokemon: PokemonVariant;
-  overlayType: 'instance';
-};
+export type PokemonOverlaySelection =
+  | PokemonVariant
+  | { pokemon: PokemonVariant; overlayType: 'instance' }
+  | null;
 
 export interface UseInstanceIdProcessorProps {
   /** Are the base variants still loading? */
@@ -40,14 +39,11 @@ export interface UseInstanceIdProcessorProps {
 
   /* router bits */
   location: AppLocation;
-  navigate: (
-    pathname: string,
-    opts: { replace: boolean; state: LocationState }
-  ) => void;
+  navigate: NavigateFunction;
 
   /* UI state setters */
-  selectedPokemon: SelectedPokemon | null;
-  setSelectedPokemon: (p: SelectedPokemon) => void;
+  selectedPokemon: PokemonOverlaySelection;
+  setSelectedPokemon: (p: PokemonOverlaySelection) => void;
   hasProcessedInstanceId: boolean;
   setHasProcessedInstanceId: (b: boolean) => void;
 
@@ -88,7 +84,7 @@ export default function useInstanceIdProcessor({
     /* -------------------------------------------------------------- */
     let combined: PokemonVariant | null =
       filteredVariants.find(
-        p => getEntityKeyFrom(p as any) === instanceId || p.variant_id === instanceId,
+        (p) => getEntityKeyFrom(p) === instanceId || p.variant_id === instanceId,
       ) ?? null;
 
     /* -------------------------------------------------------------- */
@@ -98,12 +94,12 @@ export default function useInstanceIdProcessor({
       const raw = searchInstances[instanceId];
       if (raw) {
         const variant = filteredVariants.find(
-          p => p.pokemon_id === raw.pokemon_id
+          (p) => p.pokemon_id === raw.pokemon_id,
         );
         if (variant) {
           combined = {
             ...variant,
-            variant_id: variant.variant_id || instanceId,
+            variant_id: variant.variant_id,
             instanceData: raw,
           };
         }
@@ -119,7 +115,7 @@ export default function useInstanceIdProcessor({
 
       // Clean the param to avoid reopening on navigation/back‑button
       setTimeout(() => {
-        navigate(location.pathname, {
+        void navigate(location.pathname, {
           replace: true,
           state: { ...location.state, instanceId: null },
         });

@@ -2,26 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import './BackgroundLocationCard.css';
-
-type Background = {
-  background_id: number;
-  costume_id?: number;
-  image_url: string;
-  name: string;
-  location: string;
-  date: string;
-};
-
-type Pokemon = {
-  variantType?: string;
-  backgrounds?: Background[];
-};
+import type { VariantBackground } from '@/types/pokemonSubTypes';
 
 type Props = {
-  pokemon: Pokemon;
-  onSelectBackground?: (background: Background | null) => void;
+  pokemon?: {
+    variantType?: string;
+    backgrounds?: VariantBackground[];
+  };
+  onSelectBackground?: (background: VariantBackground | null) => void;
   selectedCostumeId?: number;
-  filterBackground?: (background: Background) => boolean;
+  filterBackground?: (background: VariantBackground) => boolean;
   title?: string;
   containerClassName?: string;
   itemClassName?: string;
@@ -38,18 +28,18 @@ const BackgroundLocationCard: React.FC<Props> = ({
   itemClassName = 'background-item',
   selectedItemClassName = 'selected',
 }) => {
-  const [selectedBackground, setSelectedBackground] = useState<Background | null>(null);
+  const [selectedBackground, setSelectedBackground] = useState<VariantBackground | null>(null);
 
   useEffect(() => {
     setSelectedBackground(null);
   }, [pokemon]);
 
-  const handleBackgroundSelect = (background: Background | null) => {
+  const handleBackgroundSelect = (background: VariantBackground | null) => {
     setSelectedBackground(background);
     onSelectBackground?.(background);
   };
 
-  const defaultFilter = (background: Background) => {
+  const defaultFilter = (background: VariantBackground) => {
     if (!pokemon || !background) return false;
     if (selectedCostumeId != null) {
       if (!background.costume_id) return true;

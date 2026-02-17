@@ -3,10 +3,7 @@
 import React, { useEffect } from "react";
 import "./MaxMovesComponent.css";
 
-interface PokemonProps {
-  variant_id?: string;
-  pokemonKey?: string; // legacy
-}
+type PokemonProps = { variant_id?: string; pokemonKey?: string };
 
 interface MaxMovesComponentProps {
   pokemon: PokemonProps;

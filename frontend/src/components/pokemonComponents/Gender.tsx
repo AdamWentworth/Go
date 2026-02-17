@@ -4,13 +4,28 @@ import './Gender.css';
 
 type GenderOption = 'Male' | 'Female' | 'Both' | 'Any' | 'Genderless' | null;
 
-type Props = {
-  pokemon?: {
-    instanceData: {
-      gender: GenderOption;
-    };
-    gender_rate: string;
+type PokemonWithGender = {
+  instanceData?: {
+    gender?: string | null;
   };
+  gender_rate?: string;
+};
+
+const toGenderOption = (value: unknown): GenderOption => {
+  if (
+    value === 'Male' ||
+    value === 'Female' ||
+    value === 'Both' ||
+    value === 'Any' ||
+    value === 'Genderless'
+  ) {
+    return value;
+  }
+  return null;
+};
+
+type Props = {
+  pokemon?: PokemonWithGender;
   gender?: GenderOption;
   genderRate?: string;
   editMode?: boolean;
@@ -26,7 +41,7 @@ const Gender: React.FC<Props> = ({
   searchMode = false,
   onGenderChange,
 }) => {
-  const initialGender = pokemon?.instanceData.gender ?? initialGenderProp;
+  const initialGender = toGenderOption(pokemon?.instanceData?.gender ?? initialGenderProp);
   const genderRate = pokemon?.gender_rate ?? genderRateProp;
 
   const [gender, setGender] = useState<GenderOption>(initialGender);
@@ -63,7 +78,7 @@ const Gender: React.FC<Props> = ({
           setGender(defaultGender);
           onGenderChange?.(defaultGender);
         } else {
-          setGender(initialGender);
+          setGender(toGenderOption(initialGender));
         }
         didMount.current = true;
       }

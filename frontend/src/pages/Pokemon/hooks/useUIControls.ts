@@ -1,19 +1,18 @@
 // useUIControls.ts
 import { useState, useCallback } from 'react';
-
-type SortMode = 'descending' | 'ascending';
+import type { SortMode, SortType } from '@/types/sort';
 
 interface UISettings {
   showEvolutionaryLine: boolean;
   isFastSelectEnabled: boolean;
-  sortType: string;
+  sortType: SortType;
   sortMode: SortMode;
 }
 
 export default function useUIControls(initialSettings: UISettings) {
   const [showEvolutionaryLine, setShowEvolutionaryLine] = useState<boolean>(initialSettings.showEvolutionaryLine);
   const [isFastSelectEnabled, setIsFastSelectEnabled] = useState<boolean>(initialSettings.isFastSelectEnabled);
-  const [sortType, setSortType] = useState<string>(initialSettings.sortType);
+  const [sortType, setSortType] = useState<SortType>(initialSettings.sortType);
   const [sortMode, setSortMode] = useState<SortMode>(initialSettings.sortMode);
   const [highlightedCards, setHighlightedCards] = useState<Set<string>>(new Set());
 

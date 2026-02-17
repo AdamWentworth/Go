@@ -2,15 +2,20 @@ import React from 'react';
 import './Modals.css';
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
 import FuseOverlay from '../components/Caught/FuseOverlay';
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { VariantBackground } from '@/types/pokemonSubTypes';
 
 interface ModalsProps {
   showBackgrounds: boolean;
   setShowBackgrounds: React.Dispatch<React.SetStateAction<boolean>>;
-  pokemon: Record<string, unknown>;
-  onSelectBackground: (background: unknown) => void;
-  overlayPokemon: Record<string, unknown> | null;
+  pokemon: {
+    variantType?: PokemonVariant['variantType'];
+    backgrounds?: VariantBackground[];
+  };
+  onSelectBackground: (background: VariantBackground | null) => void;
+  overlayPokemon: PokemonVariant | Record<string, unknown> | null;
   onCloseOverlay: () => void;
-  onFuse: (...args: unknown[]) => void;
+  onFuse: () => void;
 }
 
 const Modals: React.FC<ModalsProps> = ({
@@ -21,30 +26,32 @@ const Modals: React.FC<ModalsProps> = ({
   overlayPokemon,
   onCloseOverlay,
   onFuse,
-}) => (
-  <>
-    {showBackgrounds && (
-      <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
-        <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
-          <button className="close-button" onClick={() => setShowBackgrounds(false)}>
-            Close
-          </button>
-          <BackgroundLocationCard
-            pokemon={pokemon as never}
-            onSelectBackground={onSelectBackground as never}
-          />
+}) => {
+  return (
+    <>
+      {showBackgrounds && (
+        <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
+          <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-button" onClick={() => setShowBackgrounds(false)}>
+              Close
+            </button>
+            <BackgroundLocationCard
+              pokemon={pokemon}
+              onSelectBackground={onSelectBackground}
+            />
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
-    {overlayPokemon && (
-      <FuseOverlay
-        pokemon={overlayPokemon as never}
-        onClose={onCloseOverlay}
-        onFuse={onFuse as never}
-      />
-    )}
-  </>
-);
+      {overlayPokemon && (
+        <FuseOverlay
+          pokemon={overlayPokemon as PokemonVariant}
+          onClose={onCloseOverlay}
+          onFuse={onFuse}
+        />
+      )}
+    </>
+  );
+};
 
 export default Modals;

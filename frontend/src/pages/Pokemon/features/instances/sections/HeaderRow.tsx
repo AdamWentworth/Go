@@ -9,6 +9,7 @@ interface HeaderRowProps {
   toggleEditMode: () => void | Promise<void>;
   isEditable: boolean;
   cp: string | number;
+  isFavorite?: boolean;
   onCPChange: (value: string) => void;
   onFavoriteChange: (value: boolean) => void;
 }
@@ -18,6 +19,7 @@ const HeaderRow: React.FC<HeaderRowProps> = ({
   toggleEditMode,
   isEditable,
   cp,
+  isFavorite = false,
   onCPChange,
   onFavoriteChange,
 }) => (
@@ -33,7 +35,7 @@ const HeaderRow: React.FC<HeaderRowProps> = ({
     </div>
 
     <FavoriteComponent
-      pokemon={{} as never}
+      pokemon={{ instanceData: { favorite: isFavorite } }}
       editMode={editMode}
       onFavoriteChange={onFavoriteChange}
     />

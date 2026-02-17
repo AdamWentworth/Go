@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import './Favorite.css';
+import type { PokemonInstance } from '@/types/pokemonInstance';
 
 type FavoriteProps = {
   pokemon: {
-    instanceData: {
-      favorite: boolean;
-    };
+    instanceData: Pick<PokemonInstance, 'favorite'>;
   };
   editMode: boolean;
   onFavoriteChange: (value: boolean) => void;
