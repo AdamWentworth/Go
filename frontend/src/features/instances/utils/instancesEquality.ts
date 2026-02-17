@@ -5,12 +5,14 @@ function shallowEqualInstance(a: PokemonInstance, b: PokemonInstance): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
 
-  const aKeys = Object.keys(a as Record<string, unknown>);
-  const bKeys = Object.keys(b as Record<string, unknown>);
+  const aRecord = a as Record<string, unknown>;
+  const bRecord = b as Record<string, unknown>;
+  const aKeys = Object.keys(aRecord);
+  const bKeys = Object.keys(bRecord);
   if (aKeys.length !== bKeys.length) return false;
 
   for (const key of aKeys) {
-    if ((a as any)[key] !== (b as any)[key]) return false;
+    if (aRecord[key] !== bRecord[key]) return false;
   }
   return true;
 }
@@ -31,4 +33,3 @@ export function areInstancesEqual(a: Instances, b: Instances): boolean {
 
   return true;
 }
-

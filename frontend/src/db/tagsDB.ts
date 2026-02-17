@@ -17,6 +17,13 @@ export interface SystemChildrenIdsSnapshot {
   version?: 1;
 }
 
+type LegacySystemChildrenSnapshot = {
+  version?: number;
+  caught_favorite?: Record<string, unknown>;
+  caught_trade?: Record<string, unknown>;
+  wanted_mostWanted?: Record<string, unknown>;
+};
+
 const SNAPSHOT_KEY = 'snapshot';
 
 export async function setSystemChildrenSnapshot(
@@ -31,18 +38,26 @@ export async function getSystemChildrenSnapshot(): Promise<SystemChildrenIdsSnap
   const db = await initTagsDB();
   if (!db) return null;
 
-  const raw = (await db.get(SYSTEM_CHILDREN_STORE, SNAPSHOT_KEY)) as any;
+  const raw = (await db.get(
+    SYSTEM_CHILDREN_STORE,
+    SNAPSHOT_KEY,
+  )) as SystemChildrenIdsSnapshot | LegacySystemChildrenSnapshot | undefined;
   if (!raw) return null;
   if (raw.version === 1) return raw as SystemChildrenIdsSnapshot;
+  const legacyRaw = raw as LegacySystemChildrenSnapshot;
 
   const toIds = (obj: Record<string, unknown> | undefined) => obj ? Object.keys(obj) : [];
   const normalized: SystemChildrenIdsSnapshot = {
-    caught_favorite_ids: toIds(raw?.caught_favorite),
-    caught_trade_ids: toIds(raw?.caught_trade),
-    wanted_mostWanted_ids: toIds(raw?.wanted_mostWanted),
+    caught_favorite_ids: toIds(legacyRaw.caught_favorite),
+    caught_trade_ids: toIds(legacyRaw.caught_trade),
+    wanted_mostWanted_ids: toIds(legacyRaw.wanted_mostWanted),
     version: 1,
   };
-  try { await setSystemChildrenSnapshot(normalized); } catch {}
+  try {
+    await setSystemChildrenSnapshot(normalized);
+  } catch {
+    // Best-effort migration from legacy snapshot shape.
+  }
   return normalized;
 }
 
@@ -207,7 +222,9 @@ export async function persistSystemMembershipsFromBuckets(buckets: TagBuckets): 
     try {
       const rows = (await store.index('by_tag').getAll(label)) as InstanceTag[];
       for (const row of rows) await store.delete(row.key);
-    } catch {}
+    } catch {
+      // Index may not exist in older IndexedDB versions.
+    }
   };
   await Promise.all(['caught','wanted','favorite','most_wanted','trade'].map(wipeFor));
 
@@ -229,15 +246,15 @@ export async function persistSystemMembershipsFromBuckets(buckets: TagBuckets): 
 
   // children (derived only)
   const favoriteIds = Object.entries(buckets.caught)
-    .filter(([, item]) => (item as any).favorite)
+    .filter(([, item]) => item.favorite)
     .map(([id]) => id);
 
   const tradeIds = Object.entries(buckets.caught)  // ✅ from CAUGHT only
-    .filter(([, item]) => (item as any).is_for_trade)
+    .filter(([, item]) => item.is_for_trade)
     .map(([id]) => id);
 
   const mostWantedIds = Object.entries(buckets.wanted)
-    .filter(([, item]) => (item as any).most_wanted)
+    .filter(([, item]) => item.most_wanted)
     .map(([id]) => id);
 
   putMany('favorite',     favoriteIds);
@@ -275,3 +292,4 @@ function withPerTagIndexPlaceholders(m: InstanceTag): InstanceTag {
 
   return payload;
 }
+

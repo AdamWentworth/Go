@@ -13,7 +13,7 @@ export function getDisplayName(baseKey: string, variants: PokemonVariant[]): str
 
   // Prefer species_name, then name, then the raw key
   return (
-    (variant as any)?.name ||
+    variant?.name ||
     baseKey
   );
 }

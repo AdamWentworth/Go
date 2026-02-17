@@ -6,7 +6,7 @@ interface Props {
   open: boolean;
   data: MegaSelectionData | null;
   onResolve: (option: string) => void;
-  onReject: (reason?: any) => void;
+  onReject: (reason?: unknown) => void;
 }
 
 export default function MegaPokemonModal({

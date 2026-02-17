@@ -4,6 +4,7 @@ import React, { useRef, useState, useMemo } from 'react';
 import './TagsMenu.css';
 import useDownloadImage from './hooks/useDownloadImage';
 import PreviewContainer from './PreviewContainer';
+import type { TagImageDownloadRef } from './TagImageDownload';
 import useFavoriteList from '@/hooks/sort/useFavoriteList';
 import TagItems, { type TagSummary } from './TagItems';
 import type { TagBuckets, TagItem } from '@/types/tags';
@@ -63,12 +64,12 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
     const mostWanted: Record<string, TagItem> = {};
 
     for (const [id, item] of Object.entries(caught)) {
-      if ((item as any).favorite) favorite[id] = item;
-      if ((item as any).is_for_trade) trade[id] = item;
+      if (item.favorite) favorite[id] = item;
+      if (item.is_for_trade) trade[id] = item;
     }
 
     for (const [id, item] of Object.entries(wanted)) {
-      if ((item as any).most_wanted) mostWanted[id] = item;
+      if (item.most_wanted) mostWanted[id] = item;
     }
 
     return { caught: { favorite, trade }, wanted: { mostWanted } };
@@ -109,10 +110,11 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   const [isPreviewMode     , setIsPreviewMode]     = useState(false);
   const [showColorSettings , setShowColorSettings] = useState(false);
   const { isDownloading, downloadImage } = useDownloadImage();
-  const downloadRef = useRef<any>(null);
+  const downloadRef = useRef<TagImageDownloadRef | null>(null);
 
   const handleDownload = () => {
     const captureArea = downloadRef.current?.getCaptureRef();
+    if (!captureArea) return;
     const filename    = isPreviewMode
       ? 'preview-wanted-trade.png'
       : 'wanted-trade-pokemons.png';
@@ -120,7 +122,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   };
 
   // ✅ Force preview to use derived Trade (child of Caught)
-  const previewTags = useMemo(
+  const previewTags = useMemo<Pick<TagBuckets, 'wanted' | 'trade'>>(
     () => ({
       wanted: activeTags.wanted ?? {},
       trade : derivedChildren.caught.trade ?? {},
@@ -168,7 +170,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
           h2FontColor="#000000"
           pokemonNameColor="#000000"
           onSelectPreset={() => {}}
-          activeTags={previewTags as any}
+          activeTags={previewTags}
           variants={variants}
         />
       ) : (

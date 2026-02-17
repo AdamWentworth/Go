@@ -9,11 +9,16 @@ export const mergeInstancesData = (
   newData: Instances,
   username: string,
 ): Instances => {
+  type InstanceRow = Instances[string];
+  type BaselineRow = { id: string; entry: InstanceRow };
+
   const mergedData: Instances = {};
   const seenByVariant: Record<string, true> = {};
 
-  const isSignificant = (entry: any) => !!(entry?.is_caught || entry?.is_for_trade || entry?.is_wanted);
-  const isBaseline = (entry: any) => !entry?.is_caught && !entry?.is_for_trade && !entry?.is_wanted;
+  const isSignificant = (entry: InstanceRow | undefined) =>
+    !!(entry?.is_caught || entry?.is_for_trade || entry?.is_wanted);
+  const isBaseline = (entry: InstanceRow | undefined) =>
+    !entry?.is_caught && !entry?.is_for_trade && !entry?.is_wanted;
 
   // Filter by username without mutating inputs.
   const oldFiltered: Instances = {};
@@ -143,7 +148,7 @@ export const mergeInstancesData = (
   }
 
   // Keep one baseline per variant only if no caught/wanted exists.
-  const baselinesByVariant: Record<string, Array<{ id: string; entry: any }>> = {};
+  const baselinesByVariant: Record<string, BaselineRow[]> = {};
   for (const [id, entry] of Object.entries(mergedData)) {
     if (!isBaseline(entry)) continue;
     const variant = entry?.variant_id ?? '__unknown__';
@@ -179,7 +184,7 @@ export const mergeInstancesData = (
       return out;
     };
 
-    const brief = (id: string, entry: any) => ({
+    const brief = (id: string, entry: InstanceRow | undefined) => ({
       id,
       variant_id: entry?.variant_id,
       caught: !!entry?.is_caught,

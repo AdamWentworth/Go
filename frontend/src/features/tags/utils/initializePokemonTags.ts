@@ -50,7 +50,7 @@ export function initializePokemonTags(
     if (!variant) return; // silently ignore; no public "missing" bucket anymore
 
     let img: string | undefined = variant.currentImage;
-    const { gender, is_mega, mega_form, is_fused, fusion_form, purified } = inst as any;
+    const { gender, is_mega, mega_form, is_fused, fusion_form, purified } = inst;
 
     if (
       (gender === 'Female' && variant.female_data) ||

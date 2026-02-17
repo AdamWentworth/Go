@@ -24,6 +24,7 @@ import { useInstancesStore } from '@/features/instances/store/useInstancesStore'
 import type { TagBuckets, TagItem } from '@/types/tags';
 import type { Instances }           from '@/types/instances';
 import type { PokemonVariant }      from '@/types/pokemonVariants';
+import type { PokemonInstance }     from '@/types/pokemonInstance';
 import type { TagDef }              from '@/db/tagsDB';
 
 const log = createScopedLogger('useTagsStore');
@@ -59,13 +60,13 @@ function computeSystemChildren(tags: TagBuckets): SystemChildren {
 
   // Favorite + Trade strictly from CAUGHT
   for (const [id, item] of Object.entries(tags.caught)) {
-    if ((item as any).favorite)     favorite[id]   = item;
-    if ((item as any).is_for_trade) tradeChild[id] = item;
+    if (item.favorite)     favorite[id]   = item;
+    if (item.is_for_trade) tradeChild[id] = item;
   }
 
   // Most Wanted strictly from WANTED
   for (const [id, item] of Object.entries(tags.wanted)) {
-    if ((item as any).most_wanted) mostWanted[id] = item;
+    if (item.most_wanted) mostWanted[id] = item;
   }
 
   return { caught: { favorite, trade: tradeChild }, wanted: { mostWanted } };
@@ -127,8 +128,8 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
   foreignTags      : null,
 
   async rebuildCustomTags() {
-    const { variants, variantsLoading }   = useVariantsStore.getState();
-    const { instances, instancesLoading } = useInstancesStore.getState();
+    const { variantsLoading }   = useVariantsStore.getState();
+    const { instancesLoading } = useInstancesStore.getState();
     if (variantsLoading || instancesLoading) return;
 
     set({ customTagsLoading: true });
@@ -220,11 +221,14 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
         variants = await getAllVariants<PokemonVariant>();
       }
       if (!Object.keys(instancesMap || {}).length) {
-        const instArr = await getAllInstances<any>();
-        instancesMap = (instArr || []).reduce((acc: any, row: any) => {
-          if (row?.instance_id) acc[row.instance_id] = row;
+        const instArr = await getAllInstances<PokemonInstance>();
+        instancesMap = (instArr || []).reduce<Instances>((acc, row) => {
+          const instanceId = row?.instance_id;
+          if (typeof instanceId === 'string' && instanceId.length > 0) {
+            acc[instanceId] = row;
+          }
           return acc;
-        }, {} as Instances);
+        }, {});
       }
 
       if (!variants?.length) {

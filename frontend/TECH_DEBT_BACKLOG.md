@@ -105,6 +105,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 98. P0.1 slice C: removed `no-explicit-any` debt from `features/instances/actions/updateInstanceDetails.ts`, `features/instances/storage/instancesStorage.ts`, and `features/instances/store/useInstancesStore.ts` using typed snapshot/queue helpers and typed store updater boundaries; validated with targeted instances action/storage/store tests plus green `typecheck` + `421/421` unit + production build; lint baseline reduced from `193` to `172` total findings (`151` -> `131` errors).
 99. P0.1 slice D: removed `no-explicit-any` hotspots from `Trades/TradeCard.tsx`, `PokemonMenu/PokemonCard.tsx`, `PokemonMenu/PokemonGrid.tsx`, `PokemonMenu/PokemonMenu.tsx`, and `instances/InstanceOverlay.tsx` via typed normalization/adapters and safer key handling; added dedicated regression tests for `PokemonCard` and `InstanceOverlay`; validated with green `typecheck` + `426/426` unit + production build; lint baseline reduced from `172` to `118` total findings (`131` -> `81` errors).
 100. P0.1 slice E: removed remaining explicit `any` usage from the trade/instance editing stack (`db/tradesDB.ts` generics, `features/trades/store/useTradeStore.ts`, `TradeDetails.tsx`, `WantedDetails.tsx`, `TradeInstance.tsx`, `WantedInstance.tsx`, `TradeOverlaysPanel.tsx`, `TradeProposal.tsx`, `UpdateForTradeModal.tsx`) and hardened trade-payload typing/contracts (`tradeDetailsHelpers.ts`, `useTradeProposalFlow.ts`) with compatible unit fixture updates; validated with green `typecheck`, `426/426` unit tests, and production build; lint baseline reduced from `118` to `82` total findings (`81` -> `47` errors).
+101. P0.1 slice F: removed the remaining explicit `any` + empty-catch lint blockers across tags/instances/fusion/auth paths (`db/tagsDB.ts`, `features/tags/store/useTagsStore.ts`, `features/tags/utils/initializePokemonTags.ts`, `TagsMenu/PreviewContainer.tsx`, `features/instances/utils/{instancesEquality,mergeInstancesData}.ts`, `Authentication/Login.tsx`, `LevelArc.tsx`, fusion handlers/services, and `getDisplayName.ts`), preserved behavior with green `typecheck` + `426/426` unit tests, and reduced lint from `67` findings (`33` errors) to `32` findings (`0` errors, warnings only).
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 
@@ -127,8 +128,8 @@ Repo parse against backlog claims:
 6. Tooling cleanup status:
    - Jest framework/toolchain packages/config references removed.
    - Remaining `@testing-library/jest-dom` and `jest-axe` usage is intentional for Vitest matcher/a11y helpers.
-7. Lint baseline (post P0.1 slices A-E):
-   - `npm run lint`: `82` findings (`47` errors, `35` warnings), down from `232` (`189` errors, `43` warnings).
+7. Lint baseline (post P0.1 slices A-F):
+   - `npm run lint`: `32` findings (`0` errors, `32` warnings), down from `232` (`189` errors, `43` warnings).
 
 ## Rules Of Execution
 

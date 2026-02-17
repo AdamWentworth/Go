@@ -22,6 +22,7 @@ import { createScopedLogger } from '@/utils/logger';
 import type { LoginFormValues } from '../../types/auth';
 import type { User, LoginResponse } from '../../types/auth';
 import type { UserOverview } from '@/types/user';
+import type { Trade as TradeStoreTrade, RelatedInstance } from '@/features/trades/store/useTradeStore';
 
 const log = createScopedLogger('Login');
 
@@ -88,8 +89,37 @@ const Login: FC = () => {
       log.debug('Fetched user overview:', overview);
 
       setInstances(overview.pokemon_instances);
-      setTradeData(overview.trades as any); // TODO: strongly type store
-      setRelatedInstances(overview.related_instances as any);
+      const normalizedTrades = Object.entries(overview.trades ?? {}).reduce<
+        Record<string, TradeStoreTrade>
+      >((acc, [tradeId, trade]) => {
+        if (!trade) return acc;
+        const parsedLastUpdate =
+          typeof trade.last_update === 'number'
+            ? trade.last_update
+            : typeof trade.last_update === 'string'
+            ? new Date(trade.last_update).getTime()
+            : undefined;
+        acc[tradeId] = {
+          ...trade,
+          trade_id: String(trade.trade_id ?? tradeId),
+          trade_status: String(trade.trade_status ?? ''),
+          last_update: Number.isFinite(parsedLastUpdate) ? parsedLastUpdate : undefined,
+        };
+        return acc;
+      }, {});
+      const normalizedRelatedInstances = Object.entries(
+        overview.related_instances ?? {},
+      ).reduce<Record<string, RelatedInstance>>((acc, [instanceId, instance]) => {
+        if (!instance) return acc;
+        acc[instanceId] = {
+          ...instance,
+          instance_id: String(instance.instance_id ?? instanceId),
+        };
+        return acc;
+      }, {});
+
+      setTradeData(normalizedTrades);
+      setRelatedInstances(normalizedRelatedInstances);
 
       setIsSuccessful(true);
       setFeedback('Successfully Logged in');

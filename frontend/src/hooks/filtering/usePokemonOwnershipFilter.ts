@@ -13,8 +13,7 @@ const VALID_FILTERS = ['caught', 'wanted'] as const;
 export type OwnershipFilter = typeof VALID_FILTERS[number];
 
 // Derived (children) – treat 'trade' like 'favorites' / 'most wanted'
-const SPECIAL_FILTERS = ['favorites', 'most wanted', 'trade'] as const;
-type SpecialFilter = typeof SPECIAL_FILTERS[number];
+type SpecialFilter = 'favorites' | 'most wanted' | 'trade';
 
 export function getFilteredPokemonsByOwnership(
   variants: PokemonVariant[],
@@ -29,7 +28,7 @@ export function getFilteredPokemonsByOwnership(
 
   const variantsByKey = new Map<string, PokemonVariant>();
   for (const variant of variants) {
-    const key = String((variant as any).variant_id ?? '');
+    const key = String(variant.variant_id ?? '');
     if (key) variantsByKey.set(key, variant);
   }
 
@@ -41,7 +40,7 @@ export function getFilteredPokemonsByOwnership(
       const instance = instancesData[instanceId];
       if (!instance) continue;
 
-      const variantKey = String((instance as any).variant_id ?? '');
+      const variantKey = String(instance.variant_id ?? '');
       if (!variantKey) continue;
 
       const variant = variantsByKey.get(variantKey);
@@ -60,7 +59,7 @@ export function getFilteredPokemonsByOwnership(
   if ((normalizedFilter as SpecialFilter) === 'favorites') {
     const bucket = tagBuckets.caught ?? {};
     const ids = Object.entries(bucket)
-      .filter(([, item]) => (item as any).favorite)
+      .filter(([, item]) => item.favorite)
       .map(([id]) => id);
     return mapIds(ids);
   }
@@ -68,7 +67,7 @@ export function getFilteredPokemonsByOwnership(
   if ((normalizedFilter as SpecialFilter) === 'most wanted') {
     const bucket = tagBuckets.wanted ?? {};
     const ids = Object.entries(bucket)
-      .filter(([, item]) => (item as any).most_wanted)
+      .filter(([, item]) => item.most_wanted)
       .map(([id]) => id);
     return mapIds(ids);
   }
@@ -77,7 +76,7 @@ export function getFilteredPokemonsByOwnership(
     // ✅ Trade is derived strictly from Caught
     const bucket = tagBuckets.caught ?? {};
     const ids = Object.entries(bucket)
-      .filter(([, item]) => (item as any).is_for_trade)
+      .filter(([, item]) => item.is_for_trade)
       .map(([id]) => id);
     return mapIds(ids);
   }

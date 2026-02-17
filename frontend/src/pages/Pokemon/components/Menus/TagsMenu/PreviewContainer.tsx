@@ -8,6 +8,13 @@ import type { AllVariants } from '@/types/pokemonVariants';
 import type { TagBuckets } from '@/types/tags';
 import type { ColorPreset } from './ColorSettingsOverlay';
 
+type PreviewCaptureStyles = CSSProperties & {
+  '--preview-bg-color'?: string;
+  '--section-frame-bg-color'?: string;
+  '--h2-font-color'?: string;
+  '--pokemon-name-color'?: string;
+};
+
 export interface PreviewContainerProps {
   isDownloading: boolean;
   setIsPreviewMode: (value: boolean) => void;
@@ -46,11 +53,11 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
   variants,
 }) => {
   // Only set CSS vars that were provided; everything else falls back in CSS.
-  const captureStyles: CSSProperties = {
-    ...(previewBgColor       ? ({ ['--preview-bg-color' as any]: previewBgColor } as CSSProperties) : {}),
-    ...(sectionFrameBgColor  ? ({ ['--section-frame-bg-color' as any]: sectionFrameBgColor } as CSSProperties) : {}),
-    ...(h2FontColor          ? ({ ['--h2-font-color' as any]: h2FontColor } as CSSProperties) : {}),
-    ...(pokemonNameColor     ? ({ ['--pokemon-name-color' as any]: pokemonNameColor } as CSSProperties) : {}),
+  const captureStyles: PreviewCaptureStyles = {
+    ...(previewBgColor ? { '--preview-bg-color': previewBgColor } : {}),
+    ...(sectionFrameBgColor ? { '--section-frame-bg-color': sectionFrameBgColor } : {}),
+    ...(h2FontColor ? { '--h2-font-color': h2FontColor } : {}),
+    ...(pokemonNameColor ? { '--pokemon-name-color': pokemonNameColor } : {}),
   };
 
   return (

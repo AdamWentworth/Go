@@ -6,13 +6,15 @@ import { createScopedLogger } from '@/utils/logger';
 
 const log = createScopedLogger('resolveFusionSelection');
 
+type FusionUpdatePatch = Record<string, Partial<Instances[string]>>;
+
 type ResolveFusionParams = {
   choice: string;
   leftInstanceId: string;
   rightInstanceId: string;
   fusionData: Fusion;
   instances: Instances;
-  updateDetails: (updates: Record<string, any>) => Promise<void>;
+  updateDetails: (updates: FusionUpdatePatch) => Promise<void>;
   resolve?: (result: string) => void;
 };
 

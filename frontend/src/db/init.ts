@@ -25,17 +25,21 @@ const log = createScopedLogger('db.init');
 
 interface Doc { [k: string]: unknown; }
 
+type IndexNamesLike = ArrayLike<string> & {
+  contains?: (name: string) => boolean;
+};
+
 /** normalize index presence check across DOMStringList / string[] */
 function storeHasIndex<S extends string>(
   store: IDBPObjectStore<Doc, ArrayLike<string>, S, 'versionchange'>,
   name: string
 ) {
-  const names = (store as any).indexNames;
+  const names = store.indexNames as unknown as IndexNamesLike | null | undefined;
   if (!names) return false;
-  if (typeof (names as any).contains === 'function') {
-    return (names as any).contains(name);
+  if (typeof names.contains === 'function') {
+    return names.contains(name);
   }
-  return Array.from(names as string[]).includes(name);
+  return Array.from(names).includes(name);
 }
 
 /** init factory with typed upgrade callback */
@@ -86,7 +90,7 @@ export const initTagsDB = makeInit(TAGS_DB_NAME, (db, _oldV, _newV, tx) => {
   }
 
   // --- instance tag memberships (ONE store) ---
-  let it =
+  const it =
     !db.objectStoreNames.contains(INSTANCE_TAGS_STORE)
       ? db.createObjectStore(INSTANCE_TAGS_STORE, { keyPath: 'key' }) // `${tag_id}:${instance_id}`
       : tx.objectStore(INSTANCE_TAGS_STORE);

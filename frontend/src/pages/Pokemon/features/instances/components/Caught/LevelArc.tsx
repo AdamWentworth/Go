@@ -21,9 +21,10 @@ function getCPM(level: number): number {
   // Round to nearest 0.5 grid bounds
   const lo = Math.floor(level * 2) / 2;
   const hi = Math.ceil(level * 2) / 2;
+  const multipliers = cpMultipliers as Record<number, number>;
 
-  const cLo = (cpMultipliers as any)[lo];
-  const cHi = (cpMultipliers as any)[hi];
+  const cLo = multipliers[lo];
+  const cHi = multipliers[hi];
 
   if (cLo != null && cHi != null) {
     if (hi === lo) return cLo;

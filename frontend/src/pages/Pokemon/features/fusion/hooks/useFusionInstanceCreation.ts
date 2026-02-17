@@ -2,13 +2,17 @@
 
 import { createFusionInstance } from '../services/createFusionInstance';
 import { FusionSelectionData } from '@/types/fusion';
+import type { PokemonInstance } from '@/types/pokemonInstance';
 import { createScopedLogger } from '@/utils/logger';
 
 const log = createScopedLogger('useFusionInstanceCreation');
 
 interface CreateInstanceProps {
     fusionSelectionData: FusionSelectionData | null;
-    updateDetails: (keysOrObject: any, details: any) => Promise<void>;
+    updateDetails: (
+      keyOrKeysOrMap: string | string[] | Record<string, Partial<PokemonInstance>>,
+      maybePatch?: Partial<PokemonInstance>,
+    ) => Promise<void>;
     setFusionSelectionData: React.Dispatch<React.SetStateAction<FusionSelectionData | null>>;
   }
   

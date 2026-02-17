@@ -51,7 +51,7 @@ function useFusionPokemonHandler() {
     closeSelection();
   }  
 
-  function handleFusionSelectionReject(error: any) {
+  function handleFusionSelectionReject(error: unknown) {
     rejectSelection(error);
   }
 
