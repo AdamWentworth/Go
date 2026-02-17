@@ -1,15 +1,18 @@
 // src/features/variants/hooks/useBootstrapVariants.ts
 import { useEffect } from 'react';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('useBootstrapVariants');
 
 export function useBootstrapVariants() {
   useEffect(() => {
-    // grab the “real” hydrate function off of the store
+    // Grab hydrate function off the store.
     const { hydrateFromCache } = useVariantsStore.getState();
 
-    // fire‑and‑forget, swallow & log errors
+    // Fire-and-forget while logging failures.
     void hydrateFromCache().catch((err: unknown) => {
-      console.error('[VariantsStore] Hydrate error:', err);
+      log.error('Hydrate error:', err);
     });
-  }, []); // ← run only once on mount
+  }, []);
 }

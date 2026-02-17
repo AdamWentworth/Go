@@ -3,6 +3,7 @@ import { RefObject } from 'react';
 import { produce } from 'immer';
 import { updatePokemonInstanceStatus } from '../services/updatePokemonInstanceStatus';
 import { putBatchedPokemonUpdates, putInstancesBulk } from '@/db/indexedDB';
+import { createScopedLogger } from '@/utils/logger';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { InstanceStatus, Instances } from '@/types/instances';
 import { PokemonVariant } from '@/types/pokemonVariants';
@@ -11,6 +12,8 @@ type AppState = {
   variants: PokemonVariant[];
   instances: Instances;
 };
+
+const log = createScopedLogger('updateInstanceStatus');
 
 async function yieldToPaint() {
   await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
@@ -126,7 +129,7 @@ export const updateInstanceStatus =
       }
       if (items.length) await putInstancesBulk(items);
     } catch (err) {
-      console.error('[updateInstanceStatus] instancesDB write failed:', err);
+      log.error('instancesDB write failed:', err);
     }
 
     // Timestamp for freshness checks
@@ -140,6 +143,6 @@ export const updateInstanceStatus =
       }
       if (promises.length) await Promise.all(promises);
     } catch (err) {
-      console.error('[updateInstanceStatus] updatesDB write failed:', err);
+      log.error('updatesDB write failed:', err);
     }
   };

@@ -16,6 +16,7 @@ import { getAllInstances } from '@/db/instancesDB';
 
 import { initializePokemonTags } from '../utils/initializePokemonTags';
 import { isDataFresh }          from '@/utils/cacheHelpers';
+import { createScopedLogger }   from '@/utils/logger';
 
 import { useVariantsStore }  from '@/features/variants/store/useVariantsStore';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
@@ -24,6 +25,8 @@ import type { TagBuckets, TagItem } from '@/types/tags';
 import type { Instances }           from '@/types/instances';
 import type { PokemonVariant }      from '@/types/pokemonVariants';
 import type { TagDef }              from '@/db/tagsDB';
+
+const log = createScopedLogger('useTagsStore');
 
 /* ------------ Types for custom tag tree (NO trade parent) ------------ */
 
@@ -172,7 +175,7 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
 
       set({ customTags: out, customTagsLoading: false });
     } catch (e) {
-      console.error('[TagsStore] rebuildCustomTags failed:', e);
+      log.error('rebuildCustomTags failed:', e);
       set({ customTags: { ...EMPTY_CUSTOM }, customTagsLoading: false });
     }
   },
@@ -263,7 +266,7 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
 
       await get().rebuildCustomTags();
     } catch (e) {
-      console.warn('[TagsStore] hydrateFromCache failed; will rebuild later:', e);
+      log.warn('hydrateFromCache failed; will rebuild later:', e);
     }
 
     if (!fresh || needRebuild) {

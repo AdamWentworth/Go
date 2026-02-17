@@ -4,6 +4,9 @@ import { useEffect } from 'react';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useTagsStore } from '../store/useTagsStore';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('useBootstrapTags');
 
 /**
  * Hook to bootstrap the tags system:
@@ -20,7 +23,7 @@ export function useBootstrapTags() {
   // Hydrate tags from the cache on mount
   useEffect(() => {
     hydrateFromCache().catch(error => {
-      console.error('[useBootstrapTags] Hydration error:', error);
+      log.error('Hydration error:', error);
     });
   }, [hydrateFromCache]);
 
@@ -31,7 +34,7 @@ export function useBootstrapTags() {
       variants && variants.length > 0
     ) {
       buildTags().catch(error => {
-        console.error('[useBootstrapTags] Build error:', error);
+        log.error('Build error:', error);
       });
     }
   }, [instances, variants, buildTags]);

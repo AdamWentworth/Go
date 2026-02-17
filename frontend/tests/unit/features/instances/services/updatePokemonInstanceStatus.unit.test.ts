@@ -114,7 +114,8 @@ describe('updatePokemonInstanceStatus (current model)', () => {
 
     expect(result).toBeNull();
     expect(console.error).toHaveBeenCalledWith(
-      '[updatePokemonInstanceStatus] No variant for',
+      '[updatePokemonInstanceStatus]',
+      'No variant for',
       'missing-variant',
     );
   });
@@ -191,7 +192,6 @@ describe('updatePokemonInstanceStatus (current model)', () => {
 
     expect(result).toBe(EXISTING_UUID);
     expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('Cannot move'));
-    expect(console.log).toHaveBeenCalledWith('[update] blocked due to special status');
     expect(instances[EXISTING_UUID]).toMatchObject({
       shadow: true,
       is_for_trade: false,

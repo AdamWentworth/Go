@@ -62,7 +62,11 @@ describe('updateInstanceDetails', () => {
     expect(out.a).toMatchObject({ cp: 1500, last_update: TS });
     expect(out.c).toMatchObject({ nickname: 'new', last_update: TS });
 
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('missing'), 'c');
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[updateInstanceDetails]',
+      expect.stringContaining('missing - creating placeholder'),
+      'c',
+    );
 
     expect(db.putInstancesBulk).toHaveBeenCalled();
     const bulkItems = (db.putInstancesBulk as any).mock.calls.flatMap((c: any[]) => c[0] ?? []);
@@ -127,7 +131,8 @@ describe('updateInstanceDetails', () => {
 
     await expect(updater('a', { cp: 99 })).resolves.toBeUndefined();
     expect(errSpy).toHaveBeenCalledWith(
-      '[updateInstanceDetails] updatesDB fail:',
+      '[updateInstanceDetails]',
+      'updatesDB fail:',
       expect.any(Error),
     );
   });

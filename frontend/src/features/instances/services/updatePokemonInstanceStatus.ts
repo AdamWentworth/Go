@@ -1,11 +1,14 @@
 // src/features/instances/services/updatePokemonInstanceStatus.ts
 import { generateUUID, validateUUID } from '@/utils/PokemonIDUtils';
+import { createScopedLogger } from '@/utils/logger';
 import { createNewInstanceData } from '../utils/createNewInstanceData';
 import { updateRegistrationStatus } from '../utils/updateRegistrationStatus';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { InstanceStatus } from '@/types/instances';
 import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
+
+const log = createScopedLogger('updatePokemonInstanceStatus');
 
 /**
  * Updates status flags for a Pokémon instance.
@@ -45,7 +48,7 @@ export function updatePokemonInstanceStatus(
 
   const variantData = variants.find(v => v.variant_id === variantKey) ?? null;
   if (!variantData) {
-    console.error('[updatePokemonInstanceStatus] No variant for', variantKey);
+    log.error('No variant for', variantKey);
     return null;
   }
 
@@ -82,7 +85,7 @@ export function updatePokemonInstanceStatus(
           : 'a fusion Pokémon'
         }.`
       );
-      console.log('[update] blocked due to special status');
+      log.debug('Update blocked due to special status');
       return instanceId;
     }
   }

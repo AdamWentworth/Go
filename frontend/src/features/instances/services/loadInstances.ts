@@ -1,8 +1,11 @@
 // src/features/instances/services/loadInstances.ts
 import { getInstancesData, initializeOrUpdateInstancesData } from '../storage/instancesStorage';
 import { isDataFresh } from '@/utils/cacheHelpers';
+import { createScopedLogger } from '@/utils/logger';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { Instances } from '@/types/instances';
+
+const log = createScopedLogger('loadInstances');
 
 export async function loadInstances(
   variants: PokemonVariant[],
@@ -15,7 +18,7 @@ export async function loadInstances(
     if (hasCache) {
       // Optionally (non-blocking) reconcile in the background
       // void initializeOrUpdateInstancesData(variants.map(v => v.variant_id).filter(Boolean) as string[], variants)
-      //   .catch(err => console.error('[loadInstances] BG reconcile failed:', err));
+      //   .catch(err => log.error('BG reconcile failed:', err));
       return cached;
     }
 
@@ -31,7 +34,7 @@ export async function loadInstances(
     const data = await initializeOrUpdateInstancesData(keys, variants);
     return data;
   } catch (err) {
-    console.error('[loadInstances] Failed to load instances:', err);
+    log.error('Failed to load instances:', err);
     throw err;
   }
 }

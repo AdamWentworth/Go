@@ -1,6 +1,7 @@
 // src/features/trades/store/useTradeStore.ts
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
+import { createScopedLogger } from '@/utils/logger';
 import {
   POKEMON_TRADES_STORE,
   RELATED_INSTANCES_STORE,
@@ -15,6 +16,8 @@ import {
   putBatchedTradeUpdates,
   deleteFromTradesDB,
 } from '@/db/indexedDB';
+
+const log = createScopedLogger('useTradeStore');
 
 // ────────────────────────────────────────────────────────────────────────────────
 //  Types – keep loose for now; tighten later once compilation passes everywhere
@@ -155,7 +158,7 @@ export const useTradeStore = create<TradeStoreState>()(
           await get().setRelatedInstances(newInstances);
         }
       } catch (err) {
-        console.error('[updateTradeData] ERROR:', err);
+        log.error('updateTradeData error:', err);
       }
     },
 
@@ -207,7 +210,7 @@ export const useTradeStore = create<TradeStoreState>()(
 
         set({ trades: tradesObj, relatedInstances: instancesObj });
       } catch (err) {
-        console.error('[hydrateFromDB] ERROR:', err);
+        log.error('hydrateFromDB error:', err);
       }
     },
   })),

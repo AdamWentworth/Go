@@ -4,6 +4,9 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { Instances } from '@/types/instances';
 import type { TagBuckets } from '@/types/tags';
 import type { PokemonInstance } from '@/types/pokemonInstance';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('usePokemonOwnershipFilter');
 
 // Base filters the UI should treat as parents
 const VALID_FILTERS = ['caught', 'wanted'] as const;
@@ -82,7 +85,7 @@ export function getFilteredPokemonsByOwnership(
   // ---- base parents ----
   const filterKey = normalizedFilter as OwnershipFilter;
   if (!VALID_FILTERS.includes(filterKey)) {
-    console.warn(`[usePokemonOwnershipFilter] Unknown filter "${filter}". Returning empty array.`);
+    log.warn(`Unknown filter "${filter}". Returning empty array.`);
     return [];
   }
 

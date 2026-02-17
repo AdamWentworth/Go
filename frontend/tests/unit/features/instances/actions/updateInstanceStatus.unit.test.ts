@@ -170,7 +170,8 @@ describe('updateInstanceStatus', () => {
 
     await expect(updater(UUID_A, 'Caught')).resolves.toBeUndefined();
     expect(errSpy).toHaveBeenCalledWith(
-      '[updateInstanceStatus] updatesDB write failed:',
+      '[updateInstanceStatus]',
+      'updatesDB write failed:',
       expect.any(Error),
     );
   });

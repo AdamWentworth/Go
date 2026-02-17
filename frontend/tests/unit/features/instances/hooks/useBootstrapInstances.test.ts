@@ -109,7 +109,11 @@ describe('useBootstrapInstances', () => {
     renderHook(() => useBootstrapInstances());
 
     await waitFor(() => {
-      expect(errorSpy).toHaveBeenCalledWith('[BootstrapInstances] failed:', err);
+      expect(errorSpy).toHaveBeenCalledWith(
+        '[useBootstrapInstances]',
+        'Bootstrap failed:',
+        err,
+      );
     });
 
     expect(useInstancesStore.getState().instancesLoading).toBe(false);

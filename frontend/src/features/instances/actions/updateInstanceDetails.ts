@@ -1,11 +1,13 @@
 // src/features/instances/actions/updateInstanceDetails.ts
 import { produce } from 'immer';
 import { putBatchedPokemonUpdates, putInstancesBulk } from '@/db/indexedDB';
+import { createScopedLogger } from '@/utils/logger';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { MutableInstances, SetInstancesFn } from '@/types/instances';
 
 type Patch = Partial<PokemonInstance>;
 type PatchMap = Record<string, Patch>;
+const log = createScopedLogger('updateInstanceDetails');
 
 async function yieldToPaint() {
   await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
@@ -39,7 +41,7 @@ export function updateInstanceDetails(
 
         const existing = (draft as any)[key];
         if (!existing) {
-          console.warn('[updateInstanceDetails] "%s" missing – creating placeholder', key);
+          log.warn('"%s" missing - creating placeholder', key);
           (draft as any)[key] = {} as Partial<PokemonInstance>;
         }
 
@@ -93,7 +95,7 @@ export function updateInstanceDetails(
         await putInstancesBulk(items);
       }
     } catch (err) {
-      console.error('[updateInstanceDetails] instancesDB write failed:', err);
+      log.error('instancesDB write failed:', err);
     }
 
     // Local timestamp (used by freshness checks)
@@ -104,12 +106,12 @@ export function updateInstanceDetails(
       const promises = updatedKeys.map((key) => putBatchedPokemonUpdates(key, (newMap as any)[key]));
       if (promises.length) await Promise.all(promises);
     } catch (err) {
-      console.error('[updateInstanceDetails] updatesDB fail:', err);
+      log.error('updatesDB fail:', err);
     }
 
     // Dev logging
     if (process.env.NODE_ENV === 'development') {
-      console.log('[updateInstanceDetails] patches saved', {
+      log.debug('patches saved', {
         timestamp,
         updatedKeys,
         patches: Object.fromEntries(updatedKeys.map(key => [key, (newMap as any)[key]])),

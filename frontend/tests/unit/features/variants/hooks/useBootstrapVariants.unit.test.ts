@@ -61,7 +61,7 @@ describe('🪝 useBootstrapVariants', () => {
     await Promise.resolve();
 
     testLogger.assertion('Error should be logged to console.error');
-    expect(consoleSpy).toHaveBeenCalledWith('[VariantsStore] Hydrate error:', error);
+    expect(consoleSpy).toHaveBeenCalledWith('[useBootstrapVariants]', 'Hydrate error:', error);
     consoleSpy.mockRestore();
   });
 });
