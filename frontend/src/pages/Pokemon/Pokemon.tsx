@@ -33,12 +33,20 @@ import useMegaPokemonHandler from './features/mega/hooks/useMegaPokemonHandler';
 import useFusionPokemonHandler from './features/fusion/hooks/useFusionPokemonHandler';
 import useSwipeHandler from './hooks/useSwipeHandler';
 import { getNextActiveView } from './utils/swipeNavigation';
+import {
+  buildSelectAllIds,
+  buildSliderTransform,
+  clampDragOffset,
+  getPokedexSubLabel,
+  getTagsSubLabel,
+  isActiveView,
+  toInstanceStatus,
+  type ActiveView,
+  type LastMenu,
+} from './utils/pokemonPageHelpers';
 import { createScopedLogger } from '@/utils/logger';
 
 const log = createScopedLogger('PokemonPage');
-
-type ActiveView = 'pokedex' | 'pokemon' | 'tags';
-type LastMenu = 'pokedex' | 'ownership';
 
 interface PokemonProps {
   isOwnCollection: boolean;
@@ -46,11 +54,6 @@ interface PokemonProps {
 
 const PokemonMenuMemo = React.memo(PokemonMenu);
 const HeaderUIMemo = React.memo(HeaderUI);
-
-const isActiveView = (value: string): value is ActiveView =>
-  value === 'pokedex' || value === 'pokemon' || value === 'tags';
-const isInstanceStatus = (value: string): value is InstanceStatus =>
-  value === 'Caught' || value === 'Trade' || value === 'Wanted' || value === 'Missing';
 
 function Pokemon({ isOwnCollection }: PokemonProps) {
   const { username: urlUsername } = useParams<{ username: string }>();
@@ -137,7 +140,7 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
   ) as TagBuckets;
 
   const baseVariants = lastMenu === 'pokedex' ? selectedPokedexList : variants;
-  const activeStatusFilter: InstanceStatus | null = isInstanceStatus(tagFilter) ? tagFilter : null;
+  const activeStatusFilter: InstanceStatus | null = toInstanceStatus(tagFilter);
 
   const { filteredVariants, sortedPokemons } = usePokemonProcessing(
     baseVariants,
@@ -172,10 +175,7 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
   }, [setIsFastSelectEnabled, setHighlightedCards]);
 
   const handleSelectAll = useCallback(() => {
-    const allIds = sortedPokemons
-      .map((p) => p.instanceData?.instance_id ?? p.variant_id)
-      .filter((id): id is string => typeof id === 'string' && id.length > 0);
-    setHighlightedCards(new Set(allIds));
+    setHighlightedCards(new Set(buildSelectAllIds(sortedPokemons)));
     setIsFastSelectEnabled(true);
   }, [sortedPokemons, setHighlightedCards, setIsFastSelectEnabled]);
 
@@ -235,18 +235,14 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
     onDrag: (dx) => {
       if (!containerRef.current) return;
       const width = containerRef.current.offsetWidth;
-      const max = width * maxPeekDistance;
-      setDragOffset(Math.max(-max, Math.min(max, dx)));
+      setDragOffset(clampDragOffset(dx, width, maxPeekDistance));
       setIsDragging(true);
     },
   });
 
   const getTransform = () => {
-    const idx = ['pokedex', 'pokemon', 'tags'].indexOf(activeView);
-    const basePct = -idx * 100;
     const width = containerRef.current?.offsetWidth || window.innerWidth;
-    const offsetPct = (dragOffset / width) * 100;
-    return `translate3d(${basePct + offsetPct}%,0,0)`;
+    return buildSliderTransform(activeView, dragOffset, width);
   };
 
   const displayUsername = canonicalUsername || urlUsername || '';
@@ -282,16 +278,8 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         highlightedCards={highlightedCards}
         onClearSelection={handleClearSelection}
         onSelectAll={handleSelectAll}
-        pokedexSubLabel={
-          !isUsernamePath && lastMenu === 'pokedex'
-            ? `(${(selectedPokedexKey || 'all').toUpperCase()})`
-            : undefined
-        }
-        tagsSubLabel={
-          lastMenu === 'ownership' && tagFilter
-            ? `(${String(tagFilter).toUpperCase()})`
-            : undefined
-        }
+        pokedexSubLabel={getPokedexSubLabel(isUsernamePath, lastMenu, selectedPokedexKey)}
+        tagsSubLabel={getTagsSubLabel(lastMenu, tagFilter)}
       />
 
       <div

@@ -1,28 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
-import type { SelectedMoves } from './VariantComponents/MovesSearch';
-import validatePokemon from '../utils/validatePokemon';
-import { updateImage } from '../utils/updateImage';
 import { formatCostumeName } from '../utils/formatCostumeName';
-import useErrorHandler from '../hooks/useErrorHandler';
 import { formatForm } from '@/utils/formattingHelpers';
 import type { PokemonVariant } from '@/types/pokemonVariants';
-import {
-  computeMaxAvailability,
-  cycleMaxState,
-  getPokemonSuggestions,
-  getSelectedCostumeId,
-  isBackgroundAllowedForSelection,
-  normalizeAvailableForms,
-  sortCostumesByDate,
-  type SortableCostume,
-} from './variantSearchHelpers';
+import type { SelectedMoves } from './VariantComponents/MovesSearch';
 import VariantSearchInput from './VariantSearchInput';
 import VariantSearchTogglePanel from './VariantSearchTogglePanel';
 import VariantSearchPreviewPanel from './VariantSearchPreviewPanel';
-import VariantSearchBackgroundOverlay, {
-  type BackgroundSelection,
-} from './VariantSearchBackgroundOverlay';
+import VariantSearchBackgroundOverlay from './VariantSearchBackgroundOverlay';
+import useVariantSearchController from './useVariantSearchController';
 import './VariantSearch.css';
 
 type VariantSearchProps = {
@@ -72,308 +58,57 @@ const VariantSearch: React.FC<VariantSearchProps> = ({
   setGigantamax,
   pokemonCache,
 }) => {
-  const { handleError, clearError } = useErrorHandler<string>();
-  const [availableForms, setAvailableForms] = useState<string[]>([]);
-  const [availableCostumes, setAvailableCostumes] = useState<SortableCostume[]>([]);
-  const [pokemonData, setPokemonData] = useState<PokemonVariant[]>(pokemonCache || []);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageError, setImageError] = useState(false);
-  const [showCostumeDropdown, setShowCostumeDropdown] = useState(false);
-  const [selectedBackground, setSelectedBackground] =
-    useState<BackgroundSelection | null>(null);
-  const [showBackgroundOverlay, setShowBackgroundOverlay] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-
-  useEffect(() => {
-    setPokemonData(pokemonCache || []);
-  }, [pokemonCache]);
-
-  const currentPokemonData = pokemonData.find(
-    (entry) => entry.name.toLowerCase() === (pokemon || '').toLowerCase(),
-  );
-
-  const { hasDynamax, hasGigantamax } = computeMaxAvailability(currentPokemonData);
-
-  const toggleMax = () => {
-    const next = cycleMaxState({
-      dynamax,
-      gigantamax,
-      hasDynamax,
-      hasGigantamax,
-    });
-
-    if (next.dynamax !== dynamax) {
-      setDynamax(next.dynamax);
-    }
-    if (next.gigantamax !== gigantamax) {
-      setGigantamax(next.gigantamax);
-    }
-  };
-
-  const handleValidation = (
-    name: string,
-    shinyChecked: boolean,
-    shadowChecked: boolean,
-    selectedCostume: string | null,
-    form: string,
-    selectedGenderValue: string | null,
-    dynamaxEnabled: boolean,
-    gigantamaxEnabled: boolean,
-  ) => {
-    const {
-      error,
-      availableCostumes: validatedCostumes,
-      availableForms: validatedForms,
-    } = validatePokemon(
-      pokemonData as unknown as Parameters<typeof validatePokemon>[0],
-      name,
-      shinyChecked,
-      shadowChecked,
-      selectedCostume,
-      form,
-      dynamaxEnabled,
-      gigantamaxEnabled,
-    );
-
-    if (error) {
-      handleError(error);
-      setErrorMessage(error);
-    } else {
-      clearError();
-      setErrorMessage(null);
-    }
-
-    const sortedCostumes = sortCostumesByDate(
-      validatedCostumes as unknown as SortableCostume[],
-    );
-    setAvailableCostumes(sortedCostumes);
-
-    const filteredForms = normalizeAvailableForms(validatedForms);
-    setAvailableForms(filteredForms);
-
-    if (!error) {
-      const nextImageUrl = updateImage(
-        pokemonData,
-        name,
-        shinyChecked,
-        shadowChecked,
-        selectedCostume,
-        form,
-        selectedGenderValue,
-        gigantamaxEnabled,
-      );
-      setImageUrl(nextImageUrl);
-      setImageError(false);
-    }
-  };
-
-  const handleGenderChange = (gender: string | null) => {
-    setSelectedGender(gender);
-  };
-
-  useEffect(() => {
-    if (pokemon) {
-      handleValidation(
-        pokemon,
-        isShiny,
-        isShadow,
-        costume,
-        selectedForm,
-        selectedGender,
-        dynamax,
-        gigantamax,
-      );
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGender, isShiny, isShadow, costume, selectedForm, dynamax, gigantamax]);
-
-  const handleBackgroundChange = (background: BackgroundSelection | null) => {
-    setSelectedBackground(background);
-    setSelectedBackgroundId(background ? background.background_id : null);
-    setShowBackgroundOverlay(false);
-  };
-
-  const handleImageError = () => {
-    setImageError(true);
-  };
-
-  const handlePokemonChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newPokemon = event.target.value;
-
-    if (newPokemon.length > 11) {
-      return;
-    }
-
-    setPokemon(newPokemon);
-    setSelectedForm('');
-    setSelectedGender('Any');
-    setSelectedMoves({
-      fastMove: null,
-      chargedMove1: null,
-      chargedMove2: null,
-    });
-    setDynamax(false);
-    setGigantamax(false);
-
-    if (newPokemon.length >= 3) {
-      const filtered = getPokemonSuggestions(pokemonData, newPokemon);
-      setSuggestions(filtered);
-    } else {
-      setSuggestions([]);
-    }
-
-    if (newPokemon.trim() === '') {
-      setImageUrl(null);
-      setAvailableForms([]);
-      setAvailableCostumes([]);
-      setCostume(null);
-      setSelectedBackground(null);
-      return;
-    }
-
-    handleValidation(
-      newPokemon,
-      isShiny,
-      isShadow,
-      costume,
-      '',
-      selectedGender,
-      dynamax,
-      gigantamax,
-    );
-  };
-
-  const handleInputFocus = () => {
-    if (!pokemon || pokemon.length < 3) {
-      return;
-    }
-
-    const filtered = getPokemonSuggestions(pokemonData, pokemon);
-    setSuggestions(filtered);
-  };
-
-  const handleInputBlur = () => {
-    setSuggestions([]);
-  };
-
-  const handleShinyChange = () => {
-    const shinyChecked = !isShiny;
-    setIsShiny(shinyChecked);
-    handleValidation(
-      pokemon,
-      shinyChecked,
-      isShadow,
-      costume,
-      selectedForm,
-      selectedGender,
-      dynamax,
-      gigantamax,
-    );
-  };
-
-  const handleShadowChange = () => {
-    const shadowChecked = !isShadow;
-    setIsShadow(shadowChecked);
-    handleValidation(
-      pokemon,
-      isShiny,
-      shadowChecked,
-      costume,
-      selectedForm,
-      selectedGender,
-      dynamax,
-      gigantamax,
-    );
-  };
-
-  const handleCostumeToggle = () => {
-    const nextShow = !showCostumeDropdown;
-    setShowCostumeDropdown(nextShow);
-
-    if (!nextShow) {
-      setCostume(null);
-      clearError();
-      handleValidation(
-        pokemon,
-        isShiny,
-        isShadow,
-        '',
-        selectedForm,
-        selectedGender,
-        dynamax,
-        gigantamax,
-      );
-      const defaultImage = updateImage(
-        pokemonData,
-        pokemon,
-        isShiny,
-        isShadow,
-        '',
-        selectedForm,
-        selectedGender,
-        dynamax,
-      );
-      setImageUrl(defaultImage);
-      setImageError(false);
-    }
-  };
-
-  const handleCostumeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedCostume = event.target.value;
-    setCostume(selectedCostume);
-    handleValidation(
-      pokemon,
-      isShiny,
-      isShadow,
-      selectedCostume,
-      selectedForm,
-      selectedGender,
-      dynamax,
-      gigantamax,
-    );
-  };
-
-  const handleFormChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const nextForm = event.target.value;
-    setSelectedForm(nextForm);
-    handleValidation(
-      pokemon,
-      isShiny,
-      isShadow,
-      costume,
-      nextForm,
-      selectedGender,
-      dynamax,
-      gigantamax,
-    );
-  };
-
-  const handleMovesChange = (moves: SelectedMoves) => {
-    setSelectedMoves(moves);
-  };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    setPokemon(suggestion);
-    setSuggestions([]);
-    handleValidation(
-      suggestion,
-      isShiny,
-      isShadow,
-      costume,
-      selectedForm,
-      selectedGender,
-      dynamax,
-      gigantamax,
-    );
-  };
-
-  const backgroundAllowed = isBackgroundAllowedForSelection(
+  const {
     currentPokemonData,
-    costume,
+    availableForms,
     availableCostumes,
-  );
-  const selectedCostumeId = getSelectedCostumeId(availableCostumes, costume);
-  const canDynamax = hasDynamax || hasGigantamax;
+    imageUrl,
+    imageError,
+    showCostumeDropdown,
+    selectedBackground,
+    showBackgroundOverlay,
+    suggestions,
+    backgroundAllowed,
+    selectedCostumeId,
+    canDynamax,
+    toggleMax,
+    setShowBackgroundOverlay,
+    handleImageError,
+    handleBackgroundChange,
+    handleGenderChange,
+    handlePokemonChange,
+    handleInputFocus,
+    handleInputBlur,
+    handleShinyChange,
+    handleShadowChange,
+    handleCostumeToggle,
+    handleCostumeChange,
+    handleFormChange,
+    handleMovesChange,
+    handleSuggestionClick,
+  } = useVariantSearchController({
+    pokemon,
+    setPokemon,
+    isShiny,
+    setIsShiny,
+    isShadow,
+    setIsShadow,
+    costume,
+    setCostume,
+    selectedForm,
+    setSelectedForm,
+    selectedMoves,
+    setSelectedMoves,
+    selectedGender,
+    setSelectedGender,
+    setErrorMessage,
+    setSelectedBackgroundId,
+    dynamax,
+    setDynamax,
+    gigantamax,
+    setGigantamax,
+    pokemonCache,
+  });
 
   return (
     <div className="pokemon-variant-container">

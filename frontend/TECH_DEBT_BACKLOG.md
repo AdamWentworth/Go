@@ -94,7 +94,8 @@ This backlog converts the current frontend audit into an execution plan focused 
 87. P2.2 slice F: extracted pure `VariantSearch` decision helpers into `variantSearchHelpers.ts` (max-cycle, suggestions, forms normalization, costume/background gating, date-sort), rewired `VariantSearch.tsx` to consume helpers, and added dedicated helper regression coverage (`389/389` unit tests green, plus green typecheck/build).
 88. P2.2 slice G: extracted `VariantSearch` input/autocomplete and toggle/dropdown UI into typed child components (`VariantSearchInput.tsx`, `VariantSearchTogglePanel.tsx`) with dedicated regression tests and full green validation (`393/393` unit tests, typecheck, production build).
 89. P2.2 slice H: extracted `VariantSearch` preview/moves/background and overlay UI into typed child components (`VariantSearchPreviewPanel.tsx`, `VariantSearchBackgroundOverlay.tsx`) with focused regression tests and full green validation (`397/397` unit tests, typecheck, production build).
-88. P2.2 slice G: extracted `VariantSearch` input/autocomplete and toggle/dropdown UI sections into typed child components (`VariantSearchInput.tsx`, `VariantSearchTogglePanel.tsx`), added focused component regression tests, and validated full green (`393/393` unit tests, typecheck, production build).
+90. P2.2 slice I: extracted `VariantSearch` state/handler orchestration into `useVariantSearchController.ts`, slimmed `VariantSearch.tsx` to composition-only UI (`175` LOC), and added dedicated hook regression coverage for suggestions, max-toggle transitions, costume reset, background selection, and empty-input reset behavior.
+91. P2.2 slice J: extracted pure `Pokemon.tsx` page helpers into `pokemonPageHelpers.ts` (status normalization, slider math, bulk-select ids, sub-label derivation), rewired `Pokemon.tsx` to consume helpers, and added dedicated helper regression coverage (`408/408` unit tests green, plus green typecheck/build).
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 - Pending:
@@ -113,9 +114,8 @@ Repo parse against backlog claims:
    - `tagHelpers.ts`: `0`
    - `MirrorManager.tsx`: `0`
 5. Remaining P2.2 decomposition targets still oversized:
-   - `VariantSearch.tsx`: `400` LOC
-   - `Pokemon.tsx`: `421` LOC
-   - (`TradeDetails.tsx` is now `294` LOC after slices A-E)
+   - `Pokemon.tsx`: `409` LOC
+   - (`VariantSearch.tsx` is now `175` LOC; `TradeDetails.tsx` is `294` LOC after slices A-E)
 
 ## Rules Of Execution
 
@@ -330,4 +330,4 @@ Repo parse against backlog claims:
 
 ## Immediate Next Step
 
-Continue P2.2 decomposition with `pages/Search/SearchParameters/VariantSearch.tsx`.
+Continue P2.2 decomposition with `pages/Pokemon/Pokemon.tsx`.
