@@ -1,5 +1,5 @@
 // Moves.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './Moves.css';
 
 import type { Move } from '@/types/pokemonSubTypes';
@@ -38,6 +38,11 @@ const Moves: React.FC<MovesProps> = ({
 }) => {
   const allMoves = pokemon.moves ?? [];
   const instanceData: Partial<PokemonInstance> = pokemon.instanceData ?? {};
+  const onMovesChangeRef = useRef(onMovesChange);
+
+  useEffect(() => {
+    onMovesChangeRef.current = onMovesChange;
+  }, [onMovesChange]);
 
   /* local state mirrors instanceData so UI can edit it -------------- */
   const [fastMove, setFastMove] = useState<number | null>(
@@ -91,9 +96,9 @@ const Moves: React.FC<MovesProps> = ({
     if (dirty) {
       setChargedMove1(updated.chargedMove1);
       setChargedMove2(updated.chargedMove2);
-      onMovesChange(updated);
+      onMovesChangeRef.current(updated);
     }
-  }, [isShadow, isPurified]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [chargedMove1, chargedMove2, fastMove, isPurified, isShadow]);
 
   /* helpers --------------------------------------------------------- */
   const fastMoves = allMoves.filter((m) => m.is_fast === 1);

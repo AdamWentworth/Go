@@ -25,7 +25,7 @@ The app supports:
 - **Context API** for shared state (auth, theme, Pokémon data, trades, etc.)
 - **Custom Hooks** for filtering, sorting, fetching, etc.
 - **IndexedDB** + **SSE** for fast offline caching and syncing
-- **Jest** + **Testing Library** for component tests
+- **Vitest** + **Testing Library** for unit/integration tests
 
 ---
 
@@ -205,15 +205,33 @@ Located in `src/contexts/`, these React contexts help manage global state across
 
 ## 🧪 Testing
 
+### Recommended local commands
+
 ```bash
-npm test
+npm run test:unit
 ```
 
-*Currently only some tests for the registration flow are there and not sure they still work*
+- Default local unit path (batched) to avoid Node heap OOM on Windows.
+- Uses `frontend/scripts/run-unit-tests-batched.mjs`.
 
-Tests are written with React Testing Library and live under `src/pages/*/tests/` and `src/components/tests/`
+### Additional test modes
 
-Mock APIs, services, and contexts are found in `src/mocks/`
+```bash
+npm run test:unit:single-process
+npm run test:unit:parallel
+npm run test:integration
+npm run test:e2e
+npm run test
+```
+
+- `test:unit:single-process`: one-process unit run (lowest memory mode).
+- `test:unit:parallel`: standard Vitest parallel unit run.
+- `test`: full Vitest suite used by CI quality gates.
+
+### Notes
+
+- If you hit memory pressure locally, prefer `npm run test:unit` (batched).
+- CI runs the full suite and is not constrained to local Windows batching behavior.
 
 ---
 
@@ -246,5 +264,6 @@ This frontend was designed to be modular, touch-friendly, and scale as features 
 The current codebase is large, but **structured for rapid iteration**, with clean folder grouping and reusable UI components.
 
 > If you're working on a section or need help tracking data flow — `contexts/`, `hooks/`, and `pages/Pokemon/` are the best starting points.
+
 
 

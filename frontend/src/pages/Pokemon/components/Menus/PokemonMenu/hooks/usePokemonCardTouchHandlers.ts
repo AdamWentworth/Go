@@ -25,14 +25,10 @@ const MOVE_CANCEL_THRESHOLD = 10;
 export function usePokemonCardTouchHandlers({
   onSelect,
   onSwipe,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  toggleCardHighlight,
   setIsFastSelectEnabled,
   isEditable,
   isFastSelectEnabled,
   isDisabled,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  selectKey,
 }: UseTouchHandlersProps) {
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);

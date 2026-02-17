@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import validatePokemon from '../utils/validatePokemon';
 import { updateImage } from '../utils/updateImage';
@@ -179,6 +179,9 @@ const useVariantSearchController = ({
     }
   };
 
+  const handleValidationRef = useRef(handleValidation);
+  handleValidationRef.current = handleValidation;
+
   const toggleMax = () => {
     const next = cycleMaxState({
       dynamax,
@@ -201,7 +204,7 @@ const useVariantSearchController = ({
 
   useEffect(() => {
     if (pokemon) {
-      handleValidation(
+      handleValidationRef.current(
         pokemon,
         isShiny,
         isShadow,
@@ -212,8 +215,16 @@ const useVariantSearchController = ({
         gigantamax,
       );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGender, isShiny, isShadow, costume, selectedForm, dynamax, gigantamax]);
+  }, [
+    costume,
+    dynamax,
+    gigantamax,
+    isShadow,
+    isShiny,
+    pokemon,
+    selectedForm,
+    selectedGender,
+  ]);
 
   const handleBackgroundChange = (background: BackgroundSelection | null) => {
     setSelectedBackground(background);

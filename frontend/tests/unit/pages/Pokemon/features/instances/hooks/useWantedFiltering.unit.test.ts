@@ -106,4 +106,52 @@ describe('useWantedFiltering', () => {
     expect(Object.keys(result.current.filteredWantedList)).toEqual(['regional1']);
     expect(result.current.updatedLocalWantedFilters.regionalIconFilter).toBe(true);
   });
+
+  it('does not repeatedly call setLocalNotWantedList when filtered entries are already tracked', async () => {
+    const setLocalNotWantedList = vi.fn();
+    const listsState = {
+      wanted: {
+        comm1: { variantType: 'default', shiny_rarity: 'community_day' },
+        normal1: { variantType: 'default', shiny_rarity: 'full_odds' },
+      },
+    };
+
+    const { rerender } = renderHook(
+      ({
+        selectedExcludeImages,
+        selectedIncludeOnlyImages,
+        notWantedList,
+      }) =>
+        useWantedFiltering(
+          listsState,
+          selectedExcludeImages,
+          selectedIncludeOnlyImages,
+          {},
+          setLocalNotWantedList as any,
+          notWantedList,
+          true,
+        ),
+      {
+        initialProps: {
+          selectedExcludeImages: selectedExclude(0),
+          selectedIncludeOnlyImages: selectedInclude(null),
+          notWantedList: {},
+        },
+      },
+    );
+
+    await waitFor(() => {
+      expect(setLocalNotWantedList).toHaveBeenCalledTimes(1);
+    });
+
+    rerender({
+      selectedExcludeImages: selectedExclude(0),
+      selectedIncludeOnlyImages: selectedInclude(null),
+      notWantedList: { comm1: true },
+    });
+
+    await waitFor(() => {
+      expect(setLocalNotWantedList).toHaveBeenCalledTimes(1);
+    });
+  });
 });

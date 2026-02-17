@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import './MovesSearch.css';
 
@@ -47,6 +47,12 @@ const MovesSearch: React.FC<MovesSearchProps> = ({
   selectedMoves,
   onMovesChange,
 }) => {
+  const onMovesChangeRef = useRef(onMovesChange);
+
+  useEffect(() => {
+    onMovesChangeRef.current = onMovesChange;
+  }, [onMovesChange]);
+
   const allMoves = pokemon?.moves?.length ? pokemon.moves : [DEFAULT_MOVE];
   const fastMoves = allMoves.filter((move) => Boolean(move.is_fast));
   const chargedMoves = allMoves.filter((move) => !move.is_fast);
@@ -65,8 +71,7 @@ const MovesSearch: React.FC<MovesSearchProps> = ({
 
   // Keep existing behavior: emit when local move selections change.
   useEffect(() => {
-    onMovesChange({ fastMove, chargedMove1, chargedMove2 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    onMovesChangeRef.current({ fastMove, chargedMove1, chargedMove2 });
   }, [fastMove, chargedMove1, chargedMove2]);
 
   const getMoveById = (id: number | ''): MoveOption | undefined =>

@@ -119,6 +119,8 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
   const initialMount = useRef(true);
   const [hovered, setHovered] = useState(false);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const enableMirrorRef = useRef<() => void>(() => {});
+  const disableMirrorRef = useRef<() => void>(() => {});
 
   const instanceMap: Record<string, PokemonInstance> = instances ?? {};
 
@@ -130,12 +132,11 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
     setIsMirror(currentMirror);
 
     if (currentMirror) {
-      enableMirror();
+      enableMirrorRef.current();
     } else {
-      disableMirror();
+      disableMirrorRef.current();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pokemon.instanceData?.mirror, setIsMirror]);
 
   useEffect(() => {
     if (initialMount.current || !editMode) return;
@@ -146,12 +147,11 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
     }
 
     if (isMirror) {
-      enableMirror();
+      enableMirrorRef.current();
     } else {
-      disableMirror();
+      disableMirrorRef.current();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMirror, editMode]);
+  }, [editMode, isMirror, pokemon.instanceData?.instance_id, updateDetails]);
 
   const enableMirror = (): void => {
     const existingMirrorKey = findExistingMirrorKey();
@@ -190,6 +190,9 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
     setMirrorKey(null);
     updateDisplayedList({});
   };
+
+  enableMirrorRef.current = enableMirror;
+  disableMirrorRef.current = disableMirror;
 
   const toggleMirror = (): void => {
     if (editMode) {
