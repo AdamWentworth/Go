@@ -3,6 +3,11 @@ import { defineConfig } from 'vite';
 import react            from '@vitejs/plugin-react';
 import path             from 'node:path';
 
+const isCI = process.env.CI === 'true';
+const isWindows = process.platform === 'win32';
+const lowMemoryMode = isWindows || process.env.VITEST_LOW_MEMORY === '1';
+const enableHtmlReport = process.env.VITEST_HTML_REPORT === '1';
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -68,14 +73,21 @@ export default defineConfig({
     testTimeout: 10000,
 
     isolate        : true,
-    fileParallelism: true,
-    poolOptions    : {
-      threads: {
-        singleThread: false,
-        minThreads: 2,
-        maxThreads: 4
-      }
-    },
+    pool           : lowMemoryMode ? 'forks' : 'threads',
+    fileParallelism: lowMemoryMode ? false : true,
+    poolOptions    : lowMemoryMode
+      ? {
+          forks: {
+            singleFork: true,
+          },
+        }
+      : {
+          threads: {
+            singleThread: false,
+            minThreads: 2,
+            maxThreads: 4,
+          },
+        },
     sequence       : {
       shuffle: false,
       concurrent: false,
@@ -113,14 +125,29 @@ export default defineConfig({
 
     reporters: [
       'default',
-      ['html', {
-        outputFile: 'tests/reports/html/index.html'
-      }],
-      ['junit', { 
-        outputFile: 'tests/reports/junit.xml',
-        classname: ({ filepath }) => filepath.replace(/\.test\.[jt]sx?$/, ''),
-        suiteName: 'Frontend Tests'
-      }]
+      ...(enableHtmlReport
+        ? [
+            [
+              'html',
+              {
+                outputFile: 'tests/reports/html/index.html',
+              },
+            ],
+          ]
+        : []),
+      ...(isCI
+        ? [
+            [
+              'junit',
+              {
+                outputFile: 'tests/reports/junit.xml',
+                classname: ({ filepath }) =>
+                  filepath.replace(/\.test\.[jt]sx?$/, ''),
+                suiteName: 'Frontend Tests',
+              },
+            ],
+          ]
+        : []),
     ],
 
     watch: {

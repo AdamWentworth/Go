@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import filters from '../utils/wantedFilters';
 import {
   EXCLUDE_IMAGES_wanted,
@@ -38,6 +38,13 @@ const useWantedFiltering = (
 ) => {
   const wantedSource = listsState?.wanted;
   const baseWanted = asWantedMap(wantedSource);
+  const localWantedFiltersRef = useRef(localWantedFilters);
+  const localNotWantedListRef = useRef(localNotWantedList);
+  const setLocalNotWantedListRef = useRef(setLocalNotWantedList);
+
+  localWantedFiltersRef.current = localWantedFilters;
+  localNotWantedListRef.current = localNotWantedList;
+  setLocalNotWantedListRef.current = setLocalNotWantedList;
 
   const [filteredWantedList, setFilteredWantedList] = useState<WantedMap>(baseWanted);
   const [filteredOutPokemon, setFilteredOutPokemon] = useState<string[]>([]);
@@ -49,7 +56,9 @@ const useWantedFiltering = (
     const wanted = asWantedMap(wantedSource);
     let updatedList: WantedMap = { ...wanted };
     const newlyFilteredOutPokemon: string[] = [];
-    const nextLocalWantedFilters: WantedFiltersState = { ...(localWantedFilters || {}) };
+    const nextLocalWantedFilters: WantedFiltersState = {
+      ...(localWantedFiltersRef.current || {}),
+    };
 
     // Initialize all existing filter keys to false.
     Object.keys(nextLocalWantedFilters).forEach((filterName) => {
@@ -108,7 +117,7 @@ const useWantedFiltering = (
     // Preserve legacy behavior: in edit mode, include filtered entries as greyedOut
     // and mark them in local not-wanted list.
     if (editMode) {
-      const nextNotWanted = { ...(localNotWantedList || {}) };
+      const nextNotWanted = { ...(localNotWantedListRef.current || {}) };
       let notWantedChanged = false;
       newlyFilteredOutPokemon.forEach((key) => {
         if (!nextNotWanted[key]) {
@@ -120,7 +129,7 @@ const useWantedFiltering = (
         }
       });
       if (notWantedChanged) {
-        setLocalNotWantedList(nextNotWanted);
+        setLocalNotWantedListRef.current(nextNotWanted);
       }
     }
 
@@ -132,9 +141,6 @@ const useWantedFiltering = (
     selectedIncludeOnlyImages,
     wantedSource,
     editMode,
-    localWantedFilters,
-    localNotWantedList,
-    setLocalNotWantedList,
   ]);
 
   return { filteredWantedList, filteredOutPokemon, updatedLocalWantedFilters };

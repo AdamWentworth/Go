@@ -40,7 +40,7 @@
     "test:silent": "vitest --silent",
     "test:watch": "vitest watch",
     "test:ui": "vitest --ui",
-    "test:unit": "vitest run tests/unit",
+    "test:unit": "node scripts/run-unit-tests-batched.mjs",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "vitest run tests/e2e",
     "test:variants": "vitest run tests/unit/features/variants tests/integration/features/variants tests/contracts/pokemonDataService.contract.test.ts",
