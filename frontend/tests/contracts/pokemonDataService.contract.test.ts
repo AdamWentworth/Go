@@ -1,5 +1,6 @@
 // tests/contracts/pokemonDataService.contract.test.ts
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import type { Mocked } from 'vitest';
 import axios from 'axios';
 import { getPokemons } from '@/services/pokemonDataService';
 import type { BasePokemon } from '@/types/pokemonBase';
@@ -8,7 +9,7 @@ import pokemonFixtures from '../__helpers__/fixtures/pokemons.json' assert { typ
 
 // Mock axios for all tests
 vi.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+const mockedAxios = axios as Mocked<typeof axios>;
 
 // Required fields that must be present in every Pokemon object
 const requiredKeys: (keyof BasePokemon)[] = [

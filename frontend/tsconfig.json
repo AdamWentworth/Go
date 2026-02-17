@@ -21,7 +21,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "noEmit": true,
-    "types": ["jest", "node", "web-streams-polyfill", "vitest/globals"],
+    "types": ["node", "web-streams-polyfill", "vitest/globals"],
   },
   "include": [
     "src",

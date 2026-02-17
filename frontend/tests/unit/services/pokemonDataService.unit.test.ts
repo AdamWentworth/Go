@@ -1,5 +1,6 @@
 // tests/unit/services/pokemonDataService.unit.test.ts
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import type { Mocked } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import axios from 'axios';
 import { getPokemons } from '@/services/pokemonDataService';
@@ -11,7 +12,7 @@ expect.extend(matchers);
 
 // Mock axios
 vi.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+const mockedAxios = axios as Mocked<typeof axios>;
 
 describe('Pokemon Data Service Unit Tests', () => {
   const suiteStartTime = Date.now();

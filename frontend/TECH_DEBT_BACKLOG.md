@@ -99,10 +99,9 @@ This backlog converts the current frontend audit into an execution plan focused 
 92. P2.2 slice K: extracted `Pokemon.tsx` slider/panel render orchestration into `components/PokemonViewSlider.tsx`, moved Pokedex/Pokemon/Tags panel wiring behind typed callbacks, and added focused slider wiring/style regression tests (`411/411` unit tests green, plus green typecheck/build).
 93. P2.2 slice L: extracted `Pokemon.tsx` overlay/action-menu/modal block into `components/PokemonPageOverlays.tsx`, preserved highlight action + close/action menu + mega/fusion modal wiring, and added focused overlay regression tests with full green validation (`411/411` unit tests, typecheck, production build).
 94. P2.2 slice M: extracted `Pokemon.tsx` state/effect/handler orchestration into `hooks/usePokemonPageController.tsx`, slimmed `Pokemon.tsx` to composition-only rendering (`109` LOC), and added dedicated hook regression coverage for foreign-profile load, select-all highlighting, and tags-panel state transitions (`417/417` unit tests green, plus green typecheck/build).
+95. P2.3 slice A: removed unused Jest toolchain dependencies (`jest`, `babel-jest`, `jest-environment-jsdom`, `jest-localstorage-mock`, `jest-watch-typeahead`, `identity-obj-proxy`, `jest-fixed-jsdom`, `@types/jest`), migrated lingering `jest.Mocked` usages to Vitest `Mocked`, removed `jest` from TS global types and ESLint globals, and verified with green `typecheck` + `417/417` unit + production build.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
-- Pending:
-1. P2.3 tooling cleanup.
 
 ## Audit Snapshot (2026-02-17)
 
@@ -120,6 +119,9 @@ Repo parse against backlog claims:
    - `VariantSearch.tsx`: `175` LOC
    - `TradeDetails.tsx`: `294` LOC
    - All P2.2 target components are now under the `~300` LOC goal.
+6. Tooling cleanup status:
+   - Jest framework/toolchain packages/config references removed.
+   - Remaining `@testing-library/jest-dom` and `jest-axe` usage is intentional for Vitest matcher/a11y helpers.
 
 ## Rules Of Execution
 
@@ -298,6 +300,8 @@ Repo parse against backlog claims:
 
 ### P2.3 - Tooling Cleanup
 
+- Status: Done
+
 - Goal: simplify stack and reduce maintenance overhead.
 - Tasks:
 1. Remove unused Jest toolchain packages if Vitest is canonical.
@@ -336,4 +340,4 @@ Repo parse against backlog claims:
 
 ## Immediate Next Step
 
-Start P2.3 tooling cleanup by removing unused Jest-only dependencies/config paths while keeping Vitest CI behavior unchanged.
+Continue P0.1 lint-baseline reduction so `npm run lint` can become a blocking CI gate.
