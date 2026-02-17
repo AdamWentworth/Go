@@ -3,14 +3,9 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import './Pokemon.css';
 
 import HeaderUI from './components/Header/HeaderUI';
-import HighlightActionButton from './components/Menus/PokemonMenu/HighlightActionButton';
 import PokemonViewSlider from './components/PokemonViewSlider';
+import PokemonPageOverlays from './components/PokemonPageOverlays';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import ActionMenu from '../../components/ActionMenu';
-import CloseButton from '../../components/CloseButton';
-
-import FusionPokemonModal from './features/fusion/components/FusionPokemonModal';
-import MegaPokemonModal from './features/mega/components/MegaPokemonModal';
 
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
@@ -344,44 +339,25 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         onTagSelect={handleTagSelect}
       />
 
-      {isEditable && highlightedCards.size > 0 && (
-        <HighlightActionButton
-          highlightedCards={highlightedCards}
-          handleConfirmChangeTags={handleConfirmChangeTags}
-          tagFilter={activeStatusFilter ?? ''}
-          isUpdating={isUpdating}
-        />
-      )}
-
-      <div className={`action-menu-overlay ${showActionMenu ? 'active' : ''}`}>
-        {showActionMenu && (
-          <>
-            <CloseButton onClick={handleActionMenuToggle} />
-            <div className="action-menu-content">
-              <p>This is the action menu content.</p>
-            </div>
-          </>
-        )}
-      </div>
-      <ActionMenu />
-
-      <MegaPokemonModal
-        open={isMegaSelectionOpen}
-        data={megaSelectionData}
-        onResolve={handleMegaSelectionResolve}
-        onReject={handleMegaSelectionReject}
+      <PokemonPageOverlays
+        isEditable={isEditable}
+        highlightedCards={highlightedCards}
+        onConfirmChangeTags={handleConfirmChangeTags}
+        activeStatusFilter={activeStatusFilter}
+        isUpdating={isUpdating}
+        showActionMenu={showActionMenu}
+        onActionMenuToggle={handleActionMenuToggle}
+        isMegaSelectionOpen={isMegaSelectionOpen}
+        megaSelectionData={megaSelectionData}
+        onMegaResolve={handleMegaSelectionResolve}
+        onMegaReject={handleMegaSelectionReject}
+        isFusionSelectionOpen={isFusionSelectionOpen}
+        fusionSelectionData={fusionSelectionData}
+        onFusionResolve={handleFusionSelectionResolve}
+        onFusionCancel={closeFusionSelection}
+        onCreateNewLeft={handleCreateNewLeft}
+        onCreateNewRight={handleCreateNewRight}
       />
-
-      {isFusionSelectionOpen && fusionSelectionData && (
-        <FusionPokemonModal
-          isOpen={isFusionSelectionOpen}
-          fusionSelectionData={fusionSelectionData}
-          onConfirm={handleFusionSelectionResolve}
-          onCancel={closeFusionSelection}
-          onCreateNewLeft={handleCreateNewLeft}
-          onCreateNewRight={handleCreateNewRight}
-        />
-      )}
     </div>
   );
 }

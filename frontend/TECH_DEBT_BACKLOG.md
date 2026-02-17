@@ -97,6 +97,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 90. P2.2 slice I: extracted `VariantSearch` state/handler orchestration into `useVariantSearchController.ts`, slimmed `VariantSearch.tsx` to composition-only UI (`175` LOC), and added dedicated hook regression coverage for suggestions, max-toggle transitions, costume reset, background selection, and empty-input reset behavior.
 91. P2.2 slice J: extracted pure `Pokemon.tsx` page helpers into `pokemonPageHelpers.ts` (status normalization, slider math, bulk-select ids, sub-label derivation), rewired `Pokemon.tsx` to consume helpers, and added dedicated helper regression coverage (`408/408` unit tests green, plus green typecheck/build).
 92. P2.2 slice K: extracted `Pokemon.tsx` slider/panel render orchestration into `components/PokemonViewSlider.tsx`, moved Pokedex/Pokemon/Tags panel wiring behind typed callbacks, and added focused slider wiring/style regression tests (`411/411` unit tests green, plus green typecheck/build).
+93. P2.2 slice L: extracted `Pokemon.tsx` overlay/action-menu/modal block into `components/PokemonPageOverlays.tsx`, preserved highlight action + close/action menu + mega/fusion modal wiring, and added focused overlay regression tests with full green validation (`411/411` unit tests, typecheck, production build).
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 - Pending:
@@ -115,7 +116,7 @@ Repo parse against backlog claims:
    - `tagHelpers.ts`: `0`
    - `MirrorManager.tsx`: `0`
 5. Remaining P2.2 decomposition targets still oversized:
-   - `Pokemon.tsx`: `389` LOC
+   - `Pokemon.tsx`: `365` LOC
    - (`VariantSearch.tsx` is now `175` LOC; `TradeDetails.tsx` is `294` LOC after slices A-E)
 
 ## Rules Of Execution
