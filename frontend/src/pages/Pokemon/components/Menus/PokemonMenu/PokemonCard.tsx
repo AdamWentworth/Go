@@ -85,7 +85,7 @@ const PokemonCard = memo(({
   };
 
   // Prefer instance UUID, fallback to variant key
-  const highlightKey = pokemon.instanceData?.instance_id ?? (pokemon as any).variant_id;
+  const highlightKey = pokemon.instanceData?.instance_id ?? pokemon.variant_id;
 
   const { handleTouchStart, handleTouchMove, handleTouchEnd, handleClick } =
     usePokemonCardTouchHandlers({
@@ -126,7 +126,7 @@ const PokemonCard = memo(({
   const cpValue =
     tagFilter !== ''
       ? (pokemon.instanceData?.cp ?? '')
-      : (sortType === 'combatPower' && (pokemon as any).cp50 != null ? (pokemon as any).cp50 : '');
+      : (sortType === 'combatPower' && pokemon.cp50 != null ? pokemon.cp50 : '');
 
   const cardClass = `
     pokemon-card
@@ -214,21 +214,21 @@ const PokemonCard = memo(({
         isPurified={isPurified}
       />
 
-      <p>#{(pokemon as any).pokedex_number}</p>
+      <p>#{pokemon.pokedex_number}</p>
 
       <div className="type-icons">
-        {(pokemon as any).type_1_icon && (
+        {pokemon.type_1_icon && (
           <img
-            src={(pokemon as any).type_1_icon}
-            alt={(pokemon as any).type1_name}
+            src={pokemon.type_1_icon}
+            alt={pokemon.type1_name}
             loading="lazy"
             draggable={false}
           />
         )}
-        {(pokemon as any).type_2_icon && (
+        {pokemon.type_2_icon && (
           <img
-            src={(pokemon as any).type_2_icon}
-            alt={(pokemon as any).type2_name}
+            src={pokemon.type_2_icon}
+            alt={pokemon.type2_name}
             loading="lazy"
             draggable={false}
           />

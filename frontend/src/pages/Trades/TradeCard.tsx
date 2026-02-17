@@ -29,6 +29,34 @@ interface TradeCardTrade {
   [key: string]: unknown;
 }
 
+type CanonicalTrade = TradeCardTrade & {
+  trade_id: string;
+  trade_status: string;
+  last_update: number;
+  username_proposed: string;
+  username_accepting: string;
+  pokemon_instance_id_user_proposed: string;
+  pokemon_instance_id_user_accepting: string;
+  user_proposed_completion_confirmed: boolean;
+  user_accepting_completion_confirmed: boolean;
+  trade_accepted_date: string | null;
+  trade_completed_date: string | null;
+  trade_cancelled_date: string | null;
+  trade_cancelled_by: string | null;
+  trade_deleted_date: string | null;
+  trade_proposal_date: string;
+  user_1_trade_satisfaction: boolean;
+  user_2_trade_satisfaction: boolean;
+};
+
+type AcceptArgs = Parameters<typeof handleAcceptTrade>[0];
+type DenyArgs = Parameters<typeof handleDenyTrade>[0];
+type DeleteArgs = Parameters<typeof handleDeleteTrade>[0];
+type CompleteArgs = Parameters<typeof handleCompleteTrade>[0];
+type CancelArgs = Parameters<typeof handleCancelTrade>[0];
+type ReProposeArgs = Parameters<typeof handleReProposeTrade>[0];
+type ThumbsUpArgs = Parameters<typeof handleThumbsUpTrade>[0];
+
 interface TradeCardProps {
   trade: TradeCardTrade;
   relatedInstances: RelatedInstancesMap;
@@ -39,6 +67,44 @@ interface TradeCardProps {
   loading: boolean;
   periodicUpdates: () => void;
 }
+
+const normalizeString = (value: unknown, fallback = ''): string =>
+  typeof value === 'string' ? value : fallback;
+
+const normalizeNullableString = (value: unknown): string | null =>
+  typeof value === 'string' ? value : null;
+
+const normalizeBoolean = (value: unknown, fallback = false): boolean =>
+  typeof value === 'boolean' ? value : fallback;
+
+const normalizeNumber = (value: unknown, fallback: number): number =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+const DEFAULT_ISO_TIMESTAMP = new Date(0).toISOString();
+
+const toCanonicalTrade = (input: TradeCardTrade): CanonicalTrade => {
+  const now = Date.now();
+  return {
+    ...input,
+    trade_id: normalizeString(input.trade_id),
+    trade_status: normalizeString(input.trade_status, 'proposed'),
+    last_update: normalizeNumber(input.last_update, now),
+    username_proposed: normalizeString(input.username_proposed),
+    username_accepting: normalizeString(input.username_accepting),
+    pokemon_instance_id_user_proposed: normalizeString(input.pokemon_instance_id_user_proposed),
+    pokemon_instance_id_user_accepting: normalizeString(input.pokemon_instance_id_user_accepting),
+    user_proposed_completion_confirmed: normalizeBoolean(input.user_proposed_completion_confirmed),
+    user_accepting_completion_confirmed: normalizeBoolean(input.user_accepting_completion_confirmed),
+    trade_accepted_date: normalizeNullableString(input.trade_accepted_date),
+    trade_completed_date: normalizeNullableString(input.trade_completed_date),
+    trade_cancelled_date: normalizeNullableString(input.trade_cancelled_date),
+    trade_cancelled_by: normalizeNullableString(input.trade_cancelled_by),
+    trade_deleted_date: normalizeNullableString(input.trade_deleted_date),
+    trade_proposal_date: normalizeString(input.trade_proposal_date, DEFAULT_ISO_TIMESTAMP),
+    user_1_trade_satisfaction: normalizeBoolean(input.user_1_trade_satisfaction),
+    user_2_trade_satisfaction: normalizeBoolean(input.user_2_trade_satisfaction),
+  };
+};
 
 const readCurrentUsername = (): string => {
   const storedUser = localStorage.getItem('user');
@@ -63,23 +129,28 @@ function TradeCard({
   periodicUpdates,
 }: TradeCardProps) {
   const setTradeData = useTradeStore((state) => state.setTradeData);
-  const trades = useTradeStore((state) => state.trades);
+  const trades = useTradeStore((state) => state.trades) as Record<string, TradeCardTrade>;
   const { confirm } = useModal();
 
+  const canonicalTrade = toCanonicalTrade(trade);
+  const canonicalTrades: Record<string, CanonicalTrade> = Object.fromEntries(
+    Object.entries(trades).map(([tradeId, tradeEntry]) => [tradeId, toCanonicalTrade(tradeEntry)]),
+  );
+
   const currentUsername = readCurrentUsername();
-  const usernameProposed = trade.username_proposed ?? '';
+  const usernameProposed = canonicalTrade.username_proposed;
   const isCurrentUserProposer = usernameProposed === currentUsername;
   const resolvedInstances = (instances ?? {}) as Instances;
 
   const currentUserInstanceId =
     (isCurrentUserProposer
-      ? trade.pokemon_instance_id_user_proposed
-      : trade.pokemon_instance_id_user_accepting) ?? '';
+      ? canonicalTrade.pokemon_instance_id_user_proposed
+      : canonicalTrade.pokemon_instance_id_user_accepting) ?? '';
 
   const partnerInstanceId =
     (isCurrentUserProposer
-      ? trade.pokemon_instance_id_user_accepting
-      : trade.pokemon_instance_id_user_proposed) ?? '';
+      ? canonicalTrade.pokemon_instance_id_user_accepting
+      : canonicalTrade.pokemon_instance_id_user_proposed) ?? '';
 
   const currentUserDetails = usePokemonDetails(
     currentUserInstanceId,
@@ -97,95 +168,120 @@ function TradeCard({
 
   // Handlers expect a Promise<void> setter. Store setter returns Promise<Record|void>.
   const persistTradeData = async (updatedTrades: Record<string, unknown>): Promise<void> => {
-    await setTradeData(updatedTrades as Record<string, any>);
+    await setTradeData(updatedTrades as unknown as Record<string, { trade_id: string; trade_status: string }>);
   };
 
   const handleAccept = async () => {
     const isConfirmed = await confirm('Are you sure you want to accept this trade?');
     if (!isConfirmed) return;
 
-    await handleAcceptTrade({
-      trade: trade as any,
-      trades: trades as any,
-      setTradeData: persistTradeData,
+    const args: AcceptArgs = {
+      trade: canonicalTrade as unknown as AcceptArgs['trade'],
+      trades: canonicalTrades as unknown as AcceptArgs['trades'],
+      setTradeData: async (updatedTrades) => {
+        await persistTradeData(updatedTrades as unknown as Record<string, unknown>);
+      },
       periodicUpdates,
-    });
+    };
+    await handleAcceptTrade(args);
   };
 
   const handleDeny = async () => {
     const isConfirmed = await confirm('Are you sure you want to deny this trade?');
     if (!isConfirmed) return;
 
-    await handleDenyTrade({
-      trade: trade as any,
-      trades: trades as any,
-      setTradeData: persistTradeData,
+    const args: DenyArgs = {
+      trade: canonicalTrade as unknown as DenyArgs['trade'],
+      trades: canonicalTrades as unknown as DenyArgs['trades'],
+      setTradeData: async (updatedTrades) => {
+        await persistTradeData(updatedTrades as unknown as Record<string, unknown>);
+      },
       periodicUpdates,
-    });
+    };
+    await handleDenyTrade(args);
   };
 
   const handleDelete = async () => {
     const isConfirmed = await confirm('Are you sure you want to delete this trade?');
     if (!isConfirmed) return;
 
-    await handleDeleteTrade({
-      trade: trade as any,
-      trades: trades as any,
-      setTradeData: persistTradeData,
+    const args: DeleteArgs = {
+      trade: canonicalTrade as unknown as DeleteArgs['trade'],
+      trades: canonicalTrades as unknown as DeleteArgs['trades'],
+      setTradeData: async (updatedTrades) => {
+        await persistTradeData(updatedTrades as unknown as Record<string, unknown>);
+      },
       periodicUpdates,
-    });
+    };
+    await handleDeleteTrade(args);
   };
 
   const handleComplete = async () => {
     const isConfirmed = await confirm('Are you sure you want to complete this trade?');
     if (!isConfirmed) return;
 
-    await handleCompleteTrade({
-      trade: trade as any,
-      trades: trades as any,
-      setTradeData: persistTradeData,
+    const applyInstanceUpdates: CompleteArgs['setInstances'] = (updatedData) => {
+      void setInstances(updatedData as Instances);
+    };
+
+    const args: CompleteArgs = {
+      trade: canonicalTrade as unknown as CompleteArgs['trade'],
+      trades: canonicalTrades as unknown as CompleteArgs['trades'],
+      setTradeData: async (updatedTrades) => {
+        await persistTradeData(updatedTrades as unknown as Record<string, unknown>);
+      },
       periodicUpdates,
-      relatedInstances: relatedInstances as any,
-      instances: resolvedInstances as any,
-      setInstances: setInstances as any,
+      relatedInstances: relatedInstances as unknown as CompleteArgs['relatedInstances'],
+      instances: resolvedInstances as unknown as CompleteArgs['instances'],
+      setInstances: applyInstanceUpdates,
       currentUsername,
-    });
+    };
+    await handleCompleteTrade(args);
   };
 
   const handleCancel = async () => {
     const isConfirmed = await confirm('Are you sure you want to cancel this trade?');
     if (!isConfirmed) return;
 
-    await handleCancelTrade({
-      trade: trade as any,
-      trades: trades as any,
-      setTradeData: persistTradeData,
+    const args: CancelArgs = {
+      trade: canonicalTrade as unknown as CancelArgs['trade'],
+      trades: canonicalTrades as unknown as CancelArgs['trades'],
+      setTradeData: async (updatedTrades) => {
+        await persistTradeData(updatedTrades as unknown as Record<string, unknown>);
+      },
       periodicUpdates,
       currentUsername,
-    });
+    };
+    await handleCancelTrade(args);
   };
 
   const handleRePropose = async () => {
     const isConfirmed = await confirm('Are you sure you want to re-propose this trade?');
     if (!isConfirmed) return;
 
-    await handleReProposeTrade({
-      trade: trade as any,
-      trades: trades as any,
-      setTradeData: persistTradeData,
+    const args: ReProposeArgs = {
+      trade: canonicalTrade as unknown as ReProposeArgs['trade'],
+      trades: canonicalTrades as unknown as ReProposeArgs['trades'],
+      setTradeData: async (updatedTrades) => {
+        await persistTradeData(updatedTrades as unknown as Record<string, unknown>);
+      },
       periodicUpdates,
       currentUsername,
-    });
+    };
+    await handleReProposeTrade(args);
   };
 
   const handleThumbsUp = async () => {
-    await handleThumbsUpTrade({
-      trade: trade as any,
-      trades: trades as any,
-      setTradeData: persistTradeData,
+    const args: ThumbsUpArgs = {
+      trade: canonicalTrade as unknown as ThumbsUpArgs['trade'],
+      trades: canonicalTrades as unknown as ThumbsUpArgs['trades'],
+      setTradeData: async (updatedTrades) => {
+        await persistTradeData(updatedTrades as unknown as Record<string, unknown>);
+      },
       periodicUpdates,
       currentUsername,
-    });
+    };
+    await handleThumbsUpTrade(args);
   };
 
   const normalizedStatus = selectedStatus.toLowerCase();

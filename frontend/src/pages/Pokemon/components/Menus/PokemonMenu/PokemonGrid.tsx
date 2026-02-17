@@ -29,10 +29,9 @@ export interface PokemonGridProps {
 const BUFFER_ROWS = 5;
 
 // Prefer instance UUIDs for React keys; fall back to variant key + index.
-function buildReactKey(pokemon: any, absoluteIndex: number): string {
+function buildReactKey(pokemon: CardPokemon, absoluteIndex: number): string {
   // Use instance_id if available
   if (pokemon?.instanceData?.instance_id) return pokemon.instanceData.instance_id;
-  if (pokemon?.instance_id) return pokemon.instance_id;
 
   // Fallback: use variant_id + index
   const variantKey = pokemon?.variant_id;
@@ -41,8 +40,8 @@ function buildReactKey(pokemon: any, absoluteIndex: number): string {
 }
 
 // Use instance id for highlighting if available; otherwise variant key
-function getHighlightKey(pokemon: any): string | undefined {
-  return pokemon?.instanceData?.instance_id ?? pokemon?.instance_id ?? pokemon?.variant_id;
+function getHighlightKey(pokemon: CardPokemon): string {
+  return pokemon.instanceData?.instance_id ?? pokemon.variant_id;
 }
 
 const PokemonGrid: React.FC<PokemonGridProps> = memo(({

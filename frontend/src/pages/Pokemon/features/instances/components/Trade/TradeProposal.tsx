@@ -22,6 +22,7 @@ import { createScopedLogger } from '@/utils/logger';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { Instances } from '@/types/instances';
+import type { TradeProposalPayload } from './tradeDetailsHelpers';
 
 const log = createScopedLogger('TradeProposal');
 
@@ -39,11 +40,11 @@ const hasInstanceData = (
 /* Component props                                                     */
 /* ------------------------------------------------------------------ */
 interface TradeProposalProps {
-  passedInPokemon: PokemonVariant;
-  clickedPokemon: PokemonVariant & { matchedInstances?: PokemonVariant[] };
-  wantedPokemon?: { friendship_level?: number; pref_lucky?: boolean };
+  passedInPokemon: PokemonVariant & { instanceData?: PokemonInstance };
+  clickedPokemon?: TradeProposalPayload | null;
+  wantedPokemon?: { friendship_level?: number; pref_lucky?: boolean } | null;
   onClose: () => void;
-  myInstances: Instances;
+  myInstances?: Instances;
   instances: Instances;
   username: string;
 }
@@ -66,7 +67,9 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   /* local state --------------------------------------------------- */
-  const { matchedInstances = [] } = clickedPokemon;
+  const matchedInstances = Array.isArray(clickedPokemon?.matchedInstances)
+    ? clickedPokemon.matchedInstances
+    : [];
   const [selectedMatchedInstance, setSelectedMatchedInstance] =
     useState<PokemonVariant | null>(matchedInstances[0] ?? null);
 
@@ -101,7 +104,7 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
     friendship_level,
     passedInPokemon,
     selectedMatchedInstance?.instanceData ?? null,
-    myInstances,
+    myInstances ?? {},
     instances,
   );
 
@@ -134,11 +137,47 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
     } catch {
       /* ignore */ 
     }
+    if (!username_proposed) {
+      await alert('Could not determine your username. Please sign in again.');
+      return;
+    }
+    const proposedInstanceId =
+      selectedMatchedInstance.instanceData.instance_id ?? '';
+    if (!proposedInstanceId) {
+      await alert('Selected trade instance is missing an instance id.');
+      return;
+    }
+    const normalizedFriendshipLevel = friendship_level as 1 | 2 | 3 | 4;
+    const sanitizedInstanceData = Object.entries(
+      passedInPokemon.instanceData ?? {},
+    ).reduce<Record<string, string | number | boolean | null | undefined>>(
+      (acc, [key, value]) => {
+        if (
+          value === null ||
+          value === undefined ||
+          typeof value === 'string' ||
+          typeof value === 'number' ||
+          typeof value === 'boolean'
+        ) {
+          acc[key] = value;
+        }
+        return acc;
+      },
+      {},
+    );
+    const proposeTradePokemon = {
+      variant_id: passedInPokemon.variant_id,
+      instance_id:
+        typeof passedInPokemon.instanceData?.instance_id === 'string'
+          ? passedInPokemon.instanceData.instance_id
+          : undefined,
+      instanceData: sanitizedInstanceData,
+    };
 
     const tradeData = {
       username_proposed,
       username_accepting: username,
-      pokemon_instance_id_user_proposed: selectedMatchedInstance.instanceData.instance_id,
+      pokemon_instance_id_user_proposed: proposedInstanceId,
       pokemon_instance_id_user_accepting:
         passedInPokemon.instanceData?.instance_id ??
         passedInPokemon.variant_id ??
@@ -147,10 +186,10 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
       is_registered_trade: isRegisteredTrade,
       is_lucky_trade: pref_lucky,
       trade_dust_cost: stardustCost,
-      trade_friendship_level: friendship_level,
+      trade_friendship_level: normalizedFriendshipLevel,
       user_1_trade_satisfaction: null,
       user_2_trade_satisfaction: null,
-      pokemon: passedInPokemon,
+      pokemon: proposeTradePokemon,
       trade_acceptance_date: null,
       trade_cancelled_by: null,
       trade_cancelled_date: null,
@@ -194,9 +233,9 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
           <FriendshipManager
             /* props required by its .d.ts – supply no-ops for unused ones */
             friendship={friendship_level}
-            setFriendship={setFriendshipLevel as any}
+            setFriendship={setFriendshipLevel}
             isLucky={pref_lucky}
-            setIsLucky={setPrefLucky as any}
+            setIsLucky={setPrefLucky}
             /* the props you actually use */
             friendship_level={friendship_level}
             setFriendshipLevel={setFriendshipLevel}

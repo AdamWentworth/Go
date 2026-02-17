@@ -1,14 +1,14 @@
 // PokemonActionOverlay.tsx
 import React from 'react';
 import './PokemonActionOverlay.css';
-import type { PokemonVariant } from '@/types/pokemonVariants'; // Adjust import path if needed
+import type { SelectedPokemon } from './tradeDetailsHelpers';
 
 interface PokemonActionOverlayProps {
   isOpen: boolean;
   onClose: () => void;
   onViewWantedList: () => void;
   onProposeTrade: () => void;
-  pokemon?: PokemonVariant;
+  pokemon?: SelectedPokemon | null;
 }
 
 const PokemonActionOverlay: React.FC<PokemonActionOverlayProps> = ({
@@ -27,22 +27,30 @@ const PokemonActionOverlay: React.FC<PokemonActionOverlayProps> = ({
   };
 
   if (!pokemon) return null;
+  const speciesName =
+    (typeof pokemon.species_name === 'string' && pokemon.species_name) ||
+    (typeof pokemon.name === 'string' && pokemon.name) ||
+    '';
+  const imageUrl =
+    typeof pokemon.currentImage === 'string' ? pokemon.currentImage : undefined;
+  const variantType =
+    typeof pokemon.variantType === 'string' ? pokemon.variantType : '';
 
   return (
     <div className="pokemon-action-overlay" onClick={onClose}>
       <div className="overlay-content" onClick={(e) => e.stopPropagation()}>
         {/* Image Container */}
         <div className="image-container">
-          {pokemon.currentImage && (
+          {imageUrl && (
             <img
-              src={pokemon.currentImage}
-              alt={pokemon.species_name}
+              src={imageUrl}
+              alt={speciesName}
               className="pokemon-action-image"
             />
           )}
           
           {/* Dynamax Icon */}
-          {pokemon.variantType.includes('dynamax') && (
+          {variantType.includes('dynamax') && (
             <img
               src="/images/dynamax.png"
               alt="Dynamax"
@@ -51,7 +59,7 @@ const PokemonActionOverlay: React.FC<PokemonActionOverlayProps> = ({
           )}
           
           {/* Gigantamax Icon */}
-          {pokemon.variantType.includes('gigantamax') && (
+          {variantType.includes('gigantamax') && (
             <img
               src="/images/gigantamax.png"
               alt="Gigantamax"
@@ -60,7 +68,7 @@ const PokemonActionOverlay: React.FC<PokemonActionOverlayProps> = ({
           )}
         </div>
 
-        <h2>{pokemon.species_name}</h2>
+        <h2>{speciesName}</h2>
         <p>What would you like to do with this Pokémon?</p>
         <div className="button-group">
           <button

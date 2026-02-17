@@ -10,6 +10,7 @@ import WantedInstance from './WantedInstance';
 import WantedDetails from './components/Wanted/WantedDetails';
 import CloseButton from '@/components/CloseButton';
 import type { Instances } from '@/types/instances';
+import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { SortMode, SortType } from '@/types/sort';
 import { createScopedLogger } from '@/utils/logger';
@@ -18,27 +19,34 @@ const log = createScopedLogger('InstanceOverlay');
 const dbg = (...args: unknown[]) => log.debug(...args);
 
 type OverlayType = 'caught' | 'missing' | 'trade' | 'wanted';
+type TypeCandidate = {
+  name?: string;
+  type?: { name?: string };
+  typeName?: string;
+} | string | number | null | undefined;
 
-type OverlayPokemon = (PokemonVariant & {
-  instanceData?: Record<string, unknown>;
+type OverlayPokemon = Omit<PokemonVariant, 'instanceData'> & {
+  instanceData?: Partial<PokemonInstance> & {
+    status?: string;
+  };
   status?: string;
   type1_name?: string;
-  primaryType?: { name?: string } | string;
-  primary_type?: { name?: string } | string;
-  type1?: { name?: string } | string;
-  types?: Array<{ type?: { name?: string }; name?: string } | string>;
-  type?: Array<{ type?: { name?: string }; name?: string } | string>;
-}) | null;
+  primaryType?: TypeCandidate;
+  primary_type?: TypeCandidate;
+  type1?: TypeCandidate;
+  types?: TypeCandidate[];
+  type?: TypeCandidate[];
+};
 
 interface InstanceOverlayProps {
-  pokemon: any;
+  pokemon: OverlayPokemon;
   onClose: () => void;
-  variants: any[];
+  variants: PokemonVariant[];
   tagFilter: string;
-  lists: any;
-  instances: any;
-  sortType: any;
-  sortMode: any;
+  lists: Record<string, Record<string, unknown>>;
+  instances: Instances;
+  sortType: SortType;
+  sortMode: SortMode;
   isEditable: boolean;
   username: string;
 }
@@ -49,7 +57,7 @@ const CANON = (k: unknown): string => {
   return key;
 };
 
-const deriveInitialOverlay = (tagFilter: unknown, pokemon: OverlayPokemon): OverlayType => {
+const deriveInitialOverlay = (tagFilter: unknown, pokemon: OverlayPokemon | null): OverlayType => {
   const fromTag = CANON(tagFilter);
   if (['caught', 'missing', 'trade', 'wanted'].includes(fromTag)) return fromTag as OverlayType;
 
@@ -60,7 +68,7 @@ const deriveInitialOverlay = (tagFilter: unknown, pokemon: OverlayPokemon): Over
 };
 
 // placeholder; later you can compute a color from pokemon type, shiny, etc.
-const getCaughtBgColor = (_pokemon?: OverlayPokemon) => '#0f2b2b';
+const getCaughtBgColor = (_pokemon?: OverlayPokemon | null) => '#0f2b2b';
 
 /** ---- Background image picker (no noisy logs) ---- **/
 const TYPE_SET = new Set([
@@ -68,20 +76,32 @@ const TYPE_SET = new Set([
   'grass','ground','ice','normal','poison','psychic','rock','steel','water'
 ]);
 
-const normalizeTypeName = (candidate: any): string | null => {
+const isTypeCandidateObject = (
+  value: unknown,
+): value is { name?: string; type?: { name?: string }; typeName?: string } =>
+  typeof value === 'object' && value !== null;
+
+const normalizeTypeName = (candidate: unknown): string | null => {
   if (!candidate) return null;
   if (typeof candidate === 'string' || typeof candidate === 'number') {
     return String(candidate).toLowerCase();
   }
-  if (typeof candidate === 'object') {
-    if (typeof candidate?.name === 'string') return candidate.name.toLowerCase();
-    if (typeof candidate?.type?.name === 'string') return candidate.type.name.toLowerCase();
-    if (typeof candidate?.typeName === 'string') return candidate.typeName.toLowerCase();
+  if (isTypeCandidateObject(candidate)) {
+    if (typeof candidate.name === 'string') return candidate.name.toLowerCase();
+    if (typeof candidate.type?.name === 'string') return candidate.type.name.toLowerCase();
+    if (typeof candidate.typeName === 'string') return candidate.typeName.toLowerCase();
   }
   return null;
 };
 
-const getPrimaryTypeName = (p: any): string => {
+const extractTypeName = (candidate: TypeCandidate): unknown => {
+  if (isTypeCandidateObject(candidate)) {
+    return candidate.name ?? candidate.type?.name ?? candidate.typeName;
+  }
+  return candidate;
+};
+
+const getPrimaryTypeName = (p: OverlayPokemon | null): string => {
   if (!p) return 'normal';
 
   // Prefer explicit string fields if present
@@ -93,12 +113,12 @@ const getPrimaryTypeName = (p: any): string => {
 
   // Fallbacks for common shapes
   const candidates = [
-    p?.primaryType?.name ?? p?.primaryType,
-    p?.primary_type?.name ?? p?.primary_type,
-    p?.type1?.name ?? p?.type1,
+    extractTypeName(p.primaryType),
+    extractTypeName(p.primary_type),
+    extractTypeName(p.type1),
     Array.isArray(p?.types) ? p.types[0] : null,
     Array.isArray(p?.type) ? p.type[0] : null,
-    Array.isArray(p?.types) ? p.types[0]?.type?.name : null, // PokeAPI-ish
+    Array.isArray(p?.types) ? extractTypeName(p.types[0]) : null, // PokeAPI-ish
   ];
   for (const v of candidates) {
     const norm = normalizeTypeName(v);
@@ -115,7 +135,7 @@ const getPrimaryTypeName = (p: any): string => {
   return 'normal';
 };
 
-const getBackgroundImageSrc = (p: any): string => {
+const getBackgroundImageSrc = (p: OverlayPokemon | null): string => {
   if (!p) return '/images/backgrounds/bg_normal.png';
   const isShadow = !!p?.instanceData?.shadow;
   const isLucky  = !!p?.instanceData?.lucky;
@@ -127,6 +147,19 @@ const getBackgroundImageSrc = (p: any): string => {
   return `/images/backgrounds/bg_${typeName}.png`;
 };
 /** ---------------------------------------------- **/
+
+type CaughtOverlayPokemon = React.ComponentProps<typeof CaughtInstance>['pokemon'];
+type TradeOverlayPokemon = React.ComponentProps<typeof TradeInstance>['pokemon'];
+type TradeDetailsPokemon = React.ComponentProps<typeof TradeDetails>['pokemon'];
+type WantedOverlayPokemon = React.ComponentProps<typeof WantedInstance>['pokemon'];
+type WantedDetailsPokemon = React.ComponentProps<typeof WantedDetails>['pokemon'];
+
+const withInstanceData = (
+  value: OverlayPokemon,
+): OverlayPokemon & { instanceData: Partial<PokemonInstance> } => ({
+  ...value,
+  instanceData: value.instanceData ?? {},
+});
 
 const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   pokemon,
@@ -140,7 +173,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   isEditable,
   username,
 }) => {
-  const [selectedPokemon, setSelectedPokemon] = useState<any>(pokemon);
+  const [selectedPokemon, setSelectedPokemon] = useState<OverlayPokemon | null>(pokemon);
 
   const [isSmallScreen, setIsSmallScreen] = useState(
     typeof window !== 'undefined' ? window.innerWidth <= 686 : false
@@ -165,13 +198,13 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     setCurrentOverlay(deriveInitialOverlay(tagFilter, selectedPokemon));
   }, [tagFilter, selectedPokemon]);
 
-  const handleOpenWantedOverlay = (pokemonData: any) => {
-    setSelectedPokemon(pokemonData);
+  const handleOpenWantedOverlay = (pokemonData: Record<string, unknown>) => {
+    setSelectedPokemon(pokemonData as unknown as OverlayPokemon);
     setCurrentOverlay('wanted');
   };
 
-  const handleOpenTradeOverlay = (pokemonData: any) => {
-    setSelectedPokemon(pokemonData);
+  const handleOpenTradeOverlay = (pokemonData: Record<string, unknown>) => {
+    setSelectedPokemon(pokemonData as unknown as OverlayPokemon);
     setCurrentOverlay('trade');
   };
 
@@ -195,7 +228,10 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
           <div className="caught-fullscreen">
             <div className="caught-scroll">
               <div className="caught-column">
-                <CaughtInstance pokemon={selectedPokemon as any} isEditable={isEditable} />
+                <CaughtInstance
+                  pokemon={selectedPokemon as CaughtOverlayPokemon}
+                  isEditable={isEditable}
+                />
               </div>
             </div>
           </div>
@@ -208,11 +244,14 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
           <div className={`trade-instance-overlay ${isSmallScreen ? 'small-screen' : ''}`}>
             <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
               <WindowOverlay onClose={handleCloseOverlay} className="trade-instance-window">
-                <TradeInstance pokemon={selectedPokemon as any} isEditable={isEditable} />
+                <TradeInstance
+                  pokemon={selectedPokemon as unknown as TradeOverlayPokemon}
+                  isEditable={isEditable}
+                />
               </WindowOverlay>
               <WindowOverlay onClose={handleCloseOverlay} className="trade-details-window">
                 <TradeDetails
-                  pokemon={selectedPokemon as any}
+                  pokemon={withInstanceData(selectedPokemon) as TradeDetailsPokemon}
                   lists={lists}
                   instances={instances}
                   sortType={sortType}
@@ -234,7 +273,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
             <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
               <WindowOverlay onClose={handleCloseOverlay} className="wanted-details-window">
                 <WantedDetails
-                  pokemon={selectedPokemon as any}
+                  pokemon={withInstanceData(selectedPokemon) as WantedDetailsPokemon}
                   lists={lists}
                   instances={instances}
                   sortType={sortType}
@@ -245,7 +284,10 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
                 />
               </WindowOverlay>
               <WindowOverlay onClose={handleCloseOverlay} className="wanted-instance-window">
-                <WantedInstance pokemon={selectedPokemon as any} isEditable={isEditable} />
+                <WantedInstance
+                  pokemon={selectedPokemon as unknown as WantedOverlayPokemon}
+                  isEditable={isEditable}
+                />
               </WindowOverlay>
             </div>
           </div>
@@ -263,6 +305,11 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     [currentOverlay, selectedPokemon]
   );
 
+  const caughtBackgroundStyle = useMemo(
+    () => ({ '--io-bg': bgColor } as React.CSSProperties),
+    [bgColor],
+  );
+
   // SINGLE debug log for this file
   useEffect(() => {
     if (currentOverlay === 'caught') {
@@ -277,7 +324,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
         style={{ pointerEvents: ignorePointerEvents ? 'none' : 'auto' }}
       >
         {currentOverlay === 'caught' && (
-          <div className="io-bg" style={{ ['--io-bg' as any]: bgColor } as React.CSSProperties}>
+          <div className="io-bg" style={caughtBackgroundStyle}>
             <img
               className="io-bg-img"
               src={bgImageSrc ?? '/images/backgrounds/bg_normal.png'}

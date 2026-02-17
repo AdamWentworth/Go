@@ -61,7 +61,6 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
     errors: validationErrors,
     validate,
     resetErrors,
-    computedValues,
   } = useValidation();
 
   /* ------------------------------------------------------------------
@@ -430,7 +429,7 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
       {/* NAME ------------------------------------------------------- */}
       <div className="name-container">
         <NameComponent
-          pokemon={pokemon as any}
+          pokemon={pokemon}
           editMode={editMode}
           onNicknameChange={handleNicknameChange}
         />
@@ -446,7 +445,7 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
         {(editMode || (gender !== null && gender !== '')) && (
           <div className="gender-wrapper">
             <Gender
-              pokemon={pokemon as any}
+              pokemon={pokemon}
               editMode={editMode}
               onGenderChange={handleGenderChange}
             />
@@ -457,13 +456,13 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
       {/* STATS ------------------------------------------------------ */}
       <div className="stats-container">
         <Weight
-          pokemon={pokemon as any}
+          pokemon={pokemon}
           editMode={editMode}
           onWeightChange={handleWeightChange}
         />
         <Types pokemon={pokemon} />
         <Height
-          pokemon={pokemon as any}
+          pokemon={pokemon}
           editMode={editMode}
           onHeightChange={handleHeightChange}
         />

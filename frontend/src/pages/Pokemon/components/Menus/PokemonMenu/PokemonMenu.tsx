@@ -31,7 +31,7 @@ interface PokemonMenuProps {
   toggleCardHighlight: (key: string) => void;
   highlightedCards: Set<string>;
   tagFilter: string;
-  lists: any;
+  lists: Record<string, Record<string, unknown>>;
   instances: Record<string, PokemonInstance>;
   sortType: SortType;
   setSortType: React.Dispatch<React.SetStateAction<SortType>>;
@@ -82,12 +82,12 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
   const searchAreaRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null!);
 
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const renderablePokemons = useMemo(
     () =>
       sortedPokemons.filter(
         (pokemon): pokemon is PokemonVariant & { currentImage: string } =>
-          Boolean((pokemon as PokemonVariant).currentImage)
+          typeof pokemon.currentImage === 'string' && pokemon.currentImage.length > 0
       ),
     [sortedPokemons]
   );
@@ -102,7 +102,7 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
       }
 
       if (isFastSelectEnabled) {
-        const key = pokemon.instanceData?.instance_id ?? (pokemon as any).variant_id;
+        const key = pokemon.instanceData?.instance_id ?? pokemon.variant_id;
         const was = highlightedCards.has(key);
         toggleCardHighlight(key);
         if (was && highlightedCards.size === 1) {

@@ -94,7 +94,6 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({ pokemon, isEditable }) 
   }, [isFemale, pokemon, dynamax, gigantamax]);
 
   const handleNicknameChange = (newNickname: string | null) => setNickname(newNickname);
-  const handleFavoriteChange = (newFavoriteStatus: boolean) => setIsFavorite(newFavoriteStatus);
   const handleGenderChange = (newGender: string | null) => {
     setGender(newGender);
     setIsFemale(newGender === 'Female');  // Update gender state and isFemale flag
@@ -205,14 +204,14 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({ pokemon, isEditable }) 
       </div>
 
       <div className="name-container">
-        <NameComponent pokemon={pokemon as any} editMode={editMode} onNicknameChange={handleNicknameChange} />
+        <NameComponent pokemon={pokemon} editMode={editMode} onNicknameChange={handleNicknameChange} />
       </div>
 
       <div className="gender-container">
       { (editMode || (gender !== null && gender !== '')) && (
           <div className="gender-wrapper">
             <Gender 
-              pokemon={pokemon as any} 
+              pokemon={pokemon} 
               editMode={editMode} 
               onGenderChange={handleGenderChange} 
             />
@@ -221,9 +220,9 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({ pokemon, isEditable }) 
       </div>
 
       <div className="stats-container">
-        <Weight pokemon={pokemon as any} editMode={editMode} onWeightChange={handleWeightChange} />
+        <Weight pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
         <Types pokemon={pokemon} />
-        <Height pokemon={pokemon as any} editMode={editMode} onHeightChange={handleHeightChange} />
+        <Height pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
       </div>
 
       <div className="moves-container">

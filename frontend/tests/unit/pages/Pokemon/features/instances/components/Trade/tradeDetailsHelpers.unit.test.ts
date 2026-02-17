@@ -120,9 +120,7 @@ describe('tradeDetailsHelpers', () => {
     };
     const availableInstances = [makeInstance({ instance_id: 'trade-1' })];
 
-    const payload = buildMatchedInstancesPayload(selectedPokemon, availableInstances) as {
-      matchedInstances: Array<Record<string, unknown>>;
-    };
+    const payload = buildMatchedInstancesPayload(selectedPokemon, availableInstances);
 
     expect(payload.matchedInstances).toHaveLength(1);
     expect(payload.matchedInstances[0].name).toBe('Bulbasaur');

@@ -10,6 +10,7 @@ import { createScopedLogger } from '@/utils/logger';
 import {
   prepareTradeCandidateSets,
   resolveTradeProposalDecision,
+  type TradeProposalPayload,
   type SelectedPokemon,
 } from './tradeDetailsHelpers';
 
@@ -28,7 +29,7 @@ interface UseTradeProposalFlowParams {
 interface UseTradeProposalFlowResult {
   myInstances: Instances | undefined;
   isTradeProposalOpen: boolean;
-  tradeClickedPokemon: Record<string, unknown> | null;
+  tradeClickedPokemon: TradeProposalPayload | null;
   isUpdateForTradeModalOpen: boolean;
   caughtInstancesToTrade: PokemonInstance[];
   currentBaseKey: string | null;
@@ -48,7 +49,7 @@ const useTradeProposalFlow = ({
 }: UseTradeProposalFlowParams): UseTradeProposalFlowResult => {
   const [myInstances, setMyInstances] = useState<Instances | undefined>();
   const [isTradeProposalOpen, setIsTradeProposalOpen] = useState(false);
-  const [tradeClickedPokemon, setTradeClickedPokemon] = useState<Record<string, unknown> | null>(
+  const [tradeClickedPokemon, setTradeClickedPokemon] = useState<TradeProposalPayload | null>(
     null,
   );
   const [isUpdateForTradeModalOpen, setIsUpdateForTradeModalOpen] = useState(false);

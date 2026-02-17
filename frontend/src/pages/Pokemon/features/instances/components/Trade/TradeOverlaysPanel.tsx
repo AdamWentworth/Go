@@ -7,7 +7,7 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 import PokemonActionOverlay from './PokemonActionOverlay';
 import TradeProposal from './TradeProposal';
 import UpdateForTradeModal from './UpdateForTradeModal';
-import type { SelectedPokemon } from './tradeDetailsHelpers';
+import type { SelectedPokemon, TradeProposalPayload } from './tradeDetailsHelpers';
 
 interface TradeOverlaysPanelProps {
   isOverlayOpen: boolean;
@@ -17,7 +17,7 @@ interface TradeOverlaysPanelProps {
   selectedPokemon: SelectedPokemon | null;
   isTradeProposalOpen: boolean;
   pokemon: PokemonVariant & { instanceData: Partial<PokemonInstance> };
-  tradeClickedPokemon: Record<string, unknown> | null;
+  tradeClickedPokemon: TradeProposalPayload | null;
   onCloseTradeProposal: () => void;
   myInstances: Instances | undefined;
   instancesMap: Record<string, PokemonInstance>;
@@ -52,16 +52,16 @@ const TradeOverlaysPanel: React.FC<TradeOverlaysPanelProps> = ({
       onClose={closeOverlay}
       onViewWantedList={handleViewWantedList}
       onProposeTrade={handleProposeTrade}
-      pokemon={selectedPokemon as any}
+      pokemon={selectedPokemon}
     />
 
     {isTradeProposalOpen && (
       <TradeProposal
-        passedInPokemon={pokemon as any}
-        clickedPokemon={tradeClickedPokemon as any}
-        wantedPokemon={selectedPokemon as any}
+        passedInPokemon={pokemon as unknown as PokemonVariant & { instanceData?: PokemonInstance }}
+        clickedPokemon={tradeClickedPokemon}
+        wantedPokemon={selectedPokemon as unknown as { friendship_level?: number; pref_lucky?: boolean } | null}
         onClose={onCloseTradeProposal}
-        myInstances={(myInstances ?? {}) as any}
+        myInstances={myInstances}
         instances={instancesMap}
         username={username}
       />

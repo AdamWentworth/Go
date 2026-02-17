@@ -35,7 +35,9 @@ export async function getTradeByPokemonPair(
   );
 }
 
-export async function getAllFromTradesDB(storeName: string): Promise<TradeEntry[]> {
+export async function getAllFromTradesDB<T extends Record<string, unknown> = TradeEntry>(
+  storeName: string,
+): Promise<T[]> {
   const db = await initTradesDB();
   if (!db) {
     log.warn(`TradesDB not available; cannot read from '${storeName}'.`);
@@ -44,7 +46,7 @@ export async function getAllFromTradesDB(storeName: string): Promise<TradeEntry[
 
   const tx = db.transaction(storeName, 'readonly');
   const store = tx.objectStore(storeName);
-  const allData: TradeEntry[] = await store.getAll();
+  const allData = (await store.getAll()) as T[];
   await tx.done;
 
   try {
@@ -59,7 +61,10 @@ export async function getAllFromTradesDB(storeName: string): Promise<TradeEntry[
   return allData;
 }
 
-export async function setTradesinDB(storeName: string, dataArray: TradeEntry[]): Promise<void> {
+export async function setTradesinDB<T extends Record<string, unknown>>(
+  storeName: string,
+  dataArray: T[],
+): Promise<void> {
   const db = await initTradesDB();
   if (!db) {
     log.warn(`TradesDB not available; cannot set data in '${storeName}'.`);

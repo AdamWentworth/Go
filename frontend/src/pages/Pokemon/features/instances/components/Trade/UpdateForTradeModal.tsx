@@ -82,7 +82,7 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
         is_for_trade: true,
       };
 
-      await updateDetails({ [instanceId]: updatedInstance } as any);
+      await updateDetails({ [instanceId]: updatedInstance });
 
       setRestructuredData((prev) =>
         prev.map((p) =>

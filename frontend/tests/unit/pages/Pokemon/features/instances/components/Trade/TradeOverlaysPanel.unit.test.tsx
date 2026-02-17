@@ -33,7 +33,9 @@ const makeInstance = (overrides: Partial<PokemonInstance> = {}): PokemonInstance
     ...overrides,
   } as PokemonInstance);
 
-const makeProps = () => ({
+type TradeOverlaysPanelProps = React.ComponentProps<typeof TradeOverlaysPanel>;
+
+const makeProps = (): TradeOverlaysPanelProps => ({
   isOverlayOpen: true,
   closeOverlay: vi.fn(),
   handleViewWantedList: vi.fn(),
@@ -50,8 +52,8 @@ const makeProps = () => ({
     variantType: 'default',
     currentImage: '/img/1.png',
     instanceData: makeInstance(),
-  } as any,
-  tradeClickedPokemon: null as Record<string, unknown> | null,
+  } as unknown as TradeOverlaysPanelProps['pokemon'],
+  tradeClickedPokemon: null,
   onCloseTradeProposal: vi.fn(),
   myInstances: { 'inst-1': makeInstance() },
   instancesMap: { 'inst-1': makeInstance() },

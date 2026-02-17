@@ -36,6 +36,24 @@ import useTradeProposalFlow from './useTradeProposalFlow';
 import { createScopedLogger } from '@/utils/logger';
 
 type BooleanMap = Record<string, boolean>;
+interface TradeDetailsListsState {
+  wanted: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+const normalizeWantedEntries = (
+  value: unknown,
+): Record<string, unknown> => {
+  if (!value || typeof value !== 'object') return {};
+  return value as Record<string, unknown>;
+};
+
+const normalizeListsState = (
+  value: Record<string, Record<string, unknown>>,
+): TradeDetailsListsState => ({
+  ...value,
+  wanted: normalizeWantedEntries(value.wanted),
+});
 
 interface TradeDetailsProps {
   pokemon: PokemonVariant & {
@@ -81,7 +99,9 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const [isMirror, setIsMirror] = useState(pokemon.instanceData.mirror);
   const [mirrorKey, setMirrorKey] = useState<string | null>(null);
-  const [listsState, setListsState] = useState(lists);
+  const [listsState, setListsState] = useState<TradeDetailsListsState>(
+    () => normalizeListsState(lists),
+  );
   const [, setPendingUpdates] = useState<Record<string, boolean>>({});
   const [isSmallScreen, setIsSmallScreen] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 1024 : false,
@@ -145,9 +165,12 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
     wanted_filters,
   ]);
 
+  const wantedFilteringInput =
+    listsState as unknown as Parameters<typeof useWantedFiltering>[0];
+
   const { filteredWantedList, filteredOutPokemon, updatedLocalWantedFilters } =
     useWantedFiltering(
-      listsState as any,
+      wantedFilteringInput,
       selectedExcludeImages,
       selectedIncludeOnlyImages,
       localWantedFilters,
@@ -170,9 +193,9 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
     mirrorKey,
     setMirrorKey,
     setIsMirror,
-    lists as any,
-    listsState as any,
-    setListsState as any,
+    normalizeListsState(lists),
+    listsState,
+    (updater) => setListsState((prev) => updater(prev)),
     localNotWantedList,
     setLocalNotWantedList,
     localWantedFilters,
@@ -186,7 +209,7 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 
   // Calculate the number of items in filteredWantedList excluding those in not_wanted_list.
   const filteredWantedListCount = countVisibleWantedItems(
-    filteredWantedList as Record<string, unknown>,
+    filteredWantedList,
     localNotWantedList,
   );
 
@@ -204,7 +227,11 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 
   // When not in edit mode, clicking a Pokémon's thumbnail
   // will open the PokemonActionOverlay
-  const handlePokemonClickModified = (instanceId: string, pokemonData: SelectedPokemon) => {
+  const handlePokemonClickModified = (
+    instanceId: string,
+    pokemonData: SelectedPokemon,
+  ) => {
+    if (!pokemonData) return;
     if (isEditable) {
       // If we can edit, do the default logic
       handlePokemonClick(instanceId);
@@ -250,7 +277,11 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
   };
 
   const handleMirrorDisplayedListUpdate = (newData: Record<string, PokemonInstance>) => {
-    updateDisplayedList(newData, localNotWantedList, setListsState as any);
+    updateDisplayedList(
+      newData,
+      localNotWantedList,
+      (updater) => setListsState((prev) => updater(prev)),
+    );
   };
 
   return (
@@ -298,7 +329,8 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
             onPokemonClick={(key) => {
               // We fetch the entire data for the clicked Pokémon
               // so we can store it in selectedPokemon
-              const pokemonData = (filteredWantedList as Record<string, SelectedPokemon>)[key];
+              const pokemonData = filteredWantedList[key] as SelectedPokemon | undefined;
+              if (!pokemonData) return;
               handlePokemonClickModified(key, pokemonData);
             }}
           />

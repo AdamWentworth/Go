@@ -1,191 +1,204 @@
-// src/features/trades/store/useTradeStore.ts
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { createScopedLogger } from '@/utils/logger';
+
 import {
   POKEMON_TRADES_STORE,
   RELATED_INSTANCES_STORE,
-} from '@/db/indexedDB';
-
-import { proposeTrade as proposeTradeService } from '@/features/trades/actions/proposeTrade';
-import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
-
-import {
   setTradesinDB,
   getAllFromTradesDB,
   putBatchedTradeUpdates,
   deleteFromTradesDB,
 } from '@/db/indexedDB';
 
+import { proposeTrade as proposeTradeService } from '@/features/trades/actions/proposeTrade';
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+
 const log = createScopedLogger('useTradeStore');
 
-// ────────────────────────────────────────────────────────────────────────────────
-//  Types – keep loose for now; tighten later once compilation passes everywhere
-// ────────────────────────────────────────────────────────────────────────────────
+type ProposeTradeInput = Parameters<typeof proposeTradeService>[0];
+type ProposeTradeOutput = Awaited<ReturnType<typeof proposeTradeService>>;
+
 export interface Trade {
   trade_id: string;
   trade_status: string;
+  pokemon_instance_id_user_proposed?: string | null;
+  pokemon_instance_id_user_accepting?: string | null;
+  trade_deleted_date?: string;
+  last_update?: number;
   [key: string]: unknown;
 }
 
-export interface Instance {
+export interface RelatedInstance {
   instance_id: string;
   [key: string]: unknown;
 }
 
-interface TradeStoreState {
-  /** keyed by trade_id */
-  trades: Record<string, Trade>;
-  /** keyed by instance_id */
-  relatedInstances: Record<string, Instance>;
+// Backward-compatible type alias used by existing imports.
+export type Instance = RelatedInstance;
 
-  // ACTIONS
-  setTradeData: (obj: Record<string, Trade>) => Promise<Record<string, Trade> | void>;
-  setRelatedInstances: (obj: Record<string, Instance>) => Promise<Record<string, Instance> | void>;
+interface TradeStoreState {
+  trades: Record<string, Trade>;
+  relatedInstances: Record<string, RelatedInstance>;
+  setTradeData: (
+    obj: Record<string, Trade>,
+  ) => Promise<Record<string, Trade> | void>;
+  setRelatedInstances: (
+    obj: Record<string, RelatedInstance>,
+  ) => Promise<Record<string, RelatedInstance> | void>;
   updateTradeData: (
     trades?: Record<string, Trade>,
-    instances?: Record<string, Instance>,
+    instances?: Record<string, RelatedInstance>,
   ) => Promise<void>;
-  proposeTrade: (tradeData: unknown) => Promise<
-    | { success: true; tradeId: string }
-    | { success: false; error: string }
-  >;
+  proposeTrade: (
+    tradeData: ProposeTradeInput,
+  ) => Promise<{ success: true; tradeId: string } | { success: false; error: string }>;
   resetTradeData: () => void;
   hydrateFromDB: () => Promise<void>;
 }
 
-// ────────────────────────────────────────────────────────────────────────────────
-//  Store factory – subscribeWithSelector to enable fine‑grained subscriptions
-// ────────────────────────────────────────────────────────────────────────────────
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error && error.message) return error.message;
+  return 'Unknown trade error';
+};
+
 export const useTradeStore = create<TradeStoreState>()(
   subscribeWithSelector((set, get) => ({
-    /* ----------------------------------------------------------------------- */
-    // STATE                                                               
-    /* ----------------------------------------------------------------------- */
     trades: {},
     relatedInstances: {},
 
-    /* ----------------------------------------------------------------------- */
-    // ACTIONS                                                                
-    /* ----------------------------------------------------------------------- */
     async setTradeData(newTradesObj) {
       if (!newTradesObj) return;
 
-      // Handle deletions first so we don't accidentally persist removed rows
-      for (const [id, trade] of Object.entries(newTradesObj)) {
+      const mutableTrades = { ...newTradesObj };
+
+      for (const [tradeId, trade] of Object.entries(mutableTrades)) {
         if (trade?.trade_status === 'deleted') {
-          // remove from DB
-          await deleteFromTradesDB(POKEMON_TRADES_STORE, id);
-          // strip from incoming object so it doesn't land in state later
-          delete newTradesObj[id];
+          await deleteFromTradesDB(POKEMON_TRADES_STORE, tradeId);
+          delete mutableTrades[tradeId];
         }
       }
 
-      // Persist remaining trades (if any)
-      const remaining = Object.keys(newTradesObj);
-      if (remaining.length) {
-        const array = remaining.map((trade_id) => ({
-          ...newTradesObj[trade_id],
-          trade_id,                           // ✅ only explicit once
-        }));
-        await setTradesinDB(POKEMON_TRADES_STORE, array as any);
+      const rowsToPersist = Object.entries(mutableTrades).map(([tradeId, trade]) => ({
+        ...trade,
+        trade_id: tradeId,
+      }));
+
+      if (rowsToPersist.length > 0) {
+        await setTradesinDB(POKEMON_TRADES_STORE, rowsToPersist);
       }
 
-      // Merge into in‑memory state; deletions have been stripped already
-      set((state) => ({ trades: { ...state.trades, ...newTradesObj } }));
+      set((state) => ({
+        trades: { ...state.trades, ...mutableTrades },
+      }));
 
-      return newTradesObj;
+      return mutableTrades;
     },
 
     async setRelatedInstances(newInstancesObj) {
       if (!newInstancesObj) return;
 
-      const array = Object.keys(newInstancesObj).map((instance_id) => ({
-        ...newInstancesObj[instance_id],
-        instance_id,
-      }));
+      const rowsToPersist = Object.entries(newInstancesObj).map(
+        ([instanceId, instance]) => ({
+          ...instance,
+          instance_id: instanceId,
+        }),
+      );
 
-      await setTradesinDB('relatedInstances', array as any);
+      await setTradesinDB(RELATED_INSTANCES_STORE, rowsToPersist);
+
       set((state) => ({
         relatedInstances: { ...state.relatedInstances, ...newInstancesObj },
       }));
+
       return newInstancesObj;
     },
 
-    /** Combined updater used by sockets / polling layers */
     async updateTradeData(newTrades, newInstances) {
       try {
         const combinedTradeUpdates: Record<string, Trade> = newTrades
           ? { ...newTrades }
           : {};
 
-        // Conflict resolution for trades transitioning to "pending"
         if (newTrades) {
           const snapshot = { ...get().trades, ...newTrades };
 
           for (const trade of Object.values(newTrades)) {
             if (trade.trade_status !== 'pending') continue;
 
-            const { pokemon_instance_id_user_accepting: acc, pokemon_instance_id_user_proposed: prop } =
-              trade as any; // loose typing for now
+            const acceptingId = trade.pokemon_instance_id_user_accepting ?? null;
+            const proposedId = trade.pokemon_instance_id_user_proposed ?? null;
 
-            for (const [id, t] of Object.entries(snapshot)) {
-              if (id === trade.trade_id || t.trade_status !== 'proposed') continue;
+            for (const [tradeId, existingTrade] of Object.entries(snapshot)) {
+              if (
+                tradeId === trade.trade_id ||
+                existingTrade.trade_status !== 'proposed'
+              ) {
+                continue;
+              }
 
               const clash =
-                t.pokemon_instance_id_user_accepting === acc ||
-                t.pokemon_instance_id_user_accepting === prop ||
-                t.pokemon_instance_id_user_proposed === acc ||
-                t.pokemon_instance_id_user_proposed === prop;
+                existingTrade.pokemon_instance_id_user_accepting === acceptingId ||
+                existingTrade.pokemon_instance_id_user_accepting === proposedId ||
+                existingTrade.pokemon_instance_id_user_proposed === acceptingId ||
+                existingTrade.pokemon_instance_id_user_proposed === proposedId;
 
-              if (clash) {
-                combinedTradeUpdates[id] = {
-                  ...t,
-                  trade_status: 'deleted',
-                  trade_deleted_date: new Date().toISOString(),
-                  last_update: Date.now(),
-                } as Trade;
-              }
+              if (!clash) continue;
+
+              combinedTradeUpdates[tradeId] = {
+                ...existingTrade,
+                trade_status: 'deleted',
+                trade_deleted_date: new Date().toISOString(),
+                last_update: Date.now(),
+              };
             }
           }
         }
 
-        if (Object.keys(combinedTradeUpdates).length) {
+        if (Object.keys(combinedTradeUpdates).length > 0) {
           await get().setTradeData(combinedTradeUpdates);
         }
 
         if (newInstances) {
           await get().setRelatedInstances(newInstances);
         }
-      } catch (err) {
-        log.error('updateTradeData error:', err);
+      } catch (error) {
+        log.error('updateTradeData error:', error);
       }
     },
 
     async proposeTrade(tradeData) {
       try {
-        // Prepare data (no DB yet)
-        const { tradeEntry, relatedInstanceData } = (await proposeTradeService(
-          tradeData as any,
-        )) as any;
+        const { tradeEntry, relatedInstanceData }: ProposeTradeOutput =
+          await proposeTradeService(tradeData);
 
         const tradeId = tradeEntry.trade_id;
+        const canonicalTrade: Trade = {
+          ...tradeEntry,
+          trade_id: String(tradeEntry.trade_id),
+          trade_status: String(tradeEntry.trade_status),
+        };
+        const canonicalInstance: RelatedInstance = {
+          ...relatedInstanceData,
+          instance_id: String(relatedInstanceData.instance_id ?? ''),
+        };
 
-        await get().setTradeData({ [tradeId]: tradeEntry });
-        await get().setRelatedInstances({ [relatedInstanceData.instance_id]: relatedInstanceData });
+        await get().setTradeData({ [tradeId]: canonicalTrade });
+        await get().setRelatedInstances({
+          [canonicalInstance.instance_id]: canonicalInstance,
+        });
 
         await putBatchedTradeUpdates(tradeId, {
           operation: 'createTrade',
           tradeData: tradeEntry,
         });
 
-        // trigger polling / sync cycle
         const { periodicUpdates } = useInstancesStore.getState();
         periodicUpdates();
 
         return { success: true, tradeId } as const;
-      } catch (error: any) {
-        return { success: false, error: error.message } as const;
+      } catch (error) {
+        return { success: false, error: getErrorMessage(error) } as const;
       }
     },
 
@@ -193,29 +206,37 @@ export const useTradeStore = create<TradeStoreState>()(
       set({ trades: {}, relatedInstances: {} });
     },
 
-    /** Hydrate store from IndexedDB at app start‑up */
     async hydrateFromDB() {
       try {
-        const tradesFromDB = await getAllFromTradesDB(POKEMON_TRADES_STORE);
-        const tradesObj = tradesFromDB.reduce<Record<string, Trade>>((acc, trade: any) => {
-          acc[trade.trade_id] = { ...trade };
+        const tradesFromDB = await getAllFromTradesDB<Trade>(POKEMON_TRADES_STORE);
+        const tradesObj = tradesFromDB.reduce<Record<string, Trade>>((acc, trade) => {
+          if (typeof trade.trade_id === 'string' && trade.trade_id.length > 0) {
+            acc[trade.trade_id] = { ...trade };
+          }
           return acc;
         }, {});
 
-        const instancesFromDB = await getAllFromTradesDB(RELATED_INSTANCES_STORE);
-        const instancesObj = instancesFromDB.reduce<Record<string, Instance>>((acc, inst: any) => {
-          acc[inst.instance_id] = { ...inst };
-          return acc;
-        }, {});
+        const instancesFromDB =
+          await getAllFromTradesDB<RelatedInstance>(RELATED_INSTANCES_STORE);
+        const instancesObj = instancesFromDB.reduce<Record<string, RelatedInstance>>(
+          (acc, instance) => {
+            if (
+              typeof instance.instance_id === 'string' &&
+              instance.instance_id.length > 0
+            ) {
+              acc[instance.instance_id] = { ...instance };
+            }
+            return acc;
+          },
+          {},
+        );
 
         set({ trades: tradesObj, relatedInstances: instancesObj });
-      } catch (err) {
-        log.error('hydrateFromDB error:', err);
+      } catch (error) {
+        log.error('hydrateFromDB error:', error);
       }
     },
   })),
 );
 
-// Convenience wrapper matching previous API
 export const useTradeData = () => useTradeStore();
-

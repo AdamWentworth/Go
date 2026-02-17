@@ -23,6 +23,21 @@ const log = createScopedLogger('WantedDetails');
 
 type BooleanMap = Record<string, boolean>;
 type GenericMap = Record<string, unknown>;
+type InstanceReciprocalMap = Record<string, { not_wanted_list?: BooleanMap } | undefined>;
+type UpdateDetailsAdapter = (
+  keyOrKeysOrMap: string | string[] | Record<string, Record<string, unknown>>,
+  patch?: Record<string, unknown>,
+) => Promise<void> | void;
+
+interface WantedDetailsListsState {
+  trade: Record<string, GenericMap>;
+  [key: string]: unknown;
+}
+
+const isTradeCandidate = (
+  value: unknown,
+): value is { is_for_trade?: boolean } =>
+  !!value && typeof value === 'object' && 'is_for_trade' in value;
 
 interface WantedDetailsProps {
   pokemon: PokemonVariant & {
@@ -67,12 +82,12 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
   const listsWithTrade = useMemo(() => {
     const caught = lists?.caught ?? {};
     const trade = lists?.trade ?? Object.fromEntries(
-      Object.entries(caught).filter(([, it]) => (it as any)?.is_for_trade)
+      Object.entries(caught).filter(([, it]) => isTradeCandidate(it) && it.is_for_trade)
     );
-    return { ...(lists || {}), trade };
+    return { ...(lists || {}), trade } as WantedDetailsListsState;
   }, [lists]);
 
-  const [listsState, setListsState] = useState(listsWithTrade);
+  const [listsState, setListsState] = useState<WantedDetailsListsState>(listsWithTrade);
   useEffect(() => { setListsState(listsWithTrade); }, [listsWithTrade]);
 
   const [isSmallScreen, setIsSmallScreen] = useState(
@@ -112,7 +127,7 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
     filteredOutPokemon,
     updatedLocalTradeFilters
   } = useTradeFiltering(
-    listsState as any,
+    listsState,
     selectedExcludeImages,
     selectedIncludeOnlyImages,
     localTradeFilters,
@@ -136,17 +151,15 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
       localNotTradeList,
       setLocalNotTradeList,
       pokemon,
-      instances: instances as any,
+      instances: instances as unknown as InstanceReciprocalMap,
       filteredOutPokemon,
       localTradeFilters,
-      updateDetails: updateDetails as any,
+      updateDetails: updateDetails as unknown as UpdateDetailsAdapter,
     });
 
-  const [pendingUpdates, setPendingUpdates] = useState<Record<string, boolean>>({});
+  const [, setPendingUpdates] = useState<Record<string, boolean>>({});
 
   const toggleReciprocalUpdates = (key: string, updatedNotTrade: boolean) => {
-    // Keep as-is for now; used by TradeListDisplay
-    // eslint-disable-next-line no-unused-vars
     setPendingUpdates((prev) => ({ ...prev, [key]: updatedNotTrade }));
   };
 
@@ -193,11 +206,18 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
       log.error(`Pokemon instance not found for key: ${instanceId}`);
       return;
     }
+    const variantRecord = variantData as unknown as Record<string, unknown>;
+    const variantOwnership =
+      variantRecord.ownershipStatus &&
+      typeof variantRecord.ownershipStatus === 'object'
+        ? (variantRecord.ownershipStatus as Record<string, unknown>)
+        : {};
+
     const mergedPokemonData = {
       ...variantData,
       variant_id: variantData.variant_id ?? baseKey,
       ownershipStatus: {
-        ...(variantData as any).ownershipStatus,
+        ...variantOwnership,
         ...instanceEntry
       }
     };

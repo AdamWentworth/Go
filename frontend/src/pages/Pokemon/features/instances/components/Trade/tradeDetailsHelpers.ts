@@ -30,7 +30,16 @@ export type TradeProposalDecision =
   | { kind: 'noCaught' }
   | { kind: 'needsTradeSelection'; selectedBaseKey: string; caughtInstances: PokemonInstance[] }
   | { kind: 'noAvailableTradeable' }
-  | { kind: 'proposalReady'; payload: Record<string, unknown> };
+  | { kind: 'proposalReady'; payload: TradeProposalPayload };
+
+export type MatchedInstancePokemon = PokemonVariant & {
+  instanceData: PokemonInstance;
+};
+
+export interface TradeProposalPayload {
+  matchedInstances: MatchedInstancePokemon[];
+  [key: string]: unknown;
+}
 
 interface PendingTradeRow {
   trade_status?: string;
@@ -100,14 +109,14 @@ export const findAvailableTradeInstances = (
 export const buildMatchedInstancesPayload = (
   selectedPokemon: SelectedPokemon,
   availableInstances: PokemonInstance[],
-): Record<string, unknown> => {
+): TradeProposalPayload => {
   const baseData = { ...selectedPokemon };
   delete baseData.instanceData;
 
   const matchedInstances = availableInstances.map((instance) => ({
     ...baseData,
     instanceData: { ...instance },
-  }));
+  })) as MatchedInstancePokemon[];
 
   return { matchedInstances };
 };
