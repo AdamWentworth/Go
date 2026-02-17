@@ -9,10 +9,14 @@ import {
   getPokemonSuggestions,
   getSelectedCostumeId,
   isBackgroundAllowedForSelection,
-  normalizeAvailableForms,
-  sortCostumesByDate,
   type SortableCostume,
 } from './variantSearchHelpers';
+import {
+  buildVariantValidationState,
+  EMPTY_SELECTED_MOVES,
+  runVariantValidation,
+  type VariantValidationState,
+} from './variantSearchControllerHelpers';
 import type { BackgroundSelection } from './VariantSearchBackgroundOverlay';
 import type { SelectedMoves } from './VariantComponents/MovesSearch';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -121,60 +125,39 @@ const useVariantSearchController = ({
   );
   const selectedCostumeId = getSelectedCostumeId(availableCostumes, costume);
   const canDynamax = hasDynamax || hasGigantamax;
+  const validationState: VariantValidationState = {
+    name: pokemon,
+    shinyChecked: isShiny,
+    shadowChecked: isShadow,
+    selectedCostume: costume,
+    form: selectedForm,
+    selectedGenderValue: selectedGender,
+    dynamaxEnabled: dynamax,
+    gigantamaxEnabled: gigantamax,
+  };
 
-  const handleValidation = (
-    name: string,
-    shinyChecked: boolean,
-    shadowChecked: boolean,
-    selectedCostume: string | null,
-    form: string,
-    selectedGenderValue: string | null,
-    dynamaxEnabled: boolean,
-    gigantamaxEnabled: boolean,
-  ) => {
-    const {
-      error,
-      availableCostumes: validatedCostumes,
-      availableForms: validatedForms,
-    } = validatePokemon(
-      pokemonData as unknown as Parameters<typeof validatePokemon>[0],
-      name,
-      shinyChecked,
-      shadowChecked,
-      selectedCostume,
-      form,
-      dynamaxEnabled,
-      gigantamaxEnabled,
-    );
+  const handleValidation = (overrides: Partial<VariantValidationState> = {}) => {
+    const nextState = buildVariantValidationState(validationState, overrides);
+    const result = runVariantValidation({
+      pokemonData,
+      state: nextState,
+      validatePokemonFn: validatePokemon,
+      updateImageFn: updateImage,
+    });
 
-    if (error) {
-      handleError(error);
-      setErrorMessage(error);
+    if (result.error) {
+      handleError(result.error);
+      setErrorMessage(result.error);
     } else {
       clearError();
       setErrorMessage(null);
     }
 
-    const sortedCostumes = sortCostumesByDate(
-      validatedCostumes as unknown as SortableCostume[],
-    );
-    setAvailableCostumes(sortedCostumes);
+    setAvailableCostumes(result.availableCostumes);
+    setAvailableForms(result.availableForms);
 
-    const filteredForms = normalizeAvailableForms(validatedForms);
-    setAvailableForms(filteredForms);
-
-    if (!error) {
-      const nextImageUrl = updateImage(
-        pokemonData,
-        name,
-        shinyChecked,
-        shadowChecked,
-        selectedCostume,
-        form,
-        selectedGenderValue,
-        gigantamaxEnabled,
-      );
-      setImageUrl(nextImageUrl);
+    if (!result.error) {
+      setImageUrl(result.imageUrl ?? null);
       setImageError(false);
     }
   };
@@ -204,16 +187,7 @@ const useVariantSearchController = ({
 
   useEffect(() => {
     if (pokemon) {
-      handleValidationRef.current(
-        pokemon,
-        isShiny,
-        isShadow,
-        costume,
-        selectedForm,
-        selectedGender,
-        dynamax,
-        gigantamax,
-      );
+      handleValidationRef.current();
     }
   }, [
     costume,
@@ -246,11 +220,7 @@ const useVariantSearchController = ({
     setPokemon(newPokemon);
     setSelectedForm('');
     setSelectedGender('Any');
-    setSelectedMoves({
-      fastMove: null,
-      chargedMove1: null,
-      chargedMove2: null,
-    });
+    setSelectedMoves(EMPTY_SELECTED_MOVES);
     setDynamax(false);
     setGigantamax(false);
 
@@ -270,16 +240,10 @@ const useVariantSearchController = ({
       return;
     }
 
-    handleValidation(
-      newPokemon,
-      isShiny,
-      isShadow,
-      costume,
-      '',
-      selectedGender,
-      dynamax,
-      gigantamax,
-    );
+    handleValidation({
+      name: newPokemon,
+      form: '',
+    });
   };
 
   const handleInputFocus = () => {
@@ -298,31 +262,13 @@ const useVariantSearchController = ({
   const handleShinyChange = () => {
     const shinyChecked = !isShiny;
     setIsShiny(shinyChecked);
-    handleValidation(
-      pokemon,
-      shinyChecked,
-      isShadow,
-      costume,
-      selectedForm,
-      selectedGender,
-      dynamax,
-      gigantamax,
-    );
+    handleValidation({ shinyChecked });
   };
 
   const handleShadowChange = () => {
     const shadowChecked = !isShadow;
     setIsShadow(shadowChecked);
-    handleValidation(
-      pokemon,
-      isShiny,
-      shadowChecked,
-      costume,
-      selectedForm,
-      selectedGender,
-      dynamax,
-      gigantamax,
-    );
+    handleValidation({ shadowChecked });
   };
 
   const handleCostumeToggle = () => {
@@ -332,16 +278,7 @@ const useVariantSearchController = ({
     if (!nextShow) {
       setCostume(null);
       clearError();
-      handleValidation(
-        pokemon,
-        isShiny,
-        isShadow,
-        '',
-        selectedForm,
-        selectedGender,
-        dynamax,
-        gigantamax,
-      );
+      handleValidation({ selectedCostume: '' });
       const defaultImage = updateImage(
         pokemonData,
         pokemon,
@@ -360,31 +297,13 @@ const useVariantSearchController = ({
   const handleCostumeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedCostume = event.target.value;
     setCostume(selectedCostume);
-    handleValidation(
-      pokemon,
-      isShiny,
-      isShadow,
-      selectedCostume,
-      selectedForm,
-      selectedGender,
-      dynamax,
-      gigantamax,
-    );
+    handleValidation({ selectedCostume });
   };
 
   const handleFormChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const nextForm = event.target.value;
     setSelectedForm(nextForm);
-    handleValidation(
-      pokemon,
-      isShiny,
-      isShadow,
-      costume,
-      nextForm,
-      selectedGender,
-      dynamax,
-      gigantamax,
-    );
+    handleValidation({ form: nextForm });
   };
 
   const handleMovesChange = (moves: SelectedMoves) => {
@@ -394,16 +313,7 @@ const useVariantSearchController = ({
   const handleSuggestionClick = (suggestion: string) => {
     setPokemon(suggestion);
     setSuggestions([]);
-    handleValidation(
-      suggestion,
-      isShiny,
-      isShadow,
-      costume,
-      selectedForm,
-      selectedGender,
-      dynamax,
-      gigantamax,
-    );
+    handleValidation({ name: suggestion });
   };
 
   return {
