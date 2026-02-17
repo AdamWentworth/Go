@@ -12,7 +12,7 @@ Historical migration logs were intentionally removed to keep this actionable.
 - JavaScript files (`.js`/`.jsx`) in `frontend/src`: 0
 - Lint (`npm run lint`): pass (`0` errors, `0` warnings)
 - Typecheck (`npm run typecheck`): pass
-- Unit tests (`npm run test:unit`): pass (`126` files / `434` tests)
+- Unit tests (`npm run test:unit`): pass (`127` files / `437` tests)
 - Integration test files: `10`
 - E2E test files: `1`
 - Explicit `any` types in `frontend/src`: 0
@@ -31,11 +31,11 @@ None.
 
 ## Largest Files (Maintainability Risk)
 
-1. `frontend/src/pages/Pokemon/features/instances/TradeInstance.tsx` (`454` LOC)
-2. `frontend/src/pages/Pokemon/features/instances/CaughtInstance.tsx` (`426` LOC)
-3. `frontend/src/pages/Search/PokemonSearchBar.tsx` (`406` LOC)
-4. `frontend/src/pages/Search/SearchParameters/useVariantSearchController.ts` (`403` LOC)
-5. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeProposal.tsx` (`392` LOC)
+1. `frontend/src/pages/Pokemon/features/instances/CaughtInstance.tsx` (`426` LOC)
+2. `frontend/src/pages/Search/PokemonSearchBar.tsx` (`406` LOC)
+3. `frontend/src/pages/Search/SearchParameters/useVariantSearchController.ts` (`403` LOC)
+4. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeProposal.tsx` (`392` LOC)
+5. `frontend/src/pages/Trades/views/PendingTradeView.tsx` (`375` LOC)
 
 ## Priority Backlog
 
@@ -85,6 +85,9 @@ None.
 2. Added regression tests in `tests/unit/pages/Pokemon/features/instances/utils/tradeInstanceForm.unit.test.ts`.
 3. Extracted Trade image stage/background modal into typed section components.
 4. Added section tests in `tests/unit/pages/Pokemon/features/instances/sections/TradeSections.unit.test.tsx`.
+5. Extracted TradeInstance state/effect/handler orchestration into `hooks/useTradeInstanceController.ts`.
+6. Added controller regression tests in `tests/unit/pages/Pokemon/features/instances/hooks/useTradeInstanceController.unit.test.ts`.
+7. Reduced `TradeInstance.tsx` from `454` LOC to `267` LOC while preserving behavior.
 - DoD:
 1. Each target split into smaller typed sections/hooks.
 2. Behavior parity preserved with regression tests.
@@ -138,7 +141,7 @@ None.
 
 ## Next Recommended Slice
 
-Continue `P1.1` by extracting remaining TradeInstance state/handlers into a dedicated hook and keep full validation:
+Continue `P1.1` by starting the same decomposition pattern on `CaughtInstance.tsx` (next highest-risk file):
 
 1. `npm run lint`
 2. `npm run typecheck`
