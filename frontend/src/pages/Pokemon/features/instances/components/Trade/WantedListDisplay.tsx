@@ -89,8 +89,9 @@ const WantedListDisplay = ({
       if (updatedNotWanted) {
         return { ...prev, [key]: true };
       }
-      const { [key]: _removed, ...rest } = prev;
-      return rest;
+      const next = { ...prev };
+      delete next[key];
+      return next;
     });
     toggleReciprocalUpdates(key, updatedNotWanted);
   };

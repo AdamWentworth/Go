@@ -56,8 +56,6 @@ function arcPath(cx: number, cy: number, r: number, a1: number, a2: number): str
 
 const LevelArc: React.FC<LevelArcProps> = ({
   level = 1,
-  min = 1,
-  max = 50,            // ignored for power mapping, kept for API parity
   size = 240,
   strokeWidth = 3,     // your thicker default
   dotRadius = 12,      // bigger dot

@@ -2,7 +2,6 @@
 
 import axios, { AxiosResponse } from 'axios';
 import { getDeviceId } from '../utils/deviceID';
-import type { UserOverview } from '@/types/user';
 import { createScopedLogger } from '@/utils/logger';
 
 axios.defaults.withCredentials = true;

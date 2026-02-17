@@ -28,8 +28,9 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
       if (shouldKeepRaidBoss) {
         variants.push(variant);
       } else {
-        const { raid_boss, ...rest } = variant;
-        variants.push(rest);
+        const variantWithoutRaidBoss: PokemonVariant = { ...variant };
+        delete variantWithoutRaidBoss.raid_boss;
+        variants.push(variantWithoutRaidBoss);
       }
     };
 

@@ -1,6 +1,6 @@
 // DateCaught.tsx
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { parse, format, isValid } from 'date-fns';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { enUS } from 'date-fns/locale';
@@ -28,22 +28,21 @@ const DateCaughtComponent: React.FC<DateCaughtProps> = ({
   editMode,
   onDateChange,
 }) => {
-  /* initial parse ------------------------------------------------- */
-  const parseInitial = (): Date | null => {
+  const parsedInitialDate = useMemo((): Date | null => {
     const raw = pokemon.instanceData?.date_caught; // string | null
     if (!raw) return null;
 
     let d = parse(raw, 'yyyy-MM-dd', new Date());
     if (!isValid(d)) d = new Date(raw);
     return isValid(d) ? d : null;
-  };
+  }, [pokemon.instanceData?.date_caught]);
 
-  const [date, setDate] = useState<Date | null>(parseInitial());
+  const [date, setDate] = useState<Date | null>(parsedInitialDate);
   const [showCal, setShowCal] = useState(false);
   const spanRef = useRef<HTMLSpanElement>(null);
 
   /* keep state in sync when new Pokémon object arrives */
-  useEffect(() => setDate(parseInitial()), [pokemon]);
+  useEffect(() => setDate(parsedInitialDate), [parsedInitialDate]);
 
   /* write formatted date into the span in edit mode    */
   useEffect(() => {

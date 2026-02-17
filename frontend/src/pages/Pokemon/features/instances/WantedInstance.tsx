@@ -37,7 +37,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({ pokemon, isEditable }) 
 
   const [editMode, setEditMode] = useState<boolean>(false);
   const [nickname, setNickname] = useState<string | null>(pokemon.instanceData.nickname);
-  const [isFavorite, setIsFavorite] = useState<boolean>(!!pokemon.instanceData.favorite);
+  const isFavorite = !!pokemon.instanceData.favorite;
   const [gender, setGender] = useState<string | null>(pokemon.instanceData.gender);
   const [isFemale, setIsFemale] = useState<boolean>(pokemon.instanceData.gender === 'Female');
   const [currentImage, setCurrentImage] = useState<string>(determineImageUrl(isFemale, pokemon));  // Set the initial image based on gender

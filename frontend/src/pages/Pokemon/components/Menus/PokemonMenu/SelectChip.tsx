@@ -18,7 +18,6 @@ type CSSVars = React.CSSProperties & { ['--reveal-delay']?: string };
 
 const SelectChip: React.FC<SelectChipProps> = ({
   selected,
-  /* tooltip unused */ tooltip,
   labelSelected = 'Selected',
   labelUnselected = 'Select',
   delayMs = 500,

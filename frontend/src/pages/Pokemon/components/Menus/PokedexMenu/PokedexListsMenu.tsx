@@ -146,7 +146,7 @@ const PokedexListsMenu: React.FC<PokedexListsMenuProps> = ({
 
   const renderListPreview = (listName: string): ReactNode[] => {
     const listData = listName === fullWidthList ? variants : pokedexLists[listName] || [];
-    return listData.slice(0, 24).map((pokemon, index) => {
+    return listData.slice(0, 24).map((pokemon) => {
       if (!pokemon.currentImage) return null;
       const vt = pokemon.variantType.toLowerCase();
       const hasDynamax = vt.includes('dynamax');

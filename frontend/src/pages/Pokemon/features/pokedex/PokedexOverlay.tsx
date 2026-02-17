@@ -13,7 +13,7 @@ import EvolutionShortcut from './EvolutionShortcut';
 import CloseButton from '@/components/CloseButton';
 
 import type { PokemonVariant, AllVariants } from '@/types/pokemonVariants';
-import type { Move, Fusion } from '@/types/pokemonSubTypes';
+import type { Fusion } from '@/types/pokemonSubTypes';
 
 export interface PokedexOverlayProps {
   pokemon: PokemonVariant;
@@ -44,7 +44,6 @@ const PokedexOverlay: React.FC<PokedexOverlayProps> = ({ pokemon, onClose, setSe
 
   const variant = currentPokemon.variantType ?? '';
   const isMega = variant.includes('mega');
-  const isPrimal = variant.includes('primal');
   const isFusion = variant.includes('fusion');
   const totalMoves = currentPokemon.moves.length;
   const fastMoves = currentPokemon.moves.filter(m => m.is_fast === 1);

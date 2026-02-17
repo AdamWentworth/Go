@@ -1,6 +1,6 @@
 // HeaderUI.tsx
 
-import React, { useRef, useState, useEffect, ReactNode } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import './HeaderUI.css';
 
 export interface HeaderUIProps {
@@ -38,11 +38,9 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
 
   // Refs for header and each column
   const headerRef = useRef<HTMLElement>(null);         // ← use HTMLElement here
-  const colRefs = [
-    useRef<HTMLDivElement>(null),
-    useRef<HTMLDivElement>(null),
-    useRef<HTMLDivElement>(null),
-  ];
+  const colRef0 = useRef<HTMLDivElement>(null);
+  const colRef1 = useRef<HTMLDivElement>(null);
+  const colRef2 = useRef<HTMLDivElement>(null);
 
   const [underlineLeft, setUnderlineLeft] = useState(0);
 
@@ -53,7 +51,8 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
 
   useEffect(() => {
     const updateUnderline = () => {
-      const activeCol = colRefs[activeIndex].current;
+      const activeCol =
+        activeIndex === 0 ? colRef0.current : activeIndex === 1 ? colRef1.current : colRef2.current;
       const headerEl = headerRef.current;
       if (!activeCol || !headerEl) return;
 
@@ -66,7 +65,7 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
     updateUnderline();
     window.addEventListener('resize', updateUnderline);
     return () => window.removeEventListener('resize', updateUnderline);
-  }, [activeIndex, colRefs]);
+  }, [activeIndex]);
 
   const headerClassName = `header${hasSelection ? ' header-fast-select' : ''}`;
 
@@ -131,11 +130,11 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
   return (
     <header className={headerClassName} ref={headerRef}>
       <div className="controls-row">
-        <div className="toggle-col" ref={colRefs[0]}>
+        <div className="toggle-col" ref={colRef0}>
           {renderPokedexToggle()}
         </div>
 
-        <div className="toggle-col" ref={colRefs[1]} onClick={onPokemonClick}>
+        <div className="toggle-col" ref={colRef1} onClick={onPokemonClick}>
           <div className="toggle-button">
             <span className={`toggle-text ${isPokemonActive ? 'active' : ''}`}>
               Pokémon
@@ -146,7 +145,7 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
           </div>
         </div>
 
-        <div className="toggle-col" ref={colRefs[2]}>
+        <div className="toggle-col" ref={colRef2}>
           {renderListsToggle()}
         </div>
       </div>

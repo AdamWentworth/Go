@@ -1,6 +1,6 @@
 // SearchUI.tsx
 
-import React, { useState, useEffect, useCallback, ChangeEvent, FocusEvent } from 'react';
+import React, { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { debounce } from 'lodash';
 import './SearchUI.css';
 
@@ -49,7 +49,7 @@ const SearchUI: React.FC<SearchUIProps> = ({
     debouncedSearchChange(value);
   };
 
-  const handleFocus = (e: FocusEvent<HTMLInputElement>) => {
+  const handleFocus = () => {
     setIsFocused(true);
     onFocusChange?.(true);
   };

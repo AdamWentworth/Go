@@ -9,7 +9,7 @@ const log = createScopedLogger('loadInstances');
 
 export async function loadInstances(
   variants: PokemonVariant[],
-  isLoggedIn: boolean
+  _isLoggedIn: boolean
 ): Promise<Instances> {
   try {
     // 1) Always hydrate from cache if anything is there

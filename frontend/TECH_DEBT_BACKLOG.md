@@ -106,6 +106,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 99. P0.1 slice D: removed `no-explicit-any` hotspots from `Trades/TradeCard.tsx`, `PokemonMenu/PokemonCard.tsx`, `PokemonMenu/PokemonGrid.tsx`, `PokemonMenu/PokemonMenu.tsx`, and `instances/InstanceOverlay.tsx` via typed normalization/adapters and safer key handling; added dedicated regression tests for `PokemonCard` and `InstanceOverlay`; validated with green `typecheck` + `426/426` unit + production build; lint baseline reduced from `172` to `118` total findings (`131` -> `81` errors).
 100. P0.1 slice E: removed remaining explicit `any` usage from the trade/instance editing stack (`db/tradesDB.ts` generics, `features/trades/store/useTradeStore.ts`, `TradeDetails.tsx`, `WantedDetails.tsx`, `TradeInstance.tsx`, `WantedInstance.tsx`, `TradeOverlaysPanel.tsx`, `TradeProposal.tsx`, `UpdateForTradeModal.tsx`) and hardened trade-payload typing/contracts (`tradeDetailsHelpers.ts`, `useTradeProposalFlow.ts`) with compatible unit fixture updates; validated with green `typecheck`, `426/426` unit tests, and production build; lint baseline reduced from `118` to `82` total findings (`81` -> `47` errors).
 101. P0.1 slice F: removed the remaining explicit `any` + empty-catch lint blockers across tags/instances/fusion/auth paths (`db/tagsDB.ts`, `features/tags/store/useTagsStore.ts`, `features/tags/utils/initializePokemonTags.ts`, `TagsMenu/PreviewContainer.tsx`, `features/instances/utils/{instancesEquality,mergeInstancesData}.ts`, `Authentication/Login.tsx`, `LevelArc.tsx`, fusion handlers/services, and `getDisplayName.ts`), preserved behavior with green `typecheck` + `426/426` unit tests, and reduced lint from `67` findings (`33` errors) to `32` findings (`0` errors, warnings only).
+102. P0.1 slice G: removed low-risk lint warning debt across shared UI/util paths (`DateCaught`, `Gender`, `HeaderUI`, `PokedexListsMenu`, `SearchMenu`, `SelectChip`, `WantedInstance`, `WantedListDisplay`, `PokedexOverlay`, `useVariantSearchController`, `authService`, `loadInstances`, `createPokemonVariants`) by eliminating unused vars/imports and stabilizing helper references; validated with green `typecheck`, `426/426` unit tests, and production build; lint baseline reduced from `32` findings to `14` findings (all remaining are `react-hooks/exhaustive-deps` warnings).
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 
@@ -128,8 +129,8 @@ Repo parse against backlog claims:
 6. Tooling cleanup status:
    - Jest framework/toolchain packages/config references removed.
    - Remaining `@testing-library/jest-dom` and `jest-axe` usage is intentional for Vitest matcher/a11y helpers.
-7. Lint baseline (post P0.1 slices A-F):
-   - `npm run lint`: `32` findings (`0` errors, `32` warnings), down from `232` (`189` errors, `43` warnings).
+7. Lint baseline (post P0.1 slices A-G):
+   - `npm run lint`: `14` findings (`0` errors, `14` warnings), down from `232` (`189` errors, `43` warnings).
 
 ## Rules Of Execution
 
@@ -348,4 +349,4 @@ Repo parse against backlog claims:
 
 ## Immediate Next Step
 
-Continue P0.1 lint-baseline reduction on the next highest-density files (`src/db/init.ts`, `src/db/tagsDB.ts`, `src/features/tags/store/useTagsStore.ts`, `src/hooks/filtering/usePokemonOwnershipFilter.ts`, `src/pages/Pokemon/components/Menus/TagsMenu/TagsMenu.tsx`) to retire the next major `no-explicit-any` block.
+Continue P0.1 lint-baseline reduction by resolving the remaining `react-hooks/exhaustive-deps` warnings in targeted hooks/components (`AuthContext`, `useInitLocation`, `PokemonOptionsOverlay`, `SearchUI`, `NameComponent`, `TradeProposal`, `WantedDetails`, `useCalculateStardustCost`, `useTradeFiltering`, `useWantedFiltering`, `PokemonSearchBar`, `MapView`) and then flip lint to blocking in CI.

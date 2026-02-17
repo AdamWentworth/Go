@@ -24,6 +24,23 @@ const toGenderOption = (value: unknown): GenderOption => {
   return null;
 };
 
+const parseGenderRate = (
+  rateStr: string | undefined,
+  searchMode: boolean,
+): GenderOption[] => {
+  if (!rateStr) return [];
+  const [maleRate, femaleRate, genderlessRate] = rateStr
+    .split('_')
+    .map(rate => parseInt(rate, 10) || 0);
+  if (genderlessRate === 100) return ['Genderless'];
+  if (maleRate > 0 && femaleRate > 0) {
+    return searchMode ? ['Any', 'Male', 'Female'] : ['Both', 'Male', 'Female'];
+  }
+  if (maleRate > 0) return ['Male'];
+  if (femaleRate > 0) return ['Female'];
+  return [];
+};
+
 type Props = {
   pokemon?: PokemonWithGender;
   gender?: GenderOption;
@@ -48,23 +65,9 @@ const Gender: React.FC<Props> = ({
   const [availableGenders, setAvailableGenders] = useState<GenderOption[]>([]);
   const didMount = useRef(false);
 
-  const parseGenderRate = (rateStr?: string): GenderOption[] => {
-    if (!rateStr) return [];
-    const [maleRate, femaleRate, genderlessRate] = rateStr
-      .split('_')
-      .map(rate => parseInt(rate, 10) || 0);
-    if (genderlessRate === 100) return ['Genderless'];
-    if (maleRate > 0 && femaleRate > 0) {
-      return searchMode ? ['Any', 'Male', 'Female'] : ['Both', 'Male', 'Female'];
-    }
-    if (maleRate > 0) return ['Male'];
-    if (femaleRate > 0) return ['Female'];
-    return [];
-  };
-
   useEffect(() => {
     if (genderRate) {
-      const genders = parseGenderRate(genderRate);
+      const genders = parseGenderRate(genderRate, searchMode);
       setAvailableGenders(genders);
 
       if (!didMount.current) {

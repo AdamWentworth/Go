@@ -82,7 +82,7 @@ const useVariantSearchController = ({
   setCostume,
   selectedForm,
   setSelectedForm,
-  selectedMoves,
+  selectedMoves: _selectedMoves,
   setSelectedMoves,
   selectedGender,
   setSelectedGender,
@@ -427,4 +427,3 @@ const useVariantSearchController = ({
 };
 
 export default useVariantSearchController;
-

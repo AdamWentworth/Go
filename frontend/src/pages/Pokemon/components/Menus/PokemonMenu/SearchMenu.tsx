@@ -45,7 +45,7 @@ export interface SearchMenuProps {
   onCloseMenu?: () => void;
 }
 
-const SearchMenu: React.FC<SearchMenuProps> = ({ onFilterClick, onCloseMenu }) => {
+const SearchMenu: React.FC<SearchMenuProps> = ({ onFilterClick }) => {
   const handleFilterItemClick = (filter: Filter) => {
     onFilterClick(filter);
   };
