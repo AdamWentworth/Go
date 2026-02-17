@@ -12,7 +12,7 @@ Historical migration logs were intentionally removed to keep this actionable.
 - JavaScript files (`.js`/`.jsx`) in `frontend/src`: 0
 - Lint (`npm run lint`): pass (`0` errors, `0` warnings)
 - Typecheck (`npm run typecheck`): pass
-- Unit tests (`npm run test:unit`): pass (`124` files / `429` tests)
+- Unit tests (`npm run test:unit`): pass (`126` files / `434` tests)
 - Integration test files: `10`
 - E2E test files: `1`
 - Explicit `any` types in `frontend/src`: 0
@@ -31,10 +31,10 @@ None.
 
 ## Largest Files (Maintainability Risk)
 
-1. `frontend/src/pages/Pokemon/features/instances/TradeInstance.tsx` (`504` LOC)
+1. `frontend/src/pages/Pokemon/features/instances/TradeInstance.tsx` (`454` LOC)
 2. `frontend/src/pages/Pokemon/features/instances/CaughtInstance.tsx` (`426` LOC)
 3. `frontend/src/pages/Search/PokemonSearchBar.tsx` (`406` LOC)
-4. `frontend/src/pages/Search/SearchParameters/useVariantSearchController.ts` (`393` LOC)
+4. `frontend/src/pages/Search/SearchParameters/useVariantSearchController.ts` (`403` LOC)
 5. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeProposal.tsx` (`392` LOC)
 
 ## Priority Backlog
@@ -75,11 +75,16 @@ None.
 ### P1 - Maintainability
 
 #### P1.1 Decompose Oversized Instance Components
-- Status: Pending
+- Status: In Progress (2026-02-17)
 - Goal: reduce component complexity and review risk.
 - Targets:
 1. `frontend/src/pages/Pokemon/features/instances/TradeInstance.tsx`
 2. `frontend/src/pages/Pokemon/features/instances/CaughtInstance.tsx`
+- Progress:
+1. Extracted TradeInstance validation + patch construction into `utils/tradeInstanceForm.ts`.
+2. Added regression tests in `tests/unit/pages/Pokemon/features/instances/utils/tradeInstanceForm.unit.test.ts`.
+3. Extracted Trade image stage/background modal into typed section components.
+4. Added section tests in `tests/unit/pages/Pokemon/features/instances/sections/TradeSections.unit.test.tsx`.
 - DoD:
 1. Each target split into smaller typed sections/hooks.
 2. Behavior parity preserved with regression tests.
@@ -133,7 +138,7 @@ None.
 
 ## Next Recommended Slice
 
-Start with `P1.1` (decompose oversized instance components) and finish with full validation:
+Continue `P1.1` by extracting remaining TradeInstance state/handlers into a dedicated hook and keep full validation:
 
 1. `npm run lint`
 2. `npm run typecheck`

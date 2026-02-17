@@ -16,7 +16,6 @@ import Height from '@/components/pokemonComponents/Height';
 import Moves from '@/components/pokemonComponents/Moves';
 import LocationCaught from '@/components/pokemonComponents/LocationCaught';
 import DateCaughtComponent from '@/components/pokemonComponents/DateCaught';
-import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
 import Level from '@/components/pokemonComponents/Level';
 import IV from '@/components/pokemonComponents/IV';
 import MaxComponent from './components/Caught/MaxComponent';
@@ -31,6 +30,13 @@ import { useModal } from '@/contexts/ModalContext';
 import { cpMultipliers } from '@/utils/constants';
 import { calculateCP } from '@/utils/calculateCP';
 import { getEntityKey } from './utils/getEntityKey';
+import {
+  areTradeIvsEmpty,
+  buildTradeInstancePatch,
+  toTradeValidationFields,
+} from './utils/tradeInstanceForm';
+import TradeImageStage from './sections/TradeImageStage';
+import TradeBackgroundModal from './sections/TradeBackgroundModal';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { VariantBackground } from '@/types/pokemonSubTypes';
@@ -145,10 +151,7 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
         : '',
   });
 
-  const areIVsEmpty =
-    (ivs.Attack === '' || ivs.Attack === null) &&
-    (ivs.Defense === '' || ivs.Defense === null) &&
-    (ivs.Stamina === '' || ivs.Stamina === null);
+  const areIVsEmpty = areTradeIvsEmpty(ivs);
 
   const [level, setLevel] = useState<number | null>(
     pokemon.instanceData.level != null ? Number(pokemon.instanceData.level) : null
@@ -284,25 +287,14 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
   const toggleEditMode = async () => {
     // leaving edit-mode ⇒ validate & save
     if (editMode) {
-      // minimal set needed for validation hook
-      const validationIvs = {
-        Attack:
-          ivs.Attack === '' || ivs.Attack === null ? undefined : Number(ivs.Attack),
-        Defense:
-          ivs.Defense === '' || ivs.Defense === null ? undefined : Number(ivs.Defense),
-        Stamina:
-          ivs.Stamina === '' || ivs.Stamina === null ? undefined : Number(ivs.Stamina),
-      };
-      const fieldsToValidate = {
-        level: level ?? undefined,
-        cp: cp !== '' ? Number(cp) : undefined,
-        ivs: validationIvs,
-        weight,
-        height,
-      };
-
       const { validationErrors: ve, computedValues: cv } = validate(
-        fieldsToValidate,
+        toTradeValidationFields({
+          level,
+          cp,
+          ivs,
+          weight,
+          height,
+        }),
         currentBaseStats
       );
 
@@ -318,27 +310,23 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
       if (cv.cp !== undefined) setCP(cv.cp.toString());
       if (cv.ivs !== undefined) setIvs(cv.ivs);
 
-      // build payload -------------------------------------------------
-      const payload = {
+      const payload = buildTradeInstancePatch({
         nickname,
-        cp: cp !== '' ? Number(cp) : null,
+        cp,
         gender,
-        weight: weight === '' || Number.isNaN(Number(weight)) ? null : Number(weight),
-        height: height === '' || Number.isNaN(Number(height)) ? null : Number(height),
-        fast_move_id: moves.fastMove,
-        charged_move1_id: moves.chargedMove1,
-        charged_move2_id: moves.chargedMove2,
-        level: cv.level ?? level,
-        attack_iv: cv.ivs?.Attack ?? (ivs.Attack === '' ? null : ivs.Attack),
-        defense_iv: cv.ivs?.Defense ?? (ivs.Defense === '' ? null : ivs.Defense),
-        stamina_iv: cv.ivs?.Stamina ?? (ivs.Stamina === '' ? null : ivs.Stamina),
-        location_caught: locationCaught,
-        date_caught: dateCaught,
-        location_card: selectedBackground?.background_id ?? null,
-        max_attack: maxAttack === '' ? null : Number(maxAttack),
-        max_guard: maxGuard === '' ? null : Number(maxGuard),
-        max_spirit: maxSpirit === '' ? null : Number(maxSpirit),
-      };
+        weight,
+        height,
+        moves,
+        level,
+        ivs,
+        locationCaught,
+        dateCaught,
+        selectedBackgroundId: selectedBackground?.background_id ?? null,
+        maxAttack,
+        maxGuard,
+        maxSpirit,
+        computedValues: cv,
+      });
 
       try {
         await updateDetails({ [entityKey]: payload as Partial<PokemonInstance> });
@@ -396,35 +384,13 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
         </div>
       )}
 
-      {/* IMAGE ------------------------------------------------------ */}
-      <div className="image-container">
-        {selectedBackground && (
-          <div className="background-container">
-            <div
-              className="background-image"
-              style={{ backgroundImage: `url(${selectedBackground.image_url})` }}
-            ></div>
-            <div className="brightness-overlay"></div>
-          </div>
-        )}
-        <div className="pokemon-image-container">
-          <img
-            src={currentImage}
-            alt={pokemon.name}
-            className="pokemon-image"
-          />
-          {dynamax && (
-            <img src={'/images/dynamax.png'} alt="Dynamax Badge" className="max-badge" />
-          )}
-          {gigantamax && (
-            <img
-              src={'/images/gigantamax.png'}
-              alt="Gigantamax Badge"
-              className="max-badge"
-            />
-          )}
-        </div>
-      </div>
+      <TradeImageStage
+        selectedBackground={selectedBackground}
+        currentImage={currentImage}
+        name={pokemon.name}
+        dynamax={dynamax}
+        gigantamax={gigantamax}
+      />
 
       {/* NAME ------------------------------------------------------- */}
       <div className="name-container">
@@ -524,29 +490,12 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
         />
       </div>
 
-      {/* BACKGROUND PICKER MODAL ----------------------------------- */}
-      {showBackgrounds && (
-        <div
-          className="background-overlay"
-          onClick={() => setShowBackgrounds(false)}
-        >
-          <div
-            className="background-overlay-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="close-button"
-              onClick={() => setShowBackgrounds(false)}
-            >
-              Close
-            </button>
-            <BackgroundLocationCard
-              pokemon={pokemon}
-              onSelectBackground={handleBackgroundSelect}
-            />
-          </div>
-        </div>
-      )}
+      <TradeBackgroundModal
+        showBackgrounds={showBackgrounds}
+        pokemon={pokemon}
+        onClose={() => setShowBackgrounds(false)}
+        onSelectBackground={handleBackgroundSelect}
+      />
     </div>
   );
 };
