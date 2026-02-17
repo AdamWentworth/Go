@@ -58,9 +58,50 @@ type EvaluateCostumeToggleArgs = {
   showCostumeDropdown: boolean;
 };
 
+type BuildBooleanValidationToggleArgs<
+  K extends BooleanValidationToggleField,
+> = {
+  currentValue: boolean;
+  field: K;
+};
+
+type BuildSelectionValidationChangeArgs<
+  K extends SelectionValidationField,
+> = {
+  value: VariantValidationState[K];
+  field: K;
+};
+
+type BuildSuggestionClickDecisionArgs = {
+  suggestion: string;
+};
+
+type BooleanValidationToggleField = 'shinyChecked' | 'shadowChecked';
+type SelectionValidationField = 'selectedCostume' | 'form' | 'name';
+
 export type CostumeToggleDecision = {
   nextShowCostumeDropdown: boolean;
   shouldResetCostumeSelection: boolean;
+};
+
+export type BooleanValidationToggleDecision<
+  K extends BooleanValidationToggleField,
+> = {
+  nextValue: boolean;
+  validationPatch: Pick<VariantValidationState, K>;
+};
+
+export type SelectionValidationChangeDecision<
+  K extends SelectionValidationField,
+> = {
+  value: VariantValidationState[K];
+  validationPatch: Pick<VariantValidationState, K>;
+};
+
+export type SuggestionClickDecision = {
+  nextPokemon: string;
+  nextSuggestions: [];
+  validationPatch: Pick<VariantValidationState, 'name'>;
 };
 
 export type PokemonInputChangeDecision = {
@@ -234,6 +275,43 @@ export const evaluateCostumeToggle = ({
     shouldResetCostumeSelection: !nextShowCostumeDropdown,
   };
 };
+
+export const buildBooleanValidationToggle = <
+  K extends BooleanValidationToggleField,
+>({
+  currentValue,
+  field,
+}: BuildBooleanValidationToggleArgs<K>): BooleanValidationToggleDecision<K> => {
+  const nextValue = !currentValue;
+  return {
+    nextValue,
+    validationPatch: {
+      [field]: nextValue,
+    } as Pick<VariantValidationState, K>,
+  };
+};
+
+export const buildSelectionValidationChange = <
+  K extends SelectionValidationField,
+>({
+  value,
+  field,
+}: BuildSelectionValidationChangeArgs<K>): SelectionValidationChangeDecision<K> => ({
+  value,
+  validationPatch: {
+    [field]: value,
+  } as Pick<VariantValidationState, K>,
+});
+
+export const buildSuggestionClickDecision = ({
+  suggestion,
+}: BuildSuggestionClickDecisionArgs): SuggestionClickDecision => ({
+  nextPokemon: suggestion,
+  nextSuggestions: [],
+  validationPatch: {
+    name: suggestion,
+  },
+});
 
 export const buildCostumeResetImage = ({
   pokemonData,

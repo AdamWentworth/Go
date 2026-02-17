@@ -128,6 +128,16 @@ None.
 18. Removed redundant `pokemonData` mirrored state/effect and now derive from `pokemonCache` directly (`const pokemonData = pokemonCache ?? []`).
 19. Expanded regression coverage for helper decisions and reset setter calls in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` and `tests/unit/pages/Search/SearchParameters/useVariantSearchController.unit.test.tsx`.
 20. Reduced `useVariantSearchController.ts` from `347` LOC to `344` LOC while preserving behavior.
+21. Extracted boolean validation toggles (`shinyChecked`, `shadowChecked`) into `buildBooleanValidationToggle` in `SearchParameters/variantSearchControllerHelpers.ts`.
+22. Extracted typed field-change patches into `buildSelectionValidationChange` for `selectedCostume` and `form`.
+23. Extracted suggestion-click orchestration into `buildSuggestionClickDecision` and removed inline patch construction in the controller.
+24. Wired `useVariantSearchController.ts` handlers (`handleShinyChange`, `handleShadowChange`, `handleCostumeChange`, `handleFormChange`, `handleSuggestionClick`) to helper decisions.
+25. Expanded regression coverage for the above handlers and helper outputs in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` and `tests/unit/pages/Search/SearchParameters/useVariantSearchController.unit.test.tsx`.
+26. Added typed helper `buildBooleanValidationToggle` for boolean validation fields (`shinyChecked`, `shadowChecked`) to avoid repeated invert-and-patch logic.
+27. Added typed helper `buildSelectionValidationChange` for deterministic field patch creation (`selectedCostume`, `form`, `name`).
+28. Added typed helper `buildSuggestionClickDecision` and switched suggestion-click flow to a single helper-driven decision.
+29. Added direct helper unit tests for toggle/selection/suggestion decisions in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` (now `12` tests).
+30. Added controller regression tests for shiny/shadow toggles and combined costume/form/suggestion interactions in `tests/unit/pages/Search/SearchParameters/useVariantSearchController.unit.test.tsx` (now `8` tests).
 - DoD:
 1. Large orchestration logic moved to pure helpers/hooks.
 2. Existing search behavior remains intact under tests.

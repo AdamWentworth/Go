@@ -225,6 +225,62 @@ describe('useVariantSearchController', () => {
     expect(result.current.suggestions).toEqual(['Bulbasaur']);
   });
 
+  it('toggles shiny and shadow flags through dedicated handlers', () => {
+    const setIsShiny = toSetter<boolean>();
+    const setIsShadow = toSetter<boolean>();
+    const args = makeArgs({
+      pokemon: 'Bulbasaur',
+      isShiny: false,
+      isShadow: true,
+      setIsShiny,
+      setIsShadow,
+    });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    act(() => {
+      result.current.handleShinyChange();
+    });
+    expect(setIsShiny).toHaveBeenCalledWith(true);
+
+    act(() => {
+      result.current.handleShadowChange();
+    });
+    expect(setIsShadow).toHaveBeenCalledWith(false);
+  });
+
+  it('applies costume/form changes and suggestion clicks', () => {
+    const setCostume = toSetter<string | null>();
+    const setSelectedForm = toSetter<string>();
+    const setPokemon = toSetter<string>();
+    const args = makeArgs({
+      pokemon: 'Bul',
+      setCostume,
+      setSelectedForm,
+      setPokemon,
+    });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    act(() => {
+      result.current.handleInputFocus();
+    });
+    expect(result.current.suggestions).toEqual(['Bulbasaur']);
+
+    act(() => {
+      result.current.handleCostumeChange({
+        target: { value: 'Party' },
+      } as React.ChangeEvent<HTMLSelectElement>);
+      result.current.handleFormChange({
+        target: { value: 'Origin' },
+      } as React.ChangeEvent<HTMLSelectElement>);
+      result.current.handleSuggestionClick('Bulbasaur');
+    });
+
+    expect(setCostume).toHaveBeenCalledWith('Party');
+    expect(setSelectedForm).toHaveBeenCalledWith('Origin');
+    expect(setPokemon).toHaveBeenCalledWith('Bulbasaur');
+    expect(result.current.suggestions).toEqual([]);
+  });
+
   it('applies selected background and closes background overlay', () => {
     const setSelectedBackgroundId = toSetter<number | null>();
     const args = makeArgs({

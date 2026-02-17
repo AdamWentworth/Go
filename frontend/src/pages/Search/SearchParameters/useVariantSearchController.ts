@@ -11,8 +11,11 @@ import {
   type SortableCostume,
 } from './variantSearchHelpers';
 import {
+  buildBooleanValidationToggle,
   buildCostumeResetImage,
   buildPokemonChangeResetState,
+  buildSelectionValidationChange,
+  buildSuggestionClickDecision,
   buildVariantValidationState,
   deriveValidationOutcomeDecision,
   evaluateCostumeToggle,
@@ -255,15 +258,21 @@ const useVariantSearchController = ({
   };
 
   const handleShinyChange = () => {
-    const shinyChecked = !isShiny;
-    setIsShiny(shinyChecked);
-    handleValidation({ shinyChecked });
+    const shinyDecision = buildBooleanValidationToggle({
+      currentValue: isShiny,
+      field: 'shinyChecked',
+    });
+    setIsShiny(shinyDecision.nextValue);
+    handleValidation(shinyDecision.validationPatch);
   };
 
   const handleShadowChange = () => {
-    const shadowChecked = !isShadow;
-    setIsShadow(shadowChecked);
-    handleValidation({ shadowChecked });
+    const shadowDecision = buildBooleanValidationToggle({
+      currentValue: isShadow,
+      field: 'shadowChecked',
+    });
+    setIsShadow(shadowDecision.nextValue);
+    handleValidation(shadowDecision.validationPatch);
   };
 
   const handleCostumeToggle = () => {
@@ -289,15 +298,21 @@ const useVariantSearchController = ({
   };
 
   const handleCostumeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedCostume = event.target.value;
-    setCostume(selectedCostume);
-    handleValidation({ selectedCostume });
+    const costumeDecision = buildSelectionValidationChange({
+      value: event.target.value,
+      field: 'selectedCostume',
+    });
+    setCostume(costumeDecision.value);
+    handleValidation(costumeDecision.validationPatch);
   };
 
   const handleFormChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const nextForm = event.target.value;
-    setSelectedForm(nextForm);
-    handleValidation({ form: nextForm });
+    const formDecision = buildSelectionValidationChange({
+      value: event.target.value,
+      field: 'form',
+    });
+    setSelectedForm(formDecision.value);
+    handleValidation(formDecision.validationPatch);
   };
 
   const handleMovesChange = (moves: SelectedMoves) => {
@@ -305,9 +320,10 @@ const useVariantSearchController = ({
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    setPokemon(suggestion);
-    setSuggestions([]);
-    handleValidation({ name: suggestion });
+    const suggestionDecision = buildSuggestionClickDecision({ suggestion });
+    setPokemon(suggestionDecision.nextPokemon);
+    setSuggestions(suggestionDecision.nextSuggestions);
+    handleValidation(suggestionDecision.validationPatch);
   };
 
   return {

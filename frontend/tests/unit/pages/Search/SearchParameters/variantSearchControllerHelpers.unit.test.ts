@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  buildBooleanValidationToggle,
   buildCostumeResetImage,
   buildPokemonChangeResetState,
+  buildSelectionValidationChange,
+  buildSuggestionClickDecision,
   buildVariantValidationState,
   DEFAULT_SELECTED_GENDER,
   deriveValidationOutcomeDecision,
@@ -263,5 +266,71 @@ describe('variantSearchControllerHelpers', () => {
       'Any',
       true,
     );
+  });
+
+  it('builds boolean validation toggles for shiny and shadow fields', () => {
+    expect(
+      buildBooleanValidationToggle({
+        currentValue: false,
+        field: 'shinyChecked',
+      }),
+    ).toEqual({
+      nextValue: true,
+      validationPatch: {
+        shinyChecked: true,
+      },
+    });
+
+    expect(
+      buildBooleanValidationToggle({
+        currentValue: true,
+        field: 'shadowChecked',
+      }),
+    ).toEqual({
+      nextValue: false,
+      validationPatch: {
+        shadowChecked: false,
+      },
+    });
+  });
+
+  it('builds typed selection validation changes for costume and form', () => {
+    expect(
+      buildSelectionValidationChange({
+        value: 'Party',
+        field: 'selectedCostume',
+      }),
+    ).toEqual({
+      value: 'Party',
+      validationPatch: {
+        selectedCostume: 'Party',
+      },
+    });
+
+    expect(
+      buildSelectionValidationChange({
+        value: 'Origin',
+        field: 'form',
+      }),
+    ).toEqual({
+      value: 'Origin',
+      validationPatch: {
+        form: 'Origin',
+      },
+    });
+  });
+
+  it('builds suggestion click decision with pokemon + validation patch', () => {
+    expect(
+      buildSuggestionClickDecision({
+        suggestion: 'Bulbasaur',
+      }),
+    ).toEqual({
+      nextPokemon: 'Bulbasaur',
+      nextSuggestions: [],
+      validationPatch: {
+        name: 'Bulbasaur',
+      },
+    });
   });
 });
