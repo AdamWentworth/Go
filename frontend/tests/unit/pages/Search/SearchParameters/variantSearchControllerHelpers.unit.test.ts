@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  buildCostumeResetImage,
+  buildPokemonChangeResetState,
   buildVariantValidationState,
+  DEFAULT_SELECTED_GENDER,
+  deriveValidationOutcomeDecision,
   evaluateCostumeToggle,
   evaluatePokemonInputFocus,
   evaluatePokemonInputChange,
@@ -190,5 +194,74 @@ describe('variantSearchControllerHelpers', () => {
       nextShowCostumeDropdown: false,
       shouldResetCostumeSelection: true,
     });
+  });
+
+  it('derives validation outcome decision for error and success states', () => {
+    expect(
+      deriveValidationOutcomeDecision({
+        error: 'Bad input',
+        availableCostumes: [],
+        availableForms: [],
+      }),
+    ).toEqual({
+      errorMessage: 'Bad input',
+      shouldClearError: false,
+      shouldUpdateImage: false,
+      nextImageUrl: null,
+    });
+
+    expect(
+      deriveValidationOutcomeDecision({
+        error: null,
+        availableCostumes: [],
+        availableForms: [],
+        imageUrl: '/images/bulbasaur.png',
+      }),
+    ).toEqual({
+      errorMessage: null,
+      shouldClearError: true,
+      shouldUpdateImage: true,
+      nextImageUrl: '/images/bulbasaur.png',
+    });
+  });
+
+  it('builds pokemon-change reset state with canonical defaults', () => {
+    expect(buildPokemonChangeResetState()).toEqual({
+      selectedForm: '',
+      selectedGender: DEFAULT_SELECTED_GENDER,
+      selectedMoves: {
+        fastMove: null,
+        chargedMove1: null,
+        chargedMove2: null,
+      },
+      dynamax: false,
+      gigantamax: false,
+    });
+  });
+
+  it('builds costume reset image using empty costume selector', () => {
+    const updateImageFn = vi.fn().mockReturnValue('/images/reset.png');
+    const result = buildCostumeResetImage({
+      pokemonData,
+      pokemon: 'Bulbasaur',
+      isShiny: true,
+      isShadow: false,
+      selectedForm: 'None',
+      selectedGender: 'Any',
+      dynamax: true,
+      updateImageFn,
+    });
+
+    expect(result).toBe('/images/reset.png');
+    expect(updateImageFn).toHaveBeenCalledWith(
+      pokemonData,
+      'Bulbasaur',
+      true,
+      false,
+      '',
+      'None',
+      'Any',
+      true,
+    );
   });
 });

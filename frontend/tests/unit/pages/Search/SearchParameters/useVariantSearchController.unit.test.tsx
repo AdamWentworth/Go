@@ -105,7 +105,17 @@ describe('useVariantSearchController', () => {
   });
 
   it('updates suggestions for 3+ character input and clears on shorter values', () => {
+    const setSelectedForm = toSetter<string>();
+    const setSelectedGender = toSetter<string | null>();
+    const setSelectedMoves = toSetter<SelectedMoves>();
+    const setDynamax = toSetter<boolean>();
+    const setGigantamax = toSetter<boolean>();
     const args = makeArgs({
+      setSelectedForm,
+      setSelectedGender,
+      setSelectedMoves,
+      setDynamax,
+      setGigantamax,
       pokemonCache: [
         baseVariant,
         { ...baseVariant, variant_id: '0012-default', name: 'Butterfree' } as PokemonVariant,
@@ -121,6 +131,15 @@ describe('useVariantSearchController', () => {
 
     expect(args.setPokemon).toHaveBeenCalledWith('Bul');
     expect(result.current.suggestions).toEqual(['Bulbasaur']);
+    expect(setSelectedForm).toHaveBeenCalledWith('');
+    expect(setSelectedGender).toHaveBeenCalledWith('Any');
+    expect(setSelectedMoves).toHaveBeenCalledWith({
+      fastMove: null,
+      chargedMove1: null,
+      chargedMove2: null,
+    });
+    expect(setDynamax).toHaveBeenCalledWith(false);
+    expect(setGigantamax).toHaveBeenCalledWith(false);
 
     act(() => {
       result.current.handlePokemonChange({

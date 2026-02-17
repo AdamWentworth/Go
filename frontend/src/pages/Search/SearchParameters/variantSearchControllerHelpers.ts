@@ -26,6 +26,21 @@ type VariantValidationOutcome = {
   imageUrl?: string | null;
 };
 
+export type ValidationOutcomeDecision = {
+  errorMessage: string | null;
+  shouldClearError: boolean;
+  shouldUpdateImage: boolean;
+  nextImageUrl: string | null;
+};
+
+export type PokemonChangeResetState = {
+  selectedForm: string;
+  selectedGender: string;
+  selectedMoves: typeof EMPTY_SELECTED_MOVES;
+  dynamax: boolean;
+  gigantamax: boolean;
+};
+
 type EvaluatePokemonInputFocusArgs = {
   pokemon: string;
   pokemonData: PokemonVariant[];
@@ -58,6 +73,17 @@ type RunVariantValidationArgs = {
   pokemonData: PokemonVariant[];
   state: VariantValidationState;
   validatePokemonFn?: typeof validatePokemon;
+  updateImageFn?: typeof updateImage;
+};
+
+type BuildCostumeResetImageArgs = {
+  pokemonData: PokemonVariant[];
+  pokemon: string;
+  isShiny: boolean;
+  isShadow: boolean;
+  selectedForm: string;
+  selectedGender: string | null;
+  dynamax: boolean;
   updateImageFn?: typeof updateImage;
 };
 
@@ -129,6 +155,26 @@ export const runVariantValidation = ({
   };
 };
 
+export const deriveValidationOutcomeDecision = (
+  result: VariantValidationOutcome,
+): ValidationOutcomeDecision => {
+  if (result.error) {
+    return {
+      errorMessage: result.error,
+      shouldClearError: false,
+      shouldUpdateImage: false,
+      nextImageUrl: null,
+    };
+  }
+
+  return {
+    errorMessage: null,
+    shouldClearError: true,
+    shouldUpdateImage: true,
+    nextImageUrl: result.imageUrl ?? null,
+  };
+};
+
 export const evaluatePokemonInputChange = ({
   nextPokemon,
   pokemonData,
@@ -189,8 +235,39 @@ export const evaluateCostumeToggle = ({
   };
 };
 
+export const buildCostumeResetImage = ({
+  pokemonData,
+  pokemon,
+  isShiny,
+  isShadow,
+  selectedForm,
+  selectedGender,
+  dynamax,
+  updateImageFn = updateImage,
+}: BuildCostumeResetImageArgs): string | null =>
+  updateImageFn(
+    pokemonData,
+    pokemon,
+    isShiny,
+    isShadow,
+    '',
+    selectedForm,
+    selectedGender,
+    dynamax,
+  );
+
 export const EMPTY_SELECTED_MOVES = {
   fastMove: null,
   chargedMove1: null,
   chargedMove2: null,
 } as const;
+
+export const DEFAULT_SELECTED_GENDER = 'Any';
+
+export const buildPokemonChangeResetState = (): PokemonChangeResetState => ({
+  selectedForm: '',
+  selectedGender: DEFAULT_SELECTED_GENDER,
+  selectedMoves: EMPTY_SELECTED_MOVES,
+  dynamax: false,
+  gigantamax: false,
+});

@@ -11,11 +11,13 @@ import {
   type SortableCostume,
 } from './variantSearchHelpers';
 import {
+  buildCostumeResetImage,
+  buildPokemonChangeResetState,
   buildVariantValidationState,
+  deriveValidationOutcomeDecision,
   evaluateCostumeToggle,
   evaluatePokemonInputChange,
   evaluatePokemonInputFocus,
-  EMPTY_SELECTED_MOVES,
   runVariantValidation,
   type VariantValidationState,
 } from './variantSearchControllerHelpers';
@@ -103,7 +105,7 @@ const useVariantSearchController = ({
   const { handleError, clearError } = useErrorHandler<string>();
   const [availableForms, setAvailableForms] = useState<string[]>([]);
   const [availableCostumes, setAvailableCostumes] = useState<SortableCostume[]>([]);
-  const [pokemonData, setPokemonData] = useState<PokemonVariant[]>(pokemonCache || []);
+  const pokemonData = pokemonCache ?? [];
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
   const [showCostumeDropdown, setShowCostumeDropdown] = useState(false);
@@ -111,10 +113,6 @@ const useVariantSearchController = ({
     useState<BackgroundSelection | null>(null);
   const [showBackgroundOverlay, setShowBackgroundOverlay] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-
-  useEffect(() => {
-    setPokemonData(pokemonCache || []);
-  }, [pokemonCache]);
 
   const currentPokemonData = pokemonData.find(
     (entry) => entry.name.toLowerCase() === (pokemon || '').toLowerCase(),
@@ -146,20 +144,19 @@ const useVariantSearchController = ({
       validatePokemonFn: validatePokemon,
       updateImageFn: updateImage,
     });
-
-    if (result.error) {
-      handleError(result.error);
-      setErrorMessage(result.error);
-    } else {
+    const validationDecision = deriveValidationOutcomeDecision(result);
+    setErrorMessage(validationDecision.errorMessage);
+    if (validationDecision.shouldClearError) {
       clearError();
-      setErrorMessage(null);
+    } else if (validationDecision.errorMessage) {
+      handleError(validationDecision.errorMessage);
     }
 
     setAvailableCostumes(result.availableCostumes);
     setAvailableForms(result.availableForms);
 
-    if (!result.error) {
-      setImageUrl(result.imageUrl ?? null);
+    if (validationDecision.shouldUpdateImage) {
+      setImageUrl(validationDecision.nextImageUrl);
       setImageError(false);
     }
   };
@@ -219,13 +216,14 @@ const useVariantSearchController = ({
       pokemonData,
     });
     if (inputDecision.shouldIgnore) return;
+    const resetState = buildPokemonChangeResetState();
 
     setPokemon(newPokemon);
-    setSelectedForm('');
-    setSelectedGender('Any');
-    setSelectedMoves(EMPTY_SELECTED_MOVES);
-    setDynamax(false);
-    setGigantamax(false);
+    setSelectedForm(resetState.selectedForm);
+    setSelectedGender(resetState.selectedGender);
+    setSelectedMoves(resetState.selectedMoves);
+    setDynamax(resetState.dynamax);
+    setGigantamax(resetState.gigantamax);
 
     setSuggestions(inputDecision.suggestions);
     if (inputDecision.shouldResetDerivedState) {
@@ -276,16 +274,15 @@ const useVariantSearchController = ({
       setCostume(null);
       clearError();
       handleValidation({ selectedCostume: '' });
-      const defaultImage = updateImage(
+      const defaultImage = buildCostumeResetImage({
         pokemonData,
         pokemon,
         isShiny,
         isShadow,
-        '',
         selectedForm,
         selectedGender,
         dynamax,
-      );
+      });
       setImageUrl(defaultImage);
       setImageError(false);
     }

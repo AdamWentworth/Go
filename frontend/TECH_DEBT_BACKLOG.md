@@ -122,6 +122,12 @@ None.
 12. Extracted PokemonSearchBar input-focus suggestion decision into `evaluatePokemonInputFocus` in `SearchParameters/variantSearchControllerHelpers.ts`.
 13. Extracted costume toggle open/close/reset decision into `evaluateCostumeToggle` and wired `useVariantSearchController.ts` to the helper.
 14. Added helper + hook regression coverage for focus and costume toggle behavior in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` and `tests/unit/pages/Search/SearchParameters/useVariantSearchController.unit.test.tsx`.
+15. Extracted validation result branching into `deriveValidationOutcomeDecision` in `SearchParameters/variantSearchControllerHelpers.ts` and wired error/image handling in `useVariantSearchController.ts`.
+16. Extracted canonical pokemon-change reset values into `buildPokemonChangeResetState` (`selectedForm`, `selectedGender`, `selectedMoves`, `dynamax`, `gigantamax`) and replaced inline resets.
+17. Extracted costume reset image computation into `buildCostumeResetImage` and removed duplicated `updateImage(...)` argument assembly in controller.
+18. Removed redundant `pokemonData` mirrored state/effect and now derive from `pokemonCache` directly (`const pokemonData = pokemonCache ?? []`).
+19. Expanded regression coverage for helper decisions and reset setter calls in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` and `tests/unit/pages/Search/SearchParameters/useVariantSearchController.unit.test.tsx`.
+20. Reduced `useVariantSearchController.ts` from `347` LOC to `344` LOC while preserving behavior.
 - DoD:
 1. Large orchestration logic moved to pure helpers/hooks.
 2. Existing search behavior remains intact under tests.
