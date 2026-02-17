@@ -34,18 +34,20 @@ import { parseVariantId } from '@/utils/PokemonIDUtils';
 import { getAllInstances } from '@/db/instancesDB';
 import { getAllFromTradesDB } from '@/db/tradesDB';
 import { shouldUpdateTradeInstances } from './shouldUpdateTradeInstances';
+import {
+  countVisibleWantedItems,
+  extractBaseKey,
+  initializeSelection,
+  prepareTradeCandidateSets,
+  resolveTradeProposalDecision,
+  type SelectedPokemon,
+} from './tradeDetailsHelpers';
 import { createScopedLogger } from '@/utils/logger';
 
 import UpdateForTradeModal from './UpdateForTradeModal';
 
 type BooleanMap = Record<string, boolean>;
 type GenericMap = Record<string, unknown>;
-type SelectedPokemon = GenericMap & {
-  key?: string;
-  name?: string;
-  variantType?: string;
-  instanceData?: Partial<PokemonInstance>;
-};
 
 interface TradeDetailsProps {
   pokemon: PokemonVariant & {
@@ -124,10 +126,6 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
   const [isTradeProposalOpen, setIsTradeProposalOpen] = useState(false);
   const [tradeClickedPokemon, setTradeClickedPokemon] = useState<Record<string, unknown> | null>(null);
 
-  const initializeSelection = (filterNames: string[], filters: Record<string, unknown>) => {
-    return filterNames.map((name) => !!filters[name]);
-  };
-
   useEffect(() => {
     if (wanted_filters) {
       setSelectedExcludeImages(
@@ -190,16 +188,11 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
     setPendingUpdates((prev) => ({ ...prev, [key]: updatedNotTrade }));
   };
 
-  // Calculate the number of items in filteredWantedList excluding those in not_wanted_list
-  const filteredWantedListCount = Object.keys(filteredWantedList as Record<string, unknown>).filter(
-    (key) => !localNotWantedList[key]
-  ).length;
-
-  const extractBaseKey = (instanceId: string) => {
-    let keyParts = String(instanceId).split('_');
-    keyParts.pop(); // Remove the UUID part if present
-    return keyParts.join('_');
-  };
+  // Calculate the number of items in filteredWantedList excluding those in not_wanted_list.
+  const filteredWantedListCount = countVisibleWantedItems(
+    filteredWantedList as Record<string, unknown>,
+    localNotWantedList,
+  );
 
   const handleViewWantedList = () => {
     if (selectedPokemon) {
@@ -210,112 +203,79 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
   };
 
   const handleProposeTrade = async () => {
-    // 1) Check if a Pokémon is actually selected
     if (!selectedPokemon) {
       log.debug('No selectedPokemon. Aborting trade proposal.');
       return;
     }
 
-    // 2) Parse the selected Pokémon's key to extract the baseKey
-    const parsedSelected = parseVariantId(String(selectedPokemon.key ?? ''));
-    const { baseKey: selectedBaseKey } = parsedSelected;
-
-    // 3) Retrieve current user's instances from IndexedDB
     let userInstances: PokemonInstance[] = [];
     try {
       userInstances = await getAllInstances();
     } catch (error) {
       log.error('Failed to fetch user instances from IndexedDB:', error);
-      alert("Could not fetch your instances. Aborting trade proposal.");
+      alert('Could not fetch your instances. Aborting trade proposal.');
       return;
     }
 
-    // Convert the array into a keyed object using instance_id as key
-    const hashedInstances = userInstances.reduce((acc, item) => {
-      const instanceId = String(item.instance_id ?? '');
-      acc[instanceId] = item;
-      return acc;
-    }, {} as Instances);
+    const {
+      selectedBaseKey,
+      hashedInstances,
+      caughtInstances,
+      tradeableInstances,
+    } = prepareTradeCandidateSets(selectedPokemon, userInstances, parseVariantId);
 
     log.debug('Hashed ownership data prepared.', {
       count: Object.keys(hashedInstances).length,
     });
-
-    // Store that object in state for passing to TradeProposal
-    setMyInstances(hashedInstances);
-
-    // 4) Filter to find all instances where the baseKey matches and is_caught=true
-    const caughtInstances = userInstances.filter((item) => {
-      const parsedCaught = parseVariantId(String(item.instance_id ?? ''));
-      return parsedCaught.baseKey === selectedBaseKey && item.is_caught === true;
-    });
-
     log.debug('Caught instances after filter.', { count: caughtInstances.length });
 
-    // 5) If there are no matches, user has no caught instance for this variant
-    if (caughtInstances.length === 0) {
-      alert("You do not have this Pokemon caught, so you cannot propose a trade.");
-      return;
-    }
+    setMyInstances(hashedInstances);
 
-    // 6) Check for instances that are also marked is_for_trade === true
-    const tradeableInstances = caughtInstances.filter(
-      (item) => item.is_for_trade === true
-    );
-
+    let decision: ReturnType<typeof resolveTradeProposalDecision>;
     if (tradeableInstances.length > 0) {
-      // 7) NEW: Check if any of the tradeable instances are already in pending trades
       try {
         const allTrades = await getAllFromTradesDB('pokemonTrades');
-        
-        // Filter to only pending trades
-        const pendingTrades = allTrades.filter((trade) => (trade as any).trade_status === "pending");
-        
-        // Filter out instances that are already in pending trades
-        const availableInstances = tradeableInstances.filter((instance) => {
-          const instanceIsInPendingTrade = pendingTrades.some((trade) => 
-            (trade as any).pokemon_instance_id_user_proposed === instance.instance_id ||
-            (trade as any).pokemon_instance_id_user_accepting === instance.instance_id
-          );
-          return !instanceIsInPendingTrade;
-        });
-
-        if (availableInstances.length === 0) {
-          alert("All instances of this Pokémon are currently involved in pending trades. Catch some more of this Pokémon to offer this trade or cancel your current pending trade.");
-          return;
-        }
-
-        // Build the "matchedInstances" array with only available instances
-        const baseData = { ...selectedPokemon };
-        delete baseData.instanceData;
-
-        const matchedInstances = availableInstances.map((instance) => ({
-          ...baseData,
-          instanceData: { ...instance },
-        }));
-
-        const selectedPokemonWithMatches = {
-          matchedInstances,
-        };
-
-        setTradeClickedPokemon(selectedPokemonWithMatches as Record<string, unknown>);
-
-        // Close the overlay
-        closeOverlay();
-
-        // Finally open the TradeProposal
-        setIsTradeProposalOpen(true);
+        decision = resolveTradeProposalDecision(
+          selectedPokemon,
+          selectedBaseKey,
+          caughtInstances,
+          tradeableInstances,
+          allTrades,
+        );
       } catch (error) {
         log.error('Failed to fetch or process trades data:', error);
-        alert("Could not verify trade availability. Please try again.");
+        alert('Could not verify trade availability. Please try again.');
         return;
       }
     } else {
-      // User owns it but it isn't listed for trade
-      // Instead of alert, open the UpdateForTradeModal
-      setCaughtInstancesToTrade(caughtInstances);
-      setCurrentBaseKey(selectedBaseKey); // Set the current baseKey
-      setIsUpdateForTradeModalOpen(true);
+      decision = resolveTradeProposalDecision(
+        selectedPokemon,
+        selectedBaseKey,
+        caughtInstances,
+        tradeableInstances,
+        [],
+      );
+    }
+
+    switch (decision.kind) {
+      case 'noCaught':
+        alert('You do not have this Pokemon caught, so you cannot propose a trade.');
+        return;
+      case 'noAvailableTradeable':
+        alert(
+          'All instances of this Pokemon are currently involved in pending trades. Catch some more of this Pokemon to offer this trade or cancel your current pending trade.',
+        );
+        return;
+      case 'needsTradeSelection':
+        setCaughtInstancesToTrade(decision.caughtInstances);
+        setCurrentBaseKey(decision.selectedBaseKey);
+        setIsUpdateForTradeModalOpen(true);
+        return;
+      case 'proposalReady':
+        setTradeClickedPokemon(decision.payload);
+        closeOverlay();
+        setIsTradeProposalOpen(true);
+        return;
     }
   };
 
@@ -592,3 +552,4 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 };
 
 export default TradeDetails;
+

@@ -9,7 +9,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 2. P0.3 hook correctness (`useSortManager` and `AccountForm` hook-order safety).
 3. P0.4 import hardening for targeted paths (`Search`, `Trades`, `changeInstanceTag`) plus ESLint guardrail.
 4. P0.5 top-level error boundary with fallback UI, logging hook, and regression test.
-5. P1.2 full test suite stabilization (`351/351` unit tests currently passing, deterministic Vitest sequencing, stale integration/e2e assertions updated to canonical instance model).
+5. P1.2 full test suite stabilization (`354/354` unit tests currently passing, deterministic Vitest sequencing, stale integration/e2e assertions updated to canonical instance model).
 6. P1.1 TypeScript baseline green (`npm exec tsc --noEmit` clean; auth/location/fusion/raid/test typing drift fixed).
 7. P1.3 slice A: Trades/Search compatibility adapter (`instances`/`setInstances` primary naming with legacy alias support) + regression tests.
 8. P1.3 slice B: Instance detail flow naming migration (`InstanceOverlay` -> `TradeDetails`/`WantedDetails` + wanted edit hook) with legacy alias fallback and new regression tests.
@@ -68,7 +68,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 61. TS migration slice: converted the final two JS entry files (`instances/CaughtInstance.jsx`, `Pokemon/Pokemon.jsx`) to TypeScript (`CaughtInstance.tsx`, `Pokemon.tsx`), aligned route/menu import paths to extensionless TS targets, and validated with green typecheck/unit/build.
 62. Type-hardening slice: rewrote `instances/CaughtInstance.tsx` and tightened the caught-instance section/component contracts (header/identity/level-gender/stats/meta/moves+iv/power/modals), removing high-risk cast chains while preserving behavior.
 63. Compatibility slice: normalized shared pokemon component typing (`Moves`, `Gender`, `Weight`, `Height`, `Types`, `LocationCaught`, `DateCaught`, `Favorite`, `BackgroundLocationCard`) so existing call sites/tests remain stable under stricter TS.
-64. Validation slice: restored full green after hardening pass (`npm run typecheck`, `npm run test:unit` with `351/351` passing, and `npm run build` all successful).
+64. Validation slice: restored full green after hardening pass (`npm run typecheck`, `npm run test:unit` with `354/354` passing, and `npm run build` all successful).
 65. Logging cleanup slice: migrated `Pokemon` active-view debug signal plus fusion overlay logs (`useFusion`, `FuseOverlay`) to scoped logger for env-gated output.
 66. Logging cleanup slice: migrated `authService` and `TradeDetails` logging to scoped logger, preserving error/debug semantics while keeping production logs env-gated.
 67. Logging cleanup slice: migrated authentication UI and mega selection paths (`Account`, `Register`, `useMegaPokemonHandler`) to scoped logger with behavior-preserving error/warn coverage.
@@ -81,16 +81,17 @@ This backlog converts the current frontend audit into an execution plan focused 
 74. Logging cleanup slice: migrated fusion/instance overlay + trade detail paths (`useFusionSelectionState`, `useFusionInstanceCreation`, `resolveFusionSelection`, `getCandidatesForIdWithVariants`, `useCalculatedCP`, `InstanceOverlay`, `TradeInstance`, `WantedDetails`, `MirrorManager`, `TradeProposal`, `UpdateForTradeModal`, `createMirrorEntry`) to scoped logger and removed stale console debug comment from `TradeDetails`.
 75. Logging cleanup slice: migrated tagging/auth/search hot-path logs (`categorizeVariantKeys`, `useHandleChangeTags`, `Login`, `CoordinateSelector`, `TrainerSearchBar`, `useDownloadImage`, `useMegaPokemonSelection`, `EvolutionShortcut`, `MapView`) to scoped logger with dev-gated debug/info output.
 76. Logging cleanup slice: migrated utility and sort diagnostics (`cacheHelpers`, `calculateBaseStats`, `deviceID`, `imageHelpers`, `db/init`, `useRecentPokemons`, `useNumberPokemons`) to scoped logger while preserving warning/error semantics.
-77. Logging cleanup slice: reduced raw `console.*` usage in `frontend/src` to logger-core sinks only (`utils/logger.ts` emit functions), with full `typecheck` + `351/351` unit + production build verification.
-78. P2.1 slice A: removed all explicit `any` usage from `features/variants/utils/createPokemonVariants.ts` (47 -> 0), aligned `PokemonVariant` typing with runtime `raid_boss/backgrounds` optionality, and verified with green `typecheck` + `351/351` unit + production build.
-79. P2.1 slice B: removed all explicit `any` usage from `features/instances/services/updatePokemonInstanceStatus.ts` (44 -> 0), tightened typed instance mutation paths, and verified with targeted unit coverage plus green `typecheck` + `351/351` unit + production build.
+77. Logging cleanup slice: reduced raw `console.*` usage in `frontend/src` to logger-core sinks only (`utils/logger.ts` emit functions), with full `typecheck` + `354/354` unit + production build verification.
+78. P2.1 slice A: removed all explicit `any` usage from `features/variants/utils/createPokemonVariants.ts` (47 -> 0), aligned `PokemonVariant` typing with runtime `raid_boss/backgrounds` optionality, and verified with green `typecheck` + `354/354` unit + production build.
+79. P2.1 slice B: removed all explicit `any` usage from `features/instances/services/updatePokemonInstanceStatus.ts` (44 -> 0), tightened typed instance mutation paths, and verified with targeted unit coverage plus green `typecheck` + `354/354` unit + production build.
+80. P2.1 slice C: removed all explicit `any` usage from `features/tags/utils/tagHelpers.ts` (33 -> 0), widened helper inputs to typed partial sources with deterministic defaults, eliminated mirror-entry cast usage in `createMirrorEntry.ts`, and verified with targeted + full green (`typecheck`, `354/354` unit, production build).
+81. P2.1 slice D: removed all explicit `any` usage from `pages/Pokemon/features/instances/components/Trade/MirrorManager.tsx` (37 -> 0), tightened mirror lookup/update typing, and added dedicated `MirrorManager` regression coverage (reuse/create/toggle flows) with green `typecheck` + `354/354` unit + production build.
+82. P2.2 slice A: extracted `TradeDetails` trade-proposal candidate/decision logic into `tradeDetailsHelpers.ts` (`prepareTradeCandidateSets`, `resolveTradeProposalDecision`), simplified `handleProposeTrade` orchestration, and added/expanded helper regression coverage for no-caught, needs-trade-selection, pending-trade exclusion, and proposal-ready payload flow (`366/366` unit tests green, plus green typecheck/build).
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
-2. P2.1 any-reduction campaign (slices A/B complete; next target `tagHelpers.ts`).
 - Pending:
-1. P2.1 any-reduction campaign (remaining files).
-2. P2.2 decompose large components.
-3. P2.3 tooling cleanup.
+1. P2.2 decompose large components.
+2. P2.3 tooling cleanup.
 
 ## Audit Snapshot (2026-02-17)
 
@@ -101,12 +102,12 @@ Repo parse against backlog claims:
 4. Explicit `any` hotspot counts for P2.1 priority files:
    - `createPokemonVariants.ts`: `0`
    - `updatePokemonInstanceStatus.ts`: `0`
-   - `tagHelpers.ts`: `33`
-   - `MirrorManager.tsx`: `37`
+   - `tagHelpers.ts`: `0`
+   - `MirrorManager.tsx`: `0`
 5. P2.2 decomposition targets remain oversized:
-   - `TradeDetails.tsx`: `527` LOC
-   - `VariantSearch.tsx`: `587` LOC
-   - `Pokemon.tsx`: `373` LOC
+   - `TradeDetails.tsx`: `555` LOC
+   - `VariantSearch.tsx`: `641` LOC
+   - `Pokemon.tsx`: `421` LOC
 
 ## Rules Of Execution
 
@@ -256,6 +257,8 @@ Repo parse against backlog claims:
 
 ### P2.1 - Any Reduction Campaign
 
+- Status: Done
+
 - Goal: reduce `any` usage in core data paths.
 - Priority files:
 1. `frontend/src/features/variants/utils/createPokemonVariants.ts`
@@ -319,4 +322,4 @@ Repo parse against backlog claims:
 
 ## Immediate Next Step
 
-Continue P2.1 `any`-reduction with `features/tags/utils/tagHelpers.ts` now that slices A/B are complete.
+Start P2.2 decomposition with `pages/Pokemon/features/instances/components/Trade/TradeDetails.tsx` now that P2.1 is complete.

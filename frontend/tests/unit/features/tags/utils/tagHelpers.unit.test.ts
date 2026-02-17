@@ -21,7 +21,7 @@ describe('tagHelpers', () => {
         gender: 'Female',
         friendship_level: 2,
         location_card: 'Seattle',
-      } as any,
+      },
       {
         name: 'Pikachu',
         form: null,
@@ -36,7 +36,7 @@ describe('tagHelpers', () => {
         type2_name: '',
         type_1_icon: '/images/types/electric.png',
         type_2_icon: '',
-      } as any
+      }
     );
 
     expect(item.instance_id).toBe('inst-1');
@@ -62,8 +62,8 @@ describe('tagHelpers', () => {
         mirror: false,
         pref_lucky: false,
         registered: false,
-      } as any,
-      {} as any
+      },
+      {}
     );
 
     expect(item.currentImage).toBe('/images/default_pokemon.png');
@@ -73,11 +73,10 @@ describe('tagHelpers', () => {
   });
 
   it('coerceToTagBuckets always includes caught and wanted buckets', () => {
+    const stubItem = buildTagItem('x-1', {}, {});
     const buckets = coerceToTagBuckets({
       custom: {
-        'x-1': {
-          instance_id: 'x-1',
-        } as any,
+        'x-1': stubItem,
       },
     });
 

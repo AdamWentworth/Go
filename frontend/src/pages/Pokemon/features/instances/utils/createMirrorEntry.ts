@@ -161,13 +161,14 @@ export const createMirrorEntry = (
   try {
     if (lists?.wanted && typeof lists.wanted === 'object') {
       const variantForTag = {
-        ...pokemon,
         variant_id,
+        pokemon_id,
+        pokedex_number: pokemon_id,
         currentImage:
           pokemon?.currentImage ?? pokemon?.image_url ?? '/images/default_pokemon.png',
         name: pokemon?.species_name ?? pokemon?.name,
       };
-      lists.wanted[newId] = buildTagItem(newId, newInstance as any, variantForTag as any);
+      lists.wanted[newId] = buildTagItem(newId, newInstance, variantForTag);
     }
   } catch {
     // no-op
