@@ -7,8 +7,10 @@ import { createScopedLogger } from '@/utils/logger';
 
 const log = createScopedLogger('calculateBaseStats');
 
+type StatsPokemon = Pick<BasePokemon, 'attack' | 'defense' | 'stamina' | 'name' | 'fusion' | 'megaEvolutions'>;
+
 export const calculateBaseStats = (
-  pokemon: BasePokemon,
+  pokemon: StatsPokemon,
   megaData: MegaData,
   fusionState?: FusionState
 ): BaseStats => {

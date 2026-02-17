@@ -4,14 +4,13 @@ import { createScopedLogger } from '@/utils/logger';
 import { createNewInstanceData } from '../utils/createNewInstanceData';
 import { updateRegistrationStatus } from '../utils/updateRegistrationStatus';
 import type { PokemonVariant } from '@/types/pokemonVariants';
-import type { InstanceStatus } from '@/types/instances';
-import type { Instances } from '@/types/instances';
+import type { InstanceStatus, Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
 const log = createScopedLogger('updatePokemonInstanceStatus');
 
 /**
- * Updates status flags for a Pokémon instance.
+ * Updates status flags for a Pokemon instance.
  * target may be an instance UUID or a variant_id (e.g. "0583-shiny").
  *
  * Returns the instance_id that was updated/created, or null on abort.
@@ -29,24 +28,30 @@ export function updatePokemonInstanceStatus(
   let instance: PokemonInstance | undefined;
 
   if (isUuid) {
-    instanceId  = target;
-    instance    = (instances as any)[instanceId];
-    variantKey  = instance?.variant_id ?? null;
+    instanceId = target;
+    instance = instances[instanceId];
+    variantKey = instance?.variant_id ?? null;
   } else {
-    variantKey  = target; // treating input as variant_id
+    variantKey = target; // treating input as variant_id
+
     // Try to reuse a placeholder of the same variant (baseline row)
-    for (const id in instances) {
-      const row = (instances as any)[id];
-      if (!row) continue;
-      if (row.variant_id === variantKey && !row.registered && !row.is_wanted && !row.is_for_trade && !row.is_caught) {
+    for (const [id, row] of Object.entries(instances)) {
+      if (
+        row.variant_id === variantKey &&
+        !row.registered &&
+        !row.is_wanted &&
+        !row.is_for_trade &&
+        !row.is_caught
+      ) {
         instanceId = id;
         break;
       }
     }
-    instance    = instanceId ? (instances as any)[instanceId] : undefined;
+
+    instance = instanceId ? instances[instanceId] : undefined;
   }
 
-  const variantData = variants.find(v => v.variant_id === variantKey) ?? null;
+  const variantData = variants.find((v) => v.variant_id === variantKey) ?? null;
   if (!variantData) {
     log.error('No variant for', variantKey);
     return null;
@@ -56,34 +61,38 @@ export function updatePokemonInstanceStatus(
     instanceId = generateUUID();
     const base = createNewInstanceData(variantData);
     base.instance_id = instanceId;
-    (instances as any)[instanceId] = base;
+    instances[instanceId] = base;
     instance = base;
+  }
+
+  if (!instance) {
+    log.error('No instance resolved for target', target);
+    return null;
   }
 
   // Derive some flags from variantKey
   const vkey = (variantKey ?? '').toLowerCase();
-  if ((instance as any).pokemon_id === 2301 || (instance as any).pokemon_id === 2302) {
-    (instance as any).purified = vkey.includes('default');
+  if (instance.pokemon_id === 2301 || instance.pokemon_id === 2302) {
+    instance.purified = vkey.includes('default');
   }
-  (instance as any).dynamax    = vkey.includes('dynamax');
-  (instance as any).gigantamax = vkey.includes('gigantamax');
+  instance.dynamax = vkey.includes('dynamax');
+  instance.gigantamax = vkey.includes('gigantamax');
 
   // Constraints for moving into Trade/Wanted
-  if (['Trade', 'Wanted'].includes(newStatus)) {
-    if (
-      (instance as any).lucky ||
-      (instance as any).shadow ||
-      (instance as any).is_mega ||
-      (instance as any).mega ||
-      [2270, 2271].includes((instance as any).pokemon_id) // fusions
-    ) {
+  if (newStatus === 'Trade' || newStatus === 'Wanted') {
+    const isFusionPokemon = [2270, 2271].includes(instance.pokemon_id);
+
+    if (instance.lucky || instance.shadow || instance.is_mega || instance.mega || isFusionPokemon) {
       alert(
         `Cannot move ${variantKey} to ${newStatus} as it is ${
-          (instance as any).lucky ? 'lucky'
-          : (instance as any).shadow ? 'shadow'
-          : ((instance as any).is_mega || (instance as any).mega) ? 'mega'
-          : 'a fusion Pokémon'
-        }.`
+          instance.lucky
+            ? 'lucky'
+            : instance.shadow
+              ? 'shadow'
+              : instance.is_mega || instance.mega
+                ? 'mega'
+                : 'a fusion Pokemon'
+        }.`,
       );
       log.debug('Update blocked due to special status');
       return instanceId;
@@ -92,59 +101,62 @@ export function updatePokemonInstanceStatus(
 
   switch (newStatus) {
     case 'Caught':
-      (instance as any).is_caught    = true;
-      (instance as any).is_for_trade = false;
-      (instance as any).is_wanted    = false;
-      (instance as any).registered   = true;
+      instance.is_caught = true;
+      instance.is_for_trade = false;
+      instance.is_wanted = false;
+      instance.registered = true;
       break;
 
     case 'Trade':
-      (instance as any).is_caught    = true;     // caught but flagged for trade
-      (instance as any).is_for_trade = true;
-      (instance as any).is_wanted    = false;
-      (instance as any).registered   = true;
+      instance.is_caught = true; // caught but flagged for trade
+      instance.is_for_trade = true;
+      instance.is_wanted = false;
+      instance.registered = true;
       break;
 
     case 'Wanted':
-      if ((instance as any).is_caught) {
+      if (instance.is_caught) {
         const newId = generateUUID();
-        (instances as any)[newId] = {
-          ...(instance as any),
+        const wantedClone: PokemonInstance = {
+          ...instance,
           instance_id: newId,
           is_wanted: true,
           is_caught: false,
           is_for_trade: false,
-          registered: true,       // wanted entries are considered registered for tags logic
-          last_update: new Date().toISOString(),
+          registered: true, // wanted entries are considered registered for tags logic
+          last_update: Date.now(),
         };
-        updateRegistrationStatus((instances as any)[newId], instances);
-        updateRegistrationStatus(instance as any, instances);
+        instances[newId] = wantedClone;
+        updateRegistrationStatus(wantedClone, instances);
+        updateRegistrationStatus(instance, instances);
         return newId;
-      } else {
-        (instance as any).is_wanted  = true;
-        const anyCaught = Object.values(instances).some(
-          (d: any) => d?.variant_id === variantKey && d.is_caught
-        );
-        (instance as any).registered =
-          (instance as any).is_caught || (instance as any).is_for_trade || (instance as any).is_wanted || anyCaught;
-        return instanceId!;
       }
 
+      instance.is_wanted = true;
+      {
+        const anyCaught = Object.values(instances).some(
+          (d) => d.variant_id === variantKey && d.is_caught,
+        );
+        instance.registered =
+          instance.is_caught || instance.is_for_trade || instance.is_wanted || anyCaught;
+      }
+      return instanceId;
+
     case 'Missing': // baseline / not registered
-      (instance as any).is_caught    = false;
-      (instance as any).is_for_trade = false;
-      (instance as any).is_wanted    = false;
-      (instance as any).registered   = false;
+      instance.is_caught = false;
+      instance.is_for_trade = false;
+      instance.is_wanted = false;
+      instance.registered = false;
       break;
   }
 
-  // Registered when any of the “visible” states are set
-  (instance as any).registered =
-    (instance as any).is_caught ||
-    (instance as any).is_for_trade ||
-    (instance as any).is_wanted ||
-    !!(instance as any).registered;
+  // Registered when any of the "visible" states are set
+  instance.registered =
+    instance.is_caught ||
+    instance.is_for_trade ||
+    instance.is_wanted ||
+    !!instance.registered;
 
-  updateRegistrationStatus(instance as any, instances);
-  return instanceId!;
+  updateRegistrationStatus(instance, instances);
+  return instanceId;
 }

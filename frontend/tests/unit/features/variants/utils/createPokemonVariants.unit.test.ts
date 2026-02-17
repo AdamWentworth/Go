@@ -28,7 +28,7 @@ describe('createPokemonVariants (unit)', () => {
 
   it('assigns non-empty display names for all generated variants', () => {
     const variants = createPokemonVariants(samplePokemons);
-    const names = variants.map((v) => (v as any).name);
+    const names = variants.map((v) => v.name);
     expect(names.every((n) => typeof n === 'string' && n.trim().length > 0)).toBe(true);
   });
 

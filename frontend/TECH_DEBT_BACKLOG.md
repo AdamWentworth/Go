@@ -82,10 +82,13 @@ This backlog converts the current frontend audit into an execution plan focused 
 75. Logging cleanup slice: migrated tagging/auth/search hot-path logs (`categorizeVariantKeys`, `useHandleChangeTags`, `Login`, `CoordinateSelector`, `TrainerSearchBar`, `useDownloadImage`, `useMegaPokemonSelection`, `EvolutionShortcut`, `MapView`) to scoped logger with dev-gated debug/info output.
 76. Logging cleanup slice: migrated utility and sort diagnostics (`cacheHelpers`, `calculateBaseStats`, `deviceID`, `imageHelpers`, `db/init`, `useRecentPokemons`, `useNumberPokemons`) to scoped logger while preserving warning/error semantics.
 77. Logging cleanup slice: reduced raw `console.*` usage in `frontend/src` to logger-core sinks only (`utils/logger.ts` emit functions), with full `typecheck` + `351/351` unit + production build verification.
+78. P2.1 slice A: removed all explicit `any` usage from `features/variants/utils/createPokemonVariants.ts` (47 -> 0), aligned `PokemonVariant` typing with runtime `raid_boss/backgrounds` optionality, and verified with green `typecheck` + `351/351` unit + production build.
+79. P2.1 slice B: removed all explicit `any` usage from `features/instances/services/updatePokemonInstanceStatus.ts` (44 -> 0), tightened typed instance mutation paths, and verified with targeted unit coverage plus green `typecheck` + `351/351` unit + production build.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
+2. P2.1 any-reduction campaign (slices A/B complete; next target `tagHelpers.ts`).
 - Pending:
-1. P2.1 any-reduction campaign.
+1. P2.1 any-reduction campaign (remaining files).
 2. P2.2 decompose large components.
 3. P2.3 tooling cleanup.
 
@@ -95,11 +98,11 @@ Repo parse against backlog claims:
 1. JS/JSX migration status: `0` JS/JSX files remain under `frontend/src` (accurate).
 2. Canonical naming drift: `ownershipData` references in `frontend/src` = `0`; legacy `pokemonKey` references in `frontend/src` = `0`.
 3. Logging policy drift: raw `console.*` references in `frontend/src` = `4` (all are intentional sink calls inside `utils/logger.ts`).
-4. `any` hotspot counts for P2.1 priority files:
-   - `createPokemonVariants.ts`: `47`
-   - `updatePokemonInstanceStatus.ts`: `44`
+4. Explicit `any` hotspot counts for P2.1 priority files:
+   - `createPokemonVariants.ts`: `0`
+   - `updatePokemonInstanceStatus.ts`: `0`
    - `tagHelpers.ts`: `33`
-   - `MirrorManager.tsx`: `38`
+   - `MirrorManager.tsx`: `37`
 5. P2.2 decomposition targets remain oversized:
    - `TradeDetails.tsx`: `527` LOC
    - `VariantSearch.tsx`: `587` LOC
@@ -316,4 +319,4 @@ Repo parse against backlog claims:
 
 ## Immediate Next Step
 
-Start P2.1 `any`-reduction in the four priority files now that canonical naming + TS migration + logging policy cleanup are complete.
+Continue P2.1 `any`-reduction with `features/tags/utils/tagHelpers.ts` now that slices A/B are complete.

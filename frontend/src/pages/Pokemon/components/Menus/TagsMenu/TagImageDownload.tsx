@@ -37,7 +37,7 @@ const TagImageDownload = forwardRef<TagImageDownloadRef, TagImageDownloadProps>(
         if (!Number.isNaN(cardId)) {
           const matchingVariant = variants.find(v => v.pokemon_id === pokemon.pokemon_id);
           if (matchingVariant) {
-            locationBackground = matchingVariant.backgrounds.find(bg => bg.background_id === cardId);
+            locationBackground = matchingVariant.backgrounds?.find(bg => bg.background_id === cardId);
           }
         }
       }
