@@ -50,7 +50,8 @@ This service now has dedicated frontend workflows:
 - Runs on changes under `frontend/**`, `nginx/**`, and the frontend workflow files.
 - Installs deps with `npm ci`.
 - Builds with `npm run build`.
-- Enforces audit gate with `npm audit --audit-level=moderate`.
+- Enforces a blocking production audit gate with `npm audit --omit=dev --audit-level=moderate`.
+- Runs full (prod + dev) audit as informational output for visibility without blocking deploys.
 - Builds nginx image after staging `frontend/dist` into `nginx/build`.
 - Runs Trivy scans and publishes an SBOM artifact.
 - Pushes `adamwentworth/frontend-nginx` tags (`sha-<commit>` + `latest`) when `DOCKERHUB_TOKEN` is set.

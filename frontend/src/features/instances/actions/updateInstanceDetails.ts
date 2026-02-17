@@ -124,7 +124,7 @@ export function updateInstanceDetails(
     }
 
     // Dev logging
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       log.debug('patches saved', {
         timestamp,
         updatedKeys,

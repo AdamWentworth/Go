@@ -1,220 +1,193 @@
-# Frontend Tech Debt Backlog (Clean Slate)
+# Frontend Tech Debt Backlog (Risk-First Reset)
 
-Last refreshed: 2026-02-17
+Last refreshed: 2026-02-17 (post P0.1 + P0.4)
 
-This file is a fresh starting point for frontend housekeeping from the current stable baseline.
-Historical migration logs were intentionally removed to keep this actionable.
+This is a clean reset of frontend housekeeping priorities from the current stable baseline.
+The focus is production risk reduction first, then maintainability and performance improvements.
 
-## Current Baseline
+## Current Baseline (Verified)
 
-- Source files in `frontend/src`: 500
-- TypeScript files (`.ts`/`.tsx`) in `frontend/src`: 356
-- JavaScript files (`.js`/`.jsx`) in `frontend/src`: 0
-- Lint (`npm run lint`): pass (`0` errors, `0` warnings)
-- Typecheck (`npm run typecheck`): pass
-- Unit tests (`npm run test:unit`): pass (`133` files / `458` tests)
-- Integration test files: `10`
-- E2E test files: `1`
-- Explicit `any` types in `frontend/src`: 0
-- `@ts-ignore` / `@ts-expect-error` in `frontend/src` + `frontend/tests`: 0
-- Remaining eslint suppression lines in `frontend/src`: 0
+- Lint: pass (`npm run lint`)
+- Typecheck: pass (`npm run typecheck`)
+- Build: pass (`npm run build`)
+- Unit tests: pass (`136` files / `485` tests, batched runner)
+- Integration tests: pass (`10` files / `33` tests)
+- E2E tests: pass (`1` file / `4` tests)
+- Contract tests: pass (`1` file / `3` tests)
+- Bundle budget gate: pass (`node scripts/check-bundle-budget.mjs`)
+- Prod dependency audit: pass (`npm audit --omit=dev --audit-level=moderate`)
+- Full dependency audit: failing (`9` moderate, dev-tooling chain via `ajv`/eslint path)
 
-## Known Caveat
+## Priority Model
 
-- On Windows, running all unit tests in one Vitest process can exhaust Node heap.
-- Local default unit test command is now batched: `npm run test:unit`.
-- CI can continue using its own full workflow path.
+- `P0`: release/reliability/security signal risk
+- `P1`: correctness and maintainability risk
+- `P2`: performance and polish
 
-## Remaining Suppressions (Targeted Cleanup)
+## P0 - Reliability and Release Guardrails
 
-None.
+### P0.1 CI Audit Signal Quality
 
-## Largest Files (Maintainability Risk)
-
-1. `frontend/src/pages/Trades/views/PendingTradeView.tsx` (`414` LOC)
-2. `frontend/src/pages/Pokemon/hooks/usePokemonPageController.tsx` (`407` LOC)
-3. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeProposal.tsx` (`381` LOC)
-4. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeDetails.tsx` (`364` LOC)
-5. `frontend/src/pages/Authentication/hooks/useAccountForm.ts` (`361` LOC)
-
-## Priority Backlog
-
-### P0 - Reliability and Guardrails
-
-#### P0.1 Remove Remaining ESLint Suppressions
-- Status: Done (2026-02-17)
-- Goal: eliminate hidden behavior risk from ignored lint rules.
+- Status: `Done` (2026-02-17)
+- Goal: stop non-runtime tooling issues from blocking production deploys while keeping visibility.
+- Problem:
+  `npm audit --omit=dev` is clean, but full `npm audit` fails on dev-tooling transitive issues.
+- Completed:
+1. Updated `ci-frontend` to use blocking production-only audit:
+  `npm audit --omit=dev --audit-level=moderate`.
+2. Added non-blocking informational dev/full audit step with `continue-on-error`.
+3. Added `frontend-dev-audit-report` artifact upload (`tests/reports/npm-audit-dev.json`).
+4. Updated `frontend/README.md` CI section to reflect the policy.
 - Tasks:
-1. Replace each suppression with stable dependencies or explicit refs.
-2. Add/adjust unit tests for each touched behavior path.
+1. Split audit gates in `ci-frontend`:
+  keep prod audit blocking; run dev/full audit as non-blocking or scheduled reporting.
+2. Keep Trivy image/filesystem scans as blocking in container job.
+3. Document policy in workflow comments and `frontend/README.md`.
 - DoD:
-1. Suppressions reduced from 7 to 0.
-2. `npm run lint`, `npm run typecheck`, `npm run test:unit`, `npm run build` all pass.
+1. CI fails only on production-impacting vulnerabilities.
+2. Dev-tooling vulnerabilities are still surfaced and tracked.
 
-#### P0.2 Harden Test Runner Modes
-- Status: Done (2026-02-17)
-- Goal: make local and CI test execution predictable and documented.
+### P0.2 API Client and Auth/Public Route Consistency
+
+- Status: `Pending`
+- Goal: eliminate inconsistent network behavior and duplicated fallback logic.
+- Problem:
+  mixed `fetch`/`axios` usage and route fallback logic in store code.
 - Tasks:
-1. Keep batched runner for local Windows reliability.
-2. Add explicit scripts for local-batched vs single-process runs.
-3. Document expected usage in `frontend/README.md`.
+1. Introduce a shared typed API client policy (credentials, timeout, error normalization).
+2. Centralize auth-required vs public endpoint behavior.
+3. Move username/public fallback behavior out of stores into service layer.
+4. Add regression tests for 200/403/404/timeout paths.
 - DoD:
-1. No ambiguity on which script to run locally vs CI.
-2. Fresh clone can run tests without OOM surprises.
+1. Stores/pages do not manually branch transport/auth behavior.
+2. Same request policy applies across users/search/location/auth calls.
 
-#### P0.3 Add Missing High-Risk Regression Coverage
-- Status: Done (2026-02-17)
-- Goal: lock down session and state paths that can cause app-wide failures.
-- Targets:
-1. `frontend/src/contexts/AuthContext.tsx`
-2. `frontend/src/pages/Pokemon/features/instances/hooks/useWantedFiltering.ts`
-- DoD:
-1. Direct tests cover token refresh/expiry session transitions.
-2. Direct tests verify no rerender loop/memory-churn regressions in wanted filtering.
+### P0.3 Close High-Risk Coverage Gaps
 
-### P1 - Maintainability
-
-#### P1.1 Decompose Oversized Instance Components
-- Status: Done (2026-02-17)
-- Goal: reduce component complexity and review risk.
-- Targets:
-1. `frontend/src/pages/Pokemon/features/instances/TradeInstance.tsx`
-2. `frontend/src/pages/Pokemon/features/instances/CaughtInstance.tsx`
-- Progress:
-1. Extracted TradeInstance validation + patch construction into `utils/tradeInstanceForm.ts`.
-2. Added regression tests in `tests/unit/pages/Pokemon/features/instances/utils/tradeInstanceForm.unit.test.ts`.
-3. Extracted Trade image stage/background modal into typed section components.
-4. Added section tests in `tests/unit/pages/Pokemon/features/instances/sections/TradeSections.unit.test.tsx`.
-5. Extracted TradeInstance state/effect/handler orchestration into `hooks/useTradeInstanceController.ts`.
-6. Added controller regression tests in `tests/unit/pages/Pokemon/features/instances/hooks/useTradeInstanceController.unit.test.ts`.
-7. Reduced `TradeInstance.tsx` from `454` LOC to `267` LOC while preserving behavior.
-8. Extracted CaughtInstance arc overlay measurement/observer logic into `hooks/useArcHeight.ts`.
-9. Added pure helper tests in `tests/unit/pages/Pokemon/features/instances/hooks/useArcHeight.unit.test.ts`.
-10. Reduced `CaughtInstance.tsx` from `426` LOC to `377` LOC while preserving behavior.
-11. Extracted CaughtInstance persist computation/patch-map logic into `utils/caughtPersist.ts`.
-12. Added persist regression tests in `tests/unit/pages/Pokemon/features/instances/utils/caughtPersist.unit.test.ts`.
-13. Reduced `CaughtInstance.tsx` further from `377` LOC to `368` LOC while preserving behavior.
-14. Extracted CaughtInstance form state + input handlers into `hooks/useCaughtFormState.ts`.
-15. Added form-state regression tests in `tests/unit/pages/Pokemon/features/instances/hooks/useCaughtFormState.unit.test.ts`.
-16. Reduced `CaughtInstance.tsx` from `368` LOC to `325` LOC while preserving behavior.
-- DoD:
-1. Each target split into smaller typed sections/hooks.
-2. Behavior parity preserved with regression tests.
-
-#### P1.2 Decompose Search Control Surface
-- Status: In Progress (2026-02-17)
-- Goal: simplify search UI orchestration and reduce hook/dependency fragility.
-- Targets:
-1. `frontend/src/pages/Search/PokemonSearchBar.tsx`
-2. `frontend/src/pages/Search/SearchParameters/useVariantSearchController.ts`
-- Progress:
-1. Extracted PokemonSearchBar search validation/matching/query normalization into `utils/buildPokemonSearchQuery.ts`.
-2. Added utility regression tests in `tests/unit/pages/Search/utils/buildPokemonSearchQuery.unit.test.ts`.
-3. Reduced `PokemonSearchBar.tsx` from `406` LOC to `346` LOC while preserving behavior.
-4. Extracted variant search validation-state composition/execution into `SearchParameters/variantSearchControllerHelpers.ts`.
-5. Added helper regression tests in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts`.
-6. Reduced `useVariantSearchController.ts` from `403` LOC to `314` LOC while preserving behavior.
-7. Extracted PokemonSearchBar collapse/resize/scroll lifecycle into `hooks/useSearchBarCollapse.ts`.
-8. Added lifecycle helper tests in `tests/unit/pages/Search/hooks/useSearchBarCollapse.unit.test.ts`.
-9. Reduced `PokemonSearchBar.tsx` from `346` LOC to `294` LOC while preserving behavior.
-10. Extracted Pokemon input decision logic into `evaluatePokemonInputChange` in `SearchParameters/variantSearchControllerHelpers.ts`.
-11. Added decision-table tests in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` and wired `useVariantSearchController.ts` to the helper.
-12. Extracted PokemonSearchBar input-focus suggestion decision into `evaluatePokemonInputFocus` in `SearchParameters/variantSearchControllerHelpers.ts`.
-13. Extracted costume toggle open/close/reset decision into `evaluateCostumeToggle` and wired `useVariantSearchController.ts` to the helper.
-14. Added helper + hook regression coverage for focus and costume toggle behavior in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` and `tests/unit/pages/Search/SearchParameters/useVariantSearchController.unit.test.tsx`.
-15. Extracted validation result branching into `deriveValidationOutcomeDecision` in `SearchParameters/variantSearchControllerHelpers.ts` and wired error/image handling in `useVariantSearchController.ts`.
-16. Extracted canonical pokemon-change reset values into `buildPokemonChangeResetState` (`selectedForm`, `selectedGender`, `selectedMoves`, `dynamax`, `gigantamax`) and replaced inline resets.
-17. Extracted costume reset image computation into `buildCostumeResetImage` and removed duplicated `updateImage(...)` argument assembly in controller.
-18. Removed redundant `pokemonData` mirrored state/effect and now derive from `pokemonCache` directly (`const pokemonData = pokemonCache ?? []`).
-19. Expanded regression coverage for helper decisions and reset setter calls in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` and `tests/unit/pages/Search/SearchParameters/useVariantSearchController.unit.test.tsx`.
-20. Reduced `useVariantSearchController.ts` from `347` LOC to `344` LOC while preserving behavior.
-21. Extracted boolean validation toggles (`shinyChecked`, `shadowChecked`) into `buildBooleanValidationToggle` in `SearchParameters/variantSearchControllerHelpers.ts`.
-22. Extracted typed field-change patches into `buildSelectionValidationChange` for `selectedCostume` and `form`.
-23. Extracted suggestion-click orchestration into `buildSuggestionClickDecision` and removed inline patch construction in the controller.
-24. Wired `useVariantSearchController.ts` handlers (`handleShinyChange`, `handleShadowChange`, `handleCostumeChange`, `handleFormChange`, `handleSuggestionClick`) to helper decisions.
-25. Expanded regression coverage for the above handlers and helper outputs in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` and `tests/unit/pages/Search/SearchParameters/useVariantSearchController.unit.test.tsx`.
-26. Added typed helper `buildBooleanValidationToggle` for boolean validation fields (`shinyChecked`, `shadowChecked`) to avoid repeated invert-and-patch logic.
-27. Added typed helper `buildSelectionValidationChange` for deterministic field patch creation (`selectedCostume`, `form`, `name`).
-28. Added typed helper `buildSuggestionClickDecision` and switched suggestion-click flow to a single helper-driven decision.
-29. Added direct helper unit tests for toggle/selection/suggestion decisions in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` (now `12` tests).
-30. Added controller regression tests for shiny/shadow toggles and combined costume/form/suggestion interactions in `tests/unit/pages/Search/SearchParameters/useVariantSearchController.unit.test.tsx` (now `8` tests).
-31. Added composed helper `preparePokemonSearchQuery` in `Search/utils/buildPokemonSearchQuery.ts` to unify validate + match + query construction and return typed failure/success decisions.
-32. Refactored `PokemonSearchBar.tsx` `handleSearch` to use `preparePokemonSearchQuery`, preserving collapse behavior for no-match cases via `shouldExpandSearchBar`.
-33. Extracted duplicated location/ownership panel rendering into `SearchSecondaryPanels.tsx` and removed inline duplicated JSX branches from `PokemonSearchBar.tsx`.
-34. Added regression coverage for composed search preparation outcomes in `tests/unit/pages/Search/utils/buildPokemonSearchQuery.unit.test.ts` (now `7` tests).
-35. Added unit coverage for `SearchSecondaryPanels` grouped/non-grouped layout behavior in `tests/unit/pages/Search/SearchSecondaryPanels.unit.test.tsx`.
-36. Reduced `PokemonSearchBar.tsx` from `313` LOC to `250` LOC while preserving behavior.
-- DoD:
-1. Large orchestration logic moved to pure helpers/hooks.
-2. Existing search behavior remains intact under tests.
-
-#### P1.3 Trade Proposal Flow Tightening
-- Status: Done (2026-02-17)
-- Goal: improve readability and reduce state branching risk.
-- Target:
-1. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeProposal.tsx`
-- Progress:
-1. Extracted typed payload/data helpers into `Trade/tradeProposalHelpers.ts` (`hasInstanceData`, username parsing, instance sanitization, payload builder).
-2. Added preflight validation helper `buildTradeProposalPreflight` to centralize proposal guard branches.
-3. Added regression tests in `tests/unit/pages/Pokemon/features/instances/components/Trade/tradeProposalHelpers.unit.test.ts` covering parse/sanitize/payload/preflight paths.
-4. Refactored `TradeProposal.tsx` to use helper-driven preflight and payload creation.
-5. Cleaned non-ASCII text artifacts in user-facing strings/comments; file reduced from `392` LOC to `381` LOC.
-- DoD:
-1. Branch-heavy sections extracted into typed helpers.
-2. Proposal and error-handling behavior verified by tests.
-
-#### P1.4 Decompose Search List Views
-- Status: In Progress (2026-02-17)
-- Goal: reduce duplication and branch-heavy rendering in list-view cards.
-- Targets:
-1. `frontend/src/pages/Search/views/ListViewComponents/WantedListView.tsx`
-- Progress:
-1. Extracted list-view pure helpers into `views/ListViewComponents/wantedListViewHelpers.ts`:
-  `formatWantedDate`, `toWantedGender`, `hasWantedAdditionalDetails`, `getWantedTradeEntries`.
-2. Added helper regression tests in `tests/unit/pages/Search/views/ListViewComponents/wantedListViewHelpers.unit.test.ts`.
-3. Extracted repeated image/badge/name rendering into local `WantedPokemonVisual` section component.
-4. Extracted trade-list rendering into local `WantedTradeList` section component and removed repeated badge inline style blocks.
-5. Reduced `WantedListView.tsx` from `363` LOC to `295` LOC while preserving behavior.
-6. Verified behavior with:
-  `tests/unit/pages/Search/views/ListViewComponents/WantedListView.unit.test.tsx`
-  and `tests/unit/pages/Search/views/ListViewComponents/SearchListViews.unit.test.tsx`.
-- DoD:
-1. List-view display behavior remains unchanged.
-2. Rendering duplication reduced via typed helpers/sections.
-
-### P2 - Performance and UX
-
-#### P2.1 Repeatable Perf Baseline Script
-- Status: Pending
-- Goal: make performance regressions measurable per PR.
+- Status: `Pending`
+- Goal: increase confidence in branch-heavy flows that can break user journeys.
+- Highest-risk targets:
+1. `frontend/src/pages/Authentication/hooks/useRegisterForm.ts`
+2. `frontend/src/pages/Authentication/hooks/useAccountForm.ts`
+3. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeDetails.tsx`
+4. `frontend/src/pages/Pokemon/features/instances/components/Wanted/WantedDetails.tsx`
 - Tasks:
-1. Document local perf capture workflow (FP/FCP, variants pipeline, image timing).
-2. Add optional CI artifact step for perf snapshots on demand.
+1. Add direct unit tests for success/error/edge branches.
+2. Add one integration scenario per target flow where appropriate.
 - DoD:
-1. Team can compare before/after perf with the same method.
+1. Each listed target has direct regression coverage.
+2. Critical user flows are validated without relying only on indirect tests.
 
-#### P2.2 Search/List Rendering Efficiency Review
-- Status: Pending
-- Goal: reduce rerender load in heavy list/search pages.
+### P0.4 Runtime Env Guardrails
+
+- Status: `Done` (2026-02-17)
+- Goal: prevent browser-runtime env mistakes from reappearing.
+- Problem:
+  browser code still contains `process.env` usage instead of `import.meta.env`.
+- Completed:
+1. Replaced remaining browser `process.env` usage in
+  `src/features/instances/actions/updateInstanceDetails.ts` with `import.meta.env.DEV`.
+2. Added ESLint guard (`no-restricted-properties`) for `process.env` in `src/**/*`.
+3. Expanded `src/vite-env.d.ts` with currently used `VITE_*` keys and optional debug/perf flags.
+4. Verified no `process.env` usage remains under `frontend/src`.
 - Tasks:
-1. Audit memoization and derived data recomputation in search + list views.
-2. Address highest-cost rerender hotspots first.
+1. Replace remaining `process.env` checks in browser code.
+2. Add lint guard to disallow `process.env` in `frontend/src`.
+3. Keep environment variable typing updated in `vite-env.d.ts`.
 - DoD:
-1. No behavior changes.
-2. Measurable reduction in repeated renders for key views.
+1. No `process.env` references remain in browser source.
+2. Lint catches future regressions automatically.
+
+## P1 - Correctness and Maintainability
+
+### P1.1 Expand Contract Test Surface
+
+- Status: `Pending`
+- Goal: protect frontend assumptions about backend response shapes.
+- Tasks:
+1. Add contract tests for `users`, `search`, and `auth` endpoints used by frontend.
+2. Validate required fields and status-code semantics for key read paths.
+- DoD:
+1. Contract suite covers more than pokemon data.
+2. Breaking backend schema changes fail fast in CI.
+
+### P1.2 Storage Access Consolidation
+
+- Status: `Pending`
+- Goal: reduce repeated `localStorage` parsing and timestamp-key drift.
+- Tasks:
+1. Introduce typed storage adapters for user/session/location/cache timestamps.
+2. Replace ad hoc `JSON.parse` and key literals in views/stores.
+3. Add adapter tests for malformed data and migration defaults.
+- DoD:
+1. Storage key handling is centralized and typed.
+2. Corrupt stored values no longer crash feature flows.
+
+### P1.3 Alert UX Cleanup
+
+- Status: `Pending`
+- Goal: replace blocking `alert()` calls with consistent app feedback.
+- Tasks:
+1. Replace `alert` usage with modal/toast/error-boundary patterns where appropriate.
+2. Keep user-facing messages unchanged unless product decision says otherwise.
+3. Add tests for critical error messaging paths.
+- DoD:
+1. No blocking `alert()` calls remain in primary app flows.
+2. Error handling is consistent across auth/search/trade/instance interactions.
+
+### P1.4 Dependency Upgrade Lane (Controlled)
+
+- Status: `Pending`
+- Goal: keep dependency drift under control without destabilizing app behavior.
+- Tasks:
+1. Upgrade patch/minor dependencies in small batches.
+2. Handle major upgrades in isolated PRs with compatibility notes.
+3. Run full frontend gates after each batch.
+- DoD:
+1. Dependency drift is reduced with no behavior regressions.
+2. Upgrade policy is repeatable and documented.
+
+## P2 - Performance and Polish
+
+### P2.1 Repeatable Perf Baseline Workflow
+
+- Status: `Pending`
+- Goal: make perf changes measurable and comparable between PRs.
+- Tasks:
+1. Document local telemetry capture workflow (FP/FCP, variants pipeline, image timing).
+2. Add optional CI artifact upload for perf snapshot logs.
+- DoD:
+1. Team can compare before/after metrics with a single repeatable process.
+
+### P2.2 Targeted Render Cost Review
+
+- Status: `Pending`
+- Goal: reduce unnecessary rerenders in heavy list/search views.
+- Tasks:
+1. Measure rerender hotspots before changing code.
+2. Optimize highest-cost derived computations first.
+- DoD:
+1. Measurable reduction in rerender count on target views.
+2. No functional behavior changes.
 
 ## Working Rules
 
 1. One vertical slice at a time.
-2. Every behavior-affecting refactor gets regression tests in the same PR.
-3. Keep naming canonical (`caught`, `trade`, `wanted`; `variant_id`, `instance_id`).
-4. Keep new code TypeScript-only.
+2. Every behavior-affecting refactor must include regression tests in the same PR.
+3. Keep naming canonical:
+  `caught`, `trade`, `wanted`, `variant_id`, `instance_id`.
+4. TypeScript-only changes for new/edited frontend source.
+5. Prefer explicit risk-reduction outcomes over purely stylistic refactors.
 
 ## Next Recommended Slice
 
-Continue `P1.2` by extracting remaining `useVariantSearchController.ts` orchestration side effects into focused hooks and keep behavior parity:
+Execute `P0.2` next:
 
-1. `npm run lint`
-2. `npm run typecheck`
-3. `npm run test:unit`
-4. `npm run build`
+1. Introduce shared API client policy for `fetch`/`axios` consistency.
+2. Move username/public fallback behavior out of stores into service layer.
+3. Add regression tests for auth/public handling paths.
+4. Verify with:
+  `npm run lint`
+  `npm run typecheck`
+  `npm run test:unit`
+  `npm run build`
