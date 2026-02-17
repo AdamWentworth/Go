@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 
-import MovesSearch, { type SelectedMoves } from './VariantComponents/MovesSearch';
+import type { SelectedMoves } from './VariantComponents/MovesSearch';
 import validatePokemon from '../utils/validatePokemon';
 import { updateImage } from '../utils/updateImage';
 import { formatCostumeName } from '../utils/formatCostumeName';
 import useErrorHandler from '../hooks/useErrorHandler';
-import Gender from '@/components/pokemonComponents/Gender';
-import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
 import { formatForm } from '@/utils/formattingHelpers';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import {
@@ -21,16 +19,11 @@ import {
 } from './variantSearchHelpers';
 import VariantSearchInput from './VariantSearchInput';
 import VariantSearchTogglePanel from './VariantSearchTogglePanel';
+import VariantSearchPreviewPanel from './VariantSearchPreviewPanel';
+import VariantSearchBackgroundOverlay, {
+  type BackgroundSelection,
+} from './VariantSearchBackgroundOverlay';
 import './VariantSearch.css';
-
-type BackgroundSelection = {
-  background_id: number;
-  image_url: string;
-  name: string;
-  location: string;
-  date: string;
-  costume_id?: number;
-};
 
 type VariantSearchProps = {
   pokemon: string;
@@ -414,120 +407,32 @@ const VariantSearch: React.FC<VariantSearchProps> = ({
           />
         </div>
 
-        <div className="pokemon-variant-image">
-          {selectedBackground && (
-            <div
-              className="background-image"
-              style={{ backgroundImage: `url(${selectedBackground.image_url})` }}
-            />
-          )}
-          {imageUrl && !imageError ? (
-            <img
-              src={imageUrl}
-              alt={pokemon}
-              onError={handleImageError}
-              className="pokemon-image"
-            />
-          ) : imageError ? (
-            <div className="pokemon-variant-image-error">This variant doesn't exist.</div>
-          ) : null}
-
-          {dynamax && (
-            <img
-              src="/images/dynamax.png"
-              alt="Dynamax Badge"
-              className="max-badge"
-            />
-          )}
-          {gigantamax && (
-            <img
-              src="/images/gigantamax.png"
-              alt="Gigantamax Badge"
-              className="max-badge"
-            />
-          )}
-        </div>
-
-        <div className="pokemon-moves-gender-section">
-          <MovesSearch
-            pokemon={currentPokemonData}
-            selectedMoves={selectedMoves}
-            onMovesChange={handleMovesChange}
-          />
-
-          <div className="gender-background-row">
-            <Gender
-              genderRate={currentPokemonData?.gender_rate}
-              editMode={true}
-              searchMode={true}
-              onGenderChange={handleGenderChange}
-            />
-            {backgroundAllowed && (
-              <div className="background-button-container">
-                <img
-                  src="/images/location.png"
-                  alt="Background Selector"
-                  className="background-button"
-                  onClick={() => setShowBackgroundOverlay(true)}
-                />
-              </div>
-            )}
-
-            {canDynamax && (
-              <img
-                onClick={toggleMax}
-                src={
-                  gigantamax
-                    ? '/images/gigantamax-icon.png'
-                    : dynamax
-                      ? '/images/dynamax-icon.png'
-                      : '/images/dynamax-icon.png'
-                }
-                alt={
-                  gigantamax
-                    ? 'Gigantamax'
-                    : dynamax
-                      ? 'Dynamax'
-                      : 'Dynamax (Desaturated)'
-                }
-                className={`max-icon ${!gigantamax && !dynamax ? 'desaturated' : ''}`}
-                title={
-                  gigantamax
-                    ? 'Gigantamax'
-                    : dynamax
-                      ? 'Dynamax'
-                      : 'Dynamax (Desaturated)'
-                }
-              />
-            )}
-          </div>
-        </div>
+        <VariantSearchPreviewPanel
+          selectedBackground={selectedBackground}
+          imageUrl={imageUrl}
+          imageError={imageError}
+          pokemon={pokemon}
+          onImageError={handleImageError}
+          dynamax={dynamax}
+          gigantamax={gigantamax}
+          currentPokemonData={currentPokemonData}
+          selectedMoves={selectedMoves}
+          onMovesChange={handleMovesChange}
+          onGenderChange={handleGenderChange}
+          backgroundAllowed={backgroundAllowed}
+          onOpenBackgroundOverlay={() => setShowBackgroundOverlay(true)}
+          canDynamax={canDynamax}
+          onToggleMax={toggleMax}
+        />
       </div>
 
-      {showBackgroundOverlay && (
-        <div
-          className="background-overlay"
-          onClick={() => setShowBackgroundOverlay(false)}
-        >
-          <div
-            className="background-overlay-content"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="close-button"
-              onClick={() => setShowBackgroundOverlay(false)}
-            >
-              Close
-            </button>
-            <BackgroundLocationCard
-              pokemon={currentPokemonData ?? {}}
-              onSelectBackground={handleBackgroundChange}
-              selectedCostumeId={selectedCostumeId}
-            />
-          </div>
-        </div>
-      )}
+      <VariantSearchBackgroundOverlay
+        isOpen={showBackgroundOverlay}
+        onClose={() => setShowBackgroundOverlay(false)}
+        currentPokemonData={currentPokemonData}
+        onSelectBackground={handleBackgroundChange}
+        selectedCostumeId={selectedCostumeId}
+      />
     </div>
   );
 };
