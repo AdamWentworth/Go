@@ -3,10 +3,8 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import './Pokemon.css';
 
 import HeaderUI from './components/Header/HeaderUI';
-import PokemonMenu from './components/Menus/PokemonMenu/PokemonMenu';
 import HighlightActionButton from './components/Menus/PokemonMenu/HighlightActionButton';
-import PokedexFiltersMenu from './components/Menus/PokedexMenu/PokedexListsMenu';
-import TagsMenu from './components/Menus/TagsMenu/TagsMenu';
+import PokemonViewSlider from './components/PokemonViewSlider';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ActionMenu from '../../components/ActionMenu';
 import CloseButton from '../../components/CloseButton';
@@ -52,7 +50,6 @@ interface PokemonProps {
   isOwnCollection: boolean;
 }
 
-const PokemonMenuMemo = React.memo(PokemonMenu);
 const HeaderUIMemo = React.memo(HeaderUI);
 
 function Pokemon({ isOwnCollection }: PokemonProps) {
@@ -183,6 +180,35 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
     setActiveView((prev) => (prev === 'tags' ? 'pokemon' : 'tags'));
   }, []);
 
+  const handlePokedexHighlightedCardsChange = useCallback(
+    (cards: Set<number | string>) => {
+      setHighlightedCards(new Set(Array.from(cards).map(String)));
+    },
+    [setHighlightedCards],
+  );
+
+  const handlePokedexActiveViewChange = useCallback((view: string) => {
+    if (isActiveView(view)) {
+      setActiveView(view);
+    }
+  }, []);
+
+  const handlePokedexListSelect = useCallback(
+    (list: PokemonVariant[], key: string) => {
+      setSelectedPokedexList(list);
+      setSelectedPokedexKey(key || 'all');
+      setLastMenu('pokedex');
+    },
+    [],
+  );
+
+  const handleTagSelect = useCallback((filter: string) => {
+    setHighlightedCards(new Set());
+    setTagFilter(filter);
+    setLastMenu('ownership');
+    setActiveView('pokemon');
+  }, [setHighlightedCards]);
+
   const setStatusFilter = useCallback((filter: InstanceStatus) => {
     setTagFilter(filter);
   }, []);
@@ -282,87 +308,41 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         tagsSubLabel={getTagsSubLabel(lastMenu, tagFilter)}
       />
 
-      <div
-        className="view-slider-container"
-        ref={containerRef}
-        {...swipeHandlers}
-        style={{
-          overflow: 'hidden',
-          touchAction: 'pan-y',
-          willChange: 'transform',
-        }}
-      >
-        <div
-          className="view-slider"
-          style={{
-            transform: getTransform(),
-            transition: isDragging
-              ? 'none'
-              : 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)',
-          }}
-        >
-          <div className="slider-panel">
-            <PokedexFiltersMenu
-              setTagFilter={setTagFilter}
-              setHighlightedCards={(cards) =>
-                setHighlightedCards(new Set(Array.from(cards).map(String)))
-              }
-              setActiveView={(view) => {
-                if (isActiveView(view)) setActiveView(view);
-              }}
-              onListSelect={(list, key) => {
-                setSelectedPokedexList(list);
-                setSelectedPokedexKey(key || 'all');
-                setLastMenu('pokedex');
-              }}
-              pokedexLists={pokedexLists}
-              variants={variants}
-            />
-          </div>
-
-          <div className="slider-panel">
-            <PokemonMenuMemo
-              isEditable={isEditable}
-              sortedPokemons={sortedPokemons}
-              allPokemons={variants}
-              loading={loading}
-              selectedPokemon={selectedPokemon}
-              setSelectedPokemon={setSelectedPokemon}
-              isFastSelectEnabled={isFastSelectEnabled}
-              toggleCardHighlight={toggleCardHighlight}
-              highlightedCards={highlightedCards}
-              tagFilter={tagFilter}
-              lists={activeTags}
-              instances={instances}
-              sortType={sortType}
-              setSortType={setSortType}
-              sortMode={sortMode}
-              setSortMode={setSortMode}
-              variants={variants}
-              username={displayUsername}
-              setIsFastSelectEnabled={setIsFastSelectEnabled}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              showEvolutionaryLine={showEvolutionaryLine}
-              toggleEvolutionaryLine={toggleEvolutionaryLine}
-              activeView={activeView}
-            />
-          </div>
-
-          <div className="slider-panel">
-            <TagsMenu
-              onSelectTag={(filter) => {
-                setHighlightedCards(new Set());
-                setTagFilter(filter);
-                setLastMenu('ownership');
-                setActiveView('pokemon');
-              }}
-              activeTags={activeTags}
-              variants={variants}
-            />
-          </div>
-        </div>
-      </div>
+      <PokemonViewSlider
+        containerRef={containerRef}
+        swipeHandlers={swipeHandlers}
+        transform={getTransform()}
+        isDragging={isDragging}
+        setTagFilter={setTagFilter}
+        onPokedexHighlightedCardsChange={handlePokedexHighlightedCardsChange}
+        onPokedexActiveViewChange={handlePokedexActiveViewChange}
+        onPokedexListSelect={handlePokedexListSelect}
+        pokedexLists={pokedexLists}
+        variants={variants}
+        isEditable={isEditable}
+        sortedPokemons={sortedPokemons}
+        loading={loading}
+        selectedPokemon={selectedPokemon}
+        setSelectedPokemon={setSelectedPokemon}
+        isFastSelectEnabled={isFastSelectEnabled}
+        toggleCardHighlight={toggleCardHighlight}
+        highlightedCards={highlightedCards}
+        tagFilter={tagFilter}
+        activeTags={activeTags}
+        instances={instances}
+        sortType={sortType}
+        setSortType={setSortType}
+        sortMode={sortMode}
+        setSortMode={setSortMode}
+        username={displayUsername}
+        setIsFastSelectEnabled={setIsFastSelectEnabled}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        showEvolutionaryLine={showEvolutionaryLine}
+        toggleEvolutionaryLine={toggleEvolutionaryLine}
+        activeView={activeView}
+        onTagSelect={handleTagSelect}
+      />
 
       {isEditable && highlightedCards.size > 0 && (
         <HighlightActionButton
