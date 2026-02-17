@@ -31,7 +31,7 @@ None.
 
 ## Largest Files (Maintainability Risk)
 
-1. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeProposal.tsx` (`392` LOC)
+1. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeProposal.tsx` (`381` LOC)
 2. `frontend/src/pages/Trades/views/PendingTradeView.tsx` (`375` LOC)
 3. `frontend/src/pages/Pokemon/hooks/usePokemonPageController.tsx` (`367` LOC)
 4. `frontend/src/pages/Search/views/ListViewComponents/WantedListView.tsx` (`338` LOC)
@@ -117,15 +117,23 @@ None.
 7. Extracted PokemonSearchBar collapse/resize/scroll lifecycle into `hooks/useSearchBarCollapse.ts`.
 8. Added lifecycle helper tests in `tests/unit/pages/Search/hooks/useSearchBarCollapse.unit.test.ts`.
 9. Reduced `PokemonSearchBar.tsx` from `346` LOC to `294` LOC while preserving behavior.
+10. Extracted Pokemon input decision logic into `evaluatePokemonInputChange` in `SearchParameters/variantSearchControllerHelpers.ts`.
+11. Added decision-table tests in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` and wired `useVariantSearchController.ts` to the helper.
 - DoD:
 1. Large orchestration logic moved to pure helpers/hooks.
 2. Existing search behavior remains intact under tests.
 
 #### P1.3 Trade Proposal Flow Tightening
-- Status: Pending
+- Status: Done (2026-02-17)
 - Goal: improve readability and reduce state branching risk.
 - Target:
 1. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeProposal.tsx`
+- Progress:
+1. Extracted typed payload/data helpers into `Trade/tradeProposalHelpers.ts` (`hasInstanceData`, username parsing, instance sanitization, payload builder).
+2. Added preflight validation helper `buildTradeProposalPreflight` to centralize proposal guard branches.
+3. Added regression tests in `tests/unit/pages/Pokemon/features/instances/components/Trade/tradeProposalHelpers.unit.test.ts` covering parse/sanitize/payload/preflight paths.
+4. Refactored `TradeProposal.tsx` to use helper-driven preflight and payload creation.
+5. Cleaned non-ASCII text artifacts in user-facing strings/comments; file reduced from `392` LOC to `381` LOC.
 - DoD:
 1. Branch-heavy sections extracted into typed helpers.
 2. Proposal and error-handling behavior verified by tests.

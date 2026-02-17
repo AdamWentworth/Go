@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   buildVariantValidationState,
+  evaluatePokemonInputChange,
   runVariantValidation,
 } from '@/pages/Search/SearchParameters/variantSearchControllerHelpers';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -99,5 +100,50 @@ describe('variantSearchControllerHelpers', () => {
     expect(result.imageUrl).toBeUndefined();
     expect(updateImageFn).not.toHaveBeenCalled();
   });
-});
 
+  it('evaluates pokemon input changes for ignore/reset/suggestion outcomes', () => {
+    expect(
+      evaluatePokemonInputChange({
+        nextPokemon: 'Bulbasaur1234',
+        pokemonData,
+      }),
+    ).toEqual({
+      shouldIgnore: true,
+      shouldResetDerivedState: false,
+      suggestions: [],
+    });
+
+    expect(
+      evaluatePokemonInputChange({
+        nextPokemon: '   ',
+        pokemonData,
+      }),
+    ).toEqual({
+      shouldIgnore: false,
+      shouldResetDerivedState: true,
+      suggestions: [],
+    });
+
+    expect(
+      evaluatePokemonInputChange({
+        nextPokemon: 'Bu',
+        pokemonData,
+      }),
+    ).toEqual({
+      shouldIgnore: false,
+      shouldResetDerivedState: false,
+      suggestions: [],
+    });
+
+    expect(
+      evaluatePokemonInputChange({
+        nextPokemon: 'Bul',
+        pokemonData,
+      }),
+    ).toEqual({
+      shouldIgnore: false,
+      shouldResetDerivedState: false,
+      suggestions: ['Bulbasaur'],
+    });
+  });
+});

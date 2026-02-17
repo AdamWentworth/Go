@@ -1,7 +1,7 @@
-/* TradeProposal.jsx */
+/* TradeProposal.tsx */
 
 /* ------------------------------------------------------------------ */
-/*  TradeProposal.tsx – fully-typed & squiggle-free                    */
+/*  TradeProposal.tsx - fully-typed & squiggle-free                    */
 /* ------------------------------------------------------------------ */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -23,18 +23,16 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { Instances } from '@/types/instances';
 import type { TradeProposalPayload } from './tradeDetailsHelpers';
+import {
+  buildTradeProposalPreflight,
+  buildTradeProposalRequest,
+  findMatchedInstanceById,
+  hasInstanceData,
+  parseUsernameFromStoredUser,
+  sanitizeInstanceData,
+} from './tradeProposalHelpers';
 
 const log = createScopedLogger('TradeProposal');
-
-/* ------------------------------------------------------------------ */
-/* Helpers                                                             */
-/* ------------------------------------------------------------------ */
-
-/** Narrow a variant so TypeScript knows `instanceData` is present. */
-const hasInstanceData = (
-  p: PokemonVariant | null | undefined,
-): p is PokemonVariant & { instanceData: PokemonInstance } =>
-  !!p && !!p.instanceData;
 
 /* ------------------------------------------------------------------ */
 /* Component props                                                     */
@@ -117,91 +115,41 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
   /* handlers ------------------------------------------------------ */
   const handleInstanceChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     const id = e.target.value;
-    const found = matchedInstances.find(
-      (m) => m.instanceData?.instance_id === id,
-    );
-    setSelectedMatchedInstance(found ?? null);
+    setSelectedMatchedInstance(findMatchedInstanceById(matchedInstances, id));
   };
 
   const handleProposeTrade = async (): Promise<void> => {
-    if (!hasInstanceData(selectedMatchedInstance)) {
-      await alert('Please select which instance to trade.');
+    const username_proposed = parseUsernameFromStoredUser(localStorage.getItem('user'));
+    const preflight = buildTradeProposalPreflight({
+      selectedMatchedInstance,
+      friendshipLevel: friendship_level,
+      usernameProposed: username_proposed,
+    });
+    if (!preflight.ok) {
+      await alert(preflight.error);
       return;
     }
-    if (friendship_level < 1 || friendship_level > 4) {
-      await alert('Please select a valid friendship level (1-4).');
-      return;
-    }
-
-    /* my username from localStorage (may be null) */
-    let username_proposed: string | null = null;
-    try {
-      const stored = localStorage.getItem('user');
-      if (stored) username_proposed = JSON.parse(stored).username ?? null;
-    } catch {
-      /* ignore */ 
-    }
-    if (!username_proposed) {
-      await alert('Could not determine your username. Please sign in again.');
-      return;
-    }
-    const proposedInstanceId =
-      selectedMatchedInstance.instanceData.instance_id ?? '';
-    if (!proposedInstanceId) {
-      await alert('Selected trade instance is missing an instance id.');
-      return;
-    }
+    const proposedInstanceId = preflight.proposedInstanceId;
     const normalizedFriendshipLevel = friendship_level as 1 | 2 | 3 | 4;
-    const sanitizedInstanceData = Object.entries(
-      passedInPokemon.instanceData ?? {},
-    ).reduce<Record<string, string | number | boolean | null | undefined>>(
-      (acc, [key, value]) => {
-        if (
-          value === null ||
-          value === undefined ||
-          typeof value === 'string' ||
-          typeof value === 'number' ||
-          typeof value === 'boolean'
-        ) {
-          acc[key] = value;
-        }
-        return acc;
-      },
-      {},
-    );
-    const proposeTradePokemon = {
-      variant_id: passedInPokemon.variant_id,
-      instance_id:
+    const sanitizedInstanceData = sanitizeInstanceData(passedInPokemon.instanceData);
+    const tradeData = buildTradeProposalRequest({
+      usernameProposed: preflight.usernameProposed,
+      usernameAccepting: username,
+      proposedInstanceId,
+      acceptingInstanceId:
+        passedInPokemon.instanceData?.instance_id ?? passedInPokemon.variant_id ?? '',
+      isSpecialTrade,
+      isRegisteredTrade,
+      isLuckyTrade: pref_lucky,
+      stardustCost,
+      friendshipLevel: normalizedFriendshipLevel,
+      variantId: passedInPokemon.variant_id,
+      passedInInstanceId:
         typeof passedInPokemon.instanceData?.instance_id === 'string'
           ? passedInPokemon.instanceData.instance_id
           : undefined,
-      instanceData: sanitizedInstanceData,
-    };
-
-    const tradeData = {
-      username_proposed,
-      username_accepting: username,
-      pokemon_instance_id_user_proposed: proposedInstanceId,
-      pokemon_instance_id_user_accepting:
-        passedInPokemon.instanceData?.instance_id ??
-        passedInPokemon.variant_id ??
-        '',
-      is_special_trade: isSpecialTrade,
-      is_registered_trade: isRegisteredTrade,
-      is_lucky_trade: pref_lucky,
-      trade_dust_cost: stardustCost,
-      trade_friendship_level: normalizedFriendshipLevel,
-      user_1_trade_satisfaction: null,
-      user_2_trade_satisfaction: null,
-      pokemon: proposeTradePokemon,
-      trade_acceptance_date: null,
-      trade_cancelled_by: null,
-      trade_cancelled_date: null,
-      trade_completed_date: null,
-      trade_proposal_date: new Date().toISOString(),
-      trade_status: 'proposed',
-      last_update: Date.now(),
-    };
+      sanitizedInstanceData,
+    });
 
     try {
       const result = await proposeTrade(tradeData);
@@ -222,7 +170,7 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
   };
 
   /* guard render -------------------------------------------------- */
-  if (!passedInPokemon) return <p>Missing Pokémon data.</p>;
+  if (!passedInPokemon) return <p>Missing Pokemon data.</p>;
 
   /* shortcuts with instanceData fully defined -------------------- */
   const wantPoke = hasInstanceData(passedInPokemon) ? passedInPokemon : undefined;
@@ -235,7 +183,7 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
         {/* friendship / lucky manager */}
         <div className="friendship-manager">
           <FriendshipManager
-            /* props required by its .d.ts – supply no-ops for unused ones */
+            /* props required by its .d.ts - supply no-ops for unused ones */
             friendship={friendship_level}
             setFriendship={setFriendshipLevel}
             isLucky={pref_lucky}
@@ -249,7 +197,7 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
           />
         </div>
 
-        {/* top row – the Pokémon we want */}
+        {/* top row - the Pokemon we want */}
         <div className="trade-proposal-row trade-proposal-row-first">
           <div className="trade-proposal-details">
             {wantPoke && (
@@ -318,7 +266,7 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
           </div>
         </div>
 
-        {/* middle row – CTA + stardust */}
+        {/* middle row - CTA + stardust */}
         <div className="trade-proposal-row trade-proposal-row-middle">
           <button
             className="trade-proposal-propose-button"
@@ -339,7 +287,7 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
           </div>
         </div>
 
-        {/* bottom row – my matched instance(s) */}
+        {/* bottom row - my matched instance(s) */}
         <div className="trade-proposal-row trade-proposal-row-bottom">
           <div className="trade-proposal-image-container">
             <div className="image-wrapper">
@@ -354,7 +302,7 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
               )}
               <img
                 src={matchPoke?.currentImage ?? '/images/default/placeholder.png'}
-                alt={matchPoke?.name ?? 'Your Pokémon'}
+                alt={matchPoke?.name ?? 'Your Pokemon'}
                 className="trade-proposal-pokemon-img"
               />
             </div>
@@ -381,7 +329,7 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
                   isPurified={matchPoke.instanceData.purified}
                 />
 
-                {/* correct Pokémon passed here */}
+                {/* correct Pokemon passed here */}
                 <LocationCaught
                   pokemon={matchPoke}
                   editMode={false}
@@ -430,3 +378,4 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
 };
 
 export default TradeProposal;
+

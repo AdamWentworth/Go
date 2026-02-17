@@ -1,6 +1,7 @@
 import validatePokemon from '../utils/validatePokemon';
 import { updateImage } from '../utils/updateImage';
 import {
+  getPokemonSuggestions,
   normalizeAvailableForms,
   sortCostumesByDate,
   type SortableCostume,
@@ -23,6 +24,19 @@ type VariantValidationOutcome = {
   availableCostumes: SortableCostume[];
   availableForms: string[];
   imageUrl?: string | null;
+};
+
+type EvaluatePokemonInputChangeArgs = {
+  nextPokemon: string;
+  pokemonData: PokemonVariant[];
+  minSuggestionChars?: number;
+  maxPokemonLength?: number;
+};
+
+export type PokemonInputChangeDecision = {
+  shouldIgnore: boolean;
+  shouldResetDerivedState: boolean;
+  suggestions: string[];
 };
 
 type RunVariantValidationArgs = {
@@ -100,9 +114,46 @@ export const runVariantValidation = ({
   };
 };
 
+export const evaluatePokemonInputChange = ({
+  nextPokemon,
+  pokemonData,
+  minSuggestionChars = 3,
+  maxPokemonLength = 11,
+}: EvaluatePokemonInputChangeArgs): PokemonInputChangeDecision => {
+  if (nextPokemon.length > maxPokemonLength) {
+    return {
+      shouldIgnore: true,
+      shouldResetDerivedState: false,
+      suggestions: [],
+    };
+  }
+
+  const normalized = nextPokemon.trim();
+  if (!normalized) {
+    return {
+      shouldIgnore: false,
+      shouldResetDerivedState: true,
+      suggestions: [],
+    };
+  }
+
+  if (nextPokemon.length < minSuggestionChars) {
+    return {
+      shouldIgnore: false,
+      shouldResetDerivedState: false,
+      suggestions: [],
+    };
+  }
+
+  return {
+    shouldIgnore: false,
+    shouldResetDerivedState: false,
+    suggestions: getPokemonSuggestions(pokemonData, nextPokemon),
+  };
+};
+
 export const EMPTY_SELECTED_MOVES = {
   fastMove: null,
   chargedMove1: null,
   chargedMove2: null,
 } as const;
-

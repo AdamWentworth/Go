@@ -13,6 +13,7 @@ import {
 } from './variantSearchHelpers';
 import {
   buildVariantValidationState,
+  evaluatePokemonInputChange,
   EMPTY_SELECTED_MOVES,
   runVariantValidation,
   type VariantValidationState,
@@ -212,10 +213,11 @@ const useVariantSearchController = ({
 
   const handlePokemonChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newPokemon = event.target.value;
-
-    if (newPokemon.length > 11) {
-      return;
-    }
+    const inputDecision = evaluatePokemonInputChange({
+      nextPokemon: newPokemon,
+      pokemonData,
+    });
+    if (inputDecision.shouldIgnore) return;
 
     setPokemon(newPokemon);
     setSelectedForm('');
@@ -224,14 +226,8 @@ const useVariantSearchController = ({
     setDynamax(false);
     setGigantamax(false);
 
-    if (newPokemon.length >= 3) {
-      const filtered = getPokemonSuggestions(pokemonData, newPokemon);
-      setSuggestions(filtered);
-    } else {
-      setSuggestions([]);
-    }
-
-    if (newPokemon.trim() === '') {
+    setSuggestions(inputDecision.suggestions);
+    if (inputDecision.shouldResetDerivedState) {
       setImageUrl(null);
       setAvailableForms([]);
       setAvailableCostumes([]);
