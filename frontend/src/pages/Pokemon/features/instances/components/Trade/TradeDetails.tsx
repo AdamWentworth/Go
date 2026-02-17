@@ -12,8 +12,8 @@ import type { SortMode, SortType } from '@/types/sort';
 import WantedListDisplay from './WantedListDisplay';
 
 import MirrorManager from './MirrorManager';
+import TradeFiltersPanel from './TradeFiltersPanel';
 
-import FilterImages from '../../FilterImages';
 import useImageSelection from '../../utils/useImageSelection';
 import { updateDisplayedList } from '../../utils/listUtils';
 
@@ -22,7 +22,6 @@ import {
   INCLUDE_IMAGES_wanted,
   FILTER_NAMES,
 } from '../../utils/constants';
-import { TOOLTIP_TEXTS } from '../../utils/tooltipTexts';
 
 import useWantedFiltering from '../../hooks/useWantedFiltering';
 import useToggleEditModeTrade from '../../hooks/useToggleEditModeTrade';
@@ -424,56 +423,15 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
           </div>
         </div>
 
-        {/* Only show the filters if it's not a Mirror */}
-        {!isMirror &&
-          (!shouldShowFewLayout ? (
-            <div className="image-row-container">
-              <div className="exclude-header-group image-group">
-                <FilterImages
-                  images={[...EXCLUDE_IMAGES_wanted]}
-                  selectedImages={selectedExcludeImages}
-                  toggleImageSelection={toggleExcludeImageSelection}
-                  editMode={editMode}
-                  tooltipTexts={FILTER_NAMES.map((name) => TOOLTIP_TEXTS[name])}
-                />
-              </div>
-              <div className="include-only-header-group image-group">
-                <FilterImages
-                  images={[...INCLUDE_IMAGES_wanted]}
-                  selectedImages={selectedIncludeOnlyImages}
-                  toggleImageSelection={toggleIncludeOnlyImageSelection}
-                  editMode={editMode}
-                  tooltipTexts={FILTER_NAMES.slice(
-                    EXCLUDE_IMAGES_wanted.length
-                  ).map((name) => TOOLTIP_TEXTS[name])}
-                />
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="exclude-header-group image-group exclude-few">
-                <FilterImages
-                  images={[...EXCLUDE_IMAGES_wanted]}
-                  selectedImages={selectedExcludeImages}
-                  toggleImageSelection={toggleExcludeImageSelection}
-                  editMode={editMode}
-                  tooltipTexts={FILTER_NAMES.map((name) => TOOLTIP_TEXTS[name])}
-                />
-              </div>
-              <div className="include-only-header-group include-few">
-                <h3>Include</h3>
-                <FilterImages
-                  images={[...INCLUDE_IMAGES_wanted]}
-                  selectedImages={selectedIncludeOnlyImages}
-                  toggleImageSelection={toggleIncludeOnlyImageSelection}
-                  editMode={editMode}
-                  tooltipTexts={FILTER_NAMES.slice(
-                    EXCLUDE_IMAGES_wanted.length
-                  ).map((name) => TOOLTIP_TEXTS[name])}
-                />
-              </div>
-            </>
-          ))}
+        <TradeFiltersPanel
+          isMirror={isMirror}
+          shouldShowFewLayout={shouldShowFewLayout}
+          editMode={editMode}
+          selectedExcludeImages={selectedExcludeImages}
+          selectedIncludeOnlyImages={selectedIncludeOnlyImages}
+          toggleExcludeImageSelection={toggleExcludeImageSelection}
+          toggleIncludeOnlyImageSelection={toggleIncludeOnlyImageSelection}
+        />
 
         <div className="wanted">
           <h2>Wanted List:</h2>
