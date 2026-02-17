@@ -10,7 +10,7 @@ export interface WindowOverlayProps extends HTMLAttributes<HTMLDivElement> {
 
 const WindowOverlay: React.FC<WindowOverlayProps> = ({
   children,
-  onClose,
+  onClose: _onClose,
   className = '',
   ...divProps
 }) => {

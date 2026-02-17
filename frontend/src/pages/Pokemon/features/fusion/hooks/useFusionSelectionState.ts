@@ -11,20 +11,21 @@ export function useFusionSelectionState() {
   const [fusionSelectionData, setFusionSelectionData] = useState<FusionSelectionData | null>(null);
 
   async function promptFusionPokemonSelection(baseKey: string): Promise<string> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const fusionDetails = await resolveFusionDetails(baseKey);
-        setFusionSelectionData({
-          baseKey,
-          resolve,
-          reject,
-          ...fusionDetails,
+    return new Promise((resolve, reject) => {
+      void resolveFusionDetails(baseKey)
+        .then((fusionDetails) => {
+          setFusionSelectionData({
+            baseKey,
+            resolve,
+            reject,
+            ...fusionDetails,
+          });
+          setIsFusionSelectionOpen(true);
+        })
+        .catch((err) => {
+          log.error('Error in promptFusionPokemonSelection:', err);
+          reject(err);
         });
-        setIsFusionSelectionOpen(true);
-      } catch (err) {
-        log.error('Error in promptFusionPokemonSelection:', err);
-        reject(err);
-      }
     });
   }
 

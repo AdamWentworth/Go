@@ -82,8 +82,8 @@ export function determineVariantId(pokemon: PokemonVariant): string {
   const vt = pokemon.variantType;
 
   // Quick match for costume-related images
-  if ((pokemon as any).costumes) {
-    for (const costume of (pokemon as any).costumes) {
+  if (Array.isArray(pokemon.costumes)) {
+    for (const costume of pokemon.costumes) {
       const { name, image_url, image_url_shiny, shadow_costume } = costume;
 
       if (pokemon.currentImage === image_url) {
@@ -129,14 +129,13 @@ export function determineVariantId(pokemon: PokemonVariant): string {
   }
 
   // Check standard image match fallback
-  const any = pokemon as any;
-  if (pokemon.currentImage === any.image_url) {
+  if (pokemon.currentImage === pokemon.image_url) {
     return `${paddedId}-default`;
-  } else if (pokemon.currentImage === any.image_url_shadow) {
+  } else if (pokemon.currentImage === pokemon.image_url_shadow) {
     return `${paddedId}-shadow`;
-  } else if (pokemon.currentImage === any.image_url_shiny) {
+  } else if (pokemon.currentImage === pokemon.image_url_shiny) {
     return `${paddedId}-shiny`;
-  } else if (pokemon.currentImage === any.image_url_shiny_shadow) {
+  } else if (pokemon.currentImage === pokemon.image_url_shiny_shadow) {
     return `${paddedId}-shiny_shadow`;
   }
 

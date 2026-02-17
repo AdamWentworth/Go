@@ -14,8 +14,8 @@ type MaybeInstance = {
 };
 
 function hasToken(v: PokemonVariant, token: string): boolean {
-  const vt = String((v as any).variantType ?? '').toLowerCase();
-  const id = String((v as any).variant_id ?? '').toLowerCase();
+  const vt = String(v.variantType ?? '').toLowerCase();
+  const id = String(v.variant_id ?? '').toLowerCase();
   return vt.includes(token) || id.includes(token);
 }
 
@@ -38,11 +38,11 @@ function scoreVariant(v: PokemonVariant, inst: MaybeInstance): number {
   if (wantFused === hasToken(v, 'fusion')) score += 2;
 
   if (hasCostume) {
-    const costumes = Array.isArray((v as any).costumes) ? (v as any).costumes : [];
-    if (costumes.some((c: any) => Number(c?.costume_id) === Number(inst.costume_id))) {
+    const costumes = Array.isArray(v.costumes) ? v.costumes : [];
+    if (costumes.some((costume) => Number(costume?.costume_id) === Number(inst.costume_id))) {
       score += 5;
     }
-  } else if ((v as any).variantType === 'default') {
+  } else if (v.variantType === 'default') {
     score += 1;
   }
 
@@ -60,10 +60,10 @@ export function findVariantForInstance(
   const variantsByPokemonId = new Map<number, PokemonVariant[]>();
 
   for (const variant of variants) {
-    const variantId = String((variant as any).variant_id ?? '');
+    const variantId = String(variant.variant_id ?? '');
     if (variantId) variantByKey.set(variantId, variant);
 
-    const pokemonId = Number((variant as any).pokemon_id);
+    const pokemonId = Number(variant.pokemon_id);
     if (Number.isFinite(pokemonId)) {
       const arr = variantsByPokemonId.get(pokemonId);
       if (arr) arr.push(variant);

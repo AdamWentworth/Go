@@ -114,28 +114,29 @@ function useMegaPokemonHandler() {
   };
 
   const promptMegaPokemonSelection = (baseKey: string, megaForm?: string): Promise<string> => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const caughtPokemonWithVariants = await handleMegaPokemon(baseKey);
-        const baseNumber = parseBaseKey(baseKey);
-        if (!baseNumber) {
-          throw new Error(`Invalid baseKey format: ${baseKey}`);
-        }
-        const isShiny = parseShinyStatus(baseKey);
-        const variantKey = isShiny ? `${baseNumber}-shiny` : `${baseNumber}-default`;
+    return new Promise((resolve, reject) => {
+      void handleMegaPokemon(baseKey)
+        .then((caughtPokemonWithVariants) => {
+          const baseNumber = parseBaseKey(baseKey);
+          if (!baseNumber) {
+            throw new Error(`Invalid baseKey format: ${baseKey}`);
+          }
+          const isShiny = parseShinyStatus(baseKey);
+          const variantKey = isShiny ? `${baseNumber}-shiny` : `${baseNumber}-default`;
 
-        setMegaSelectionData({
-          caughtPokemon: caughtPokemonWithVariants,
-          variantKey,
-          megaForm,
-          resolve,
-          reject,
+          setMegaSelectionData({
+            caughtPokemon: caughtPokemonWithVariants,
+            variantKey,
+            megaForm,
+            resolve,
+            reject,
+          });
+
+          setIsMegaSelectionOpen(true);
+        })
+        .catch((error) => {
+          reject(error);
         });
-
-        setIsMegaSelectionOpen(true);
-      } catch (error) {
-        reject(error);
-      }
     });
   };
 

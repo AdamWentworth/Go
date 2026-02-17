@@ -12,26 +12,28 @@ import { useAuth }             from './AuthContext';
 import { useSessionStore } from '../stores/useSessionStore';
 import { useAuthStore }      from '../stores/useAuthStore';
 import { useTradeStore } from '@/features/trades/store/useTradeStore';
+import type { Trade as TradeRecord, Instance as RelatedInstanceRecord } from '@/features/trades/store/useTradeStore';
 
 /* NEW granular contexts */
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import type { Instances } from '@/types/instances';
 
 import { fetchUpdates } from '../services/sseService';
 import { getDeviceId }  from '../utils/deviceID';
 import { createScopedLogger } from '@/utils/logger';
 
 /* ---------- type helpers ---------- */
-interface PokemonUpdateData { [key: string]: any }
-interface TradeUpdateData   { [key: string]: any }
+type PokemonUpdateData = Instances;
+type TradeUpdateData = Record<string, TradeRecord>;
 
 interface IncomingUpdateData {
   pokemon?:          PokemonUpdateData;
   trade?:            TradeUpdateData;
-  relatedInstance?:  any;
+  relatedInstance?:  Record<string, RelatedInstanceRecord>;
 }
 
-interface EventsContextType {}          // (extend later if you expose helpers)
+type EventsContextType = Record<string, never>;
 
 const EventsContext = createContext<EventsContextType>({});
 export const useEvents = (): EventsContextType => useContext(EventsContext);

@@ -3,7 +3,7 @@ import React, { ButtonHTMLAttributes } from 'react';
 import './CloseButton.css';
 import { useTheme } from '../contexts/ThemeContext';
 
-export interface CloseButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {}
+export type CloseButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
 
 const CloseButton: React.FC<CloseButtonProps> = ({
   onClick,
