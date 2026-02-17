@@ -31,11 +31,11 @@ None.
 
 ## Largest Files (Maintainability Risk)
 
-1. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeProposal.tsx` (`381` LOC)
-2. `frontend/src/pages/Trades/views/PendingTradeView.tsx` (`375` LOC)
-3. `frontend/src/pages/Pokemon/hooks/usePokemonPageController.tsx` (`367` LOC)
-4. `frontend/src/pages/Search/views/ListViewComponents/WantedListView.tsx` (`338` LOC)
-5. `frontend/src/pages/Pokemon/features/instances/CaughtInstance.tsx` (`325` LOC)
+1. `frontend/src/pages/Trades/views/PendingTradeView.tsx` (`414` LOC)
+2. `frontend/src/pages/Pokemon/hooks/usePokemonPageController.tsx` (`407` LOC)
+3. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeProposal.tsx` (`381` LOC)
+4. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeDetails.tsx` (`364` LOC)
+5. `frontend/src/pages/Authentication/hooks/useAccountForm.ts` (`361` LOC)
 
 ## Priority Backlog
 
@@ -162,6 +162,25 @@ None.
 - DoD:
 1. Branch-heavy sections extracted into typed helpers.
 2. Proposal and error-handling behavior verified by tests.
+
+#### P1.4 Decompose Search List Views
+- Status: In Progress (2026-02-17)
+- Goal: reduce duplication and branch-heavy rendering in list-view cards.
+- Targets:
+1. `frontend/src/pages/Search/views/ListViewComponents/WantedListView.tsx`
+- Progress:
+1. Extracted list-view pure helpers into `views/ListViewComponents/wantedListViewHelpers.ts`:
+  `formatWantedDate`, `toWantedGender`, `hasWantedAdditionalDetails`, `getWantedTradeEntries`.
+2. Added helper regression tests in `tests/unit/pages/Search/views/ListViewComponents/wantedListViewHelpers.unit.test.ts`.
+3. Extracted repeated image/badge/name rendering into local `WantedPokemonVisual` section component.
+4. Extracted trade-list rendering into local `WantedTradeList` section component and removed repeated badge inline style blocks.
+5. Reduced `WantedListView.tsx` from `363` LOC to `295` LOC while preserving behavior.
+6. Verified behavior with:
+  `tests/unit/pages/Search/views/ListViewComponents/WantedListView.unit.test.tsx`
+  and `tests/unit/pages/Search/views/ListViewComponents/SearchListViews.unit.test.tsx`.
+- DoD:
+1. List-view display behavior remains unchanged.
+2. Rendering duplication reduced via typed helpers/sections.
 
 ### P2 - Performance and UX
 
