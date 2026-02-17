@@ -8,56 +8,19 @@ import './PokemonSearchBar.css';
 import { createScopedLogger } from '@/utils/logger';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import {
-  isCaughtOwnershipMode,
-  toOwnershipApiValue,
   type SearchOwnershipMode,
 } from './utils/ownershipMode';
+import {
+  buildPokemonSearchQueryParams,
+  findMatchingPokemonVariant,
+  validateSearchInput,
+  type Coordinates,
+  type IvFilters,
+  type PokemonSearchQueryParams,
+  type SelectedMoves,
+} from './utils/buildPokemonSearchQuery';
 
 type SearchView = 'list' | 'map';
-
-type SelectedMoves = {
-  fastMove: number | '' | null;
-  chargedMove1: number | '' | null;
-  chargedMove2: number | '' | null;
-};
-
-type Coordinates = {
-  latitude: number | null;
-  longitude: number | null;
-};
-
-type IvFilters = {
-  Attack: number | '' | null;
-  Defense: number | '' | null;
-  Stamina: number | '' | null;
-};
-
-export type PokemonSearchQueryParams = {
-  pokemon_id: number;
-  shiny: boolean;
-  shadow: boolean;
-  costume_id: number | null;
-  fast_move_id: number | '' | null;
-  charged_move_1_id: number | '' | null;
-  charged_move_2_id: number | '' | null;
-  gender: string | null;
-  background_id: number | null;
-  attack_iv: number | null;
-  defense_iv: number | null;
-  stamina_iv: number | null;
-  only_matching_trades: boolean | null;
-  pref_lucky: boolean | null;
-  friendship_level: number | null;
-  already_registered: boolean | null;
-  trade_in_wanted_list: boolean | null;
-  latitude: number | null;
-  longitude: number | null;
-  ownership: ReturnType<typeof toOwnershipApiValue>;
-  range_km: number;
-  limit: number;
-  dynamax: boolean;
-  gigantamax: boolean;
-};
 
 type PokemonSearchBarProps = {
   onSearch: (
@@ -73,9 +36,6 @@ type PokemonSearchBarProps = {
 };
 
 const log = createScopedLogger('PokemonSearchBar');
-
-const toNullableNumber = (value: number | '' | null): number | null =>
-  typeof value === 'number' ? value : null;
 
 const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
   onSearch,
@@ -204,31 +164,24 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
   const handleSearch = async () => {
     setErrorMessage('');
 
-    if (isShadow && (ownershipMode === 'trade' || ownershipMode === 'wanted')) {
-      setErrorMessage('Shadow Pokemon cannot be listed for trade or wanted');
+    const inputError = validateSearchInput({
+      isShadow,
+      ownershipMode,
+      pokemon,
+      useCurrentLocation,
+      city,
+      coordinates,
+      pokemonCache,
+    });
+    if (inputError) {
+      setErrorMessage(inputError);
       return;
     }
 
-    if (!pokemon) {
-      setErrorMessage('Please provide a Pokemon name.');
-      return;
-    }
-
-    if (!useCurrentLocation && (!city || !coordinates.latitude || !coordinates.longitude)) {
-      setErrorMessage('Please provide a location or use your current location.');
-      return;
-    }
-
-    if (!pokemonCache || pokemonCache.length === 0) {
-      setErrorMessage('No Pokemon data found in the default store.');
-      return;
-    }
-
-    const matchingPokemon = pokemonCache.find(
-      (variant) =>
-        variant.name?.toLowerCase() === pokemon.toLowerCase() &&
-        (!selectedForm ||
-          (variant.form ?? '').toLowerCase() === selectedForm.toLowerCase()),
+    const matchingPokemon = findMatchingPokemonVariant(
+      pokemonCache as PokemonVariant[],
+      pokemon,
+      selectedForm,
     );
 
     if (!matchingPokemon) {
@@ -237,53 +190,27 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
       return;
     }
 
-    const matchingCostume = matchingPokemon.costumes?.find(
-      (entry) => entry.name === costume,
-    );
-
-    const queryParams: PokemonSearchQueryParams = {
-      pokemon_id: matchingPokemon.pokemon_id,
-      shiny: isShiny,
-      shadow: isShadow,
-      costume_id: matchingCostume?.costume_id ?? null,
-      fast_move_id: selectedMoves.fastMove,
-      charged_move_1_id: selectedMoves.chargedMove1,
-      charged_move_2_id: selectedMoves.chargedMove2,
-      gender: selectedGender === 'Any' ? null : selectedGender,
-      background_id: selectedBackgroundId,
-      attack_iv: toNullableNumber(ivs.Attack),
-      defense_iv: toNullableNumber(ivs.Defense),
-      stamina_iv: toNullableNumber(ivs.Stamina),
-      only_matching_trades: onlyMatchingTrades ? true : null,
-      pref_lucky: prefLucky ? true : null,
-      friendship_level: friendshipLevel,
-      already_registered: alreadyRegistered ? true : null,
-      trade_in_wanted_list: tradeInWantedList ? true : null,
-      latitude: coordinates.latitude,
-      longitude: coordinates.longitude,
-      ownership: toOwnershipApiValue(ownershipMode),
-      range_km: range,
-      limit: resultsLimit,
+    const queryParams: PokemonSearchQueryParams = buildPokemonSearchQueryParams({
+      matchingPokemon,
+      costume,
+      isShiny,
+      isShadow,
+      selectedMoves,
+      selectedGender,
+      selectedBackgroundId,
+      ivs,
+      onlyMatchingTrades,
+      prefLucky,
+      friendshipLevel,
+      alreadyRegistered,
+      tradeInWantedList,
+      coordinates,
+      ownershipMode,
+      range,
+      resultsLimit,
       dynamax,
       gigantamax,
-    };
-
-    if (!isCaughtOwnershipMode(ownershipMode)) {
-      queryParams.attack_iv = null;
-      queryParams.defense_iv = null;
-      queryParams.stamina_iv = null;
-    }
-
-    if (ownershipMode !== 'trade') {
-      queryParams.only_matching_trades = null;
-    }
-
-    if (ownershipMode !== 'wanted') {
-      queryParams.pref_lucky = null;
-      queryParams.friendship_level = null;
-      queryParams.already_registered = null;
-      queryParams.trade_in_wanted_list = null;
-    }
+    });
 
     log.debug('Search query parameters', queryParams);
     await onSearch(queryParams, null);
@@ -447,3 +374,4 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
 };
 
 export default PokemonSearchBar;
+export type { PokemonSearchQueryParams };

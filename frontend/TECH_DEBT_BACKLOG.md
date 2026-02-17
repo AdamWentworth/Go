@@ -12,7 +12,7 @@ Historical migration logs were intentionally removed to keep this actionable.
 - JavaScript files (`.js`/`.jsx`) in `frontend/src`: 0
 - Lint (`npm run lint`): pass (`0` errors, `0` warnings)
 - Typecheck (`npm run typecheck`): pass
-- Unit tests (`npm run test:unit`): pass (`130` files / `446` tests)
+- Unit tests (`npm run test:unit`): pass (`131` files / `450` tests)
 - Integration test files: `10`
 - E2E test files: `1`
 - Explicit `any` types in `frontend/src`: 0
@@ -31,11 +31,11 @@ None.
 
 ## Largest Files (Maintainability Risk)
 
-1. `frontend/src/pages/Search/PokemonSearchBar.tsx` (`406` LOC)
-2. `frontend/src/pages/Search/SearchParameters/useVariantSearchController.ts` (`403` LOC)
-3. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeProposal.tsx` (`392` LOC)
-4. `frontend/src/pages/Trades/views/PendingTradeView.tsx` (`375` LOC)
-5. `frontend/src/pages/Pokemon/hooks/usePokemonPageController.tsx` (`367` LOC)
+1. `frontend/src/pages/Search/SearchParameters/useVariantSearchController.ts` (`403` LOC)
+2. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeProposal.tsx` (`392` LOC)
+3. `frontend/src/pages/Trades/views/PendingTradeView.tsx` (`375` LOC)
+4. `frontend/src/pages/Pokemon/hooks/usePokemonPageController.tsx` (`367` LOC)
+5. `frontend/src/pages/Search/PokemonSearchBar.tsx` (`346` LOC)
 
 ## Priority Backlog
 
@@ -102,11 +102,15 @@ None.
 2. Behavior parity preserved with regression tests.
 
 #### P1.2 Decompose Search Control Surface
-- Status: Pending
+- Status: In Progress (2026-02-17)
 - Goal: simplify search UI orchestration and reduce hook/dependency fragility.
 - Targets:
 1. `frontend/src/pages/Search/PokemonSearchBar.tsx`
 2. `frontend/src/pages/Search/SearchParameters/useVariantSearchController.ts`
+- Progress:
+1. Extracted PokemonSearchBar search validation/matching/query normalization into `utils/buildPokemonSearchQuery.ts`.
+2. Added utility regression tests in `tests/unit/pages/Search/utils/buildPokemonSearchQuery.unit.test.ts`.
+3. Reduced `PokemonSearchBar.tsx` from `406` LOC to `346` LOC while preserving behavior.
 - DoD:
 1. Large orchestration logic moved to pure helpers/hooks.
 2. Existing search behavior remains intact under tests.

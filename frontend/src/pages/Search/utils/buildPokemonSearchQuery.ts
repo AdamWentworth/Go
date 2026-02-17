@@ -1,0 +1,198 @@
+import type { PokemonVariant } from '@/types/pokemonVariants';
+import {
+  isCaughtOwnershipMode,
+  toOwnershipApiValue,
+  type SearchOwnershipMode,
+} from './ownershipMode';
+
+export type SelectedMoves = {
+  fastMove: number | '' | null;
+  chargedMove1: number | '' | null;
+  chargedMove2: number | '' | null;
+};
+
+export type Coordinates = {
+  latitude: number | null;
+  longitude: number | null;
+};
+
+export type IvFilters = {
+  Attack: number | '' | null;
+  Defense: number | '' | null;
+  Stamina: number | '' | null;
+};
+
+export type PokemonSearchQueryParams = {
+  pokemon_id: number;
+  shiny: boolean;
+  shadow: boolean;
+  costume_id: number | null;
+  fast_move_id: number | '' | null;
+  charged_move_1_id: number | '' | null;
+  charged_move_2_id: number | '' | null;
+  gender: string | null;
+  background_id: number | null;
+  attack_iv: number | null;
+  defense_iv: number | null;
+  stamina_iv: number | null;
+  only_matching_trades: boolean | null;
+  pref_lucky: boolean | null;
+  friendship_level: number | null;
+  already_registered: boolean | null;
+  trade_in_wanted_list: boolean | null;
+  latitude: number | null;
+  longitude: number | null;
+  ownership: ReturnType<typeof toOwnershipApiValue>;
+  range_km: number;
+  limit: number;
+  dynamax: boolean;
+  gigantamax: boolean;
+};
+
+type ValidateSearchInputArgs = {
+  isShadow: boolean;
+  ownershipMode: SearchOwnershipMode;
+  pokemon: string;
+  useCurrentLocation: boolean;
+  city: string;
+  coordinates: Coordinates;
+  pokemonCache: PokemonVariant[] | null;
+};
+
+type BuildQueryArgs = {
+  matchingPokemon: PokemonVariant;
+  costume: string | null;
+  isShiny: boolean;
+  isShadow: boolean;
+  selectedMoves: SelectedMoves;
+  selectedGender: string | null;
+  selectedBackgroundId: number | null;
+  ivs: IvFilters;
+  onlyMatchingTrades: boolean;
+  prefLucky: boolean;
+  friendshipLevel: number;
+  alreadyRegistered: boolean;
+  tradeInWantedList: boolean;
+  coordinates: Coordinates;
+  ownershipMode: SearchOwnershipMode;
+  range: number;
+  resultsLimit: number;
+  dynamax: boolean;
+  gigantamax: boolean;
+};
+
+const toNullableNumber = (value: number | '' | null): number | null =>
+  typeof value === 'number' ? value : null;
+
+export const validateSearchInput = ({
+  isShadow,
+  ownershipMode,
+  pokemon,
+  useCurrentLocation,
+  city,
+  coordinates,
+  pokemonCache,
+}: ValidateSearchInputArgs): string | null => {
+  if (isShadow && (ownershipMode === 'trade' || ownershipMode === 'wanted')) {
+    return 'Shadow Pokemon cannot be listed for trade or wanted';
+  }
+
+  if (!pokemon) {
+    return 'Please provide a Pokemon name.';
+  }
+
+  if (!useCurrentLocation && (!city || !coordinates.latitude || !coordinates.longitude)) {
+    return 'Please provide a location or use your current location.';
+  }
+
+  if (!pokemonCache || pokemonCache.length === 0) {
+    return 'No Pokemon data found in the default store.';
+  }
+
+  return null;
+};
+
+export const findMatchingPokemonVariant = (
+  pokemonCache: PokemonVariant[],
+  pokemon: string,
+  selectedForm: string,
+): PokemonVariant | undefined =>
+  pokemonCache.find(
+    (variant) =>
+      variant.name?.toLowerCase() === pokemon.toLowerCase() &&
+      (!selectedForm ||
+        (variant.form ?? '').toLowerCase() === selectedForm.toLowerCase()),
+  );
+
+export const buildPokemonSearchQueryParams = ({
+  matchingPokemon,
+  costume,
+  isShiny,
+  isShadow,
+  selectedMoves,
+  selectedGender,
+  selectedBackgroundId,
+  ivs,
+  onlyMatchingTrades,
+  prefLucky,
+  friendshipLevel,
+  alreadyRegistered,
+  tradeInWantedList,
+  coordinates,
+  ownershipMode,
+  range,
+  resultsLimit,
+  dynamax,
+  gigantamax,
+}: BuildQueryArgs): PokemonSearchQueryParams => {
+  const matchingCostume = matchingPokemon.costumes?.find(
+    (entry) => entry.name === costume,
+  );
+
+  const queryParams: PokemonSearchQueryParams = {
+    pokemon_id: matchingPokemon.pokemon_id,
+    shiny: isShiny,
+    shadow: isShadow,
+    costume_id: matchingCostume?.costume_id ?? null,
+    fast_move_id: selectedMoves.fastMove,
+    charged_move_1_id: selectedMoves.chargedMove1,
+    charged_move_2_id: selectedMoves.chargedMove2,
+    gender: selectedGender === 'Any' ? null : selectedGender,
+    background_id: selectedBackgroundId,
+    attack_iv: toNullableNumber(ivs.Attack),
+    defense_iv: toNullableNumber(ivs.Defense),
+    stamina_iv: toNullableNumber(ivs.Stamina),
+    only_matching_trades: onlyMatchingTrades ? true : null,
+    pref_lucky: prefLucky ? true : null,
+    friendship_level: friendshipLevel,
+    already_registered: alreadyRegistered ? true : null,
+    trade_in_wanted_list: tradeInWantedList ? true : null,
+    latitude: coordinates.latitude,
+    longitude: coordinates.longitude,
+    ownership: toOwnershipApiValue(ownershipMode),
+    range_km: range,
+    limit: resultsLimit,
+    dynamax,
+    gigantamax,
+  };
+
+  if (!isCaughtOwnershipMode(ownershipMode)) {
+    queryParams.attack_iv = null;
+    queryParams.defense_iv = null;
+    queryParams.stamina_iv = null;
+  }
+
+  if (ownershipMode !== 'trade') {
+    queryParams.only_matching_trades = null;
+  }
+
+  if (ownershipMode !== 'wanted') {
+    queryParams.pref_lucky = null;
+    queryParams.friendship_level = null;
+    queryParams.already_registered = null;
+    queryParams.trade_in_wanted_list = null;
+  }
+
+  return queryParams;
+};
+
