@@ -2,10 +2,13 @@
 
 import { useState, useEffect, ChangeEvent } from 'react';
 import { fetchSuggestions, fetchLocationOptions } from '../../../services/locationServices';
+import { createScopedLogger } from '@/utils/logger';
 
 import type { User } from '../../../types/auth';
 import type { AccountFormValues, FormErrors } from '@/types/auth';
 import type { Coordinates, LocationSuggestion } from '../../../types/location';
+
+const log = createScopedLogger('useAccountForm');
 
 const useAccountForm = (
   user: User,
@@ -72,14 +75,14 @@ const useAccountForm = (
         selectedCoordinates.longitude !== prevCoordinates.longitude)
     ) {
       setPrevCoordinates(selectedCoordinates);
-      console.log('Coordinates updated:', selectedCoordinates);
+      log.debug('Coordinates updated:', selectedCoordinates);
     }
   }, [selectedCoordinates, prevCoordinates]);
 
   useEffect(() => {
     if (!user) {
       alert('No user data available, please log in.');
-      console.error('No user data available, please log in.');
+      log.error('No user data available, please log in.');
     }
   }, [user]);
 
@@ -183,7 +186,7 @@ const useAccountForm = (
     if (validate(values)) {
       onSubmit(values);
     } else {
-      console.log('Validation errors:', errors);
+      log.debug('Validation errors:', errors);
     }
   };
 
@@ -203,7 +206,7 @@ const useAccountForm = (
         delete submissionValues.confirmPassword;
       }
 
-      console.log('Submitting values:', submissionValues);
+      log.debug('Submitting values:', submissionValues);
 
       if (!submissionValues.allowLocation) {
         localStorage.removeItem('location');
@@ -258,7 +261,7 @@ const useAccountForm = (
           }          
         },
         () => {
-          console.error('Error fetching location.');
+          log.error('Error fetching location.');
           alert('Unable to fetch your current location. Please enable location permissions.');
         }
       );

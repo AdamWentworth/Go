@@ -1,9 +1,11 @@
 // useRaidBossesData.ts
 
 import { useEffect, useState } from 'react';
+import { createScopedLogger } from '@/utils/logger';
 
 const CACHE_NAME = 'raidCache';
 const CACHE_KEY = 'raid_bosses';
+const log = createScopedLogger('useRaidBossesData');
 
 export interface RaidBossReference {
   id: number;
@@ -32,14 +34,14 @@ const useRaidBossesData = <T extends HasRaidBossData>(
         const response = await cache.match(CACHE_KEY);
         if (response) {
           const cachedData = (await response.json()) as T[];
-          console.log('Retrieved raid boss variants from cache:', cachedData);
+          log.debug('Retrieved raid boss variants from cache:', cachedData);
           setRaidBossesData(cachedData);
           setRaidLoading(false);
         } else if (!loading && variants.length > 0) {
           processAndStoreData();
         }
       } catch (error) {
-        console.error('Error fetching from cache:', error);
+        log.error('Error fetching from cache:', error);
         if (!loading && variants.length > 0) {
           processAndStoreData();
         }
@@ -71,8 +73,8 @@ const useRaidBossesData = <T extends HasRaidBossData>(
       // Determine the IDs not found in the processed data.
       const notFoundRaidBossIds = allRaidBossIds.filter(id => !foundRaidBossIds.has(id));
 
-      console.log('Raid boss IDs not found:', notFoundRaidBossIds);
-      console.log('Storing raid boss variants in cache:', raidBossVariants);
+      log.debug('Raid boss IDs not found:', notFoundRaidBossIds);
+      log.debug('Storing raid boss variants in cache:', raidBossVariants);
 
       try {
         const cache = await caches.open(CACHE_NAME);
@@ -80,7 +82,7 @@ const useRaidBossesData = <T extends HasRaidBossData>(
         await cache.put(CACHE_KEY, response);
         setRaidBossesData(raidBossVariants);
       } catch (error) {
-        console.error('Error storing data in cache:', error);
+        log.error('Error storing data in cache:', error);
       }
       setRaidLoading(false);
     };

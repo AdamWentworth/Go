@@ -4,6 +4,9 @@ import { useState, useCallback, ChangeEvent, FocusEvent } from 'react';
 import { fetchSuggestions, fetchLocationOptions } from '../../../services/locationServices';
 import type { Coordinates, LocationSuggestion } from '../../../types/location';
 import type { RegisterFormValues, RegisterFormErrors } from '../../../types/auth';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('useRegisterForm');
 
 const useRegisterForm = (
   onSubmit: (values: RegisterFormValues & { location: string }) => void
@@ -159,7 +162,7 @@ const useRegisterForm = (
       };
       onSubmit(submitValues);
     } else {
-      console.error('Validation failed:', validationErrors);
+      log.debug('Validation failed:', validationErrors);
     }
   };
 
@@ -199,7 +202,7 @@ const useRegisterForm = (
           }
         },
         (err) => {
-          console.error('Error fetching location:', err.message);
+          log.error('Error fetching location:', err.message);
           alert('Unable to fetch your current location. Please enable location permissions.');
         }
       );

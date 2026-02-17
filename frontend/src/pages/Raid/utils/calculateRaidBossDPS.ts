@@ -2,6 +2,9 @@
 
 import { calculateDamage } from './calculateDamage';
 import { TYPE_MAPPING } from './constants';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('calculateRaidBossDPS');
 
 export interface RaidMove {
   is_fast: number;
@@ -93,7 +96,9 @@ export function calculateRaidBossDPS(
     dpsResults.push(RaidBossAverageDPS.toFixed(2));  // Format to two decimal places.
   });
 
-  console.log(dpsResults);
-  console.log(playerPokemons);
+  log.debug('Calculated raid boss DPS results', {
+    resultCount: dpsResults.length,
+    playerCount: playerPokemons.length,
+  });
   return dpsResults;
 }
