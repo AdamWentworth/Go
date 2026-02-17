@@ -1,7 +1,6 @@
 // TradeDetails.jsx
 import React, { useState, useEffect } from 'react';
 import './TradeDetails.css';
-import EditSaveComponent from '@/components/EditSaveComponent';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useModal } from '@/contexts/ModalContext';
 import type { Instances } from '@/types/instances';
@@ -11,7 +10,7 @@ import type { SortMode, SortType } from '@/types/sort';
 
 import WantedListDisplay from './WantedListDisplay';
 
-import MirrorManager from './MirrorManager';
+import TradeTopRow from './TradeTopRow';
 import TradeFiltersPanel from './TradeFiltersPanel';
 
 import useImageSelection from '../../utils/useImageSelection';
@@ -357,71 +356,28 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
     setLocalNotWantedList({});
   };
 
+  const handleMirrorDisplayedListUpdate = (newData: Record<string, PokemonInstance>) => {
+    updateDisplayedList(newData, localNotWantedList, setListsState as any);
+  };
+
   return (
     <div>
       <div className="trade-details-container">
-        <div className={`top-row ${isMirror ? 'few-wanted' : ''}`}>
-          {isEditable && (
-            <div className="edit-save-container">
-              <EditSaveComponent
-                editMode={editMode}
-                toggleEditMode={toggleEditMode}
-                isEditable={isEditable}
-              />
-              {!isMirror && (
-                <div
-                  className={`reset-container ${editMode ? 'editable' : ''}`}
-                >
-                  <img
-                    src={`/images/reset.png`}
-                    alt="Reset Filters"
-                    style={{
-                      cursor: editMode ? 'pointer' : 'default',
-                      width: '25px',
-                      height: 'auto',
-                    }}
-                    onClick={editMode ? handleResetFilters : undefined}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-          {!isMirror ? (
-            !shouldShowFewLayout ? (
-              <>
-                <div className="header-group">
-                  <h3>Exclude</h3>
-                </div>
-                <div className="header-group">
-                  <h3>Include</h3>
-                </div>
-              </>
-            ) : (
-              <div className="header-group include-few">
-                <h3>Exclude</h3>
-              </div>
-            )
-          ) : (
-            <div className="spacer"></div>
-          )}
-          <div className="mirror">
-            <MirrorManager
-              pokemon={pokemon}
-              instances={instancesMap}
-              lists={lists}
-              isMirror={isMirror}
-              setIsMirror={setIsMirror}
-              setMirrorKey={setMirrorKey}
-              // Pass isEditable as the editMode prop so that when viewing (isEditable is false)
-              // the toggle logic inside MirrorManager is disabled.
-              editMode={isEditable}
-              updateDisplayedList={(newData) =>
-                updateDisplayedList(newData, localNotWantedList, setListsState as any)
-              }
-              updateDetails={updateDetails}
-            />
-          </div>
-        </div>
+        <TradeTopRow
+          isMirror={isMirror}
+          isEditable={isEditable}
+          editMode={editMode}
+          shouldShowFewLayout={shouldShowFewLayout}
+          toggleEditMode={toggleEditMode}
+          onResetFilters={handleResetFilters}
+          pokemon={pokemon}
+          instancesMap={instancesMap}
+          lists={lists}
+          setIsMirror={setIsMirror}
+          setMirrorKey={setMirrorKey}
+          updateMirrorDisplayedList={handleMirrorDisplayedListUpdate}
+          updateDetails={updateDetails}
+        />
 
         <TradeFiltersPanel
           isMirror={isMirror}
