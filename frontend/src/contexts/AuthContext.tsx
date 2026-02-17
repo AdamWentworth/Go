@@ -2,6 +2,7 @@
 import {
   createContext,
   useContext,
+  useCallback,
   useEffect,
   useRef,
   ReactNode,
@@ -51,6 +52,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const userRef = useRef<User | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearSessionRef = useRef<(forced: boolean) => Promise<void>>(async () => {});
+  const checkAndRefreshTokenRef = useRef<() => Promise<void>>(async () => {});
+  const refreshTokenRef = useRef<() => Promise<void>>(async () => {});
+  const scheduleTokenRefreshRef = useRef<(accessExp: Date) => void>(() => {});
+  const startTokenExpirationCheckRef = useRef<() => void>(() => {});
 
   const navigate = useNavigate();
   const { resetInstances } = useInstancesStore();
@@ -66,123 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   }
 
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      const userData = JSON.parse(stored) as User;
-      setUser(userData);
-      userRef.current = userData;
-      setIsLoggedIn(true);
-
-      const now = Date.now();
-      const accessExp = new Date(userData.accessTokenExpiry).getTime();
-      const refreshExp = new Date(userData.refreshTokenExpiry).getTime();
-      const msUntilRefresh = accessExp - now - 60_000;
-
-      postAuthStateToSW(true);
-
-      if (refreshExp > now) {
-        if (msUntilRefresh > 0) {
-          refreshTimeoutRef.current = setTimeout(checkAndRefreshToken, msUntilRefresh);
-        } else {
-          void checkAndRefreshToken();
-        }
-        startTokenExpirationCheck();
-      } else {
-        void clearSession(true);
-      }
-    }
-
-    setIsLoading(false);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
-    };
-  }, []);
-
-  const startTokenExpirationCheck = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      const current = userRef.current;
-      if (!current) return;
-      if (Date.now() >= new Date(current.refreshTokenExpiry).getTime()) {
-        void clearSession(true);
-      }
-    }, 60_000);
-  };
-
-  const checkAndRefreshToken = async () => {
-    const current = userRef.current;
-    if (!current) return;
-
-    const now = Date.now();
-    const accessExp = new Date(current.accessTokenExpiry).getTime();
-    const refreshExp = new Date(current.refreshTokenExpiry).getTime();
-    const msUntilRefresh = accessExp - now - 60_000;
-
-    if (now >= refreshExp) {
-      await clearSession(true);
-      return;
-    }
-
-    if (msUntilRefresh <= 0) {
-      await refreshToken();
-    } else {
-      scheduleTokenRefresh(new Date(accessExp));
-    }
-  };
-
-  const refreshToken = async () => {
-    try {
-      const { accessTokenExpiry, refreshTokenExpiry } =
-        (await refreshTokenService()) as RefreshTokenPayload;
-
-      const newUser: User = {
-        ...userRef.current!,
-        accessTokenExpiry,
-        refreshTokenExpiry,
-      };
-
-      setUser(newUser);
-      userRef.current = newUser;
-      localStorage.setItem('user', JSON.stringify(newUser));
-      scheduleTokenRefresh(new Date(accessTokenExpiry));
-    } catch {
-      await clearSession(true);
-    }
-  };
-
-  const scheduleTokenRefresh = (accessExp: Date) => {
-    if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
-    const msUntilRefresh = accessExp.getTime() - Date.now() - 60_000;
-    refreshTimeoutRef.current = setTimeout(checkAndRefreshToken, Math.max(msUntilRefresh, 0));
-  };
-
-  const login = (userData: User) => {
-    localStorage.setItem('user', JSON.stringify(userData));
-    setIsLoggedIn(true);
-    setUser(userData);
-    userRef.current = userData;
-    startTokenExpirationCheck();
-    scheduleTokenRefresh(new Date(userData.accessTokenExpiry));
-    postAuthStateToSW(true);
-  };
-
-  const logout = async () => {
-    try {
-      await logoutUser();
-    } catch (err: unknown) {
-      if ((err as { response?: { status: number } }).response?.status !== 404) {
-        toast.error('An error occurred during logout. Please try again.');
-        return;
-      }
-    } finally {
-      await clearSession(false);
-    }
-  };
-
-  const clearSession = async (forced: boolean) => {
+  const clearSession = useCallback(async (forced: boolean) => {
     localStorage.removeItem('user');
     localStorage.removeItem('pokemonOwnership');
     localStorage.removeItem('ownershipTimestamp');
@@ -210,6 +100,134 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate('/login', { replace: true });
     if (forced) {
       setTimeout(() => alert('Your session has expired, please log in again.'), 1_000);
+    }
+  }, [navigate, resetInstances, resetTags, resetTradeData, setIsLoggedIn, setUser]);
+
+  const startTokenExpirationCheck = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      const current = userRef.current;
+      if (!current) return;
+      if (Date.now() >= new Date(current.refreshTokenExpiry).getTime()) {
+        void clearSessionRef.current(true);
+      }
+    }, 60_000);
+  }, []);
+
+  const checkAndRefreshToken = useCallback(async () => {
+    const current = userRef.current;
+    if (!current) return;
+
+    const now = Date.now();
+    const accessExp = new Date(current.accessTokenExpiry).getTime();
+    const refreshExp = new Date(current.refreshTokenExpiry).getTime();
+    const msUntilRefresh = accessExp - now - 60_000;
+
+    if (now >= refreshExp) {
+      await clearSessionRef.current(true);
+      return;
+    }
+
+    if (msUntilRefresh <= 0) {
+      await refreshTokenRef.current();
+    } else {
+      scheduleTokenRefreshRef.current(new Date(accessExp));
+    }
+  }, []);
+
+  const refreshToken = useCallback(async () => {
+    try {
+      const { accessTokenExpiry, refreshTokenExpiry } =
+        (await refreshTokenService()) as RefreshTokenPayload;
+
+      const newUser: User = {
+        ...userRef.current!,
+        accessTokenExpiry,
+        refreshTokenExpiry,
+      };
+
+      setUser(newUser);
+      userRef.current = newUser;
+      localStorage.setItem('user', JSON.stringify(newUser));
+      scheduleTokenRefreshRef.current(new Date(accessTokenExpiry));
+    } catch {
+      await clearSessionRef.current(true);
+    }
+  }, [setUser]);
+
+  const scheduleTokenRefresh = useCallback((accessExp: Date) => {
+    if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+    const msUntilRefresh = accessExp.getTime() - Date.now() - 60_000;
+    refreshTimeoutRef.current = setTimeout(
+      () => void checkAndRefreshTokenRef.current(),
+      Math.max(msUntilRefresh, 0),
+    );
+  }, []);
+
+  clearSessionRef.current = clearSession;
+  checkAndRefreshTokenRef.current = checkAndRefreshToken;
+  refreshTokenRef.current = refreshToken;
+  scheduleTokenRefreshRef.current = scheduleTokenRefresh;
+  startTokenExpirationCheckRef.current = startTokenExpirationCheck;
+
+  useEffect(() => {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      const userData = JSON.parse(stored) as User;
+      useAuthStore.getState().setUser(userData);
+      userRef.current = userData;
+      useAuthStore.getState().setIsLoggedIn(true);
+
+      const now = Date.now();
+      const accessExp = new Date(userData.accessTokenExpiry).getTime();
+      const refreshExp = new Date(userData.refreshTokenExpiry).getTime();
+      const msUntilRefresh = accessExp - now - 60_000;
+
+      postAuthStateToSW(true);
+
+      if (refreshExp > now) {
+        if (msUntilRefresh > 0) {
+          refreshTimeoutRef.current = setTimeout(
+            () => void checkAndRefreshTokenRef.current(),
+            msUntilRefresh,
+          );
+        } else {
+          void checkAndRefreshTokenRef.current();
+        }
+        startTokenExpirationCheckRef.current();
+      } else {
+        void clearSessionRef.current(true);
+      }
+    }
+
+    setIsLoading(false);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+    };
+  }, []);
+
+  const login = (userData: User) => {
+    localStorage.setItem('user', JSON.stringify(userData));
+    setIsLoggedIn(true);
+    setUser(userData);
+    userRef.current = userData;
+    startTokenExpirationCheck();
+    scheduleTokenRefresh(new Date(userData.accessTokenExpiry));
+    postAuthStateToSW(true);
+  };
+
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch (err: unknown) {
+      if ((err as { response?: { status: number } }).response?.status !== 404) {
+        toast.error('An error occurred during logout. Please try again.');
+        return;
+      }
+    } finally {
+      await clearSession(false);
     }
   };
 

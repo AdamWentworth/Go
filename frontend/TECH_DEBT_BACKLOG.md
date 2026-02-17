@@ -107,8 +107,9 @@ This backlog converts the current frontend audit into an execution plan focused 
 100. P0.1 slice E: removed remaining explicit `any` usage from the trade/instance editing stack (`db/tradesDB.ts` generics, `features/trades/store/useTradeStore.ts`, `TradeDetails.tsx`, `WantedDetails.tsx`, `TradeInstance.tsx`, `WantedInstance.tsx`, `TradeOverlaysPanel.tsx`, `TradeProposal.tsx`, `UpdateForTradeModal.tsx`) and hardened trade-payload typing/contracts (`tradeDetailsHelpers.ts`, `useTradeProposalFlow.ts`) with compatible unit fixture updates; validated with green `typecheck`, `426/426` unit tests, and production build; lint baseline reduced from `118` to `82` total findings (`81` -> `47` errors).
 101. P0.1 slice F: removed the remaining explicit `any` + empty-catch lint blockers across tags/instances/fusion/auth paths (`db/tagsDB.ts`, `features/tags/store/useTagsStore.ts`, `features/tags/utils/initializePokemonTags.ts`, `TagsMenu/PreviewContainer.tsx`, `features/instances/utils/{instancesEquality,mergeInstancesData}.ts`, `Authentication/Login.tsx`, `LevelArc.tsx`, fusion handlers/services, and `getDisplayName.ts`), preserved behavior with green `typecheck` + `426/426` unit tests, and reduced lint from `67` findings (`33` errors) to `32` findings (`0` errors, warnings only).
 102. P0.1 slice G: removed low-risk lint warning debt across shared UI/util paths (`DateCaught`, `Gender`, `HeaderUI`, `PokedexListsMenu`, `SearchMenu`, `SelectChip`, `WantedInstance`, `WantedListDisplay`, `PokedexOverlay`, `useVariantSearchController`, `authService`, `loadInstances`, `createPokemonVariants`) by eliminating unused vars/imports and stabilizing helper references; validated with green `typecheck`, `426/426` unit tests, and production build; lint baseline reduced from `32` findings to `14` findings (all remaining are `react-hooks/exhaustive-deps` warnings).
+103. P0.1 slice H: resolved the remaining `react-hooks/exhaustive-deps` warning set (`AuthContext`, `WantedDetails`, `useCalculateStardustCost`, `useTradeFiltering`, `useWantedFiltering`, `PokemonSearchBar`, `MapView`), validated with green `lint` + `typecheck` + targeted unit regressions + production build, and flipped frontend CI lint from advisory to blocking.
 - In progress:
-1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
+1. None.
 
 ## Audit Snapshot (2026-02-17)
 
@@ -129,8 +130,8 @@ Repo parse against backlog claims:
 6. Tooling cleanup status:
    - Jest framework/toolchain packages/config references removed.
    - Remaining `@testing-library/jest-dom` and `jest-axe` usage is intentional for Vitest matcher/a11y helpers.
-7. Lint baseline (post P0.1 slices A-G):
-   - `npm run lint`: `14` findings (`0` errors, `14` warnings), down from `232` (`189` errors, `43` warnings).
+7. Lint baseline (post P0.1 slices A-H):
+   - `npm run lint`: `0` findings (`0` errors, `0` warnings), down from `232` (`189` errors, `43` warnings).
 
 ## Rules Of Execution
 
@@ -143,13 +144,13 @@ Repo parse against backlog claims:
 
 ### P0.1 - CI Quality Gates (Blocking)
 
-- Status: In progress
+- Status: Done
 
 - Goal: prevent shipping broken runtime/type/test states.
 - Tasks:
 1. [x] Add `typecheck` script to `frontend/package.json`.
 2. [x] Add CI steps in `.github/workflows/ci-frontend.yml` for:
-3. [ ] `npm run lint` (currently advisory while baseline is reduced)
+3. [x] `npm run lint`
 4. [x] `npm run typecheck`
 5. [x] `npm run test`
 6. [x] Keep build + bundle checks as required.
@@ -349,4 +350,4 @@ Repo parse against backlog claims:
 
 ## Immediate Next Step
 
-Continue P0.1 lint-baseline reduction by resolving the remaining `react-hooks/exhaustive-deps` warnings in targeted hooks/components (`AuthContext`, `useInitLocation`, `PokemonOptionsOverlay`, `SearchUI`, `NameComponent`, `TradeProposal`, `WantedDetails`, `useCalculateStardustCost`, `useTradeFiltering`, `useWantedFiltering`, `PokemonSearchBar`, `MapView`) and then flip lint to blocking in CI.
+Start the next maintainability wave by targeting high-value runtime-path regression coverage that still lacks direct tests (`AuthContext` session lifecycle and `useWantedFiltering` edge-path behavior), then re-run full CI gates on PR.

@@ -1,6 +1,6 @@
 // SearchUI.tsx
 
-import React, { useState, useEffect, useCallback, ChangeEvent } from 'react';
+import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
 import { debounce } from 'lodash';
 import './SearchUI.css';
 
@@ -36,12 +36,19 @@ const SearchUI: React.FC<SearchUIProps> = ({
   }, [searchTerm]);
 
   // Debounce search callbacks
-  const debouncedSearchChange = useCallback(
-    debounce((value: string) => {
-      onSearchChange(value);
-    }, 250),
-    [onSearchChange]
+  const debouncedSearchChange = useMemo(
+    () =>
+      debounce((value: string) => {
+        onSearchChange(value);
+      }, 250),
+    [onSearchChange],
   );
+
+  useEffect(() => {
+    return () => {
+      debouncedSearchChange.cancel();
+    };
+  }, [debouncedSearchChange]);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

@@ -36,7 +36,8 @@ const useWantedFiltering = (
   localNotWantedList: Record<string, boolean>,
   editMode: boolean,
 ) => {
-  const baseWanted = asWantedMap(listsState?.wanted);
+  const wantedSource = listsState?.wanted;
+  const baseWanted = asWantedMap(wantedSource);
 
   const [filteredWantedList, setFilteredWantedList] = useState<WantedMap>(baseWanted);
   const [filteredOutPokemon, setFilteredOutPokemon] = useState<string[]>([]);
@@ -45,10 +46,9 @@ const useWantedFiltering = (
   });
 
   useEffect(() => {
-    const wanted = asWantedMap(listsState?.wanted);
+    const wanted = asWantedMap(wantedSource);
     let updatedList: WantedMap = { ...wanted };
     const newlyFilteredOutPokemon: string[] = [];
-    const reappearingPokemon: string[] = [];
     const nextLocalWantedFilters: WantedFiltersState = { ...(localWantedFilters || {}) };
 
     // Initialize all existing filter keys to false.
@@ -65,12 +65,6 @@ const useWantedFiltering = (
         updatedList = filterFn(updatedList) || {};
         nextLocalWantedFilters[filterName] = true;
       } else {
-        Object.keys(wanted).forEach((key) => {
-          const reevaluated = filterFn(updatedList) || {};
-          if (!reevaluated[key] && updatedList[key]) {
-            reappearingPokemon.push(key);
-          }
-        });
         nextLocalWantedFilters[filterName] = false;
       }
     });
@@ -114,12 +108,20 @@ const useWantedFiltering = (
     // Preserve legacy behavior: in edit mode, include filtered entries as greyedOut
     // and mark them in local not-wanted list.
     if (editMode) {
+      const nextNotWanted = { ...(localNotWantedList || {}) };
+      let notWantedChanged = false;
       newlyFilteredOutPokemon.forEach((key) => {
-        if (!localNotWantedList[key]) {
+        if (!nextNotWanted[key]) {
+          nextNotWanted[key] = true;
+          notWantedChanged = true;
+        }
+        if (wanted[key]) {
           updatedList[key] = { ...wanted[key], greyedOut: true };
-          setLocalNotWantedList((prev) => ({ ...prev, [key]: true }));
         }
       });
+      if (notWantedChanged) {
+        setLocalNotWantedList(nextNotWanted);
+      }
     }
 
     setFilteredWantedList(updatedList);
@@ -128,8 +130,11 @@ const useWantedFiltering = (
   }, [
     selectedExcludeImages,
     selectedIncludeOnlyImages,
-    listsState?.wanted,
+    wantedSource,
     editMode,
+    localWantedFilters,
+    localNotWantedList,
+    setLocalNotWantedList,
   ]);
 
   return { filteredWantedList, filteredOutPokemon, updatedLocalWantedFilters };

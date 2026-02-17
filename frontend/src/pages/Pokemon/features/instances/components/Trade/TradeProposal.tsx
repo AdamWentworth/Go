@@ -4,7 +4,7 @@
 /*  TradeProposal.tsx – fully-typed & squiggle-free                    */
 /* ------------------------------------------------------------------ */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './TradeProposal.css';
 
 import CP from '@/components/pokemonComponents/CP';
@@ -67,9 +67,13 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   /* local state --------------------------------------------------- */
-  const matchedInstances = Array.isArray(clickedPokemon?.matchedInstances)
-    ? clickedPokemon.matchedInstances
-    : [];
+  const matchedInstances = useMemo(
+    () =>
+      Array.isArray(clickedPokemon?.matchedInstances)
+        ? clickedPokemon.matchedInstances
+        : [],
+    [clickedPokemon?.matchedInstances],
+  );
   const [selectedMatchedInstance, setSelectedMatchedInstance] =
     useState<PokemonVariant | null>(matchedInstances[0] ?? null);
 

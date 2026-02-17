@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { useNavigate } from 'react-router-dom';
@@ -74,20 +74,26 @@ const MapView: React.FC<MapViewProps> = ({ data, instanceData, pokemonCache }) =
     }
   }, [pokemonCache]);
 
-  const findPokemonByKey = (
-    keyOrInstanceId?: string | null,
-    instanceLike?: Parameters<typeof findVariantForInstance>[2],
-  ) => findVariantForInstance(pokemonVariants, keyOrInstanceId, instanceLike);
+  const findPokemonByKey = useCallback(
+    (
+      keyOrInstanceId?: string | null,
+      instanceLike?: Parameters<typeof findVariantForInstance>[2],
+    ) => findVariantForInstance(pokemonVariants, keyOrInstanceId, instanceLike),
+    [pokemonVariants],
+  );
 
-  const navigateToUserCatalog = (
-    username: string,
-    instanceId: string,
-    selectedInstanceData: string,
-  ) => {
-    navigate(`/pokemon/${username}`, {
-      state: { instanceId, instanceData: selectedInstanceData },
-    });
-  };
+  const navigateToUserCatalog = useCallback(
+    (
+      username: string,
+      instanceId: string,
+      selectedInstanceData: string,
+    ) => {
+      navigate(`/pokemon/${username}`, {
+        state: { instanceId, instanceData: selectedInstanceData },
+      });
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     if (!data.length) return;
@@ -254,7 +260,14 @@ const MapView: React.FC<MapViewProps> = ({ data, instanceData, pokemonCache }) =
         mapRef.current.setTarget(undefined);
       }
     };
-  }, [data, isLightMode, ownershipMode, pokemonVariants]);
+  }, [
+    data,
+    findPokemonByKey,
+    isLightMode,
+    navigateToUserCatalog,
+    ownershipMode,
+    pokemonVariants,
+  ]);
 
   return (
     <div>

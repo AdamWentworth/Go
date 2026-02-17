@@ -12,6 +12,27 @@ interface UseCalculateStardustCostResult {
   isRegisteredTrade: boolean;
 }
 
+const REG_COST = 100;
+const UNREG_COST_NOT_SPECIAL: Record<number, number> = {
+  1: 20000,
+  2: 16000,
+  3: 1600,
+  4: 800,
+};
+const UNREG_COST_SPECIAL: Record<number, number> = {
+  1: 1000000,
+  2: 800000,
+  3: 80000,
+  4: 40000,
+};
+const REG_COST_SPECIAL: Record<number, number> = {
+  1: 20000,
+  2: 16000,
+  3: 1600,
+  4: 800,
+};
+const MAX_COST = 1000000;
+
 export const useCalculateStardustCost = (
   friendshipLevel: number,
   passedInPokemon: PokemonVariant | null,
@@ -22,27 +43,6 @@ export const useCalculateStardustCost = (
   const [stardustCost, setStardustCost] = useState(0);
   const [isSpecialTrade, setIsSpecialTrade] = useState(false);
   const [isRegisteredTrade, setIsRegisteredTrade] = useState(false);
-
-  const REG_COST = 100;
-  const UNREG_COST_NOT_SPECIAL: Record<number, number> = {
-    1: 20000,
-    2: 16000,
-    3: 1600,
-    4: 800,
-  };
-  const UNREG_COST_SPECIAL: Record<number, number> = {
-    1: 1000000,
-    2: 800000,
-    3: 80000,
-    4: 40000,
-  };
-  const REG_COST_SPECIAL: Record<number, number> = {
-    1: 20000,
-    2: 16000,
-    3: 1600,
-    4: 800,
-  };
-  const MAX_COST = 1000000;
 
   useEffect(() => {
     const calculateCost = () => {

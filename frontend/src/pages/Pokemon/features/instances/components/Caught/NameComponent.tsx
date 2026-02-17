@@ -1,5 +1,5 @@
 // NameComponent.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import './NameComponent.css';
 import { getLastWord } from '@/utils/formattingHelpers';
 
@@ -17,18 +17,20 @@ interface NameComponentProps {
 }
 
 const NameComponent: React.FC<NameComponentProps> = ({ pokemon, editMode, onNicknameChange }) => {
-  const initialNickname = (): string =>
+  const initialNickname = useMemo((): string =>
     pokemon.instanceData?.nickname && pokemon.instanceData.nickname.trim() !== ''
       ? pokemon.instanceData.nickname
-      : '';
+      : '',
+    [pokemon.instanceData?.nickname],
+  );
 
-  const [nickname, setNicknameState] = useState<string>(initialNickname());
+  const [nickname, setNicknameState] = useState<string>(initialNickname);
   const [userFocus, setUserFocus] = useState<boolean>(false);
   const editableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setNicknameState(initialNickname());
-  }, [pokemon.instanceData?.nickname, pokemon.name]);
+    setNicknameState(initialNickname);
+  }, [initialNickname, pokemon.name]);
 
   useEffect(() => {
     if (editMode && editableRef.current) {

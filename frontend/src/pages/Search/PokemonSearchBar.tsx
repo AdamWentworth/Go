@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FaChevronDown, FaChevronUp, FaGlobe, FaList } from 'react-icons/fa';
 
 import VariantSearch from './SearchParameters/VariantSearch';
@@ -172,7 +172,7 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
     }
   }, [isCollapsed]);
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     const searchBar = collapsibleRef.current;
     const searchBarHeight = searchBar ? searchBar.offsetHeight : 0;
     const searchBarBottom = searchBar ? searchBar.offsetTop + searchBarHeight : 0;
@@ -190,12 +190,12 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
       }
       setIsCollapsed(false);
     }
-  };
+  }, [setIsCollapsed]);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [handleScroll]);
 
   const toggleCollapse = () => {
     setIsCollapsed((prev) => !prev);

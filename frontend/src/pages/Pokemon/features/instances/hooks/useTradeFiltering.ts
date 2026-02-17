@@ -62,10 +62,12 @@ export default function useTradeFiltering(
   localNotTradeList: Record<string, boolean>,
   editMode: boolean,
 ): UseTradeFilteringResult {
+  const tradeList = listsState?.trade;
+
   const memo = useMemo(() => {
     const baseTrade =
-      listsState && listsState.trade && typeof listsState.trade === 'object'
-        ? listsState.trade
+      tradeList && typeof tradeList === 'object'
+        ? tradeList
         : {};
 
     let updatedList: TradeMap = { ...baseTrade };
@@ -138,11 +140,12 @@ export default function useTradeFiltering(
       reappeared,
     };
   }, [
-    listsState && listsState.trade,
+    tradeList,
     selectedExcludeImages,
     selectedIncludeOnlyImages,
     localTradeFilters,
     editMode,
+    localNotTradeList,
   ]);
 
   const stableTradeFilters = shallowEqualObj(
@@ -172,8 +175,8 @@ export default function useTradeFiltering(
   }, [
     editMode,
     setLocalNotTradeList,
-    memo.newlyFiltered.length,
-    memo.reappeared.length,
+    memo.newlyFiltered,
+    memo.reappeared,
   ]);
 
   return {

@@ -42,7 +42,7 @@ const useForceWrap = (
       (optionLines === 1 && previewLines > 1) ||
       (previewLines === 1 && optionLines > 1)
     );
-  }, [trigger]);
+  }, [optionRef, previewRef, trigger]);
 
   return forceWrap;
 };

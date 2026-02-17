@@ -1,6 +1,6 @@
 // useInitLocation.ts
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,14 +23,14 @@ export function useInitLocation() {
   const didInitialRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const storeAndLogCoords = (coords: { latitude: number; longitude: number }) => {
+  const storeAndLogCoords = useCallback((coords: { latitude: number; longitude: number }) => {
     setLocation(coords);
     setStatus('available');
     localStorage.setItem('location', JSON.stringify(coords));
     log.debug(
       `Location acquired and stored. Latitude: ${coords.latitude}, Longitude: ${coords.longitude}`,
     );
-  };
+  }, [setLocation, setStatus]);
 
   useEffect(() => {
     const fetchLocation = () => {
@@ -130,5 +130,5 @@ export function useInitLocation() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [authLoading, user, updateUserDetails, setLocation, setStatus]);
+  }, [authLoading, storeAndLogCoords, updateUserDetails, user, setLocation, setStatus]);
 }

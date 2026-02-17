@@ -69,8 +69,14 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
 }) => {
   const instancesMap = instances ?? {};
   // Defensive defaults in case instanceData is not ready yet.
-  const not_trade_list = pokemon?.instanceData?.not_trade_list ?? {};
-  const trade_filters  = pokemon?.instanceData?.trade_filters  ?? {};
+  const not_trade_list = useMemo(
+    () => pokemon?.instanceData?.not_trade_list ?? {},
+    [pokemon?.instanceData?.not_trade_list],
+  );
+  const trade_filters = useMemo(
+    () => pokemon?.instanceData?.trade_filters ?? {},
+    [pokemon?.instanceData?.trade_filters],
+  );
 
   const [editMode, setEditMode] = useState(false);
   const [localNotTradeList, setLocalNotTradeList] = useState({ ...not_trade_list });
