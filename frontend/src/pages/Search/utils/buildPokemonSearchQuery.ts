@@ -81,6 +81,43 @@ type BuildQueryArgs = {
   gigantamax: boolean;
 };
 
+type PreparePokemonSearchQueryArgs = {
+  pokemon: string;
+  selectedForm: string;
+  isShiny: boolean;
+  isShadow: boolean;
+  costume: string | null;
+  selectedMoves: SelectedMoves;
+  selectedGender: string | null;
+  selectedBackgroundId: number | null;
+  dynamax: boolean;
+  gigantamax: boolean;
+  city: string;
+  useCurrentLocation: boolean;
+  ownershipMode: SearchOwnershipMode;
+  coordinates: Coordinates;
+  range: number;
+  resultsLimit: number;
+  ivs: IvFilters;
+  onlyMatchingTrades: boolean;
+  prefLucky: boolean;
+  friendshipLevel: number;
+  alreadyRegistered: boolean;
+  tradeInWantedList: boolean;
+  pokemonCache: PokemonVariant[] | null;
+};
+
+export type PreparedPokemonSearchQuery =
+  | {
+      ok: true;
+      queryParams: PokemonSearchQueryParams;
+    }
+  | {
+      ok: false;
+      errorMessage: string;
+      shouldExpandSearchBar: boolean;
+    };
+
 const toNullableNumber = (value: number | '' | null): number | null =>
   typeof value === 'number' ? value : null;
 
@@ -196,3 +233,83 @@ export const buildPokemonSearchQueryParams = ({
   return queryParams;
 };
 
+export const preparePokemonSearchQuery = ({
+  pokemon,
+  selectedForm,
+  isShiny,
+  isShadow,
+  costume,
+  selectedMoves,
+  selectedGender,
+  selectedBackgroundId,
+  dynamax,
+  gigantamax,
+  city,
+  useCurrentLocation,
+  ownershipMode,
+  coordinates,
+  range,
+  resultsLimit,
+  ivs,
+  onlyMatchingTrades,
+  prefLucky,
+  friendshipLevel,
+  alreadyRegistered,
+  tradeInWantedList,
+  pokemonCache,
+}: PreparePokemonSearchQueryArgs): PreparedPokemonSearchQuery => {
+  const inputError = validateSearchInput({
+    isShadow,
+    ownershipMode,
+    pokemon,
+    useCurrentLocation,
+    city,
+    coordinates,
+    pokemonCache,
+  });
+  if (inputError) {
+    return {
+      ok: false,
+      errorMessage: inputError,
+      shouldExpandSearchBar: false,
+    };
+  }
+
+  const matchingPokemon = findMatchingPokemonVariant(
+    pokemonCache as PokemonVariant[],
+    pokemon,
+    selectedForm,
+  );
+  if (!matchingPokemon) {
+    return {
+      ok: false,
+      errorMessage: 'No matching Pokemon found in the default list.',
+      shouldExpandSearchBar: true,
+    };
+  }
+
+  return {
+    ok: true,
+    queryParams: buildPokemonSearchQueryParams({
+      matchingPokemon,
+      costume,
+      isShiny,
+      isShadow,
+      selectedMoves,
+      selectedGender,
+      selectedBackgroundId,
+      ivs,
+      onlyMatchingTrades,
+      prefLucky,
+      friendshipLevel,
+      alreadyRegistered,
+      tradeInWantedList,
+      coordinates,
+      ownershipMode,
+      range,
+      resultsLimit,
+      dynamax,
+      gigantamax,
+    }),
+  };
+};

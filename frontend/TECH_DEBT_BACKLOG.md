@@ -138,6 +138,12 @@ None.
 28. Added typed helper `buildSuggestionClickDecision` and switched suggestion-click flow to a single helper-driven decision.
 29. Added direct helper unit tests for toggle/selection/suggestion decisions in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` (now `12` tests).
 30. Added controller regression tests for shiny/shadow toggles and combined costume/form/suggestion interactions in `tests/unit/pages/Search/SearchParameters/useVariantSearchController.unit.test.tsx` (now `8` tests).
+31. Added composed helper `preparePokemonSearchQuery` in `Search/utils/buildPokemonSearchQuery.ts` to unify validate + match + query construction and return typed failure/success decisions.
+32. Refactored `PokemonSearchBar.tsx` `handleSearch` to use `preparePokemonSearchQuery`, preserving collapse behavior for no-match cases via `shouldExpandSearchBar`.
+33. Extracted duplicated location/ownership panel rendering into `SearchSecondaryPanels.tsx` and removed inline duplicated JSX branches from `PokemonSearchBar.tsx`.
+34. Added regression coverage for composed search preparation outcomes in `tests/unit/pages/Search/utils/buildPokemonSearchQuery.unit.test.ts` (now `7` tests).
+35. Added unit coverage for `SearchSecondaryPanels` grouped/non-grouped layout behavior in `tests/unit/pages/Search/SearchSecondaryPanels.unit.test.tsx`.
+36. Reduced `PokemonSearchBar.tsx` from `313` LOC to `250` LOC while preserving behavior.
 - DoD:
 1. Large orchestration logic moved to pure helpers/hooks.
 2. Existing search behavior remains intact under tests.

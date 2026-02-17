@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildPokemonSearchQueryParams,
   findMatchingPokemonVariant,
+  preparePokemonSearchQuery,
   validateSearchInput,
 } from '@/pages/Search/utils/buildPokemonSearchQuery';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -115,5 +116,110 @@ describe('buildPokemonSearchQuery utils', () => {
       trade_in_wanted_list: true,
     });
   });
-});
 
+  it('prepares search query and surfaces validation errors without expansion', () => {
+    const prepared = preparePokemonSearchQuery({
+      pokemon: '',
+      selectedForm: '',
+      isShiny: false,
+      isShadow: false,
+      costume: '',
+      selectedMoves: { fastMove: null, chargedMove1: null, chargedMove2: null },
+      selectedGender: 'Any',
+      selectedBackgroundId: null,
+      dynamax: false,
+      gigantamax: false,
+      city: 'Seattle',
+      useCurrentLocation: false,
+      ownershipMode: 'caught',
+      coordinates: { latitude: 47.6, longitude: -122.3 },
+      range: 5,
+      resultsLimit: 10,
+      ivs: { Attack: null, Defense: null, Stamina: null },
+      onlyMatchingTrades: false,
+      prefLucky: false,
+      friendshipLevel: 0,
+      alreadyRegistered: false,
+      tradeInWantedList: false,
+      pokemonCache,
+    });
+
+    expect(prepared).toEqual({
+      ok: false,
+      errorMessage: 'Please provide a Pokemon name.',
+      shouldExpandSearchBar: false,
+    });
+  });
+
+  it('prepares search query and requests expansion when no pokemon match exists', () => {
+    const prepared = preparePokemonSearchQuery({
+      pokemon: 'Missingno',
+      selectedForm: '',
+      isShiny: false,
+      isShadow: false,
+      costume: '',
+      selectedMoves: { fastMove: null, chargedMove1: null, chargedMove2: null },
+      selectedGender: 'Any',
+      selectedBackgroundId: null,
+      dynamax: false,
+      gigantamax: false,
+      city: 'Seattle',
+      useCurrentLocation: false,
+      ownershipMode: 'caught',
+      coordinates: { latitude: 47.6, longitude: -122.3 },
+      range: 5,
+      resultsLimit: 10,
+      ivs: { Attack: null, Defense: null, Stamina: null },
+      onlyMatchingTrades: false,
+      prefLucky: false,
+      friendshipLevel: 0,
+      alreadyRegistered: false,
+      tradeInWantedList: false,
+      pokemonCache,
+    });
+
+    expect(prepared).toEqual({
+      ok: false,
+      errorMessage: 'No matching Pokemon found in the default list.',
+      shouldExpandSearchBar: true,
+    });
+  });
+
+  it('prepares successful query params when inputs are valid and match exists', () => {
+    const prepared = preparePokemonSearchQuery({
+      pokemon: 'Bulbasaur',
+      selectedForm: '',
+      isShiny: false,
+      isShadow: false,
+      costume: 'Party',
+      selectedMoves: { fastMove: 1, chargedMove1: 2, chargedMove2: 3 },
+      selectedGender: 'Female',
+      selectedBackgroundId: 42,
+      dynamax: false,
+      gigantamax: false,
+      city: 'Seattle',
+      useCurrentLocation: false,
+      ownershipMode: 'trade',
+      coordinates: { latitude: 47.6, longitude: -122.3 },
+      range: 5,
+      resultsLimit: 10,
+      ivs: { Attack: 15, Defense: 14, Stamina: 13 },
+      onlyMatchingTrades: true,
+      prefLucky: true,
+      friendshipLevel: 4,
+      alreadyRegistered: true,
+      tradeInWantedList: true,
+      pokemonCache,
+    });
+
+    expect(prepared.ok).toBe(true);
+    if (prepared.ok) {
+      expect(prepared.queryParams).toMatchObject({
+        pokemon_id: 1,
+        ownership: 'trade',
+        costume_id: 7,
+        only_matching_trades: true,
+      });
+    }
+  });
+});

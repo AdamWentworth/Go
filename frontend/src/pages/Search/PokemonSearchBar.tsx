@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { FaChevronDown, FaChevronUp, FaGlobe, FaList } from 'react-icons/fa';
 
 import VariantSearch from './SearchParameters/VariantSearch';
-import LocationSearch from './SearchParameters/LocationSearch';
-import OwnershipSearch from './SearchParameters/OwnershipSearch';
+import SearchSecondaryPanels from './SearchSecondaryPanels';
 import './PokemonSearchBar.css';
 import { createScopedLogger } from '@/utils/logger';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -11,9 +10,7 @@ import {
   type SearchOwnershipMode,
 } from './utils/ownershipMode';
 import {
-  buildPokemonSearchQueryParams,
-  findMatchingPokemonVariant,
-  validateSearchInput,
+  preparePokemonSearchQuery,
   type Coordinates,
   type IvFilters,
   type PokemonSearchQueryParams,
@@ -99,60 +96,80 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
 
   const handleSearch = async () => {
     setErrorMessage('');
-
-    const inputError = validateSearchInput({
-      isShadow,
-      ownershipMode,
-      pokemon,
-      useCurrentLocation,
-      city,
-      coordinates,
-      pokemonCache,
-    });
-    if (inputError) {
-      setErrorMessage(inputError);
-      return;
-    }
-
-    const matchingPokemon = findMatchingPokemonVariant(
-      pokemonCache as PokemonVariant[],
+    const preparedSearch = preparePokemonSearchQuery({
       pokemon,
       selectedForm,
-    );
-
-    if (!matchingPokemon) {
-      setErrorMessage('No matching Pokemon found in the default list.');
-      setIsCollapsed(false);
-      return;
-    }
-
-    const queryParams: PokemonSearchQueryParams = buildPokemonSearchQueryParams({
-      matchingPokemon,
-      costume,
       isShiny,
       isShadow,
+      costume,
       selectedMoves,
       selectedGender,
       selectedBackgroundId,
+      dynamax,
+      gigantamax,
+      city,
+      useCurrentLocation,
+      ownershipMode,
+      coordinates,
+      range,
+      resultsLimit,
       ivs,
       onlyMatchingTrades,
       prefLucky,
       friendshipLevel,
       alreadyRegistered,
       tradeInWantedList,
-      coordinates,
-      ownershipMode,
-      range,
-      resultsLimit,
-      dynamax,
-      gigantamax,
+      pokemonCache,
     });
+    if (!preparedSearch.ok) {
+      setErrorMessage(preparedSearch.errorMessage);
+      if (preparedSearch.shouldExpandSearchBar) {
+        setIsCollapsed(false);
+      }
+      return;
+    }
+    const queryParams: PokemonSearchQueryParams = preparedSearch.queryParams;
 
     log.debug('Search query parameters', queryParams);
     await onSearch(queryParams, null);
     setIsCollapsed(true);
     markSearchTriggered();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const locationProps: React.ComponentProps<typeof SearchSecondaryPanels>['locationProps'] = {
+    city,
+    setCity,
+    useCurrentLocation,
+    setUseCurrentLocation,
+    setCoordinates,
+    range,
+    setRange,
+    resultsLimit,
+    setResultsLimit,
+    handleSearch,
+    isLoading,
+    view,
+    setView,
+    setSelectedBoundary,
+  };
+  const ownershipProps: React.ComponentProps<typeof SearchSecondaryPanels>['ownershipProps'] = {
+    ownershipMode,
+    setOwnershipMode,
+    ivs,
+    setIvs,
+    isHundo,
+    setIsHundo,
+    onlyMatchingTrades,
+    setOnlyMatchingTrades,
+    prefLucky,
+    setPrefLucky,
+    alreadyRegistered,
+    setAlreadyRegistered,
+    trade_in_wanted_list: tradeInWantedList,
+    setTradeInWantedList,
+    friendshipLevel,
+    setFriendshipLevel,
   };
 
   return (
@@ -188,91 +205,11 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
             />
           </div>
 
-          {isMidWidth ? (
-            <div className="location-ownership-row">
-              <div className="location-search">
-                <LocationSearch
-                  city={city}
-                  setCity={setCity}
-                  useCurrentLocation={useCurrentLocation}
-                  setUseCurrentLocation={setUseCurrentLocation}
-                  setCoordinates={setCoordinates}
-                  range={range}
-                  setRange={setRange}
-                  resultsLimit={resultsLimit}
-                  setResultsLimit={setResultsLimit}
-                  handleSearch={handleSearch}
-                  isLoading={isLoading}
-                  view={view}
-                  setView={setView}
-                  setSelectedBoundary={setSelectedBoundary}
-                />
-              </div>
-
-              <div className="ownership-status">
-                <OwnershipSearch
-                  ownershipMode={ownershipMode}
-                  setOwnershipMode={setOwnershipMode}
-                  ivs={ivs}
-                  setIvs={setIvs}
-                  isHundo={isHundo}
-                  setIsHundo={setIsHundo}
-                  onlyMatchingTrades={onlyMatchingTrades}
-                  setOnlyMatchingTrades={setOnlyMatchingTrades}
-                  prefLucky={prefLucky}
-                  setPrefLucky={setPrefLucky}
-                  alreadyRegistered={alreadyRegistered}
-                  setAlreadyRegistered={setAlreadyRegistered}
-                  trade_in_wanted_list={tradeInWantedList}
-                  setTradeInWantedList={setTradeInWantedList}
-                  friendshipLevel={friendshipLevel}
-                  setFriendshipLevel={setFriendshipLevel}
-                />
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="location-search">
-                <LocationSearch
-                  city={city}
-                  setCity={setCity}
-                  useCurrentLocation={useCurrentLocation}
-                  setUseCurrentLocation={setUseCurrentLocation}
-                  setCoordinates={setCoordinates}
-                  range={range}
-                  setRange={setRange}
-                  resultsLimit={resultsLimit}
-                  setResultsLimit={setResultsLimit}
-                  handleSearch={handleSearch}
-                  isLoading={isLoading}
-                  view={view}
-                  setView={setView}
-                  setSelectedBoundary={setSelectedBoundary}
-                />
-              </div>
-
-              <div className="ownership-status">
-                <OwnershipSearch
-                  ownershipMode={ownershipMode}
-                  setOwnershipMode={setOwnershipMode}
-                  ivs={ivs}
-                  setIvs={setIvs}
-                  isHundo={isHundo}
-                  setIsHundo={setIsHundo}
-                  onlyMatchingTrades={onlyMatchingTrades}
-                  setOnlyMatchingTrades={setOnlyMatchingTrades}
-                  prefLucky={prefLucky}
-                  setPrefLucky={setPrefLucky}
-                  alreadyRegistered={alreadyRegistered}
-                  setAlreadyRegistered={setAlreadyRegistered}
-                  trade_in_wanted_list={tradeInWantedList}
-                  setTradeInWantedList={setTradeInWantedList}
-                  friendshipLevel={friendshipLevel}
-                  setFriendshipLevel={setFriendshipLevel}
-                />
-              </div>
-            </>
-          )}
+          <SearchSecondaryPanels
+            isMidWidth={isMidWidth}
+            locationProps={locationProps}
+            ownershipProps={ownershipProps}
+          />
         </div>
       </div>
 
