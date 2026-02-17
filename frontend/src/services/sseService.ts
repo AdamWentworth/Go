@@ -1,6 +1,9 @@
 // services/sseService.ts
 
 import axios from 'axios';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('sseService');
 
 export const fetchUpdates = async (
   userId: string,
@@ -20,11 +23,11 @@ export const fetchUpdates = async (
     if (response.status >= 200 && response.status < 300) {
       return response.data;
     } else {
-      console.error('Failed to fetch updates.');
+      log.warn('Failed to fetch updates.', { status: response.status });
       return null;
     }
-  } catch {
-    console.error('Failed to fetch updates.');
+  } catch (error) {
+    log.error('Failed to fetch updates.', error);
     return null;
   }
 };

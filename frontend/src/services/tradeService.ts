@@ -1,6 +1,7 @@
 // services/tradeService.js
 
 import axios from 'axios';
+import { createScopedLogger } from '@/utils/logger';
 
 interface Trade {
   trade_id?: string;
@@ -13,6 +14,8 @@ export interface PartnerInfo {
   pokemonGoName?: string | null;
   location?: string | null;
 }
+
+const log = createScopedLogger('tradeService');
 
 /**
  * Reveal the partner's info for a given trade.
@@ -37,10 +40,10 @@ export async function revealPartnerInfo(trade: Trade): Promise<PartnerInfo> {
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
-      console.error('[revealPartnerInfo] error:', error.message);
+      log.error('[revealPartnerInfo] error:', error.message);
       throw error;
     } else {
-      console.error('[revealPartnerInfo] unknown error:', error);
+      log.error('[revealPartnerInfo] unknown error:', error);
       throw new Error('An unexpected error occurred.');
     }
   }

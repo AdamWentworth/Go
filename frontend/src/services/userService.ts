@@ -2,9 +2,11 @@
 
 import axios, { AxiosResponse } from 'axios';
 import { getDeviceId } from '../utils/deviceID';
+import { createScopedLogger } from '@/utils/logger';
 import type { UserOverview } from '@/types/user';
 
 axios.defaults.withCredentials = true;
+const log = createScopedLogger('userService');
 
 const readApi = axios.create({
   baseURL: import.meta.env.VITE_USERS_API_URL,
@@ -27,9 +29,9 @@ export const fetchUserOverview = async (userId: string): Promise<UserOverview> =
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
-      console.error('Error fetching user overview:', error.response || error);
+      log.error('Error fetching user overview:', error.response || error);
     } else {
-      console.error('Error fetching user overview:', error);
+      log.error('Error fetching user overview:', error);
     }
     throw error;
   }

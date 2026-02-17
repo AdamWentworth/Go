@@ -66,6 +66,9 @@ describe('locationServices.fetchLocationOptions', () => {
     await expect(fetchLocationOptions(1, 2)).rejects.toThrow(
       'Unknown error occurred while fetching location options.',
     );
-    expect(errorSpy).toHaveBeenCalledWith('Unknown error fetching location options');
+    expect(errorSpy).toHaveBeenCalledWith(
+      '[locationServices]',
+      'Unknown error fetching location options',
+    );
   });
 });

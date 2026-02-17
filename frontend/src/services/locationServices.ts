@@ -1,6 +1,7 @@
 // locationSuggestions.ts
 
 import axios from 'axios';
+import { createScopedLogger } from '@/utils/logger';
 import type {
   LocationBase,
   LocationSuggestion,
@@ -8,6 +9,7 @@ import type {
 } from '@/types/location';
 
 const BASE_URL = import.meta.env.VITE_LOCATION_SERVICE_URL;
+const log = createScopedLogger('locationServices');
 
 export const fetchSuggestions = async (
   userInput: string
@@ -41,12 +43,12 @@ export const fetchSuggestions = async (
       return formattedSuggestions;
     } else {
       if (import.meta.env.VITE_LOG_WARNINGS === 'true') {
-        console.warn('Unexpected data format:', data);
+        log.warn('Unexpected data format:', data);
       }
       return [];
     }
   } catch (error) {
-    console.error('Error fetching suggestions:', error);
+    log.error('Error fetching suggestions:', error);
     return [];
   }
 };
@@ -79,10 +81,10 @@ export const fetchLocationOptions = async (
     });
   } catch (error) {
     if (error instanceof Error) {
-      console.error('Error fetching location options:', error.message);
+      log.error('Error fetching location options:', error.message);
       throw error;
     } else {
-      console.error('Unknown error fetching location options');
+      log.error('Unknown error fetching location options');
       throw new Error('Unknown error occurred while fetching location options.');
     }
   }

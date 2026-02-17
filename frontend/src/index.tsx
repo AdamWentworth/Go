@@ -5,14 +5,17 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { initPerfPaintObservers } from './utils/perfTelemetry';
+import { createScopedLogger } from './utils/logger';
 import './index.css';
+
+const log = createScopedLogger('index');
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
-        console.log('Service Worker registered with scope:', registration.scope);
+        log.debug('Service Worker registered with scope:', registration.scope);
 
         navigator.serviceWorker.ready.then((registration) => {
           if (registration.active) {
@@ -26,7 +29,7 @@ if ('serviceWorker' in navigator) {
         });
       })
       .catch((error) => {
-        console.error('Service Worker registration failed:', error);
+        log.error('Service Worker registration failed:', error);
       });
   });
 }

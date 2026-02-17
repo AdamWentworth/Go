@@ -74,6 +74,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 67. Logging cleanup slice: migrated authentication UI and mega selection paths (`Account`, `Register`, `useMegaPokemonHandler`) to scoped logger with behavior-preserving error/warn coverage.
 68. Naming canonicalization slice: retired legacy `pokemonKey` usage from frontend source/test logic in favor of explicit `variant_id`/`instance_id` semantics; kept legacy `pokemonKey` fixture fields as inert test data only.
 69. Logging cleanup slice: migrated raw console usage in auth form hooks and raid data paths (`useAccountForm`, `useRegisterForm`, `useRaidBossesData`, `calculateRaidBossDPS`) to scoped logger with `debug` for high-chatter telemetry and `error` for failure paths.
+70. Logging cleanup slice: migrated service/entry-point logging (`index`, `userService`, `tradeService`, `sseService`, `locationServices`) to scoped logger and updated location service regression assertions for logger-prefixed error output.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
@@ -87,7 +88,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 Repo parse against backlog claims:
 1. JS/JSX migration status: `0` JS/JSX files remain under `frontend/src` (accurate).
 2. Canonical naming drift: `ownershipData` references in `frontend/src` = `0`; legacy `pokemonKey` references in `frontend/src` = `0`.
-3. Logging policy drift: raw `console.*` references in `frontend/src` = `93` (many are valid error/warn paths, but high-noise debug logs remain in several feature modules).
+3. Logging policy drift: raw `console.*` references in `frontend/src` = `81` (many are valid error/warn paths, but high-noise debug logs remain in several feature modules).
 4. `any` hotspot counts for P2.1 priority files:
    - `createPokemonVariants.ts`: `47`
    - `updatePokemonInstanceStatus.ts`: `44`
