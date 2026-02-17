@@ -22,8 +22,8 @@ export const updateInstanceStatus =
     setData: (updater: (prev: AppState) => AppState) => AppState,
     instancesDataRef: RefObject<Instances>,
   ) =>
-  async (pokemonKeys: string | string[], newStatus: InstanceStatus): Promise<void> => {
-    const keys = Array.isArray(pokemonKeys) ? pokemonKeys : [pokemonKeys];
+  async (instanceIds: string | string[], newStatus: InstanceStatus): Promise<void> => {
+    const keys = Array.isArray(instanceIds) ? instanceIds : [instanceIds];
     const timestamp = Date.now();
 
     const changedKeys = new Set<string>();

@@ -37,7 +37,7 @@ export type PokemonVariant = Omit<BasePokemon, 'variantType' | 'currentImage'> &
     // Additional variant-only properties
     raid_boss?: BasePokemon['raid_boss'];
     backgrounds?: BasePokemon['backgrounds'];
-    variant_id: string; // ← formerly pokemonKey
+    variant_id: string;
   };
 
 export type AllVariants = PokemonVariant[];

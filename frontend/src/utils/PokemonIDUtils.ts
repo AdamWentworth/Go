@@ -37,12 +37,10 @@ export function getKeyParts(key: string): ParsedKeyParts {
 /** Parse a string that may be a pure variant_id or an instance_id ("{variant_id}_{uuid}") */
 export function parseVariantId(input: string): {
   baseKey: string;
-  // temporary alias for legacy call sites
-  pokemonKey: string;
   hasUUID: boolean;
 } {
   if (!input) {
-    return { baseKey: '', pokemonKey: '', hasUUID: false };
+    return { baseKey: '', hasUUID: false };
   }
 
   const keyParts = input.split('_');
@@ -54,31 +52,27 @@ export function parseVariantId(input: string): {
   const baseKey = keyParts.join('_');
   return {
     baseKey,
-    pokemonKey: baseKey,
     hasUUID,
   };
 }
 
-/** Canonical variant key accessor during pokemonKey -> variant_id migration. */
+/** Canonical variant key accessor. */
 export function getVariantIdFrom(input: {
   variant_id?: string | null;
-  pokemonKey?: string | null;
 } | null | undefined): string {
-  return String(input?.variant_id ?? input?.pokemonKey ?? '');
+  return String(input?.variant_id ?? '');
 }
 
 /** Preferred entity key for mutations: instance_id first, variant_id second. */
 export function getEntityKeyFrom(input: {
   instance_id?: string | null;
   variant_id?: string | null;
-  pokemonKey?: string | null;
   instanceData?: { instance_id?: string | null } | null;
 } | null | undefined): string {
   return String(
     input?.instanceData?.instance_id ??
     input?.instance_id ??
     input?.variant_id ??
-    input?.pokemonKey ??
     '',
   );
 }
@@ -150,7 +144,3 @@ export function determineVariantId(pokemon: PokemonVariant): string {
   return paddedId;
 }
 
-/* --------------------------- Back-compat shims --------------------------- */
-// Temporary aliases to avoid breaking imports during rollout.
-export const parsePokemonKey = parseVariantId;
-export const determinePokemonKey = determineVariantId;

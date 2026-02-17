@@ -10,7 +10,6 @@ type PokemonProps = {
   instanceData?: Partial<Pick<PokemonInstance, 'shadow' | 'purified'>>;
   variantType?: string;
   variant_id?: string;
-  pokemonKey?: string;
 };
 
 interface MaxComponentProps {
@@ -30,7 +29,7 @@ const MaxComponent: React.FC<MaxComponentProps> = ({
   onToggleMax,
   showMaxOptions
 }) => {
-  const key = pokemon.variant_id ?? pokemon.pokemonKey ?? '';
+  const key = pokemon.variant_id ?? '';
   const hasMaxVariant =
     pokemon.variantType &&
     (pokemon.variantType.includes('dynamax') || pokemon.variantType.includes('gigantamax'));

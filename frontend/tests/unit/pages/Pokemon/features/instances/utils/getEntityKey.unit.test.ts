@@ -7,7 +7,6 @@ describe('getEntityKey', () => {
       getEntityKey({
         instanceData: { instance_id: 'instance-1' },
         variant_id: 'variant-1',
-        pokemonKey: 'legacy-1',
       }),
     ).toBe('instance-1');
   });
@@ -16,17 +15,16 @@ describe('getEntityKey', () => {
     expect(
       getEntityKey({
         variant_id: 'variant-2',
-        pokemonKey: 'legacy-2',
       }),
     ).toBe('variant-2');
   });
 
-  it('falls back to legacy pokemonKey', () => {
+  it('returns empty string when only unknown key fields exist', () => {
     expect(
       getEntityKey({
-        pokemonKey: 'legacy-3',
-      }),
-    ).toBe('legacy-3');
+        legacyKey: 'legacy-3',
+      } as unknown as Parameters<typeof getEntityKey>[0]),
+    ).toBe('');
   });
 
   it('returns empty string when no key fields exist', () => {
@@ -35,4 +33,3 @@ describe('getEntityKey', () => {
     expect(getEntityKey(undefined)).toBe('');
   });
 });
-

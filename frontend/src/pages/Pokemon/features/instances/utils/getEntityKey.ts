@@ -3,15 +3,12 @@ interface EntityRef {
     instance_id?: string | null;
   } | null;
   variant_id?: string | null;
-  pokemonKey?: string | null;
 }
 
 export const getEntityKey = (value: EntityRef | null | undefined): string => {
   return (
     value?.instanceData?.instance_id ??
     value?.variant_id ??
-    value?.pokemonKey ??
     ''
   );
 };
-

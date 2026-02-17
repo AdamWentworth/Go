@@ -28,12 +28,6 @@ export function getFilteredPokemonsByOwnership(
   for (const variant of variants) {
     const key = String((variant as any).variant_id ?? '');
     if (key) variantsByKey.set(key, variant);
-
-    // Keep legacy lookup while pokemonKey -> variant_id migration finishes.
-    const legacyKey = String((variant as any).pokemonKey ?? '');
-    if (legacyKey && !variantsByKey.has(legacyKey)) {
-      variantsByKey.set(legacyKey, variant);
-    }
   }
 
   // helper: instance_ids -> hydrated rows
@@ -44,7 +38,7 @@ export function getFilteredPokemonsByOwnership(
       const instance = instancesData[instanceId];
       if (!instance) continue;
 
-      const variantKey = String((instance as any).variant_id ?? (instance as any).pokemonKey ?? '');
+      const variantKey = String((instance as any).variant_id ?? '');
       if (!variantKey) continue;
 
       const variant = variantsByKey.get(variantKey);

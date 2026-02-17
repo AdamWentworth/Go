@@ -23,7 +23,6 @@ interface TradeData {
   trade_friendship_level?: 1 | 2 | 3 | 4;
   pokemon: {
     variant_id?: string;
-    pokemonKey?: string; // legacy
     instance_id?: string;
     instanceData?: instanceData;
   };
@@ -137,7 +136,6 @@ export async function proposeTrade(tradeData: TradeData): Promise<{
       (pokemon.instanceData?.instance_id as string | undefined) ??
       pokemon.instance_id ??
       pokemon.variant_id ??
-      pokemon.pokemonKey ??
       '',
     ...(pokemon.instanceData ?? {}),
   };

@@ -31,7 +31,6 @@ describe.sequential('loadVariants (integration)', () => {
     ...variant,
     variant_id:
       (variant as any).variant_id ??
-      (variant as any).pokemonKey ??
       `${String(variant.pokemon_id).padStart(4, '0')}-${variant.variantType}-${idx}`,
   }));
   const staleTimestamp = Date.now() - 1000 * 60 * 60 * 48; // 48h

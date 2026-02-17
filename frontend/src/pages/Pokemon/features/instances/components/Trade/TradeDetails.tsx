@@ -30,7 +30,7 @@ import useToggleEditModeTrade from '../../hooks/useToggleEditModeTrade';
 import PokemonActionOverlay from './PokemonActionOverlay';
 import TradeProposal from './TradeProposal';
 
-import { parsePokemonKey } from '@/utils/PokemonIDUtils';
+import { parseVariantId } from '@/utils/PokemonIDUtils';
 import { getAllInstances } from '@/db/instancesDB';
 import { getAllFromTradesDB } from '@/db/tradesDB';
 import { shouldUpdateTradeInstances } from './shouldUpdateTradeInstances';
@@ -40,7 +40,6 @@ import UpdateForTradeModal from './UpdateForTradeModal';
 
 type BooleanMap = Record<string, boolean>;
 type GenericMap = Record<string, unknown>;
-type VariantWithKey = PokemonVariant & { pokemonKey?: string };
 type SelectedPokemon = GenericMap & {
   key?: string;
   name?: string;
@@ -49,7 +48,7 @@ type SelectedPokemon = GenericMap & {
 };
 
 interface TradeDetailsProps {
-  pokemon: VariantWithKey & {
+  pokemon: PokemonVariant & {
     instanceData: Partial<PokemonInstance> & {
       not_wanted_list?: BooleanMap;
       wanted_filters?: BooleanMap;
@@ -61,7 +60,7 @@ interface TradeDetailsProps {
   sortType: SortType;
   sortMode: SortMode;
   openWantedOverlay: (pokemon: Record<string, unknown>) => void;
-  variants: VariantWithKey[];
+  variants: PokemonVariant[];
   isEditable: boolean;
   username: string;
   onClose?: () => void;
@@ -196,8 +195,8 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
     (key) => !localNotWantedList[key]
   ).length;
 
-  const extractBaseKey = (pokemonKey: string) => {
-    let keyParts = String(pokemonKey).split('_');
+  const extractBaseKey = (instanceId: string) => {
+    let keyParts = String(instanceId).split('_');
     keyParts.pop(); // Remove the UUID part if present
     return keyParts.join('_');
   };
@@ -218,36 +217,36 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
     }
 
     // 2) Parse the selected Pokémon's key to extract the baseKey
-    const parsedSelected = parsePokemonKey(String(selectedPokemon.key ?? ''));
+    const parsedSelected = parseVariantId(String(selectedPokemon.key ?? ''));
     const { baseKey: selectedBaseKey } = parsedSelected;
 
-    // 3) Retrieve user ownership data from IndexedDB
-    let userOwnershipData: PokemonInstance[] = [];
+    // 3) Retrieve current user's instances from IndexedDB
+    let userInstances: PokemonInstance[] = [];
     try {
-      userOwnershipData = await getAllInstances();
+      userInstances = await getAllInstances();
     } catch (error) {
-      log.error('Failed to fetch userOwnershipData from IndexedDB:', error);
-      alert("Could not fetch your ownership data. Aborting trade proposal.");
+      log.error('Failed to fetch user instances from IndexedDB:', error);
+      alert("Could not fetch your instances. Aborting trade proposal.");
       return;
     }
 
     // Convert the array into a keyed object using instance_id as key
-    const hashedOwnershipData = userOwnershipData.reduce((acc, item) => {
+    const hashedInstances = userInstances.reduce((acc, item) => {
       const instanceId = String(item.instance_id ?? '');
       acc[instanceId] = item;
       return acc;
     }, {} as Instances);
 
     log.debug('Hashed ownership data prepared.', {
-      count: Object.keys(hashedOwnershipData).length,
+      count: Object.keys(hashedInstances).length,
     });
 
     // Store that object in state for passing to TradeProposal
-    setMyInstances(hashedOwnershipData);
+    setMyInstances(hashedInstances);
 
     // 4) Filter to find all instances where the baseKey matches and is_caught=true
-    const caughtInstances = userOwnershipData.filter((item) => {
-      const parsedCaught = parsePokemonKey(String(item.instance_id ?? ''));
+    const caughtInstances = userInstances.filter((item) => {
+      const parsedCaught = parseVariantId(String(item.instance_id ?? ''));
       return parsedCaught.baseKey === selectedBaseKey && item.is_caught === true;
     });
 
@@ -354,10 +353,10 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 
   // When not in edit mode, clicking a Pokémon's thumbnail
   // will open the PokemonActionOverlay
-  const handlePokemonClickModified = (pokemonKey: string, pokemonData: SelectedPokemon) => {
+  const handlePokemonClickModified = (instanceId: string, pokemonData: SelectedPokemon) => {
     if (isEditable) {
       // If we can edit, do the default logic
-      handlePokemonClick(pokemonKey);
+      handlePokemonClick(instanceId);
     } else {
       // Otherwise, open the overlay
       setSelectedPokemon(pokemonData);
@@ -365,22 +364,20 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
     }
   };
 
-  const handlePokemonClick = (pokemonKey: string) => {
-    const baseKey = extractBaseKey(pokemonKey);
+  const handlePokemonClick = (instanceId: string) => {
+    const baseKey = extractBaseKey(instanceId);
 
     // 1) Find the variant data
-    const variantData = variants.find(
-      (variant) => (variant.variant_id ?? (variant as any).pokemonKey) === baseKey
-    );
+    const variantData = variants.find((variant) => variant.variant_id === baseKey);
     if (!variantData) {
-      log.error(`Variant not found for pokemonKey: ${pokemonKey}`);
+      log.error(`Variant not found for instance id: ${instanceId}`);
       return;
     }
 
     // 2) Merge variant with instances
-    const instanceEntry = instancesMap[pokemonKey];
+    const instanceEntry = instancesMap[instanceId];
     if (!instanceEntry) {
-      log.error(`No instance data found for key: ${pokemonKey}`);
+      log.error(`No instance data found for key: ${instanceId}`);
       return;
     }
 

@@ -163,23 +163,23 @@ const WantedPopup: React.FC<WantedPopupProps> = ({
           <div className="trade-list-section">
             <h3>Trade Pokemon:</h3>
             <div className="trade-list">
-              {Object.keys(item.trade_list).map((pokemonKeyWithUUID) => {
-                const tradeListPokemon = item.trade_list?.[pokemonKeyWithUUID];
+              {Object.keys(item.trade_list).map((tradeInstanceId) => {
+                const tradeListPokemon = item.trade_list?.[tradeInstanceId];
                 const matchedPokemon = findPokemonByKey(
-                  pokemonKeyWithUUID,
+                  tradeInstanceId,
                   tradeListPokemon ?? null,
                 );
 
                 return matchedPokemon ? (
                   <img
-                    key={pokemonKeyWithUUID}
+                    key={tradeInstanceId}
                     src={matchedPokemon.currentImage}
                     alt={matchedPokemon.name}
                     className={`trade-pokemon-image ${tradeListPokemon?.match ? 'glowing-pokemon' : ''}`}
                     title={`${matchedPokemon.form ? `${matchedPokemon.form} ` : ''}${matchedPokemon.name ?? ''}`}
                   />
                 ) : (
-                  <p key={pokemonKeyWithUUID}>No match found</p>
+                  <p key={tradeInstanceId}>No match found</p>
                 );
               })}
             </div>

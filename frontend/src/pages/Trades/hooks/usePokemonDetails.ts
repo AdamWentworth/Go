@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { parsePokemonKey } from '../../../utils/PokemonIDUtils';
+import { parseVariantId } from '../../../utils/PokemonIDUtils';
 import { findVariantForInstance } from '../../Search/utils/findVariantForInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
@@ -39,7 +39,7 @@ export function usePokemonDetails(
       (instancesMap && instancesMap[instanceId]) ||
       {};
 
-    const parsed = parsePokemonKey(instanceId);
+    const parsed = parseVariantId(instanceId);
     const variantLookupKey = instanceDetails?.variant_id || parsed.baseKey || instanceId;
 
     const variantFromMap =

@@ -18,7 +18,6 @@ interface PokemonLike {
     [key: string]: unknown;
   };
   variant_id?: string;
-  pokemonKey?: string;
 }
 
 interface ToggleEditModeWantedArgs {
@@ -52,12 +51,12 @@ export const toggleEditMode = ({
 }: ToggleEditModeWantedArgs): void => {
   const instancesMap = instances ?? {};
   const currentKey =
-    pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? pokemon.pokemonKey ?? '';
+    pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? '';
   const currentNotTradeList = pokemon.instanceData?.not_trade_list ?? {};
 
   log.debug('toggleEditMode start', {
     enteringEdit: !editMode,
-    pokemonKey: currentKey,
+    instanceId: currentKey,
   });
 
   // Leaving edit mode: build patch map and persist.

@@ -48,8 +48,8 @@ interface TradeListDisplayProps {
   onPokemonClick?: (key: string) => void;
 }
 
-const extractBaseKey = (pokemonKey: string): string => {
-  const parts = String(pokemonKey).split('_');
+const extractBaseKey = (instanceId: string): string => {
+  const parts = String(instanceId).split('_');
   parts.pop();
   return parts.join('_');
 };

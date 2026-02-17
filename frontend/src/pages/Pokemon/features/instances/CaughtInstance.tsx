@@ -44,7 +44,6 @@ import Modals from './sections/Modals';
 
 type CaughtPokemon = PokemonVariant & {
   instanceData?: PokemonInstance;
-  pokemonKey?: string;
 };
 
 interface CaughtInstanceProps {
@@ -59,8 +58,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
   const name = String(pokemon.name ?? pokemon.species_name ?? 'Pokemon');
   const variantType = pokemon.variantType;
   const variantId = pokemon.variant_id;
-  const legacyPokemonKey = pokemon.pokemonKey;
-  const pokemonKey = String(instanceData.instance_id ?? variantId ?? legacyPokemonKey ?? '');
+  const instanceId = String(instanceData.instance_id ?? variantId ?? '');
 
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const { alert } = useModal();
@@ -310,7 +308,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
       };
 
       const patchMap: Record<string, Partial<PokemonInstance>> = buildInstanceChanges({
-        pokemonKey,
+        instanceId,
         nickname,
         isLucky,
         isFavorite,
@@ -344,7 +342,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
       if (fusion.fusedWith && fusion.is_fused && fusion.fusedWith !== originalFusedWith) {
         patchMap[fusion.fusedWith] = {
           disabled: true,
-          fused_with: pokemonKey,
+          fused_with: instanceId,
           is_fused: true,
           fusion_form: fusion.fusion_form,
         };

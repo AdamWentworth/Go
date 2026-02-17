@@ -12,7 +12,6 @@ type PokemonWithInstance = {
   variantType?: PokemonVariant['variantType'];
   variant_id?: PokemonVariant['variant_id'];
   max?: PokemonVariant['max'];
-  pokemonKey?: string;
   instanceData?: Partial<PokemonInstance>;
 };
 

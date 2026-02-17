@@ -88,7 +88,6 @@ export interface PokemonInstance {
   last_update: number;           // epoch ms (standardize on number)
 
   /* optional convenience props used only by the client -------------------- */
-  pokemonKey?: string;           // legacy
   username?: string;
   gps?: string | null;
 

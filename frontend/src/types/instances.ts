@@ -13,7 +13,7 @@ export type MutableInstances = Record<string, Partial<PokemonInstance>>;
 
 /* async helpers ----------------------------------------------------------- */
 export type UpdateInstanceStatusFn = (
-  pokemonKeys: string | string[],
+  instanceIds: string | string[],
   newStatus: InstanceStatus
 ) => Promise<void>;
 

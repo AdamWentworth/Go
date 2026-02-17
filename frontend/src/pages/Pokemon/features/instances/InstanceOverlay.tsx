@@ -21,7 +21,6 @@ type OverlayType = 'caught' | 'missing' | 'trade' | 'wanted';
 type OverlayPokemon = (PokemonVariant & {
   instanceData?: Record<string, unknown>;
   status?: string;
-  pokemonKey?: string;
   type1_name?: string;
   primaryType?: { name?: string } | string;
   primary_type?: { name?: string } | string;

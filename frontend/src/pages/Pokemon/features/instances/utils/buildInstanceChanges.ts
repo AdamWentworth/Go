@@ -10,7 +10,7 @@ export type FusionState = {
 };
 
 type BuildArgs = {
-  pokemonKey: string;
+  instanceId: string;
   nickname: string | null;
   isLucky: boolean;
   isFavorite: boolean;
@@ -42,7 +42,7 @@ export function buildInstanceChanges(a: BuildArgs) {
   };
 
   return {
-    [a.pokemonKey]: {
+    [a.instanceId]: {
       nickname: a.nickname,
       lucky: a.isLucky,
       cp: a.computedCP,

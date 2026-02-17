@@ -32,7 +32,6 @@ interface WantedInstanceProps {
 }
 
 const WantedInstance: React.FC<WantedInstanceProps> = ({ pokemon, isEditable }) => {
-  // console.log(pokemon.pokemonKey)
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const entityKey = getEntityKey(pokemon);
 

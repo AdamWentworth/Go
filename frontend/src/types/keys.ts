@@ -8,7 +8,7 @@ export interface ParsedKeyParts {
     isShadow: boolean;
   }
 
-export interface ParsedPokemonKey {
+export interface ParsedVariantKey {
     baseKey: string;
     hasUUID: boolean;
   }

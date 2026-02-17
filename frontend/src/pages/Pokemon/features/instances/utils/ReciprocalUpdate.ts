@@ -8,20 +8,20 @@ interface InstanceListsShape {
 type InstanceMap = Record<string, InstanceListsShape | undefined>;
 
 /**
- * Return a new `not_trade_list` for `otherPokemonKey` without mutating store data.
+ * Return a new `not_trade_list` for `otherInstanceId` without mutating store data.
  */
 export const updateNotTradeList = (
   instances: InstanceMap,
-  currentPokemonKey: string,
-  otherPokemonKey: string,
+  currentInstanceId: string,
+  otherInstanceId: string,
   add: boolean,
 ): BooleanMap | null => {
-  const otherInst = instances[otherPokemonKey];
+  const otherInst = instances[otherInstanceId];
   if (!otherInst) return null;
 
   const next: BooleanMap = { ...(otherInst.not_trade_list || {}) };
-  if (add) next[currentPokemonKey] = true;
-  else delete next[currentPokemonKey];
+  if (add) next[currentInstanceId] = true;
+  else delete next[currentInstanceId];
   return next;
 };
 
@@ -30,16 +30,15 @@ export const updateNotTradeList = (
  */
 export const updateNotWantedList = (
   instances: InstanceMap,
-  currentPokemonKey: string,
-  otherPokemonKey: string,
+  currentInstanceId: string,
+  otherInstanceId: string,
   add: boolean,
 ): BooleanMap | null => {
-  const otherInst = instances[otherPokemonKey];
+  const otherInst = instances[otherInstanceId];
   if (!otherInst) return null;
 
   const next: BooleanMap = { ...(otherInst.not_wanted_list || {}) };
-  if (add) next[currentPokemonKey] = true;
-  else delete next[currentPokemonKey];
+  if (add) next[currentInstanceId] = true;
+  else delete next[currentInstanceId];
   return next;
 };
-

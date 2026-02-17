@@ -72,25 +72,28 @@ This backlog converts the current frontend audit into an execution plan focused 
 65. Logging cleanup slice: migrated `Pokemon` active-view debug signal plus fusion overlay logs (`useFusion`, `FuseOverlay`) to scoped logger for env-gated output.
 66. Logging cleanup slice: migrated `authService` and `TradeDetails` logging to scoped logger, preserving error/debug semantics while keeping production logs env-gated.
 67. Logging cleanup slice: migrated authentication UI and mega selection paths (`Account`, `Register`, `useMegaPokemonHandler`) to scoped logger with behavior-preserving error/warn coverage.
+68. Naming canonicalization slice: retired legacy `pokemonKey` usage from frontend source/test logic in favor of explicit `variant_id`/`instance_id` semantics; kept legacy `pokemonKey` fixture fields as inert test data only.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
 - Pending:
-1. P1.3 naming canonicalization.
+1. P2.1 any-reduction campaign.
+2. P2.2 decompose large components.
+3. P2.3 tooling cleanup.
 
 ## Audit Snapshot (2026-02-17)
 
 Repo parse against backlog claims:
 1. JS/JSX migration status: `0` JS/JSX files remain under `frontend/src` (accurate).
-2. Canonical naming drift: `ownershipData` references in `frontend/src` = `0`; legacy `pokemonKey` references still present = `94`.
-3. Logging policy drift: raw `console.*` references in `frontend/src` = `108` (many are valid error/warn paths, but high-noise debug logs remain in several feature modules).
+2. Canonical naming drift: `ownershipData` references in `frontend/src` = `0`; legacy `pokemonKey` references in `frontend/src` = `0`.
+3. Logging policy drift: raw `console.*` references in `frontend/src` = `107` (many are valid error/warn paths, but high-noise debug logs remain in several feature modules).
 4. `any` hotspot counts for P2.1 priority files:
    - `createPokemonVariants.ts`: `47`
    - `updatePokemonInstanceStatus.ts`: `44`
    - `tagHelpers.ts`: `33`
    - `MirrorManager.tsx`: `38`
 5. P2.2 decomposition targets remain oversized:
-   - `TradeDetails.tsx`: `529` LOC
+   - `TradeDetails.tsx`: `527` LOC
    - `VariantSearch.tsx`: `587` LOC
    - `Pokemon.tsx`: `373` LOC
 
@@ -212,7 +215,7 @@ Repo parse against backlog claims:
 
 ### P1.3 - Naming Canonicalization (Domain)
 
-- Status: In progress
+- Status: Done
 
 - Goal: unify model language for maintainability.
 - Target canonical terms:
@@ -305,4 +308,4 @@ Repo parse against backlog claims:
 
 ## Immediate Next Step
 
-Continue P1.3 naming canonicalization and P1.4 logging policy cleanup now that `frontend/src` JS/JSX migration is complete (`0` JS/JSX files remaining).
+Continue P1.4 logging policy cleanup and then start P2.1 `any`-reduction in the four priority files now that canonical naming + TS migration are complete.

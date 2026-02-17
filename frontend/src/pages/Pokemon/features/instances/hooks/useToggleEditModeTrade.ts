@@ -29,7 +29,6 @@ interface PokemonLike {
     [key: string]: unknown;
   };
   variant_id?: string;
-  pokemonKey?: string;
 }
 
 const log = createScopedLogger('useToggleEditModeTrade');
@@ -55,7 +54,7 @@ const useToggleEditModeTrade = (
 ) => {
   const [editMode, setEditMode] = useState(false);
   const currentKey =
-    pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? pokemon.pokemonKey ?? '';
+    pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? '';
   const currentNotWantedList = pokemon.instanceData?.not_wanted_list ?? {};
 
   const instances = useInstancesStore.getState().instances as Record<string, GenericMap>;
@@ -132,4 +131,3 @@ const useToggleEditModeTrade = (
 };
 
 export default useToggleEditModeTrade;
-

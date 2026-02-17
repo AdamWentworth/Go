@@ -1,25 +1,25 @@
-// categorizePokemonKeys.ts
+// categorizeVariantKeys.ts
 
-import { ParsedPokemonKey } from '@/types/keys';
-import { parsePokemonKey } from '@/utils/PokemonIDUtils';
+import { ParsedVariantKey } from '@/types/keys';
+import { parseVariantId } from '@/utils/PokemonIDUtils';
 
-export interface CategorizedPokemonKeys {
-  regular: { key: string; parsed: ParsedPokemonKey }[];
+export interface CategorizedVariantKeys {
+  regular: { key: string; parsed: ParsedVariantKey }[];
   mega: { key: string; baseKey: string; megaForm?: string }[];
   fusion: { key: string; baseKey: string }[];
 }
 
-export function categorizePokemonKeys(
+export function categorizeVariantKeys(
   keys: Set<string>
-): CategorizedPokemonKeys {
-  const regular: CategorizedPokemonKeys['regular'] = [];
-  const mega: CategorizedPokemonKeys['mega'] = [];
-  const fusion: CategorizedPokemonKeys['fusion'] = [];
+): CategorizedVariantKeys {
+  const regular: CategorizedVariantKeys['regular'] = [];
+  const mega: CategorizedVariantKeys['mega'] = [];
+  const fusion: CategorizedVariantKeys['fusion'] = [];
 
   for (const key of keys) {
-    const parsed = parsePokemonKey(key);
+    const parsed = parseVariantId(key);
     if (!parsed) {
-      console.warn(`Invalid pokemonKey format: ${key}`);
+      console.warn(`Invalid variant key format: ${key}`);
       continue;
     }
 

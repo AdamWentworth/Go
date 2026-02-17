@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import "./MaxMovesComponent.css";
 
-type PokemonProps = { variant_id?: string; pokemonKey?: string };
+type PokemonProps = { variant_id?: string };
 
 interface MaxMovesComponentProps {
   pokemon: PokemonProps;
@@ -30,7 +30,7 @@ const MaxMovesComponent: React.FC<MaxMovesComponentProps> = ({
   handleMaxGuardChange,
   handleMaxSpiritChange,
 }) => {
-  const key = pokemon.variant_id ?? pokemon.pokemonKey ?? '';
+  const key = pokemon.variant_id ?? '';
   useEffect(() => {
     if (!editMode) {
       setShowMaxOptions(false);

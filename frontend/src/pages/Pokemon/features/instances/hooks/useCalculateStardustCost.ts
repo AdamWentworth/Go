@@ -1,7 +1,7 @@
 // src/hooks/useCalculateStardustCost.ts
 
 import { useEffect, useState } from 'react';
-import { parsePokemonKey } from '@/utils/PokemonIDUtils';
+import { parseVariantId } from '@/utils/PokemonIDUtils';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -62,7 +62,6 @@ export const useCalculateStardustCost = (
       const passedInInstanceId =
         passedInPokemon.instanceData?.instance_id ??
         passedInPokemon.variant_id ??
-        (passedInPokemon as any).pokemonKey ??
         '';
       const selectedInstanceId = selectedMatchedInstance.instance_id ?? '';
 
@@ -110,10 +109,10 @@ function isPokemonRegistered(
     return false;
   }
 
-  const { baseKey } = parsePokemonKey(instanceId);
+  const { baseKey } = parseVariantId(instanceId);
 
   return Object.entries(instances).some(([key, data]) => {
-    const { baseKey: thisBaseKey } = parsePokemonKey(key);
+    const { baseKey: thisBaseKey } = parseVariantId(key);
     return thisBaseKey === baseKey && Boolean(data.registered);
   });
 }

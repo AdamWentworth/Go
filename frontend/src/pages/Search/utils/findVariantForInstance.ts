@@ -15,7 +15,7 @@ type MaybeInstance = {
 
 function hasToken(v: PokemonVariant, token: string): boolean {
   const vt = String((v as any).variantType ?? '').toLowerCase();
-  const id = String((v as any).variant_id ?? (v as any).pokemonKey ?? '').toLowerCase();
+  const id = String((v as any).variant_id ?? '').toLowerCase();
   return vt.includes(token) || id.includes(token);
 }
 
@@ -62,12 +62,6 @@ export function findVariantForInstance(
   for (const variant of variants) {
     const variantId = String((variant as any).variant_id ?? '');
     if (variantId) variantByKey.set(variantId, variant);
-
-    // Legacy lookup during pokemonKey -> variant_id migration.
-    const legacyKey = String((variant as any).pokemonKey ?? '');
-    if (legacyKey && !variantByKey.has(legacyKey)) {
-      variantByKey.set(legacyKey, variant);
-    }
 
     const pokemonId = Number((variant as any).pokemon_id);
     if (Number.isFinite(pokemonId)) {

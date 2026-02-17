@@ -3,7 +3,7 @@ import { getAllInstances }           from '@/db/instancesDB';
 import { initVariantsDB, VARIANTS_STORE } from '@/db/indexedDB';
 
 import type { PokemonInstance }      from '@/types/pokemonInstance';
-import { parsePokemonKey }           from '@/utils/PokemonIDUtils';
+import { parseVariantId }            from '@/utils/PokemonIDUtils';
 import type { PokemonVariant }       from '@/types/pokemonVariants';
 
 export async function getValidCandidates(
@@ -29,7 +29,7 @@ export async function getValidCandidates(
   if (!db) return enriched; // IndexedDB unavailable (private-mode etc.)
 
   for (const cand of filtered) {
-    const parsed = parsePokemonKey(cand.instance_id!);
+    const parsed = parseVariantId(cand.instance_id!);
     if (!parsed) continue;
 
     const variant = await db.get(

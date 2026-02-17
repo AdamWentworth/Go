@@ -268,10 +268,10 @@ const TradeListView: React.FC<TradeListViewProps> = ({ item, findPokemonByKey })
           <div className="wanted-list-section">
             <h1>Wanted Pokemon:</h1>
             <div className="wanted-list">
-              {Object.keys(item.wanted_list).map((pokemonKeyWithUUID) => {
-                const wantedListPokemon = item.wanted_list?.[pokemonKeyWithUUID];
+              {Object.keys(item.wanted_list).map((wantedInstanceId) => {
+                const wantedListPokemon = item.wanted_list?.[wantedInstanceId];
                 const matchedPokemon = findPokemonByKey(
-                  pokemonKeyWithUUID,
+                  wantedInstanceId,
                   wantedListPokemon ?? null,
                 );
 
@@ -279,7 +279,7 @@ const TradeListView: React.FC<TradeListViewProps> = ({ item, findPokemonByKey })
 
                 return (
                   <div
-                    key={pokemonKeyWithUUID}
+                    key={wantedInstanceId}
                     className="wanted-pokemon-container"
                     style={{ position: 'relative' }}
                   >

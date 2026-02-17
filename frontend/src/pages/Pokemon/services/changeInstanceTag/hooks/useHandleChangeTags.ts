@@ -11,7 +11,7 @@ import type { PokemonInstance } from '../../../../../types/pokemonInstance';
 import type { PokemonVariant } from '../../../../../types/pokemonVariants';
 import type { InstanceStatus } from '@/types/instances';
 
-import { categorizePokemonKeys } from '../logic/categorizePokemonKeys';
+import { categorizeVariantKeys } from '../logic/categorizeVariantKeys';
 import { validateBlockedMoves } from '../logic/validateMoveToFilter';
 import { getDisplayName } from '../logic/getDisplayName';
 
@@ -104,7 +104,7 @@ function useHandleChangeTags({
       const displayFilterText = targetFilter; // already normalized
       const messageDetails: string[] = [];
 
-      const { regular, mega, fusion } = categorizePokemonKeys(highlightedCards);
+      const { regular, mega, fusion } = categorizeVariantKeys(highlightedCards);
 
       const validation = validateBlockedMoves({
         filter: targetFilter,
@@ -120,20 +120,20 @@ function useHandleChangeTags({
         return;
       }
 
-      const skippedMegaPokemonKeys: string[] = [];
-      const skippedFusionPokemonKeys: string[] = [];
+      const skippedMegaVariantKeys: string[] = [];
+      const skippedFusionVariantKeys: string[] = [];
       const remainingHighlightedCards = new Set(highlightedCards);
 
       for (const { key, baseKey, megaForm } of mega) {
         try {
           const result = await promptMegaPokemonSelection(baseKey, megaForm);
           if (result !== 'assignExisting' && result !== 'createNew') {
-            skippedMegaPokemonKeys.push(baseKey);
+            skippedMegaVariantKeys.push(baseKey);
           }
           remainingHighlightedCards.delete(key);
         } catch (error) {
           console.error(`Error handling Mega Pokémon (${baseKey}):`, error);
-          skippedMegaPokemonKeys.push(baseKey);
+          skippedMegaVariantKeys.push(baseKey);
           remainingHighlightedCards.delete(key);
         }
       }
@@ -146,12 +146,12 @@ function useHandleChangeTags({
             result !== 'assignFusion' &&
             result !== 'createNew'
           ) {
-            skippedFusionPokemonKeys.push(baseKey);
+            skippedFusionVariantKeys.push(baseKey);
           }
           remainingHighlightedCards.delete(key);
         } catch (error) {
           console.error(`Error handling Fusion Pokémon (${baseKey}):`, error);
-          skippedFusionPokemonKeys.push(baseKey);
+          skippedFusionVariantKeys.push(baseKey);
           remainingHighlightedCards.delete(key);
         }
       }
@@ -195,15 +195,15 @@ function useHandleChangeTags({
         handleMoveHighlightedToFilter(targetFilter, remainingHighlightedCards);
       }
 
-      if (skippedMegaPokemonKeys.length > 0) {
-        const names = skippedMegaPokemonKeys.map((key) => getDisplayName(key, variants));
+      if (skippedMegaVariantKeys.length > 0) {
+        const names = skippedMegaVariantKeys.map((key) => getDisplayName(key, variants));
         const msg = `Skipped handling of Mega Pokémon: ${names.join(', ')}`;
         console.log(msg);
         await alert(msg);
       }
 
-      if (skippedFusionPokemonKeys.length > 0) {
-        const names = skippedFusionPokemonKeys.map((key) => getDisplayName(key, variants));
+      if (skippedFusionVariantKeys.length > 0) {
+        const names = skippedFusionVariantKeys.map((key) => getDisplayName(key, variants));
         const msg = `Skipped handling of Fusion Pokémon: ${names.join(', ')}`;
         console.log(msg);
         await alert(msg);

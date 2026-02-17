@@ -25,7 +25,7 @@ vi.mock('@/db/variantsDB', () => ({
 describe.sequential('fetchAndProcessVariants (unit)', () => {
   const baseVariants = (variantsFixture as any[]).slice(0, 4).map((v, idx) => ({
     ...v,
-    variant_id: (v as any).variant_id ?? (v as any).pokemonKey ?? `0000-default-${idx}`,
+    variant_id: (v as any).variant_id ?? `0000-default-${idx}`,
   }));
 
   beforeEach(() => {

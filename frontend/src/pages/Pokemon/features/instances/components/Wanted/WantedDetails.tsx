@@ -171,25 +171,23 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
     setLocalNotTradeList({});
   };
 
-  const extractBaseKey = (pokemonKey: string) => {
-    const parts = String(pokemonKey).split('_');
+  const extractBaseKey = (instanceId: string) => {
+    const parts = String(instanceId).split('_');
     parts.pop(); // Remove UUID part if present
     return parts.join('_');
   };
 
-  const handlePokemonClick = (pokemonKey: string) => {
-    const baseKey = extractBaseKey(pokemonKey);
+  const handlePokemonClick = (instanceId: string) => {
+    const baseKey = extractBaseKey(instanceId);
     const variantData =
-      (variants || []).find(
-        (variant) => (variant.variant_id ?? (variant as any).pokemonKey) === baseKey,
-      );
+      (variants || []).find((variant) => variant.variant_id === baseKey);
     if (!variantData) {
-      console.error(`Variant not found for pokemonKey: ${pokemonKey}`);
+      console.error(`Variant not found for instance id: ${instanceId}`);
       return;
     }
-    const instanceEntry = (instancesMap as Record<string, GenericMap>)?.[pokemonKey];
+    const instanceEntry = (instancesMap as Record<string, GenericMap>)?.[instanceId];
     if (!instanceEntry) {
-      console.error(`Pokemon instance not found for key: ${pokemonKey}`);
+      console.error(`Pokemon instance not found for key: ${instanceId}`);
       return;
     }
     const mergedPokemonData = {

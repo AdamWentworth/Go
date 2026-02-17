@@ -1,7 +1,7 @@
 // src/pages/Pokemon/services/fusionSelection/services/getCandidatesForIdWithVariants.ts
 
 import { getAllInstances, getVariantById } from '@/db/indexedDB';
-import { parsePokemonKey } from '@/utils/PokemonIDUtils';
+import { parseVariantId } from '@/utils/PokemonIDUtils';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
 export async function getCandidatesForIdWithVariants(
@@ -33,7 +33,7 @@ export async function getCandidatesForIdWithVariants(
     const { instance_id } = candidate;
     if (!instance_id) continue;
 
-    const parsedKey = parsePokemonKey(instance_id);
+    const parsedKey = parseVariantId(instance_id);
     const candidateVariantKey = candidate.variant_id || parsedKey?.baseKey;
     if (!candidateVariantKey) continue;
 

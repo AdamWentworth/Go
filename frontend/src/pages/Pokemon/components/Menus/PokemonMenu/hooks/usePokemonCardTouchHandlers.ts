@@ -16,11 +16,6 @@ interface UseTouchHandlersProps {
    * Optional because the hook does not currently use it directly; parent owns selection logic.
    */
   selectKey?: string;
-
-  /**
-   * Legacy prop kept for API compatibility. Prefer `selectKey`.
-   */
-  pokemonKey?: string;
 }
 
 const LONG_PRESS_MS = 300;
@@ -38,8 +33,6 @@ export function usePokemonCardTouchHandlers({
   isDisabled,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   selectKey,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  pokemonKey,
 }: UseTouchHandlersProps) {
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);

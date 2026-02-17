@@ -28,7 +28,7 @@ interface InstancesStore {
   resetInstances(): void;
   hydrateInstances(data: Instances): void;
   setInstances(data: Instances): void;
-  updateInstanceStatus(pokemonKeys: string | string[], newStatus: InstanceStatus): Promise<void>;
+  updateInstanceStatus(instanceIds: string | string[], newStatus: InstanceStatus): Promise<void>;
   updateInstanceDetails(keyOrKeysOrMap: string | string[] | PatchMap, patch?: Patch): Promise<void>;
   periodicUpdates(): void;
 }
@@ -103,9 +103,9 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
       }
     },
 
-    async updateInstanceStatus(pokemonKeys, newStatus) {
+    async updateInstanceStatus(instanceIds, newStatus) {
       log.debug(
-        `Updating status for ${Array.isArray(pokemonKeys) ? pokemonKeys.length : 1} records to "${newStatus}"`,
+        `Updating status for ${Array.isArray(instanceIds) ? instanceIds.length : 1} records to "${newStatus}"`,
       );
 
       const fn = makeUpdateStatus(
@@ -116,9 +116,9 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
             instances: get().instances,
           });
           set({ instances: res.instances });
-          if (Array.isArray(pokemonKeys)) {
+          if (Array.isArray(instanceIds)) {
             const after = res.instances;
-            for (const key of pokemonKeys) {
+            for (const key of instanceIds) {
               const row = after[key];
               if (row) {
                 log.debug('Post-status flags', newStatus, key, {
@@ -135,7 +135,7 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
         { current: get().instances },
       );
 
-      await fn(pokemonKeys, newStatus);
+      await fn(instanceIds, newStatus);
       get().periodicUpdates();
     },
 

@@ -25,7 +25,6 @@ describe('sortPokedexLists (unit)', () => {
     ...variant,
     variant_id:
       (variant as any).variant_id ??
-      (variant as any).pokemonKey ??
       `${String(variant.pokemon_id).padStart(4, '0')}-${variant.variantType}-${idx}`,
   }));
 
