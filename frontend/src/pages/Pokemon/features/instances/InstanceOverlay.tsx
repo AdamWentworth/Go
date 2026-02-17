@@ -12,9 +12,10 @@ import CloseButton from '@/components/CloseButton';
 import type { Instances } from '@/types/instances';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { SortMode, SortType } from '@/types/sort';
+import { createScopedLogger } from '@/utils/logger';
 
-const DEBUG_BG = import.meta.env.DEV; // set to false to silence the single debug log
-const dbg = (...args: any[]) => { if (DEBUG_BG) console.log('[BG]', ...args); };
+const log = createScopedLogger('InstanceOverlay');
+const dbg = (...args: unknown[]) => log.debug(...args);
 
 type OverlayType = 'caught' | 'missing' | 'trade' | 'wanted';
 

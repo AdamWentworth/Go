@@ -14,6 +14,9 @@ import type { InstanceStatus } from '@/types/instances';
 import { categorizeVariantKeys } from '../logic/categorizeVariantKeys';
 import { validateBlockedMoves } from '../logic/validateMoveToFilter';
 import { getDisplayName } from '../logic/getDisplayName';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('useHandleChangeTags');
 
 type MenuContext = 'pokedex' | 'ownership';
 
@@ -90,7 +93,7 @@ function useHandleChangeTags({
         setHighlightedCards(new Set());
         setIsFastSelectEnabled(false);
       } catch (error) {
-        console.error('Error updating instance:', error);
+        log.error('Error updating instance:', error);
       } finally {
         setIsUpdating(false);
       }
@@ -132,7 +135,7 @@ function useHandleChangeTags({
           }
           remainingHighlightedCards.delete(key);
         } catch (error) {
-          console.error(`Error handling Mega Pokémon (${baseKey}):`, error);
+          log.error(`Error handling Mega Pokemon (${baseKey}):`, error);
           skippedMegaVariantKeys.push(baseKey);
           remainingHighlightedCards.delete(key);
         }
@@ -150,7 +153,7 @@ function useHandleChangeTags({
           }
           remainingHighlightedCards.delete(key);
         } catch (error) {
-          console.error(`Error handling Fusion Pokémon (${baseKey}):`, error);
+          log.error(`Error handling Fusion Pokemon (${baseKey}):`, error);
           skippedFusionVariantKeys.push(baseKey);
           remainingHighlightedCards.delete(key);
         }
@@ -185,11 +188,11 @@ function useHandleChangeTags({
 
         if (userConfirmed) {
           handleMoveHighlightedToFilter(targetFilter, remainingHighlightedCards).catch((error) => {
-            console.error('Error during instance update:', error);
+            log.error('Error during instance update:', error);
             alert('An error occurred while updating instance. Please try again.');
           });
         } else {
-          console.log('User canceled the operation.');
+          log.debug('User canceled the operation.');
         }
       } else {
         handleMoveHighlightedToFilter(targetFilter, remainingHighlightedCards);
@@ -198,14 +201,14 @@ function useHandleChangeTags({
       if (skippedMegaVariantKeys.length > 0) {
         const names = skippedMegaVariantKeys.map((key) => getDisplayName(key, variants));
         const msg = `Skipped handling of Mega Pokémon: ${names.join(', ')}`;
-        console.log(msg);
+        log.info(msg);
         await alert(msg);
       }
 
       if (skippedFusionVariantKeys.length > 0) {
         const names = skippedFusionVariantKeys.map((key) => getDisplayName(key, variants));
         const msg = `Skipped handling of Fusion Pokémon: ${names.join(', ')}`;
-        console.log(msg);
+        log.info(msg);
         await alert(msg);
       }
     },
@@ -227,3 +230,4 @@ function useHandleChangeTags({
 }
 
 export default useHandleChangeTags;
+

@@ -8,6 +8,9 @@ import { getVariantById } from '@/db/indexedDB';
 import CaughtInstance from '../../CaughtInstance';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('UpdateForTradeModal');
 
 interface UpdateForTradeModalProps {
   caughtInstances: PokemonInstance[];
@@ -43,7 +46,7 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
         const data = (await getVariantById(baseKey)) as PokemonVariant;
         setVariantData(data);
       } catch (err) {
-        console.error(err);
+        log.error('Failed to fetch variant data:', err);
         setError('Failed to fetch variant data.');
       } finally {
         setLoading(false);
@@ -89,7 +92,7 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
         ),
       );
     } catch (err) {
-      console.error(err);
+      log.error(`Failed to update instance ${instanceId} for trade:`, err);
       setError(`Failed to update instance ${instanceId} for trade.`);
     }
   };

@@ -18,6 +18,9 @@ import CloseButton from '../../components/CloseButton';
 import LocationOptionsOverlay from './LocationOptionsOverlay';
 import { fetchLocationOptions } from '../../services/locationServices';
 import type { LocationSuggestion } from '../../types/location';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('CoordinateSelector');
 
 // Define the props interface.
 export interface CoordinateSelectorProps {
@@ -74,7 +77,7 @@ const CoordinateSelector: FC<CoordinateSelectorProps> = ({
       const coordinates = toLonLat(event.coordinate);
       const [longitude, latitude] = coordinates;
 
-      console.log(`Map clicked. Coordinates: latitude=${latitude}, longitude=${longitude}`);
+      log.debug(`Map clicked. Coordinates: latitude=${latitude}, longitude=${longitude}`);
 
       // Clear existing markers.
       markerSource.clear();
@@ -114,7 +117,7 @@ const CoordinateSelector: FC<CoordinateSelectorProps> = ({
       setLocationOptions(options);
       setShowOptionsOverlay(true);
     } catch (error) {
-      console.error('Failed to fetch location options:', error);
+      log.error('Failed to fetch location options:', error);
       alert('Unable to fetch location options. Please try again.');
     } finally {
       setLoading(false);

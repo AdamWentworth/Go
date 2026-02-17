@@ -3,6 +3,9 @@
 import { useMemo } from 'react';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { SortMode } from '@/types/sort'; // Updated import
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('useNumberPokemons');
 
 const useNumberPokemons = (
   displayedPokemons: PokemonVariant[] | undefined,
@@ -10,7 +13,7 @@ const useNumberPokemons = (
 ): PokemonVariant[] => {
   return useMemo(() => {
     if (!displayedPokemons || !Array.isArray(displayedPokemons)) {
-      console.error('displayedPokemons is either undefined or not an array:', displayedPokemons);
+      log.error('displayedPokemons is either undefined or not an array:', displayedPokemons);
       return [];
     }
 

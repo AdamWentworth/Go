@@ -16,11 +16,14 @@ import 'react-toastify/dist/ReactToastify.css';
 import ResetPasswordOverlay from './ResetPasswordOverlay';
 import ActionMenu from '../../components/ActionMenu';
 import { isApiError } from '../../utils/errors';
+import { createScopedLogger } from '@/utils/logger';
 
 // Centralised types
 import type { LoginFormValues } from '../../types/auth';
 import type { User, LoginResponse } from '../../types/auth';
 import type { UserOverview } from '@/types/user';
+
+const log = createScopedLogger('Login');
 
 const Login: FC = () => {
   /* -------------------------------- form state ------------------------- */
@@ -82,7 +85,7 @@ const Login: FC = () => {
       /* ----------------------------- fetch overview --------------------- */
       const overview = (await fetchUserOverview(user.user_id)) as UserOverview;
 
-      console.log(overview)
+      log.debug('Fetched user overview:', overview);
 
       setInstances(overview.pokemon_instances);
       setTradeData(overview.trades as any); // TODO: strongly type store

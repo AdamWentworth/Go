@@ -3,6 +3,9 @@
 import type { BasePokemon } from '@/types/pokemonBase';
 import type { MegaEvolution, Fusion } from '@/types/pokemonSubTypes';
 import type { BaseStats, FusionState, MegaData } from '@/types/pokemonUtils';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('calculateBaseStats');
 
 export const calculateBaseStats = (
   pokemon: BasePokemon,
@@ -21,7 +24,7 @@ export const calculateBaseStats = (
         stamina: Number(fusionEntry.stamina),
       };
     } else {
-      console.warn(
+      log.warn(
         `Fusion "${fusionState.fusion_form}" not found or missing stats for Pokémon "${pokemon.name}". Falling back to Mega or normal stats.`
       );
     }
@@ -39,7 +42,7 @@ export const calculateBaseStats = (
           stamina: Number(selectedMega.stamina),
         };
       } else {
-        console.warn(
+        log.warn(
           `Mega form "${megaData.megaForm}" not found in megaEvolutions for Pokémon "${pokemon.name}". Falling back to normal stats.`
         );
       }
@@ -52,7 +55,7 @@ export const calculateBaseStats = (
           stamina: Number(selectedMega.stamina),
         };
       } else {
-        console.warn(
+        log.warn(
           `No Mega form with null form found in megaEvolutions for Pokémon "${pokemon.name}". Falling back to normal stats.`
         );
       }
@@ -65,3 +68,4 @@ export const calculateBaseStats = (
     stamina: Number(pokemon.stamina),
   };
 };
+

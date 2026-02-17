@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import html2canvas from 'html2canvas';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('useDownloadImage');
 
 export default function useDownloadImage(): { 
   isDownloading: boolean; 
@@ -37,7 +40,7 @@ export default function useDownloadImage(): {
       link.click();
       document.body.removeChild(link);
     } catch (err) {
-      console.error('Download failed:', err);
+      log.error('Download failed:', err);
     } finally {
       // Reset dimensions.
       captureArea.style.width = "";

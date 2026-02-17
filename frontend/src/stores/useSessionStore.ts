@@ -1,6 +1,9 @@
 // useSessionStore.ts
 
 import { create } from 'zustand';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('useSessionStore');
 
 type SessionStore = {
   lastUpdateTimestamp: Date | null;
@@ -36,7 +39,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
   },
 
   updateTimestamp: (timestamp: Date) => {
-    console.log('Updating lastUpdateTimestamp to:', timestamp);
+    log.debug('Updating lastUpdateTimestamp to:', timestamp);
     set({
       lastUpdateTimestamp: timestamp,
       isSessionNew: false,

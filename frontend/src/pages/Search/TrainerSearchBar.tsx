@@ -5,6 +5,7 @@
 
 import { useState, useEffect, ChangeEvent } from 'react';
 import './TrainerSearchBar.css';
+import { createScopedLogger } from '@/utils/logger';
 
 type TrainerResult = {
   username: string;
@@ -12,6 +13,7 @@ type TrainerResult = {
 };
 
 const API_BASE = import.meta.env.VITE_USERS_API_URL ?? '';
+const log = createScopedLogger('TrainerSearchBar');
 
 const MIN_QUERY_LEN = 2;          // backend requires at least 2 chars
 const DEBOUNCE_MS   = 300;
@@ -59,7 +61,7 @@ const TrainerSearchBar = () => {
       const data: TrainerResult[] = await res.json();
       setResults(data);
     } catch (err) {
-      console.error('Trainer search error:', err);
+      log.error('Trainer search error:', err);
       setError(
         err instanceof Error ? err.message : 'Failed to fetch trainers.'
       );

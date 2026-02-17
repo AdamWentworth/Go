@@ -3,6 +3,9 @@
 import { useMemo } from 'react';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { SortMode } from '@/types/sort'; // Updated import
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('useRecentPokemons');
 
 const useRecentPokemons = (
   displayedPokemons: PokemonVariant[],
@@ -59,14 +62,14 @@ const useRecentPokemons = (
             if (maxData?.dynamax_release_date) {
               return new Date(maxData.dynamax_release_date);
             }
-            console.warn(`Missing dynamax_release_date for ${pokemon.name} (#${pokemon.pokedex_number})`);
+            log.warn(`Missing dynamax_release_date for ${pokemon.name} (#${pokemon.pokedex_number})`);
             return new Date();
           case 'gigantamax':
           case 'shiny_gigantamax':
             if (maxData?.gigantamax_release_date) {
               return new Date(maxData.gigantamax_release_date);
             }
-            console.warn(`Missing gigantamax_release_date for ${pokemon.name} (#${pokemon.pokedex_number})`);
+            log.warn(`Missing gigantamax_release_date for ${pokemon.name} (#${pokemon.pokedex_number})`);
             return new Date();
           default:
             return new Date(pokemon.date_available ?? '');

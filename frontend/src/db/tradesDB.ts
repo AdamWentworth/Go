@@ -2,6 +2,9 @@
 
 import { initTradesDB } from './init';
 import { POKEMON_TRADES_STORE } from './constants';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('tradesDB');
 
 // Define the structure of a trade entry
 export interface TradeEntry {
@@ -35,7 +38,7 @@ export async function getTradeByPokemonPair(
 export async function getAllFromTradesDB(storeName: string): Promise<TradeEntry[]> {
   const db = await initTradesDB();
   if (!db) {
-    console.warn(`TradesDB not available; cannot read from '${storeName}'.`);
+    log.warn(`TradesDB not available; cannot read from '${storeName}'.`);
     return [];
   }
 
@@ -46,11 +49,11 @@ export async function getAllFromTradesDB(storeName: string): Promise<TradeEntry[
 
   try {
     const allDataSize: number = new Blob([JSON.stringify(allData)]).size;
-    console.log(
+    log.debug(
       `getAllFromTradesDB: Retrieved ${allData.length} items from '${storeName}' (approx size: ${allDataSize} bytes)`
     );
   } catch (err) {
-    console.log(`Error measuring size in getAllFromTradesDB for store '${storeName}':`, err);
+    log.debug(`Error measuring size in getAllFromTradesDB for store '${storeName}':`, err);
   }
 
   return allData;
@@ -59,17 +62,17 @@ export async function getAllFromTradesDB(storeName: string): Promise<TradeEntry[
 export async function setTradesinDB(storeName: string, dataArray: TradeEntry[]): Promise<void> {
   const db = await initTradesDB();
   if (!db) {
-    console.warn(`TradesDB not available; cannot set data in '${storeName}'.`);
+    log.warn(`TradesDB not available; cannot set data in '${storeName}'.`);
     return;
   }
 
   try {
     const totalDataSize: number = new Blob([JSON.stringify(dataArray)]).size;
-    console.log(
+    log.debug(
       `setTradesinDB: Storing ${dataArray.length} items in '${storeName}', size: ${totalDataSize} bytes`
     );
   } catch (err) {
-    console.log('Error measuring size in setTradesinDB:', err);
+    log.debug('Error measuring size in setTradesinDB:', err);
   }
 
   const tx = db.transaction(storeName, 'readwrite');

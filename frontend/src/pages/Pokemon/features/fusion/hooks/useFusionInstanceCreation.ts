@@ -2,6 +2,9 @@
 
 import { createFusionInstance } from '../services/createFusionInstance';
 import { FusionSelectionData } from '@/types/fusion';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('useFusionInstanceCreation');
 
 interface CreateInstanceProps {
     fusionSelectionData: FusionSelectionData | null;
@@ -33,7 +36,7 @@ export async function createLeftFusionInstance({
       };
     });
   } catch (err) {
-    console.error('[Fusion Instance Creation] Failed to create left instance:', err);
+    log.error('Failed to create left instance:', err);
     setFusionSelectionData((prev) => {
       if (!prev) return prev;
       return {
@@ -68,7 +71,7 @@ export async function createRightFusionInstance({
       };
     });
   } catch (err) {
-    console.error('[Fusion Instance Creation] Failed to create right instance:', err);
+    log.error('Failed to create right instance:', err);
     setFusionSelectionData((prev) => {
       if (!prev) return prev;
       return {

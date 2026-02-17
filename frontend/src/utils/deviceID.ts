@@ -1,4 +1,7 @@
 // deviceId.ts
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('deviceId');
 
 /**
  * Returns a unique device ID stored in localStorage (or generates a new one)
@@ -12,7 +15,7 @@ export const getDeviceId = (): string => {
     localStorage.setItem('deviceID', newId);
     return newId;
   } catch (error) {
-    console.warn('localStorage is not available:', error);
+    log.warn('localStorage is not available:', error);
     return generateUUID();
   }
 };

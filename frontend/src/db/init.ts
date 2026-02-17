@@ -19,6 +19,9 @@ import {
   TAG_DEFS_STORE, INSTANCE_TAGS_STORE,
   SYSTEM_CHILDREN_STORE,
 } from './constants';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('db.init');
 
 interface Doc { [k: string]: unknown; }
 
@@ -52,7 +55,7 @@ function makeInit(
     try {
       ref = await openDB<Doc>(dbName, DB_VERSION, { upgrade });
     } catch (err) {
-      console.error(`${dbName} init failed:`, err);
+      log.error(`${dbName} init failed:`, err);
       ref = null;
     }
     return ref;

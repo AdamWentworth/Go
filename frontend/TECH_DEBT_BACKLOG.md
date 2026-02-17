@@ -77,9 +77,13 @@ This backlog converts the current frontend audit into an execution plan focused 
 70. Logging cleanup slice: migrated service/entry-point logging (`index`, `userService`, `tradeService`, `sseService`, `locationServices`) to scoped logger and updated location service regression assertions for logger-prefixed error output.
 71. Logging cleanup slice: migrated instances/trades mutation-path logging (`updateInstanceStatus`, `updateInstanceDetails`, `updatePokemonInstanceStatus`, `useBootstrapInstances`, `loadInstances`, `useTradeStore`) to scoped logger and aligned unit assertions to scoped prefixes.
 72. Logging cleanup slice: migrated tags/variants/filtering logging (`useTagsStore`, `useBootstrapTags`, `useBootstrapVariants`, `usePokemonOwnershipFilter`) to scoped logger and updated hook regression expectations for scoped error output.
+73. Logging cleanup slice: migrated auth/session/trades DB logging (`AuthContext`, `useSessionStore`, `tradesDB`) to scoped logger with debug-level payload size telemetry retained for dev only.
+74. Logging cleanup slice: migrated fusion/instance overlay + trade detail paths (`useFusionSelectionState`, `useFusionInstanceCreation`, `resolveFusionSelection`, `getCandidatesForIdWithVariants`, `useCalculatedCP`, `InstanceOverlay`, `TradeInstance`, `WantedDetails`, `MirrorManager`, `TradeProposal`, `UpdateForTradeModal`, `createMirrorEntry`) to scoped logger and removed stale console debug comment from `TradeDetails`.
+75. Logging cleanup slice: migrated tagging/auth/search hot-path logs (`categorizeVariantKeys`, `useHandleChangeTags`, `Login`, `CoordinateSelector`, `TrainerSearchBar`, `useDownloadImage`, `useMegaPokemonSelection`, `EvolutionShortcut`, `MapView`) to scoped logger with dev-gated debug/info output.
+76. Logging cleanup slice: migrated utility and sort diagnostics (`cacheHelpers`, `calculateBaseStats`, `deviceID`, `imageHelpers`, `db/init`, `useRecentPokemons`, `useNumberPokemons`) to scoped logger while preserving warning/error semantics.
+77. Logging cleanup slice: reduced raw `console.*` usage in `frontend/src` to logger-core sinks only (`utils/logger.ts` emit functions), with full `typecheck` + `351/351` unit + production build verification.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
-2. P1.4 logging policy.
 - Pending:
 1. P2.1 any-reduction campaign.
 2. P2.2 decompose large components.
@@ -90,7 +94,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 Repo parse against backlog claims:
 1. JS/JSX migration status: `0` JS/JSX files remain under `frontend/src` (accurate).
 2. Canonical naming drift: `ownershipData` references in `frontend/src` = `0`; legacy `pokemonKey` references in `frontend/src` = `0`.
-3. Logging policy drift: raw `console.*` references in `frontend/src` = `62` (many are valid error/warn paths, but high-noise debug logs remain in several feature modules).
+3. Logging policy drift: raw `console.*` references in `frontend/src` = `4` (all are intentional sink calls inside `utils/logger.ts`).
 4. `any` hotspot counts for P2.1 priority files:
    - `createPokemonVariants.ts`: `47`
    - `updatePokemonInstanceStatus.ts`: `44`
@@ -233,7 +237,7 @@ Repo parse against backlog claims:
 
 ### P1.4 - Logging Policy
 
-- Status: In progress
+- Status: Done
 
 - Goal: cut production log noise and keep only actionable telemetry.
 - Tasks:
@@ -312,4 +316,4 @@ Repo parse against backlog claims:
 
 ## Immediate Next Step
 
-Continue P1.4 logging policy cleanup and then start P2.1 `any`-reduction in the four priority files now that canonical naming + TS migration are complete.
+Start P2.1 `any`-reduction in the four priority files now that canonical naming + TS migration + logging policy cleanup are complete.

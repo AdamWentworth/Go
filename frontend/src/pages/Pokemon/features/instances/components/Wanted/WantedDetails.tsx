@@ -17,6 +17,9 @@ import useTradeFiltering from '../../hooks/useTradeFiltering';
 import type { Instances } from '@/types/instances';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { SortMode, SortType } from '@/types/sort';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('WantedDetails');
 
 type BooleanMap = Record<string, boolean>;
 type GenericMap = Record<string, unknown>;
@@ -182,12 +185,12 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
     const variantData =
       (variants || []).find((variant) => variant.variant_id === baseKey);
     if (!variantData) {
-      console.error(`Variant not found for instance id: ${instanceId}`);
+      log.error(`Variant not found for instance id: ${instanceId}`);
       return;
     }
     const instanceEntry = (instancesMap as Record<string, GenericMap>)?.[instanceId];
     if (!instanceEntry) {
-      console.error(`Pokemon instance not found for key: ${instanceId}`);
+      log.error(`Pokemon instance not found for key: ${instanceId}`);
       return;
     }
     const mergedPokemonData = {

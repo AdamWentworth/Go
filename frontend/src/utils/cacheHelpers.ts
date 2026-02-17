@@ -1,4 +1,7 @@
 // utils/cacheHelpers.ts
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('cacheHelpers');
 
 /**
  * Determines if a timestamp is still considered fresh.
@@ -33,7 +36,7 @@ export const readTimestampFromCache = async (): Promise<number | null> => {
         return cachedData.timestamp ?? null;
       }
     } catch (error) {
-      console.error('Error reading timestamp from cache:', error);
+      log.error('Error reading timestamp from cache:', error);
     }
   }
 

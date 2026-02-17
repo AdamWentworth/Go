@@ -20,6 +20,7 @@ import { useInstancesStore } from '@/features/instances/store/useInstancesStore'
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { useTradeStore } from '@/features/trades/store/useTradeStore';
 import { useAuthStore } from '../stores/useAuthStore';
+import { createScopedLogger } from '@/utils/logger';
 import {
   clearInstancesStore,
   clearTradesStore,
@@ -30,6 +31,7 @@ import type { ApiResponse } from '../types/common';
 import type { AuthContextType } from '../types/authContext';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const log = createScopedLogger('AuthContext');
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
@@ -202,7 +204,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await clearTradesStore('pokemonTrades');
       await clearTradesStore('relatedInstances');
     } catch (err) {
-      console.error('Error clearing IndexedDB data:', err);
+      log.error('Error clearing IndexedDB data:', err);
     }
 
     navigate('/login', { replace: true });

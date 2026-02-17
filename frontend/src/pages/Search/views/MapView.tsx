@@ -22,10 +22,13 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import { normalizeOwnershipMode } from '../utils/ownershipMode';
 import { findVariantForInstance } from '../utils/findVariantForInstance';
+import { createScopedLogger } from '@/utils/logger';
 import CaughtPopup from './MapViewComponents/CaughtPopup';
 import TradePopup from './MapViewComponents/TradePopup';
 import WantedPopup from './MapViewComponents/WantedPopup';
 import './MapView.css';
+
+const log = createScopedLogger('MapView');
 
 type MapDataItem = {
   longitude?: number | string | null;
@@ -222,7 +225,7 @@ const MapView: React.FC<MapViewProps> = ({ data, instanceData, pokemonCache }) =
               />,
             );
           } else {
-            console.warn('pokemonVariants not yet populated, skipping popup render');
+            log.warn('pokemonVariants not yet populated, skipping popup render');
           }
 
           const featureCoordinate = typedFeature.getGeometry().getCoordinates();

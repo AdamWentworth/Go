@@ -1,13 +1,16 @@
 // src/pages/Pokemon/services/fusionSelection/resolveFusionSelection.ts
 
 import type { Instances } from '@/types/instances';
-import { Fusion } from '@/types/pokemonSubTypes'; // ✅ reuse the shared type
+import { Fusion } from '@/types/pokemonSubTypes';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('resolveFusionSelection');
 
 type ResolveFusionParams = {
   choice: string;
   leftInstanceId: string;
   rightInstanceId: string;
-  fusionData: Fusion; // ✅ use shared Fusion type
+  fusionData: Fusion;
   instances: Instances;
   updateDetails: (updates: Record<string, any>) => Promise<void>;
   resolve?: (result: string) => void;
@@ -52,7 +55,7 @@ export async function resolveFusionSelection({
       await updateDetails(changes);
       resolve?.('fuseThis');
     } catch (error) {
-      console.error('[Fusion Handler] Error during fusion resolution:', error);
+      log.error('Error during fusion resolution:', error);
     }
   } else {
     resolve?.('cancel');

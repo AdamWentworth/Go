@@ -2,10 +2,13 @@
 
 import React from 'react';
 import './EvolutionShortcut.css';
+import { createScopedLogger } from '@/utils/logger';
 
 // Types
 import type { PokemonVariant, AllVariants } from '@/types/pokemonVariants';
 import type { Fusion, MegaEvolution } from '@/types/pokemonSubTypes';
+
+const log = createScopedLogger('EvolutionShortcut');
 
 export interface EvolutionShortcutProps {
   evolvesFrom?: number[];
@@ -44,7 +47,7 @@ const EvolutionShortcut: React.FC<EvolutionShortcutProps> = ({
         );
     const selection = candidates[0];
     if (selection) setSelectedPokemon(selection as EvolutionShortcutProps['currentPokemon']);
-    else console.warn('[EvolutionShortcut] evolution not found', pokemonId, form);
+    else log.warn('Evolution not found', pokemonId, form);
   };
 
   const onMegaClick = (mega: MegaEvolution): void => {
@@ -67,10 +70,7 @@ const EvolutionShortcut: React.FC<EvolutionShortcutProps> = ({
     if (sel) {
       setSelectedPokemon(sel as EvolutionShortcutProps['currentPokemon']);
     } else {
-      console.warn(
-        '[EvolutionShortcut] mega evolution not found',
-        variantTypes
-      );
+      log.warn('Mega evolution not found', variantTypes);
     }
   };
 
@@ -84,17 +84,14 @@ const EvolutionShortcut: React.FC<EvolutionShortcutProps> = ({
     if (sel) {
       setSelectedPokemon({ ...(sel as PokemonVariant), fusionInfo: fusion });
     } else {
-      console.warn('[EvolutionShortcut] fusion not found', fusion.fusion_id);
+      log.warn('Fusion not found', fusion.fusion_id);
     }
   };
 
   const onRevertToBaseClick = (): void => {
     const base = findDefault(currentPokemon.pokemon_id);
     if (base) setSelectedPokemon(base as EvolutionShortcutProps['currentPokemon']);
-    else console.warn(
-      '[EvolutionShortcut] base form not found',
-      currentPokemon.pokemon_id
-    );
+    else log.warn('Base form not found', currentPokemon.pokemon_id);
   };
 
   const isMega = currentPokemon.variantType?.includes('mega');

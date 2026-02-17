@@ -5,6 +5,9 @@ import { createMirrorEntry } from '../../utils/createMirrorEntry';
 import './MirrorManager.css';
 import { PokemonVariant } from '@/types/pokemonVariants';
 import { PokemonInstance } from '@/types/pokemonInstance';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('MirrorManager');
 
 interface MirrorManagerProps {
   pokemon: PokemonVariant & {
@@ -85,10 +88,7 @@ function safeUpdate(
       (fn as (patch: Record<string, Partial<PokemonInstance>>) => void)({ [id]: data });
     }
   } catch (e) {
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.warn('[MirrorManager] safeUpdate failed:', e);
-    }
+    log.warn('safeUpdate failed:', e);
   }
 }
 
@@ -206,10 +206,7 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
     const pidNum = asNumber((pokemon as any)?.pokemon_id);
 
     if (!targetVariant) {
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.warn('[MirrorManager] No variant_id on pokemon; cannot find mirror.', pokemon);
-      }
+      log.warn('No variant_id on pokemon; cannot find mirror.', pokemon);
       return undefined;
     }
 
@@ -232,10 +229,7 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
       return true;
     });
 
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.log('[MirrorManager] findExistingMirrorKey:', foundKey || 'No key found', 'variant_id:', targetVariant);
-    }
+    log.debug('findExistingMirrorKey:', foundKey || 'No key found', 'variant_id:', targetVariant);
     return foundKey;
   };
 

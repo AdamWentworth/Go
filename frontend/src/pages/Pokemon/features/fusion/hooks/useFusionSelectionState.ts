@@ -2,6 +2,9 @@
 import { useState } from 'react';
 import { resolveFusionDetails } from '../services/resolveFusionDetails';
 import type { FusionSelectionData } from '@/types/fusion';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('useFusionSelectionState');
 
 export function useFusionSelectionState() {
   const [isFusionSelectionOpen, setIsFusionSelectionOpen] = useState(false);
@@ -19,7 +22,7 @@ export function useFusionSelectionState() {
         });
         setIsFusionSelectionOpen(true);
       } catch (err) {
-        console.error('[Fusion Handler] Error in promptFusionPokemonSelection:', err);
+        log.error('Error in promptFusionPokemonSelection:', err);
         reject(err);
       }
     });

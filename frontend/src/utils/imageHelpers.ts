@@ -2,8 +2,10 @@
 
 import type { PokemonVariant } from '../types/pokemonVariants';
 import type { Costume, MegaEvolution } from '../types/pokemonSubTypes';
+import { createScopedLogger } from '@/utils/logger';
 
 const DEFAULT_IMAGE_URL = '/images/default_pokemon.png';
+const log = createScopedLogger('imageHelpers');
 
 export function determineImageUrl(
   isFemale: boolean,
@@ -16,7 +18,7 @@ export function determineImageUrl(
   gigantamax: boolean = false
 ): string {
   if (!pokemon) {
-    console.warn('determineImageUrl called without a valid pokemon object.');
+    log.warn('determineImageUrl called without a valid pokemon object.');
     return DEFAULT_IMAGE_URL;
   }
 

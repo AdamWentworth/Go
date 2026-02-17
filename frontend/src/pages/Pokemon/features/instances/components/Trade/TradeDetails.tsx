@@ -391,7 +391,6 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
     };
 
     // 3) This is your existing "openWantedOverlay" for the clicked Pokémon
-    // console.log(mergedPokemonData)
     openWantedOverlay(mergedPokemonData);
   };
 

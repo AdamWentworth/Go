@@ -2,6 +2,9 @@
 
 import { ParsedVariantKey } from '@/types/keys';
 import { parseVariantId } from '@/utils/PokemonIDUtils';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('categorizeVariantKeys');
 
 export interface CategorizedVariantKeys {
   regular: { key: string; parsed: ParsedVariantKey }[];
@@ -19,7 +22,7 @@ export function categorizeVariantKeys(
   for (const key of keys) {
     const parsed = parseVariantId(key);
     if (!parsed) {
-      console.warn(`Invalid variant key format: ${key}`);
+      log.warn(`Invalid variant key format: ${key}`);
       continue;
     }
 

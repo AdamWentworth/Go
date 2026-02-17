@@ -1,5 +1,8 @@
 import { generateUUID } from '@/utils/PokemonIDUtils';
 import { buildTagItem } from '@/features/tags/utils/tagHelpers';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('createMirrorEntry');
 
 type GenericMap = Record<string, unknown>;
 
@@ -94,10 +97,7 @@ const safeUpdate = (
       callable({ [id]: data });
     }
   } catch (e) {
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.warn('[createMirrorEntry] safeUpdate failed:', e);
-    }
+    log.warn('safeUpdate failed:', e);
   }
 };
 
@@ -114,9 +114,8 @@ export const createMirrorEntry = (
   const rawVariant = pokemon?.variant_id || pokemon?.instanceData?.variant_id || '';
   const variant_id = normalizeVariantId(String(rawVariant || ''));
 
-  if (!variant_id && process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line no-console
-    console.warn('[createMirrorEntry] Missing variant_id on pokemon:', pokemon);
+  if (!variant_id) {
+    log.warn('Missing variant_id on pokemon:', pokemon);
   }
 
   const newId =

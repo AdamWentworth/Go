@@ -4,6 +4,9 @@ import { useEffect } from 'react';
 import { calculateCP } from '@/utils/calculateCP';
 import type { UseCalculatedCPProps } from '@/types/cp';
 import { cpMultipliers } from '@/utils/constants';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('useCalculatedCP');
 
 // Local robust CPM lookup (avoids needing a new util file).
 const getCPM = (lvl: number | null | undefined): number | undefined => {
@@ -43,7 +46,7 @@ export const useCalculatedCP = ({
       );
       setCP(calculatedCP.toString());
     } else {
-      console.warn(`No CP multiplier found for level ${level}`);
+      log.warn(`No CP multiplier found for level ${level}`);
     }
   }, [currentBaseStats, level, ivs, setCP]);
 };

@@ -3,6 +3,9 @@
 import { getAllInstances, getVariantById } from '@/db/indexedDB';
 import { parseVariantId } from '@/utils/PokemonIDUtils';
 import type { PokemonInstance } from '@/types/pokemonInstance';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('getCandidatesForIdWithVariants');
 
 export async function getCandidatesForIdWithVariants(
   baseId: string,
@@ -40,7 +43,7 @@ export async function getCandidatesForIdWithVariants(
     try {
       const variantData = await getVariantById(candidateVariantKey);
       if (!variantData) {
-        console.warn(`[Fusion Handler] No variant data found for ${candidateVariantKey}`);
+        log.warn(`No variant data found for ${candidateVariantKey}`);
         continue;
       }
 
@@ -49,7 +52,7 @@ export async function getCandidatesForIdWithVariants(
         instanceData: candidate,
       });
     } catch (err) {
-      console.error(`[Fusion Handler] Error fetching variantData for ${candidateVariantKey}:`, err);
+      log.error(`Error fetching variantData for ${candidateVariantKey}:`, err);
     }
   }
 

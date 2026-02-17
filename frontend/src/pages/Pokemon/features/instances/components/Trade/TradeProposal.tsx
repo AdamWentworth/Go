@@ -17,10 +17,13 @@ import useCalculateStardustCost from '../../hooks/useCalculateStardustCost';
 
 import { useTradeStore } from '@/features/trades/store/useTradeStore';
 import { useModal } from '@/contexts/ModalContext';
+import { createScopedLogger } from '@/utils/logger';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { Instances } from '@/types/instances';
+
+const log = createScopedLogger('TradeProposal');
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -170,7 +173,7 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
       await alert('Trade proposal successfully created!');
       onClose();
     } catch (err) {
-      console.error(err);
+      log.error('Unexpected error while proposing trade:', err);
       await alert('An unexpected error occurred. Please try again.');
     }
   };

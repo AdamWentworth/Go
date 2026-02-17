@@ -34,6 +34,9 @@ import { getEntityKey } from './utils/getEntityKey';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { VariantBackground } from '@/types/pokemonSubTypes';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('TradeInstance');
 
 type BackgroundOption = VariantBackground;
 
@@ -341,7 +344,7 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
       try {
         await updateDetails({ [entityKey]: payload as Partial<PokemonInstance> });
       } catch (error) {
-        console.error('Error updating trade details:', error);
+        log.error('Error updating trade details:', error);
         alert(
           'An error occurred while updating the Pokémon details. Please try again.'
         );
