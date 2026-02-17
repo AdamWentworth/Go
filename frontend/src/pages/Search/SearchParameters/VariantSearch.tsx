@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 
-import Dropdown from '../components/Dropdown';
 import MovesSearch, { type SelectedMoves } from './VariantComponents/MovesSearch';
 import validatePokemon from '../utils/validatePokemon';
 import { updateImage } from '../utils/updateImage';
@@ -20,6 +19,8 @@ import {
   sortCostumesByDate,
   type SortableCostume,
 } from './variantSearchHelpers';
+import VariantSearchInput from './VariantSearchInput';
+import VariantSearchTogglePanel from './VariantSearchTogglePanel';
 import './VariantSearch.css';
 
 type BackgroundSelection = {
@@ -386,73 +387,31 @@ const VariantSearch: React.FC<VariantSearchProps> = ({
       <div className="main-content">
         <div className="pokemon-variant-details">
           <h3>Pokemon Variant</h3>
-          <div className="pokemon-search-row">
-            <input
-              type="text"
-              value={pokemon}
-              onChange={handlePokemonChange}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
-              placeholder="Enter Pokemon name"
-            />
-            {suggestions.length > 0 && (
-              <ul
-                className="autocomplete-suggestions"
-                onMouseDown={(event) => event.preventDefault()}
-              >
-                {suggestions.map((suggestion) => (
-                  <li key={suggestion} onClick={() => handleSuggestionClick(suggestion)}>
-                    {suggestion}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <VariantSearchInput
+            pokemon={pokemon}
+            suggestions={suggestions}
+            onPokemonChange={handlePokemonChange}
+            onInputFocus={handleInputFocus}
+            onInputBlur={handleInputBlur}
+            onSuggestionClick={handleSuggestionClick}
+          />
 
-          <div className="button-container">
-            <button
-              type="button"
-              onClick={handleShinyChange}
-              className={`shiny-button ${isShiny ? 'active' : ''}`}
-            >
-              <img src="/images/shiny_icon.png" alt="Toggle Shiny" />
-            </button>
-            <button
-              type="button"
-              onClick={handleCostumeToggle}
-              className={`costume-button ${showCostumeDropdown ? 'active' : ''}`}
-            >
-              <img src="/images/costume_icon.png" alt="Toggle Costume" />
-            </button>
-            <button
-              type="button"
-              onClick={handleShadowChange}
-              className={`shadow-button ${isShadow ? 'active' : ''}`}
-            >
-              <img src="/images/shadow_icon.png" alt="Toggle Shadow" />
-            </button>
-          </div>
-
-          {availableForms.length > 0 && (
-            <Dropdown
-              label="Form"
-              value={selectedForm}
-              options={availableForms}
-              handleChange={handleFormChange}
-              formatLabel={formatForm}
-              className="form-dropdown"
-            />
-          )}
-          {showCostumeDropdown && availableCostumes.length > 0 && (
-            <Dropdown
-              label="Costume"
-              value={costume}
-              options={availableCostumes.map((entry) => entry.name)}
-              handleChange={handleCostumeChange}
-              formatLabel={formatCostumeName}
-              className="costume-dropdown"
-            />
-          )}
+          <VariantSearchTogglePanel
+            isShiny={isShiny}
+            isShadow={isShadow}
+            showCostumeDropdown={showCostumeDropdown}
+            onShinyToggle={handleShinyChange}
+            onCostumeToggle={handleCostumeToggle}
+            onShadowToggle={handleShadowChange}
+            availableForms={availableForms}
+            selectedForm={selectedForm}
+            onFormChange={handleFormChange}
+            availableCostumeNames={availableCostumes.map((entry) => entry.name)}
+            costume={costume}
+            onCostumeChange={handleCostumeChange}
+            formatCostumeLabel={formatCostumeName}
+            formatFormLabel={formatForm}
+          />
         </div>
 
         <div className="pokemon-variant-image">
