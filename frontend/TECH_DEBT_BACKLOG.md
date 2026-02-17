@@ -91,6 +91,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 84. P2.2 slice C: extracted the large wanted-filter render block from `TradeDetails` into dedicated child component `TradeFiltersPanel.tsx`, preserving filter toggle behavior/layout modes and adding dedicated unit coverage for mirror hidden-state, compact include-heading rendering, and include/exclude toggle callback wiring (`372/372` unit tests green, plus green typecheck/build).
 85. P2.2 slice D: extracted the `TradeDetails` top-row (edit/save + reset affordance + header mode + mirror manager) into `TradeTopRow.tsx`, preserved reset/mirror/header behaviors, and added dedicated unit coverage for heading variants, reset click gating, and structural rendering (`375/375` unit tests green, plus green typecheck/build).
 86. P2.2 slice E: extracted trade-proposal/update-modal orchestration from `TradeDetails` into `useTradeProposalFlow.ts`, removed dead in-component update-modal handler path, and added dedicated hook regression coverage for no-selection, fetch failure, needs-trade-selection, and proposal-ready flows (`382/382` unit tests green, plus green typecheck/build).
+87. P2.2 slice F: extracted pure `VariantSearch` decision helpers into `variantSearchHelpers.ts` (max-cycle, suggestions, forms normalization, costume/background gating, date-sort), rewired `VariantSearch.tsx` to consume helpers, and added dedicated helper regression coverage (`389/389` unit tests green, plus green typecheck/build).
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 - Pending:
@@ -109,7 +110,7 @@ Repo parse against backlog claims:
    - `tagHelpers.ts`: `0`
    - `MirrorManager.tsx`: `0`
 5. Remaining P2.2 decomposition targets still oversized:
-   - `VariantSearch.tsx`: `641` LOC
+   - `VariantSearch.tsx`: `530` LOC
    - `Pokemon.tsx`: `421` LOC
    - (`TradeDetails.tsx` is now `294` LOC after slices A-E)
 

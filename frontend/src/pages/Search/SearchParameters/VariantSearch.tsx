@@ -10,14 +10,17 @@ import Gender from '@/components/pokemonComponents/Gender';
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
 import { formatForm } from '@/utils/formattingHelpers';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import {
+  computeMaxAvailability,
+  cycleMaxState,
+  getPokemonSuggestions,
+  getSelectedCostumeId,
+  isBackgroundAllowedForSelection,
+  normalizeAvailableForms,
+  sortCostumesByDate,
+  type SortableCostume,
+} from './variantSearchHelpers';
 import './VariantSearch.css';
-
-type SortableCostume = {
-  name: string;
-  costume_id?: number;
-  date_available?: string;
-  [key: string]: unknown;
-};
 
 type BackgroundSelection = {
   background_id: number;
@@ -50,15 +53,6 @@ type VariantSearchProps = {
   gigantamax: boolean;
   setGigantamax: React.Dispatch<React.SetStateAction<boolean>>;
   pokemonCache: PokemonVariant[] | null;
-};
-
-const toDateMillis = (value: unknown): number => {
-  if (typeof value !== 'string' || value.length === 0) {
-    return 0;
-  }
-
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? 0 : parsed;
 };
 
 const VariantSearch: React.FC<VariantSearchProps> = ({
@@ -104,35 +98,21 @@ const VariantSearch: React.FC<VariantSearchProps> = ({
     (entry) => entry.name.toLowerCase() === (pokemon || '').toLowerCase(),
   );
 
-  const hasDynamax =
-    currentPokemonData?.max?.some((maxForm) => Number(maxForm.dynamax) === 1) ||
-    false;
-  const hasGigantamax =
-    currentPokemonData?.max?.some((maxForm) => Number(maxForm.gigantamax) === 1) ||
-    false;
+  const { hasDynamax, hasGigantamax } = computeMaxAvailability(currentPokemonData);
 
   const toggleMax = () => {
-    if (!dynamax && !gigantamax) {
-      if (hasDynamax) {
-        setDynamax(true);
-      } else if (hasGigantamax) {
-        setGigantamax(true);
-      }
-      return;
-    }
+    const next = cycleMaxState({
+      dynamax,
+      gigantamax,
+      hasDynamax,
+      hasGigantamax,
+    });
 
-    if (dynamax) {
-      if (hasGigantamax) {
-        setDynamax(false);
-        setGigantamax(true);
-      } else {
-        setDynamax(false);
-      }
-      return;
+    if (next.dynamax !== dynamax) {
+      setDynamax(next.dynamax);
     }
-
-    if (gigantamax) {
-      setGigantamax(false);
+    if (next.gigantamax !== gigantamax) {
+      setGigantamax(next.gigantamax);
     }
   };
 
@@ -169,22 +149,13 @@ const VariantSearch: React.FC<VariantSearchProps> = ({
       setErrorMessage(null);
     }
 
-    const sortedCostumes = [
-      ...(validatedCostumes as unknown as SortableCostume[]),
-    ].sort(
-      (a, b) => toDateMillis(a.date_available) - toDateMillis(b.date_available),
+    const sortedCostumes = sortCostumesByDate(
+      validatedCostumes as unknown as SortableCostume[],
     );
     setAvailableCostumes(sortedCostumes);
 
-    const filteredForms = validatedForms
-      .filter(
-        (candidate): candidate is string =>
-          typeof candidate === 'string' && candidate.trim().toLowerCase() !== '',
-      )
-      .map((candidate) =>
-        candidate.toLowerCase() === 'none' ? 'None' : candidate,
-      );
-    setAvailableForms(filteredForms.length > 0 ? filteredForms : []);
+    const filteredForms = normalizeAvailableForms(validatedForms);
+    setAvailableForms(filteredForms);
 
     if (!error) {
       const nextImageUrl = updateImage(
@@ -251,15 +222,7 @@ const VariantSearch: React.FC<VariantSearchProps> = ({
     setGigantamax(false);
 
     if (newPokemon.length >= 3) {
-      const filtered = Array.from(
-        new Set(
-          pokemonData
-            .filter((entry) =>
-              entry.name.toLowerCase().startsWith(newPokemon.toLowerCase()),
-            )
-            .map((entry) => entry.name),
-        ),
-      );
+      const filtered = getPokemonSuggestions(pokemonData, newPokemon);
       setSuggestions(filtered);
     } else {
       setSuggestions([]);
@@ -291,15 +254,7 @@ const VariantSearch: React.FC<VariantSearchProps> = ({
       return;
     }
 
-    const filtered = Array.from(
-      new Set(
-        pokemonData
-          .filter((entry) =>
-            entry.name.toLowerCase().startsWith(pokemon.toLowerCase()),
-          )
-          .map((entry) => entry.name),
-      ),
-    );
+    const filtered = getPokemonSuggestions(pokemonData, pokemon);
     setSuggestions(filtered);
   };
 
@@ -418,32 +373,12 @@ const VariantSearch: React.FC<VariantSearchProps> = ({
     );
   };
 
-  const isBackgroundAllowed = () => {
-    if (!currentPokemonData || !currentPokemonData.backgrounds) {
-      return false;
-    }
-
-    if (!costume) {
-      return currentPokemonData.backgrounds.some((background) => {
-        const costumeId = background.costume_id as number | null | undefined;
-        return costumeId == null;
-      });
-    }
-
-    const selectedCostumeId = availableCostumes.find(
-      (entry) => entry.name === costume,
-    )?.costume_id;
-
-    return currentPokemonData.backgrounds.some(
-      (background) =>
-        background.costume_id === selectedCostumeId ||
-        background.costume_id == null,
-    );
-  };
-
-  const selectedCostumeId = availableCostumes.find(
-    (entry) => entry.name === costume,
-  )?.costume_id;
+  const backgroundAllowed = isBackgroundAllowedForSelection(
+    currentPokemonData,
+    costume,
+    availableCostumes,
+  );
+  const selectedCostumeId = getSelectedCostumeId(availableCostumes, costume);
   const canDynamax = hasDynamax || hasGigantamax;
 
   return (
@@ -568,7 +503,7 @@ const VariantSearch: React.FC<VariantSearchProps> = ({
               searchMode={true}
               onGenderChange={handleGenderChange}
             />
-            {isBackgroundAllowed() && (
+            {backgroundAllowed && (
               <div className="background-button-container">
                 <img
                   src="/images/location.png"
