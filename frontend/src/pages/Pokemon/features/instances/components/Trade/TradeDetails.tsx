@@ -12,6 +12,7 @@ import WantedListDisplay from './WantedListDisplay';
 
 import TradeTopRow from './TradeTopRow';
 import TradeFiltersPanel from './TradeFiltersPanel';
+import TradeOverlaysPanel from './TradeOverlaysPanel';
 
 import useImageSelection from '../../utils/useImageSelection';
 import { updateDisplayedList } from '../../utils/listUtils';
@@ -25,27 +26,16 @@ import {
 import useWantedFiltering from '../../hooks/useWantedFiltering';
 import useToggleEditModeTrade from '../../hooks/useToggleEditModeTrade';
 
-import PokemonActionOverlay from './PokemonActionOverlay';
-import TradeProposal from './TradeProposal';
-
-import { parseVariantId } from '@/utils/PokemonIDUtils';
-import { getAllInstances } from '@/db/instancesDB';
-import { getAllFromTradesDB } from '@/db/tradesDB';
-import { shouldUpdateTradeInstances } from './shouldUpdateTradeInstances';
 import {
   buildWantedOverlayPokemon,
   countVisibleWantedItems,
   initializeSelection,
-  prepareTradeCandidateSets,
-  resolveTradeProposalDecision,
   type SelectedPokemon,
 } from './tradeDetailsHelpers';
+import useTradeProposalFlow from './useTradeProposalFlow';
 import { createScopedLogger } from '@/utils/logger';
 
-import UpdateForTradeModal from './UpdateForTradeModal';
-
 type BooleanMap = Record<string, boolean>;
-type GenericMap = Record<string, unknown>;
 
 interface TradeDetailsProps {
   pokemon: PokemonVariant & {
@@ -89,7 +79,6 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
     ...wanted_filters,
   });
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
-  const updateStatus = useInstancesStore((s) => s.updateInstanceStatus);
   const [isMirror, setIsMirror] = useState(pokemon.instanceData.mirror);
   const [mirrorKey, setMirrorKey] = useState<string | null>(null);
   const [listsState, setListsState] = useState(lists);
@@ -97,13 +86,6 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
   const [isSmallScreen, setIsSmallScreen] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 1024 : false,
   );
-
-  // New state variables for UpdateForTradeModal
-  const [isUpdateForTradeModalOpen, setIsUpdateForTradeModalOpen] = useState(false);
-  const [caughtInstancesToTrade, setCaughtInstancesToTrade] = useState<PokemonInstance[]>([]);
-  const [currentBaseKey, setCurrentBaseKey] = useState<string | null>(null); // New state for baseKey
-
-  const [myInstances, setMyInstances] = useState<Instances | undefined>();
 
   const {
     selectedImages: selectedExcludeImages,
@@ -120,9 +102,25 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [selectedPokemon, setSelectedPokemon] = useState<SelectedPokemon | null>(null);
 
-  // We will set these when user actually proposes the trade
-  const [isTradeProposalOpen, setIsTradeProposalOpen] = useState(false);
-  const [tradeClickedPokemon, setTradeClickedPokemon] = useState<Record<string, unknown> | null>(null);
+  const closeOverlay = () => {
+    setIsOverlayOpen(false);
+  };
+
+  const {
+    myInstances,
+    isTradeProposalOpen,
+    tradeClickedPokemon,
+    isUpdateForTradeModalOpen,
+    caughtInstancesToTrade,
+    currentBaseKey,
+    proposeTrade,
+    closeTradeProposal,
+    closeTradeSelectionModal,
+  } = useTradeProposalFlow({
+    selectedPokemon,
+    closeOverlay,
+    alert,
+  });
 
   useEffect(() => {
     if (wanted_filters) {
@@ -201,112 +199,7 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
   };
 
   const handleProposeTrade = async () => {
-    if (!selectedPokemon) {
-      log.debug('No selectedPokemon. Aborting trade proposal.');
-      return;
-    }
-
-    let userInstances: PokemonInstance[] = [];
-    try {
-      userInstances = await getAllInstances();
-    } catch (error) {
-      log.error('Failed to fetch user instances from IndexedDB:', error);
-      alert('Could not fetch your instances. Aborting trade proposal.');
-      return;
-    }
-
-    const {
-      selectedBaseKey,
-      hashedInstances,
-      caughtInstances,
-      tradeableInstances,
-    } = prepareTradeCandidateSets(selectedPokemon, userInstances, parseVariantId);
-
-    log.debug('Hashed ownership data prepared.', {
-      count: Object.keys(hashedInstances).length,
-    });
-    log.debug('Caught instances after filter.', { count: caughtInstances.length });
-
-    setMyInstances(hashedInstances);
-
-    let decision: ReturnType<typeof resolveTradeProposalDecision>;
-    if (tradeableInstances.length > 0) {
-      try {
-        const allTrades = await getAllFromTradesDB('pokemonTrades');
-        decision = resolveTradeProposalDecision(
-          selectedPokemon,
-          selectedBaseKey,
-          caughtInstances,
-          tradeableInstances,
-          allTrades,
-        );
-      } catch (error) {
-        log.error('Failed to fetch or process trades data:', error);
-        alert('Could not verify trade availability. Please try again.');
-        return;
-      }
-    } else {
-      decision = resolveTradeProposalDecision(
-        selectedPokemon,
-        selectedBaseKey,
-        caughtInstances,
-        tradeableInstances,
-        [],
-      );
-    }
-
-    switch (decision.kind) {
-      case 'noCaught':
-        alert('You do not have this Pokemon caught, so you cannot propose a trade.');
-        return;
-      case 'noAvailableTradeable':
-        alert(
-          'All instances of this Pokemon are currently involved in pending trades. Catch some more of this Pokemon to offer this trade or cancel your current pending trade.',
-        );
-        return;
-      case 'needsTradeSelection':
-        setCaughtInstancesToTrade(decision.caughtInstances);
-        setCurrentBaseKey(decision.selectedBaseKey);
-        setIsUpdateForTradeModalOpen(true);
-        return;
-      case 'proposalReady':
-        setTradeClickedPokemon(decision.payload);
-        closeOverlay();
-        setIsTradeProposalOpen(true);
-        return;
-    }
-  };
-
-  const closeOverlay = () => {
-    setIsOverlayOpen(false);
-  };
-
-  const handleConfirmTradeUpdate = async (selectedInstanceIds: unknown) => {
-    try {
-      if (!shouldUpdateTradeInstances(selectedInstanceIds)) {
-        setIsUpdateForTradeModalOpen(false);
-        return;
-      }
-
-      // Use canonical store action so all tag/registration invariants stay consistent.
-      const instanceIds = selectedInstanceIds.map((id) => String(id));
-      await updateStatus(instanceIds, 'Trade');
-
-      // Close the modal
-      setIsUpdateForTradeModalOpen(false);
-
-      // Proceed with the trade proposal
-      // Re-run handleProposeTrade or implement the logic here
-      handleProposeTrade(); // Be cautious to avoid infinite loops
-    } catch (error) {
-      log.error('Failed to update instances for trade:', error);
-      alert("There was an error updating your instances for trade. Please try again.");
-    }
-  };
-
-  const handleCancelTradeUpdate = () => {
-    // Simply close the modal without making any changes
-    setIsUpdateForTradeModalOpen(false);
+    await proposeTrade();
   };
 
   // When not in edit mode, clicking a Pokémon's thumbnail
@@ -412,39 +305,24 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
         </div>
       </div>
 
-      {/* The overlay that appears when not in edit mode */}
-      <PokemonActionOverlay
-        isOpen={isOverlayOpen}
-        onClose={closeOverlay}
-        onViewWantedList={handleViewWantedList}
-        onProposeTrade={handleProposeTrade}
-        pokemon={selectedPokemon as any}
+      <TradeOverlaysPanel
+        isOverlayOpen={isOverlayOpen}
+        closeOverlay={closeOverlay}
+        handleViewWantedList={handleViewWantedList}
+        handleProposeTrade={handleProposeTrade}
+        selectedPokemon={selectedPokemon}
+        isTradeProposalOpen={isTradeProposalOpen}
+        pokemon={pokemon}
+        tradeClickedPokemon={tradeClickedPokemon}
+        onCloseTradeProposal={closeTradeProposal}
+        myInstances={myInstances}
+        instancesMap={instancesMap}
+        username={username}
+        isUpdateForTradeModalOpen={isUpdateForTradeModalOpen}
+        caughtInstancesToTrade={caughtInstancesToTrade}
+        currentBaseKey={currentBaseKey}
+        handleCancelTradeUpdate={closeTradeSelectionModal}
       />
-
-      {/* If the user actually proposes a trade, open TradeProposal */}
-      {isTradeProposalOpen && (
-        <TradeProposal
-          passedInPokemon={pokemon}      // The "parent" Pokémon from which we came
-          clickedPokemon={tradeClickedPokemon as any} // The user’s matches from their DB
-          wantedPokemon={selectedPokemon as any} // <--- We pass the *clicked* Pokémon as wantedPokemon
-          onClose={() => {
-            setIsTradeProposalOpen(false);
-            setTradeClickedPokemon(null);
-          }}
-          myInstances={(myInstances ?? {}) as any}
-          instances={instancesMap}
-          username={username}
-        />
-      )}
-
-      {/* Render the UpdateForTradeModal when needed */}
-      {isUpdateForTradeModalOpen && (
-        <UpdateForTradeModal
-          caughtInstances={caughtInstancesToTrade}
-          baseKey={currentBaseKey} // Pass the baseKey here
-          onClose={handleCancelTradeUpdate}
-        />
-      )}
     </div>
   );
 };

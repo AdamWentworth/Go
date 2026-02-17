@@ -90,6 +90,7 @@ This backlog converts the current frontend audit into an execution plan focused 
 83. P2.2 slice B: extracted `TradeDetails` instance-to-overlay merge flow into tested helper `buildWantedOverlayPokemon`, simplified `handlePokemonClick` orchestration, and added helper regression coverage for missing-variant, missing-instance, and successful merged overlay payload behavior.
 84. P2.2 slice C: extracted the large wanted-filter render block from `TradeDetails` into dedicated child component `TradeFiltersPanel.tsx`, preserving filter toggle behavior/layout modes and adding dedicated unit coverage for mirror hidden-state, compact include-heading rendering, and include/exclude toggle callback wiring (`372/372` unit tests green, plus green typecheck/build).
 85. P2.2 slice D: extracted the `TradeDetails` top-row (edit/save + reset affordance + header mode + mirror manager) into `TradeTopRow.tsx`, preserved reset/mirror/header behaviors, and added dedicated unit coverage for heading variants, reset click gating, and structural rendering (`375/375` unit tests green, plus green typecheck/build).
+86. P2.2 slice E: extracted trade-proposal/update-modal orchestration from `TradeDetails` into `useTradeProposalFlow.ts`, removed dead in-component update-modal handler path, and added dedicated hook regression coverage for no-selection, fetch failure, needs-trade-selection, and proposal-ready flows (`382/382` unit tests green, plus green typecheck/build).
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 - Pending:
@@ -107,10 +108,10 @@ Repo parse against backlog claims:
    - `updatePokemonInstanceStatus.ts`: `0`
    - `tagHelpers.ts`: `0`
    - `MirrorManager.tsx`: `0`
-5. P2.2 decomposition targets remain oversized:
-   - `TradeDetails.tsx`: `454` LOC
+5. Remaining P2.2 decomposition targets still oversized:
    - `VariantSearch.tsx`: `641` LOC
    - `Pokemon.tsx`: `421` LOC
+   - (`TradeDetails.tsx` is now `294` LOC after slices A-E)
 
 ## Rules Of Execution
 
@@ -325,4 +326,4 @@ Repo parse against backlog claims:
 
 ## Immediate Next Step
 
-Start P2.2 decomposition with `pages/Pokemon/features/instances/components/Trade/TradeDetails.tsx` now that P2.1 is complete.
+Continue P2.2 decomposition with `pages/Search/SearchParameters/VariantSearch.tsx`.
