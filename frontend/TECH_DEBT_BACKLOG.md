@@ -12,7 +12,7 @@ Historical migration logs were intentionally removed to keep this actionable.
 - JavaScript files (`.js`/`.jsx`) in `frontend/src`: 0
 - Lint (`npm run lint`): pass (`0` errors, `0` warnings)
 - Typecheck (`npm run typecheck`): pass
-- Unit tests (`npm run test:unit`): pass (`132` files / `453` tests)
+- Unit tests (`npm run test:unit`): pass (`133` files / `458` tests)
 - Integration test files: `10`
 - E2E test files: `1`
 - Explicit `any` types in `frontend/src`: 0
@@ -34,8 +34,8 @@ None.
 1. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeProposal.tsx` (`392` LOC)
 2. `frontend/src/pages/Trades/views/PendingTradeView.tsx` (`375` LOC)
 3. `frontend/src/pages/Pokemon/hooks/usePokemonPageController.tsx` (`367` LOC)
-4. `frontend/src/pages/Search/PokemonSearchBar.tsx` (`346` LOC)
-5. `frontend/src/pages/Search/views/ListViewComponents/WantedListView.tsx` (`338` LOC)
+4. `frontend/src/pages/Search/views/ListViewComponents/WantedListView.tsx` (`338` LOC)
+5. `frontend/src/pages/Pokemon/features/instances/CaughtInstance.tsx` (`325` LOC)
 
 ## Priority Backlog
 
@@ -75,7 +75,7 @@ None.
 ### P1 - Maintainability
 
 #### P1.1 Decompose Oversized Instance Components
-- Status: In Progress (2026-02-17)
+- Status: Done (2026-02-17)
 - Goal: reduce component complexity and review risk.
 - Targets:
 1. `frontend/src/pages/Pokemon/features/instances/TradeInstance.tsx`
@@ -114,6 +114,9 @@ None.
 4. Extracted variant search validation-state composition/execution into `SearchParameters/variantSearchControllerHelpers.ts`.
 5. Added helper regression tests in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts`.
 6. Reduced `useVariantSearchController.ts` from `403` LOC to `314` LOC while preserving behavior.
+7. Extracted PokemonSearchBar collapse/resize/scroll lifecycle into `hooks/useSearchBarCollapse.ts`.
+8. Added lifecycle helper tests in `tests/unit/pages/Search/hooks/useSearchBarCollapse.unit.test.ts`.
+9. Reduced `PokemonSearchBar.tsx` from `346` LOC to `294` LOC while preserving behavior.
 - DoD:
 1. Large orchestration logic moved to pure helpers/hooks.
 2. Existing search behavior remains intact under tests.
@@ -157,7 +160,7 @@ None.
 
 ## Next Recommended Slice
 
-Continue `P1.2` by extracting PokemonSearchBar layout/collapse lifecycle into a dedicated hook and keep behavior parity:
+Continue `P1.2` by extracting remaining `useVariantSearchController.ts` orchestration side effects into focused hooks and keep behavior parity:
 
 1. `npm run lint`
 2. `npm run typecheck`

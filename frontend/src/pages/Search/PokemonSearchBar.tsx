@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { FaChevronDown, FaChevronUp, FaGlobe, FaList } from 'react-icons/fa';
 
 import VariantSearch from './SearchParameters/VariantSearch';
@@ -19,6 +19,7 @@ import {
   type PokemonSearchQueryParams,
   type SelectedMoves,
 } from './utils/buildPokemonSearchQuery';
+import { useSearchBarCollapse } from './hooks/useSearchBarCollapse';
 
 type SearchView = 'list' | 'map';
 
@@ -85,81 +86,16 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
   const [friendshipLevel, setFriendshipLevel] = useState(0);
 
   const [errorMessage, setErrorMessage] = useState<string | null>('');
-  const [isMidWidth, setIsMidWidth] = useState(false);
   const [, setSelectedBoundary] = useState<string | null>(null);
-
-  const collapsibleRef = useRef<HTMLDivElement | null>(null);
-  const searchTriggeredRef = useRef(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMidWidth(window.innerWidth >= 1024 && window.innerWidth <= 1439);
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (!collapsibleRef.current || isCollapsed) return;
-
-    const contentElement = collapsibleRef.current.querySelector('.content');
-    if (!contentElement) return;
-
-    const observer = new ResizeObserver(() => {
-      if (!isCollapsed && collapsibleRef.current) {
-        collapsibleRef.current.style.maxHeight = `${collapsibleRef.current.scrollHeight}px`;
-      }
-    });
-
-    observer.observe(contentElement);
-    return () => observer.disconnect();
-  }, [isCollapsed]);
-
-  useEffect(() => {
-    if (collapsibleRef.current) {
-      if (!isCollapsed) {
-        collapsibleRef.current.style.maxHeight = `${collapsibleRef.current.scrollHeight}px`;
-        setTimeout(() => {
-          if (!isCollapsed && collapsibleRef.current) {
-            collapsibleRef.current.style.overflow = 'visible';
-          }
-        }, 600);
-      } else {
-        collapsibleRef.current.style.maxHeight = '0px';
-        collapsibleRef.current.style.overflow = 'hidden';
-      }
-    }
-  }, [isCollapsed]);
-
-  const handleScroll = useCallback(() => {
-    const searchBar = collapsibleRef.current;
-    const searchBarHeight = searchBar ? searchBar.offsetHeight : 0;
-    const searchBarBottom = searchBar ? searchBar.offsetTop + searchBarHeight : 0;
-    const adjustedCollapsePoint = searchBarBottom - searchBarHeight * 0.15;
-
-    if (window.scrollY > adjustedCollapsePoint) {
-      setIsCollapsed(true);
-      return;
-    }
-
-    if (window.scrollY === 0) {
-      if (searchTriggeredRef.current) {
-        searchTriggeredRef.current = false;
-        return;
-      }
-      setIsCollapsed(false);
-    }
-  }, [setIsCollapsed]);
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
-
-  const toggleCollapse = () => {
-    setIsCollapsed((prev) => !prev);
-  };
+  const {
+    collapsibleRef,
+    isMidWidth,
+    toggleCollapse,
+    markSearchTriggered,
+  } = useSearchBarCollapse({
+    isCollapsed,
+    setIsCollapsed,
+  });
 
   const handleSearch = async () => {
     setErrorMessage('');
@@ -215,7 +151,7 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
     log.debug('Search query parameters', queryParams);
     await onSearch(queryParams, null);
     setIsCollapsed(true);
-    searchTriggeredRef.current = true;
+    markSearchTriggered();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
