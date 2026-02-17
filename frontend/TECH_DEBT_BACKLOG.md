@@ -86,7 +86,8 @@ This backlog converts the current frontend audit into an execution plan focused 
 79. P2.1 slice B: removed all explicit `any` usage from `features/instances/services/updatePokemonInstanceStatus.ts` (44 -> 0), tightened typed instance mutation paths, and verified with targeted unit coverage plus green `typecheck` + `354/354` unit + production build.
 80. P2.1 slice C: removed all explicit `any` usage from `features/tags/utils/tagHelpers.ts` (33 -> 0), widened helper inputs to typed partial sources with deterministic defaults, eliminated mirror-entry cast usage in `createMirrorEntry.ts`, and verified with targeted + full green (`typecheck`, `354/354` unit, production build).
 81. P2.1 slice D: removed all explicit `any` usage from `pages/Pokemon/features/instances/components/Trade/MirrorManager.tsx` (37 -> 0), tightened mirror lookup/update typing, and added dedicated `MirrorManager` regression coverage (reuse/create/toggle flows) with green `typecheck` + `354/354` unit + production build.
-82. P2.2 slice A: extracted `TradeDetails` trade-proposal candidate/decision logic into `tradeDetailsHelpers.ts` (`prepareTradeCandidateSets`, `resolveTradeProposalDecision`), simplified `handleProposeTrade` orchestration, and added/expanded helper regression coverage for no-caught, needs-trade-selection, pending-trade exclusion, and proposal-ready payload flow (`366/366` unit tests green, plus green typecheck/build).
+82. P2.2 slice A: extracted `TradeDetails` trade-proposal candidate/decision logic into `tradeDetailsHelpers.ts` (`prepareTradeCandidateSets`, `resolveTradeProposalDecision`), simplified `handleProposeTrade` orchestration, and added/expanded helper regression coverage for no-caught, needs-trade-selection, pending-trade exclusion, and proposal-ready payload flow (`369/369` unit tests green, plus green typecheck/build).
+83. P2.2 slice B: extracted `TradeDetails` instance-to-overlay merge flow into tested helper `buildWantedOverlayPokemon`, simplified `handlePokemonClick` orchestration, and added helper regression coverage for missing-variant, missing-instance, and successful merged overlay payload behavior.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 - Pending:
@@ -105,7 +106,7 @@ Repo parse against backlog claims:
    - `tagHelpers.ts`: `0`
    - `MirrorManager.tsx`: `0`
 5. P2.2 decomposition targets remain oversized:
-   - `TradeDetails.tsx`: `555` LOC
+   - `TradeDetails.tsx`: `540` LOC
    - `VariantSearch.tsx`: `641` LOC
    - `Pokemon.tsx`: `421` LOC
 

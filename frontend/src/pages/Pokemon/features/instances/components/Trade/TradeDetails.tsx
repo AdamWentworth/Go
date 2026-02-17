@@ -35,8 +35,8 @@ import { getAllInstances } from '@/db/instancesDB';
 import { getAllFromTradesDB } from '@/db/tradesDB';
 import { shouldUpdateTradeInstances } from './shouldUpdateTradeInstances';
 import {
+  buildWantedOverlayPokemon,
   countVisibleWantedItems,
-  extractBaseKey,
   initializeSelection,
   prepareTradeCandidateSets,
   resolveTradeProposalDecision,
@@ -325,33 +325,17 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
   };
 
   const handlePokemonClick = (instanceId: string) => {
-    const baseKey = extractBaseKey(instanceId);
-
-    // 1) Find the variant data
-    const variantData = variants.find((variant) => variant.variant_id === baseKey);
-    if (!variantData) {
-      log.error(`Variant not found for instance id: ${instanceId}`);
+    const merged = buildWantedOverlayPokemon(instanceId, variants, instancesMap);
+    if (!merged.ok) {
+      if (merged.error === 'variantNotFound') {
+        log.error(`Variant not found for instance id: ${instanceId}`);
+      } else {
+        log.error(`No instance data found for key: ${instanceId}`);
+      }
       return;
     }
 
-    // 2) Merge variant with instances
-    const instanceEntry = instancesMap[instanceId];
-    if (!instanceEntry) {
-      log.error(`No instance data found for key: ${instanceId}`);
-      return;
-    }
-
-    const mergedPokemonData = {
-      ...variantData,
-      variant_id: variantData.variant_id ?? baseKey,
-      instanceData: {
-        ...variantData.instanceData,
-        ...instanceEntry,
-      },
-    };
-
-    // 3) This is your existing "openWantedOverlay" for the clicked Pokémon
-    openWantedOverlay(mergedPokemonData);
+    openWantedOverlay(merged.pokemon as unknown as Record<string, unknown>);
   };
 
   // Keep track of window resizing
@@ -552,4 +536,5 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
 };
 
 export default TradeDetails;
+
 

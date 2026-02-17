@@ -1,5 +1,6 @@
 import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
+import type { PokemonVariant } from '@/types/pokemonVariants';
 
 type GenericMap = Record<string, unknown>;
 
@@ -9,6 +10,14 @@ export type SelectedPokemon = GenericMap & {
   variantType?: string;
   instanceData?: Partial<PokemonInstance>;
 };
+
+export type WantedOverlayPokemon = PokemonVariant & {
+  instanceData: PokemonInstance;
+};
+
+export type BuildWantedOverlayPokemonResult =
+  | { ok: true; pokemon: WantedOverlayPokemon }
+  | { ok: false; error: 'variantNotFound' | 'instanceNotFound'; baseKey: string };
 
 export interface TradeCandidateSets {
   selectedBaseKey: string;
@@ -101,6 +110,36 @@ export const buildMatchedInstancesPayload = (
   }));
 
   return { matchedInstances };
+};
+
+export const buildWantedOverlayPokemon = (
+  instanceId: string,
+  variants: PokemonVariant[],
+  instancesMap: Record<string, PokemonInstance>,
+): BuildWantedOverlayPokemonResult => {
+  const baseKey = extractBaseKey(instanceId);
+
+  const variantData = variants.find((variant) => variant.variant_id === baseKey);
+  if (!variantData) {
+    return { ok: false, error: 'variantNotFound', baseKey };
+  }
+
+  const instanceEntry = instancesMap[instanceId];
+  if (!instanceEntry) {
+    return { ok: false, error: 'instanceNotFound', baseKey };
+  }
+
+  return {
+    ok: true,
+    pokemon: {
+      ...variantData,
+      variant_id: variantData.variant_id ?? baseKey,
+      instanceData: {
+        ...variantData.instanceData,
+        ...instanceEntry,
+      },
+    },
+  };
 };
 
 export const prepareTradeCandidateSets = (

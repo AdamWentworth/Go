@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildWantedOverlayPokemon,
   buildMatchedInstancesPayload,
   countVisibleWantedItems,
   extractBaseKey,
@@ -15,6 +16,7 @@ import {
 } from '@/pages/Pokemon/features/instances/components/Trade/tradeDetailsHelpers';
 
 import type { PokemonInstance } from '@/types/pokemonInstance';
+import type { PokemonVariant } from '@/types/pokemonVariants';
 
 const makeInstance = (overrides: Partial<PokemonInstance> = {}): PokemonInstance =>
   ({
@@ -26,6 +28,22 @@ const makeInstance = (overrides: Partial<PokemonInstance> = {}): PokemonInstance
     is_wanted: false,
     ...overrides,
   } as PokemonInstance);
+
+const makeVariant = (overrides: Partial<PokemonVariant> = {}): PokemonVariant =>
+  ({
+    variant_id: '0001-default',
+    variantType: 'default',
+    currentImage: '/img/default.png',
+    species_name: 'Bulbasaur',
+    instanceData: {
+      instance_id: 'variant-instance',
+      pokemon_id: 1,
+      is_caught: false,
+      is_for_trade: false,
+      is_wanted: false,
+    } as PokemonInstance,
+    ...overrides,
+  } as unknown as PokemonVariant);
 
 describe('tradeDetailsHelpers', () => {
   it('initializeSelection maps filter flags to booleans in order', () => {
@@ -111,6 +129,56 @@ describe('tradeDetailsHelpers', () => {
     expect(payload.matchedInstances[0].instanceData).toEqual(
       expect.objectContaining({ instance_id: 'trade-1' }),
     );
+  });
+
+  it('buildWantedOverlayPokemon returns variantNotFound when variant lookup misses', () => {
+    const result = buildWantedOverlayPokemon(
+      '0001-default_uuid-a',
+      [makeVariant({ variant_id: '0002-default' })],
+      { '0001-default_uuid-a': makeInstance({ instance_id: '0001-default_uuid-a' }) },
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'variantNotFound',
+      baseKey: '0001-default',
+    });
+  });
+
+  it('buildWantedOverlayPokemon returns instanceNotFound when instance map misses key', () => {
+    const result = buildWantedOverlayPokemon('0001-default_uuid-a', [makeVariant()], {});
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'instanceNotFound',
+      baseKey: '0001-default',
+    });
+  });
+
+  it('buildWantedOverlayPokemon merges variant and instance payloads for overlay', () => {
+    const result = buildWantedOverlayPokemon(
+      '0001-default_uuid-a',
+      [makeVariant({ variant_id: '0001-default' })],
+      {
+        '0001-default_uuid-a': makeInstance({
+          instance_id: '0001-default_uuid-a',
+          pokemon_id: 25,
+          is_caught: true,
+        }),
+      },
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.pokemon.variant_id).toBe('0001-default');
+      expect(result.pokemon.instanceData).toEqual(
+        expect.objectContaining({
+          instance_id: '0001-default_uuid-a',
+          pokemon_id: 25,
+          is_caught: true,
+        }),
+      );
+    }
   });
 
   it('prepareTradeCandidateSets computes base key, instance map, caught and tradeable sets', () => {
