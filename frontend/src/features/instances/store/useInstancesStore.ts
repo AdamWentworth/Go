@@ -1,7 +1,6 @@
 // src/features/instances/store/useInstancesStore.ts
 
 import { create } from 'zustand';
-import { produce } from 'immer';
 import { periodicUpdates as periodicFactory } from '@/stores/BatchedUpdates/periodicUpdates';
 import { mergeInstancesData } from '@/features/instances/utils/mergeInstancesData';
 import { updateInstanceStatus as makeUpdateStatus } from '@/features/instances/actions/updateInstanceStatus';
@@ -34,7 +33,7 @@ interface InstancesStore {
 }
 
 export const useInstancesStore = create<InstancesStore>()((set, get) => {
-  const scheduledRef = { current: null as any };
+  const scheduledRef = { current: null as boolean | null };
   const timerRef = { current: null as NodeJS.Timeout | null };
   const periodicUpdates = periodicFactory(scheduledRef, timerRef);
 
@@ -109,7 +108,10 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
       );
 
       const fn = makeUpdateStatus(
-        { get variants() { return useVariantsStore.getState().variants; } } as any,
+        {
+          variants: useVariantsStore.getState().variants,
+          instances: get().instances,
+        },
         updater => {
           const res = updater({
             variants: useVariantsStore.getState().variants,
@@ -146,16 +148,20 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
         { instances: get().instances },
         updater => {
           const res = updater({ instances: get().instances });
-          set(
-            produce((state: any) => {
-              state.instances = res.instances;
-            }),
-          );
+          set({ instances: res.instances as Instances });
           return res;
         },
       );
 
-      await fn(keyOrKeysOrMap as any, patch as any);
+      const isPatchMapInput = typeof keyOrKeysOrMap === 'object' && !Array.isArray(keyOrKeysOrMap);
+      if (isPatchMapInput && patch === undefined) {
+        await fn(keyOrKeysOrMap);
+      } else {
+        const keys = typeof keyOrKeysOrMap === 'string' || Array.isArray(keyOrKeysOrMap)
+          ? keyOrKeysOrMap
+          : [];
+        await fn(keys, patch ?? {});
+      }
       get().periodicUpdates();
     },
 

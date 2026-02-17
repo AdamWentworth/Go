@@ -7,6 +7,8 @@ import type { MutableInstances, SetInstancesFn } from '@/types/instances';
 
 type Patch = Partial<PokemonInstance>;
 type PatchMap = Record<string, Patch>;
+type InstanceSnapshot = Partial<PokemonInstance>;
+type PersistedInstance = InstanceSnapshot & { instance_id: string };
 const log = createScopedLogger('updateInstanceDetails');
 
 async function yieldToPaint() {
@@ -32,26 +34,26 @@ export function updateInstanceDetails(
     maybePatch?: Patch,
   ): Promise<void> => {
     const timestamp = Date.now();
-    let updatedKeys: string[] = [];
+    const updatedKeys: string[] = [];
 
     // Immutable local map update
-    const newMap = produce(data.instances, draft => {
+    const newMap = produce(data.instances, (draft: MutableInstances) => {
       const apply = (key: string, patch: Patch) => {
         if (!patch || Object.keys(patch).length === 0) return false;
 
-        const existing = (draft as any)[key];
+        const existing = draft[key];
         if (!existing) {
           log.warn('"%s" missing - creating placeholder', key);
-          (draft as any)[key] = {} as Partial<PokemonInstance>;
+          draft[key] = {};
         }
 
-        const current = (draft as any)[key] as Record<string, unknown>;
+        const current = draft[key] ?? {};
         const hasActualChange = Object.entries(patch).some(
           ([field, value]) => !Object.is(current[field], value)
         );
         if (!hasActualChange) return false;
 
-        (draft as any)[key] = {
+        draft[key] = {
           ...current,
           ...patch,
           last_update: timestamp,
@@ -90,7 +92,12 @@ export function updateInstanceDetails(
 
     // Local cache: write only changed keys directly to instancesDB
     try {
-      const items = updatedKeys.map((id) => ({ ...(newMap as any)[id], instance_id: id })) as PokemonInstance[];
+      const items: PersistedInstance[] = updatedKeys
+        .map((id) => {
+          const snapshot = newMap[id];
+          return snapshot ? { ...snapshot, instance_id: id } : null;
+        })
+        .filter((item): item is PersistedInstance => item !== null);
       if (items.length) {
         await putInstancesBulk(items);
       }
@@ -102,8 +109,15 @@ export function updateInstanceDetails(
     localStorage.setItem('ownershipTimestamp', String(timestamp));
 
     // Queue patches to updatesDB for SW network batching
+    const queueEntries: Array<{ key: string; snapshot: InstanceSnapshot }> = updatedKeys
+      .map((key) => {
+        const snapshot = newMap[key];
+        return snapshot ? { key, snapshot } : null;
+      })
+      .filter((entry): entry is { key: string; snapshot: InstanceSnapshot } => entry !== null);
+
     try {
-      const promises = updatedKeys.map((key) => putBatchedPokemonUpdates(key, (newMap as any)[key]));
+      const promises = queueEntries.map((entry) => putBatchedPokemonUpdates(entry.key, entry.snapshot));
       if (promises.length) await Promise.all(promises);
     } catch (err) {
       log.error('updatesDB fail:', err);
@@ -114,7 +128,7 @@ export function updateInstanceDetails(
       log.debug('patches saved', {
         timestamp,
         updatedKeys,
-        patches: Object.fromEntries(updatedKeys.map(key => [key, (newMap as any)[key]])),
+        patches: Object.fromEntries(queueEntries.map((entry) => [entry.key, entry.snapshot])),
       });
     }
   };

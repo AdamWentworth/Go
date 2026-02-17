@@ -22,9 +22,9 @@ export async function getInstancesData(): Promise<{
   const data = await idb.getAllInstances<PokemonInstance>();
   const instances: Instances = {};
 
-  (data as PokemonInstance[]).forEach((item) => {
+  data.forEach((item) => {
     if (item.instance_id) {
-      (instances as any)[item.instance_id] = item;
+      instances[item.instance_id] = item;
     } else if (canDebugLog) {
       log.warn('Skipped item without instance_id', item);
     }
@@ -43,10 +43,10 @@ export async function setInstancesData(payload: {
   timestamp: number;
 }): Promise<void> {
   const t0 = performance.now();
-  const items = Object.keys(payload.data).map((instance_id) => ({
-    ...(payload.data as any)[instance_id],
+  const items: PokemonInstance[] = Object.entries(payload.data).map(([instance_id, row]) => ({
+    ...row,
     instance_id,
-  })) as PokemonInstance[];
+  }));
 
   await idb.putInstancesBulk(items);
 
@@ -78,10 +78,10 @@ export async function replaceInstancesData(
   }
 
   // 2) Prepare items
-  const items = Object.entries(data).map(([instance_id, row]) => ({
-    ...(row as any),
+  const items: PokemonInstance[] = Object.entries(data).map(([instance_id, row]) => ({
+    ...row,
     instance_id,
-  })) as PokemonInstance[];
+  }));
 
   // 3) Write in chunks — a fresh tx per chunk — then yield
   const CHUNK = 500;
@@ -95,9 +95,7 @@ export async function replaceInstancesData(
     }
     await tx.done;
 
-    await new Promise<void>(r =>
-      requestAnimationFrame(() => requestAnimationFrame(() => r()))
-    );
+    await yieldToPaint();
   }
 
   if (canDebugLog) {
@@ -120,9 +118,9 @@ export async function initializeOrUpdateInstancesData(
     let shouldUpdate = false;
 
     const existingVariantIds = new Set(
-      Object.values(stored as any)
-        .map((v: any) => v?.variant_id)
-        .filter((v: any): v is string => !!v)
+      Object.values(stored)
+        .map((entry) => entry.variant_id)
+        .filter((variantId): variantId is string => Boolean(variantId))
     );
 
     const t0 = performance.now();
@@ -136,7 +134,7 @@ export async function initializeOrUpdateInstancesData(
         instance_id,
         variant_id: vkey,
       };
-      (stored as any)[instance_id] = newEntry;
+      stored[instance_id] = newEntry;
       shouldUpdate = true;
     });
 
