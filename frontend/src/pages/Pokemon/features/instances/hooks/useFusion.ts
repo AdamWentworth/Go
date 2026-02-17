@@ -3,6 +3,9 @@ import { useState } from 'react';
 import { getValidCandidates } from '../../fusion/core/getValidCandidates';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('useFusion');
 
 interface FusionEntry {
   fusion_id: number;
@@ -46,7 +49,7 @@ export function useFusion(pokemon: PokemonVariant, alert: (msg: string) => void 
   });
 
   const handleFusionToggle = async (fusionId: number) => {
-    console.log('handleFusionToggle called with fusionId:', fusionId);
+    log.debug('handleFusionToggle called with fusionId:', fusionId);
 
     if (!ownership?.is_caught) {
       alert('This Pokémon is not caught. You cannot fuse with a non-caught instance.');
@@ -73,13 +76,13 @@ export function useFusion(pokemon: PokemonVariant, alert: (msg: string) => void 
         }
         setFusion(prev => ({ ...prev, overlayPokemon: candidates[0] }));
       } catch (error) {
-        console.error('Error retrieving data from indexedDB:', error);
+        log.error('Error retrieving data from indexedDB:', error);
       }
     }
   };
 
   const handleFuseProceed = () => {
-    console.log('handleFuseProceed called');
+    log.debug('handleFuseProceed called');
     setFusion(prev => {
       const updated = { ...prev };
       if (prev.pendingFusionId != null) {
@@ -103,13 +106,13 @@ export function useFusion(pokemon: PokemonVariant, alert: (msg: string) => void 
         updated.pendingFusionId = null;
       }
       updated.overlayPokemon = null;
-      console.log('handleFuseProceed updated fusion state:', updated);
+      log.debug('handleFuseProceed updated fusion state:', updated);
       return updated;
     });
   };
 
   const handleUndoFusion = () => {
-    console.log('handleUndoFusion called');
+    log.debug('handleUndoFusion called');
     setFusion(prev => ({
       ...prev,
       is_fused: false,

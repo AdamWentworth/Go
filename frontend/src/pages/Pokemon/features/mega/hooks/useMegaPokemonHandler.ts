@@ -4,14 +4,17 @@ import { getAllInstances, getVariantById } from '@/db/indexedDB';
 import { parseVariantId } from '@/utils/PokemonIDUtils';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import { createScopedLogger } from '@/utils/logger';
 
 export interface MegaSelectionData {
   caughtPokemon: (PokemonInstance & { variantData: PokemonVariant | null })[];
   variantKey: string; // kept prop name for now
   megaForm?: string;
   resolve: (value: string) => void;
-  reject: (reason?: any) => void;
+  reject: (reason?: unknown) => void;
 }
+
+const log = createScopedLogger('useMegaPokemonHandler');
 
 function useMegaPokemonHandler() {
   const [isMegaSelectionOpen, setIsMegaSelectionOpen] = useState<boolean>(false);
@@ -36,12 +39,12 @@ function useMegaPokemonHandler() {
 
     const filteredPokemon = allData.filter((entry) => {
       if (!entry.instance_id || typeof entry.instance_id !== 'string') {
-        console.warn("Skipping entry with invalid instance_id:", entry);
+        log.warn('Skipping entry with invalid instance_id:', entry);
         return false;
       }
       const parsed = parseVariantId(entry.instance_id);
       if (!parsed) {
-        console.warn("Failed to parse instance_id:", entry.instance_id);
+        log.warn('Failed to parse instance_id:', entry.instance_id);
         return false;
       }
       const { baseKey } = parsed;
@@ -71,23 +74,23 @@ function useMegaPokemonHandler() {
 
       const isShiny = parseShinyStatus(baseKey);
       const caughtPokemon = await getCaughtPokemon(baseNumber, isShiny);
-      console.log("Caught Pokemon matching requirements:", caughtPokemon);
+      log.debug('Caught Pokemon matching requirements.', { count: caughtPokemon.length });
 
       const caughtPokemonWithVariants = await Promise.all(
         caughtPokemon.map(async (pokemon) => {
           const { instance_id } = pokemon;
           if (!instance_id) {
-            console.warn(`Missing instance_id for pokemon`, pokemon);
+            log.warn('Missing instance_id for pokemon:', pokemon);
             return { ...pokemon, variantData: null };
           }
           const parsed = parseVariantId(instance_id);
           if (!parsed) {
-            console.warn(`Invalid instance_id format: ${instance_id}`);
+            log.warn(`Invalid instance_id format: ${instance_id}`);
             return { ...pokemon, variantData: null };
           }
           const { baseKey: variantKey } = parsed;
           if (!variantKey) {
-            console.warn(`No valid baseKey parsed for instance_id: ${instance_id}`);
+            log.warn(`No valid baseKey parsed for instance_id: ${instance_id}`);
             return { ...pokemon, variantData: null };
           }
           try {
@@ -97,7 +100,7 @@ function useMegaPokemonHandler() {
             }
             return { ...pokemon, variantData };
           } catch (error) {
-            console.error(`Error fetching variant data for ${variantKey}:`, error);
+            log.error(`Error fetching variant data for ${variantKey}:`, error);
             return { ...pokemon, variantData: null };
           }
         })
@@ -105,7 +108,7 @@ function useMegaPokemonHandler() {
 
       return caughtPokemonWithVariants;
     } catch (error) {
-      console.error("Error handling Mega Pokémon:", error);
+      log.error('Error handling Mega Pokemon:', error);
       throw error;
     }
   };
@@ -144,7 +147,7 @@ function useMegaPokemonHandler() {
     setMegaSelectionData(null);
   };
 
-  const handleMegaSelectionReject = (error: any) => {
+  const handleMegaSelectionReject = (error: unknown) => {
     if (megaSelectionData && megaSelectionData.reject) {
       megaSelectionData.reject(error);
     }

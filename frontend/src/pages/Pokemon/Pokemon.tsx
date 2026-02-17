@@ -33,6 +33,9 @@ import useMegaPokemonHandler from './features/mega/hooks/useMegaPokemonHandler';
 import useFusionPokemonHandler from './features/fusion/hooks/useFusionPokemonHandler';
 import useSwipeHandler from './hooks/useSwipeHandler';
 import { getNextActiveView } from './utils/swipeNavigation';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('PokemonPage');
 
 type ActiveView = 'pokedex' | 'pokemon' | 'tags';
 type LastMenu = 'pokedex' | 'ownership';
@@ -121,7 +124,7 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
 
   useEffect(() => {
     if (!import.meta.env.DEV) return;
-    console.log('Active view changed to:', activeView);
+    log.debug('Active view changed to:', activeView);
   }, [activeView]);
 
   useEffect(() => {

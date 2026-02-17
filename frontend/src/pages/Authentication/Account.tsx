@@ -11,6 +11,9 @@ import ActionMenu from '../../components/ActionMenu';
 import type { FormErrors, AccountFormValues } from '@/types/auth';
 import type { AccountFormHandle } from './FormComponents/AccountForm';
 import { isApiError } from '../../utils/errors';
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('Account');
 
 const Account: FC = () => {
   const { updateUserDetails, logout, deleteAccount } = useAuth();
@@ -30,10 +33,10 @@ const Account: FC = () => {
   ): Promise<void> => {
     try {
       const result = await updateUserDetails(userId, userData);
-      console.log("Update result:", result);
+      log.debug('Update result:', result);
 
       if (result.success) {
-        console.log('Account details updated successfully!');
+        log.info('Account details updated successfully.');
         setIsEditable(false);
 
         if (userData.password && !result.data?.passwordUpdated) {
@@ -63,7 +66,7 @@ const Account: FC = () => {
             : '',
         }));
         toast.error('Update failed: ' + errorMessage);
-        console.error('Update failed:', errorMessage);
+        log.error('Update failed:', errorMessage);
 
         if (formRef.current) {
           formRef.current.resetForm();
@@ -77,7 +80,7 @@ const Account: FC = () => {
       }
     
       toast.error(errorMessage);
-      console.error('Unexpected error during update:', error);
+      log.error('Unexpected error during update:', error);
     
       if (formRef.current) {
         formRef.current.resetForm();
@@ -90,7 +93,7 @@ const Account: FC = () => {
       await logout();
       navigate('/login');
     } catch (error: unknown) {
-      console.error('Logout failed:', error);
+      log.error('Logout failed:', error);
       toast.error('Failed to logout. Please try again.');
     }
   };
@@ -108,7 +111,7 @@ const Account: FC = () => {
         }
       
         toast.error('Failed to delete account: ' + errorMessage);
-        console.error('Delete account failed:', error);
+        log.error('Delete account failed:', error);
       }      
     } else {
       toast.info('Account deletion canceled');

@@ -3,6 +3,9 @@ import React from 'react';
 import CaughtInstance from '../../CaughtInstance';
 import './FuseOverlay.css';
 import type { PokemonVariant } from '@/types/pokemonVariants'; // Adjust the path if needed
+import { createScopedLogger } from '@/utils/logger';
+
+const log = createScopedLogger('FuseOverlay');
 
 interface FuseOverlayProps {
   pokemon: PokemonVariant;
@@ -12,7 +15,7 @@ interface FuseOverlayProps {
 
 const FuseOverlay: React.FC<FuseOverlayProps> = ({ pokemon, onClose, onFuse }) => {
   const handleFuse = () => {
-    console.log('Fuse button clicked for', pokemon);
+    log.debug('Fuse button clicked for', pokemon);
     if (onFuse) onFuse();
   };
 

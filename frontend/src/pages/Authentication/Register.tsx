@@ -13,9 +13,12 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import ActionMenu from '../../components/ActionMenu';
 import { isApiError } from '../../utils/errors';
 import { updateUserInSecondaryDB } from "@/services/authService";
+import { createScopedLogger } from '@/utils/logger';
 
 // Import centralized types.
 import type { RegisterFormValues, User, LoginResponse } from '../../types/auth';
+
+const log = createScopedLogger('Register');
 
 const Register: FC = () => {
   // useRegisterForm provides all the state and handlers for our register form.
@@ -50,7 +53,7 @@ const Register: FC = () => {
 
   // The onSubmit callback invoked when the registration form is submitted.
   async function onSubmit(formValues: RegisterFormValues): Promise<void> {
-    console.log("Form Values:", formValues);
+    log.debug('Form values submitted.', { username: formValues.username });
     
     // Sanitize form values.
     const sanitizedFormValues: RegisterFormValues = {
@@ -65,7 +68,7 @@ const Register: FC = () => {
     try {
       // Register the user.
       await registerUser(sanitizedFormValues);
-      console.log("Registration successful.");
+      log.info('Registration successful.');
 
       // Wait for 2 seconds before attempting login.
       setTimeout(async () => {
@@ -75,7 +78,7 @@ const Register: FC = () => {
             username: formValues.username,
             password: formValues.password,
           })) as LoginResponse;
-          console.log("Login successful.");
+          log.info('Login successful.');
 
           // Construct a User object matching our centralized User type.
           const user: User = {
@@ -115,7 +118,7 @@ const Register: FC = () => {
             toast.error('Login successful but user details are incorrect.');
           }
         } catch (loginError) {
-          console.error("Login Error:", loginError);
+          log.error('Login error:', loginError);
           toast.error('Registration successful, but login failed. Please try to log in.');
         } finally {
           // Set loading to false after login attempt.
@@ -123,7 +126,7 @@ const Register: FC = () => {
         }
       }, 2000);
     } catch (error: unknown) {
-      console.error("Registration Error:", error);
+      log.error('Registration error:', error);
     
       if (isApiError(error)) {
         const message = error.response.data.message;

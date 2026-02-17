@@ -2,14 +2,14 @@
 
 This backlog converts the current frontend audit into an execution plan focused on production hardening first, then maintainability and migration work.
 
-## Current Status (2026-02-15)
+## Current Status (2026-02-17)
 
 - Completed:
 1. P0.2 runtime crash fixes (`TradeDetails` undefined call path, `TradeListView`/`WantedListView` gender render crash path).
 2. P0.3 hook correctness (`useSortManager` and `AccountForm` hook-order safety).
 3. P0.4 import hardening for targeted paths (`Search`, `Trades`, `changeInstanceTag`) plus ESLint guardrail.
 4. P0.5 top-level error boundary with fallback UI, logging hook, and regression test.
-5. P1.2 full test suite stabilization (`184/184` passing, deterministic Vitest sequencing, stale integration/e2e assertions updated to canonical instance model).
+5. P1.2 full test suite stabilization (`351/351` unit tests currently passing, deterministic Vitest sequencing, stale integration/e2e assertions updated to canonical instance model).
 6. P1.1 TypeScript baseline green (`npm exec tsc --noEmit` clean; auth/location/fusion/raid/test typing drift fixed).
 7. P1.3 slice A: Trades/Search compatibility adapter (`instances`/`setInstances` primary naming with legacy alias support) + regression tests.
 8. P1.3 slice B: Instance detail flow naming migration (`InstanceOverlay` -> `TradeDetails`/`WantedDetails` + wanted edit hook) with legacy alias fallback and new regression tests.
@@ -66,11 +66,33 @@ This backlog converts the current frontend audit into an execution plan focused 
 59. TS migration slice: converted `components/Wanted/WantedDetails.jsx` to TypeScript (`WantedDetails.tsx`), fixed TS-safe filter/image typing and import hardening (`FilterImages` extensionless), and kept `useTradeFiltering`/edit-toggle behavior stable with green typecheck/tests/build.
 60. TS migration slice: converted `components/Trade/TradeDetails.jsx` and `instances/InstanceOverlay.jsx` to TypeScript (`TradeDetails.tsx`, `InstanceOverlay.tsx`), removed stale `.js` import suffixes, stabilized strict-null/readonly typing in trade-overlay flows, and validated with green typecheck/unit/build.
 61. TS migration slice: converted the final two JS entry files (`instances/CaughtInstance.jsx`, `Pokemon/Pokemon.jsx`) to TypeScript (`CaughtInstance.tsx`, `Pokemon.tsx`), aligned route/menu import paths to extensionless TS targets, and validated with green typecheck/unit/build.
+62. Type-hardening slice: rewrote `instances/CaughtInstance.tsx` and tightened the caught-instance section/component contracts (header/identity/level-gender/stats/meta/moves+iv/power/modals), removing high-risk cast chains while preserving behavior.
+63. Compatibility slice: normalized shared pokemon component typing (`Moves`, `Gender`, `Weight`, `Height`, `Types`, `LocationCaught`, `DateCaught`, `Favorite`, `BackgroundLocationCard`) so existing call sites/tests remain stable under stricter TS.
+64. Validation slice: restored full green after hardening pass (`npm run typecheck`, `npm run test:unit` with `351/351` passing, and `npm run build` all successful).
+65. Logging cleanup slice: migrated `Pokemon` active-view debug signal plus fusion overlay logs (`useFusion`, `FuseOverlay`) to scoped logger for env-gated output.
+66. Logging cleanup slice: migrated `authService` and `TradeDetails` logging to scoped logger, preserving error/debug semantics while keeping production logs env-gated.
+67. Logging cleanup slice: migrated authentication UI and mega selection paths (`Account`, `Register`, `useMegaPokemonHandler`) to scoped logger with behavior-preserving error/warn coverage.
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 2. P1.4 logging policy.
 - Pending:
 1. P1.3 naming canonicalization.
+
+## Audit Snapshot (2026-02-17)
+
+Repo parse against backlog claims:
+1. JS/JSX migration status: `0` JS/JSX files remain under `frontend/src` (accurate).
+2. Canonical naming drift: `ownershipData` references in `frontend/src` = `0`; legacy `pokemonKey` references still present = `94`.
+3. Logging policy drift: raw `console.*` references in `frontend/src` = `108` (many are valid error/warn paths, but high-noise debug logs remain in several feature modules).
+4. `any` hotspot counts for P2.1 priority files:
+   - `createPokemonVariants.ts`: `47`
+   - `updatePokemonInstanceStatus.ts`: `44`
+   - `tagHelpers.ts`: `33`
+   - `MirrorManager.tsx`: `38`
+5. P2.2 decomposition targets remain oversized:
+   - `TradeDetails.tsx`: `529` LOC
+   - `VariantSearch.tsx`: `587` LOC
+   - `Pokemon.tsx`: `373` LOC
 
 ## Rules Of Execution
 
@@ -184,11 +206,13 @@ This backlog converts the current frontend audit into an execution plan focused 
 3. [x] Keep failure detection but scope assertions per test where relevant.
 4. [x] Reduce randomization for CI determinism (disabled shuffle/concurrent test execution in Vitest).
 - DoD:
-1. [x] `npm run test` green locally (`191 passed`).
+1. [x] `npm run test` green locally (`351 passed`).
 2. [x] No unhandled promise rejection during test run.
 - Estimate: 1 to 2 days.
 
 ### P1.3 - Naming Canonicalization (Domain)
+
+- Status: In progress
 
 - Goal: unify model language for maintainability.
 - Target canonical terms:
@@ -201,6 +225,8 @@ This backlog converts the current frontend audit into an execution plan focused 
 - Estimate: 1 to 2 days (incremental).
 
 ### P1.4 - Logging Policy
+
+- Status: In progress
 
 - Goal: cut production log noise and keep only actionable telemetry.
 - Tasks:
@@ -231,9 +257,9 @@ This backlog converts the current frontend audit into an execution plan focused 
 
 - Goal: reduce complexity and improve reviewability.
 - First targets:
-1. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeDetails.jsx`
-2. `frontend/src/pages/Search/SearchParameters/VariantSearch.jsx`
-3. `frontend/src/pages/Pokemon/Pokemon.jsx`
+1. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeDetails.tsx`
+2. `frontend/src/pages/Search/SearchParameters/VariantSearch.tsx`
+3. `frontend/src/pages/Pokemon/Pokemon.tsx`
 - DoD:
 1. Extract pure helpers/hooks and child components.
 2. No single component file over ~300 LOC in target set.

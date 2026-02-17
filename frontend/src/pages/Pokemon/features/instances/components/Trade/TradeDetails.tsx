@@ -34,6 +34,7 @@ import { parsePokemonKey } from '@/utils/PokemonIDUtils';
 import { getAllInstances } from '@/db/instancesDB';
 import { getAllFromTradesDB } from '@/db/tradesDB';
 import { shouldUpdateTradeInstances } from './shouldUpdateTradeInstances';
+import { createScopedLogger } from '@/utils/logger';
 
 import UpdateForTradeModal from './UpdateForTradeModal';
 
@@ -65,6 +66,8 @@ interface TradeDetailsProps {
   username: string;
   onClose?: () => void;
 }
+
+const log = createScopedLogger('TradeDetails');
 
 const TradeDetails: React.FC<TradeDetailsProps> = ({
   pokemon,
@@ -210,7 +213,7 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
   const handleProposeTrade = async () => {
     // 1) Check if a Pokémon is actually selected
     if (!selectedPokemon) {
-      console.log("[TradeDetails] No selectedPokemon. Aborting trade proposal.");
+      log.debug('No selectedPokemon. Aborting trade proposal.');
       return;
     }
 
@@ -223,10 +226,7 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
     try {
       userOwnershipData = await getAllInstances();
     } catch (error) {
-      console.error(
-        "Failed to fetch userOwnershipData from IndexedDB:",
-        error
-      );
+      log.error('Failed to fetch userOwnershipData from IndexedDB:', error);
       alert("Could not fetch your ownership data. Aborting trade proposal.");
       return;
     }
@@ -238,7 +238,9 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
       return acc;
     }, {} as Instances);
 
-    console.log(hashedOwnershipData)
+    log.debug('Hashed ownership data prepared.', {
+      count: Object.keys(hashedOwnershipData).length,
+    });
 
     // Store that object in state for passing to TradeProposal
     setMyInstances(hashedOwnershipData);
@@ -249,7 +251,7 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
       return parsedCaught.baseKey === selectedBaseKey && item.is_caught === true;
     });
 
-    console.log("caughtInstances after filter =>", caughtInstances);
+    log.debug('Caught instances after filter.', { count: caughtInstances.length });
 
     // 5) If there are no matches, user has no caught instance for this variant
     if (caughtInstances.length === 0) {
@@ -305,7 +307,7 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
         // Finally open the TradeProposal
         setIsTradeProposalOpen(true);
       } catch (error) {
-        console.error("Failed to fetch or process trades data:", error);
+        log.error('Failed to fetch or process trades data:', error);
         alert("Could not verify trade availability. Please try again.");
         return;
       }
@@ -340,7 +342,7 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
       // Re-run handleProposeTrade or implement the logic here
       handleProposeTrade(); // Be cautious to avoid infinite loops
     } catch (error) {
-      console.error("Failed to update instances for trade:", error);
+      log.error('Failed to update instances for trade:', error);
       alert("There was an error updating your instances for trade. Please try again.");
     }
   };
@@ -371,14 +373,14 @@ const TradeDetails: React.FC<TradeDetailsProps> = ({
       (variant) => (variant.variant_id ?? (variant as any).pokemonKey) === baseKey
     );
     if (!variantData) {
-      console.error(`Variant not found for pokemonKey: ${pokemonKey}`);
+      log.error(`Variant not found for pokemonKey: ${pokemonKey}`);
       return;
     }
 
     // 2) Merge variant with instances
     const instanceEntry = instancesMap[pokemonKey];
     if (!instanceEntry) {
-      console.error(`No instance data found for key: ${pokemonKey}`);
+      log.error(`No instance data found for key: ${pokemonKey}`);
       return;
     }
 

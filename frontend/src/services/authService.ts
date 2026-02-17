@@ -3,6 +3,7 @@
 import axios, { AxiosResponse } from 'axios';
 import { getDeviceId } from '../utils/deviceID';
 import type { UserOverview } from '@/types/user';
+import { createScopedLogger } from '@/utils/logger';
 
 axios.defaults.withCredentials = true;
 
@@ -13,6 +14,8 @@ const authApi = axios.create({
 const readApi = axios.create({
   baseURL: import.meta.env.VITE_USERS_API_URL,
 });
+
+const log = createScopedLogger('authService');
 
 // A generic type for payload objects
 interface GenericPayload {
@@ -32,9 +35,9 @@ export const registerUser = async (userData: GenericPayload): Promise<unknown> =
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
-      console.error('Error registering user:', error.response || error);
+      log.error('Error registering user:', error.response || error);
     } else {
-      console.error('Error registering user:', error);
+      log.error('Error registering user:', error);
     }
     throw error;
   }
@@ -53,9 +56,9 @@ export const loginUser = async (loginData: GenericPayload): Promise<unknown> => 
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
-      console.error('Error logging in user:', error.response || error);
+      log.error('Error logging in user:', error.response || error);
     } else {
-      console.error('Error logging in user:', error);
+      log.error('Error logging in user:', error);
     }
     throw error;
   }
@@ -73,9 +76,9 @@ export const logoutUser = async (): Promise<void> => {
     return Promise.resolve();
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
-      console.error('Error during logout:', error.response || error);
+      log.error('Error during logout:', error.response || error);
     } else {
-      console.error('Error during logout:', error);
+      log.error('Error during logout:', error);
     }
     throw error;
   }
@@ -93,10 +96,10 @@ export const updateUserDetails = async (
     return { success: true, data: response.data };
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
-      console.error('Error updating user:', error.response || error);
+      log.error('Error updating user:', error.response || error);
       return { success: false, error: (error.response?.data as GenericPayload)?.message as string };
     } else {
-      console.error('Error updating user:', error);
+      log.error('Error updating user:', error);
       return { success: false, error: 'Unknown error' };
     }
   }
@@ -133,14 +136,14 @@ export const updateUserInSecondaryDB = async (
     return { success: true, data: response.data };
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
-      console.error('Error updating user in secondary DB:', error.response || error);
+      log.error('Error updating user in secondary DB:', error.response || error);
       return {
         success: false,
         error: (error.response?.data as GenericPayload)?.message as string ||
           'Failed to update user in secondary DB',
       };
     } else {
-      console.error('Error updating user in secondary DB:', error);
+      log.error('Error updating user in secondary DB:', error);
       return { success: false, error: 'Unknown error' };
     }
   }
@@ -155,9 +158,9 @@ export const deleteAccount = async (userId: string): Promise<unknown> => {
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
-      console.error('Error deleting account:', error.response || error);
+      log.error('Error deleting account:', error.response || error);
     } else {
-      console.error('Error deleting account:', error);
+      log.error('Error deleting account:', error);
     }
     throw error;
   }
@@ -172,9 +175,9 @@ export const refreshTokenService = async (): Promise<unknown> => {
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
-      console.error('Error refreshing token:', error.response || error);
+      log.error('Error refreshing token:', error.response || error);
     } else {
-      console.error('Error refreshing token:', error);
+      log.error('Error refreshing token:', error);
     }
     throw error;
   }
@@ -193,9 +196,9 @@ export const resetPassword = async ({
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
-      console.error('Error resetting password:', error.response || error);
+      log.error('Error resetting password:', error.response || error);
     } else {
-      console.error('Error resetting password:', error);
+      log.error('Error resetting password:', error);
     }
     throw error;
   }
