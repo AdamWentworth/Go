@@ -119,6 +119,9 @@ None.
 9. Reduced `PokemonSearchBar.tsx` from `346` LOC to `294` LOC while preserving behavior.
 10. Extracted Pokemon input decision logic into `evaluatePokemonInputChange` in `SearchParameters/variantSearchControllerHelpers.ts`.
 11. Added decision-table tests in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` and wired `useVariantSearchController.ts` to the helper.
+12. Extracted PokemonSearchBar input-focus suggestion decision into `evaluatePokemonInputFocus` in `SearchParameters/variantSearchControllerHelpers.ts`.
+13. Extracted costume toggle open/close/reset decision into `evaluateCostumeToggle` and wired `useVariantSearchController.ts` to the helper.
+14. Added helper + hook regression coverage for focus and costume toggle behavior in `tests/unit/pages/Search/SearchParameters/variantSearchControllerHelpers.unit.test.ts` and `tests/unit/pages/Search/SearchParameters/useVariantSearchController.unit.test.tsx`.
 - DoD:
 1. Large orchestration logic moved to pure helpers/hooks.
 2. Existing search behavior remains intact under tests.

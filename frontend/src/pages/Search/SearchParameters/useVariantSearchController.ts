@@ -6,14 +6,15 @@ import useErrorHandler from '../hooks/useErrorHandler';
 import {
   computeMaxAvailability,
   cycleMaxState,
-  getPokemonSuggestions,
   getSelectedCostumeId,
   isBackgroundAllowedForSelection,
   type SortableCostume,
 } from './variantSearchHelpers';
 import {
   buildVariantValidationState,
+  evaluateCostumeToggle,
   evaluatePokemonInputChange,
+  evaluatePokemonInputFocus,
   EMPTY_SELECTED_MOVES,
   runVariantValidation,
   type VariantValidationState,
@@ -243,12 +244,12 @@ const useVariantSearchController = ({
   };
 
   const handleInputFocus = () => {
-    if (!pokemon || pokemon.length < 3) {
-      return;
-    }
-
-    const filtered = getPokemonSuggestions(pokemonData, pokemon);
-    setSuggestions(filtered);
+    setSuggestions(
+      evaluatePokemonInputFocus({
+        pokemon,
+        pokemonData,
+      }),
+    );
   };
 
   const handleInputBlur = () => {
@@ -268,10 +269,10 @@ const useVariantSearchController = ({
   };
 
   const handleCostumeToggle = () => {
-    const nextShow = !showCostumeDropdown;
-    setShowCostumeDropdown(nextShow);
+    const toggleDecision = evaluateCostumeToggle({ showCostumeDropdown });
+    setShowCostumeDropdown(toggleDecision.nextShowCostumeDropdown);
 
-    if (!nextShow) {
+    if (toggleDecision.shouldResetCostumeSelection) {
       setCostume(null);
       clearError();
       handleValidation({ selectedCostume: '' });

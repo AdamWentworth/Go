@@ -26,11 +26,26 @@ type VariantValidationOutcome = {
   imageUrl?: string | null;
 };
 
+type EvaluatePokemonInputFocusArgs = {
+  pokemon: string;
+  pokemonData: PokemonVariant[];
+  minSuggestionChars?: number;
+};
+
 type EvaluatePokemonInputChangeArgs = {
   nextPokemon: string;
   pokemonData: PokemonVariant[];
   minSuggestionChars?: number;
   maxPokemonLength?: number;
+};
+
+type EvaluateCostumeToggleArgs = {
+  showCostumeDropdown: boolean;
+};
+
+export type CostumeToggleDecision = {
+  nextShowCostumeDropdown: boolean;
+  shouldResetCostumeSelection: boolean;
 };
 
 export type PokemonInputChangeDecision = {
@@ -149,6 +164,28 @@ export const evaluatePokemonInputChange = ({
     shouldIgnore: false,
     shouldResetDerivedState: false,
     suggestions: getPokemonSuggestions(pokemonData, nextPokemon),
+  };
+};
+
+export const evaluatePokemonInputFocus = ({
+  pokemon,
+  pokemonData,
+  minSuggestionChars = 3,
+}: EvaluatePokemonInputFocusArgs): string[] => {
+  if (!pokemon || pokemon.length < minSuggestionChars) {
+    return [];
+  }
+
+  return getPokemonSuggestions(pokemonData, pokemon);
+};
+
+export const evaluateCostumeToggle = ({
+  showCostumeDropdown,
+}: EvaluateCostumeToggleArgs): CostumeToggleDecision => {
+  const nextShowCostumeDropdown = !showCostumeDropdown;
+  return {
+    nextShowCostumeDropdown,
+    shouldResetCostumeSelection: !nextShowCostumeDropdown,
   };
 };
 

@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   buildVariantValidationState,
+  evaluateCostumeToggle,
+  evaluatePokemonInputFocus,
   evaluatePokemonInputChange,
   runVariantValidation,
 } from '@/pages/Search/SearchParameters/variantSearchControllerHelpers';
@@ -144,6 +146,49 @@ describe('variantSearchControllerHelpers', () => {
       shouldIgnore: false,
       shouldResetDerivedState: false,
       suggestions: ['Bulbasaur'],
+    });
+  });
+
+  it('evaluates pokemon input focus suggestions', () => {
+    expect(
+      evaluatePokemonInputFocus({
+        pokemon: '',
+        pokemonData,
+      }),
+    ).toEqual([]);
+
+    expect(
+      evaluatePokemonInputFocus({
+        pokemon: 'Bu',
+        pokemonData,
+      }),
+    ).toEqual([]);
+
+    expect(
+      evaluatePokemonInputFocus({
+        pokemon: 'Bul',
+        pokemonData,
+      }),
+    ).toEqual(['Bulbasaur']);
+  });
+
+  it('evaluates costume toggle open/close decisions', () => {
+    expect(
+      evaluateCostumeToggle({
+        showCostumeDropdown: false,
+      }),
+    ).toEqual({
+      nextShowCostumeDropdown: true,
+      shouldResetCostumeSelection: false,
+    });
+
+    expect(
+      evaluateCostumeToggle({
+        showCostumeDropdown: true,
+      }),
+    ).toEqual({
+      nextShowCostumeDropdown: false,
+      shouldResetCostumeSelection: true,
     });
   });
 });

@@ -188,6 +188,22 @@ describe('useVariantSearchController', () => {
 
     expect(result.current.showCostumeDropdown).toBe(false);
     expect(setCostume).toHaveBeenCalledWith(null);
+    expect(
+      updateImageMock.mock.calls.some((call) => call[4] === ''),
+    ).toBe(true);
+  });
+
+  it('recomputes suggestions on input focus when pokemon has 3+ chars', () => {
+    const args = makeArgs({
+      pokemon: 'Bul',
+    });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    act(() => {
+      result.current.handleInputFocus();
+    });
+
+    expect(result.current.suggestions).toEqual(['Bulbasaur']);
   });
 
   it('applies selected background and closes background overlay', () => {
