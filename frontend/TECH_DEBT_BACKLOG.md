@@ -98,11 +98,11 @@ This backlog converts the current frontend audit into an execution plan focused 
 91. P2.2 slice J: extracted pure `Pokemon.tsx` page helpers into `pokemonPageHelpers.ts` (status normalization, slider math, bulk-select ids, sub-label derivation), rewired `Pokemon.tsx` to consume helpers, and added dedicated helper regression coverage (`408/408` unit tests green, plus green typecheck/build).
 92. P2.2 slice K: extracted `Pokemon.tsx` slider/panel render orchestration into `components/PokemonViewSlider.tsx`, moved Pokedex/Pokemon/Tags panel wiring behind typed callbacks, and added focused slider wiring/style regression tests (`411/411` unit tests green, plus green typecheck/build).
 93. P2.2 slice L: extracted `Pokemon.tsx` overlay/action-menu/modal block into `components/PokemonPageOverlays.tsx`, preserved highlight action + close/action menu + mega/fusion modal wiring, and added focused overlay regression tests with full green validation (`411/411` unit tests, typecheck, production build).
+94. P2.2 slice M: extracted `Pokemon.tsx` state/effect/handler orchestration into `hooks/usePokemonPageController.tsx`, slimmed `Pokemon.tsx` to composition-only rendering (`109` LOC), and added dedicated hook regression coverage for foreign-profile load, select-all highlighting, and tags-panel state transitions (`417/417` unit tests green, plus green typecheck/build).
 - In progress:
 1. P0.1 strict CI gate expansion (typecheck+test blocking enabled; lint still advisory pending baseline cleanup).
 - Pending:
-1. P2.2 decompose large components.
-2. P2.3 tooling cleanup.
+1. P2.3 tooling cleanup.
 
 ## Audit Snapshot (2026-02-17)
 
@@ -115,9 +115,11 @@ Repo parse against backlog claims:
    - `updatePokemonInstanceStatus.ts`: `0`
    - `tagHelpers.ts`: `0`
    - `MirrorManager.tsx`: `0`
-5. Remaining P2.2 decomposition targets still oversized:
-   - `Pokemon.tsx`: `365` LOC
-   - (`VariantSearch.tsx` is now `175` LOC; `TradeDetails.tsx` is `294` LOC after slices A-E)
+5. P2.2 decomposition target sizes:
+   - `Pokemon.tsx`: `109` LOC
+   - `VariantSearch.tsx`: `175` LOC
+   - `TradeDetails.tsx`: `294` LOC
+   - All P2.2 target components are now under the `~300` LOC goal.
 
 ## Rules Of Execution
 
@@ -282,6 +284,8 @@ Repo parse against backlog claims:
 
 ### P2.2 - Decompose Large Components
 
+- Status: Done
+
 - Goal: reduce complexity and improve reviewability.
 - First targets:
 1. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeDetails.tsx`
@@ -332,4 +336,4 @@ Repo parse against backlog claims:
 
 ## Immediate Next Step
 
-Continue P2.2 decomposition with `pages/Pokemon/Pokemon.tsx`.
+Start P2.3 tooling cleanup by removing unused Jest-only dependencies/config paths while keeping Vitest CI behavior unchanged.

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import './Pokemon.css';
 
@@ -7,39 +7,11 @@ import PokemonViewSlider from './components/PokemonViewSlider';
 import PokemonPageOverlays from './components/PokemonPageOverlays';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
-import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
-import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
-import { useTagsStore } from '@/features/tags/store/useTagsStore';
-import { useUserSearchStore } from '@/stores/useUserSearchStore';
-import { emptyTagBuckets } from '@/features/tags/utils/initializePokemonTags';
-
-import type { PokemonVariant } from '@/types/pokemonVariants';
-import type { InstanceStatus } from '@/types/instances';
-import type { TagBuckets } from '@/types/tags';
-
-import useInstanceIdProcessor from './hooks/useInstanceIdProcessor';
-import type { PokemonOverlaySelection } from './hooks/useInstanceIdProcessor';
-import useUIControls from './hooks/useUIControls';
-import useHandleChangeTags from './services/changeInstanceTag/hooks/useHandleChangeTags';
-import usePokemonProcessing from './hooks/usePokemonProcessing';
-import useMegaPokemonHandler from './features/mega/hooks/useMegaPokemonHandler';
-import useFusionPokemonHandler from './features/fusion/hooks/useFusionPokemonHandler';
-import useSwipeHandler from './hooks/useSwipeHandler';
-import { getNextActiveView } from './utils/swipeNavigation';
 import {
-  buildSelectAllIds,
-  buildSliderTransform,
-  clampDragOffset,
   getPokedexSubLabel,
   getTagsSubLabel,
-  isActiveView,
-  toInstanceStatus,
-  type ActiveView,
-  type LastMenu,
 } from './utils/pokemonPageHelpers';
-import { createScopedLogger } from '@/utils/logger';
-
-const log = createScopedLogger('PokemonPage');
+import usePokemonPageController from './hooks/usePokemonPageController';
 
 interface PokemonProps {
   isOwnCollection: boolean;
@@ -51,312 +23,95 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
   const { username: urlUsername } = useParams<{ username: string }>();
   const location = useLocation();
   const navigate = useNavigate();
-  const isUsernamePath = !isOwnCollection && Boolean(urlUsername);
-
-  const foreignInstances = useInstancesStore((s) => s.foreignInstances);
-  const userExists = useUserSearchStore((s) => s.userExists);
-  const viewedLoading = useUserSearchStore((s) => s.foreignInstancesLoading);
-  const loadForeignProfile = useUserSearchStore((s) => s.loadForeignProfile);
-  const canonicalUsername = useUserSearchStore((s) => s.canonicalUsername);
-
-  const variants = useVariantsStore((s) => s.variants);
-  const pokedexLists = useVariantsStore((s) => s.pokedexLists);
-  const loading = useVariantsStore((s) => s.variantsLoading);
-  const updateInstanceStatus = useInstancesStore((s) => s.updateInstanceStatus);
-  const contextInstanceData = useInstancesStore((s) => s.instances);
-
-  const tags = useTagsStore((s) => s.tags);
-  const foreignTags = useTagsStore((s) => s.foreignTags);
-
-  const instances = isOwnCollection
-    ? contextInstanceData
-    : foreignInstances || contextInstanceData;
-
-  const [tagFilter, setTagFilter] = useState<string>('');
-  const [selectedPokemon, setSelectedPokemon] = useState<PokemonOverlaySelection>(null);
-  const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState<boolean>(false);
-  const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  const [selectedPokedexList, setSelectedPokedexList] = useState<PokemonVariant[]>([]);
-  const [selectedPokedexKey, setSelectedPokedexKey] = useState<string>('all');
-  const [lastMenu, setLastMenu] = useState<LastMenu>('pokedex');
-  const [defaultListLoaded, setDefaultListLoaded] = useState<boolean>(false);
-  const [showActionMenu, setShowActionMenu] = useState<boolean>(false);
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [activeView, setActiveView] = useState<ActiveView>('pokemon');
-  const [dragOffset, setDragOffset] = useState<number>(0);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-
-  const {
-    showEvolutionaryLine,
-    toggleEvolutionaryLine,
-    isFastSelectEnabled,
-    setIsFastSelectEnabled,
-    sortType,
-    setSortType,
-    sortMode,
-    setSortMode,
-    highlightedCards,
-    setHighlightedCards,
-    toggleCardHighlight,
-  } = useUIControls({
-    showEvolutionaryLine: false,
-    isFastSelectEnabled: false,
-    sortType: 'number',
-    sortMode: 'ascending',
-  });
-
-  useEffect(() => {
-    setSelectedPokedexList(variants);
-    setSelectedPokedexKey('all');
-    setDefaultListLoaded(true);
-  }, [isUsernamePath, variants, pokedexLists]);
-
-  useEffect(() => {
-    if (!isUsernamePath) return;
-    setHighlightedCards(new Set());
-    setActiveView('pokemon');
-  }, [isUsernamePath, urlUsername, setHighlightedCards]);
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    log.debug('Active view changed to:', activeView);
-  }, [activeView]);
-
-  useEffect(() => {
-    if (!isUsernamePath || !urlUsername) return;
-    void loadForeignProfile(urlUsername, () => setTagFilter('Caught'));
-  }, [isUsernamePath, urlUsername, loadForeignProfile]);
-
-  const activeTags: TagBuckets = (
-    isUsernamePath ? foreignTags ?? (emptyTagBuckets as unknown as TagBuckets) : tags
-  ) as TagBuckets;
-
-  const baseVariants = lastMenu === 'pokedex' ? selectedPokedexList : variants;
-  const activeStatusFilter: InstanceStatus | null = toInstanceStatus(tagFilter);
-
-  const { filteredVariants, sortedPokemons } = usePokemonProcessing(
-    baseVariants,
-    instances,
-    activeStatusFilter,
-    activeTags,
-    searchTerm,
-    showEvolutionaryLine,
-    sortType,
-    sortMode,
-  );
-
-  useInstanceIdProcessor({
-    variantsLoading: loading,
-    filteredVariants,
-    location,
-    selectedPokemon,
+  const controller = usePokemonPageController({
     isOwnCollection,
-    hasProcessedInstanceId,
+    urlUsername,
+    location,
     navigate,
-    setSelectedPokemon,
-    setHasProcessedInstanceId,
   });
 
-  const handleActionMenuToggle = useCallback(() => {
-    setShowActionMenu((prev) => !prev);
-  }, []);
-
-  const handleClearSelection = useCallback(() => {
-    setIsFastSelectEnabled(false);
-    setHighlightedCards(new Set());
-  }, [setIsFastSelectEnabled, setHighlightedCards]);
-
-  const handleSelectAll = useCallback(() => {
-    setHighlightedCards(new Set(buildSelectAllIds(sortedPokemons)));
-    setIsFastSelectEnabled(true);
-  }, [sortedPokemons, setHighlightedCards, setIsFastSelectEnabled]);
-
-  const handleListsButtonClick = useCallback(() => {
-    setActiveView((prev) => (prev === 'tags' ? 'pokemon' : 'tags'));
-  }, []);
-
-  const handlePokedexHighlightedCardsChange = useCallback(
-    (cards: Set<number | string>) => {
-      setHighlightedCards(new Set(Array.from(cards).map(String)));
-    },
-    [setHighlightedCards],
-  );
-
-  const handlePokedexActiveViewChange = useCallback((view: string) => {
-    if (isActiveView(view)) {
-      setActiveView(view);
-    }
-  }, []);
-
-  const handlePokedexListSelect = useCallback(
-    (list: PokemonVariant[], key: string) => {
-      setSelectedPokedexList(list);
-      setSelectedPokedexKey(key || 'all');
-      setLastMenu('pokedex');
-    },
-    [],
-  );
-
-  const handleTagSelect = useCallback((filter: string) => {
-    setHighlightedCards(new Set());
-    setTagFilter(filter);
-    setLastMenu('ownership');
-    setActiveView('pokemon');
-  }, [setHighlightedCards]);
-
-  const setStatusFilter = useCallback((filter: InstanceStatus) => {
-    setTagFilter(filter);
-  }, []);
-
-  const updateInstanceStatusBatch = useCallback(
-    (keys: string[], filter: InstanceStatus) => updateInstanceStatus(keys, filter),
-    [updateInstanceStatus],
-  );
-
-  const {
-    promptMegaPokemonSelection,
-    isMegaSelectionOpen,
-    megaSelectionData,
-    handleMegaSelectionResolve,
-    handleMegaSelectionReject,
-  } = useMegaPokemonHandler();
-  const {
-    promptFusionPokemonSelection,
-    isFusionSelectionOpen,
-    fusionSelectionData,
-    handleFusionSelectionResolve,
-    closeFusionSelection,
-    handleCreateNewLeft,
-    handleCreateNewRight,
-  } = useFusionPokemonHandler();
-
-  const { handleConfirmChangeTags } = useHandleChangeTags({
-    setTagFilter: setStatusFilter,
-    setLastMenu,
-    setHighlightedCards,
-    highlightedCards,
-    updateInstanceStatus: updateInstanceStatusBatch,
-    variants,
-    instances,
-    setIsUpdating,
-    promptMegaPokemonSelection,
-    promptFusionPokemonSelection,
-    setIsFastSelectEnabled,
-  });
-
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const maxPeekDistance = 0.3;
-
-  const swipeHandlers = useSwipeHandler({
-    onSwipe: (dir) => {
-      if (dir) setActiveView(getNextActiveView(activeView, dir));
-      setDragOffset(0);
-      setIsDragging(false);
-    },
-    onDrag: (dx) => {
-      if (!containerRef.current) return;
-      const width = containerRef.current.offsetWidth;
-      setDragOffset(clampDragOffset(dx, width, maxPeekDistance));
-      setIsDragging(true);
-    },
-  });
-
-  const getTransform = () => {
-    const width = containerRef.current?.offsetWidth || window.innerWidth;
-    return buildSliderTransform(activeView, dragOffset, width);
-  };
-
-  const displayUsername = canonicalUsername || urlUsername || '';
-  const isEditable = isOwnCollection;
-  const contextText: React.ReactNode =
-    tagFilter === ''
-      ? 'Pokedex View'
-      : isEditable
-      ? 'Editing your Collection'
-      : (
-          <>
-            Viewing <span className="username"><strong>{displayUsername}</strong></span>'s Collection
-          </>
-        );
-
-  if (loading || viewedLoading || isUpdating || !defaultListLoaded) {
+  if (controller.isPageLoading) {
     return <LoadingSpinner />;
   }
 
   return (
     <div className="pokemon-page">
-      {isUsernamePath && userExists === false && <h1>User not found</h1>}
+      {controller.isUsernamePath && controller.userExists === false && <h1>User not found</h1>}
 
       <HeaderUIMemo
-        activeView={activeView}
-        onListsButtonClick={handleListsButtonClick}
+        activeView={controller.activeView}
+        onListsButtonClick={controller.handleListsButtonClick}
         onPokedexClick={() =>
-          setActiveView((prev) => (prev === 'pokedex' ? 'pokemon' : 'pokedex'))
+          controller.setActiveView((prev) => (prev === 'pokedex' ? 'pokemon' : 'pokedex'))
         }
-        onPokemonClick={() => setActiveView('pokemon')}
-        contextText={contextText}
-        totalPokemon={sortedPokemons.length}
-        highlightedCards={highlightedCards}
-        onClearSelection={handleClearSelection}
-        onSelectAll={handleSelectAll}
-        pokedexSubLabel={getPokedexSubLabel(isUsernamePath, lastMenu, selectedPokedexKey)}
-        tagsSubLabel={getTagsSubLabel(lastMenu, tagFilter)}
+        onPokemonClick={() => controller.setActiveView('pokemon')}
+        contextText={controller.contextText}
+        totalPokemon={controller.sortedPokemons.length}
+        highlightedCards={controller.highlightedCards}
+        onClearSelection={controller.handleClearSelection}
+        onSelectAll={controller.handleSelectAll}
+        pokedexSubLabel={getPokedexSubLabel(
+          controller.isUsernamePath,
+          controller.lastMenu,
+          controller.selectedPokedexKey,
+        )}
+        tagsSubLabel={getTagsSubLabel(controller.lastMenu, controller.tagFilter)}
       />
 
       <PokemonViewSlider
-        containerRef={containerRef}
-        swipeHandlers={swipeHandlers}
-        transform={getTransform()}
-        isDragging={isDragging}
-        setTagFilter={setTagFilter}
-        onPokedexHighlightedCardsChange={handlePokedexHighlightedCardsChange}
-        onPokedexActiveViewChange={handlePokedexActiveViewChange}
-        onPokedexListSelect={handlePokedexListSelect}
-        pokedexLists={pokedexLists}
-        variants={variants}
-        isEditable={isEditable}
-        sortedPokemons={sortedPokemons}
-        loading={loading}
-        selectedPokemon={selectedPokemon}
-        setSelectedPokemon={setSelectedPokemon}
-        isFastSelectEnabled={isFastSelectEnabled}
-        toggleCardHighlight={toggleCardHighlight}
-        highlightedCards={highlightedCards}
-        tagFilter={tagFilter}
-        activeTags={activeTags}
-        instances={instances}
-        sortType={sortType}
-        setSortType={setSortType}
-        sortMode={sortMode}
-        setSortMode={setSortMode}
-        username={displayUsername}
-        setIsFastSelectEnabled={setIsFastSelectEnabled}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        showEvolutionaryLine={showEvolutionaryLine}
-        toggleEvolutionaryLine={toggleEvolutionaryLine}
-        activeView={activeView}
-        onTagSelect={handleTagSelect}
+        containerRef={controller.containerRef}
+        swipeHandlers={controller.swipeHandlers}
+        transform={controller.transform}
+        isDragging={controller.isDragging}
+        setTagFilter={controller.setTagFilter}
+        onPokedexHighlightedCardsChange={controller.handlePokedexHighlightedCardsChange}
+        onPokedexActiveViewChange={controller.handlePokedexActiveViewChange}
+        onPokedexListSelect={controller.handlePokedexListSelect}
+        pokedexLists={controller.pokedexLists}
+        variants={controller.variants}
+        isEditable={controller.isEditable}
+        sortedPokemons={controller.sortedPokemons}
+        loading={controller.isPageLoading}
+        selectedPokemon={controller.selectedPokemon}
+        setSelectedPokemon={controller.setSelectedPokemon}
+        isFastSelectEnabled={controller.isFastSelectEnabled}
+        toggleCardHighlight={controller.toggleCardHighlight}
+        highlightedCards={controller.highlightedCards}
+        tagFilter={controller.tagFilter}
+        activeTags={controller.activeTags}
+        instances={controller.instances}
+        sortType={controller.sortType}
+        setSortType={controller.setSortType}
+        sortMode={controller.sortMode}
+        setSortMode={controller.setSortMode}
+        username={controller.displayUsername}
+        setIsFastSelectEnabled={controller.setIsFastSelectEnabled}
+        searchTerm={controller.searchTerm}
+        setSearchTerm={controller.setSearchTerm}
+        showEvolutionaryLine={controller.showEvolutionaryLine}
+        toggleEvolutionaryLine={controller.toggleEvolutionaryLine}
+        activeView={controller.activeView}
+        onTagSelect={controller.handleTagSelect}
       />
 
       <PokemonPageOverlays
-        isEditable={isEditable}
-        highlightedCards={highlightedCards}
-        onConfirmChangeTags={handleConfirmChangeTags}
-        activeStatusFilter={activeStatusFilter}
-        isUpdating={isUpdating}
-        showActionMenu={showActionMenu}
-        onActionMenuToggle={handleActionMenuToggle}
-        isMegaSelectionOpen={isMegaSelectionOpen}
-        megaSelectionData={megaSelectionData}
-        onMegaResolve={handleMegaSelectionResolve}
-        onMegaReject={handleMegaSelectionReject}
-        isFusionSelectionOpen={isFusionSelectionOpen}
-        fusionSelectionData={fusionSelectionData}
-        onFusionResolve={handleFusionSelectionResolve}
-        onFusionCancel={closeFusionSelection}
-        onCreateNewLeft={handleCreateNewLeft}
-        onCreateNewRight={handleCreateNewRight}
+        isEditable={controller.isEditable}
+        highlightedCards={controller.highlightedCards}
+        onConfirmChangeTags={controller.handleConfirmChangeTags}
+        activeStatusFilter={controller.activeStatusFilter}
+        isUpdating={controller.isUpdating}
+        showActionMenu={controller.showActionMenu}
+        onActionMenuToggle={controller.handleActionMenuToggle}
+        isMegaSelectionOpen={controller.isMegaSelectionOpen}
+        megaSelectionData={controller.megaSelectionData}
+        onMegaResolve={controller.handleMegaSelectionResolve}
+        onMegaReject={controller.handleMegaSelectionReject}
+        isFusionSelectionOpen={controller.isFusionSelectionOpen}
+        fusionSelectionData={controller.fusionSelectionData}
+        onFusionResolve={controller.handleFusionSelectionResolve}
+        onFusionCancel={controller.closeFusionSelection}
+        onCreateNewLeft={controller.handleCreateNewLeft}
+        onCreateNewRight={controller.handleCreateNewRight}
       />
     </div>
   );
