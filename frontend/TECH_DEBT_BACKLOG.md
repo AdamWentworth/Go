@@ -1,6 +1,6 @@
 # Frontend Tech Debt Backlog (Risk-First Reset)
 
-Last refreshed: 2026-02-18 (post P1.4)
+Last refreshed: 2026-02-18 (post P2.1)
 
 This is a clean reset of frontend housekeeping priorities from the current stable baseline.
 The focus is production risk reduction first, then maintainability and performance improvements.
@@ -246,8 +246,28 @@ The focus is production risk reduction first, then maintainability and performan
 
 ### P2.1 Repeatable Perf Baseline Workflow
 
-- Status: `Pending`
+- Status: `Done` (2026-02-18)
 - Goal: make perf changes measurable and comparable between PRs.
+- Completed:
+1. Added dedicated workflow documentation:
+  `frontend/docs/PERF_BASELINE_WORKFLOW.md`
+  covering repeatable runtime telemetry capture (`FP/FCP`, variants pipeline, image timing),
+  local capture prerequisites, snapshot naming, and PR comparison template.
+2. Added runtime snapshot export support in dev perf panel:
+  `frontend/src/components/dev/PerfTelemetryPanel.tsx`
+  now supports `Copy JSON` and `Download JSON` actions.
+3. Added typed snapshot helper in telemetry utilities:
+  `frontend/src/utils/perfTelemetry.ts` with `getPerfTelemetrySnapshot()`.
+4. Added regression tests for snapshot shape/defaults:
+  `frontend/tests/unit/utils/perfTelemetry.unit.test.ts`.
+5. Added optional CI perf snapshot artifact path:
+  `frontend/scripts/check-bundle-budget.mjs` now writes JSON when
+  `FRONTEND_BUNDLE_BUDGET_REPORT_PATH` is set.
+6. Updated `ci-frontend` to produce and upload perf report artifacts:
+  `.github/workflows/ci-frontend.yml`
+  artifact: `frontend-perf-snapshots` from `frontend/tests/reports/perf/**/*.json`.
+7. Linked the new workflow doc in:
+  `frontend/README.md`.
 - Tasks:
 1. Document local telemetry capture workflow (FP/FCP, variants pipeline, image timing).
 2. Add optional CI artifact upload for perf snapshot logs.
@@ -276,8 +296,8 @@ The focus is production risk reduction first, then maintainability and performan
 
 ## Next Recommended Slice
 
-Execute `P2.1` next:
+Execute `P2.2` next:
 
-1. Document local perf telemetry capture workflow (FP/FCP, variants pipeline, image timing).
-2. Add a repeatable perf snapshot artifact output path for CI/manual comparisons.
-3. Define a simple before/after template so perf-impacting changes can be compared in PRs.
+1. Capture rerender hotspots for list/search-heavy views with React Profiler snapshots.
+2. Prioritize highest-cost derived computations and memo boundaries first.
+3. Attach before/after rerender evidence to each optimization PR.

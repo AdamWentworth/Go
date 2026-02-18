@@ -12,6 +12,7 @@ const parseKbBudget = (raw, fallbackKb) => {
 
 const initialJsBudgetKb = parseKbBudget(process.env.FRONTEND_INITIAL_JS_GZIP_BUDGET_KB, 180);
 const maxChunkBudgetKb = parseKbBudget(process.env.FRONTEND_MAX_JS_CHUNK_GZIP_KB, 130);
+const reportPath = process.env.FRONTEND_BUNDLE_BUDGET_REPORT_PATH;
 
 if (!fs.existsSync(manifestPath)) {
   console.error(`Bundle manifest not found: ${manifestPath}`);
@@ -103,7 +104,57 @@ if (oversizedChunks.length > 0) {
 }
 
 if (failed) {
+  if (reportPath) {
+    const reportDir = path.dirname(path.resolve(process.cwd(), reportPath));
+    fs.mkdirSync(reportDir, { recursive: true });
+    fs.writeFileSync(
+      path.resolve(process.cwd(), reportPath),
+      JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        budgets: {
+          startupKb: initialJsBudgetKb,
+          maxChunkKb: maxChunkBudgetKb,
+        },
+        startupTotalGzipKb: Number(toKb(startupTotalGzip)),
+        startupChunks: startupJs
+          .map((item) => ({ file: item.file, gzipKb: Number(toKb(item.gzip)) }))
+          .sort((a, b) => b.gzipKb - a.gzipKb),
+        topChunks: allJsChunks
+          .slice(0, 20)
+          .map((item) => ({ file: item.file, gzipKb: Number(toKb(item.gzip)) })),
+        oversizedChunks: oversizedChunks
+          .map((item) => ({ file: item.file, gzipKb: Number(toKb(item.gzip)) })),
+        passed: false,
+      }, null, 2),
+      'utf8'
+    );
+  }
   process.exit(1);
+}
+
+if (reportPath) {
+  const reportDir = path.dirname(path.resolve(process.cwd(), reportPath));
+  fs.mkdirSync(reportDir, { recursive: true });
+  fs.writeFileSync(
+    path.resolve(process.cwd(), reportPath),
+    JSON.stringify({
+      generatedAt: new Date().toISOString(),
+      budgets: {
+        startupKb: initialJsBudgetKb,
+        maxChunkKb: maxChunkBudgetKb,
+      },
+      startupTotalGzipKb: Number(toKb(startupTotalGzip)),
+      startupChunks: startupJs
+        .map((item) => ({ file: item.file, gzipKb: Number(toKb(item.gzip)) }))
+        .sort((a, b) => b.gzipKb - a.gzipKb),
+      topChunks: allJsChunks
+        .slice(0, 20)
+        .map((item) => ({ file: item.file, gzipKb: Number(toKb(item.gzip)) })),
+      oversizedChunks: [],
+      passed: true,
+    }, null, 2),
+    'utf8'
+  );
 }
 
 console.log('Bundle budgets passed.');

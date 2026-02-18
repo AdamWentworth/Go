@@ -65,3 +65,41 @@ export function recordImageLoadError(): void {
 export function shouldShowPerfPanel(): boolean {
   return isPanelEnabled;
 }
+
+export type PerfTelemetrySnapshot = {
+  capturedAtIso: string;
+  firstPaintMs?: number;
+  firstContentfulPaintMs?: number;
+  variants?: {
+    fetchedMs: number;
+    transformMs: number;
+    persistMs: number;
+    persistCommittedMs?: number;
+    persistEndToEndMs?: number;
+    totalMs: number;
+    variantCount: number;
+    capturedAt: number;
+  };
+  images: {
+    loads: number;
+    errors: number;
+    avgLoadMs: number;
+    p95LoadMs: number;
+    lastLoadMs?: number;
+    sampleCount: number;
+  };
+};
+
+export function getPerfTelemetrySnapshot(): PerfTelemetrySnapshot {
+  const state = usePerfTelemetryStore.getState();
+  return {
+    capturedAtIso: new Date().toISOString(),
+    firstPaintMs: state.firstPaintMs,
+    firstContentfulPaintMs: state.firstContentfulPaintMs,
+    variants: state.variants,
+    images: {
+      ...state.images,
+      sampleCount: state.imageSamplesMs.length,
+    },
+  };
+}
