@@ -109,6 +109,20 @@ describe('CaughtListView', () => {
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
+  it('opens confirmation from keyboard activation on center column', () => {
+    render(<CaughtListView item={baseItem} />);
+    const centerColumn = screen.getByRole('button');
+    fireEvent.keyDown(centerColumn, { key: 'Enter' });
+    expect(
+      screen.getByText(/Would you like to see ash's Bulbasaur in their catalog/i),
+    ).toBeInTheDocument();
+  });
+
+  it('shows Unknown when date is invalid instead of crashing', () => {
+    render(<CaughtListView item={{ ...baseItem, date_caught: 'invalid-date' }} />);
+    expect(screen.getByText('Unknown')).toBeInTheDocument();
+  });
+
   it('navigates to user catalog when confirmation is accepted', () => {
     const { container } = render(<CaughtListView item={baseItem} />);
 

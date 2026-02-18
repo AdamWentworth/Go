@@ -32,8 +32,14 @@ const VariantSearchInput: React.FC<VariantSearchInputProps> = ({
         onMouseDown={(event) => event.preventDefault()}
       >
         {suggestions.map((suggestion) => (
-          <li key={suggestion} onClick={() => onSuggestionClick(suggestion)}>
-            {suggestion}
+          <li key={suggestion}>
+            <button
+              type="button"
+              className="autocomplete-suggestion-button"
+              onClick={() => onSuggestionClick(suggestion)}
+            >
+              {suggestion}
+            </button>
           </li>
         ))}
       </ul>

@@ -238,12 +238,24 @@
 }
 
 .autocomplete-suggestions li {
-  padding: 10px;
-  cursor: pointer;
+  padding: 0;
 }
 
-.autocomplete-suggestions li:hover {
+.autocomplete-suggestions .autocomplete-suggestion-button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 10px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.autocomplete-suggestions .autocomplete-suggestion-button:hover,
+.autocomplete-suggestions .autocomplete-suggestion-button:focus-visible {
   background-color: #f0f0f0;
+  outline: none;
 }
 
 /* Responsive layout adjustments */

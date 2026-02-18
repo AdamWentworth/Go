@@ -48,6 +48,7 @@ const baseItem = {
   longitude: 20,
   cp: 1400,
   gender: 'Male',
+  date_caught: '2026-02-10T12:00:00.000Z',
   wanted_list: {
     'variant-1:abc': { match: true, dynamax: true },
   },
@@ -115,5 +116,26 @@ describe('TradeListView', () => {
       screen.queryByText(/Would you like to see ash's Bulbasaur in their catalog/i),
     ).not.toBeInTheDocument();
     expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it('opens confirmation from keyboard activation on center column', () => {
+    const findPokemonByKey = vi.fn(() => null);
+    render(<TradeListView item={baseItem} findPokemonByKey={findPokemonByKey} />);
+    const centerColumn = screen.getByRole('button');
+    fireEvent.keyDown(centerColumn, { key: 'Enter' });
+    expect(
+      screen.getByText(/Would you like to see ash's Bulbasaur in their catalog/i),
+    ).toBeInTheDocument();
+  });
+
+  it('shows Unknown date when date_caught is invalid instead of crashing', () => {
+    const findPokemonByKey = vi.fn(() => null);
+    render(
+      <TradeListView
+        item={{ ...baseItem, date_caught: 'invalid-date', location_caught: 'Seattle' }}
+        findPokemonByKey={findPokemonByKey}
+      />,
+    );
+    expect(screen.getByText('Unknown')).toBeInTheDocument();
   });
 });

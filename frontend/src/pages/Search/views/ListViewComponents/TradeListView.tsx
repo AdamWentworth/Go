@@ -7,6 +7,7 @@ import CP from '../../../../components/pokemonComponents/CP.jsx';
 import ConfirmationOverlay from '../ConfirmationOverlay';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
+import { formatDateOnlySafe } from './wantedListViewHelpers';
 import './TradeListView.css';
 
 type TradeListWantedEntry = {
@@ -65,12 +66,6 @@ type TradeListViewProps = {
   ) => MatchedPokemon | null;
 };
 
-const formatDate = (dateString?: string): string => {
-  if (!dateString) return 'Unknown';
-  const date = new Date(dateString);
-  return date.toISOString().split('T')[0];
-};
-
 const TradeListView: React.FC<TradeListViewProps> = ({ item, findPokemonByKey }) => {
   const navigate = useNavigate();
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -124,6 +119,15 @@ const TradeListView: React.FC<TradeListViewProps> = ({ item, findPokemonByKey })
     setShowConfirmation(true);
   };
 
+  const handleCenterColumnKeyDown = (
+    event: React.KeyboardEvent<HTMLDivElement>,
+  ) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleOpenConfirmation();
+    }
+  };
+
   const handleConfirmNavigation = () => {
     navigate(`/pokemon/${item.username ?? ''}`, {
       state: { instanceId: item.instance_id ?? '', instanceData: 'Trade' },
@@ -148,7 +152,13 @@ const TradeListView: React.FC<TradeListViewProps> = ({ item, findPokemonByKey })
         />
       </div>
 
-      <div className="center-column" onClick={handleOpenConfirmation}>
+      <div
+        className="center-column"
+        onClick={handleOpenConfirmation}
+        onKeyDown={handleCenterColumnKeyDown}
+        role="button"
+        tabIndex={0}
+      >
         <div className="card">
           <h3>{item.username}</h3>
 
@@ -236,7 +246,7 @@ const TradeListView: React.FC<TradeListViewProps> = ({ item, findPokemonByKey })
                   <div className="pokemon-date">
                     <p>
                       <strong>Date Caught: </strong>
-                      {formatDate(item.date_caught)}
+                      {formatDateOnlySafe(item.date_caught, 'Unknown')}
                     </p>
                   </div>
                 )}

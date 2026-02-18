@@ -44,9 +44,8 @@ describe('VariantSearchInput', () => {
       />,
     );
 
-    fireEvent.click(screen.getByText('Bulbasaur'));
+    fireEvent.click(screen.getByRole('button', { name: 'Bulbasaur' }));
     expect(onSuggestionClick).toHaveBeenCalledWith('Bulbasaur');
-    expect(screen.getByText('Bulbizarre')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Bulbizarre' })).toBeInTheDocument();
   });
 });
-

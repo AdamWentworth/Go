@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  formatDateOnlySafe,
   formatWantedDate,
   getWantedTradeEntries,
   hasWantedAdditionalDetails,
@@ -9,6 +10,12 @@ import {
 } from '@/pages/Search/views/ListViewComponents/wantedListViewHelpers';
 
 describe('wantedListViewHelpers', () => {
+  it('formats safe ISO date-only strings with configurable fallback', () => {
+    expect(formatDateOnlySafe('2026-02-17T12:34:56.000Z')).toBe('2026-02-17');
+    expect(formatDateOnlySafe('bad-date')).toBe('Unknown');
+    expect(formatDateOnlySafe('', 'N/A')).toBe('N/A');
+  });
+
   it('formats valid dates and falls back to Unknown', () => {
     expect(formatWantedDate('2026-02-17T12:34:56.000Z')).toBe('2026-02-17');
     expect(formatWantedDate('bad-date')).toBe('Unknown');

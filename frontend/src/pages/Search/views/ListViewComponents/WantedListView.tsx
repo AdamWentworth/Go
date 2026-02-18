@@ -169,6 +169,15 @@ const WantedListView: React.FC<WantedListViewProps> = ({ item, findPokemonByKey 
     setShowConfirmation(true);
   };
 
+  const handleCenterColumnKeyDown = (
+    event: React.KeyboardEvent<HTMLDivElement>,
+  ) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleOpenConfirmation();
+    }
+  };
+
   const handleConfirmNavigation = () => {
     navigate(`/pokemon/${item.username ?? ''}`, {
       state: { instanceId: item.instance_id ?? '', instanceData: 'Wanted' },
@@ -193,7 +202,13 @@ const WantedListView: React.FC<WantedListViewProps> = ({ item, findPokemonByKey 
         />
       </div>
 
-      <div className="center-column" onClick={handleOpenConfirmation}>
+      <div
+        className="center-column"
+        onClick={handleOpenConfirmation}
+        onKeyDown={handleCenterColumnKeyDown}
+        role="button"
+        tabIndex={0}
+      >
         <div className="card">
           <h3>{item.username}</h3>
 

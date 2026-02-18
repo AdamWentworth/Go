@@ -8,6 +8,7 @@ import Gender from '../../../../components/pokemonComponents/Gender';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
 import ConfirmationOverlay from '../ConfirmationOverlay';
+import { formatDateOnlySafe } from './wantedListViewHelpers';
 import './CaughtListView.css';
 
 type CaughtListItem = {
@@ -49,12 +50,6 @@ type CaughtListViewProps = {
   item: CaughtListItem;
 };
 
-const formatDate = (dateString?: string): string => {
-  if (!dateString) return 'Unknown';
-  const date = new Date(dateString);
-  return date.toISOString().split('T')[0];
-};
-
 const CaughtListView: React.FC<CaughtListViewProps> = ({ item }) => {
   const navigate = useNavigate();
   const imageUrl = URLSelect(
@@ -81,6 +76,15 @@ const CaughtListView: React.FC<CaughtListViewProps> = ({ item }) => {
     setShowConfirmation(true);
   };
 
+  const handleCenterColumnKeyDown = (
+    event: React.KeyboardEvent<HTMLDivElement>,
+  ) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleOpenConfirmation();
+    }
+  };
+
   const handleConfirmNavigation = () => {
     navigate(`/pokemon/${item.username ?? ''}`, {
       state: { instanceId: item.instance_id ?? '', instanceData: 'Caught' },
@@ -94,7 +98,7 @@ const CaughtListView: React.FC<CaughtListViewProps> = ({ item }) => {
 
   return (
     <div className="list-view-row">
-      <div className="left-column" onClick={(event) => event.stopPropagation()}>
+      <div className="left-column">
         {typeof item.distance === 'number' && item.distance > 0 && (
           <p>Distance: {item.distance.toFixed(2)} km</p>
         )}
@@ -105,7 +109,13 @@ const CaughtListView: React.FC<CaughtListViewProps> = ({ item }) => {
         />
       </div>
 
-      <div className="center-column" onClick={handleOpenConfirmation}>
+      <div
+        className="center-column"
+        onClick={handleOpenConfirmation}
+        onKeyDown={handleCenterColumnKeyDown}
+        role="button"
+        tabIndex={0}
+      >
         <div className="card">
           <h3>{item.username}</h3>
           {typeof item.cp === 'number' && item.cp > 0 && (
@@ -191,7 +201,7 @@ const CaughtListView: React.FC<CaughtListViewProps> = ({ item }) => {
           <div className="date-caught">
             <p>
               <strong>Date Caught: </strong>
-              {formatDate(item.date_caught)}
+              {formatDateOnlySafe(item.date_caught, 'Unknown')}
             </p>
           </div>
         )}

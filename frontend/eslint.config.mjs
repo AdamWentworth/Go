@@ -4,6 +4,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 import globals from 'globals';
 
 export default [
@@ -20,11 +21,19 @@ export default [
     plugins: {
       react: react,
       'react-hooks': reactHooks,
+      'jsx-a11y': jsxA11y,
     },
     rules: {
       'react/prop-types': 'off',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+      'jsx-a11y/alt-text': 'error',
+      'jsx-a11y/aria-props': 'error',
+      'jsx-a11y/aria-proptypes': 'error',
+      'jsx-a11y/aria-unsupported-elements': 'error',
+      'jsx-a11y/role-has-required-aria-props': 'error',
+      'jsx-a11y/role-supports-aria-props': 'error',
+      'jsx-a11y/no-aria-hidden-on-focusable': 'error',
       'no-restricted-imports': [
         'error',
         {
@@ -114,6 +123,17 @@ export default [
           message: 'Use app UI controls, not globalThis.prompt().',
         },
       ],
+    },
+  },
+  {
+    files: [
+      'src/pages/Search/views/ListViewComponents/*ListView.tsx',
+      'src/pages/Search/SearchParameters/VariantSearchInput.tsx',
+    ],
+    rules: {
+      'jsx-a11y/click-events-have-key-events': 'error',
+      'jsx-a11y/no-static-element-interactions': 'error',
+      'jsx-a11y/interactive-supports-focus': 'error',
     },
   },
 ];

@@ -62,12 +62,18 @@ export const toWantedGender = (gender?: string): WantedGender | null =>
     ? (gender as WantedGender)
     : null;
 
-export const formatWantedDate = (dateString?: string): string => {
-  if (!dateString) return 'Unknown';
+export const formatDateOnlySafe = (
+  dateString?: string | null,
+  fallback = 'Unknown',
+): string => {
+  if (!dateString) return fallback;
   const date = new Date(dateString);
-  return Number.isNaN(date.getTime())
-    ? 'Unknown'
-    : (date.toISOString().split('T')[0] ?? 'Unknown');
+  if (Number.isNaN(date.getTime())) return fallback;
+  return date.toISOString().slice(0, 10);
+};
+
+export const formatWantedDate = (dateString?: string): string => {
+  return formatDateOnlySafe(dateString, 'Unknown');
 };
 
 export const hasWantedAdditionalDetails = (item: WantedListItem): boolean =>
@@ -84,4 +90,3 @@ export const hasWantedAdditionalDetails = (item: WantedListItem): boolean =>
 export const getWantedTradeEntries = (
   tradeList: WantedListItem['trade_list'],
 ): Array<[string, WantedTradeEntry]> => Object.entries(tradeList ?? {});
-
