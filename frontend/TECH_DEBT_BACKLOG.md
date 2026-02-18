@@ -134,8 +134,23 @@ The focus is production risk reduction first, then maintainability and performan
 
 ### P1.1 Expand Contract Test Surface
 
-- Status: `Pending`
+- Status: `Done` (2026-02-18)
 - Goal: protect frontend assumptions about backend response shapes.
+- Completed:
+1. Added `tests/contracts/userService.contract.test.ts` covering
+  `/users/:id/overview` envelope shape and auth failure status semantics.
+2. Added `tests/contracts/searchService.contract.test.ts` covering
+  `/searchPokemon` array/object response shape handling and 400 status semantics.
+3. Added `tests/contracts/authService.contract.test.ts` covering
+  `/login` session bootstrap payload shape, `/refresh` token payload shape, and 401 status semantics.
+4. Added dedicated script `npm run test:contracts` in `frontend/package.json`.
+5. Verified gates:
+  `npm run test:contracts`
+  `npm run lint`
+  `npm run typecheck`
+  `npm run test:unit`
+  `npm run test:integration`
+  `npm run build`
 - Tasks:
 1. Add contract tests for `users`, `search`, and `auth` endpoints used by frontend.
 2. Validate required fields and status-code semantics for key read paths.
@@ -213,9 +228,8 @@ The focus is production risk reduction first, then maintainability and performan
 
 ## Next Recommended Slice
 
-Execute `P1.1` next:
+Execute `P1.2` next:
 
-1. Add contract tests for `users` endpoints consumed by frontend (`instances/by-username`, profile/update reads).
-2. Add contract tests for `search` endpoint response shape used by Search page/store.
-3. Add contract tests for `auth` session/bootstrap endpoints used in app init.
-4. Validate status-code semantics (200/401/403/404) and required fields for each contract.
+1. Introduce typed storage adapters for user/session/location/cache timestamps.
+2. Replace ad hoc `JSON.parse` + key literals in stores/views.
+3. Add malformed-storage and default-migration regression tests for adapters.

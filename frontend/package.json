@@ -45,6 +45,7 @@
     "test:unit:single-process": "cross-env VITEST_LOW_MEMORY=1 vitest run tests/unit",
     "test:unit:parallel": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
+    "test:contracts": "vitest run tests/contracts",
     "test:e2e": "vitest run tests/e2e",
     "test:variants": "vitest run tests/unit/features/variants tests/integration/features/variants tests/contracts/pokemonDataService.contract.test.ts",
     "test:instances": "vitest run tests/unit/features/instances tests/integration/features/instances",
