@@ -49,10 +49,20 @@ The focus is production risk reduction first, then maintainability and performan
 
 ### P0.2 API Client and Auth/Public Route Consistency
 
-- Status: `Pending`
+- Status: `In Progress` (2026-02-17)
 - Goal: eliminate inconsistent network behavior and duplicated fallback logic.
 - Problem:
   mixed `fetch`/`axios` usage and route fallback logic in store code.
+- Progress:
+1. Added shared request policy utilities in `src/services/httpClient.ts`
+  (default credentials, timeout guard, safe JSON parsing).
+2. Added `src/services/userSearchService.ts` with centralized:
+  `fetchForeignInstancesByUsername` canonical/public fallback behavior
+  and `fetchTrainerAutocomplete` user-search behavior.
+3. Refactored `useUserSearchStore` to consume service outcomes rather than doing inline fetch/fallback logic.
+4. Refactored `TrainerSearchBar` to consume service-layer autocomplete behavior.
+5. Added regression tests in `tests/unit/services/userSearchService.unit.test.ts`
+  for success, 304, 403, 404, fallback, and autocomplete error handling.
 - Tasks:
 1. Introduce a shared typed API client policy (credentials, timeout, error normalization).
 2. Centralize auth-required vs public endpoint behavior.

@@ -5,8 +5,8 @@ import type { Instances } from '@/types/instances';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { createScopedLogger } from '@/utils/logger';
+import { fetchForeignInstancesByUsername } from '@/services/userSearchService';
 
-const USERS_API_URL = import.meta.env.VITE_USERS_API_URL;
 const CACHE_NAME = 'SearchCache';
 const log = createScopedLogger('UserSearchStore');
 
@@ -104,28 +104,9 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
 
       const cachedInstances = getCachedInstances(cached);
       const cachedEtag = cached?.etag ?? null;
+      const outcome = await fetchForeignInstancesByUsername(lower, cachedEtag);
 
-      const headers: Record<string, string> = {};
-      if (cachedEtag) {
-        headers['If-None-Match'] = cachedEtag;
-      }
-      let resp = await fetch(`${USERS_API_URL}/instances/by-username/${lower}`, {
-        credentials: 'include',
-        headers,
-      });
-
-      // Resilience fallback: if instance endpoint returns 403/404, try public snapshot.
-      if (resp.status === 403 || resp.status === 404) {
-        const publicResp = await fetch(`${USERS_API_URL}/public/users/${lower}`, {
-          credentials: 'include',
-          headers,
-        });
-        if (publicResp.ok || publicResp.status === 304 || publicResp.status === 404) {
-          resp = publicResp;
-        }
-      }
-
-      if (resp.status === 304 && cached && cachedInstances) {
+      if (outcome.type === 'notModified' && cached && cachedInstances) {
         log.debug('304 - using cached data');
         useInstancesStore.getState().setForeignInstances(cachedInstances);
         set({
@@ -137,10 +118,9 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
         return cached.username;
       }
 
-      if (resp.ok) {
-        const result = await resp.json();
-        const actualUsername = result.username || result.user?.username || searchedUsername;
-        const instances: Instances = result.instances ?? {};
+      if (outcome.type === 'success') {
+        const actualUsername = outcome.username;
+        const instances = outcome.instances;
 
         replaceAddressBar(searchedUsername, actualUsername);
         useInstancesStore.getState().setForeignInstances(instances);
@@ -155,20 +135,22 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
           username: actualUsername,
           instances,
           timestamp: Date.now(),
-          etag: resp.headers.get('ETag') ?? null,
+          etag: outcome.etag,
         } as SearchCacheRecord);
 
         setOwnershipFilter?.(defaultFilter);
         return actualUsername;
       }
 
-      if (resp.status === 404) {
+      if (outcome.type === 'notFound') {
         log.info('404 - user not found');
         set({ userExists: false });
-      } else if (resp.status === 403) {
+      } else if (outcome.type === 'forbidden') {
         if (alertFn) await alertFn('You must be logged in to perform this search.');
-      } else {
-        log.error('fetch failed', resp.status, resp.statusText);
+      } else if (outcome.type === 'notModified') {
+        log.error('304 with no cache available');
+      } else if (outcome.type === 'error') {
+        log.error('fetch failed', outcome.status, outcome.statusText);
       }
 
       // Avoid leaking stale foreign profile data after failed lookups.

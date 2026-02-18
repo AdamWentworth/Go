@@ -2,13 +2,13 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import './TrainerSearchBar.css';
 import { createScopedLogger } from '@/utils/logger';
+import { fetchTrainerAutocomplete } from '@/services/userSearchService';
 
 type TrainerResult = {
   username: string;
   pokemonGoName?: string | null;
 };
 
-const API_BASE = import.meta.env.VITE_USERS_API_URL ?? '';
 const log = createScopedLogger('TrainerSearchBar');
 
 const MIN_QUERY_LEN = 2; // backend requires at least 2 chars
@@ -40,18 +40,11 @@ const TrainerSearchBar = () => {
     setError('');
 
     try {
-      const res = await fetch(
-        `${API_BASE}/autocomplete-trainers?q=${encodeURIComponent(term)}`,
-        { credentials: 'include' },
-      );
-
-      if (!res.ok) {
-        const msg = (await res.json().catch(() => null))?.message ?? `Server returned ${res.status}`;
-        throw new Error(msg);
+      const outcome = await fetchTrainerAutocomplete(term);
+      if (outcome.type === 'error') {
+        throw new Error(outcome.message);
       }
-
-      const data: TrainerResult[] = await res.json();
-      setResults(data);
+      setResults(outcome.results);
     } catch (err) {
       log.error('Trainer search error:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch trainers.');
