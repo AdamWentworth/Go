@@ -77,13 +77,32 @@ The focus is production risk reduction first, then maintainability and performan
 
 ### P0.3 Close High-Risk Coverage Gaps
 
-- Status: `Pending`
+- Status: `Done` (2026-02-18)
 - Goal: increase confidence in branch-heavy flows that can break user journeys.
 - Highest-risk targets:
 1. `frontend/src/pages/Authentication/hooks/useRegisterForm.ts`
 2. `frontend/src/pages/Authentication/hooks/useAccountForm.ts`
 3. `frontend/src/pages/Pokemon/features/instances/components/Trade/TradeDetails.tsx`
 4. `frontend/src/pages/Pokemon/features/instances/components/Wanted/WantedDetails.tsx`
+- Progress:
+1. Added direct hook-level regression tests for `useRegisterForm` in
+  `tests/unit/pages/Authentication/hooks/useRegisterForm.unit.test.ts`
+  covering valid submit, invalid submit, location suggestions, and geolocation success/error.
+2. Added direct hook-level regression tests for `useAccountForm` in
+  `tests/unit/pages/Authentication/hooks/useAccountForm.unit.test.ts`
+  covering editable submit sanitization, location suggestion branch, and geolocation success/error.
+3. Added direct component-level branch coverage for `TradeDetails` in
+  `tests/unit/pages/Pokemon/features/instances/components/Trade/TradeDetails.unit.test.tsx`
+  covering editable overlay open, non-editable action overlay open, and variant/instance error branches.
+4. Added direct component-level branch coverage for `WantedDetails` in
+  `tests/unit/pages/Pokemon/features/instances/components/Wanted/WantedDetails.unit.test.tsx`
+  covering trade overlay merge path, variant/instance error branches, and reset guard behavior by edit mode.
+5. Verified all frontend quality gates after coverage additions:
+  `npm run lint`
+  `npm run typecheck`
+  `npm run test:unit`
+  `npm run test:integration`
+  `npm run build`
 - Tasks:
 1. Add direct unit tests for success/error/edge branches.
 2. Add one integration scenario per target flow where appropriate.
@@ -194,14 +213,9 @@ The focus is production risk reduction first, then maintainability and performan
 
 ## Next Recommended Slice
 
-Execute `P0.3` next:
+Execute `P1.1` next:
 
-1. Add direct tests for `useRegisterForm` high-risk success/error branches.
-2. Add direct tests for `useAccountForm` high-risk success/error branches.
-3. Add focused branch coverage for `TradeDetails.tsx` and `WantedDetails.tsx` decision paths.
-4. Verify with:
-  `npm run lint`
-  `npm run typecheck`
-  `npm run test:unit`
-  `npm run test:integration`
-  `npm run build`
+1. Add contract tests for `users` endpoints consumed by frontend (`instances/by-username`, profile/update reads).
+2. Add contract tests for `search` endpoint response shape used by Search page/store.
+3. Add contract tests for `auth` session/bootstrap endpoints used in app init.
+4. Validate status-code semantics (200/401/403/404) and required fields for each contract.
