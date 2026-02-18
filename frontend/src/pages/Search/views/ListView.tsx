@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import './ListView.css';
 import CaughtListView from './ListViewComponents/CaughtListView';
 import TradeListView from './ListViewComponents/TradeListView';
 import WantedListView from './ListViewComponents/WantedListView';
 import { findVariantForInstance } from '../utils/findVariantForInstance';
 import { normalizeOwnershipMode } from '../utils/ownershipMode';
+import { RenderProfiler } from '@/components/dev/RenderProfiler';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
@@ -28,14 +29,11 @@ const ListView: React.FC<ListViewProps> = ({
   const ownershipMode = normalizeOwnershipMode(instanceData as Parameters<
     typeof normalizeOwnershipMode
   >[0]);
-  const [pokemonVariants, setPokemonVariants] = useState<PokemonVariant[]>([]);
   const listViewRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (pokemonCache) {
-      setPokemonVariants(pokemonCache);
-    }
-  }, [pokemonCache]);
+  const pokemonVariants = useMemo<PokemonVariant[]>(
+    () => pokemonCache ?? [],
+    [pokemonCache],
+  );
 
   useEffect(() => {
     if (listViewRef.current && typeof listViewRef.current.scrollTo === 'function') {
@@ -70,17 +68,29 @@ const ListView: React.FC<ListViewProps> = ({
   return (
     <div className="list-view-container" ref={listViewRef}>
       {data.map((item, index) => {
+        const instanceId =
+          typeof item.instance_id === 'string' && item.instance_id
+            ? item.instance_id
+            : `${ownershipMode}-${index}`;
         if (ownershipMode === 'caught') {
-          return <CaughtListView key={index} item={item} />;
+          return (
+            <RenderProfiler key={instanceId} id="Search.CaughtListRow">
+              <CaughtListView item={item} />
+            </RenderProfiler>
+          );
         }
         if (ownershipMode === 'trade') {
           return (
-            <TradeListView key={index} item={item} findPokemonByKey={findPokemonByKey} />
+            <RenderProfiler key={instanceId} id="Search.TradeListRow">
+              <TradeListView item={item} findPokemonByKey={findPokemonByKey} />
+            </RenderProfiler>
           );
         }
         if (ownershipMode === 'wanted') {
           return (
-            <WantedListView key={index} item={item} findPokemonByKey={findPokemonByKey} />
+            <RenderProfiler key={instanceId} id="Search.WantedListRow">
+              <WantedListView item={item} findPokemonByKey={findPokemonByKey} />
+            </RenderProfiler>
           );
         }
         return null;
@@ -89,4 +99,4 @@ const ListView: React.FC<ListViewProps> = ({
   );
 };
 
-export default ListView;
+export default React.memo(ListView);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MiniMap from './MiniMap';
 import MoveDisplay from '@/components/pokemonComponents/MoveDisplay';
@@ -91,16 +91,30 @@ const WantedTradeList: React.FC<WantedTradeListProps> = ({
   tradeList,
   findPokemonByKey,
 }) => {
-  const entries = getWantedTradeEntries(tradeList);
+  const entries = useMemo(() => {
+    return getWantedTradeEntries(tradeList)
+      .map(([tradeInstanceId, tradeListPokemon]) => {
+        const matchedPokemon = findPokemonByKey(tradeInstanceId, tradeListPokemon);
+        if (!matchedPokemon) return null;
+        return { tradeInstanceId, tradeListPokemon, matchedPokemon };
+      })
+      .filter(
+        (
+          value,
+        ): value is {
+          tradeInstanceId: string;
+          tradeListPokemon: WantedTradeEntry;
+          matchedPokemon: MatchedPokemon;
+        } => value !== null,
+      );
+  }, [findPokemonByKey, tradeList]);
+
   if (!entries.length) return null;
   return (
     <div className="trade-list-section">
       <h1>Trade Pokemon:</h1>
       <div className="trade-list">
-        {entries.map(([tradeInstanceId, tradeListPokemon]) => {
-          const matchedPokemon = findPokemonByKey(tradeInstanceId, tradeListPokemon);
-          if (!matchedPokemon) return null;
-
+        {entries.map(({ tradeInstanceId, tradeListPokemon, matchedPokemon }) => {
           return (
             <div
               key={tradeInstanceId}
@@ -292,4 +306,4 @@ const WantedListView: React.FC<WantedListViewProps> = ({ item, findPokemonByKey 
   );
 };
 
-export default WantedListView;
+export default React.memo(WantedListView);

@@ -25,6 +25,10 @@ export default function PerfTelemetryPanel() {
   const firstContentfulPaintMs = usePerfTelemetryStore((s) => s.firstContentfulPaintMs);
   const variants = usePerfTelemetryStore((s) => s.variants);
   const images = usePerfTelemetryStore((s) => s.images);
+  const renders = usePerfTelemetryStore((s) => s.renders);
+  const topRenderHotspots = Object.entries(renders)
+    .sort((a, b) => b[1].commits - a[1].commits)
+    .slice(0, 4);
 
   const exportSnapshot = async (mode: 'copy' | 'download'): Promise<void> => {
     const snapshot = getPerfTelemetrySnapshot();
@@ -109,6 +113,17 @@ export default function PerfTelemetryPanel() {
           <div>Last load: {formatMs(images.lastLoadMs)}</div>
           <div>Avg load: {formatMs(images.avgLoadMs)}</div>
           <div>P95 load: {formatMs(images.p95LoadMs)}</div>
+
+          <div style={{ marginTop: 8 }}><strong>Render hotspots</strong></div>
+          {topRenderHotspots.length === 0 ? (
+            <div>--</div>
+          ) : (
+            topRenderHotspots.map(([id, metric]) => (
+              <div key={id}>
+                {id}: {formatCount(metric.commits)} commits ({formatMs(metric.avgMs)} avg)
+              </div>
+            ))
+          )}
 
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
             <button

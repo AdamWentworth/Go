@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { useNavigate } from 'react-router-dom';
@@ -62,17 +62,14 @@ const MapView: React.FC<MapViewProps> = ({ data, instanceData, pokemonCache }) =
   const popupRootRef = useRef<Root | null>(null);
   const { isLightMode } = useTheme();
   const navigate = useNavigate();
-  const [pokemonVariants, setPokemonVariants] = useState<PokemonVariant[]>([]);
+  const pokemonVariants = useMemo<PokemonVariant[]>(
+    () => pokemonCache ?? [],
+    [pokemonCache],
+  );
 
   const ownershipMode = normalizeOwnershipMode(
     instanceData as Parameters<typeof normalizeOwnershipMode>[0],
   );
-
-  useEffect(() => {
-    if (pokemonCache) {
-      setPokemonVariants(pokemonCache);
-    }
-  }, [pokemonCache]);
 
   const findPokemonByKey = useCallback(
     (
@@ -280,4 +277,4 @@ const MapView: React.FC<MapViewProps> = ({ data, instanceData, pokemonCache }) =
   );
 };
 
-export default MapView;
+export default React.memo(MapView);

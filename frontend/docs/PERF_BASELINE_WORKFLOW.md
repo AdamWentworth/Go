@@ -9,6 +9,7 @@ Runtime metrics captured from the in-app perf panel:
 - `FP` / `FCP`
 - variants pipeline (`fetch`, `transform`, `queue persist`, `commit write`, `queue->commit`, `total`, `count`)
 - image timing (`loads`, `errors`, `last`, `avg`, `p95`)
+- render hotspots (`commits`, `avg`, `p95`) for profiled heavy views
 
 Build-time companion metrics from CI:
 
@@ -27,7 +28,8 @@ Build-time companion metrics from CI:
 4. Execute the same interaction path for every run (example):
    - boot app
    - load variants
-   - open Pokemon page and let above-the-fold images settle
+   - run Search list mode (caught/trade/wanted) with same query inputs
+   - toggle to Search map mode for the same query inputs
 5. Open `Perf telemetry [+]`.
 6. Export snapshot:
    - `Copy JSON` for quick paste into PR notes, or
@@ -61,18 +63,21 @@ Baseline:
 - FP/FCP: <...>
 - Variants total: <...>
 - Images avg/p95: <...>
+- Render hotspots (top 3): <...>
 - Startup gzip: <...>
 
 Candidate:
 - FP/FCP: <...>
 - Variants total: <...>
 - Images avg/p95: <...>
+- Render hotspots (top 3): <...>
 - Startup gzip: <...>
 
 Delta:
 - FP/FCP: <...>
 - Variants total: <...>
 - Images avg/p95: <...>
+- Render hotspots (top 3): <...>
 - Startup gzip: <...>
 
 Notes:

@@ -232,7 +232,7 @@ const renderMapView = (instanceData: 'caught' | 'trade' | 'wanted') =>
 
 const getLatestMap = async () => {
   await waitFor(() => {
-    expect(mapInstances.length).toBeGreaterThan(1);
+    expect(mapInstances.length).toBeGreaterThan(0);
   });
   return mapInstances[mapInstances.length - 1];
 };

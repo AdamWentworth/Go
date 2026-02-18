@@ -19,12 +19,23 @@ type ImageMetrics = {
   lastLoadMs?: number;
 };
 
+type RenderProfileMetric = {
+  commits: number;
+  mounts: number;
+  updates: number;
+  avgMs: number;
+  p95Ms: number;
+  lastMs: number;
+};
+
 type PerfTelemetryState = {
   firstPaintMs?: number;
   firstContentfulPaintMs?: number;
   variants?: VariantPipelineMetrics;
   images: ImageMetrics;
   imageSamplesMs: number[];
+  renders: Record<string, RenderProfileMetric>;
+  renderSamplesById: Record<string, number[]>;
   setFirstPaintMs: (value: number) => void;
   setFirstContentfulPaintMs: (value: number) => void;
   setVariantPipeline: (value: Omit<VariantPipelineMetrics, 'capturedAt'>) => void;
@@ -34,9 +45,15 @@ type PerfTelemetryState = {
   }) => void;
   recordImageLoadMs: (value: number) => void;
   recordImageError: () => void;
+  recordRenderCommit: (
+    id: string,
+    phase: 'mount' | 'update' | 'nested-update',
+    durationMs: number,
+  ) => void;
 };
 
 const IMAGE_SAMPLE_LIMIT = 120;
+const RENDER_SAMPLE_LIMIT = 120;
 
 function calculateAverage(values: number[]): number {
   if (!values.length) return 0;
@@ -63,6 +80,8 @@ export const usePerfTelemetryStore = create<PerfTelemetryState>((set) => ({
     lastLoadMs: undefined,
   },
   imageSamplesMs: [],
+  renders: {},
+  renderSamplesById: {},
 
   setFirstPaintMs: (value) =>
     set((state) => ({
@@ -118,6 +137,38 @@ export const usePerfTelemetryStore = create<PerfTelemetryState>((set) => ({
         errors: state.images.errors + 1,
       },
     })),
+
+  recordRenderCommit: (id, phase, durationMs) =>
+    set((state) => {
+      if (!id || !Number.isFinite(durationMs) || durationMs < 0) return state;
+
+      const existingSamples = state.renderSamplesById[id] ?? [];
+      const nextSamples = [...existingSamples, durationMs].slice(-RENDER_SAMPLE_LIMIT);
+
+      const previous = state.renders[id];
+      const commits = (previous?.commits ?? 0) + 1;
+      const mounts = (previous?.mounts ?? 0) + (phase === 'mount' ? 1 : 0);
+      const updates =
+        (previous?.updates ?? 0) + (phase === 'update' || phase === 'nested-update' ? 1 : 0);
+
+      return {
+        renderSamplesById: {
+          ...state.renderSamplesById,
+          [id]: nextSamples,
+        },
+        renders: {
+          ...state.renders,
+          [id]: {
+            commits,
+            mounts,
+            updates,
+            avgMs: calculateAverage(nextSamples),
+            p95Ms: calculateP95(nextSamples),
+            lastMs: durationMs,
+          },
+        },
+      };
+    }),
 }));
 
-export type { VariantPipelineMetrics, ImageMetrics };
+export type { VariantPipelineMetrics, ImageMetrics, RenderProfileMetric };

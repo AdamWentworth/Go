@@ -210,4 +210,4 @@ const CaughtListView: React.FC<CaughtListViewProps> = ({ item }) => {
   );
 };
 
-export default CaughtListView;
+export default React.memo(CaughtListView);

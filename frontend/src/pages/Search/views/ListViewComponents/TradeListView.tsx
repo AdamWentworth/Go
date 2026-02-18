@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MiniMap from './MiniMap';
 import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay.jsx';
@@ -100,6 +100,25 @@ const TradeListView: React.FC<TradeListViewProps> = ({ item, findPokemonByKey })
     item.charged_move2_id ||
     item.location_caught ||
     item.date_caught;
+
+  const wantedEntries = useMemo(() => {
+    return Object.entries(item.wanted_list ?? {})
+      .map(([wantedInstanceId, wantedListPokemon]) => {
+        if (!wantedListPokemon) return null;
+        const matchedPokemon = findPokemonByKey(wantedInstanceId, wantedListPokemon);
+        if (!matchedPokemon) return null;
+        return { wantedInstanceId, wantedListPokemon, matchedPokemon };
+      })
+      .filter(
+        (
+          value,
+        ): value is {
+          wantedInstanceId: string;
+          wantedListPokemon: TradeListWantedEntry;
+          matchedPokemon: MatchedPokemon;
+        } => value !== null,
+      );
+  }, [findPokemonByKey, item.wanted_list]);
 
   const handleOpenConfirmation = () => {
     setShowConfirmation(true);
@@ -268,15 +287,7 @@ const TradeListView: React.FC<TradeListViewProps> = ({ item, findPokemonByKey })
           <div className="wanted-list-section">
             <h1>Wanted Pokemon:</h1>
             <div className="wanted-list">
-              {Object.keys(item.wanted_list).map((wantedInstanceId) => {
-                const wantedListPokemon = item.wanted_list?.[wantedInstanceId];
-                const matchedPokemon = findPokemonByKey(
-                  wantedInstanceId,
-                  wantedListPokemon ?? null,
-                );
-
-                if (!wantedListPokemon || !matchedPokemon) return null;
-
+              {wantedEntries.map(({ wantedInstanceId, wantedListPokemon, matchedPokemon }) => {
                 return (
                   <div
                     key={wantedInstanceId}
@@ -340,4 +351,4 @@ const TradeListView: React.FC<TradeListViewProps> = ({ item, findPokemonByKey })
   );
 };
 
-export default TradeListView;
+export default React.memo(TradeListView);

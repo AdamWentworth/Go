@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import PokemonSearchBar from './PokemonSearchBar';
 import TrainerSearchBar from './TrainerSearchBar';
@@ -12,6 +12,7 @@ import { useModal } from '../../contexts/ModalContext';
 import { createScopedLogger } from '@/utils/logger';
 import { normalizeOwnershipMode } from './utils/ownershipMode';
 import { searchPokemon } from '@/services/searchService';
+import { RenderProfiler } from '@/components/dev/RenderProfiler';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type {
@@ -49,7 +50,6 @@ const Search: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [pokemonCache, setPokemonCache] = useState<PokemonVariant[] | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [scrollToTopTrigger, setScrollToTopTrigger] = useState(0);
 
@@ -59,12 +59,20 @@ const Search: React.FC = () => {
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const shouldScrollRef = useRef(false);
-
-  useEffect(() => {
-    if (pokedexLists) {
-      setPokemonCache(pokedexLists.default || []);
+  const pokemonCache = useMemo<PokemonVariant[]>(
+    () => pokedexLists?.default ?? [],
+    [pokedexLists],
+  );
+  const pokemonById = useMemo(() => {
+    const map = new Map<number, PokemonVariant>();
+    for (const variant of pokemonCache) {
+      const pokemonId = Number(variant.pokemon_id);
+      if (Number.isFinite(pokemonId) && !map.has(pokemonId)) {
+        map.set(pokemonId, variant);
+      }
     }
-  }, [pokedexLists]);
+    return map;
+  }, [pokemonCache]);
 
   useEffect(() => {
     if (shouldScrollRef.current && searchResults.length > 0) {
@@ -96,12 +104,12 @@ const Search: React.FC = () => {
     try {
       const dataArray = await searchPokemon(queryParams);
 
-      if (dataArray.length > 0 && (pokemonCache?.length || 0) > 0) {
+      if (dataArray.length > 0 && pokemonById.size > 0) {
         const enrichedData = dataArray.reduce<EnrichedSearchResult[]>(
           (acc, item) => {
-            const pokemonInfo = pokemonCache?.find(
-              (variant) => variant.pokemon_id === item.pokemon_id,
-            );
+            const pokemonId = Number(item.pokemon_id);
+            if (!Number.isFinite(pokemonId)) return acc;
+            const pokemonInfo = pokemonById.get(pokemonId);
 
             if (pokemonInfo) {
               acc.push({
@@ -184,19 +192,23 @@ const Search: React.FC = () => {
           (isLoading ? (
             <LoadingSpinner />
           ) : view === 'list' ? (
-            <ListView
-              data={searchResults}
-              instanceData={ownershipMode}
-              hasSearched={hasSearched}
-              pokemonCache={variants}
-              scrollToTopTrigger={scrollToTopTrigger}
-            />
+            <RenderProfiler id="Search.ListView">
+              <ListView
+                data={searchResults}
+                instanceData={ownershipMode}
+                hasSearched={hasSearched}
+                pokemonCache={variants}
+                scrollToTopTrigger={scrollToTopTrigger}
+              />
+            </RenderProfiler>
           ) : (
-            <MapView
-              data={searchResults}
-              instanceData={ownershipMode}
-              pokemonCache={variants}
-            />
+            <RenderProfiler id="Search.MapView">
+              <MapView
+                data={searchResults}
+                instanceData={ownershipMode}
+                pokemonCache={variants}
+              />
+            </RenderProfiler>
           ))}
       </div>
 

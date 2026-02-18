@@ -13,6 +13,41 @@ type MaybeInstance = {
   costume_id?: number | null;
 };
 
+type VariantIndex = {
+  variantByKey: Map<string, PokemonVariant>;
+  variantsByPokemonId: Map<number, PokemonVariant[]>;
+};
+
+const variantIndexCache = new WeakMap<PokemonVariant[], VariantIndex>();
+
+function buildVariantIndex(variants: PokemonVariant[]): VariantIndex {
+  const variantByKey = new Map<string, PokemonVariant>();
+  const variantsByPokemonId = new Map<number, PokemonVariant[]>();
+
+  for (const variant of variants) {
+    const variantId = String(variant.variant_id ?? '');
+    if (variantId) variantByKey.set(variantId, variant);
+
+    const pokemonId = Number(variant.pokemon_id);
+    if (Number.isFinite(pokemonId)) {
+      const arr = variantsByPokemonId.get(pokemonId);
+      if (arr) arr.push(variant);
+      else variantsByPokemonId.set(pokemonId, [variant]);
+    }
+  }
+
+  return { variantByKey, variantsByPokemonId };
+}
+
+function getVariantIndex(variants: PokemonVariant[]): VariantIndex {
+  const cached = variantIndexCache.get(variants);
+  if (cached) return cached;
+
+  const built = buildVariantIndex(variants);
+  variantIndexCache.set(variants, built);
+  return built;
+}
+
 function hasToken(v: PokemonVariant, token: string): boolean {
   const vt = String(v.variantType ?? '').toLowerCase();
   const id = String(v.variant_id ?? '').toLowerCase();
@@ -55,21 +90,7 @@ export function findVariantForInstance(
   inst?: MaybeInstance | null,
 ): PokemonVariant | null {
   if (!Array.isArray(variants) || variants.length === 0) return null;
-
-  const variantByKey = new Map<string, PokemonVariant>();
-  const variantsByPokemonId = new Map<number, PokemonVariant[]>();
-
-  for (const variant of variants) {
-    const variantId = String(variant.variant_id ?? '');
-    if (variantId) variantByKey.set(variantId, variant);
-
-    const pokemonId = Number(variant.pokemon_id);
-    if (Number.isFinite(pokemonId)) {
-      const arr = variantsByPokemonId.get(pokemonId);
-      if (arr) arr.push(variant);
-      else variantsByPokemonId.set(pokemonId, [variant]);
-    }
-  }
+  const { variantByKey, variantsByPokemonId } = getVariantIndex(variants);
 
   // Source of truth for display image mapping is instance.variant_id when present.
   if (inst?.variant_id) {

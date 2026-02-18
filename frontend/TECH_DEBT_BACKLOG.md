@@ -1,6 +1,6 @@
 # Frontend Tech Debt Backlog (Risk-First Reset)
 
-Last refreshed: 2026-02-18 (post P2.1)
+Last refreshed: 2026-02-18 (post P2.2)
 
 This is a clean reset of frontend housekeeping priorities from the current stable baseline.
 The focus is production risk reduction first, then maintainability and performance improvements.
@@ -276,8 +276,36 @@ The focus is production risk reduction first, then maintainability and performan
 
 ### P2.2 Targeted Render Cost Review
 
-- Status: `Pending`
+- Status: `Done` (2026-02-18)
 - Goal: reduce unnecessary rerenders in heavy list/search views.
+- Completed:
+1. Added dev-only render hotspot instrumentation via React Profiler:
+  `frontend/src/components/dev/RenderProfiler.tsx`
+  with metrics persisted to perf telemetry store (`commits`, `mounts`, `updates`, `avg`, `p95`).
+2. Extended perf telemetry plumbing to include render metrics in panel/snapshot:
+  `frontend/src/stores/usePerfTelemetryStore.ts`,
+  `frontend/src/utils/perfTelemetry.ts`,
+  `frontend/src/components/dev/PerfTelemetryPanel.tsx`.
+3. Instrumented high-churn search surfaces:
+  `frontend/src/pages/Search/Search.tsx`,
+  `frontend/src/pages/Search/views/ListView.tsx`
+  (list/map view profiling + row-level profiling hooks).
+4. Optimized highest-cost derived lookup path:
+  `frontend/src/pages/Search/utils/findVariantForInstance.ts`
+  now reuses a cached variant index (WeakMap by variants array identity) instead of rebuilding maps per call.
+5. Removed avoidable cache-mirroring rerender paths:
+  `frontend/src/pages/Search/Search.tsx` and `frontend/src/pages/Search/views/MapView.tsx`
+  now derive cache data with `useMemo` rather than state-sync effects.
+6. Reduced repeated list derivation work in trade/wanted list rows:
+  `frontend/src/pages/Search/views/ListViewComponents/TradeListView.tsx`,
+  `frontend/src/pages/Search/views/ListViewComponents/WantedListView.tsx`,
+  with memoized matched-entry derivation and memoized row components.
+7. Added/updated regression coverage:
+  `frontend/tests/unit/utils/perfTelemetry.unit.test.ts`,
+  `frontend/tests/unit/pages/Search/views/MapView.unit.test.tsx`,
+  and validated existing search/list view suites.
+8. Updated perf capture guidance to include render-hotspot comparison:
+  `frontend/docs/PERF_BASELINE_WORKFLOW.md`.
 - Tasks:
 1. Measure rerender hotspots before changing code.
 2. Optimize highest-cost derived computations first.
@@ -296,8 +324,8 @@ The focus is production risk reduction first, then maintainability and performan
 
 ## Next Recommended Slice
 
-Execute `P2.2` next:
+Execute backlog refresh next:
 
-1. Capture rerender hotspots for list/search-heavy views with React Profiler snapshots.
-2. Prioritize highest-cost derived computations and memo boundaries first.
-3. Attach before/after rerender evidence to each optimization PR.
+1. Capture fresh baseline snapshots with the updated render-hotspot telemetry.
+2. Re-rank remaining performance and maintainability work from latest production behavior.
+3. Add the next risk-first slice (`P0/P1/P2`) with explicit DoD and test expectations.

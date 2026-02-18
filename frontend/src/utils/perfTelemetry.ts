@@ -62,6 +62,15 @@ export function recordImageLoadError(): void {
   usePerfTelemetryStore.getState().recordImageError();
 }
 
+export function recordRenderCommitMetrics(
+  id: string,
+  phase: 'mount' | 'update' | 'nested-update',
+  durationMs: number,
+): void {
+  if (!isPanelEnabled) return;
+  usePerfTelemetryStore.getState().recordRenderCommit(id, phase, durationMs);
+}
+
 export function shouldShowPerfPanel(): boolean {
   return isPanelEnabled;
 }
@@ -88,6 +97,17 @@ export type PerfTelemetrySnapshot = {
     lastLoadMs?: number;
     sampleCount: number;
   };
+  renders: Record<
+    string,
+    {
+      commits: number;
+      mounts: number;
+      updates: number;
+      avgMs: number;
+      p95Ms: number;
+      lastMs: number;
+    }
+  >;
 };
 
 export function getPerfTelemetrySnapshot(): PerfTelemetrySnapshot {
@@ -101,5 +121,6 @@ export function getPerfTelemetrySnapshot(): PerfTelemetrySnapshot {
       ...state.images,
       sampleCount: state.imageSamplesMs.length,
     },
+    renders: state.renders,
   };
 }
