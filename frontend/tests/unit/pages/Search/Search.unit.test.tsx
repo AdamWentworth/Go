@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import Search from '@/pages/Search/Search';
 
-const mockedAxiosGet = vi.fn();
+const mockedSearchPokemon = vi.fn();
 const alertMock = vi.fn().mockResolvedValue(undefined);
 
 const variantsState = {
@@ -14,10 +14,8 @@ const variantsState = {
   },
 };
 
-vi.mock('axios', () => ({
-  default: {
-    get: (...args: unknown[]) => mockedAxiosGet(...args),
-  },
+vi.mock('@/services/searchService', () => ({
+  searchPokemon: (...args: unknown[]) => mockedSearchPokemon(...args),
 }));
 
 vi.mock('@/features/variants/store/useVariantsStore', () => ({
@@ -111,7 +109,7 @@ vi.mock('@/components/ActionMenu', () => ({
 
 describe('Search', () => {
   beforeEach(() => {
-    mockedAxiosGet.mockReset();
+    mockedSearchPokemon.mockReset();
     alertMock.mockClear();
   });
 
@@ -123,14 +121,11 @@ describe('Search', () => {
   });
 
   it('normalizes owned -> caught and renders sorted/enriched list results', async () => {
-    mockedAxiosGet.mockResolvedValueOnce({
-      status: 200,
-      data: [
-        { pokemon_id: 1, distance: 5, username: 'far' },
-        { pokemon_id: 1, distance: 2, username: 'near' },
-        { pokemon_id: 999, distance: 1, username: 'ignored' },
-      ],
-    });
+    mockedSearchPokemon.mockResolvedValueOnce([
+      { pokemon_id: 1, distance: 5, username: 'far' },
+      { pokemon_id: 1, distance: 2, username: 'near' },
+      { pokemon_id: 999, distance: 1, username: 'ignored' },
+    ]);
 
     render(<Search />);
 
@@ -141,20 +136,15 @@ describe('Search', () => {
       expect(screen.getByTestId('list-view')).toHaveTextContent('caught|2|near|true');
     });
 
-    expect(mockedAxiosGet).toHaveBeenCalledWith(
-      expect.stringContaining('/searchPokemon'),
-      expect.objectContaining({
-        withCredentials: true,
-        params: expect.objectContaining({ ownership: 'owned' }),
-      }),
+    expect(mockedSearchPokemon).toHaveBeenCalledWith(
+      expect.objectContaining({ ownership: 'owned' }),
     );
   });
 
   it('switches to map view and passes trade ownership mode', async () => {
-    mockedAxiosGet.mockResolvedValueOnce({
-      status: 200,
-      data: [{ pokemon_id: 1, distance: 3, username: 'ash' }],
-    });
+    mockedSearchPokemon.mockResolvedValueOnce([
+      { pokemon_id: 1, distance: 3, username: 'ash' },
+    ]);
 
     render(<Search />);
 

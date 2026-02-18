@@ -1,7 +1,7 @@
 // services/tradeService.js
 
-import axios from 'axios';
 import { createScopedLogger } from '@/utils/logger';
+import { buildUrl, parseJsonSafe, requestWithPolicy } from './httpClient';
 
 interface Trade {
   trade_id?: string;
@@ -24,17 +24,18 @@ const log = createScopedLogger('tradeService');
  */
 export async function revealPartnerInfo(trade: Trade): Promise<PartnerInfo> {
   try {
-    const response = await axios.post(
-      `${import.meta.env.VITE_AUTH_API_URL}/reveal-partner-info`,
-      { trade },
+    const response = await requestWithPolicy(
+      buildUrl(import.meta.env.VITE_AUTH_API_URL, '/reveal-partner-info'),
       {
-        withCredentials: true,
-        validateStatus: () => true,
-      }
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trade }),
+      },
     );
+    const data = await parseJsonSafe<PartnerInfo>(response);
 
     if (response.status >= 200 && response.status < 300) {
-      return response.data as PartnerInfo;
+      return data ?? {};
     } else {
       throw new Error('Failed to reveal partner info.');
     }

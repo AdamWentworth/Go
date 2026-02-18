@@ -1,27 +1,33 @@
 // services/sseService.ts
 
-import axios from 'axios';
 import { createScopedLogger } from '@/utils/logger';
+import {
+  buildUrl,
+  parseJsonSafe,
+  requestWithPolicy,
+} from './httpClient';
 
 const log = createScopedLogger('sseService');
 
 export const fetchUpdates = async (
-  userId: string,
+  _userId: string,
   deviceId: string,
   timestamp: string
 ): Promise<unknown | null> => {
   try {
-    const response = await axios.get(`${import.meta.env.VITE_EVENTS_API_URL}/getUpdates`, {
-      params: {
+    const response = await requestWithPolicy(
+      buildUrl(import.meta.env.VITE_EVENTS_API_URL, '/getUpdates', {
         device_id: deviceId,
-        timestamp: timestamp,
+        timestamp,
+      }),
+      {
+        method: 'GET',
       },
-      withCredentials: true,
-      validateStatus: () => true,
-    });
+    );
+    const data = await parseJsonSafe<unknown>(response);
 
     if (response.status >= 200 && response.status < 300) {
-      return response.data;
+      return data;
     } else {
       log.warn('Failed to fetch updates.', { status: response.status });
       return null;

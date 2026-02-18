@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import axios from 'axios';
 
 import PokemonSearchBar from './PokemonSearchBar';
 import TrainerSearchBar from './TrainerSearchBar';
@@ -12,23 +11,17 @@ import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useModal } from '../../contexts/ModalContext';
 import { createScopedLogger } from '@/utils/logger';
 import { normalizeOwnershipMode } from './utils/ownershipMode';
+import { searchPokemon } from '@/services/searchService';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import type {
+  SearchQueryParams,
+  SearchResultRow,
+} from '@/services/searchService';
 import './Search.css';
 
 type SearchMode = 'pokemon' | 'trainer' | null;
 type SearchView = 'list' | 'map';
-
-type SearchQueryParams = {
-  ownership?: string;
-  [key: string]: string | number | boolean | null | undefined;
-};
-
-type SearchResultRow = {
-  pokemon_id?: number;
-  distance?: number;
-  [key: string]: unknown;
-};
 
 type EnrichedSearchResult = SearchResultRow & {
   pokemonInfo: PokemonVariant;
@@ -101,53 +94,38 @@ const Search: React.FC = () => {
     shouldScrollRef.current = true;
 
     try {
-      const response = await axios.get<
-        SearchResultRow[] | Record<string, SearchResultRow>
-      >(`${import.meta.env.VITE_SEARCH_API_URL}/searchPokemon`, {
-        params: queryParams,
-        withCredentials: true,
-      });
+      const dataArray = await searchPokemon(queryParams);
 
-      if (response.status === 200) {
-        const responseData = response.data;
-        const dataArray = Array.isArray(responseData)
-          ? responseData
-          : Object.values(responseData || {});
+      if (dataArray.length > 0 && (pokemonCache?.length || 0) > 0) {
+        const enrichedData = dataArray.reduce<EnrichedSearchResult[]>(
+          (acc, item) => {
+            const pokemonInfo = pokemonCache?.find(
+              (variant) => variant.pokemon_id === item.pokemon_id,
+            );
 
-        if (dataArray.length > 0 && (pokemonCache?.length || 0) > 0) {
-          const enrichedData = dataArray.reduce<EnrichedSearchResult[]>(
-            (acc, item) => {
-              const pokemonInfo = pokemonCache?.find(
-                (variant) => variant.pokemon_id === item.pokemon_id,
-              );
+            if (pokemonInfo) {
+              acc.push({
+                ...item,
+                pokemonInfo,
+                boundary: boundaryWKT,
+              });
+            }
+            return acc;
+          },
+          [],
+        );
 
-              if (pokemonInfo) {
-                acc.push({
-                  ...item,
-                  pokemonInfo,
-                  boundary: boundaryWKT,
-                });
-              }
-              return acc;
-            },
-            [],
-          );
-
-          if (enrichedData.length > 0) {
-            enrichedData.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
-            setSearchResults(enrichedData);
-            setScrollToTopTrigger((prev) => prev + 1);
-            setIsCollapsed(true);
-          } else {
-            setSearchResults([]);
-            setIsCollapsed(false);
-          }
+        if (enrichedData.length > 0) {
+          enrichedData.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+          setSearchResults(enrichedData);
+          setScrollToTopTrigger((prev) => prev + 1);
+          setIsCollapsed(true);
         } else {
           setSearchResults([]);
           setIsCollapsed(false);
         }
       } else {
-        setErrorMessage('Failed to retrieve search results.');
+        setSearchResults([]);
         setIsCollapsed(false);
       }
     } catch (error) {

@@ -27,6 +27,10 @@ describe('locationServices.fetchLocationOptions', () => {
 
     expect(fetchSpy).toHaveBeenCalledWith(
       expect.stringContaining('/reverse?lat=35.6895&lon=139.6917'),
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'omit',
+      }),
     );
     expect(result).toHaveLength(3);
     expect(result[0].displayName).toBe('Pallet Town, Kanto, Japan');

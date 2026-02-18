@@ -1,12 +1,16 @@
 // locationSuggestions.ts
 
-import axios from 'axios';
 import { createScopedLogger } from '@/utils/logger';
 import type {
   LocationBase,
   LocationSuggestion,
   LocationResponse,
 } from '@/types/location';
+import {
+  buildUrl,
+  parseJsonSafe,
+  requestWithPolicy,
+} from './httpClient';
 
 const BASE_URL = import.meta.env.VITE_LOCATION_SERVICE_URL;
 const log = createScopedLogger('locationServices');
@@ -19,26 +23,32 @@ export const fetchSuggestions = async (
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
 
-    const response = await axios.get(
-      `${BASE_URL}/autocomplete?query=${encodeURIComponent(normalizedInput)}`,
+    const response = await requestWithPolicy(
+      buildUrl(BASE_URL, '/autocomplete', { query: normalizedInput }),
       {
-        withCredentials: false,
-      }
+        method: 'GET',
+        credentials: 'omit',
+      },
     );
-
-    const data: unknown = response.data;
+    const data: unknown = await parseJsonSafe<unknown>(response);
 
     if (Array.isArray(data)) {
-      const formattedSuggestions: LocationSuggestion[] = data.slice(0, 5).map((item: LocationBase) => {
-        const displayName = [item.name || item.city, item.state_or_province, item.country]
-          .filter(Boolean)
-          .join(', ');
+      const formattedSuggestions: LocationSuggestion[] = data
+        .slice(0, 5)
+        .map((item: LocationBase) => {
+          const displayName = [
+            item.name || item.city,
+            item.state_or_province,
+            item.country,
+          ]
+            .filter(Boolean)
+            .join(', ');
 
-        return {
-          displayName,
-          ...item,
-        };
-      });
+          return {
+            displayName,
+            ...item,
+          };
+        });
 
       return formattedSuggestions;
     } else {
@@ -58,15 +68,24 @@ export const fetchLocationOptions = async (
   longitude: number
 ): Promise<LocationSuggestion[]> => {
   try {
-    const response = await fetch(
-      `${BASE_URL}/reverse?lat=${latitude}&lon=${longitude}`
+    const response = await requestWithPolicy(
+      buildUrl(BASE_URL, '/reverse', {
+        lat: latitude,
+        lon: longitude,
+      }),
+      {
+        method: 'GET',
+        credentials: 'omit',
+      },
     );
 
     if (!response.ok) {
       throw new Error(`Failed to fetch location options: ${response.statusText}`);
     }
 
-    const data: LocationResponse = await response.json();
+    const data = (await parseJsonSafe<LocationResponse>(response)) ?? {
+      locations: [],
+    };
     const locations = data.locations || [];
 
     return locations.map((item: LocationBase) => {

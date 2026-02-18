@@ -1,16 +1,17 @@
 // userService.ts
 
-import axios, { AxiosResponse } from 'axios';
 import { getDeviceId } from '../utils/deviceID';
 import { createScopedLogger } from '@/utils/logger';
 import type { UserOverview } from '@/types/user';
+import {
+  buildUrl,
+  parseJsonSafe,
+  requestWithPolicy,
+  toHttpError,
+} from './httpClient';
 
-axios.defaults.withCredentials = true;
 const log = createScopedLogger('userService');
-
-const readApi = axios.create({
-  baseURL: import.meta.env.VITE_USERS_API_URL,
-});
+const USERS_API_URL = import.meta.env.VITE_USERS_API_URL;
 
 // ==========================
 // fetchUserOverview
@@ -18,21 +19,23 @@ const readApi = axios.create({
 export const fetchUserOverview = async (userId: string): Promise<UserOverview> => {
   try {
     const deviceId = getDeviceId();
-
-    const response: AxiosResponse<UserOverview> = await readApi.get(`/users/${userId}/overview`, {
-      params: { device_id: deviceId },
-      headers: { 'Content-Type': 'application/json' },
-      withCredentials: true, // Ensures cookies/JWT are sent
+    const url = buildUrl(USERS_API_URL, `/users/${userId}/overview`, {
+      device_id: deviceId,
     });
 
-    // response.data now contains { pokemon_instances: { ... }, trades: [ ... ], ... }
-    return response.data;
-  } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      log.error('Error fetching user overview:', error.response || error);
-    } else {
-      log.error('Error fetching user overview:', error);
+    const response = await requestWithPolicy(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await parseJsonSafe<UserOverview>(response);
+
+    if (!response.ok || !data) {
+      throw toHttpError(response.status, data);
     }
+
+    return data;
+  } catch (error: unknown) {
+    log.error('Error fetching user overview:', error);
     throw error;
   }
 };

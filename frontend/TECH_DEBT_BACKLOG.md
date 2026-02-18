@@ -1,6 +1,6 @@
 # Frontend Tech Debt Backlog (Risk-First Reset)
 
-Last refreshed: 2026-02-17 (post P0.1 + P0.4)
+Last refreshed: 2026-02-18 (post P0.2)
 
 This is a clean reset of frontend housekeeping priorities from the current stable baseline.
 The focus is production risk reduction first, then maintainability and performance improvements.
@@ -13,7 +13,7 @@ The focus is production risk reduction first, then maintainability and performan
 - Unit tests: pass (`136` files / `485` tests, batched runner)
 - Integration tests: pass (`10` files / `33` tests)
 - E2E tests: pass (`1` file / `4` tests)
-- Contract tests: pass (`1` file / `3` tests)
+- Contract tests: pass (`1` file / `4` tests)
 - Bundle budget gate: pass (`node scripts/check-bundle-budget.mjs`)
 - Prod dependency audit: pass (`npm audit --omit=dev --audit-level=moderate`)
 - Full dependency audit: failing (`9` moderate, dev-tooling chain via `ajv`/eslint path)
@@ -49,25 +49,28 @@ The focus is production risk reduction first, then maintainability and performan
 
 ### P0.2 API Client and Auth/Public Route Consistency
 
-- Status: `In Progress` (2026-02-17)
+- Status: `Done` (2026-02-18)
 - Goal: eliminate inconsistent network behavior and duplicated fallback logic.
 - Problem:
   mixed `fetch`/`axios` usage and route fallback logic in store code.
-- Progress:
+- Completed:
 1. Added shared request policy utilities in `src/services/httpClient.ts`
-  (default credentials, timeout guard, safe JSON parsing).
+  (default credentials, timeout guard, safe JSON parsing, normalized HTTP errors, URL builder).
 2. Added `src/services/userSearchService.ts` with centralized:
   `fetchForeignInstancesByUsername` canonical/public fallback behavior
   and `fetchTrainerAutocomplete` user-search behavior.
 3. Refactored `useUserSearchStore` to consume service outcomes rather than doing inline fetch/fallback logic.
 4. Refactored `TrainerSearchBar` to consume service-layer autocomplete behavior.
-5. Added regression tests in `tests/unit/services/userSearchService.unit.test.ts`
-  for success, 304, 403, 404, fallback, and autocomplete error handling.
-- Tasks:
-1. Introduce a shared typed API client policy (credentials, timeout, error normalization).
-2. Centralize auth-required vs public endpoint behavior.
-3. Move username/public fallback behavior out of stores into service layer.
-4. Add regression tests for 200/403/404/timeout paths.
+5. Migrated all remaining API callers to shared policy/service layer:
+  `authService`, `userService`, `pokemonDataService`, `tradeService`, `sseService`, `locationServices`, and `Search.tsx` via `searchService`.
+6. Added regression tests in:
+  `tests/unit/services/userSearchService.unit.test.ts`
+  `tests/unit/services/searchService.unit.test.ts`
+  `tests/unit/services/authService.unit.test.ts`
+  `tests/unit/services/userService.unit.test.ts`
+  `tests/unit/services/tradeService.unit.test.ts`
+  `tests/unit/services/sseService.unit.test.ts`
+  and updated `pokemonDataService` unit/integration/contract suites.
 - DoD:
 1. Stores/pages do not manually branch transport/auth behavior.
 2. Same request policy applies across users/search/location/auth calls.
@@ -191,13 +194,14 @@ The focus is production risk reduction first, then maintainability and performan
 
 ## Next Recommended Slice
 
-Execute `P0.2` next:
+Execute `P0.3` next:
 
-1. Introduce shared API client policy for `fetch`/`axios` consistency.
-2. Move username/public fallback behavior out of stores into service layer.
-3. Add regression tests for auth/public handling paths.
+1. Add direct tests for `useRegisterForm` high-risk success/error branches.
+2. Add direct tests for `useAccountForm` high-risk success/error branches.
+3. Add focused branch coverage for `TradeDetails.tsx` and `WantedDetails.tsx` decision paths.
 4. Verify with:
   `npm run lint`
   `npm run typecheck`
   `npm run test:unit`
+  `npm run test:integration`
   `npm run build`

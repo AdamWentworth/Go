@@ -1,24 +1,49 @@
 // authService.ts
 
-import axios, { AxiosResponse } from 'axios';
 import { getDeviceId } from '../utils/deviceID';
 import { createScopedLogger } from '@/utils/logger';
-
-axios.defaults.withCredentials = true;
-
-const authApi = axios.create({
-  baseURL: import.meta.env.VITE_AUTH_API_URL,
-});
-
-const readApi = axios.create({
-  baseURL: import.meta.env.VITE_USERS_API_URL,
-});
+import {
+  buildUrl,
+  HttpError,
+  parseJsonSafe,
+  requestWithPolicy,
+  toHttpError,
+} from './httpClient';
 
 const log = createScopedLogger('authService');
+const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL;
+const USERS_API_URL = import.meta.env.VITE_USERS_API_URL;
 
 // A generic type for payload objects
 interface GenericPayload {
   [key: string]: unknown;
+}
+
+type RequestPayload = GenericPayload | null;
+
+const JSON_HEADERS = {
+  'Content-Type': 'application/json',
+};
+
+async function requestJson<T>(
+  baseUrl: string,
+  path: string,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  payload: RequestPayload = null,
+): Promise<T> {
+  const response = await requestWithPolicy(buildUrl(baseUrl, path), {
+    method,
+    headers: JSON_HEADERS,
+    body: payload ? JSON.stringify(payload) : undefined,
+  });
+
+  const data = await parseJsonSafe<T | GenericPayload>(response);
+
+  if (!response.ok) {
+    throw toHttpError(response.status, data);
+  }
+
+  return (data ?? {}) as T;
 }
 
 // ==========================
@@ -27,17 +52,14 @@ interface GenericPayload {
 export const registerUser = async (userData: GenericPayload): Promise<unknown> => {
   try {
     const deviceId = getDeviceId();
-    const response: AxiosResponse<unknown> = await authApi.post(
+    return await requestJson<unknown>(
+      AUTH_API_URL,
       '/register',
-      { ...userData, device_id: deviceId }
+      'POST',
+      { ...userData, device_id: deviceId },
     );
-    return response.data;
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      log.error('Error registering user:', error.response || error);
-    } else {
-      log.error('Error registering user:', error);
-    }
+    log.error('Error registering user:', error);
     throw error;
   }
 };
@@ -48,17 +70,14 @@ export const registerUser = async (userData: GenericPayload): Promise<unknown> =
 export const loginUser = async (loginData: GenericPayload): Promise<unknown> => {
   try {
     const deviceId = getDeviceId();
-    const response: AxiosResponse<unknown> = await authApi.post(
+    return await requestJson<unknown>(
+      AUTH_API_URL,
       '/login',
-      { ...loginData, device_id: deviceId }
+      'POST',
+      { ...loginData, device_id: deviceId },
     );
-    return response.data;
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      log.error('Error logging in user:', error.response || error);
-    } else {
-      log.error('Error logging in user:', error);
-    }
+    log.error('Error logging in user:', error);
     throw error;
   }
 };
@@ -68,17 +87,13 @@ export const loginUser = async (loginData: GenericPayload): Promise<unknown> => 
 // ==========================
 export const logoutUser = async (): Promise<void> => {
   try {
-    await authApi.post('/logout', {});
+    await requestJson<unknown>(AUTH_API_URL, '/logout', 'POST', {});
     localStorage.removeItem('user');
     localStorage.removeItem('location');
     localStorage.removeItem('pokemonOwnership');
     return Promise.resolve();
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      log.error('Error during logout:', error.response || error);
-    } else {
-      log.error('Error during logout:', error);
-    }
+    log.error('Error during logout:', error);
     throw error;
   }
 };
@@ -91,16 +106,19 @@ export const updateUserDetails = async (
   userData: GenericPayload
 ): Promise<{ success: boolean; data?: unknown; error?: string }> => {
   try {
-    const response: AxiosResponse<unknown> = await authApi.put(`/update/${userId}`, userData);
-    return { success: true, data: response.data };
+    const data = await requestJson<unknown>(
+      AUTH_API_URL,
+      `/update/${userId}`,
+      'PUT',
+      userData,
+    );
+    return { success: true, data };
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      log.error('Error updating user:', error.response || error);
-      return { success: false, error: (error.response?.data as GenericPayload)?.message as string };
-    } else {
-      log.error('Error updating user:', error);
-      return { success: false, error: 'Unknown error' };
+    log.error('Error updating user:', error);
+    if (error instanceof HttpError) {
+      return { success: false, error: error.response.data.message };
     }
+    return { success: false, error: 'Unknown error' };
   }
 };
 
@@ -119,32 +137,30 @@ export const updateUserInSecondaryDB = async (
   userDetails: UserDetails
 ): Promise<{ success: boolean; data?: unknown; error?: string }> => {
   try {
-    const response: AxiosResponse<unknown> = await readApi.put(
+    const data = await requestJson<unknown>(
+      USERS_API_URL,
       `/update-user/${userId}`,
+      'PUT',
       {
         username: userDetails.username,
         latitude: userDetails.latitude,
         longitude: userDetails.longitude,
         pokemonGoName: userDetails.pokemonGoName,
       },
-      {
-        headers: { 'Content-Type': 'application/json' },
-        withCredentials: true,
-      }
     );
-    return { success: true, data: response.data };
+
+    return { success: true, data };
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      log.error('Error updating user in secondary DB:', error.response || error);
+    log.error('Error updating user in secondary DB:', error);
+    if (error instanceof HttpError) {
       return {
         success: false,
-        error: (error.response?.data as GenericPayload)?.message as string ||
+        error:
+          error.response.data.message ||
           'Failed to update user in secondary DB',
       };
-    } else {
-      log.error('Error updating user in secondary DB:', error);
-      return { success: false, error: 'Unknown error' };
     }
+    return { success: false, error: 'Unknown error' };
   }
 };
 
@@ -153,14 +169,13 @@ export const updateUserInSecondaryDB = async (
 // ==========================
 export const deleteAccount = async (userId: string): Promise<unknown> => {
   try {
-    const response: AxiosResponse<unknown> = await authApi.delete(`/delete/${userId}`);
-    return response.data;
+    return await requestJson<unknown>(
+      AUTH_API_URL,
+      `/delete/${userId}`,
+      'DELETE',
+    );
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      log.error('Error deleting account:', error.response || error);
-    } else {
-      log.error('Error deleting account:', error);
-    }
+    log.error('Error deleting account:', error);
     throw error;
   }
 };
@@ -170,14 +185,9 @@ export const deleteAccount = async (userId: string): Promise<unknown> => {
 // ==========================
 export const refreshTokenService = async (): Promise<unknown> => {
   try {
-    const response: AxiosResponse<unknown> = await authApi.post('/refresh', {});
-    return response.data;
+    return await requestJson<unknown>(AUTH_API_URL, '/refresh', 'POST', {});
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      log.error('Error refreshing token:', error.response || error);
-    } else {
-      log.error('Error refreshing token:', error);
-    }
+    log.error('Error refreshing token:', error);
     throw error;
   }
 };
@@ -191,14 +201,11 @@ export const resetPassword = async ({
   identifier: string;
 }): Promise<unknown> => {
   try {
-    const response: AxiosResponse<unknown> = await authApi.post('/reset-password', { identifier });
-    return response.data;
+    return await requestJson<unknown>(AUTH_API_URL, '/reset-password', 'POST', {
+      identifier,
+    });
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      log.error('Error resetting password:', error.response || error);
-    } else {
-      log.error('Error resetting password:', error);
-    }
+    log.error('Error resetting password:', error);
     throw error;
   }
 };

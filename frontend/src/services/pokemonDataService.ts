@@ -1,11 +1,15 @@
 // src/services/pokemonDataService.ts
 
-import axios, { AxiosResponse } from 'axios';
 import type { Pokemons } from '../types/pokemonBase';
 import { createScopedLogger, loggerInternals } from '@/utils/logger';
+import {
+  buildUrl,
+  parseJsonSafe,
+  requestWithPolicy,
+  toHttpError,
+} from './httpClient';
 
 const BASE_URL: string = import.meta.env.VITE_POKEMON_API_URL;
-axios.defaults.withCredentials = true;
 
 const log = createScopedLogger('pokemonDataService');
 const canDebugLog = loggerInternals.shouldEmit('debug');
@@ -33,14 +37,24 @@ function readCachedPokemons(): Pokemons | null {
 export const getPokemons = async (): Promise<Pokemons> => {
   try {
     const ifNoneMatch = localStorage.getItem(POKEMON_ETAG_KEY) ?? '';
-    const headers = ifNoneMatch ? { 'If-None-Match': ifNoneMatch } : {};
-
-    const response: AxiosResponse<Pokemons> = await axios.get(`${BASE_URL}/pokemons`, {
+    const headers: Record<string, string> = {};
+    if (ifNoneMatch) {
+      headers['If-None-Match'] = ifNoneMatch;
+    }
+    const response = await requestWithPolicy(buildUrl(BASE_URL, '/pokemons'), {
+      method: 'GET',
       headers,
-      validateStatus: (status) => (status >= 200 && status < 300) || status === 304,
     });
-
-    if (canDebugLog) log.debug('API response', response);
+    if (canDebugLog) {
+      const responseHeaders: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value;
+      });
+      log.debug('API response', {
+        status: response.status,
+        headers: responseHeaders,
+      });
+    }
 
     if (response.status === 304) {
       if (canDebugLog) log.debug('Server returned 304 - using cached data');
@@ -49,14 +63,18 @@ export const getPokemons = async (): Promise<Pokemons> => {
       throw new Error('No cached data available for 304 response');
     }
 
-    const payload = response.data as unknown;
+    const payload = await parseJsonSafe<unknown>(response);
+    if (!response.ok) {
+      throw toHttpError(response.status, payload);
+    }
+
     if (!Array.isArray(payload)) {
       throw new Error(
         `[pokemonDataService] invalid payload shape: expected array, got ${typeof payload}`,
       );
     }
 
-    const etagHeader = (response.headers?.etag as string | undefined)?.trim();
+    const etagHeader = response.headers.get('etag')?.trim();
     if (etagHeader) {
       localStorage.setItem(POKEMON_ETAG_KEY, etagHeader);
     }
@@ -64,12 +82,6 @@ export const getPokemons = async (): Promise<Pokemons> => {
 
     return payload as Pokemons;
   } catch (error: unknown) {
-    if (axios.isAxiosError(error) && error.response?.status === 304) {
-      if (canDebugLog) log.debug('Caught 304 in error handler - using cached data');
-      const cached = readCachedPokemons();
-      if (cached) return cached;
-    }
-
     log.error('Error fetching the Pokemon data', error);
     throw error;
   }
