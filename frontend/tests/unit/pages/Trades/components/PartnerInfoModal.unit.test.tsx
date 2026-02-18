@@ -1,7 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { toast } from 'react-toastify';
 
 import PartnerInfoModal, {
   formatTrainerCode,
@@ -9,6 +8,7 @@ import PartnerInfoModal, {
 
 const mocks = vi.hoisted(() => ({
   writeTextMock: vi.fn().mockResolvedValue(undefined),
+  alertMock: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/contexts/ThemeContext', () => ({
@@ -24,13 +24,11 @@ vi.mock('@/components/CloseButton', () => ({
   ),
 }));
 
-vi.mock('react-toastify', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-  },
+vi.mock('@/contexts/ModalContext', () => ({
+  useModal: () => ({
+    alert: mocks.alertMock,
+    confirm: vi.fn(),
+  }),
 }));
 
 describe('PartnerInfoModal', () => {
@@ -73,7 +71,7 @@ describe('PartnerInfoModal', () => {
 
     await waitFor(() => {
       expect(mocks.writeTextMock).toHaveBeenCalledWith('1234 5678 9012');
-      expect(toast.success).toHaveBeenCalledWith('Trainer code copied!');
+      expect(mocks.alertMock).toHaveBeenCalledWith('Trainer code copied!');
     });
   });
 

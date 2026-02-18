@@ -20,6 +20,7 @@ export function updatePokemonInstanceStatus(
   newStatus: InstanceStatus, // "Caught" | "Trade" | "Wanted" | "Missing"
   variants: PokemonVariant[],
   instances: Instances,
+  onAlert?: (message: string) => void,
 ): string | null {
   const isUuid = validateUUID(target);
 
@@ -83,17 +84,16 @@ export function updatePokemonInstanceStatus(
     const isFusionPokemon = [2270, 2271].includes(instance.pokemon_id);
 
     if (instance.lucky || instance.shadow || instance.is_mega || instance.mega || isFusionPokemon) {
-      alert(
-        `Cannot move ${variantKey} to ${newStatus} as it is ${
-          instance.lucky
-            ? 'lucky'
-            : instance.shadow
-              ? 'shadow'
-              : instance.is_mega || instance.mega
-                ? 'mega'
-                : 'a fusion Pokemon'
-        }.`,
-      );
+      const message = `Cannot move ${variantKey} to ${newStatus} as it is ${
+        instance.lucky
+          ? 'lucky'
+          : instance.shadow
+            ? 'shadow'
+            : instance.is_mega || instance.mega
+              ? 'mega'
+              : 'a fusion Pokemon'
+      }.`;
+      onAlert?.(message);
       log.debug('Update blocked due to special status');
       return instanceId;
     }

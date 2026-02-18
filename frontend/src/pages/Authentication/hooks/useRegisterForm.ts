@@ -1,7 +1,7 @@
 // useRegisterForm.ts
 
 import { useState, useCallback, ChangeEvent, FocusEvent } from 'react';
-import { toast } from 'react-toastify';
+import { useModal } from '@/contexts/ModalContext';
 import { fetchSuggestions, fetchLocationOptions } from '../../../services/locationServices';
 import type { Coordinates, LocationSuggestion } from '../../../types/location';
 import type { RegisterFormValues, RegisterFormErrors } from '../../../types/auth';
@@ -12,6 +12,7 @@ const log = createScopedLogger('useRegisterForm');
 const useRegisterForm = (
   onSubmit: (values: RegisterFormValues & { location: string }) => void
 ) => {
+  const { alert } = useModal();
   const [values, setValues] = useState<RegisterFormValues>({
     username: '',
     email: '',
@@ -199,16 +200,16 @@ const useRegisterForm = (
             setLocationOptions(fetchedOptions);
             setShowOptionsOverlay(true);
           } catch {
-            toast.error('Unable to fetch location options. Please try again.');
+            await alert('Unable to fetch location options. Please try again.');
           }
         },
         (err) => {
           log.error('Error fetching location:', err.message);
-          toast.error('Unable to fetch your current location. Please enable location permissions.');
+          void alert('Unable to fetch your current location. Please enable location permissions.');
         }
       );
     } else if (allowLocation) {
-      toast.error('Geolocation is not supported by your browser.');
+      void alert('Geolocation is not supported by your browser.');
     } else {
       setSuggestions([]);
       setSelectedCoordinates(null);

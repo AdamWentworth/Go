@@ -1,6 +1,6 @@
 // CoordinateSelector.tsx
 
-import React, { useEffect, useRef, useState, FC } from 'react';
+import React, { useCallback, useEffect, useRef, useState, FC } from 'react';
 import 'ol/ol.css';
 import Map from 'ol/Map';
 import View from 'ol/View';
@@ -12,8 +12,8 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import { toast } from 'react-toastify';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useModal } from '../../contexts/ModalContext';
 import './CoordinateSelector.css';
 import CloseButton from '../../components/CloseButton';
 import LocationOptionsOverlay from './LocationOptionsOverlay';
@@ -41,11 +41,28 @@ const CoordinateSelector: FC<CoordinateSelectorProps> = ({
   const [markerSource] = useState<VectorSource>(new VectorSource());
   // Get the current theme flag.
   const { isLightMode } = useTheme();
+  const { alert } = useModal();
 
   // State for location options, loading, and overlay visibility.
   const [locationOptions, setLocationOptions] = useState<LocationSuggestion[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [showOptionsOverlay, setShowOptionsOverlay] = useState<boolean>(false);
+
+  // Wrap the fetchLocationOptions service.
+  const fetchLocationOptionsWrapper = useCallback(async (latitude: number, longitude: number) => {
+    setLoading(true);
+    setLocationOptions([]);
+    try {
+      const options = await fetchLocationOptions(latitude, longitude);
+      setLocationOptions(options);
+      setShowOptionsOverlay(true);
+    } catch (error) {
+      log.error('Failed to fetch location options:', error);
+      await alert('Unable to fetch location options. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [alert]);
 
   useEffect(() => {
     // Base layer based on the current theme.
@@ -107,23 +124,7 @@ const CoordinateSelector: FC<CoordinateSelectorProps> = ({
     return () => {
       map.setTarget(undefined);
     };    
-  }, [isLightMode, markerSource, onCoordinatesSelect]);
-
-  // Wrap the fetchLocationOptions service.
-  const fetchLocationOptionsWrapper = async (latitude: number, longitude: number) => {
-    setLoading(true);
-    setLocationOptions([]);
-    try {
-      const options = await fetchLocationOptions(latitude, longitude);
-      setLocationOptions(options);
-      setShowOptionsOverlay(true);
-    } catch (error) {
-      log.error('Failed to fetch location options:', error);
-      toast.error('Unable to fetch location options. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchLocationOptionsWrapper, isLightMode, markerSource, onCoordinatesSelect]);
 
   // Handle when a location is selected from the overlay.
   const handleLocationSelect = (location: LocationSuggestion) => {

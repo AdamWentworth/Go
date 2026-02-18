@@ -1,6 +1,6 @@
 # Frontend Tech Debt Backlog (Risk-First Reset)
 
-Last refreshed: 2026-02-18 (post P1.2)
+Last refreshed: 2026-02-18 (post P1.4)
 
 This is a clean reset of frontend housekeeping priorities from the current stable baseline.
 The focus is production risk reduction first, then maintainability and performance improvements.
@@ -187,18 +187,27 @@ The focus is production risk reduction first, then maintainability and performan
 
 ### P1.3 Alert UX Cleanup
 
-- Status: `In Progress` (2026-02-18)
+- Status: `Done` (2026-02-18)
 - Goal: replace blocking `alert()` calls with consistent app feedback.
 - Progress:
-1. Replaced blocking session-expiry browser alert in `AuthContext` with toast feedback.
-2. Replaced auth/location blocking alerts with toast feedback in:
+1. Replaced blocking session-expiry browser alert in `AuthContext` with non-blocking toast feedback
+  (kept in toast lane because `AuthContext` sits above `ModalProvider`).
+2. Migrated auth/location UI alert paths to `ModalContext.alert` in:
   `useRegisterForm`, `useAccountForm`, `CoordinateSelector`, and `RegisterSocialButtons`.
-3. Replaced trainer-code copy browser alerts in `PartnerInfoModal` with success/error toasts.
+3. Migrated trainer-code copy feedback in `PartnerInfoModal` to `ModalContext.alert`.
 4. Added/updated regression coverage for migrated paths in:
   `tests/unit/contexts/AuthContext.unit.test.tsx`
   `tests/unit/pages/Authentication/hooks/useRegisterForm.unit.test.ts`
   `tests/unit/pages/Authentication/hooks/useAccountForm.unit.test.ts`
   `tests/unit/pages/Trades/components/PartnerInfoModal.unit.test.tsx`
+5. Added frontend UX messaging policy doc:
+  `docs/UX_MESSAGING_POLICY.md` and linked it in `README.md`.
+6. Added source lint guard banning browser dialogs in app code:
+  no `alert/confirm/prompt` globals and no `window/globalThis` dialog calls.
+7. Removed remaining direct browser dialog usage in active paths:
+  `Account.tsx` now uses `ModalContext.confirm`,
+  `FusionPokemonSelection.tsx` now uses `ModalContext.alert`,
+  and status-update blocking notices now use injected notifier callbacks instead of global alerts.
 - Tasks:
 1. Replace `alert` usage with modal/toast/error-boundary patterns where appropriate.
 2. Keep user-facing messages unchanged unless product decision says otherwise.
@@ -209,8 +218,22 @@ The focus is production risk reduction first, then maintainability and performan
 
 ### P1.4 Dependency Upgrade Lane (Controlled)
 
-- Status: `Pending`
+- Status: `Done` (2026-02-18)
 - Goal: keep dependency drift under control without destabilizing app behavior.
+- Completed:
+1. Upgraded patch/minor dependency set across runtime and tooling in one controlled batch
+  (`frontend/package.json` / `frontend/package-lock.json`) while intentionally deferring major-version jumps
+  (React 19, Router 7, Vite 7, ESLint 10, etc.) to isolated future work.
+2. Stabilized the test lane by pinning `fake-indexeddb` to `6.0.0` after regression behavior was observed on newer minor releases.
+3. Validated gates after the upgrade batch:
+  `npm run lint`
+  `npm run typecheck`
+  `npm run test:contracts`
+  `npm run test:unit`
+  `npm run test:integration`
+  `npm run build`
+  `npm audit --omit=dev --audit-level=moderate` (pass)
+  `npm audit --audit-level=moderate` (expected dev-tooling `ajv` chain findings, non-runtime).
 - Tasks:
 1. Upgrade patch/minor dependencies in small batches.
 2. Handle major upgrades in isolated PRs with compatibility notes.
@@ -253,8 +276,8 @@ The focus is production risk reduction first, then maintainability and performan
 
 ## Next Recommended Slice
 
-Execute `P1.2` next:
+Execute `P2.1` next:
 
-1. Introduce typed storage adapters for user/session/location/cache timestamps.
-2. Replace ad hoc `JSON.parse` + key literals in stores/views.
-3. Add malformed-storage and default-migration regression tests for adapters.
+1. Document local perf telemetry capture workflow (FP/FCP, variants pipeline, image timing).
+2. Add a repeatable perf snapshot artifact output path for CI/manual comparisons.
+3. Define a simple before/after template so perf-impacting changes can be compared in PRs.

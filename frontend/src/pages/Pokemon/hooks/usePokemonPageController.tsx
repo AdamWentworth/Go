@@ -6,6 +6,7 @@ import { useInstancesStore } from '@/features/instances/store/useInstancesStore'
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { useUserSearchStore } from '@/stores/useUserSearchStore';
 import { emptyTagBuckets } from '@/features/tags/utils/initializePokemonTags';
+import { useModal } from '@/contexts/ModalContext';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { InstanceStatus, Instances } from '@/types/instances';
@@ -127,6 +128,7 @@ export default function usePokemonPageController({
   const pokedexLists = useVariantsStore((s) => s.pokedexLists);
   const loading = useVariantsStore((s) => s.variantsLoading);
   const updateInstanceStatus = useInstancesStore((s) => s.updateInstanceStatus);
+  const { alert } = useModal();
   const contextInstanceData = useInstancesStore((s) => s.instances);
 
   const tags = useTagsStore((s) => s.tags);
@@ -273,8 +275,11 @@ export default function usePokemonPageController({
   }, []);
 
   const updateInstanceStatusBatch = useCallback(
-    (keys: string[], filter: InstanceStatus) => updateInstanceStatus(keys, filter),
-    [updateInstanceStatus],
+    (keys: string[], filter: InstanceStatus) =>
+      updateInstanceStatus(keys, filter, (message) => {
+        void alert(message);
+      }),
+    [alert, updateInstanceStatus],
   );
 
   const {
@@ -404,4 +409,3 @@ export default function usePokemonPageController({
     handleCreateNewRight,
   };
 }
-

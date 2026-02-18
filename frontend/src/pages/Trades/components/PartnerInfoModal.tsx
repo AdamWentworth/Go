@@ -9,7 +9,7 @@ import { fromLonLat } from 'ol/proj';
 import XYZ from 'ol/source/XYZ';
 import VectorSource from 'ol/source/Vector';
 import { Circle, Fill, Style } from 'ol/style';
-import { toast } from 'react-toastify';
+import { useModal } from '@/contexts/ModalContext';
 
 import CloseButton from '@/components/CloseButton';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -45,6 +45,7 @@ export function formatTrainerCode(code?: string | null): string {
 function PartnerInfoModal({ partnerInfo, onClose }: PartnerInfoModalProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const { isLightMode } = useTheme();
+  const { alert } = useModal();
 
   useEffect(() => {
     const latitude = partnerInfo?.coordinates?.latitude;
@@ -105,9 +106,9 @@ function PartnerInfoModal({ partnerInfo, onClose }: PartnerInfoModalProps) {
   const handleCopyCode = async () => {
     try {
       await navigator.clipboard.writeText(formattedCode);
-      toast.success('Trainer code copied!');
+      await alert('Trainer code copied!');
     } catch {
-      toast.error('Unable to copy trainer code.');
+      await alert('Unable to copy trainer code.');
     }
   };
 

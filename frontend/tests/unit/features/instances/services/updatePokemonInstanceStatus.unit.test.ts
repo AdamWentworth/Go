@@ -104,7 +104,6 @@ describe('updatePokemonInstanceStatus (current model)', () => {
       makeInstance({ variant_id: variant.variant_id, pokemon_id: variant.pokemon_id }),
     );
     vi.spyOn(registrationUtils, 'updateRegistrationStatus').mockImplementation(() => {});
-    vi.spyOn(window, 'alert').mockImplementation(() => {});
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -182,16 +181,23 @@ describe('updatePokemonInstanceStatus (current model)', () => {
   });
 
   it('blocks Trade/Wanted transitions for special states (example: shadow)', () => {
+    const alertMock = vi.fn();
     instances[EXISTING_UUID] = makeInstance({
       instance_id: EXISTING_UUID,
       variant_id: '0001-default',
       shadow: true,
     });
 
-    const result = updatePokemonInstanceStatus(EXISTING_UUID, 'Trade', variants, instances);
+    const result = updatePokemonInstanceStatus(
+      EXISTING_UUID,
+      'Trade',
+      variants,
+      instances,
+      alertMock,
+    );
 
     expect(result).toBe(EXISTING_UUID);
-    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('Cannot move'));
+    expect(alertMock).toHaveBeenCalledWith(expect.stringContaining('Cannot move'));
     expect(instances[EXISTING_UUID]).toMatchObject({
       shadow: true,
       is_for_trade: false,

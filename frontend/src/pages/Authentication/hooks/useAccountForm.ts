@@ -1,7 +1,7 @@
 // useAccountForm.ts
 
 import { useState, useEffect, ChangeEvent } from 'react';
-import { toast } from 'react-toastify';
+import { useModal } from '@/contexts/ModalContext';
 import { fetchSuggestions, fetchLocationOptions } from '../../../services/locationServices';
 import { createScopedLogger } from '@/utils/logger';
 
@@ -19,6 +19,7 @@ const useAccountForm = (
     toggleEdit: (edit: boolean) => void
   ) => void
 ) => {
+  const { alert } = useModal();
   const [isEditable, setIsEditable] = useState(false);
   const [isMapVisible, setIsMapVisible] = useState(false);
   const [showOptionsOverlay, setShowOptionsOverlay] = useState(false);
@@ -82,10 +83,10 @@ const useAccountForm = (
 
   useEffect(() => {
     if (!user) {
-      toast.error('No user data available, please log in.');
+      void alert('No user data available, please log in.');
       log.error('No user data available, please log in.');
     }
-  }, [user]);
+  }, [alert, user]);
 
   const validate = (vals: AccountFormValues): boolean => {
     const tempErrors: FormErrors = {};
@@ -258,16 +259,16 @@ const useAccountForm = (
             setLocationOptions(fetchedOptions);
             setShowOptionsOverlay(true);
           } catch {
-            toast.error('Unable to fetch location options. Please try again.');
+            await alert('Unable to fetch location options. Please try again.');
           }          
         },
         () => {
           log.error('Error fetching location.');
-          toast.error('Unable to fetch your current location. Please enable location permissions.');
+          void alert('Unable to fetch your current location. Please enable location permissions.');
         }
       );
     } else if (allowLocation) {
-      toast.error('Geolocation is not supported by your browser.');
+      void alert('Geolocation is not supported by your browser.');
     } else {
       setSuggestions([]);
       setSelectedCoordinates(null);

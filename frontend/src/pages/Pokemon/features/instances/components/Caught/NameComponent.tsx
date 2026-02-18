@@ -26,7 +26,7 @@ const NameComponent: React.FC<NameComponentProps> = ({ pokemon, editMode, onNick
 
   const [nickname, setNicknameState] = useState<string>(initialNickname);
   const [userFocus, setUserFocus] = useState<boolean>(false);
-  const editableRef = useRef<HTMLDivElement>(null);
+  const editableRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     setNicknameState(initialNickname);
@@ -58,7 +58,7 @@ const NameComponent: React.FC<NameComponentProps> = ({ pokemon, editMode, onNick
     }
   };
 
-  const handleInput = (event: React.FormEvent<HTMLDivElement>) => {
+  const handleInput = (event: React.FormEvent<HTMLSpanElement>) => {
     const newValue = event.currentTarget.textContent?.trim() ?? '';
     if (newValue === '') {
       setNicknameState('');
@@ -69,7 +69,7 @@ const NameComponent: React.FC<NameComponentProps> = ({ pokemon, editMode, onNick
     }
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLSpanElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
       editableRef.current?.blur();

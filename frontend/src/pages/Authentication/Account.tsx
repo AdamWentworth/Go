@@ -3,6 +3,7 @@
 import { useState, useRef, FC } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useModal } from '@/contexts/ModalContext';
 import { useNavigate } from 'react-router-dom';
 import AccountForm from './FormComponents/AccountForm';
 import './Account.css';
@@ -17,6 +18,7 @@ const log = createScopedLogger('Account');
 
 const Account: FC = () => {
   const { updateUserDetails, logout, deleteAccount } = useAuth();
+  const { confirm } = useModal();
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const [errors, setErrors] = useState<FormErrors>({});
@@ -99,7 +101,11 @@ const Account: FC = () => {
   };
 
   const handleDeleteAccount = async (): Promise<void> => {
-    if (window.confirm("Are you sure you want to delete your account and all its data?")) {
+    const isConfirmed = await confirm(
+      'Are you sure you want to delete your account and all its data?',
+    );
+
+    if (isConfirmed) {
       try {
         await deleteAccount(user.user_id);
         toast.success('Account deleted successfully');

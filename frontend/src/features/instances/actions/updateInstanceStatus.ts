@@ -65,7 +65,11 @@ export const updateInstanceStatus =
     setData: (updater: (prev: AppState) => AppState) => AppState,
     instancesDataRef: RefObject<Instances>,
   ) =>
-  async (instanceIds: string | string[], newStatus: InstanceStatus): Promise<void> => {
+  async (
+    instanceIds: string | string[],
+    newStatus: InstanceStatus,
+    onAlert?: (message: string) => void,
+  ): Promise<void> => {
     const keys = Array.isArray(instanceIds) ? instanceIds : [instanceIds];
     const timestamp = Date.now();
     const currentInstances = instancesDataRef.current ?? {};
@@ -79,6 +83,7 @@ export const updateInstanceStatus =
           newStatus,
           data.variants,
           draft,
+          onAlert,
         );
         if (!resolvedId) continue;
 

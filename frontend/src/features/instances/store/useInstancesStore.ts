@@ -28,7 +28,11 @@ interface InstancesStore {
   resetInstances(): void;
   hydrateInstances(data: Instances): void;
   setInstances(data: Instances): void;
-  updateInstanceStatus(instanceIds: string | string[], newStatus: InstanceStatus): Promise<void>;
+  updateInstanceStatus(
+    instanceIds: string | string[],
+    newStatus: InstanceStatus,
+    onAlert?: (message: string) => void,
+  ): Promise<void>;
   updateInstanceDetails(keyOrKeysOrMap: string | string[] | PatchMap, patch?: Patch): Promise<void>;
   periodicUpdates(): void;
 }
@@ -103,7 +107,7 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
       }
     },
 
-    async updateInstanceStatus(instanceIds, newStatus) {
+    async updateInstanceStatus(instanceIds, newStatus, onAlert) {
       log.debug(
         `Updating status for ${Array.isArray(instanceIds) ? instanceIds.length : 1} records to "${newStatus}"`,
       );
@@ -138,7 +142,7 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
         { current: get().instances },
       );
 
-      await fn(instanceIds, newStatus);
+      await fn(instanceIds, newStatus, onAlert);
       get().periodicUpdates();
     },
 

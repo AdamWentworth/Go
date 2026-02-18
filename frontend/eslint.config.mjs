@@ -61,12 +61,57 @@ export default [
   {
     files: ['src/**/*.{js,jsx,ts,tsx}'],
     rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'alert',
+          message: 'Use ModalContext.alert or toast, not browser alert().',
+        },
+        {
+          name: 'confirm',
+          message: 'Use ModalContext.confirm, not browser confirm().',
+        },
+        {
+          name: 'prompt',
+          message: 'Use app UI controls, not browser prompt().',
+        },
+      ],
       'no-restricted-properties': [
         'error',
         {
           object: 'process',
           property: 'env',
           message: 'Use import.meta.env in browser source files.',
+        },
+        {
+          object: 'window',
+          property: 'alert',
+          message: 'Use ModalContext.alert or toast, not window.alert().',
+        },
+        {
+          object: 'window',
+          property: 'confirm',
+          message: 'Use ModalContext.confirm, not window.confirm().',
+        },
+        {
+          object: 'window',
+          property: 'prompt',
+          message: 'Use app UI controls, not window.prompt().',
+        },
+        {
+          object: 'globalThis',
+          property: 'alert',
+          message: 'Use ModalContext.alert or toast, not globalThis.alert().',
+        },
+        {
+          object: 'globalThis',
+          property: 'confirm',
+          message: 'Use ModalContext.confirm, not globalThis.confirm().',
+        },
+        {
+          object: 'globalThis',
+          property: 'prompt',
+          message: 'Use app UI controls, not globalThis.prompt().',
         },
       ],
     },

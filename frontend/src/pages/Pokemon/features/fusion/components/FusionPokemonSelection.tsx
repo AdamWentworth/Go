@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import CloseButton from '@/components/CloseButton';
+import { useModal } from '@/contexts/ModalContext';
 import CaughtInstance from '../../instances/CaughtInstance';
 import './FusionPokemonSelection.css';
 
@@ -33,12 +34,13 @@ const FusionPokemonSelection: React.FC<FusionPokemonSelectionProps> = ({
   onCreateNewRight,
   error,
 }) => {
+  const { alert } = useModal();
   const [selectedLeftInstance, setSelectedLeftInstance] = useState<string | null>(null);
   const [selectedRightInstance, setSelectedRightInstance] = useState<string | null>(null);
 
   const handleFuse = () => {
     if (!selectedLeftInstance || !selectedRightInstance) {
-      alert('Please select one PokÃ©mon from each side before fusing.');
+      void alert('Please select one Pokémon from each side before fusing.');
       return;
     }
 

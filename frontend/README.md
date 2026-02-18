@@ -201,6 +201,7 @@ Located in `src/contexts/`, these React contexts help manage global state across
 
 - All components and pages are written in modular files with separate `.css` styles
 - Variant image files are under `public/images/` and structured by type (shiny, shadow, costumes, etc.)
+- UX messaging standards (modal vs toast) are documented in `docs/UX_MESSAGING_POLICY.md`.
 
 ---
 

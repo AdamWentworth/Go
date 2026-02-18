@@ -12,6 +12,7 @@ const updateInstanceStatusMock = vi.fn();
 const setHighlightedCardsMock = vi.fn();
 const setIsFastSelectEnabledMock = vi.fn();
 const handleConfirmChangeTagsMock = vi.fn(async () => undefined);
+const modalAlertMock = vi.fn().mockResolvedValue(undefined);
 
 const baseVariant = { variant_id: '0001-default', pokemon_id: 1 } as PokemonVariant;
 const variantsStoreState = {
@@ -53,6 +54,13 @@ vi.mock('@/features/tags/store/useTagsStore', () => ({
 vi.mock('@/stores/useUserSearchStore', () => ({
   useUserSearchStore: (selector: (s: Record<string, unknown>) => unknown) =>
     selector(userSearchStoreState),
+}));
+
+vi.mock('@/contexts/ModalContext', () => ({
+  useModal: () => ({
+    alert: modalAlertMock,
+    confirm: vi.fn(),
+  }),
 }));
 
 vi.mock('@/pages/Pokemon/hooks/useUIControls', () => ({

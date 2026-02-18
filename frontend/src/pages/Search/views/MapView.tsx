@@ -157,6 +157,9 @@ const MapView: React.FC<MapViewProps> = ({ data, instanceData, pokemonCache }) =
     });
 
     const extent = vectorSource.getExtent();
+    if (!extent) {
+      return;
+    }
     const paddedExtent = bufferExtent(
       extent,
       Math.max(extent[2] - extent[0], extent[3] - extent[1]) * 0.25,
