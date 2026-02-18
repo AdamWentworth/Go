@@ -2,6 +2,11 @@
 
 import { create } from 'zustand';
 import { createScopedLogger } from '@/utils/logger';
+import {
+  getStorageNumber,
+  setStorageNumber,
+  STORAGE_KEYS,
+} from '@/utils/storage';
 
 const log = createScopedLogger('useSessionStore');
 
@@ -20,20 +25,21 @@ export const useSessionStore = create<SessionStore>((set) => ({
 
   initSession: () => {
     const currentTime = new Date().getTime();
-    const lastActivityStr = localStorage.getItem('lastActivityTime');
-    const lastActivity = lastActivityStr ? parseInt(lastActivityStr, 10) : null;
+    const lastActivity = getStorageNumber(STORAGE_KEYS.lastActivityTime, NaN);
+    const hasLastActivity = Number.isFinite(lastActivity);
 
     const isSessionNew =
-      lastActivity === null
+      !hasLastActivity
         ? true
         : currentTime - lastActivity > INACTIVITY_THRESHOLD_MS;
 
-    localStorage.setItem('lastActivityTime', currentTime.toString());
+    setStorageNumber(STORAGE_KEYS.lastActivityTime, currentTime);
 
-    const ownershipTimestampStr = localStorage.getItem('ownershipTimestamp');
-    const lastUpdateTimestamp = ownershipTimestampStr
-      ? new Date(parseInt(ownershipTimestampStr, 10))
-      : new Date();
+    const ownershipTimestamp = getStorageNumber(
+      STORAGE_KEYS.ownershipTimestamp,
+      Date.now(),
+    );
+    const lastUpdateTimestamp = new Date(ownershipTimestamp);
 
     set({ lastUpdateTimestamp, isSessionNew });
   },

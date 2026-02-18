@@ -2,6 +2,7 @@
 import { getInstancesData, initializeOrUpdateInstancesData } from '../storage/instancesStorage';
 import { isDataFresh } from '@/utils/cacheHelpers';
 import { createScopedLogger } from '@/utils/logger';
+import { getStorageNumber, STORAGE_KEYS } from '@/utils/storage';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { Instances } from '@/types/instances';
 
@@ -23,7 +24,7 @@ export async function loadInstances(
     }
 
     // 2) If no cache, fall back to your old freshness logic
-    const ts = Number(localStorage.getItem('ownershipTimestamp') || 0);
+    const ts = getStorageNumber(STORAGE_KEYS.ownershipTimestamp, 0);
     const fresh = ts && isDataFresh(ts);
     if (fresh) {
       return cached; // fresh but empty -> fine, return empty

@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { fetchSuggestions } from '@/services/locationServices';
 import { createScopedLogger } from '@/utils/logger';
 import type { LocationSuggestion } from '@/types/location';
+import { getStoredLocation } from '@/utils/storage';
 import './LocationSearch.css';
 
 type Coordinates = {
@@ -103,28 +104,19 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
       setCity('');
       setSuggestions([]);
 
-      const storedLocation = localStorage.getItem('location');
+      const storedLocation = getStoredLocation();
       if (!storedLocation) {
         log.warn('No location found in localStorage');
         return;
       }
 
-      try {
-        const parsed = JSON.parse(storedLocation) as {
-          latitude?: unknown;
-          longitude?: unknown;
-        };
+      const latitude = toNumberOrNull(storedLocation.latitude);
+      const longitude = toNumberOrNull(storedLocation.longitude);
 
-        const latitude = toNumberOrNull(parsed.latitude);
-        const longitude = toNumberOrNull(parsed.longitude);
-
-        setCoordinates({ latitude, longitude });
-        log.debug(
-          `Using current location: Latitude ${latitude}, Longitude ${longitude}`,
-        );
-      } catch (error) {
-        log.error('Failed to parse stored location payload', error);
-      }
+      setCoordinates({ latitude, longitude });
+      log.debug(
+        `Using current location: Latitude ${latitude}, Longitude ${longitude}`,
+      );
 
       return;
     }

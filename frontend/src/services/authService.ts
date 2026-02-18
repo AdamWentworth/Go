@@ -9,6 +9,7 @@ import {
   requestWithPolicy,
   toHttpError,
 } from './httpClient';
+import { removeStorageKeys, STORAGE_KEYS } from '@/utils/storage';
 
 const log = createScopedLogger('authService');
 const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL;
@@ -88,9 +89,11 @@ export const loginUser = async (loginData: GenericPayload): Promise<unknown> => 
 export const logoutUser = async (): Promise<void> => {
   try {
     await requestJson<unknown>(AUTH_API_URL, '/logout', 'POST', {});
-    localStorage.removeItem('user');
-    localStorage.removeItem('location');
-    localStorage.removeItem('pokemonOwnership');
+    removeStorageKeys([
+      STORAGE_KEYS.user,
+      STORAGE_KEYS.location,
+      STORAGE_KEYS.pokemonOwnership,
+    ]);
     return Promise.resolve();
   } catch (error: unknown) {
     log.error('Error during logout:', error);

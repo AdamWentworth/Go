@@ -14,6 +14,11 @@ import { logSize } from '@/utils/loggers';
 import { fetchAndProcessVariants } from './fetchAndProcessVariants';
 import { POKEDEX_STORES } from '@/db/constants';
 import { createScopedLogger } from '@/utils/logger';
+import {
+  getStorageNumber,
+  setStorageNumber,
+  STORAGE_KEYS,
+} from '@/utils/storage';
 
 let derivedListsMemo: { key: string; lists: PokedexLists } | null = null;
 const log = createScopedLogger('loadVariants');
@@ -50,8 +55,11 @@ function getOrBuildPokedexLists(variants: PokemonVariant[], variantsTimestamp: n
 export async function loadVariants() {
   log.debug('Fetching data from API or cache...');
 
-  const variantsTimestamp      = Number(localStorage.getItem('variantsTimestamp') || 0);
-  const pokedexListsTimestamp  = Number(localStorage.getItem('pokedexListsTimestamp') || 0);
+  const variantsTimestamp = getStorageNumber(STORAGE_KEYS.variantsTimestamp, 0);
+  const pokedexListsTimestamp = getStorageNumber(
+    STORAGE_KEYS.pokedexListsTimestamp,
+    0,
+  );
 
   const variantsFresh = variantsTimestamp && isDataFresh(variantsTimestamp);
   const pokedexFresh  = pokedexListsTimestamp && isDataFresh(pokedexListsTimestamp);
@@ -102,12 +110,12 @@ export async function loadVariants() {
     /* -------------------------------------------------------------- */
     log.debug('PokedexLists are stale or variants updated, regenerating...');
     const currentVariantsTimestamp =
-      Number(localStorage.getItem('variantsTimestamp') || variantsTimestamp || 0);
+      getStorageNumber(STORAGE_KEYS.variantsTimestamp, variantsTimestamp || 0);
     pokedexLists = getOrBuildPokedexLists(variants, currentVariantsTimestamp);
 
     try {
       await storePokedexLists(pokedexLists);
-      localStorage.setItem('pokedexListsTimestamp', Date.now().toString());
+      setStorageNumber(STORAGE_KEYS.pokedexListsTimestamp, Date.now());
       listsBuiltNow = true;
       log.debug('Successfully stored new PokedexLists in IndexedDB');
     } catch (error) {

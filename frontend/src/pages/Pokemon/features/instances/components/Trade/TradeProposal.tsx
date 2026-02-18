@@ -28,9 +28,9 @@ import {
   buildTradeProposalRequest,
   findMatchedInstanceById,
   hasInstanceData,
-  parseUsernameFromStoredUser,
   sanitizeInstanceData,
 } from './tradeProposalHelpers';
+import { getStoredUsername } from '@/utils/storage';
 
 const log = createScopedLogger('TradeProposal');
 
@@ -119,7 +119,7 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
   };
 
   const handleProposeTrade = async (): Promise<void> => {
-    const username_proposed = parseUsernameFromStoredUser(localStorage.getItem('user'));
+    const username_proposed = getStoredUsername();
     const preflight = buildTradeProposalPreflight({
       selectedMatchedInstance,
       friendshipLevel: friendship_level,

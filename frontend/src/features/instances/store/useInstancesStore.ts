@@ -10,6 +10,7 @@ import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { replaceInstancesData } from '@/features/instances/storage/instancesStorage';
 import { areInstancesEqual } from '@/features/instances/utils/instancesEquality';
 import { createScopedLogger } from '@/utils/logger';
+import { removeStorageKey, STORAGE_KEYS } from '@/utils/storage';
 
 import type { Instances, InstanceStatus } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -45,7 +46,7 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
     resetInstances() {
       log.debug('resetInstances()');
       set({ instances: {}, instancesLoading: true });
-      localStorage.removeItem('ownershipTimestamp');
+      removeStorageKey(STORAGE_KEYS.ownershipTimestamp);
     },
 
     hydrateInstances(data) {

@@ -1,5 +1,10 @@
 // deviceId.ts
 import { createScopedLogger } from '@/utils/logger';
+import {
+  getStorageString,
+  setStorageString,
+  STORAGE_KEYS,
+} from '@/utils/storage';
 
 const log = createScopedLogger('deviceId');
 
@@ -8,11 +13,11 @@ const log = createScopedLogger('deviceId');
  */
 export const getDeviceId = (): string => {
   try {
-    const deviceId = localStorage.getItem('deviceID');
+    const deviceId = getStorageString(STORAGE_KEYS.deviceId);
     if (deviceId) return deviceId;
 
     const newId = generateUUID();
-    localStorage.setItem('deviceID', newId);
+    setStorageString(STORAGE_KEYS.deviceId, newId);
     return newId;
   } catch (error) {
     log.warn('localStorage is not available:', error);

@@ -11,6 +11,7 @@ import { revealPartnerInfo } from '../../../services/tradeService';
 import type { PartnerInfo } from '../../../services/tradeService';
 import PartnerInfoModal from '../components/PartnerInfoModal';
 import type { TradeMove, TradePokemonDetails, TradeViewTrade } from './types';
+import { getStoredUsername } from '@/utils/storage';
 import './PendingTradeView.css';
 
 type DetailSection = 'left' | 'right';
@@ -26,18 +27,6 @@ interface PendingTradeViewProps {
   handleComplete: (trade: TradeViewTrade) => void | Promise<void>;
   handleCancel: () => void | Promise<void>;
 }
-
-const readCurrentUsername = (): string => {
-  const storedUser = localStorage.getItem('user');
-  if (!storedUser) return '';
-
-  try {
-    const parsed = JSON.parse(storedUser) as { username?: unknown };
-    return typeof parsed.username === 'string' ? parsed.username : '';
-  } catch {
-    return '';
-  }
-};
 
 const hasVariantTag = (
   variantType: TradePokemonDetails['variantType'],
@@ -88,7 +77,7 @@ const PendingTradeView: React.FC<PendingTradeViewProps> = ({
   const friendshipLevel =
     reversedFriendshipLevels[trade.trade_friendship_level ?? ''] ?? 0;
 
-  const currentUsername = readCurrentUsername();
+  const currentUsername = getStoredUsername() ?? '';
 
   useEffect(() => {
     setLocalTrade(trade);

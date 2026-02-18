@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useLocationStore } from '@/features/location/store/useLocationStore';
 import { createScopedLogger } from '@/utils/logger';
+import { removeStorageKey, setStoredLocation, STORAGE_KEYS } from '@/utils/storage';
 
 const log = createScopedLogger('useInitLocation');
 
@@ -26,7 +27,7 @@ export function useInitLocation() {
   const storeAndLogCoords = useCallback((coords: { latitude: number; longitude: number }) => {
     setLocation(coords);
     setStatus('available');
-    localStorage.setItem('location', JSON.stringify(coords));
+    setStoredLocation(coords);
     log.debug(
       `Location acquired and stored. Latitude: ${coords.latitude}, Longitude: ${coords.longitude}`,
     );
@@ -45,7 +46,7 @@ export function useInitLocation() {
         log.debug('User not logged in. Skipping location fetching.');
         setStatus('unavailable');
         setLocation(null);
-        localStorage.removeItem('location');
+        removeStorageKey(STORAGE_KEYS.location);
         return;
       }
 
@@ -85,7 +86,7 @@ export function useInitLocation() {
             );
             setStatus('unavailable');
             setLocation(null);
-            localStorage.removeItem('location');
+            removeStorageKey(STORAGE_KEYS.location);
           },
         );
         return;
@@ -105,7 +106,7 @@ export function useInitLocation() {
         };
         setLocation(manual);
         setStatus('available');
-        localStorage.setItem('location', JSON.stringify(manual));
+        setStoredLocation(manual);
         log.debug(
           `Manual location set. Latitude: ${manual.latitude}, Longitude: ${manual.longitude}`,
         );
@@ -113,7 +114,7 @@ export function useInitLocation() {
         log.debug('No manual coordinates provided by user.');
         setStatus('unavailable');
         setLocation(null);
-        localStorage.removeItem('location');
+        removeStorageKey(STORAGE_KEYS.location);
       }
     };
 

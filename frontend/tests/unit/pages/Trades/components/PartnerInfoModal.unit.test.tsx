@@ -1,6 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { toast } from 'react-toastify';
 
 import PartnerInfoModal, {
   formatTrainerCode,
@@ -23,6 +24,15 @@ vi.mock('@/components/CloseButton', () => ({
   ),
 }));
 
+vi.mock('react-toastify', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+  },
+}));
+
 describe('PartnerInfoModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -30,7 +40,6 @@ describe('PartnerInfoModal', () => {
       value: { writeText: mocks.writeTextMock },
       configurable: true,
     });
-    vi.spyOn(window, 'alert').mockImplementation(() => {});
   });
 
   it('formats trainer codes in groups of four digits', () => {
@@ -64,7 +73,7 @@ describe('PartnerInfoModal', () => {
 
     await waitFor(() => {
       expect(mocks.writeTextMock).toHaveBeenCalledWith('1234 5678 9012');
-      expect(window.alert).toHaveBeenCalledWith('Trainer code copied!');
+      expect(toast.success).toHaveBeenCalledWith('Trainer code copied!');
     });
   });
 

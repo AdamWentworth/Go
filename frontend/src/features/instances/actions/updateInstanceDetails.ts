@@ -2,6 +2,7 @@
 import { produce } from 'immer';
 import { putBatchedPokemonUpdates, putInstancesBulk } from '@/db/indexedDB';
 import { createScopedLogger } from '@/utils/logger';
+import { setStorageNumber, STORAGE_KEYS } from '@/utils/storage';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { MutableInstances, SetInstancesFn } from '@/types/instances';
 
@@ -106,7 +107,7 @@ export function updateInstanceDetails(
     }
 
     // Local timestamp (used by freshness checks)
-    localStorage.setItem('ownershipTimestamp', String(timestamp));
+    setStorageNumber(STORAGE_KEYS.ownershipTimestamp, timestamp);
 
     // Queue patches to updatesDB for SW network batching
     const queueEntries: Array<{ key: string; snapshot: InstanceSnapshot }> = updatedKeys

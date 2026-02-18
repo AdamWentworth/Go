@@ -6,6 +6,11 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import {
+  getStorageBoolean,
+  setStorageBoolean,
+  STORAGE_KEYS,
+} from '@/utils/storage';
 
 type ThemeContextValue = {
   isLightMode: boolean;
@@ -19,21 +24,7 @@ type ThemeProviderProps = {
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 const readStoredThemePreference = (): boolean => {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  const storedPreference = window.localStorage.getItem('isLightMode');
-  if (storedPreference === null) {
-    return false;
-  }
-
-  try {
-    const parsed = JSON.parse(storedPreference);
-    return typeof parsed === 'boolean' ? parsed : false;
-  } catch {
-    return storedPreference === 'true';
-  }
+  return getStorageBoolean(STORAGE_KEYS.isLightMode, false);
 };
 
 export function useTheme(): ThemeContextValue {
@@ -52,7 +43,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const toggleTheme = useCallback(() => {
     setIsLightMode((prevMode) => {
       const newMode = !prevMode;
-      window.localStorage.setItem('isLightMode', JSON.stringify(newMode));
+      setStorageBoolean(STORAGE_KEYS.isLightMode, newMode);
       return newMode;
     });
   }, []);

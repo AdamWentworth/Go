@@ -4,6 +4,7 @@ import { produce } from 'immer';
 import { updatePokemonInstanceStatus } from '../services/updatePokemonInstanceStatus';
 import { putBatchedPokemonUpdates, putInstancesBulk } from '@/db/indexedDB';
 import { createScopedLogger } from '@/utils/logger';
+import { setStorageNumber, STORAGE_KEYS } from '@/utils/storage';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { InstanceStatus, Instances } from '@/types/instances';
 import { PokemonVariant } from '@/types/pokemonVariants';
@@ -155,7 +156,7 @@ export const updateInstanceStatus =
     }
 
     // Timestamp for freshness checks
-    localStorage.setItem('ownershipTimestamp', String(timestamp));
+    setStorageNumber(STORAGE_KEYS.ownershipTimestamp, timestamp);
 
     // Queue to updatesDB; SW will batch-send to backend
     try {

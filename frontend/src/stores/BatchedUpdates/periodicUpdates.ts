@@ -1,28 +1,21 @@
 // periodicUpdates.ts
 import { getBatchedPokemonUpdates, getBatchedTradeUpdates } from '../../db/indexedDB';
 import { createScopedLogger } from '@/utils/logger';
+import { getStoredLocation, getStoredUserRecord } from '@/utils/storage';
+import type { Coordinates } from '@/types/location';
 
 type Ref<T> = { current: T };
-type LocationType = {
-  latitude: number;
-  longitude: number;
-  [key: string]: unknown;
-} | null;
+type LocationType = Coordinates | null;
 
 const log = createScopedLogger('periodicUpdates');
 
 function isUserLoggedIn(): boolean {
-  try {
-    const raw = localStorage.getItem('user');
-    if (!raw) return false;
-    const user = JSON.parse(raw);
-    const now = Date.now();
-    const refreshExp = new Date(user.refreshTokenExpiry).getTime();
-    // Consider logged in only if refresh token is still valid.
-    return Number.isFinite(refreshExp) && refreshExp > now;
-  } catch {
-    return false;
-  }
+  const user = getStoredUserRecord();
+  if (!user || typeof user.refreshTokenExpiry !== 'string') return false;
+  const now = Date.now();
+  const refreshExp = new Date(user.refreshTokenExpiry).getTime();
+  // Consider logged in only if refresh token is still valid.
+  return Number.isFinite(refreshExp) && refreshExp > now;
 }
 
 export const periodicUpdates = (
@@ -30,16 +23,7 @@ export const periodicUpdates = (
   timerRef: Ref<NodeJS.Timeout | null>,
 ): (() => void) => {
   return () => {
-    const storedLocation = localStorage.getItem('location');
-    let location: LocationType = null;
-
-    if (storedLocation) {
-      try {
-        location = JSON.parse(storedLocation);
-      } catch (error) {
-        log.warn('Failed to parse stored location', error);
-      }
-    }
+    const location: LocationType = getStoredLocation();
 
     // Helper: schedule next check in 60s.
     const scheduleNext = (fn: () => void) => {

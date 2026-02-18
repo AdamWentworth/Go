@@ -1,6 +1,7 @@
 // useAccountForm.ts
 
 import { useState, useEffect, ChangeEvent } from 'react';
+import { toast } from 'react-toastify';
 import { fetchSuggestions, fetchLocationOptions } from '../../../services/locationServices';
 import { createScopedLogger } from '@/utils/logger';
 
@@ -81,7 +82,7 @@ const useAccountForm = (
 
   useEffect(() => {
     if (!user) {
-      alert('No user data available, please log in.');
+      toast.error('No user data available, please log in.');
       log.error('No user data available, please log in.');
     }
   }, [user]);
@@ -257,16 +258,16 @@ const useAccountForm = (
             setLocationOptions(fetchedOptions);
             setShowOptionsOverlay(true);
           } catch {
-            alert('Unable to fetch location options. Please try again.');
+            toast.error('Unable to fetch location options. Please try again.');
           }          
         },
         () => {
           log.error('Error fetching location.');
-          alert('Unable to fetch your current location. Please enable location permissions.');
+          toast.error('Unable to fetch your current location. Please enable location permissions.');
         }
       );
     } else if (allowLocation) {
-      alert('Geolocation is not supported by your browser.');
+      toast.error('Geolocation is not supported by your browser.');
     } else {
       setSuggestions([]);
       setSelectedCoordinates(null);

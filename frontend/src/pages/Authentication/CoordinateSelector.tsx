@@ -12,6 +12,7 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
+import { toast } from 'react-toastify';
 import { useTheme } from '../../contexts/ThemeContext';
 import './CoordinateSelector.css';
 import CloseButton from '../../components/CloseButton';
@@ -118,7 +119,7 @@ const CoordinateSelector: FC<CoordinateSelectorProps> = ({
       setShowOptionsOverlay(true);
     } catch (error) {
       log.error('Failed to fetch location options:', error);
-      alert('Unable to fetch location options. Please try again.');
+      toast.error('Unable to fetch location options. Please try again.');
     } finally {
       setLoading(false);
     }

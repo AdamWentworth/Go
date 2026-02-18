@@ -1,6 +1,6 @@
 # Frontend Tech Debt Backlog (Risk-First Reset)
 
-Last refreshed: 2026-02-18 (post P0.2)
+Last refreshed: 2026-02-18 (post P1.2)
 
 This is a clean reset of frontend housekeeping priorities from the current stable baseline.
 The focus is production risk reduction first, then maintainability and performance improvements.
@@ -160,8 +160,23 @@ The focus is production risk reduction first, then maintainability and performan
 
 ### P1.2 Storage Access Consolidation
 
-- Status: `Pending`
+- Status: `Done` (2026-02-18)
 - Goal: reduce repeated `localStorage` parsing and timestamp-key drift.
+- Completed:
+1. Added centralized typed storage adapter in `src/utils/storage.ts` with:
+  `STORAGE_KEYS`, guarded read/write/remove helpers, typed JSON/number/boolean helpers,
+  and domain helpers for user/username/location.
+2. Migrated ad hoc storage access across contexts, stores, services, and views to adapter usage:
+  `AuthContext`, `ThemeContext`, `useSessionStore`, `periodicUpdates`,
+  `LocationSearch`, `useInitLocation`, `deviceID`, `authService`,
+  trades views/cards, instances actions/store/storage, tags store, variants loaders, and `variantsDB`.
+3. Added regression tests for malformed data and default behavior in:
+  `tests/unit/utils/storage.unit.test.ts`.
+4. Verified frontend gates after migration:
+  `npm run test:unit`
+  `npm run lint`
+  `npm run typecheck`
+  `npm run build`
 - Tasks:
 1. Introduce typed storage adapters for user/session/location/cache timestamps.
 2. Replace ad hoc `JSON.parse` and key literals in views/stores.
@@ -172,8 +187,18 @@ The focus is production risk reduction first, then maintainability and performan
 
 ### P1.3 Alert UX Cleanup
 
-- Status: `Pending`
+- Status: `In Progress` (2026-02-18)
 - Goal: replace blocking `alert()` calls with consistent app feedback.
+- Progress:
+1. Replaced blocking session-expiry browser alert in `AuthContext` with toast feedback.
+2. Replaced auth/location blocking alerts with toast feedback in:
+  `useRegisterForm`, `useAccountForm`, `CoordinateSelector`, and `RegisterSocialButtons`.
+3. Replaced trainer-code copy browser alerts in `PartnerInfoModal` with success/error toasts.
+4. Added/updated regression coverage for migrated paths in:
+  `tests/unit/contexts/AuthContext.unit.test.tsx`
+  `tests/unit/pages/Authentication/hooks/useRegisterForm.unit.test.ts`
+  `tests/unit/pages/Authentication/hooks/useAccountForm.unit.test.ts`
+  `tests/unit/pages/Trades/components/PartnerInfoModal.unit.test.tsx`
 - Tasks:
 1. Replace `alert` usage with modal/toast/error-boundary patterns where appropriate.
 2. Keep user-facing messages unchanged unless product decision says otherwise.

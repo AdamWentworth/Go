@@ -10,6 +10,7 @@ import type {
 } from './types';
 import type { Instances } from '@/types/instances';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import { getStoredUsername } from '@/utils/storage';
 
 import './TradeList.css';
 
@@ -29,19 +30,6 @@ type EnrichedTrade = TradeListTrade & { trade_id: string };
 const normalizeStatus = (value: string | null | undefined): string =>
   String(value ?? '').toLowerCase();
 
-const getCurrentUsername = (): string | null => {
-  const storedUser = localStorage.getItem('user');
-  if (!storedUser) return null;
-
-  try {
-    const parsed = JSON.parse(storedUser) as { username?: unknown };
-    const username = parsed?.username;
-    return typeof username === 'string' ? username : null;
-  } catch {
-    return null;
-  }
-};
-
 function TradeList({
   trades,
   relatedInstances,
@@ -54,7 +42,7 @@ function TradeList({
 }: TradeListProps) {
   const resolvedInstances = (instances ?? {}) as Instances;
 
-  const currentUsername = useMemo(() => getCurrentUsername(), []);
+  const currentUsername = useMemo(() => getStoredUsername(), []);
 
   const sortedTrades = useMemo<EnrichedTrade[]>(
     () =>

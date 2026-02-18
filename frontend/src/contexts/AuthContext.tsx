@@ -23,6 +23,12 @@ import { useTradeStore } from '@/features/trades/store/useTradeStore';
 import { useAuthStore } from '../stores/useAuthStore';
 import { createScopedLogger } from '@/utils/logger';
 import {
+  getStoredUser,
+  removeStorageKeys,
+  setStoredUser,
+  STORAGE_KEYS,
+} from '@/utils/storage';
+import {
   clearInstancesStore,
   clearTradesStore,
   clearAllTagsDB,
@@ -73,10 +79,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const clearSession = useCallback(async (forced: boolean) => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('pokemonOwnership');
-    localStorage.removeItem('ownershipTimestamp');
-    localStorage.removeItem('listsTimestamp');
+    removeStorageKeys([
+      STORAGE_KEYS.user,
+      STORAGE_KEYS.pokemonOwnership,
+      STORAGE_KEYS.ownershipTimestamp,
+      STORAGE_KEYS.listsTimestamp,
+    ]);
 
     setIsLoggedIn(false);
     setUser(null);
@@ -99,7 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     navigate('/login', { replace: true });
     if (forced) {
-      setTimeout(() => alert('Your session has expired, please log in again.'), 1_000);
+      setTimeout(() => toast.info('Your session has expired, please log in again.'), 1_000);
     }
   }, [navigate, resetInstances, resetTags, resetTradeData, setIsLoggedIn, setUser]);
 
@@ -148,7 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setUser(newUser);
       userRef.current = newUser;
-      localStorage.setItem('user', JSON.stringify(newUser));
+      setStoredUser(newUser);
       scheduleTokenRefreshRef.current(new Date(accessTokenExpiry));
     } catch {
       await clearSessionRef.current(true);
@@ -171,9 +179,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   startTokenExpirationCheckRef.current = startTokenExpirationCheck;
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      const userData = JSON.parse(stored) as User;
+    const userData = getStoredUser();
+    if (userData) {
       useAuthStore.getState().setUser(userData);
       userRef.current = userData;
       useAuthStore.getState().setIsLoggedIn(true);
@@ -209,7 +216,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = (userData: User) => {
-    localStorage.setItem('user', JSON.stringify(userData));
+    setStoredUser(userData);
     setIsLoggedIn(true);
     setUser(userData);
     userRef.current = userData;
@@ -264,7 +271,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setUser(updated);
       userRef.current = updated;
-      localStorage.setItem('user', JSON.stringify(updated));
+      setStoredUser(updated);
 
       /* ------------------------------------------------------------------ */
       /* decide if we need to sync the secondary MySQL DB                   */

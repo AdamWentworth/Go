@@ -8,6 +8,7 @@ import { TRADE_FRIENDSHIP_LEVELS } from '../../../db/indexedDB';
 import { formatDate } from '../../../utils/formattingHelpers';
 import { hasDetails } from '../helpers/hasDetails';
 import type { TradeMove, TradePokemonDetails, TradeViewTrade } from './types';
+import { getStoredUsername } from '@/utils/storage';
 import './CompletedTradeView.css';
 
 type DetailSection = 'left' | 'right';
@@ -19,18 +20,6 @@ interface CompletedTradeViewProps {
   loading: boolean;
   handleThumbsUp: () => void;
 }
-
-const readCurrentUsername = (): string => {
-  const storedUser = localStorage.getItem('user');
-  if (!storedUser) return '';
-
-  try {
-    const parsed = JSON.parse(storedUser) as { username?: unknown };
-    return typeof parsed.username === 'string' ? parsed.username : '';
-  } catch {
-    return '';
-  }
-};
 
 const hasVariantTag = (
   variantType: TradePokemonDetails['variantType'],
@@ -60,7 +49,7 @@ const CompletedTradeView: React.FC<CompletedTradeViewProps> = ({
     right: false,
   });
 
-  const currentUsername = readCurrentUsername();
+  const currentUsername = getStoredUsername() ?? '';
   const isCurrentUserProposer = trade.username_proposed === currentUsername;
   const satisfactionStatus = isCurrentUserProposer
     ? trade.user_1_trade_satisfaction

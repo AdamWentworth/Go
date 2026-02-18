@@ -3,6 +3,11 @@ import * as idb from '@/db/indexedDB';
 import { generateUUID } from '@/utils/PokemonIDUtils';
 import { createNewInstanceData } from '../utils/createNewInstanceData';
 import { createScopedLogger, loggerInternals } from '@/utils/logger';
+import {
+  getStorageNumber,
+  setStorageNumber,
+  STORAGE_KEYS,
+} from '@/utils/storage';
 
 import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -30,7 +35,7 @@ export async function getInstancesData(): Promise<{
     }
   });
 
-  const rawTs = parseInt(localStorage.getItem('ownershipTimestamp') || '0', 10);
+  const rawTs = getStorageNumber(STORAGE_KEYS.ownershipTimestamp, 0);
   const timestamp = rawTs > 0 ? rawTs : 0;
   return { data: instances, timestamp };
 }
@@ -54,7 +59,7 @@ export async function setInstancesData(payload: {
     log.debug(`Stored instances into IndexedDB in ${Math.round(performance.now() - t0)} ms`);
   }
 
-  localStorage.setItem('ownershipTimestamp', payload.timestamp.toString());
+  setStorageNumber(STORAGE_KEYS.ownershipTimestamp, payload.timestamp);
 }
 
 /**
@@ -102,7 +107,7 @@ export async function replaceInstancesData(
     log.debug(`[replaceInstancesData] wrote ${items.length} rows in ${Math.round(performance.now() - t0)} ms`);
   }
 
-  localStorage.setItem('ownershipTimestamp', String(timestamp));
+  setStorageNumber(STORAGE_KEYS.ownershipTimestamp, timestamp);
 }
 
 export async function initializeOrUpdateInstancesData(

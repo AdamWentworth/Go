@@ -6,6 +6,11 @@ import { recordVariantPipelineMetrics } from "@/utils/perfTelemetry";
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import { computePayloadHash } from "@/features/variants/utils/payloadHash";
 import { createScopedLogger } from "@/utils/logger";
+import {
+  getStorageString,
+  setStorageNumber,
+  STORAGE_KEYS,
+} from "@/utils/storage";
 
 const log = createScopedLogger('fetchAndProcessVariants');
 
@@ -54,14 +59,14 @@ export async function fetchAndProcessVariants() {
   logSize('newly fetched Pokemon data', pokemons);
 
   const payloadHash = computePayloadHash(pokemons);
-  const previousPayloadHash = localStorage.getItem('variantsPayloadHash');
+  const previousPayloadHash = getStorageString(STORAGE_KEYS.variantsPayloadHash);
   const payloadUnchanged = previousPayloadHash != null && previousPayloadHash === payloadHash;
 
   if (payloadUnchanged) {
     const cachedVariants = await getAllVariants<PokemonVariant>();
     if (cachedVariants.length > 0) {
       // We confirmed API payload equivalence with cached data.
-      localStorage.setItem('variantsTimestamp', String(Date.now()));
+      setStorageNumber(STORAGE_KEYS.variantsTimestamp, Date.now());
       const totalMs = performance.now() - pipelineStart;
 
       recordVariantPipelineMetrics({

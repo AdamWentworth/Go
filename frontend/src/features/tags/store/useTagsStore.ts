@@ -17,6 +17,12 @@ import { getAllInstances } from '@/db/instancesDB';
 import { initializePokemonTags } from '../utils/initializePokemonTags';
 import { isDataFresh }          from '@/utils/cacheHelpers';
 import { createScopedLogger }   from '@/utils/logger';
+import {
+  getStorageNumber,
+  removeStorageKey,
+  setStorageNumber,
+  STORAGE_KEYS,
+} from '@/utils/storage';
 
 import { useVariantsStore }  from '@/features/variants/store/useVariantsStore';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
@@ -208,8 +214,8 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
   },
 
   async hydrateFromCache() {
-    const tagsTS = Number(localStorage.getItem('tagsTimestamp') || 0);
-    const ownTS  = Number(localStorage.getItem('ownershipTimestamp') || 0);
+    const tagsTS = getStorageNumber(STORAGE_KEYS.tagsTimestamp, 0);
+    const ownTS = getStorageNumber(STORAGE_KEYS.ownershipTimestamp, 0);
     const fresh       = !!tagsTS && isDataFresh(tagsTS);
     const needRebuild = ownTS > tagsTS;
 
@@ -248,7 +254,7 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
 
         await setSystemChildrenSnapshot(toSnapshotIds(emptySystem)).catch(() => {});
         await persistSystemMembershipsFromBuckets(emptyBuckets).catch(() => {});
-        localStorage.setItem('tagsTimestamp', Date.now().toString());
+        setStorageNumber(STORAGE_KEYS.tagsTimestamp, Date.now());
         await get().rebuildCustomTags();
         return;
       }
@@ -266,7 +272,7 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
 
       await persistSystemMembershipsFromBuckets(buckets).catch(() => {});
 
-      localStorage.setItem('tagsTimestamp', Date.now().toString());
+      setStorageNumber(STORAGE_KEYS.tagsTimestamp, Date.now());
 
       await get().rebuildCustomTags();
     } catch (e) {
@@ -291,7 +297,7 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
       customTagsLoading: true,
       foreignTags: null,
     });
-    localStorage.removeItem('tagsTimestamp');
+    removeStorageKey(STORAGE_KEYS.tagsTimestamp);
   },
 }));
 

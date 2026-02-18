@@ -3,6 +3,11 @@ import { initVariantsDB } from './init';
 import { VARIANTS_STORE } from './constants';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import { recordVariantPersistCommitMetrics } from '@/utils/perfTelemetry';
+import {
+  setStorageNumber,
+  setStorageString,
+  STORAGE_KEYS,
+} from '@/utils/storage';
 
 export async function putVariantsBulk<T>(data: T[]) {
   const db = await initVariantsDB();
@@ -60,9 +65,9 @@ async function drainVariantPersistQueue() {
       await putVariantsBulk(current.data as unknown[]);
       const persistCommittedMs = performance.now() - persistStartMs;
       const persistEndToEndMs = performance.now() - current.enqueuedAtMs;
-      localStorage.setItem('variantsTimestamp', String(current.timestamp));
+      setStorageNumber(STORAGE_KEYS.variantsTimestamp, current.timestamp);
       if (current.payloadHash) {
-        localStorage.setItem('variantsPayloadHash', current.payloadHash);
+        setStorageString(STORAGE_KEYS.variantsPayloadHash, current.payloadHash);
       }
       recordVariantPersistCommitMetrics({
         persistCommittedMs,

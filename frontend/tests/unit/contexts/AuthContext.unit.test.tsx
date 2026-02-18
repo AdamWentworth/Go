@@ -7,6 +7,7 @@ import type { User } from '@/types/auth';
 import {
   refreshTokenService,
 } from '@/services/authService';
+import { toast } from 'react-toastify';
 import {
   clearInstancesStore,
   clearAllTagsDB,
@@ -78,6 +79,15 @@ vi.mock('@/db/indexedDB', async () => {
   };
 });
 
+vi.mock('react-toastify', () => ({
+  toast: {
+    info: vi.fn(),
+    error: vi.fn(),
+    success: vi.fn(),
+    warn: vi.fn(),
+  },
+}));
+
 const AuthProbe = () => {
   const { isLoggedIn, isLoading, user } = useAuth();
 
@@ -112,8 +122,6 @@ describe('AuthContext', () => {
   });
 
   it('clears session and navigates to login when refresh token is expired on boot', async () => {
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
-
     const expiredUser = buildUser({
       accessTokenExpiry: new Date(Date.now() - 120_000).toISOString(),
       refreshTokenExpiry: new Date(Date.now() - 60_000).toISOString(),
@@ -131,7 +139,7 @@ describe('AuthContext', () => {
     );
     await waitFor(
       () =>
-        expect(alertSpy).toHaveBeenCalledWith(
+        expect(toast.info).toHaveBeenCalledWith(
           'Your session has expired, please log in again.',
         ),
       { timeout: 1500 },

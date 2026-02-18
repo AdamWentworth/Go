@@ -16,6 +16,7 @@ import { handleReProposeTrade } from '@/pages/Trades/handlers/handleReProposeTra
 import { handleThumbsUpTrade } from '@/pages/Trades/handlers/handleThumbsUpTrade';
 import { usePokemonDetails } from '@/pages/Trades/hooks/usePokemonDetails';
 import type { RelatedInstancesMap, TradeStatusFilter } from '@/pages/Trades/types';
+import { getStoredUsername } from '@/utils/storage';
 
 import './TradeCard.css';
 
@@ -106,18 +107,6 @@ const toCanonicalTrade = (input: TradeCardTrade): CanonicalTrade => {
   };
 };
 
-const readCurrentUsername = (): string => {
-  const storedUser = localStorage.getItem('user');
-  if (!storedUser) return '';
-
-  try {
-    const parsed = JSON.parse(storedUser) as { username?: unknown };
-    return typeof parsed.username === 'string' ? parsed.username : '';
-  } catch {
-    return '';
-  }
-};
-
 function TradeCard({
   trade,
   relatedInstances,
@@ -137,7 +126,7 @@ function TradeCard({
     Object.entries(trades).map(([tradeId, tradeEntry]) => [tradeId, toCanonicalTrade(tradeEntry)]),
   );
 
-  const currentUsername = readCurrentUsername();
+  const currentUsername = getStoredUsername() ?? '';
   const usernameProposed = canonicalTrade.username_proposed;
   const isCurrentUserProposer = usernameProposed === currentUsername;
   const resolvedInstances = (instances ?? {}) as Instances;

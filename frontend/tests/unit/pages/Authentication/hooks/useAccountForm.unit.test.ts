@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { toast } from 'react-toastify';
 
 import useAccountForm from '@/pages/Authentication/hooks/useAccountForm';
 import {
@@ -11,6 +12,15 @@ import type { User } from '@/types/auth';
 vi.mock('@/services/locationServices', () => ({
   fetchSuggestions: vi.fn(),
   fetchLocationOptions: vi.fn(),
+}));
+
+vi.mock('react-toastify', () => ({
+  toast: {
+    error: vi.fn(),
+    info: vi.fn(),
+    success: vi.fn(),
+    warn: vi.fn(),
+  },
 }));
 
 const mockedFetchSuggestions = vi.mocked(fetchSuggestions);
@@ -30,8 +40,6 @@ const baseUser: User = {
 };
 
 describe('useAccountForm', () => {
-  const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -141,7 +149,7 @@ describe('useAccountForm', () => {
     });
   });
 
-  it('alerts user when geolocation callback returns error', async () => {
+  it('shows toast error when geolocation callback returns error', async () => {
     const getCurrentPosition = vi.fn(
       (_success: PositionCallback, error?: PositionErrorCallback) => {
         error?.({
@@ -162,7 +170,7 @@ describe('useAccountForm', () => {
       } as never);
     });
 
-    expect(alertSpy).toHaveBeenCalledWith(
+    expect(toast.error).toHaveBeenCalledWith(
       'Unable to fetch your current location. Please enable location permissions.',
     );
   });

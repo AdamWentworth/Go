@@ -9,6 +9,7 @@ import { fromLonLat } from 'ol/proj';
 import XYZ from 'ol/source/XYZ';
 import VectorSource from 'ol/source/Vector';
 import { Circle, Fill, Style } from 'ol/style';
+import { toast } from 'react-toastify';
 
 import CloseButton from '@/components/CloseButton';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -104,9 +105,9 @@ function PartnerInfoModal({ partnerInfo, onClose }: PartnerInfoModalProps) {
   const handleCopyCode = async () => {
     try {
       await navigator.clipboard.writeText(formattedCode);
-      window.alert('Trainer code copied!');
+      toast.success('Trainer code copied!');
     } catch {
-      window.alert('Unable to copy trainer code.');
+      toast.error('Unable to copy trainer code.');
     }
   };
 

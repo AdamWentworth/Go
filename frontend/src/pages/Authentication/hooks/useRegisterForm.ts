@@ -1,6 +1,7 @@
 // useRegisterForm.ts
 
 import { useState, useCallback, ChangeEvent, FocusEvent } from 'react';
+import { toast } from 'react-toastify';
 import { fetchSuggestions, fetchLocationOptions } from '../../../services/locationServices';
 import type { Coordinates, LocationSuggestion } from '../../../types/location';
 import type { RegisterFormValues, RegisterFormErrors } from '../../../types/auth';
@@ -198,16 +199,16 @@ const useRegisterForm = (
             setLocationOptions(fetchedOptions);
             setShowOptionsOverlay(true);
           } catch {
-            alert('Unable to fetch location options. Please try again.');
+            toast.error('Unable to fetch location options. Please try again.');
           }
         },
         (err) => {
           log.error('Error fetching location:', err.message);
-          alert('Unable to fetch your current location. Please enable location permissions.');
+          toast.error('Unable to fetch your current location. Please enable location permissions.');
         }
       );
     } else if (allowLocation) {
-      alert('Geolocation is not supported by your browser.');
+      toast.error('Geolocation is not supported by your browser.');
     } else {
       setSuggestions([]);
       setSelectedCoordinates(null);
