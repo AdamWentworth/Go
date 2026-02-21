@@ -3,18 +3,13 @@
 import { createScopedLogger } from '@/utils/logger';
 import { buildUrl, parseJsonSafe, requestWithPolicy } from './httpClient';
 import { tradesContract } from '@shared-contracts/trades';
+import type {
+  PartnerInfo,
+  RevealPartnerInfoRequest,
+  TradeReference,
+} from '@shared-contracts/trades';
 
-interface Trade {
-  trade_id?: string;
-  usernames?: string[];
-  [key: string]: unknown;
-}
-
-export interface PartnerInfo {
-  trainerCode?: string | null;
-  pokemonGoName?: string | null;
-  location?: string | null;
-}
+export type { PartnerInfo } from '@shared-contracts/trades';
 
 const log = createScopedLogger('tradeService');
 
@@ -23,14 +18,15 @@ const log = createScopedLogger('tradeService');
  * @param trade - The entire trade object (including trade_id, usernames, etc.)
  * @returns {Promise<PartnerInfo>} - Partner info on success
  */
-export async function revealPartnerInfo(trade: Trade): Promise<PartnerInfo> {
+export async function revealPartnerInfo(trade: TradeReference): Promise<PartnerInfo> {
   try {
+    const payload: RevealPartnerInfoRequest = { trade };
     const response = await requestWithPolicy(
       buildUrl(import.meta.env.VITE_AUTH_API_URL, tradesContract.endpoints.revealPartnerInfo),
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trade }),
+        body: JSON.stringify(payload),
       },
     );
     const data = await parseJsonSafe<PartnerInfo>(response);

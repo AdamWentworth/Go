@@ -20,9 +20,9 @@ Shared API contracts/types used across clients (web now, mobile next).
 3. `auth.ts`
    - Auth endpoint path helpers.
 4. `trades.ts`
-   - Trade-related endpoint paths.
+   - Trade-related endpoint paths and transport DTOs (`PartnerInfo`, `TradeReference`).
 5. `location.ts`
-   - Location service endpoint paths.
+   - Location service endpoint paths and transport DTOs (`LocationBase`, `LocationResponse`).
 6. `events.ts`
    - Events service endpoint paths.
 7. `pokemon.ts`

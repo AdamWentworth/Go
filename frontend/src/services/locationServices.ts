@@ -5,7 +5,7 @@ import type {
   LocationBase,
   LocationSuggestion,
   LocationResponse,
-} from '@/types/location';
+} from '@shared-contracts/location';
 import {
   buildUrl,
   parseJsonSafe,

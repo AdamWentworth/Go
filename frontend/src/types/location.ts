@@ -5,18 +5,8 @@ export interface Coordinates {
   longitude: number;
 }
 
-export interface LocationBase {
-  name?: string;
-  city?: string;
-  state_or_province?: string;
-  country?: string;
-  [key: string]: unknown;
-}
-
-export interface LocationSuggestion extends LocationBase {
-  displayName: string;
-}
-
-export interface LocationResponse {
-  locations?: LocationBase[];
-}
+export type {
+  LocationBase,
+  LocationSuggestion,
+  LocationResponse,
+} from '@shared-contracts/location';
