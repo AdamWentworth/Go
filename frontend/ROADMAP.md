@@ -7,7 +7,7 @@ Last updated: 2026-02-21
 - Web frontend is stable, deployable, and CI-gated.
 - `P0` hardening is complete.
 - `P1` CSS cleanup/guardrails is complete.
-- Current focus is `P2.3`: first mobile vertical slices on top of the shared-contract shell.
+- Current focus is `P2.3`: stabilizing the first mobile vertical slices on top of shared contracts.
 
 ## 2) Architecture Decision (Locked)
 
@@ -61,8 +61,8 @@ Done:
    - events update envelope + SSE endpoint/query
    - trade record + related-instance payload schema
    - partner info/reveal payloads
-6. Trade UI handler/page transport types aligned to shared `TradeRecord`/`RelatedInstanceRecord` to remove remaining duplicated trade DTO definitions.
-7. Trade proposal request DTO centralized in shared contracts and consumed by both proposal builder + trade action.
+6. Trade UI handler/page transport types aligned to shared `TradeRecord`/`RelatedInstanceRecord`.
+7. Trade proposal request DTO centralized in shared contracts and consumed by trade proposal/action code.
 8. Receiver endpoint contract centralized (`receiverContract.endpoints.batchedUpdates`) and wired into web -> service worker config.
 9. Shared `buildUrl` helper centralized in contracts and consumed from frontend service layer.
 10. Shared-contracts checks expanded (`receiver.ts` required in CI preflight + endpoint contract test coverage).
@@ -81,6 +81,10 @@ Done:
 7. Session persistence added via `expo-secure-store` for mobile auth bootstrap continuity.
 8. Dedicated mobile CI workflow added (`.github/workflows/ci-mobile.yml`).
 
+Remaining:
+
+1. Validate the shell on physical device/emulator (`android` and/or `ios`) against live services.
+
 ### P2.3 Vertical Slices (In Progress)
 
 Done:
@@ -90,60 +94,35 @@ Done:
    - foreign instances lookup with private->public fallback
    - summary rendering for caught/trade/wanted counts
    - navigation wired from mobile home shell
-   - service-level tests added for autocomplete and lookup fallback behavior
-
-## 5) Remaining Work by Phase
-
-### P2.2 Mobile Bootstrap
-
-Objective: create runnable Expo app using shared contracts/core.
+   - service-level tests for autocomplete and lookup fallback behavior
+2. Mobile pokemon detail read baseline shipped:
+   - shared-contract-backed pokemon service (`/pokemons`)
+   - dedicated pokemon read-model adapters (list/detail transforms)
+   - Pokemon Catalog screen with filter + detail panel
+   - navigation wired from mobile home shell
+   - service and adapter tests
+3. Mobile instance list read baseline shipped:
+   - trainer lookup maps instances into typed read-models
+   - caught/trade/wanted ownership filtering in mobile UI
+   - instance list rendering for looked-up trainers (`variant_id` + `instance_id`)
+   - read-model tests for ownership filtering behavior
 
 Remaining:
 
-1. Validate the shell on physical device/emulator (`android` and/or `ios`) against live services.
+1. Add screen-level tests for mobile trainer/pokemon read screens.
+2. Polish empty/error/loading UI states for first slices.
+3. Validate first slices on device against live APIs.
 
-Exit criteria:
-
-1. Mobile app runs on simulator/device.
-2. Auth/session bootstrap path functional.
-3. Shared contracts imported directly by mobile.
-
-Estimate remaining: **0-1 iterations**.
-
-### P2.3 Vertical Slices (RN)
-
-Objective: prove end-to-end business value without web regressions.
-
-Suggested order:
-
-1. Trainer search list + user lookup.
-2. Pokemon detail read path.
-3. Instance list read path (caught/trade/wanted views).
-
-Exit criteria:
-
-1. At least one full production-grade slice is stable (`MVP gate`).
-2. Shared-core reuse is verified in real app flows.
-
-Estimate: **4-6 iterations**.
-
-### P2.4 Parity + Hardening
+## 5) Next Phase (P2.4) Preview
 
 Objective: move from MVP to near-full parity with explicit tradeoffs.
 
-Work:
+Planned work:
 
 1. Build parity matrix (web feature -> mobile status/owner/target).
 2. Port remaining high-value flows (trade management, profile/account, tag interactions).
 3. Add RN performance + crash + network resilience checks.
 4. Release hardening (offline/cache strategy, error UX, observability).
-
-Exit criteria:
-
-1. Near-full parity on prioritized features.
-2. Stable release candidate with monitoring and rollback plan.
-
-Estimate: **8-10 iterations**.
 
 ## 6) Priority Rules
 
@@ -159,18 +138,19 @@ Estimate: **8-10 iterations**.
 2. Offline/cache behavior divergence:
    - Mitigation: define shared cache contract + platform-specific storage adapters.
 3. UI parity drag from web-specific patterns:
-   - Mitigation: parity matrix and explicit “native-appropriate” UX decisions.
+   - Mitigation: parity matrix and explicit "native-appropriate" UX decisions.
 4. Scope creep during refactors:
    - Mitigation: keep extraction and feature work in separate iterations.
 
 ## 8) Next 3 Iterations (Immediate Plan)
 
 1. Finish remaining `P2.2` exit criteria (device/emulator validation against live services).
-2. Advance `P2.3` slice 2: pokemon detail read path contracts and data adapters.
-3. Advance `P2.3` slice 3: instance list read path (caught/trade/wanted views).
+2. Harden `P2.3` slices with screen-level tests and basic UX polish.
+3. Start `P2.4` parity matrix and select first high-value parity flow.
 
 ## 9) Definition of Success
 
 1. RN app is testable on device with shared-core contracts.
 2. Web remains stable with no regression in core flows.
-3. Shared packages become the single source of truth for backend-facing contracts.
+3. Shared packages remain the single source of truth for backend-facing contracts.
+

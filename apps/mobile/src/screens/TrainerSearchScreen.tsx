@@ -10,8 +10,14 @@ import {
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { OwnershipMode } from '@pokemongonexus/shared-contracts/domain';
 import type { InstancesMap } from '@pokemongonexus/shared-contracts/instances';
 import type { TrainerAutocompleteEntry } from '@pokemongonexus/shared-contracts/users';
+import {
+  filterInstancesByOwnership,
+  toInstanceListItems,
+  type InstanceListItem,
+} from '../features/instances/instanceReadModels';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import {
   fetchForeignInstancesByUsername,
@@ -31,6 +37,8 @@ type LookupSummary = {
 
 const MIN_QUERY_LEN = 2;
 const DEBOUNCE_MS = 300;
+const MAX_VISIBLE_INSTANCES = 80;
+const OWNERSHIP_MODES: OwnershipMode[] = ['caught', 'trade', 'wanted'];
 
 const summarizeInstances = (username: string, instances: InstancesMap): LookupSummary => {
   const values = Object.values(instances);
@@ -66,6 +74,8 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [lookupSummary, setLookupSummary] = useState<LookupSummary | null>(null);
+  const [lookupInstances, setLookupInstances] = useState<InstanceListItem[]>([]);
+  const [ownershipMode, setOwnershipMode] = useState<OwnershipMode>('caught');
 
   const trimmedQuery = query.trim();
   const canSearch = trimmedQuery.length >= MIN_QUERY_LEN;
@@ -110,12 +120,14 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
     setLookupLoading(true);
     setLookupError(null);
     setLookupSummary(null);
+    setLookupInstances([]);
 
     try {
       const outcome = await fetchForeignInstancesByUsername(lookupUsername);
       if (outcome.type === 'success') {
         setSelectedUsername(outcome.username);
         setLookupSummary(summarizeInstances(outcome.username, outcome.instances));
+        setLookupInstances(toInstanceListItems(outcome.instances));
         return;
       }
       if (outcome.type === 'notFound') {
@@ -151,6 +163,12 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
     return lines;
   }, [lookupSummary]);
 
+  const ownershipItems = useMemo(
+    () => filterInstancesByOwnership(lookupInstances, ownershipMode),
+    [lookupInstances, ownershipMode],
+  );
+  const visibleOwnershipItems = ownershipItems.slice(0, MAX_VISIBLE_INSTANCES);
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Trainer Search</Text>
@@ -165,6 +183,7 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
           setQuery(value);
           setSelectedUsername(null);
           setLookupSummary(null);
+          setLookupInstances([]);
           setLookupError(null);
         }}
         style={styles.input}
@@ -174,8 +193,7 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
       {searchError ? <Text style={styles.error}>{searchError}</Text> : null}
 
       {results.map((trainer) => {
-        const isSelected =
-          selectedUsername?.toLowerCase() === trainer.username.toLowerCase();
+        const isSelected = selectedUsername?.toLowerCase() === trainer.username.toLowerCase();
         return (
           <Pressable
             key={trainer.username}
@@ -183,6 +201,7 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
               setSelectedUsername(trainer.username);
               setQuery(trainer.username);
               setLookupSummary(null);
+              setLookupInstances([]);
               setLookupError(null);
             }}
             style={[styles.resultRow, isSelected ? styles.resultRowSelected : null]}
@@ -211,6 +230,39 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
             <Text key={line} style={styles.summaryLine}>
               {line}
             </Text>
+          ))}
+        </View>
+      ) : null}
+
+      {lookupSummary ? (
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>Instances ({ownershipMode})</Text>
+          <View style={styles.modeRow}>
+            {OWNERSHIP_MODES.map((mode) => {
+              const selected = mode === ownershipMode;
+              return (
+                <Pressable
+                  key={mode}
+                  onPress={() => setOwnershipMode(mode)}
+                  style={[styles.modePill, selected ? styles.modePillSelected : null]}
+                >
+                  <Text style={[styles.modePillText, selected ? styles.modePillTextSelected : null]}>
+                    {mode}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Text style={styles.summaryLine}>
+            Showing {visibleOwnershipItems.length} of {ownershipItems.length} matched instances.
+          </Text>
+
+          {visibleOwnershipItems.map((item) => (
+            <View key={item.instanceId} style={styles.instanceRow}>
+              <Text style={styles.instancePrimary}>{item.variantId || '(missing variant_id)'}</Text>
+              <Text style={styles.instanceSecondary}>instance_id: {item.instanceId}</Text>
+            </View>
           ))}
         </View>
       ) : null}
@@ -282,5 +334,43 @@ const styles = StyleSheet.create({
   summaryLine: {
     color: '#333',
   },
+  modeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginVertical: 4,
+  },
+  modePill: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#9ca3af',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#f3f4f6',
+  },
+  modePillSelected: {
+    borderColor: '#2563eb',
+    backgroundColor: '#dbeafe',
+  },
+  modePillText: {
+    color: '#374151',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  modePillTextSelected: {
+    color: '#1d4ed8',
+  },
+  instanceRow: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    padding: 8,
+    backgroundColor: '#f9fafb',
+  },
+  instancePrimary: {
+    fontWeight: '600',
+  },
+  instanceSecondary: {
+    color: '#6b7280',
+    fontSize: 12,
+  },
 });
-

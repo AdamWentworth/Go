@@ -4,12 +4,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../features/auth/AuthProvider';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LoginScreen } from '../screens/LoginScreen';
+import { PokemonCatalogScreen } from '../screens/PokemonCatalogScreen';
 import { TrainerSearchScreen } from '../screens/TrainerSearchScreen';
 
 export type RootStackParamList = {
   Login: undefined;
   Home: undefined;
   TrainerSearch: undefined;
+  PokemonCatalog: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -24,6 +26,7 @@ export const AppNavigator = () => {
           <>
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="TrainerSearch" component={TrainerSearchScreen} />
+            <Stack.Screen name="PokemonCatalog" component={PokemonCatalogScreen} />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
