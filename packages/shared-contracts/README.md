@@ -37,6 +37,7 @@ Shared API contracts/types used across clients (web now, mobile next).
    - Update transport DTOs (`UpdatesQueryParams`, `SseQueryParams`, `IncomingUpdateEnvelope`).
 9. `pokemon.ts`
    - Pokemon service endpoint paths.
+   - Pokemon API transport DTOs (`BasePokemon`, `Pokemons`, move/costume/raid/fusion subtypes).
 
 ## Usage (frontend)
 

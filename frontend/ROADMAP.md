@@ -56,6 +56,7 @@ Done:
    - auth session payloads
    - user-search outcomes
    - pokemon search request shape
+   - pokemon API base/subtype payload schema
    - events update envelope + SSE endpoint/query
    - partner info/reveal payloads
 
