@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { LoginResponse } from '@pokemongonexus/shared-contracts/auth';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../features/auth/AuthProvider';
+import { parseAllowLocationInput, validateAccountForm } from '../features/auth/accountValidation';
 import {
   deleteAccount,
   updateAuthAccount,
@@ -28,12 +29,26 @@ export const AccountScreen = ({ navigation }: AccountScreenProps) => {
       setError('Missing authenticated user.');
       return;
     }
+    const validationError = validateAccountForm({
+      pokemonGoName,
+      allowLocationInput,
+    });
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    const parsedAllowLocation = parseAllowLocationInput(allowLocationInput);
+    if (parsedAllowLocation.value === null) {
+      setError(parsedAllowLocation.error ?? 'Invalid allow location value.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const allowLocation = allowLocationInput.trim().toLowerCase() === 'true';
+      const allowLocation = parsedAllowLocation.value;
       await updateAuthAccount(user.user_id, {
         pokemonGoName: pokemonGoName.trim(),
         location: location.trim(),

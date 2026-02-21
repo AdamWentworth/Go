@@ -3,6 +3,7 @@ import { Button, ScrollView, StyleSheet, Text, TextInput, View } from 'react-nat
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../features/auth/AuthProvider';
+import { normalizeTrainerCode, validateRegisterForm } from '../features/auth/registerValidation';
 import { registerUser } from '../services/authService';
 import { commonStyles } from '../ui/commonStyles';
 
@@ -17,20 +18,24 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
   const [trainerCode, setTrainerCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const canSubmit = useMemo(
+  const validationError = useMemo(
     () =>
-      username.trim().length > 0 &&
-      email.trim().length > 0 &&
-      password.trim().length > 0 &&
-      pokemonGoName.trim().length > 0 &&
-      trainerCode.replace(/\s+/g, '').length === 12 &&
-      !loading,
-    [username, email, password, pokemonGoName, trainerCode, loading],
+      validateRegisterForm({
+        username,
+        email,
+        password,
+        pokemonGoName,
+        trainerCode,
+      }),
+    [username, email, password, pokemonGoName, trainerCode],
   );
+  const canSubmit = !loading && validationError === null;
 
   const handleRegister = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit) {
+      if (validationError) setError(validationError);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -39,7 +44,7 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
         email: email.trim(),
         password,
         pokemonGoName: pokemonGoName.trim(),
-        trainerCode: trainerCode.replace(/\s+/g, ''),
+        trainerCode: normalizeTrainerCode(trainerCode),
       });
 
       await signIn({ username: username.trim(), password });

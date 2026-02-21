@@ -141,6 +141,21 @@ Done:
    - wired creation actions into `PokemonCatalogScreen` (create caught/trade/wanted)
    - expanded collection mutations for mega/fusion toggles and tag bucket add/remove updates
    - added helper-level tests for instance creation and extended mutation semantics
+10. Mobile trade reconciliation UX shipped:
+   - `TradesScreen` now tracks sync outcome (`idle/success/failed`) for mutation visibility
+   - failed optimistic sync now exposes explicit retry action (`Retry Last Update`)
+   - mutation sync failures are surfaced as persistent sync errors while server state is reloaded
+   - screen-level tests cover successful mutation sync and failed->retry->success flow
+11. Mobile trade lifecycle action gating shipped:
+   - added status-based action rules (`proposed/pending/denied/cancelled/completed/deleted`)
+   - `TradesScreen` now shows allowed actions per selected trade status
+   - invalid actions are disabled at UI level for safer mutation flows
+   - dedicated unit tests added for action-rule behavior
+12. Mobile account/register validation parity pass shipped:
+   - extracted typed validation modules for register and account flows
+   - register flow now enforces username/email/password/trainer-code constraints before submit
+   - account flow now validates pokemon-go-name and strict allow-location parsing (`true/false`)
+   - added screen tests for register/account success + invalid-input behavior
 
 Remaining:
 
@@ -148,8 +163,9 @@ Remaining:
 2. Continue UX polish for edge network/error paths on mobile slices.
 3. Close functional parity gaps for:
    - full pokemon page interaction workflows (deeper edit overlays, validation rules, and custom tag management UX)
-   - trade backend reconciliation UX (conflict/retry/server-authoritative refresh after mutation)
+   - remaining trade lifecycle edge-case UX (confirmation UX + edge-case lifecycle messaging)
    - full search parameter parity (map/list UX + deeper web-specific interactions)
+   - final account/register UX polish (fine-grained field-level hints + server-error mapping)
 
 ## 5) Parity Snapshot (Web -> Mobile)
 

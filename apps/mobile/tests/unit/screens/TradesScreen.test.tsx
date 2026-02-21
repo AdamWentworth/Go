@@ -63,6 +63,8 @@ describe('TradesScreen', () => {
 
     expect(screen.getByText('proposed: 1')).toBeTruthy();
     expect(screen.getByText('proposed - t1')).toBeTruthy();
+    fireEvent.press(screen.getByText('proposed - t1'));
+    expect(screen.getByText('Allowed actions: accept, deny, cancel, delete')).toBeTruthy();
   });
 
   it('accept action mutates selected trade and syncs via receiver update', async () => {
@@ -113,5 +115,49 @@ describe('TradesScreen', () => {
         }),
       }),
     );
+    expect(screen.getByText('Last sync: success')).toBeTruthy();
+  });
+
+  it('shows retry after mutation sync failure and retries successfully', async () => {
+    mockedFetchTradesOverviewForUser.mockResolvedValue({
+      statusCounts: { proposed: 1 },
+      trades: [
+        {
+          trade_id: 't1',
+          trade_status: 'proposed',
+          username_proposed: 'ash',
+          username_accepting: 'misty',
+          pokemon_instance_id_user_proposed: 'i1',
+          pokemon_instance_id_user_accepting: 'i2',
+        },
+      ],
+    });
+    mockedSendTradeUpdate
+      .mockRejectedValueOnce(new Error('receiver unavailable'))
+      .mockResolvedValue({});
+
+    render(<TradesScreen navigation={baseNavigation as never} route={route as never} />);
+
+    fireEvent.press(screen.getByText('Load Trades'));
+
+    await waitFor(() => {
+      expect(screen.getByText('proposed - t1')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('proposed - t1'));
+    fireEvent.press(screen.getByText('Accept'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Trade update failed to sync/i)).toBeTruthy();
+      expect(screen.getByText('Last sync: failed')).toBeTruthy();
+      expect(screen.getByText('Retry Last Update')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('Retry Last Update'));
+
+    await waitFor(() => {
+      expect(mockedSendTradeUpdate).toHaveBeenCalledTimes(2);
+      expect(screen.getByText('Last sync: success')).toBeTruthy();
+    });
   });
 });

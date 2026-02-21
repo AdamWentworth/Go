@@ -12,8 +12,10 @@ import {
   reproposeTrade,
   toTradeMap,
   toTradeRows,
+  type TradeMap,
   type TradeRow,
 } from '../features/trades/tradeMutations';
+import { buildAllowedActionLabel, isTradeActionAllowed } from '../features/trades/tradeActionRules';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { sendTradeUpdate } from '../services/receiverService';
 import { fetchTradesOverviewForUser } from '../services/tradesService';
@@ -21,6 +23,9 @@ import { commonStyles } from '../ui/commonStyles';
 import { theme } from '../ui/theme';
 
 type TradesScreenProps = NativeStackScreenProps<RootStackParamList, 'Trades'>;
+type TradeMutationResult = { next: TradeMap; changed: TradeRow[] };
+type TradeMutation = (tradeMap: TradeMap) => TradeMutationResult;
+type SyncState = 'idle' | 'success' | 'failed';
 
 const MAX_ROWS = 80;
 
@@ -32,12 +37,13 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
   const [trades, setTrades] = useState<TradeRow[]>([]);
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
   const [mutationLoading, setMutationLoading] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncState, setSyncState] = useState<SyncState>('idle');
+  const [retryMutation, setRetryMutation] = useState<TradeMutation | null>(null);
 
   const loadTrades = async () => {
     setLoading(true);
     setError(null);
-    setTrades([]);
-    setStatusCounts({});
     try {
       if (!user?.user_id) {
         setError('You must be authenticated to load trades.');
@@ -75,13 +81,12 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
   };
 
   const runMutation = async (
-    mutate: (tradeMap: ReturnType<typeof toTradeMap>) => {
-      next: ReturnType<typeof toTradeMap>;
-      changed: TradeRow[];
-    },
+    mutate: TradeMutation,
   ) => {
     if (!selectedTradeId || mutationLoading) return;
     setMutationLoading(true);
+    setError(null);
+    setSyncError(null);
     const currentMap = toTradeMap(trades);
     const { next, changed } = mutate(currentMap);
     const nextRows = toTradeRows(next);
@@ -89,9 +94,17 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
     setStatusCounts(buildStatusCounts(nextRows));
     try {
       await syncMutation(changed);
+      setSyncState('success');
+      setRetryMutation(null);
       await loadTrades();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Failed to sync trade update.');
+      setSyncState('failed');
+      setRetryMutation(() => mutate);
+      setSyncError(
+        nextError instanceof Error
+          ? `Trade update failed to sync: ${nextError.message}`
+          : 'Trade update failed to sync.',
+      );
       await loadTrades();
     } finally {
       setMutationLoading(false);
@@ -106,13 +119,17 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
       <View style={commonStyles.actions}>
         <Button
           title={loading ? 'Loading...' : 'Load Trades'}
-          onPress={() => void loadTrades()}
+          onPress={() => {
+            setSyncError(null);
+            void loadTrades();
+          }}
           disabled={mutationLoading}
         />
         <Button title="Back" onPress={() => navigation.goBack()} />
       </View>
 
       {error ? <Text style={commonStyles.error}>{error}</Text> : null}
+      {syncError ? <Text style={commonStyles.error}>{syncError}</Text> : null}
 
       {statusEntries.length > 0 ? (
         <View style={commonStyles.card}>
@@ -129,6 +146,18 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
         Showing {visibleTrades.length} of {trades.length} trades.
       </Text>
       {mutationLoading ? <Text style={commonStyles.caption}>Syncing trade update...</Text> : null}
+      <Text style={commonStyles.caption}>
+        Last sync: {syncState}
+      </Text>
+      {retryMutation ? (
+        <View style={commonStyles.actions}>
+          <Button
+            title="Retry Last Update"
+            disabled={mutationLoading}
+            onPress={() => void runMutation(retryMutation)}
+          />
+        </View>
+      ) : null}
 
       {visibleTrades.map((trade) => (
         <Pressable
@@ -152,20 +181,21 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
       {selectedTrade ? (
         <View style={commonStyles.card}>
           <Text style={commonStyles.cardTitle}>Trade Actions ({selectedTrade.trade_id})</Text>
+          <Text style={commonStyles.caption}>{buildAllowedActionLabel(selectedTrade.trade_status)}</Text>
           <View style={commonStyles.actions}>
             <Button
               title="Accept"
-              disabled={mutationLoading}
+              disabled={mutationLoading || !isTradeActionAllowed(selectedTrade.trade_status, 'accept')}
               onPress={() => void runMutation((map) => acceptTrade(map, selectedTrade.trade_id))}
             />
             <Button
               title="Deny"
-              disabled={mutationLoading}
+              disabled={mutationLoading || !isTradeActionAllowed(selectedTrade.trade_status, 'deny')}
               onPress={() => void runMutation((map) => denyTrade(map, selectedTrade.trade_id))}
             />
             <Button
               title="Cancel"
-              disabled={mutationLoading}
+              disabled={mutationLoading || !isTradeActionAllowed(selectedTrade.trade_status, 'cancel')}
               onPress={() =>
                 void runMutation((map) =>
                   cancelTrade(map, selectedTrade.trade_id, user?.username ?? 'unknown'),
@@ -174,21 +204,21 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
             />
             <Button
               title="Complete"
-              disabled={mutationLoading}
+              disabled={mutationLoading || !isTradeActionAllowed(selectedTrade.trade_status, 'complete')}
               onPress={() =>
                 void runMutation((map) => completeTrade(map, selectedTrade.trade_id, user?.username ?? ''))
               }
             />
             <Button
               title="Re-Propose"
-              disabled={mutationLoading}
+              disabled={mutationLoading || !isTradeActionAllowed(selectedTrade.trade_status, 'repropose')}
               onPress={() =>
                 void runMutation((map) => reproposeTrade(map, selectedTrade.trade_id, user?.username ?? ''))
               }
             />
             <Button
               title="Delete"
-              disabled={mutationLoading}
+              disabled={mutationLoading || !isTradeActionAllowed(selectedTrade.trade_status, 'delete')}
               onPress={() => void runMutation((map) => deleteTrade(map, selectedTrade.trade_id))}
             />
           </View>
