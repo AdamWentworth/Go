@@ -12,6 +12,14 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { Pokemons } from '@pokemongonexus/shared-contracts/pokemon';
+import { useAuth } from '../features/auth/AuthProvider';
+import {
+  createInstanceFromPokemon,
+} from '../features/instances/createInstanceFromPokemon';
+import {
+  toReceiverPokemonPayload,
+  type InstanceStatusMutation,
+} from '../features/instances/instanceMutations';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import {
   findPokemonById,
@@ -19,6 +27,7 @@ import {
   toPokemonList,
 } from '../features/pokemon/pokemonReadModels';
 import { fetchPokemons } from '../services/pokemonService';
+import { sendPokemonUpdate } from '../services/receiverService';
 import { commonStyles } from '../ui/commonStyles';
 import { theme } from '../ui/theme';
 
@@ -27,11 +36,14 @@ type PokemonCatalogScreenProps = NativeStackScreenProps<RootStackParamList, 'Pok
 const MAX_VISIBLE_ROWS = 120;
 
 export const PokemonCatalogScreen = ({ navigation }: PokemonCatalogScreenProps) => {
+  const { user } = useAuth();
   const [pokemons, setPokemons] = useState<Pokemons>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [selectedPokemonId, setSelectedPokemonId] = useState<number | null>(null);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createMessage, setCreateMessage] = useState<string | null>(null);
 
   const loadPokemons = async () => {
     setLoading(true);
@@ -67,6 +79,33 @@ export const PokemonCatalogScreen = ({ navigation }: PokemonCatalogScreenProps) 
     return pokemon ? toPokemonDetail(pokemon) : null;
   }, [pokemons, selectedPokemonId]);
 
+  const selectedPokemon = useMemo(
+    () => findPokemonById(pokemons, selectedPokemonId),
+    [pokemons, selectedPokemonId],
+  );
+
+  const createInstance = async (status: InstanceStatusMutation) => {
+    if (!selectedPokemon || !user?.user_id || createLoading) return;
+    setCreateLoading(true);
+    setCreateMessage(null);
+    setError(null);
+    try {
+      const instance = createInstanceFromPokemon(selectedPokemon, status);
+      await sendPokemonUpdate(toReceiverPokemonPayload(instance));
+      setCreateMessage(
+        `Created ${status} instance ${instance.instance_id} (${instance.variant_id}).`,
+      );
+    } catch (nextError) {
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : 'Failed to create instance.',
+      );
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={commonStyles.title}>Pokemon Catalog</Text>
@@ -88,6 +127,7 @@ export const PokemonCatalogScreen = ({ navigation }: PokemonCatalogScreenProps) 
 
       {loading ? <ActivityIndicator /> : null}
       {error ? <Text style={commonStyles.error}>{error}</Text> : null}
+      {createMessage ? <Text style={commonStyles.success}>{createMessage}</Text> : null}
       {showNoData ? <Text style={commonStyles.caption}>No pokemon data loaded yet.</Text> : null}
       {showNoMatches ? <Text style={commonStyles.caption}>No pokemon matched your filter.</Text> : null}
 
@@ -142,6 +182,23 @@ export const PokemonCatalogScreen = ({ navigation }: PokemonCatalogScreenProps) 
             {selectedDetail.hasMegaEvolution ? 'yes' : 'no'} fusion=
             {selectedDetail.hasFusion ? 'yes' : 'no'}
           </Text>
+          <View style={commonStyles.actions}>
+            <Button
+              title={createLoading ? 'Creating...' : 'Create Caught Instance'}
+              onPress={() => void createInstance('caught')}
+              disabled={createLoading || !user?.user_id}
+            />
+            <Button
+              title="Create Trade Instance"
+              onPress={() => void createInstance('trade')}
+              disabled={createLoading || !user?.user_id}
+            />
+            <Button
+              title="Create Wanted Instance"
+              onPress={() => void createInstance('wanted')}
+              disabled={createLoading || !user?.user_id}
+            />
+          </View>
         </View>
       ) : null}
     </ScrollView>

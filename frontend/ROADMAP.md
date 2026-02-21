@@ -136,13 +136,18 @@ Done:
    - wired own-collection mutation actions into `PokemonCollectionScreen`
    - added optimistic local updates + receiver sync for pokemon updates
    - added mutation unit tests and screen-level mutation sync tests
+9. Mobile instance creation + extended mutation controls shipped:
+   - added typed instance creation helper from catalog pokemon data
+   - wired creation actions into `PokemonCatalogScreen` (create caught/trade/wanted)
+   - expanded collection mutations for mega/fusion toggles and tag bucket updates
+   - added helper-level tests for instance creation and extended mutation semantics
 
 Remaining:
 
 1. Validate first slices on device against live APIs.
 2. Continue UX polish for edge network/error paths on mobile slices.
 3. Close functional parity gaps for:
-   - full pokemon page interaction workflows (instance creation + fusion/mega/tag flows)
+   - full pokemon page interaction workflows (deeper edit overlays, validation rules, and custom tag management UX)
    - trade backend reconciliation UX (conflict/retry/server-authoritative refresh after mutation)
    - full search parameter parity (map/list UX + deeper web-specific interactions)
 

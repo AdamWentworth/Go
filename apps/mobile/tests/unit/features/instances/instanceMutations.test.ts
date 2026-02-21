@@ -1,6 +1,9 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import {
   mutateInstanceFavorite,
+  mutateInstanceFusion,
+  mutateInstanceMega,
+  mutateInstanceAddTag,
   mutateInstanceMostWanted,
   mutateInstanceNickname,
   mutateInstanceStatus,
@@ -116,6 +119,34 @@ describe('instanceMutations', () => {
     expect(nicknamed.last_update).toBe(107);
   });
 
+  it('applies mega/fusion/tag mutations safely', () => {
+    const megaEnabled = mutateInstanceMega(makeBaseInstance(), true, 'mega_x', 108);
+    expect(megaEnabled.mega).toBe(true);
+    expect(megaEnabled.is_mega).toBe(true);
+    expect(megaEnabled.mega_form).toBe('mega_x');
+
+    const megaDisabled = mutateInstanceMega(megaEnabled, false, null, 109);
+    expect(megaDisabled.mega).toBe(false);
+    expect(megaDisabled.is_mega).toBe(false);
+    expect(megaDisabled.mega_form).toBeNull();
+
+    const fusionEnabled = mutateInstanceFusion(makeBaseInstance(), true, 'dawn_wings', 110);
+    expect(fusionEnabled.is_fused).toBe(true);
+    expect(fusionEnabled.fusion_form).toBe('dawn_wings');
+    expect(fusionEnabled.fusion).toEqual({});
+
+    const fusionDisabled = mutateInstanceFusion(fusionEnabled, false, null, 111);
+    expect(fusionDisabled.is_fused).toBe(false);
+    expect(fusionDisabled.fusion_form).toBeNull();
+    expect(fusionDisabled.fusion).toBeNull();
+
+    const tags1 = mutateInstanceAddTag(makeBaseInstance(), 'caught', 'Great League', 112);
+    expect(tags1.caught_tags).toEqual(['Great League']);
+
+    const tags2 = mutateInstanceAddTag(tags1, 'caught', 'great league', 113);
+    expect(tags2.caught_tags).toEqual(['Great League']);
+  });
+
   it('builds receiver payload with key + instance_id', () => {
     const payload = toReceiverPokemonPayload(makeBaseInstance());
     expect(payload).toEqual(
@@ -127,4 +158,3 @@ describe('instanceMutations', () => {
     );
   });
 });
-

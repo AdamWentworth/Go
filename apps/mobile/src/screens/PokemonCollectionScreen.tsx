@@ -5,7 +5,10 @@ import type { OwnershipMode } from '@pokemongonexus/shared-contracts/domain';
 import type { InstancesMap, PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import { useAuth } from '../features/auth/AuthProvider';
 import {
+  mutateInstanceAddTag,
   mutateInstanceFavorite,
+  mutateInstanceFusion,
+  mutateInstanceMega,
   mutateInstanceMostWanted,
   mutateInstanceNickname,
   mutateInstanceStatus,
@@ -56,6 +59,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const [error, setError] = useState<string | null>(null);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const [nicknameDraft, setNicknameDraft] = useState('');
+  const [megaFormDraft, setMegaFormDraft] = useState('');
+  const [fusionFormDraft, setFusionFormDraft] = useState('');
+  const [tagDraft, setTagDraft] = useState('');
 
   const items = useMemo(() => toInstanceListItems(instancesMap), [instancesMap]);
 
@@ -75,6 +81,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     setInstancesMap({});
     setSelectedInstanceId(null);
     setNicknameDraft('');
+    setMegaFormDraft('');
+    setFusionFormDraft('');
+    setTagDraft('');
 
     try {
       const normalized = usernameInput.trim();
@@ -170,6 +179,34 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     );
   };
 
+  const applyMegaToggle = async () => {
+    if (!selectedInstanceId || !selectedInstance) return;
+    const nextEnabled = !Boolean(selectedInstance.is_mega || selectedInstance.mega);
+    const normalizedForm = megaFormDraft.trim() || null;
+    await updateInstanceAndSync(selectedInstanceId, (instance) =>
+      mutateInstanceMega(instance, nextEnabled, normalizedForm),
+    );
+  };
+
+  const applyFusionToggle = async () => {
+    if (!selectedInstanceId || !selectedInstance) return;
+    const nextEnabled = !Boolean(selectedInstance.is_fused);
+    const normalizedForm = fusionFormDraft.trim() || null;
+    await updateInstanceAndSync(selectedInstanceId, (instance) =>
+      mutateInstanceFusion(instance, nextEnabled, normalizedForm),
+    );
+  };
+
+  const addTag = async (bucket: 'caught' | 'trade' | 'wanted') => {
+    if (!selectedInstanceId) return;
+    const normalized = tagDraft.trim();
+    if (!normalized) return;
+    await updateInstanceAndSync(selectedInstanceId, (instance) =>
+      mutateInstanceAddTag(instance, bucket, normalized),
+    );
+    setTagDraft('');
+  };
+
   const filtered = useMemo(() => filterInstancesByOwnership(items, ownershipMode), [items, ownershipMode]);
   const visible = filtered.slice(0, MAX_ROWS);
   const summary = useMemo(() => summarize(items), [items]);
@@ -238,14 +275,18 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
           {visible.map((item) => {
             const selected = selectedInstanceId === item.instanceId;
             return (
-              <Pressable
-                key={item.instanceId}
-                onPress={() => {
-                  setSelectedInstanceId(item.instanceId);
-                  setNicknameDraft(item.nickname ?? '');
-                }}
-                style={[commonStyles.row, selected ? commonStyles.rowSelected : null]}
-              >
+                <Pressable
+                  key={item.instanceId}
+                  onPress={() => {
+                    setSelectedInstanceId(item.instanceId);
+                    setNicknameDraft(item.nickname ?? '');
+                    const selected = instancesMap[item.instanceId];
+                    setMegaFormDraft(String(selected?.mega_form ?? ''));
+                    setFusionFormDraft(String(selected?.fusion_form ?? ''));
+                    setTagDraft('');
+                  }}
+                  style={[commonStyles.row, selected ? commonStyles.rowSelected : null]}
+                >
                 <Text style={commonStyles.rowTitle}>{item.variantId || '(missing variant_id)'}</Text>
                 <Text style={commonStyles.rowSub}>instance_id: {item.instanceId}</Text>
                 <Text style={commonStyles.rowSub}>nickname: {item.nickname ?? '-'}</Text>
@@ -267,6 +308,21 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
           <Text style={commonStyles.caption}>
             favorite={String(Boolean(selectedInstance.favorite))}, most_wanted={String(Boolean(selectedInstance.most_wanted))}
           </Text>
+          <Text style={commonStyles.caption}>
+            mega={String(Boolean(selectedInstance.mega || selectedInstance.is_mega))} ({String(selectedInstance.mega_form ?? '-')})
+          </Text>
+          <Text style={commonStyles.caption}>
+            fused={String(Boolean(selectedInstance.is_fused))} ({String(selectedInstance.fusion_form ?? '-')})
+          </Text>
+          <Text style={commonStyles.caption}>
+            caught_tags={(selectedInstance.caught_tags ?? []).join(', ') || '-'}
+          </Text>
+          <Text style={commonStyles.caption}>
+            trade_tags={(selectedInstance.trade_tags ?? []).join(', ') || '-'}
+          </Text>
+          <Text style={commonStyles.caption}>
+            wanted_tags={(selectedInstance.wanted_tags ?? []).join(', ') || '-'}
+          </Text>
 
           {isOwnCollection ? (
             <>
@@ -285,6 +341,16 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                   onPress={() => void applyMostWantedToggle()}
                   disabled={syncing || !selectedInstance.is_wanted}
                 />
+                <Button
+                  title={selectedInstance.is_mega || selectedInstance.mega ? 'Disable Mega' : 'Enable Mega'}
+                  onPress={() => void applyMegaToggle()}
+                  disabled={syncing}
+                />
+                <Button
+                  title={selectedInstance.is_fused ? 'Disable Fusion' : 'Enable Fusion'}
+                  onPress={() => void applyFusionToggle()}
+                  disabled={syncing}
+                />
               </View>
 
               <TextInput
@@ -294,6 +360,31 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                 style={commonStyles.input}
               />
               <Button title="Save Nickname" onPress={() => void saveNickname()} disabled={syncing} />
+
+              <TextInput
+                placeholder="Mega Form"
+                value={megaFormDraft}
+                onChangeText={setMegaFormDraft}
+                style={commonStyles.input}
+              />
+              <TextInput
+                placeholder="Fusion Form"
+                value={fusionFormDraft}
+                onChangeText={setFusionFormDraft}
+                style={commonStyles.input}
+              />
+
+              <TextInput
+                placeholder="Tag"
+                value={tagDraft}
+                onChangeText={setTagDraft}
+                style={commonStyles.input}
+              />
+              <View style={commonStyles.actions}>
+                <Button title="Add Caught Tag" onPress={() => void addTag('caught')} disabled={syncing} />
+                <Button title="Add Trade Tag" onPress={() => void addTag('trade')} disabled={syncing} />
+                <Button title="Add Wanted Tag" onPress={() => void addTag('wanted')} disabled={syncing} />
+              </View>
             </>
           ) : null}
         </View>
