@@ -7,7 +7,7 @@ Last updated: 2026-02-21
 - Web frontend is stable, deployable, and CI-gated.
 - `P0` hardening is complete.
 - `P1` CSS cleanup/guardrails is complete.
-- Current focus is `P2.2`: mobile bootstrap + first runnable shell using shared contracts.
+- Current focus is `P2.3`: first mobile vertical slices on top of the shared-contract shell.
 
 ## 2) Architecture Decision (Locked)
 
@@ -80,6 +80,17 @@ Done:
 6. Mobile baseline checks green (`npm run typecheck`, `npm run lint`, `npm run test` in `apps/mobile`).
 7. Session persistence added via `expo-secure-store` for mobile auth bootstrap continuity.
 8. Dedicated mobile CI workflow added (`.github/workflows/ci-mobile.yml`).
+
+### P2.3 Vertical Slices (In Progress)
+
+Done:
+
+1. Mobile trainer search + user lookup baseline shipped:
+   - autocomplete via shared users contract
+   - foreign instances lookup with private->public fallback
+   - summary rendering for caught/trade/wanted counts
+   - navigation wired from mobile home shell
+   - service-level tests added for autocomplete and lookup fallback behavior
 
 ## 5) Remaining Work by Phase
 
@@ -155,8 +166,8 @@ Estimate: **8-10 iterations**.
 ## 8) Next 3 Iterations (Immediate Plan)
 
 1. Finish remaining `P2.2` exit criteria (device/emulator validation against live services).
-2. Begin `P2.3` slice 1: trainer search list + user lookup on mobile.
-3. Begin `P2.3` slice 2 prep: pokemon detail read path contracts and data adapters.
+2. Advance `P2.3` slice 2: pokemon detail read path contracts and data adapters.
+3. Advance `P2.3` slice 3: instance list read path (caught/trade/wanted views).
 
 ## 9) Definition of Success
 

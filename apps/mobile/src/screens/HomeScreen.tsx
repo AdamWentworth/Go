@@ -1,15 +1,20 @@
 import React from 'react';
 import { Button, StyleSheet, Text, View } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../features/auth/AuthProvider';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 
-export const HomeScreen = () => {
+type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
+
+export const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const { user, signOut } = useAuth();
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome</Text>
       <Text style={styles.username}>{user?.username ?? 'Trainer'}</Text>
-      <Text style={styles.caption}>P2.2 navigation + auth shell is wired.</Text>
+      <Text style={styles.caption}>P2.3 trainer search slice is now available.</Text>
+      <Button title="Trainer Search" onPress={() => navigation.navigate('TrainerSearch')} />
       <Button title="Sign Out" onPress={() => void signOut()} />
     </View>
   );
