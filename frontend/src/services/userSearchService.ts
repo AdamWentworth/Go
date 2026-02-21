@@ -1,15 +1,13 @@
 import type { Instances } from '@/types/instances';
 import { requestWithPolicy, parseJsonSafe } from '@/services/httpClient';
+import type {
+  ErrorEnvelope,
+  TrainerAutocompleteEntry,
+  UserInstancesEnvelope,
+} from '@shared-contracts/users';
+import { usersContract } from '@shared-contracts/users';
 
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL;
-
-type UserEnvelope = {
-  username?: string;
-  user?: {
-    username?: string;
-  };
-  instances?: Instances;
-};
 
 export type ForeignInstancesFetchOutcome =
   | {
@@ -23,10 +21,7 @@ export type ForeignInstancesFetchOutcome =
   | { type: 'forbidden' }
   | { type: 'error'; status: number; statusText: string };
 
-export type TrainerAutocompleteResult = {
-  username: string;
-  pokemonGoName?: string | null;
-};
+export type TrainerAutocompleteResult = TrainerAutocompleteEntry;
 
 const buildConditionalHeaders = (etag?: string | null): Record<string, string> =>
   etag ? { 'If-None-Match': etag } : {};
@@ -35,16 +30,15 @@ export async function fetchForeignInstancesByUsername(
   username: string,
   etag?: string | null,
 ): Promise<ForeignInstancesFetchOutcome> {
-  const lower = username.toLowerCase();
   const headers = buildConditionalHeaders(etag);
 
-  let response = await requestWithPolicy(`${USERS_API_URL}/instances/by-username/${encodeURIComponent(lower)}`, {
+  let response = await requestWithPolicy(buildUrlForUsersEndpoint(usersContract.endpoints.instancesByUsername(username)), {
     headers,
   });
 
   if (response.status === 403 || response.status === 404) {
     const publicResponse = await requestWithPolicy(
-      `${USERS_API_URL}/public/users/${encodeURIComponent(lower)}`,
+      buildUrlForUsersEndpoint(usersContract.endpoints.publicUserByUsername(username)),
       { headers },
     );
 
@@ -60,7 +54,7 @@ export async function fetchForeignInstancesByUsername(
     return { type: 'error', status: response.status, statusText: response.statusText };
   }
 
-  const body = await parseJsonSafe<UserEnvelope>(response);
+  const body = await parseJsonSafe<UserInstancesEnvelope<Instances>>(response);
   if (!body) {
     return { type: 'error', status: 502, statusText: 'Invalid JSON response' };
   }
@@ -80,13 +74,14 @@ export type TrainerAutocompleteOutcome =
   | { type: 'success'; results: TrainerAutocompleteResult[] }
   | { type: 'error'; message: string; status?: number };
 
+const buildUrlForUsersEndpoint = (pathWithQuery: string): string =>
+  `${USERS_API_URL}${pathWithQuery}`;
+
 export async function fetchTrainerAutocomplete(query: string): Promise<TrainerAutocompleteOutcome> {
-  const response = await requestWithPolicy(
-    `${USERS_API_URL}/autocomplete-trainers?q=${encodeURIComponent(query)}`,
-  );
+  const response = await requestWithPolicy(buildUrlForUsersEndpoint(usersContract.endpoints.autocompleteTrainers(query)));
 
   if (!response.ok) {
-    const body = await parseJsonSafe<{ message?: string }>(response);
+    const body = await parseJsonSafe<ErrorEnvelope>(response);
     return {
       type: 'error',
       status: response.status,
@@ -94,11 +89,10 @@ export async function fetchTrainerAutocomplete(query: string): Promise<TrainerAu
     };
   }
 
-  const body = await parseJsonSafe<TrainerAutocompleteResult[]>(response);
+  const body = await parseJsonSafe<TrainerAutocompleteEntry[]>(response);
   if (!Array.isArray(body)) {
     return { type: 'error', message: 'Invalid trainer autocomplete response' };
   }
 
   return { type: 'success', results: body };
 }
-

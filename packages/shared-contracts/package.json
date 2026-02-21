@@ -1,0 +1,11 @@
+{
+  "name": "@pokemongonexus/shared-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./users": "./src/users.ts",
+    "./search": "./src/search.ts"
+  }
+}

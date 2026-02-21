@@ -13,7 +13,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      '@tests': path.resolve(__dirname, 'tests')
+      '@tests': path.resolve(__dirname, 'tests'),
+      '@shared-contracts': path.resolve(__dirname, '../packages/shared-contracts/src')
     }
   },
   server : {

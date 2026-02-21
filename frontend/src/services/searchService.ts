@@ -4,17 +4,12 @@ import {
   requestWithPolicy,
   toHttpError,
 } from './httpClient';
-
-export type SearchQueryParams = Record<
-  string,
-  string | number | boolean | null | undefined
->;
-
-export type SearchResultRow = {
-  pokemon_id?: number;
-  distance?: number;
-  [key: string]: unknown;
-};
+import type {
+  SearchQueryParams,
+  SearchResultRow,
+} from '@shared-contracts/search';
+import { searchContract } from '@shared-contracts/search';
+export type { SearchQueryParams, SearchResultRow } from '@shared-contracts/search';
 
 const SEARCH_API_URL = import.meta.env.VITE_SEARCH_API_URL;
 
@@ -22,7 +17,7 @@ export async function searchPokemon(
   queryParams: SearchQueryParams,
 ): Promise<SearchResultRow[]> {
   const response = await requestWithPolicy(
-    buildUrl(SEARCH_API_URL, '/searchPokemon', queryParams),
+    buildUrl(SEARCH_API_URL, searchContract.endpoints.searchPokemon, queryParams),
     {
       method: 'GET',
     },

@@ -5,7 +5,8 @@
     "baseUrl": "src",
     "paths": {
       "@/*": ["*"],
-      "#tests/*": ["tests/*"]
+      "#tests/*": ["tests/*"],
+      "@shared-contracts/*": ["../../packages/shared-contracts/src/*"]
     },
     "target": "ESNext",
     "module": "ESNext",

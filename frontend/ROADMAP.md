@@ -102,7 +102,7 @@ Recommendation: Option A first. It gives lower risk and protects delivery while 
 
 ## Phase 2 - React Native Implementation (Priority: P2)
 
-- Status: Planned
+- Status: In Progress (P2.1 started, 2026-02-21)
 - Target window: 4-10 weeks (incremental)
 - Objective: ship native apps without destabilizing the web app.
 
@@ -126,6 +126,7 @@ This avoids forcing web-specific dependencies (DOM/OpenLayers/CSS) into mobile.
 1. P2.1 Monorepo/package extraction prep
    - Extract shared types and service contracts from frontend into a shared package.
    - Keep API semantics identical across platforms.
+   - Status: In Progress (shared `users` + `search` contracts extracted and wired, 2026-02-21)
 
 2. P2.2 Mobile bootstrap
    - Stand up Expo app with auth shell, navigation, and environment handling.
