@@ -31,6 +31,9 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<SearchResultRow[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(25);
+  const [selectedResultIndex, setSelectedResultIndex] = useState<number | null>(null);
 
   const setField = <K extends keyof typeof formState>(key: K, value: (typeof formState)[K]) => {
     setFormState((current) => ({ ...current, [key]: value }));
@@ -40,8 +43,11 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
 
   const runSearch = async () => {
     setLoading(true);
+    setHasSearched(true);
     setError(null);
     setResults([]);
+    setSelectedResultIndex(null);
+    setVisibleCount(25);
 
     try {
       const payload = await searchPokemon(queryPreview);
@@ -52,6 +58,13 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
       setLoading(false);
     }
   };
+
+  const visibleResults = useMemo(() => results.slice(0, visibleCount), [results, visibleCount]);
+  const hasMoreResults = visibleCount < results.length;
+  const selectedResult = useMemo(() => {
+    if (selectedResultIndex === null) return null;
+    return results[selectedResultIndex] ?? null;
+  }, [results, selectedResultIndex]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -343,7 +356,17 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
 
       <View style={commonStyles.actions}>
         <Button title={loading ? 'Searching...' : 'Search'} onPress={() => void runSearch()} />
-        <Button title="Reset Filters" onPress={() => setFormState(defaultSearchFormState)} />
+        <Button
+          title="Reset Filters"
+          onPress={() => {
+            setFormState(defaultSearchFormState);
+            setResults([]);
+            setHasSearched(false);
+            setSelectedResultIndex(null);
+            setVisibleCount(25);
+            setError(null);
+          }}
+        />
         <Button title="Back" onPress={() => navigation.goBack()} />
       </View>
 
@@ -355,14 +378,45 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
         </Text>
       ) : null}
       <Text style={commonStyles.caption}>Results: {results.length}</Text>
+      {hasSearched && !loading && !error && results.length === 0 ? (
+        <Text style={commonStyles.hint}>
+          No matches found. Try increasing range, relaxing filters, or switching ownership mode.
+        </Text>
+      ) : null}
 
-      {results.slice(0, 25).map((row, index) => (
-        <View key={`${index}-${String(row.pokemon_id ?? 'x')}`} style={commonStyles.row}>
+      {visibleResults.map((row, index) => {
+        const absoluteIndex = index;
+        const isSelected = selectedResultIndex === absoluteIndex;
+        return (
+        <Pressable
+          key={`${absoluteIndex}-${String(row.pokemon_id ?? 'x')}`}
+          onPress={() => setSelectedResultIndex(absoluteIndex)}
+          style={[commonStyles.row, isSelected ? commonStyles.rowSelected : null]}
+        >
           <Text style={commonStyles.rowTitle}>pokemon_id: {String(row.pokemon_id ?? '-')}</Text>
           <Text style={commonStyles.rowSub}>distance: {String(row.distance ?? '-')}</Text>
           <Text style={commonStyles.rowSub}>{JSON.stringify(row).slice(0, 140)}</Text>
+        </Pressable>
+      );
+      })}
+
+      {hasMoreResults ? (
+        <View style={commonStyles.actions}>
+          <Button
+            title={`Load More (${results.length - visibleCount} remaining)`}
+            onPress={() => setVisibleCount((count) => count + 25)}
+          />
         </View>
-      ))}
+      ) : null}
+
+      {selectedResult ? (
+        <View style={commonStyles.card}>
+          <Text style={styles.sectionTitle}>Selected Result</Text>
+          <Text style={commonStyles.rowSub}>pokemon_id: {String(selectedResult.pokemon_id ?? '-')}</Text>
+          <Text style={commonStyles.rowSub}>distance: {String(selectedResult.distance ?? '-')}</Text>
+          <Text style={commonStyles.rowSub}>{JSON.stringify(selectedResult, null, 2)}</Text>
+        </View>
+      ) : null}
     </ScrollView>
   );
 };

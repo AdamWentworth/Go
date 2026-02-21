@@ -21,6 +21,11 @@ const route = {
 } as const;
 
 describe('SearchScreen', () => {
+  const pressSearchButton = () => {
+    const labels = screen.getAllByText('Search');
+    fireEvent.press(labels[labels.length - 1] as never);
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -32,7 +37,7 @@ describe('SearchScreen', () => {
 
     fireEvent.changeText(screen.getByPlaceholderText('Pokemon ID'), '25');
     fireEvent.press(screen.getAllByText('Yes')[0] as never);
-    fireEvent.press(screen.getAllByText('Search')[1] as never);
+    pressSearchButton();
 
     await waitFor(() => {
       expect(mockedSearchPokemon).toHaveBeenCalledTimes(1);
@@ -44,5 +49,43 @@ describe('SearchScreen', () => {
       }),
     );
     expect(screen.getByText('Results: 1')).toBeTruthy();
+    fireEvent.press(screen.getByText('pokemon_id: 25'));
+    expect(screen.getByText('Selected Result')).toBeTruthy();
+  });
+
+  it('shows no-results hint after a completed empty search', async () => {
+    mockedSearchPokemon.mockResolvedValue([]);
+
+    render(<SearchScreen navigation={baseNavigation as never} route={route as never} />);
+    pressSearchButton();
+
+    await waitFor(() => {
+      expect(screen.getByText('Results: 0')).toBeTruthy();
+    });
+    expect(
+      screen.getByText(
+        'No matches found. Try increasing range, relaxing filters, or switching ownership mode.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('paginates long result sets with load-more', async () => {
+    mockedSearchPokemon.mockResolvedValue(
+      Array.from({ length: 30 }, (_, index) => ({
+        pokemon_id: index + 1,
+        distance: index + 0.1,
+      })),
+    );
+
+    render(<SearchScreen navigation={baseNavigation as never} route={route as never} />);
+    pressSearchButton();
+
+    await waitFor(() => {
+      expect(screen.getByText('Results: 30')).toBeTruthy();
+    });
+    expect(screen.getByText('Load More (5 remaining)')).toBeTruthy();
+
+    fireEvent.press(screen.getByText('Load More (5 remaining)'));
+    expect(screen.queryByText('Load More (5 remaining)')).toBeNull();
   });
 });

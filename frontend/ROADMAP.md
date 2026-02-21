@@ -161,6 +161,16 @@ Done:
    - added status-aware server error mapping for register/update/delete account actions
    - expanded unit coverage for validation state helpers + server error mapping
    - expanded screen coverage for friendly error UX in register/account paths
+14. Mobile trade confirmation + lifecycle messaging shipped:
+   - added action-level confirmation prompts before trade mutations
+   - added selected-trade lifecycle detail messaging (proposed/pending/completed/cancelled/denied/deleted)
+   - retained status-based action gating and reconciliation flow
+   - expanded trade screen tests to cover confirm/cancel mutation paths and lifecycle labels
+15. Mobile search UX parity pass shipped:
+   - added post-search no-results guidance state
+   - added selectable search result rows + selected-result detail card
+   - added incremental pagination for large result sets (`Load More`)
+   - expanded search screen tests for empty-state and pagination behavior
 
 Remaining:
 
@@ -168,8 +178,8 @@ Remaining:
 2. Continue UX polish for edge network/error paths on mobile slices.
 3. Close functional parity gaps for:
    - full pokemon page interaction workflows (deeper edit overlays, validation rules, and custom tag management UX)
-   - remaining trade lifecycle edge-case UX (confirmation UX + edge-case lifecycle messaging)
-   - full search parameter parity (map/list UX + deeper web-specific interactions)
+   - final trade lifecycle edge-case UX polish (fine-grained confirmation copy + optional audit details)
+   - full search parity finish (map/list interaction parity + web-specific advanced interactions)
 
 ## 5) Parity Snapshot (Web -> Mobile)
 
@@ -229,11 +239,12 @@ Planned work:
    - stricter mutation validation rules aligned with backend business constraints
    - richer custom-tag management UX (add/remove/manage across caught/trade/wanted buckets)
 2. Search parity:
-   - map/list parity and interaction model with web search
-   - filter/result UX parity and pagination/selection behavior
+   - filter/result UX parity and pagination/selection behavior: shipped baseline
+   - remaining: map/list parity and web-specific advanced interactions
 3. Trades parity:
-   - conflict/retry/server-authoritative reconciliation UX after mutation
-   - remaining edge-case lifecycle UX (delete/cancel/re-propose/complete outcomes)
+   - conflict/retry/server-authoritative reconciliation UX after mutation: shipped
+   - status-based actions + confirmation/lifecycle messaging: shipped
+   - optional final pass: richer audit details and status-specific help copy
 4. Account/Register parity:
    - baseline parity shipped (validation + field hints + mapped server errors)
    - optional final pass for fully native form affordances (inline field focus helpers)
