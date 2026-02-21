@@ -139,7 +139,7 @@ Done:
 9. Mobile instance creation + extended mutation controls shipped:
    - added typed instance creation helper from catalog pokemon data
    - wired creation actions into `PokemonCatalogScreen` (create caught/trade/wanted)
-   - expanded collection mutations for mega/fusion toggles and tag bucket updates
+   - expanded collection mutations for mega/fusion toggles and tag bucket add/remove updates
    - added helper-level tests for instance creation and extended mutation semantics
 
 Remaining:
@@ -201,3 +201,23 @@ Planned work:
 1. RN app is testable on device with shared-core contracts.
 2. Web remains stable with no regression in core flows.
 3. Shared packages remain the single source of truth for backend-facing contracts.
+
+## 11) 99% Parity Checklist (Open)
+
+1. Pokemon page parity:
+   - instance edit overlays and workflow sequencing aligned with web
+   - stricter mutation validation rules aligned with backend business constraints
+   - richer custom-tag management UX (add/remove/manage across caught/trade/wanted buckets)
+2. Search parity:
+   - map/list parity and interaction model with web search
+   - filter/result UX parity and pagination/selection behavior
+3. Trades parity:
+   - conflict/retry/server-authoritative reconciliation UX after mutation
+   - remaining edge-case lifecycle UX (delete/cancel/re-propose/complete outcomes)
+4. Account/Register parity:
+   - full validation and error-state parity with web forms
+   - polished submission/loading/success UX parity
+5. Platform hardening:
+   - real device validation on Android and iOS against live services
+   - resilience passes (network interruptions/offline behavior/retries)
+   - observability/crash hooks for mobile release confidence

@@ -4,6 +4,7 @@ import {
   mutateInstanceFusion,
   mutateInstanceMega,
   mutateInstanceAddTag,
+  mutateInstanceRemoveTag,
   mutateInstanceMostWanted,
   mutateInstanceNickname,
   mutateInstanceStatus,
@@ -145,6 +146,15 @@ describe('instanceMutations', () => {
 
     const tags2 = mutateInstanceAddTag(tags1, 'caught', 'great league', 113);
     expect(tags2.caught_tags).toEqual(['Great League']);
+
+    const tags3 = mutateInstanceAddTag(tags2, 'trade', 'regional', 114);
+    expect(tags3.trade_tags).toEqual(['regional']);
+
+    const tags4 = mutateInstanceRemoveTag(tags3, 'caught', 'great league', 115);
+    expect(tags4.caught_tags).toEqual([]);
+
+    const tags5 = mutateInstanceRemoveTag(tags4, 'trade', 'Regional', 116);
+    expect(tags5.trade_tags).toEqual([]);
   });
 
   it('builds receiver payload with key + instance_id', () => {

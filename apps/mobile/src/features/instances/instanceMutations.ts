@@ -174,6 +174,29 @@ export const mutateInstanceAddTag = (
   return withTimestamp({ ...instance, wanted_tags: next }, timestamp);
 };
 
+export const mutateInstanceRemoveTag = (
+  instance: PokemonInstance,
+  bucket: 'caught' | 'trade' | 'wanted',
+  rawTag: string,
+  timestamp = Date.now(),
+): PokemonInstance => {
+  const tag = normalizeTag(rawTag);
+  if (!tag) return instance;
+
+  const removeTag = (tags: string[] | null): string[] => {
+    const normalized = dedupeTags(tags ?? []);
+    return normalized.filter((existing) => existing.toLowerCase() !== tag.toLowerCase());
+  };
+
+  if (bucket === 'caught') {
+    return withTimestamp({ ...instance, caught_tags: removeTag(instance.caught_tags) }, timestamp);
+  }
+  if (bucket === 'trade') {
+    return withTimestamp({ ...instance, trade_tags: removeTag(instance.trade_tags) }, timestamp);
+  }
+  return withTimestamp({ ...instance, wanted_tags: removeTag(instance.wanted_tags) }, timestamp);
+};
+
 export const toReceiverPokemonPayload = (
   instance: PokemonInstance,
 ): Record<string, unknown> => {

@@ -11,6 +11,7 @@ import {
   mutateInstanceMega,
   mutateInstanceMostWanted,
   mutateInstanceNickname,
+  mutateInstanceRemoveTag,
   mutateInstanceStatus,
   toReceiverPokemonPayload,
   type InstanceStatusMutation,
@@ -25,6 +26,7 @@ import { sendPokemonUpdate } from '../services/receiverService';
 import { fetchForeignInstancesByUsername } from '../services/userSearchService';
 import { fetchUserOverview } from '../services/userOverviewService';
 import { commonStyles } from '../ui/commonStyles';
+import { theme } from '../ui/theme';
 
 type PokemonCollectionScreenProps = NativeStackScreenProps<RootStackParamList, 'PokemonCollection'>;
 
@@ -207,6 +209,16 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     setTagDraft('');
   };
 
+  const removeTag = async (
+    bucket: 'caught' | 'trade' | 'wanted',
+    tag: string,
+  ) => {
+    if (!selectedInstanceId) return;
+    await updateInstanceAndSync(selectedInstanceId, (instance) =>
+      mutateInstanceRemoveTag(instance, bucket, tag),
+    );
+  };
+
   const filtered = useMemo(() => filterInstancesByOwnership(items, ownershipMode), [items, ownershipMode]);
   const visible = filtered.slice(0, MAX_ROWS);
   const summary = useMemo(() => summarize(items), [items]);
@@ -324,6 +336,43 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
             wanted_tags={(selectedInstance.wanted_tags ?? []).join(', ') || '-'}
           </Text>
 
+          <Text style={commonStyles.caption}>Caught tag controls:</Text>
+          <View style={styles.tagRow}>
+            {(selectedInstance.caught_tags ?? []).map((tag) => (
+              <Pressable
+                key={`caught-${tag}`}
+                onPress={() => void removeTag('caught', tag)}
+                style={styles.tagPill}
+              >
+                <Text style={styles.tagPillText}>Remove caught tag: {tag}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={commonStyles.caption}>Trade tag controls:</Text>
+          <View style={styles.tagRow}>
+            {(selectedInstance.trade_tags ?? []).map((tag) => (
+              <Pressable
+                key={`trade-${tag}`}
+                onPress={() => void removeTag('trade', tag)}
+                style={styles.tagPill}
+              >
+                <Text style={styles.tagPillText}>Remove trade tag: {tag}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={commonStyles.caption}>Wanted tag controls:</Text>
+          <View style={styles.tagRow}>
+            {(selectedInstance.wanted_tags ?? []).map((tag) => (
+              <Pressable
+                key={`wanted-${tag}`}
+                onPress={() => void removeTag('wanted', tag)}
+                style={styles.tagPill}
+              >
+                <Text style={styles.tagPillText}>Remove wanted tag: {tag}</Text>
+              </Pressable>
+            ))}
+          </View>
+
           {isOwnCollection ? (
             <>
               <View style={commonStyles.actions}>
@@ -396,5 +445,22 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
 const styles = StyleSheet.create({
   container: {
     ...commonStyles.screenContainer,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  tagPill: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.borderStrong,
+    backgroundColor: theme.colors.surfaceAlt,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  tagPillText: {
+    fontSize: 12,
+    color: theme.colors.textTertiary,
   },
 });
