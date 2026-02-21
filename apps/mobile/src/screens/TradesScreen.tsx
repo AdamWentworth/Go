@@ -31,6 +31,7 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [trades, setTrades] = useState<TradeRow[]>([]);
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
+  const [mutationLoading, setMutationLoading] = useState(false);
 
   const loadTrades = async () => {
     setLoading(true);
@@ -79,7 +80,8 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
       changed: TradeRow[];
     },
   ) => {
-    if (!selectedTradeId) return;
+    if (!selectedTradeId || mutationLoading) return;
+    setMutationLoading(true);
     const currentMap = toTradeMap(trades);
     const { next, changed } = mutate(currentMap);
     const nextRows = toTradeRows(next);
@@ -87,18 +89,26 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
     setStatusCounts(buildStatusCounts(nextRows));
     try {
       await syncMutation(changed);
+      await loadTrades();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Failed to sync trade update.');
+      await loadTrades();
+    } finally {
+      setMutationLoading(false);
     }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={commonStyles.title}>Trades</Text>
-      <Text style={commonStyles.subtitle}>Read-only mobile baseline for trade overview</Text>
+      <Text style={commonStyles.subtitle}>Trade overview + mutation baseline</Text>
 
       <View style={commonStyles.actions}>
-        <Button title={loading ? 'Loading...' : 'Load Trades'} onPress={() => void loadTrades()} />
+        <Button
+          title={loading ? 'Loading...' : 'Load Trades'}
+          onPress={() => void loadTrades()}
+          disabled={mutationLoading}
+        />
         <Button title="Back" onPress={() => navigation.goBack()} />
       </View>
 
@@ -118,6 +128,7 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
       <Text style={commonStyles.caption}>
         Showing {visibleTrades.length} of {trades.length} trades.
       </Text>
+      {mutationLoading ? <Text style={commonStyles.caption}>Syncing trade update...</Text> : null}
 
       {visibleTrades.map((trade) => (
         <Pressable
@@ -144,14 +155,17 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
           <View style={commonStyles.actions}>
             <Button
               title="Accept"
+              disabled={mutationLoading}
               onPress={() => void runMutation((map) => acceptTrade(map, selectedTrade.trade_id))}
             />
             <Button
               title="Deny"
+              disabled={mutationLoading}
               onPress={() => void runMutation((map) => denyTrade(map, selectedTrade.trade_id))}
             />
             <Button
               title="Cancel"
+              disabled={mutationLoading}
               onPress={() =>
                 void runMutation((map) =>
                   cancelTrade(map, selectedTrade.trade_id, user?.username ?? 'unknown'),
@@ -160,18 +174,21 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
             />
             <Button
               title="Complete"
+              disabled={mutationLoading}
               onPress={() =>
                 void runMutation((map) => completeTrade(map, selectedTrade.trade_id, user?.username ?? ''))
               }
             />
             <Button
               title="Re-Propose"
+              disabled={mutationLoading}
               onPress={() =>
                 void runMutation((map) => reproposeTrade(map, selectedTrade.trade_id, user?.username ?? ''))
               }
             />
             <Button
               title="Delete"
+              disabled={mutationLoading}
               onPress={() => void runMutation((map) => deleteTrade(map, selectedTrade.trade_id))}
             />
           </View>

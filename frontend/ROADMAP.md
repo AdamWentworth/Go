@@ -123,8 +123,14 @@ Done:
    - trade mutation adapters for accept/deny/cancel/complete/re-propose/delete
    - optimistic in-screen mutation updates + status reaggregation
    - receiver batched update service adapter for trade update sync
+   - post-mutation server refresh for reconciliation after optimistic updates
    - unit coverage for trade mutation business rules
    - screen-level coverage for trade action + sync behavior
+7. Mobile search parameter surface expanded:
+   - extracted typed search query builder from form state
+   - expanded filter controls for flags, optional move/iv/background/costume fields, and trade booleans
+   - added query-builder unit tests to lock parameter normalization behavior
+   - updated screen-level search test assertions for advanced parameter propagation
 
 Remaining:
 
@@ -133,7 +139,7 @@ Remaining:
 3. Close functional parity gaps for:
    - full pokemon page interaction flows (create/edit/fusion/mega/tag workflows)
    - trade backend reconciliation UX (conflict/retry/server-authoritative refresh after mutation)
-   - full search parameter parity (web-level filters + map/list UX)
+   - full search parameter parity (map/list UX + deeper web-specific interactions)
 
 ## 5) Parity Snapshot (Web -> Mobile)
 

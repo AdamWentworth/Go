@@ -31,11 +31,18 @@ describe('SearchScreen', () => {
     render(<SearchScreen navigation={baseNavigation as never} route={route as never} />);
 
     fireEvent.changeText(screen.getByPlaceholderText('Pokemon ID'), '25');
+    fireEvent.press(screen.getAllByText('Yes')[0] as never);
     fireEvent.press(screen.getAllByText('Search')[1] as never);
 
     await waitFor(() => {
       expect(mockedSearchPokemon).toHaveBeenCalledTimes(1);
     });
+    expect(mockedSearchPokemon).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pokemon_id: 25,
+        shiny: true,
+      }),
+    );
     expect(screen.getByText('Results: 1')).toBeTruthy();
   });
 });
