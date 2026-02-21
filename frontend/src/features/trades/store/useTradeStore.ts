@@ -13,26 +13,18 @@ import {
 
 import { proposeTrade as proposeTradeService } from '@/features/trades/actions/proposeTrade';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import type {
+  RelatedInstanceRecord,
+  TradeRecord,
+} from '@shared-contracts/trades';
 
 const log = createScopedLogger('useTradeStore');
 
 type ProposeTradeInput = Parameters<typeof proposeTradeService>[0];
 type ProposeTradeOutput = Awaited<ReturnType<typeof proposeTradeService>>;
 
-export interface Trade {
-  trade_id: string;
-  trade_status: string;
-  pokemon_instance_id_user_proposed?: string | null;
-  pokemon_instance_id_user_accepting?: string | null;
-  trade_deleted_date?: string;
-  last_update?: number;
-  [key: string]: unknown;
-}
-
-export interface RelatedInstance {
-  instance_id: string;
-  [key: string]: unknown;
-}
+export type Trade = TradeRecord;
+export type RelatedInstance = RelatedInstanceRecord;
 
 // Backward-compatible type alias used by existing imports.
 export type Instance = RelatedInstance;

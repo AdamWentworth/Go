@@ -59,6 +59,7 @@ Done:
    - pokemon search request shape
    - pokemon API base/subtype payload schema
    - events update envelope + SSE endpoint/query
+   - trade record + related-instance payload schema
    - partner info/reveal payloads
 
 ## 5) Remaining Work by Phase

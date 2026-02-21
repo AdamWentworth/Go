@@ -31,7 +31,7 @@ Shared API contracts/types used across clients (web now, mobile next).
    - Auth endpoint path helpers.
    - Auth/session transport DTOs (`AuthUser`, `LoginResponse`, `RefreshTokenResponse`).
 7. `trades.ts`
-   - Trade-related endpoint paths and transport DTOs (`PartnerInfo`, `PartnerCoordinates`, `TradeReference`).
+   - Trade-related endpoint paths and transport DTOs (`TradeRecord`, `RelatedInstanceRecord`, `PartnerInfo`, `PartnerCoordinates`, `TradeReference`).
 8. `location.ts`
    - Location service endpoint paths and transport DTOs (`Coordinates`, `LocationBase`, `LocationResponse`).
 9. `events.ts`
