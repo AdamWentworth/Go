@@ -230,6 +230,10 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const saveNickname = async () => {
     if (!selectedInstanceId) return;
     const normalizedNickname = nicknameDraft.trim();
+    if (normalizedNickname.length > 50) {
+      setError('Nickname must be 50 characters or fewer.');
+      return;
+    }
     await updateInstanceAndSync(selectedInstanceId, (instance) =>
       mutateInstanceNickname(instance, normalizedNickname.length > 0 ? normalizedNickname : null),
     );
@@ -239,6 +243,10 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     if (!selectedInstanceId || !selectedInstance) return;
     const nextEnabled = !Boolean(selectedInstance.is_mega || selectedInstance.mega);
     const normalizedForm = megaFormDraft.trim() || null;
+    if (nextEnabled && !normalizedForm) {
+      setError('Mega form is required when enabling mega.');
+      return;
+    }
     await updateInstanceAndSync(selectedInstanceId, (instance) =>
       mutateInstanceMega(instance, nextEnabled, normalizedForm),
     );
@@ -248,6 +256,10 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     if (!selectedInstanceId || !selectedInstance) return;
     const nextEnabled = !Boolean(selectedInstance.is_fused);
     const normalizedForm = fusionFormDraft.trim() || null;
+    if (nextEnabled && !normalizedForm) {
+      setError('Fusion form is required when enabling fusion.');
+      return;
+    }
     await updateInstanceAndSync(selectedInstanceId, (instance) =>
       mutateInstanceFusion(instance, nextEnabled, normalizedForm),
     );
@@ -454,6 +466,10 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
 
               {editorSection === 'attributes' ? (
                 <>
+                  <Text style={commonStyles.hint}>Nickname max length: 50 characters.</Text>
+                  <Text style={commonStyles.hint}>
+                    Mega/Fusion form is required when enabling those states.
+                  </Text>
                   <View style={commonStyles.actions}>
                     <Button
                       title={selectedInstance.favorite ? 'Unset Favorite' : 'Set Favorite'}

@@ -180,15 +180,25 @@ Done:
    - added selected-trade audit detail lines (proposal/accept/complete/cancel/delete + canceller)
    - integrated audit detail rendering alongside lifecycle status hints
    - expanded lifecycle message unit tests and trade screen assertions
+18. Mobile search interaction polish shipped:
+   - added client-side result sorting controls (distance, pokemon id, username)
+   - added trainer jump CTA from selected result (`Open Trainer Collection`)
+   - retained selected-result detail panel and no-results guidance
+   - expanded search screen tests for sort behavior and trainer navigation flow
+19. Mobile pokemon attribute validation pass shipped:
+   - enforced nickname max length validation before mutation sync
+   - enforced mega/fusion form requirements when enabling those states
+   - added attribute-level validation hints in collection editor
+   - expanded collection screen tests for invalid nickname/mega-form mutation guards
 
 Remaining:
 
 1. Validate first slices on device against live APIs.
 2. Continue UX polish for edge network/error paths on mobile slices.
 3. Close functional parity gaps for:
-   - final pokemon workflow polish (deeper parity for advanced overlays + optional per-field validation messaging)
+   - final pokemon workflow polish (advanced overlay parity beyond current sectioned editor)
    - final trade lifecycle edge-case UX polish (fine-grained confirmation copy)
-   - full search parity finish (map/list interaction parity + web-specific advanced interactions)
+   - full search parity finish (map interaction parity + remaining web-specific advanced interactions)
 
 ## 5) Parity Snapshot (Web -> Mobile)
 
@@ -247,8 +257,8 @@ Planned work:
    - sectioned editor + custom tag management parity: shipped baseline
    - remaining: advanced overlay affordances and tighter field-level mutation hints
 2. Search parity:
-   - filter/result UX parity and pagination/selection behavior: shipped baseline
-   - remaining: map/list parity and web-specific advanced interactions
+   - filter/result UX parity, pagination/selection, and trainer navigation: shipped baseline
+   - remaining: map parity and web-specific advanced interactions
 3. Trades parity:
    - conflict/retry/server-authoritative reconciliation UX after mutation: shipped
    - status-based actions + confirmation/lifecycle messaging: shipped

@@ -14,8 +14,15 @@ import { commonStyles } from '../ui/commonStyles';
 import { theme } from '../ui/theme';
 
 type SearchScreenProps = NativeStackScreenProps<RootStackParamList, 'Search'>;
+type SearchSortMode = 'distance_asc' | 'distance_desc' | 'pokemon_id_asc' | 'username_asc';
 
 const OWNERSHIP_MODES: OwnershipMode[] = ['caught', 'trade', 'wanted'];
+const SORT_OPTIONS: { label: string; value: SearchSortMode }[] = [
+  { label: 'distance↑', value: 'distance_asc' },
+  { label: 'distance↓', value: 'distance_desc' },
+  { label: 'pokemon↑', value: 'pokemon_id_asc' },
+  { label: 'username↑', value: 'username_asc' },
+];
 const BOOL_OPTIONS: { label: string; value: 'true' | 'false' }[] = [
   { label: 'Yes', value: 'true' },
   { label: 'No', value: 'false' },
@@ -26,6 +33,24 @@ const TRI_BOOL_OPTIONS: { label: string; value: BooleanFilter }[] = [
   { label: 'No', value: 'false' },
 ];
 
+const toNumberSafe = (value: unknown, fallback = Number.MAX_SAFE_INTEGER): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+};
+
+const getResultUsername = (row: SearchResultRow): string | null => {
+  const candidates = ['username', 'trainer_username', 'user_name'];
+  for (const key of candidates) {
+    const value = row[key];
+    if (typeof value === 'string' && value.trim().length > 0) return value.trim();
+  }
+  return null;
+};
+
 export const SearchScreen = ({ navigation }: SearchScreenProps) => {
   const [formState, setFormState] = useState(defaultSearchFormState);
   const [loading, setLoading] = useState(false);
@@ -33,7 +58,8 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
   const [results, setResults] = useState<SearchResultRow[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [visibleCount, setVisibleCount] = useState(25);
-  const [selectedResultIndex, setSelectedResultIndex] = useState<number | null>(null);
+  const [selectedResult, setSelectedResult] = useState<SearchResultRow | null>(null);
+  const [sortMode, setSortMode] = useState<SearchSortMode>('distance_asc');
 
   const setField = <K extends keyof typeof formState>(key: K, value: (typeof formState)[K]) => {
     setFormState((current) => ({ ...current, [key]: value }));
@@ -46,7 +72,7 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
     setHasSearched(true);
     setError(null);
     setResults([]);
-    setSelectedResultIndex(null);
+    setSelectedResult(null);
     setVisibleCount(25);
 
     try {
@@ -59,12 +85,30 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
     }
   };
 
-  const visibleResults = useMemo(() => results.slice(0, visibleCount), [results, visibleCount]);
+  const sortedResults = useMemo(() => {
+    const rows = [...results];
+    switch (sortMode) {
+      case 'distance_desc':
+        return rows.sort((a, b) => toNumberSafe(b.distance, 0) - toNumberSafe(a.distance, 0));
+      case 'pokemon_id_asc':
+        return rows.sort((a, b) => toNumberSafe(a.pokemon_id) - toNumberSafe(b.pokemon_id));
+      case 'username_asc':
+        return rows.sort((a, b) => {
+          const aUsername = getResultUsername(a) ?? '~';
+          const bUsername = getResultUsername(b) ?? '~';
+          return aUsername.localeCompare(bUsername);
+        });
+      case 'distance_asc':
+      default:
+        return rows.sort((a, b) => toNumberSafe(a.distance) - toNumberSafe(b.distance));
+    }
+  }, [results, sortMode]);
+  const visibleResults = useMemo(() => sortedResults.slice(0, visibleCount), [sortedResults, visibleCount]);
   const hasMoreResults = visibleCount < results.length;
-  const selectedResult = useMemo(() => {
-    if (selectedResultIndex === null) return null;
-    return results[selectedResultIndex] ?? null;
-  }, [results, selectedResultIndex]);
+  const selectedUsername = useMemo(
+    () => (selectedResult ? getResultUsername(selectedResult) : null),
+    [selectedResult],
+  );
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -362,7 +406,7 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
             setFormState(defaultSearchFormState);
             setResults([]);
             setHasSearched(false);
-            setSelectedResultIndex(null);
+            setSelectedResult(null);
             setVisibleCount(25);
             setError(null);
           }}
@@ -383,14 +427,35 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
           No matches found. Try increasing range, relaxing filters, or switching ownership mode.
         </Text>
       ) : null}
+      {results.length > 0 ? (
+        <>
+          <Text style={commonStyles.caption}>Sort results by</Text>
+          <View style={commonStyles.pillRow}>
+            {SORT_OPTIONS.map((option) => {
+              const selected = option.value === sortMode;
+              return (
+                <Pressable
+                  key={option.value}
+                  onPress={() => setSortMode(option.value)}
+                  style={[commonStyles.pill, selected ? commonStyles.pillSelected : null]}
+                >
+                  <Text style={[commonStyles.pillText, selected ? commonStyles.pillTextSelected : null]}>
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </>
+      ) : null}
 
       {visibleResults.map((row, index) => {
         const absoluteIndex = index;
-        const isSelected = selectedResultIndex === absoluteIndex;
+        const isSelected = selectedResult === row;
         return (
         <Pressable
           key={`${absoluteIndex}-${String(row.pokemon_id ?? 'x')}`}
-          onPress={() => setSelectedResultIndex(absoluteIndex)}
+          onPress={() => setSelectedResult(row)}
           style={[commonStyles.row, isSelected ? commonStyles.rowSelected : null]}
         >
           <Text style={commonStyles.rowTitle}>pokemon_id: {String(row.pokemon_id ?? '-')}</Text>
@@ -414,7 +479,14 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
           <Text style={styles.sectionTitle}>Selected Result</Text>
           <Text style={commonStyles.rowSub}>pokemon_id: {String(selectedResult.pokemon_id ?? '-')}</Text>
           <Text style={commonStyles.rowSub}>distance: {String(selectedResult.distance ?? '-')}</Text>
+          <Text style={commonStyles.rowSub}>username: {selectedUsername ?? '-'}</Text>
           <Text style={commonStyles.rowSub}>{JSON.stringify(selectedResult, null, 2)}</Text>
+          {selectedUsername ? (
+            <Button
+              title="Open Trainer Collection"
+              onPress={() => navigation.navigate('PokemonCollection', { username: selectedUsername })}
+            />
+          ) : null}
         </View>
       ) : null}
     </ScrollView>

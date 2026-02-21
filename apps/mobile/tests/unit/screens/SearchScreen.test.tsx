@@ -31,7 +31,9 @@ describe('SearchScreen', () => {
   });
 
   it('runs search and renders result count', async () => {
-    mockedSearchPokemon.mockResolvedValue([{ pokemon_id: 25, distance: 1.5 }]);
+    mockedSearchPokemon.mockResolvedValue([
+      { pokemon_id: 25, distance: 1.5, username: 'misty' },
+    ]);
 
     render(<SearchScreen navigation={baseNavigation as never} route={route as never} />);
 
@@ -49,8 +51,11 @@ describe('SearchScreen', () => {
       }),
     );
     expect(screen.getByText('Results: 1')).toBeTruthy();
-    fireEvent.press(screen.getByText('pokemon_id: 25'));
+    fireEvent.press(screen.getAllByText('pokemon_id: 25')[0] as never);
     expect(screen.getByText('Selected Result')).toBeTruthy();
+    expect(screen.getByText('Open Trainer Collection')).toBeTruthy();
+    fireEvent.press(screen.getByText('Open Trainer Collection'));
+    expect(baseNavigation.navigate).toHaveBeenCalledWith('PokemonCollection', { username: 'misty' });
   });
 
   it('shows no-results hint after a completed empty search', async () => {
@@ -87,5 +92,23 @@ describe('SearchScreen', () => {
 
     fireEvent.press(screen.getByText('Load More (5 remaining)'));
     expect(screen.queryByText('Load More (5 remaining)')).toBeNull();
+  });
+
+  it('supports sorting by username', async () => {
+    mockedSearchPokemon.mockResolvedValue([
+      { pokemon_id: 3, distance: 5, username: 'zeta' },
+      { pokemon_id: 2, distance: 3, username: 'alpha' },
+    ]);
+
+    render(<SearchScreen navigation={baseNavigation as never} route={route as never} />);
+    pressSearchButton();
+
+    await waitFor(() => {
+      expect(screen.getByText('Results: 2')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('username↑'));
+    fireEvent.press(screen.getAllByText('pokemon_id: 2')[0] as never);
+    expect(screen.getByText('username: alpha')).toBeTruthy();
   });
 });
