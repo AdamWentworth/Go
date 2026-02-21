@@ -1,162 +1,165 @@
-# Frontend Engineering Roadmap
+# Frontend + React Native Roadmap
 
 Last updated: 2026-02-21
 
-This replaces the old tech-debt backlog and gives a practical execution plan from the current state.
+## 1) Snapshot
 
-## Current Position
+- Web frontend is stable, deployable, and CI-gated.
+- `P0` hardening is complete.
+- `P1` CSS cleanup/guardrails is complete.
+- Current focus is `P2`: ship React Native using a shared-core architecture.
 
-- Frontend status: stable and deployable with strong automated testing and CI gates.
-- Recent review score:
-  - Production readiness: 8.2/10
-  - Code quality/maintainability: 7.8/10
-  - Industry-practice alignment: 7.9/10
-- Primary gaps:
-  - hardening issues (date safety, accessibility semantics/enforcement, coverage gates)
-  - CSS scale/consistency cost
-  - mobile strategy (React Native) not yet implemented
+## 2) Architecture Decision (Locked)
 
-## Execution Order (Recommended)
+We are using:
 
-1. Fix hardening risks first.
-2. Standardize CSS system and reduce styling entropy.
-3. Implement React Native via shared core + separate UI layers.
+1. Shared core packages (`packages/*`) for contracts, domain logic, and reusable non-UI logic.
+2. Separate UI applications for each platform:
+   - Web: React + Vite
+   - Mobile: React Native + Expo
 
-Reason: mobile expansion is expensive; it should start from a hardened, stable web foundation.
+We are not doing a DOM-in-native strategy as the primary path.
 
-## Phase 0 - Hardening and Guardrails (Priority: P0)
+## 3) Delivery Targets
 
-- Status: Completed (2026-02-18)
-- Target window: 1-2 weeks
-- Objective: eliminate avoidable runtime/accessibility/quality-gate regressions.
+1. RN MVP ready for real device testing: **8-12 iterations**.
+2. Near-full web feature replica in RN: **16-22 iterations**.
 
-### Work Items
+One iteration = one scoped, test-backed change set that keeps CI green.
 
-1. P0.1 Date safety normalization
-   - Replace unsafe `toISOString()` usage with safe date-format helper where invalid input can occur.
-   - Add unit tests for invalid/empty date input behavior.
+## 4) Completed Work
 
-2. P0.2 Accessibility semantics and keyboard support
-   - Replace clickable non-semantic containers with proper interactive elements where applicable.
-   - Ensure keyboard activation and focus states are preserved.
-   - Add role/name expectations in affected view tests.
+### P0 Hardening (Done)
 
-3. P0.3 Accessibility lint enforcement
-   - Add `eslint-plugin-jsx-a11y` and a baseline ruleset.
-   - Fix current violations and keep lint clean in CI.
+1. Date safety normalization.
+2. Accessibility semantics/keyboard support.
+3. A11y lint enforcement in CI.
+4. Coverage gate enforcement.
 
-4. P0.4 Coverage policy gate
-   - Add minimum coverage thresholds for critical areas (start conservative, ratchet up).
-   - Keep current pass/fail tests; add coverage fail-fast in CI.
+### P1 CSS Governance (Done)
 
-### Definition of Done
+1. Token layer rollout.
+2. CSS architecture boundaries and conventions.
+3. Large file split/reduction.
+4. Stylelint enforcement in CI.
 
-1. No known invalid-date crash paths in search/trade list rendering.
-2. Search list interactions are keyboard-accessible and screen-reader sane.
-3. A11y lint runs in CI and is blocking.
-4. Coverage thresholds are enforced and green.
+### P2.1 Shared Extraction (In Progress)
 
-## Phase 1 - CSS System Cleanup (Priority: P1)
+Done:
 
-- Status: Completed (2026-02-21)
-- Target window: 2-4 weeks
-- Objective: keep vanilla CSS (or evolve carefully) while making it scalable and maintainable.
+1. Shared endpoint contracts extracted for `users`, `search`, `auth`, `trades`, `location`, `events`, `pokemon`.
+2. Shared common response envelope type extracted (`ApiResponse<T>`).
+3. Shared domain normalizers extracted.
+4. CI preflight added for shared-contracts wiring.
+5. Shared DTOs centralized and consumed by web for:
+   - user overview
+   - auth session payloads
+   - user-search outcomes
+   - pokemon search request shape
+   - events update envelope + SSE endpoint/query
+   - partner info/reveal payloads
 
-### Decision Gate
+## 5) Remaining Work by Phase
 
-Choose one of the following before implementation:
+### P2.1 Shared-Core Completion (Now)
 
-1. Option A (Recommended): keep vanilla CSS and enforce structure.
-2. Option B: migrate to utility-first styling (higher churn now, potentially faster feature velocity later).
+Objective: finish transport/domain extraction so mobile can consume stable packages.
 
-Recommendation: Option A first. It gives lower risk and protects delivery while reducing CSS debt.
+Remaining:
 
-### Work Items (Option A Path)
+1. Sweep for any remaining frontend-local transport DTOs and endpoint string duplication.
+2. Move reusable non-UI helpers from `frontend/src` to shared packages where low-risk.
+3. Add/expand contract tests for extracted modules.
+4. Lock package-level versioning/release conventions (internal is fine, but explicit).
 
-1. P1.1 Design token layer
-   - Introduce centralized CSS variables for spacing, typography, color, z-index, motion.
-   - Remove repeated hard-coded values in largest CSS files first.
-   - Status: Completed (initial rollout, 2026-02-18)
+Exit criteria:
 
-2. P1.2 CSS architecture boundaries
-   - Define folder conventions for shared primitives vs feature-level styles.
-   - Enforce naming pattern and file size guidance for new edits.
-   - Status: Completed (policy and conventions documented, 2026-02-18)
+1. Web uses shared contracts for all backend boundaries.
+2. No duplicated transport DTO definitions across services.
+3. Contract tests + typecheck + lint all green.
 
-3. P1.3 Large-file reduction
-   - Split highest-cost CSS files into cohesive modules (Search/Trades first).
-   - Keep selectors local and reduce cascade depth.
-   - Status: Completed (Search/Trades high-cost files split, 2026-02-18)
+Estimated remaining: **2-4 iterations**.
 
-4. P1.4 Styling quality checks
-   - Add Stylelint (or equivalent) with agreed rules.
-   - Run in CI as non-blocking first, then blocking once clean.
-   - Status: Completed (Stylelint wired and blocking in CI, 2026-02-21)
+### P2.2 Mobile Bootstrap
 
-### Definition of Done
+Objective: create runnable Expo app using shared contracts/core.
 
-1. Tokens are used in key high-churn areas.
-2. Largest CSS files are reduced/split with no behavior regressions.
-3. Style linting is active in CI.
-4. New styling work follows a documented standard.
+Work:
 
-## Phase 2 - React Native Implementation (Priority: P2)
+1. Scaffold `apps/mobile` with Expo + TS + lint/test baseline.
+2. Configure env/runtime config for API endpoints.
+3. Wire auth shell + navigation skeleton.
+4. Consume shared contracts in mobile service layer.
 
-- Status: In Progress (P2.1 started, 2026-02-21)
-- Target window: 4-10 weeks (incremental)
-- Objective: ship native apps without destabilizing the web app.
+Exit criteria:
 
-### Architecture Direction
+1. Mobile app runs on simulator/device.
+2. Auth/session bootstrap path functional.
+3. Shared contracts imported directly by mobile.
 
-Use a shared-domain model, not a full single-UI model:
+Estimate: **2-3 iterations**.
 
-1. Shared packages:
-   - types
-   - API client contracts
-   - domain logic/state transforms
-   - validators/formatters
-2. Separate UI layers:
-   - web (React + Vite)
-   - mobile (React Native/Expo)
+### P2.3 Vertical Slices (RN)
 
-This avoids forcing web-specific dependencies (DOM/OpenLayers/CSS) into mobile.
+Objective: prove end-to-end business value without web regressions.
 
-### Work Items
+Suggested order:
 
-1. P2.1 Monorepo/package extraction prep
-   - Extract shared types and service contracts from frontend into a shared package.
-   - Keep API semantics identical across platforms.
-   - Status: In Progress (shared `users`, `search`, `auth`, `trades`, `location`, `events`, `pokemon` contracts extracted/wired; shared domain normalizers added; CI preflight guard added for package resolution; `UserOverview`, auth session DTOs, user-search outcomes, canonical pokemon search request DTO, events update DTOs, and `PartnerInfo` shapes centralized in shared contracts and consumed by web, 2026-02-21)
+1. Trainer search list + user lookup.
+2. Pokemon detail read path.
+3. Instance list read path (caught/trade/wanted views).
 
-2. P2.2 Mobile bootstrap
-   - Stand up Expo app with auth shell, navigation, and environment handling.
-   - Connect to existing backend endpoints through shared service layer.
+Exit criteria:
 
-3. P2.3 Vertical slice pilot
-   - Implement one end-to-end slice on mobile (recommended: Search list mode, then Pokemon detail).
-   - Reuse shared logic package; implement native UI independently.
+1. At least one full production-grade slice is stable (`MVP gate`).
+2. Shared-core reuse is verified in real app flows.
 
-4. P2.4 Platform parity plan
-   - Create explicit parity matrix (web feature, mobile status, owner, target release).
-   - Roll out remaining features by priority/value.
+Estimate: **4-6 iterations**.
 
-### Definition of Done
+### P2.4 Parity + Hardening
 
-1. Shared package consumed by web and mobile.
-2. Mobile app ships at least one production-grade vertical slice.
-3. No web regression caused by shared extraction work.
-4. Parity roadmap is explicit and tracked.
+Objective: move from MVP to near-full parity with explicit tradeoffs.
 
-## Parallel Constraints and Rules
+Work:
 
-1. No business-logic behavior changes without tests in the same PR.
-2. Keep naming canonical across services and frontend:
-   - `caught`, `trade`, `wanted`, `variant_id`, `instance_id`
-3. Keep verbose logs dev-only.
-4. Maintain CI green at each phase step.
+1. Build parity matrix (web feature -> mobile status/owner/target).
+2. Port remaining high-value flows (trade management, profile/account, tag interactions).
+3. Add RN performance + crash + network resilience checks.
+4. Release hardening (offline/cache strategy, error UX, observability).
 
-## Immediate Next Sprint Plan
+Exit criteria:
 
-1. Start Phase 2.1 by extracting shared API contracts/types into a reusable package.
-2. Create the minimal Expo bootstrap app with shared environment loading.
-3. Keep web CI green while shared extraction lands incrementally.
+1. Near-full parity on prioritized features.
+2. Stable release candidate with monitoring and rollback plan.
+
+Estimate: **8-10 iterations**.
+
+## 6) Priority Rules
+
+1. No business logic behavior change without tests in same iteration.
+2. Keep canonical naming: `caught`, `trade`, `wanted`, `variant_id`, `instance_id`.
+3. Dev logs enabled in dev; suppressed in prod.
+4. Keep CI green every iteration (`test`, `typecheck`, `lint`, contract checks).
+
+## 7) Risks and Mitigations
+
+1. Map stack mismatch (OpenLayers web vs RN maps):
+   - Mitigation: isolate map logic behind adapter interfaces before full UI parity work.
+2. Offline/cache behavior divergence:
+   - Mitigation: define shared cache contract + platform-specific storage adapters.
+3. UI parity drag from web-specific patterns:
+   - Mitigation: parity matrix and explicit “native-appropriate” UX decisions.
+4. Scope creep during refactors:
+   - Mitigation: keep extraction and feature work in separate iterations.
+
+## 8) Next 3 Iterations (Immediate Plan)
+
+1. Complete remaining `P2.1` DTO/contract sweep and remove duplicated service payload types.
+2. Extract next safe shared non-UI utilities used by both search + user flows.
+3. Add/expand contract tests to lock shared API boundaries, then cut over to `P2.2` mobile scaffold.
+
+## 9) Definition of Success
+
+1. RN app is testable on device with shared-core contracts.
+2. Web remains stable with no regression in core flows.
+3. Shared packages become the single source of truth for backend-facing contracts.

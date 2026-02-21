@@ -22,7 +22,12 @@ import type { Instances } from '@/types/instances';
 import { fetchUpdates } from '../services/sseService';
 import { getDeviceId }  from '../utils/deviceID';
 import { createScopedLogger } from '@/utils/logger';
-import type { IncomingUpdateEnvelope } from '@shared-contracts/events';
+import { buildUrl } from '@/services/httpClient';
+import { eventsContract } from '@shared-contracts/events';
+import type {
+  IncomingUpdateEnvelope,
+  SseQueryParams,
+} from '@shared-contracts/events';
 
 /* ---------- type helpers ---------- */
 type PokemonUpdateData = Instances;
@@ -94,7 +99,14 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
     if (!user) return;
 
     closeSSE();
-    const url = `${import.meta.env.VITE_EVENTS_API_URL}/sse?device_id=${deviceIdRef.current}`;
+    const queryParams: SseQueryParams = {
+      device_id: deviceIdRef.current,
+    };
+    const url = buildUrl(
+      import.meta.env.VITE_EVENTS_API_URL,
+      eventsContract.endpoints.sse,
+      queryParams,
+    );
 
     try {
       const es = new EventSource(url, { withCredentials: true });

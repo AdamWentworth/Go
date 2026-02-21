@@ -46,6 +46,7 @@ describe('shared contracts', () => {
     expect(locationContract.endpoints.autocomplete).toBe('/autocomplete');
     expect(locationContract.endpoints.reverse).toBe('/reverse');
     expect(eventsContract.endpoints.getUpdates).toBe('/getUpdates');
+    expect(eventsContract.endpoints.sse).toBe('/sse');
     expect(pokemonContract.endpoints.pokemons).toBe('/pokemons');
   });
 });

@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./users": "./src/users.ts",
     "./search": "./src/search.ts",
+    "./common": "./src/common.ts",
     "./domain": "./src/domain.ts",
     "./auth": "./src/auth.ts",
     "./trades": "./src/trades.ts",

@@ -1,12 +1,17 @@
 export const eventsContract = {
   endpoints: {
     getUpdates: '/getUpdates',
+    sse: '/sse',
   },
 } as const;
 
 export interface UpdatesQueryParams extends Record<string, string> {
   device_id: string;
   timestamp: string;
+}
+
+export interface SseQueryParams extends Record<string, string> {
+  device_id: string;
 }
 
 export interface IncomingUpdateEnvelope<
