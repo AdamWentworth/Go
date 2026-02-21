@@ -1,0 +1,294 @@
+/* TradeCard.base.css */
+
+/* =======================
+   BASE (GLOBAL) STYLES
+   ======================= */
+
+/* Layout and container styling */
+.trade-card .trade-pokemon {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  padding: var(--space-3); /* You can move this to a media query if it changes, but it appears used as a default */
+}
+
+.trade-card p,
+.trade-card h4 {
+  margin-block-start: 4px;
+  margin-block-end: 4px;
+}
+
+/* Pokemon container styling */
+.trade-card .pokemon {
+  flex: 1;
+  width: 5rem; /* Adjust width as needed */
+  height: auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Center column (icon + buttons) */
+.trade-card .center-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  /* If this is part of a grid layout by default, you can keep grid-column: 2 / 3 outside or inside a media query 
+     depending on whether it changes. If it’s always the same, leave it here.
+  */
+  grid-column: 2 / 3;
+}
+
+/* Trade icon default styling */
+.trade-card .trade-icon {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  filter: drop-shadow(var(--shadow-image));
+}
+
+/* Default size for trade icon images */
+.trade-card .trade-icon img {
+  width: 50px;
+  height: 50px;
+}
+
+/* Pokemon image container + images */
+.trade-card .pokemon-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+/* Images get a drop-shadow and are fully contained */
+.trade-card .pokemon-image-container img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(var(--shadow-image));
+}
+
+/* Lucky/backdrop layering */
+.trade-card .image-wrapper {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.trade-card .lucky-backdrop-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+}
+
+.trade-card .lucky-backdrop {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.trade-card .list-view-gender-icon {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+}
+
+/* Hearts, lucky container images */
+.trade-card .hearts-lucky-container img {
+  margin-top: var(--space-2);
+  width: 2rem;
+  height: auto;
+}
+
+.trade-card .hearts img {
+  width: 1rem;
+  height: auto;
+  margin-bottom: -5px;
+}
+
+/* Offering and Receiving Sections */
+.trade-card .pokemon.offering,
+.trade-card .pokemon.received {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+
+.trade-card .pokemon.received {
+  grid-column: 3 / 4; 
+}
+
+.trade-card .headers {
+  grid-column: 1 / 3;
+}
+
+/* Pokemon Content Layout */
+.trade-card .pokemon .pokemon-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-column: 1 / 3;
+}
+
+.trade-card .pokemon.has-details .pokemon-content {
+  grid-template-columns: 1fr 1fr;
+}
+
+.trade-card .pokemon.no-details .pokemon-content {
+  grid-template-columns: 1fr;
+}
+
+.trade-card .pokemon.no-details .static-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Pokemon details */
+.trade-card .weight-height-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.trade-card .weight-height {
+  margin-bottom: 8px;
+}
+
+/* Common smaller font usage */
+.trade-card .weight-height-move-container,
+.trade-card .weight-height-move-container .moves-container .move p,
+.trade-card .details-content p {
+  font-size: 0.75rem;
+}
+
+.trade-card .iv-display-container {
+  display: flex;
+  width: 100%;
+  height: unset;
+}
+
+.trade-card .weight-height-move-container {
+  width: 100%;
+  gap: 10px;
+}
+
+/* Pokemon name and types */
+.trade-card .pokemon-name {
+  text-align: center;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.trade-card .pokemon-types {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.trade-card .pokemon-types .type-icon {
+  width: 1rem;
+  height: auto;
+}
+
+/* Moves container */
+.trade-card .pokemon-content .moves-container .move {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.trade-card .pokemon-content .moves-container .move img {
+  width: 1rem;
+  height: auto;
+}
+
+/* Toggle details button (hidden by default unless needed in media) */
+.trade-card .toggle-details-button {
+  display: none;
+  margin-top: var(--space-3);
+  padding: 0.5rem 1rem;
+  background-color: var(--color-accent-primary);
+  color: var(--color-text-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--motion-base) ease;
+}
+
+.trade-card .toggle-details-button:hover {
+  background-color: var(--color-accent-primary-hover);
+}
+
+.trade-card .toggle-details-button:focus {
+  outline: 2px solid var(--color-accent-primary-hover);
+  outline-offset: 2px;
+}
+
+/* Close button for details */
+.trade-card .close-details-button {
+  display: block;
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--color-surface-2);
+  cursor: pointer;
+  z-index: var(--z-popover);
+}
+
+.trade-card .close-details-button:hover {
+  color: var(--color-text-inverse);
+}
+
+/* Details content (visible by default on large screens, or hidden behind toggles) */
+.trade-card .details-content {
+  position: relative;
+  background: transparent;
+  color: inherit;
+  padding: 5px;
+  box-sizing: border-box;
+  visibility: visible; /* Base might be visible; you can override below. */
+  opacity: 1;         /* Same as above. */
+}
+
+.trade-card .stardust-display {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-bottom: 5px;
+}
+
+.trade-card .stardust-icon {
+  width: 16px;
+  height: auto;
+}
+
+.trade-card .stardust-cost {
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+/* =======================
+   MEDIA QUERIES
+   ======================= */
+
+/* ————— Up to 480px ————— */

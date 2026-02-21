@@ -1,6 +1,6 @@
 # Frontend Engineering Roadmap
 
-Last updated: 2026-02-18
+Last updated: 2026-02-21
 
 This replaces the old tech-debt backlog and gives a practical execution plan from the current state.
 
@@ -58,7 +58,7 @@ Reason: mobile expansion is expensive; it should start from a hardened, stable w
 
 ## Phase 1 - CSS System Cleanup (Priority: P1)
 
-- Status: In Progress (started 2026-02-18)
+- Status: Completed (2026-02-21)
 - Target window: 2-4 weeks
 - Objective: keep vanilla CSS (or evolve carefully) while making it scalable and maintainable.
 
@@ -86,11 +86,12 @@ Recommendation: Option A first. It gives lower risk and protects delivery while 
 3. P1.3 Large-file reduction
    - Split highest-cost CSS files into cohesive modules (Search/Trades first).
    - Keep selectors local and reduce cascade depth.
-   - Status: In Progress (started with `ListView.css` split, 2026-02-18)
+   - Status: Completed (Search/Trades high-cost files split, 2026-02-18)
 
 4. P1.4 Styling quality checks
    - Add Stylelint (or equivalent) with agreed rules.
    - Run in CI as non-blocking first, then blocking once clean.
+   - Status: Completed (Stylelint wired and blocking in CI, 2026-02-21)
 
 ### Definition of Done
 
@@ -155,6 +156,6 @@ This avoids forcing web-specific dependencies (DOM/OpenLayers/CSS) into mobile.
 
 ## Immediate Next Sprint Plan
 
-1. Execute Phase 0 fully before starting CSS or RN migration.
-2. Start Phase 1 tokenization in Search + Trades once Phase 0 is complete.
-3. Begin RN only after shared package extraction design is approved.
+1. Start Phase 2.1 by extracting shared API contracts/types into a reusable package.
+2. Create the minimal Expo bootstrap app with shared environment loading.
+3. Keep web CI green while shared extraction lands incrementally.

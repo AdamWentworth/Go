@@ -1,5 +1,4 @@
 import React from 'react';
-import './Table.css';
 import type { MoveCombination } from './utils/moveCombinations';
 
 type TableProps = {

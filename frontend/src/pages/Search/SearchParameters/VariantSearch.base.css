@@ -1,11 +1,11 @@
-/* VariantSearch.css */
+/* VariantSearch.base.css */
 
 /* Container for the entire component */
 .pokemon-variant-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-left: 20px;
+  padding-left: calc(var(--space-5) + var(--space-3));
 }
 
 .pokemon-variant-container h3 {
@@ -35,7 +35,7 @@
   justify-content: center;
   align-items: center;
   overflow: hidden; /* Ensures background image stays within bounds */
-  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(var(--shadow-image));
 }
 
 .pokemon-variant-container .background-image {
@@ -61,7 +61,7 @@
 }
 
 .pokemon-variant-image-error {
-  color: red;
+  color: var(--color-danger);
   font-size: 14px;
 }
 
@@ -77,7 +77,7 @@
   display: flex;
   flex-direction: column; /* Ensure moves and gender are in the same column */
   align-items: center;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   justify-content: flex-end;
   margin-bottom: 5px;
   margin-left: 10px;
@@ -117,7 +117,7 @@
 .pokemon-variant-container .button-container button {
   width: 52px;
   height: 46px;
-  background-color: #ccc;
+  background-color: var(--color-surface-3);
   border: none;
   outline: none;
   padding: 10px;
@@ -125,8 +125,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 15px;
-  transition: background-color 0.3s ease;
+  border-radius: var(--radius-xl);
+  transition: background-color var(--motion-base) ease;
 }
 
 /* Icon styles */
@@ -149,7 +149,7 @@
 
 /* Hover styles */
 .pokemon-variant-container .button-container .shiny-button:hover {
-  background-color: #ffcc00;
+  background-color: var(--color-warning);
 }
 
 .pokemon-variant-container .button-container .costume-button:hover {
@@ -162,7 +162,7 @@
 
 /* Hover states for active buttons */
 .pokemon-variant-container .button-container .shiny-button.active:hover {
-  background-color: #ffcc00;
+  background-color: var(--color-warning);
 }
 
 .pokemon-variant-container .button-container .costume-button.active:hover {
@@ -199,7 +199,7 @@
 .gender-background-row .max-icon {
   width: 2.5rem;
   height: auto;
-  transition: filter 0.3s ease; /* Smooth transition effect */
+  transition: filter var(--motion-base) ease; /* Smooth transition effect */
 }
 
 .pokemon-variant-image .max-badge {
@@ -226,15 +226,15 @@
 
 .autocomplete-suggestions {
   position: absolute;
-  background-color: white;
-  border: 1px solid #ccc;
+  background-color: var(--color-text-primary);
+  border: 1px solid var(--color-border-muted);
   list-style: none;
   padding: 0;
   margin: 0;
   max-height: 150px;
   overflow-y: auto;
-  z-index: 1000;
-  color: black;
+  z-index: var(--z-overlay);
+  color: var(--color-text-inverse);
 }
 
 .autocomplete-suggestions li {
@@ -254,253 +254,8 @@
 
 .autocomplete-suggestions .autocomplete-suggestion-button:hover,
 .autocomplete-suggestions .autocomplete-suggestion-button:focus-visible {
-  background-color: #f0f0f0;
+  background-color: var(--color-surface-hover);
   outline: none;
 }
 
 /* Responsive layout adjustments */
-@media (max-width: 480px) {
-  .pokemon-variant-container .main-content {
-    flex-direction: column;
-    min-width: 100%;
-    align-items: center;
-  }
-  .pokemon-variant-container .button-container img {
-    width: 20px;
-    height: 20px;
-  }
-  .pokemon-variant-container {
-    padding-left: 0px
-  }
-  .pokemon-variant-details {
-    align-items: center;
-    width: 100%;
-  }
-  .pokemon-search-row {
-    width: 65%;
-  }
-  .pokemon-search-row input[type="text"] {
-    width: 100%;
-  }
-  .pokemon-variant-container .button-container button {
-    width: 40px;
-    height: 40px;
-  }
-
-  .pokemon-moves-gender-section {
-    margin-bottom: 0px;
-    margin-left: 0px;
-  }
-  .pokemon-variant-container h3 {
-    margin-block-end: 10px;
-    margin-block-start: 0px;
-  }
-}
-
-@media (min-width: 481px) and (max-width: 767px) {
-  .pokemon-variant-container {
-    padding-left: unset;
-    padding-right: 10px;
-  }
-  .pokemon-variant-container .main-content {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-  }
-
-  /* Put details and image in the same row */
-  .pokemon-variant-details,
-  .pokemon-variant-image {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .pokemon-variant-container .main-content {
-    min-width: 480px;
-    justify-content: center;
-  }
-  .pokemon-search-row input[type="text"] {
-    width: 200px;;
-  }
-
-  .pokemon-variant-container .button-container button {
-    width: 45px;
-    height: 45px;
-  }
-
-  .pokemon-variant-container .button-container img {
-    width: 28px;
-    height: 28px;
-  }
-
-  /* Move moves and gender section to a new row */
-  .pokemon-moves-gender-section {
-    display: flex;
-    justify-content: center;
-    align-content: center;
-    margin-top: 10px;
-    margin-left: unset;
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
-  .pokemon-variant-container {
-    padding-left: unset;
-    padding-right: 10px;
-  }
-  .pokemon-variant-container .main-content {
-    display: flex;
-    flex-wrap: wrap;
-  }
-
-  /* Put details and image in the same row */
-  .pokemon-variant-details,
-  .pokemon-variant-image {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .pokemon-variant-container .main-content {
-    min-width: 480px;
-    justify-content: center;
-    gap: 5%;
-  }
-  .pokemon-search-row input[type="text"] {
-    width: 200px;
-  }
-
-  .pokemon-variant-container .button-container button {
-    width: 45px;
-    height: 45px;
-  }
-
-  /* Move moves and gender section to a new row */
-  .pokemon-moves-gender-section {
-    display: flex;
-    justify-content: center;
-    align-content: center;
-    margin-top: 10px;
-    margin-left: unset;
-  }
-
-  .pokemon-variant-container .button-container img {
-    width: 32px;
-    height: 32px;
-  }
-  .pokemon-variant-container .button-container button {
-    padding: 8px;
-  }
-}
-
-
-@media (min-width: 1024px) and (max-width: 1439px) {
-  .pokemon-variant-container {
-    padding-left: unset;
-    padding-right: 10px;
-  }
-  .pokemon-variant-container .main-content {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10%;
-  }
-
-  /* Put details and image in the same row */
-  .pokemon-variant-details,
-  .pokemon-variant-image {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .pokemon-variant-container .main-content {
-    min-width: 480px;
-  }
-  .pokemon-search-row input[type="text"] {
-    width: 240px;
-  }
-
-  .pokemon-variant-container .button-container button {
-    width: 50px;
-    height: 50px;
-  }
-
-  /* Move moves and gender section to a new row */
-  .pokemon-moves-gender-section {
-    display: flex;
-    justify-content: center;
-    align-content: center;
-    margin-top: 10px;
-    margin-left: unset;
-  }
-
-  .pokemon-variant-container .button-container img {
-    width: 32px;
-    height: 32px;
-  }
-  .pokemon-variant-container .button-container button {
-    padding: 8px;
-  }
-}
-
-@media (min-width: 1440px) and (max-width: 1919px) {
-  .pokemon-variant-details {
-    width: 160px;
-  }
-  .pokemon-variant-container .button-container img {
-    width: 28px;
-    height: 28px;
-  }
-  .main-content {
-    height: 200px;
-  }
-  .main-content .pokemon-variant-image {
-    position: relative;
-    width: 150px;
-    height: 150px;
-    margin-top: 25px;
-    margin-right: 10px;
-  }
-  .pokemon-variant-container .main-content {
-    min-width: unset;
-  }
-  .pokemon-moves-gender-section {
-    width: 120px;
-    height: 200px;
-    margin-bottom: unset;
-  }
-
-  .pokemon-search-row input[type="text"] {
-    width: 140px;
-  }
-
-  .pokemon-variant-container .button-container button {
-    width: 42px;
-    height: 38px;
-  }
-  .pokemon-variant-container .button-container img {
-    width: 24px;
-    height: 24px;
-  }
-  .pokemon-variant-container .button-container button {
-    padding: 8px;
-  }
-  .form-dropdown,
-  .costume-dropdown {
-    display: flex;
-    align-items: center;
-  }
-
-  .form-dropdown label,
-  .costume-dropdown label {
-    margin-right: 8px;
-    white-space: nowrap;
-  }
-
-  .form-dropdown select,
-  .costume-dropdown select {
-    width: auto; /* Adjust width as needed */
-  }
-}

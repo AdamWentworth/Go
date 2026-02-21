@@ -9,7 +9,8 @@ import VariantSearchTogglePanel from './VariantSearchTogglePanel';
 import VariantSearchPreviewPanel from './VariantSearchPreviewPanel';
 import VariantSearchBackgroundOverlay from './VariantSearchBackgroundOverlay';
 import useVariantSearchController from './useVariantSearchController';
-import './VariantSearch.css';
+import './VariantSearch.base.css';
+import './VariantSearch.responsive.css';
 
 type VariantSearchProps = {
   pokemon: string;

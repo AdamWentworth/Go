@@ -18,7 +18,8 @@ import { usePokemonDetails } from '@/pages/Trades/hooks/usePokemonDetails';
 import type { RelatedInstancesMap, TradeStatusFilter } from '@/pages/Trades/types';
 import { getStoredUsername } from '@/utils/storage';
 
-import './TradeCard.css';
+import './TradeCard.base.css';
+import './TradeCard.responsive.css';
 
 interface TradeCardTrade {
   trade_id?: string;
