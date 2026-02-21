@@ -17,7 +17,8 @@ import {
 } from '../features/trades/tradeMutations';
 import {
   buildAllowedActionLabel,
-  isTradeActionAllowed,
+  buildUnavailableTradeActionHints,
+  evaluateTradeAction,
   type TradeAction,
 } from '../features/trades/tradeActionRules';
 import {
@@ -87,6 +88,22 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
     () => buildTradeAuditDetails(selectedTrade),
     [selectedTrade],
   );
+  const actionDecisions = useMemo(() => {
+    if (!selectedTrade) return null;
+    const context = {
+      viewerUsername: user?.username ?? null,
+      trade: selectedTrade,
+    };
+    return {
+      accept: evaluateTradeAction(selectedTrade.trade_status, 'accept', context),
+      deny: evaluateTradeAction(selectedTrade.trade_status, 'deny', context),
+      cancel: evaluateTradeAction(selectedTrade.trade_status, 'cancel', context),
+      complete: evaluateTradeAction(selectedTrade.trade_status, 'complete', context),
+      repropose: evaluateTradeAction(selectedTrade.trade_status, 'repropose', context),
+      delete: evaluateTradeAction(selectedTrade.trade_status, 'delete', context),
+      unavailableHints: buildUnavailableTradeActionHints(selectedTrade.trade_status, context),
+    };
+  }, [selectedTrade, user?.username]);
 
   const syncMutation = async (rows: TradeRow[]) => {
     for (const row of rows) {
@@ -133,7 +150,7 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
     mutate: TradeMutation,
   ) => {
     if (!selectedTrade || mutationLoading) return;
-    const content = buildTradeActionConfirmation(action, selectedTrade);
+    const content = buildTradeActionConfirmation(action, selectedTrade, user?.username ?? '');
     Alert.alert(content.title, content.message, [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -218,6 +235,11 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
           <Text style={commonStyles.cardTitle}>Trade Actions ({selectedTrade.trade_id})</Text>
           <Text style={commonStyles.caption}>{buildAllowedActionLabel(selectedTrade.trade_status)}</Text>
           <Text style={commonStyles.hint}>{selectedTradeStatusDetail}</Text>
+          {(actionDecisions?.unavailableHints ?? []).map((hint) => (
+            <Text key={hint} style={commonStyles.hint}>
+              {hint}
+            </Text>
+          ))}
           {selectedTradeAuditDetails.map((line) => (
             <Text key={line} style={commonStyles.caption}>
               {line}
@@ -226,21 +248,21 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
           <View style={commonStyles.actions}>
             <Button
               title="Accept"
-              disabled={mutationLoading || !isTradeActionAllowed(selectedTrade.trade_status, 'accept')}
+              disabled={mutationLoading || !Boolean(actionDecisions?.accept.allowed)}
               onPress={() =>
                 confirmAndRunMutation('accept', (map) => acceptTrade(map, selectedTrade.trade_id))
               }
             />
             <Button
               title="Deny"
-              disabled={mutationLoading || !isTradeActionAllowed(selectedTrade.trade_status, 'deny')}
+              disabled={mutationLoading || !Boolean(actionDecisions?.deny.allowed)}
               onPress={() =>
                 confirmAndRunMutation('deny', (map) => denyTrade(map, selectedTrade.trade_id))
               }
             />
             <Button
               title="Cancel"
-              disabled={mutationLoading || !isTradeActionAllowed(selectedTrade.trade_status, 'cancel')}
+              disabled={mutationLoading || !Boolean(actionDecisions?.cancel.allowed)}
               onPress={() =>
                 confirmAndRunMutation('cancel', (map) =>
                   cancelTrade(map, selectedTrade.trade_id, user?.username ?? 'unknown'),
@@ -249,7 +271,7 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
             />
             <Button
               title="Complete"
-              disabled={mutationLoading || !isTradeActionAllowed(selectedTrade.trade_status, 'complete')}
+              disabled={mutationLoading || !Boolean(actionDecisions?.complete.allowed)}
               onPress={() =>
                 confirmAndRunMutation('complete', (map) =>
                   completeTrade(map, selectedTrade.trade_id, user?.username ?? ''),
@@ -258,7 +280,7 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
             />
             <Button
               title="Re-Propose"
-              disabled={mutationLoading || !isTradeActionAllowed(selectedTrade.trade_status, 'repropose')}
+              disabled={mutationLoading || !Boolean(actionDecisions?.repropose.allowed)}
               onPress={() =>
                 confirmAndRunMutation('repropose', (map) =>
                   reproposeTrade(map, selectedTrade.trade_id, user?.username ?? ''),
@@ -267,7 +289,7 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
             />
             <Button
               title="Delete"
-              disabled={mutationLoading || !isTradeActionAllowed(selectedTrade.trade_status, 'delete')}
+              disabled={mutationLoading || !Boolean(actionDecisions?.delete.allowed)}
               onPress={() =>
                 confirmAndRunMutation('delete', (map) => deleteTrade(map, selectedTrade.trade_id))
               }

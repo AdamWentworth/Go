@@ -16,14 +16,33 @@ const baseTrade: TradeRow = {
 
 describe('tradeLifecycleMessages', () => {
   it('builds confirmation content per action', () => {
-    expect(buildTradeActionConfirmation('accept', baseTrade)).toEqual(
+    expect(buildTradeActionConfirmation('accept', baseTrade, 'ash')).toEqual(
       expect.objectContaining({
         title: 'Accept trade?',
+        message: expect.stringContaining('auto-deleted'),
       }),
     );
-    expect(buildTradeActionConfirmation('delete', baseTrade)).toEqual(
+    expect(buildTradeActionConfirmation('delete', baseTrade, 'ash')).toEqual(
       expect.objectContaining({
         title: 'Delete trade?',
+      }),
+    );
+  });
+
+  it('adapts completion confirmation copy based on counterpart confirmation', () => {
+    expect(
+      buildTradeActionConfirmation(
+        'complete',
+        {
+          ...baseTrade,
+          trade_status: 'pending',
+          user_accepting_completion_confirmed: true,
+        },
+        'ash',
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        title: 'Finalize trade completion?',
       }),
     );
   });

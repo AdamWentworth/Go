@@ -16,13 +16,19 @@ const formatDateSafe = (value: unknown): string | null => {
 export const buildTradeActionConfirmation = (
   action: TradeAction,
   trade: TradeRow,
+  viewerUsername?: string,
 ): ConfirmationContent => {
   const tradeLabel = `${trade.trade_id} (${trade.username_proposed ?? '-'} -> ${trade.username_accepting ?? '-'})`;
+  const viewer = viewerUsername ?? '';
+  const isProposer = viewer.length > 0 && viewer === (trade.username_proposed ?? '');
+  const counterpartConfirmed = isProposer
+    ? Boolean(trade.user_accepting_completion_confirmed)
+    : Boolean(trade.user_proposed_completion_confirmed);
   switch (action) {
     case 'accept':
       return {
         title: 'Accept trade?',
-        message: `Confirm accepting trade ${tradeLabel}.`,
+        message: `Confirm accepting trade ${tradeLabel}. Any conflicting proposed trades may be auto-deleted.`,
       };
     case 'deny':
       return {
@@ -32,22 +38,28 @@ export const buildTradeActionConfirmation = (
     case 'cancel':
       return {
         title: 'Cancel trade?',
-        message: `Confirm cancelling trade ${tradeLabel}.`,
+        message: `Confirm cancelling trade ${tradeLabel}. This will preserve history but stop further progress.`,
       };
     case 'complete':
+      if (counterpartConfirmed) {
+        return {
+          title: 'Finalize trade completion?',
+          message: `Confirming completion for trade ${tradeLabel} will mark it completed immediately.`,
+        };
+      }
       return {
-        title: 'Confirm completion?',
-        message: `Mark completion confirmation for trade ${tradeLabel}.`,
+        title: 'Confirm completion step?',
+        message: `Record your completion confirmation for trade ${tradeLabel}. It will complete after both trainers confirm.`,
       };
     case 'repropose':
       return {
         title: 'Re-propose trade?',
-        message: `Re-open trade ${tradeLabel} as proposed.`,
+        message: `Re-open trade ${tradeLabel} as proposed so the other trainer can respond again.`,
       };
     case 'delete':
       return {
         title: 'Delete trade?',
-        message: `Mark trade ${tradeLabel} as deleted.`,
+        message: `Mark trade ${tradeLabel} as deleted. It may remain in historical/audit views.`,
       };
     default:
       return {

@@ -221,4 +221,31 @@ describe('TradesScreen', () => {
     });
     expect(mockedSendTradeUpdate).not.toHaveBeenCalled();
   });
+
+  it('shows completion guard hint when viewer already confirmed completion', async () => {
+    mockedFetchTradesOverviewForUser.mockResolvedValue({
+      statusCounts: { pending: 1 },
+      trades: [
+        {
+          trade_id: 't1',
+          trade_status: 'pending',
+          username_proposed: 'ash',
+          username_accepting: 'misty',
+          user_proposed_completion_confirmed: true,
+          pokemon_instance_id_user_proposed: 'i1',
+          pokemon_instance_id_user_accepting: 'i2',
+        },
+      ],
+    });
+    mockedSendTradeUpdate.mockResolvedValue({});
+
+    render(<TradesScreen navigation={baseNavigation as never} route={route as never} />);
+    fireEvent.press(screen.getByText('Load Trades'));
+    await waitFor(() => {
+      expect(screen.getByText('pending - t1')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('pending - t1'));
+    expect(screen.getByText('complete: you already confirmed completion.')).toBeTruthy();
+  });
 });

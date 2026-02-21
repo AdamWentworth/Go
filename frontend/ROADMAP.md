@@ -190,6 +190,11 @@ Done:
    - enforced mega/fusion form requirements when enabling those states
    - added attribute-level validation hints in collection editor
    - expanded collection screen tests for invalid nickname/mega-form mutation guards
+20. Mobile trade edge-case guard polish shipped:
+   - added fine-grained action decision guards (status + participant completion state)
+   - surfaced unavailable-action hint reasons in trade detail UI
+   - refined confirmation copy per action with clearer side effects
+   - expanded trade rule/message/screen tests for completion guard behavior
 
 Remaining:
 
@@ -197,7 +202,6 @@ Remaining:
 2. Continue UX polish for edge network/error paths on mobile slices.
 3. Close functional parity gaps for:
    - final pokemon workflow polish (advanced overlay parity beyond current sectioned editor)
-   - final trade lifecycle edge-case UX polish (fine-grained confirmation copy)
    - full search parity finish (map interaction parity + remaining web-specific advanced interactions)
 
 ## 5) Parity Snapshot (Web -> Mobile)
@@ -241,9 +245,9 @@ Planned work:
 
 ## 9) Next 3 Iterations (Immediate Plan)
 
-1. Finish remaining `P2.2` exit criteria (device/emulator validation against live services).
-2. Port register screen + finalize auth-path parity.
-3. Start mutation parity for trades and pokemon instance workflows.
+1. Execute real-device validation (`android` and `ios`) against live services with a short pass/fail checklist.
+2. Add first mobile map parity slice for search results (marker baseline + selection sync with list state).
+3. Finalize pokemon workflow overlay parity (deeper per-field editing affordances + messaging polish).
 
 ## 10) Definition of Success
 
@@ -262,7 +266,7 @@ Planned work:
 3. Trades parity:
    - conflict/retry/server-authoritative reconciliation UX after mutation: shipped
    - status-based actions + confirmation/lifecycle messaging: shipped
-   - optional final pass: richer audit details and status-specific help copy
+   - richer audit details and status-specific help copy: shipped
 4. Account/Register parity:
    - baseline parity shipped (validation + field hints + mapped server errors)
    - optional final pass for fully native form affordances (inline field focus helpers)
