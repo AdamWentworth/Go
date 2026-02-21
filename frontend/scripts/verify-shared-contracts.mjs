@@ -13,6 +13,7 @@ const requiredSharedFiles = [
   'index.ts',
   'users.ts',
   'search.ts',
+  'domain.ts',
   'auth.ts',
   'trades.ts',
   'location.ts',

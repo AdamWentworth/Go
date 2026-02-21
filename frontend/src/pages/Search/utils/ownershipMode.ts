@@ -1,24 +1,14 @@
-export type SearchOwnershipMode = 'caught' | 'trade' | 'wanted';
-export type SearchOwnershipModeInput = SearchOwnershipMode | null | undefined;
-export type SearchOwnershipApiValue = SearchOwnershipMode;
+import {
+  isCaughtOwnershipMode as isCaughtMode,
+  normalizeOwnershipMode as normalizeMode,
+  toOwnershipApiValue as toApiValue,
+} from '@shared-contracts/domain';
+import type { OwnershipMode, OwnershipModeInput } from '@shared-contracts/domain';
 
-const FALLBACK_MODE: SearchOwnershipMode = 'caught';
+export type SearchOwnershipMode = OwnershipMode;
+export type SearchOwnershipModeInput = OwnershipModeInput;
+export type SearchOwnershipApiValue = OwnershipMode;
 
-export const normalizeOwnershipMode = (
-  value: SearchOwnershipModeInput,
-): SearchOwnershipMode => {
-  if (value === 'caught' || value === 'trade' || value === 'wanted') {
-    return value;
-  }
-  return FALLBACK_MODE;
-};
-
-export const toOwnershipApiValue = (
-  mode: SearchOwnershipMode,
-): SearchOwnershipApiValue => {
-  // Backend now expects canonical naming.
-  return mode;
-};
-
-export const isCaughtOwnershipMode = (value: SearchOwnershipModeInput): boolean =>
-  normalizeOwnershipMode(value) === 'caught';
+export const normalizeOwnershipMode = normalizeMode;
+export const toOwnershipApiValue = toApiValue;
+export const isCaughtOwnershipMode = isCaughtMode;

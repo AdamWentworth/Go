@@ -12,6 +12,7 @@ import {
   requestWithPolicy,
 } from './httpClient';
 import { locationContract } from '@shared-contracts/location';
+import { stripDiacritics } from '@shared-contracts/domain';
 
 const BASE_URL = import.meta.env.VITE_LOCATION_SERVICE_URL;
 const log = createScopedLogger('locationServices');
@@ -20,9 +21,7 @@ export const fetchSuggestions = async (
   userInput: string
 ): Promise<LocationSuggestion[]> => {
   try {
-    const normalizedInput = userInput
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
+    const normalizedInput = stripDiacritics(userInput);
 
     const response = await requestWithPolicy(
       buildUrl(BASE_URL, locationContract.endpoints.autocomplete, { query: normalizedInput }),

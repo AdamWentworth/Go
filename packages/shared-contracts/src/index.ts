@@ -1,5 +1,6 @@
 export * from './users';
 export * from './search';
+export * from './domain';
 export * from './auth';
 export * from './trades';
 export * from './location';

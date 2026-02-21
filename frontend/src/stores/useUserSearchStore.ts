@@ -6,6 +6,7 @@ import { useInstancesStore } from '@/features/instances/store/useInstancesStore'
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { createScopedLogger } from '@/utils/logger';
 import { fetchForeignInstancesByUsername } from '@/services/userSearchService';
+import { caseFold, equalsCaseInsensitive } from '@shared-contracts/domain';
 
 const CACHE_NAME = 'SearchCache';
 const log = createScopedLogger('UserSearchStore');
@@ -22,7 +23,7 @@ function replaceAddressBar(oldName: string, newName: string) {
 		const path = window.location.pathname;
 		const segments = path.split('/');
 		const last = segments[segments.length - 1];
-		if (last && last.toLowerCase() === oldName.toLowerCase()) {
+		if (last && equalsCaseInsensitive(last, oldName)) {
 			segments[segments.length - 1] = newName;
 			const nextPath = segments.join('/');
 			window.history.replaceState(
@@ -73,7 +74,7 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
     set({ foreignInstancesLoading: true, userExists: null });
 
     try {
-      const lower = searchedUsername.toLowerCase();
+      const lower = caseFold(searchedUsername);
       const db = await openDB(CACHE_NAME, 1, {
         upgrade(upgradeDB) {
           if (!upgradeDB.objectStoreNames.contains(CACHE_NAME)) {
@@ -94,7 +95,7 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
 
       if (!cached) {
         for (const key of await db.getAllKeys(CACHE_NAME)) {
-          if (typeof key === 'string' && key.toLowerCase() === lower) {
+          if (typeof key === 'string' && equalsCaseInsensitive(key, lower)) {
             canonicalKey = key;
             cached = (await db.get(CACHE_NAME, canonicalKey)) as SearchCacheRecord | null;
             break;
