@@ -57,6 +57,8 @@ export const PokemonCatalogScreen = ({ navigation }: PokemonCatalogScreenProps) 
   }, [listItems, query]);
 
   const visibleItems = filteredItems.slice(0, MAX_VISIBLE_ROWS);
+  const showNoData = !loading && !error && pokemons.length === 0;
+  const showNoMatches = !loading && !error && pokemons.length > 0 && filteredItems.length === 0;
 
   const selectedDetail = useMemo(() => {
     const pokemon = findPokemonById(pokemons, selectedPokemonId);
@@ -84,6 +86,8 @@ export const PokemonCatalogScreen = ({ navigation }: PokemonCatalogScreenProps) 
 
       {loading ? <ActivityIndicator /> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {showNoData ? <Text style={styles.caption}>No pokemon data loaded yet.</Text> : null}
+      {showNoMatches ? <Text style={styles.caption}>No pokemon matched your filter.</Text> : null}
 
       <Text style={styles.caption}>
         Showing {visibleItems.length} of {filteredItems.length} matched entries ({pokemons.length}{' '}
@@ -214,4 +218,3 @@ const styles = StyleSheet.create({
     color: '#333',
   },
 });
-

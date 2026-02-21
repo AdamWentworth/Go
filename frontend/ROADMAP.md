@@ -106,12 +106,16 @@ Done:
    - caught/trade/wanted ownership filtering in mobile UI
    - instance list rendering for looked-up trainers (`variant_id` + `instance_id`)
    - read-model tests for ownership filtering behavior
+4. Screen-level test coverage + first UX polish landed for mobile slices:
+   - `TrainerSearchScreen` tests for debounce autocomplete + lookup ownership filtering
+   - `PokemonCatalogScreen` tests for list/detail rendering + empty filter state
+   - explicit empty-state hints for autocomplete, ownership lists, and pokemon filters
 
 Remaining:
 
-1. Add screen-level tests for mobile trainer/pokemon read screens.
-2. Polish empty/error/loading UI states for first slices.
-3. Validate first slices on device against live APIs.
+1. Validate first slices on device against live APIs.
+2. Continue UX polish for edge network/error paths on mobile slices.
+3. Start first parity matrix draft for `P2.4`.
 
 ## 5) Next Phase (P2.4) Preview
 
@@ -145,7 +149,7 @@ Planned work:
 ## 8) Next 3 Iterations (Immediate Plan)
 
 1. Finish remaining `P2.2` exit criteria (device/emulator validation against live services).
-2. Harden `P2.3` slices with screen-level tests and basic UX polish.
+2. Validate `P2.3` trainer/pokemon flows on device and capture parity gaps.
 3. Start `P2.4` parity matrix and select first high-value parity flow.
 
 ## 9) Definition of Success
@@ -153,4 +157,3 @@ Planned work:
 1. RN app is testable on device with shared-core contracts.
 2. Web remains stable with no regression in core flows.
 3. Shared packages remain the single source of truth for backend-facing contracts.
-

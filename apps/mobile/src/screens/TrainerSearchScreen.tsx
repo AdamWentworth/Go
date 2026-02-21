@@ -168,6 +168,8 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
     [lookupInstances, ownershipMode],
   );
   const visibleOwnershipItems = ownershipItems.slice(0, MAX_VISIBLE_INSTANCES);
+  const showNoAutocompleteResults =
+    !searchLoading && !searchError && canSearch && results.length === 0;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -191,6 +193,9 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
 
       {searchLoading ? <ActivityIndicator /> : null}
       {searchError ? <Text style={styles.error}>{searchError}</Text> : null}
+      {!canSearch ? (
+        <Text style={styles.hint}>Enter at least {MIN_QUERY_LEN} characters to search trainers.</Text>
+      ) : null}
 
       {results.map((trainer) => {
         const isSelected = selectedUsername?.toLowerCase() === trainer.username.toLowerCase();
@@ -211,6 +216,9 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
           </Pressable>
         );
       })}
+      {showNoAutocompleteResults ? (
+        <Text style={styles.hint}>No trainers matched your query.</Text>
+      ) : null}
 
       <View style={styles.actions}>
         <Button
@@ -264,6 +272,9 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
               <Text style={styles.instanceSecondary}>instance_id: {item.instanceId}</Text>
             </View>
           ))}
+          {visibleOwnershipItems.length === 0 ? (
+            <Text style={styles.hint}>No instances for the selected ownership mode.</Text>
+          ) : null}
         </View>
       ) : null}
     </ScrollView>
@@ -298,6 +309,9 @@ const styles = StyleSheet.create({
   error: {
     color: '#b00020',
     marginTop: 4,
+  },
+  hint: {
+    color: '#6b7280',
   },
   resultRow: {
     borderWidth: 1,

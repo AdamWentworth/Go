@@ -27,11 +27,13 @@
     "react-native-screens": "^4.23.0"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^30.0.0",
     "@types/react": "~19.1.0",
     "eslint": "^9.39.3",
     "eslint-config-expo": "^10.0.0",
     "jest-expo": "^54.0.17",
+    "react-test-renderer": "^19.1.0",
     "typescript": "~5.9.2"
   },
   "jest": {
