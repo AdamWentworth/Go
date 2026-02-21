@@ -1,6 +1,7 @@
 /* sw.js - lean: network batching only (no IndexedDB writes) */
 
 let RECEIVER_API_URL = null;
+let RECEIVER_BATCHED_UPDATES_PATH = '/batchedUpdates';
 let DEBUG_SW = true; // can be toggled via SET_CONFIG
 let IS_LOGGED_IN = false; // <-- NEW
 
@@ -19,9 +20,17 @@ self.addEventListener('message', (event) => {
   // Config (e.g., { type: 'SET_CONFIG', payload: { RECEIVER_API_URL, DEBUG_SW, IS_LOGGED_IN } })
   if (type === 'SET_CONFIG' && payload) {
     if (payload.RECEIVER_API_URL) RECEIVER_API_URL = payload.RECEIVER_API_URL;
+    if (payload.RECEIVER_BATCHED_UPDATES_PATH) {
+      RECEIVER_BATCHED_UPDATES_PATH = payload.RECEIVER_BATCHED_UPDATES_PATH;
+    }
     if (typeof payload.DEBUG_SW === 'boolean') DEBUG_SW = payload.DEBUG_SW;
     if (typeof payload.IS_LOGGED_IN === 'boolean') IS_LOGGED_IN = payload.IS_LOGGED_IN; // <-- NEW
-    log('Config', { RECEIVER_API_URL, DEBUG_SW, IS_LOGGED_IN });
+    log('Config', {
+      RECEIVER_API_URL,
+      RECEIVER_BATCHED_UPDATES_PATH,
+      DEBUG_SW,
+      IS_LOGGED_IN,
+    });
     return;
   }
 
@@ -175,7 +184,10 @@ async function sendBatchedUpdatesToBackend(location) {
     const payload = { location: location || null, pokemonUpdates, tradeUpdates };
     log('batchedUpdates:POST', { payload });
 
-    const res = await fetch(`${RECEIVER_API_URL}/batchedUpdates`, {
+    const targetPath = RECEIVER_BATCHED_UPDATES_PATH.startsWith('/')
+      ? RECEIVER_BATCHED_UPDATES_PATH
+      : `/${RECEIVER_BATCHED_UPDATES_PATH}`;
+    const res = await fetch(`${RECEIVER_API_URL}${targetPath}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

@@ -6,6 +6,7 @@ import { tradesContract } from '@shared-contracts/trades';
 import { locationContract } from '@shared-contracts/location';
 import { eventsContract } from '@shared-contracts/events';
 import { pokemonContract } from '@shared-contracts/pokemon';
+import { receiverContract } from '@shared-contracts/receiver';
 
 describe('shared contracts', () => {
   it('builds users endpoints with canonical lowercase username', () => {
@@ -48,5 +49,6 @@ describe('shared contracts', () => {
     expect(eventsContract.endpoints.getUpdates).toBe('/getUpdates');
     expect(eventsContract.endpoints.sse).toBe('/sse');
     expect(pokemonContract.endpoints.pokemons).toBe('/pokemons');
+    expect(receiverContract.endpoints.batchedUpdates).toBe('/batchedUpdates');
   });
 });

@@ -6,6 +6,7 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { initPerfPaintObservers } from './utils/perfTelemetry';
 import { createScopedLogger } from './utils/logger';
+import { receiverContract } from '@shared-contracts/receiver';
 import './styles/tokens.css';
 import './index.css';
 
@@ -24,6 +25,8 @@ if ('serviceWorker' in navigator) {
               type: 'SET_CONFIG',
               payload: {
                 RECEIVER_API_URL: import.meta.env.VITE_RECEIVER_API_URL,
+                RECEIVER_BATCHED_UPDATES_PATH:
+                  receiverContract.endpoints.batchedUpdates,
               },
             });
           }

@@ -1,4 +1,5 @@
 import { createScopedLogger } from '@/utils/logger';
+export { buildUrl } from '@shared-contracts/common';
 
 const log = createScopedLogger('httpClient');
 const DEFAULT_TIMEOUT_MS = 10000;
@@ -85,22 +86,4 @@ export function toHttpError(
   const normalizedBody = normalizeErrorBody(status, data);
   const message = fallbackMessage || normalizedBody.message;
   return new HttpError(message, status, normalizedBody);
-}
-
-export function buildUrl(
-  baseUrl: string,
-  path: string,
-  query?: Record<string, string | number | boolean | null | undefined>,
-): string {
-  const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-  const normalizedPath = path.replace(/^\/+/, '');
-  const url = new URL(normalizedPath, normalizedBase);
-  if (!query) return url.toString();
-
-  for (const [key, value] of Object.entries(query)) {
-    if (value === undefined || value === null) continue;
-    url.searchParams.set(key, String(value));
-  }
-
-  return url.toString();
 }

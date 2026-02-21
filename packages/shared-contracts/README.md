@@ -25,6 +25,7 @@ Shared API contracts/types used across clients (web now, mobile next).
    - Search endpoint path contract.
 4. `common.ts`
    - Shared generic response envelope types (`ApiResponse<T>`).
+   - Shared URL helper (`buildUrl`) for consistent endpoint composition.
 5. `domain.ts`
    - Shared web/mobile-safe normalizers (ownership mode, case-folding, diacritic stripping).
 6. `auth.ts`
@@ -32,6 +33,7 @@ Shared API contracts/types used across clients (web now, mobile next).
    - Auth/session transport DTOs (`AuthUser`, `LoginResponse`, `RefreshTokenResponse`).
 7. `trades.ts`
    - Trade-related endpoint paths and transport DTOs (`TradeRecord`, `RelatedInstanceRecord`, `PartnerInfo`, `PartnerCoordinates`, `TradeReference`).
+   - Trade proposal request DTOs (`TradeProposalRequest`, `TradeProposalPokemonPayload`).
 8. `location.ts`
    - Location service endpoint paths and transport DTOs (`Coordinates`, `LocationBase`, `LocationResponse`).
 9. `events.ts`
@@ -40,6 +42,19 @@ Shared API contracts/types used across clients (web now, mobile next).
 10. `pokemon.ts`
    - Pokemon service endpoint paths.
    - Pokemon API transport DTOs (`BasePokemon`, `Pokemons`, move/costume/raid/fusion subtypes).
+11. `receiver.ts`
+   - Receiver service endpoint paths (`receiverContract.endpoints.batchedUpdates`).
+   - Receiver batched update payload DTO (`ReceiverBatchedUpdatesPayload`).
+
+## Versioning Policy
+
+1. `@pokemongonexus/shared-contracts` is an internal package (`private: true`) and follows SemVer for repo-level coordination.
+2. Additive, non-breaking contract changes should increment `minor`.
+3. Breaking contract changes should increment `major` and include consumer updates in the same PR.
+4. Any contract change must include:
+   - updated module docs in this file
+   - relevant contract/unit tests
+   - `typecheck` + `lint` green in consumer app(s)
 
 ## Usage (frontend)
 

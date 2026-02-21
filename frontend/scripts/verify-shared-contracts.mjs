@@ -21,6 +21,7 @@ const requiredSharedFiles = [
   'location.ts',
   'events.ts',
   'pokemon.ts',
+  'receiver.ts',
 ];
 
 const missingSharedFiles = requiredSharedFiles.filter(

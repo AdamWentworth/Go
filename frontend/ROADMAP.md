@@ -43,7 +43,7 @@ One iteration = one scoped, test-backed change set that keeps CI green.
 3. Large file split/reduction.
 4. Stylelint enforcement in CI.
 
-### P2.1 Shared Extraction (In Progress)
+### P2.1 Shared Extraction (Done)
 
 Done:
 
@@ -62,27 +62,13 @@ Done:
    - trade record + related-instance payload schema
    - partner info/reveal payloads
 6. Trade UI handler/page transport types aligned to shared `TradeRecord`/`RelatedInstanceRecord` to remove remaining duplicated trade DTO definitions.
+7. Trade proposal request DTO centralized in shared contracts and consumed by both proposal builder + trade action.
+8. Receiver endpoint contract centralized (`receiverContract.endpoints.batchedUpdates`) and wired into web -> service worker config.
+9. Shared `buildUrl` helper centralized in contracts and consumed from frontend service layer.
+10. Shared-contracts checks expanded (`receiver.ts` required in CI preflight + endpoint contract test coverage).
+11. Package-level versioning/release conventions documented in shared-contracts README.
 
 ## 5) Remaining Work by Phase
-
-### P2.1 Shared-Core Completion (Now)
-
-Objective: finish transport/domain extraction so mobile can consume stable packages.
-
-Remaining:
-
-1. Sweep for any remaining frontend-local transport DTOs and endpoint string duplication.
-2. Move reusable non-UI helpers from `frontend/src` to shared packages where low-risk.
-3. Add/expand contract tests for extracted modules.
-4. Lock package-level versioning/release conventions (internal is fine, but explicit).
-
-Exit criteria:
-
-1. Web uses shared contracts for all backend boundaries.
-2. No duplicated transport DTO definitions across services.
-3. Contract tests + typecheck + lint all green.
-
-Estimated remaining: **2-4 iterations**.
 
 ### P2.2 Mobile Bootstrap
 
@@ -158,9 +144,9 @@ Estimate: **8-10 iterations**.
 
 ## 8) Next 3 Iterations (Immediate Plan)
 
-1. Complete remaining `P2.1` DTO/contract sweep and remove duplicated service payload types.
-2. Extract next safe shared non-UI utilities used by both search + user flows.
-3. Add/expand contract tests to lock shared API boundaries, then cut over to `P2.2` mobile scaffold.
+1. Scaffold `apps/mobile` (Expo + TS + lint/test baseline) with repo-standard scripts.
+2. Add mobile runtime env wiring for API base URLs and consume shared contracts in a typed service layer.
+3. Wire initial auth/session bootstrap flow in mobile and validate against existing backend contracts.
 
 ## 9) Definition of Success
 

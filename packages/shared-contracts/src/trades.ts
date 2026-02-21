@@ -54,3 +54,43 @@ export interface PartnerInfo {
 export interface RevealPartnerInfoRequest {
   trade: TradeReference;
 }
+
+export type TradeProposalPrimitive =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined;
+
+export type TradeProposalInstanceData = Record<
+  string,
+  TradeProposalPrimitive
+>;
+
+export interface TradeProposalPokemonPayload {
+  variant_id: string;
+  instance_id?: string;
+  instanceData: TradeProposalInstanceData;
+}
+
+export interface TradeProposalRequest {
+  username_proposed: string;
+  username_accepting: string;
+  pokemon_instance_id_user_proposed: string;
+  pokemon_instance_id_user_accepting: string;
+  is_special_trade: boolean;
+  is_registered_trade: boolean;
+  is_lucky_trade: boolean;
+  trade_dust_cost: number;
+  trade_friendship_level: 1 | 2 | 3 | 4;
+  user_1_trade_satisfaction: null;
+  user_2_trade_satisfaction: null;
+  pokemon: TradeProposalPokemonPayload;
+  trade_accepted_date: null;
+  trade_cancelled_by: null;
+  trade_cancelled_date: null;
+  trade_completed_date: null;
+  trade_proposal_date: string;
+  trade_status: 'proposed';
+  last_update: number;
+}

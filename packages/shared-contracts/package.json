@@ -14,6 +14,7 @@
     "./trades": "./src/trades.ts",
     "./location": "./src/location.ts",
     "./events": "./src/events.ts",
-    "./pokemon": "./src/pokemon.ts"
+    "./pokemon": "./src/pokemon.ts",
+    "./receiver": "./src/receiver.ts"
   }
 }

@@ -1,34 +1,11 @@
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
+import type {
+  TradeProposalInstanceData,
+  TradeProposalRequest,
+} from '@shared-contracts/trades';
 
-type Primitive = string | number | boolean | null | undefined;
-type SanitizedInstanceData = Record<string, Primitive>;
-
-export type TradeProposalRequest = {
-  username_proposed: string;
-  username_accepting: string;
-  pokemon_instance_id_user_proposed: string;
-  pokemon_instance_id_user_accepting: string;
-  is_special_trade: boolean;
-  is_registered_trade: boolean;
-  is_lucky_trade: boolean;
-  trade_dust_cost: number;
-  trade_friendship_level: 1 | 2 | 3 | 4;
-  user_1_trade_satisfaction: null;
-  user_2_trade_satisfaction: null;
-  pokemon: {
-    variant_id: string;
-    instance_id?: string;
-    instanceData: SanitizedInstanceData;
-  };
-  trade_acceptance_date: null;
-  trade_cancelled_by: null;
-  trade_cancelled_date: null;
-  trade_completed_date: null;
-  trade_proposal_date: string;
-  trade_status: 'proposed';
-  last_update: number;
-};
+type SanitizedInstanceData = TradeProposalInstanceData;
 
 type BuildTradeProposalRequestArgs = {
   usernameProposed: string;
@@ -177,7 +154,7 @@ export const buildTradeProposalRequest = ({
     instance_id: passedInInstanceId,
     instanceData: sanitizedInstanceData,
   },
-  trade_acceptance_date: null,
+  trade_accepted_date: null,
   trade_cancelled_by: null,
   trade_cancelled_date: null,
   trade_completed_date: null,
