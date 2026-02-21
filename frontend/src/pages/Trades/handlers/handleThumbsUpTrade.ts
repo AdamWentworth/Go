@@ -2,17 +2,17 @@
 
 import { putBatchedTradeUpdates } from "../../../db/indexedDB";
 import { createScopedLogger } from '@/utils/logger';
+import type { TradeRecord } from '@shared-contracts/trades';
 
 const log = createScopedLogger('handleThumbsUpTrade');
 
-interface Trade {
+type Trade = TradeRecord & {
   trade_id: string;
   username_proposed: string;
   user_1_trade_satisfaction: boolean;
   user_2_trade_satisfaction: boolean;
   last_update: number;
-  // Add additional fields as needed
-}
+};
 
 interface HandleThumbsUpTradeArgs {
   trade: Trade;

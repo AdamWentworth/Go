@@ -2,22 +2,19 @@
 
 import { putBatchedTradeUpdates } from "../../../db/indexedDB";
 import { createScopedLogger } from '@/utils/logger';
+import type { TradeRecord } from '@shared-contracts/trades';
 
 const log = createScopedLogger('handleCompleteTrade');
 
-export interface Trade {
+export type Trade = TradeRecord & {
   trade_id: string;
   username_proposed: string;
   username_accepting: string;
-  user_proposed_completion_confirmed?: boolean;
-  user_accepting_completion_confirmed?: boolean;
   trade_status: string;
-  trade_completed_date?: string | null;
   last_update: number;
   pokemon_instance_id_user_proposed: string;
   pokemon_instance_id_user_accepting: string;
-  // Add any additional properties if needed.
-}
+};
 
 export interface InstanceData {
   username: string;

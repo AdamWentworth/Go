@@ -61,6 +61,7 @@ Done:
    - events update envelope + SSE endpoint/query
    - trade record + related-instance payload schema
    - partner info/reveal payloads
+6. Trade UI handler/page transport types aligned to shared `TradeRecord`/`RelatedInstanceRecord` to remove remaining duplicated trade DTO definitions.
 
 ## 5) Remaining Work by Phase
 

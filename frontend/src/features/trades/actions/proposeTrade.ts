@@ -6,6 +6,7 @@ import {
   getTradeByPokemonPair
 } from '@/db/indexedDB';
 import { generateUUID } from '@/utils/PokemonIDUtils';
+import type { TradeRecord } from '@shared-contracts/trades';
 
 interface instanceData {
   [key: string]: string | number | boolean | null | undefined;
@@ -28,7 +29,7 @@ interface TradeData {
   };
 }
 
-interface TradeEntry {
+type TradeEntry = TradeRecord & {
   trade_id: string;
   username_proposed: string;
   username_accepting: string;
@@ -39,18 +40,10 @@ interface TradeEntry {
   is_lucky_trade: number;
   trade_dust_cost: number;
   trade_friendship_level: string;
-  user_1_trade_satisfaction: null;
-  user_2_trade_satisfaction: null;
-  user_proposed_completion_confirmed: null;
-  user_accepting_completion_confirmed: null;
   trade_status: string;
-  trade_accepted_date: null;
   trade_proposal_date: string;
-  trade_completed_date: null;
-  trade_cancelled_date: null;
-  trade_cancelled_by: null;
   last_update: number;
-}
+};
 
 export async function proposeTrade(tradeData: TradeData): Promise<{
   tradeEntry: TradeEntry;

@@ -1,16 +1,19 @@
+import type { TradeRecord } from '@shared-contracts/trades';
+
 export interface TradeViewTrade {
-  trade_friendship_level?: string | null;
-  trade_dust_cost?: number | null;
-  is_lucky_trade?: boolean | null;
-  username_proposed?: string | null;
-  username_accepting?: string | null;
-  user_proposed_completion_confirmed?: boolean | null;
-  user_accepting_completion_confirmed?: boolean | null;
+  trade_status?: TradeRecord['trade_status'] | null;
+  trade_friendship_level?: TradeRecord['trade_friendship_level'];
+  trade_dust_cost?: TradeRecord['trade_dust_cost'];
+  is_lucky_trade?: boolean | number | null;
+  username_proposed?: TradeRecord['username_proposed'];
+  username_accepting?: TradeRecord['username_accepting'];
+  user_proposed_completion_confirmed?: TradeRecord['user_proposed_completion_confirmed'];
+  user_accepting_completion_confirmed?: TradeRecord['user_accepting_completion_confirmed'];
   user_1_trade_satisfaction?: boolean | number | null;
   user_2_trade_satisfaction?: boolean | number | null;
-  trade_cancelled_date?: string | null;
-  trade_cancelled_by?: string | null;
-  trade_completed_date?: string | null;
+  trade_cancelled_date?: TradeRecord['trade_cancelled_date'];
+  trade_cancelled_by?: TradeRecord['trade_cancelled_by'];
+  trade_completed_date?: TradeRecord['trade_completed_date'];
   [key: string]: unknown;
 }
 

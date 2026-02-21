@@ -1,5 +1,5 @@
 import type { Instances } from '@/types/instances';
-import { requestWithPolicy, parseJsonSafe } from '@/services/httpClient';
+import { buildUrl, requestWithPolicy, parseJsonSafe } from '@/services/httpClient';
 import type {
   ErrorEnvelope,
   ForeignInstancesFetchOutcome,
@@ -65,7 +65,7 @@ export async function fetchForeignInstancesByUsername(
 }
 
 const buildUrlForUsersEndpoint = (pathWithQuery: string): string =>
-  `${USERS_API_URL}${pathWithQuery}`;
+  buildUrl(USERS_API_URL, pathWithQuery);
 
 export async function fetchTrainerAutocomplete(query: string): Promise<TrainerAutocompleteOutcome> {
   const response = await requestWithPolicy(buildUrlForUsersEndpoint(usersContract.endpoints.autocompleteTrainers(query)));

@@ -7,9 +7,23 @@ export const tradesContract = {
 export interface TradeRecord {
   trade_id?: string;
   trade_status: string;
+  username_proposed?: string | null;
+  username_accepting?: string | null;
   pokemon_instance_id_user_proposed?: string | null;
   pokemon_instance_id_user_accepting?: string | null;
-  trade_deleted_date?: string;
+  user_proposed_completion_confirmed?: boolean | null;
+  user_accepting_completion_confirmed?: boolean | null;
+  trade_proposal_date?: string | null;
+  trade_accepted_date?: string | null;
+  trade_completed_date?: string | null;
+  trade_cancelled_date?: string | null;
+  trade_cancelled_by?: string | null;
+  trade_friendship_level?: string | null;
+  trade_dust_cost?: number | null;
+  is_lucky_trade?: boolean | number | null;
+  trade_deleted_date?: string | null;
+  user_1_trade_satisfaction?: boolean | null;
+  user_2_trade_satisfaction?: boolean | null;
   last_update?: number | string | null;
   [key: string]: unknown;
 }

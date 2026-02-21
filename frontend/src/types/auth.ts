@@ -1,7 +1,6 @@
 // auth.ts
 
 import type { Coordinates } from './location';
-import type { Instances } from './instances';
 import type {
   AuthUser,
   LoginResponse as SharedLoginResponse,
@@ -35,12 +34,6 @@ export interface RegisterFormValues extends GenericPayload {
 
 export interface RegisterFormErrors {
   [key: string]: string;
-}
-
-export interface OwnershipResponse {
-  pokemon_instances: Instances;
-  trades: unknown[];
-  related_instances: unknown[];
 }
 
 export interface AccountFormValues {

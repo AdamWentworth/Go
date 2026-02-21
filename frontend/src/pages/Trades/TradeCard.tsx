@@ -17,19 +17,12 @@ import { handleThumbsUpTrade } from '@/pages/Trades/handlers/handleThumbsUpTrade
 import { usePokemonDetails } from '@/pages/Trades/hooks/usePokemonDetails';
 import type { RelatedInstancesMap, TradeStatusFilter } from '@/pages/Trades/types';
 import { getStoredUsername } from '@/utils/storage';
+import type { TradeRecord } from '@shared-contracts/trades';
 
 import './TradeCard.base.css';
 import './TradeCard.responsive.css';
 
-interface TradeCardTrade {
-  trade_id?: string;
-  trade_status?: string | null;
-  username_proposed?: string | null;
-  username_accepting?: string | null;
-  pokemon_instance_id_user_proposed?: string | null;
-  pokemon_instance_id_user_accepting?: string | null;
-  [key: string]: unknown;
-}
+type TradeCardTrade = TradeRecord;
 
 type CanonicalTrade = TradeCardTrade & {
   trade_id: string;

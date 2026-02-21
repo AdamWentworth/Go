@@ -2,16 +2,15 @@
 
 import { putBatchedTradeUpdates } from "../../../db/indexedDB";
 import { createScopedLogger } from '@/utils/logger';
+import type { TradeRecord } from '@shared-contracts/trades';
 
 const log = createScopedLogger('handleDenyTrade');
 
-export interface Trade {
+export type Trade = TradeRecord & {
   trade_id: string;
-  trade_deleted_date?: string | null;
   trade_status: string;
   last_update: number;
-  // Add additional properties as required.
-}
+};
 
 export interface HandleDenyTradeArgs {
   trade: Trade;
