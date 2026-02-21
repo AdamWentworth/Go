@@ -20,6 +20,10 @@ import {
   loadStoredSession,
   saveStoredSession,
 } from './sessionStorage';
+import {
+  clearAuthToken,
+  setAuthToken,
+} from './authSession';
 
 type SessionStatus = 'bootstrapping' | 'authenticated' | 'unauthenticated';
 
@@ -29,6 +33,7 @@ type AuthContextValue = {
   error: string | null;
   signIn: (credentials: LoginRequest) => Promise<void>;
   signOut: () => Promise<void>;
+  updateUser: (nextUser: LoginResponse) => Promise<void>;
   clearError: () => void;
 };
 
@@ -57,8 +62,10 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
         if (persistedSession) {
           setUser(persistedSession);
+          setAuthToken(persistedSession.token);
           setStatus('authenticated');
         } else {
+          clearAuthToken();
           setStatus('unauthenticated');
         }
 
@@ -84,6 +91,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     try {
       const response = await loginUser(credentials);
       await saveStoredSession(response);
+      setAuthToken(response.token);
       setUser(response);
       setStatus('authenticated');
     } catch (nextError) {
@@ -101,9 +109,16 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       // Logout failures should still clear local auth state.
     } finally {
       await clearStoredSession();
+      clearAuthToken();
       setUser(null);
       setStatus('unauthenticated');
     }
+  }, []);
+
+  const updateUser = useCallback(async (nextUser: LoginResponse) => {
+    await saveStoredSession(nextUser);
+    setAuthToken(nextUser.token);
+    setUser(nextUser);
   }, []);
 
   const clearError = useCallback(() => setError(null), []);
@@ -115,9 +130,10 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       error,
       signIn,
       signOut,
+      updateUser,
       clearError,
     }),
-    [status, user, error, signIn, signOut, clearError],
+    [status, user, error, signIn, signOut, updateUser, clearError],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

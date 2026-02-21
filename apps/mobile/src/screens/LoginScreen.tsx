@@ -1,8 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../features/auth/AuthProvider';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 
-export const LoginScreen = () => {
+type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;
+
+export const LoginScreen = ({ navigation }: LoginScreenProps) => {
   const { signIn, error, clearError, status } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -28,7 +32,7 @@ export const LoginScreen = () => {
     return (
       <View style={styles.center}>
         <ActivityIndicator />
-        <Text style={styles.caption}>Bootstrapping session…</Text>
+        <Text style={styles.caption}>Bootstrapping session...</Text>
       </View>
     );
   }
@@ -58,7 +62,12 @@ export const LoginScreen = () => {
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Button title={submitting ? 'Signing in…' : 'Sign In'} onPress={handleSubmit} disabled={!canSubmit} />
+      <Button
+        title={submitting ? 'Signing in...' : 'Sign In'}
+        onPress={() => void handleSubmit()}
+        disabled={!canSubmit}
+      />
+      <Button title="Register" onPress={() => navigation.navigate('Register')} />
     </View>
   );
 };
@@ -101,3 +110,4 @@ const styles = StyleSheet.create({
     color: '#666',
   },
 });
+

@@ -226,6 +226,15 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
           onPress={() => void handleLookup()}
           disabled={lookupLoading || lookupUsername.trim().length === 0}
         />
+        <Button
+          title="Open Collection"
+          onPress={() =>
+            navigation.navigate('PokemonCollection', {
+              username: lookupUsername.trim() || undefined,
+            })
+          }
+          disabled={lookupUsername.trim().length === 0}
+        />
         <Button title="Back" onPress={() => navigation.goBack()} />
       </View>
 

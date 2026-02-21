@@ -1,5 +1,6 @@
 import {
   authContract,
+  type AuthRequestPayload,
   type LoginResponse,
   type RefreshTokenResponse,
 } from '@pokemongonexus/shared-contracts/auth';
@@ -10,6 +11,16 @@ export type LoginRequest = {
   username: string;
   password: string;
 };
+
+export type RegisterRequest = AuthRequestPayload;
+
+export const registerUser = async (payload: RegisterRequest): Promise<Record<string, unknown>> =>
+  requestJson<Record<string, unknown>>(
+    runtimeConfig.api.authApiUrl,
+    authContract.endpoints.register,
+    'POST',
+    payload,
+  );
 
 export const loginUser = async (payload: LoginRequest): Promise<LoginResponse> =>
   requestJson<LoginResponse>(

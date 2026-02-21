@@ -13,9 +13,13 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
     <View style={styles.container}>
       <Text style={styles.title}>Welcome</Text>
       <Text style={styles.username}>{user?.username ?? 'Trainer'}</Text>
-      <Text style={styles.caption}>P2.3 read slices are now available.</Text>
+      <Text style={styles.caption}>Mobile parity workbench</Text>
       <Button title="Trainer Search" onPress={() => navigation.navigate('TrainerSearch')} />
       <Button title="Pokemon Catalog" onPress={() => navigation.navigate('PokemonCatalog')} />
+      <Button title="My Collection" onPress={() => navigation.navigate('PokemonCollection')} />
+      <Button title="Search" onPress={() => navigation.navigate('Search')} />
+      <Button title="Trades" onPress={() => navigation.navigate('Trades')} />
+      <Button title="Account" onPress={() => navigation.navigate('Account')} />
       <Button title="Sign Out" onPress={() => void signOut()} />
     </View>
   );

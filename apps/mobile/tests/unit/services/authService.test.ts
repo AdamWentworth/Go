@@ -1,6 +1,6 @@
 import { authContract } from '@pokemongonexus/shared-contracts/auth';
 import { runtimeConfig } from '../../../src/config/runtimeConfig';
-import { loginUser } from '../../../src/services/authService';
+import { loginUser, registerUser } from '../../../src/services/authService';
 
 jest.mock('@pokemongonexus/shared-contracts/common', () => ({
   buildUrl: (base: string, path: string) => `${base}${path}`,
@@ -9,6 +9,7 @@ jest.mock('@pokemongonexus/shared-contracts/common', () => ({
 jest.mock('@pokemongonexus/shared-contracts/auth', () => ({
   authContract: {
     endpoints: {
+      register: '/register',
       login: '/login',
       refresh: '/refresh',
       logout: '/logout',
@@ -51,6 +52,28 @@ describe('authService', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
       `${runtimeConfig.api.authApiUrl}${authContract.endpoints.login}`,
+    );
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      method: 'POST',
+    });
+  });
+
+  it('posts register payload to shared auth contract endpoint', async () => {
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      makeResponse(200, { success: true }),
+    );
+
+    await registerUser({
+      username: 'newuser',
+      email: 'newuser@example.com',
+      password: 'password123',
+      pokemonGoName: 'NewUser',
+      trainerCode: '123412341234',
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      `${runtimeConfig.api.authApiUrl}${authContract.endpoints.register}`,
     );
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
       method: 'POST',

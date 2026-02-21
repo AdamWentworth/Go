@@ -110,14 +110,35 @@ Done:
    - `TrainerSearchScreen` tests for debounce autocomplete + lookup ownership filtering
    - `PokemonCatalogScreen` tests for list/detail rendering + empty filter state
    - explicit empty-state hints for autocomplete, ownership lists, and pokemon filters
+5. Mobile route-surface expansion shipped with reusable service adapters:
+   - `PokemonCollectionScreen` (own + foreign username collection read path)
+   - `SearchScreen` (shared-contract `searchPokemon` baseline)
+   - `TradesScreen` (trade overview read path + status grouping)
+   - `AccountScreen` (auth/secondary profile update + delete baseline)
+   - `RegisterScreen` (mobile register baseline + immediate sign-in flow)
+   - auth token propagation from session storage into mobile service headers
+   - new service coverage for `account`, `search`, `trades`, `overview`
 
 Remaining:
 
 1. Validate first slices on device against live APIs.
 2. Continue UX polish for edge network/error paths on mobile slices.
-3. Start first parity matrix draft for `P2.4`.
+3. Close functional parity gaps for:
+   - full pokemon page interaction flows (create/edit/fusion/mega/tag workflows)
+   - full trades mutation lifecycle (accept/deny/cancel/complete/re-propose)
+   - full search parameter parity (web-level filters + map/list UX)
 
-## 5) Next Phase (P2.4) Preview
+## 5) Parity Snapshot (Web -> Mobile)
+
+1. `/login`: `complete` (mobile auth shell + persisted session).
+2. `/pokemon`: `partial` (catalog + collection read paths exist; advanced instance workflows pending).
+3. `/pokemon/:username`: `partial` (foreign collection lookup/read implemented; deeper UI parity pending).
+4. `/search`: `partial` (endpoint wired + baseline UI; full filter/map parity pending).
+5. `/trades`: `partial` (read/status summary implemented; mutation lifecycle pending).
+6. `/account`: `partial` (update/delete baseline implemented; full form parity pending).
+7. `/register`: `partial` (register screen baseline implemented; full validation/error UX parity pending).
+
+## 6) Next Phase (P2.4) Preview
 
 Objective: move from MVP to near-full parity with explicit tradeoffs.
 
@@ -128,14 +149,14 @@ Planned work:
 3. Add RN performance + crash + network resilience checks.
 4. Release hardening (offline/cache strategy, error UX, observability).
 
-## 6) Priority Rules
+## 7) Priority Rules
 
 1. No business logic behavior change without tests in same iteration.
 2. Keep canonical naming: `caught`, `trade`, `wanted`, `variant_id`, `instance_id`.
 3. Dev logs enabled in dev; suppressed in prod.
 4. Keep CI green every iteration (`test`, `typecheck`, `lint`, contract checks).
 
-## 7) Risks and Mitigations
+## 8) Risks and Mitigations
 
 1. Map stack mismatch (OpenLayers web vs RN maps):
    - Mitigation: isolate map logic behind adapter interfaces before full UI parity work.
@@ -146,13 +167,13 @@ Planned work:
 4. Scope creep during refactors:
    - Mitigation: keep extraction and feature work in separate iterations.
 
-## 8) Next 3 Iterations (Immediate Plan)
+## 9) Next 3 Iterations (Immediate Plan)
 
 1. Finish remaining `P2.2` exit criteria (device/emulator validation against live services).
-2. Validate `P2.3` trainer/pokemon flows on device and capture parity gaps.
-3. Start `P2.4` parity matrix and select first high-value parity flow.
+2. Port register screen + finalize auth-path parity.
+3. Start mutation parity for trades and pokemon instance workflows.
 
-## 9) Definition of Success
+## 10) Definition of Success
 
 1. RN app is testable on device with shared-core contracts.
 2. Web remains stable with no regression in core flows.

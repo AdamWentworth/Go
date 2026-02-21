@@ -1,4 +1,5 @@
 import { buildUrl } from '@pokemongonexus/shared-contracts/common';
+import { getAuthToken } from '../features/auth/authSession';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
@@ -41,12 +42,24 @@ export const requestJson = async <TResponse>(
   baseUrl: string,
   path: string,
   method: HttpMethod,
-  payload?: Record<string, unknown>,
+  payload?: unknown,
+  options?: {
+    headers?: Record<string, string>;
+  },
 ): Promise<TResponse> => {
+  const authToken = getAuthToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers ?? {}),
+  };
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
+
   const response = await fetch(buildUrl(baseUrl, path), {
     method,
-    headers: { 'Content-Type': 'application/json' },
-    body: payload ? JSON.stringify(payload) : undefined,
+    headers,
+    body: payload !== undefined ? JSON.stringify(payload) : undefined,
   });
   const data = await parseJsonSafe<TResponse>(response);
 
