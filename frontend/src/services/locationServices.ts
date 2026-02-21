@@ -11,6 +11,7 @@ import {
   parseJsonSafe,
   requestWithPolicy,
 } from './httpClient';
+import { locationContract } from '@shared-contracts/location';
 
 const BASE_URL = import.meta.env.VITE_LOCATION_SERVICE_URL;
 const log = createScopedLogger('locationServices');
@@ -24,7 +25,7 @@ export const fetchSuggestions = async (
       .replace(/[\u0300-\u036f]/g, '');
 
     const response = await requestWithPolicy(
-      buildUrl(BASE_URL, '/autocomplete', { query: normalizedInput }),
+      buildUrl(BASE_URL, locationContract.endpoints.autocomplete, { query: normalizedInput }),
       {
         method: 'GET',
         credentials: 'omit',
@@ -69,7 +70,7 @@ export const fetchLocationOptions = async (
 ): Promise<LocationSuggestion[]> => {
   try {
     const response = await requestWithPolicy(
-      buildUrl(BASE_URL, '/reverse', {
+      buildUrl(BASE_URL, locationContract.endpoints.reverse, {
         lat: latitude,
         lon: longitude,
       }),

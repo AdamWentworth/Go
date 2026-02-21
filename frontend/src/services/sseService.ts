@@ -6,6 +6,7 @@ import {
   parseJsonSafe,
   requestWithPolicy,
 } from './httpClient';
+import { eventsContract } from '@shared-contracts/events';
 
 const log = createScopedLogger('sseService');
 
@@ -16,7 +17,7 @@ export const fetchUpdates = async (
 ): Promise<unknown | null> => {
   try {
     const response = await requestWithPolicy(
-      buildUrl(import.meta.env.VITE_EVENTS_API_URL, '/getUpdates', {
+      buildUrl(import.meta.env.VITE_EVENTS_API_URL, eventsContract.endpoints.getUpdates, {
         device_id: deviceId,
         timestamp,
       }),

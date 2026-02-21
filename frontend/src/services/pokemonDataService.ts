@@ -8,6 +8,7 @@ import {
   requestWithPolicy,
   toHttpError,
 } from './httpClient';
+import { pokemonContract } from '@shared-contracts/pokemon';
 
 const BASE_URL: string = import.meta.env.VITE_POKEMON_API_URL;
 
@@ -41,7 +42,7 @@ export const getPokemons = async (): Promise<Pokemons> => {
     if (ifNoneMatch) {
       headers['If-None-Match'] = ifNoneMatch;
     }
-    const response = await requestWithPolicy(buildUrl(BASE_URL, '/pokemons'), {
+    const response = await requestWithPolicy(buildUrl(BASE_URL, pokemonContract.endpoints.pokemons), {
       method: 'GET',
       headers,
     });

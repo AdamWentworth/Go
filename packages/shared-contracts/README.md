@@ -17,6 +17,16 @@ Shared API contracts/types used across clients (web now, mobile next).
 2. `search.ts`
    - Search query/result row types.
    - Search endpoint path contract.
+3. `auth.ts`
+   - Auth endpoint path helpers.
+4. `trades.ts`
+   - Trade-related endpoint paths.
+5. `location.ts`
+   - Location service endpoint paths.
+6. `events.ts`
+   - Events service endpoint paths.
+7. `pokemon.ts`
+   - Pokemon service endpoint paths.
 
 ## Usage (frontend)
 

@@ -6,6 +6,11 @@
   "exports": {
     ".": "./src/index.ts",
     "./users": "./src/users.ts",
-    "./search": "./src/search.ts"
+    "./search": "./src/search.ts",
+    "./auth": "./src/auth.ts",
+    "./trades": "./src/trades.ts",
+    "./location": "./src/location.ts",
+    "./events": "./src/events.ts",
+    "./pokemon": "./src/pokemon.ts"
   }
 }

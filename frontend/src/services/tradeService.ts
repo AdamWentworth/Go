@@ -2,6 +2,7 @@
 
 import { createScopedLogger } from '@/utils/logger';
 import { buildUrl, parseJsonSafe, requestWithPolicy } from './httpClient';
+import { tradesContract } from '@shared-contracts/trades';
 
 interface Trade {
   trade_id?: string;
@@ -25,7 +26,7 @@ const log = createScopedLogger('tradeService');
 export async function revealPartnerInfo(trade: Trade): Promise<PartnerInfo> {
   try {
     const response = await requestWithPolicy(
-      buildUrl(import.meta.env.VITE_AUTH_API_URL, '/reveal-partner-info'),
+      buildUrl(import.meta.env.VITE_AUTH_API_URL, tradesContract.endpoints.revealPartnerInfo),
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

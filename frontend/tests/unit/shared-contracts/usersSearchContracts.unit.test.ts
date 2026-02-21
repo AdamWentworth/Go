@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { usersContract } from '@shared-contracts/users';
 import { searchContract } from '@shared-contracts/search';
+import { authContract } from '@shared-contracts/auth';
+import { tradesContract } from '@shared-contracts/trades';
+import { locationContract } from '@shared-contracts/location';
+import { eventsContract } from '@shared-contracts/events';
+import { pokemonContract } from '@shared-contracts/pokemon';
 
 describe('shared contracts', () => {
   it('builds users endpoints with canonical lowercase username', () => {
@@ -15,5 +20,32 @@ describe('shared contracts', () => {
 
   it('exposes stable search endpoint path', () => {
     expect(searchContract.endpoints.searchPokemon).toBe('/searchPokemon');
+  });
+
+  it('builds users overview/update endpoints', () => {
+    expect(usersContract.endpoints.userOverview('663d6760537fa61b79ac8bab')).toBe(
+      '/users/663d6760537fa61b79ac8bab/overview',
+    );
+    expect(usersContract.endpoints.updateUser('663d6760537fa61b79ac8bab')).toBe(
+      '/update-user/663d6760537fa61b79ac8bab',
+    );
+  });
+
+  it('builds auth endpoints with encoded user ids', () => {
+    expect(authContract.endpoints.register).toBe('/register');
+    expect(authContract.endpoints.login).toBe('/login');
+    expect(authContract.endpoints.logout).toBe('/logout');
+    expect(authContract.endpoints.refresh).toBe('/refresh');
+    expect(authContract.endpoints.resetPassword).toBe('/reset-password');
+    expect(authContract.endpoints.updateUser('u/1')).toBe('/update/u%2F1');
+    expect(authContract.endpoints.deleteUser('u/1')).toBe('/delete/u%2F1');
+  });
+
+  it('exposes stable trades/location/events/pokemon endpoints', () => {
+    expect(tradesContract.endpoints.revealPartnerInfo).toBe('/reveal-partner-info');
+    expect(locationContract.endpoints.autocomplete).toBe('/autocomplete');
+    expect(locationContract.endpoints.reverse).toBe('/reverse');
+    expect(eventsContract.endpoints.getUpdates).toBe('/getUpdates');
+    expect(pokemonContract.endpoints.pokemons).toBe('/pokemons');
   });
 });

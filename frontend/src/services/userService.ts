@@ -9,6 +9,7 @@ import {
   requestWithPolicy,
   toHttpError,
 } from './httpClient';
+import { usersContract } from '@shared-contracts/users';
 
 const log = createScopedLogger('userService');
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL;
@@ -19,7 +20,7 @@ const USERS_API_URL = import.meta.env.VITE_USERS_API_URL;
 export const fetchUserOverview = async (userId: string): Promise<UserOverview> => {
   try {
     const deviceId = getDeviceId();
-    const url = buildUrl(USERS_API_URL, `/users/${userId}/overview`, {
+    const url = buildUrl(USERS_API_URL, usersContract.endpoints.userOverview(userId), {
       device_id: deviceId,
     });
 

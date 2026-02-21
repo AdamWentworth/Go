@@ -25,5 +25,9 @@ export const usersContract = {
       `/public/users/${encodeURIComponent(toLower(username))}`,
     autocompleteTrainers: (query: string) =>
       `/autocomplete-trainers?q=${encodeURIComponent(query)}`,
+    updateUser: (userId: string) =>
+      `/update-user/${encodeURIComponent(userId)}`,
+    userOverview: (userId: string) =>
+      `/users/${encodeURIComponent(userId)}/overview`,
   },
 } as const;

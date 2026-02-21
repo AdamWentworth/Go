@@ -10,6 +10,8 @@ import {
   toHttpError,
 } from './httpClient';
 import { removeStorageKeys, STORAGE_KEYS } from '@/utils/storage';
+import { authContract } from '@shared-contracts/auth';
+import { usersContract } from '@shared-contracts/users';
 
 const log = createScopedLogger('authService');
 const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL;
@@ -55,7 +57,7 @@ export const registerUser = async (userData: GenericPayload): Promise<unknown> =
     const deviceId = getDeviceId();
     return await requestJson<unknown>(
       AUTH_API_URL,
-      '/register',
+      authContract.endpoints.register,
       'POST',
       { ...userData, device_id: deviceId },
     );
@@ -73,7 +75,7 @@ export const loginUser = async (loginData: GenericPayload): Promise<unknown> => 
     const deviceId = getDeviceId();
     return await requestJson<unknown>(
       AUTH_API_URL,
-      '/login',
+      authContract.endpoints.login,
       'POST',
       { ...loginData, device_id: deviceId },
     );
@@ -88,7 +90,7 @@ export const loginUser = async (loginData: GenericPayload): Promise<unknown> => 
 // ==========================
 export const logoutUser = async (): Promise<void> => {
   try {
-    await requestJson<unknown>(AUTH_API_URL, '/logout', 'POST', {});
+    await requestJson<unknown>(AUTH_API_URL, authContract.endpoints.logout, 'POST', {});
     removeStorageKeys([
       STORAGE_KEYS.user,
       STORAGE_KEYS.location,
@@ -111,7 +113,7 @@ export const updateUserDetails = async (
   try {
     const data = await requestJson<unknown>(
       AUTH_API_URL,
-      `/update/${userId}`,
+      authContract.endpoints.updateUser(userId),
       'PUT',
       userData,
     );
@@ -142,7 +144,7 @@ export const updateUserInSecondaryDB = async (
   try {
     const data = await requestJson<unknown>(
       USERS_API_URL,
-      `/update-user/${userId}`,
+      usersContract.endpoints.updateUser(userId),
       'PUT',
       {
         username: userDetails.username,
@@ -174,7 +176,7 @@ export const deleteAccount = async (userId: string): Promise<unknown> => {
   try {
     return await requestJson<unknown>(
       AUTH_API_URL,
-      `/delete/${userId}`,
+      authContract.endpoints.deleteUser(userId),
       'DELETE',
     );
   } catch (error: unknown) {
@@ -188,7 +190,7 @@ export const deleteAccount = async (userId: string): Promise<unknown> => {
 // ==========================
 export const refreshTokenService = async (): Promise<unknown> => {
   try {
-    return await requestJson<unknown>(AUTH_API_URL, '/refresh', 'POST', {});
+    return await requestJson<unknown>(AUTH_API_URL, authContract.endpoints.refresh, 'POST', {});
   } catch (error: unknown) {
     log.error('Error refreshing token:', error);
     throw error;
@@ -204,7 +206,8 @@ export const resetPassword = async ({
   identifier: string;
 }): Promise<unknown> => {
   try {
-    return await requestJson<unknown>(AUTH_API_URL, '/reset-password', 'POST', {
+    return await requestJson<unknown>(AUTH_API_URL, authContract.endpoints.resetPassword, 'POST', {
+      // keep payload semantics unchanged
       identifier,
     });
   } catch (error: unknown) {

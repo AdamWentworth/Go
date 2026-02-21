@@ -126,7 +126,7 @@ This avoids forcing web-specific dependencies (DOM/OpenLayers/CSS) into mobile.
 1. P2.1 Monorepo/package extraction prep
    - Extract shared types and service contracts from frontend into a shared package.
    - Keep API semantics identical across platforms.
-   - Status: In Progress (shared `users` + `search` contracts extracted and wired, 2026-02-21)
+   - Status: In Progress (shared `users`, `search`, `auth`, `trades`, `location`, `events`, `pokemon` contracts extracted and wired, 2026-02-21)
 
 2. P2.2 Mobile bootstrap
    - Stand up Expo app with auth shell, navigation, and environment handling.
