@@ -5,6 +5,11 @@ export const locationContract = {
   },
 } as const;
 
+export interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
 export interface LocationBase {
   name?: string;
   city?: string;

@@ -30,6 +30,13 @@ export type TrainerAutocompleteEntry = {
   pokemonGoName?: string | null;
 };
 
+export interface SecondaryUserUpdateRequest {
+  username: string;
+  latitude?: number;
+  longitude?: number;
+  pokemonGoName?: string;
+}
+
 export type ErrorEnvelope = {
   message?: string;
 };

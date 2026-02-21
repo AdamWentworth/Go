@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   loginUser,
   refreshTokenService,
+  updateUserInSecondaryDB,
   updateUserDetails,
 } from '@/services/authService';
 
@@ -70,6 +71,42 @@ describe('authService', () => {
         status: 401,
         data: { message: 'Unauthorized' },
       },
+    });
+  });
+
+  it('submits secondary-db update payload to users service endpoint', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const result = await updateUserInSecondaryDB('u1', {
+      username: 'misty',
+      pokemonGoName: 'Misty',
+      latitude: 12.34,
+      longitude: 56.78,
+    });
+
+    expect(result).toEqual({
+      success: true,
+      data: { ok: true },
+    });
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/update-user/u1'),
+      expect.objectContaining({
+        method: 'PUT',
+      }),
+    );
+
+    const requestInit = fetchSpy.mock.calls[0]?.[1] as RequestInit;
+    const body = requestInit.body ? JSON.parse(String(requestInit.body)) : {};
+    expect(body).toMatchObject({
+      username: 'misty',
+      pokemonGoName: 'Misty',
+      latitude: 12.34,
+      longitude: 56.78,
     });
   });
 });

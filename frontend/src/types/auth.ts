@@ -2,26 +2,15 @@
 
 import type { Coordinates } from './location';
 import type { Instances } from './instances';
+import type {
+  AuthUser,
+  LoginResponse as SharedLoginResponse,
+  RefreshTokenResponse,
+} from '@shared-contracts/auth';
 
-export interface User {
-  user_id: string;
-  username: string;
-  email: string;
-  pokemonGoName: string;
-  trainerCode: string;
-  location: string;
-  allowLocation: boolean;
-  coordinates?: Coordinates | null;
-  accessTokenExpiry: string;
-  refreshTokenExpiry: string;
-  [key: string]: unknown;
-}
-
-export interface RefreshTokenPayload {
-  accessTokenExpiry: string;
-  refreshTokenExpiry: string;
-  accessToken: string;
-}
+export type User = AuthUser;
+export type RefreshTokenPayload = RefreshTokenResponse;
+export type LoginResponse = SharedLoginResponse;
 
 export interface GenericPayload {
   [key: string]: unknown;
@@ -46,20 +35,6 @@ export interface RegisterFormValues extends GenericPayload {
 
 export interface RegisterFormErrors {
   [key: string]: string;
-}
-
-export interface LoginResponse {
-  email: string;
-  username: string;
-  pokemonGoName: string;
-  trainerCode: string;
-  user_id: string;
-  token: string;
-  allowLocation: boolean;
-  location: string;
-  coordinates: Coordinates | null;
-  accessTokenExpiry: string;
-  refreshTokenExpiry: string;
 }
 
 export interface OwnershipResponse {

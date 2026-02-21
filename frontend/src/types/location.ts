@@ -1,11 +1,7 @@
 // src/types/location.ts
 
-export interface Coordinates {
-  latitude: number;
-  longitude: number;
-}
-
 export type {
+  Coordinates,
   LocationBase,
   LocationSuggestion,
   LocationResponse,

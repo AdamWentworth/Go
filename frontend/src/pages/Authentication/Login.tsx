@@ -53,7 +53,7 @@ const Login: FC = () => {
     setIsLoading(true);
     try {
       /* ----------------------------- authenticate ----------------------- */
-      const response = (await loginUser(formValues)) as LoginResponse;
+      const response: LoginResponse = await loginUser(formValues);
       const {
         email,
         username,

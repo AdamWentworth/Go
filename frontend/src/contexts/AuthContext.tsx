@@ -33,7 +33,7 @@ import {
   clearTradesStore,
   clearAllTagsDB,
 } from '../db/indexedDB';
-import type { User, RefreshTokenPayload } from '../types/auth';
+import type { User } from '../types/auth';
 import type { ApiResponse } from '../types/common';
 import type { AuthContextType } from '../types/authContext';
 
@@ -146,7 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const refreshToken = useCallback(async () => {
     try {
       const { accessTokenExpiry, refreshTokenExpiry } =
-        (await refreshTokenService()) as RefreshTokenPayload;
+        await refreshTokenService();
 
       const newUser: User = {
         ...userRef.current!,

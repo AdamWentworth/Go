@@ -13,6 +13,7 @@ Shared API contracts/types used across clients (web now, mobile next).
 1. `users.ts`
    - Public user/instances envelope types.
    - User overview DTO types (`UserOverviewUser`, `UserOverview`).
+   - Secondary user-update DTOs (`SecondaryUserUpdateRequest`).
    - Trainer autocomplete types.
    - Users endpoint path helpers.
 2. `search.ts`
@@ -22,10 +23,11 @@ Shared API contracts/types used across clients (web now, mobile next).
    - Shared web/mobile-safe normalizers (ownership mode, case-folding, diacritic stripping).
 4. `auth.ts`
    - Auth endpoint path helpers.
+   - Auth/session transport DTOs (`AuthUser`, `LoginResponse`, `RefreshTokenResponse`).
 5. `trades.ts`
    - Trade-related endpoint paths and transport DTOs (`PartnerInfo`, `PartnerCoordinates`, `TradeReference`).
 6. `location.ts`
-   - Location service endpoint paths and transport DTOs (`LocationBase`, `LocationResponse`).
+   - Location service endpoint paths and transport DTOs (`Coordinates`, `LocationBase`, `LocationResponse`).
 7. `events.ts`
    - Events service endpoint paths.
 8. `pokemon.ts`

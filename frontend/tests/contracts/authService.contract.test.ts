@@ -57,7 +57,7 @@ describe('authService contract', () => {
 
     vi.spyOn(global, 'fetch').mockResolvedValueOnce(makeJsonResponse(200, payload));
 
-    const result = (await refreshTokenService()) as Record<string, unknown>;
+    const result = await refreshTokenService();
 
     expect(result).toMatchObject(payload);
     expect(typeof result.accessToken).toBe('string');
@@ -78,4 +78,3 @@ describe('authService contract', () => {
     });
   });
 });
-

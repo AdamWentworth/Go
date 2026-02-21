@@ -74,10 +74,10 @@ const Register: FC = () => {
       setTimeout(async () => {
         try {
           // Login using the provided username and password.
-          const loginResponse = (await loginUser({
+          const loginResponse: LoginResponse = await loginUser({
             username: formValues.username,
             password: formValues.password,
-          })) as LoginResponse;
+          });
           log.info('Login successful.');
 
           // Construct a User object matching our centralized User type.

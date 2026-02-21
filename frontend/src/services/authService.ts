@@ -12,17 +12,19 @@ import {
 import { removeStorageKeys, STORAGE_KEYS } from '@/utils/storage';
 import { authContract } from '@shared-contracts/auth';
 import { usersContract } from '@shared-contracts/users';
+import type {
+  AuthRequestPayload,
+  LoginResponse,
+  RefreshTokenResponse,
+  ResetPasswordRequest,
+} from '@shared-contracts/auth';
+import type { SecondaryUserUpdateRequest } from '@shared-contracts/users';
 
 const log = createScopedLogger('authService');
 const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL;
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL;
 
-// A generic type for payload objects
-interface GenericPayload {
-  [key: string]: unknown;
-}
-
-type RequestPayload = GenericPayload | null;
+type RequestPayload = AuthRequestPayload | null;
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json',
@@ -40,7 +42,7 @@ async function requestJson<T>(
     body: payload ? JSON.stringify(payload) : undefined,
   });
 
-  const data = await parseJsonSafe<T | GenericPayload>(response);
+  const data = await parseJsonSafe<T | AuthRequestPayload>(response);
 
   if (!response.ok) {
     throw toHttpError(response.status, data);
@@ -52,10 +54,12 @@ async function requestJson<T>(
 // ==========================
 // registerUser
 // ==========================
-export const registerUser = async (userData: GenericPayload): Promise<unknown> => {
+export const registerUser = async (
+  userData: AuthRequestPayload,
+): Promise<AuthRequestPayload> => {
   try {
     const deviceId = getDeviceId();
-    return await requestJson<unknown>(
+    return await requestJson<AuthRequestPayload>(
       AUTH_API_URL,
       authContract.endpoints.register,
       'POST',
@@ -70,10 +74,12 @@ export const registerUser = async (userData: GenericPayload): Promise<unknown> =
 // ==========================
 // loginUser
 // ==========================
-export const loginUser = async (loginData: GenericPayload): Promise<unknown> => {
+export const loginUser = async (
+  loginData: AuthRequestPayload,
+): Promise<LoginResponse> => {
   try {
     const deviceId = getDeviceId();
-    return await requestJson<unknown>(
+    return await requestJson<LoginResponse>(
       AUTH_API_URL,
       authContract.endpoints.login,
       'POST',
@@ -108,7 +114,7 @@ export const logoutUser = async (): Promise<void> => {
 // ==========================
 export const updateUserDetails = async (
   userId: string,
-  userData: GenericPayload
+  userData: AuthRequestPayload
 ): Promise<{ success: boolean; data?: unknown; error?: string }> => {
   try {
     const data = await requestJson<unknown>(
@@ -130,16 +136,9 @@ export const updateUserDetails = async (
 // ==========================
 // updateUserInSecondaryDB
 // ==========================
-interface UserDetails {
-  username: string;
-  latitude?: number;
-  longitude?: number;
-  pokemonGoName?: string;
-}
-
 export const updateUserInSecondaryDB = async (
   userId: string,
-  userDetails: UserDetails
+  userDetails: SecondaryUserUpdateRequest
 ): Promise<{ success: boolean; data?: unknown; error?: string }> => {
   try {
     const data = await requestJson<unknown>(
@@ -172,9 +171,9 @@ export const updateUserInSecondaryDB = async (
 // ==========================
 // deleteAccount
 // ==========================
-export const deleteAccount = async (userId: string): Promise<unknown> => {
+export const deleteAccount = async (userId: string): Promise<AuthRequestPayload> => {
   try {
-    return await requestJson<unknown>(
+    return await requestJson<AuthRequestPayload>(
       AUTH_API_URL,
       authContract.endpoints.deleteUser(userId),
       'DELETE',
@@ -188,9 +187,14 @@ export const deleteAccount = async (userId: string): Promise<unknown> => {
 // ==========================
 // refreshTokenService
 // ==========================
-export const refreshTokenService = async (): Promise<unknown> => {
+export const refreshTokenService = async (): Promise<RefreshTokenResponse> => {
   try {
-    return await requestJson<unknown>(AUTH_API_URL, authContract.endpoints.refresh, 'POST', {});
+    return await requestJson<RefreshTokenResponse>(
+      AUTH_API_URL,
+      authContract.endpoints.refresh,
+      'POST',
+      {},
+    );
   } catch (error: unknown) {
     log.error('Error refreshing token:', error);
     throw error;
@@ -202,14 +206,16 @@ export const refreshTokenService = async (): Promise<unknown> => {
 // ==========================
 export const resetPassword = async ({
   identifier,
-}: {
-  identifier: string;
-}): Promise<unknown> => {
+}: ResetPasswordRequest): Promise<AuthRequestPayload> => {
   try {
-    return await requestJson<unknown>(AUTH_API_URL, authContract.endpoints.resetPassword, 'POST', {
-      // keep payload semantics unchanged
-      identifier,
-    });
+    return await requestJson<AuthRequestPayload>(
+      AUTH_API_URL,
+      authContract.endpoints.resetPassword,
+      'POST',
+      {
+        identifier,
+      },
+    );
   } catch (error: unknown) {
     log.error('Error resetting password:', error);
     throw error;
