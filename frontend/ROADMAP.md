@@ -7,7 +7,7 @@ Last updated: 2026-02-21
 - Web frontend is stable, deployable, and CI-gated.
 - `P0` hardening is complete.
 - `P1` CSS cleanup/guardrails is complete.
-- Current focus is `P2`: ship React Native using a shared-core architecture.
+- Current focus is `P2.2`: mobile bootstrap + first runnable shell using shared contracts.
 
 ## 2) Architecture Decision (Locked)
 
@@ -68,18 +68,28 @@ Done:
 10. Shared-contracts checks expanded (`receiver.ts` required in CI preflight + endpoint contract test coverage).
 11. Package-level versioning/release conventions documented in shared-contracts README.
 
+### P2.2 Mobile Bootstrap (In Progress)
+
+Done:
+
+1. `apps/mobile` scaffolded with Expo + TypeScript.
+2. Mobile baseline scripts wired (`start`, `android`, `ios`, `web`, `typecheck`, `lint`, `test`).
+3. Runtime API config added via Expo `extra` (`app.config.ts` + `.env.example`).
+4. Shared contracts consumed in mobile service layer (`authService`, shared URL builder/contracts).
+5. Auth + navigation shell implemented (`Login`/`Home` flow with provider + stack navigator).
+6. Mobile baseline checks green (`npm run typecheck`, `npm run lint`, `npm run test` in `apps/mobile`).
+
 ## 5) Remaining Work by Phase
 
 ### P2.2 Mobile Bootstrap
 
 Objective: create runnable Expo app using shared contracts/core.
 
-Work:
+Remaining:
 
-1. Scaffold `apps/mobile` with Expo + TS + lint/test baseline.
-2. Configure env/runtime config for API endpoints.
-3. Wire auth shell + navigation skeleton.
-4. Consume shared contracts in mobile service layer.
+1. Validate the shell on physical device/emulator (`android` and/or `ios`) against live services.
+2. Add a lightweight session persistence strategy (SecureStore or AsyncStorage) for auth bootstrap continuity.
+3. Add first mobile CI workflow (`typecheck` + `lint` + `test`).
 
 Exit criteria:
 
@@ -87,7 +97,7 @@ Exit criteria:
 2. Auth/session bootstrap path functional.
 3. Shared contracts imported directly by mobile.
 
-Estimate: **2-3 iterations**.
+Estimate remaining: **1-2 iterations**.
 
 ### P2.3 Vertical Slices (RN)
 
@@ -144,9 +154,9 @@ Estimate: **8-10 iterations**.
 
 ## 8) Next 3 Iterations (Immediate Plan)
 
-1. Scaffold `apps/mobile` (Expo + TS + lint/test baseline) with repo-standard scripts.
-2. Add mobile runtime env wiring for API base URLs and consume shared contracts in a typed service layer.
-3. Wire initial auth/session bootstrap flow in mobile and validate against existing backend contracts.
+1. Finish remaining `P2.2` exit criteria (device validation + session persistence + CI).
+2. Begin `P2.3` slice 1: trainer search list + user lookup on mobile.
+3. Begin `P2.3` slice 2 prep: pokemon detail read path contracts and data adapters.
 
 ## 9) Definition of Success
 
