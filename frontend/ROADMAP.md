@@ -78,6 +78,8 @@ Done:
 4. Shared contracts consumed in mobile service layer (`authService`, shared URL builder/contracts).
 5. Auth + navigation shell implemented (`Login`/`Home` flow with provider + stack navigator).
 6. Mobile baseline checks green (`npm run typecheck`, `npm run lint`, `npm run test` in `apps/mobile`).
+7. Session persistence added via `expo-secure-store` for mobile auth bootstrap continuity.
+8. Dedicated mobile CI workflow added (`.github/workflows/ci-mobile.yml`).
 
 ## 5) Remaining Work by Phase
 
@@ -88,8 +90,6 @@ Objective: create runnable Expo app using shared contracts/core.
 Remaining:
 
 1. Validate the shell on physical device/emulator (`android` and/or `ios`) against live services.
-2. Add a lightweight session persistence strategy (SecureStore or AsyncStorage) for auth bootstrap continuity.
-3. Add first mobile CI workflow (`typecheck` + `lint` + `test`).
 
 Exit criteria:
 
@@ -97,7 +97,7 @@ Exit criteria:
 2. Auth/session bootstrap path functional.
 3. Shared contracts imported directly by mobile.
 
-Estimate remaining: **1-2 iterations**.
+Estimate remaining: **0-1 iterations**.
 
 ### P2.3 Vertical Slices (RN)
 
@@ -154,7 +154,7 @@ Estimate: **8-10 iterations**.
 
 ## 8) Next 3 Iterations (Immediate Plan)
 
-1. Finish remaining `P2.2` exit criteria (device validation + session persistence + CI).
+1. Finish remaining `P2.2` exit criteria (device/emulator validation against live services).
 2. Begin `P2.3` slice 1: trainer search list + user lookup on mobile.
 3. Begin `P2.3` slice 2 prep: pokemon detail read path contracts and data adapters.
 

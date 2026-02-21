@@ -1,0 +1,46 @@
+name: ci-mobile
+
+on:
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+      - "packages/shared-contracts/**"
+      - ".github/workflows/ci-mobile.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "apps/mobile/**"
+      - "packages/shared-contracts/**"
+      - ".github/workflows/ci-mobile.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test

@@ -8,8 +8,18 @@ import React, {
   type PropsWithChildren,
 } from 'react';
 import type { LoginResponse } from '@pokemongonexus/shared-contracts/auth';
-import { loginUser, logoutUser, refreshSession, type LoginRequest } from '../../services/authService';
+import {
+  loginUser,
+  logoutUser,
+  refreshSession,
+  type LoginRequest,
+} from '../../services/authService';
 import { HttpError } from '../../services/httpClient';
+import {
+  clearStoredSession,
+  loadStoredSession,
+  saveStoredSession,
+} from './sessionStorage';
 
 type SessionStatus = 'bootstrapping' | 'authenticated' | 'unauthenticated';
 
@@ -42,11 +52,24 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
     const bootstrap = async () => {
       try {
-        await refreshSession();
+        const persistedSession = await loadStoredSession();
+        if (!isMounted) return;
+
+        if (persistedSession) {
+          setUser(persistedSession);
+          setStatus('authenticated');
+        } else {
+          setStatus('unauthenticated');
+        }
+
+        void refreshSession().catch(() => {
+          // Keep local persisted session until explicit logout.
+        });
       } catch {
-        // No existing session is a normal startup state for now.
-      } finally {
-        if (isMounted) setStatus('unauthenticated');
+        if (isMounted) {
+          setUser(null);
+          setStatus('unauthenticated');
+        }
       }
     };
 
@@ -60,6 +83,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     setError(null);
     try {
       const response = await loginUser(credentials);
+      await saveStoredSession(response);
       setUser(response);
       setStatus('authenticated');
     } catch (nextError) {
@@ -76,6 +100,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     } catch {
       // Logout failures should still clear local auth state.
     } finally {
+      await clearStoredSession();
       setUser(null);
       setStatus('unauthenticated');
     }
