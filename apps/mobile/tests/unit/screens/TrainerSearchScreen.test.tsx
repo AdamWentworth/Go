@@ -1,12 +1,12 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { TrainerSearchScreen } from './TrainerSearchScreen';
+import { TrainerSearchScreen } from '../../../src/screens/TrainerSearchScreen';
 import {
   fetchForeignInstancesByUsername,
   fetchTrainerAutocomplete,
-} from '../services/userSearchService';
+} from '../../../src/services/userSearchService';
 
-jest.mock('../services/userSearchService', () => ({
+jest.mock('../../../src/services/userSearchService', () => ({
   fetchTrainerAutocomplete: jest.fn(),
   fetchForeignInstancesByUsername: jest.fn(),
 }));

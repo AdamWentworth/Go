@@ -1,6 +1,6 @@
 import { pokemonContract } from '@pokemongonexus/shared-contracts/pokemon';
-import { runtimeConfig } from '../config/runtimeConfig';
-import { fetchPokemons } from './pokemonService';
+import { runtimeConfig } from '../../../src/config/runtimeConfig';
+import { fetchPokemons } from '../../../src/services/pokemonService';
 
 jest.mock('@pokemongonexus/shared-contracts/common', () => ({
   buildUrl: (base: string, path: string) => `${base}${path}`,
@@ -40,4 +40,3 @@ describe('pokemonService', () => {
     });
   });
 });
-

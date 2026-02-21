@@ -4,7 +4,7 @@ import {
   clearStoredSession,
   loadStoredSession,
   saveStoredSession,
-} from './sessionStorage';
+} from '../../../../src/features/auth/sessionStorage';
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(),

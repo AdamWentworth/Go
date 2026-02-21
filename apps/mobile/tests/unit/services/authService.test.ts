@@ -1,6 +1,6 @@
 import { authContract } from '@pokemongonexus/shared-contracts/auth';
-import { runtimeConfig } from '../config/runtimeConfig';
-import { loginUser } from './authService';
+import { runtimeConfig } from '../../../src/config/runtimeConfig';
+import { loginUser } from '../../../src/services/authService';
 
 jest.mock('@pokemongonexus/shared-contracts/common', () => ({
   buildUrl: (base: string, path: string) => `${base}${path}`,

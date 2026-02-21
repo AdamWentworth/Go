@@ -2,7 +2,7 @@ import { usersContract } from '@pokemongonexus/shared-contracts/users';
 import {
   fetchForeignInstancesByUsername,
   fetchTrainerAutocomplete,
-} from './userSearchService';
+} from '../../../src/services/userSearchService';
 
 jest.mock('@pokemongonexus/shared-contracts/common', () => ({
   buildUrl: (base: string, path: string) => `${base}${path}`,
@@ -91,4 +91,3 @@ describe('userSearchService', () => {
     expect(outcome).toEqual({ type: 'notModified' });
   });
 });
-

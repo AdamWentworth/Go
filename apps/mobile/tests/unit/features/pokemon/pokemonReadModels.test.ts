@@ -3,7 +3,7 @@ import {
   findPokemonById,
   toPokemonDetail,
   toPokemonList,
-} from './pokemonReadModels';
+} from '../../../../src/features/pokemon/pokemonReadModels';
 
 const basePokemonFixture = (overrides: Partial<BasePokemon> = {}): BasePokemon => ({
   pokemon_id: 25,
@@ -124,4 +124,3 @@ describe('pokemonReadModels', () => {
     expect(findPokemonById(pokemons, 999)).toBeNull();
   });
 });
-

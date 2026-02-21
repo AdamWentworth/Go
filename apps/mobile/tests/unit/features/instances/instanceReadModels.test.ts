@@ -2,7 +2,7 @@ import type { InstancesMap } from '@pokemongonexus/shared-contracts/instances';
 import {
   filterInstancesByOwnership,
   toInstanceListItems,
-} from './instanceReadModels';
+} from '../../../../src/features/instances/instanceReadModels';
 
 describe('instanceReadModels', () => {
   const fixture: InstancesMap = {
@@ -142,4 +142,3 @@ describe('instanceReadModels', () => {
     expect(filterInstancesByOwnership(list, 'wanted').map((entry) => entry.instanceId)).toEqual(['i2']);
   });
 });
-

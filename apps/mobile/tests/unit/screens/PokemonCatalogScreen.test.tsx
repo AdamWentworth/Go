@@ -1,9 +1,9 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { PokemonCatalogScreen } from './PokemonCatalogScreen';
-import { fetchPokemons } from '../services/pokemonService';
+import { PokemonCatalogScreen } from '../../../src/screens/PokemonCatalogScreen';
+import { fetchPokemons } from '../../../src/services/pokemonService';
 
-jest.mock('../services/pokemonService', () => ({
+jest.mock('../../../src/services/pokemonService', () => ({
   fetchPokemons: jest.fn(),
 }));
 
@@ -181,4 +181,3 @@ describe('PokemonCatalogScreen', () => {
     expect(screen.getByText('No pokemon matched your filter.')).toBeTruthy();
   });
 });
-
