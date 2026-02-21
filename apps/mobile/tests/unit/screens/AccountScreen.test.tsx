@@ -52,6 +52,8 @@ describe('AccountScreen', () => {
 
   it('blocks invalid allow-location input', async () => {
     render(<AccountScreen navigation={baseNavigation as never} route={route as never} />);
+    expect(screen.getByText('Validation checklist')).toBeTruthy();
+    expect(screen.getByText('PASS Pokemon GO name is required')).toBeTruthy();
 
     fireEvent.changeText(screen.getByPlaceholderText('Allow location (true/false)'), 'maybe');
     fireEvent.press(screen.getByText('Save'));
@@ -97,5 +99,16 @@ describe('AccountScreen', () => {
       }),
     );
     expect(screen.getByText('Account updated successfully.')).toBeTruthy();
+  });
+
+  it('maps account update auth errors to friendly copy', async () => {
+    mockedUpdateAuthAccount.mockRejectedValue({ status: 401, data: { message: 'token expired' } });
+
+    render(<AccountScreen navigation={baseNavigation as never} route={route as never} />);
+    fireEvent.press(screen.getByText('Save'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Your session expired. Please sign in again.')).toBeTruthy();
+    });
   });
 });

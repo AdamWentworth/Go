@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Alert, Button, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { LoginResponse } from '@pokemongonexus/shared-contracts/auth';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../features/auth/AuthProvider';
-import { parseAllowLocationInput, validateAccountForm } from '../features/auth/accountValidation';
+import {
+  getAccountFieldStates,
+  parseAllowLocationInput,
+  validateAccountForm,
+} from '../features/auth/accountValidation';
+import { mapAuthErrorMessage } from '../features/auth/serverErrorMessages';
 import {
   deleteAccount,
   updateAuthAccount,
@@ -23,6 +28,14 @@ export const AccountScreen = ({ navigation }: AccountScreenProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const fieldStates = useMemo(
+    () =>
+      getAccountFieldStates({
+        pokemonGoName,
+        allowLocationInput,
+      }),
+    [pokemonGoName, allowLocationInput],
+  );
 
   const saveAccount = async () => {
     if (!user?.user_id) {
@@ -71,7 +84,7 @@ export const AccountScreen = ({ navigation }: AccountScreenProps) => {
       await updateUser(nextUser);
       setSuccess('Account updated successfully.');
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Failed to update account.');
+      setError(mapAuthErrorMessage(nextError, 'account_update'));
     } finally {
       setLoading(false);
     }
@@ -93,7 +106,7 @@ export const AccountScreen = ({ navigation }: AccountScreenProps) => {
               await deleteAccount(user.user_id);
               await signOut();
             } catch (nextError) {
-              setError(nextError instanceof Error ? nextError.message : 'Failed to delete account.');
+              setError(mapAuthErrorMessage(nextError, 'account_delete'));
             } finally {
               setLoading(false);
             }
@@ -128,6 +141,14 @@ export const AccountScreen = ({ navigation }: AccountScreenProps) => {
         autoCapitalize="none"
         style={commonStyles.input}
       />
+      <View style={commonStyles.card}>
+        <Text style={commonStyles.caption}>Validation checklist</Text>
+        {fieldStates.map((state) => (
+          <Text key={state.key} style={state.valid ? styles.validHint : styles.invalidHint}>
+            {state.valid ? 'PASS' : 'TODO'} {state.label}
+          </Text>
+        ))}
+      </View>
 
       <View style={commonStyles.actions}>
         <Button title={loading ? 'Saving...' : 'Save'} onPress={() => void saveAccount()} />
@@ -153,5 +174,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
     paddingTop: 12,
+  },
+  validHint: {
+    color: theme.colors.success,
+    fontSize: theme.type.caption,
+  },
+  invalidHint: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.type.caption,
   },
 });

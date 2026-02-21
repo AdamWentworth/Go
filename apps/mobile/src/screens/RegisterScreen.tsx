@@ -3,9 +3,15 @@ import { Button, ScrollView, StyleSheet, Text, TextInput, View } from 'react-nat
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../features/auth/AuthProvider';
-import { normalizeTrainerCode, validateRegisterForm } from '../features/auth/registerValidation';
+import {
+  getRegisterFieldStates,
+  normalizeTrainerCode,
+  validateRegisterForm,
+} from '../features/auth/registerValidation';
+import { mapAuthErrorMessage } from '../features/auth/serverErrorMessages';
 import { registerUser } from '../services/authService';
 import { commonStyles } from '../ui/commonStyles';
+import { theme } from '../ui/theme';
 
 type RegisterScreenProps = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -18,6 +24,17 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
   const [trainerCode, setTrainerCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fieldStates = useMemo(
+    () =>
+      getRegisterFieldStates({
+        username,
+        email,
+        password,
+        pokemonGoName,
+        trainerCode,
+      }),
+    [username, email, password, pokemonGoName, trainerCode],
+  );
   const validationError = useMemo(
     () =>
       validateRegisterForm({
@@ -49,7 +66,7 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
 
       await signIn({ username: username.trim(), password });
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Failed to register.');
+      setError(mapAuthErrorMessage(nextError, 'register'));
     } finally {
       setLoading(false);
     }
@@ -98,6 +115,14 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
         onChangeText={setTrainerCode}
         style={commonStyles.input}
       />
+      <View style={styles.validationCard}>
+        <Text style={commonStyles.caption}>Validation checklist</Text>
+        {fieldStates.map((state) => (
+          <Text key={state.key} style={state.valid ? styles.validHint : styles.invalidHint}>
+            {state.valid ? 'PASS' : 'TODO'} {state.label}
+          </Text>
+        ))}
+      </View>
 
       <View style={commonStyles.actions}>
         <Button title={loading ? 'Registering...' : 'Register'} onPress={() => void handleRegister()} disabled={!canSubmit} />
@@ -113,5 +138,16 @@ const styles = StyleSheet.create({
   container: {
     ...commonStyles.screenContainer,
     padding: 24,
+  },
+  validationCard: {
+    ...commonStyles.card,
+  },
+  validHint: {
+    color: theme.colors.success,
+    fontSize: theme.type.caption,
+  },
+  invalidHint: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.type.caption,
   },
 });

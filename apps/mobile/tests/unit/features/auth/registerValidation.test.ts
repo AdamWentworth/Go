@@ -1,4 +1,5 @@
 import {
+  getRegisterFieldStates,
   normalizeTrainerCode,
   validateRegisterForm,
 } from '../../../../src/features/auth/registerValidation';
@@ -70,5 +71,25 @@ describe('registerValidation', () => {
         trainerCode: '123',
       }),
     ).toBe('Trainer code must contain 12 digits.');
+  });
+
+  it('returns field-level validation states', () => {
+    const states = getRegisterFieldStates({
+      username: 'ash',
+      email: 'bad-email',
+      password: '123',
+      pokemonGoName: '',
+      trainerCode: '1234',
+    });
+
+    expect(states).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: 'username', valid: true }),
+        expect.objectContaining({ key: 'email', valid: false }),
+        expect.objectContaining({ key: 'password', valid: false }),
+        expect.objectContaining({ key: 'pokemon_go_name', valid: false }),
+        expect.objectContaining({ key: 'trainer_code', valid: false }),
+      ]),
+    );
   });
 });

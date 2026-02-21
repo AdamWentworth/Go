@@ -43,6 +43,8 @@ describe('RegisterScreen', () => {
     mockSignIn.mockResolvedValue(undefined);
 
     render(<RegisterScreen navigation={baseNavigation as never} route={route as never} />);
+    expect(screen.getByText('Validation checklist')).toBeTruthy();
+    expect(screen.getByText('TODO Trainer code digits: 0/12')).toBeTruthy();
 
     fireEvent.changeText(screen.getByPlaceholderText('Username'), 'ash');
     fireEvent.changeText(screen.getByPlaceholderText('Email'), 'ash@example.com');
@@ -77,5 +79,24 @@ describe('RegisterScreen', () => {
     pressRegisterButton();
     expect(mockedRegisterUser).not.toHaveBeenCalled();
     expect(mockSignIn).not.toHaveBeenCalled();
+  });
+
+  it('maps register server conflicts to friendly messages', async () => {
+    mockedRegisterUser.mockRejectedValue(
+      { status: 409, data: { message: 'username already exists' } },
+    );
+
+    render(<RegisterScreen navigation={baseNavigation as never} route={route as never} />);
+    fireEvent.changeText(screen.getByPlaceholderText('Username'), 'ash');
+    fireEvent.changeText(screen.getByPlaceholderText('Email'), 'ash@example.com');
+    fireEvent.changeText(screen.getByPlaceholderText('Password'), 'pikachu123');
+    fireEvent.changeText(screen.getByPlaceholderText('Pokemon GO name'), 'Ash K');
+    fireEvent.changeText(screen.getByPlaceholderText('Trainer code (12 digits)'), '1234 5678 9012');
+
+    pressRegisterButton();
+
+    await waitFor(() => {
+      expect(screen.getByText('Username is already taken.')).toBeTruthy();
+    });
   });
 });

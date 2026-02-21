@@ -1,4 +1,5 @@
 import {
+  getAccountFieldStates,
   parseAllowLocationInput,
   validateAccountForm,
 } from '../../../../src/features/auth/accountValidation';
@@ -37,5 +38,18 @@ describe('accountValidation', () => {
         allowLocationInput: 'false',
       }),
     ).toBeNull();
+  });
+
+  it('returns field-level account states', () => {
+    const states = getAccountFieldStates({
+      pokemonGoName: '',
+      allowLocationInput: 'maybe',
+    });
+    expect(states).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: 'pokemon_go_name', valid: false }),
+        expect.objectContaining({ key: 'allow_location', valid: false }),
+      ]),
+    );
   });
 });

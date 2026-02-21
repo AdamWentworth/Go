@@ -7,6 +7,31 @@ export const parseAllowLocationInput = (
   return { value: null, error: 'Allow location must be either true or false.' };
 };
 
+export type AccountFieldState = {
+  key: 'pokemon_go_name' | 'allow_location';
+  label: string;
+  valid: boolean;
+};
+
+export const getAccountFieldStates = (input: {
+  pokemonGoName: string;
+  allowLocationInput: string;
+}): AccountFieldState[] => {
+  const parsed = parseAllowLocationInput(input.allowLocationInput);
+  return [
+    {
+      key: 'pokemon_go_name',
+      label: 'Pokemon GO name is required',
+      valid: input.pokemonGoName.trim().length > 0,
+    },
+    {
+      key: 'allow_location',
+      label: 'Allow location must be true or false',
+      valid: parsed.value !== null,
+    },
+  ];
+};
+
 export const validateAccountForm = (input: {
   pokemonGoName: string;
   allowLocationInput: string;

@@ -156,6 +156,11 @@ Done:
    - register flow now enforces username/email/password/trainer-code constraints before submit
    - account flow now validates pokemon-go-name and strict allow-location parsing (`true/false`)
    - added screen tests for register/account success + invalid-input behavior
+13. Mobile account/register UX polish shipped:
+   - added field-level validation checklists for register/account flows
+   - added status-aware server error mapping for register/update/delete account actions
+   - expanded unit coverage for validation state helpers + server error mapping
+   - expanded screen coverage for friendly error UX in register/account paths
 
 Remaining:
 
@@ -165,7 +170,6 @@ Remaining:
    - full pokemon page interaction workflows (deeper edit overlays, validation rules, and custom tag management UX)
    - remaining trade lifecycle edge-case UX (confirmation UX + edge-case lifecycle messaging)
    - full search parameter parity (map/list UX + deeper web-specific interactions)
-   - final account/register UX polish (fine-grained field-level hints + server-error mapping)
 
 ## 5) Parity Snapshot (Web -> Mobile)
 
@@ -231,8 +235,8 @@ Planned work:
    - conflict/retry/server-authoritative reconciliation UX after mutation
    - remaining edge-case lifecycle UX (delete/cancel/re-propose/complete outcomes)
 4. Account/Register parity:
-   - full validation and error-state parity with web forms
-   - polished submission/loading/success UX parity
+   - baseline parity shipped (validation + field hints + mapped server errors)
+   - optional final pass for fully native form affordances (inline field focus helpers)
 5. Platform hardening:
    - real device validation on Android and iOS against live services
    - resilience passes (network interruptions/offline behavior/retries)
