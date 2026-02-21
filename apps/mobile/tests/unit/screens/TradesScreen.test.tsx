@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { TradesScreen } from '../../../src/screens/TradesScreen';
+import { sendTradeUpdate } from '../../../src/services/receiverService';
 import { fetchTradesOverviewForUser } from '../../../src/services/tradesService';
 
 jest.mock('../../../src/features/auth/AuthProvider', () => ({
@@ -13,8 +14,13 @@ jest.mock('../../../src/services/tradesService', () => ({
   fetchTradesOverviewForUser: jest.fn(),
 }));
 
+jest.mock('../../../src/services/receiverService', () => ({
+  sendTradeUpdate: jest.fn(),
+}));
+
 const mockedFetchTradesOverviewForUser =
   fetchTradesOverviewForUser as jest.MockedFunction<typeof fetchTradesOverviewForUser>;
+const mockedSendTradeUpdate = sendTradeUpdate as jest.MockedFunction<typeof sendTradeUpdate>;
 
 const baseNavigation = {
   goBack: jest.fn(),
@@ -56,7 +62,56 @@ describe('TradesScreen', () => {
     });
 
     expect(screen.getByText('proposed: 1')).toBeTruthy();
-    expect(screen.getByText('proposed • t1')).toBeTruthy();
+    expect(screen.getByText('proposed - t1')).toBeTruthy();
+  });
+
+  it('accept action mutates selected trade and syncs via receiver update', async () => {
+    mockedFetchTradesOverviewForUser.mockResolvedValue({
+      statusCounts: { proposed: 2 },
+      trades: [
+        {
+          trade_id: 't1',
+          trade_status: 'proposed',
+          username_proposed: 'ash',
+          username_accepting: 'misty',
+          pokemon_instance_id_user_proposed: 'i1',
+          pokemon_instance_id_user_accepting: 'i2',
+        },
+        {
+          trade_id: 't2',
+          trade_status: 'proposed',
+          username_proposed: 'brock',
+          username_accepting: 'gary',
+          pokemon_instance_id_user_proposed: 'i7',
+          pokemon_instance_id_user_accepting: 'i2',
+        },
+      ],
+    });
+    mockedSendTradeUpdate.mockResolvedValue({});
+
+    render(<TradesScreen navigation={baseNavigation as never} route={route as never} />);
+
+    fireEvent.press(screen.getByText('Load Trades'));
+
+    await waitFor(() => {
+      expect(screen.getByText('proposed - t1')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('proposed - t1'));
+    fireEvent.press(screen.getByText('Accept'));
+
+    await waitFor(() => {
+      expect(mockedSendTradeUpdate).toHaveBeenCalled();
+    });
+
+    expect(mockedSendTradeUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        operation: 'updateTrade',
+        tradeData: expect.objectContaining({
+          trade_id: 't1',
+          trade_status: 'pending',
+        }),
+      }),
+    );
   });
 });
-

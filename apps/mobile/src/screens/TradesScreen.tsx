@@ -1,8 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { Button, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Button, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../features/auth/AuthProvider';
+import {
+  acceptTrade,
+  buildStatusCounts,
+  cancelTrade,
+  completeTrade,
+  deleteTrade,
+  denyTrade,
+  reproposeTrade,
+  toTradeMap,
+  toTradeRows,
+  type TradeRow,
+} from '../features/trades/tradeMutations';
 import type { RootStackParamList } from '../navigation/AppNavigator';
+import { sendTradeUpdate } from '../services/receiverService';
 import { fetchTradesOverviewForUser } from '../services/tradesService';
 
 type TradesScreenProps = NativeStackScreenProps<RootStackParamList, 'Trades'>;
@@ -14,15 +27,8 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
-  const [trades, setTrades] = useState<{
-    trade_id?: string;
-    trade_status: string;
-    username_proposed?: string | null;
-    username_accepting?: string | null;
-    pokemon_instance_id_user_proposed?: string | null;
-    pokemon_instance_id_user_accepting?: string | null;
-    last_update?: string | number | null;
-  }[]>([]);
+  const [trades, setTrades] = useState<TradeRow[]>([]);
+  const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
 
   const loadTrades = async () => {
     setLoading(true);
@@ -35,8 +41,13 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
         return;
       }
       const payload = await fetchTradesOverviewForUser(user.user_id);
-      setTrades(payload.trades);
-      setStatusCounts(payload.statusCounts);
+      const normalizedRows = payload.trades.map((row) => ({
+        ...row,
+        trade_id: String(row.trade_id ?? ''),
+        trade_status: String(row.trade_status ?? ''),
+      })) as TradeRow[];
+      setTrades(normalizedRows);
+      setStatusCounts(buildStatusCounts(normalizedRows));
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'Failed to load trades.');
     } finally {
@@ -46,6 +57,38 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
 
   const visibleTrades = useMemo(() => trades.slice(0, MAX_ROWS), [trades]);
   const statusEntries = useMemo(() => Object.entries(statusCounts).sort(), [statusCounts]);
+  const selectedTrade = useMemo(
+    () => trades.find((trade) => trade.trade_id === selectedTradeId) ?? null,
+    [trades, selectedTradeId],
+  );
+
+  const syncMutation = async (rows: TradeRow[]) => {
+    for (const row of rows) {
+      await sendTradeUpdate({
+        operation: 'updateTrade',
+        tradeData: row,
+      });
+    }
+  };
+
+  const runMutation = async (
+    mutate: (tradeMap: ReturnType<typeof toTradeMap>) => {
+      next: ReturnType<typeof toTradeMap>;
+      changed: TradeRow[];
+    },
+  ) => {
+    if (!selectedTradeId) return;
+    const currentMap = toTradeMap(trades);
+    const { next, changed } = mutate(currentMap);
+    const nextRows = toTradeRows(next);
+    setTrades(nextRows);
+    setStatusCounts(buildStatusCounts(nextRows));
+    try {
+      await syncMutation(changed);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Failed to sync trade update.');
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -75,19 +118,63 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
       </Text>
 
       {visibleTrades.map((trade) => (
-        <View key={String(trade.trade_id)} style={styles.tradeRow}>
-          <Text style={styles.tradePrimary}>
-            {trade.trade_status} • {trade.trade_id}
-          </Text>
+        <Pressable
+          key={String(trade.trade_id)}
+          onPress={() => setSelectedTradeId(trade.trade_id ?? null)}
+          style={[styles.tradeRow, selectedTradeId === trade.trade_id ? styles.tradeRowSelected : null]}
+        >
+          <Text style={styles.tradePrimary}>{trade.trade_status} - {trade.trade_id}</Text>
           <Text style={styles.tradeSecondary}>
-            {trade.username_proposed ?? '-'} → {trade.username_accepting ?? '-'}
+            {trade.username_proposed ?? '-'}
+            {' -> '}
+            {trade.username_accepting ?? '-'}
           </Text>
           <Text style={styles.tradeSecondary}>
             {trade.pokemon_instance_id_user_proposed ?? '-'} /{' '}
             {trade.pokemon_instance_id_user_accepting ?? '-'}
           </Text>
-        </View>
+        </Pressable>
       ))}
+
+      {selectedTrade ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Trade Actions ({selectedTrade.trade_id})</Text>
+          <View style={styles.actions}>
+            <Button
+              title="Accept"
+              onPress={() => void runMutation((map) => acceptTrade(map, selectedTrade.trade_id))}
+            />
+            <Button
+              title="Deny"
+              onPress={() => void runMutation((map) => denyTrade(map, selectedTrade.trade_id))}
+            />
+            <Button
+              title="Cancel"
+              onPress={() =>
+                void runMutation((map) =>
+                  cancelTrade(map, selectedTrade.trade_id, user?.username ?? 'unknown'),
+                )
+              }
+            />
+            <Button
+              title="Complete"
+              onPress={() =>
+                void runMutation((map) => completeTrade(map, selectedTrade.trade_id, user?.username ?? ''))
+              }
+            />
+            <Button
+              title="Re-Propose"
+              onPress={() =>
+                void runMutation((map) => reproposeTrade(map, selectedTrade.trade_id, user?.username ?? ''))
+              }
+            />
+            <Button
+              title="Delete"
+              onPress={() => void runMutation((map) => deleteTrade(map, selectedTrade.trade_id))}
+            />
+          </View>
+        </View>
+      ) : null}
     </ScrollView>
   );
 };
@@ -132,6 +219,10 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: '#f9fafb',
     gap: 2,
+  },
+  tradeRowSelected: {
+    borderColor: '#2563eb',
+    backgroundColor: '#dbeafe',
   },
   tradePrimary: {
     fontWeight: '600',

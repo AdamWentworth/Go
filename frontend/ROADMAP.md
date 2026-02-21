@@ -118,6 +118,12 @@ Done:
    - `RegisterScreen` (mobile register baseline + immediate sign-in flow)
    - auth token propagation from session storage into mobile service headers
    - new service coverage for `account`, `search`, `trades`, `overview`
+6. Mobile trade mutation baseline shipped:
+   - trade mutation adapters for accept/deny/cancel/complete/re-propose/delete
+   - optimistic in-screen mutation updates + status reaggregation
+   - receiver batched update service adapter for trade update sync
+   - unit coverage for trade mutation business rules
+   - screen-level coverage for trade action + sync behavior
 
 Remaining:
 
@@ -125,7 +131,7 @@ Remaining:
 2. Continue UX polish for edge network/error paths on mobile slices.
 3. Close functional parity gaps for:
    - full pokemon page interaction flows (create/edit/fusion/mega/tag workflows)
-   - full trades mutation lifecycle (accept/deny/cancel/complete/re-propose)
+   - trade backend reconciliation UX (conflict/retry/server-authoritative refresh after mutation)
    - full search parameter parity (web-level filters + map/list UX)
 
 ## 5) Parity Snapshot (Web -> Mobile)
@@ -134,7 +140,7 @@ Remaining:
 2. `/pokemon`: `partial` (catalog + collection read paths exist; advanced instance workflows pending).
 3. `/pokemon/:username`: `partial` (foreign collection lookup/read implemented; deeper UI parity pending).
 4. `/search`: `partial` (endpoint wired + baseline UI; full filter/map parity pending).
-5. `/trades`: `partial` (read/status summary implemented; mutation lifecycle pending).
+5. `/trades`: `partial` (read + mutation baseline implemented; reconciliation UX parity pending).
 6. `/account`: `partial` (update/delete baseline implemented; full form parity pending).
 7. `/register`: `partial` (register screen baseline implemented; full validation/error UX parity pending).
 

@@ -17,6 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       pokemonApiUrl: readEnv('EXPO_PUBLIC_POKEMON_API_URL', 'https://pokemongonexus.com/api/pokemon'),
       locationApiUrl: readEnv('EXPO_PUBLIC_LOCATION_API_URL', 'https://pokemongonexus.com/api/location'),
       eventsApiUrl: readEnv('EXPO_PUBLIC_EVENTS_API_URL', 'https://pokemongonexus.com/api/events'),
+      receiverApiUrl: readEnv('EXPO_PUBLIC_RECEIVER_API_URL', 'https://pokemongonexus.com/api/receiver'),
     },
   },
 });

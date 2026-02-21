@@ -7,6 +7,7 @@ type RuntimeApiConfig = {
   pokemonApiUrl: string;
   locationApiUrl: string;
   eventsApiUrl: string;
+  receiverApiUrl: string;
 };
 
 type ExpoExtra = {
@@ -20,6 +21,7 @@ const DEFAULT_API_CONFIG: RuntimeApiConfig = {
   pokemonApiUrl: 'https://pokemongonexus.com/api/pokemon',
   locationApiUrl: 'https://pokemongonexus.com/api/location',
   eventsApiUrl: 'https://pokemongonexus.com/api/events',
+  receiverApiUrl: 'https://pokemongonexus.com/api/receiver',
 };
 
 const sanitizeUrl = (value: unknown, fallback: string): string => {
@@ -43,5 +45,6 @@ export const runtimeConfig: { api: RuntimeApiConfig } = {
     pokemonApiUrl: sanitizeUrl(apiOverrides.pokemonApiUrl, DEFAULT_API_CONFIG.pokemonApiUrl),
     locationApiUrl: sanitizeUrl(apiOverrides.locationApiUrl, DEFAULT_API_CONFIG.locationApiUrl),
     eventsApiUrl: sanitizeUrl(apiOverrides.eventsApiUrl, DEFAULT_API_CONFIG.eventsApiUrl),
+    receiverApiUrl: sanitizeUrl(apiOverrides.receiverApiUrl, DEFAULT_API_CONFIG.receiverApiUrl),
   },
 };
