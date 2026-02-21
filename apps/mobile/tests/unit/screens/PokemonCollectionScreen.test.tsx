@@ -1,9 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { PokemonCollectionScreen } from '../../../src/screens/PokemonCollectionScreen';
 import { sendPokemonUpdate } from '../../../src/services/receiverService';
 import { fetchUserOverview } from '../../../src/services/userOverviewService';
 import { fetchForeignInstancesByUsername } from '../../../src/services/userSearchService';
+import type { AlertButton } from 'react-native';
 
 jest.mock('../../../src/features/auth/AuthProvider', () => ({
   useAuth: () => ({
@@ -41,6 +43,18 @@ const route = {
 } as const;
 
 describe('PokemonCollectionScreen', () => {
+  const mockAlert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+  const confirmLastAlert = async () => {
+    const calls = mockAlert.mock.calls;
+    const lastCall = calls[calls.length - 1];
+    const buttons = (lastCall?.[2] ?? []) as AlertButton[];
+    const confirmAction = buttons.find((button) => button.text === 'Confirm');
+    await act(async () => {
+      confirmAction?.onPress?.();
+    });
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -147,6 +161,7 @@ describe('PokemonCollectionScreen', () => {
 
     fireEvent.press(screen.getByText('v-001'));
     fireEvent.press(screen.getByText('Set Trade'));
+    await confirmLastAlert();
 
     await waitFor(() => {
       expect(mockedSendPokemonUpdate).toHaveBeenCalled();
@@ -199,18 +214,67 @@ describe('PokemonCollectionScreen', () => {
     });
 
     fireEvent.press(screen.getByText('v-001'));
-    fireEvent.changeText(screen.getByPlaceholderText('Tag'), 'PVP');
+    fireEvent.press(screen.getByText('tags'));
+    fireEvent.changeText(screen.getByPlaceholderText('Tag for caught bucket'), 'PVP');
     fireEvent.press(screen.getByText('Add Caught Tag'));
 
     await waitFor(() => {
-      expect(screen.getByText('Remove caught tag: PVP')).toBeTruthy();
+      expect(screen.getByText('Remove Caught tag: PVP')).toBeTruthy();
     });
 
-    fireEvent.press(screen.getByText('Remove caught tag: PVP'));
+    fireEvent.press(screen.getByText('Remove Caught tag: PVP'));
+    await confirmLastAlert();
     await waitFor(() => {
-      expect(screen.queryByText('Remove caught tag: PVP')).toBeNull();
+      expect(screen.queryByText('Remove Caught tag: PVP')).toBeNull();
     });
 
     expect(mockedSendPokemonUpdate).toHaveBeenCalledTimes(2);
+  });
+
+  it('clears selected tag bucket after confirmation', async () => {
+    mockedFetchUserOverview.mockResolvedValue({
+      user: { user_id: 'u1', username: 'ash' },
+      pokemon_instances: {
+        i1: {
+          instance_id: 'i1',
+          variant_id: 'v-001',
+          pokemon_id: 1,
+          nickname: null,
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          most_wanted: false,
+          favorite: false,
+          caught_tags: ['PVP'],
+          trade_tags: [],
+          wanted_tags: [],
+          registered: true,
+          date_added: '2026-01-01T00:00:00Z',
+          last_update: 1,
+        },
+      },
+      trades: {},
+      related_instances: {},
+      registrations: {},
+    } as never);
+    mockedSendPokemonUpdate.mockResolvedValue({});
+
+    render(
+      <PokemonCollectionScreen navigation={baseNavigation as never} route={route as never} />,
+    );
+    fireEvent.press(screen.getByText('Load Collection'));
+    await waitFor(() => {
+      expect(screen.getByText('v-001')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('v-001'));
+    fireEvent.press(screen.getByText('tags'));
+    fireEvent.press(screen.getByText('Clear Caught Tags'));
+    await confirmLastAlert();
+
+    await waitFor(() => {
+      expect(screen.getByText('No tags in caught bucket.')).toBeTruthy();
+    });
+    expect(mockedSendPokemonUpdate).toHaveBeenCalledTimes(1);
   });
 });

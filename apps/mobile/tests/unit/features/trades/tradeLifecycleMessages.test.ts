@@ -1,4 +1,5 @@
 import {
+  buildTradeAuditDetails,
   buildTradeActionConfirmation,
   buildTradeStatusDetail,
 } from '../../../../src/features/trades/tradeLifecycleMessages';
@@ -49,5 +50,21 @@ describe('tradeLifecycleMessages', () => {
         'ash',
       ),
     ).toContain('cancelled');
+  });
+
+  it('builds audit detail list safely', () => {
+    expect(buildTradeAuditDetails(baseTrade)).toEqual(['No audit timestamps yet.']);
+    expect(
+      buildTradeAuditDetails({
+        ...baseTrade,
+        trade_proposal_date: '2026-02-10T10:00:00.000Z',
+        trade_cancelled_by: 'ash',
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Proposed:'),
+        'Cancelled by: ash',
+      ]),
+    );
   });
 });

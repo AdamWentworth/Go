@@ -94,3 +94,23 @@ export const buildTradeStatusDetail = (
       return `Trade status: ${trade.trade_status ?? 'unknown'}.`;
   }
 };
+
+export const buildTradeAuditDetails = (trade: TradeRow | null): string[] => {
+  if (!trade) return [];
+  const details: string[] = [];
+  const proposalAt = formatDateSafe(trade.trade_proposal_date);
+  const acceptedAt = formatDateSafe(trade.trade_accepted_date);
+  const completedAt = formatDateSafe(trade.trade_completed_date);
+  const cancelledAt = formatDateSafe(trade.trade_cancelled_date);
+  const deletedAt = formatDateSafe(trade.trade_deleted_date);
+
+  if (proposalAt) details.push(`Proposed: ${proposalAt}`);
+  if (acceptedAt) details.push(`Accepted: ${acceptedAt}`);
+  if (completedAt) details.push(`Completed: ${completedAt}`);
+  if (cancelledAt) details.push(`Cancelled: ${cancelledAt}`);
+  if (deletedAt) details.push(`Deleted: ${deletedAt}`);
+  if (trade.trade_cancelled_by) details.push(`Cancelled by: ${trade.trade_cancelled_by}`);
+
+  if (details.length === 0) return ['No audit timestamps yet.'];
+  return details;
+};

@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Button, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Button, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OwnershipMode } from '@pokemongonexus/shared-contracts/domain';
 import type { InstancesMap, PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import { useAuth } from '../features/auth/AuthProvider';
 import {
   mutateInstanceAddTag,
+  mutateInstanceClearTags,
   mutateInstanceFavorite,
   mutateInstanceFusion,
   mutateInstanceMega,
@@ -31,7 +32,10 @@ import { theme } from '../ui/theme';
 type PokemonCollectionScreenProps = NativeStackScreenProps<RootStackParamList, 'PokemonCollection'>;
 
 const OWNERSHIP_MODES: OwnershipMode[] = ['caught', 'trade', 'wanted'];
+const TAG_BUCKETS: ('caught' | 'trade' | 'wanted')[] = ['caught', 'trade', 'wanted'];
+const EDITOR_SECTIONS = ['status', 'attributes', 'tags'] as const;
 const MAX_ROWS = 120;
+type EditorSection = (typeof EDITOR_SECTIONS)[number];
 
 const summarize = (items: InstanceListItem[]) => {
   let caught = 0;
@@ -50,6 +54,18 @@ const toMutableInstance = (instanceId: string, instance: PokemonInstance): Pokem
   instance_id: instance.instance_id ?? instanceId,
 });
 
+const toTagBucketLabel = (bucket: 'caught' | 'trade' | 'wanted'): string =>
+  bucket.charAt(0).toUpperCase() + bucket.slice(1);
+
+const getBucketTags = (
+  instance: PokemonInstance,
+  bucket: 'caught' | 'trade' | 'wanted',
+): string[] => {
+  if (bucket === 'caught') return instance.caught_tags ?? [];
+  if (bucket === 'trade') return instance.trade_tags ?? [];
+  return instance.wanted_tags ?? [];
+};
+
 export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollectionScreenProps) => {
   const { user } = useAuth();
   const [ownershipMode, setOwnershipMode] = useState<OwnershipMode>('caught');
@@ -60,9 +76,11 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
+  const [editorSection, setEditorSection] = useState<EditorSection>('status');
   const [nicknameDraft, setNicknameDraft] = useState('');
   const [megaFormDraft, setMegaFormDraft] = useState('');
   const [fusionFormDraft, setFusionFormDraft] = useState('');
+  const [tagBucketDraft, setTagBucketDraft] = useState<'caught' | 'trade' | 'wanted'>('caught');
   const [tagDraft, setTagDraft] = useState('');
 
   const items = useMemo(() => toInstanceListItems(instancesMap), [instancesMap]);
@@ -77,6 +95,19 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     return activeUsername.toLowerCase() === user.username.toLowerCase();
   }, [activeUsername, user?.username]);
 
+  const selectedStatusHint = useMemo(() => {
+    if (!selectedInstance) return 'Select an instance to view status details.';
+    if (selectedInstance.is_for_trade) return 'This instance is caught and listed for trade.';
+    if (selectedInstance.is_wanted) return 'This instance is marked wanted (not caught).';
+    if (selectedInstance.is_caught) return 'This instance is caught and not listed for trade.';
+    return 'This instance is currently missing/unset.';
+  }, [selectedInstance]);
+
+  const selectedBucketTags = useMemo(() => {
+    if (!selectedInstance) return [];
+    return getBucketTags(selectedInstance, tagBucketDraft);
+  }, [selectedInstance, tagBucketDraft]);
+
   const loadCollection = async () => {
     setLoading(true);
     setError(null);
@@ -85,6 +116,7 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     setNicknameDraft('');
     setMegaFormDraft('');
     setFusionFormDraft('');
+    setTagBucketDraft('caught');
     setTagDraft('');
 
     try {
@@ -159,6 +191,28 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     );
   };
 
+  const confirmStatusChange = (targetStatus: InstanceStatusMutation) => {
+    if (!selectedInstanceId) return;
+    const statusLabel =
+      targetStatus === 'missing'
+        ? 'Set Missing'
+        : `Set ${targetStatus.charAt(0).toUpperCase()}${targetStatus.slice(1)}`;
+    Alert.alert(
+      `${statusLabel}?`,
+      `Apply status change "${statusLabel}" to ${selectedInstanceId}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          style: 'default',
+          onPress: () => {
+            void applyStatus(targetStatus);
+          },
+        },
+      ],
+    );
+  };
+
   const applyFavoriteToggle = async () => {
     if (!selectedInstanceId || !selectedInstance) return;
     await updateInstanceAndSync(selectedInstanceId, (instance) =>
@@ -199,23 +253,53 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     );
   };
 
-  const addTag = async (bucket: 'caught' | 'trade' | 'wanted') => {
+  const addTag = async () => {
     if (!selectedInstanceId) return;
     const normalized = tagDraft.trim();
     if (!normalized) return;
     await updateInstanceAndSync(selectedInstanceId, (instance) =>
-      mutateInstanceAddTag(instance, bucket, normalized),
+      mutateInstanceAddTag(instance, tagBucketDraft, normalized),
     );
     setTagDraft('');
   };
 
-  const removeTag = async (
-    bucket: 'caught' | 'trade' | 'wanted',
-    tag: string,
-  ) => {
+  const removeTag = async (tag: string) => {
     if (!selectedInstanceId) return;
-    await updateInstanceAndSync(selectedInstanceId, (instance) =>
-      mutateInstanceRemoveTag(instance, bucket, tag),
+    Alert.alert(
+      `Remove ${toTagBucketLabel(tagBucketDraft)} tag?`,
+      `Remove "${tag}" from ${toTagBucketLabel(tagBucketDraft)} tags?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          style: 'default',
+          onPress: () => {
+            void updateInstanceAndSync(selectedInstanceId, (instance) =>
+              mutateInstanceRemoveTag(instance, tagBucketDraft, tag),
+            );
+          },
+        },
+      ],
+    );
+  };
+
+  const clearSelectedTagBucket = async () => {
+    if (!selectedInstanceId || selectedBucketTags.length === 0) return;
+    Alert.alert(
+      `Clear ${toTagBucketLabel(tagBucketDraft)} tags?`,
+      `Remove all ${toTagBucketLabel(tagBucketDraft)} tags for ${selectedInstanceId}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          style: 'destructive',
+          onPress: () => {
+            void updateInstanceAndSync(selectedInstanceId, (instance) =>
+              mutateInstanceClearTags(instance, tagBucketDraft),
+            );
+          },
+        },
+      ],
     );
   };
 
@@ -291,10 +375,12 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                   key={item.instanceId}
                   onPress={() => {
                     setSelectedInstanceId(item.instanceId);
+                    setEditorSection('status');
                     setNicknameDraft(item.nickname ?? '');
                     const selected = instancesMap[item.instanceId];
                     setMegaFormDraft(String(selected?.mega_form ?? ''));
                     setFusionFormDraft(String(selected?.fusion_form ?? ''));
+                    setTagBucketDraft('caught');
                     setTagDraft('');
                   }}
                   style={[commonStyles.row, selected ? commonStyles.rowSelected : null]}
@@ -335,105 +421,145 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
           <Text style={commonStyles.caption}>
             wanted_tags={(selectedInstance.wanted_tags ?? []).join(', ') || '-'}
           </Text>
+          <Text style={commonStyles.hint}>{selectedStatusHint}</Text>
 
-          <Text style={commonStyles.caption}>Caught tag controls:</Text>
-          <View style={styles.tagRow}>
-            {(selectedInstance.caught_tags ?? []).map((tag) => (
-              <Pressable
-                key={`caught-${tag}`}
-                onPress={() => void removeTag('caught', tag)}
-                style={styles.tagPill}
-              >
-                <Text style={styles.tagPillText}>Remove caught tag: {tag}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Text style={commonStyles.caption}>Trade tag controls:</Text>
-          <View style={styles.tagRow}>
-            {(selectedInstance.trade_tags ?? []).map((tag) => (
-              <Pressable
-                key={`trade-${tag}`}
-                onPress={() => void removeTag('trade', tag)}
-                style={styles.tagPill}
-              >
-                <Text style={styles.tagPillText}>Remove trade tag: {tag}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Text style={commonStyles.caption}>Wanted tag controls:</Text>
-          <View style={styles.tagRow}>
-            {(selectedInstance.wanted_tags ?? []).map((tag) => (
-              <Pressable
-                key={`wanted-${tag}`}
-                onPress={() => void removeTag('wanted', tag)}
-                style={styles.tagPill}
-              >
-                <Text style={styles.tagPillText}>Remove wanted tag: {tag}</Text>
-              </Pressable>
-            ))}
+          <Text style={commonStyles.caption}>Editor section</Text>
+          <View style={commonStyles.pillRow}>
+            {EDITOR_SECTIONS.map((section) => {
+              const selected = section === editorSection;
+              return (
+                <Pressable
+                  key={section}
+                  onPress={() => setEditorSection(section)}
+                  style={[commonStyles.pill, selected ? commonStyles.pillSelected : null]}
+                >
+                  <Text style={[commonStyles.pillText, selected ? commonStyles.pillTextSelected : null]}>
+                    {section}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
           {isOwnCollection ? (
             <>
-              <View style={commonStyles.actions}>
-                <Button title="Set Caught" onPress={() => void applyStatus('caught')} disabled={syncing} />
-                <Button title="Set Trade" onPress={() => void applyStatus('trade')} disabled={syncing} />
-                <Button title="Set Wanted" onPress={() => void applyStatus('wanted')} disabled={syncing} />
-                <Button title="Set Missing" onPress={() => void applyStatus('missing')} disabled={syncing} />
-                <Button
-                  title={selectedInstance.favorite ? 'Unset Favorite' : 'Set Favorite'}
-                  onPress={() => void applyFavoriteToggle()}
-                  disabled={syncing}
-                />
-                <Button
-                  title={selectedInstance.most_wanted ? 'Unset Most Wanted' : 'Set Most Wanted'}
-                  onPress={() => void applyMostWantedToggle()}
-                  disabled={syncing || !selectedInstance.is_wanted}
-                />
-                <Button
-                  title={selectedInstance.is_mega || selectedInstance.mega ? 'Disable Mega' : 'Enable Mega'}
-                  onPress={() => void applyMegaToggle()}
-                  disabled={syncing}
-                />
-                <Button
-                  title={selectedInstance.is_fused ? 'Disable Fusion' : 'Enable Fusion'}
-                  onPress={() => void applyFusionToggle()}
-                  disabled={syncing}
-                />
-              </View>
+              {editorSection === 'status' ? (
+                <View style={commonStyles.actions}>
+                  <Button title="Set Caught" onPress={() => confirmStatusChange('caught')} disabled={syncing} />
+                  <Button title="Set Trade" onPress={() => confirmStatusChange('trade')} disabled={syncing} />
+                  <Button title="Set Wanted" onPress={() => confirmStatusChange('wanted')} disabled={syncing} />
+                  <Button title="Set Missing" onPress={() => confirmStatusChange('missing')} disabled={syncing} />
+                </View>
+              ) : null}
 
-              <TextInput
-                placeholder="Nickname"
-                value={nicknameDraft}
-                onChangeText={setNicknameDraft}
-                style={commonStyles.input}
-              />
-              <Button title="Save Nickname" onPress={() => void saveNickname()} disabled={syncing} />
+              {editorSection === 'attributes' ? (
+                <>
+                  <View style={commonStyles.actions}>
+                    <Button
+                      title={selectedInstance.favorite ? 'Unset Favorite' : 'Set Favorite'}
+                      onPress={() => void applyFavoriteToggle()}
+                      disabled={syncing}
+                    />
+                    <Button
+                      title={selectedInstance.most_wanted ? 'Unset Most Wanted' : 'Set Most Wanted'}
+                      onPress={() => void applyMostWantedToggle()}
+                      disabled={syncing || !selectedInstance.is_wanted}
+                    />
+                    <Button
+                      title={selectedInstance.is_mega || selectedInstance.mega ? 'Disable Mega' : 'Enable Mega'}
+                      onPress={() => void applyMegaToggle()}
+                      disabled={syncing}
+                    />
+                    <Button
+                      title={selectedInstance.is_fused ? 'Disable Fusion' : 'Enable Fusion'}
+                      onPress={() => void applyFusionToggle()}
+                      disabled={syncing}
+                    />
+                  </View>
 
-              <TextInput
-                placeholder="Mega Form"
-                value={megaFormDraft}
-                onChangeText={setMegaFormDraft}
-                style={commonStyles.input}
-              />
-              <TextInput
-                placeholder="Fusion Form"
-                value={fusionFormDraft}
-                onChangeText={setFusionFormDraft}
-                style={commonStyles.input}
-              />
+                  <TextInput
+                    placeholder="Nickname"
+                    value={nicknameDraft}
+                    onChangeText={setNicknameDraft}
+                    style={commonStyles.input}
+                  />
+                  <Button title="Save Nickname" onPress={() => void saveNickname()} disabled={syncing} />
 
-              <TextInput
-                placeholder="Tag"
-                value={tagDraft}
-                onChangeText={setTagDraft}
-                style={commonStyles.input}
-              />
-              <View style={commonStyles.actions}>
-                <Button title="Add Caught Tag" onPress={() => void addTag('caught')} disabled={syncing} />
-                <Button title="Add Trade Tag" onPress={() => void addTag('trade')} disabled={syncing} />
-                <Button title="Add Wanted Tag" onPress={() => void addTag('wanted')} disabled={syncing} />
-              </View>
+                  <TextInput
+                    placeholder="Mega Form"
+                    value={megaFormDraft}
+                    onChangeText={setMegaFormDraft}
+                    style={commonStyles.input}
+                  />
+                  <TextInput
+                    placeholder="Fusion Form"
+                    value={fusionFormDraft}
+                    onChangeText={setFusionFormDraft}
+                    style={commonStyles.input}
+                  />
+                </>
+              ) : null}
+
+              {editorSection === 'tags' ? (
+                <>
+                  <Text style={commonStyles.caption}>Tag bucket</Text>
+                  <View style={commonStyles.pillRow}>
+                    {TAG_BUCKETS.map((bucket) => {
+                      const selected = bucket === tagBucketDraft;
+                      return (
+                        <Pressable
+                          key={bucket}
+                          onPress={() => setTagBucketDraft(bucket)}
+                          style={[commonStyles.pill, selected ? commonStyles.pillSelected : null]}
+                        >
+                          <Text style={[commonStyles.pillText, selected ? commonStyles.pillTextSelected : null]}>
+                            {bucket}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  <TextInput
+                    placeholder={`Tag for ${tagBucketDraft} bucket`}
+                    value={tagDraft}
+                    onChangeText={setTagDraft}
+                    style={commonStyles.input}
+                  />
+                  <View style={commonStyles.actions}>
+                    <Button
+                      title={`Add ${toTagBucketLabel(tagBucketDraft)} Tag`}
+                      onPress={() => void addTag()}
+                      disabled={syncing}
+                    />
+                    <Button
+                      title={`Clear ${toTagBucketLabel(tagBucketDraft)} Tags`}
+                      onPress={() => void clearSelectedTagBucket()}
+                      disabled={syncing || selectedBucketTags.length === 0}
+                    />
+                  </View>
+
+                  {selectedBucketTags.length === 0 ? (
+                    <Text style={commonStyles.hint}>
+                      No tags in {tagBucketDraft} bucket.
+                    </Text>
+                  ) : (
+                    <View style={styles.tagRow}>
+                      {selectedBucketTags.map((tag) => (
+                        <Pressable
+                          key={`${tagBucketDraft}-${tag}`}
+                          onPress={() => void removeTag(tag)}
+                          style={styles.tagPill}
+                        >
+                          <Text style={styles.tagPillText}>
+                            Remove {toTagBucketLabel(tagBucketDraft)} tag: {tag}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+                </>
+              ) : null}
             </>
           ) : null}
         </View>

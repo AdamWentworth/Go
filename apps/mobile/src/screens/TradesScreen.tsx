@@ -21,6 +21,7 @@ import {
   type TradeAction,
 } from '../features/trades/tradeActionRules';
 import {
+  buildTradeAuditDetails,
   buildTradeActionConfirmation,
   buildTradeStatusDetail,
 } from '../features/trades/tradeLifecycleMessages';
@@ -81,6 +82,10 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
   const selectedTradeStatusDetail = useMemo(
     () => buildTradeStatusDetail(selectedTrade, user?.username ?? ''),
     [selectedTrade, user?.username],
+  );
+  const selectedTradeAuditDetails = useMemo(
+    () => buildTradeAuditDetails(selectedTrade),
+    [selectedTrade],
   );
 
   const syncMutation = async (rows: TradeRow[]) => {
@@ -213,6 +218,11 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
           <Text style={commonStyles.cardTitle}>Trade Actions ({selectedTrade.trade_id})</Text>
           <Text style={commonStyles.caption}>{buildAllowedActionLabel(selectedTrade.trade_status)}</Text>
           <Text style={commonStyles.hint}>{selectedTradeStatusDetail}</Text>
+          {selectedTradeAuditDetails.map((line) => (
+            <Text key={line} style={commonStyles.caption}>
+              {line}
+            </Text>
+          ))}
           <View style={commonStyles.actions}>
             <Button
               title="Accept"

@@ -171,14 +171,23 @@ Done:
    - added selectable search result rows + selected-result detail card
    - added incremental pagination for large result sets (`Load More`)
    - expanded search screen tests for empty-state and pagination behavior
+16. Mobile pokemon-collection editing UX pass shipped:
+   - added sectioned instance editor (`status`, `attributes`, `tags`)
+   - added confirmation prompts for status changes and destructive tag actions
+   - upgraded custom tag management to bucket-based add/remove/clear flows
+   - expanded instance mutation tests and collection screen tests for tag clear/remove + confirmations
+17. Mobile trades lifecycle audit messaging shipped:
+   - added selected-trade audit detail lines (proposal/accept/complete/cancel/delete + canceller)
+   - integrated audit detail rendering alongside lifecycle status hints
+   - expanded lifecycle message unit tests and trade screen assertions
 
 Remaining:
 
 1. Validate first slices on device against live APIs.
 2. Continue UX polish for edge network/error paths on mobile slices.
 3. Close functional parity gaps for:
-   - full pokemon page interaction workflows (deeper edit overlays, validation rules, and custom tag management UX)
-   - final trade lifecycle edge-case UX polish (fine-grained confirmation copy + optional audit details)
+   - final pokemon workflow polish (deeper parity for advanced overlays + optional per-field validation messaging)
+   - final trade lifecycle edge-case UX polish (fine-grained confirmation copy)
    - full search parity finish (map/list interaction parity + web-specific advanced interactions)
 
 ## 5) Parity Snapshot (Web -> Mobile)
@@ -235,9 +244,8 @@ Planned work:
 ## 11) 99% Parity Checklist (Open)
 
 1. Pokemon page parity:
-   - instance edit overlays and workflow sequencing aligned with web
-   - stricter mutation validation rules aligned with backend business constraints
-   - richer custom-tag management UX (add/remove/manage across caught/trade/wanted buckets)
+   - sectioned editor + custom tag management parity: shipped baseline
+   - remaining: advanced overlay affordances and tighter field-level mutation hints
 2. Search parity:
    - filter/result UX parity and pagination/selection behavior: shipped baseline
    - remaining: map/list parity and web-specific advanced interactions

@@ -90,6 +90,7 @@ describe('TradesScreen', () => {
     fireEvent.press(screen.getByText('proposed - t1'));
     expect(screen.getByText('Allowed actions: accept, deny, cancel, delete')).toBeTruthy();
     expect(screen.getByText('Trade proposed. Waiting for the other trainer to accept.')).toBeTruthy();
+    expect(screen.getByText('No audit timestamps yet.')).toBeTruthy();
   });
 
   it('accept action mutates selected trade and syncs via receiver update', async () => {
