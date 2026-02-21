@@ -17,25 +17,27 @@ Shared API contracts/types used across clients (web now, mobile next).
    - Secondary user-update DTOs (`SecondaryUserUpdateRequest`).
    - Trainer autocomplete types.
    - Users endpoint path helpers.
-2. `search.ts`
+2. `instances.ts`
+   - Canonical pokemon instance transport schema (`PokemonInstance`, `InstancesMap`).
+3. `search.ts`
    - Search query/result row types.
    - Canonical pokemon search request DTO (`PokemonSearchQueryParams`).
    - Search endpoint path contract.
-3. `common.ts`
+4. `common.ts`
    - Shared generic response envelope types (`ApiResponse<T>`).
-4. `domain.ts`
+5. `domain.ts`
    - Shared web/mobile-safe normalizers (ownership mode, case-folding, diacritic stripping).
-5. `auth.ts`
+6. `auth.ts`
    - Auth endpoint path helpers.
    - Auth/session transport DTOs (`AuthUser`, `LoginResponse`, `RefreshTokenResponse`).
-6. `trades.ts`
+7. `trades.ts`
    - Trade-related endpoint paths and transport DTOs (`PartnerInfo`, `PartnerCoordinates`, `TradeReference`).
-7. `location.ts`
+8. `location.ts`
    - Location service endpoint paths and transport DTOs (`Coordinates`, `LocationBase`, `LocationResponse`).
-8. `events.ts`
+9. `events.ts`
    - Events service endpoint paths.
    - Update transport DTOs (`UpdatesQueryParams`, `SseQueryParams`, `IncomingUpdateEnvelope`).
-9. `pokemon.ts`
+10. `pokemon.ts`
    - Pokemon service endpoint paths.
    - Pokemon API transport DTOs (`BasePokemon`, `Pokemons`, move/costume/raid/fusion subtypes).
 

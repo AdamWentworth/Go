@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./users": "./src/users.ts",
+    "./instances": "./src/instances.ts",
     "./search": "./src/search.ts",
     "./common": "./src/common.ts",
     "./domain": "./src/domain.ts",

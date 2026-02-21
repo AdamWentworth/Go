@@ -12,6 +12,7 @@ const frontendRoot = path.join(repoRoot, 'frontend');
 const requiredSharedFiles = [
   'index.ts',
   'users.ts',
+  'instances.ts',
   'search.ts',
   'common.ts',
   'domain.ts',

@@ -1,4 +1,5 @@
 export * from './users';
+export * from './instances';
 export * from './search';
 export * from './common';
 export * from './domain';

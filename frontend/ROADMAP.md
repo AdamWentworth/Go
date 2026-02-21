@@ -54,6 +54,7 @@ Done:
 5. Shared DTOs centralized and consumed by web for:
    - user overview
    - auth session payloads
+   - canonical pokemon instance payload schema
    - user-search outcomes
    - pokemon search request shape
    - pokemon API base/subtype payload schema

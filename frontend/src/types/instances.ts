@@ -1,6 +1,7 @@
 // src/types/instances.ts
 
 import type { PokemonInstance } from './pokemonInstance';
+import type { InstancesMap } from '@shared-contracts/instances';
 
 /* -------------------------------------------------------------------------- */
 /*  Instance-centric helpers                                                 */
@@ -8,7 +9,7 @@ import type { PokemonInstance } from './pokemonInstance';
 
 export type InstanceStatus = 'Caught' | 'Trade' | 'Wanted' | 'Missing';
 
-export type Instances        = Record<string, PokemonInstance>;
+export type Instances        = InstancesMap;
 export type MutableInstances = Record<string, Partial<PokemonInstance>>;
 
 /* async helpers ----------------------------------------------------------- */
