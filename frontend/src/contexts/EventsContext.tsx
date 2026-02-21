@@ -22,16 +22,17 @@ import type { Instances } from '@/types/instances';
 import { fetchUpdates } from '../services/sseService';
 import { getDeviceId }  from '../utils/deviceID';
 import { createScopedLogger } from '@/utils/logger';
+import type { IncomingUpdateEnvelope } from '@shared-contracts/events';
 
 /* ---------- type helpers ---------- */
 type PokemonUpdateData = Instances;
 type TradeUpdateData = Record<string, TradeRecord>;
-
-interface IncomingUpdateData {
-  pokemon?:          PokemonUpdateData;
-  trade?:            TradeUpdateData;
-  relatedInstance?:  Record<string, RelatedInstanceRecord>;
-}
+type RelatedInstanceUpdateData = Record<string, RelatedInstanceRecord>;
+type IncomingUpdateData = IncomingUpdateEnvelope<
+  PokemonUpdateData,
+  TradeUpdateData,
+  RelatedInstanceUpdateData
+>;
 
 type EventsContextType = Record<string, never>;
 
@@ -123,11 +124,11 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
         if (isSessionNew) {
           try {
             log.debug('fetching missed updates');
-            const updates = (await fetchUpdates(
+            const updates = await fetchUpdates<IncomingUpdateData>(
               user.user_id,
               deviceIdRef.current,
               lastUpdateTimestamp.getTime().toString(),
-            )) as IncomingUpdateData;
+            );
 
             if (updates?.pokemon || updates?.trade) {
               handleIncomingUpdate(updates);

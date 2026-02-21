@@ -7,25 +7,34 @@ import {
   requestWithPolicy,
 } from './httpClient';
 import { eventsContract } from '@shared-contracts/events';
+import type {
+  IncomingUpdateEnvelope,
+  UpdatesQueryParams,
+} from '@shared-contracts/events';
+
+export type { IncomingUpdateEnvelope, UpdatesQueryParams } from '@shared-contracts/events';
 
 const log = createScopedLogger('sseService');
 
-export const fetchUpdates = async (
+export const fetchUpdates = async <
+  TPayload extends IncomingUpdateEnvelope = IncomingUpdateEnvelope,
+>(
   _userId: string,
   deviceId: string,
   timestamp: string
-): Promise<unknown | null> => {
+): Promise<TPayload | null> => {
   try {
+    const queryParams: UpdatesQueryParams = {
+      device_id: deviceId,
+      timestamp,
+    };
     const response = await requestWithPolicy(
-      buildUrl(import.meta.env.VITE_EVENTS_API_URL, eventsContract.endpoints.getUpdates, {
-        device_id: deviceId,
-        timestamp,
-      }),
+      buildUrl(import.meta.env.VITE_EVENTS_API_URL, eventsContract.endpoints.getUpdates, queryParams),
       {
         method: 'GET',
       },
     );
-    const data = await parseJsonSafe<unknown>(response);
+    const data = await parseJsonSafe<TPayload>(response);
 
     if (response.status >= 200 && response.status < 300) {
       return data;

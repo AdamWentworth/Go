@@ -32,6 +32,7 @@ Shared API contracts/types used across clients (web now, mobile next).
    - Location service endpoint paths and transport DTOs (`Coordinates`, `LocationBase`, `LocationResponse`).
 7. `events.ts`
    - Events service endpoint paths.
+   - Update transport DTOs (`UpdatesQueryParams`, `IncomingUpdateEnvelope`).
 8. `pokemon.ts`
    - Pokemon service endpoint paths.
 
