@@ -9,7 +9,7 @@
   display: flex;
   justify-content: space-between;
   align-items: stretch;
-  padding: 10px; /* You can move this to a media query if it changes, but it appears used as a default */
+  padding: var(--space-3); /* You can move this to a media query if it changes, but it appears used as a default */
 }
 
 .trade-card p,
@@ -48,7 +48,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(var(--shadow-image));
 }
 
 /* Default size for trade icon images */
@@ -72,7 +72,7 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(var(--shadow-image));
 }
 
 /* Lucky/backdrop layering */
@@ -110,7 +110,7 @@
 
 /* Hearts, lucky container images */
 .trade-card .hearts-lucky-container img {
-  margin-top: 5px;
+  margin-top: var(--space-2);
   width: 2rem;
   height: auto;
 }
@@ -221,22 +221,22 @@
 /* Toggle details button (hidden by default unless needed in media) */
 .trade-card .toggle-details-button {
   display: none;
-  margin-top: 10px;
+  margin-top: var(--space-3);
   padding: 0.5rem 1rem;
-  background-color: #007bff;
-  color: white;
+  background-color: var(--color-accent-primary);
+  color: var(--color-text-primary);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color var(--motion-base) ease;
 }
 
 .trade-card .toggle-details-button:hover {
-  background-color: #0056b3;
+  background-color: var(--color-accent-primary-hover);
 }
 
 .trade-card .toggle-details-button:focus {
-  outline: 2px solid #0056b3;
+  outline: 2px solid var(--color-accent-primary-hover);
   outline-offset: 2px;
 }
 
@@ -250,13 +250,13 @@
   border: none;
   font-size: 2rem;
   line-height: 1;
-  color: #333;
+  color: var(--color-surface-2);
   cursor: pointer;
-  z-index: 1002;
+  z-index: var(--z-popover);
 }
 
 .trade-card .close-details-button:hover {
-  color: #000;
+  color: var(--color-text-inverse);
 }
 
 /* Details content (visible by default on large screens, or hidden behind toggles) */
@@ -335,15 +335,15 @@
   /* Overriding details-content to be a modal-like popup */
   .trade-card .details-content {
     position: absolute;
-    background: #333;
-    color: #fff;
+    background: var(--color-surface-2);
+    color: var(--color-text-primary);
     padding: 15px;
-    z-index: 1001;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
-    border-radius: 12px;
+    z-index: var(--z-modal);
+    box-shadow: var(--shadow-elevated);
+    border-radius: var(--radius-lg);
     visibility: hidden; 
     opacity: 0;
-    transition: visibility 0.3s, opacity 0.3s;
+    transition: visibility var(--motion-base), opacity var(--motion-base);
   }
 
   .trade-card .details-content.visible {
@@ -451,15 +451,15 @@
   /* Modal-like details content again */
   .trade-card .details-content {
     position: absolute;
-    background: #333;
-    color: #fff;
+    background: var(--color-surface-2);
+    color: var(--color-text-primary);
     padding: 15px;
-    z-index: 1001;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
-    border-radius: 12px;
+    z-index: var(--z-modal);
+    box-shadow: var(--shadow-elevated);
+    border-radius: var(--radius-lg);
     visibility: hidden;
     opacity: 0;
-    transition: visibility 0.3s, opacity 0.3s;
+    transition: visibility var(--motion-base), opacity var(--motion-base);
   }
 
   .trade-card .details-content.visible {

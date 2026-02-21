@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import './ListView.css';
+import './ListView.base.css';
+import './ListView.responsive.css';
 import CaughtListView from './ListViewComponents/CaughtListView';
 import TradeListView from './ListViewComponents/TradeListView';
 import WantedListView from './ListViewComponents/WantedListView';

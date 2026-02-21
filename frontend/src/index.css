@@ -1,14 +1,10 @@
 /* index.css */
 
-/* index.css */
-
 /* Ensure scrolling works but scrollbar is hidden */
 html, body {
-  background-color: #111;
+  background-color: var(--color-bg-app);
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-family-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   height: 100vh;
@@ -29,8 +25,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
 
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: var(--font-family-mono);
 }
 
 /* body {

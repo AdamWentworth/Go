@@ -58,7 +58,7 @@ Reason: mobile expansion is expensive; it should start from a hardened, stable w
 
 ## Phase 1 - CSS System Cleanup (Priority: P1)
 
-- Status: Planned
+- Status: In Progress (started 2026-02-18)
 - Target window: 2-4 weeks
 - Objective: keep vanilla CSS (or evolve carefully) while making it scalable and maintainable.
 
@@ -76,14 +76,17 @@ Recommendation: Option A first. It gives lower risk and protects delivery while 
 1. P1.1 Design token layer
    - Introduce centralized CSS variables for spacing, typography, color, z-index, motion.
    - Remove repeated hard-coded values in largest CSS files first.
+   - Status: Completed (initial rollout, 2026-02-18)
 
 2. P1.2 CSS architecture boundaries
    - Define folder conventions for shared primitives vs feature-level styles.
    - Enforce naming pattern and file size guidance for new edits.
+   - Status: Completed (policy and conventions documented, 2026-02-18)
 
 3. P1.3 Large-file reduction
    - Split highest-cost CSS files into cohesive modules (Search/Trades first).
    - Keep selectors local and reduce cascade depth.
+   - Status: In Progress (started with `ListView.css` split, 2026-02-18)
 
 4. P1.4 Styling quality checks
    - Add Stylelint (or equivalent) with agreed rules.

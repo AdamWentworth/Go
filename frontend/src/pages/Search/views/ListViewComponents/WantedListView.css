@@ -86,7 +86,7 @@
 .wanted-list-view .pokemon-weight p:last-child,
 .wanted-list-view .pokemon-height p:last-child {
   font-size: 0.6em;
-  color: #aaa;
+  color: var(--color-text-secondary);
 }
 
 .wanted-list-view .pokemon-moves {
@@ -118,8 +118,8 @@
   width: 72px;
   height: 72px;
   object-fit: cover;
-  border-radius: 8px;
-  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.2));
+  border-radius: var(--radius-md);
+  filter: drop-shadow(var(--shadow-image));
 }
 
 .wanted-list-view .pokemon-image-container {
@@ -142,12 +142,12 @@
 }
 
 .wanted-list-view .trade-list-section .trade-list::-webkit-scrollbar-thumb {
-  background-color: #222;
+  background-color: var(--color-surface-1);
   border-radius: 10px;
 }
 
 .wanted-list-view .trade-list-section .trade-list::-webkit-scrollbar-thumb:hover {
-  background-color: #111;
+  background-color: var(--color-bg-app);
 }
 
 @media (max-width: 480px) {
