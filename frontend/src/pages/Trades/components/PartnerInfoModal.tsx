@@ -10,24 +10,13 @@ import XYZ from 'ol/source/XYZ';
 import VectorSource from 'ol/source/Vector';
 import { Circle, Fill, Style } from 'ol/style';
 import { useModal } from '@/contexts/ModalContext';
+import type { PartnerInfo } from '@shared-contracts/trades';
 
 import CloseButton from '@/components/CloseButton';
 import { useTheme } from '@/contexts/ThemeContext';
 
 import 'ol/ol.css';
 import './PartnerInfoModal.css';
-
-interface PartnerCoordinates {
-  latitude: number;
-  longitude: number;
-}
-
-export interface PartnerInfo {
-  trainerCode?: string | null;
-  pokemonGoName?: string | null;
-  coordinates?: PartnerCoordinates | null;
-  location?: string | null;
-}
 
 interface PartnerInfoModalProps {
   partnerInfo: PartnerInfo | null;

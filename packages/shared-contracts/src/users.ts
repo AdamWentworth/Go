@@ -6,6 +6,25 @@ export type UserInstancesEnvelope<TInstances = Record<string, unknown>> = {
   instances?: TInstances;
 };
 
+export interface UserOverviewUser {
+  user_id: string;
+  username: string;
+  [key: string]: unknown;
+}
+
+export interface UserOverview<
+  TPokemonInstance = Record<string, unknown>,
+  TTrade = Record<string, unknown>,
+  TRelatedInstance = TPokemonInstance,
+  TRegistration = boolean,
+> {
+  user: UserOverviewUser;
+  pokemon_instances: Record<string, TPokemonInstance>;
+  trades: Record<string, TTrade>;
+  related_instances: Record<string, TRelatedInstance>;
+  registrations: Record<string, TRegistration>;
+}
+
 export type TrainerAutocompleteEntry = {
   username: string;
   pokemonGoName?: string | null;
