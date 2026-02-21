@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../features/auth/AuthProvider';
 import { registerUser } from '../services/authService';
+import { commonStyles } from '../ui/commonStyles';
 
 type RegisterScreenProps = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -51,8 +52,8 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Register</Text>
-      <Text style={styles.subtitle}>Create a new trainer account</Text>
+      <Text style={commonStyles.title}>Register</Text>
+      <Text style={commonStyles.subtitle}>Create a new trainer account</Text>
 
       <TextInput
         autoCapitalize="none"
@@ -60,7 +61,7 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
         placeholder="Username"
         value={username}
         onChangeText={setUsername}
-        style={styles.input}
+        style={commonStyles.input}
       />
       <TextInput
         autoCapitalize="none"
@@ -68,7 +69,7 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
-        style={styles.input}
+        style={commonStyles.input}
       />
       <TextInput
         autoCapitalize="none"
@@ -77,57 +78,35 @@ export const RegisterScreen = ({ navigation }: RegisterScreenProps) => {
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
-        style={styles.input}
+        style={commonStyles.input}
       />
       <TextInput
         placeholder="Pokemon GO name"
         value={pokemonGoName}
         onChangeText={setPokemonGoName}
-        style={styles.input}
+        style={commonStyles.input}
       />
       <TextInput
         keyboardType="number-pad"
         placeholder="Trainer code (12 digits)"
         value={trainerCode}
         onChangeText={setTrainerCode}
-        style={styles.input}
+        style={commonStyles.input}
       />
 
-      <View style={styles.actions}>
+      <View style={commonStyles.actions}>
         <Button title={loading ? 'Registering...' : 'Register'} onPress={() => void handleRegister()} disabled={!canSubmit} />
         <Button title="Back to Login" onPress={() => navigation.navigate('Login')} />
       </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <Text style={commonStyles.error}>{error}</Text> : null}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    ...commonStyles.screenContainer,
     padding: 24,
-    gap: 12,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  subtitle: {
-    color: '#666',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#bbb',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-  },
-  actions: {
-    gap: 8,
-  },
-  error: {
-    color: '#b00020',
   },
 });
-

@@ -9,6 +9,8 @@ import {
   updateAuthAccount,
   updateSecondaryAccount,
 } from '../services/accountService';
+import { commonStyles } from '../ui/commonStyles';
+import { theme } from '../ui/theme';
 
 type AccountScreenProps = NativeStackScreenProps<RootStackParamList, 'Account'>;
 
@@ -88,37 +90,37 @@ export const AccountScreen = ({ navigation }: AccountScreenProps) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Account</Text>
-      <Text style={styles.subtitle}>Mobile baseline for account/profile updates</Text>
+      <Text style={commonStyles.title}>Account</Text>
+      <Text style={commonStyles.subtitle}>Mobile baseline for account/profile updates</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.caption}>Username: {user?.username ?? '-'}</Text>
-        <Text style={styles.caption}>Email: {String(user?.email ?? '-')}</Text>
-        <Text style={styles.caption}>Trainer code: {String(user?.trainerCode ?? '-')}</Text>
+      <View style={commonStyles.card}>
+        <Text style={commonStyles.caption}>Username: {user?.username ?? '-'}</Text>
+        <Text style={commonStyles.caption}>Email: {String(user?.email ?? '-')}</Text>
+        <Text style={commonStyles.caption}>Trainer code: {String(user?.trainerCode ?? '-')}</Text>
       </View>
 
       <TextInput
         placeholder="Pokemon GO name"
         value={pokemonGoName}
         onChangeText={setPokemonGoName}
-        style={styles.input}
+        style={commonStyles.input}
       />
-      <TextInput placeholder="Location" value={location} onChangeText={setLocation} style={styles.input} />
+      <TextInput placeholder="Location" value={location} onChangeText={setLocation} style={commonStyles.input} />
       <TextInput
         placeholder="Allow location (true/false)"
         value={allowLocationInput}
         onChangeText={setAllowLocationInput}
         autoCapitalize="none"
-        style={styles.input}
+        style={commonStyles.input}
       />
 
-      <View style={styles.actions}>
+      <View style={commonStyles.actions}>
         <Button title={loading ? 'Saving...' : 'Save'} onPress={() => void saveAccount()} />
         <Button title="Back" onPress={() => navigation.goBack()} />
       </View>
 
-      {success ? <Text style={styles.success}>{success}</Text> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {success ? <Text style={commonStyles.success}>{success}</Text> : null}
+      {error ? <Text style={commonStyles.error}>{error}</Text> : null}
 
       <View style={styles.dangerArea}>
         <Button color="#b00020" title="Delete Account" onPress={confirmDelete} />
@@ -129,49 +131,12 @@ export const AccountScreen = ({ navigation }: AccountScreenProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    gap: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  subtitle: {
-    color: '#6b7280',
-  },
-  card: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 12,
-    backgroundColor: '#fff',
-    gap: 4,
-  },
-  caption: {
-    color: '#374151',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#bbb',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-  },
-  actions: {
-    gap: 8,
-  },
-  success: {
-    color: '#047857',
-  },
-  error: {
-    color: '#b00020',
+    ...commonStyles.screenContainer,
   },
   dangerArea: {
     marginTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: theme.colors.border,
     paddingTop: 12,
   },
 });
-

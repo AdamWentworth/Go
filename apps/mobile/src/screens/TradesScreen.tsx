@@ -17,6 +17,8 @@ import {
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { sendTradeUpdate } from '../services/receiverService';
 import { fetchTradesOverviewForUser } from '../services/tradesService';
+import { commonStyles } from '../ui/commonStyles';
+import { theme } from '../ui/theme';
 
 type TradesScreenProps = NativeStackScreenProps<RootStackParamList, 'Trades'>;
 
@@ -92,28 +94,28 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Trades</Text>
-      <Text style={styles.subtitle}>Read-only mobile baseline for trade overview</Text>
+      <Text style={commonStyles.title}>Trades</Text>
+      <Text style={commonStyles.subtitle}>Read-only mobile baseline for trade overview</Text>
 
-      <View style={styles.actions}>
+      <View style={commonStyles.actions}>
         <Button title={loading ? 'Loading...' : 'Load Trades'} onPress={() => void loadTrades()} />
         <Button title="Back" onPress={() => navigation.goBack()} />
       </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <Text style={commonStyles.error}>{error}</Text> : null}
 
       {statusEntries.length > 0 ? (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Status Summary</Text>
+        <View style={commonStyles.card}>
+          <Text style={commonStyles.cardTitle}>Status Summary</Text>
           {statusEntries.map(([status, count]) => (
-            <Text key={status} style={styles.caption}>
+            <Text key={status} style={commonStyles.caption}>
               {status}: {count}
             </Text>
           ))}
         </View>
       ) : null}
 
-      <Text style={styles.caption}>
+      <Text style={commonStyles.caption}>
         Showing {visibleTrades.length} of {trades.length} trades.
       </Text>
 
@@ -121,15 +123,15 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
         <Pressable
           key={String(trade.trade_id)}
           onPress={() => setSelectedTradeId(trade.trade_id ?? null)}
-          style={[styles.tradeRow, selectedTradeId === trade.trade_id ? styles.tradeRowSelected : null]}
+          style={[commonStyles.row, selectedTradeId === trade.trade_id ? commonStyles.rowSelected : null]}
         >
-          <Text style={styles.tradePrimary}>{trade.trade_status} - {trade.trade_id}</Text>
-          <Text style={styles.tradeSecondary}>
+          <Text style={commonStyles.rowTitle}>{trade.trade_status} - {trade.trade_id}</Text>
+          <Text style={commonStyles.rowSub}>
             {trade.username_proposed ?? '-'}
             {' -> '}
             {trade.username_accepting ?? '-'}
           </Text>
-          <Text style={styles.tradeSecondary}>
+          <Text style={commonStyles.rowSub}>
             {trade.pokemon_instance_id_user_proposed ?? '-'} /{' '}
             {trade.pokemon_instance_id_user_accepting ?? '-'}
           </Text>
@@ -137,9 +139,9 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
       ))}
 
       {selectedTrade ? (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Trade Actions ({selectedTrade.trade_id})</Text>
-          <View style={styles.actions}>
+        <View style={commonStyles.card}>
+          <Text style={commonStyles.cardTitle}>Trade Actions ({selectedTrade.trade_id})</Text>
+          <View style={commonStyles.actions}>
             <Button
               title="Accept"
               onPress={() => void runMutation((map) => acceptTrade(map, selectedTrade.trade_id))}
@@ -181,54 +183,7 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    gap: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  subtitle: {
-    color: '#6b7280',
-  },
-  actions: {
-    gap: 8,
-  },
-  error: {
-    color: '#b00020',
-  },
-  caption: {
-    color: '#374151',
-  },
-  card: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 12,
-    backgroundColor: '#fff',
-    gap: 4,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  tradeRow: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
-    padding: 8,
-    backgroundColor: '#f9fafb',
-    gap: 2,
-  },
-  tradeRowSelected: {
-    borderColor: '#2563eb',
-    backgroundColor: '#dbeafe',
-  },
-  tradePrimary: {
-    fontWeight: '600',
-  },
-  tradeSecondary: {
-    color: '#6b7280',
-    fontSize: 12,
+    ...commonStyles.screenContainer,
+    backgroundColor: theme.colors.background,
   },
 });

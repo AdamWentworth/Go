@@ -19,6 +19,8 @@ import {
   toPokemonList,
 } from '../features/pokemon/pokemonReadModels';
 import { fetchPokemons } from '../services/pokemonService';
+import { commonStyles } from '../ui/commonStyles';
+import { theme } from '../ui/theme';
 
 type PokemonCatalogScreenProps = NativeStackScreenProps<RootStackParamList, 'PokemonCatalog'>;
 
@@ -67,8 +69,8 @@ export const PokemonCatalogScreen = ({ navigation }: PokemonCatalogScreenProps) 
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Pokemon Catalog</Text>
-      <Text style={styles.subtitle}>Read-only base pokemon detail path</Text>
+      <Text style={commonStyles.title}>Pokemon Catalog</Text>
+      <Text style={commonStyles.subtitle}>Read-only base pokemon detail path</Text>
 
       <TextInput
         autoCapitalize="none"
@@ -76,20 +78,20 @@ export const PokemonCatalogScreen = ({ navigation }: PokemonCatalogScreenProps) 
         placeholder="Filter by name..."
         value={query}
         onChangeText={setQuery}
-        style={styles.input}
+        style={commonStyles.input}
       />
 
-      <View style={styles.actions}>
+      <View style={commonStyles.actions}>
         <Button title={loading ? 'Refreshing...' : 'Refresh'} onPress={() => void loadPokemons()} />
         <Button title="Back" onPress={() => navigation.goBack()} />
       </View>
 
       {loading ? <ActivityIndicator /> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {showNoData ? <Text style={styles.caption}>No pokemon data loaded yet.</Text> : null}
-      {showNoMatches ? <Text style={styles.caption}>No pokemon matched your filter.</Text> : null}
+      {error ? <Text style={commonStyles.error}>{error}</Text> : null}
+      {showNoData ? <Text style={commonStyles.caption}>No pokemon data loaded yet.</Text> : null}
+      {showNoMatches ? <Text style={commonStyles.caption}>No pokemon matched your filter.</Text> : null}
 
-      <Text style={styles.caption}>
+      <Text style={commonStyles.caption}>
         Showing {visibleItems.length} of {filteredItems.length} matched entries ({pokemons.length}{' '}
         total).
       </Text>
@@ -101,19 +103,19 @@ export const PokemonCatalogScreen = ({ navigation }: PokemonCatalogScreenProps) 
             <Pressable
               key={`${item.pokemonId}-${item.displayName}`}
               onPress={() => setSelectedPokemonId(item.pokemonId)}
-              style={[styles.row, selected ? styles.rowSelected : null]}
+              style={[commonStyles.row, selected ? commonStyles.rowSelected : null]}
             >
-              <Text style={styles.rowTitle}>
+              <Text style={commonStyles.rowTitle}>
                 #{item.pokemonId} {item.displayName}
               </Text>
-              <Text style={styles.rowSub}>{item.types.join(' / ') || '-'}</Text>
+              <Text style={commonStyles.rowSub}>{item.types.join(' / ') || '-'}</Text>
             </Pressable>
           );
         })}
       </View>
 
       {selectedDetail ? (
-        <View style={styles.detailCard}>
+        <View style={commonStyles.card}>
           <Text style={styles.detailTitle}>{selectedDetail.displayName}</Text>
           {selectedDetail.imageUrl ? (
             <Image source={{ uri: selectedDetail.imageUrl }} style={styles.detailImage} />
@@ -148,66 +150,15 @@ export const PokemonCatalogScreen = ({ navigation }: PokemonCatalogScreenProps) 
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    gap: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  subtitle: {
-    color: '#666',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#bbb',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-  },
-  actions: {
-    gap: 8,
-  },
-  error: {
-    color: '#b00020',
-  },
-  caption: {
-    color: '#666',
+    ...commonStyles.screenContainer,
   },
   list: {
     gap: 8,
   },
-  row: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    padding: 10,
-    backgroundColor: '#fff',
-  },
-  rowSelected: {
-    borderColor: '#3b82f6',
-    backgroundColor: '#eff6ff',
-  },
-  rowTitle: {
-    fontWeight: '600',
-  },
-  rowSub: {
-    color: '#666',
-    marginTop: 2,
-  },
-  detailCard: {
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 12,
-    backgroundColor: '#fff',
-    gap: 4,
-  },
   detailTitle: {
     fontSize: 17,
     fontWeight: '700',
+    color: theme.colors.textPrimary,
   },
   detailImage: {
     width: 120,
@@ -215,6 +166,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   detailLine: {
-    color: '#333',
+    color: theme.colors.textTertiary,
   },
 });

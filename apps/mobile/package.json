@@ -15,6 +15,7 @@
   "dependencies": {
     "@babel/runtime": "^7.28.6",
     "@pokemongonexus/shared-contracts": "file:../../packages/shared-contracts",
+    "@pokemongonexus/shared-ui-tokens": "file:../../packages/shared-ui-tokens",
     "@react-navigation/native": "^7.1.28",
     "@react-navigation/native-stack": "^7.13.0",
     "expo": "~54.0.33",

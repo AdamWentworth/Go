@@ -80,6 +80,7 @@ Done:
 6. Mobile baseline checks green (`npm run typecheck`, `npm run lint`, `npm run test` in `apps/mobile`).
 7. Session persistence added via `expo-secure-store` for mobile auth bootstrap continuity.
 8. Dedicated mobile CI workflow added (`.github/workflows/ci-mobile.yml`).
+9. Shared UI token package added (`@pokemongonexus/shared-ui-tokens`) and wired into mobile screen styling via reusable RN style primitives.
 
 Remaining:
 

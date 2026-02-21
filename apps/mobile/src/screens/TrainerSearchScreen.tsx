@@ -23,6 +23,7 @@ import {
   fetchForeignInstancesByUsername,
   fetchTrainerAutocomplete,
 } from '../services/userSearchService';
+import { commonStyles } from '../ui/commonStyles';
 
 type TrainerSearchScreenProps = NativeStackScreenProps<RootStackParamList, 'TrainerSearch'>;
 
@@ -173,8 +174,8 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Trainer Search</Text>
-      <Text style={styles.subtitle}>Autocomplete + foreign instance lookup</Text>
+      <Text style={commonStyles.title}>Trainer Search</Text>
+      <Text style={commonStyles.subtitle}>Autocomplete + foreign instance lookup</Text>
 
       <TextInput
         autoCapitalize="none"
@@ -188,13 +189,13 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
           setLookupInstances([]);
           setLookupError(null);
         }}
-        style={styles.input}
+        style={commonStyles.input}
       />
 
       {searchLoading ? <ActivityIndicator /> : null}
-      {searchError ? <Text style={styles.error}>{searchError}</Text> : null}
+      {searchError ? <Text style={commonStyles.error}>{searchError}</Text> : null}
       {!canSearch ? (
-        <Text style={styles.hint}>Enter at least {MIN_QUERY_LEN} characters to search trainers.</Text>
+        <Text style={commonStyles.hint}>Enter at least {MIN_QUERY_LEN} characters to search trainers.</Text>
       ) : null}
 
       {results.map((trainer) => {
@@ -209,18 +210,18 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
               setLookupInstances([]);
               setLookupError(null);
             }}
-            style={[styles.resultRow, isSelected ? styles.resultRowSelected : null]}
+            style={[commonStyles.row, isSelected ? commonStyles.rowSelected : null]}
           >
-            <Text style={styles.resultPrimary}>{trainer.username}</Text>
-            <Text style={styles.resultSecondary}>{trainer.pokemonGoName ?? '-'}</Text>
+            <Text style={commonStyles.rowTitle}>{trainer.username}</Text>
+            <Text style={commonStyles.rowSub}>{trainer.pokemonGoName ?? '-'}</Text>
           </Pressable>
         );
       })}
       {showNoAutocompleteResults ? (
-        <Text style={styles.hint}>No trainers matched your query.</Text>
+        <Text style={commonStyles.hint}>No trainers matched your query.</Text>
       ) : null}
 
-      <View style={styles.actions}>
+      <View style={commonStyles.actions}>
         <Button
           title={lookupLoading ? 'Loading...' : 'Lookup Trainer'}
           onPress={() => void handleLookup()}
@@ -238,13 +239,13 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
         <Button title="Back" onPress={() => navigation.goBack()} />
       </View>
 
-      {lookupError ? <Text style={styles.error}>{lookupError}</Text> : null}
+      {lookupError ? <Text style={commonStyles.error}>{lookupError}</Text> : null}
 
       {lookupSummary ? (
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>{lookupSummary.username}</Text>
+        <View style={commonStyles.card}>
+          <Text style={commonStyles.cardTitle}>{lookupSummary.username}</Text>
           {summaryLines.map((line) => (
-            <Text key={line} style={styles.summaryLine}>
+            <Text key={line} style={commonStyles.caption}>
               {line}
             </Text>
           ))}
@@ -252,18 +253,18 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
       ) : null}
 
       {lookupSummary ? (
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Instances ({ownershipMode})</Text>
-          <View style={styles.modeRow}>
+        <View style={commonStyles.card}>
+          <Text style={commonStyles.cardTitle}>Instances ({ownershipMode})</Text>
+          <View style={commonStyles.pillRow}>
             {OWNERSHIP_MODES.map((mode) => {
               const selected = mode === ownershipMode;
               return (
                 <Pressable
                   key={mode}
                   onPress={() => setOwnershipMode(mode)}
-                  style={[styles.modePill, selected ? styles.modePillSelected : null]}
+                  style={[commonStyles.pill, selected ? commonStyles.pillSelected : null]}
                 >
-                  <Text style={[styles.modePillText, selected ? styles.modePillTextSelected : null]}>
+                  <Text style={[commonStyles.pillText, selected ? commonStyles.pillTextSelected : null]}>
                     {mode}
                   </Text>
                 </Pressable>
@@ -271,18 +272,18 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
             })}
           </View>
 
-          <Text style={styles.summaryLine}>
+          <Text style={commonStyles.caption}>
             Showing {visibleOwnershipItems.length} of {ownershipItems.length} matched instances.
           </Text>
 
           {visibleOwnershipItems.map((item) => (
-            <View key={item.instanceId} style={styles.instanceRow}>
-              <Text style={styles.instancePrimary}>{item.variantId || '(missing variant_id)'}</Text>
-              <Text style={styles.instanceSecondary}>instance_id: {item.instanceId}</Text>
+            <View key={item.instanceId} style={commonStyles.row}>
+              <Text style={commonStyles.rowTitle}>{item.variantId || '(missing variant_id)'}</Text>
+              <Text style={commonStyles.rowSub}>instance_id: {item.instanceId}</Text>
             </View>
           ))}
           {visibleOwnershipItems.length === 0 ? (
-            <Text style={styles.hint}>No instances for the selected ownership mode.</Text>
+            <Text style={commonStyles.hint}>No instances for the selected ownership mode.</Text>
           ) : null}
         </View>
       ) : null}
@@ -292,108 +293,6 @@ export const TrainerSearchScreen = ({ navigation }: TrainerSearchScreenProps) =>
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    gap: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  subtitle: {
-    color: '#666',
-    marginBottom: 6,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#bbb',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-  },
-  actions: {
-    gap: 8,
-    marginTop: 8,
-  },
-  error: {
-    color: '#b00020',
-    marginTop: 4,
-  },
-  hint: {
-    color: '#6b7280',
-  },
-  resultRow: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    padding: 10,
-    backgroundColor: '#fff',
-  },
-  resultRowSelected: {
-    borderColor: '#3b82f6',
-    backgroundColor: '#eff6ff',
-  },
-  resultPrimary: {
-    fontWeight: '600',
-  },
-  resultSecondary: {
-    color: '#666',
-    marginTop: 2,
-  },
-  summaryCard: {
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 12,
-    backgroundColor: '#fff',
-    gap: 4,
-  },
-  summaryTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  summaryLine: {
-    color: '#333',
-  },
-  modeRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginVertical: 4,
-  },
-  modePill: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#9ca3af',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    backgroundColor: '#f3f4f6',
-  },
-  modePillSelected: {
-    borderColor: '#2563eb',
-    backgroundColor: '#dbeafe',
-  },
-  modePillText: {
-    color: '#374151',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  modePillTextSelected: {
-    color: '#1d4ed8',
-  },
-  instanceRow: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
-    padding: 8,
-    backgroundColor: '#f9fafb',
-  },
-  instancePrimary: {
-    fontWeight: '600',
-  },
-  instanceSecondary: {
-    color: '#6b7280',
-    fontSize: 12,
+    ...commonStyles.screenContainer,
   },
 });

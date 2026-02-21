@@ -11,6 +11,7 @@ import {
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { fetchForeignInstancesByUsername } from '../services/userSearchService';
 import { fetchUserOverview } from '../services/userOverviewService';
+import { commonStyles } from '../ui/commonStyles';
 
 type PokemonCollectionScreenProps = NativeStackScreenProps<RootStackParamList, 'PokemonCollection'>;
 
@@ -81,8 +82,8 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Pokemon Collection</Text>
-      <Text style={styles.subtitle}>Use blank username to load your own collection</Text>
+      <Text style={commonStyles.title}>Pokemon Collection</Text>
+      <Text style={commonStyles.subtitle}>Use blank username to load your own collection</Text>
 
       <TextInput
         autoCapitalize="none"
@@ -90,56 +91,56 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
         placeholder="Foreign username (optional)"
         value={usernameInput}
         onChangeText={setUsernameInput}
-        style={styles.input}
+        style={commonStyles.input}
       />
 
-      <View style={styles.actions}>
+      <View style={commonStyles.actions}>
         <Button title={loading ? 'Loading...' : 'Load Collection'} onPress={() => void loadCollection()} />
         <Button title="Back" onPress={() => navigation.goBack()} />
       </View>
 
-      {activeUsername ? <Text style={styles.caption}>Active trainer: {activeUsername}</Text> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {activeUsername ? <Text style={commonStyles.caption}>Active trainer: {activeUsername}</Text> : null}
+      {error ? <Text style={commonStyles.error}>{error}</Text> : null}
       {!loading && !error && items.length === 0 ? (
-        <Text style={styles.caption}>No instances loaded yet.</Text>
+        <Text style={commonStyles.caption}>No instances loaded yet.</Text>
       ) : null}
 
       {items.length > 0 ? (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Summary</Text>
-          <Text style={styles.caption}>Total: {summary.total}</Text>
-          <Text style={styles.caption}>Caught: {summary.caught}</Text>
-          <Text style={styles.caption}>Trade: {summary.trade}</Text>
-          <Text style={styles.caption}>Wanted: {summary.wanted}</Text>
+        <View style={commonStyles.card}>
+          <Text style={commonStyles.cardTitle}>Summary</Text>
+          <Text style={commonStyles.caption}>Total: {summary.total}</Text>
+          <Text style={commonStyles.caption}>Caught: {summary.caught}</Text>
+          <Text style={commonStyles.caption}>Trade: {summary.trade}</Text>
+          <Text style={commonStyles.caption}>Wanted: {summary.wanted}</Text>
         </View>
       ) : null}
 
       {items.length > 0 ? (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Instances ({ownershipMode})</Text>
-          <View style={styles.modeRow}>
+        <View style={commonStyles.card}>
+          <Text style={commonStyles.cardTitle}>Instances ({ownershipMode})</Text>
+          <View style={commonStyles.pillRow}>
             {OWNERSHIP_MODES.map((mode) => {
               const selected = mode === ownershipMode;
               return (
                 <Pressable
                   key={mode}
                   onPress={() => setOwnershipMode(mode)}
-                  style={[styles.modePill, selected ? styles.modePillSelected : null]}
+                  style={[commonStyles.pill, selected ? commonStyles.pillSelected : null]}
                 >
-                  <Text style={[styles.modePillText, selected ? styles.modePillTextSelected : null]}>
+                  <Text style={[commonStyles.pillText, selected ? commonStyles.pillTextSelected : null]}>
                     {mode}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
-          <Text style={styles.caption}>
+          <Text style={commonStyles.caption}>
             Showing {visible.length} of {filtered.length} rows.
           </Text>
           {visible.map((item) => (
-            <View key={item.instanceId} style={styles.instanceRow}>
-              <Text style={styles.instancePrimary}>{item.variantId || '(missing variant_id)'}</Text>
-              <Text style={styles.instanceSecondary}>instance_id: {item.instanceId}</Text>
+            <View key={item.instanceId} style={commonStyles.row}>
+              <Text style={commonStyles.rowTitle}>{item.variantId || '(missing variant_id)'}</Text>
+              <Text style={commonStyles.rowSub}>instance_id: {item.instanceId}</Text>
             </View>
           ))}
         </View>
@@ -150,83 +151,6 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    gap: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  subtitle: {
-    color: '#6b7280',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#bbb',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-  },
-  actions: {
-    gap: 8,
-  },
-  error: {
-    color: '#b00020',
-  },
-  caption: {
-    color: '#374151',
-  },
-  card: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 12,
-    backgroundColor: '#fff',
-    gap: 4,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  modeRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginVertical: 4,
-  },
-  modePill: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#9ca3af',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    backgroundColor: '#f3f4f6',
-  },
-  modePillSelected: {
-    borderColor: '#2563eb',
-    backgroundColor: '#dbeafe',
-  },
-  modePillText: {
-    color: '#374151',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  modePillTextSelected: {
-    color: '#1d4ed8',
-  },
-  instanceRow: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
-    padding: 8,
-    backgroundColor: '#f9fafb',
-  },
-  instancePrimary: {
-    fontWeight: '600',
-  },
-  instanceSecondary: {
-    color: '#6b7280',
-    fontSize: 12,
+    ...commonStyles.screenContainer,
   },
 });
-
