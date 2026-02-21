@@ -35,6 +35,8 @@ const OWNERSHIP_MODES: OwnershipMode[] = ['caught', 'trade', 'wanted'];
 const TAG_BUCKETS: ('caught' | 'trade' | 'wanted')[] = ['caught', 'trade', 'wanted'];
 const EDITOR_SECTIONS = ['status', 'attributes', 'tags'] as const;
 const MAX_ROWS = 120;
+const MAX_NICKNAME_LENGTH = 50;
+const MAX_TAG_LENGTH = 40;
 type EditorSection = (typeof EDITOR_SECTIONS)[number];
 
 const summarize = (items: InstanceListItem[]) => {
@@ -107,6 +109,23 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     if (!selectedInstance) return [];
     return getBucketTags(selectedInstance, tagBucketDraft);
   }, [selectedInstance, tagBucketDraft]);
+  const normalizedNicknameDraft = nicknameDraft.trim();
+  const currentNickname = useMemo(
+    () => (selectedInstance?.nickname ? selectedInstance.nickname.trim() : ''),
+    [selectedInstance],
+  );
+  const nicknameLength = normalizedNicknameDraft.length;
+  const nicknameTooLong = nicknameLength > MAX_NICKNAME_LENGTH;
+  const nicknameUnchanged = normalizedNicknameDraft === currentNickname;
+  const normalizedTagDraft = tagDraft.trim();
+  const tagLength = normalizedTagDraft.length;
+  const tagTooLong = tagLength > MAX_TAG_LENGTH;
+  const duplicateTagInBucket = useMemo(
+    () =>
+      normalizedTagDraft.length > 0 &&
+      selectedBucketTags.some((tag) => tag.toLowerCase() === normalizedTagDraft.toLowerCase()),
+    [normalizedTagDraft, selectedBucketTags],
+  );
 
   const loadCollection = async () => {
     setLoading(true);
@@ -229,13 +248,15 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
 
   const saveNickname = async () => {
     if (!selectedInstanceId) return;
-    const normalizedNickname = nicknameDraft.trim();
-    if (normalizedNickname.length > 50) {
-      setError('Nickname must be 50 characters or fewer.');
+    if (nicknameTooLong) {
+      setError(`Nickname must be ${MAX_NICKNAME_LENGTH} characters or fewer.`);
+      return;
+    }
+    if (nicknameUnchanged) {
       return;
     }
     await updateInstanceAndSync(selectedInstanceId, (instance) =>
-      mutateInstanceNickname(instance, normalizedNickname.length > 0 ? normalizedNickname : null),
+      mutateInstanceNickname(instance, nicknameLength > 0 ? normalizedNicknameDraft : null),
     );
   };
 
@@ -267,10 +288,21 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
 
   const addTag = async () => {
     if (!selectedInstanceId) return;
-    const normalized = tagDraft.trim();
-    if (!normalized) return;
+    if (tagLength === 0) {
+      setError('Tag cannot be empty.');
+      return;
+    }
+    if (tagTooLong) {
+      setError(`Tag must be ${MAX_TAG_LENGTH} characters or fewer.`);
+      return;
+    }
+    if (duplicateTagInBucket) {
+      setError(`Tag "${normalizedTagDraft}" already exists in ${tagBucketDraft} bucket.`);
+      return;
+    }
+    setError(null);
     await updateInstanceAndSync(selectedInstanceId, (instance) =>
-      mutateInstanceAddTag(instance, tagBucketDraft, normalized),
+      mutateInstanceAddTag(instance, tagBucketDraft, normalizedTagDraft),
     );
     setTagDraft('');
   };
@@ -466,7 +498,14 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
 
               {editorSection === 'attributes' ? (
                 <>
-                  <Text style={commonStyles.hint}>Nickname max length: 50 characters.</Text>
+                  <Text style={commonStyles.hint}>
+                    Nickname length: {nicknameLength}/{MAX_NICKNAME_LENGTH}
+                  </Text>
+                  {nicknameTooLong ? (
+                    <Text style={commonStyles.error}>
+                      Nickname must be {MAX_NICKNAME_LENGTH} characters or fewer.
+                    </Text>
+                  ) : null}
                   <Text style={commonStyles.hint}>
                     Mega/Fusion form is required when enabling those states.
                   </Text>
@@ -499,7 +538,11 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     onChangeText={setNicknameDraft}
                     style={commonStyles.input}
                   />
-                  <Button title="Save Nickname" onPress={() => void saveNickname()} disabled={syncing} />
+                  <Button
+                    title="Save Nickname"
+                    onPress={() => void saveNickname()}
+                    disabled={syncing || nicknameTooLong || nicknameUnchanged}
+                  />
 
                   <TextInput
                     placeholder="Mega Form"
@@ -542,11 +585,24 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     onChangeText={setTagDraft}
                     style={commonStyles.input}
                   />
+                  <Text style={commonStyles.hint}>
+                    Tag length: {tagLength}/{MAX_TAG_LENGTH}
+                  </Text>
+                  {duplicateTagInBucket ? (
+                    <Text style={commonStyles.hint}>
+                      Tag already exists in {tagBucketDraft} bucket.
+                    </Text>
+                  ) : null}
+                  {tagTooLong ? (
+                    <Text style={commonStyles.error}>
+                      Tag must be {MAX_TAG_LENGTH} characters or fewer.
+                    </Text>
+                  ) : null}
                   <View style={commonStyles.actions}>
                     <Button
                       title={`Add ${toTagBucketLabel(tagBucketDraft)} Tag`}
                       onPress={() => void addTag()}
-                      disabled={syncing}
+                      disabled={syncing || tagLength === 0 || tagTooLong || duplicateTagInBucket}
                     />
                     <Button
                       title={`Clear ${toTagBucketLabel(tagBucketDraft)} Tags`}

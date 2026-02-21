@@ -3,25 +3,28 @@ import { Button, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OwnershipMode } from '@pokemongonexus/shared-contracts/domain';
 import type { SearchResultRow } from '@pokemongonexus/shared-contracts/search';
+import { SearchMapCanvas } from '../components/search/SearchMapCanvas';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import {
   buildPokemonSearchQuery,
   defaultSearchFormState,
   type BooleanFilter,
 } from '../features/search/searchQueryBuilder';
+import { getSearchMapBounds, toSearchMapPoints } from '../features/search/searchMapModels';
 import { searchPokemon } from '../services/searchService';
 import { commonStyles } from '../ui/commonStyles';
 import { theme } from '../ui/theme';
 
 type SearchScreenProps = NativeStackScreenProps<RootStackParamList, 'Search'>;
 type SearchSortMode = 'distance_asc' | 'distance_desc' | 'pokemon_id_asc' | 'username_asc';
+type SearchViewMode = 'list' | 'map';
 
 const OWNERSHIP_MODES: OwnershipMode[] = ['caught', 'trade', 'wanted'];
 const SORT_OPTIONS: { label: string; value: SearchSortMode }[] = [
-  { label: 'distance↑', value: 'distance_asc' },
-  { label: 'distance↓', value: 'distance_desc' },
-  { label: 'pokemon↑', value: 'pokemon_id_asc' },
-  { label: 'username↑', value: 'username_asc' },
+  { label: 'distance asc', value: 'distance_asc' },
+  { label: 'distance desc', value: 'distance_desc' },
+  { label: 'pokemon asc', value: 'pokemon_id_asc' },
+  { label: 'username asc', value: 'username_asc' },
 ];
 const BOOL_OPTIONS: { label: string; value: 'true' | 'false' }[] = [
   { label: 'Yes', value: 'true' },
@@ -60,6 +63,7 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
   const [visibleCount, setVisibleCount] = useState(25);
   const [selectedResult, setSelectedResult] = useState<SearchResultRow | null>(null);
   const [sortMode, setSortMode] = useState<SearchSortMode>('distance_asc');
+  const [viewMode, setViewMode] = useState<SearchViewMode>('list');
 
   const setField = <K extends keyof typeof formState>(key: K, value: (typeof formState)[K]) => {
     setFormState((current) => ({ ...current, [key]: value }));
@@ -74,6 +78,7 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
     setResults([]);
     setSelectedResult(null);
     setVisibleCount(25);
+    setViewMode('list');
 
     try {
       const payload = await searchPokemon(queryPreview);
@@ -109,6 +114,13 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
     () => (selectedResult ? getResultUsername(selectedResult) : null),
     [selectedResult],
   );
+  const mapPoints = useMemo(() => toSearchMapPoints(sortedResults), [sortedResults]);
+  const mapBounds = useMemo(() => getSearchMapBounds(mapPoints), [mapPoints]);
+  const selectedMarkerId = useMemo(() => {
+    if (!selectedResult) return null;
+    const point = mapPoints.find((candidate) => candidate.row === selectedResult);
+    return point?.markerId ?? null;
+  }, [mapPoints, selectedResult]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -409,6 +421,7 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
             setSelectedResult(null);
             setVisibleCount(25);
             setError(null);
+            setViewMode('list');
           }}
         />
         <Button title="Back" onPress={() => navigation.goBack()} />
@@ -429,6 +442,24 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
       ) : null}
       {results.length > 0 ? (
         <>
+          <Text style={commonStyles.caption}>View mode</Text>
+          <View style={commonStyles.pillRow}>
+            {(['list', 'map'] as const).map((mode) => {
+              const selected = viewMode === mode;
+              return (
+                <Pressable
+                  key={mode}
+                  onPress={() => setViewMode(mode)}
+                  style={[commonStyles.pill, selected ? commonStyles.pillSelected : null]}
+                >
+                  <Text style={[commonStyles.pillText, selected ? commonStyles.pillTextSelected : null]}>
+                    {mode}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
           <Text style={commonStyles.caption}>Sort results by</Text>
           <View style={commonStyles.pillRow}>
             {SORT_OPTIONS.map((option) => {
@@ -449,21 +480,42 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
         </>
       ) : null}
 
-      {visibleResults.map((row, index) => {
-        const absoluteIndex = index;
-        const isSelected = selectedResult === row;
-        return (
-        <Pressable
-          key={`${absoluteIndex}-${String(row.pokemon_id ?? 'x')}`}
-          onPress={() => setSelectedResult(row)}
-          style={[commonStyles.row, isSelected ? commonStyles.rowSelected : null]}
-        >
-          <Text style={commonStyles.rowTitle}>pokemon_id: {String(row.pokemon_id ?? '-')}</Text>
-          <Text style={commonStyles.rowSub}>distance: {String(row.distance ?? '-')}</Text>
-          <Text style={commonStyles.rowSub}>{JSON.stringify(row).slice(0, 140)}</Text>
-        </Pressable>
-      );
-      })}
+      {viewMode === 'list'
+        ? visibleResults.map((row, index) => {
+            const absoluteIndex = index;
+            const isSelected = selectedResult === row;
+            return (
+              <Pressable
+                key={`${absoluteIndex}-${String(row.pokemon_id ?? 'x')}`}
+                onPress={() => setSelectedResult(row)}
+                style={[commonStyles.row, isSelected ? commonStyles.rowSelected : null]}
+              >
+                <Text style={commonStyles.rowTitle}>pokemon_id: {String(row.pokemon_id ?? '-')}</Text>
+                <Text style={commonStyles.rowSub}>distance: {String(row.distance ?? '-')}</Text>
+                <Text style={commonStyles.rowSub}>{JSON.stringify(row).slice(0, 140)}</Text>
+              </Pressable>
+            );
+          })
+        : (
+          <View style={commonStyles.card}>
+            <Text style={styles.sectionTitle}>Map Preview</Text>
+            <Text style={commonStyles.caption}>Map points: {mapPoints.length}</Text>
+            {mapBounds ? (
+              <Text style={commonStyles.rowSub}>
+                Bounds lat[{mapBounds.minLat.toFixed(3)}, {mapBounds.maxLat.toFixed(3)}], lon[
+                {mapBounds.minLon.toFixed(3)}, {mapBounds.maxLon.toFixed(3)}]
+              </Text>
+            ) : null}
+            <SearchMapCanvas
+              points={mapPoints}
+              selectedMarkerId={selectedMarkerId}
+              onSelect={(markerId) => {
+                const point = mapPoints.find((candidate) => candidate.markerId === markerId);
+                if (point) setSelectedResult(point.row);
+              }}
+            />
+          </View>
+        )}
 
       {hasMoreResults ? (
         <View style={commonStyles.actions}>

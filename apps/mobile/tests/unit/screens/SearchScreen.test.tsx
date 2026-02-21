@@ -31,9 +31,7 @@ describe('SearchScreen', () => {
   });
 
   it('runs search and renders result count', async () => {
-    mockedSearchPokemon.mockResolvedValue([
-      { pokemon_id: 25, distance: 1.5, username: 'misty' },
-    ]);
+    mockedSearchPokemon.mockResolvedValue([{ pokemon_id: 25, distance: 1.5, username: 'misty' }]);
 
     render(<SearchScreen navigation={baseNavigation as never} route={route as never} />);
 
@@ -107,8 +105,29 @@ describe('SearchScreen', () => {
       expect(screen.getByText('Results: 2')).toBeTruthy();
     });
 
-    fireEvent.press(screen.getByText('username↑'));
+    fireEvent.press(screen.getByText('username asc'));
     fireEvent.press(screen.getAllByText('pokemon_id: 2')[0] as never);
     expect(screen.getByText('username: alpha')).toBeTruthy();
+  });
+
+  it('syncs map marker selection with selected result details', async () => {
+    mockedSearchPokemon.mockResolvedValue([
+      { pokemon_id: 10, distance: 1, username: 'ash', latitude: 48.85, longitude: 2.35 },
+      { pokemon_id: 11, distance: 2, username: 'brock', latitude: 51.5, longitude: -0.12 },
+    ]);
+
+    render(<SearchScreen navigation={baseNavigation as never} route={route as never} />);
+    pressSearchButton();
+
+    await waitFor(() => {
+      expect(screen.getByText('Results: 2')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('map'));
+    expect(screen.getByText('Map Preview')).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText('Map marker #2'));
+    expect(screen.getByText('Selected Result')).toBeTruthy();
+    expect(screen.getByText('username: brock')).toBeTruthy();
   });
 });

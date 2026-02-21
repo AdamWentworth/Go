@@ -195,14 +195,24 @@ Done:
    - surfaced unavailable-action hint reasons in trade detail UI
    - refined confirmation copy per action with clearer side effects
    - expanded trade rule/message/screen tests for completion guard behavior
+21. Mobile search map baseline hardening shipped:
+   - added typed search map model coverage for coordinate extraction, bounds, and marker layout
+   - added dedicated map canvas tests for empty state and marker selection events
+   - added screen-level map selection sync test (`marker -> selected result detail`)
+   - normalized mobile search sort labels to ASCII-safe strings for stable rendering/tests
+22. Mobile pokemon workflow overlay validation polish shipped:
+   - added inline nickname/tag length telemetry in collection editor
+   - disabled invalid submit actions (unchanged/too-long nickname, empty/duplicate/too-long tags)
+   - surfaced explicit validation messaging for duplicate and oversized tags
+   - expanded `PokemonCollectionScreen` tests for duplicate/oversized tag guardrails
 
 Remaining:
 
 1. Validate first slices on device against live APIs.
 2. Continue UX polish for edge network/error paths on mobile slices.
 3. Close functional parity gaps for:
-   - final pokemon workflow polish (advanced overlay parity beyond current sectioned editor)
-   - full search parity finish (map interaction parity + remaining web-specific advanced interactions)
+   - final pokemon workflow polish (advanced interaction parity beyond current sectioned editor)
+   - full search parity finish (advanced map interactions + remaining web-specific advanced interactions)
 
 ## 5) Parity Snapshot (Web -> Mobile)
 
@@ -246,8 +256,8 @@ Planned work:
 ## 9) Next 3 Iterations (Immediate Plan)
 
 1. Execute real-device validation (`android` and `ios`) against live services with a short pass/fail checklist.
-2. Add first mobile map parity slice for search results (marker baseline + selection sync with list state).
-3. Finalize pokemon workflow overlay parity (deeper per-field editing affordances + messaging polish).
+2. Continue mobile search parity with advanced map interactions (viewport-style filtering + richer marker detail UX).
+3. Execute pokemon workflow parity follow-up (remaining advanced interactions beyond validation/editor guardrails).
 
 ## 10) Definition of Success
 
