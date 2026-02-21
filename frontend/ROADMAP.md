@@ -131,13 +131,18 @@ Done:
    - expanded filter controls for flags, optional move/iv/background/costume fields, and trade booleans
    - added query-builder unit tests to lock parameter normalization behavior
    - updated screen-level search test assertions for advanced parameter propagation
+8. Mobile instance mutation baseline shipped:
+   - added typed instance mutation helpers for status/favorite/most-wanted/nickname updates
+   - wired own-collection mutation actions into `PokemonCollectionScreen`
+   - added optimistic local updates + receiver sync for pokemon updates
+   - added mutation unit tests and screen-level mutation sync tests
 
 Remaining:
 
 1. Validate first slices on device against live APIs.
 2. Continue UX polish for edge network/error paths on mobile slices.
 3. Close functional parity gaps for:
-   - full pokemon page interaction flows (create/edit/fusion/mega/tag workflows)
+   - full pokemon page interaction workflows (instance creation + fusion/mega/tag flows)
    - trade backend reconciliation UX (conflict/retry/server-authoritative refresh after mutation)
    - full search parameter parity (map/list UX + deeper web-specific interactions)
 

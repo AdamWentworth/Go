@@ -7,7 +7,10 @@ export type TradeBatchedUpdate = {
   tradeData: Record<string, unknown>;
 };
 
-export type PokemonBatchedUpdate = Record<string, unknown>;
+export type PokemonBatchedUpdate = {
+  operation?: 'createPokemon' | 'updatePokemon' | 'deletePokemon' | string;
+  [key: string]: unknown;
+};
 
 export const sendBatchedUpdates = async (
   payload: ReceiverBatchedUpdatesPayload<PokemonBatchedUpdate, TradeBatchedUpdate>,
@@ -28,3 +31,11 @@ export const sendTradeUpdate = async (
     tradeUpdates: [tradeUpdate],
   });
 
+export const sendPokemonUpdate = async (
+  pokemonUpdate: PokemonBatchedUpdate,
+): Promise<Record<string, unknown>> =>
+  sendBatchedUpdates({
+    location: null,
+    pokemonUpdates: [pokemonUpdate],
+    tradeUpdates: [],
+  });

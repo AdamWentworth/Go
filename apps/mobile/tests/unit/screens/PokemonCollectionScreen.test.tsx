@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { PokemonCollectionScreen } from '../../../src/screens/PokemonCollectionScreen';
+import { sendPokemonUpdate } from '../../../src/services/receiverService';
 import { fetchUserOverview } from '../../../src/services/userOverviewService';
 import { fetchForeignInstancesByUsername } from '../../../src/services/userSearchService';
 
@@ -19,9 +20,14 @@ jest.mock('../../../src/services/userSearchService', () => ({
   fetchTrainerAutocomplete: jest.fn(),
 }));
 
+jest.mock('../../../src/services/receiverService', () => ({
+  sendPokemonUpdate: jest.fn(),
+}));
+
 const mockedFetchUserOverview = fetchUserOverview as jest.MockedFunction<typeof fetchUserOverview>;
 const mockedFetchForeignInstancesByUsername =
   fetchForeignInstancesByUsername as jest.MockedFunction<typeof fetchForeignInstancesByUsername>;
+const mockedSendPokemonUpdate = sendPokemonUpdate as jest.MockedFunction<typeof sendPokemonUpdate>;
 
 const baseNavigation = {
   goBack: jest.fn(),
@@ -43,7 +49,20 @@ describe('PokemonCollectionScreen', () => {
     mockedFetchUserOverview.mockResolvedValue({
       user: { user_id: 'u1', username: 'ash' },
       pokemon_instances: {
-        i1: { variant_id: 'v-001', is_caught: true, is_for_trade: false, is_wanted: false },
+        i1: {
+          instance_id: 'i1',
+          variant_id: 'v-001',
+          pokemon_id: 1,
+          nickname: null,
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          most_wanted: false,
+          favorite: false,
+          registered: true,
+          date_added: '2026-01-01T00:00:00Z',
+          last_update: 1,
+        },
       },
       trades: {},
       related_instances: {},
@@ -90,5 +109,55 @@ describe('PokemonCollectionScreen', () => {
     expect(screen.getByText('Active trainer: misty')).toBeTruthy();
     fireEvent.press(screen.getByText('trade'));
     expect(screen.getByText('v-002')).toBeTruthy();
+  });
+
+  it('allows instance status mutation for own collection and syncs via receiver', async () => {
+    mockedFetchUserOverview.mockResolvedValue({
+      user: { user_id: 'u1', username: 'ash' },
+      pokemon_instances: {
+        i1: {
+          instance_id: 'i1',
+          variant_id: 'v-001',
+          pokemon_id: 1,
+          nickname: null,
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          most_wanted: false,
+          favorite: false,
+          registered: true,
+          date_added: '2026-01-01T00:00:00Z',
+          last_update: 1,
+        },
+      },
+      trades: {},
+      related_instances: {},
+      registrations: {},
+    } as never);
+    mockedSendPokemonUpdate.mockResolvedValue({});
+
+    render(
+      <PokemonCollectionScreen navigation={baseNavigation as never} route={route as never} />,
+    );
+
+    fireEvent.press(screen.getByText('Load Collection'));
+    await waitFor(() => {
+      expect(screen.getByText('v-001')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('v-001'));
+    fireEvent.press(screen.getByText('Set Trade'));
+
+    await waitFor(() => {
+      expect(mockedSendPokemonUpdate).toHaveBeenCalled();
+    });
+    expect(mockedSendPokemonUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: 'i1',
+        is_caught: true,
+        is_for_trade: true,
+        is_wanted: false,
+      }),
+    );
   });
 });

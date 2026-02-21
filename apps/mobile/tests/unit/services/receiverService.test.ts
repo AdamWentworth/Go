@@ -1,6 +1,10 @@
 import { receiverContract } from '@pokemongonexus/shared-contracts/receiver';
 import { runtimeConfig } from '../../../src/config/runtimeConfig';
-import { sendBatchedUpdates, sendTradeUpdate } from '../../../src/services/receiverService';
+import {
+  sendBatchedUpdates,
+  sendPokemonUpdate,
+  sendTradeUpdate,
+} from '../../../src/services/receiverService';
 import { requestJson } from '../../../src/services/httpClient';
 
 jest.mock('../../../src/services/httpClient', () => ({
@@ -48,6 +52,28 @@ describe('receiverService', () => {
         location: null,
         pokemonUpdates: [],
         tradeUpdates: [tradeUpdate],
+      },
+    );
+  });
+
+  it('wraps pokemon updates in batched payload', async () => {
+    const pokemonUpdate = {
+      operation: 'updatePokemon' as const,
+      key: 'i1',
+      pokemon_id: 25,
+      is_caught: true,
+    };
+
+    await sendPokemonUpdate(pokemonUpdate);
+
+    expect(mockedRequestJson).toHaveBeenCalledWith(
+      runtimeConfig.api.receiverApiUrl,
+      receiverContract.endpoints.batchedUpdates,
+      'POST',
+      {
+        location: null,
+        pokemonUpdates: [pokemonUpdate],
+        tradeUpdates: [],
       },
     );
   });
