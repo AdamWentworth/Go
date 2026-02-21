@@ -13,11 +13,13 @@ Shared API contracts/types used across clients (web now, mobile next).
 1. `users.ts`
    - Public user/instances envelope types.
    - User overview DTO types (`UserOverviewUser`, `UserOverview`).
+   - User search outcome DTOs (`ForeignInstancesFetchOutcome`, `TrainerAutocompleteOutcome`).
    - Secondary user-update DTOs (`SecondaryUserUpdateRequest`).
    - Trainer autocomplete types.
    - Users endpoint path helpers.
 2. `search.ts`
    - Search query/result row types.
+   - Canonical pokemon search request DTO (`PokemonSearchQueryParams`).
    - Search endpoint path contract.
 3. `domain.ts`
    - Shared web/mobile-safe normalizers (ownership mode, case-folding, diacritic stripping).

@@ -1,4 +1,5 @@
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { PokemonSearchQueryParams } from '@shared-contracts/search';
 import {
   isCaughtOwnershipMode,
   toOwnershipApiValue,
@@ -22,32 +23,7 @@ export type IvFilters = {
   Stamina: number | '' | null;
 };
 
-export type PokemonSearchQueryParams = {
-  pokemon_id: number;
-  shiny: boolean;
-  shadow: boolean;
-  costume_id: number | null;
-  fast_move_id: number | '' | null;
-  charged_move_1_id: number | '' | null;
-  charged_move_2_id: number | '' | null;
-  gender: string | null;
-  background_id: number | null;
-  attack_iv: number | null;
-  defense_iv: number | null;
-  stamina_iv: number | null;
-  only_matching_trades: boolean | null;
-  pref_lucky: boolean | null;
-  friendship_level: number | null;
-  already_registered: boolean | null;
-  trade_in_wanted_list: boolean | null;
-  latitude: number | null;
-  longitude: number | null;
-  ownership: ReturnType<typeof toOwnershipApiValue>;
-  range_km: number;
-  limit: number;
-  dynamax: boolean;
-  gigantamax: boolean;
-};
+export type { PokemonSearchQueryParams } from '@shared-contracts/search';
 
 type ValidateSearchInputArgs = {
   isShadow: boolean;

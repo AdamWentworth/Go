@@ -30,6 +30,24 @@ export type TrainerAutocompleteEntry = {
   pokemonGoName?: string | null;
 };
 
+export type ForeignInstancesFetchOutcome<
+  TInstances = Record<string, unknown>,
+> =
+  | {
+      type: 'success';
+      username: string;
+      instances: TInstances;
+      etag: string | null;
+    }
+  | { type: 'notModified' }
+  | { type: 'notFound' }
+  | { type: 'forbidden' }
+  | { type: 'error'; status: number; statusText: string };
+
+export type TrainerAutocompleteOutcome =
+  | { type: 'success'; results: TrainerAutocompleteEntry[] }
+  | { type: 'error'; message: string; status?: number };
+
 export interface SecondaryUserUpdateRequest {
   username: string;
   latitude?: number;

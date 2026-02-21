@@ -2,24 +2,18 @@ import type { Instances } from '@/types/instances';
 import { requestWithPolicy, parseJsonSafe } from '@/services/httpClient';
 import type {
   ErrorEnvelope,
+  ForeignInstancesFetchOutcome,
+  TrainerAutocompleteOutcome,
   TrainerAutocompleteEntry,
   UserInstancesEnvelope,
 } from '@shared-contracts/users';
 import { usersContract } from '@shared-contracts/users';
+export type {
+  ForeignInstancesFetchOutcome,
+  TrainerAutocompleteOutcome,
+} from '@shared-contracts/users';
 
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL;
-
-export type ForeignInstancesFetchOutcome =
-  | {
-      type: 'success';
-      username: string;
-      instances: Instances;
-      etag: string | null;
-    }
-  | { type: 'notModified' }
-  | { type: 'notFound' }
-  | { type: 'forbidden' }
-  | { type: 'error'; status: number; statusText: string };
 
 export type TrainerAutocompleteResult = TrainerAutocompleteEntry;
 
@@ -29,7 +23,7 @@ const buildConditionalHeaders = (etag?: string | null): Record<string, string> =
 export async function fetchForeignInstancesByUsername(
   username: string,
   etag?: string | null,
-): Promise<ForeignInstancesFetchOutcome> {
+): Promise<ForeignInstancesFetchOutcome<Instances>> {
   const headers = buildConditionalHeaders(etag);
 
   let response = await requestWithPolicy(buildUrlForUsersEndpoint(usersContract.endpoints.instancesByUsername(username)), {
@@ -69,10 +63,6 @@ export async function fetchForeignInstancesByUsername(
     etag: response.headers.get('ETag') ?? null,
   };
 }
-
-export type TrainerAutocompleteOutcome =
-  | { type: 'success'; results: TrainerAutocompleteResult[] }
-  | { type: 'error'; message: string; status?: number };
 
 const buildUrlForUsersEndpoint = (pathWithQuery: string): string =>
   `${USERS_API_URL}${pathWithQuery}`;
