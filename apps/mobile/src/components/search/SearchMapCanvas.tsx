@@ -8,16 +8,33 @@ type SearchMapCanvasProps = {
   points: SearchMapPoint[];
   selectedMarkerId: string | null;
   onSelect: (markerId: string) => void;
+  ownershipMode?: string;
 };
 
 const MAP_WIDTH = 320;
 const MAP_HEIGHT = 220;
 const MARKER_SIZE = 14;
+const POPUP_WIDTH = 90;
 
-export const SearchMapCanvas = ({ points, selectedMarkerId, onSelect }: SearchMapCanvasProps) => {
+export const SearchMapCanvas = ({
+  points,
+  selectedMarkerId,
+  onSelect,
+  ownershipMode,
+}: SearchMapCanvasProps) => {
   const layout = useMemo(
     () => buildSearchMapMarkerLayout(points, MAP_WIDTH, MAP_HEIGHT),
     [points],
+  );
+
+  const selectedPoint = useMemo(
+    () => (selectedMarkerId ? points.find((p) => p.markerId === selectedMarkerId) ?? null : null),
+    [points, selectedMarkerId],
+  );
+
+  const selectedMarkerLayout = useMemo(
+    () => (selectedMarkerId ? layout.find((m) => m.markerId === selectedMarkerId) ?? null : null),
+    [layout, selectedMarkerId],
   );
 
   if (points.length === 0) {
@@ -27,6 +44,16 @@ export const SearchMapCanvas = ({ points, selectedMarkerId, onSelect }: SearchMa
       </View>
     );
   }
+
+  const popupLeft =
+    selectedMarkerLayout !== null
+      ? Math.min(
+          selectedMarkerLayout.left + MARKER_SIZE / 2 + 4,
+          MAP_WIDTH - POPUP_WIDTH - 4,
+        )
+      : 0;
+  const popupTop =
+    selectedMarkerLayout !== null ? Math.max(4, selectedMarkerLayout.top - 24) : 0;
 
   return (
     <View style={styles.canvas}>
@@ -50,6 +77,19 @@ export const SearchMapCanvas = ({ points, selectedMarkerId, onSelect }: SearchMa
           </Pressable>
         );
       })}
+      {selectedPoint !== null && selectedMarkerLayout !== null ? (
+        <View
+          accessibilityLabel="Map marker popup"
+          style={[styles.popup, { left: popupLeft, top: popupTop }]}
+          pointerEvents="none"
+        >
+          <Text style={styles.popupText}>#{selectedPoint.pokemonId ?? '?'}</Text>
+          {selectedPoint.username ? (
+            <Text style={styles.popupText}>{selectedPoint.username}</Text>
+          ) : null}
+          {ownershipMode ? <Text style={styles.popupText}>{ownershipMode}</Text> : null}
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -86,6 +126,21 @@ const styles = StyleSheet.create({
   markerText: {
     color: theme.colors.surface,
     fontSize: 8,
+  },
+  popup: {
+    position: 'absolute',
+    width: POPUP_WIDTH,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.sm,
+    padding: 4,
+    zIndex: 10,
+  },
+  popupText: {
+    color: theme.colors.textPrimary,
+    fontSize: 10,
+    lineHeight: 14,
   },
   emptyState: {
     borderWidth: 1,

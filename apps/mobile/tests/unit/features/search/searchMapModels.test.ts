@@ -2,8 +2,25 @@ import type { SearchResultRow } from '@pokemongonexus/shared-contracts/search';
 import {
   buildSearchMapMarkerLayout,
   getSearchMapBounds,
+  getViewportBounds,
+  isPointInViewport,
   toSearchMapPoints,
+  type SearchMapPoint,
 } from '../../../../src/features/search/searchMapModels';
+
+const makePoint = (
+  markerId: string,
+  latitude: number,
+  longitude: number,
+): SearchMapPoint => ({
+  markerId,
+  resultIndex: Number(markerId.replace('marker-', '')) - 1,
+  pokemonId: 1,
+  username: 'test',
+  latitude,
+  longitude,
+  row: { pokemon_id: 1, latitude, longitude },
+});
 
 describe('searchMapModels', () => {
   it('builds map points from flat and nested coordinates', () => {
@@ -64,5 +81,74 @@ describe('searchMapModels', () => {
     expect(layout[0].top).toBeCloseTo(100, 6);
     expect(layout[1].left).toBeCloseTo(150, 6);
     expect(layout[1].top).toBeCloseTo(100, 6);
+  });
+
+  describe('getViewportBounds', () => {
+    const bounds = { minLat: 0, maxLat: 10, minLon: 0, maxLon: 10 };
+
+    it('returns null when bounds is null', () => {
+      expect(getViewportBounds(null, { latRatio: 0.5, lonRatio: 0.5, zoom: 1 })).toBeNull();
+    });
+
+    it('returns full bounds at zoom 1 (no clipping)', () => {
+      const result = getViewportBounds(bounds, { latRatio: 0.5, lonRatio: 0.5, zoom: 1 });
+      expect(result).toEqual(bounds);
+    });
+
+    it('returns a narrower window at zoom 2', () => {
+      const result = getViewportBounds(bounds, { latRatio: 0.5, lonRatio: 0.5, zoom: 2 });
+      expect(result).not.toBeNull();
+      const latSpread = result!.maxLat - result!.minLat;
+      const lonSpread = result!.maxLon - result!.minLon;
+      expect(latSpread).toBeLessThan(10);
+      expect(lonSpread).toBeLessThan(10);
+    });
+
+    it('clamps viewport window to bounds edges when panned to corner', () => {
+      const result = getViewportBounds(bounds, { latRatio: 0, lonRatio: 0, zoom: 4 });
+      expect(result).not.toBeNull();
+      expect(result!.minLat).toBeGreaterThanOrEqual(bounds.minLat);
+      expect(result!.minLon).toBeGreaterThanOrEqual(bounds.minLon);
+    });
+  });
+
+  describe('isPointInViewport', () => {
+    it('returns true for any point when viewportBounds is null', () => {
+      const point = makePoint('marker-1', 5, 5);
+      expect(isPointInViewport(point, null)).toBe(true);
+    });
+
+    it('returns true when point is inside viewport', () => {
+      const point = makePoint('marker-1', 5, 5);
+      const viewport = { minLat: 0, maxLat: 10, minLon: 0, maxLon: 10 };
+      expect(isPointInViewport(point, viewport)).toBe(true);
+    });
+
+    it('returns true for points exactly on viewport boundary', () => {
+      const point = makePoint('marker-1', 0, 0);
+      const viewport = { minLat: 0, maxLat: 10, minLon: 0, maxLon: 10 };
+      expect(isPointInViewport(point, viewport)).toBe(true);
+    });
+
+    it('returns false when point latitude is outside viewport', () => {
+      const point = makePoint('marker-1', 15, 5);
+      const viewport = { minLat: 0, maxLat: 10, minLon: 0, maxLon: 10 };
+      expect(isPointInViewport(point, viewport)).toBe(false);
+    });
+
+    it('returns false when point longitude is outside viewport', () => {
+      const point = makePoint('marker-1', 5, 20);
+      const viewport = { minLat: 0, maxLat: 10, minLon: 0, maxLon: 10 };
+      expect(isPointInViewport(point, viewport)).toBe(false);
+    });
+
+    it('filters a mixed point set correctly', () => {
+      const inside = makePoint('marker-1', 5, 5);
+      const outside = makePoint('marker-2', 50, 50);
+      const viewport = { minLat: 0, maxLat: 10, minLon: 0, maxLon: 10 };
+      const filtered = [inside, outside].filter((p) => isPointInViewport(p, viewport));
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].markerId).toBe('marker-1');
+    });
   });
 });

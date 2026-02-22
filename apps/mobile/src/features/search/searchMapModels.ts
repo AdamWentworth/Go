@@ -10,11 +10,17 @@ export type SearchMapPoint = {
   row: SearchResultRow;
 };
 
-type CoordinateBounds = {
+export type SearchMapCoordinateBounds = {
   minLat: number;
   maxLat: number;
   minLon: number;
   maxLon: number;
+};
+
+export type SearchMapViewportState = {
+  latRatio: number;
+  lonRatio: number;
+  zoom: number;
 };
 
 const CANDIDATE_LAT_KEYS = [
@@ -95,9 +101,50 @@ export const toSearchMapPoints = (rows: SearchResultRow[]): SearchMapPoint[] => 
   return points;
 };
 
-export const getSearchMapBounds = (points: SearchMapPoint[]): CoordinateBounds | null => {
+export const DEFAULT_SEARCH_MAP_VIEWPORT: SearchMapViewportState = {
+  latRatio: 0.5,
+  lonRatio: 0.5,
+  zoom: 1,
+};
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
+
+const resolveSpan = (range: number, zoom: number): number => {
+  if (!Number.isFinite(range) || range <= 0) return 0;
+  const safeZoom = clamp(zoom, 1, 16);
+  return range / safeZoom;
+};
+
+const projectCenter = (min: number, max: number, ratio: number): number => {
+  if (min === max) return min;
+  const normalized = clamp(ratio, 0, 1);
+  return min + (max - min) * normalized;
+};
+
+const fitToBounds = (
+  min: number,
+  max: number,
+  center: number,
+  span: number,
+): { min: number; max: number } => {
+  if (min === max || span <= 0 || span >= max - min) return { min, max };
+  let nextMin = center - span / 2;
+  let nextMax = center + span / 2;
+  if (nextMin < min) {
+    nextMin = min;
+    nextMax = min + span;
+  }
+  if (nextMax > max) {
+    nextMax = max;
+    nextMin = max - span;
+  }
+  return { min: nextMin, max: nextMax };
+};
+
+export const getSearchMapBounds = (points: SearchMapPoint[]): SearchMapCoordinateBounds | null => {
   if (points.length === 0) return null;
-  return points.reduce<CoordinateBounds>(
+  return points.reduce<SearchMapCoordinateBounds>(
     (acc, point) => ({
       minLat: Math.min(acc.minLat, point.latitude),
       maxLat: Math.max(acc.maxLat, point.latitude),
@@ -110,6 +157,43 @@ export const getSearchMapBounds = (points: SearchMapPoint[]): CoordinateBounds |
       minLon: points[0].longitude,
       maxLon: points[0].longitude,
     },
+  );
+};
+
+export const getViewportBounds = (
+  bounds: SearchMapCoordinateBounds | null,
+  viewport: SearchMapViewportState,
+): SearchMapCoordinateBounds | null => {
+  if (!bounds) return null;
+
+  const latRange = bounds.maxLat - bounds.minLat;
+  const lonRange = bounds.maxLon - bounds.minLon;
+  const latSpan = resolveSpan(latRange, viewport.zoom);
+  const lonSpan = resolveSpan(lonRange, viewport.zoom);
+
+  const latCenter = projectCenter(bounds.minLat, bounds.maxLat, viewport.latRatio);
+  const lonCenter = projectCenter(bounds.minLon, bounds.maxLon, viewport.lonRatio);
+  const latWindow = fitToBounds(bounds.minLat, bounds.maxLat, latCenter, latSpan);
+  const lonWindow = fitToBounds(bounds.minLon, bounds.maxLon, lonCenter, lonSpan);
+
+  return {
+    minLat: latWindow.min,
+    maxLat: latWindow.max,
+    minLon: lonWindow.min,
+    maxLon: lonWindow.max,
+  };
+};
+
+export const isPointInViewport = (
+  point: SearchMapPoint,
+  viewportBounds: SearchMapCoordinateBounds | null,
+): boolean => {
+  if (!viewportBounds) return true;
+  return (
+    point.latitude >= viewportBounds.minLat &&
+    point.latitude <= viewportBounds.maxLat &&
+    point.longitude >= viewportBounds.minLon &&
+    point.longitude <= viewportBounds.maxLon
   );
 };
 

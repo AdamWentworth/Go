@@ -206,6 +206,17 @@ Done:
    - surfaced explicit validation messaging for duplicate and oversized tags
    - expanded `PokemonCollectionScreen` tests for duplicate/oversized tag guardrails
 
+23. Mobile search map advanced interactions shipped (Iteration 24):
+   - location name autocomplete input wired to `/location` service with 350ms debounce
+   - suggestion tap populates lat/lon fields; location query clears on filter reset
+   - viewport filter toggle (On/Off) applies `isPointInViewport` to canvas points in real time
+   - pan controls (N/S/E/W) and zoom controls (+/−/Reset view) for map viewport
+   - filtered point count shown with `(filtered)` annotation when viewport is active
+   - marker selection now shows inline popup with pokemon id, username, and ownership mode
+   - `getViewportBounds` + `isPointInViewport` unit tests added to `searchMapModels.test.ts`
+   - new `locationService.ts` + `locationService.test.ts` covering fetch, mapping, and error paths
+   - `SearchMapCanvas` and `SearchScreen` tests expanded for popup and autocomplete/viewport flows
+
 Remaining:
 
 1. Validate first slices on device against live APIs.
@@ -224,16 +235,134 @@ Remaining:
 6. `/account`: `partial` (update/delete baseline implemented; full form parity pending).
 7. `/register`: `partial` (register screen baseline implemented; full validation/error UX parity pending).
 
-## 6) Next Phase (P2.4) Preview
+## 6) Next Phase (P2.4) — Detailed Plan
 
-Objective: move from MVP to near-full parity with explicit tradeoffs.
+Objective: move from MVP to near-full parity with explicit tradeoffs documented.
 
-Planned work:
+### Parity Matrix (Web → Mobile)
 
-1. Build parity matrix (web feature -> mobile status/owner/target).
-2. Port remaining high-value flows (trade management, profile/account, tag interactions).
-3. Add RN performance + crash + network resilience checks.
-4. Release hardening (offline/cache strategy, error UX, observability).
+| Route / Feature | Web | Mobile | Gap |
+| --- | --- | --- | --- |
+| `/login` | Complete | Complete | None |
+| `/register` | Complete | Baseline shipped | Social auth (Auth0), location overlay |
+| `/account` | Complete | Baseline shipped | Password change, location coordinate selector |
+| `/pokemon` (catalog) | Complete | Complete | None |
+| `/pokemon` (collection read) | Complete | Complete | None |
+| `/pokemon` (instance editor) | Full (20+ fields) | Tags/status/nickname/mega/fusion only | CP, IV, moves, level, gender, height/weight, date/location caught, background, lucky, max, purify |
+| `/pokemon` (custom tags) | Full (create/color/manage) | System tags only | Custom tag creation, color management |
+| `/pokemon` (Pokedex browser) | Full (shiny/shadow/costume info) | None | Full Pokedex view |
+| `/pokemon` (batch ops) | Multi-select, bulk tag | None | Batch mutation UI |
+| `/pokemon/:username` | Complete | Baseline shipped | Deeper UI parity for foreign view |
+| `/search` (filters) | 15+ parameters | Full parameter set shipped | None — filter surface parity complete |
+| `/search` (list view) | Complete | Complete | None |
+| `/search` (map view) | OpenLayers full map | Canvas with marker selection | Viewport filtering, richer popups, location autocomplete |
+| `/trades` (read) | Complete | Complete | None |
+| `/trades` (lifecycle) | Full (all actions) | All core actions shipped | Re-propose, satisfaction rating, partner reveal |
+| `/trades` (status views) | Per-status filtered views | Single list | Status tab views |
+| Real-time sync (SSE) | Complete | None | Entire SSE layer |
+| Offline persistence | IndexedDB (6+ stores) | None | Platform storage adapter + sync strategy |
+| Raid calculator | Complete | None | Entire feature |
+| Theme (light/dark) | Complete | Dark only | Light mode + toggle |
+
+### Iteration Plan (23 onward)
+
+#### Iteration 23 — Real Device Validation
+
+- Boot on Android + iOS emulator/device against live services.
+- Short pass/fail checklist: login, view collection, run search, submit trade action.
+- Document failures as follow-up items rather than blocking this iteration.
+
+#### Iteration 24 — Search Map Advanced Interactions
+
+- Add viewport-style filtering (only show results inside current map bounds).
+- Richer marker detail: tapping a marker shows a summary popup with pokemon name + username + ownership mode.
+- Location autocomplete input wired to location service (typeahead suggestions from `/location` API).
+- Pan/zoom controls persisted across searches in the same session.
+- Screen + model tests for viewport filter edge cases.
+
+#### Iteration 25 — Instance Editor: Core Fields
+
+- Expand the `PokemonCollectionScreen` instance editor with:
+  - CP display + editable level (integer or slider, 1–50).
+  - IV editing: Attack / Defense / Stamina (0–15 integers with validation).
+  - Gender selector (based on gender-availability from variant).
+  - Date caught (date picker with platform-native component).
+  - Nickname enforces max 12 chars (sync with web validation, currently 50 on mobile).
+- Wire all new fields through existing `instanceMutations` + `receiverService`.
+- Unit tests for IV bounds, gender validity, date serialization.
+- Screen tests for editor field submission paths.
+
+#### Iteration 26 — Instance Editor: Extended Fields
+
+- Background/location image selector: local enum list matching web's 40+ options.
+- Lucky Pokemon toggle.
+- Max Pokemon toggle with max-move selection (parallel to `MaxComponent` on web).
+- Purify toggle (shadow/purified state).
+- Moves editor: fast move + charged move(s) selectable from pokemon's move list (from shared pokemon data).
+- Height/weight display (read-only; editable if API supports it).
+- Editor sections reorganized into status / core stats / moves / cosmetics / tags.
+- Tests for each new mutation type and the composite editor layout.
+
+#### Iteration 27 — Trade Feature Completions
+
+- Add per-status filtered views to `TradesScreen` (tabs or segment control: Proposed / Pending / Offers / Completed / Cancelled).
+- Re-propose action: open a simple form pre-filled with current instance data.
+- Satisfaction rating: thumbs up/down after trade completes.
+- Partner reveal: after trade enters pending/completed, show "Reveal Partner" option backed by `revealPartnerInfo` service.
+- Tests for each new action path and status-view rendering.
+
+#### Iteration 28 — Custom Tagging System
+
+- Custom tag creation: name + color picker (fixed palette matching web tokens).
+- Tag membership management: assign tags to instances in the collection editor.
+- Tag list view on collection screen with filter-by-tag capability.
+- Tag deletion with confirmation (removes from all instances).
+- Backed by a lightweight in-memory tag store (no offline persistence yet; that comes in P3).
+- Unit tests for tag CRUD, membership mutations, and filter logic.
+- Screen tests for tag UI flows.
+
+#### Iteration 29 — Mega and Fusion
+
+- Mega: when enabling the mega toggle in the instance editor, show a form selector for which mega form (if multiple exist per variant data). Wire into existing mega mutation path.
+- Fusion: two-step selection modal — pick left parent + right parent from own caught instances. Call the existing instance creation flow with fusion fields populated.
+- Tests for mega form validation and fusion parent eligibility logic.
+
+#### Iteration 30 — SSE Real-Time Sync
+
+- Add `EventSource`-based SSE connection in mobile (via `expo-modules` or native fetch polyfill).
+- Wire `EventsContext` equivalent: subscribe to `/events` endpoint on auth, dispatch updates to instance + trade stores.
+- Auto-reconnect with 30-second check interval (matches web).
+- Missed-update fetch on session resume (call `/events?since=<lastTimestamp>`).
+- Device ID tracking (stored in SecureStore).
+- Tests for update dispatch, reconnect logic, and missed-update fetch.
+
+#### Iteration 31 — Platform Hardening Pass 1 (Network Resilience)
+
+- Exponential backoff for failed API requests (3 retries, 1s/2s/4s delays).
+- Request timeout configuration (global via `httpClient`).
+- Network connectivity detection with offline banner UI.
+- Retry button on any screen that fails to load data.
+- Tests for retry behavior and offline state rendering.
+
+#### Iteration 32 — Platform Hardening Pass 2 (Observability + Release Prep)
+
+- Integrate crash reporting (Sentry or Expo Crash Reporter).
+- Add structured error logging (dev: console, prod: Sentry breadcrumbs).
+- Performance: lazy-load heavy screen data (trades/instances only fetched when navigating to that screen).
+- App icon, splash screen, and metadata finalized in `app.config.ts`.
+- CI smoke test against staging environment.
+
+### Deferred / Optional (P3)
+
+1. **Offline persistence**: AsyncStorage or SQLite adapter wrapping the same contract shapes as IndexedDB stores. Sync strategy: optimistic local mutations, server reconcile on reconnect.
+2. **Raid calculator**: DPS calculator with type effectiveness — self-contained feature, lowest parity impact.
+3. **Pokedex browser**: shiny/shadow/costume info panels alongside the catalog screen.
+4. **Batch operations**: multi-select instances for bulk status change or tag assignment.
+5. **Light mode + theme toggle**: add light palette to `shared-ui-tokens` and wire theme context.
+6. **Deep linking**: configure universal links + Expo linking so shared URLs open in app.
+7. **Push notifications**: trade action notifications via Expo Notifications + server-side webhook.
+8. **Social auth (Auth0)**: register/login with Google/Apple via Auth0 integration.
+9. **Location services**: GPS permission + automatic coordinate detection on search screen.
 
 ## 7) Priority Rules
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Button, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OwnershipMode } from '@pokemongonexus/shared-contracts/domain';
@@ -10,8 +10,20 @@ import {
   defaultSearchFormState,
   type BooleanFilter,
 } from '../features/search/searchQueryBuilder';
-import { getSearchMapBounds, toSearchMapPoints } from '../features/search/searchMapModels';
+import {
+  DEFAULT_SEARCH_MAP_VIEWPORT,
+  getSearchMapBounds,
+  getViewportBounds,
+  isPointInViewport,
+  toSearchMapPoints,
+  type SearchMapViewportState,
+} from '../features/search/searchMapModels';
 import { searchPokemon } from '../services/searchService';
+import {
+  fetchLocationSuggestions,
+  MIN_LOCATION_QUERY_LENGTH,
+  type LocationAutocompleteResult,
+} from '../services/locationService';
 import { commonStyles } from '../ui/commonStyles';
 import { theme } from '../ui/theme';
 
@@ -35,6 +47,11 @@ const TRI_BOOL_OPTIONS: { label: string; value: BooleanFilter }[] = [
   { label: 'Yes', value: 'true' },
   { label: 'No', value: 'false' },
 ];
+const MAP_PAN_STEP = 0.2;
+const MAP_ZOOM_STEP = 1.5;
+const MAP_MIN_ZOOM = 1;
+const MAP_MAX_ZOOM = 16;
+const LOCATION_DEBOUNCE_MS = 350;
 
 const toNumberSafe = (value: unknown, fallback = Number.MAX_SAFE_INTEGER): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -54,6 +71,9 @@ const getResultUsername = (row: SearchResultRow): string | null => {
   return null;
 };
 
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
+
 export const SearchScreen = ({ navigation }: SearchScreenProps) => {
   const [formState, setFormState] = useState(defaultSearchFormState);
   const [loading, setLoading] = useState(false);
@@ -64,12 +84,71 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
   const [selectedResult, setSelectedResult] = useState<SearchResultRow | null>(null);
   const [sortMode, setSortMode] = useState<SearchSortMode>('distance_asc');
   const [viewMode, setViewMode] = useState<SearchViewMode>('list');
+  const [viewportFilterEnabled, setViewportFilterEnabled] = useState(false);
+  const [viewportState, setViewportState] = useState<SearchMapViewportState>(
+    DEFAULT_SEARCH_MAP_VIEWPORT,
+  );
+  const [locationQuery, setLocationQuery] = useState('');
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationAutocompleteResult[]>([]);
+  const [locationSuggestionsLoading, setLocationSuggestionsLoading] = useState(false);
 
   const setField = <K extends keyof typeof formState>(key: K, value: (typeof formState)[K]) => {
     setFormState((current) => ({ ...current, [key]: value }));
   };
 
+  useEffect(() => {
+    if (locationQuery.trim().length < MIN_LOCATION_QUERY_LENGTH) {
+      setLocationSuggestions([]);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      setLocationSuggestionsLoading(true);
+      fetchLocationSuggestions(locationQuery)
+        .then((suggestions) => {
+          setLocationSuggestions(suggestions);
+        })
+        .catch(() => {
+          setLocationSuggestions([]);
+        })
+        .finally(() => {
+          setLocationSuggestionsLoading(false);
+        });
+    }, LOCATION_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+  }, [locationQuery]);
+
+  const applyLocationSuggestion = (suggestion: LocationAutocompleteResult) => {
+    if (suggestion.latitude !== null) {
+      setField('latitudeInput', String(suggestion.latitude));
+    }
+    if (suggestion.longitude !== null) {
+      setField('longitudeInput', String(suggestion.longitude));
+    }
+    setLocationQuery(suggestion.displayName);
+    setLocationSuggestions([]);
+  };
+
   const queryPreview = useMemo(() => buildPokemonSearchQuery(formState), [formState]);
+
+  const updateViewport = (updates: Partial<SearchMapViewportState>) => {
+    setViewportState((current) => ({
+      latRatio: clamp(updates.latRatio ?? current.latRatio, 0, 1),
+      lonRatio: clamp(updates.lonRatio ?? current.lonRatio, 0, 1),
+      zoom: clamp(updates.zoom ?? current.zoom, MAP_MIN_ZOOM, MAP_MAX_ZOOM),
+    }));
+  };
+
+  const resetViewport = () => {
+    setViewportState(DEFAULT_SEARCH_MAP_VIEWPORT);
+  };
+
+  const panViewport = (axis: 'latRatio' | 'lonRatio', delta: number) => {
+    updateViewport({ [axis]: viewportState[axis] + delta });
+  };
+
+  const zoomViewport = (nextZoom: number) => {
+    updateViewport({ zoom: nextZoom });
+  };
 
   const runSearch = async () => {
     setLoading(true);
@@ -116,6 +195,17 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
   );
   const mapPoints = useMemo(() => toSearchMapPoints(sortedResults), [sortedResults]);
   const mapBounds = useMemo(() => getSearchMapBounds(mapPoints), [mapPoints]);
+  const viewportBounds = useMemo(
+    () => (viewportFilterEnabled ? getViewportBounds(mapBounds, viewportState) : null),
+    [viewportFilterEnabled, mapBounds, viewportState],
+  );
+  const displayedMapPoints = useMemo(
+    () =>
+      viewportFilterEnabled
+        ? mapPoints.filter((point) => isPointInViewport(point, viewportBounds))
+        : mapPoints,
+    [mapPoints, viewportFilterEnabled, viewportBounds],
+  );
   const selectedMarkerId = useMemo(() => {
     if (!selectedResult) return null;
     const point = mapPoints.find((candidate) => candidate.row === selectedResult);
@@ -136,6 +226,36 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
           onChangeText={(value) => setField('pokemonIdInput', value)}
           style={commonStyles.input}
         />
+
+        <TextInput
+          placeholder="Location name (city, region...)"
+          value={locationQuery}
+          onChangeText={setLocationQuery}
+          style={commonStyles.input}
+          autoCapitalize="none"
+        />
+        {locationSuggestionsLoading ? (
+          <Text style={commonStyles.caption}>Searching locations...</Text>
+        ) : null}
+        {locationSuggestions.length > 0 ? (
+          <View>
+            {locationSuggestions.map((suggestion, index) => (
+              <Pressable
+                key={`suggestion-${index}`}
+                onPress={() => applyLocationSuggestion(suggestion)}
+                style={styles.suggestionRow}
+              >
+                <Text style={styles.suggestionText}>{suggestion.displayName}</Text>
+                {suggestion.latitude !== null && suggestion.longitude !== null ? (
+                  <Text style={commonStyles.rowSub}>
+                    {suggestion.latitude.toFixed(3)}, {suggestion.longitude.toFixed(3)}
+                  </Text>
+                ) : null}
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+
         <TextInput
           keyboardType="numeric"
           placeholder="Latitude"
@@ -422,6 +542,8 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
             setVisibleCount(25);
             setError(null);
             setViewMode('list');
+            setLocationQuery('');
+            setLocationSuggestions([]);
           }}
         />
         <Button title="Back" onPress={() => navigation.goBack()} />
@@ -499,16 +621,64 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
         : (
           <View style={commonStyles.card}>
             <Text style={styles.sectionTitle}>Map Preview</Text>
-            <Text style={commonStyles.caption}>Map points: {mapPoints.length}</Text>
+            <Text style={commonStyles.caption}>
+              Map points: {displayedMapPoints.length}
+              {viewportFilterEnabled && displayedMapPoints.length !== mapPoints.length
+                ? ` / ${mapPoints.length} (filtered)`
+                : ''}
+            </Text>
             {mapBounds ? (
               <Text style={commonStyles.rowSub}>
                 Bounds lat[{mapBounds.minLat.toFixed(3)}, {mapBounds.maxLat.toFixed(3)}], lon[
                 {mapBounds.minLon.toFixed(3)}, {mapBounds.maxLon.toFixed(3)}]
               </Text>
             ) : null}
+
+            <Text style={commonStyles.caption}>Viewport filter</Text>
+            <View style={commonStyles.pillRow}>
+              <Pressable
+                onPress={() => setViewportFilterEnabled(false)}
+                style={[commonStyles.pill, !viewportFilterEnabled ? commonStyles.pillSelected : null]}
+              >
+                <Text style={[commonStyles.pillText, !viewportFilterEnabled ? commonStyles.pillTextSelected : null]}>
+                  Off
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setViewportFilterEnabled(true)}
+                style={[commonStyles.pill, viewportFilterEnabled ? commonStyles.pillSelected : null]}
+              >
+                <Text style={[commonStyles.pillText, viewportFilterEnabled ? commonStyles.pillTextSelected : null]}>
+                  On
+                </Text>
+              </Pressable>
+            </View>
+
+            <Text style={commonStyles.caption}>
+              Zoom: {viewportState.zoom.toFixed(1)}
+            </Text>
+            <View style={commonStyles.pillRow}>
+              <Button
+                title="+"
+                onPress={() => zoomViewport(viewportState.zoom + MAP_ZOOM_STEP)}
+              />
+              <Button
+                title="-"
+                onPress={() => zoomViewport(viewportState.zoom - MAP_ZOOM_STEP)}
+              />
+              <Button title="Reset view" onPress={resetViewport} />
+            </View>
+            <View style={commonStyles.pillRow}>
+              <Button title="N" onPress={() => panViewport('latRatio', MAP_PAN_STEP)} />
+              <Button title="S" onPress={() => panViewport('latRatio', -MAP_PAN_STEP)} />
+              <Button title="W" onPress={() => panViewport('lonRatio', -MAP_PAN_STEP)} />
+              <Button title="E" onPress={() => panViewport('lonRatio', MAP_PAN_STEP)} />
+            </View>
+
             <SearchMapCanvas
-              points={mapPoints}
+              points={displayedMapPoints}
               selectedMarkerId={selectedMarkerId}
+              ownershipMode={formState.ownershipMode}
               onSelect={(markerId) => {
                 const point = mapPoints.find((candidate) => candidate.markerId === markerId);
                 if (point) setSelectedResult(point.row);
@@ -553,5 +723,15 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontWeight: '700',
     marginBottom: 2,
+  },
+  suggestionRow: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  suggestionText: {
+    color: theme.colors.textPrimary,
+    fontSize: 14,
   },
 });
