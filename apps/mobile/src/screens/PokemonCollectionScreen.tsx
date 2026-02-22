@@ -13,6 +13,7 @@ import {
   mutateInstanceFavorite,
   mutateInstanceFusion,
   mutateInstanceLocationDetails,
+  mutateInstanceMaxStats,
   mutateInstanceMega,
   mutateInstanceMostWanted,
   mutateInstanceMoves,
@@ -47,6 +48,8 @@ const MIN_IV = 0;
 const MAX_IV = 15;
 const MIN_LEVEL = 1;
 const MAX_LEVEL = 50;
+const MIN_MAX_LEVEL = 0;
+const MAX_MAX_LEVEL = 3;
 const DATE_CAUGHT_FORMAT = 'YYYY-MM-DD';
 const MAX_LOCATION_FIELD_LENGTH = 255;
 type EditorSection = (typeof EDITOR_SECTIONS)[number];
@@ -143,6 +146,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const [isPurifiedDraft, setIsPurifiedDraft] = useState(false);
   const [locationCaughtDraft, setLocationCaughtDraft] = useState('');
   const [locationCardDraft, setLocationCardDraft] = useState('');
+  const [maxAttackDraft, setMaxAttackDraft] = useState('');
+  const [maxGuardDraft, setMaxGuardDraft] = useState('');
+  const [maxSpiritDraft, setMaxSpiritDraft] = useState('');
   const [megaFormDraft, setMegaFormDraft] = useState('');
   const [fusionFormDraft, setFusionFormDraft] = useState('');
   const [tagBucketDraft, setTagBucketDraft] = useState<'caught' | 'trade' | 'wanted'>('caught');
@@ -205,6 +211,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   );
   const normalizedGenderDraft = useMemo(() => normalizeGender(genderDraft), [genderDraft]);
   const normalizedDateCaughtDraft = useMemo(() => dateCaughtDraft.trim(), [dateCaughtDraft]);
+  const parsedMaxAttack = useMemo(() => parseOptionalInteger(maxAttackDraft), [maxAttackDraft]);
+  const parsedMaxGuard = useMemo(() => parseOptionalInteger(maxGuardDraft), [maxGuardDraft]);
+  const parsedMaxSpirit = useMemo(() => parseOptionalInteger(maxSpiritDraft), [maxSpiritDraft]);
 
   const battleStatsValidationError = useMemo(() => {
     if (parsedCp === 'invalid') return 'CP must be a whole number.';
@@ -349,6 +358,47 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     );
   }, [normalizedLocationCardDraft, normalizedLocationCaughtDraft, selectedInstance]);
 
+  const maxStatsValidationError = useMemo(() => {
+    if (parsedMaxAttack === 'invalid') return 'Max Attack must be a whole number.';
+    if (
+      typeof parsedMaxAttack === 'number' &&
+      (parsedMaxAttack < MIN_MAX_LEVEL || parsedMaxAttack > MAX_MAX_LEVEL)
+    ) {
+      return `Max Attack must be between ${MIN_MAX_LEVEL} and ${MAX_MAX_LEVEL}.`;
+    }
+    if (parsedMaxGuard === 'invalid') return 'Max Guard must be a whole number.';
+    if (
+      typeof parsedMaxGuard === 'number' &&
+      (parsedMaxGuard < MIN_MAX_LEVEL || parsedMaxGuard > MAX_MAX_LEVEL)
+    ) {
+      return `Max Guard must be between ${MIN_MAX_LEVEL} and ${MAX_MAX_LEVEL}.`;
+    }
+    if (parsedMaxSpirit === 'invalid') return 'Max Spirit must be a whole number.';
+    if (
+      typeof parsedMaxSpirit === 'number' &&
+      (parsedMaxSpirit < MIN_MAX_LEVEL || parsedMaxSpirit > MAX_MAX_LEVEL)
+    ) {
+      return `Max Spirit must be between ${MIN_MAX_LEVEL} and ${MAX_MAX_LEVEL}.`;
+    }
+    return null;
+  }, [parsedMaxAttack, parsedMaxGuard, parsedMaxSpirit]);
+
+  const maxStatsUnchanged = useMemo(() => {
+    if (!selectedInstance) return true;
+    if (
+      parsedMaxAttack === 'invalid' ||
+      parsedMaxGuard === 'invalid' ||
+      parsedMaxSpirit === 'invalid'
+    ) {
+      return true;
+    }
+    return (
+      selectedInstance.max_attack === parsedMaxAttack &&
+      selectedInstance.max_guard === parsedMaxGuard &&
+      selectedInstance.max_spirit === parsedMaxSpirit
+    );
+  }, [parsedMaxAttack, parsedMaxGuard, parsedMaxSpirit, selectedInstance]);
+
   const caughtDetailsValidationError = useMemo(() => {
     if (normalizedGenderDraft && !GENDER_OPTIONS.includes(normalizedGenderDraft as (typeof GENDER_OPTIONS)[number])) {
       return `Gender must be one of: ${GENDER_OPTIONS.join(', ')}.`;
@@ -391,6 +441,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     setIsPurifiedDraft(false);
     setLocationCaughtDraft('');
     setLocationCardDraft('');
+    setMaxAttackDraft('');
+    setMaxGuardDraft('');
+    setMaxSpiritDraft('');
     setMegaFormDraft('');
     setFusionFormDraft('');
     setTagBucketDraft('caught');
@@ -616,6 +669,30 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     );
   };
 
+  const saveMaxStats = async () => {
+    if (!selectedInstanceId) return;
+    if (maxStatsValidationError) {
+      setError(maxStatsValidationError);
+      return;
+    }
+    if (maxStatsUnchanged) return;
+    if (
+      parsedMaxAttack === 'invalid' ||
+      parsedMaxGuard === 'invalid' ||
+      parsedMaxSpirit === 'invalid'
+    ) {
+      return;
+    }
+    setError(null);
+    await updateInstanceAndSync(selectedInstanceId, (instance) =>
+      mutateInstanceMaxStats(instance, {
+        maxAttack: parsedMaxAttack,
+        maxGuard: parsedMaxGuard,
+        maxSpirit: parsedMaxSpirit,
+      }),
+    );
+  };
+
   const applyMegaToggle = async () => {
     if (!selectedInstanceId || !selectedInstance) return;
     const nextEnabled = !Boolean(selectedInstance.is_mega || selectedInstance.mega);
@@ -793,6 +870,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     setIsPurifiedDraft(Boolean(selected?.purified));
                     setLocationCaughtDraft(String(selected?.location_caught ?? ''));
                     setLocationCardDraft(String(selected?.location_card ?? ''));
+                    setMaxAttackDraft(String(selected?.max_attack ?? ''));
+                    setMaxGuardDraft(String(selected?.max_guard ?? ''));
+                    setMaxSpiritDraft(String(selected?.max_spirit ?? ''));
                     setMegaFormDraft(String(selected?.mega_form ?? ''));
                     setFusionFormDraft(String(selected?.fusion_form ?? ''));
                     setTagBucketDraft('caught');
@@ -838,6 +918,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
           </Text>
           <Text style={commonStyles.caption}>
             location_caught={String(selectedInstance.location_caught ?? '-')}, location_card={String(selectedInstance.location_card ?? '-')}
+          </Text>
+          <Text style={commonStyles.caption}>
+            max_attack={String(selectedInstance.max_attack ?? '-')}, max_guard={String(selectedInstance.max_guard ?? '-')}, max_spirit={String(selectedInstance.max_spirit ?? '-')}
           </Text>
           <Text style={commonStyles.caption}>
             mega={String(Boolean(selectedInstance.mega || selectedInstance.is_mega))} ({String(selectedInstance.mega_form ?? '-')})
@@ -921,6 +1004,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                   </Text>
                   {locationValidationError ? (
                     <Text style={commonStyles.error}>{locationValidationError}</Text>
+                  ) : null}
+                  {maxStatsValidationError ? (
+                    <Text style={commonStyles.error}>{maxStatsValidationError}</Text>
                   ) : null}
                   <View style={commonStyles.actions}>
                     <Button
@@ -1080,6 +1166,33 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     title="Save Location Details"
                     onPress={() => void saveLocationDetails()}
                     disabled={syncing || locationUnchanged || Boolean(locationValidationError)}
+                  />
+
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder="Max Attack"
+                    value={maxAttackDraft}
+                    onChangeText={setMaxAttackDraft}
+                    style={commonStyles.input}
+                  />
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder="Max Guard"
+                    value={maxGuardDraft}
+                    onChangeText={setMaxGuardDraft}
+                    style={commonStyles.input}
+                  />
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder="Max Spirit"
+                    value={maxSpiritDraft}
+                    onChangeText={setMaxSpiritDraft}
+                    style={commonStyles.input}
+                  />
+                  <Button
+                    title="Save Max Stats"
+                    onPress={() => void saveMaxStats()}
+                    disabled={syncing || maxStatsUnchanged || Boolean(maxStatsValidationError)}
                   />
 
                   <Text style={commonStyles.caption}>Gender</Text>

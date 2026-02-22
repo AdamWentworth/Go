@@ -5,6 +5,7 @@ import {
   mutateInstanceCaughtDetails,
   mutateInstanceAura,
   mutateInstanceLocationDetails,
+  mutateInstanceMaxStats,
   mutateInstanceMoves,
   mutateInstanceFusion,
   mutateInstanceMega,
@@ -219,46 +220,62 @@ describe('instanceMutations', () => {
     expect(next.last_update).toBe(113);
   });
 
+  it('applies max-stat mutations safely', () => {
+    const next = mutateInstanceMaxStats(
+      makeBaseInstance(),
+      {
+        maxAttack: 3,
+        maxGuard: 2,
+        maxSpirit: 1,
+      },
+      114,
+    );
+    expect(next.max_attack).toBe(3);
+    expect(next.max_guard).toBe(2);
+    expect(next.max_spirit).toBe(1);
+    expect(next.last_update).toBe(114);
+  });
+
   it('applies mega/fusion/tag mutations safely', () => {
-    const megaEnabled = mutateInstanceMega(makeBaseInstance(), true, 'mega_x', 114);
+    const megaEnabled = mutateInstanceMega(makeBaseInstance(), true, 'mega_x', 115);
     expect(megaEnabled.mega).toBe(true);
     expect(megaEnabled.is_mega).toBe(true);
     expect(megaEnabled.mega_form).toBe('mega_x');
 
-    const megaDisabled = mutateInstanceMega(megaEnabled, false, null, 115);
+    const megaDisabled = mutateInstanceMega(megaEnabled, false, null, 116);
     expect(megaDisabled.mega).toBe(false);
     expect(megaDisabled.is_mega).toBe(false);
     expect(megaDisabled.mega_form).toBeNull();
 
-    const fusionEnabled = mutateInstanceFusion(makeBaseInstance(), true, 'dawn_wings', 116);
+    const fusionEnabled = mutateInstanceFusion(makeBaseInstance(), true, 'dawn_wings', 117);
     expect(fusionEnabled.is_fused).toBe(true);
     expect(fusionEnabled.fusion_form).toBe('dawn_wings');
     expect(fusionEnabled.fusion).toEqual({});
 
-    const fusionDisabled = mutateInstanceFusion(fusionEnabled, false, null, 117);
+    const fusionDisabled = mutateInstanceFusion(fusionEnabled, false, null, 118);
     expect(fusionDisabled.is_fused).toBe(false);
     expect(fusionDisabled.fusion_form).toBeNull();
     expect(fusionDisabled.fusion).toBeNull();
 
-    const tags1 = mutateInstanceAddTag(makeBaseInstance(), 'caught', 'Great League', 118);
+    const tags1 = mutateInstanceAddTag(makeBaseInstance(), 'caught', 'Great League', 119);
     expect(tags1.caught_tags).toEqual(['Great League']);
 
-    const tags2 = mutateInstanceAddTag(tags1, 'caught', 'great league', 119);
+    const tags2 = mutateInstanceAddTag(tags1, 'caught', 'great league', 120);
     expect(tags2.caught_tags).toEqual(['Great League']);
 
-    const tags3 = mutateInstanceAddTag(tags2, 'trade', 'regional', 120);
+    const tags3 = mutateInstanceAddTag(tags2, 'trade', 'regional', 121);
     expect(tags3.trade_tags).toEqual(['regional']);
 
-    const tags4 = mutateInstanceRemoveTag(tags3, 'caught', 'great league', 121);
+    const tags4 = mutateInstanceRemoveTag(tags3, 'caught', 'great league', 122);
     expect(tags4.caught_tags).toEqual([]);
 
-    const tags5 = mutateInstanceRemoveTag(tags4, 'trade', 'Regional', 122);
+    const tags5 = mutateInstanceRemoveTag(tags4, 'trade', 'Regional', 123);
     expect(tags5.trade_tags).toEqual([]);
 
-    const tags6 = mutateInstanceSetTags(tags5, 'wanted', ['PVP', 'pvp', '  raid  '], 123);
+    const tags6 = mutateInstanceSetTags(tags5, 'wanted', ['PVP', 'pvp', '  raid  '], 124);
     expect(tags6.wanted_tags).toEqual(['PVP', 'raid']);
 
-    const tags7 = mutateInstanceClearTags(tags6, 'wanted', 124);
+    const tags7 = mutateInstanceClearTags(tags6, 'wanted', 125);
     expect(tags7.wanted_tags).toEqual([]);
   });
 

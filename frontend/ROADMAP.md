@@ -244,6 +244,13 @@ Done:
    - added location validation guardrails (max 255 chars for `location_caught`/`location_card`)
    - expanded mutation and screen tests for aura normalization and invalid-location blocking
 
+28. Mobile pokemon max-stat editing baseline shipped:
+   - added typed max-stat mutation adapter (`mutateInstanceMaxStats`)
+   - expanded collection attributes editor with max attack/guard/spirit fields
+   - added max-stat validation guardrails (whole numbers, range 0-3, blank to clear)
+   - prevented invalid or unchanged max-stat submits from dispatching receiver sync updates
+   - expanded mutation and screen tests for max-stat save and out-of-range blocking
+
 Remaining:
 
 1. Validate first slices on device against live APIs.

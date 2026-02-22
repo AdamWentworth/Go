@@ -26,6 +26,11 @@ export type InstanceLocationDetailsMutation = {
   locationCaught: string | null;
   locationCard: string | null;
 };
+export type InstanceMaxStatsMutation = {
+  maxAttack: number | null;
+  maxGuard: number | null;
+  maxSpirit: number | null;
+};
 
 const withTimestamp = (instance: PokemonInstance, timestamp: number): PokemonInstance => ({
   ...instance,
@@ -205,6 +210,21 @@ export const mutateInstanceLocationDetails = (
       ...instance,
       location_caught: details.locationCaught,
       location_card: details.locationCard,
+    },
+    timestamp,
+  );
+
+export const mutateInstanceMaxStats = (
+  instance: PokemonInstance,
+  maxStats: InstanceMaxStatsMutation,
+  timestamp = Date.now(),
+): PokemonInstance =>
+  withTimestamp(
+    {
+      ...instance,
+      max_attack: maxStats.maxAttack,
+      max_guard: maxStats.maxGuard,
+      max_spirit: maxStats.maxSpirit,
     },
     timestamp,
   );

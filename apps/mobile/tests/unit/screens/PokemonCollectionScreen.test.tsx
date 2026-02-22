@@ -877,4 +877,107 @@ describe('PokemonCollectionScreen', () => {
     });
     expect(mockedSendPokemonUpdate).not.toHaveBeenCalled();
   });
+
+  it('saves max stats and syncs update', async () => {
+    mockedFetchUserOverview.mockResolvedValue({
+      user: { user_id: 'u1', username: 'ash' },
+      pokemon_instances: {
+        i1: {
+          instance_id: 'i1',
+          variant_id: 'v-001',
+          pokemon_id: 1,
+          nickname: null,
+          max_attack: null,
+          max_guard: null,
+          max_spirit: null,
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          most_wanted: false,
+          favorite: false,
+          registered: true,
+          date_added: '2026-01-01T00:00:00Z',
+          last_update: 1,
+        },
+      },
+      trades: {},
+      related_instances: {},
+      registrations: {},
+    } as never);
+    mockedSendPokemonUpdate.mockResolvedValue({});
+
+    render(
+      <PokemonCollectionScreen navigation={baseNavigation as never} route={route as never} />,
+    );
+    fireEvent.press(screen.getByText('Load Collection'));
+    await waitFor(() => {
+      expect(screen.getByText('v-001')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('v-001'));
+    fireEvent.press(screen.getByText('attributes'));
+    fireEvent.changeText(screen.getByPlaceholderText('Max Attack'), '3');
+    fireEvent.changeText(screen.getByPlaceholderText('Max Guard'), '2');
+    fireEvent.changeText(screen.getByPlaceholderText('Max Spirit'), '1');
+    fireEvent.press(screen.getByText('Save Max Stats'));
+
+    await waitFor(() => {
+      expect(mockedSendPokemonUpdate).toHaveBeenCalled();
+    });
+    expect(mockedSendPokemonUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: 'i1',
+        max_attack: 3,
+        max_guard: 2,
+        max_spirit: 1,
+      }),
+    );
+  });
+
+  it('blocks max stat save when value exceeds range', async () => {
+    mockedFetchUserOverview.mockResolvedValue({
+      user: { user_id: 'u1', username: 'ash' },
+      pokemon_instances: {
+        i1: {
+          instance_id: 'i1',
+          variant_id: 'v-001',
+          pokemon_id: 1,
+          nickname: null,
+          max_attack: null,
+          max_guard: null,
+          max_spirit: null,
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          most_wanted: false,
+          favorite: false,
+          registered: true,
+          date_added: '2026-01-01T00:00:00Z',
+          last_update: 1,
+        },
+      },
+      trades: {},
+      related_instances: {},
+      registrations: {},
+    } as never);
+    mockedSendPokemonUpdate.mockResolvedValue({});
+
+    render(
+      <PokemonCollectionScreen navigation={baseNavigation as never} route={route as never} />,
+    );
+    fireEvent.press(screen.getByText('Load Collection'));
+    await waitFor(() => {
+      expect(screen.getByText('v-001')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('v-001'));
+    fireEvent.press(screen.getByText('attributes'));
+    fireEvent.changeText(screen.getByPlaceholderText('Max Attack'), '4');
+    fireEvent.press(screen.getByText('Save Max Stats'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Max Attack must be between 0 and 3.')).toBeTruthy();
+    });
+    expect(mockedSendPokemonUpdate).not.toHaveBeenCalled();
+  });
 });
