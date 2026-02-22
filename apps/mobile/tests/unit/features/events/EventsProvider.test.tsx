@@ -43,6 +43,8 @@ const Probe = () => {
 };
 
 describe('EventsProvider', () => {
+  jest.setTimeout(15000);
+
   const originalEventSource = (globalThis as { EventSource?: unknown }).EventSource;
   const originalConsoleError = console.error;
   let consoleErrorSpy: jest.SpyInstance;

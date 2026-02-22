@@ -7,6 +7,9 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Copy frontend build output to Nginx's html directory
 COPY ./build /usr/share/nginx/html
 
+# Copy shared cross-app assets under /media
+COPY ./canonical-assets /usr/share/nginx/html/media
+
 # Copy proxy_params (ensure it exists at project root or adjust path)
 COPY proxy_params /etc/nginx/proxy_params
 

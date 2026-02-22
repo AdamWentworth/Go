@@ -2,6 +2,10 @@ import { authContract } from '@pokemongonexus/shared-contracts/auth';
 import { runtimeConfig } from '../../../src/config/runtimeConfig';
 import { loginUser, registerUser } from '../../../src/services/authService';
 
+jest.mock('../../../src/features/events/eventsSession', () => ({
+  getOrCreateDeviceId: jest.fn().mockResolvedValue('device-test-1'),
+}));
+
 jest.mock('@pokemongonexus/shared-contracts/common', () => ({
   buildUrl: (base: string, path: string) => `${base}${path}`,
 }));
@@ -56,6 +60,16 @@ describe('authService', () => {
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
       method: 'POST',
     });
+    const requestInit = fetchMock.mock.calls[0]?.[1];
+    const body = requestInit && typeof requestInit === 'object' && 'body' in requestInit
+      ? (requestInit as { body?: string }).body
+      : undefined;
+    expect(body).toBeDefined();
+    expect(JSON.parse(body as string)).toMatchObject({
+      username: 'ash',
+      password: 'pikachu',
+      device_id: 'device-test-1',
+    });
   });
 
   it('posts register payload to shared auth contract endpoint', async () => {
@@ -77,6 +91,19 @@ describe('authService', () => {
     );
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
       method: 'POST',
+    });
+    const requestInit = fetchMock.mock.calls[0]?.[1];
+    const body = requestInit && typeof requestInit === 'object' && 'body' in requestInit
+      ? (requestInit as { body?: string }).body
+      : undefined;
+    expect(body).toBeDefined();
+    expect(JSON.parse(body as string)).toMatchObject({
+      username: 'newuser',
+      email: 'newuser@example.com',
+      password: 'password123',
+      pokemonGoName: 'NewUser',
+      trainerCode: '123412341234',
+      device_id: 'device-test-1',
     });
   });
 });

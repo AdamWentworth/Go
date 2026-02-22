@@ -515,6 +515,7 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
 7. **Push notifications**: trade action notifications via Expo Notifications + server-side webhook.
 8. **Social auth (Auth0)**: register/login with Google/Apple via Auth0 integration.
 9. **Location services**: GPS permission + automatic coordinate detection on search screen.
+10. **Desktop packaging (future)**: package the existing web app with Tauri or Electron for Windows/macOS distribution after mobile parity is stable.
 
 ## 7) Priority Rules
 

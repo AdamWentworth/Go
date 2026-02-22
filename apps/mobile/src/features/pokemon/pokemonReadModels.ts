@@ -1,4 +1,5 @@
 import type { BasePokemon, Move, Pokemons } from '@pokemongonexus/shared-contracts/pokemon';
+import { resolvePokemonImageUrl } from './imageUrls';
 
 export type PokemonListItem = {
   pokemonId: number;
@@ -54,7 +55,7 @@ export const toPokemonListItem = (pokemon: BasePokemon): PokemonListItem => ({
   displayName: toDisplayName(pokemon.name, pokemon.form),
   form: pokemon.form,
   types: toTypes(pokemon),
-  imageUrl: pokemon.image_url ?? null,
+  imageUrl: resolvePokemonImageUrl(pokemon.image_url),
   shinyAvailable: toBool(pokemon.shiny_available),
   shadowShinyAvailable: toBool(pokemon.shadow_shiny_available),
 });
@@ -72,7 +73,7 @@ export const toPokemonList = (pokemons: Pokemons): PokemonListItem[] =>
 export const toPokemonDetail = (pokemon: BasePokemon): PokemonDetail => ({
   pokemonId: pokemon.pokemon_id,
   displayName: toDisplayName(pokemon.name, pokemon.form),
-  imageUrl: pokemon.image_url ?? null,
+  imageUrl: resolvePokemonImageUrl(pokemon.image_url),
   pokedexNumber: pokemon.pokedex_number,
   attack: pokemon.attack,
   defense: pokemon.defense,
@@ -98,4 +99,3 @@ export const findPokemonById = (
   if (typeof pokemonId !== 'number') return null;
   return pokemons.find((pokemon) => pokemon.pokemon_id === pokemonId) ?? null;
 };
-

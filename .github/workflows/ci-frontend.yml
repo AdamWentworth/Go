@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "frontend/**"
+      - "assets/**"
       - "nginx/**"
       - ".github/workflows/ci-frontend.yml"
       - ".github/workflows/deploy-frontend-prod.yml"
@@ -11,6 +12,7 @@ on:
     branches: ["main", "master"]
     paths:
       - "frontend/**"
+      - "assets/**"
       - "nginx/**"
       - ".github/workflows/ci-frontend.yml"
       - ".github/workflows/deploy-frontend-prod.yml"
@@ -179,8 +181,11 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf nginx/build
+          rm -rf nginx/canonical-assets
           mkdir -p nginx/build
+          mkdir -p nginx/canonical-assets
           cp -R frontend/dist/. nginx/build/
+          cp -R assets/. nginx/canonical-assets/
 
       - name: Build Container Image
         run: docker build --pull -t frontend_nginx:ci-${{ github.sha }} ./nginx

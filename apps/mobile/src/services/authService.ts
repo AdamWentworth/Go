@@ -6,6 +6,7 @@ import {
 } from '@pokemongonexus/shared-contracts/auth';
 import { runtimeConfig } from '../config/runtimeConfig';
 import { requestJson } from './httpClient';
+import { getOrCreateDeviceId } from '../features/events/eventsSession';
 
 export type LoginRequest = {
   username: string;
@@ -19,7 +20,7 @@ export const registerUser = async (payload: RegisterRequest): Promise<Record<str
     runtimeConfig.api.authApiUrl,
     authContract.endpoints.register,
     'POST',
-    payload,
+    { ...payload, device_id: await getOrCreateDeviceId() },
   );
 
 export const loginUser = async (payload: LoginRequest): Promise<LoginResponse> =>
@@ -27,7 +28,7 @@ export const loginUser = async (payload: LoginRequest): Promise<LoginResponse> =
     runtimeConfig.api.authApiUrl,
     authContract.endpoints.login,
     'POST',
-    payload,
+    { ...payload, device_id: await getOrCreateDeviceId() },
   );
 
 export const refreshSession = async (): Promise<RefreshTokenResponse> =>

@@ -1,8 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Button,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OwnershipMode } from '@pokemongonexus/shared-contracts/domain';
 import type { InstancesMap, PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
+import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import { useAuth } from '../features/auth/AuthProvider';
 import { useEvents } from '../features/events/EventsProvider';
 import {
@@ -30,7 +41,9 @@ import {
   toInstanceListItems,
   type InstanceListItem,
 } from '../features/instances/instanceReadModels';
+import { resolvePokemonImageUrl } from '../features/pokemon/imageUrls';
 import type { RootStackParamList } from '../navigation/AppNavigator';
+import { fetchPokemons } from '../services/pokemonService';
 import { sendPokemonUpdate } from '../services/receiverService';
 import { fetchForeignInstancesByUsername } from '../services/userSearchService';
 import { fetchUserOverview } from '../services/userOverviewService';
@@ -56,6 +69,15 @@ const DATE_CAUGHT_FORMAT = 'YYYY-MM-DD';
 const MAX_LOCATION_FIELD_LENGTH = 255;
 const EVENT_REFRESH_COOLDOWN_MS = 1500;
 type EditorSection = (typeof EDITOR_SECTIONS)[number];
+type PokemonImageVariant = {
+  form: string | null;
+  normal: string | null;
+  shiny: string | null;
+  shadow: string | null;
+  shinyShadow: string | null;
+  costumeById: Record<number, string | null>;
+};
+type PokemonImageIndex = Record<number, PokemonImageVariant[]>;
 
 const summarize = (items: InstanceListItem[]) => {
   let caught = 0;
@@ -67,6 +89,90 @@ const summarize = (items: InstanceListItem[]) => {
     if (item.isWanted) wanted += 1;
   }
   return { total: items.length, caught, trade, wanted };
+};
+
+const normalizeToken = (value: string | null | undefined): string =>
+  (value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_');
+
+const buildPokemonImageIndex = (pokemons: BasePokemon[]): PokemonImageIndex => {
+  const index: PokemonImageIndex = {};
+  for (const pokemon of pokemons) {
+    const id = pokemon.pokemon_id;
+    const costumeById: Record<number, string | null> = {};
+    for (const costume of pokemon.costumes ?? []) {
+      const preferred =
+        resolvePokemonImageUrl(costume.image_url) ??
+        resolvePokemonImageUrl(costume.image_url_shiny) ??
+        resolvePokemonImageUrl(costume.image_url_female) ??
+        resolvePokemonImageUrl(costume.image_url_shiny_female);
+      costumeById[costume.costume_id] = preferred;
+    }
+    const entry: PokemonImageVariant = {
+      form: pokemon.form ?? null,
+      normal: resolvePokemonImageUrl(pokemon.image_url) ?? resolvePokemonImageUrl(pokemon.sprite_url),
+      shiny: resolvePokemonImageUrl(pokemon.image_url_shiny),
+      shadow: resolvePokemonImageUrl(pokemon.image_url_shadow),
+      shinyShadow: resolvePokemonImageUrl(pokemon.image_url_shiny_shadow),
+      costumeById,
+    };
+    if (!index[id]) index[id] = [];
+    index[id]?.push(entry);
+  }
+  return index;
+};
+
+const selectImageVariant = (
+  variants: PokemonImageVariant[] | undefined,
+  variantId: string,
+): PokemonImageVariant | null => {
+  if (!variants || variants.length === 0) return null;
+  const normalizedVariantId = normalizeToken(variantId);
+  const formMatch = variants.find((candidate) => {
+    const token = normalizeToken(candidate.form);
+    return token.length > 0 && normalizedVariantId.includes(token);
+  });
+  if (formMatch) return formMatch;
+  const normalForm = variants.find((candidate) => normalizeToken(candidate.form) === 'normal');
+  return normalForm ?? variants[0] ?? null;
+};
+
+const fallbackPokemonSprite = (pokemonId: number | null | undefined): string | null => {
+  if (typeof pokemonId !== 'number' || !Number.isFinite(pokemonId) || pokemonId <= 0) return null;
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
+};
+
+const getInstanceImageUrl = (
+  instance: PokemonInstance,
+  imageIndex: PokemonImageIndex,
+): string | null => {
+  const variants = imageIndex[instance.pokemon_id];
+  const selected = selectImageVariant(variants, instance.variant_id);
+  if (selected) {
+    if (typeof instance.costume_id === 'number' && instance.costume_id > 0) {
+      const costume = selected.costumeById[instance.costume_id];
+      if (costume && costume.trim().length > 0) return costume;
+    }
+    if (instance.shiny && instance.shadow && selected.shinyShadow) return selected.shinyShadow;
+    if (instance.shadow && selected.shadow) return selected.shadow;
+    if (instance.shiny && selected.shiny) return selected.shiny;
+    if (selected.normal) return selected.normal;
+  }
+
+  const explicit =
+    resolvePokemonImageUrl(instance.image_url as string | undefined) ??
+    resolvePokemonImageUrl(instance.sprite_url as string | undefined);
+  if (explicit) return explicit;
+  return fallbackPokemonSprite(instance.pokemon_id);
+};
+
+const toStatusBadge = (item: InstanceListItem): string => {
+  if (item.isForTrade) return 'Trade';
+  if (item.isWanted) return 'Wanted';
+  if (item.isCaught) return 'Caught';
+  return 'Missing';
 };
 
 const toMutableInstance = (instanceId: string, instance: PokemonInstance): PokemonInstance => ({
@@ -134,6 +240,7 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const [error, setError] = useState<string | null>(null);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const [editorSection, setEditorSection] = useState<EditorSection>('status');
+  const [pokemonImageIndex, setPokemonImageIndex] = useState<PokemonImageIndex>({});
   const [nicknameDraft, setNicknameDraft] = useState('');
   const [cpDraft, setCpDraft] = useState('');
   const [levelDraft, setLevelDraft] = useState('');
@@ -161,6 +268,24 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const [tagBucketDraft, setTagBucketDraft] = useState<'caught' | 'trade' | 'wanted'>('caught');
   const [tagDraft, setTagDraft] = useState('');
   const lastEventRefreshAtRef = useRef(0);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadPokemonImages = async () => {
+      try {
+        const pokemons = await fetchPokemons();
+        if (!mounted) return;
+        setPokemonImageIndex(buildPokemonImageIndex(pokemons));
+      } catch {
+        if (!mounted) return;
+        setPokemonImageIndex({});
+      }
+    };
+    void loadPokemonImages();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const items = useMemo(() => toInstanceListItems(instancesMap), [instancesMap]);
 
@@ -926,9 +1051,14 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
           <Text style={commonStyles.caption}>
             Showing {visible.length} of {filtered.length} rows.
           </Text>
-          {visible.map((item) => {
-            const selected = selectedInstanceId === item.instanceId;
-            return (
+          <View style={styles.instanceGrid}>
+            {visible.map((item) => {
+              const selected = selectedInstanceId === item.instanceId;
+              const sourceInstance = instancesMap[item.instanceId];
+              const imageUrl = sourceInstance
+                ? getInstanceImageUrl(sourceInstance, pokemonImageIndex)
+                : null;
+              return (
                 <Pressable
                   key={item.instanceId}
                   onPress={() => {
@@ -962,14 +1092,32 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     setTagBucketDraft('caught');
                     setTagDraft('');
                   }}
-                  style={[commonStyles.row, selected ? commonStyles.rowSelected : null]}
+                  style={[styles.instanceCard, selected ? styles.instanceCardSelected : null]}
                 >
-                <Text style={commonStyles.rowTitle}>{item.variantId || '(missing variant_id)'}</Text>
-                <Text style={commonStyles.rowSub}>instance_id: {item.instanceId}</Text>
-                <Text style={commonStyles.rowSub}>nickname: {item.nickname ?? '-'}</Text>
-              </Pressable>
-            );
-          })}
+                  <View style={styles.instanceImageFrame}>
+                    {imageUrl ? (
+                      <Image source={{ uri: imageUrl }} style={styles.instanceImage} resizeMode="contain" />
+                    ) : (
+                      <Text style={styles.instanceImageFallback}>?</Text>
+                    )}
+                  </View>
+                  <View style={styles.instanceBadgeRow}>
+                    <View style={styles.instanceStatusBadge}>
+                      <Text style={styles.instanceStatusBadgeText}>{toStatusBadge(item)}</Text>
+                    </View>
+                    {Boolean(sourceInstance?.favorite) ? (
+                      <View style={styles.favoriteBadge}>
+                        <Text style={styles.favoriteBadgeText}>Favorite</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text style={styles.instanceVariant}>{item.variantId || '(missing variant_id)'}</Text>
+                  <Text style={commonStyles.rowSub}>instance_id: {item.instanceId}</Text>
+                  <Text style={commonStyles.rowSub}>nickname: {item.nickname ?? '-'}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       ) : null}
 
@@ -1458,6 +1606,82 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
 const styles = StyleSheet.create({
   container: {
     ...commonStyles.screenContainer,
+  },
+  instanceGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 10,
+    marginTop: 8,
+  },
+  instanceCard: {
+    width: '48%',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.surfaceAlt,
+    padding: theme.spacing.sm,
+    gap: 4,
+  },
+  instanceCardSelected: {
+    borderColor: theme.colors.selectedBorder,
+    backgroundColor: theme.colors.selectedSurface,
+  },
+  instanceImageFrame: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: theme.radius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  instanceImage: {
+    width: '88%',
+    height: '88%',
+  },
+  instanceImageFallback: {
+    color: theme.colors.textSecondary,
+    fontSize: 28,
+    fontWeight: '700',
+  },
+  instanceBadgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  instanceStatusBadge: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.borderStrong,
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  instanceStatusBadgeText: {
+    color: theme.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  favoriteBadge: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.selectedBorder,
+    backgroundColor: theme.colors.selectedSurface,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  favoriteBadgeText: {
+    color: theme.colors.selectedText,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  instanceVariant: {
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    fontSize: 13,
   },
   tagRow: {
     flexDirection: 'row',

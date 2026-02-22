@@ -31,7 +31,7 @@ const basePokemonFixture = (overrides: Partial<BasePokemon> = {}): BasePokemon =
   date_shadow_available: '2019-07-22',
   date_shiny_shadow_available: '2020-01-01',
   shiny_shadow_rarity: null,
-  image_url: 'https://example.com/pikachu.png',
+  image_url: '/images/pokemon/pikachu.png',
   image_url_shadow: 'https://example.com/pikachu-shadow.png',
   image_url_shiny: 'https://example.com/pikachu-shiny.png',
   image_url_shiny_shadow: 'https://example.com/pikachu-shiny-shadow.png',
@@ -107,6 +107,7 @@ describe('pokemonReadModels', () => {
     expect(list[0]?.pokemonId).toBe(25);
     expect(list[1]?.pokemonId).toBe(26);
     expect(list[0]?.types).toEqual(['Electric']);
+    expect(list[0]?.imageUrl).toBe('https://pokemongonexus.com/images/pokemon/pikachu.png');
   });
 
   it('builds pokemon detail model including move splits', () => {
@@ -115,6 +116,7 @@ describe('pokemonReadModels', () => {
     expect(detail.fastMoves).toEqual(['Quick Attack']);
     expect(detail.chargedMoves).toEqual(['Thunderbolt']);
     expect(detail.shinyAvailable).toBe(true);
+    expect(detail.imageUrl).toBe('https://pokemongonexus.com/images/pokemon/pikachu.png');
   });
 
   it('finds pokemon by id and returns null for missing id', () => {

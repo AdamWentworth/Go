@@ -30,3 +30,12 @@ Copy `.env.example` values into your environment (or EAS secrets) using `EXPO_PU
 
 Expo/React Native dependencies in this scaffold expect Node `>= 20.19.4`.  
 If you are below that, install may still work but runtime/tooling issues are possible.
+
+## Monorepo Resolution Note
+
+This app consumes local workspace packages from `../../packages/*`.
+If Metro cannot resolve `@pokemongonexus/*` imports, restart with cache clear:
+
+```bash
+npx expo start -c
+```
