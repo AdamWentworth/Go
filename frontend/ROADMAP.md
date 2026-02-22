@@ -346,6 +346,27 @@ Done:
    - preserved current query/filter state for immediate retry flows
    - added screen-level coverage for fail-then-retry behavior
 
+45. Mobile pokemon physical-details parity shipped:
+   - added typed physical-detail mutation adapter usage in `PokemonCollectionScreen`
+   - expanded collection editor with `weight`, `height`, and `costume_id` controls
+   - added validation guardrails (numeric parsing + non-negative checks)
+   - prevented invalid/unchanged physical-detail submits from dispatching receiver sync updates
+   - expanded mutation and screen tests for physical-detail save + invalid-value blocking
+
+46. SSE stream-token auth hardening follow-up shipped:
+   - shared events contract expanded with `/sse-token` endpoint and token response/query DTOs
+   - events service now issues short-lived SSE tokens (`token_use=sse`) bound to `device_id`
+   - events JWT middleware now validates `stream_token` usage + device consistency for SSE requests
+   - mobile realtime flow now requests SSE stream token first and uses query `access_token` only when explicitly enabled
+   - expanded backend and mobile tests for stream-token path and fallback behavior
+
+47. Mobile crash pipeline baseline integration shipped:
+   - added runtime-configurable crash reporting settings in Expo config (`observability` block)
+   - added `reportCrash` transport with bounded session reporting guardrails
+   - added `MobileErrorBoundary` and app-shell integration for render crash capture
+   - extended runtime bootstrap to report global runtime and unhandled-rejection failures
+   - added unit coverage for crash reporter and error boundary behavior
+
 Remaining:
 
 1. Validate first slices on real Android/iOS devices against live APIs.
@@ -353,8 +374,8 @@ Remaining:
    - final pokemon workflow polish (advanced interaction parity beyond current sectioned editor)
    - full search parity finish (advanced map interactions + remaining web-specific advanced interactions)
 3. Optional hardening follow-up:
-   - enrich SSE stream auth to avoid query fallback when a header-capable SSE client is adopted
-   - integrate production crash pipeline (Sentry/Crashlytics) on top of current observability bootstrap
+   - tighten production policy by disabling query-token fallback where SSE token path is fully available
+   - optionally swap/augment crash webhook pipeline with Sentry/Crashlytics provider integration
 
 ## 5) Parity Snapshot (Web -> Mobile)
 
@@ -379,7 +400,7 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
 | `/account` | Complete | Baseline shipped | Password change, location coordinate selector |
 | `/pokemon` (catalog) | Complete | Complete | None |
 | `/pokemon` (collection read) | Complete | Complete | None |
-| `/pokemon` (instance editor) | Full (20+ fields) | Core + extended editor fields shipped (stats, moves, aura, caught details, max stats, tags) | Background catalog selector parity, height/weight edit policy, final overlay UX polish |
+| `/pokemon` (instance editor) | Full (20+ fields) | Core + extended editor fields shipped (stats, moves, aura, caught details, max stats, physical details, tags) | Background catalog selector parity, final overlay UX polish |
 | `/pokemon` (custom tags) | Full (create/color/manage) | System tags only | Custom tag creation, color management |
 | `/pokemon` (Pokedex browser) | Full (shiny/shadow/costume info) | None | Full Pokedex view |
 | `/pokemon` (batch ops) | Multi-select, bulk tag | None | Batch mutation UI |
@@ -517,7 +538,7 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
 
 1. Execute real-device validation (`android` and `ios`) against live services with a short pass/fail checklist.
 2. Close remaining pokemon/search parity UX gaps with native-first interaction polish.
-3. Execute crash-pipeline integration (Sentry/Crashlytics) and final SSE auth hardening follow-up.
+3. Finalize production policy for realtime/crash hardening (query-fallback policy + optional Sentry/Crashlytics provider choice).
 
 ## 10) Definition of Success
 
@@ -543,6 +564,6 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
 5. Platform hardening:
    - real device validation on Android and iOS against live services
    - resilience baseline shipped (timeouts/retries + policy-based transport + app-wide offline banner/retry UX)
-   - observability bootstrap shipped; remaining: production crash pipeline integration
-   - hybrid realtime transport + dedupe/reload-throttle reconciliation shipped; remaining: SSE auth hardening
+   - observability bootstrap + baseline crash reporting pipeline shipped; optional: Sentry/Crashlytics provider integration
+   - hybrid realtime transport + dedupe/reload-throttle reconciliation + stream-token auth hardening shipped
 

@@ -6,6 +6,7 @@ import {
   mutateInstanceAura,
   mutateInstanceLocationDetails,
   mutateInstanceMaxStats,
+  mutateInstancePhysicalDetails,
   mutateInstanceMoves,
   mutateInstanceFusion,
   mutateInstanceMega,
@@ -234,6 +235,22 @@ describe('instanceMutations', () => {
     expect(next.max_guard).toBe(2);
     expect(next.max_spirit).toBe(1);
     expect(next.last_update).toBe(114);
+  });
+
+  it('applies physical-detail mutations safely', () => {
+    const next = mutateInstancePhysicalDetails(
+      makeBaseInstance(),
+      {
+        weight: 12.34,
+        height: 1.23,
+        costumeId: 15,
+      },
+      114_1,
+    );
+    expect(next.weight).toBe(12.34);
+    expect(next.height).toBe(1.23);
+    expect(next.costume_id).toBe(15);
+    expect(next.last_update).toBe(114_1);
   });
 
   it('applies mega/fusion/tag mutations safely', () => {

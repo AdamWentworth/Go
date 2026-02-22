@@ -1,4 +1,9 @@
-import type { IncomingUpdateEnvelope, UpdatesQueryParams } from '@pokemongonexus/shared-contracts/events';
+import type {
+  IncomingUpdateEnvelope,
+  SseTokenQueryParams,
+  SseTokenResponse,
+  UpdatesQueryParams,
+} from '@pokemongonexus/shared-contracts/events';
 import { eventsContract } from '@pokemongonexus/shared-contracts/events';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { TradeRecord } from '@pokemongonexus/shared-contracts/trades';
@@ -103,4 +108,43 @@ export const fetchMissedUpdates = async (
   }
   const data = await parseJsonSafe<EventsEnvelope>(response);
   return normalizeEventsEnvelope(data);
+};
+
+export const fetchSseStreamToken = async (deviceId: string): Promise<string | null> => {
+  const queryParams: SseTokenQueryParams = {
+    device_id: deviceId,
+  };
+  const url = buildEventsUrl(
+    runtimeConfig.api.eventsApiUrl,
+    eventsContract.endpoints.sseToken,
+    queryParams,
+  );
+
+  const authToken = getAuthToken();
+  if (!authToken || authToken.trim().length === 0) {
+    return null;
+  }
+
+  const response = await requestWithPolicy(url, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${authToken}`,
+    },
+    retryCount: 0,
+    timeoutMs: 6000,
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = await parseJsonSafe<SseTokenResponse>(response);
+  const token = data?.token;
+  if (typeof token !== 'string') {
+    return null;
+  }
+  const normalized = token.trim();
+  return normalized.length > 0 ? normalized : null;
 };

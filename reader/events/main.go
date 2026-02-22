@@ -56,6 +56,7 @@ func main() {
 	protected := app.Group("/", verifyJWT)
 	protected.Get("/api/sse", sseHandler)
 	protected.Get("/api/getUpdates", GetUpdates)
+	protected.Get("/api/sse-token", issueSSEToken)
 
 	startKafkaConsumer()
 

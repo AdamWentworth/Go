@@ -31,6 +31,11 @@ export type InstanceMaxStatsMutation = {
   maxGuard: number | null;
   maxSpirit: number | null;
 };
+export type InstancePhysicalDetailsMutation = {
+  weight: number | null;
+  height: number | null;
+  costumeId: number | null;
+};
 
 const withTimestamp = (instance: PokemonInstance, timestamp: number): PokemonInstance => ({
   ...instance,
@@ -225,6 +230,21 @@ export const mutateInstanceMaxStats = (
       max_attack: maxStats.maxAttack,
       max_guard: maxStats.maxGuard,
       max_spirit: maxStats.maxSpirit,
+    },
+    timestamp,
+  );
+
+export const mutateInstancePhysicalDetails = (
+  instance: PokemonInstance,
+  details: InstancePhysicalDetailsMutation,
+  timestamp = Date.now(),
+): PokemonInstance =>
+  withTimestamp(
+    {
+      ...instance,
+      weight: details.weight,
+      height: details.height,
+      costume_id: details.costumeId,
     },
     timestamp,
   );

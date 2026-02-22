@@ -2,6 +2,7 @@ import { eventsContract } from '@pokemongonexus/shared-contracts/events';
 import { runtimeConfig } from '../../../src/config/runtimeConfig';
 import { setAuthToken, clearAuthToken } from '../../../src/features/auth/authSession';
 import {
+  fetchSseStreamToken,
   fetchMissedUpdates,
   hasEventsDelta,
   normalizeEventsEnvelope,
@@ -69,5 +70,30 @@ describe('eventsService', () => {
       }),
     });
     expect(result?.trade.t1.trade_status).toBe('pending');
+  });
+
+  it('fetches SSE stream token with bearer auth header', async () => {
+    setAuthToken('jwt-token');
+    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      makeResponse(200, {
+        token: 'stream-token',
+        expires_in_seconds: 300,
+      }),
+    );
+
+    const token = await fetchSseStreamToken('device-1');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toContain(
+      `${runtimeConfig.api.eventsApiUrl}${eventsContract.endpoints.sseToken}`,
+    );
+    expect(fetchMock.mock.calls[0]?.[0]).toContain('device_id=device-1');
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      method: 'GET',
+      headers: expect.objectContaining({
+        Authorization: 'Bearer jwt-token',
+      }),
+    });
+    expect(token).toBe('stream-token');
   });
 });

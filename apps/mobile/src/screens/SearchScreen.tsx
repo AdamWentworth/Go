@@ -71,6 +71,19 @@ const getResultUsername = (row: SearchResultRow): string | null => {
   return null;
 };
 
+const buildSearchRowKey = (row: SearchResultRow): string => {
+  const instanceId = typeof row.instance_id === 'string' ? row.instance_id.trim().toLowerCase() : '';
+  if (instanceId.length > 0) {
+    return `instance:${instanceId}`;
+  }
+  const username = (getResultUsername(row) ?? '').toLowerCase();
+  const pokemonId = String(row.pokemon_id ?? '');
+  const distance = String(row.distance ?? '');
+  const latitude = String(row.latitude ?? '');
+  const longitude = String(row.longitude ?? '');
+  return `fallback:${username}|${pokemonId}|${distance}|${latitude}|${longitude}`;
+};
+
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
 
@@ -81,7 +94,7 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
   const [results, setResults] = useState<SearchResultRow[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [visibleCount, setVisibleCount] = useState(25);
-  const [selectedResult, setSelectedResult] = useState<SearchResultRow | null>(null);
+  const [selectedResultKey, setSelectedResultKey] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<SearchSortMode>('distance_asc');
   const [viewMode, setViewMode] = useState<SearchViewMode>('list');
   const [viewportFilterEnabled, setViewportFilterEnabled] = useState(false);
@@ -155,7 +168,7 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
     setHasSearched(true);
     setError(null);
     setResults([]);
-    setSelectedResult(null);
+    setSelectedResultKey(null);
     setVisibleCount(25);
     setViewMode('list');
 
@@ -189,6 +202,16 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
   }, [results, sortMode]);
   const visibleResults = useMemo(() => sortedResults.slice(0, visibleCount), [sortedResults, visibleCount]);
   const hasMoreResults = visibleCount < results.length;
+  const selectedResult = useMemo(() => {
+    if (!selectedResultKey) return null;
+    return results.find((row) => buildSearchRowKey(row) === selectedResultKey) ?? null;
+  }, [results, selectedResultKey]);
+  useEffect(() => {
+    if (!selectedResultKey) return;
+    if (!selectedResult) {
+      setSelectedResultKey(null);
+    }
+  }, [selectedResult, selectedResultKey]);
   const selectedUsername = useMemo(
     () => (selectedResult ? getResultUsername(selectedResult) : null),
     [selectedResult],
@@ -207,10 +230,10 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
     [mapPoints, viewportFilterEnabled, viewportBounds],
   );
   const selectedMarkerId = useMemo(() => {
-    if (!selectedResult) return null;
-    const point = mapPoints.find((candidate) => candidate.row === selectedResult);
+    if (!selectedResultKey) return null;
+    const point = mapPoints.find((candidate) => buildSearchRowKey(candidate.row) === selectedResultKey);
     return point?.markerId ?? null;
-  }, [mapPoints, selectedResult]);
+  }, [mapPoints, selectedResultKey]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -538,7 +561,7 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
             setFormState(defaultSearchFormState);
             setResults([]);
             setHasSearched(false);
-            setSelectedResult(null);
+            setSelectedResultKey(null);
             setVisibleCount(25);
             setError(null);
             setViewMode('list');
@@ -610,11 +633,12 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
       {viewMode === 'list'
         ? visibleResults.map((row, index) => {
             const absoluteIndex = index;
-            const isSelected = selectedResult === row;
+            const rowKey = buildSearchRowKey(row);
+            const isSelected = selectedResultKey === rowKey;
             return (
               <Pressable
-                key={`${absoluteIndex}-${String(row.pokemon_id ?? 'x')}`}
-                onPress={() => setSelectedResult(row)}
+                key={`${rowKey}-${absoluteIndex}`}
+                onPress={() => setSelectedResultKey(rowKey)}
                 style={[commonStyles.row, isSelected ? commonStyles.rowSelected : null]}
               >
                 <Text style={commonStyles.rowTitle}>pokemon_id: {String(row.pokemon_id ?? '-')}</Text>
@@ -686,7 +710,7 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
               ownershipMode={formState.ownershipMode}
               onSelect={(markerId) => {
                 const point = mapPoints.find((candidate) => candidate.markerId === markerId);
-                if (point) setSelectedResult(point.row);
+                if (point) setSelectedResultKey(buildSearchRowKey(point.row));
               }}
             />
           </View>

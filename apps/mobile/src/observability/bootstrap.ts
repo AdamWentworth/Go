@@ -1,4 +1,5 @@
 import { logError, logWarn } from './logger';
+import { reportCrash } from './crashReporter';
 
 let initialized = false;
 
@@ -25,6 +26,19 @@ export const initializeObservability = (): void => {
   const fallback = errorUtils.getGlobalHandler?.();
   errorUtils.setGlobalHandler((error, isFatal) => {
     logError('crash', isFatal ? 'Fatal runtime error' : 'Unhandled runtime error', error);
+    void reportCrash('runtime_error', error, { fatal: Boolean(isFatal) });
     fallback?.(error, isFatal);
   });
+
+  const globalScope = globalThis as unknown as {
+    onunhandledrejection?: ((event: { reason?: unknown }) => void) | null;
+  };
+  const previousUnhandled = globalScope.onunhandledrejection;
+  globalScope.onunhandledrejection = (event) => {
+    logError('crash', 'Unhandled promise rejection', event?.reason);
+    void reportCrash('unhandled_rejection', event?.reason ?? 'Unknown rejection', {
+      fatal: false,
+    });
+    previousUnhandled?.(event);
+  };
 };

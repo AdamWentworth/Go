@@ -130,6 +130,63 @@ func TestVerifyJWT_ValidQueryTokenSetsLocals(t *testing.T) {
 	}
 }
 
+func TestVerifyJWT_ValidStreamTokenQuerySetsLocals(t *testing.T) {
+	original := jwtSecret
+	defer func() { jwtSecret = original }()
+
+	secret := []byte("test-secret")
+	jwtSecret = secret
+	app := newAuthTestApp()
+
+	claims := AccessTokenClaims{
+		UserID:   "user-stream",
+		Username: "misty",
+		DeviceID: "device-stream",
+		TokenUse: "sse",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+		},
+	}
+	token := signAccessToken(t, secret, claims)
+
+	req := httptest.NewRequest(fiber.MethodGet, "/ok?device_id=device-stream&stream_token="+token, nil)
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("expected %d, got %d", fiber.StatusOK, resp.StatusCode)
+	}
+}
+
+func TestVerifyJWT_StreamTokenRequiresSSETokenUse(t *testing.T) {
+	original := jwtSecret
+	defer func() { jwtSecret = original }()
+
+	secret := []byte("test-secret")
+	jwtSecret = secret
+	app := newAuthTestApp()
+
+	claims := AccessTokenClaims{
+		UserID:   "user-stream",
+		Username: "misty",
+		DeviceID: "device-stream",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+		},
+	}
+	token := signAccessToken(t, secret, claims)
+
+	req := httptest.NewRequest(fiber.MethodGet, "/ok?device_id=device-stream&stream_token="+token, nil)
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != fiber.StatusForbidden {
+		t.Fatalf("expected %d, got %d", fiber.StatusForbidden, resp.StatusCode)
+	}
+}
+
 func TestVerifyJWT_OversizedCookie(t *testing.T) {
 	original := jwtSecret
 	defer func() { jwtSecret = original }()

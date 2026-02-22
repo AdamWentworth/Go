@@ -2,7 +2,7 @@ import React from 'react';
 import { Button, Text } from 'react-native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { EventsProvider, useEvents } from '../../../../src/features/events/EventsProvider';
-import { fetchMissedUpdates } from '../../../../src/services/eventsService';
+import { fetchMissedUpdates, fetchSseStreamToken } from '../../../../src/services/eventsService';
 
 jest.mock('../../../../src/features/auth/AuthProvider', () => ({
   useAuth: () => ({
@@ -19,6 +19,7 @@ jest.mock('../../../../src/features/events/eventsSession', () => ({
 
 jest.mock('../../../../src/services/eventsService', () => ({
   fetchMissedUpdates: jest.fn(),
+  fetchSseStreamToken: jest.fn(),
   hasEventsDelta: (payload: { pokemon: Record<string, unknown>; trade: Record<string, unknown>; relatedInstances: Record<string, unknown> }) =>
     Object.keys(payload.pokemon).length > 0 ||
     Object.keys(payload.trade).length > 0 ||
@@ -26,6 +27,7 @@ jest.mock('../../../../src/services/eventsService', () => ({
 }));
 
 const mockedFetchMissedUpdates = fetchMissedUpdates as jest.MockedFunction<typeof fetchMissedUpdates>;
+const mockedFetchSseStreamToken = fetchSseStreamToken as jest.MockedFunction<typeof fetchSseStreamToken>;
 
 const Probe = () => {
   const { deviceId, eventVersion, transport, connected, refreshNow } = useEvents();
@@ -58,6 +60,7 @@ describe('EventsProvider', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     delete (globalThis as { EventSource?: unknown }).EventSource;
+    mockedFetchSseStreamToken.mockResolvedValue(null);
   });
 
   afterAll(() => {
@@ -132,6 +135,7 @@ describe('EventsProvider', () => {
       trade: {},
       relatedInstances: {},
     });
+    mockedFetchSseStreamToken.mockResolvedValue('stream-token');
 
     render(
       <EventsProvider>
@@ -144,6 +148,7 @@ describe('EventsProvider', () => {
       expect(screen.getByTestId('transport').props.children).toBe('sse');
       expect(EventSourceMock).toHaveBeenCalled();
     });
+    expect(EventSourceMock.mock.calls[0]?.[0]).toContain('stream_token=stream-token');
   });
 
   it('deduplicates repeated payloads during reconciliation', async () => {

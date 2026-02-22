@@ -4,6 +4,7 @@ package main
 
 import (
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
@@ -14,10 +15,12 @@ type AccessTokenClaims struct {
 	UserID   string `json:"user_id"`
 	Username string `json:"username"`
 	DeviceID string `json:"device_id"`
+	TokenUse string `json:"token_use,omitempty"`
 	jwt.RegisteredClaims
 }
 
 const maxAccessTokenLength = 8192
+const sseTokenTTL = 5 * time.Minute
 
 func readAccessToken(c *fiber.Ctx) (string, string) {
 	if token := strings.TrimSpace(c.Cookies("accessToken")); token != "" {
@@ -37,6 +40,9 @@ func readAccessToken(c *fiber.Ctx) (string, string) {
 
 	if token := strings.TrimSpace(c.Query("access_token")); token != "" {
 		return token, "query"
+	}
+	if token := strings.TrimSpace(c.Query("stream_token")); token != "" {
+		return token, "stream_query"
 	}
 
 	return "", ""
@@ -77,6 +83,18 @@ func verifyJWT(c *fiber.Ctx) error {
 	if claims.UserID == "" {
 		logrus.Warn("Authentication failed: JWT missing user_id")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Authentication failed"})
+	}
+
+	if tokenSource == "stream_query" {
+		if claims.TokenUse != "sse" {
+			logrus.Warn("Authentication failed: stream token missing sse token_use")
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Authentication failed"})
+		}
+		queryDeviceID := strings.TrimSpace(c.Query("device_id"))
+		if claims.DeviceID != "" && queryDeviceID != "" && claims.DeviceID != queryDeviceID {
+			logrus.Warn("Authentication failed: stream token device mismatch")
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Authentication failed"})
+		}
 	}
 
 	c.Locals("user_id", claims.UserID)

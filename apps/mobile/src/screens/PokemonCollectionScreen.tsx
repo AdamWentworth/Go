@@ -19,6 +19,7 @@ import {
   mutateInstanceMostWanted,
   mutateInstanceMoves,
   mutateInstanceNickname,
+  mutateInstancePhysicalDetails,
   mutateInstanceRemoveTag,
   mutateInstanceStatus,
   toReceiverPokemonPayload,
@@ -149,6 +150,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const [isPurifiedDraft, setIsPurifiedDraft] = useState(false);
   const [locationCaughtDraft, setLocationCaughtDraft] = useState('');
   const [locationCardDraft, setLocationCardDraft] = useState('');
+  const [weightDraft, setWeightDraft] = useState('');
+  const [heightDraft, setHeightDraft] = useState('');
+  const [costumeIdDraft, setCostumeIdDraft] = useState('');
   const [maxAttackDraft, setMaxAttackDraft] = useState('');
   const [maxGuardDraft, setMaxGuardDraft] = useState('');
   const [maxSpiritDraft, setMaxSpiritDraft] = useState('');
@@ -218,6 +222,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const parsedMaxAttack = useMemo(() => parseOptionalInteger(maxAttackDraft), [maxAttackDraft]);
   const parsedMaxGuard = useMemo(() => parseOptionalInteger(maxGuardDraft), [maxGuardDraft]);
   const parsedMaxSpirit = useMemo(() => parseOptionalInteger(maxSpiritDraft), [maxSpiritDraft]);
+  const parsedWeight = useMemo(() => parseOptionalDecimal(weightDraft), [weightDraft]);
+  const parsedHeight = useMemo(() => parseOptionalDecimal(heightDraft), [heightDraft]);
+  const parsedCostumeId = useMemo(() => parseOptionalInteger(costumeIdDraft), [costumeIdDraft]);
 
   const battleStatsValidationError = useMemo(() => {
     if (parsedCp === 'invalid') return 'CP must be a whole number.';
@@ -403,6 +410,30 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     );
   }, [parsedMaxAttack, parsedMaxGuard, parsedMaxSpirit, selectedInstance]);
 
+  const physicalDetailsValidationError = useMemo(() => {
+    if (parsedWeight === 'invalid') return 'Weight must be a number.';
+    if (typeof parsedWeight === 'number' && parsedWeight < 0) return 'Weight must be 0 or greater.';
+    if (parsedHeight === 'invalid') return 'Height must be a number.';
+    if (typeof parsedHeight === 'number' && parsedHeight < 0) return 'Height must be 0 or greater.';
+    if (parsedCostumeId === 'invalid') return 'Costume ID must be a whole number.';
+    if (typeof parsedCostumeId === 'number' && parsedCostumeId < 0) {
+      return 'Costume ID must be 0 or greater.';
+    }
+    return null;
+  }, [parsedCostumeId, parsedHeight, parsedWeight]);
+
+  const physicalDetailsUnchanged = useMemo(() => {
+    if (!selectedInstance) return true;
+    if (parsedWeight === 'invalid' || parsedHeight === 'invalid' || parsedCostumeId === 'invalid') {
+      return true;
+    }
+    return (
+      selectedInstance.weight === parsedWeight &&
+      selectedInstance.height === parsedHeight &&
+      selectedInstance.costume_id === parsedCostumeId
+    );
+  }, [parsedCostumeId, parsedHeight, parsedWeight, selectedInstance]);
+
   const caughtDetailsValidationError = useMemo(() => {
     if (normalizedGenderDraft && !GENDER_OPTIONS.includes(normalizedGenderDraft as (typeof GENDER_OPTIONS)[number])) {
       return `Gender must be one of: ${GENDER_OPTIONS.join(', ')}.`;
@@ -445,6 +476,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     setIsPurifiedDraft(false);
     setLocationCaughtDraft('');
     setLocationCardDraft('');
+    setWeightDraft('');
+    setHeightDraft('');
+    setCostumeIdDraft('');
     setMaxAttackDraft('');
     setMaxGuardDraft('');
     setMaxSpiritDraft('');
@@ -720,6 +754,26 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     );
   };
 
+  const savePhysicalDetails = async () => {
+    if (!selectedInstanceId) return;
+    if (physicalDetailsValidationError) {
+      setError(physicalDetailsValidationError);
+      return;
+    }
+    if (physicalDetailsUnchanged) return;
+    if (parsedWeight === 'invalid' || parsedHeight === 'invalid' || parsedCostumeId === 'invalid') {
+      return;
+    }
+    setError(null);
+    await updateInstanceAndSync(selectedInstanceId, (instance) =>
+      mutateInstancePhysicalDetails(instance, {
+        weight: parsedWeight,
+        height: parsedHeight,
+        costumeId: parsedCostumeId,
+      }),
+    );
+  };
+
   const applyMegaToggle = async () => {
     if (!selectedInstanceId || !selectedInstance) return;
     const nextEnabled = !Boolean(selectedInstance.is_mega || selectedInstance.mega);
@@ -897,6 +951,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     setIsPurifiedDraft(Boolean(selected?.purified));
                     setLocationCaughtDraft(String(selected?.location_caught ?? ''));
                     setLocationCardDraft(String(selected?.location_card ?? ''));
+                    setWeightDraft(String(selected?.weight ?? ''));
+                    setHeightDraft(String(selected?.height ?? ''));
+                    setCostumeIdDraft(String(selected?.costume_id ?? ''));
                     setMaxAttackDraft(String(selected?.max_attack ?? ''));
                     setMaxGuardDraft(String(selected?.max_guard ?? ''));
                     setMaxSpiritDraft(String(selected?.max_spirit ?? ''));
@@ -942,6 +999,10 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
           </Text>
           <Text style={commonStyles.caption}>
             gender={String(selectedInstance.gender ?? '-')}, date_caught={String(selectedInstance.date_caught ?? '-')}
+          </Text>
+          <Text style={commonStyles.caption}>
+            weight={String(selectedInstance.weight ?? '-')}, height={String(selectedInstance.height ?? '-')}, costume_id=
+            {String(selectedInstance.costume_id ?? '-')}
           </Text>
           <Text style={commonStyles.caption}>
             location_caught={String(selectedInstance.location_caught ?? '-')}, location_card={String(selectedInstance.location_card ?? '-')}
@@ -1031,6 +1092,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                   </Text>
                   {locationValidationError ? (
                     <Text style={commonStyles.error}>{locationValidationError}</Text>
+                  ) : null}
+                  {physicalDetailsValidationError ? (
+                    <Text style={commonStyles.error}>{physicalDetailsValidationError}</Text>
                   ) : null}
                   {maxStatsValidationError ? (
                     <Text style={commonStyles.error}>{maxStatsValidationError}</Text>
@@ -1193,6 +1257,37 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     title="Save Location Details"
                     onPress={() => void saveLocationDetails()}
                     disabled={syncing || locationUnchanged || Boolean(locationValidationError)}
+                  />
+
+                  <TextInput
+                    keyboardType="decimal-pad"
+                    placeholder="Weight"
+                    value={weightDraft}
+                    onChangeText={setWeightDraft}
+                    style={commonStyles.input}
+                  />
+                  <TextInput
+                    keyboardType="decimal-pad"
+                    placeholder="Height"
+                    value={heightDraft}
+                    onChangeText={setHeightDraft}
+                    style={commonStyles.input}
+                  />
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder="Costume ID"
+                    value={costumeIdDraft}
+                    onChangeText={setCostumeIdDraft}
+                    style={commonStyles.input}
+                  />
+                  <Button
+                    title="Save Physical Details"
+                    onPress={() => void savePhysicalDetails()}
+                    disabled={
+                      syncing ||
+                      physicalDetailsUnchanged ||
+                      Boolean(physicalDetailsValidationError)
+                    }
                   />
 
                   <TextInput

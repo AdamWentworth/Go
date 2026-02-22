@@ -19,6 +19,7 @@ import {
   saveLastEventsTimestamp,
 } from './eventsSession';
 import {
+  fetchSseStreamToken,
   fetchMissedUpdates,
   hasEventsDelta,
   type NormalizedEventsEnvelope,
@@ -83,16 +84,21 @@ type EventSourceLike = {
   close: () => void;
 };
 
-const buildSseUrl = (deviceId: string): string => {
+const buildSseUrl = (deviceId: string, streamToken: string | null, accessToken: string | null): string => {
   const normalizedBase = runtimeConfig.api.eventsApiUrl.endsWith('/')
     ? runtimeConfig.api.eventsApiUrl
     : `${runtimeConfig.api.eventsApiUrl}/`;
   const normalizedPath = eventsContract.endpoints.sse.replace(/^\/+/, '');
   const url = new URL(normalizedPath, normalizedBase);
   url.searchParams.set('device_id', deviceId);
-  const token = getAuthToken();
-  if (token && token.trim().length > 0) {
-    url.searchParams.set('access_token', token);
+  if (streamToken && streamToken.trim().length > 0) {
+    url.searchParams.set('stream_token', streamToken.trim());
+    return url.toString();
+  }
+  if (runtimeConfig.realtime.allowAccessTokenQueryFallback) {
+    if (accessToken && accessToken.trim().length > 0) {
+      url.searchParams.set('access_token', accessToken.trim());
+    }
   }
   return url.toString();
 };
@@ -162,7 +168,7 @@ export const EventsProvider = ({ children }: PropsWithChildren) => {
     }
   }, [runIfMounted]);
 
-  const connectStream = useCallback((): boolean => {
+  const connectStream = useCallback(async (): Promise<boolean> => {
     if (!deviceId || status !== 'authenticated') return false;
     if (!hasEventSourceRuntime()) {
       runIfMounted(() => {
@@ -171,10 +177,15 @@ export const EventsProvider = ({ children }: PropsWithChildren) => {
       return false;
     }
 
+    const accessToken = getAuthToken();
+    const streamToken = await fetchSseStreamToken(deviceId);
+
     closeStream();
     try {
       const EventSourceCtor = (globalThis as { EventSource: new (url: string, options?: { withCredentials?: boolean }) => EventSourceLike }).EventSource;
-      const source = new EventSourceCtor(buildSseUrl(deviceId), { withCredentials: true });
+      const source = new EventSourceCtor(buildSseUrl(deviceId, streamToken, accessToken), {
+        withCredentials: true,
+      });
       sseRef.current = source;
       runIfMounted(() => {
         setTransport('sse');
@@ -283,12 +294,14 @@ export const EventsProvider = ({ children }: PropsWithChildren) => {
 
   useEffect(() => {
     if (status !== 'authenticated' || !deviceId) return;
-    const streamConnected = connectStream();
-    if (!streamConnected) {
-      runIfMounted(() => {
-        setTransport('polling');
-      });
-    }
+    void (async () => {
+      const streamConnected = await connectStream();
+      if (!streamConnected) {
+        runIfMounted(() => {
+          setTransport('polling');
+        });
+      }
+    })();
     void refreshNow();
     const id = setInterval(() => {
       if (transport === 'sse' && connected) return;

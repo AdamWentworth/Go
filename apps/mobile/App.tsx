@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
+import { MobileErrorBoundary } from './src/components/MobileErrorBoundary';
 import { NetworkStatusBanner } from './src/components/NetworkStatusBanner';
 import { AuthProvider } from './src/features/auth/AuthProvider';
 import { EventsProvider } from './src/features/events/EventsProvider';
@@ -16,7 +17,9 @@ export default function App() {
         <EventsProvider>
           <StatusBar style="auto" />
           <View style={styles.appShell}>
-            <AppNavigator />
+            <MobileErrorBoundary>
+              <AppNavigator />
+            </MobileErrorBoundary>
             <NetworkStatusBanner />
           </View>
         </EventsProvider>
