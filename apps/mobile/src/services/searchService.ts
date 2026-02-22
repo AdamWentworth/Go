@@ -2,7 +2,7 @@ import { buildUrl } from '@pokemongonexus/shared-contracts/common';
 import { searchContract, type SearchQueryParams, type SearchResultRow } from '@pokemongonexus/shared-contracts/search';
 import { runtimeConfig } from '../config/runtimeConfig';
 import { getAuthToken } from '../features/auth/authSession';
-import { parseJsonSafe } from './httpClient';
+import { parseJsonSafe, requestWithPolicy } from './httpClient';
 
 const buildSearchUrl = (queryParams: SearchQueryParams): string =>
   buildUrl(runtimeConfig.api.searchApiUrl, searchContract.endpoints.searchPokemon, queryParams);
@@ -11,8 +11,12 @@ export const searchPokemon = async (
   queryParams: SearchQueryParams,
 ): Promise<SearchResultRow[]> => {
   const authToken = getAuthToken();
-  const response = await fetch(buildSearchUrl(queryParams), {
+  const response = await requestWithPolicy(buildSearchUrl(queryParams), {
     method: 'GET',
+    timeoutMs: 8_000,
+    retryCount: 1,
+    retryDelayMs: 300,
+    credentials: 'include',
     headers: {
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     },
@@ -25,4 +29,3 @@ export const searchPokemon = async (
   if (!payload) return [];
   return Array.isArray(payload) ? payload : Object.values(payload);
 };
-

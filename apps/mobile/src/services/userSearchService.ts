@@ -9,7 +9,8 @@ import {
   type UserInstancesEnvelope,
 } from '@pokemongonexus/shared-contracts/users';
 import { runtimeConfig } from '../config/runtimeConfig';
-import { parseJsonSafe } from './httpClient';
+import { getAuthToken } from '../features/auth/authSession';
+import { parseJsonSafe, requestWithPolicy } from './httpClient';
 
 const buildUsersUrlForPath = (pathWithQuery: string): string =>
   buildUrl(runtimeConfig.api.usersApiUrl, pathWithQuery);
@@ -20,14 +21,21 @@ const buildConditionalHeaders = (etag?: string | null): Record<string, string> =
 const getJson = async (
   pathWithQuery: string,
   headers?: Record<string, string>,
-): Promise<Response> =>
-  fetch(buildUsersUrlForPath(pathWithQuery), {
+): Promise<Response> => {
+  const authToken = getAuthToken();
+  return requestWithPolicy(buildUsersUrlForPath(pathWithQuery), {
     method: 'GET',
+    timeoutMs: 8_000,
+    retryCount: 1,
+    retryDelayMs: 250,
+    credentials: 'include',
     headers: {
       Accept: 'application/json',
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       ...headers,
     },
   });
+};
 
 export const fetchTrainerAutocomplete = async (
   query: string,
@@ -88,4 +96,3 @@ export const fetchForeignInstancesByUsername = async (
     etag: response.headers.get('ETag') ?? null,
   };
 };
-

@@ -279,11 +279,38 @@ Done:
    - confirmation-copy support added for satisfaction updates
    - expanded lifecycle-message unit coverage for new confirmation path
 
+34. Mobile events sync baseline shipped:
+   - added mobile `EventsProvider` with persisted device identity + last-sync timestamp (`expo-secure-store`)
+   - wired periodic `getUpdates` polling (30s cadence) with bootstrap missed-update fetch
+   - normalized events payload handling for `pokemon`, `trade`, and `relatedInstances`
+   - exposed event context (`eventVersion`, `latestUpdate`, `refreshNow`) for screen-level consumers
+   - added unit coverage for events session persistence, service normalization/fetch, and provider refresh behavior
+
+35. Mobile live-refresh integration shipped for core mutation surfaces:
+   - `TradesScreen` now auto-refreshes when inbound trade deltas are detected
+   - `PokemonCollectionScreen` now auto-refreshes own-collection views on inbound instance deltas
+   - event-driven refresh is guarded against local sync/mutation in-flight states
+   - existing screen-level mutation tests remain green with events integration
+
+36. Mobile network resilience hardening shipped:
+   - introduced `requestWithPolicy` in mobile `httpClient` with timeout + retry/backoff semantics
+   - retriable status handling added (408/425/429/5xx) with bounded exponential delays
+   - `requestJson` migrated to policy-driven transport for auth-bearing requests
+   - read services (`search`, `location`, `userOverview`, `userSearch`) aligned to policy-based requests
+   - added dedicated `httpClient` retry/timeout unit coverage
+
+37. Mobile observability bootstrap shipped:
+   - added structured mobile logger helpers with dev-focused verbosity
+   - added one-time runtime observability bootstrap in app root
+   - installed global error-handler hook where runtime supports `ErrorUtils`
+   - integrated bootstrap into `apps/mobile/App.tsx`
+
 Remaining:
 
-1. Validate first slices on device against live APIs.
-2. Continue UX polish for edge network/error paths on mobile slices.
-3. Close functional parity gaps for:
+1. Validate first slices on real Android/iOS devices against live APIs.
+2. Upgrade realtime transport from polling baseline to native SSE transport where feasible.
+3. Continue UX polish for edge network/error paths on mobile slices.
+4. Close functional parity gaps for:
    - final pokemon workflow polish (advanced interaction parity beyond current sectioned editor)
    - full search parity finish (advanced map interactions + remaining web-specific advanced interactions)
 
@@ -310,18 +337,18 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
 | `/account` | Complete | Baseline shipped | Password change, location coordinate selector |
 | `/pokemon` (catalog) | Complete | Complete | None |
 | `/pokemon` (collection read) | Complete | Complete | None |
-| `/pokemon` (instance editor) | Full (20+ fields) | Tags/status/nickname/mega/fusion only | CP, IV, moves, level, gender, height/weight, date/location caught, background, lucky, max, purify |
+| `/pokemon` (instance editor) | Full (20+ fields) | Core + extended editor fields shipped (stats, moves, aura, caught details, max stats, tags) | Background catalog selector parity, height/weight edit policy, final overlay UX polish |
 | `/pokemon` (custom tags) | Full (create/color/manage) | System tags only | Custom tag creation, color management |
 | `/pokemon` (Pokedex browser) | Full (shiny/shadow/costume info) | None | Full Pokedex view |
 | `/pokemon` (batch ops) | Multi-select, bulk tag | None | Batch mutation UI |
 | `/pokemon/:username` | Complete | Baseline shipped | Deeper UI parity for foreign view |
 | `/search` (filters) | 15+ parameters | Full parameter set shipped | None — filter surface parity complete |
 | `/search` (list view) | Complete | Complete | None |
-| `/search` (map view) | OpenLayers full map | Canvas with marker selection | Viewport filtering, richer popups, location autocomplete |
+| `/search` (map view) | OpenLayers full map | Canvas with viewport/filter/popup/autocomplete baseline shipped | Remaining native-appropriate map UX refinements |
 | `/trades` (read) | Complete | Complete | None |
 | `/trades` (lifecycle) | Full (all actions) | Core + advanced lifecycle actions shipped | None |
 | `/trades` (status views) | Per-status filtered views | Per-status filtered views shipped | None |
-| Real-time sync (SSE) | Complete | None | Entire SSE layer |
+| Real-time sync (SSE) | Complete | Polling + missed-update sync shipped | Native SSE transport upgrade + deeper store-level reconciliation |
 | Offline persistence | IndexedDB (6+ stores) | None | Platform storage adapter + sync strategy |
 | Raid calculator | Complete | None | Entire feature |
 | Theme (light/dark) | Complete | Dark only | Light mode + toggle |
@@ -447,8 +474,8 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
 ## 9) Next 3 Iterations (Immediate Plan)
 
 1. Execute real-device validation (`android` and `ios`) against live services with a short pass/fail checklist.
-2. Continue mobile search parity with advanced map interactions (viewport-style filtering + richer marker detail UX).
-3. Execute pokemon workflow parity follow-up (remaining advanced interactions beyond validation/editor guardrails).
+2. Upgrade mobile realtime transport from polling baseline to SSE-capable transport with reconnect semantics.
+3. Close remaining pokemon/search parity UX gaps with native-first interaction polish.
 
 ## 10) Definition of Success
 
@@ -473,6 +500,7 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
    - optional final pass for fully native form affordances (inline field focus helpers)
 5. Platform hardening:
    - real device validation on Android and iOS against live services
-   - resilience passes (network interruptions/offline behavior/retries)
-   - observability/crash hooks for mobile release confidence
+   - resilience baseline shipped (timeouts/retries + policy-based transport); remaining: offline banner and recovery UX
+   - observability bootstrap shipped; remaining: production crash pipeline integration
+   - realtime polling baseline shipped; remaining: SSE transport parity and deeper event reconciliation
 

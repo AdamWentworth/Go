@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { PartnerInfo } from '@pokemongonexus/shared-contracts/trades';
 import { useAuth } from '../features/auth/AuthProvider';
+import { useEvents } from '../features/events/EventsProvider';
 import {
   acceptTrade,
   buildStatusCounts,
@@ -70,6 +71,7 @@ const formatPartnerValue = (value: unknown): string => {
 
 export const TradesScreen = ({ navigation }: TradesScreenProps) => {
   const { user } = useAuth();
+  const { eventVersion, latestUpdate, syncing: eventsSyncing } = useEvents();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
@@ -84,7 +86,7 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
   const [partnerRevealError, setPartnerRevealError] = useState<string | null>(null);
   const [revealedPartners, setRevealedPartners] = useState<Record<string, PartnerInfo>>({});
 
-  const loadTrades = async () => {
+  const loadTrades = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -115,7 +117,15 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.user_id]);
+
+  useEffect(() => {
+    if (eventVersion === 0) return;
+    if (!latestUpdate) return;
+    if (Object.keys(latestUpdate.trade).length === 0) return;
+    if (loading || mutationLoading || eventsSyncing) return;
+    void loadTrades();
+  }, [eventVersion, latestUpdate, loading, mutationLoading, eventsSyncing, loadTrades]);
 
   const filteredTrades = useMemo(() => {
     if (statusFilter === STATUS_FILTER_ALL) return trades;

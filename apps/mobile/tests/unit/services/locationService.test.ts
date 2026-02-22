@@ -116,7 +116,10 @@ describe('fetchLocationSuggestions', () => {
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(makeOkResponse([]));
     await fetchLocationSuggestions('London');
-    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('query=London'));
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('query=London'),
+      expect.objectContaining({ method: 'GET' }),
+    );
   });
 
   it('builds display name from name only when state and country are absent', async () => {

@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OwnershipMode } from '@pokemongonexus/shared-contracts/domain';
 import type { InstancesMap, PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import { useAuth } from '../features/auth/AuthProvider';
+import { useEvents } from '../features/events/EventsProvider';
 import {
   mutateInstanceAddTag,
   mutateInstanceAura,
@@ -121,6 +122,7 @@ const isValidDateCaught = (value: string): boolean => {
 
 export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollectionScreenProps) => {
   const { user } = useAuth();
+  const { eventVersion, latestUpdate, syncing: eventsSyncing } = useEvents();
   const [ownershipMode, setOwnershipMode] = useState<OwnershipMode>('caught');
   const [usernameInput, setUsernameInput] = useState(route.params?.username ?? '');
   const [activeUsername, setActiveUsername] = useState<string | null>(null);
@@ -420,7 +422,7 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     );
   }, [normalizedDateCaughtDraft, normalizedGenderDraft, selectedInstance]);
 
-  const loadCollection = async () => {
+  const loadCollection = useCallback(async () => {
     setLoading(true);
     setError(null);
     setInstancesMap({});
@@ -480,7 +482,27 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     } finally {
       setLoading(false);
     }
-  };
+  }, [usernameInput, user?.user_id, user?.username]);
+
+  useEffect(() => {
+    if (eventVersion === 0) return;
+    if (!latestUpdate) return;
+    const hasInstanceDelta =
+      Object.keys(latestUpdate.pokemon).length > 0 ||
+      Object.keys(latestUpdate.relatedInstances).length > 0;
+    if (!hasInstanceDelta) return;
+    if (!activeUsername || !isOwnCollection || loading || syncing || eventsSyncing) return;
+    void loadCollection();
+  }, [
+    activeUsername,
+    eventVersion,
+    eventsSyncing,
+    isOwnCollection,
+    latestUpdate,
+    loadCollection,
+    loading,
+    syncing,
+  ]);
 
   const updateInstanceAndSync = async (
     instanceId: string,

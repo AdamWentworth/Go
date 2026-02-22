@@ -1,7 +1,7 @@
 import { buildUrl } from '@pokemongonexus/shared-contracts/common';
 import { locationContract } from '@pokemongonexus/shared-contracts/location';
 import { runtimeConfig } from '../config/runtimeConfig';
-import { parseJsonSafe } from './httpClient';
+import { parseJsonSafe, requestWithPolicy } from './httpClient';
 
 type LocationAutocompleteRow = {
   id?: number;
@@ -35,7 +35,13 @@ export const fetchLocationSuggestions = async (
   const url = buildUrl(runtimeConfig.api.locationApiUrl, locationContract.endpoints.autocomplete, {
     query,
   });
-  const response = await fetch(url);
+  const response = await requestWithPolicy(url, {
+    method: 'GET',
+    timeoutMs: 6_000,
+    retryCount: 1,
+    retryDelayMs: 250,
+    credentials: 'include',
+  });
   if (!response.ok) return [];
   const payload = await parseJsonSafe<LocationAutocompleteRow[]>(response);
   if (!payload || !Array.isArray(payload)) return [];
