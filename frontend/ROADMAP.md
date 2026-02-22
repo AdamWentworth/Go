@@ -237,6 +237,13 @@ Done:
    - prevented invalid or unchanged move submits from dispatching receiver sync updates
    - expanded mutation and screen tests for move save and invalid-negative blocking
 
+27. Mobile pokemon aura/location detail editing baseline shipped:
+   - added typed aura/location mutation adapters (`mutateInstanceAura`, `mutateInstanceLocationDetails`)
+   - expanded collection attributes editor with lucky/shadow/purified controls and location fields
+   - normalized aura semantics to match web behavior (shadow/purified mutually exclusive; shadow clears lucky)
+   - added location validation guardrails (max 255 chars for `location_caught`/`location_card`)
+   - expanded mutation and screen tests for aura normalization and invalid-location blocking
+
 Remaining:
 
 1. Validate first slices on device against live APIs.

@@ -6,11 +6,13 @@ import type { InstancesMap, PokemonInstance } from '@pokemongonexus/shared-contr
 import { useAuth } from '../features/auth/AuthProvider';
 import {
   mutateInstanceAddTag,
+  mutateInstanceAura,
   mutateInstanceBattleStats,
   mutateInstanceCaughtDetails,
   mutateInstanceClearTags,
   mutateInstanceFavorite,
   mutateInstanceFusion,
+  mutateInstanceLocationDetails,
   mutateInstanceMega,
   mutateInstanceMostWanted,
   mutateInstanceMoves,
@@ -46,6 +48,7 @@ const MAX_IV = 15;
 const MIN_LEVEL = 1;
 const MAX_LEVEL = 50;
 const DATE_CAUGHT_FORMAT = 'YYYY-MM-DD';
+const MAX_LOCATION_FIELD_LENGTH = 255;
 type EditorSection = (typeof EDITOR_SECTIONS)[number];
 
 const summarize = (items: InstanceListItem[]) => {
@@ -135,6 +138,11 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const [chargedMove2IdDraft, setChargedMove2IdDraft] = useState('');
   const [genderDraft, setGenderDraft] = useState('');
   const [dateCaughtDraft, setDateCaughtDraft] = useState('');
+  const [isLuckyDraft, setIsLuckyDraft] = useState(false);
+  const [isShadowDraft, setIsShadowDraft] = useState(false);
+  const [isPurifiedDraft, setIsPurifiedDraft] = useState(false);
+  const [locationCaughtDraft, setLocationCaughtDraft] = useState('');
+  const [locationCardDraft, setLocationCardDraft] = useState('');
   const [megaFormDraft, setMegaFormDraft] = useState('');
   const [fusionFormDraft, setFusionFormDraft] = useState('');
   const [tagBucketDraft, setTagBucketDraft] = useState<'caught' | 'trade' | 'wanted'>('caught');
@@ -303,6 +311,44 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     selectedInstance,
   ]);
 
+  const normalizedLocationCaughtDraft = useMemo(
+    () => locationCaughtDraft.trim(),
+    [locationCaughtDraft],
+  );
+  const normalizedLocationCardDraft = useMemo(
+    () => locationCardDraft.trim(),
+    [locationCardDraft],
+  );
+
+  const auraUnchanged = useMemo(() => {
+    if (!selectedInstance) return true;
+    return (
+      Boolean(selectedInstance.lucky) === isLuckyDraft &&
+      Boolean(selectedInstance.shadow) === isShadowDraft &&
+      Boolean(selectedInstance.purified) === isPurifiedDraft
+    );
+  }, [isLuckyDraft, isPurifiedDraft, isShadowDraft, selectedInstance]);
+
+  const locationValidationError = useMemo(() => {
+    if (normalizedLocationCaughtDraft.length > MAX_LOCATION_FIELD_LENGTH) {
+      return `Location caught must be ${MAX_LOCATION_FIELD_LENGTH} characters or fewer.`;
+    }
+    if (normalizedLocationCardDraft.length > MAX_LOCATION_FIELD_LENGTH) {
+      return `Location card must be ${MAX_LOCATION_FIELD_LENGTH} characters or fewer.`;
+    }
+    return null;
+  }, [normalizedLocationCardDraft, normalizedLocationCaughtDraft]);
+
+  const locationUnchanged = useMemo(() => {
+    if (!selectedInstance) return true;
+    const currentLocationCaught = (selectedInstance.location_caught ?? '').trim();
+    const currentLocationCard = (selectedInstance.location_card ?? '').trim();
+    return (
+      currentLocationCaught === normalizedLocationCaughtDraft &&
+      currentLocationCard === normalizedLocationCardDraft
+    );
+  }, [normalizedLocationCardDraft, normalizedLocationCaughtDraft, selectedInstance]);
+
   const caughtDetailsValidationError = useMemo(() => {
     if (normalizedGenderDraft && !GENDER_OPTIONS.includes(normalizedGenderDraft as (typeof GENDER_OPTIONS)[number])) {
       return `Gender must be one of: ${GENDER_OPTIONS.join(', ')}.`;
@@ -340,6 +386,11 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     setChargedMove2IdDraft('');
     setGenderDraft('');
     setDateCaughtDraft('');
+    setIsLuckyDraft(false);
+    setIsShadowDraft(false);
+    setIsPurifiedDraft(false);
+    setLocationCaughtDraft('');
+    setLocationCardDraft('');
     setMegaFormDraft('');
     setFusionFormDraft('');
     setTagBucketDraft('caught');
@@ -535,6 +586,36 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     );
   };
 
+  const saveAura = async () => {
+    if (!selectedInstanceId) return;
+    if (auraUnchanged) return;
+    setError(null);
+    await updateInstanceAndSync(selectedInstanceId, (instance) =>
+      mutateInstanceAura(instance, {
+        lucky: isLuckyDraft,
+        shadow: isShadowDraft,
+        purified: isPurifiedDraft,
+      }),
+    );
+  };
+
+  const saveLocationDetails = async () => {
+    if (!selectedInstanceId) return;
+    if (locationValidationError) {
+      setError(locationValidationError);
+      return;
+    }
+    if (locationUnchanged) return;
+    setError(null);
+    await updateInstanceAndSync(selectedInstanceId, (instance) =>
+      mutateInstanceLocationDetails(instance, {
+        locationCaught:
+          normalizedLocationCaughtDraft.length > 0 ? normalizedLocationCaughtDraft : null,
+        locationCard: normalizedLocationCardDraft.length > 0 ? normalizedLocationCardDraft : null,
+      }),
+    );
+  };
+
   const applyMegaToggle = async () => {
     if (!selectedInstanceId || !selectedInstance) return;
     const nextEnabled = !Boolean(selectedInstance.is_mega || selectedInstance.mega);
@@ -707,6 +788,11 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     setChargedMove2IdDraft(String(selected?.charged_move2_id ?? ''));
                     setGenderDraft(String(selected?.gender ?? ''));
                     setDateCaughtDraft(String(selected?.date_caught ?? ''));
+                    setIsLuckyDraft(Boolean(selected?.lucky));
+                    setIsShadowDraft(Boolean(selected?.shadow));
+                    setIsPurifiedDraft(Boolean(selected?.purified));
+                    setLocationCaughtDraft(String(selected?.location_caught ?? ''));
+                    setLocationCardDraft(String(selected?.location_card ?? ''));
                     setMegaFormDraft(String(selected?.mega_form ?? ''));
                     setFusionFormDraft(String(selected?.fusion_form ?? ''));
                     setTagBucketDraft('caught');
@@ -745,7 +831,13 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
             moves fast={String(selectedInstance.fast_move_id ?? '-')}, c1={String(selectedInstance.charged_move1_id ?? '-')}, c2={String(selectedInstance.charged_move2_id ?? '-')}
           </Text>
           <Text style={commonStyles.caption}>
+            lucky={String(Boolean(selectedInstance.lucky))}, shadow={String(Boolean(selectedInstance.shadow))}, purified={String(Boolean(selectedInstance.purified))}
+          </Text>
+          <Text style={commonStyles.caption}>
             gender={String(selectedInstance.gender ?? '-')}, date_caught={String(selectedInstance.date_caught ?? '-')}
+          </Text>
+          <Text style={commonStyles.caption}>
+            location_caught={String(selectedInstance.location_caught ?? '-')}, location_card={String(selectedInstance.location_card ?? '-')}
           </Text>
           <Text style={commonStyles.caption}>
             mega={String(Boolean(selectedInstance.mega || selectedInstance.is_mega))} ({String(selectedInstance.mega_form ?? '-')})
@@ -823,6 +915,12 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                   </Text>
                   {movesValidationError ? (
                     <Text style={commonStyles.error}>{movesValidationError}</Text>
+                  ) : null}
+                  <Text style={commonStyles.hint}>
+                    Aura status: purified and shadow are mutually exclusive.
+                  </Text>
+                  {locationValidationError ? (
+                    <Text style={commonStyles.error}>{locationValidationError}</Text>
                   ) : null}
                   <View style={commonStyles.actions}>
                     <Button
@@ -925,6 +1023,63 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     title="Save Moves"
                     onPress={() => void saveMoves()}
                     disabled={syncing || movesUnchanged || Boolean(movesValidationError)}
+                  />
+
+                  <Text style={commonStyles.caption}>Aura</Text>
+                  <View style={commonStyles.actions}>
+                    <Button
+                      title={isLuckyDraft ? 'Unset Lucky' : 'Set Lucky'}
+                      onPress={() => setIsLuckyDraft((prev) => !prev)}
+                      disabled={syncing || isShadowDraft}
+                    />
+                    <Button
+                      title={isShadowDraft ? 'Unset Shadow' : 'Set Shadow'}
+                      onPress={() => {
+                        setIsShadowDraft((prev) => {
+                          const next = !prev;
+                          if (next) {
+                            setIsPurifiedDraft(false);
+                            setIsLuckyDraft(false);
+                          }
+                          return next;
+                        });
+                      }}
+                      disabled={syncing}
+                    />
+                    <Button
+                      title={isPurifiedDraft ? 'Unset Purified' : 'Set Purified'}
+                      onPress={() => {
+                        setIsPurifiedDraft((prev) => {
+                          const next = !prev;
+                          if (next) setIsShadowDraft(false);
+                          return next;
+                        });
+                      }}
+                      disabled={syncing}
+                    />
+                  </View>
+                  <Button
+                    title="Save Aura"
+                    onPress={() => void saveAura()}
+                    disabled={syncing || auraUnchanged}
+                  />
+
+                  <TextInput
+                    placeholder="Location Caught"
+                    value={locationCaughtDraft}
+                    onChangeText={setLocationCaughtDraft}
+                    style={commonStyles.input}
+                  />
+                  <TextInput
+                    placeholder="Location Card"
+                    value={locationCardDraft}
+                    onChangeText={setLocationCardDraft}
+                    style={commonStyles.input}
+                  />
+                  <Button
+                    title="Save Location Details"
+                    onPress={() => void saveLocationDetails()}
+                    disabled={syncing || locationUnchanged || Boolean(locationValidationError)}
                   />
 
                   <Text style={commonStyles.caption}>Gender</Text>

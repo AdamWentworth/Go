@@ -3,6 +3,8 @@ import {
   mutateInstanceFavorite,
   mutateInstanceBattleStats,
   mutateInstanceCaughtDetails,
+  mutateInstanceAura,
+  mutateInstanceLocationDetails,
   mutateInstanceMoves,
   mutateInstanceFusion,
   mutateInstanceMega,
@@ -175,46 +177,88 @@ describe('instanceMutations', () => {
     expect(next.last_update).toBe(110);
   });
 
+  it('normalizes aura mutations safely', () => {
+    const purified = mutateInstanceAura(
+      makeBaseInstance(),
+      {
+        lucky: true,
+        shadow: true,
+        purified: true,
+      },
+      111,
+    );
+    expect(purified.shadow).toBe(false);
+    expect(purified.purified).toBe(true);
+    expect(purified.lucky).toBe(true);
+
+    const shadow = mutateInstanceAura(
+      makeBaseInstance(),
+      {
+        lucky: true,
+        shadow: true,
+        purified: false,
+      },
+      112,
+    );
+    expect(shadow.shadow).toBe(true);
+    expect(shadow.purified).toBe(false);
+    expect(shadow.lucky).toBe(false);
+  });
+
+  it('applies location-detail mutations safely', () => {
+    const next = mutateInstanceLocationDetails(
+      makeBaseInstance(),
+      {
+        locationCaught: 'Seattle, WA',
+        locationCard: '1234',
+      },
+      113,
+    );
+    expect(next.location_caught).toBe('Seattle, WA');
+    expect(next.location_card).toBe('1234');
+    expect(next.last_update).toBe(113);
+  });
+
   it('applies mega/fusion/tag mutations safely', () => {
-    const megaEnabled = mutateInstanceMega(makeBaseInstance(), true, 'mega_x', 111);
+    const megaEnabled = mutateInstanceMega(makeBaseInstance(), true, 'mega_x', 114);
     expect(megaEnabled.mega).toBe(true);
     expect(megaEnabled.is_mega).toBe(true);
     expect(megaEnabled.mega_form).toBe('mega_x');
 
-    const megaDisabled = mutateInstanceMega(megaEnabled, false, null, 112);
+    const megaDisabled = mutateInstanceMega(megaEnabled, false, null, 115);
     expect(megaDisabled.mega).toBe(false);
     expect(megaDisabled.is_mega).toBe(false);
     expect(megaDisabled.mega_form).toBeNull();
 
-    const fusionEnabled = mutateInstanceFusion(makeBaseInstance(), true, 'dawn_wings', 113);
+    const fusionEnabled = mutateInstanceFusion(makeBaseInstance(), true, 'dawn_wings', 116);
     expect(fusionEnabled.is_fused).toBe(true);
     expect(fusionEnabled.fusion_form).toBe('dawn_wings');
     expect(fusionEnabled.fusion).toEqual({});
 
-    const fusionDisabled = mutateInstanceFusion(fusionEnabled, false, null, 114);
+    const fusionDisabled = mutateInstanceFusion(fusionEnabled, false, null, 117);
     expect(fusionDisabled.is_fused).toBe(false);
     expect(fusionDisabled.fusion_form).toBeNull();
     expect(fusionDisabled.fusion).toBeNull();
 
-    const tags1 = mutateInstanceAddTag(makeBaseInstance(), 'caught', 'Great League', 115);
+    const tags1 = mutateInstanceAddTag(makeBaseInstance(), 'caught', 'Great League', 118);
     expect(tags1.caught_tags).toEqual(['Great League']);
 
-    const tags2 = mutateInstanceAddTag(tags1, 'caught', 'great league', 116);
+    const tags2 = mutateInstanceAddTag(tags1, 'caught', 'great league', 119);
     expect(tags2.caught_tags).toEqual(['Great League']);
 
-    const tags3 = mutateInstanceAddTag(tags2, 'trade', 'regional', 117);
+    const tags3 = mutateInstanceAddTag(tags2, 'trade', 'regional', 120);
     expect(tags3.trade_tags).toEqual(['regional']);
 
-    const tags4 = mutateInstanceRemoveTag(tags3, 'caught', 'great league', 118);
+    const tags4 = mutateInstanceRemoveTag(tags3, 'caught', 'great league', 121);
     expect(tags4.caught_tags).toEqual([]);
 
-    const tags5 = mutateInstanceRemoveTag(tags4, 'trade', 'Regional', 119);
+    const tags5 = mutateInstanceRemoveTag(tags4, 'trade', 'Regional', 122);
     expect(tags5.trade_tags).toEqual([]);
 
-    const tags6 = mutateInstanceSetTags(tags5, 'wanted', ['PVP', 'pvp', '  raid  '], 120);
+    const tags6 = mutateInstanceSetTags(tags5, 'wanted', ['PVP', 'pvp', '  raid  '], 123);
     expect(tags6.wanted_tags).toEqual(['PVP', 'raid']);
 
-    const tags7 = mutateInstanceClearTags(tags6, 'wanted', 121);
+    const tags7 = mutateInstanceClearTags(tags6, 'wanted', 124);
     expect(tags7.wanted_tags).toEqual([]);
   });
 

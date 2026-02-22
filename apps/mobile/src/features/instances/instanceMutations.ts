@@ -17,6 +17,15 @@ export type InstanceMovesMutation = {
   chargedMove1Id: number | null;
   chargedMove2Id: number | null;
 };
+export type InstanceAuraMutation = {
+  lucky: boolean;
+  shadow: boolean;
+  purified: boolean;
+};
+export type InstanceLocationDetailsMutation = {
+  locationCaught: string | null;
+  locationCard: string | null;
+};
 
 const withTimestamp = (instance: PokemonInstance, timestamp: number): PokemonInstance => ({
   ...instance,
@@ -161,6 +170,41 @@ export const mutateInstanceMoves = (
       fast_move_id: moves.fastMoveId,
       charged_move1_id: moves.chargedMove1Id,
       charged_move2_id: moves.chargedMove2Id,
+    },
+    timestamp,
+  );
+
+export const mutateInstanceAura = (
+  instance: PokemonInstance,
+  aura: InstanceAuraMutation,
+  timestamp = Date.now(),
+): PokemonInstance => {
+  const normalizedPurified = aura.purified ? true : false;
+  const normalizedShadow = normalizedPurified ? false : aura.shadow;
+  const normalizedPurifiedAfterShadow = normalizedShadow ? false : normalizedPurified;
+  const normalizedLucky = normalizedShadow ? false : aura.lucky;
+
+  return withTimestamp(
+    {
+      ...instance,
+      lucky: normalizedLucky,
+      shadow: normalizedShadow,
+      purified: normalizedPurifiedAfterShadow,
+    },
+    timestamp,
+  );
+};
+
+export const mutateInstanceLocationDetails = (
+  instance: PokemonInstance,
+  details: InstanceLocationDetailsMutation,
+  timestamp = Date.now(),
+): PokemonInstance =>
+  withTimestamp(
+    {
+      ...instance,
+      location_caught: details.locationCaught,
+      location_card: details.locationCard,
     },
     timestamp,
   );

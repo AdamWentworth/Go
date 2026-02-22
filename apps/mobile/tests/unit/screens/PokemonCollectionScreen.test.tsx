@@ -777,4 +777,104 @@ describe('PokemonCollectionScreen', () => {
     });
     expect(mockedSendPokemonUpdate).not.toHaveBeenCalled();
   });
+
+  it('saves aura status with normalized shadow/purified behavior', async () => {
+    mockedFetchUserOverview.mockResolvedValue({
+      user: { user_id: 'u1', username: 'ash' },
+      pokemon_instances: {
+        i1: {
+          instance_id: 'i1',
+          variant_id: 'v-001',
+          pokemon_id: 1,
+          nickname: null,
+          lucky: true,
+          shadow: false,
+          purified: false,
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          most_wanted: false,
+          favorite: false,
+          registered: true,
+          date_added: '2026-01-01T00:00:00Z',
+          last_update: 1,
+        },
+      },
+      trades: {},
+      related_instances: {},
+      registrations: {},
+    } as never);
+    mockedSendPokemonUpdate.mockResolvedValue({});
+
+    render(
+      <PokemonCollectionScreen navigation={baseNavigation as never} route={route as never} />,
+    );
+    fireEvent.press(screen.getByText('Load Collection'));
+    await waitFor(() => {
+      expect(screen.getByText('v-001')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('v-001'));
+    fireEvent.press(screen.getByText('attributes'));
+    fireEvent.press(screen.getByText('Set Shadow'));
+    fireEvent.press(screen.getByText('Save Aura'));
+
+    await waitFor(() => {
+      expect(mockedSendPokemonUpdate).toHaveBeenCalled();
+    });
+    expect(mockedSendPokemonUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: 'i1',
+        shadow: true,
+        purified: false,
+        lucky: false,
+      }),
+    );
+  });
+
+  it('blocks location detail save when location text exceeds max length', async () => {
+    mockedFetchUserOverview.mockResolvedValue({
+      user: { user_id: 'u1', username: 'ash' },
+      pokemon_instances: {
+        i1: {
+          instance_id: 'i1',
+          variant_id: 'v-001',
+          pokemon_id: 1,
+          nickname: null,
+          location_caught: null,
+          location_card: null,
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          most_wanted: false,
+          favorite: false,
+          registered: true,
+          date_added: '2026-01-01T00:00:00Z',
+          last_update: 1,
+        },
+      },
+      trades: {},
+      related_instances: {},
+      registrations: {},
+    } as never);
+    mockedSendPokemonUpdate.mockResolvedValue({});
+
+    render(
+      <PokemonCollectionScreen navigation={baseNavigation as never} route={route as never} />,
+    );
+    fireEvent.press(screen.getByText('Load Collection'));
+    await waitFor(() => {
+      expect(screen.getByText('v-001')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('v-001'));
+    fireEvent.press(screen.getByText('attributes'));
+    fireEvent.changeText(screen.getByPlaceholderText('Location Caught'), 'x'.repeat(256));
+    fireEvent.press(screen.getByText('Save Location Details'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Location caught must be 255 characters or fewer.')).toBeTruthy();
+    });
+    expect(mockedSendPokemonUpdate).not.toHaveBeenCalled();
+  });
 });
