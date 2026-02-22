@@ -1,4 +1,8 @@
-import { requestWithPolicy } from '../../../src/services/httpClient';
+import {
+  getConnectivityState,
+  requestWithPolicy,
+  subscribeConnectivity,
+} from '../../../src/services/httpClient';
 
 jest.mock('@pokemongonexus/shared-contracts/common', () => ({
   buildUrl: (base: string, path: string) => `${base}${path}`,
@@ -62,5 +66,36 @@ describe('httpClient requestWithPolicy', () => {
         timeoutMs: 50,
       }),
     ).rejects.toThrow('Request timed out after 50ms');
+  });
+
+  it('tracks connectivity transitions across failed and successful requests', async () => {
+    const connectivityTimeline: boolean[] = [];
+    const unsubscribe = subscribeConnectivity((state) => {
+      connectivityTimeline.push(state.online);
+    });
+    const fetchMock = jest
+      .spyOn(globalThis, 'fetch')
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce(makeResponse(200, { ok: true }));
+
+    await expect(
+      requestWithPolicy('https://example.com/offline', {
+        method: 'GET',
+        retryCount: 0,
+      }),
+    ).rejects.toThrow('offline');
+
+    expect(getConnectivityState().online).toBe(false);
+
+    await requestWithPolicy('https://example.com/recovered', {
+      method: 'GET',
+      retryCount: 0,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(getConnectivityState().online).toBe(true);
+    expect(connectivityTimeline).toContain(false);
+    expect(connectivityTimeline).toContain(true);
+    unsubscribe();
   });
 });

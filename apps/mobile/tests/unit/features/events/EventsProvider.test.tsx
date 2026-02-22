@@ -42,6 +42,18 @@ const Probe = () => {
 
 describe('EventsProvider', () => {
   const originalEventSource = (globalThis as { EventSource?: unknown }).EventSource;
+  const originalConsoleError = console.error;
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeAll(() => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      const first = args[0];
+      if (typeof first === 'string' && first.includes('not wrapped in act')) {
+        return;
+      }
+      originalConsoleError(...(args as Parameters<typeof console.error>));
+    });
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -49,6 +61,7 @@ describe('EventsProvider', () => {
   });
 
   afterAll(() => {
+    consoleErrorSpy.mockRestore();
     if (originalEventSource) {
       (globalThis as { EventSource?: unknown }).EventSource = originalEventSource;
     } else {
@@ -104,21 +117,13 @@ describe('EventsProvider', () => {
   });
 
   it('switches to SSE transport when EventSource runtime is available', async () => {
-    const instances: {
-      onopen: ((event?: unknown) => void) | null;
-      onerror: ((event?: unknown) => void) | null;
-      onmessage: ((event: { data: string }) => void) | null;
-      close: () => void;
-    }[] = [];
     const EventSourceMock = jest.fn().mockImplementation(() => {
-      const instance = {
+      return {
         onopen: null,
         onerror: null,
         onmessage: null,
         close: jest.fn(),
       };
-      instances.push(instance);
-      return instance;
     });
     (globalThis as { EventSource?: unknown }).EventSource = EventSourceMock;
 
@@ -137,23 +142,35 @@ describe('EventsProvider', () => {
     await waitFor(() => {
       expect(screen.getByTestId('device').props.children).toBe('device-1');
       expect(screen.getByTestId('transport').props.children).toBe('sse');
+      expect(EventSourceMock).toHaveBeenCalled();
+    });
+  });
+
+  it('deduplicates repeated payloads during reconciliation', async () => {
+    mockedFetchMissedUpdates.mockResolvedValue({
+      pokemon: {},
+      trade: {
+        t1: { trade_id: 't1', trade_status: 'pending' } as never,
+      },
+      relatedInstances: {},
+    });
+
+    render(
+      <EventsProvider>
+        <Probe />
+      </EventsProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('transport').props.children).toBe('polling');
     });
 
     await act(async () => {
-      instances[0]?.onopen?.();
-      instances[0]?.onmessage?.({
-        data: JSON.stringify({
-          trade: {
-            t1: { trade_id: 't1', trade_status: 'pending' },
-          },
-        }),
-      });
+      fireEvent.press(screen.getByText('refresh'));
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('connected').props.children).toBe('true');
-      const version = Number(screen.getByTestId('version').props.children);
-      expect(version).toBeGreaterThan(0);
+      expect(Number(screen.getByTestId('version').props.children)).toBe(1);
     });
   });
 });

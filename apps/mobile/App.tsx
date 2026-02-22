@@ -1,6 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, View } from 'react-native';
+import { NetworkStatusBanner } from './src/components/NetworkStatusBanner';
 import { AuthProvider } from './src/features/auth/AuthProvider';
 import { EventsProvider } from './src/features/events/EventsProvider';
+import { NetworkProvider } from './src/features/network/NetworkProvider';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { initializeObservability } from './src/observability/bootstrap';
 
@@ -9,10 +12,21 @@ initializeObservability();
 export default function App() {
   return (
     <AuthProvider>
-      <EventsProvider>
-        <StatusBar style="auto" />
-        <AppNavigator />
-      </EventsProvider>
+      <NetworkProvider>
+        <EventsProvider>
+          <StatusBar style="auto" />
+          <View style={styles.appShell}>
+            <AppNavigator />
+            <NetworkStatusBanner />
+          </View>
+        </EventsProvider>
+      </NetworkProvider>
     </AuthProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  appShell: {
+    flex: 1,
+  },
+});

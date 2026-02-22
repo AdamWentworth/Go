@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { OwnershipMode } from '@pokemongonexus/shared-contracts/domain';
@@ -53,6 +53,7 @@ const MIN_MAX_LEVEL = 0;
 const MAX_MAX_LEVEL = 3;
 const DATE_CAUGHT_FORMAT = 'YYYY-MM-DD';
 const MAX_LOCATION_FIELD_LENGTH = 255;
+const EVENT_REFRESH_COOLDOWN_MS = 1500;
 type EditorSection = (typeof EDITOR_SECTIONS)[number];
 
 const summarize = (items: InstanceListItem[]) => {
@@ -155,6 +156,7 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const [fusionFormDraft, setFusionFormDraft] = useState('');
   const [tagBucketDraft, setTagBucketDraft] = useState<'caught' | 'trade' | 'wanted'>('caught');
   const [tagDraft, setTagDraft] = useState('');
+  const lastEventRefreshAtRef = useRef(0);
 
   const items = useMemo(() => toInstanceListItems(instancesMap), [instancesMap]);
 
@@ -492,6 +494,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
       Object.keys(latestUpdate.relatedInstances).length > 0;
     if (!hasInstanceDelta) return;
     if (!activeUsername || !isOwnCollection || loading || syncing || eventsSyncing) return;
+    const now = Date.now();
+    if (now - lastEventRefreshAtRef.current < EVENT_REFRESH_COOLDOWN_MS) return;
+    lastEventRefreshAtRef.current = now;
     void loadCollection();
   }, [
     activeUsername,

@@ -58,6 +58,24 @@ const BOOTSTRAP_LOOKBACK_MS = 5 * 60_000;
 const hasEventSourceRuntime = (): boolean =>
   typeof (globalThis as { EventSource?: unknown }).EventSource === 'function';
 
+const stableSerialize = (value: unknown): string => {
+  if (value === null || value === undefined) return 'null';
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => stableSerialize(entry)).join(',')}]`;
+  }
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const keys = Object.keys(record).sort();
+    return `{${keys.map((key) => `${JSON.stringify(key)}:${stableSerialize(record[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+};
+
+const buildEnvelopeFingerprint = (updates: NormalizedEventsEnvelope): string =>
+  stableSerialize(updates);
+
 type EventSourceLike = {
   onopen: ((event?: unknown) => void) | null;
   onerror: ((event?: unknown) => void) | null;
@@ -91,8 +109,23 @@ export const EventsProvider = ({ children }: PropsWithChildren) => {
   const [error, setError] = useState<string | null>(null);
   const pollingRef = useRef(false);
   const lastTimestampRef = useRef<number>(Date.now());
+  const lastDeltaFingerprintRef = useRef<string | null>(null);
   const sseRef = useRef<EventSourceLike | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(
+    () => () => {
+      mountedRef.current = false;
+    },
+    [],
+  );
+
+  const runIfMounted = useCallback((callback: () => void) => {
+    if (mountedRef.current) {
+      callback();
+    }
+  }, []);
 
   const closeStream = useCallback(() => {
     if (sseRef.current) {
@@ -103,25 +136,38 @@ export const EventsProvider = ({ children }: PropsWithChildren) => {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
     }
-    setConnected(false);
-  }, []);
+    runIfMounted(() => {
+      setConnected(false);
+    });
+  }, [runIfMounted]);
 
   const applyIncomingUpdates = useCallback(async (updates: NormalizedEventsEnvelope): Promise<void> => {
     const now = Date.now();
     lastTimestampRef.current = now;
-    setLastSyncAt(now);
+    runIfMounted(() => {
+      setLastSyncAt(now);
+    });
     await saveLastEventsTimestamp(now);
 
     if (hasEventsDelta(updates)) {
-      setLatestUpdate(updates);
-      setEventVersion((version) => version + 1);
+      const fingerprint = buildEnvelopeFingerprint(updates);
+      if (lastDeltaFingerprintRef.current === fingerprint) {
+        return;
+      }
+      lastDeltaFingerprintRef.current = fingerprint;
+      runIfMounted(() => {
+        setLatestUpdate(updates);
+        setEventVersion((version) => version + 1);
+      });
     }
-  }, []);
+  }, [runIfMounted]);
 
   const connectStream = useCallback((): boolean => {
     if (!deviceId || status !== 'authenticated') return false;
     if (!hasEventSourceRuntime()) {
-      setTransport('polling');
+      runIfMounted(() => {
+        setTransport('polling');
+      });
       return false;
     }
 
@@ -130,15 +176,21 @@ export const EventsProvider = ({ children }: PropsWithChildren) => {
       const EventSourceCtor = (globalThis as { EventSource: new (url: string, options?: { withCredentials?: boolean }) => EventSourceLike }).EventSource;
       const source = new EventSourceCtor(buildSseUrl(deviceId), { withCredentials: true });
       sseRef.current = source;
-      setTransport('sse');
+      runIfMounted(() => {
+        setTransport('sse');
+      });
 
       source.onopen = () => {
-        setConnected(true);
-        setError(null);
+        runIfMounted(() => {
+          setConnected(true);
+          setError(null);
+        });
         logDebug('events', 'SSE stream connected');
       };
       source.onerror = () => {
-        setConnected(false);
+        runIfMounted(() => {
+          setConnected(false);
+        });
         logWarn('events', 'SSE stream error; scheduling reconnect');
         closeStream();
         reconnectTimerRef.current = setTimeout(() => {
@@ -161,11 +213,13 @@ export const EventsProvider = ({ children }: PropsWithChildren) => {
       };
       return true;
     } catch (nextError) {
-      setTransport('polling');
+      runIfMounted(() => {
+        setTransport('polling');
+      });
       logWarn('events', 'SSE unavailable, falling back to polling', nextError);
       return false;
     }
-  }, [applyIncomingUpdates, closeStream, deviceId, status]);
+  }, [applyIncomingUpdates, closeStream, deviceId, runIfMounted, status]);
 
   const bootstrapSession = useCallback(async (): Promise<void> => {
     const resolvedDeviceId = await getOrCreateDeviceId();
@@ -183,44 +237,57 @@ export const EventsProvider = ({ children }: PropsWithChildren) => {
     if (pollingRef.current || status !== 'authenticated') return;
     if (!deviceId) return;
     pollingRef.current = true;
-    setSyncing(true);
-    setError(null);
+    runIfMounted(() => {
+      setSyncing(true);
+      setError(null);
+    });
 
     try {
       const timestamp = lastTimestampRef.current;
       const updates = await fetchMissedUpdates(deviceId, timestamp);
-      setConnected(true);
+      runIfMounted(() => {
+        setConnected(true);
+      });
       if (updates) {
         await applyIncomingUpdates(updates);
       }
     } catch (nextError) {
-      setConnected(false);
-      setError(nextError instanceof Error ? nextError.message : 'Failed to sync realtime updates.');
+      runIfMounted(() => {
+        setConnected(false);
+        setError(nextError instanceof Error ? nextError.message : 'Failed to sync realtime updates.');
+      });
     } finally {
-      setSyncing(false);
+      runIfMounted(() => {
+        setSyncing(false);
+      });
       pollingRef.current = false;
     }
-  }, [applyIncomingUpdates, deviceId, status]);
+  }, [applyIncomingUpdates, deviceId, runIfMounted, status]);
 
   useEffect(() => {
     if (status !== 'authenticated') {
       closeStream();
-      setLatestUpdate(null);
-      setSyncing(false);
-      setError(null);
-      setConnected(false);
-      setTransport('polling');
+      runIfMounted(() => {
+        setLatestUpdate(null);
+        setSyncing(false);
+        setError(null);
+        setConnected(false);
+        setTransport('polling');
+      });
+      lastDeltaFingerprintRef.current = null;
       return;
     }
 
     void bootstrapSession();
-  }, [bootstrapSession, closeStream, status]);
+  }, [bootstrapSession, closeStream, runIfMounted, status]);
 
   useEffect(() => {
     if (status !== 'authenticated' || !deviceId) return;
     const streamConnected = connectStream();
     if (!streamConnected) {
-      setTransport('polling');
+      runIfMounted(() => {
+        setTransport('polling');
+      });
     }
     void refreshNow();
     const id = setInterval(() => {
@@ -234,7 +301,7 @@ export const EventsProvider = ({ children }: PropsWithChildren) => {
       clearInterval(id);
       closeStream();
     };
-  }, [closeStream, connectStream, connected, deviceId, refreshNow, status, transport]);
+  }, [closeStream, connectStream, connected, deviceId, refreshNow, runIfMounted, status, transport]);
 
   const value = useMemo<EventsContextValue>(
     () => ({

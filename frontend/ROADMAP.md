@@ -328,16 +328,33 @@ Done:
    - checklist covers auth, collection/search/trade flows, realtime behavior, and network resilience recovery
    - aligns validation expectations with current hybrid realtime architecture
 
+42. Mobile app-wide connectivity recovery UX shipped:
+   - added transport-level connectivity state in mobile `httpClient` (online/offline, last check, last error)
+   - added `NetworkProvider` to surface connectivity state across the app shell
+   - added global `NetworkStatusBanner` with explicit `Retry Connection` action
+   - wired app shell (`App.tsx`) so offline/degraded state is visible across all routes
+   - added unit coverage for connectivity transitions and banner behavior
+
+43. Events reconciliation hardening shipped:
+   - added payload fingerprint deduplication in `EventsProvider` to prevent duplicate version bumps
+   - added event-driven refresh cooldowns in `TradesScreen` and `PokemonCollectionScreen` to reduce burst reloads
+   - retained hybrid SSE + polling transport and mutation-safety guards
+   - expanded provider tests to lock dedupe behavior under repeated payload refreshes
+
+44. Search edge-network recovery UX shipped:
+   - added explicit `Retry Search` recovery path when search requests fail
+   - preserved current query/filter state for immediate retry flows
+   - added screen-level coverage for fail-then-retry behavior
+
 Remaining:
 
 1. Validate first slices on real Android/iOS devices against live APIs.
-2. Continue UX polish for edge network/error paths on mobile slices.
-3. Close functional parity gaps for:
+2. Close functional parity gaps for:
    - final pokemon workflow polish (advanced interaction parity beyond current sectioned editor)
    - full search parity finish (advanced map interactions + remaining web-specific advanced interactions)
-4. Optional hardening follow-up:
+3. Optional hardening follow-up:
    - enrich SSE stream auth to avoid query fallback when a header-capable SSE client is adopted
-   - add deeper app-wide offline banner patterns beyond Home-screen sync status
+   - integrate production crash pipeline (Sentry/Crashlytics) on top of current observability bootstrap
 
 ## 5) Parity Snapshot (Web -> Mobile)
 
@@ -500,7 +517,7 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
 
 1. Execute real-device validation (`android` and `ios`) against live services with a short pass/fail checklist.
 2. Close remaining pokemon/search parity UX gaps with native-first interaction polish.
-3. Execute platform hardening follow-up (offline UX consistency + deeper event reconciliation polish).
+3. Execute crash-pipeline integration (Sentry/Crashlytics) and final SSE auth hardening follow-up.
 
 ## 10) Definition of Success
 
@@ -525,7 +542,7 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
    - optional final pass for fully native form affordances (inline field focus helpers)
 5. Platform hardening:
    - real device validation on Android and iOS against live services
-   - resilience baseline shipped (timeouts/retries + policy-based transport); remaining: offline banner and recovery UX
+   - resilience baseline shipped (timeouts/retries + policy-based transport + app-wide offline banner/retry UX)
    - observability bootstrap shipped; remaining: production crash pipeline integration
-   - hybrid realtime transport shipped (SSE where available + polling fallback); remaining: deeper event reconciliation
+   - hybrid realtime transport + dedupe/reload-throttle reconciliation shipped; remaining: SSE auth hardening
 

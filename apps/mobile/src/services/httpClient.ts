@@ -26,6 +26,54 @@ export class HttpError extends Error {
   }
 }
 
+export type ConnectivityState = {
+  online: boolean;
+  lastChangedAt: number;
+  lastCheckAt: number | null;
+  lastError: string | null;
+};
+
+type ConnectivityListener = (state: ConnectivityState) => void;
+
+const connectivityListeners = new Set<ConnectivityListener>();
+let connectivityState: ConnectivityState = {
+  online: true,
+  lastChangedAt: Date.now(),
+  lastCheckAt: null,
+  lastError: null,
+};
+
+const emitConnectivityState = (): void => {
+  for (const listener of connectivityListeners) {
+    listener(connectivityState);
+  }
+};
+
+const setConnectivityState = (online: boolean, lastError: string | null): void => {
+  const now = Date.now();
+  const changed =
+    connectivityState.online !== online || connectivityState.lastError !== lastError;
+  connectivityState = {
+    online,
+    lastChangedAt: connectivityState.online === online ? connectivityState.lastChangedAt : now,
+    lastCheckAt: now,
+    lastError,
+  };
+  if (changed) {
+    emitConnectivityState();
+  }
+};
+
+export const getConnectivityState = (): ConnectivityState => connectivityState;
+
+export const subscribeConnectivity = (listener: ConnectivityListener): (() => void) => {
+  connectivityListeners.add(listener);
+  listener(connectivityState);
+  return () => {
+    connectivityListeners.delete(listener);
+  };
+};
+
 const buildUrl = (
   baseUrl: string,
   path: string,
@@ -99,6 +147,7 @@ export const requestWithPolicy = async (
         ...requestInit,
         signal: controller.signal,
       });
+      setConnectivityState(true, null);
 
       if (attempt < retryCount && retryStatusCodes.includes(response.status)) {
         const delayMs = retryDelayMs * 2 ** attempt;
@@ -127,6 +176,7 @@ export const requestWithPolicy = async (
           await wait(delayMs);
           continue;
         }
+        setConnectivityState(false, `Request timed out after ${timeoutMs}ms`);
         throw new Error(`Request timed out after ${timeoutMs}ms`);
       }
 
@@ -141,6 +191,8 @@ export const requestWithPolicy = async (
         await wait(delayMs);
         continue;
       }
+      const message = error instanceof Error ? error.message : 'Request failed';
+      setConnectivityState(false, message);
       throw error;
     } finally {
       clearTimeout(timeout);

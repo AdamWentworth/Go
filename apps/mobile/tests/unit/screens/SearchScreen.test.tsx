@@ -226,4 +226,25 @@ describe('SearchScreen', () => {
 
     expect(screen.getByPlaceholderText('Location name (city, region...)').props.value).toBe('');
   });
+
+  it('offers retry when search request fails', async () => {
+    mockedSearchPokemon.mockRejectedValueOnce(new Error('temporary outage')).mockResolvedValueOnce([
+      { pokemon_id: 7, distance: 4.2, username: 'brock' },
+    ]);
+
+    render(<SearchScreen navigation={baseNavigation as never} route={route as never} />);
+    pressSearchButton();
+
+    await waitFor(() => {
+      expect(screen.getByText('temporary outage')).toBeTruthy();
+      expect(screen.getByText('Retry Search')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('Retry Search'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Results: 1')).toBeTruthy();
+    });
+    expect(mockedSearchPokemon).toHaveBeenCalledTimes(2);
+  });
 });

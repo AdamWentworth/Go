@@ -549,7 +549,12 @@ export const SearchScreen = ({ navigation }: SearchScreenProps) => {
         <Button title="Back" onPress={() => navigation.goBack()} />
       </View>
 
-      {error ? <Text style={commonStyles.error}>{error}</Text> : null}
+      {error ? (
+        <View style={commonStyles.card}>
+          <Text style={commonStyles.error}>{error}</Text>
+          <Button title="Retry Search" onPress={() => void runSearch()} />
+        </View>
+      ) : null}
       {!loading && !error ? (
         <Text style={commonStyles.caption}>
           Query: pokemon_id={queryPreview.pokemon_id}, ownership={queryPreview.ownership}, lat=

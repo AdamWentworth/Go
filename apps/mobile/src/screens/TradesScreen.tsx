@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { PartnerInfo } from '@pokemongonexus/shared-contracts/trades';
@@ -44,6 +44,7 @@ type SyncState = 'idle' | 'success' | 'failed';
 const MAX_ROWS = 80;
 const STATUS_FILTER_ALL = 'all';
 const STATUS_FILTER_PRIORITY = ['proposed', 'pending', 'completed', 'cancelled', 'denied', 'deleted'];
+const EVENT_REFRESH_COOLDOWN_MS = 1500;
 
 const normalizeStatus = (status: unknown): string =>
   typeof status === 'string' ? status.trim().toLowerCase() : '';
@@ -85,6 +86,7 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
   const [revealingTradeId, setRevealingTradeId] = useState<string | null>(null);
   const [partnerRevealError, setPartnerRevealError] = useState<string | null>(null);
   const [revealedPartners, setRevealedPartners] = useState<Record<string, PartnerInfo>>({});
+  const lastEventRefreshAtRef = useRef(0);
 
   const loadTrades = useCallback(async () => {
     setLoading(true);
@@ -124,6 +126,9 @@ export const TradesScreen = ({ navigation }: TradesScreenProps) => {
     if (!latestUpdate) return;
     if (Object.keys(latestUpdate.trade).length === 0) return;
     if (loading || mutationLoading || eventsSyncing) return;
+    const now = Date.now();
+    if (now - lastEventRefreshAtRef.current < EVENT_REFRESH_COOLDOWN_MS) return;
+    lastEventRefreshAtRef.current = now;
     void loadTrades();
   }, [eventVersion, latestUpdate, loading, mutationLoading, eventsSyncing, loadTrades]);
 
