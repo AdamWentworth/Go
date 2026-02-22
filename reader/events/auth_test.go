@@ -72,6 +72,64 @@ func TestVerifyJWT_MissingCookie(t *testing.T) {
 	}
 }
 
+func TestVerifyJWT_ValidAuthorizationHeaderSetsLocals(t *testing.T) {
+	original := jwtSecret
+	defer func() { jwtSecret = original }()
+
+	secret := []byte("test-secret")
+	jwtSecret = secret
+	app := newAuthTestApp()
+
+	claims := AccessTokenClaims{
+		UserID:   "user-456",
+		Username: "misty",
+		DeviceID: "device-auth-header",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+		},
+	}
+	token := signAccessToken(t, secret, claims)
+
+	req := httptest.NewRequest(fiber.MethodGet, "/ok", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("expected %d, got %d", fiber.StatusOK, resp.StatusCode)
+	}
+}
+
+func TestVerifyJWT_ValidQueryTokenSetsLocals(t *testing.T) {
+	original := jwtSecret
+	defer func() { jwtSecret = original }()
+
+	secret := []byte("test-secret")
+	jwtSecret = secret
+	app := newAuthTestApp()
+
+	claims := AccessTokenClaims{
+		UserID:   "user-789",
+		Username: "brock",
+		DeviceID: "device-query",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+		},
+	}
+	token := signAccessToken(t, secret, claims)
+
+	req := httptest.NewRequest(fiber.MethodGet, "/ok?access_token="+token, nil)
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != fiber.StatusOK {
+		t.Fatalf("expected %d, got %d", fiber.StatusOK, resp.StatusCode)
+	}
+}
+
 func TestVerifyJWT_OversizedCookie(t *testing.T) {
 	original := jwtSecret
 	defer func() { jwtSecret = original }()

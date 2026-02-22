@@ -305,14 +305,39 @@ Done:
    - installed global error-handler hook where runtime supports `ErrorUtils`
    - integrated bootstrap into `apps/mobile/App.tsx`
 
+38. Events-service auth interoperability shipped for mobile realtime:
+   - updated `reader/events` JWT middleware to accept access token via cookie, `Authorization: Bearer`, or `access_token` query param
+   - retained existing cookie behavior while enabling mobile-safe non-cookie auth paths
+   - added middleware tests for header/query token acceptance in `reader/events/auth_test.go`
+   - validated events service test suite remains green (`go test ./...` in `reader/events`)
+
+39. Mobile SSE hybrid transport shipped:
+   - `EventsProvider` now attempts SSE stream when runtime provides `EventSource`
+   - SSE URL includes `device_id` and token fallback query for non-cookie clients
+   - added reconnect scheduling and automatic fallback to polling on stream failures
+   - inbound SSE messages now feed the same normalized update pipeline used by polling
+   - added test coverage for SSE-mode activation and message-driven version bumps
+
+40. Mobile sync-status UX + manual recovery shipped:
+   - `HomeScreen` now surfaces realtime transport/status, last sync time, and sync error state
+   - added explicit `Retry Realtime Sync` action for degraded/offline recovery
+   - added screen-level test coverage for realtime status panel behavior
+
+41. Device validation artifact shipped:
+   - added `apps/mobile/DEVICE_VALIDATION_CHECKLIST.md` with Android/iOS live-service smoke criteria
+   - checklist covers auth, collection/search/trade flows, realtime behavior, and network resilience recovery
+   - aligns validation expectations with current hybrid realtime architecture
+
 Remaining:
 
 1. Validate first slices on real Android/iOS devices against live APIs.
-2. Upgrade realtime transport from polling baseline to native SSE transport where feasible.
-3. Continue UX polish for edge network/error paths on mobile slices.
-4. Close functional parity gaps for:
+2. Continue UX polish for edge network/error paths on mobile slices.
+3. Close functional parity gaps for:
    - final pokemon workflow polish (advanced interaction parity beyond current sectioned editor)
    - full search parity finish (advanced map interactions + remaining web-specific advanced interactions)
+4. Optional hardening follow-up:
+   - enrich SSE stream auth to avoid query fallback when a header-capable SSE client is adopted
+   - add deeper app-wide offline banner patterns beyond Home-screen sync status
 
 ## 5) Parity Snapshot (Web -> Mobile)
 
@@ -348,7 +373,7 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
 | `/trades` (read) | Complete | Complete | None |
 | `/trades` (lifecycle) | Full (all actions) | Core + advanced lifecycle actions shipped | None |
 | `/trades` (status views) | Per-status filtered views | Per-status filtered views shipped | None |
-| Real-time sync (SSE) | Complete | Polling + missed-update sync shipped | Native SSE transport upgrade + deeper store-level reconciliation |
+| Real-time sync (SSE) | Complete | Hybrid shipped (SSE where available + polling fallback) | Deeper store-level reconciliation polish |
 | Offline persistence | IndexedDB (6+ stores) | None | Platform storage adapter + sync strategy |
 | Raid calculator | Complete | None | Entire feature |
 | Theme (light/dark) | Complete | Dark only | Light mode + toggle |
@@ -474,8 +499,8 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
 ## 9) Next 3 Iterations (Immediate Plan)
 
 1. Execute real-device validation (`android` and `ios`) against live services with a short pass/fail checklist.
-2. Upgrade mobile realtime transport from polling baseline to SSE-capable transport with reconnect semantics.
-3. Close remaining pokemon/search parity UX gaps with native-first interaction polish.
+2. Close remaining pokemon/search parity UX gaps with native-first interaction polish.
+3. Execute platform hardening follow-up (offline UX consistency + deeper event reconciliation polish).
 
 ## 10) Definition of Success
 
@@ -502,5 +527,5 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
    - real device validation on Android and iOS against live services
    - resilience baseline shipped (timeouts/retries + policy-based transport); remaining: offline banner and recovery UX
    - observability bootstrap shipped; remaining: production crash pipeline integration
-   - realtime polling baseline shipped; remaining: SSE transport parity and deeper event reconciliation
+   - hybrid realtime transport shipped (SSE where available + polling fallback); remaining: deeper event reconciliation
 

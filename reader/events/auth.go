@@ -3,6 +3,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/sirupsen/logrus"
@@ -15,20 +17,45 @@ type AccessTokenClaims struct {
 	jwt.RegisteredClaims
 }
 
-// Middleware to verify the access token from cookie.
+const maxAccessTokenLength = 8192
+
+func readAccessToken(c *fiber.Ctx) (string, string) {
+	if token := strings.TrimSpace(c.Cookies("accessToken")); token != "" {
+		return token, "cookie"
+	}
+
+	authHeader := strings.TrimSpace(c.Get("Authorization"))
+	if authHeader != "" {
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
+			token := strings.TrimSpace(parts[1])
+			if token != "" {
+				return token, "authorization"
+			}
+		}
+	}
+
+	if token := strings.TrimSpace(c.Query("access_token")); token != "" {
+		return token, "query"
+	}
+
+	return "", ""
+}
+
+// Middleware to verify the access token from cookie/header/query.
 func verifyJWT(c *fiber.Ctx) error {
 	if len(jwtSecret) == 0 {
 		logrus.Error("JWT secret is not initialized")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Server configuration error"})
 	}
 
-	tokenString := c.Cookies("accessToken")
+	tokenString, tokenSource := readAccessToken(c)
 	if tokenString == "" {
-		logrus.Warn("Authentication failed: accessToken cookie missing")
+		logrus.Warn("Authentication failed: access token missing")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Authentication failed"})
 	}
-	if len(tokenString) > 8192 {
-		logrus.Warn("Authentication failed: accessToken cookie too large")
+	if len(tokenString) > maxAccessTokenLength {
+		logrus.Warnf("Authentication failed: access token too large (%s)", tokenSource)
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Authentication failed"})
 	}
 

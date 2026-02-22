@@ -8,7 +8,11 @@ import React, {
   useState,
   type PropsWithChildren,
 } from 'react';
+import { eventsContract } from '@pokemongonexus/shared-contracts/events';
 import { useAuth } from '../auth/AuthProvider';
+import { runtimeConfig } from '../../config/runtimeConfig';
+import { getAuthToken } from '../auth/authSession';
+import { logDebug, logWarn } from '../../observability/logger';
 import {
   getOrCreateDeviceId,
   loadLastEventsTimestamp,
@@ -20,8 +24,12 @@ import {
   type NormalizedEventsEnvelope,
 } from '../../services/eventsService';
 
+type EventsTransport = 'polling' | 'sse';
+
 type EventsContextValue = {
   deviceId: string | null;
+  transport: EventsTransport;
+  connected: boolean;
   eventVersion: number;
   lastSyncAt: number | null;
   latestUpdate: NormalizedEventsEnvelope | null;
@@ -32,6 +40,8 @@ type EventsContextValue = {
 
 const defaultEventsContextValue: EventsContextValue = {
   deviceId: null,
+  transport: 'polling',
+  connected: false,
   eventVersion: 0,
   lastSyncAt: null,
   latestUpdate: null,
@@ -43,11 +53,37 @@ const defaultEventsContextValue: EventsContextValue = {
 const EventsContext = createContext<EventsContextValue>(defaultEventsContextValue);
 
 const POLL_INTERVAL_MS = 30_000;
+const SSE_RECONNECT_DELAY_MS = 5_000;
 const BOOTSTRAP_LOOKBACK_MS = 5 * 60_000;
+const hasEventSourceRuntime = (): boolean =>
+  typeof (globalThis as { EventSource?: unknown }).EventSource === 'function';
+
+type EventSourceLike = {
+  onopen: ((event?: unknown) => void) | null;
+  onerror: ((event?: unknown) => void) | null;
+  onmessage: ((event: { data: string }) => void) | null;
+  close: () => void;
+};
+
+const buildSseUrl = (deviceId: string): string => {
+  const normalizedBase = runtimeConfig.api.eventsApiUrl.endsWith('/')
+    ? runtimeConfig.api.eventsApiUrl
+    : `${runtimeConfig.api.eventsApiUrl}/`;
+  const normalizedPath = eventsContract.endpoints.sse.replace(/^\/+/, '');
+  const url = new URL(normalizedPath, normalizedBase);
+  url.searchParams.set('device_id', deviceId);
+  const token = getAuthToken();
+  if (token && token.trim().length > 0) {
+    url.searchParams.set('access_token', token);
+  }
+  return url.toString();
+};
 
 export const EventsProvider = ({ children }: PropsWithChildren) => {
   const { status } = useAuth();
   const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [transport, setTransport] = useState<EventsTransport>('polling');
+  const [connected, setConnected] = useState(false);
   const [eventVersion, setEventVersion] = useState(0);
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [latestUpdate, setLatestUpdate] = useState<NormalizedEventsEnvelope | null>(null);
@@ -55,6 +91,81 @@ export const EventsProvider = ({ children }: PropsWithChildren) => {
   const [error, setError] = useState<string | null>(null);
   const pollingRef = useRef(false);
   const lastTimestampRef = useRef<number>(Date.now());
+  const sseRef = useRef<EventSourceLike | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const closeStream = useCallback(() => {
+    if (sseRef.current) {
+      sseRef.current.close();
+      sseRef.current = null;
+    }
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
+    setConnected(false);
+  }, []);
+
+  const applyIncomingUpdates = useCallback(async (updates: NormalizedEventsEnvelope): Promise<void> => {
+    const now = Date.now();
+    lastTimestampRef.current = now;
+    setLastSyncAt(now);
+    await saveLastEventsTimestamp(now);
+
+    if (hasEventsDelta(updates)) {
+      setLatestUpdate(updates);
+      setEventVersion((version) => version + 1);
+    }
+  }, []);
+
+  const connectStream = useCallback((): boolean => {
+    if (!deviceId || status !== 'authenticated') return false;
+    if (!hasEventSourceRuntime()) {
+      setTransport('polling');
+      return false;
+    }
+
+    closeStream();
+    try {
+      const EventSourceCtor = (globalThis as { EventSource: new (url: string, options?: { withCredentials?: boolean }) => EventSourceLike }).EventSource;
+      const source = new EventSourceCtor(buildSseUrl(deviceId), { withCredentials: true });
+      sseRef.current = source;
+      setTransport('sse');
+
+      source.onopen = () => {
+        setConnected(true);
+        setError(null);
+        logDebug('events', 'SSE stream connected');
+      };
+      source.onerror = () => {
+        setConnected(false);
+        logWarn('events', 'SSE stream error; scheduling reconnect');
+        closeStream();
+        reconnectTimerRef.current = setTimeout(() => {
+          reconnectTimerRef.current = null;
+          void connectStream();
+        }, SSE_RECONNECT_DELAY_MS);
+      };
+      source.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data) as NormalizedEventsEnvelope;
+          const normalized: NormalizedEventsEnvelope = {
+            pokemon: parsed?.pokemon ?? {},
+            trade: parsed?.trade ?? {},
+            relatedInstances: parsed?.relatedInstances ?? {},
+          };
+          void applyIncomingUpdates(normalized);
+        } catch (nextError) {
+          logWarn('events', 'Failed to parse SSE payload', nextError);
+        }
+      };
+      return true;
+    } catch (nextError) {
+      setTransport('polling');
+      logWarn('events', 'SSE unavailable, falling back to polling', nextError);
+      return false;
+    }
+  }, [applyIncomingUpdates, closeStream, deviceId, status]);
 
   const bootstrapSession = useCallback(async (): Promise<void> => {
     const resolvedDeviceId = await getOrCreateDeviceId();
@@ -78,46 +189,58 @@ export const EventsProvider = ({ children }: PropsWithChildren) => {
     try {
       const timestamp = lastTimestampRef.current;
       const updates = await fetchMissedUpdates(deviceId, timestamp);
-      const now = Date.now();
-      lastTimestampRef.current = now;
-      await saveLastEventsTimestamp(now);
-      setLastSyncAt(now);
-
-      if (updates && hasEventsDelta(updates)) {
-        setLatestUpdate(updates);
-        setEventVersion((version) => version + 1);
+      setConnected(true);
+      if (updates) {
+        await applyIncomingUpdates(updates);
       }
     } catch (nextError) {
+      setConnected(false);
       setError(nextError instanceof Error ? nextError.message : 'Failed to sync realtime updates.');
     } finally {
       setSyncing(false);
       pollingRef.current = false;
     }
-  }, [deviceId, status]);
+  }, [applyIncomingUpdates, deviceId, status]);
 
   useEffect(() => {
     if (status !== 'authenticated') {
+      closeStream();
       setLatestUpdate(null);
       setSyncing(false);
       setError(null);
+      setConnected(false);
+      setTransport('polling');
       return;
     }
 
     void bootstrapSession();
-  }, [bootstrapSession, status]);
+  }, [bootstrapSession, closeStream, status]);
 
   useEffect(() => {
     if (status !== 'authenticated' || !deviceId) return;
+    const streamConnected = connectStream();
+    if (!streamConnected) {
+      setTransport('polling');
+    }
     void refreshNow();
     const id = setInterval(() => {
+      if (transport === 'sse' && connected) return;
       void refreshNow();
+      if (transport === 'sse' && !connected) {
+        void connectStream();
+      }
     }, POLL_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [deviceId, refreshNow, status]);
+    return () => {
+      clearInterval(id);
+      closeStream();
+    };
+  }, [closeStream, connectStream, connected, deviceId, refreshNow, status, transport]);
 
   const value = useMemo<EventsContextValue>(
     () => ({
       deviceId,
+      transport,
+      connected,
       eventVersion,
       lastSyncAt,
       latestUpdate,
@@ -125,7 +248,7 @@ export const EventsProvider = ({ children }: PropsWithChildren) => {
       error,
       refreshNow,
     }),
-    [deviceId, eventVersion, lastSyncAt, latestUpdate, syncing, error, refreshNow],
+    [connected, deviceId, error, eventVersion, lastSyncAt, latestUpdate, refreshNow, syncing, transport],
   );
 
   return <EventsContext.Provider value={value}>{children}</EventsContext.Provider>;
