@@ -1,10 +1,14 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeAssetUrlsDeep, resolveAssetUrl } from '@/utils/assetUrl';
 
 describe('assetUrl', () => {
-  it('returns relative paths unchanged when VITE_ASSET_ORIGIN is not set', () => {
+  afterEach(() => {
     vi.unstubAllEnvs();
+  });
+
+  it('returns relative paths unchanged when VITE_ASSET_ORIGIN is blank', () => {
+    vi.stubEnv('VITE_ASSET_ORIGIN', '');
     expect(resolveAssetUrl('/images/default/pokemon_1.png')).toBe('/images/default/pokemon_1.png');
   });
 
@@ -16,7 +20,6 @@ describe('assetUrl', () => {
     expect(resolveAssetUrl('images/default/pokemon_1.png')).toBe(
       'https://pokemongonexus.com/images/default/pokemon_1.png',
     );
-    vi.unstubAllEnvs();
   });
 
   it('normalizes nested image/icon fields while leaving unrelated fields unchanged', () => {
@@ -37,7 +40,5 @@ describe('assetUrl', () => {
     expect(normalized.type_1_icon).toBe('https://pokemongonexus.com/images/types/grass.png');
     expect(normalized.nested.sprite_url).toBe('https://pokemongonexus.com/images/sprites/pokemon_1.png');
     expect(normalized.nested.ignored).toBe('/not-an-asset-field.png');
-    vi.unstubAllEnvs();
   });
 });
-
