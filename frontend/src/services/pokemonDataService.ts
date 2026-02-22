@@ -2,6 +2,7 @@
 
 import type { Pokemons } from '../types/pokemonBase';
 import { createScopedLogger, loggerInternals } from '@/utils/logger';
+import { normalizeAssetUrlsDeep } from '@/utils/assetUrl';
 import {
   buildUrl,
   parseJsonSafe,
@@ -24,10 +25,10 @@ function readCachedPokemons(): Pokemons | null {
   try {
     const parsed = JSON.parse(cachedData) as unknown;
     if (Array.isArray(parsed)) {
-      return parsed as Pokemons;
+      return normalizeAssetUrlsDeep(parsed as Pokemons);
     }
     if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { data?: unknown }).data)) {
-      return (parsed as { data: Pokemons }).data;
+      return normalizeAssetUrlsDeep((parsed as { data: Pokemons }).data);
     }
     return null;
   } catch {
@@ -75,13 +76,15 @@ export const getPokemons = async (): Promise<Pokemons> => {
       );
     }
 
+    const normalizedPayload = normalizeAssetUrlsDeep(payload as Pokemons);
+
     const etagHeader = response.headers.get('etag')?.trim();
     if (etagHeader) {
       localStorage.setItem(POKEMON_ETAG_KEY, etagHeader);
     }
-    localStorage.setItem(POKEMON_CACHE_KEY, JSON.stringify({ data: payload }));
+    localStorage.setItem(POKEMON_CACHE_KEY, JSON.stringify({ data: normalizedPayload }));
 
-    return payload as Pokemons;
+    return normalizedPayload;
   } catch (error: unknown) {
     log.error('Error fetching the Pokemon data', error);
     throw error;

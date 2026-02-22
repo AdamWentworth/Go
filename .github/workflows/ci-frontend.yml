@@ -32,6 +32,7 @@ jobs:
       VITE_SEARCH_API_URL: ${{ vars.VITE_SEARCH_API_URL || 'https://pokemongonexus.com/api/search' }}
       VITE_LOCATION_SERVICE_URL: ${{ vars.VITE_LOCATION_SERVICE_URL || 'https://pokemongonexus.com/api/location' }}
       VITE_EVENTS_API_URL: ${{ vars.VITE_EVENTS_API_URL || 'https://pokemongonexus.com/api/events' }}
+      VITE_ASSET_ORIGIN: ${{ vars.VITE_ASSET_ORIGIN || 'https://pokemongonexus.com' }}
       VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1770678424675' }}
       FRONTEND_INITIAL_JS_GZIP_BUDGET_KB: ${{ vars.FRONTEND_INITIAL_JS_GZIP_BUDGET_KB || '180' }}
       FRONTEND_MAX_JS_CHUNK_GZIP_KB: ${{ vars.FRONTEND_MAX_JS_CHUNK_GZIP_KB || '130' }}
@@ -84,7 +85,8 @@ jobs:
             VITE_USERS_API_URL \
             VITE_SEARCH_API_URL \
             VITE_LOCATION_SERVICE_URL \
-            VITE_EVENTS_API_URL; do
+            VITE_EVENTS_API_URL \
+            VITE_ASSET_ORIGIN; do
             if [[ -z "${!key:-}" ]]; then
               echo "Missing required CI env: ${key}" >&2
               exit 1
@@ -153,6 +155,7 @@ jobs:
       VITE_SEARCH_API_URL: ${{ vars.VITE_SEARCH_API_URL || 'https://pokemongonexus.com/api/search' }}
       VITE_LOCATION_SERVICE_URL: ${{ vars.VITE_LOCATION_SERVICE_URL || 'https://pokemongonexus.com/api/location' }}
       VITE_EVENTS_API_URL: ${{ vars.VITE_EVENTS_API_URL || 'https://pokemongonexus.com/api/events' }}
+      VITE_ASSET_ORIGIN: ${{ vars.VITE_ASSET_ORIGIN || 'https://pokemongonexus.com' }}
       VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1770678424675' }}
 
     steps:
