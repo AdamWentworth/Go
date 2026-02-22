@@ -2,6 +2,7 @@ import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances
 import {
   mutateInstanceFavorite,
   mutateInstanceBattleStats,
+  mutateInstanceCaughtDetails,
   mutateInstanceFusion,
   mutateInstanceMega,
   mutateInstanceAddTag,
@@ -143,46 +144,60 @@ describe('instanceMutations', () => {
     expect(next.last_update).toBe(108);
   });
 
+  it('applies caught-detail mutations safely', () => {
+    const next = mutateInstanceCaughtDetails(
+      makeBaseInstance(),
+      {
+        gender: 'male',
+        dateCaught: '2026-02-22',
+      },
+      109,
+    );
+    expect(next.gender).toBe('male');
+    expect(next.date_caught).toBe('2026-02-22');
+    expect(next.last_update).toBe(109);
+  });
+
   it('applies mega/fusion/tag mutations safely', () => {
-    const megaEnabled = mutateInstanceMega(makeBaseInstance(), true, 'mega_x', 109);
+    const megaEnabled = mutateInstanceMega(makeBaseInstance(), true, 'mega_x', 110);
     expect(megaEnabled.mega).toBe(true);
     expect(megaEnabled.is_mega).toBe(true);
     expect(megaEnabled.mega_form).toBe('mega_x');
 
-    const megaDisabled = mutateInstanceMega(megaEnabled, false, null, 110);
+    const megaDisabled = mutateInstanceMega(megaEnabled, false, null, 111);
     expect(megaDisabled.mega).toBe(false);
     expect(megaDisabled.is_mega).toBe(false);
     expect(megaDisabled.mega_form).toBeNull();
 
-    const fusionEnabled = mutateInstanceFusion(makeBaseInstance(), true, 'dawn_wings', 111);
+    const fusionEnabled = mutateInstanceFusion(makeBaseInstance(), true, 'dawn_wings', 112);
     expect(fusionEnabled.is_fused).toBe(true);
     expect(fusionEnabled.fusion_form).toBe('dawn_wings');
     expect(fusionEnabled.fusion).toEqual({});
 
-    const fusionDisabled = mutateInstanceFusion(fusionEnabled, false, null, 112);
+    const fusionDisabled = mutateInstanceFusion(fusionEnabled, false, null, 113);
     expect(fusionDisabled.is_fused).toBe(false);
     expect(fusionDisabled.fusion_form).toBeNull();
     expect(fusionDisabled.fusion).toBeNull();
 
-    const tags1 = mutateInstanceAddTag(makeBaseInstance(), 'caught', 'Great League', 113);
+    const tags1 = mutateInstanceAddTag(makeBaseInstance(), 'caught', 'Great League', 114);
     expect(tags1.caught_tags).toEqual(['Great League']);
 
-    const tags2 = mutateInstanceAddTag(tags1, 'caught', 'great league', 114);
+    const tags2 = mutateInstanceAddTag(tags1, 'caught', 'great league', 115);
     expect(tags2.caught_tags).toEqual(['Great League']);
 
-    const tags3 = mutateInstanceAddTag(tags2, 'trade', 'regional', 115);
+    const tags3 = mutateInstanceAddTag(tags2, 'trade', 'regional', 116);
     expect(tags3.trade_tags).toEqual(['regional']);
 
-    const tags4 = mutateInstanceRemoveTag(tags3, 'caught', 'great league', 116);
+    const tags4 = mutateInstanceRemoveTag(tags3, 'caught', 'great league', 117);
     expect(tags4.caught_tags).toEqual([]);
 
-    const tags5 = mutateInstanceRemoveTag(tags4, 'trade', 'Regional', 117);
+    const tags5 = mutateInstanceRemoveTag(tags4, 'trade', 'Regional', 118);
     expect(tags5.trade_tags).toEqual([]);
 
-    const tags6 = mutateInstanceSetTags(tags5, 'wanted', ['PVP', 'pvp', '  raid  '], 118);
+    const tags6 = mutateInstanceSetTags(tags5, 'wanted', ['PVP', 'pvp', '  raid  '], 119);
     expect(tags6.wanted_tags).toEqual(['PVP', 'raid']);
 
-    const tags7 = mutateInstanceClearTags(tags6, 'wanted', 119);
+    const tags7 = mutateInstanceClearTags(tags6, 'wanted', 120);
     expect(tags7.wanted_tags).toEqual([]);
   });
 

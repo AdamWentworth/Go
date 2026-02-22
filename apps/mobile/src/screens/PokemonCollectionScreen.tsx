@@ -7,6 +7,7 @@ import { useAuth } from '../features/auth/AuthProvider';
 import {
   mutateInstanceAddTag,
   mutateInstanceBattleStats,
+  mutateInstanceCaughtDetails,
   mutateInstanceClearTags,
   mutateInstanceFavorite,
   mutateInstanceFusion,
@@ -34,14 +35,16 @@ type PokemonCollectionScreenProps = NativeStackScreenProps<RootStackParamList, '
 
 const OWNERSHIP_MODES: OwnershipMode[] = ['caught', 'trade', 'wanted'];
 const TAG_BUCKETS: ('caught' | 'trade' | 'wanted')[] = ['caught', 'trade', 'wanted'];
+const GENDER_OPTIONS = ['male', 'female', 'genderless', 'unknown'] as const;
 const EDITOR_SECTIONS = ['status', 'attributes', 'tags'] as const;
 const MAX_ROWS = 120;
-const MAX_NICKNAME_LENGTH = 50;
+const MAX_NICKNAME_LENGTH = 12;
 const MAX_TAG_LENGTH = 40;
 const MIN_IV = 0;
 const MAX_IV = 15;
 const MIN_LEVEL = 1;
 const MAX_LEVEL = 50;
+const DATE_CAUGHT_FORMAT = 'YYYY-MM-DD';
 type EditorSection = (typeof EDITOR_SECTIONS)[number];
 
 const summarize = (items: InstanceListItem[]) => {
@@ -89,6 +92,26 @@ const parseOptionalDecimal = (value: string): number | null | 'invalid' => {
   return parsed;
 };
 
+const normalizeGender = (value: string | null | undefined): string | null => {
+  const normalized = (value ?? '').trim().toLowerCase();
+  return normalized.length > 0 ? normalized : null;
+};
+
+const isValidDateCaught = (value: string): boolean => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() + 1 === month &&
+    date.getUTCDate() === day
+  );
+};
+
 export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollectionScreenProps) => {
   const { user } = useAuth();
   const [ownershipMode, setOwnershipMode] = useState<OwnershipMode>('caught');
@@ -106,6 +129,8 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const [attackIvDraft, setAttackIvDraft] = useState('');
   const [defenseIvDraft, setDefenseIvDraft] = useState('');
   const [staminaIvDraft, setStaminaIvDraft] = useState('');
+  const [genderDraft, setGenderDraft] = useState('');
+  const [dateCaughtDraft, setDateCaughtDraft] = useState('');
   const [megaFormDraft, setMegaFormDraft] = useState('');
   const [fusionFormDraft, setFusionFormDraft] = useState('');
   const [tagBucketDraft, setTagBucketDraft] = useState<'caught' | 'trade' | 'wanted'>('caught');
@@ -157,6 +182,8 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const parsedAttackIv = useMemo(() => parseOptionalInteger(attackIvDraft), [attackIvDraft]);
   const parsedDefenseIv = useMemo(() => parseOptionalInteger(defenseIvDraft), [defenseIvDraft]);
   const parsedStaminaIv = useMemo(() => parseOptionalInteger(staminaIvDraft), [staminaIvDraft]);
+  const normalizedGenderDraft = useMemo(() => normalizeGender(genderDraft), [genderDraft]);
+  const normalizedDateCaughtDraft = useMemo(() => dateCaughtDraft.trim(), [dateCaughtDraft]);
 
   const battleStatsValidationError = useMemo(() => {
     if (parsedCp === 'invalid') return 'CP must be a whole number.';
@@ -223,6 +250,27 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     selectedInstance,
   ]);
 
+  const caughtDetailsValidationError = useMemo(() => {
+    if (normalizedGenderDraft && !GENDER_OPTIONS.includes(normalizedGenderDraft as (typeof GENDER_OPTIONS)[number])) {
+      return `Gender must be one of: ${GENDER_OPTIONS.join(', ')}.`;
+    }
+    if (normalizedDateCaughtDraft.length > 0 && !isValidDateCaught(normalizedDateCaughtDraft)) {
+      return `Date caught must use ${DATE_CAUGHT_FORMAT} format.`;
+    }
+    return null;
+  }, [normalizedDateCaughtDraft, normalizedGenderDraft]);
+
+  const caughtDetailsUnchanged = useMemo(() => {
+    if (!selectedInstance) return true;
+    const currentGender = normalizeGender(selectedInstance.gender as string | null | undefined);
+    const currentDateCaught = (selectedInstance.date_caught ?? '').trim();
+    const nextDateCaught = normalizedDateCaughtDraft;
+    return (
+      currentGender === normalizedGenderDraft &&
+      currentDateCaught === nextDateCaught
+    );
+  }, [normalizedDateCaughtDraft, normalizedGenderDraft, selectedInstance]);
+
   const loadCollection = async () => {
     setLoading(true);
     setError(null);
@@ -234,6 +282,8 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     setAttackIvDraft('');
     setDefenseIvDraft('');
     setStaminaIvDraft('');
+    setGenderDraft('');
+    setDateCaughtDraft('');
     setMegaFormDraft('');
     setFusionFormDraft('');
     setTagBucketDraft('caught');
@@ -385,6 +435,22 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
         attackIv: parsedAttackIv,
         defenseIv: parsedDefenseIv,
         staminaIv: parsedStaminaIv,
+      }),
+    );
+  };
+
+  const saveCaughtDetails = async () => {
+    if (!selectedInstanceId) return;
+    if (caughtDetailsValidationError) {
+      setError(caughtDetailsValidationError);
+      return;
+    }
+    if (caughtDetailsUnchanged) return;
+    setError(null);
+    await updateInstanceAndSync(selectedInstanceId, (instance) =>
+      mutateInstanceCaughtDetails(instance, {
+        gender: normalizedGenderDraft,
+        dateCaught: normalizedDateCaughtDraft.length > 0 ? normalizedDateCaughtDraft : null,
       }),
     );
   };
@@ -556,6 +622,8 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     setAttackIvDraft(String(selected?.attack_iv ?? ''));
                     setDefenseIvDraft(String(selected?.defense_iv ?? ''));
                     setStaminaIvDraft(String(selected?.stamina_iv ?? ''));
+                    setGenderDraft(String(selected?.gender ?? ''));
+                    setDateCaughtDraft(String(selected?.date_caught ?? ''));
                     setMegaFormDraft(String(selected?.mega_form ?? ''));
                     setFusionFormDraft(String(selected?.fusion_form ?? ''));
                     setTagBucketDraft('caught');
@@ -583,6 +651,15 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
           </Text>
           <Text style={commonStyles.caption}>
             favorite={String(Boolean(selectedInstance.favorite))}, most_wanted={String(Boolean(selectedInstance.most_wanted))}
+          </Text>
+          <Text style={commonStyles.caption}>
+            cp={String(selectedInstance.cp ?? '-')}, level={String(selectedInstance.level ?? '-')}
+          </Text>
+          <Text style={commonStyles.caption}>
+            ivs atk={String(selectedInstance.attack_iv ?? '-')}, def={String(selectedInstance.defense_iv ?? '-')}, sta={String(selectedInstance.stamina_iv ?? '-')}
+          </Text>
+          <Text style={commonStyles.caption}>
+            gender={String(selectedInstance.gender ?? '-')}, date_caught={String(selectedInstance.date_caught ?? '-')}
           </Text>
           <Text style={commonStyles.caption}>
             mega={String(Boolean(selectedInstance.mega || selectedInstance.is_mega))} ({String(selectedInstance.mega_form ?? '-')})
@@ -648,6 +725,12 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                   </Text>
                   {battleStatsValidationError ? (
                     <Text style={commonStyles.error}>{battleStatsValidationError}</Text>
+                  ) : null}
+                  <Text style={commonStyles.hint}>
+                    Gender options: {GENDER_OPTIONS.join(', ')}. Date caught format: {DATE_CAUGHT_FORMAT}.
+                  </Text>
+                  {caughtDetailsValidationError ? (
+                    <Text style={commonStyles.error}>{caughtDetailsValidationError}</Text>
                   ) : null}
                   <View style={commonStyles.actions}>
                     <Button
@@ -723,6 +806,48 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     title="Save Battle Stats"
                     onPress={() => void saveBattleStats()}
                     disabled={syncing || battleStatsUnchanged || Boolean(battleStatsValidationError)}
+                  />
+
+                  <Text style={commonStyles.caption}>Gender</Text>
+                  <View style={commonStyles.pillRow}>
+                    {GENDER_OPTIONS.map((option) => {
+                      const selected = normalizedGenderDraft === option;
+                      return (
+                        <Pressable
+                          key={option}
+                          onPress={() => setGenderDraft(option)}
+                          style={[commonStyles.pill, selected ? commonStyles.pillSelected : null]}
+                        >
+                          <Text style={[commonStyles.pillText, selected ? commonStyles.pillTextSelected : null]}>
+                            {option}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                    <Pressable
+                      onPress={() => setGenderDraft('')}
+                      style={[commonStyles.pill, normalizedGenderDraft === null ? commonStyles.pillSelected : null]}
+                    >
+                      <Text
+                        style={[
+                          commonStyles.pillText,
+                          normalizedGenderDraft === null ? commonStyles.pillTextSelected : null,
+                        ]}
+                      >
+                        clear
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <TextInput
+                    placeholder={`Date Caught (${DATE_CAUGHT_FORMAT})`}
+                    value={dateCaughtDraft}
+                    onChangeText={setDateCaughtDraft}
+                    style={commonStyles.input}
+                  />
+                  <Button
+                    title="Save Caught Details"
+                    onPress={() => void saveCaughtDetails()}
+                    disabled={syncing || caughtDetailsUnchanged || Boolean(caughtDetailsValidationError)}
                   />
 
                   <TextInput

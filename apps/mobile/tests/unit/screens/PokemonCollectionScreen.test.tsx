@@ -362,11 +362,11 @@ describe('PokemonCollectionScreen', () => {
 
     fireEvent.press(screen.getByText('v-001'));
     fireEvent.press(screen.getByText('attributes'));
-    fireEvent.changeText(screen.getByPlaceholderText('Nickname'), 'x'.repeat(51));
+    fireEvent.changeText(screen.getByPlaceholderText('Nickname'), 'x'.repeat(13));
     fireEvent.press(screen.getByText('Save Nickname'));
 
     await waitFor(() => {
-      expect(screen.getByText('Nickname must be 50 characters or fewer.')).toBeTruthy();
+      expect(screen.getByText('Nickname must be 12 characters or fewer.')).toBeTruthy();
     });
     expect(mockedSendPokemonUpdate).not.toHaveBeenCalled();
   });
@@ -461,6 +461,105 @@ describe('PokemonCollectionScreen', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Tag must be 40 characters or fewer.')).toBeTruthy();
+    });
+    expect(mockedSendPokemonUpdate).not.toHaveBeenCalled();
+  });
+
+  it('saves caught details (gender/date_caught) and syncs update', async () => {
+    mockedFetchUserOverview.mockResolvedValue({
+      user: { user_id: 'u1', username: 'ash' },
+      pokemon_instances: {
+        i1: {
+          instance_id: 'i1',
+          variant_id: 'v-001',
+          pokemon_id: 1,
+          nickname: null,
+          gender: null,
+          date_caught: null,
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          most_wanted: false,
+          favorite: false,
+          registered: true,
+          date_added: '2026-01-01T00:00:00Z',
+          last_update: 1,
+        },
+      },
+      trades: {},
+      related_instances: {},
+      registrations: {},
+    } as never);
+    mockedSendPokemonUpdate.mockResolvedValue({});
+
+    render(
+      <PokemonCollectionScreen navigation={baseNavigation as never} route={route as never} />,
+    );
+    fireEvent.press(screen.getByText('Load Collection'));
+    await waitFor(() => {
+      expect(screen.getByText('v-001')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('v-001'));
+    fireEvent.press(screen.getByText('attributes'));
+    fireEvent.press(screen.getByText('male'));
+    fireEvent.changeText(screen.getByPlaceholderText('Date Caught (YYYY-MM-DD)'), '2026-02-22');
+    fireEvent.press(screen.getByText('Save Caught Details'));
+
+    await waitFor(() => {
+      expect(mockedSendPokemonUpdate).toHaveBeenCalled();
+    });
+    expect(mockedSendPokemonUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: 'i1',
+        gender: 'male',
+        date_caught: '2026-02-22',
+      }),
+    );
+  });
+
+  it('blocks caught details update when date format is invalid', async () => {
+    mockedFetchUserOverview.mockResolvedValue({
+      user: { user_id: 'u1', username: 'ash' },
+      pokemon_instances: {
+        i1: {
+          instance_id: 'i1',
+          variant_id: 'v-001',
+          pokemon_id: 1,
+          nickname: null,
+          gender: null,
+          date_caught: null,
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          most_wanted: false,
+          favorite: false,
+          registered: true,
+          date_added: '2026-01-01T00:00:00Z',
+          last_update: 1,
+        },
+      },
+      trades: {},
+      related_instances: {},
+      registrations: {},
+    } as never);
+    mockedSendPokemonUpdate.mockResolvedValue({});
+
+    render(
+      <PokemonCollectionScreen navigation={baseNavigation as never} route={route as never} />,
+    );
+    fireEvent.press(screen.getByText('Load Collection'));
+    await waitFor(() => {
+      expect(screen.getByText('v-001')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('v-001'));
+    fireEvent.press(screen.getByText('attributes'));
+    fireEvent.changeText(screen.getByPlaceholderText('Date Caught (YYYY-MM-DD)'), '2026-02-31');
+    fireEvent.press(screen.getByText('Save Caught Details'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Date caught must use YYYY-MM-DD format.')).toBeTruthy();
     });
     expect(mockedSendPokemonUpdate).not.toHaveBeenCalled();
   });

@@ -223,6 +223,13 @@ Done:
    - prevented invalid or unchanged stat submits from dispatching receiver sync updates
    - expanded mutation and screen tests for battle-stat save and invalid-IV blocks
 
+25. Mobile pokemon caught-details alignment shipped:
+   - aligned nickname limit to web parity (12 characters max)
+   - added typed caught-details mutation adapter (`mutateInstanceCaughtDetails`)
+   - expanded collection attributes editor with gender + date_caught controls
+   - added strict date validation (`YYYY-MM-DD`) and gender normalization guardrails
+   - expanded mutation and screen tests for caught-details save + invalid-date blocking
+
 Remaining:
 
 1. Validate first slices on device against live APIs.
