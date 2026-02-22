@@ -464,4 +464,115 @@ describe('PokemonCollectionScreen', () => {
     });
     expect(mockedSendPokemonUpdate).not.toHaveBeenCalled();
   });
+
+  it('saves CP/level/IV battle stats and syncs update', async () => {
+    mockedFetchUserOverview.mockResolvedValue({
+      user: { user_id: 'u1', username: 'ash' },
+      pokemon_instances: {
+        i1: {
+          instance_id: 'i1',
+          variant_id: 'v-001',
+          pokemon_id: 1,
+          nickname: null,
+          cp: null,
+          level: null,
+          attack_iv: null,
+          defense_iv: null,
+          stamina_iv: null,
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          most_wanted: false,
+          favorite: false,
+          registered: true,
+          date_added: '2026-01-01T00:00:00Z',
+          last_update: 1,
+        },
+      },
+      trades: {},
+      related_instances: {},
+      registrations: {},
+    } as never);
+    mockedSendPokemonUpdate.mockResolvedValue({});
+
+    render(
+      <PokemonCollectionScreen navigation={baseNavigation as never} route={route as never} />,
+    );
+    fireEvent.press(screen.getByText('Load Collection'));
+    await waitFor(() => {
+      expect(screen.getByText('v-001')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('v-001'));
+    fireEvent.press(screen.getByText('attributes'));
+    fireEvent.changeText(screen.getByPlaceholderText('CP'), '2499');
+    fireEvent.changeText(screen.getByPlaceholderText('Level'), '40');
+    fireEvent.changeText(screen.getByPlaceholderText('Attack IV'), '15');
+    fireEvent.changeText(screen.getByPlaceholderText('Defense IV'), '14');
+    fireEvent.changeText(screen.getByPlaceholderText('Stamina IV'), '13');
+    fireEvent.press(screen.getByText('Save Battle Stats'));
+
+    await waitFor(() => {
+      expect(mockedSendPokemonUpdate).toHaveBeenCalled();
+    });
+    expect(mockedSendPokemonUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: 'i1',
+        cp: 2499,
+        level: 40,
+        attack_iv: 15,
+        defense_iv: 14,
+        stamina_iv: 13,
+      }),
+    );
+  });
+
+  it('blocks battle stats update when IV value is out of range', async () => {
+    mockedFetchUserOverview.mockResolvedValue({
+      user: { user_id: 'u1', username: 'ash' },
+      pokemon_instances: {
+        i1: {
+          instance_id: 'i1',
+          variant_id: 'v-001',
+          pokemon_id: 1,
+          nickname: null,
+          cp: null,
+          level: null,
+          attack_iv: null,
+          defense_iv: null,
+          stamina_iv: null,
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          most_wanted: false,
+          favorite: false,
+          registered: true,
+          date_added: '2026-01-01T00:00:00Z',
+          last_update: 1,
+        },
+      },
+      trades: {},
+      related_instances: {},
+      registrations: {},
+    } as never);
+    mockedSendPokemonUpdate.mockResolvedValue({});
+
+    render(
+      <PokemonCollectionScreen navigation={baseNavigation as never} route={route as never} />,
+    );
+    fireEvent.press(screen.getByText('Load Collection'));
+    await waitFor(() => {
+      expect(screen.getByText('v-001')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('v-001'));
+    fireEvent.press(screen.getByText('attributes'));
+    fireEvent.changeText(screen.getByPlaceholderText('Attack IV'), '16');
+    fireEvent.press(screen.getByText('Save Battle Stats'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Attack IV must be between 0 and 15.')).toBeTruthy();
+    });
+    expect(mockedSendPokemonUpdate).not.toHaveBeenCalled();
+  });
 });

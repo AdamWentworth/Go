@@ -1,6 +1,13 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 
 export type InstanceStatusMutation = 'caught' | 'trade' | 'wanted' | 'missing';
+export type InstanceBattleStatsMutation = {
+  cp: number | null;
+  level: number | null;
+  attackIv: number | null;
+  defenseIv: number | null;
+  staminaIv: number | null;
+};
 
 const withTimestamp = (instance: PokemonInstance, timestamp: number): PokemonInstance => ({
   ...instance,
@@ -99,6 +106,23 @@ export const mutateInstanceNickname = (
     {
       ...instance,
       nickname,
+    },
+    timestamp,
+  );
+
+export const mutateInstanceBattleStats = (
+  instance: PokemonInstance,
+  stats: InstanceBattleStatsMutation,
+  timestamp = Date.now(),
+): PokemonInstance =>
+  withTimestamp(
+    {
+      ...instance,
+      cp: stats.cp,
+      level: stats.level,
+      attack_iv: stats.attackIv,
+      defense_iv: stats.defenseIv,
+      stamina_iv: stats.staminaIv,
     },
     timestamp,
   );

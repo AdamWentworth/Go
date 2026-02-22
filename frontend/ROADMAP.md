@@ -205,17 +205,23 @@ Done:
    - disabled invalid submit actions (unchanged/too-long nickname, empty/duplicate/too-long tags)
    - surfaced explicit validation messaging for duplicate and oversized tags
    - expanded `PokemonCollectionScreen` tests for duplicate/oversized tag guardrails
-
 23. Mobile search map advanced interactions shipped (Iteration 24):
    - location name autocomplete input wired to `/location` service with 350ms debounce
    - suggestion tap populates lat/lon fields; location query clears on filter reset
    - viewport filter toggle (On/Off) applies `isPointInViewport` to canvas points in real time
-   - pan controls (N/S/E/W) and zoom controls (+/−/Reset view) for map viewport
+   - pan controls (N/S/E/W) and zoom controls (+/-/Reset view) for map viewport
    - filtered point count shown with `(filtered)` annotation when viewport is active
    - marker selection now shows inline popup with pokemon id, username, and ownership mode
    - `getViewportBounds` + `isPointInViewport` unit tests added to `searchMapModels.test.ts`
    - new `locationService.ts` + `locationService.test.ts` covering fetch, mapping, and error paths
    - `SearchMapCanvas` and `SearchScreen` tests expanded for popup and autocomplete/viewport flows
+
+24. Mobile pokemon core stat editing shipped:
+   - added typed CP/level/IV mutation adapter (mutateInstanceBattleStats)
+   - expanded collection editor attributes section with CP/level/attack/defense/stamina fields
+   - added validation guardrails for numeric format and stat ranges (IV 0-15, level 1-50)
+   - prevented invalid or unchanged stat submits from dispatching receiver sync updates
+   - expanded mutation and screen tests for battle-stat save and invalid-IV blocks
 
 Remaining:
 
@@ -413,3 +419,4 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
    - real device validation on Android and iOS against live services
    - resilience passes (network interruptions/offline behavior/retries)
    - observability/crash hooks for mobile release confidence
+

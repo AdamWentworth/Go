@@ -6,6 +6,7 @@ import type { InstancesMap, PokemonInstance } from '@pokemongonexus/shared-contr
 import { useAuth } from '../features/auth/AuthProvider';
 import {
   mutateInstanceAddTag,
+  mutateInstanceBattleStats,
   mutateInstanceClearTags,
   mutateInstanceFavorite,
   mutateInstanceFusion,
@@ -37,6 +38,10 @@ const EDITOR_SECTIONS = ['status', 'attributes', 'tags'] as const;
 const MAX_ROWS = 120;
 const MAX_NICKNAME_LENGTH = 50;
 const MAX_TAG_LENGTH = 40;
+const MIN_IV = 0;
+const MAX_IV = 15;
+const MIN_LEVEL = 1;
+const MAX_LEVEL = 50;
 type EditorSection = (typeof EDITOR_SECTIONS)[number];
 
 const summarize = (items: InstanceListItem[]) => {
@@ -68,6 +73,22 @@ const getBucketTags = (
   return instance.wanted_tags ?? [];
 };
 
+const parseOptionalInteger = (value: string): number | null | 'invalid' => {
+  const normalized = value.trim();
+  if (!normalized) return null;
+  if (!/^-?\d+$/.test(normalized)) return 'invalid';
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 'invalid';
+};
+
+const parseOptionalDecimal = (value: string): number | null | 'invalid' => {
+  const normalized = value.trim();
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) return 'invalid';
+  return parsed;
+};
+
 export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollectionScreenProps) => {
   const { user } = useAuth();
   const [ownershipMode, setOwnershipMode] = useState<OwnershipMode>('caught');
@@ -80,6 +101,11 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const [editorSection, setEditorSection] = useState<EditorSection>('status');
   const [nicknameDraft, setNicknameDraft] = useState('');
+  const [cpDraft, setCpDraft] = useState('');
+  const [levelDraft, setLevelDraft] = useState('');
+  const [attackIvDraft, setAttackIvDraft] = useState('');
+  const [defenseIvDraft, setDefenseIvDraft] = useState('');
+  const [staminaIvDraft, setStaminaIvDraft] = useState('');
   const [megaFormDraft, setMegaFormDraft] = useState('');
   const [fusionFormDraft, setFusionFormDraft] = useState('');
   const [tagBucketDraft, setTagBucketDraft] = useState<'caught' | 'trade' | 'wanted'>('caught');
@@ -126,6 +152,76 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
       selectedBucketTags.some((tag) => tag.toLowerCase() === normalizedTagDraft.toLowerCase()),
     [normalizedTagDraft, selectedBucketTags],
   );
+  const parsedCp = useMemo(() => parseOptionalInteger(cpDraft), [cpDraft]);
+  const parsedLevel = useMemo(() => parseOptionalDecimal(levelDraft), [levelDraft]);
+  const parsedAttackIv = useMemo(() => parseOptionalInteger(attackIvDraft), [attackIvDraft]);
+  const parsedDefenseIv = useMemo(() => parseOptionalInteger(defenseIvDraft), [defenseIvDraft]);
+  const parsedStaminaIv = useMemo(() => parseOptionalInteger(staminaIvDraft), [staminaIvDraft]);
+
+  const battleStatsValidationError = useMemo(() => {
+    if (parsedCp === 'invalid') return 'CP must be a whole number.';
+    if (typeof parsedCp === 'number' && parsedCp < 0) return 'CP must be 0 or greater.';
+
+    if (parsedLevel === 'invalid') return 'Level must be a number.';
+    if (
+      typeof parsedLevel === 'number' &&
+      (parsedLevel < MIN_LEVEL || parsedLevel > MAX_LEVEL)
+    ) {
+      return `Level must be between ${MIN_LEVEL} and ${MAX_LEVEL}.`;
+    }
+
+    if (parsedAttackIv === 'invalid') return 'Attack IV must be a whole number.';
+    if (
+      typeof parsedAttackIv === 'number' &&
+      (parsedAttackIv < MIN_IV || parsedAttackIv > MAX_IV)
+    ) {
+      return `Attack IV must be between ${MIN_IV} and ${MAX_IV}.`;
+    }
+
+    if (parsedDefenseIv === 'invalid') return 'Defense IV must be a whole number.';
+    if (
+      typeof parsedDefenseIv === 'number' &&
+      (parsedDefenseIv < MIN_IV || parsedDefenseIv > MAX_IV)
+    ) {
+      return `Defense IV must be between ${MIN_IV} and ${MAX_IV}.`;
+    }
+
+    if (parsedStaminaIv === 'invalid') return 'Stamina IV must be a whole number.';
+    if (
+      typeof parsedStaminaIv === 'number' &&
+      (parsedStaminaIv < MIN_IV || parsedStaminaIv > MAX_IV)
+    ) {
+      return `Stamina IV must be between ${MIN_IV} and ${MAX_IV}.`;
+    }
+    return null;
+  }, [parsedAttackIv, parsedCp, parsedDefenseIv, parsedLevel, parsedStaminaIv]);
+
+  const battleStatsUnchanged = useMemo(() => {
+    if (!selectedInstance) return true;
+    if (
+      parsedCp === 'invalid' ||
+      parsedLevel === 'invalid' ||
+      parsedAttackIv === 'invalid' ||
+      parsedDefenseIv === 'invalid' ||
+      parsedStaminaIv === 'invalid'
+    ) {
+      return true;
+    }
+    return (
+      selectedInstance.cp === parsedCp &&
+      selectedInstance.level === parsedLevel &&
+      selectedInstance.attack_iv === parsedAttackIv &&
+      selectedInstance.defense_iv === parsedDefenseIv &&
+      selectedInstance.stamina_iv === parsedStaminaIv
+    );
+  }, [
+    parsedAttackIv,
+    parsedCp,
+    parsedDefenseIv,
+    parsedLevel,
+    parsedStaminaIv,
+    selectedInstance,
+  ]);
 
   const loadCollection = async () => {
     setLoading(true);
@@ -133,6 +229,11 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     setInstancesMap({});
     setSelectedInstanceId(null);
     setNicknameDraft('');
+    setCpDraft('');
+    setLevelDraft('');
+    setAttackIvDraft('');
+    setDefenseIvDraft('');
+    setStaminaIvDraft('');
     setMegaFormDraft('');
     setFusionFormDraft('');
     setTagBucketDraft('caught');
@@ -257,6 +358,34 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     }
     await updateInstanceAndSync(selectedInstanceId, (instance) =>
       mutateInstanceNickname(instance, nicknameLength > 0 ? normalizedNicknameDraft : null),
+    );
+  };
+
+  const saveBattleStats = async () => {
+    if (!selectedInstanceId) return;
+    if (battleStatsValidationError) {
+      setError(battleStatsValidationError);
+      return;
+    }
+    if (battleStatsUnchanged) return;
+    if (
+      parsedCp === 'invalid' ||
+      parsedLevel === 'invalid' ||
+      parsedAttackIv === 'invalid' ||
+      parsedDefenseIv === 'invalid' ||
+      parsedStaminaIv === 'invalid'
+    ) {
+      return;
+    }
+    setError(null);
+    await updateInstanceAndSync(selectedInstanceId, (instance) =>
+      mutateInstanceBattleStats(instance, {
+        cp: parsedCp,
+        level: parsedLevel,
+        attackIv: parsedAttackIv,
+        defenseIv: parsedDefenseIv,
+        staminaIv: parsedStaminaIv,
+      }),
     );
   };
 
@@ -422,6 +551,11 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     setEditorSection('status');
                     setNicknameDraft(item.nickname ?? '');
                     const selected = instancesMap[item.instanceId];
+                    setCpDraft(String(selected?.cp ?? ''));
+                    setLevelDraft(String(selected?.level ?? ''));
+                    setAttackIvDraft(String(selected?.attack_iv ?? ''));
+                    setDefenseIvDraft(String(selected?.defense_iv ?? ''));
+                    setStaminaIvDraft(String(selected?.stamina_iv ?? ''));
                     setMegaFormDraft(String(selected?.mega_form ?? ''));
                     setFusionFormDraft(String(selected?.fusion_form ?? ''));
                     setTagBucketDraft('caught');
@@ -509,6 +643,12 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                   <Text style={commonStyles.hint}>
                     Mega/Fusion form is required when enabling those states.
                   </Text>
+                  <Text style={commonStyles.hint}>
+                    IVs must be whole numbers ({MIN_IV}-{MAX_IV}); level must be between {MIN_LEVEL}-{MAX_LEVEL}.
+                  </Text>
+                  {battleStatsValidationError ? (
+                    <Text style={commonStyles.error}>{battleStatsValidationError}</Text>
+                  ) : null}
                   <View style={commonStyles.actions}>
                     <Button
                       title={selectedInstance.favorite ? 'Unset Favorite' : 'Set Favorite'}
@@ -542,6 +682,47 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     title="Save Nickname"
                     onPress={() => void saveNickname()}
                     disabled={syncing || nicknameTooLong || nicknameUnchanged}
+                  />
+
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder="CP"
+                    value={cpDraft}
+                    onChangeText={setCpDraft}
+                    style={commonStyles.input}
+                  />
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder="Level"
+                    value={levelDraft}
+                    onChangeText={setLevelDraft}
+                    style={commonStyles.input}
+                  />
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder="Attack IV"
+                    value={attackIvDraft}
+                    onChangeText={setAttackIvDraft}
+                    style={commonStyles.input}
+                  />
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder="Defense IV"
+                    value={defenseIvDraft}
+                    onChangeText={setDefenseIvDraft}
+                    style={commonStyles.input}
+                  />
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder="Stamina IV"
+                    value={staminaIvDraft}
+                    onChangeText={setStaminaIvDraft}
+                    style={commonStyles.input}
+                  />
+                  <Button
+                    title="Save Battle Stats"
+                    onPress={() => void saveBattleStats()}
+                    disabled={syncing || battleStatsUnchanged || Boolean(battleStatsValidationError)}
                   />
 
                   <TextInput
