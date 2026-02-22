@@ -13,6 +13,7 @@ import {
   mutateInstanceFusion,
   mutateInstanceMega,
   mutateInstanceMostWanted,
+  mutateInstanceMoves,
   mutateInstanceNickname,
   mutateInstanceRemoveTag,
   mutateInstanceStatus,
@@ -129,6 +130,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const [attackIvDraft, setAttackIvDraft] = useState('');
   const [defenseIvDraft, setDefenseIvDraft] = useState('');
   const [staminaIvDraft, setStaminaIvDraft] = useState('');
+  const [fastMoveIdDraft, setFastMoveIdDraft] = useState('');
+  const [chargedMove1IdDraft, setChargedMove1IdDraft] = useState('');
+  const [chargedMove2IdDraft, setChargedMove2IdDraft] = useState('');
   const [genderDraft, setGenderDraft] = useState('');
   const [dateCaughtDraft, setDateCaughtDraft] = useState('');
   const [megaFormDraft, setMegaFormDraft] = useState('');
@@ -182,6 +186,15 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
   const parsedAttackIv = useMemo(() => parseOptionalInteger(attackIvDraft), [attackIvDraft]);
   const parsedDefenseIv = useMemo(() => parseOptionalInteger(defenseIvDraft), [defenseIvDraft]);
   const parsedStaminaIv = useMemo(() => parseOptionalInteger(staminaIvDraft), [staminaIvDraft]);
+  const parsedFastMoveId = useMemo(() => parseOptionalInteger(fastMoveIdDraft), [fastMoveIdDraft]);
+  const parsedChargedMove1Id = useMemo(
+    () => parseOptionalInteger(chargedMove1IdDraft),
+    [chargedMove1IdDraft],
+  );
+  const parsedChargedMove2Id = useMemo(
+    () => parseOptionalInteger(chargedMove2IdDraft),
+    [chargedMove2IdDraft],
+  );
   const normalizedGenderDraft = useMemo(() => normalizeGender(genderDraft), [genderDraft]);
   const normalizedDateCaughtDraft = useMemo(() => dateCaughtDraft.trim(), [dateCaughtDraft]);
 
@@ -250,6 +263,46 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     selectedInstance,
   ]);
 
+  const movesValidationError = useMemo(() => {
+    if (parsedFastMoveId === 'invalid') return 'Fast Move ID must be a whole number.';
+    if (typeof parsedFastMoveId === 'number' && parsedFastMoveId < 0) {
+      return 'Fast Move ID must be 0 or greater.';
+    }
+
+    if (parsedChargedMove1Id === 'invalid') return 'Charged Move 1 ID must be a whole number.';
+    if (typeof parsedChargedMove1Id === 'number' && parsedChargedMove1Id < 0) {
+      return 'Charged Move 1 ID must be 0 or greater.';
+    }
+
+    if (parsedChargedMove2Id === 'invalid') return 'Charged Move 2 ID must be a whole number.';
+    if (typeof parsedChargedMove2Id === 'number' && parsedChargedMove2Id < 0) {
+      return 'Charged Move 2 ID must be 0 or greater.';
+    }
+
+    return null;
+  }, [parsedChargedMove1Id, parsedChargedMove2Id, parsedFastMoveId]);
+
+  const movesUnchanged = useMemo(() => {
+    if (!selectedInstance) return true;
+    if (
+      parsedFastMoveId === 'invalid' ||
+      parsedChargedMove1Id === 'invalid' ||
+      parsedChargedMove2Id === 'invalid'
+    ) {
+      return true;
+    }
+    return (
+      selectedInstance.fast_move_id === parsedFastMoveId &&
+      selectedInstance.charged_move1_id === parsedChargedMove1Id &&
+      selectedInstance.charged_move2_id === parsedChargedMove2Id
+    );
+  }, [
+    parsedChargedMove1Id,
+    parsedChargedMove2Id,
+    parsedFastMoveId,
+    selectedInstance,
+  ]);
+
   const caughtDetailsValidationError = useMemo(() => {
     if (normalizedGenderDraft && !GENDER_OPTIONS.includes(normalizedGenderDraft as (typeof GENDER_OPTIONS)[number])) {
       return `Gender must be one of: ${GENDER_OPTIONS.join(', ')}.`;
@@ -282,6 +335,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     setAttackIvDraft('');
     setDefenseIvDraft('');
     setStaminaIvDraft('');
+    setFastMoveIdDraft('');
+    setChargedMove1IdDraft('');
+    setChargedMove2IdDraft('');
     setGenderDraft('');
     setDateCaughtDraft('');
     setMegaFormDraft('');
@@ -455,6 +511,30 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
     );
   };
 
+  const saveMoves = async () => {
+    if (!selectedInstanceId) return;
+    if (movesValidationError) {
+      setError(movesValidationError);
+      return;
+    }
+    if (movesUnchanged) return;
+    if (
+      parsedFastMoveId === 'invalid' ||
+      parsedChargedMove1Id === 'invalid' ||
+      parsedChargedMove2Id === 'invalid'
+    ) {
+      return;
+    }
+    setError(null);
+    await updateInstanceAndSync(selectedInstanceId, (instance) =>
+      mutateInstanceMoves(instance, {
+        fastMoveId: parsedFastMoveId,
+        chargedMove1Id: parsedChargedMove1Id,
+        chargedMove2Id: parsedChargedMove2Id,
+      }),
+    );
+  };
+
   const applyMegaToggle = async () => {
     if (!selectedInstanceId || !selectedInstance) return;
     const nextEnabled = !Boolean(selectedInstance.is_mega || selectedInstance.mega);
@@ -622,6 +702,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     setAttackIvDraft(String(selected?.attack_iv ?? ''));
                     setDefenseIvDraft(String(selected?.defense_iv ?? ''));
                     setStaminaIvDraft(String(selected?.stamina_iv ?? ''));
+                    setFastMoveIdDraft(String(selected?.fast_move_id ?? ''));
+                    setChargedMove1IdDraft(String(selected?.charged_move1_id ?? ''));
+                    setChargedMove2IdDraft(String(selected?.charged_move2_id ?? ''));
                     setGenderDraft(String(selected?.gender ?? ''));
                     setDateCaughtDraft(String(selected?.date_caught ?? ''));
                     setMegaFormDraft(String(selected?.mega_form ?? ''));
@@ -657,6 +740,9 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
           </Text>
           <Text style={commonStyles.caption}>
             ivs atk={String(selectedInstance.attack_iv ?? '-')}, def={String(selectedInstance.defense_iv ?? '-')}, sta={String(selectedInstance.stamina_iv ?? '-')}
+          </Text>
+          <Text style={commonStyles.caption}>
+            moves fast={String(selectedInstance.fast_move_id ?? '-')}, c1={String(selectedInstance.charged_move1_id ?? '-')}, c2={String(selectedInstance.charged_move2_id ?? '-')}
           </Text>
           <Text style={commonStyles.caption}>
             gender={String(selectedInstance.gender ?? '-')}, date_caught={String(selectedInstance.date_caught ?? '-')}
@@ -732,6 +818,12 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                   {caughtDetailsValidationError ? (
                     <Text style={commonStyles.error}>{caughtDetailsValidationError}</Text>
                   ) : null}
+                  <Text style={commonStyles.hint}>
+                    Move IDs must be whole numbers (0+), or blank to clear.
+                  </Text>
+                  {movesValidationError ? (
+                    <Text style={commonStyles.error}>{movesValidationError}</Text>
+                  ) : null}
                   <View style={commonStyles.actions}>
                     <Button
                       title={selectedInstance.favorite ? 'Unset Favorite' : 'Set Favorite'}
@@ -806,6 +898,33 @@ export const PokemonCollectionScreen = ({ navigation, route }: PokemonCollection
                     title="Save Battle Stats"
                     onPress={() => void saveBattleStats()}
                     disabled={syncing || battleStatsUnchanged || Boolean(battleStatsValidationError)}
+                  />
+
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder="Fast Move ID"
+                    value={fastMoveIdDraft}
+                    onChangeText={setFastMoveIdDraft}
+                    style={commonStyles.input}
+                  />
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder="Charged Move 1 ID"
+                    value={chargedMove1IdDraft}
+                    onChangeText={setChargedMove1IdDraft}
+                    style={commonStyles.input}
+                  />
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder="Charged Move 2 ID"
+                    value={chargedMove2IdDraft}
+                    onChangeText={setChargedMove2IdDraft}
+                    style={commonStyles.input}
+                  />
+                  <Button
+                    title="Save Moves"
+                    onPress={() => void saveMoves()}
+                    disabled={syncing || movesUnchanged || Boolean(movesValidationError)}
                   />
 
                   <Text style={commonStyles.caption}>Gender</Text>

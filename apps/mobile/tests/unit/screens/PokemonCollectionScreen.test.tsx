@@ -674,4 +674,107 @@ describe('PokemonCollectionScreen', () => {
     });
     expect(mockedSendPokemonUpdate).not.toHaveBeenCalled();
   });
+
+  it('saves move ids and syncs update', async () => {
+    mockedFetchUserOverview.mockResolvedValue({
+      user: { user_id: 'u1', username: 'ash' },
+      pokemon_instances: {
+        i1: {
+          instance_id: 'i1',
+          variant_id: 'v-001',
+          pokemon_id: 1,
+          nickname: null,
+          fast_move_id: null,
+          charged_move1_id: null,
+          charged_move2_id: null,
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          most_wanted: false,
+          favorite: false,
+          registered: true,
+          date_added: '2026-01-01T00:00:00Z',
+          last_update: 1,
+        },
+      },
+      trades: {},
+      related_instances: {},
+      registrations: {},
+    } as never);
+    mockedSendPokemonUpdate.mockResolvedValue({});
+
+    render(
+      <PokemonCollectionScreen navigation={baseNavigation as never} route={route as never} />,
+    );
+    fireEvent.press(screen.getByText('Load Collection'));
+    await waitFor(() => {
+      expect(screen.getByText('v-001')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('v-001'));
+    fireEvent.press(screen.getByText('attributes'));
+    fireEvent.changeText(screen.getByPlaceholderText('Fast Move ID'), '216');
+    fireEvent.changeText(screen.getByPlaceholderText('Charged Move 1 ID'), '90');
+    fireEvent.changeText(screen.getByPlaceholderText('Charged Move 2 ID'), '14');
+    fireEvent.press(screen.getByText('Save Moves'));
+
+    await waitFor(() => {
+      expect(mockedSendPokemonUpdate).toHaveBeenCalled();
+    });
+    expect(mockedSendPokemonUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: 'i1',
+        fast_move_id: 216,
+        charged_move1_id: 90,
+        charged_move2_id: 14,
+      }),
+    );
+  });
+
+  it('blocks move id save when value is negative', async () => {
+    mockedFetchUserOverview.mockResolvedValue({
+      user: { user_id: 'u1', username: 'ash' },
+      pokemon_instances: {
+        i1: {
+          instance_id: 'i1',
+          variant_id: 'v-001',
+          pokemon_id: 1,
+          nickname: null,
+          fast_move_id: null,
+          charged_move1_id: null,
+          charged_move2_id: null,
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          most_wanted: false,
+          favorite: false,
+          registered: true,
+          date_added: '2026-01-01T00:00:00Z',
+          last_update: 1,
+        },
+      },
+      trades: {},
+      related_instances: {},
+      registrations: {},
+    } as never);
+    mockedSendPokemonUpdate.mockResolvedValue({});
+
+    render(
+      <PokemonCollectionScreen navigation={baseNavigation as never} route={route as never} />,
+    );
+    fireEvent.press(screen.getByText('Load Collection'));
+    await waitFor(() => {
+      expect(screen.getByText('v-001')).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByText('v-001'));
+    fireEvent.press(screen.getByText('attributes'));
+    fireEvent.changeText(screen.getByPlaceholderText('Fast Move ID'), '-1');
+    fireEvent.press(screen.getByText('Save Moves'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Fast Move ID must be 0 or greater.')).toBeTruthy();
+    });
+    expect(mockedSendPokemonUpdate).not.toHaveBeenCalled();
+  });
 });

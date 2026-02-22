@@ -230,6 +230,13 @@ Done:
    - added strict date validation (`YYYY-MM-DD`) and gender normalization guardrails
    - expanded mutation and screen tests for caught-details save + invalid-date blocking
 
+26. Mobile pokemon move-id editing baseline shipped:
+   - added typed move mutation adapter (`mutateInstanceMoves`)
+   - expanded collection attributes editor with fast/charged move id fields
+   - added move-id validation guardrails (whole numbers, 0+, blank to clear)
+   - prevented invalid or unchanged move submits from dispatching receiver sync updates
+   - expanded mutation and screen tests for move save and invalid-negative blocking
+
 Remaining:
 
 1. Validate first slices on device against live APIs.

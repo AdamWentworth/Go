@@ -12,6 +12,11 @@ export type InstanceCaughtDetailsMutation = {
   gender: string | null;
   dateCaught: string | null;
 };
+export type InstanceMovesMutation = {
+  fastMoveId: number | null;
+  chargedMove1Id: number | null;
+  chargedMove2Id: number | null;
+};
 
 const withTimestamp = (instance: PokemonInstance, timestamp: number): PokemonInstance => ({
   ...instance,
@@ -141,6 +146,21 @@ export const mutateInstanceCaughtDetails = (
       ...instance,
       gender: details.gender,
       date_caught: details.dateCaught,
+    },
+    timestamp,
+  );
+
+export const mutateInstanceMoves = (
+  instance: PokemonInstance,
+  moves: InstanceMovesMutation,
+  timestamp = Date.now(),
+): PokemonInstance =>
+  withTimestamp(
+    {
+      ...instance,
+      fast_move_id: moves.fastMoveId,
+      charged_move1_id: moves.chargedMove1Id,
+      charged_move2_id: moves.chargedMove2Id,
     },
     timestamp,
   );
