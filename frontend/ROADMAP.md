@@ -251,6 +251,34 @@ Done:
    - prevented invalid or unchanged max-stat submits from dispatching receiver sync updates
    - expanded mutation and screen tests for max-stat save and out-of-range blocking
 
+29. Mobile trades status-view parity shipped:
+   - added status filter pills (`all/proposed/pending/completed/cancelled/denied/deleted`)
+   - trades list now renders against selected status view rather than a single flat stream
+   - preserved status summary card while adding per-view empty-state guidance
+   - expanded `TradesScreen` coverage for status-view filtering behavior
+
+30. Mobile partner reveal flow shipped:
+   - added typed partner-reveal service adapter (`revealTradePartnerInfo`) using shared auth/trade contracts
+   - added pending/completed trade reveal action with loading/error handling in `TradesScreen`
+   - added partner detail card rendering (trainer code, pokemon-go name, location, coordinates)
+   - added service-level unit coverage for shared-contract endpoint wiring
+
+31. Mobile completed-trade satisfaction rating shipped:
+   - added typed satisfaction mutation adapter (`setTradeSatisfaction`)
+   - extended trade action rules with participant/status guards for satisfaction updates
+   - added completed-trade satisfaction toggle action in `TradesScreen`
+   - added mutation/rules/screen tests for proposer/accepter/outsider satisfaction behavior
+
+32. Mobile re-propose lifecycle normalization hardening shipped:
+   - re-propose now clears stale completion flags and satisfaction flags before re-opening trade
+   - retained proposer/accepter swap semantics for re-propose-by-counterparty flows
+   - expanded mutation tests to lock re-propose reset semantics
+
+33. Mobile trades lifecycle audit detail expansion shipped:
+   - lifecycle audit details now include proposer/accepter satisfaction lines when present
+   - confirmation-copy support added for satisfaction updates
+   - expanded lifecycle-message unit coverage for new confirmation path
+
 Remaining:
 
 1. Validate first slices on device against live APIs.
@@ -291,8 +319,8 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
 | `/search` (list view) | Complete | Complete | None |
 | `/search` (map view) | OpenLayers full map | Canvas with marker selection | Viewport filtering, richer popups, location autocomplete |
 | `/trades` (read) | Complete | Complete | None |
-| `/trades` (lifecycle) | Full (all actions) | All core actions shipped | Re-propose, satisfaction rating, partner reveal |
-| `/trades` (status views) | Per-status filtered views | Single list | Status tab views |
+| `/trades` (lifecycle) | Full (all actions) | Core + advanced lifecycle actions shipped | None |
+| `/trades` (status views) | Per-status filtered views | Per-status filtered views shipped | None |
 | Real-time sync (SSE) | Complete | None | Entire SSE layer |
 | Offline persistence | IndexedDB (6+ stores) | None | Platform storage adapter + sync strategy |
 | Raid calculator | Complete | None | Entire feature |

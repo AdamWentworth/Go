@@ -1,4 +1,11 @@
-export type TradeAction = 'accept' | 'deny' | 'cancel' | 'complete' | 'repropose' | 'delete';
+export type TradeAction =
+  | 'accept'
+  | 'deny'
+  | 'cancel'
+  | 'complete'
+  | 'repropose'
+  | 'delete'
+  | 'satisfaction';
 export type TradeActionDecision = { allowed: boolean; reason: string | null };
 
 type TradeActionContext = {
@@ -16,7 +23,7 @@ const ACTIONS_BY_STATUS: Record<string, TradeAction[]> = {
   pending: ['complete', 'cancel'],
   denied: ['repropose', 'delete'],
   cancelled: ['repropose', 'delete'],
-  completed: ['delete'],
+  completed: ['delete', 'satisfaction'],
   deleted: ['repropose'],
 };
 
@@ -32,6 +39,7 @@ const ACTION_LABELS: Record<TradeAction, string> = {
   complete: 'complete',
   repropose: 're-propose',
   delete: 'delete',
+  satisfaction: 'satisfaction',
 };
 
 const REQUIRED_STATUS_BY_ACTION: Record<TradeAction, string[]> = {
@@ -41,6 +49,7 @@ const REQUIRED_STATUS_BY_ACTION: Record<TradeAction, string[]> = {
   complete: ['pending'],
   repropose: ['denied', 'cancelled', 'deleted'],
   delete: ['proposed', 'denied', 'cancelled', 'completed'],
+  satisfaction: ['completed'],
 };
 
 export const isTradeActionAllowed = (
@@ -79,6 +88,20 @@ export const evaluateTradeAction = (
     }
     if (isAccepter && Boolean(trade.user_accepting_completion_confirmed)) {
       return { allowed: false, reason: 'complete: you already confirmed completion.' };
+    }
+  }
+
+  if (action === 'satisfaction') {
+    const trade = context?.trade;
+    const viewer = context?.viewerUsername ?? null;
+    if (!trade || !viewer) {
+      return { allowed: false, reason: 'satisfaction: unable to determine participant identity.' };
+    }
+
+    const isProposer = viewer === (trade.username_proposed ?? '');
+    const isAccepter = viewer === (trade.username_accepting ?? '');
+    if (!isProposer && !isAccepter) {
+      return { allowed: false, reason: 'satisfaction: only trade participants can rate this trade.' };
     }
   }
 

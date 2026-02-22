@@ -27,6 +27,11 @@ describe('tradeLifecycleMessages', () => {
         title: 'Delete trade?',
       }),
     );
+    expect(buildTradeActionConfirmation('satisfaction', baseTrade, 'ash')).toEqual(
+      expect.objectContaining({
+        title: 'Update trade satisfaction?',
+      }),
+    );
   });
 
   it('adapts completion confirmation copy based on counterpart confirmation', () => {

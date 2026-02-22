@@ -144,6 +144,10 @@ export const reproposeTrade = (
     trade_cancelled_date: null,
     trade_cancelled_by: null,
     trade_deleted_date: null,
+    user_proposed_completion_confirmed: false,
+    user_accepting_completion_confirmed: false,
+    user_1_trade_satisfaction: null,
+    user_2_trade_satisfaction: null,
     trade_proposal_date: nowIso(),
     last_update: nowMs(),
   };
@@ -191,6 +195,38 @@ export const completeTrade = (
     updated.trade_status = 'completed';
     updated.trade_completed_date = nowIso();
   }
+
+  return {
+    next: { ...trades, [tradeId]: updated },
+    changed: [updated],
+  };
+};
+
+export const setTradeSatisfaction = (
+  trades: TradeMap,
+  tradeId: string,
+  currentUsername: string,
+): { next: TradeMap; changed: TradeRow[] } => {
+  const source = trades[tradeId];
+  if (!source) return { next: trades, changed: [] };
+
+  const proposer = source.username_proposed ?? '';
+  const accepter = source.username_accepting ?? '';
+  const isProposer = currentUsername.length > 0 && currentUsername === proposer;
+  const isAccepter = currentUsername.length > 0 && currentUsername === accepter;
+  if (!isProposer && !isAccepter) {
+    return { next: trades, changed: [] };
+  }
+
+  const proposerSatisfaction = Boolean(source.user_1_trade_satisfaction);
+  const accepterSatisfaction = Boolean(source.user_2_trade_satisfaction);
+  const updated: TradeRow = {
+    ...source,
+    ...(isProposer
+      ? { user_1_trade_satisfaction: !proposerSatisfaction }
+      : { user_2_trade_satisfaction: !accepterSatisfaction }),
+    last_update: nowMs(),
+  };
 
   return {
     next: { ...trades, [tradeId]: updated },

@@ -61,6 +61,11 @@ export const buildTradeActionConfirmation = (
         title: 'Delete trade?',
         message: `Mark trade ${tradeLabel} as deleted. It may remain in historical/audit views.`,
       };
+    case 'satisfaction':
+      return {
+        title: 'Update trade satisfaction?',
+        message: `Toggle your trade satisfaction rating for trade ${tradeLabel}.`,
+      };
     default:
       return {
         title: 'Update trade?',
@@ -122,6 +127,12 @@ export const buildTradeAuditDetails = (trade: TradeRow | null): string[] => {
   if (cancelledAt) details.push(`Cancelled: ${cancelledAt}`);
   if (deletedAt) details.push(`Deleted: ${deletedAt}`);
   if (trade.trade_cancelled_by) details.push(`Cancelled by: ${trade.trade_cancelled_by}`);
+  if (typeof trade.user_1_trade_satisfaction === 'boolean') {
+    details.push(`Proposer satisfaction: ${trade.user_1_trade_satisfaction ? 'yes' : 'no'}`);
+  }
+  if (typeof trade.user_2_trade_satisfaction === 'boolean') {
+    details.push(`Accepter satisfaction: ${trade.user_2_trade_satisfaction ? 'yes' : 'no'}`);
+  }
 
   if (details.length === 0) return ['No audit timestamps yet.'];
   return details;

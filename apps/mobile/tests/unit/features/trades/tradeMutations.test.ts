@@ -3,6 +3,7 @@ import {
   buildStatusCounts,
   completeTrade,
   reproposeTrade,
+  setTradeSatisfaction,
   toTradeMap,
   toTradeRows,
   type TradeRow,
@@ -81,6 +82,10 @@ describe('tradeMutations', () => {
         trade_cancelled_date: '2026-01-03T00:00:00.000Z',
         trade_cancelled_by: 'ash',
         trade_deleted_date: '2026-01-04T00:00:00.000Z',
+        user_proposed_completion_confirmed: true,
+        user_accepting_completion_confirmed: true,
+        user_1_trade_satisfaction: true,
+        user_2_trade_satisfaction: true,
       },
     ]);
 
@@ -94,6 +99,10 @@ describe('tradeMutations', () => {
     expect(next.t1.trade_cancelled_date).toBeNull();
     expect(next.t1.trade_cancelled_by).toBeNull();
     expect(next.t1.trade_deleted_date).toBeNull();
+    expect(next.t1.user_proposed_completion_confirmed).toBe(false);
+    expect(next.t1.user_accepting_completion_confirmed).toBe(false);
+    expect(next.t1.user_1_trade_satisfaction).toBeNull();
+    expect(next.t1.user_2_trade_satisfaction).toBeNull();
   });
 
   it('buildStatusCounts and toTradeRows return consistent grouped/sorted rows', () => {
@@ -109,5 +118,30 @@ describe('tradeMutations', () => {
     const counts = buildStatusCounts(sorted);
     expect(counts).toEqual({ proposed: 1, pending: 2 });
   });
-});
 
+  it('setTradeSatisfaction toggles the correct side for each participant', () => {
+    const base = toTradeMap([
+      {
+        trade_id: 't1',
+        trade_status: 'completed',
+        username_proposed: 'ash',
+        username_accepting: 'misty',
+        user_1_trade_satisfaction: false,
+        user_2_trade_satisfaction: false,
+      },
+    ]);
+
+    const proposerToggle = setTradeSatisfaction(base, 't1', 'ash');
+    expect(proposerToggle.next.t1.user_1_trade_satisfaction).toBe(true);
+    expect(proposerToggle.next.t1.user_2_trade_satisfaction).toBe(false);
+
+    const accepterToggle = setTradeSatisfaction(proposerToggle.next, 't1', 'misty');
+    expect(accepterToggle.next.t1.user_1_trade_satisfaction).toBe(true);
+    expect(accepterToggle.next.t1.user_2_trade_satisfaction).toBe(true);
+
+    const outsider = setTradeSatisfaction(accepterToggle.next, 't1', 'brock');
+    expect(outsider.changed).toEqual([]);
+    expect(outsider.next.t1.user_1_trade_satisfaction).toBe(true);
+    expect(outsider.next.t1.user_2_trade_satisfaction).toBe(true);
+  });
+});
