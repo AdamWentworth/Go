@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getPokemons } from '@/services/pokemonDataService';
+import { normalizeAssetUrlsDeep } from '@/utils/assetUrl';
 import type { BasePokemon } from '@/types/pokemonBase';
 import pokemonsFixture from '@/../tests/__helpers__/fixtures/pokemons.json';
 
@@ -22,7 +23,7 @@ describe('pokemonDataService (integration)', () => {
 
     const result = await getPokemons();
 
-    expect(result).toEqual(payload);
+    expect(result).toEqual(normalizeAssetUrlsDeep(payload));
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -34,6 +35,6 @@ describe('pokemonDataService (integration)', () => {
 
     const result = await getPokemons();
 
-    expect(result).toEqual(payload);
+    expect(result).toEqual(normalizeAssetUrlsDeep(payload));
   });
 });

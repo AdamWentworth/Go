@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getPokemons } from '@/services/pokemonDataService';
+import { normalizeAssetUrlsDeep } from '@/utils/assetUrl';
 import type { BasePokemon } from '@/types/pokemonBase';
 import pokemonFixtures from '../../__helpers__/fixtures/pokemons.json' assert { type: 'json' };
 
@@ -22,7 +23,7 @@ describe('pokemonDataService', () => {
 
     const result = await getPokemons();
 
-    expect(result).toEqual(payload);
+    expect(result).toEqual(normalizeAssetUrlsDeep(payload));
   });
 
   it('uses cached payload on 304 response', async () => {
@@ -33,7 +34,7 @@ describe('pokemonDataService', () => {
 
     const result = await getPokemons();
 
-    expect(result).toEqual(payload);
+    expect(result).toEqual(normalizeAssetUrlsDeep(payload));
   });
 
   it('supports legacy raw-array cache shape on 304 response', async () => {
@@ -44,7 +45,7 @@ describe('pokemonDataService', () => {
 
     const result = await getPokemons();
 
-    expect(result).toEqual(payload);
+    expect(result).toEqual(normalizeAssetUrlsDeep(payload));
   });
 
   it('throws when 304 response has no cache', async () => {
