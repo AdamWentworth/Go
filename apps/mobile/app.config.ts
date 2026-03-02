@@ -25,6 +25,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       locationApiUrl: readEnv('EXPO_PUBLIC_LOCATION_API_URL', 'https://pokemongonexus.com/api/location'),
       eventsApiUrl: readEnv('EXPO_PUBLIC_EVENTS_API_URL', 'https://pokemongonexus.com/api/events'),
       receiverApiUrl: readEnv('EXPO_PUBLIC_RECEIVER_API_URL', 'https://pokemongonexus.com/api/receiver'),
+      frontendAppUrl: readEnv('EXPO_PUBLIC_FRONTEND_APP_URL', 'https://pokemongonexus.com'),
     },
     observability: {
       crashReportUrl: readEnv('EXPO_PUBLIC_CRASH_REPORT_URL', ''),

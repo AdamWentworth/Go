@@ -8,6 +8,7 @@ type RuntimeApiConfig = {
   locationApiUrl: string;
   eventsApiUrl: string;
   receiverApiUrl: string;
+  frontendAppUrl: string;
 };
 
 type RuntimeObservabilityConfig = {
@@ -35,6 +36,7 @@ const DEFAULT_API_CONFIG: RuntimeApiConfig = {
   locationApiUrl: 'https://pokemongonexus.com/api/location',
   eventsApiUrl: 'https://pokemongonexus.com/api/events',
   receiverApiUrl: 'https://pokemongonexus.com/api/receiver',
+  frontendAppUrl: 'https://pokemongonexus.com',
 };
 
 const DEFAULT_OBSERVABILITY_CONFIG: RuntimeObservabilityConfig = {
@@ -104,6 +106,7 @@ export const runtimeConfig: {
     locationApiUrl: sanitizeUrl(apiOverrides.locationApiUrl, DEFAULT_API_CONFIG.locationApiUrl),
     eventsApiUrl: sanitizeUrl(apiOverrides.eventsApiUrl, DEFAULT_API_CONFIG.eventsApiUrl),
     receiverApiUrl: sanitizeUrl(apiOverrides.receiverApiUrl, DEFAULT_API_CONFIG.receiverApiUrl),
+    frontendAppUrl: sanitizeUrl(apiOverrides.frontendAppUrl, DEFAULT_API_CONFIG.frontendAppUrl),
   },
   observability: {
     crashReportUrl:

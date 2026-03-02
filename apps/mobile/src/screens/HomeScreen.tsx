@@ -33,6 +33,15 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
       <Button title="Trainer Search" onPress={() => navigation.navigate('TrainerSearch')} />
       <Button title="Pokemon Catalog" onPress={() => navigation.navigate('PokemonCatalog')} />
       <Button title="My Collection" onPress={() => navigation.navigate('PokemonCollection')} />
+      <Button
+        title="Pokemon Page (Web Replica)"
+        onPress={() =>
+          navigation.navigate('PokemonWebReplica', {
+            username: user?.username,
+            ownRoute: false,
+          })
+        }
+      />
       <Button title="Search" onPress={() => navigation.navigate('Search')} />
       <Button title="Trades" onPress={() => navigation.navigate('Trades')} />
       <Button title="Account" onPress={() => navigation.navigate('Account')} />
