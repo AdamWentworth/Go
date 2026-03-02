@@ -9,7 +9,7 @@ React Native mobile scaffold for Pokemon Go Nexus.
 3. Typed runtime API config via Expo `extra`.
 4. Shared contracts consumption from `@pokemongonexus/shared-contracts`.
 5. Lint/typecheck/test scripts.
-6. Web parity preview screen for Pokemon page via embedded WebView.
+6. Reusable web parity screen (`WebApp`) via embedded WebView for any frontend route.
 
 ## Commands
 
@@ -27,7 +27,7 @@ npm run test
 
 Copy `.env.example` values into your environment (or EAS secrets) using `EXPO_PUBLIC_*` keys.
 
-`EXPO_PUBLIC_FRONTEND_APP_URL` controls which deployed web app is used for the Pokemon Web Replica screen.
+`EXPO_PUBLIC_FRONTEND_APP_URL` controls which deployed web app is used by the reusable `WebApp` screen.
 
 ## Note on Node version
 

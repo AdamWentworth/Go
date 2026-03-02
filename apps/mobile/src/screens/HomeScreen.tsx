@@ -12,6 +12,13 @@ type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
 export const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const { user, signOut } = useAuth();
   const { transport, connected, syncing, error, lastSyncAt, refreshNow } = useEvents();
+  const openWebRoute = (title: string, path: string) => {
+    navigation.navigate('WebApp', {
+      title,
+      path,
+      username: user?.username,
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -30,21 +37,25 @@ export const HomeScreen = ({ navigation }: HomeScreenProps) => {
           <Button title="Retry Realtime Sync" onPress={() => void refreshNow()} />
         ) : null}
       </View>
-      <Button title="Trainer Search" onPress={() => navigation.navigate('TrainerSearch')} />
-      <Button title="Pokemon Catalog" onPress={() => navigation.navigate('PokemonCatalog')} />
-      <Button title="My Collection" onPress={() => navigation.navigate('PokemonCollection')} />
+      <Button title="Web: Home" onPress={() => openWebRoute('Web: Home', '/')} />
       <Button
-        title="Pokemon Page (Web Replica)"
-        onPress={() =>
-          navigation.navigate('PokemonWebReplica', {
-            username: user?.username,
-            ownRoute: false,
-          })
-        }
+        title="Web: Pokemon (Mine)"
+        onPress={() => openWebRoute('Web: Pokemon (Mine)', '/pokemon')}
       />
-      <Button title="Search" onPress={() => navigation.navigate('Search')} />
-      <Button title="Trades" onPress={() => navigation.navigate('Trades')} />
-      <Button title="Account" onPress={() => navigation.navigate('Account')} />
+      <Button
+        title="Web: Pokemon (:username)"
+        onPress={() => openWebRoute('Web: Pokemon (:username)', '/pokemon/:username')}
+      />
+      <Button title="Web: Search" onPress={() => openWebRoute('Web: Search', '/search')} />
+      <Button title="Web: Trades" onPress={() => openWebRoute('Web: Trades', '/trades')} />
+      <Button title="Web: Account" onPress={() => openWebRoute('Web: Account', '/account')} />
+      <Text style={commonStyles.caption}>Native fallback/debug screens</Text>
+      <Button title="Native: Trainer Search" onPress={() => navigation.navigate('TrainerSearch')} />
+      <Button title="Native: Pokemon Catalog" onPress={() => navigation.navigate('PokemonCatalog')} />
+      <Button title="Native: My Collection" onPress={() => navigation.navigate('PokemonCollection')} />
+      <Button title="Native: Search" onPress={() => navigation.navigate('Search')} />
+      <Button title="Native: Trades" onPress={() => navigation.navigate('Trades')} />
+      <Button title="Native: Account" onPress={() => navigation.navigate('Account')} />
       <Button title="Sign Out" onPress={() => void signOut()} />
     </View>
   );

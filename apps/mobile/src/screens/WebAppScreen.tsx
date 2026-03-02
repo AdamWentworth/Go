@@ -13,81 +13,74 @@ import type { RootStackParamList } from '../navigation/AppNavigator';
 import { runtimeConfig } from '../config/runtimeConfig';
 import { useAuth } from '../features/auth/AuthProvider';
 
-type FrontendPokemonWebScreenProps = NativeStackScreenProps<
-  RootStackParamList,
-  'PokemonWebReplica'
->;
+type WebAppScreenProps = NativeStackScreenProps<RootStackParamList, 'WebApp'>;
 
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
+const ensureLeadingSlash = (value: string): string =>
+  value.startsWith('/') ? value : `/${value}`;
 
-const buildPokemonPageUrl = (
-  appBaseUrl: string,
-  username: string,
-  useOwnRoute: boolean,
-): string => {
-  const base = trimTrailingSlash(appBaseUrl);
-  if (useOwnRoute) return `${base}/pokemon`;
-  const normalizedUser = username.trim();
-  if (!normalizedUser) return `${base}/pokemon`;
-  return `${base}/pokemon/${encodeURIComponent(normalizedUser)}`;
+const resolvePath = (pathTemplate: string, username: string): string => {
+  const normalizedTemplate = ensureLeadingSlash(pathTemplate.trim() || '/');
+  const normalizedUsername = username.trim();
+  if (!normalizedTemplate.includes(':username')) return normalizedTemplate;
+  if (!normalizedUsername) return normalizedTemplate.replace(':username', '');
+  return normalizedTemplate.replace(':username', encodeURIComponent(normalizedUsername));
 };
 
-export const FrontendPokemonWebScreen = ({
-  navigation,
-  route,
-}: FrontendPokemonWebScreenProps) => {
+const buildAppUrl = (appBaseUrl: string, path: string): string =>
+  `${trimTrailingSlash(appBaseUrl)}${ensureLeadingSlash(path)}`;
+
+export const WebAppScreen = ({ navigation, route }: WebAppScreenProps) => {
   const { user } = useAuth();
+  const [pathDraft, setPathDraft] = useState(route.params?.path ?? '/');
   const [usernameDraft, setUsernameDraft] = useState(
     route.params?.username ?? user?.username ?? '',
   );
-  const [useOwnRoute, setUseOwnRoute] = useState(Boolean(route.params?.ownRoute));
   const [version, setVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUrl, setCurrentUrl] = useState('');
   const webViewRef = useRef<WebView>(null);
+  const title = route.params?.title ?? 'Web App';
 
-  const pageUrl = useMemo(
-    () =>
-      buildPokemonPageUrl(
-        runtimeConfig.api.frontendAppUrl,
-        usernameDraft,
-        useOwnRoute,
-      ),
-    [useOwnRoute, usernameDraft],
+  const resolvedPath = useMemo(
+    () => resolvePath(pathDraft, usernameDraft),
+    [pathDraft, usernameDraft],
+  );
+  const appUrl = useMemo(
+    () => buildAppUrl(runtimeConfig.api.frontendAppUrl, resolvedPath),
+    [resolvedPath],
   );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Pokemon Page Replica</Text>
+        <Text style={styles.title}>{title}</Text>
         <Text style={styles.caption}>
-          Rendering the same web Pokemon UI for visual parity checks.
+          Shared web frontend rendered in mobile for parity and single-source UI.
         </Text>
         <TextInput
           autoCapitalize="none"
           autoCorrect={false}
-          value={usernameDraft}
-          onChangeText={setUsernameDraft}
-          placeholder="username (for /pokemon/:username)"
+          placeholder="path (example: /pokemon/:username)"
+          value={pathDraft}
+          onChangeText={setPathDraft}
           style={styles.input}
         />
-        <View style={styles.actions}>
-          <Button
-            title={useOwnRoute ? 'Using /pokemon' : 'Use /pokemon'}
-            onPress={() => setUseOwnRoute(true)}
-          />
-          <Button
-            title={!useOwnRoute ? 'Using /pokemon/:username' : 'Use /pokemon/:username'}
-            onPress={() => setUseOwnRoute(false)}
-          />
-        </View>
+        <TextInput
+          autoCapitalize="none"
+          autoCorrect={false}
+          placeholder="username (for :username path token)"
+          value={usernameDraft}
+          onChangeText={setUsernameDraft}
+          style={styles.input}
+        />
         <View style={styles.actions}>
           <Button title="Back" onPress={() => navigation.goBack()} />
           <Button title="Reload" onPress={() => webViewRef.current?.reload()} />
           <Button title="Apply URL" onPress={() => setVersion((prev) => prev + 1)} />
         </View>
         <Text style={styles.urlText} numberOfLines={2}>
-          {currentUrl || pageUrl}
+          {currentUrl || appUrl}
         </Text>
       </View>
 
@@ -98,9 +91,9 @@ export const FrontendPokemonWebScreen = ({
       ) : null}
 
       <WebView
-        key={`pokemon-web-replica-${version}`}
+        key={`web-app-${version}`}
         ref={webViewRef}
-        source={{ uri: pageUrl }}
+        source={{ uri: appUrl }}
         style={styles.webview}
         startInLoadingState
         sharedCookiesEnabled

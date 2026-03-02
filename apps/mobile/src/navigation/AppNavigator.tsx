@@ -11,16 +11,22 @@ import { PokemonCollectionScreen } from '../screens/PokemonCollectionScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { TradesScreen } from '../screens/TradesScreen';
 import { TrainerSearchScreen } from '../screens/TrainerSearchScreen';
-import { FrontendPokemonWebScreen } from '../screens/FrontendPokemonWebScreen';
+import { WebAppScreen } from '../screens/WebAppScreen';
 
 export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Home: undefined;
+  WebApp:
+    | {
+        title?: string;
+        path?: string;
+        username?: string;
+      }
+    | undefined;
   TrainerSearch: undefined;
   PokemonCatalog: undefined;
   PokemonCollection: { username?: string } | undefined;
-  PokemonWebReplica: { username?: string; ownRoute?: boolean } | undefined;
   Search: undefined;
   Trades: undefined;
   Account: undefined;
@@ -37,10 +43,10 @@ export const AppNavigator = () => {
         {status === 'authenticated' ? (
           <>
             <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="WebApp" component={WebAppScreen} />
             <Stack.Screen name="TrainerSearch" component={TrainerSearchScreen} />
             <Stack.Screen name="PokemonCatalog" component={PokemonCatalogScreen} />
             <Stack.Screen name="PokemonCollection" component={PokemonCollectionScreen} />
-            <Stack.Screen name="PokemonWebReplica" component={FrontendPokemonWebScreen} />
             <Stack.Screen name="Search" component={SearchScreen} />
             <Stack.Screen name="Trades" component={TradesScreen} />
             <Stack.Screen name="Account" component={AccountScreen} />
