@@ -18,6 +18,16 @@ permissions:
 jobs:
   parity:
     runs-on: ubuntu-latest
+    env:
+      VITE_POKEMON_API_URL: ${{ vars.VITE_POKEMON_API_URL || 'https://pokemongonexus.com/api/pokemon' }}
+      VITE_AUTH_API_URL: ${{ vars.VITE_AUTH_API_URL || 'https://pokemongonexus.com/api/auth' }}
+      VITE_RECEIVER_API_URL: ${{ vars.VITE_RECEIVER_API_URL || 'https://pokemongonexus.com/api/receiver' }}
+      VITE_USERS_API_URL: ${{ vars.VITE_USERS_API_URL || 'https://pokemongonexus.com/api/users' }}
+      VITE_SEARCH_API_URL: ${{ vars.VITE_SEARCH_API_URL || 'https://pokemongonexus.com/api/search' }}
+      VITE_LOCATION_SERVICE_URL: ${{ vars.VITE_LOCATION_SERVICE_URL || 'https://pokemongonexus.com/api/location' }}
+      VITE_EVENTS_API_URL: ${{ vars.VITE_EVENTS_API_URL || 'https://pokemongonexus.com/api/events' }}
+      VITE_ASSET_ORIGIN: ${{ vars.VITE_ASSET_ORIGIN || 'https://pokemongonexus.com' }}
+      VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1770678424675' }}
 
     steps:
       - uses: actions/checkout@v4
