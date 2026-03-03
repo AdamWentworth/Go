@@ -183,6 +183,14 @@ jobs:
         working-directory: frontend/apps/web
         run: npm ci
 
+      - name: Link Web node_modules For app-core Build
+        working-directory: frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf node_modules
+          ln -s apps/web/node_modules node_modules
+
       - name: Build Frontend
         working-directory: frontend/apps/web
         run: npm run build
