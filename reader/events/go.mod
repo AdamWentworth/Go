@@ -5,7 +5,7 @@ go 1.25.7
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/gofiber/adaptor/v2 v2.2.1
-	github.com/gofiber/fiber/v2 v2.52.11
+	github.com/gofiber/fiber/v2 v2.52.12
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/joho/godotenv v1.5.1
 	github.com/prometheus/client_golang v1.20.5
