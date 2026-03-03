@@ -24,6 +24,7 @@ type BuildCaughtPersistPatchMapArgs = {
   instanceId: string;
   nickname: string | null;
   isLucky: boolean;
+  isTraded: boolean;
   isFavorite: boolean;
   gender: string | null;
   weight: number | null;
@@ -34,6 +35,10 @@ type BuildCaughtPersistPatchMapArgs = {
   moves: MovesState;
   locationCaught: string | null;
   dateCaught: string | null;
+  originalTrainerName: string | null;
+  originalTrainerId: string | null;
+  tradedDate: string | null;
+  pokeball: string | null;
   selectedBackgroundId: number | null;
   megaData: MegaData;
   fusion: FusionState;
@@ -61,6 +66,7 @@ export const buildCaughtPersistPatchMap = ({
   instanceId,
   nickname,
   isLucky,
+  isTraded,
   isFavorite,
   gender,
   weight,
@@ -71,6 +77,10 @@ export const buildCaughtPersistPatchMap = ({
   moves,
   locationCaught,
   dateCaught,
+  originalTrainerName,
+  originalTrainerId,
+  tradedDate,
+  pokeball,
   selectedBackgroundId,
   megaData,
   fusion,
@@ -85,6 +95,7 @@ export const buildCaughtPersistPatchMap = ({
     instanceId,
     nickname,
     isLucky,
+    isTraded,
     isFavorite,
     gender,
     weight,
@@ -95,6 +106,10 @@ export const buildCaughtPersistPatchMap = ({
     ivs: computedIvs,
     locationCaught,
     dateCaught,
+    originalTrainerName,
+    originalTrainerId,
+    tradedDate,
+    pokeball,
     selectedBackgroundId,
     megaData,
     fusion,
@@ -125,4 +140,3 @@ export const buildCaughtPersistPatchMap = ({
 
   return patchMap;
 };
-

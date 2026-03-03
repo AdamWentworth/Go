@@ -44,7 +44,7 @@ const IdentityRow: React.FC<IdentityRowProps> = ({
       />
     </div>
 
-    <div className="name-container">
+    <div className="identity-name-slot">
       <NameComponent
         pokemon={pokemon}
         editMode={editMode}

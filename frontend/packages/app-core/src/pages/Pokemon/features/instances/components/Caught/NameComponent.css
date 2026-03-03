@@ -1,5 +1,5 @@
 /* NameComponent.css */
-.name-container {
+.pokemon-name-container {
     display: flex;
     justify-content: center; /* Horizontally center the nickname text */
     align-items: center; /* Vertically align items in the middle */

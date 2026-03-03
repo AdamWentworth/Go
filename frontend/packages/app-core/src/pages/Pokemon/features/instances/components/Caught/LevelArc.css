@@ -6,11 +6,13 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(var(--panel-offset) - var(--arc-baseline-offset, 6px));
+  top: calc(var(--panel-offset) - var(--arc-baseline-offset, 44px));
 
-  --arc-top-gap: 4px;
-  --arc-horizontal-inset: clamp(12px, 2.25vw, 36px);
-  --arc-vertical-scale: 0.94;
+  /* Keep the arc apex below the CP row so image overlap feels natural */
+  --arc-top-gap: 30px;
+  /* Keep responsive width while always preserving visible side gutters */
+  --arc-horizontal-inset: clamp(20px, 2.4vw, 56px);
+  --arc-max-width: 800px;
 
   /* NEW: colors you asked for */
   --arc-complete: rgba(255, 255, 255, 0.95);   /* white segment up to the dot */
@@ -23,7 +25,10 @@
 
 .level-arc-overlay {
   position: relative;
-  width: calc(100% - (var(--arc-horizontal-inset) * 2));
+  width: min(
+    calc(100% - (var(--arc-horizontal-inset) * 2)),
+    var(--arc-max-width)
+  );
   margin: 0 auto;
   height: var(--arc-height, 120px);
   transform: translateY(-100%);
@@ -35,9 +40,6 @@
   height: 100%;
   display: block;
   overflow: visible;
-  transform-box: fill-box;
-  transform-origin: top center;
-  transform: scaleY(var(--arc-vertical-scale));
 }
 
 /* No shadows */
@@ -45,4 +47,14 @@
   display: block;
   pointer-events: none;
   overflow: visible;
+}
+
+/* Counter non-uniform SVG scaling so the dot stays visually circular. */
+.level-arc-dot {
+  transform-origin: center;
+  transform-box: fill-box;
+  transform: scale(
+    var(--arc-dot-scale-x, 1),
+    var(--arc-dot-scale-y, 1)
+  );
 }

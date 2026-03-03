@@ -3,10 +3,14 @@
 /* ---------------------- Image + Arc Stack ---------------------- */
 .image-container {
   position: relative;
-  width: 240px;
-  height: 240px;
+  width: var(--caught-image-stage-size, 272px);
+  height: var(--caught-image-stage-size, 272px);
   overflow: visible;            /* allow arc to render outside box */
   z-index: 1;
+}
+
+.caught-instance .image-container {
+  margin-top: calc(var(--caught-stage-lift, 0px) * -1);
 }
 
 .background-container {
@@ -35,8 +39,11 @@
 
 .pokemon-image-container {
   position: relative;
-  display: inline-block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 100%;
+  height: 100%;
   z-index: 3;
 }
 
@@ -47,7 +54,10 @@
 .pokemon-image {
   position: relative;
   z-index: 5;
-  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+  width: min(100%, calc(var(--caught-image-stage-size, 272px) * 0.98));
+  max-width: none;
   height: auto;
 }
 

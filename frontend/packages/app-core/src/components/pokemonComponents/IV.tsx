@@ -85,8 +85,11 @@ const IV: React.FC<Props> = ({
             const barWidth = getBarWidth(val);
 
             return (
-              <div className="iv-display-stat" key={statKey}>
-                <span className="iv-display-label">{label}:</span>
+              <div
+                className={`iv-display-stat ${clamped === 15 ? 'iv-stat-full' : 'iv-stat-base'}`}
+                key={statKey}
+              >
+                <span className="iv-display-label">{label}</span>
                 <div className="iv-display-content">
                   <span className="iv-display-value">{val ?? ''}</span>
                 </div>
@@ -143,8 +146,11 @@ const IV: React.FC<Props> = ({
             };
 
             return (
-              <div className="iv-display-stat" key={statKey}>
-                <span className="iv-label">{label}:</span>
+              <div
+                className={`iv-display-stat ${clampValue(val) === 15 ? 'iv-stat-full' : 'iv-stat-base'}`}
+                key={statKey}
+              >
+                <span className="iv-label">{label}</span>
                 <div className="iv-content">
                   <input
                     type="number"
@@ -195,8 +201,11 @@ const IV: React.FC<Props> = ({
             };
 
             return (
-              <div className="iv-display" key={type}>
-                <span className="iv-label">{label}:</span>
+              <div
+                className={`iv-display iv-display-stat ${clamped === 15 ? 'iv-stat-full' : 'iv-stat-base'}`}
+                key={type}
+              >
+                <span className="iv-label">{label}</span>
                 <div className="iv-content">
                   <input
                     type="number"

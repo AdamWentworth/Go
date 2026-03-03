@@ -137,6 +137,7 @@ const LevelArc: React.FC<LevelArcProps> = ({
 
       {/* Level dot */}
       <circle
+        className="level-arc-dot"
         cx={dotX}
         cy={dotY}
         r={dotRadius}

@@ -1,0 +1,47 @@
+.ball-caught-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: center;
+}
+
+.ball-caught-container label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+}
+
+.ball-caught-value {
+  display: block;
+  min-height: 24px;
+  line-height: 24px;
+  border: 1px solid transparent;
+}
+
+.ball-caught-toggle-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.ball-caught-toggle {
+  border: 1px solid #8f8f8f;
+  background: rgba(26, 26, 26, 0.35);
+  color: #d7dfdb;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-family: var(--font-family-base);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  line-height: 1.1;
+}
+
+.ball-caught-toggle.active {
+  background: rgba(224, 240, 229, 0.2);
+  border-color: #c2d0c8;
+  color: #e0f0e5;
+}
+

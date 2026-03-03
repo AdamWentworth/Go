@@ -17,6 +17,18 @@ const USERS_API_URL = import.meta.env.VITE_USERS_API_URL;
 
 export type TrainerAutocompleteResult = TrainerAutocompleteEntry;
 
+type PublicUserSnapshotEnvelope = {
+  user?: {
+    user_id?: string;
+    username?: string;
+  };
+};
+
+export type PublicUserLookupOutcome =
+  | { type: 'success'; username: string; userId: string | null }
+  | { type: 'notFound' }
+  | { type: 'error'; status: number; message: string };
+
 const buildConditionalHeaders = (etag?: string | null): Record<string, string> =>
   etag ? { 'If-None-Match': etag } : {};
 
@@ -85,4 +97,35 @@ export async function fetchTrainerAutocomplete(query: string): Promise<TrainerAu
   }
 
   return { type: 'success', results: body };
+}
+
+export async function fetchPublicUserByUsername(
+  username: string,
+): Promise<PublicUserLookupOutcome> {
+  const response = await requestWithPolicy(
+    buildUrlForUsersEndpoint(usersContract.endpoints.publicUserByUsername(username)),
+  );
+
+  if (response.status === 404) {
+    return { type: 'notFound' };
+  }
+
+  const body = await parseJsonSafe<PublicUserSnapshotEnvelope & ErrorEnvelope>(response);
+
+  if (!response.ok) {
+    return {
+      type: 'error',
+      status: response.status,
+      message: body?.message ?? `Server returned ${response.status}`,
+    };
+  }
+
+  const resolvedUsername = body?.user?.username ?? username;
+  const resolvedUserId = body?.user?.user_id ?? null;
+
+  return {
+    type: 'success',
+    username: resolvedUsername,
+    userId: resolvedUserId,
+  };
 }

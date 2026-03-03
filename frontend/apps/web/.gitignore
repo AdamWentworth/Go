@@ -26,6 +26,5 @@ yarn-error.log*
 
 package-lock.json
 
-tests/.vitest/
-tests/coverage/
-tests/reports/
+/.artifacts/*
+!/.artifacts/README.md

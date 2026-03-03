@@ -1,0 +1,51 @@
+name: ci-frontend-workspace
+
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/ci-frontend-workspace.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/ci-frontend-workspace.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            frontend/apps/web/package-lock.json
+            frontend/apps/mobile/package-lock.json
+
+      - name: Install Web Dependencies
+        run: npm ci
+        working-directory: frontend/apps/web
+
+      - name: Install Mobile Dependencies
+        run: npm ci
+        working-directory: frontend/apps/mobile
+
+      - name: Workspace Lint
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Workspace Typecheck
+        run: npm run typecheck
+        working-directory: frontend
+
+      - name: Workspace Test
+        run: npm run test
+        working-directory: frontend

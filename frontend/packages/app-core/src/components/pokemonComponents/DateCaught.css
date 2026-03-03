@@ -1,6 +1,5 @@
-/* DateCaughtComponent.css */
 .date-container {
-  position: relative; /* Relative position for absolute child positioning */
+  position: relative;
   display: flex;
   flex-direction: column;
   margin-top: 5px;
@@ -8,17 +7,35 @@
 }
 
 .date-field {
-  position: relative; /* Ensure the date picker positions relative to this field */
+  position: relative;
 }
 
-.calendar-overlay {
-  position: absolute; /* Position absolutely to overlay */
-  top: 100%; /* Position below the input field */
-  left: 0;
-  z-index: 1000; /* Ensure it's above other content */
+.date-field label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
 }
 
-.date-field span {
+.date-field input.editable {
+  width: 100%;
+  min-height: 24px;
+  border: 1px solid white;
+  background-color: transparent;
+  color: inherit;
+  box-sizing: border-box;
+  padding: 0;
+  color-scheme: dark;
+}
+
+.date-field input.editable:focus {
+  outline: none;
+}
+
+.date-field input.editable::-webkit-calendar-picker-indicator {
+  filter: invert(0.85);
+}
+
+.date-field span.text {
   background-color: transparent;
   display: block;
   width: 100%;
@@ -28,24 +45,3 @@
   box-sizing: border-box;
   height: 24px;
 }
-
-.date-field span.editable {
-  cursor: text;
-  border: 1px solid white;
-  overflow: hidden;
-}
-
-.date-field span.text {
-  border: 1px solid transparent;
-}
-
-.date-field span:focus {
-  outline: none;
-}
-
-.date-field label {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 12px
-}
-

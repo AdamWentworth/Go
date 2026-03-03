@@ -23,6 +23,14 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   background: transparent;
 }
 
+button,
+input,
+select,
+textarea,
+option {
+  font-family: var(--font-family-base);
+}
+
 
 code {
   font-family: var(--font-family-mono);

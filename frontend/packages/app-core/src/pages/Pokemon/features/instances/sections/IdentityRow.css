@@ -2,21 +2,43 @@
 
 /* ---------------------- Name / Lucky / Purify Row ---------------------- */
 .purify-name-shadow-container {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   width: 100%;
   position: relative;
-  height: 2rem;
+  min-height: 3rem;
 }
 
-.lucky-component { flex: 0 0 auto; margin-right: auto; }
-.purify-component { flex: 0 0 auto; margin-left: auto; }
+.lucky-component {
+  justify-self: start;
+}
 
-.name-container {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+.purify-component {
+  justify-self: end;
+}
+
+.identity-name-slot {
+  justify-self: center;
   text-align: center;
   white-space: nowrap;
+}
+
+.identity-name-slot .pokemon-name-container {
+  width: 100%;
+}
+
+/* Caught overlay: large, bold identity title (nickname/species) */
+.identity-name-slot .name-editable-content {
+  font-size: clamp(30px, 5.4vw, 52px);
+  line-height: 1.05;
+  font-weight: 500;
+  font-family: "Roboto", var(--font-family-base);
+}
+
+/* Match lucky slot left edge with caught-section content rail */
+.caught-instance .purify-name-shadow-container > .lucky-component {
+  margin-inline-start: calc(
+    var(--caught-section-inline-pad) + var(--caught-section-inner-inline-pad)
+  );
 }

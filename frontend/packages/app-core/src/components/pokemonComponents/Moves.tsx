@@ -4,6 +4,9 @@ import './Moves.css';
 
 import type { Move } from '@/types/pokemonSubTypes';
 import type { PokemonInstance } from '@/types/pokemonInstance';
+import { resolveAssetUrl } from '@/utils/assetUrl';
+
+type DamageMode = 'raid' | 'pvp';
 
 type VariantWithOptionalInstance = {
   moves?: Move[];
@@ -39,6 +42,9 @@ const Moves: React.FC<MovesProps> = ({
   const allMoves = pokemon.moves ?? [];
   const instanceData: Partial<PokemonInstance> = pokemon.instanceData ?? {};
   const onMovesChangeRef = useRef(onMovesChange);
+  const modeToggleRef = useRef<HTMLDivElement>(null);
+  const raidTabRef = useRef<HTMLButtonElement>(null);
+  const pvpTabRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     onMovesChangeRef.current = onMovesChange;
@@ -54,6 +60,9 @@ const Moves: React.FC<MovesProps> = ({
   const [chargedMove2, setChargedMove2] = useState<number | null>(
     instanceData.charged_move2_id ?? null,
   );
+  const [damageMode, setDamageMode] = useState<DamageMode>('raid');
+  const damageModeIndex = damageMode === 'raid' ? 0 : 1;
+  const [underlineLeft, setUnderlineLeft] = useState(0);
 
   /* sync prop → state when `pokemon` object changes ----------------- */
   useEffect(() => {
@@ -61,6 +70,23 @@ const Moves: React.FC<MovesProps> = ({
     setChargedMove1(pokemon.instanceData?.charged_move1_id ?? null);
     setChargedMove2(pokemon.instanceData?.charged_move2_id ?? null);
   }, [pokemon.instanceData?.fast_move_id, pokemon.instanceData?.charged_move1_id, pokemon.instanceData?.charged_move2_id]);
+
+  useEffect(() => {
+    const updateUnderline = () => {
+      const toggleEl = modeToggleRef.current;
+      const activeTabEl = damageMode === 'raid' ? raidTabRef.current : pvpTabRef.current;
+      if (!toggleEl || !activeTabEl) return;
+
+      const toggleRect = toggleEl.getBoundingClientRect();
+      const tabRect = activeTabEl.getBoundingClientRect();
+      const tabCenter = tabRect.left + tabRect.width / 2;
+      setUnderlineLeft(tabCenter - toggleRect.left);
+    };
+
+    updateUnderline();
+    window.addEventListener('resize', updateUnderline);
+    return () => window.removeEventListener('resize', updateUnderline);
+  }, [damageMode]);
 
   /* shadow / purified swap logic ------------------------------------ */
   useEffect(() => {
@@ -136,6 +162,52 @@ const Moves: React.FC<MovesProps> = ({
         null
       : null;
 
+  const getPowerValue = (move: Move, mode: DamageMode): number | null => {
+    const power = mode === 'raid' ? move.raid_power : move.pvp_power;
+    return typeof power === 'number' && Number.isFinite(power)
+      ? power
+      : null;
+  };
+
+  const getShadowBonusValue = (power: number): number =>
+    Math.max(1, Math.round(power * 0.2));
+
+  const renderPowerValue = (move: Move | null, mode: DamageMode) => {
+    if (!move) return <span className="move-power-base">-</span>;
+
+    const power = getPowerValue(move, mode);
+    if (power == null) return <span className="move-power-base">-</span>;
+
+    if (!isShadow) return <span className="move-power-base">{power}</span>;
+
+    return (
+      <>
+        <span className="move-power-base">{power}</span>
+        <span className="move-power-bonus">+{getShadowBonusValue(power)}</span>
+      </>
+    );
+  };
+
+  const renderShadowBonusRow = (moveId: number | null) => {
+    if (!isShadow) return null;
+    const move = getMoveById(moveId);
+    if (!move) return null;
+
+    return (
+      <div className="move-shadow-bonus-row">
+        <span className="move-shadow-icon-badge">
+          <img
+            src={resolveAssetUrl('/media/images/shadow_icon.png')}
+            alt=""
+            aria-hidden="true"
+            className="move-shadow-icon"
+          />
+        </span>
+        <span className="move-shadow-bonus-text">SHADOW BONUS</span>
+      </div>
+    );
+  };
+
   const fusionId =
     pokemon.instanceData?.fusion_form &&
     pokemon.fusion?.find((f) => f.name === pokemon.instanceData?.fusion_form)
@@ -181,6 +253,7 @@ const Moves: React.FC<MovesProps> = ({
     moves: Move[],
     selectedId: number | null,
     slot: 'fast' | 'charged1' | 'charged2',
+    mode: DamageMode,
   ) => {
     const filtered = moves.filter((m) => {
       if (!fusionId && m.fusion_id != null) return false;
@@ -223,54 +296,56 @@ const Moves: React.FC<MovesProps> = ({
             </option>
           ))}
         </select>
-        <div className="spacer" />
+        <span className="move-power-value">{renderPowerValue(move, mode)}</span>
       </div>
     );
   };
 
-  const renderMoveInfo = (id: number | null) => {
+  const renderMoveInfo = (id: number | null, mode: DamageMode) => {
     const move = getMoveById(id);
     if (!move)
       return <span className="unselected-move">Unselected move</span>;
 
     return (
       <div className="move-info">
-        <img
-          src={`/images/types/${move.type.toLowerCase()}.png`}
-          alt={move.type}
-          className="type-icon"
-        />
-        <span
-          className="move-name"
-          style={move.legacy ? { fontWeight: 'bold' } : undefined}
-        >
-          {move.name}
-          {move.legacy ? '*' : ''}
-        </span>
-        <div className="spacer" />
+        <div className="move-left">
+          <img
+            src={`/images/types/${move.type.toLowerCase()}.png`}
+            alt={move.type}
+            className="type-icon"
+          />
+          <span
+            className="move-name"
+            style={move.legacy ? { fontWeight: 'bold' } : undefined}
+          >
+            {move.name}
+            {move.legacy ? '*' : ''}
+          </span>
+        </div>
+        <span className="move-power-value">{renderPowerValue(move, mode)}</span>
       </div>
     );
   };
 
-  if (!editMode && !fastMove && !chargedMove1 && !chargedMove2) return null;
-
-  return (
-    <div className={`moves-container ${editMode ? 'editable' : ''}`}>
+  const renderMovesPage = (mode: DamageMode) => (
+    <>
       <div className="move-section">
         {editMode
-          ? renderMoveOptions(fastMoves, fastMove, 'fast')
-          : renderMoveInfo(fastMove)}
+          ? renderMoveOptions(fastMoves, fastMove, 'fast', mode)
+          : renderMoveInfo(fastMove, mode)}
       </div>
+      {renderShadowBonusRow(fastMove)}
       <div className="move-section">
         {editMode
-          ? renderMoveOptions(chargedMoves, chargedMove1, 'charged1')
-          : renderMoveInfo(chargedMove1)}
+          ? renderMoveOptions(chargedMoves, chargedMove1, 'charged1', mode)
+          : renderMoveInfo(chargedMove1, mode)}
       </div>
+      {renderShadowBonusRow(chargedMove1)}
       <div className="move-section">
         {chargedMove2 ? (
           editMode
-            ? renderMoveOptions(chargedMoves, chargedMove2, 'charged2')
-            : renderMoveInfo(chargedMove2)
+            ? renderMoveOptions(chargedMoves, chargedMove2, 'charged2', mode)
+            : renderMoveInfo(chargedMove2, mode)
         ) : editMode ? (
           <button
             onClick={addSecondChargedMove}
@@ -279,6 +354,59 @@ const Moves: React.FC<MovesProps> = ({
             <span className="move-add-icon">+</span>
           </button>
         ) : null}
+      </div>
+      {renderShadowBonusRow(chargedMove2)}
+    </>
+  );
+
+  if (!editMode && !fastMove && !chargedMove1 && !chargedMove2) return null;
+
+  return (
+    <div className={`moves-container ${editMode ? 'editable' : ''}`}>
+      <div
+        ref={modeToggleRef}
+        className="moves-mode-toggle"
+        role="tablist"
+        aria-label="Move battle mode"
+      >
+        <button
+          ref={raidTabRef}
+          type="button"
+          role="tab"
+          aria-selected={damageMode === 'raid'}
+          className={`moves-mode-button ${damageMode === 'raid' ? 'active' : ''}`}
+          onClick={() => setDamageMode('raid')}
+        >
+          Gyms &amp; Raids
+        </button>
+        <button
+          ref={pvpTabRef}
+          type="button"
+          role="tab"
+          aria-selected={damageMode === 'pvp'}
+          className={`moves-mode-button ${damageMode === 'pvp' ? 'active' : ''}`}
+          onClick={() => setDamageMode('pvp')}
+        >
+          Trainer Battles
+        </button>
+        <span
+          className="moves-mode-underline"
+          style={{ left: underlineLeft }}
+          aria-hidden="true"
+        />
+      </div>
+      <div className="moves-pages-viewport">
+        <div
+          className="moves-pages-track"
+          style={{ transform: `translateX(-${damageModeIndex * 50}%)` }}
+        >
+          <div className="moves-page" role="tabpanel" aria-hidden={damageMode !== 'raid'}>
+            {renderMovesPage('raid')}
+          </div>
+          <div className="moves-page" role="tabpanel" aria-hidden={damageMode !== 'pvp'}>
+            {renderMovesPage('pvp')}
+          </div>
+        </div>
       </div>
     </div>
   );

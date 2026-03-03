@@ -11,3 +11,9 @@ Use app-local commands for CI parity:
 
 - Web: run commands in `frontend/apps/web`.
 - Mobile: run commands in `frontend/apps/mobile`.
+
+You can also run one command from `frontend/`:
+
+- `npm run test` (web + mobile)
+- `npm run lint` (web + mobile)
+- `npm run typecheck` (web + mobile)

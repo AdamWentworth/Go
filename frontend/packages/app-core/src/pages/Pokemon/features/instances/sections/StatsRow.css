@@ -2,17 +2,83 @@
 
 /* ---------------------- Weight / Types / Height ---------------------- */
 .weight-type-height-container {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
   width: 100%;
-  justify-content: center;
+  max-width: 700px;
+  margin: 0 auto;
+  padding-inline: clamp(18px, 5.5vw, 52px);
+  column-gap: clamp(8px, 1.2vw, 16px);
+  box-sizing: border-box;
 }
 
-.weight-container, .height-container { flex: 1; }
+.weight-type-height-container > .weight-container,
+.weight-type-height-container > .height-container,
+.weight-type-height-container > .type-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+}
 
-.weight-type-height-container.only-type .weight-container,
-.weight-type-height-container.only-type .height-container { display: none; }
+/* Reset legacy inner offsets from Weight/Height components for caught row layout */
+.weight-type-height-container > .weight-container .weight-container {
+  margin-left: 0;
+}
+
+.weight-type-height-container > .height-container .height-container {
+  margin-right: 0;
+}
+
+.weight-type-height-container .weight-editable-container,
+.weight-type-height-container .height-editable-container {
+  justify-content: center;
+  align-items: baseline;
+  gap: 0;
+}
+
+.weight-type-height-container .weight-editable-content,
+.weight-type-height-container .height-editable-content {
+  text-align: center;
+  padding: 0;
+  margin-left: 0;
+  margin-right: 0;
+  margin-bottom: 0;
+  line-height: 1;
+}
+
+.weight-type-height-container .weight-suffix,
+.weight-type-height-container .height-suffix {
+  font-weight: 500;
+  margin-top: 0;
+  margin-left: -1px;
+  margin-right: 0;
+  line-height: 1;
+}
+
+.weight-type-height-container.only-type > .weight-container,
+.weight-type-height-container.only-type > .height-container {
+  display: none;
+}
 
 .weight-component, .type-component, .height-component {
   display: flex; align-items: center;
+}
+
+.stats-pipe {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  padding-inline: 0;
+  color: grey;
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 1;
+  transform: scaleY(1.25);
+  transform-origin: center;
+  user-select: none;
 }

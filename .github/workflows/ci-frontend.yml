@@ -36,7 +36,7 @@ jobs:
       VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1770678424675' }}
       FRONTEND_INITIAL_JS_GZIP_BUDGET_KB: ${{ vars.FRONTEND_INITIAL_JS_GZIP_BUDGET_KB || '180' }}
       FRONTEND_MAX_JS_CHUNK_GZIP_KB: ${{ vars.FRONTEND_MAX_JS_CHUNK_GZIP_KB || '130' }}
-      FRONTEND_BUNDLE_BUDGET_REPORT_PATH: tests/reports/perf/bundle-budget.json
+      FRONTEND_BUNDLE_BUDGET_REPORT_PATH: .artifacts/tests/reports/perf/bundle-budget.json
     defaults:
       run:
         working-directory: frontend/apps/web
@@ -123,15 +123,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p tests/reports
-          npm audit --audit-level=moderate --json > tests/reports/npm-audit-dev.json
+          mkdir -p .artifacts/tests/reports
+          npm audit --audit-level=moderate --json > .artifacts/tests/reports/npm-audit-dev.json
 
       - name: Upload Dev Audit Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dev-audit-report
-          path: frontend/apps/web/tests/reports/npm-audit-dev.json
+          path: frontend/apps/web/.artifacts/tests/reports/npm-audit-dev.json
           if-no-files-found: ignore
 
       - name: Upload Perf Snapshot Reports
@@ -139,7 +139,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-perf-snapshots
-          path: frontend/apps/web/tests/reports/perf/**/*.json
+          path: frontend/apps/web/.artifacts/tests/reports/perf/**/*.json
           if-no-files-found: ignore
 
   container-security-build:

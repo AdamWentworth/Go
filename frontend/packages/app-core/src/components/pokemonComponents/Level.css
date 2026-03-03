@@ -10,13 +10,14 @@
   .level-inline {
     display: flex;
     align-items: center; /* Align text and value vertically */
-    gap: 8px; /* Optional spacing between "Level:" and the value */
+    gap: 3px; /* Keep LEVEL and value visually tight */
   }
   
   .level-label {
-    font-weight: normal;
-    font-size: 0.8rem; /* Small font size for the label */
+    font-weight: 600;
+    font-size: 0.74rem; /* Slightly smaller but heavier uppercase label */
     color: grey; /* Grey color for the label */
+    text-transform: uppercase;
   }
   
   .level-input {
@@ -24,7 +25,7 @@
     color: white; /* White text */
     border-radius: 4px; /* Rounded corners */
     font-size: 0.8rem; /* Small font size */
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family: var(--font-family-base);
     border: none; /* No border */
     outline: 1px solid #a3a3a3; /* Light grey outline */
     text-align: center; /* Center the text inside the input */
@@ -39,5 +40,6 @@
     font-weight: normal;
     font-size: 0.8rem;
     color: grey; /* Match the small grey style */
+    text-transform: uppercase;
   }
   

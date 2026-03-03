@@ -36,7 +36,9 @@ const StatsRow: React.FC<StatsRowProps> = ({
         onWeightChange={onWeightChange}
       />
     </div>
+    <span className="stats-pipe" aria-hidden="true">|</span>
     <Types pokemon={pokemon} />
+    <span className="stats-pipe" aria-hidden="true">|</span>
     <div className="height-container">
       <Height
         pokemon={pokemon}

@@ -86,7 +86,7 @@ const NameComponent: React.FC<NameComponentProps> = ({ pokemon, editMode, onNick
   }, [editMode]);
 
   return (
-    <div className="name-container">
+    <div className="pokemon-name-container">
       <div className="name-display">
         <div className="name-center-content">
           {editMode ? (

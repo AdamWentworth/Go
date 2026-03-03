@@ -52,7 +52,11 @@
 .instance-overlay > *:not(.io-bg) { position: relative; z-index: 1; }
 
 /* caught mode layout */
-.instance-overlay.caught-mode { align-items: stretch; }
+.instance-overlay.caught-mode {
+  align-items: stretch;
+  --overlay-close-button-size: clamp(50px, 12vw, 80px);
+  --overlay-close-button-gap: 20px;
+}
 
 /* container that fills full viewport; no extra padding here */
 .caught-fullscreen {
@@ -74,14 +78,21 @@
   justify-content: center;
   overflow: visible;
   padding-top: calc(24px + env(safe-area-inset-bottom));
-  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  padding-bottom: calc(
+    32px +
+    var(--overlay-close-button-size) +
+    var(--overlay-close-button-gap) +
+    env(safe-area-inset-bottom)
+  );
   min-height: 100dvh;
 }
 
 /* the centered content column/panel */
 .caught-column {
-  /* keep your tuned offset */
-  --panel-offset: calc(240px * 0.95);
+  /* Keep panel start fixed so larger sprites can overlap behind the panel */
+  --caught-image-stage-size: 296px;
+  --caught-stage-lift: 48px;
+  --panel-offset: 252px;
 
   width: 92.5%;
   height: 100%;

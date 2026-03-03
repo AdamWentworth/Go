@@ -18,6 +18,14 @@ The app supports:
 
 ---
 
+## 🗂 Monorepo Layout (Current)
+
+- `frontend/packages/app-core/` → canonical web app source (`src`), static assets (`public`), and test source (`tests`).
+- `frontend/apps/web/` → web host/build shell (Vite config, CI scripts, env files, dist output).
+- `frontend/apps/web/.artifacts/tests/` → generated local/CI test artifacts only (`.vitest`, coverage, reports).
+
+---
+
 ## ⚙️ Tech Stack
 
 - **React 18+**

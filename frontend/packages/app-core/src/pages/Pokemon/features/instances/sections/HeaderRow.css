@@ -7,6 +7,7 @@
   align-items: center;
   width: 100%;
   position: relative;
+  transform: translateY(-10px);
   z-index: 5; /* ensure the header paints above the arc at all widths */
 }
 
@@ -14,7 +15,7 @@
 .top-row .cp-component-container {
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -14px);
   z-index: 10; /* ensure above arc/sprite */
 }
 
@@ -23,10 +24,32 @@
   display: flex;
   justify-content: center;
   align-items: baseline;
-  margin-top: -10px;
+  margin-top: -18px;
   font-weight: bold;
 }
 
 .top-row .favorite-component {
   margin-left: auto;
+}
+
+/* Larger top-row controls for caught overlay readability/tap comfort */
+.top-row .edit-save-container .icon-button img {
+  width: 40px;
+  height: 40px;
+}
+
+.top-row .favorite-component img {
+  width: 44px;
+  height: 44px;
+}
+
+/* Make CP label/value more prominent in the caught header */
+.top-row .cp-label {
+  font-size: clamp(16px, 3.2vw, 24px);
+}
+
+.top-row .cp-value,
+.top-row .cp-editable-content {
+  font-size: clamp(32px, 5.6vw, 46px);
+  line-height: 1.1;
 }

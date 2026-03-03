@@ -1,7 +1,312 @@
 /* MetaPanel.css */
 
 /* ---------------------- Meta (Location & Date) ---------------------- */
-.location-caught-component,
-.date-caught-component {
+.meta-panel {
   width: 100%;
+}
+
+.meta-divider {
+  width: 100%;
+  height: 0;
+  margin: 16px auto 18px;
+}
+
+.meta-card {
+  width: var(--caught-content-width);
+  margin: 0 auto 8px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  position: relative;
+  border-radius: 8px;
+  background: rgba(170, 170, 170, 0.22);
+  display: grid;
+  gap: 8px;
+}
+
+.location-caught-component,
+.date-caught-component,
+.ball-caught-component {
+  width: 100%;
+}
+
+.meta-summary {
+  display: block;
+  padding-right: 44px;
+}
+
+.meta-summary-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.meta-caught-label,
+.meta-date-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: grey;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  font-family: var(--font-family-base);
+}
+
+.meta-location-value {
+  margin: 3px 0;
+  color: #e0f0e5;
+  font-size: 16px;
+  line-height: 1.2;
+  font-family: var(--font-family-base);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.meta-ball-slot {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 1;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.meta-ball-placeholder {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid #9aa19d;
+  background:
+    linear-gradient(to bottom, #f4f4f4 0 46%, #4a4a4a 46% 54%, #e4e4e4 54% 100%);
+  position: relative;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.meta-ball-placeholder::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid #9aa19d;
+  background: #f3f3f3;
+}
+
+.meta-edit-fields {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(224, 240, 229, 0.2);
+}
+
+.meta-trainer-edit-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 4px;
+}
+
+.meta-trainer-edit-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: grey;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  font-family: var(--font-family-base);
+}
+
+.meta-edit-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #a3a3a3;
+  border-radius: 4px;
+  padding: 5px 8px;
+  background: rgba(20, 20, 20, 0.35);
+  color: #e0f0e5;
+  font-size: 14px;
+  font-family: var(--font-family-base);
+  color-scheme: dark;
+}
+
+.meta-edit-input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.85);
+}
+
+.meta-toggle-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meta-toggle-button {
+  min-width: 54px;
+  border: 1px solid #8f8f8f;
+  border-radius: 999px;
+  background: rgba(26, 26, 26, 0.35);
+  color: #d7dfdb;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-family: var(--font-family-base);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+.meta-toggle-button.active {
+  background: rgba(224, 240, 229, 0.2);
+  border-color: #c2d0c8;
+  color: #e0f0e5;
+}
+
+.meta-toggle-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.meta-trainer-name-input-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.meta-trainer-suggestions {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 1200;
+  display: grid;
+  gap: 1px;
+  border: 1px solid #8f8f8f;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #1f1f1f;
+}
+
+.meta-trainer-suggestion-item {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: #2a2a2a;
+  color: #e0f0e5;
+  font-size: 13px;
+  font-family: var(--font-family-base);
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.meta-trainer-suggestion-item:hover {
+  background: #363636;
+}
+
+.meta-trainer-lookup-status {
+  margin-top: 3px;
+  font-size: 11px;
+  color: #96a29d;
+  font-family: var(--font-family-base);
+}
+
+.meta-trainer-lookup-error {
+  margin-top: 3px;
+  font-size: 11px;
+  color: #ff8f8f;
+  font-family: var(--font-family-base);
+}
+
+.meta-trade-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.meta-trade-label,
+.meta-trade-date-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: grey;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  font-family: var(--font-family-base);
+}
+
+.meta-trade-value {
+  color: #e0f0e5;
+  font-size: 16px;
+  line-height: 1.2;
+  font-family: var(--font-family-base);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.meta-card .location-caught-container,
+.meta-card .date-container,
+.meta-card .ball-caught-container {
+  margin-top: 0;
+}
+
+.meta-card .location-caught-container,
+.meta-card .date-container {
+  text-align: left;
+}
+
+.meta-card .location-field label,
+.meta-card .date-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: grey;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  font-family: var(--font-family-base);
+  margin-bottom: 4px;
+}
+
+.meta-card .location-field span.editable,
+.meta-card .date-field input.editable {
+  border: 1px solid #a3a3a3;
+  border-radius: 4px;
+  padding: 5px 8px;
+  min-height: 32px;
+  height: auto;
+  background: rgba(20, 20, 20, 0.35);
+  color: #e0f0e5;
+  font-size: 14px;
+  line-height: 1.4;
+  font-family: var(--font-family-base);
+  text-align: left;
+}
+
+.meta-card .location-caught-container .suggestions {
+  top: calc(100% + 2px);
+  border: 1px solid #8f8f8f;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #1f1f1f;
+  box-shadow: none;
+}
+
+.meta-card .location-caught-container .suggestion-item {
+  background: #2a2a2a;
+  color: #e0f0e5;
+  border-bottom: 1px solid #313131;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: var(--font-family-base);
+}
+
+.meta-card .location-caught-container .suggestion-item:hover {
+  background: #363636;
 }

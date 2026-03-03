@@ -65,6 +65,12 @@ vi.mock('@/components/pokemonComponents/DateCaught', () => ({
   default: () => <div>date-caught</div>,
 }));
 
+vi.mock('@/components/pokemonComponents/BallCaught', () => ({
+  default: ({ onChange }: { onChange?: (value: string | null) => void }) => (
+    <button onClick={() => onChange?.('ultra_ball')}>ball-caught</button>
+  ),
+}));
+
 vi.mock('@/components/pokemonComponents/BackgroundLocationCard', () => ({
   default: ({ onSelectBackground }: { onSelectBackground?: (value: unknown) => void }) => (
     <button onClick={() => onSelectBackground?.({ background_id: 1 })}>pick-background</button>
@@ -238,18 +244,99 @@ describe('instances section components', () => {
     expect(screen.getByText('gender')).toBeInTheDocument();
   });
 
-  it('MetaPanel renders location/date controls', () => {
+  it('MetaPanel renders location/date/ball controls', () => {
+    const onPokeballChange = vi.fn();
+    const onIsTradedChange = vi.fn();
+
     render(
       <MetaPanel
         pokemon={{}}
         editMode={true}
+        isLucky={false}
+        isTraded={false}
+        isShadow={false}
+        originalTrainerName={null}
+        originalTrainerId={null}
+        tradedDate={null}
+        pokeball={null}
         onLocationChange={vi.fn()}
         onDateChange={vi.fn()}
+        onIsTradedChange={onIsTradedChange}
+        onOriginalTrainerNameChange={vi.fn()}
+        onOriginalTrainerIdChange={vi.fn()}
+        onTradedDateChange={vi.fn()}
+        onPokeballChange={onPokeballChange}
       />,
     );
 
+    expect(screen.getByText('CAUGHT')).toBeInTheDocument();
+    expect(screen.getByText('UNKNOWN LOCATION')).toBeInTheDocument();
+    expect(screen.getByText('UNKNOWN DATE')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    expect(onIsTradedChange).toHaveBeenCalledWith(true);
     expect(screen.getByText('location-caught')).toBeInTheDocument();
     expect(screen.getByText('date-caught')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'ball-caught' }));
+    expect(onPokeballChange).toHaveBeenCalledWith('ultra_ball');
+  });
+
+  it('MetaPanel shows trade banner when instance is traded or lucky', () => {
+    render(
+      <MetaPanel
+        pokemon={{
+          instanceData: {
+            original_trainer_name: 'Trainer Red',
+            original_trainer_id: 'ot-123',
+            traded_date: '2026-02-11T03:12:00.000Z',
+          },
+        }}
+        editMode={false}
+        isLucky={false}
+        isTraded={true}
+        isShadow={false}
+        originalTrainerName={null}
+        originalTrainerId={null}
+        tradedDate={null}
+        pokeball={null}
+        onLocationChange={vi.fn()}
+        onDateChange={vi.fn()}
+        onIsTradedChange={vi.fn()}
+        onOriginalTrainerNameChange={vi.fn()}
+        onOriginalTrainerIdChange={vi.fn()}
+        onTradedDateChange={vi.fn()}
+        onPokeballChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('OBTAINED IN A TRADE')).toBeInTheDocument();
+    expect(screen.getByText('Trainer Red')).toBeInTheDocument();
+    expect(screen.getByText('2026-02-11')).toBeInTheDocument();
+  });
+
+  it('MetaPanel disables traded-on toggle for shadow pokemon', () => {
+    render(
+      <MetaPanel
+        pokemon={{}}
+        editMode={true}
+        isLucky={false}
+        isTraded={false}
+        isShadow={true}
+        originalTrainerName={null}
+        originalTrainerId={null}
+        tradedDate={null}
+        pokeball={null}
+        onLocationChange={vi.fn()}
+        onDateChange={vi.fn()}
+        onIsTradedChange={vi.fn()}
+        onOriginalTrainerNameChange={vi.fn()}
+        onOriginalTrainerIdChange={vi.fn()}
+        onTradedDateChange={vi.fn()}
+        onPokeballChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Yes' })).toBeDisabled();
+    expect(screen.getByText('Shadow Pokemon cannot be traded until purified.')).toBeInTheDocument();
   });
 
   it('Modals closes backgrounds and supports fuse overlay actions', () => {

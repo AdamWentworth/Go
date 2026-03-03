@@ -13,6 +13,9 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
   const [nickname, setNickname] = useState<string | null>(instanceData.nickname ?? null);
   const [isFavorite, setIsFavorite] = useState<boolean>(Boolean(instanceData.favorite));
   const [isLucky, setIsLucky] = useState<boolean>(Boolean(instanceData.lucky));
+  const [isTradedInternal, setIsTradedInternal] = useState<boolean>(
+    Boolean(instanceData.is_traded),
+  );
 
   const [cp, setCP] = useState<string>(instanceData.cp != null ? String(instanceData.cp) : '');
   const [weight, setWeight] = useState<number>(Number(instanceData.weight ?? 0));
@@ -42,9 +45,18 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
     instanceData.location_caught ?? null,
   );
   const [dateCaught, setDateCaught] = useState<string | null>(instanceData.date_caught ?? null);
+  const [originalTrainerName, setOriginalTrainerName] = useState<string | null>(
+    instanceData.original_trainer_name ?? null,
+  );
+  const [originalTrainerId, setOriginalTrainerId] = useState<string | null>(
+    instanceData.original_trainer_id ?? null,
+  );
+  const [tradedDate, setTradedDate] = useState<string | null>(instanceData.traded_date ?? null);
+  const [pokeball, setPokeball] = useState<string | null>(instanceData.pokeball ?? null);
 
   const [isShadow, setIsShadow] = useState<boolean>(Boolean(instanceData.shadow));
   const [isPurified, setIsPurified] = useState<boolean>(Boolean(instanceData.purified));
+  const isTraded = !isShadow && (isLucky || isTradedInternal);
 
   const [maxAttack, setMaxAttack] = useState<string>(String(instanceData.max_attack ?? ''));
   const [maxGuard, setMaxGuard] = useState<string>(String(instanceData.max_guard ?? ''));
@@ -56,7 +68,22 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
     setIsFemale(nextGender === 'Female');
   }, []);
   const handleCPChange = useCallback((value: string) => setCP(value), []);
-  const handleLuckyToggle = useCallback((value: boolean) => setIsLucky(value), []);
+  const handleLuckyToggle = useCallback((value: boolean) => {
+    setIsLucky(value);
+    if (value) {
+      setIsTradedInternal(true);
+    }
+  }, []);
+  const handleIsTradedChange = useCallback(
+    (value: boolean) => {
+      if (isLucky && !value) {
+        setIsTradedInternal(true);
+        return;
+      }
+      setIsTradedInternal(value);
+    },
+    [isLucky],
+  );
   const handleNicknameChange = useCallback((value: string | null) => setNickname(value), []);
   const handleFavoriteChange = useCallback((value: boolean) => setIsFavorite(value), []);
   const handleWeightChange = useCallback((value: string | number) => setWeight(Number(value)), []);
@@ -73,6 +100,16 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
   );
   const handleLocationCaughtChange = useCallback((value: string) => setLocationCaught(value), []);
   const handleDateCaughtChange = useCallback((value: string) => setDateCaught(value), []);
+  const handleOriginalTrainerNameChange = useCallback(
+    (value: string) => setOriginalTrainerName(value),
+    [],
+  );
+  const handleOriginalTrainerIdChange = useCallback(
+    (value: string | null) => setOriginalTrainerId(value),
+    [],
+  );
+  const handleTradedDateChange = useCallback((value: string) => setTradedDate(value), []);
+  const handlePokeballChange = useCallback((value: string | null) => setPokeball(value), []);
   const handleLevelChange = useCallback((value: string) => {
     setLevel(value !== '' ? Number(value) : null);
   }, []);
@@ -84,6 +121,8 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
     }
     setIsPurified(false);
     setIsShadow(true);
+    setIsLucky(false);
+    setIsTradedInternal(false);
   }, []);
   const handleMaxAttackChange = useCallback((value: string) => setMaxAttack(value), []);
   const handleMaxGuardChange = useCallback((value: string) => setMaxGuard(value), []);
@@ -108,6 +147,7 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
     nickname,
     isFavorite,
     isLucky,
+    isTraded,
     cp,
     setCP,
     weight,
@@ -118,6 +158,10 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
     areIVsEmpty,
     locationCaught,
     dateCaught,
+    originalTrainerName,
+    originalTrainerId,
+    tradedDate,
+    pokeball,
     isShadow,
     isPurified,
     maxAttack,
@@ -129,6 +173,7 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
     handleGenderChange,
     handleCPChange,
     handleLuckyToggle,
+    handleIsTradedChange,
     handleNicknameChange,
     handleFavoriteChange,
     handleWeightChange,
@@ -137,6 +182,10 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
     handleIvChange,
     handleLocationCaughtChange,
     handleDateCaughtChange,
+    handleOriginalTrainerNameChange,
+    handleOriginalTrainerIdChange,
+    handleTradedDateChange,
+    handlePokeballChange,
     handleLevelChange,
     handlePurifyToggle,
     handleMaxAttackChange,
@@ -145,4 +194,3 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
     handleToggleMaxOptions,
   };
 };
-

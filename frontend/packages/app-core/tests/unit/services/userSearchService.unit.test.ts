@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   fetchForeignInstancesByUsername,
+  fetchPublicUserByUsername,
   fetchTrainerAutocomplete,
 } from '@/services/userSearchService';
 
@@ -153,5 +154,31 @@ describe.sequential('userSearchService', () => {
       message: 'Query must be at least 2 characters.',
     });
   });
-});
 
+  it('fetches public user lookup by username and returns user_id', async () => {
+    fetchMock.mockResolvedValueOnce(
+      makeResponse(200, {
+        user: { user_id: 'user-42', username: 'FakeUser0632' },
+      }),
+    );
+
+    const outcome = await fetchPublicUserByUsername('fakeuser0632');
+    expect(outcome).toEqual({
+      type: 'success',
+      username: 'FakeUser0632',
+      userId: 'user-42',
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `${USERS_API_URL}/public/users/fakeuser0632`,
+    );
+  });
+
+  it('returns notFound for missing public user snapshot', async () => {
+    fetchMock.mockResolvedValueOnce(makeResponse(404));
+
+    const outcome = await fetchPublicUserByUsername('missing');
+    expect(outcome).toEqual({ type: 'notFound' });
+  });
+});

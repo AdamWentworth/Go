@@ -56,6 +56,7 @@ describe('caughtPersist utils', () => {
       instanceId: 'current',
       nickname: 'Sparky',
       isLucky: false,
+      isTraded: true,
       isFavorite: true,
       gender: 'Female',
       weight: 5.5,
@@ -66,6 +67,10 @@ describe('caughtPersist utils', () => {
       moves: baseMoves,
       locationCaught: 'Seattle',
       dateCaught: '2026-02-17',
+      originalTrainerName: 'Trainer Silver',
+      originalTrainerId: 'user-999',
+      tradedDate: '2026-02-18',
+      pokeball: 'ultra_ball',
       selectedBackgroundId: 7,
       megaData: baseMega,
       fusion: {
@@ -85,7 +90,12 @@ describe('caughtPersist utils', () => {
     expect(patchMap.current).toMatchObject({
       cp: 1234,
       level: 35,
+      is_traded: true,
       location_card: '7',
+      pokeball: 'ultra_ball',
+      original_trainer_name: 'Trainer Silver',
+      original_trainer_id: 'user-999',
+      traded_date: '2026-02-18',
       fusion_form: 'Sun',
       fused_with: 'new-fused',
       max_attack: null,
@@ -108,4 +118,3 @@ describe('caughtPersist utils', () => {
     });
   });
 });
-

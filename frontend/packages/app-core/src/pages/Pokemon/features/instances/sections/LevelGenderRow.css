@@ -24,6 +24,13 @@
   align-items: center;
 }
 
+/* Match gender slot right edge with caught-section content rail */
+.caught-instance .level-gender-row .gender-wrapper {
+  margin-inline-end: calc(
+    var(--caught-section-inline-pad) + var(--caught-section-inner-inline-pad)
+  );
+}
+
 .level-component label { font-weight: bold; }
 .level-component input { padding: 2px; font-size: 1rem; }
 .level-component .error { color: red; font-size: 0.8rem; }

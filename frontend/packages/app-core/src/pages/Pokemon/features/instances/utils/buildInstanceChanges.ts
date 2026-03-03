@@ -13,6 +13,7 @@ type BuildArgs = {
   instanceId: string;
   nickname: string | null;
   isLucky: boolean;
+  isTraded: boolean;
   isFavorite: boolean;
   gender: string | null;
   weight: number | null;
@@ -23,6 +24,10 @@ type BuildArgs = {
   ivs: IVs;
   locationCaught: string | null;
   dateCaught: string | null;
+  originalTrainerName: string | null;
+  originalTrainerId: string | null;
+  tradedDate: string | null;
+  pokeball: string | null;
   selectedBackgroundId: number | null;
   megaData: MegaData;
   fusion: FusionState;
@@ -45,6 +50,7 @@ export function buildInstanceChanges(a: BuildArgs) {
     [a.instanceId]: {
       nickname: a.nickname,
       lucky: a.isLucky,
+      is_traded: a.isLucky ? true : a.isTraded,
       cp: a.computedCP,
       favorite: a.isFavorite,
       gender: a.gender,
@@ -58,6 +64,10 @@ export function buildInstanceChanges(a: BuildArgs) {
       stamina_iv: iv(a.ivs.Stamina),
       location_caught: a.locationCaught,
       date_caught: a.dateCaught,
+      original_trainer_name: a.originalTrainerName,
+      original_trainer_id: a.originalTrainerId,
+      traded_date: a.tradedDate,
+      pokeball: a.pokeball,
       location_card: a.selectedBackgroundId == null ? null : String(a.selectedBackgroundId),
       mega: a.megaData.mega,
       is_mega: a.megaData.isMega,

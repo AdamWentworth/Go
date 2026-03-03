@@ -9,6 +9,7 @@ const lowMemoryMode = isWindows || process.env.VITEST_LOW_MEMORY === '1';
 const enableHtmlReport = process.env.VITEST_HTML_REPORT === '1';
 const appCoreRoot = path.resolve(__dirname, '../../packages/app-core');
 const webRoot = __dirname;
+const testArtifactsRoot = path.resolve(webRoot, '.artifacts/tests');
 const appCoreSetupFile = `/@fs/${path
   .resolve(appCoreRoot, 'tests/setupTests.ts')
   .replace(/\\/g, '/')}`;
@@ -85,7 +86,7 @@ export default defineConfig(({ mode }) => {
       }
     },
 
-    cacheDir: path.resolve(__dirname, 'tests/.vitest'),
+    cacheDir: path.join(testArtifactsRoot, '.vitest'),
 
     /* ---------- Vitest --------------------------------------------------- */
     test: {
@@ -130,7 +131,7 @@ export default defineConfig(({ mode }) => {
       coverage: {
         provider: 'v8',
         reporter: ['text', 'html', 'lcov', 'json'],
-        reportsDirectory: path.resolve(__dirname, 'tests/coverage'),
+        reportsDirectory: path.join(testArtifactsRoot, 'coverage'),
         thresholds: {
           // Conservative starting gate; ratchet upward as coverage work lands.
           statements: 25,
@@ -153,7 +154,7 @@ export default defineConfig(({ mode }) => {
               [
                 'html',
                 {
-                  outputFile: path.resolve(__dirname, 'tests/reports/html/index.html'),
+                  outputFile: path.join(testArtifactsRoot, 'reports/html/index.html'),
                 },
               ],
             ]
@@ -163,7 +164,7 @@ export default defineConfig(({ mode }) => {
               [
                 'junit',
                 {
-                  outputFile: path.resolve(__dirname, 'tests/reports/junit.xml'),
+                  outputFile: path.join(testArtifactsRoot, 'reports/junit.xml'),
                   classname: ({ filepath }) =>
                     filepath.replace(/\.test\.[jt]sx?$/, ''),
                   suiteName: 'Frontend Tests',

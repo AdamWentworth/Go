@@ -1,12 +1,24 @@
 /* IV.css */
 
+/* Shared token defaults for all IV modes (display/edit/search). */
+.iv-display-container,
+.iv-display,
+.iv-display-stat {
+    --iv-row-gap: 10px;
+    --iv-display-row-pad: 5px;
+    --iv-edit-row-pad: 2px;
+    --iv-gauge-height: 15px;
+    --iv-gauge-offset: -20px;
+    --iv-gauge-bottom-gap: 5px;
+}
+
 /* Container styles */
 .iv-display-container {
     display: flex;
     flex-direction: column;
     height: 100%; /* Take full height of the parent container */
     width: 100%;
-    padding-bottom: 10px;
+    padding-bottom: var(--iv-row-gap);
   }
   
   .iv-container {
@@ -22,20 +34,37 @@
   .iv-display-stat {
     position: relative;
     width: 100%;
+    box-sizing: border-box;
     display: grid;
     grid-template-columns: 1fr auto; /* For label and content */
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: var(--iv-row-gap);
   }
   
   /* Specific differences in spacing */
   .iv-display {
-    padding: 5px;
+    padding-block: var(--iv-display-row-pad);
+    padding-inline-start: var(
+      --iv-row-inline-pad-start,
+      var(--iv-row-inline-pad, var(--iv-display-row-pad))
+    );
+    padding-inline-end: var(
+      --iv-row-inline-pad-end,
+      var(--iv-row-inline-pad, var(--iv-display-row-pad))
+    );
   }
   
   .iv-display-stat {
-    margin: 5px 0;
-    padding: 2px;
+    margin: var(--iv-display-row-pad) 0;
+    padding-block: var(--iv-edit-row-pad);
+    padding-inline-start: var(
+      --iv-row-inline-pad-start,
+      var(--iv-row-inline-pad, var(--iv-edit-row-pad))
+    );
+    padding-inline-end: var(
+      --iv-row-inline-pad-end,
+      var(--iv-row-inline-pad, var(--iv-edit-row-pad))
+    );
   }
   
   /* Label styles */
@@ -43,6 +72,7 @@
   .iv-display-label {
     text-align: left;
     justify-self: start;
+    font-weight: 500;
   }
   
   /* Content area styles */
@@ -59,7 +89,8 @@
   .iv-display-value {
     width: 20px;
     height: 20px;
-    font-size: 14px;
+    font-size: 16px;
+    font-weight: 500;
     padding: 0;
     color: white;
     background-color: transparent;
@@ -89,30 +120,51 @@
   .iv-display-bar-bg,
   .iv-display-bar {
     position: absolute;
-    height: 15px;
-    bottom: -20px;
+    height: var(--iv-gauge-height);
+    bottom: var(--iv-gauge-offset);
     width: 75%; /* Gauge width */
     border-radius: 7.5px;
     left: 12.5%; /* Centering the gauge */
-    margin-bottom: 5px;
+    margin-bottom: var(--iv-gauge-bottom-gap);
   }
   
   .iv-bar-bg,
   .iv-display-bar-bg {
     background-color: #ccc;
+    box-shadow:
+      inset 0 2px 3px rgba(0, 0, 0, 0.45),
+      0 1px 0 rgba(255, 255, 255, 0.08);
   }
   
   .iv-bar,
   .iv-display-bar {
-    background-color: #ef9219;
+    background: linear-gradient(180deg, #f6ad42 0%, #ef9219 100%);
     width: 0%;
     transition: width 0.3s ease-in-out;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.28),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+      0 2px 3px rgba(0, 0, 0, 0.35);
   }
   
   /* Full gauge styling */
   .iv-bar.full,
   .iv-display-full {
-    background-color: #c45856;
+    background: linear-gradient(180deg, #e07a78 0%, #c45856 100%);
+  }
+
+  .iv-stat-base .iv-label,
+  .iv-stat-base .iv-display-label,
+  .iv-stat-base .iv-display-value,
+  .iv-stat-base .iv-input {
+    color: #ef9219;
+  }
+
+  .iv-stat-full .iv-label,
+  .iv-stat-full .iv-display-label,
+  .iv-stat-full .iv-display-value,
+  .iv-stat-full .iv-input {
+    color: #c45856;
   }
   
   /* Gauge markers (pseudo-elements) */
@@ -122,12 +174,12 @@
   .iv-display-stat::before {
     content: '';
     position: absolute;
-    bottom: -20px;
+    bottom: var(--iv-gauge-offset);
     width: 2px;
-    height: 15px;
+    height: var(--iv-gauge-height);
     background-color: white;
     z-index: 2;
-    margin-bottom: 5px;
+    margin-bottom: var(--iv-gauge-bottom-gap);
   }
   
   .iv-display::after,

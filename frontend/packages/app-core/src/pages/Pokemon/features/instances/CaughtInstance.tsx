@@ -84,6 +84,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
     nickname,
     isFavorite,
     isLucky,
+    isTraded,
     cp,
     setCP,
     weight,
@@ -94,6 +95,10 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
     areIVsEmpty,
     locationCaught,
     dateCaught,
+    originalTrainerName,
+    originalTrainerId,
+    tradedDate,
+    pokeball,
     isShadow,
     isPurified,
     maxAttack,
@@ -104,6 +109,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
     handleGenderChange,
     handleCPChange,
     handleLuckyToggle,
+    handleIsTradedChange,
     handleNicknameChange,
     handleFavoriteChange,
     handleWeightChange,
@@ -112,6 +118,10 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
     handleIvChange,
     handleLocationCaughtChange,
     handleDateCaughtChange,
+    handleOriginalTrainerNameChange,
+    handleOriginalTrainerIdChange,
+    handleTradedDateChange,
+    handlePokeballChange,
     handleLevelChange,
     handlePurifyToggle,
     handleMaxAttackChange,
@@ -203,6 +213,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
         instanceId,
         nickname,
         isLucky,
+        isTraded,
         isFavorite,
         gender,
         weight,
@@ -213,6 +224,10 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
         moves,
         locationCaught,
         dateCaught,
+        originalTrainerName,
+        originalTrainerId,
+        tradedDate,
+        pokeball,
         selectedBackgroundId: selectedBackground?.background_id ?? null,
         megaData,
         fusion: persistFusion,
@@ -303,6 +318,8 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
         onHeightChange={handleHeightChange}
       />
 
+      <div className="caught-stats-divider" aria-hidden="true" />
+
       <PowerPanel
         pokemon={pokemon}
         editMode={editMode}
@@ -337,8 +354,20 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
       <MetaPanel
         pokemon={pokemon}
         editMode={editMode}
+        pokeball={pokeball}
+        originalTrainerName={originalTrainerName}
+        originalTrainerId={originalTrainerId}
+        tradedDate={tradedDate}
+        isLucky={isLucky}
+        isTraded={isTraded}
+        isShadow={isShadow}
         onLocationChange={handleLocationCaughtChange}
         onDateChange={handleDateCaughtChange}
+        onIsTradedChange={handleIsTradedChange}
+        onOriginalTrainerNameChange={handleOriginalTrainerNameChange}
+        onOriginalTrainerIdChange={handleOriginalTrainerIdChange}
+        onTradedDateChange={handleTradedDateChange}
+        onPokeballChange={handlePokeballChange}
       />
 
       <Modals

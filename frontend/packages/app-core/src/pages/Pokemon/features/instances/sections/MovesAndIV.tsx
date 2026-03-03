@@ -49,9 +49,12 @@ const MovesAndIV: React.FC<MovesAndIVProps> = ({
     </div>
 
     {(editMode || !areIVsEmpty) && (
-      <div className="iv-component">
-        <IV editMode={editMode} onIvChange={onIvChange} ivs={ivs} />
-      </div>
+      <>
+        <div className="moves-stats-divider" aria-hidden="true" />
+        <div className="iv-component">
+          <IV editMode={editMode} onIvChange={onIvChange} ivs={ivs} />
+        </div>
+      </>
     )}
   </>
 );

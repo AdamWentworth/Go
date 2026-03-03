@@ -1,8 +1,33 @@
 /* CaughtInstance.css */
 .caught-instance {
+  --caught-content-inset: 12px;
+  --caught-section-inner-inline-pad: 4px;
+  --caught-trailing-value-column-width: 44px;
+  --caught-trailing-value-inline-end: 4px;
+  --caught-moves-page-inline-pad: var(--caught-section-inner-inline-pad);
+  --caught-section-inline-pad: var(--caught-content-inset);
+  --caught-content-width: calc(100% - (var(--caught-content-inset) * 2));
+  --caught-divider-thickness: 2px;
+  --caught-divider-color: grey;
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
   color: #e0f0e5;
+}
+
+.caught-stats-divider::before,
+.caught-instance .moves-stats-divider::before,
+.meta-divider::before {
+  content: '';
+  display: block;
+  width: var(--caught-content-width);
+  margin: 0 auto;
+  border-top: var(--caught-divider-thickness) solid var(--caught-divider-color);
+}
+
+.caught-stats-divider {
+  width: 100%;
+  height: 0;
+  margin: 14px auto 10px;
 }

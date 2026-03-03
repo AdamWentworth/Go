@@ -3,7 +3,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-right: -20px;
 }
 
 .height-display {
@@ -15,6 +14,7 @@
 .height-editable-container {
   display: flex;
   align-items: center;
+  gap: 6px;
   position: relative; /* For absolute positioning of the category tag */
 }
 
@@ -25,11 +25,12 @@
   display: inline-block; /* Behaves inline */
   min-width: 10px; /* Ensure there's space for the cursor */
   text-align: right; /* Align text to the right */
+  font-weight: 500;
   padding: 0 2px;
   margin: 0 -1px;
   line-height: 18px;
   margin-bottom: -5px;
-  margin-right: -4px;
+  margin-right: 0;
 }
 
 .height-editable-container.editable .height-editable-content {
@@ -38,14 +39,17 @@
 }
 
 .height-label {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
   color: grey;
   margin-top: 2px; /* Space between value and label */
   text-align: center;
+  text-transform: uppercase;
 }
 
 .height-suffix {
-  margin-top: 4px;
+  margin-top: 0;
+  font-weight: 500;
 }
 
 /* Styles for the height category tag (no pointer) */

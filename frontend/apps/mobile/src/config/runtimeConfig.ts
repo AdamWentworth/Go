@@ -39,6 +39,33 @@ const DEFAULT_API_CONFIG: RuntimeApiConfig = {
   frontendAppUrl: 'https://pokemongonexus.com',
 };
 
+const deriveExpoHost = (): string | null => {
+  const expoConfig = Constants.expoConfig as
+    | {
+        hostUri?: string;
+        debuggerHost?: string;
+      }
+    | undefined;
+
+  const hostFromHostUri = expoConfig?.hostUri?.split(':')[0];
+  if (hostFromHostUri) return hostFromHostUri;
+
+  const hostFromDebugger = expoConfig?.debuggerHost?.split(':')[0];
+  if (hostFromDebugger) return hostFromDebugger;
+
+  return null;
+};
+
+const deriveDevFrontendAppUrl = (): string | null => {
+  if (!__DEV__) return null;
+  const host = deriveExpoHost();
+  if (!host) return null;
+  return `http://${host}:3000`;
+};
+
+const DEFAULT_FRONTEND_APP_URL =
+  deriveDevFrontendAppUrl() ?? DEFAULT_API_CONFIG.frontendAppUrl;
+
 const DEFAULT_OBSERVABILITY_CONFIG: RuntimeObservabilityConfig = {
   crashReportUrl: null,
   crashReportApiKey: null,
@@ -106,7 +133,7 @@ export const runtimeConfig: {
     locationApiUrl: sanitizeUrl(apiOverrides.locationApiUrl, DEFAULT_API_CONFIG.locationApiUrl),
     eventsApiUrl: sanitizeUrl(apiOverrides.eventsApiUrl, DEFAULT_API_CONFIG.eventsApiUrl),
     receiverApiUrl: sanitizeUrl(apiOverrides.receiverApiUrl, DEFAULT_API_CONFIG.receiverApiUrl),
-    frontendAppUrl: sanitizeUrl(apiOverrides.frontendAppUrl, DEFAULT_API_CONFIG.frontendAppUrl),
+    frontendAppUrl: sanitizeUrl(apiOverrides.frontendAppUrl, DEFAULT_FRONTEND_APP_URL),
   },
   observability: {
     crashReportUrl:
