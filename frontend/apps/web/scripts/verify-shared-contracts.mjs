@@ -8,6 +8,9 @@ const __dirname = path.dirname(__filename);
 const frontendRoot = path.resolve(__dirname, '..', '..', '..');
 const webRoot = path.resolve(__dirname, '..');
 const sharedContractsRoot = path.join(frontendRoot, 'packages', 'shared-contracts', 'src');
+const appCoreRoot = path.join(frontendRoot, 'packages', 'app-core');
+const appCoreSrcRoot = path.join(appCoreRoot, 'src');
+const appCoreTestsRoot = path.join(appCoreRoot, 'tests');
 
 const requiredSharedFiles = [
   'index.ts',
@@ -42,6 +45,16 @@ if (!fs.existsSync(sharedContractsRoot) || missingSharedFiles.length > 0) {
     '[verify-shared-contracts] ensure CI/build context includes frontend/packages/shared-contracts.',
   );
   throw new Error(lines.join('\n'));
+}
+
+if (!fs.existsSync(appCoreSrcRoot) || !fs.existsSync(appCoreTestsRoot)) {
+  throw new Error(
+    [
+      '[verify-shared-contracts] app-core package is missing required source/test roots.',
+      `[verify-shared-contracts] expected source root: ${appCoreSrcRoot}`,
+      `[verify-shared-contracts] expected test root: ${appCoreTestsRoot}`,
+    ].join('\n'),
+  );
 }
 
 const tsconfigPath = path.join(webRoot, 'tsconfig.json');

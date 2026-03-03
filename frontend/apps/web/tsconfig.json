@@ -2,11 +2,12 @@
 
 {
   "compilerOptions": {
-    "baseUrl": "src",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["*"],
-      "#tests/*": ["tests/*"],
-      "@shared-contracts/*": ["../../../packages/shared-contracts/src/*"]
+      "@/*": ["../../packages/app-core/src/*"],
+      "@tests/*": ["../../packages/app-core/tests/*"],
+      "#tests/*": ["../../packages/app-core/tests/*"],
+      "@shared-contracts/*": ["../../packages/shared-contracts/src/*"]
     },
     "target": "ESNext",
     "module": "ESNext",
@@ -25,10 +26,10 @@
     "types": ["node", "web-streams-polyfill", "vitest/globals"],
   },
   "include": [
-    "src",
-    "src/vite-env.d.ts",
+    "../../packages/app-core/src",
+    "../../packages/app-core/src/vite-env.d.ts",
     "vite.config.mjs",
-    "tests/setupTests.ts", 
-    "tests"
+    "../../packages/app-core/tests/setupTests.ts",
+    "../../packages/app-core/tests"
   ]
 }

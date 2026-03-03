@@ -3,7 +3,8 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const PROJECT_ROOT = process.cwd();
-const UNIT_ROOT = path.join(PROJECT_ROOT, 'tests', 'unit');
+const APP_CORE_ROOT = path.join(PROJECT_ROOT, '..', '..', 'packages', 'app-core');
+const UNIT_ROOT = path.join(APP_CORE_ROOT, 'tests', 'unit');
 const BATCH_SIZE = Number.parseInt(process.env.VITEST_BATCH_SIZE ?? '20', 10);
 
 function isTestFile(name) {
@@ -24,7 +25,7 @@ function walk(dir, out) {
     if (!entry.isFile() || !isTestFile(entry.name)) {
       continue;
     }
-    out.push(path.relative(PROJECT_ROOT, fullPath));
+    out.push(path.relative(APP_CORE_ROOT, fullPath));
   }
 }
 
@@ -54,6 +55,7 @@ const vitestEntry = path.join(
   'vitest',
   'vitest.mjs',
 );
+const vitestConfig = path.join(PROJECT_ROOT, 'vite.config.mjs');
 
 for (let i = 0; i < chunks.length; i += 1) {
   const chunk = chunks[i];
@@ -62,9 +64,9 @@ for (let i = 0; i < chunks.length; i += 1) {
   );
   const result = spawnSync(
     nodeCmd,
-    [vitestEntry, 'run', ...chunk],
+    [vitestEntry, 'run', '--config', vitestConfig, ...chunk],
     {
-      cwd: PROJECT_ROOT,
+      cwd: APP_CORE_ROOT,
       stdio: 'inherit',
       env: process.env,
     },

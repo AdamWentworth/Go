@@ -7,17 +7,24 @@ const isCI = process.env.CI === 'true';
 const isWindows = process.platform === 'win32';
 const lowMemoryMode = isWindows || process.env.VITEST_LOW_MEMORY === '1';
 const enableHtmlReport = process.env.VITEST_HTML_REPORT === '1';
+const appCoreRoot = path.resolve(__dirname, '../../packages/app-core');
+const webRoot = __dirname;
+const appCoreSetupFile = `/@fs/${path
+  .resolve(appCoreRoot, 'tests/setupTests.ts')
+  .replace(/\\/g, '/')}`;
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, webRoot, '');
   const assetOrigin = (env.VITE_ASSET_ORIGIN || 'https://pokemongonexus.com').replace(/\/+$/, '');
 
   return {
+    root: appCoreRoot,
+    envDir: webRoot,
     plugins: [react()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, 'src'),
-        '@tests': path.resolve(__dirname, 'tests'),
+        '@': path.resolve(appCoreRoot, 'src'),
+        '@tests': path.resolve(appCoreRoot, 'tests'),
         '@shared-contracts': path.resolve(__dirname, '../../packages/shared-contracts/src')
       }
     },
@@ -42,6 +49,8 @@ export default defineConfig(({ mode }) => {
       esbuild: {
         drop: ['console', 'debugger'],
       },
+      outDir: path.resolve(__dirname, 'dist'),
+      emptyOutDir: true,
       manifest: true,
       rollupOptions: {
         output: {
@@ -76,13 +85,13 @@ export default defineConfig(({ mode }) => {
       }
     },
 
-    cacheDir: 'tests/.vitest',
+    cacheDir: path.resolve(__dirname, 'tests/.vitest'),
 
     /* ---------- Vitest --------------------------------------------------- */
     test: {
       globals    : true,
       environment: 'jsdom',
-      setupFiles : ['tests/setupTests.ts'],
+      setupFiles : [appCoreSetupFile],
       testTimeout: 10000,
 
       isolate        : true,
@@ -121,7 +130,7 @@ export default defineConfig(({ mode }) => {
       coverage: {
         provider: 'v8',
         reporter: ['text', 'html', 'lcov', 'json'],
-        reportsDirectory: 'tests/coverage',
+        reportsDirectory: path.resolve(__dirname, 'tests/coverage'),
         thresholds: {
           // Conservative starting gate; ratchet upward as coverage work lands.
           statements: 25,
@@ -144,7 +153,7 @@ export default defineConfig(({ mode }) => {
               [
                 'html',
                 {
-                  outputFile: 'tests/reports/html/index.html',
+                  outputFile: path.resolve(__dirname, 'tests/reports/html/index.html'),
                 },
               ],
             ]
@@ -154,7 +163,7 @@ export default defineConfig(({ mode }) => {
               [
                 'junit',
                 {
-                  outputFile: 'tests/reports/junit.xml',
+                  outputFile: path.resolve(__dirname, 'tests/reports/junit.xml'),
                   classname: ({ filepath }) =>
                     filepath.replace(/\.test\.[jt]sx?$/, ''),
                   suiteName: 'Frontend Tests',
