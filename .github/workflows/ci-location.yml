@@ -72,33 +72,52 @@ jobs:
         run: docker build --pull -t location_service:ci-${{ github.sha }} ./location
 
       - name: Trivy Filesystem Scan
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: fs
-          scan-ref: ./location
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
-          ignore-unfixed: true
-          exit-code: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.cache/trivy"
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            -v "$HOME/.cache/trivy:/root/.cache/" \
+            ghcr.io/aquasecurity/trivy:0.65.0 \
+            fs \
+            --scanners vuln \
+            --pkg-types os,library \
+            --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            --exit-code 1 \
+            /workspace/location
 
       - name: Trivy Image Scan
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: image
-          image-ref: location_service:ci-${{ github.sha }}
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
-          ignore-unfixed: true
-          exit-code: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.cache/trivy"
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$HOME/.cache/trivy:/root/.cache/" \
+            ghcr.io/aquasecurity/trivy:0.65.0 \
+            image \
+            --pkg-types os,library \
+            --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            --exit-code 1 \
+            location_service:ci-${{ github.sha }}
 
       - name: Generate SBOM (CycloneDX)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          scan-type: image
-          image-ref: location_service:ci-${{ github.sha }}
-          format: cyclonedx
-          output: location_image_sbom.cdx.json
-          exit-code: "0"
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.cache/trivy"
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD:/workspace" \
+            -v "$HOME/.cache/trivy:/root/.cache/" \
+            ghcr.io/aquasecurity/trivy:0.65.0 \
+            image \
+            --format cyclonedx \
+            --output /workspace/location_image_sbom.cdx.json \
+            location_service:ci-${{ github.sha }}
 
       - name: Upload SBOM Artifact
         uses: actions/upload-artifact@v4

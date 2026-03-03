@@ -1,6 +1,9 @@
 # nginx dockerfile
 FROM nginx:alpine
 
+# Apply latest Alpine security updates during image build.
+RUN apk upgrade --no-cache
+
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/nginx.conf
 
