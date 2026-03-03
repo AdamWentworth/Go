@@ -92,9 +92,10 @@
   /* Keep panel start fixed so larger sprites can overlap behind the panel */
   --caught-image-stage-size: 296px;
   --caught-stage-lift: 48px;
-  --panel-offset: 252px;
+  --panel-offset: 240px;
 
-  width: 92.5%;
+  width: min(92.5%, 500px);
+  max-width: 500px;
   height: 100%;
   margin: 0 auto;
   background: transparent;              /* was: #333 */

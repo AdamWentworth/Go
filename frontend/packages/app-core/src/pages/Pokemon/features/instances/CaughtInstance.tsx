@@ -41,6 +41,7 @@ import PowerPanel from './sections/PowerPanel';
 import MovesAndIV from './sections/MovesAndIV';
 import MetaPanel from './sections/MetaPanel';
 import Modals from './sections/Modals';
+import CaughtDateRibbon from './sections/CaughtDateRibbon';
 
 type CaughtPokemon = PokemonVariant & {
   instanceData?: PokemonInstance;
@@ -258,6 +259,8 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
 
   return (
     <div className="caught-instance">
+      <CaughtDateRibbon dateCaught={dateCaught} />
+
       <HeaderRow
         editMode={editMode}
         toggleEditMode={handleToggleEditClick}

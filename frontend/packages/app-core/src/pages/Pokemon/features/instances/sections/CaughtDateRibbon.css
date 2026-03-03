@@ -1,0 +1,99 @@
+.caught-date-ribbon {
+  position: absolute;
+  top: calc(var(--panel-offset, 252px) + 20px);
+  right: 1px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 4px;
+  border-top-left-radius: 999px;
+  border-bottom-left-radius: 999px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  overflow: visible;
+  background: #f4be5c;
+  pointer-events: none;
+}
+
+.caught-date-ribbon::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -5px;
+  width: 6px;
+  height: 100%;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  background: #f4be5c;
+}
+
+.caught-date-ribbon-ball {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(48, 48, 48, 0.7);
+  background:
+    linear-gradient(
+      to bottom,
+      #f6f6f6 0 46%,
+      #474747 46% 54%,
+      #e7e7e7 54% 100%
+    );
+}
+
+.caught-date-ribbon-ball::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  border: 1px solid rgba(48, 48, 48, 0.7);
+  background: #f6f6f6;
+  transform: translate(-50%, -50%);
+}
+
+.caught-date-ribbon-text {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-left: 4px;
+  min-width: 0;
+  color: #fff;
+  font-family: var(--font-family-base);
+}
+
+.caught-date-ribbon-year {
+  display: inline-flex;
+  justify-content: flex-end;
+  width: auto;
+  align-self: flex-end;
+  white-space: nowrap;
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.caught-date-ribbon-mmdd {
+  display: inline-flex;
+  justify-content: flex-end;
+  width: auto;
+  align-self: flex-end;
+  white-space: nowrap;
+  padding-top: 2px;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
