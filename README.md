@@ -280,7 +280,7 @@ This project is built with scalability, structure, and flexibility in mind. It s
 
 If you're contributing:
 
-- Start with `frontend/src/pages/Pokemon/` or `pokemon/internal/`
+- Start with `frontend/apps/web/src/pages/Pokemon/` or `pokemon/internal/`
 - Kafka event schema is your friend
 - For data changes, use the Editor or scripts carefully
 - Always **back up** before making major changes

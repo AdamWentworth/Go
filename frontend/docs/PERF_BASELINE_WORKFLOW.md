@@ -35,7 +35,7 @@ Build-time companion metrics from CI:
    - `Copy JSON` for quick paste into PR notes, or
    - `Download JSON` to keep a file artifact.
 7. Save snapshots under:
-   - `frontend/tests/reports/perf/local/<label>.json` (recommended naming below)
+   - `frontend/apps/web/tests/reports/perf/local/<label>.json` (recommended naming below)
 
 Recommended file names:
 
@@ -46,7 +46,7 @@ Recommended file names:
 
 `ci-frontend` writes and uploads:
 
-- `frontend/tests/reports/perf/bundle-budget.json`
+- `frontend/apps/web/tests/reports/perf/bundle-budget.json`
 - artifact name: `frontend-perf-snapshots`
 
 This does not replace runtime metrics; it complements them for bundle-level drift tracking.

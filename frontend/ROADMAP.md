@@ -72,12 +72,12 @@ Done:
 
 Done:
 
-1. `apps/mobile` scaffolded with Expo + TypeScript.
+1. `frontend/apps/mobile` scaffolded with Expo + TypeScript.
 2. Mobile baseline scripts wired (`start`, `android`, `ios`, `web`, `typecheck`, `lint`, `test`).
 3. Runtime API config added via Expo `extra` (`app.config.ts` + `.env.example`).
 4. Shared contracts consumed in mobile service layer (`authService`, shared URL builder/contracts).
 5. Auth + navigation shell implemented (`Login`/`Home` flow with provider + stack navigator).
-6. Mobile baseline checks green (`npm run typecheck`, `npm run lint`, `npm run test` in `apps/mobile`).
+6. Mobile baseline checks green (`npm run typecheck`, `npm run lint`, `npm run test` in `frontend/apps/mobile`).
 7. Session persistence added via `expo-secure-store` for mobile auth bootstrap continuity.
 8. Dedicated mobile CI workflow added (`.github/workflows/ci-mobile.yml`).
 9. Shared UI token package added (`@pokemongonexus/shared-ui-tokens`) and wired into mobile screen styling via reusable RN style primitives.
@@ -303,7 +303,7 @@ Done:
    - added structured mobile logger helpers with dev-focused verbosity
    - added one-time runtime observability bootstrap in app root
    - installed global error-handler hook where runtime supports `ErrorUtils`
-   - integrated bootstrap into `apps/mobile/App.tsx`
+   - integrated bootstrap into `frontend/apps/mobile/App.tsx`
 
 38. Events-service auth interoperability shipped for mobile realtime:
    - updated `reader/events` JWT middleware to accept access token via cookie, `Authorization: Bearer`, or `access_token` query param
@@ -324,7 +324,7 @@ Done:
    - added screen-level test coverage for realtime status panel behavior
 
 41. Device validation artifact shipped:
-   - added `apps/mobile/DEVICE_VALIDATION_CHECKLIST.md` with Android/iOS live-service smoke criteria
+   - added `frontend/apps/mobile/DEVICE_VALIDATION_CHECKLIST.md` with Android/iOS live-service smoke criteria
    - checklist covers auth, collection/search/trade flows, realtime behavior, and network resilience recovery
    - aligns validation expectations with current hybrid realtime architecture
 

@@ -39,7 +39,7 @@ jobs:
       FRONTEND_BUNDLE_BUDGET_REPORT_PATH: tests/reports/perf/bundle-budget.json
     defaults:
       run:
-        working-directory: frontend
+        working-directory: frontend/apps/web
 
     steps:
       - uses: actions/checkout@v4
@@ -48,7 +48,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: frontend/apps/web/package-lock.json
 
       - name: Verify Shared Contracts Package Wiring
         run: npm run check:shared-contracts
@@ -131,7 +131,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dev-audit-report
-          path: frontend/tests/reports/npm-audit-dev.json
+          path: frontend/apps/web/tests/reports/npm-audit-dev.json
           if-no-files-found: ignore
 
       - name: Upload Perf Snapshot Reports
@@ -139,7 +139,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-perf-snapshots
-          path: frontend/tests/reports/perf/**/*.json
+          path: frontend/apps/web/tests/reports/perf/**/*.json
           if-no-files-found: ignore
 
   container-security-build:
@@ -165,18 +165,18 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: frontend/apps/web/package-lock.json
 
       - name: Verify Shared Contracts Package Wiring
-        working-directory: frontend
+        working-directory: frontend/apps/web
         run: npm run check:shared-contracts
 
       - name: Install Dependencies
-        working-directory: frontend
+        working-directory: frontend/apps/web
         run: npm ci
 
       - name: Build Frontend
-        working-directory: frontend
+        working-directory: frontend/apps/web
         run: npm run build
 
       - name: Stage Frontend Build For Nginx Image
@@ -187,7 +187,7 @@ jobs:
           rm -rf nginx/canonical-assets
           mkdir -p nginx/build
           mkdir -p nginx/canonical-assets
-          cp -R frontend/dist/. nginx/build/
+          cp -R frontend/apps/web/dist/. nginx/build/
           cp -R assets/. nginx/canonical-assets/
 
       - name: Build Container Image

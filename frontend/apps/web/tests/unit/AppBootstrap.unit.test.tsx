@@ -1,0 +1,67 @@
+import { render } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mockHooks = vi.hoisted(() => ({
+  variants: vi.fn(),
+  instances: vi.fn(),
+  tags: vi.fn(),
+  trades: vi.fn(),
+  location: vi.fn(),
+}));
+
+vi.mock('@/features/variants/hooks/useBootstrapVariants', () => ({
+  useBootstrapVariants: mockHooks.variants,
+}));
+
+vi.mock('@/features/instances/hooks/useBootstrapInstances', () => ({
+  useBootstrapInstances: mockHooks.instances,
+}));
+
+vi.mock('@/features/tags/hooks/useBootstrapTags', () => ({
+  useBootstrapTags: mockHooks.tags,
+}));
+
+vi.mock('@/features/trades/hooks/useBootstrapTrades', () => ({
+  useBootstrapTrades: mockHooks.trades,
+}));
+
+vi.mock('@/features/location/hooks/useInitLocation', () => ({
+  useInitLocation: mockHooks.location,
+}));
+
+import AppBootstrap from '@/AppBootstrap';
+
+function renderAt(pathname: string) {
+  return render(
+    <MemoryRouter initialEntries={[pathname]}>
+      <AppBootstrap />
+    </MemoryRouter>,
+  );
+}
+
+describe('AppBootstrap', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('disables heavy bootstrap on auth routes', () => {
+    renderAt('/login');
+
+    expect(mockHooks.variants).toHaveBeenCalledWith(false);
+    expect(mockHooks.instances).toHaveBeenCalledWith(false);
+    expect(mockHooks.tags).toHaveBeenCalledWith(false);
+    expect(mockHooks.trades).toHaveBeenCalledWith(false);
+    expect(mockHooks.location).toHaveBeenCalledWith(false);
+  });
+
+  it('enables bootstrap on non-auth routes', () => {
+    renderAt('/pokemon');
+
+    expect(mockHooks.variants).toHaveBeenCalledWith(true);
+    expect(mockHooks.instances).toHaveBeenCalledWith(true);
+    expect(mockHooks.tags).toHaveBeenCalledWith(true);
+    expect(mockHooks.trades).toHaveBeenCalledWith(true);
+    expect(mockHooks.location).toHaveBeenCalledWith(true);
+  });
+});

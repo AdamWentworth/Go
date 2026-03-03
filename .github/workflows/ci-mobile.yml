@@ -3,14 +3,16 @@ name: ci-mobile
 on:
   pull_request:
     paths:
-      - "apps/mobile/**"
-      - "packages/shared-contracts/**"
+      - "frontend/apps/mobile/**"
+      - "frontend/packages/shared-contracts/**"
+      - "frontend/packages/shared-ui-tokens/**"
       - ".github/workflows/ci-mobile.yml"
   push:
     branches: ["main", "master"]
     paths:
-      - "apps/mobile/**"
-      - "packages/shared-contracts/**"
+      - "frontend/apps/mobile/**"
+      - "frontend/packages/shared-contracts/**"
+      - "frontend/packages/shared-ui-tokens/**"
       - ".github/workflows/ci-mobile.yml"
   workflow_dispatch: {}
 
@@ -22,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: apps/mobile
+        working-directory: frontend/apps/mobile
 
     steps:
       - uses: actions/checkout@v4
@@ -31,7 +33,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: apps/mobile/package-lock.json
+          cache-dependency-path: frontend/apps/mobile/package-lock.json
 
       - name: Install Dependencies
         run: npm ci

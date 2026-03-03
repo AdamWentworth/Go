@@ -1,0 +1,2 @@
+/* Canonical web theme tokens now live in packages/shared-ui-tokens. */
+@import "../../../../packages/shared-ui-tokens/src/web.css";
