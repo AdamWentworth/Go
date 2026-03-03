@@ -38,6 +38,13 @@ jobs:
         run: npm ci
         working-directory: frontend/apps/mobile
 
+      - name: Link Web node_modules For app-core Typecheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf frontend/node_modules
+          ln -s apps/web/node_modules frontend/node_modules
+
       - name: Workspace Lint
         run: npm run lint
         working-directory: frontend
