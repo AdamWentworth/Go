@@ -1,9 +1,26 @@
-import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import react from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks';
-import jsxA11y from 'eslint-plugin-jsx-a11y';
-import globals from 'globals';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+
+const requireHere = createRequire(import.meta.url);
+const requireWeb = createRequire(new URL('../../apps/web/package.json', import.meta.url));
+
+const resolveModule = (specifier) => {
+  try {
+    return requireHere.resolve(specifier);
+  } catch {
+    return requireWeb.resolve(specifier);
+  }
+};
+
+const load = async (specifier) =>
+  import(pathToFileURL(resolveModule(specifier)).href);
+
+const js = (await load('@eslint/js')).default;
+const tseslint = (await load('typescript-eslint')).default;
+const react = (await load('eslint-plugin-react')).default;
+const reactHooks = (await load('eslint-plugin-react-hooks')).default;
+const jsxA11y = (await load('eslint-plugin-jsx-a11y')).default;
+const globals = (await load('globals')).default;
 
 export default [
   js.configs.recommended,

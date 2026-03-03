@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import './CaughtDateRibbon.css';
+import { resolveAssetUrl } from '@/utils/assetUrl';
 
 interface CaughtDateRibbonProps {
   dateCaught: string | null;
@@ -7,6 +8,7 @@ interface CaughtDateRibbonProps {
 
 const DEFAULT_YEAR = '----';
 const DEFAULT_MMDD = '-- --';
+const CAUGHT_ICON_URL = resolveAssetUrl('/images/caught.png');
 
 const CaughtDateRibbon: React.FC<CaughtDateRibbonProps> = ({ dateCaught }) => {
   const { year, mmdd } = useMemo(() => {
@@ -28,7 +30,9 @@ const CaughtDateRibbon: React.FC<CaughtDateRibbonProps> = ({ dateCaught }) => {
 
   return (
     <div className="caught-date-ribbon" aria-label={`Caught date ${year} ${mmdd}`}>
-      <span className="caught-date-ribbon-ball" aria-hidden="true" />
+      <span className="caught-date-ribbon-ball" aria-hidden="true">
+        <img src={CAUGHT_ICON_URL} alt="" className="caught-date-ribbon-ball-image" />
+      </span>
       <span className="caught-date-ribbon-text">
         <span className="caught-date-ribbon-year">{year}</span>
         <span className="caught-date-ribbon-mmdd">{mmdd}</span>
@@ -38,4 +42,3 @@ const CaughtDateRibbon: React.FC<CaughtDateRibbonProps> = ({ dateCaught }) => {
 };
 
 export default CaughtDateRibbon;
-

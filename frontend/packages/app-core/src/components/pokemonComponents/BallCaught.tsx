@@ -1,16 +1,6 @@
 import React from 'react';
 import './BallCaught.css';
-
-const BALL_OPTIONS = [
-  { value: 'poke_ball', label: 'POKE BALL' },
-  { value: 'great_ball', label: 'GREAT BALL' },
-  { value: 'ultra_ball', label: 'ULTRA BALL' },
-  { value: 'premier_ball', label: 'PREMIER BALL' },
-  { value: 'master_ball', label: 'MASTER BALL' },
-  { value: 'beast_ball', label: 'BEAST BALL' },
-] as const;
-
-type BallValue = (typeof BALL_OPTIONS)[number]['value'];
+import { BALL_OPTIONS, type BallValue, getBallLabel } from './ballAssets';
 
 type BallCaughtProps = {
   value: string | null;
@@ -18,19 +8,12 @@ type BallCaughtProps = {
   onChange: (value: string | null) => void;
 };
 
-const toBallLabel = (value: string | null): string => {
-  if (!value) return 'UNKNOWN';
-  const found = BALL_OPTIONS.find((option) => option.value === value);
-  if (found) return found.label;
-  return value.replace(/_/g, ' ').toUpperCase();
-};
-
 const BallCaught: React.FC<BallCaughtProps> = ({ value, editMode, onChange }) => {
   if (!editMode) {
     return (
       <div className="ball-caught-container">
         <label>Ball Caught</label>
-        <span className="ball-caught-value">{toBallLabel(value)}</span>
+        <span className="ball-caught-value">{getBallLabel(value)}</span>
       </div>
     );
   }
@@ -64,4 +47,3 @@ const BallCaught: React.FC<BallCaughtProps> = ({ value, editMode, onChange }) =>
 };
 
 export default BallCaught;
-

@@ -29,32 +29,18 @@
 }
 
 .caught-date-ribbon-ball {
-  position: relative;
   width: 16px;
   height: 16px;
   flex: 0 0 16px;
-  border-radius: 50%;
-  border: 1px solid rgba(48, 48, 48, 0.7);
-  background:
-    linear-gradient(
-      to bottom,
-      #f6f6f6 0 46%,
-      #474747 46% 54%,
-      #e7e7e7 54% 100%
-    );
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.caught-date-ribbon-ball::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  border: 1px solid rgba(48, 48, 48, 0.7);
-  background: #f6f6f6;
-  transform: translate(-50%, -50%);
+.caught-date-ribbon-ball-image {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 
 .caught-date-ribbon-text {

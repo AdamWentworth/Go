@@ -3,6 +3,7 @@ import './MetaPanel.css';
 import LocationCaught from '@/components/pokemonComponents/LocationCaught';
 import DateCaughtComponent from '@/components/pokemonComponents/DateCaught';
 import BallCaught from '@/components/pokemonComponents/BallCaught';
+import { getBallImageUrl } from '@/components/pokemonComponents/ballAssets';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import {
   fetchPublicUserByUsername,
@@ -51,7 +52,7 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
   isTraded,
   isShadow,
   originalTrainerName,
-  originalTrainerId,
+  originalTrainerId: _originalTrainerId,
   tradedDate,
   pokeball,
   onLocationChange,
@@ -191,7 +192,7 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
           </div>
 
           <div className="meta-ball-slot" aria-hidden="true">
-            <div className="meta-ball-placeholder" />
+            <img className="meta-ball-image" src={getBallImageUrl(pokeball)} alt="" />
           </div>
         </div>
 
