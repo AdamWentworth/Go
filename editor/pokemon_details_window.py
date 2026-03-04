@@ -20,9 +20,9 @@ from frames.pokemon_max_frame         import PokemonMaxFrame
 import os
 
 class PokemonDetailsWindow:
-    def __init__(self, parent, pokemon_id, details):
+    def __init__(self, parent, pokemon_id, details, db_manager=None):
         self.pokemon_id = pokemon_id
-        self.db_manager = DatabaseManager('../pokemon_data/data/pokego.db')  # Adjust the path as necessary
+        self.db_manager = db_manager if db_manager is not None else DatabaseManager('../pokemon/data/pokego.db')
 
         self.female_pokemon_data = self.db_manager.fetch_female_pokemon()
 

@@ -6,6 +6,7 @@ from database.shadow_pokemon_manager import ShadowPokemonManager
 from database.costume_pokemon_manager import CostumePokemonManager
 from database.evolution_manager import EvolutionManager
 from database.mega_evolution_manager import MegaEvolutionManager
+from database.fusion_pokemon_manager import FusionPokemonManager
 from database.female_pokemon_manager import FemalePokemonManager
 from database.max_pokemon_manager   import MaxPokemonManager
 from database.size_pokemon_manager  import SizePokemonManager
@@ -18,12 +19,16 @@ class DatabaseManager:
         self.costume_pokemon_manager = CostumePokemonManager(self.conn)
         self.evolution_manager = EvolutionManager(self.conn)
         self.mega_evolution_manager = MegaEvolutionManager(self.conn)
+        self.fusion_pokemon_manager = FusionPokemonManager(self.conn)
         self.female_pokemon_manager = FemalePokemonManager(self.conn)
         self.max_pokemon_manager   = MaxPokemonManager(self.conn)
         self.size_pokemon_manager  = SizePokemonManager(self.conn)
 
     def fetch_all_pokemon_sorted(self, sort_by='pokemon_id'):
         return self.pokemon_manager.fetch_all_pokemon_sorted(sort_by)
+
+    def fetch_all_fusions_sorted(self, sort_by='fusion_id'):
+        return self.fusion_pokemon_manager.fetch_all_fusions_sorted(sort_by)
     
     def fetch_type_ids(self):
         cursor = self.conn.get_cursor()
@@ -40,12 +45,24 @@ class DatabaseManager:
 
     def fetch_pokemon_details(self, pokemon_id):
         return self.pokemon_manager.fetch_pokemon_details(pokemon_id)    
+
+    def fetch_fusion_details(self, fusion_id):
+        return self.fusion_pokemon_manager.fetch_fusion_details(fusion_id)
     
     def update_pokemon_data(self, pokemon_id, data):
         return self.pokemon_manager.update_pokemon_data(pokemon_id, data)
 
     def update_pokemon_moves(self, pokemon_id, move_data):
         return self.pokemon_manager.update_pokemon_moves(pokemon_id, move_data)
+
+    def fetch_fusion_moves(self, fusion_id):
+        return self.fusion_pokemon_manager.fetch_fusion_moves(fusion_id)
+
+    def update_fusion_data(self, fusion_id, data):
+        return self.fusion_pokemon_manager.update_fusion_data(fusion_id, data)
+
+    def update_fusion_moveset(self, fusion_id, move_data):
+        return self.fusion_pokemon_manager.update_fusion_moveset(fusion_id, move_data)
 
     # Evolution-related methods
     def add_evolves_to(self, pokemon_id, evolves_to_id):
