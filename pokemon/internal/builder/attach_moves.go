@@ -9,52 +9,108 @@ import (
 func (b *Builder) attachMoves(ctx context.Context, orderedIDs []int, pokemonByID map[int]map[string]any) error {
 	_ = orderedIDs
 
-	// 4) moves
+	// 4) moves from pokemon_moves.
 	//
-	// Previous implementation did:
-	//   - query moves joined to pokemon_moves (duplicating move rows)
-	//   - query pokemon_moves again (SELECT *), then "find" moves by move_id
-	//
-	// This version is both faster and more contract-stable:
-	//   - single query that returns pokemon_id + legacy + move fields
-	//   - explicit pokemon_moves columns (pokemon_id, move_id, legacy)
-	//
-	// NOTE: moves is still selected as m.* because the service currently returns the full move object.
-	// If you want a strict public contract for move fields, replace m.* with an explicit column list.
-	rows, err := b.queryRows(ctx, `
+	// Keep base behavior intact (including move.fusion_id when present on moves table)
+	// so existing clients continue to filter as before.
+	baseRows, err := b.queryRows(ctx, `
 	SELECT
 	  pm.pokemon_id,
-	  pm.move_id,
 	  pm.legacy,
 	  m.*,
 	  t.name AS type_name
 	FROM pokemon_moves pm
 	JOIN moves m ON pm.move_id = m.move_id
 	JOIN types t ON m.type_id = t.type_id
+	ORDER BY pm.pokemon_id, m.is_fast DESC, m.name
 	`)
 	if err != nil {
 		return err
 	}
 
-	for _, r := range rows {
+	// Track base move_ids by pokemon so we can add only fusion-only extras from
+	// fusion_moveset without duplicating moves already in the base learnset.
+	baseMoveIDsByPokemon := make(map[int]map[int]struct{}, len(pokemonByID))
+
+	for _, r := range baseRows {
 		pid := asInt(r["pokemon_id"])
 		p, ok := pokemonByID[pid]
 		if !ok {
 			continue
 		}
+		moveID := asInt(r["move_id"])
+		if _, exists := baseMoveIDsByPokemon[pid]; !exists {
+			baseMoveIDsByPokemon[pid] = make(map[int]struct{})
+		}
+		baseMoveIDsByPokemon[pid][moveID] = struct{}{}
 
-		// Build move entry: start with row clone (includes m.*), then normalize/override.
 		entry := cloneMap(r)
-
-		// Remove join helper fields that are not part of the move object in the Node service.
 		delete(entry, "pokemon_id")
-
-		// Node uses `type` lowercased, derived from types.name.
 		entry["type"] = lower(asString(r["type_name"]))
 		delete(entry, "type_name")
-
-		// Ensure legacy is boolean-ish like Node (explicit override).
 		entry["legacy"] = (asInt(r["legacy"]) == 1)
+
+		appendTo(p, "moves", orderedjson.Map{M: entry, Order: []string{"move_id", "move_name"}})
+	}
+
+	// Fusion-only move enrichment:
+	// Pull moves explicitly mapped in fusion_moveset and append rows for each
+	// base pokemon side (id1 + id2), tagging them with fusion_id.
+	//
+	// We intentionally skip rows whose move_id already exists in that pokemon's
+	// base learnset to avoid duplicate entries in the current frontend move picker.
+	fusionRows, err := b.queryRows(ctx, `
+	SELECT
+	  fp.base_pokemon_id1 AS pokemon_id,
+	  fm.fusion_id AS fusion_id_override,
+	  fm.legacy AS legacy_override,
+	  m.*,
+	  t.name AS type_name
+	FROM fusion_moveset fm
+	JOIN fusion_pokemon fp ON fp.fusion_id = fm.fusion_id
+	JOIN moves m ON m.move_id = fm.move_id
+	JOIN types t ON t.type_id = m.type_id
+
+	UNION ALL
+
+	SELECT
+	  fp.base_pokemon_id2 AS pokemon_id,
+	  fm.fusion_id AS fusion_id_override,
+	  fm.legacy AS legacy_override,
+	  m.*,
+	  t.name AS type_name
+	FROM fusion_moveset fm
+	JOIN fusion_pokemon fp ON fp.fusion_id = fm.fusion_id
+	JOIN moves m ON m.move_id = fm.move_id
+	JOIN types t ON t.type_id = m.type_id
+	WHERE fp.base_pokemon_id2 IS NOT NULL
+	`)
+	if err != nil {
+		return err
+	}
+
+	for _, r := range fusionRows {
+		pid := asInt(r["pokemon_id"])
+		p, ok := pokemonByID[pid]
+		if !ok {
+			continue
+		}
+		moveID := asInt(r["move_id"])
+
+		if baseSet, exists := baseMoveIDsByPokemon[pid]; exists {
+			if _, found := baseSet[moveID]; found {
+				continue
+			}
+		}
+
+		entry := cloneMap(r)
+		delete(entry, "pokemon_id")
+		delete(entry, "fusion_id_override")
+		delete(entry, "legacy_override")
+		entry["type"] = lower(asString(r["type_name"]))
+		delete(entry, "type_name")
+		entry["legacy"] = (asInt(r["legacy_override"]) == 1)
+		entry["fusion_id"] = asInt(r["fusion_id_override"])
 
 		appendTo(p, "moves", orderedjson.Map{M: entry, Order: []string{"move_id", "move_name"}})
 	}

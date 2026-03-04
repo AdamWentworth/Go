@@ -8,7 +8,7 @@ interface CaughtDateRibbonProps {
 
 const DEFAULT_YEAR = '----';
 const DEFAULT_MMDD = '-- --';
-const CAUGHT_ICON_URL = resolveAssetUrl('/images/caught.png');
+const CAUGHT_ICON_URL = resolveAssetUrl('/media/images/caught.png');
 
 const CaughtDateRibbon: React.FC<CaughtDateRibbonProps> = ({ dateCaught }) => {
   const { year, mmdd } = useMemo(() => {

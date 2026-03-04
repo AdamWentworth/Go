@@ -97,6 +97,46 @@ describe('resolveFusionMovePool', () => {
     expect(result.some((move) => move.name === 'Fire Fang')).toBe(false);
   });
 
+  it('prefers fusion entry moves when the payload provides fusion.moves', () => {
+    const baseMoves = [
+      buildMove({ move_id: 5, name: 'Dragon Breath', is_fast: 1 }),
+      buildMove({ move_id: 82, name: 'Dragon Claw', is_fast: 0 }),
+      buildMove({ move_id: 269, name: 'Glaciate', is_fast: 0 }),
+    ];
+    const fusionMoves = [
+      buildMove({ move_id: 14, name: 'Shadow Claw', is_fast: 1, fusion_id: 4 }),
+      buildMove({ move_id: 87, name: 'Stone Edge', is_fast: 0, fusion_id: 4 }),
+      buildMove({ move_id: 267, name: 'Fusion Bolt', is_fast: 0, fusion_id: 4 }),
+    ];
+
+    const result = resolveFusionMovePool({
+      pokemon: {
+        moves: baseMoves,
+        fusion: [
+          {
+            fusion_id: 4,
+            base_pokemon_id2: 644,
+            name: 'Black Kyurem',
+            moves: fusionMoves,
+          } as Fusion,
+        ],
+      } as unknown as Pick<PokemonVariant, 'moves' | 'fusion'>,
+      fusion: {
+        is_fused: true,
+        fusion_form: 'Black Kyurem',
+      },
+      instances: {} as Instances,
+      variants: [],
+    });
+
+    expect(result.map((move) => move.name)).toEqual([
+      'Shadow Claw',
+      'Stone Edge',
+      'Fusion Bolt',
+    ]);
+    expect(result.some((move) => move.name === 'Dragon Breath')).toBe(false);
+  });
+
   it('falls back to fusion base_pokemon_id2 when fusedWith lookup is unavailable', () => {
     const baseMoves = [
       buildMove({ move_id: 5, name: 'Dragon Breath', is_fast: 1 }),
@@ -130,4 +170,3 @@ describe('resolveFusionMovePool', () => {
     expect(result.some((move) => move.name === 'Charge Beam')).toBe(false);
   });
 });
-

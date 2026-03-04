@@ -1,27 +1,71 @@
 /* FusionComponent.css */
-
 .fusion-component {
-    /* Add any container styles if needed */
-    margin: 1rem 0;
-  }
-  
-  .fusion-images {
-    display: flex;
-    align-items: center;
-    /* Common image container styles */
-  }
-  
-  .fusion-images.single {
-    justify-content: center; /* Center the single image */
-  }
-  
-  .fusion-images.multiple {
-    justify-content: space-around; /* Space images side by side */
-  }
-  
-  .fusion-images img {
-    max-width: 50px; /* Adjust size as needed */
-    height: auto;
-    margin: 0 10px; /* Spacing between images */
-  }
-  
+  width: var(--caught-content-width);
+  margin: 8px auto 4px;
+  padding-inline: var(--caught-section-inline-pad);
+  box-sizing: border-box;
+}
+
+.fusion-state-row,
+.fusion-option-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fusion-option-list.single {
+  justify-content: center;
+}
+
+.fusion-option-list.multiple {
+  justify-content: center;
+}
+
+.fusion-option-button,
+.fusion-action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(166, 196, 186, 0.75);
+  background: rgba(34, 53, 49, 0.45);
+  color: #e0f0e5;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.fusion-option-button:disabled,
+.fusion-action-button:disabled {
+  opacity: 0.58;
+  cursor: default;
+}
+
+.fusion-option-icon,
+.fusion-state-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.fusion-state-label {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #d9ece0;
+}
+
+.fusion-edit-hint {
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9eb6aa;
+}

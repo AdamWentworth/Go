@@ -60,29 +60,40 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
     megaForm: megaData?.megaForm ?? null,
   };
 
-  const normalizedMegaEvolutions = megaEvolutions.filter(
-    (entry): entry is MegaEvolution & { form: string } => typeof entry.form === 'string',
-  );
+  const hasMaxVariant =
+    typeof pokemon.variantType === 'string' &&
+    (pokemon.variantType.includes('dynamax') || pokemon.variantType.includes('gigantamax'));
+
+  const canRenderMax =
+    editMode &&
+    hasMaxVariant &&
+    Array.isArray(pokemon.max) &&
+    pokemon.max.length > 0 &&
+    !pokemon.instanceData?.shadow &&
+    !pokemon.instanceData?.purified &&
+    !pokemon.variantType?.includes('costume');
 
   return (
     <>
-      <div className="max-mega-container">
-        <div className="max-component">
-          <MaxComponent
-            pokemon={pokemon}
-            editMode={editMode}
-            dynamax={dynamax}
-            gigantamax={gigantamax}
-            onToggleMax={onToggleMax}
-            showMaxOptions={showMaxOptions}
-          />
-        </div>
+      <div className={`max-mega-container ${canRenderMax ? '' : 'max-mega-container--mega-only'}`}>
+        {canRenderMax ? (
+          <div className="max-component">
+            <MaxComponent
+              pokemon={pokemon}
+              editMode={editMode}
+              dynamax={dynamax}
+              gigantamax={gigantamax}
+              onToggleMax={onToggleMax}
+              showMaxOptions={showMaxOptions}
+            />
+          </div>
+        ) : null}
         <div className="mega-component">
           <MegaComponent
             megaData={normalizedMegaData}
             setMegaData={setMegaData}
             editMode={editMode}
-            megaEvolutions={normalizedMegaEvolutions}
+            megaEvolutions={megaEvolutions}
             isShadow={isShadow}
             name={name}
           />

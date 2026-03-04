@@ -37,7 +37,7 @@ class PokemonCostumeImageFrame(tk.Frame):
 
         script_dir = os.path.dirname(os.path.realpath(__file__))
         go_dir     = os.path.normpath(os.path.join(script_dir, "../../"))
-        self.img_root = os.path.join(go_dir, "frontend", "public")
+        self.img_root = os.path.join(go_dir, "assets")
 
         self.costumes = self.db_manager.fetch_pokemon_costumes(pokemon_id)
 

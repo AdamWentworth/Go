@@ -29,7 +29,7 @@ class BaseShadowImageFrame(tk.Frame):
         # Set the relative path to images
         script_directory = os.path.dirname(os.path.realpath(__file__))
         go_directory = os.path.normpath(os.path.join(script_directory, '../../'))
-        self.relative_path_to_images = os.path.join(go_directory, 'frontend', 'public', 'images', image_subfolder)
+        self.relative_path_to_images = os.path.join(go_directory, 'assets', 'images', image_subfolder)
 
         # Check if image_url is None or empty
         if image_url:

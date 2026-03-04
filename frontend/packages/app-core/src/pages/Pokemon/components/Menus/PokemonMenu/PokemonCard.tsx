@@ -76,10 +76,20 @@ const PokemonCard = memo(({
     if (isFused && fusionForm) {
       name = pokemon.instanceData?.shiny ? `Shiny ${fusionForm}` : fusionForm;
     }
-    if (isMega && megaForm) {
-      name = pokemon.instanceData?.shiny
-        ? `Shiny Mega ${name} ${pokemon.instanceData?.mega_form}`
-        : `Mega ${name} ${pokemon.instanceData?.mega_form}`;
+    if (isMega) {
+      const normalizedName = name
+        .replace(/^Shiny\s+Mega\s+/i, '')
+        .replace(/^Mega\s+/i, '')
+        .replace(/^Shiny\s+/i, '');
+      const isShinyState =
+        Boolean(pokemon.instanceData?.shiny) ||
+        pokemon.variantType.includes('shiny') ||
+        /^Shiny\s+/i.test(name);
+      const megaSuffix =
+        megaForm && !normalizedName.toLowerCase().endsWith(megaForm.toLowerCase())
+          ? ` ${megaForm}`
+          : '';
+      name = `${isShinyState ? 'Shiny Mega' : 'Mega'} ${normalizedName}${megaSuffix}`;
     }
     return name;
   };

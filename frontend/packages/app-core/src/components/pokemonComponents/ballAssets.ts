@@ -12,25 +12,42 @@ export const BALL_OPTIONS = [
 
 export type BallValue = (typeof BALL_OPTIONS)[number]['value'];
 
-const BALL_FILE_BY_VALUE: Record<BallValue, string> = {
+const BALL_FILE_BY_ALIAS: Record<string, string> = {
   poke_ball: 'pokeball.png',
+  pokeball: 'pokeball.png',
+  poke: 'pokeball.png',
   great_ball: 'greatball.png',
+  greatball: 'greatball.png',
+  great: 'greatball.png',
   ultra_ball: 'ultraball.png',
+  ultraball: 'ultraball.png',
+  ultra: 'ultraball.png',
   premier_ball: 'premierball.png',
+  premierball: 'premierball.png',
+  premier: 'premierball.png',
   master_ball: 'masterball.png',
+  masterball: 'masterball.png',
+  master: 'masterball.png',
   safari_ball: 'safariball.png',
+  safariball: 'safariball.png',
+  safari: 'safariball.png',
   beast_ball: 'beastball.png',
+  beastball: 'beastball.png',
+  beast: 'beastball.png',
 };
 
-const toBallFileName = (value: string): string => {
-  const known = BALL_FILE_BY_VALUE[value as BallValue];
-  if (known) return known;
-  const normalized = value
+const normalizeBallAlias = (value: string): string =>
+  value
     .trim()
     .toLowerCase()
-    .replace(/_ball$/, '')
     .replace(/[^a-z0-9]/g, '');
-  return `${normalized || 'poke'}ball.png`;
+
+const toBallFileName = (value: string): string => {
+  const canonical = BALL_FILE_BY_ALIAS[value];
+  if (canonical) return canonical;
+
+  const normalized = normalizeBallAlias(value);
+  return BALL_FILE_BY_ALIAS[normalized] ?? `${normalized || 'poke'}ball.png`;
 };
 
 export const getBallLabel = (value: string | null): string => {
@@ -42,5 +59,10 @@ export const getBallLabel = (value: string | null): string => {
 
 export const getBallImageUrl = (value: string | null): string => {
   const fileName = toBallFileName(value ?? 'poke_ball');
-  return resolveAssetUrl(`/images/balls/${fileName}`);
+  return resolveAssetUrl(`/media/images/balls/${fileName}`);
+};
+
+export const getBallImageClassName = (value: string | null): string => {
+  const fileName = toBallFileName(value ?? 'poke_ball');
+  return `meta-ball-${fileName.replace('.png', '')}`;
 };

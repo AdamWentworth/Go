@@ -4,9 +4,19 @@
 .max-mega-container {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   width: 100%;
 }
 
-.max-component, .mega-component {
+.max-mega-container--mega-only {
+  justify-content: center;
+}
+
+.max-component,
+.mega-component {
   flex: 1;
+}
+
+.max-mega-container--mega-only .mega-component {
+  flex: 0 1 auto;
 }

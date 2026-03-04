@@ -1,9 +1,11 @@
 from details_window.ui_setup import create_scrollable_window, bind_scroll_events
 import tkinter as tk
 from tkinter import messagebox
+import os
 
 from database_manager import DatabaseManager
 from frames.fusion_info_frames import FusionInfoFrames
+from frames.fusion_image_frames import FusionImageFrames
 from frames.pokemon_moves_frame import PokemonMovesFrame
 
 
@@ -18,6 +20,9 @@ class FusionDetailsWindow:
             messagebox.showerror("Error", f"No fusion row found for fusion_id={self.fusion_id}")
             return
 
+        script_directory = os.path.dirname(os.path.realpath(__file__))
+        self.relative_path_to_images = os.path.normpath(os.path.join(script_directory, '../assets'))
+
         self.window, self.canvas, self.scrollable_frame = create_scrollable_window(
             parent,
             f"Details of Fusion ID: {self.fusion_id}",
@@ -29,6 +34,14 @@ class FusionDetailsWindow:
 
         self.info_frames = FusionInfoFrames(main_container, self.fusion_data)
         self.info_frames.create_info_frames()
+
+        self.image_frames = FusionImageFrames(
+            main_container,
+            self.fusion_id,
+            self,
+            self.info_frames.entry_widgets["Image URL"],
+            self.info_frames.entry_widgets["Image URL Shiny"],
+        )
 
         self.moves_frame = PokemonMovesFrame(main_container, self.db_manager, self.moves)
         self.moves_frame.create_moves_frame()

@@ -42,3 +42,10 @@
     var(--caught-section-inline-pad) + var(--caught-section-inner-inline-pad)
   );
 }
+
+/* Match purified/shadow toggle slot right edge with caught-section content rail */
+.caught-instance .purify-name-shadow-container > .purify-component {
+  margin-inline-end: calc(
+    var(--caught-section-inline-pad) + var(--caught-section-inner-inline-pad)
+  );
+}

@@ -123,7 +123,7 @@ class PokemonShadowCostumeFrame(tk.Frame):
     # ────────────────────────────────────────────────────────────
     def get_images_directory(self):
         return os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                            '../../frontend/public')
+                            '../../assets')
 
     def view_image(self, image_url, _kind):
         if image_url:

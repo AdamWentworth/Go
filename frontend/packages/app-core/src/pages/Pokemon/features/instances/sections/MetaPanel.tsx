@@ -3,7 +3,7 @@ import './MetaPanel.css';
 import LocationCaught from '@/components/pokemonComponents/LocationCaught';
 import DateCaughtComponent from '@/components/pokemonComponents/DateCaught';
 import BallCaught from '@/components/pokemonComponents/BallCaught';
-import { getBallImageUrl } from '@/components/pokemonComponents/ballAssets';
+import { getBallImageClassName, getBallImageUrl } from '@/components/pokemonComponents/ballAssets';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import {
   fetchPublicUserByUsername,
@@ -145,12 +145,25 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
   const resolveTrainerByUsername = async (usernameInput: string): Promise<void> => {
     const username = usernameInput.trim();
     if (!username) {
+      onOriginalTrainerNameChange('');
+      setTrainerQuery('');
       onOriginalTrainerIdChange(null);
+      setTrainerLookupError(null);
       return;
     }
 
     setTrainerLookupBusy(true);
-    const outcome = await fetchPublicUserByUsername(username);
+    let outcome;
+    try {
+      outcome = await fetchPublicUserByUsername(username);
+    } catch {
+      setTrainerLookupBusy(false);
+      onOriginalTrainerNameChange(username);
+      setTrainerQuery(username);
+      onOriginalTrainerIdChange(null);
+      setTrainerLookupError('Unable to verify trainer right now.');
+      return;
+    }
     setTrainerLookupBusy(false);
 
     if (outcome.type === 'success') {
@@ -162,11 +175,17 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
     }
 
     if (outcome.type === 'notFound') {
+      // Keep manually entered trainer names even if they are not in our user database.
+      onOriginalTrainerNameChange(username);
+      setTrainerQuery(username);
       onOriginalTrainerIdChange(null);
       setTrainerLookupError(null);
       return;
     }
 
+    // On lookup errors, preserve the entered name and allow save without a linked user_id.
+    onOriginalTrainerNameChange(username);
+    setTrainerQuery(username);
     onOriginalTrainerIdChange(null);
     setTrainerLookupError(outcome.message);
   };
@@ -192,7 +211,11 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
           </div>
 
           <div className="meta-ball-slot" aria-hidden="true">
-            <img className="meta-ball-image" src={getBallImageUrl(pokeball)} alt="" />
+            <img
+              className={`meta-ball-image ${getBallImageClassName(pokeball)}`}
+              src={getBallImageUrl(pokeball)}
+              alt=""
+            />
           </div>
         </div>
 
@@ -249,8 +272,11 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
                       }}
                       onFocus={() => setTrainerHasFocus(true)}
                       onBlur={() => {
+                        const committedName = trainerQuery.trim();
                         setTrainerHasFocus(false);
-                        void resolveTrainerByUsername(trainerQuery);
+                        onOriginalTrainerNameChange(committedName);
+                        onOriginalTrainerIdChange(null);
+                        void resolveTrainerByUsername(committedName);
                         window.setTimeout(() => setTrainerSuggestions([]), 120);
                       }}
                       placeholder="Optional"

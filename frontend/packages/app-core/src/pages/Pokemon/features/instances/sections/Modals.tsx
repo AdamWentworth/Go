@@ -13,7 +13,9 @@ interface ModalsProps {
     backgrounds?: VariantBackground[];
   };
   onSelectBackground: (background: VariantBackground | null) => void;
+  overlayCandidates?: PokemonVariant[];
   overlayPokemon: PokemonVariant | Record<string, unknown> | null;
+  onSelectOverlayPokemon?: (pokemon: PokemonVariant) => void;
   onCloseOverlay: () => void;
   onFuse: () => void;
 }
@@ -23,10 +25,22 @@ const Modals: React.FC<ModalsProps> = ({
   setShowBackgrounds,
   pokemon,
   onSelectBackground,
+  overlayCandidates = [],
   overlayPokemon,
+  onSelectOverlayPokemon,
   onCloseOverlay,
   onFuse,
 }) => {
+  const candidates =
+    overlayCandidates.length > 0
+      ? overlayCandidates
+      : overlayPokemon
+        ? [overlayPokemon as PokemonVariant]
+        : [];
+
+  const selectedCandidate =
+    (overlayPokemon as PokemonVariant | null) ?? candidates[0] ?? null;
+
   return (
     <>
       {showBackgrounds && (
@@ -43,9 +57,11 @@ const Modals: React.FC<ModalsProps> = ({
         </div>
       )}
 
-      {overlayPokemon && (
+      {candidates.length > 0 && (
         <FuseOverlay
-          pokemon={overlayPokemon as PokemonVariant}
+          candidates={candidates}
+          selectedPokemon={selectedCandidate}
+          onSelectPokemon={(selected) => onSelectOverlayPokemon?.(selected)}
           onClose={onCloseOverlay}
           onFuse={onFuse}
         />

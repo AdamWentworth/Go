@@ -6,19 +6,112 @@ import type { PokemonInstance }      from '@/types/pokemonInstance';
 import { parseVariantId }            from '@/utils/PokemonIDUtils';
 import type { PokemonVariant }       from '@/types/pokemonVariants';
 
+const parseBasePokemonId = (value: string): number | null => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const extractBaseFromKey = (key: string | null | undefined): number | null => {
+  if (!key) return null;
+  const match = key.match(/^(\d{1,4})[-_]/);
+  if (!match) return null;
+  return parseBasePokemonId(match[1] ?? '');
+};
+
+const buildVariantKeyCandidates = (key: string): string[] => {
+  const keys = [key];
+  const match = key.match(/^(\d{1,4})(-.+)$/);
+  if (!match) return keys;
+
+  const idPart = match[1] ?? '';
+  const rest = match[2] ?? '';
+  const padded = `${idPart.padStart(4, '0')}${rest}`;
+  if (padded !== key) {
+    keys.push(padded);
+  }
+  return keys;
+};
+
+const buildFallbackVariantKey = (row: PokemonInstance): string | null => {
+  if (typeof row.pokemon_id !== 'number' || !Number.isFinite(row.pokemon_id)) {
+    return null;
+  }
+  const base = String(row.pokemon_id).padStart(4, '0');
+  return `${base}-${row.shiny ? 'shiny' : 'default'}`;
+};
+
+const UUID_AT_END_REGEX =
+  /([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+
+const normalizeInstanceToken = (value: string | null | undefined): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return null;
+
+  const match = trimmed.match(UUID_AT_END_REGEX);
+  if (match?.[1]) return match[1];
+  return trimmed;
+};
+
 export async function getValidCandidates(
   baseId: string,
   isShiny: boolean,
   ignoreShiny = false,
+  includeInstanceIds: string[] = [],
+  includeLinkedToInstanceId: string | null = null,
 ) {
   /* ----------------------------- instances ----------------------------- */
   const ownership =
     (await getAllInstances<PokemonInstance>()) ?? [];
-
+  const targetBaseId = parseBasePokemonId(baseId);
+  const forcedIncludeRaw = new Set(
+    includeInstanceIds.filter((id) => id.length > 0).map((id) => id.trim().toLowerCase()),
+  );
+  const forcedIncludeNormalized = new Set(
+    includeInstanceIds
+      .map((id) => normalizeInstanceToken(id))
+      .filter((id): id is string => Boolean(id)),
+  );
+  const linkedTargetRaw =
+    typeof includeLinkedToInstanceId === 'string' && includeLinkedToInstanceId.length > 0
+      ? includeLinkedToInstanceId.trim().toLowerCase()
+      : null;
+  const linkedTargetNormalized = normalizeInstanceToken(includeLinkedToInstanceId);
   const filtered = ownership.filter((o) => {
-    if (!o.instance_id?.startsWith(baseId.padStart(4, '0') + '-')) return false;
-    if (!o.is_caught || o.is_for_trade || o.is_fused || o.disabled) return false;
-    if (!ignoreShiny && (!!o.shiny) !== isShiny)                    return false;
+    if (targetBaseId == null) return false;
+
+    const entryBaseId = typeof o.pokemon_id === 'number'
+      ? o.pokemon_id
+      : extractBaseFromKey(o.variant_id) ?? extractBaseFromKey(o.instance_id);
+    if (entryBaseId !== targetBaseId) return false;
+
+    const candidateInstanceRaw =
+      typeof o.instance_id === 'string' && o.instance_id.length > 0
+        ? o.instance_id.trim().toLowerCase()
+        : null;
+    const candidateInstanceNormalized = normalizeInstanceToken(o.instance_id);
+    const isForcedById =
+      (candidateInstanceRaw != null && forcedIncludeRaw.has(candidateInstanceRaw)) ||
+      (candidateInstanceNormalized != null && forcedIncludeNormalized.has(candidateInstanceNormalized));
+    const isForcedByLink =
+      typeof o.fused_with === 'string' &&
+      (
+        (linkedTargetRaw != null && o.fused_with.trim().toLowerCase() === linkedTargetRaw) ||
+        (() => {
+          const fusedWithNormalized = normalizeInstanceToken(o.fused_with);
+          return (
+            linkedTargetNormalized != null &&
+            fusedWithNormalized != null &&
+            fusedWithNormalized === linkedTargetNormalized
+          );
+        })()
+      );
+    const isForced = isForcedById || isForcedByLink;
+    if (!o.is_caught) return false;
+    if (!isForced && o.is_for_trade) return false;
+    if (!isForced && o.is_fused) return false;
+    if (!isForced && o.disabled) return false;
+    if (!ignoreShiny && (!!o.shiny) !== isShiny) return false;
     return true;
   });
 
@@ -29,15 +122,40 @@ export async function getValidCandidates(
   if (!db) return enriched; // IndexedDB unavailable (private-mode etc.)
 
   for (const cand of filtered) {
-    const parsed = parseVariantId(cand.instance_id!);
-    if (!parsed) continue;
+    const parsedFromInstance = cand.instance_id ? parseVariantId(cand.instance_id) : null;
+    const preferredKey =
+      (typeof cand.variant_id === 'string' && cand.variant_id.length > 0
+        ? cand.variant_id
+        : parsedFromInstance?.baseKey) ??
+      buildFallbackVariantKey(cand) ??
+      '';
+    if (!preferredKey) continue;
 
-    const variant = await db.get(
-      VARIANTS_STORE,
-      parsed.baseKey,
-    ) as PokemonVariant | undefined;
+    let variant: PokemonVariant | undefined;
+    for (const key of buildVariantKeyCandidates(preferredKey)) {
+      variant = await db.get(
+        VARIANTS_STORE,
+        key,
+      ) as PokemonVariant | undefined;
+      if (variant) break;
+    }
 
-    if (variant) enriched.push({ ...variant, instanceData: cand });
+    if (!variant) {
+      const fallbackKey = buildFallbackVariantKey(cand);
+      if (fallbackKey) {
+        for (const key of buildVariantKeyCandidates(fallbackKey)) {
+          variant = await db.get(
+            VARIANTS_STORE,
+            key,
+          ) as PokemonVariant | undefined;
+          if (variant) break;
+        }
+      }
+    }
+
+    if (variant) {
+      enriched.push({ ...variant, instanceData: cand });
+    }
   }
 
   return enriched;

@@ -8,6 +8,41 @@ import (
 
 func (b *Builder) attachFusions(ctx context.Context, orderedIDs []int, pokemonByID map[int]map[string]any) error {
 	_ = orderedIDs
+
+	fusionMoveRows, err := b.queryRows(ctx, `
+	SELECT
+	  fm.fusion_id,
+	  fm.legacy,
+	  m.*,
+	  t.name AS type_name
+	FROM fusion_moveset AS fm
+	JOIN moves AS m ON fm.move_id = m.move_id
+	JOIN types AS t ON m.type_id = t.type_id
+	ORDER BY fm.fusion_id, m.is_fast DESC, m.name
+	`)
+	if err != nil {
+		return err
+	}
+
+	fusionMovesByID := make(map[int][]any)
+	for _, r := range fusionMoveRows {
+		fid := asInt(r["fusion_id"])
+		if fid == 0 {
+			continue
+		}
+
+		entry := cloneMap(r)
+		delete(entry, "type_name")
+		entry["type"] = lower(asString(r["type_name"]))
+		entry["legacy"] = (asInt(r["legacy"]) == 1)
+		entry["fusion_id"] = fid
+
+		fusionMovesByID[fid] = append(
+			fusionMovesByID[fid],
+			orderedjson.Map{M: entry, Order: []string{"move_id", "move_name"}},
+		)
+	}
+
 	// 5) fusions
 	fusionRows, err := b.queryRows(ctx, `
 	SELECT 
@@ -46,6 +81,10 @@ func (b *Builder) attachFusions(ctx context.Context, orderedIDs []int, pokemonBy
 	for _, f := range fusionRows {
 		fid := asInt(f["fusion_id"])
 		cp := fusionCP[fid]
+		moves := fusionMovesByID[fid]
+		if moves == nil {
+			moves = []any{}
+		}
 
 		fusion := orderedjson.Map{M: map[string]any{
 			"fusion_id":            f["fusion_id"],
@@ -69,6 +108,7 @@ func (b *Builder) attachFusions(ctx context.Context, orderedIDs []int, pokemonBy
 			"shiny_rarity":         f["shiny_rarity"],
 			"date_available":       f["date_available"],
 			"date_shiny_available": f["date_shiny_available"],
+			"moves":                moves,
 			"cp40":                 cp.cp40,
 			"cp50":                 cp.cp50,
 		}, Order: fusionKeyOrder}

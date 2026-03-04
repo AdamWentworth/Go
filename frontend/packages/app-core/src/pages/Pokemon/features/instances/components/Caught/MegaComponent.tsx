@@ -4,6 +4,9 @@ import React from 'react';
 import './MegaComponent.css';
 import type { MegaData } from '../../utils/buildInstanceChanges';
 import type { MegaEvolution } from '@/types/pokemonSubTypes';
+import { resolveAssetUrl } from '@/utils/assetUrl';
+
+const MEGA_ICON_URL = resolveAssetUrl('/media/images/mega.png');
 
 interface MegaComponentProps {
   megaData: MegaData;
@@ -83,17 +86,15 @@ const MegaComponent: React.FC<MegaComponentProps> = ({
 
   return (
     <div className={`mega-component ${editMode ? 'edit-mode' : ''}`}>
-      {editMode || isMega ? (
-        <img
-          src={`/images/mega.png`}
-          alt="Mega Toggle"
-          className={`mega-image ${isMega ? 'saturated' : 'desaturated'} ${
-            editMode ? '' : 'static-mode'
-          }`}
-          onClick={handleClick}
-          title={formLabel}
-        />
-      ) : null}
+      <img
+        src={MEGA_ICON_URL}
+        alt="Mega Toggle"
+        className={`mega-image ${isMega ? 'saturated' : 'desaturated'} ${
+          editMode ? 'interactive' : 'static-mode'
+        }`}
+        onClick={handleClick}
+        title={formLabel}
+      />
     </div>
   );
 };

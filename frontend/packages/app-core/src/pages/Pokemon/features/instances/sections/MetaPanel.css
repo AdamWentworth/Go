@@ -82,6 +82,12 @@
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
 }
 
+.meta-ball-image.meta-ball-beastball,
+.meta-ball-image.meta-ball-safariball {
+  transform: scale(1.40625);
+  transform-origin: center center;
+}
+
 .meta-edit-fields {
   width: 100%;
   display: grid;

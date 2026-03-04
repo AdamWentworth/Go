@@ -64,6 +64,7 @@ export interface Fusion {
   image_url_shiny?: string;
   name: string;
   fusion_id?: number | null;
+  moves?: Move[];
 }
 
 export interface MaxForm {

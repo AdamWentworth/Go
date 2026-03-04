@@ -1,5 +1,5 @@
 // InstanceOverlay.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import './InstanceOverlay.css';
 import OverlayPortal from '@/components/OverlayPortal';
 import WindowOverlay from '@/components/WindowOverlay';
@@ -137,7 +137,8 @@ const getPrimaryTypeName = (p: OverlayPokemon | null): string => {
 
 const getBackgroundImageSrc = (p: OverlayPokemon | null): string => {
   if (!p) return '/images/backgrounds/bg_normal.png';
-  const isShadow = !!p?.instanceData?.shadow;
+  const isPurified = !!p?.instanceData?.purified;
+  const isShadow = !!p?.instanceData?.shadow && !isPurified;
   const isLucky  = !!p?.instanceData?.lucky;
 
   if (isShadow) return '/images/backgrounds/bg_shadow.png';
@@ -174,6 +175,25 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   username,
 }) => {
   const [selectedPokemon, setSelectedPokemon] = useState<OverlayPokemon | null>(pokemon);
+  const [previewInstanceDataPatch, setPreviewInstanceDataPatch] = useState<
+    Partial<PokemonInstance>
+  >({});
+  const liveSelectedPokemon = useMemo<OverlayPokemon | null>(() => {
+    if (!selectedPokemon) return null;
+
+    const instanceId = selectedPokemon.instanceData?.instance_id;
+    const liveInstance = instanceId ? instances[instanceId] : null;
+    const mergedInstanceData: Partial<PokemonInstance> = {
+      ...(selectedPokemon.instanceData ?? {}),
+      ...(liveInstance ?? {}),
+      ...previewInstanceDataPatch,
+    };
+
+    return {
+      ...selectedPokemon,
+      instanceData: mergedInstanceData,
+    };
+  }, [instances, previewInstanceDataPatch, selectedPokemon]);
 
   const [isSmallScreen, setIsSmallScreen] = useState(
     typeof window !== 'undefined' ? window.innerWidth <= 686 : false
@@ -183,6 +203,31 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    const selectedKey =
+      selectedPokemon?.instanceData?.instance_id ?? selectedPokemon?.variant_id ?? null;
+    const incomingKey = pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? null;
+
+    if (selectedKey !== incomingKey) {
+      setSelectedPokemon(pokemon);
+      setPreviewInstanceDataPatch({});
+    }
+  }, [pokemon, selectedPokemon?.instanceData?.instance_id, selectedPokemon?.variant_id]);
+
+  const handleCaughtPreviewInstanceDataChange = useCallback(
+    (patch: Partial<PokemonInstance>) => {
+      setPreviewInstanceDataPatch((prev) => {
+        const next = { ...prev, ...patch };
+        const hasChange = Object.keys(next).some((key) => {
+          const typedKey = key as keyof PokemonInstance;
+          return !Object.is(next[typedKey], prev[typedKey]);
+        });
+        return hasChange ? next : prev;
+      });
+    },
+    [],
+  );
 
   const [ignorePointerEvents, setIgnorePointerEvents] = useState(true);
   useEffect(() => {
@@ -194,17 +239,27 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     deriveInitialOverlay(tagFilter, pokemon)
   );
 
+  const activeInstanceIdHint = useMemo(() => {
+    const liveId = liveSelectedPokemon?.instanceData?.instance_id;
+    if (typeof liveId === 'string' && liveId.length > 0) return liveId;
+    const selectedId = selectedPokemon?.instanceData?.instance_id;
+    if (typeof selectedId === 'string' && selectedId.length > 0) return selectedId;
+    return null;
+  }, [liveSelectedPokemon?.instanceData?.instance_id, selectedPokemon?.instanceData?.instance_id]);
+
   useEffect(() => {
-    setCurrentOverlay(deriveInitialOverlay(tagFilter, selectedPokemon));
-  }, [tagFilter, selectedPokemon]);
+    setCurrentOverlay(deriveInitialOverlay(tagFilter, liveSelectedPokemon));
+  }, [tagFilter, liveSelectedPokemon]);
 
   const handleOpenWantedOverlay = (pokemonData: Record<string, unknown>) => {
     setSelectedPokemon(pokemonData as unknown as OverlayPokemon);
+    setPreviewInstanceDataPatch({});
     setCurrentOverlay('wanted');
   };
 
   const handleOpenTradeOverlay = (pokemonData: Record<string, unknown>) => {
     setSelectedPokemon(pokemonData as unknown as OverlayPokemon);
+    setPreviewInstanceDataPatch({});
     setCurrentOverlay('trade');
   };
 
@@ -212,6 +267,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     onClose();
     setCurrentOverlay(deriveInitialOverlay(tagFilter, null));
     setSelectedPokemon(null);
+    setPreviewInstanceDataPatch({});
   };
 
   const renderCloseButton = () => (
@@ -221,16 +277,19 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   );
 
   const renderContent = () => {
+    const activePokemon = liveSelectedPokemon;
     switch (currentOverlay) {
       case 'caught':
-        if (!selectedPokemon) return null;
+        if (!activePokemon) return null;
         return (
           <div className="caught-fullscreen">
             <div className="caught-scroll">
               <div className="caught-column">
                 <CaughtInstance
-                  pokemon={selectedPokemon as CaughtOverlayPokemon}
+                  pokemon={activePokemon as CaughtOverlayPokemon}
                   isEditable={isEditable}
+                  onPreviewInstanceDataChange={handleCaughtPreviewInstanceDataChange}
+                  activeInstanceIdHint={activeInstanceIdHint}
                 />
               </div>
             </div>
@@ -239,19 +298,19 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
       case 'missing':
         return <div className="missing-placeholder">Missing Instance Component</div>;
       case 'trade':
-        if (!selectedPokemon) return null;
+        if (!activePokemon) return null;
         return (
           <div className={`trade-instance-overlay ${isSmallScreen ? 'small-screen' : ''}`}>
             <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
               <WindowOverlay onClose={handleCloseOverlay} className="trade-instance-window">
                 <TradeInstance
-                  pokemon={selectedPokemon as unknown as TradeOverlayPokemon}
+                  pokemon={activePokemon as unknown as TradeOverlayPokemon}
                   isEditable={isEditable}
                 />
               </WindowOverlay>
               <WindowOverlay onClose={handleCloseOverlay} className="trade-details-window">
                 <TradeDetails
-                  pokemon={withInstanceData(selectedPokemon) as TradeDetailsPokemon}
+                  pokemon={withInstanceData(activePokemon) as TradeDetailsPokemon}
                   lists={lists}
                   instances={instances}
                   sortType={sortType}
@@ -267,13 +326,13 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
           </div>
         );
       case 'wanted':
-        if (!selectedPokemon) return null;
+        if (!activePokemon) return null;
         return (
           <div className="wanted-instance-overlay">
             <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
               <WindowOverlay onClose={handleCloseOverlay} className="wanted-details-window">
                 <WantedDetails
-                  pokemon={withInstanceData(selectedPokemon) as WantedDetailsPokemon}
+                  pokemon={withInstanceData(activePokemon) as WantedDetailsPokemon}
                   lists={lists}
                   instances={instances}
                   sortType={sortType}
@@ -285,7 +344,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
               </WindowOverlay>
               <WindowOverlay onClose={handleCloseOverlay} className="wanted-instance-window">
                 <WantedInstance
-                  pokemon={selectedPokemon as unknown as WantedOverlayPokemon}
+                  pokemon={activePokemon as unknown as WantedOverlayPokemon}
                   isEditable={isEditable}
                 />
               </WindowOverlay>
@@ -297,12 +356,12 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     }
   };
 
-  const bgColor = currentOverlay === 'caught' ? getCaughtBgColor(selectedPokemon) : null;
+  const bgColor = currentOverlay === 'caught' ? getCaughtBgColor(liveSelectedPokemon) : null;
 
   // recompute the background image whenever the selected pokemon changes
   const bgImageSrc = useMemo(
-    () => (currentOverlay === 'caught' ? getBackgroundImageSrc(selectedPokemon) : null),
-    [currentOverlay, selectedPokemon]
+    () => (currentOverlay === 'caught' ? getBackgroundImageSrc(liveSelectedPokemon) : null),
+    [currentOverlay, liveSelectedPokemon]
   );
 
   const caughtBackgroundStyle = useMemo(
@@ -313,9 +372,9 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   // SINGLE debug log for this file
   useEffect(() => {
     if (currentOverlay === 'caught') {
-      dbg('Background image:', bgImageSrc, 'for', selectedPokemon?.name ?? '(unknown)');
+      dbg('Background image:', bgImageSrc, 'for', liveSelectedPokemon?.name ?? '(unknown)');
     }
-  }, [currentOverlay, bgImageSrc, selectedPokemon?.name]);
+  }, [currentOverlay, bgImageSrc, liveSelectedPokemon?.name]);
 
   return (
     <OverlayPortal>

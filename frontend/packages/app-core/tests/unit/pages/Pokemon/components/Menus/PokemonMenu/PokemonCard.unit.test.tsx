@@ -23,6 +23,7 @@ function makePokemon(overrides: Record<string, unknown> = {}) {
   return {
     pokemon_id: 1,
     name: 'Bulbasaur',
+    species_name: 'Bulbasaur',
     variant_id: '0001-default',
     variantType: 'default',
     currentImage: '/images/1.png',
@@ -119,5 +120,20 @@ describe('PokemonCard', () => {
     expect(setIsFastSelectEnabled).toHaveBeenCalledWith(true);
     expect(toggleCardHighlight).toHaveBeenCalledWith('instance-123');
     expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders mega-prefixed display names in catalog cards for mega instances', () => {
+    renderCard({
+      name: 'Shiny Tyranitar',
+      species_name: 'Tyranitar',
+      variantType: 'shiny',
+      instanceData: {
+        shiny: true,
+        is_mega: true,
+        mega_form: null,
+      },
+    });
+
+    expect(screen.getByRole('heading', { name: 'Shiny Mega Tyranitar' })).toBeInTheDocument();
   });
 });

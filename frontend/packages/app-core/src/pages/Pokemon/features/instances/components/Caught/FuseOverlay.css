@@ -1,27 +1,137 @@
 /* FuseOverlay.css */
 .fuse-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  
-  .fuse-overlay .overlay-content {
-    background: #333;
-    padding: 20px;
-    border-radius: 8px;
-    position: relative;
-  }
-  
-  .fuse-overlay .fuse-button {
-    margin-top: 10px;
-    padding: 10px 20px;
-    font-size: 1rem;
-  }
-  
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  z-index: 2000;
+}
+
+.fuse-overlay .overlay-content {
+  width: min(680px, 100%);
+  max-height: min(82vh, 760px);
+  background: #1f2b2a;
+  border: 1px solid rgba(156, 186, 175, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.34);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fuse-overlay-title {
+  margin: 0;
+  color: #d8ebdf;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fuse-candidate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.fuse-candidate-card {
+  border: 1px solid rgba(173, 198, 188, 0.3);
+  background: rgba(31, 50, 46, 0.86);
+  color: #e0f0e5;
+  border-radius: 10px;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.fuse-candidate-card.is-selected {
+  border-color: rgba(245, 180, 78, 0.95);
+  background: rgba(57, 75, 68, 0.95);
+}
+
+.fuse-candidate-image {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+}
+
+.fuse-candidate-details {
+  min-width: 0;
+}
+
+.fuse-candidate-name {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fuse-candidate-subtitle {
+  color: #b7cebf;
+  margin-top: 2px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fuse-candidate-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  color: #f3f8f4;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.fuse-overlay-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.fuse-overlay .fuse-button,
+.fuse-overlay .close-overlay {
+  border: 0;
+  border-radius: 8px;
+  min-width: 90px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.fuse-overlay .close-overlay {
+  background: #2a3a37;
+  color: #e1efe5;
+}
+
+.fuse-overlay .fuse-button {
+  background: #f5b44e;
+  color: #1b2524;
+}
+
+.fuse-overlay .fuse-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

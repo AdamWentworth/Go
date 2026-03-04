@@ -48,7 +48,7 @@ class PokemonMegaFrame:
 
         # path to shiny icon
         root = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "../../frontend/public/images")
+            os.path.join(os.path.dirname(__file__), "../../assets/images")
         )
         self.shiny_icon_path = os.path.join(root, "shiny_icon.png")
 

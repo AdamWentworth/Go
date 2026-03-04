@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import InstanceOverlay from '@/pages/Pokemon/features/instances/InstanceOverlay';
 
 vi.mock('@/components/OverlayPortal', () => ({
@@ -24,7 +24,27 @@ vi.mock('@/components/CloseButton', () => ({
 }));
 
 vi.mock('@/pages/Pokemon/features/instances/CaughtInstance', () => ({
-  default: () => <div data-testid="caught-instance" />,
+  default: ({
+    pokemon,
+    onPreviewInstanceDataChange,
+  }: {
+    pokemon: { instanceData?: { original_trainer_name?: string | null } };
+    onPreviewInstanceDataChange?: (patch: {
+      shadow?: boolean;
+      purified?: boolean;
+      lucky?: boolean;
+    }) => void;
+  }) => (
+    <div data-testid="caught-instance">
+      {pokemon.instanceData?.original_trainer_name ?? 'none'}
+      <button
+        type="button"
+        onClick={() => onPreviewInstanceDataChange?.({ shadow: false, purified: true, lucky: false })}
+      >
+        preview-purified
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock('@/pages/Pokemon/features/instances/TradeInstance', () => ({
@@ -99,5 +119,81 @@ describe('InstanceOverlay', () => {
     });
     expect(screen.getByTestId('wanted-details')).toBeInTheDocument();
     expect(screen.getByTestId('wanted-instance')).toBeInTheDocument();
+  });
+
+  it('uses non-shadow type background for purified pokemon even when shadow flag exists', () => {
+    renderOverlay('caught', {
+      type1_name: 'Psychic',
+      instanceData: { shadow: true, purified: true },
+    });
+
+    const background = document.querySelector('.io-bg-img') as HTMLImageElement | null;
+    expect(background).not.toBeNull();
+    expect(background?.getAttribute('src')).toContain('bg_psychic.png');
+  });
+
+  it('updates caught background immediately from preview patch before save', () => {
+    renderOverlay('caught', {
+      type1_name: 'Psychic',
+      instanceData: { shadow: true, purified: false },
+    });
+
+    const initialBackground = document.querySelector('.io-bg-img') as HTMLImageElement | null;
+    expect(initialBackground?.getAttribute('src')).toContain('bg_shadow.png');
+
+    fireEvent.click(screen.getByRole('button', { name: 'preview-purified' }));
+
+    const updatedBackground = document.querySelector('.io-bg-img') as HTMLImageElement | null;
+    expect(updatedBackground?.getAttribute('src')).toContain('bg_psychic.png');
+  });
+
+  it('hydrates open overlay instance data from latest instances map without reopening', () => {
+    const pokemon = makePokemon({
+      instanceData: {
+        instance_id: 'instance-1',
+        original_trainer_name: null,
+      },
+    });
+
+    const { rerender } = render(
+      <InstanceOverlay
+        pokemon={pokemon}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="caught"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+      />,
+    );
+
+    expect(screen.getByTestId('caught-instance')).toHaveTextContent('none');
+
+    rerender(
+      <InstanceOverlay
+        pokemon={pokemon}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="caught"
+        lists={{}}
+        instances={
+          {
+            'instance-1': {
+              instance_id: 'instance-1',
+              original_trainer_name: 'PokePete35',
+            },
+          } as any
+        }
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+      />,
+    );
+
+    expect(screen.getByTestId('caught-instance')).toHaveTextContent('PokePete35');
   });
 });

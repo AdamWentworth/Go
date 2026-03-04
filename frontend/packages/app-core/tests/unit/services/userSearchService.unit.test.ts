@@ -155,6 +155,18 @@ describe.sequential('userSearchService', () => {
     });
   });
 
+  it('returns friendly autocomplete message when response payload is malformed', async () => {
+    fetchMock.mockResolvedValueOnce(
+      makeResponse(200, { results: [{ username: 'ash' }] }),
+    );
+
+    const outcome = await fetchTrainerAutocomplete('ash');
+    expect(outcome).toEqual({
+      type: 'error',
+      message: "Looks like this trainer hasn't signed up for Pokemon Go Nexus yet.",
+    });
+  });
+
   it('fetches public user lookup by username and returns user_id', async () => {
     fetchMock.mockResolvedValueOnce(
       makeResponse(200, {

@@ -115,6 +115,7 @@ var (
 		"shiny_rarity",
 		"date_available",
 		"date_shiny_available",
+		"moves",
 		"cp40",
 		"cp50",
 	}

@@ -19,6 +19,7 @@ export interface FusionState {
   fusedWith: string | null;
   fusedOtherInstanceKey: string | null;
   storedFusionObject: Record<number, boolean>;
+  overlayCandidates: PokemonVariant[];
   overlayPokemon: PokemonVariant | null;
   pendingFusionId: number | null;
 }
@@ -35,15 +36,21 @@ function arrayToRecord(arr?: FusionEntry[] | Record<number, boolean>): Record<nu
   }, {});
 }
 
-export function useFusion(pokemon: PokemonVariant, alert: (msg: string) => void | Promise<void>) {
+export function useFusion(
+  pokemon: PokemonVariant,
+  alert: (msg: string) => void | Promise<void>,
+  activeInstanceIdHint: string | null = null,
+) {
   const ownership = pokemon.instanceData as PokemonInstance | undefined;
+  const initialFusedWith = typeof ownership?.fused_with === 'string' ? ownership.fused_with : null;
 
   const [fusion, setFusion] = useState<FusionState>({
     is_fused: ownership?.is_fused ?? false,
     fusion_form: ownership?.fusion_form ?? null,
-    fusedWith: typeof ownership?.fused_with === 'string' ? ownership.fused_with : null,
-    fusedOtherInstanceKey: null,
+    fusedWith: initialFusedWith,
+    fusedOtherInstanceKey: initialFusedWith,
     storedFusionObject: arrayToRecord(ownership?.fusion as FusionEntry[] | Record<number, boolean>),
+    overlayCandidates: [],
     overlayPokemon: null,
     pendingFusionId: null,
   });
@@ -67,14 +74,41 @@ export function useFusion(pokemon: PokemonVariant, alert: (msg: string) => void 
     if (selectedFusion?.base_pokemon_id2 != null) {
       const baseId2 = selectedFusion.base_pokemon_id2;
       const padded = baseId2.toString().padStart(4, '0');
-
+      const preferredPartnerId = fusion.fusedOtherInstanceKey ?? fusion.fusedWith ?? null;
+      const currentInstanceId =
+        (typeof activeInstanceIdHint === 'string' && activeInstanceIdHint.length > 0
+          ? activeInstanceIdHint
+          : null) ??
+        (typeof ownership?.instance_id === 'string' && ownership.instance_id.length > 0
+          ? ownership.instance_id
+          : null);
       try {
-        const candidates = await getValidCandidates(padded, ownership?.shiny ?? false, false);
+        const candidates = await getValidCandidates(
+          padded,
+          ownership?.shiny ?? false,
+          true,
+          preferredPartnerId ? [preferredPartnerId] : [],
+          currentInstanceId,
+        );
         if (candidates.length === 0) {
           alert(`No valid instance found for fusion with base_pokemon_id2 ${baseId2}.`);
           return;
         }
-        setFusion(prev => ({ ...prev, overlayPokemon: candidates[0] }));
+        const orderedCandidates =
+          preferredPartnerId == null
+            ? candidates
+            : [...candidates].sort((a, b) => {
+                const aId = a.instanceData?.instance_id;
+                const bId = b.instanceData?.instance_id;
+                if (aId === preferredPartnerId && bId !== preferredPartnerId) return -1;
+                if (bId === preferredPartnerId && aId !== preferredPartnerId) return 1;
+                return 0;
+              });
+        setFusion(prev => ({
+          ...prev,
+          overlayCandidates: orderedCandidates,
+          overlayPokemon: orderedCandidates[0] ?? null,
+        }));
       } catch (error) {
         log.error('Error retrieving data from indexedDB:', error);
       }
@@ -105,6 +139,7 @@ export function useFusion(pokemon: PokemonVariant, alert: (msg: string) => void 
         };
         updated.pendingFusionId = null;
       }
+      updated.overlayCandidates = [];
       updated.overlayPokemon = null;
       log.debug('handleFuseProceed updated fusion state:', updated);
       return updated;
@@ -118,7 +153,7 @@ export function useFusion(pokemon: PokemonVariant, alert: (msg: string) => void 
       is_fused: false,
       fusion_form: null,
       fusedWith: null,
-      fusedOtherInstanceKey: null,
+      fusedOtherInstanceKey: prev.fusedWith ?? prev.fusedOtherInstanceKey,
     }));
   };
 

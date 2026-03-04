@@ -3,7 +3,6 @@
 .mega-component {
   display: flex;
   align-items: center;
-  margin-left: auto; /* Aligns the component to the right within its container */
   justify-content: center;
 }
 
@@ -28,15 +27,10 @@
 .mega-component .static-mode {
   pointer-events: none; /* Disable interactions */
   cursor: default; /* Default cursor */
-  filter: none; /* No filter */
   opacity: 1; /* Fully visible */
 }
 
-.mega-component .mega-image:hover {
-  opacity: 0.8;
-}
-
-.mega-component.edit-mode .mega-image:hover {
+.mega-component .mega-image.interactive:hover {
   opacity: 0.8;
 }
 

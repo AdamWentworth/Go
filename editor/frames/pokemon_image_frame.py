@@ -33,8 +33,8 @@ class PokemonImageFrame:
         # Correctly navigate up four directories from the script location to reach the Go folder
         go_directory = os.path.normpath(os.path.join(script_directory, '../../'))
 
-        # Construct the path to the images directory
-        self.relative_path_to_images = os.path.join(go_directory, 'frontend', 'public')
+        # Construct the path root that backs /images/... URLs
+        self.relative_path_to_images = os.path.join(go_directory, 'assets')
 
         # Trim leading slash from image_url if present to ensure it's treated as relative
         image_url = image_url.lstrip("\\/")

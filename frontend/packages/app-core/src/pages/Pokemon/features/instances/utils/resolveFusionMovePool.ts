@@ -33,6 +33,17 @@ const normalizeVariantKey = (value: unknown): string | null => {
 const normalizeText = (value: unknown): string =>
   typeof value === 'string' ? value.trim().toLowerCase() : '';
 
+const parseFusionId = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!/^\d+$/.test(trimmed)) return null;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 const dedupeByMoveId = (moves: Move[]): Move[] => {
   const seen = new Set<number>();
   const deduped: Move[] = [];
@@ -43,6 +54,31 @@ const dedupeByMoveId = (moves: Move[]): Move[] => {
     deduped.push(move);
   }
   return deduped;
+};
+
+const findFusionEntry = (
+  fusionEntries: Array<{ fusion_id?: number | null; name?: string; moves?: Move[] }>,
+  fusionState: FusionMoveState,
+): { fusion_id?: number | null; name?: string; moves?: Move[] } | undefined => {
+  const byId = parseFusionId(fusionState.fusion_form);
+  if (byId != null) {
+    const match = fusionEntries.find((entry) => entry.fusion_id === byId);
+    if (match) return match;
+  }
+
+  const normalizedName = normalizeText(fusionState.fusion_form);
+  if (normalizedName) {
+    const match = fusionEntries.find(
+      (entry) => normalizeText(entry.name) === normalizedName,
+    );
+    if (match) return match;
+  }
+
+  if (fusionState.is_fused && fusionEntries.length === 1) {
+    return fusionEntries[0];
+  }
+
+  return undefined;
 };
 
 const pickPartnerVariantByPokemonId = (
@@ -112,6 +148,23 @@ export const resolveFusionMovePool = ({
 
   if (!fusion.is_fused) {
     return dedupeByMoveId(baseMoves);
+  }
+
+  const fusionEntries = Array.isArray(pokemon.fusion)
+    ? pokemon.fusion
+    : [];
+  const selectedFusion = findFusionEntry(
+    fusionEntries as Array<{ fusion_id?: number | null; name?: string; moves?: Move[] }>,
+    fusion,
+  );
+  const selectedFusionMoves = Array.isArray(selectedFusion?.moves)
+    ? selectedFusion.moves
+    : [];
+
+  // Preferred path for the new payload shape: fusion entries provide their
+  // own canonical move pools.
+  if (selectedFusionMoves.length > 0) {
+    return dedupeByMoveId(selectedFusionMoves);
   }
 
   const partnerVariant = pickPartnerVariant({ fusion, instances, variants, pokemon });

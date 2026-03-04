@@ -111,7 +111,19 @@ vi.mock('@/pages/Pokemon/features/instances/components/Caught/MaxMovesComponent'
 }));
 
 vi.mock('@/pages/Pokemon/features/instances/components/Caught/MegaComponent', () => ({
-  default: () => <div>mega-component</div>,
+  default: ({
+    megaEvolutions,
+  }: {
+    megaEvolutions?: Array<{ form?: string | null }>;
+  }) => (
+    <div
+      data-testid="mega-component"
+      data-mega-count={String(megaEvolutions?.length ?? 0)}
+      data-mega-first-form={megaEvolutions?.[0]?.form ?? '__null__'}
+    >
+      mega-component
+    </div>
+  ),
 }));
 
 vi.mock('@/components/pokemonComponents/Weight', () => ({
@@ -408,7 +420,22 @@ describe('instances section components', () => {
 
     render(
       <PowerPanel
-        pokemon={{}}
+        pokemon={{
+          variantType: 'dynamax',
+          max: [
+            {
+              pokemon_id: 1,
+              dynamax: true,
+              gigantamax: false,
+              dynamax_release_date: null,
+              gigantamax_release_date: null,
+            },
+          ],
+          instanceData: {
+            shadow: false,
+            purified: false,
+          },
+        }}
         editMode={true}
         megaData={{}}
         setMegaData={vi.fn()}
@@ -431,8 +458,45 @@ describe('instances section components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'toggle-max' }));
 
     expect(onToggleMax).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('mega-component')).toBeInTheDocument();
+    expect(screen.getByTestId('mega-component')).toBeInTheDocument();
     expect(screen.getByText('max-1-2-3')).toBeInTheDocument();
+  });
+
+  it('PowerPanel preserves mega evolutions with null form for caught mega toggles', () => {
+    render(
+      <PowerPanel
+        pokemon={{}}
+        editMode={true}
+        megaData={{}}
+        setMegaData={vi.fn()}
+        megaEvolutions={[
+          {
+            id: 248,
+            date_available: '2024-01-01',
+            mega_energy_cost: 200,
+            form: null,
+            type1_name: 'Rock',
+            type_1_id: 6,
+          },
+        ]}
+        isShadow={false}
+        name="Tyranitar"
+        dynamax={false}
+        gigantamax={false}
+        showMaxOptions={false}
+        onToggleMax={vi.fn()}
+        maxAttack="1"
+        maxGuard="2"
+        maxSpirit="3"
+        onMaxAttackChange={vi.fn()}
+        onMaxGuardChange={vi.fn()}
+        onMaxSpiritChange={vi.fn()}
+      />,
+    );
+
+    const megaComponent = screen.getByTestId('mega-component');
+    expect(megaComponent).toHaveAttribute('data-mega-count', '1');
+    expect(megaComponent).toHaveAttribute('data-mega-first-form', '__null__');
   });
 
   it('StatsRow renders and forwards weight/height changes', () => {

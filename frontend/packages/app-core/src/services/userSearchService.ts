@@ -93,7 +93,10 @@ export async function fetchTrainerAutocomplete(query: string): Promise<TrainerAu
 
   const body = await parseJsonSafe<TrainerAutocompleteEntry[]>(response);
   if (!Array.isArray(body)) {
-    return { type: 'error', message: 'Invalid trainer autocomplete response' };
+    return {
+      type: 'error',
+      message: "Looks like this trainer hasn't signed up for Pokemon Go Nexus yet.",
+    };
   }
 
   return { type: 'success', results: body };

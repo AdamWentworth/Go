@@ -35,10 +35,10 @@ class PokemonDetailsWindow:
         self.type_ids = self.db_manager.fetch_type_ids()
         self.existing_move_ids = self.db_manager.fetch_pokemon_moves(pokemon_id)
 
-        # Define the relative path to images
+        # Define filesystem root used for image URLs like /images/...
         script_directory = os.path.dirname(os.path.realpath(__file__))
-        go_directory = os.path.normpath(os.path.join(script_directory, '../frontend/public'))
-        self.relative_path_to_images = go_directory
+        assets_directory = os.path.normpath(os.path.join(script_directory, '../assets'))
+        self.relative_path_to_images = assets_directory
 
         # Scrollable container setup
         self.window, self.canvas, self.scrollable_frame = create_scrollable_window(parent, f"Details of Pokémon ID: {pokemon_id}")

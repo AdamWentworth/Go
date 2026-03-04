@@ -10,7 +10,7 @@ type DamageMode = 'raid' | 'pvp';
 
 type VariantWithOptionalInstance = {
   moves?: Move[];
-  fusion?: Array<{ name?: string; fusion_id?: number | null }>;
+  fusion?: Array<{ name?: string; fusion_id?: number | null; moves?: Move[] }>;
   instanceData?: Partial<PokemonInstance>;
 };
 
@@ -68,10 +68,27 @@ const Moves: React.FC<MovesProps> = ({
     typeof pokemon.instanceData?.fusion_form === 'string'
       ? pokemon.instanceData.fusion_form.trim().toLowerCase()
       : '';
-  const fusionId =
+  const fusionEntries = Array.isArray(pokemon.fusion) ? pokemon.fusion : [];
+  const fusionIdFromName =
     normalizedFusionForm &&
-    pokemon.fusion?.find((f) => (f.name ?? '').trim().toLowerCase() === normalizedFusionForm)
+    fusionEntries.find((f) => (f.name ?? '').trim().toLowerCase() === normalizedFusionForm)
       ?.fusion_id;
+  const fusionIdFromNumericForm =
+    normalizedFusionForm && /^\d+$/.test(normalizedFusionForm)
+      ? Number(normalizedFusionForm)
+      : null;
+  const fusionIdsFromMoves = Array.from(
+    new Set(
+      allMoves
+        .map((move) => move.fusion_id)
+        .filter((id): id is number => typeof id === 'number'),
+    ),
+  );
+  const inferredFusionId = fusionIdsFromMoves.length === 1 ? fusionIdsFromMoves[0] : null;
+  const fusionId =
+    fusionIdFromName ??
+    (typeof fusionIdFromNumericForm === 'number' ? fusionIdFromNumericForm : null) ??
+    inferredFusionId;
 
   const allowMoveForFusion = (move: Move) => {
     if (!fusionId) return move.fusion_id == null;
