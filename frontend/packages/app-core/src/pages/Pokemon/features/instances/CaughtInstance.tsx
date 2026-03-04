@@ -19,6 +19,7 @@ import { useBackgrounds } from './hooks/useBackgrounds';
 import { useSprite } from './hooks/useSprite';
 import { useEditWorkflow } from './hooks/useEditWorkflow';
 import { useArcHeight } from './hooks/useArcHeight';
+import { createScopedLogger } from '@/utils/logger';
 
 import { calculateBaseStats } from '@/utils/calculateBaseStats';
 import {
@@ -72,6 +73,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
   onPreviewInstanceDataChange,
   activeInstanceIdHint = null,
 }) => {
+  const log = useMemo(() => createScopedLogger('caughtInstance.fusionMoves'), []);
   const instanceData: Partial<PokemonInstance> = pokemon.instanceData ?? {};
   const megaEvolutions: MegaEvolution[] = pokemon.megaEvolutions ?? [];
   const backgrounds: VariantBackground[] = pokemon.backgrounds ?? [];
@@ -330,6 +332,35 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
     }),
     [fusion.is_fused, resolvedFusionMoves.source],
   );
+
+  useEffect(() => {
+    if (fusionMoveMeta.source !== 'fusion_missing') return;
+
+    const fusionEntries = Array.isArray(pokemon.fusion) ? pokemon.fusion : [];
+    log.warn('fusion moves unavailable in caught overlay', {
+      variantId,
+      instanceId,
+      isFused: fusion.is_fused,
+      fusionForm: fusion.fusion_form ?? null,
+      storedFusionKeys: Object.keys(fusion.storedFusionObject ?? {}),
+      selectedFusionId: resolvedFusionMoves.fusionId,
+      fusionEntries: fusionEntries.map((entry) => ({
+        fusion_id: entry?.fusion_id ?? null,
+        name: entry?.name ?? null,
+        moveCount: Array.isArray(entry?.moves) ? entry.moves.length : 0,
+      })),
+    });
+  }, [
+    fusion.is_fused,
+    fusion.fusion_form,
+    fusion.storedFusionObject,
+    fusionMoveMeta.source,
+    instanceId,
+    log,
+    pokemon.fusion,
+    resolvedFusionMoves.fusionId,
+    variantId,
+  ]);
 
   return (
     <div className="caught-instance">
