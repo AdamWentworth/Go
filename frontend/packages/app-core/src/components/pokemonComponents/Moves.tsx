@@ -64,6 +64,21 @@ const Moves: React.FC<MovesProps> = ({
   const damageModeIndex = damageMode === 'raid' ? 0 : 1;
   const [underlineLeft, setUnderlineLeft] = useState(0);
 
+  const normalizedFusionForm =
+    typeof pokemon.instanceData?.fusion_form === 'string'
+      ? pokemon.instanceData.fusion_form.trim().toLowerCase()
+      : '';
+  const fusionId =
+    normalizedFusionForm &&
+    pokemon.fusion?.find((f) => (f.name ?? '').trim().toLowerCase() === normalizedFusionForm)
+      ?.fusion_id;
+
+  const allowMoveForFusion = (move: Move) => {
+    if (!fusionId) return move.fusion_id == null;
+    if (move.fusion_id == null) return true;
+    return move.fusion_id === fusionId;
+  };
+
   /* sync prop → state when `pokemon` object changes ----------------- */
   useEffect(() => {
     setFastMove(pokemon.instanceData?.fast_move_id ?? null);
@@ -127,8 +142,8 @@ const Moves: React.FC<MovesProps> = ({
   }, [chargedMove1, chargedMove2, fastMove, isPurified, isShadow]);
 
   /* helpers --------------------------------------------------------- */
-  const fastMoves = allMoves.filter((m) => m.is_fast === 1);
-  const chargedMoves = allMoves.filter((m) => m.is_fast === 0);
+  const fastMoves = allMoves.filter((m) => m.is_fast === 1 && allowMoveForFusion(m));
+  const chargedMoves = allMoves.filter((m) => m.is_fast === 0 && allowMoveForFusion(m));
 
   const makeSpecial = (id: number, name: string): Move => ({
     move_id: id,
@@ -208,10 +223,41 @@ const Moves: React.FC<MovesProps> = ({
     );
   };
 
-  const fusionId =
-    pokemon.instanceData?.fusion_form &&
-    pokemon.fusion?.find((f) => f.name === pokemon.instanceData?.fusion_form)
-      ?.fusion_id;
+  useEffect(() => {
+    const next = { fastMove, chargedMove1, chargedMove2 };
+    let dirty = false;
+
+    const fastSet = new Set(fastMoves.map((m) => m.move_id));
+    const chargedSet = new Set(chargedMoves.map((m) => m.move_id));
+
+    if (next.fastMove != null && !fastSet.has(next.fastMove)) {
+      next.fastMove = null;
+      dirty = true;
+    }
+    if (next.chargedMove1 != null && !chargedSet.has(next.chargedMove1)) {
+      next.chargedMove1 = null;
+      dirty = true;
+    }
+    if (next.chargedMove2 != null && !chargedSet.has(next.chargedMove2)) {
+      next.chargedMove2 = null;
+      dirty = true;
+    }
+    if (
+      next.chargedMove1 != null &&
+      next.chargedMove2 != null &&
+      next.chargedMove1 === next.chargedMove2
+    ) {
+      next.chargedMove2 = null;
+      dirty = true;
+    }
+
+    if (dirty) {
+      setFastMove(next.fastMove);
+      setChargedMove1(next.chargedMove1);
+      setChargedMove2(next.chargedMove2);
+      onMovesChangeRef.current(next);
+    }
+  }, [chargedMove1, chargedMove2, chargedMoves, fastMove, fastMoves]);
 
   /* event handlers -------------------------------------------------- */
   const handleMoveChange = (
@@ -256,8 +302,6 @@ const Moves: React.FC<MovesProps> = ({
     mode: DamageMode,
   ) => {
     const filtered = moves.filter((m) => {
-      if (!fusionId && m.fusion_id != null) return false;
-      if (fusionId && m.fusion_id && m.fusion_id !== fusionId) return false;
       if (slot === 'charged1' && m.move_id === chargedMove2) return false;
       if (slot === 'charged2' && m.move_id === chargedMove1) return false;
       if (m.shadow === 1 && !isShadow) return false;

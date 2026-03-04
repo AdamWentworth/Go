@@ -1,4 +1,5 @@
 import React, {
+  useEffect,
   useMemo,
   useState,
   useCallback,
@@ -6,6 +7,7 @@ import React, {
 import './CaughtInstance.css';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useModal } from '@/contexts/ModalContext';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -28,6 +30,7 @@ import {
   buildCaughtPersistPatchMap,
   resolveCaughtPersistValues,
 } from './utils/caughtPersist';
+import { resolveFusionMovePool } from './utils/resolveFusionMovePool';
 import { useCaughtFormState } from './hooks/useCaughtFormState';
 
 import HeaderRow from './sections/HeaderRow';
@@ -42,17 +45,31 @@ import MovesAndIV from './sections/MovesAndIV';
 import MetaPanel from './sections/MetaPanel';
 import Modals from './sections/Modals';
 import CaughtDateRibbon from './sections/CaughtDateRibbon';
+import FusionComponent from './components/Caught/FusionComponent';
 
 type CaughtPokemon = PokemonVariant & {
   instanceData?: PokemonInstance;
 };
 
+type MovesPreviewPokemon = {
+  moves?: CaughtPokemon['moves'];
+  fusion?: CaughtPokemon['fusion'];
+  instanceData?: Partial<PokemonInstance>;
+};
+
 interface CaughtInstanceProps {
   pokemon: CaughtPokemon;
   isEditable: boolean;
+  onPreviewInstanceDataChange?: (patch: Partial<PokemonInstance>) => void;
+  activeInstanceIdHint?: string | null;
 }
 
-const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) => {
+const CaughtInstance: React.FC<CaughtInstanceProps> = ({
+  pokemon,
+  isEditable,
+  onPreviewInstanceDataChange,
+  activeInstanceIdHint = null,
+}) => {
   const instanceData: Partial<PokemonInstance> = pokemon.instanceData ?? {};
   const megaEvolutions: MegaEvolution[] = pokemon.megaEvolutions ?? [];
   const backgrounds: VariantBackground[] = pokemon.backgrounds ?? [];
@@ -62,6 +79,8 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
   const instanceId = String(instanceData.instance_id ?? variantId ?? '');
 
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
+  const instances = useInstancesStore((s) => s.instances);
+  const variants = useVariantsStore((s) => s.variants);
   const { alert } = useModal();
   const { validate, resetErrors } = useValidation();
 
@@ -74,7 +93,11 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
         : null,
   });
 
-  const { fusion, setFusion, handleFuseProceed } = useFusion(pokemon, alert);
+  const { fusion, setFusion, handleFuseProceed, handleFusionToggle, handleUndoFusion } = useFusion(
+    pokemon,
+    alert,
+    activeInstanceIdHint,
+  );
   const [originalFusedWith, setOriginalFusedWith] = useState<string | null>(
     fusion.fusedWith ?? null,
   );
@@ -133,6 +156,14 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
 
   const dynamax = Boolean(instanceData.dynamax);
   const gigantamax = Boolean(instanceData.gigantamax);
+
+  useEffect(() => {
+    onPreviewInstanceDataChange?.({
+      shadow: isShadow,
+      purified: isPurified,
+      lucky: isLucky,
+    });
+  }, [isShadow, isPurified, isLucky, onPreviewInstanceDataChange]);
 
   const {
     showBackgrounds,
@@ -257,6 +288,38 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
     });
   }, [toggleEditMode, level, cp, ivs, weight, height]);
 
+  const movesPokemon = useMemo<MovesPreviewPokemon>(
+    () => ({
+      ...pokemon,
+      moves: resolveFusionMovePool({
+        pokemon,
+        fusion,
+        instances,
+        variants,
+      }),
+      instanceData: {
+        ...(pokemon.instanceData ?? {}),
+        fusion_form: fusion.fusion_form,
+        is_fused: fusion.is_fused,
+        fast_move_id: moves.fastMove,
+        charged_move1_id: moves.chargedMove1,
+        charged_move2_id: moves.chargedMove2,
+      },
+    }),
+    [
+      fusion.fusion_form,
+      fusion.is_fused,
+      moves.chargedMove1,
+      moves.chargedMove2,
+      moves.fastMove,
+      instances,
+      pokemon,
+      fusion.fusedOtherInstanceKey,
+      fusion.fusedWith,
+      variants,
+    ],
+  );
+
   return (
     <div className="caught-instance">
       <CaughtDateRibbon dateCaught={dateCaught} />
@@ -343,8 +406,19 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
         onMaxSpiritChange={handleMaxSpiritChange}
       />
 
+      <div className="caught-fusion-slot">
+        <FusionComponent
+          fusion={pokemon.fusion ?? null}
+          editMode={editMode}
+          pokemon={pokemon}
+          onFusionToggle={handleFusionToggle}
+          onUndoFusion={handleUndoFusion}
+          fusionState={fusion}
+        />
+      </div>
+
       <MovesAndIV
-        pokemon={pokemon}
+        pokemon={movesPokemon}
         editMode={editMode}
         onMovesChange={handleMovesChange}
         isShadow={isShadow}
@@ -378,9 +452,13 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({ pokemon, isEditable }) 
         setShowBackgrounds={setShowBackgrounds}
         pokemon={pokemon}
         onSelectBackground={handleBackgroundSelect}
+        overlayCandidates={fusion.overlayCandidates}
         overlayPokemon={fusion.overlayPokemon}
+        onSelectOverlayPokemon={(selectedPokemon) =>
+          setFusion((prev) => ({ ...prev, overlayPokemon: selectedPokemon }))
+        }
         onCloseOverlay={() =>
-          setFusion((prev) => ({ ...prev, overlayPokemon: null }))
+          setFusion((prev) => ({ ...prev, overlayPokemon: null, overlayCandidates: [] }))
         }
         onFuse={handleFuseProceed}
       />
