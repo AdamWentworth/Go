@@ -6,18 +6,47 @@
   width: var(--caught-image-stage-size, 272px);
   height: var(--caught-image-stage-size, 272px);
   overflow: visible;            /* allow arc to render outside box */
-  z-index: 1;
+  z-index: auto;
 }
 
 .caught-instance .image-container {
   margin-top: calc(var(--caught-stage-lift, 0px) * -1);
 }
 
+/* Caught overlay only: expand location backdrop to the same max-width column */
+.caught-instance .image-container .background-container {
+  top: -20px;
+  left: 50%;
+  right: auto;
+  width: min(86vw, 447px);
+  transform: translateX(-50%);
+}
+
+.caught-instance .image-container .background-image {
+  background-position: center top;
+  -webkit-mask-image: radial-gradient(
+    ellipse 57% 94% at 50% 56%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.98) 52%,
+    rgba(0, 0, 0, 0.9) 64%,
+    rgba(0, 0, 0, 0.6) 76%,
+    rgba(0, 0, 0, 0) 88%
+  );
+  mask-image: radial-gradient(
+    ellipse 57% 94% at 50% 56%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.98) 52%,
+    rgba(0, 0, 0, 0.9) 64%,
+    rgba(0, 0, 0, 0.6) 76%,
+    rgba(0, 0, 0, 0) 88%
+  );
+}
+
 .background-container {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  z-index: 1;
+  z-index: -1;
 }
 
 .background-image {

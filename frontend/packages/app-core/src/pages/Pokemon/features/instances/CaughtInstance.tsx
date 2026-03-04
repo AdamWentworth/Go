@@ -362,6 +362,41 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
     variantId,
   ]);
 
+  const canRenderMegaPower = Boolean(
+    megaEvolutions.length > 0 &&
+      !isShadow &&
+      !name.toLowerCase().includes('clone'),
+  );
+
+  const hasMaxVariant =
+    typeof variantType === 'string' &&
+    (variantType.includes('dynamax') || variantType.includes('gigantamax'));
+
+  const canRenderMaxPower = Boolean(
+    editMode &&
+      hasMaxVariant &&
+      Array.isArray(pokemon.max) &&
+      pokemon.max.length > 0 &&
+      !isShadow &&
+      !isPurified &&
+      !variantType?.includes('costume'),
+  );
+
+  const fusionOptionCount = useMemo(
+    () =>
+      (pokemon.fusion ?? []).filter(
+        (item) =>
+          item.base_pokemon_id1 === pokemon.pokemon_id &&
+          typeof item.fusion_id === 'number',
+      ).length,
+    [pokemon.fusion, pokemon.pokemon_id],
+  );
+
+  const canRenderFusionPower = Boolean(fusion.is_fused || fusionOptionCount > 0);
+  const showPowerSectionDivider = Boolean(
+    canRenderMegaPower || canRenderMaxPower || canRenderFusionPower,
+  );
+
   return (
     <div className="caught-instance">
       <CaughtDateRibbon dateCaught={dateCaught} />
@@ -458,6 +493,10 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
           fusionState={fusion}
         />
       </div>
+
+      {showPowerSectionDivider ? (
+        <div className="caught-power-divider" aria-hidden="true" />
+      ) : null}
 
       <MovesAndIV
         pokemon={movesPokemon}

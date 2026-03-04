@@ -28,21 +28,12 @@ func (b *Builder) attachMoves(ctx context.Context, orderedIDs []int, pokemonByID
 		return err
 	}
 
-	// Track base move_ids by pokemon so we can add only fusion-only extras from
-	// fusion_moveset without duplicating moves already in the base learnset.
-	baseMoveIDsByPokemon := make(map[int]map[int]struct{}, len(pokemonByID))
-
 	for _, r := range baseRows {
 		pid := asInt(r["pokemon_id"])
 		p, ok := pokemonByID[pid]
 		if !ok {
 			continue
 		}
-		moveID := asInt(r["move_id"])
-		if _, exists := baseMoveIDsByPokemon[pid]; !exists {
-			baseMoveIDsByPokemon[pid] = make(map[int]struct{})
-		}
-		baseMoveIDsByPokemon[pid][moveID] = struct{}{}
 
 		entry := cloneMap(r)
 		delete(entry, "pokemon_id")
@@ -57,8 +48,8 @@ func (b *Builder) attachMoves(ctx context.Context, orderedIDs []int, pokemonByID
 	// Pull moves explicitly mapped in fusion_moveset and append rows for each
 	// base pokemon side (id1 + id2), tagging them with fusion_id.
 	//
-	// We intentionally skip rows whose move_id already exists in that pokemon's
-	// base learnset to avoid duplicate entries in the current frontend move picker.
+	// Keep overlap rows too (same move_id in base + fusion) so strict per-fusion
+	// filtering can still resolve full fusion-exclusive move pools with overlaps.
 	fusionRows, err := b.queryRows(ctx, `
 	SELECT
 	  fp.base_pokemon_id1 AS pokemon_id,
@@ -94,13 +85,6 @@ func (b *Builder) attachMoves(ctx context.Context, orderedIDs []int, pokemonByID
 		p, ok := pokemonByID[pid]
 		if !ok {
 			continue
-		}
-		moveID := asInt(r["move_id"])
-
-		if baseSet, exists := baseMoveIDsByPokemon[pid]; exists {
-			if _, found := baseSet[moveID]; found {
-				continue
-			}
 		}
 
 		entry := cloneMap(r)

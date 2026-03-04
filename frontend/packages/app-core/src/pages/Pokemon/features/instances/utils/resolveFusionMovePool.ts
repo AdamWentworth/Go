@@ -206,11 +206,7 @@ export const resolveFusionMovePool = ({
       : baseMoves.filter((move) => move?.fusion_id === selectedFusionId);
 
   if (taggedFusionMoves.length > 0) {
-    const hasTaggedFastMove = taggedFusionMoves.some((move) => move.is_fast === 1);
-    const baseUnscopedMoves = baseMoves.filter((move) => move?.fusion_id == null);
-    const fallbackMoves = hasTaggedFastMove
-      ? taggedFusionMoves
-      : [...baseUnscopedMoves, ...taggedFusionMoves];
+    const fallbackMoves = [...taggedFusionMoves];
 
     log.debug('resolved fusion move pool from top-level fusion-tagged moves', {
       fusionFormRaw: fusion.fusion_form ?? null,
@@ -223,8 +219,7 @@ export const resolveFusionMovePool = ({
       selectedFusionName: selectedFusion?.name ?? null,
       selectedFusionMoveCount: selectedFusionMoves.length,
       taggedFusionMoveCount: taggedFusionMoves.length,
-      taggedFusionHasFast: hasTaggedFastMove,
-      fallbackMode: hasTaggedFastMove ? 'strict_tagged_only' : 'base_plus_tagged',
+      fallbackMode: 'strict_tagged_only',
     });
     return {
       moves: dedupeByMoveId(fallbackMoves),

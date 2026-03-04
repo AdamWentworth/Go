@@ -126,6 +126,11 @@
   z-index: 1;
 }
 
+/* Allow inner caught layers to place background content behind ::before */
+.caught-column > .caught-instance {
+  z-index: auto;
+}
+
 /* keep trade/wanted rules as-is... */
 .instance-overlay .trade-instance-overlay { margin: 0 auto; }
 

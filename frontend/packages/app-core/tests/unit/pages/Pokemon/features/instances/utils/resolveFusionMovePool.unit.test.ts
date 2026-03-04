@@ -206,7 +206,6 @@ describe('resolveFusionMovePool', () => {
     expect(result.source).toBe('fusion');
     expect(result.fusionId).toBe(3);
     expect(result.moves.map((move) => move.name)).toEqual(['Ice Fang', 'Ancient Power']);
-    expect(result.moves.some((move) => move.name === 'Dragon Breath')).toBe(false);
     expect(result.moves.some((move) => move.name === 'Freeze Shock')).toBe(false);
   });
 
@@ -233,10 +232,7 @@ describe('resolveFusionMovePool', () => {
 
     expect(result.source).toBe('fusion');
     expect(result.fusionId).toBe(1);
-    expect(result.moves.map((move) => move.name)).toEqual([
-      'Metal Claw',
-      'Sunsteel Strike',
-    ]);
+    expect(result.moves.map((move) => move.name)).toEqual(['Sunsteel Strike']);
   });
 
   it('returns fusion_missing when fused but no fusion move pool is available', () => {

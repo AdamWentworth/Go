@@ -1,6 +1,8 @@
 import React from 'react';
 import './FusionComponent.css';
 import { resolveAssetUrl } from '@/utils/assetUrl';
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import type { PokemonInstance } from '@/types/pokemonInstance';
 
 import type { Fusion } from '@/types/pokemonSubTypes';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -8,6 +10,7 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 interface FusionState {
   is_fused: boolean;
   fusion_form: number | string | null;
+  fusedWith?: string | null;
 }
 
 interface FusionComponentProps {
@@ -19,12 +22,55 @@ interface FusionComponentProps {
   fusionState: FusionState;
 }
 
-const buildFusionIconUrl = (fusionId: number, isShiny: boolean) =>
+const buildFusionIconUrl = (fusionId: number) =>
+  resolveAssetUrl(`/media/images/fusion_${fusionId}.png`);
+
+const buildPokemonIconUrl = (pokemonId: number, isShiny: boolean) =>
   resolveAssetUrl(
     isShiny
-      ? `/media/images/shiny_fusion/shiny_fusion_${fusionId}.png`
-      : `/media/images/fusion/fusion_${fusionId}.png`,
+      ? `/media/images/shiny/shiny_pokemon_${pokemonId}.png`
+      : `/media/images/default/pokemon_${pokemonId}.png`,
   );
+
+const buildFusionFormImageUrl = (
+  fusionItem: Fusion & { fusion_id: number },
+  isShiny: boolean,
+) => {
+  const explicitUrl = isShiny
+    ? fusionItem.image_url_shiny ?? fusionItem.image_url
+    : fusionItem.image_url;
+
+  if (explicitUrl && explicitUrl.trim().length > 0) {
+    return resolveAssetUrl(explicitUrl);
+  }
+
+  return buildFusionIconUrl(fusionItem.fusion_id);
+};
+
+const extractLegacyInstanceId = (key: string): string | null => {
+  const idx = key.lastIndexOf('_');
+  if (idx < 0 || idx >= key.length - 1) return null;
+  const suffix = key.slice(idx + 1);
+  return suffix || null;
+};
+
+const findInstanceById = (
+  collection: Record<string, PokemonInstance> | null | undefined,
+  candidates: string[],
+): PokemonInstance | null => {
+  if (!collection) return null;
+  for (const id of candidates) {
+    const direct = collection[id];
+    if (direct) return direct;
+  }
+  const candidateSet = new Set(candidates);
+  for (const row of Object.values(collection)) {
+    if (row?.instance_id && candidateSet.has(String(row.instance_id))) {
+      return row;
+    }
+  }
+  return null;
+};
 
 const FusionComponent: React.FC<FusionComponentProps> = ({
   fusion,
@@ -55,31 +101,62 @@ const FusionComponent: React.FC<FusionComponentProps> = ({
       );
     }) ?? null;
 
+  const isShiny = Boolean(pokemon.instanceData?.shiny);
+  const leftPokemonId = currentFusion?.base_pokemon_id1 ?? pokemon.pokemon_id;
+  const rightPokemonId = currentFusion?.base_pokemon_id2 ?? null;
+  const fusedWithKey = typeof fusionState.fusedWith === 'string' ? fusionState.fusedWith : null;
+  const fusedWithLegacyId = fusedWithKey ? extractLegacyInstanceId(fusedWithKey) : null;
+
+  const partnerInstance = useInstancesStore((state) => {
+    if (!fusedWithKey) return null;
+    const candidateIds = [fusedWithKey, fusedWithLegacyId].filter(
+      (value): value is string => Boolean(value),
+    );
+    const fromOwned = findInstanceById(state.instances, candidateIds);
+    if (fromOwned) return fromOwned;
+    return findInstanceById(state.foreignInstances, candidateIds);
+  });
+
+  const rightIsShiny = partnerInstance ? Boolean(partnerInstance.shiny) : isShiny;
+
   return (
     <div className="fusion-component">
       {fusionState.is_fused ? (
-        <div className="fusion-state-row">
-          {currentFusion?.fusion_id != null ? (
-            <img
-              src={buildFusionIconUrl(currentFusion.fusion_id, Boolean(pokemon.instanceData?.shiny))}
-              alt={currentFusion.name ?? 'Fusion form'}
-              className="fusion-state-icon"
-            />
-          ) : null}
-
+        <div className="fusion-state-layout">
           <span className="fusion-state-label">
             {currentFusion?.name ?? fusionState.fusion_form ?? 'Fusion active'}
           </span>
 
-          <button
-            type="button"
-            className="fusion-action-button"
-            disabled={!editMode}
-            onClick={onUndoFusion}
-            title={editMode ? undefined : 'Enable edit mode to separate this fusion.'}
-          >
-            Separate
-          </button>
+          <div className="fusion-state-row">
+            {leftPokemonId != null ? (
+              <img
+                src={buildPokemonIconUrl(leftPokemonId, isShiny)}
+                alt={pokemon.name ?? `Pokemon ${leftPokemonId}`}
+                className="fusion-partner-icon fusion-partner-icon--left"
+              />
+            ) : (
+              <span className="fusion-partner-icon-spacer" aria-hidden="true" />
+            )}
+
+            <button
+              type="button"
+              className="fusion-action-button"
+              disabled={!editMode}
+              onClick={onUndoFusion}
+            >
+              Separate
+            </button>
+
+            {rightPokemonId != null ? (
+              <img
+                src={buildPokemonIconUrl(rightPokemonId, rightIsShiny)}
+                alt={`Pokemon ${rightPokemonId}`}
+                className="fusion-partner-icon fusion-partner-icon--right"
+              />
+            ) : (
+              <span className="fusion-partner-icon-spacer" aria-hidden="true" />
+            )}
+          </div>
         </div>
       ) : (
         <div className={`fusion-option-list ${fusionOptions.length === 1 ? 'single' : 'multiple'}`}>
@@ -93,21 +170,22 @@ const FusionComponent: React.FC<FusionComponentProps> = ({
               title={editMode ? undefined : 'Enable edit mode to fuse this Pokemon.'}
             >
               <img
-                src={buildFusionIconUrl(fusionItem.fusion_id, Boolean(pokemon.instanceData?.shiny))}
-                alt={fusionItem.name || `Fusion ${fusionItem.fusion_id}`}
-                className="fusion-option-icon"
+                src={buildFusionIconUrl(fusionItem.fusion_id)}
+                alt={`${fusionItem.name || `Fusion ${fusionItem.fusion_id}`} icon`}
+                className="fusion-option-icon fusion-option-icon--glyph"
               />
               <span className="fusion-option-text">
-                {fusionOptions.length === 1 ? 'Fuse' : `Fuse ${fusionItem.name}`}
+                {fusionItem.name ? `Fuse ${fusionItem.name}` : 'Fuse'}
               </span>
+              <img
+                src={buildFusionFormImageUrl(fusionItem, isShiny)}
+                alt={fusionItem.name || `Fusion ${fusionItem.fusion_id}`}
+                className="fusion-option-icon fusion-option-icon--preview"
+              />
             </button>
           ))}
         </div>
       )}
-
-      {!editMode ? (
-        <p className="fusion-edit-hint">Enable edit mode to change fusion state.</p>
-      ) : null}
     </div>
   );
 };
