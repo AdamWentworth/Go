@@ -2,6 +2,7 @@ package main
 
 import (
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -55,9 +56,14 @@ func metricsMiddleware(c *fiber.Ctx) error {
 	if r := c.Route(); r != nil && r.Path != "" {
 		route = r.Path
 	}
+
+	// Fiber request strings can reference reused fasthttp buffers.
+	// Clone label values so Prometheus keeps stable, immutable strings.
+	methodLabel := strings.Clone(c.Method())
+	routeLabel := strings.Clone(route)
 	status := strconv.Itoa(c.Response().StatusCode())
-	httpRequestsTotal.WithLabelValues(c.Method(), route, status).Inc()
-	httpRequestDurationSeconds.WithLabelValues(c.Method(), route, status).Observe(time.Since(start).Seconds())
+	httpRequestsTotal.WithLabelValues(methodLabel, routeLabel, status).Inc()
+	httpRequestDurationSeconds.WithLabelValues(methodLabel, routeLabel, status).Observe(time.Since(start).Seconds())
 
 	return err
 }

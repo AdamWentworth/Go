@@ -2,3 +2,4 @@
 data/backups/
 data/pokego.db-shm
 data/pokego.db-wal
+data/pokego.db.bak*

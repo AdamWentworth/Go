@@ -6,6 +6,8 @@ import type { Move } from '@/types/pokemonSubTypes';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import { resolveAssetUrl } from '@/utils/assetUrl';
 
+type FusionMoveSource = 'base' | 'fusion' | 'fusion_missing';
+
 type DamageMode = 'raid' | 'pvp';
 
 type VariantWithOptionalInstance = {
@@ -27,6 +29,8 @@ export interface MovesProps {
   }) => void;
   isShadow: boolean;
   isPurified: boolean;
+  fusionMoveSource?: FusionMoveSource;
+  isFused?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -38,6 +42,8 @@ const Moves: React.FC<MovesProps> = ({
   onMovesChange,
   isShadow,
   isPurified,
+  fusionMoveSource = 'base',
+  isFused = false,
 }) => {
   const allMoves = pokemon.moves ?? [];
   const instanceData: Partial<PokemonInstance> = pokemon.instanceData ?? {};
@@ -90,7 +96,12 @@ const Moves: React.FC<MovesProps> = ({
     (typeof fusionIdFromNumericForm === 'number' ? fusionIdFromNumericForm : null) ??
     inferredFusionId;
 
+  const hasMissingFusionMoves = isFused && fusionMoveSource === 'fusion_missing';
+  const disableMoveEditing = editMode && hasMissingFusionMoves;
+
   const allowMoveForFusion = (move: Move) => {
+    if (fusionMoveSource === 'fusion') return true;
+    if (hasMissingFusionMoves) return false;
     if (!fusionId) return move.fusion_id == null;
     if (move.fusion_id == null) return true;
     return move.fusion_id === fusionId;
@@ -241,6 +252,9 @@ const Moves: React.FC<MovesProps> = ({
   };
 
   useEffect(() => {
+    if (hasMissingFusionMoves) {
+      return;
+    }
     const next = { fastMove, chargedMove1, chargedMove2 };
     let dirty = false;
 
@@ -274,7 +288,7 @@ const Moves: React.FC<MovesProps> = ({
       setChargedMove2(next.chargedMove2);
       onMovesChangeRef.current(next);
     }
-  }, [chargedMove1, chargedMove2, chargedMoves, fastMove, fastMoves]);
+  }, [chargedMove1, chargedMove2, chargedMoves, fastMove, fastMoves, hasMissingFusionMoves]);
 
   /* event handlers -------------------------------------------------- */
   const handleMoveChange = (
@@ -344,6 +358,7 @@ const Moves: React.FC<MovesProps> = ({
           value={selectedId ?? ''}
           onChange={(e) => handleMoveChange(e, slot)}
           className="move-select"
+          disabled={disableMoveEditing}
         >
           <option value="">Unselected move</option>
           {filtered.map((m) => (
@@ -411,6 +426,8 @@ const Moves: React.FC<MovesProps> = ({
           <button
             onClick={addSecondChargedMove}
             className="icon-button add-move-button"
+            disabled={disableMoveEditing}
+            aria-label="Add second charged move"
           >
             <span className="move-add-icon">+</span>
           </button>
@@ -420,10 +437,17 @@ const Moves: React.FC<MovesProps> = ({
     </>
   );
 
-  if (!editMode && !fastMove && !chargedMove1 && !chargedMove2) return null;
+  if (!editMode && !fastMove && !chargedMove1 && !chargedMove2 && !hasMissingFusionMoves) {
+    return null;
+  }
 
   return (
     <div className={`moves-container ${editMode ? 'editable' : ''}`}>
+      {hasMissingFusionMoves ? (
+        <div className="moves-fusion-warning" role="status">
+          Fusion moves unavailable. Refresh pokemon data.
+        </div>
+      ) : null}
       <div
         ref={modeToggleRef}
         className="moves-mode-toggle"

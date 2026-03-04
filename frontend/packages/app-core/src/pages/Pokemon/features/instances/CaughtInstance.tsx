@@ -7,7 +7,6 @@ import React, {
 import './CaughtInstance.css';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
-import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useModal } from '@/contexts/ModalContext';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -30,7 +29,10 @@ import {
   buildCaughtPersistPatchMap,
   resolveCaughtPersistValues,
 } from './utils/caughtPersist';
-import { resolveFusionMovePool } from './utils/resolveFusionMovePool';
+import {
+  resolveFusionMovePool,
+  type FusionMoveSource,
+} from './utils/resolveFusionMovePool';
 import { useCaughtFormState } from './hooks/useCaughtFormState';
 
 import HeaderRow from './sections/HeaderRow';
@@ -79,8 +81,6 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
   const instanceId = String(instanceData.instance_id ?? variantId ?? '');
 
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
-  const instances = useInstancesStore((s) => s.instances);
-  const variants = useVariantsStore((s) => s.variants);
   const { alert } = useModal();
   const { validate, resetErrors } = useValidation();
 
@@ -288,36 +288,47 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
     });
   }, [toggleEditMode, level, cp, ivs, weight, height]);
 
-  const movesPokemon = useMemo<MovesPreviewPokemon>(
-    () => ({
-      ...pokemon,
-      moves: resolveFusionMovePool({
+  const resolvedFusionMoves = useMemo(
+    () =>
+      resolveFusionMovePool({
         pokemon,
         fusion,
-        instances,
-        variants,
       }),
-      instanceData: {
-        ...(pokemon.instanceData ?? {}),
-        fusion_form: fusion.fusion_form,
-        is_fused: fusion.is_fused,
-        fast_move_id: moves.fastMove,
-        charged_move1_id: moves.chargedMove1,
-        charged_move2_id: moves.chargedMove2,
-      },
-    }),
+    [fusion.fusion_form, fusion.is_fused, pokemon],
+  );
+
+  const movesPokemon = useMemo<MovesPreviewPokemon>(
+    () => {
+      return {
+        ...pokemon,
+        moves: resolvedFusionMoves.moves,
+        instanceData: {
+          ...(pokemon.instanceData ?? {}),
+          fusion_form: fusion.fusion_form,
+          is_fused: fusion.is_fused,
+          fast_move_id: moves.fastMove,
+          charged_move1_id: moves.chargedMove1,
+          charged_move2_id: moves.chargedMove2,
+        },
+      };
+    },
     [
       fusion.fusion_form,
       fusion.is_fused,
       moves.chargedMove1,
       moves.chargedMove2,
       moves.fastMove,
-      instances,
       pokemon,
-      fusion.fusedOtherInstanceKey,
-      fusion.fusedWith,
-      variants,
+      resolvedFusionMoves.moves,
     ],
+  );
+
+  const fusionMoveMeta = useMemo<{ source: FusionMoveSource; isFused: boolean }>(
+    () => ({
+      source: resolvedFusionMoves.source,
+      isFused: Boolean(fusion.is_fused),
+    }),
+    [fusion.is_fused, resolvedFusionMoves.source],
   );
 
   return (
@@ -423,6 +434,8 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
         onMovesChange={handleMovesChange}
         isShadow={isShadow}
         isPurified={isPurified}
+        fusionMoveSource={fusionMoveMeta.source}
+        isFused={fusionMoveMeta.isFused}
         ivs={ivs}
         onIvChange={handleIvChange}
         areIVsEmpty={areIVsEmpty}

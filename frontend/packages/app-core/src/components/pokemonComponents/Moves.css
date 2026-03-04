@@ -6,6 +6,19 @@
   margin-top: 5px;
 }
 
+.moves-fusion-warning {
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  border: 1px solid #6f7a74;
+  border-radius: 6px;
+  background: rgba(17, 17, 17, 0.45);
+  color: #c8d1cb;
+  font-family: var(--font-family-base);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
 .moves-mode-toggle {
   display: inline-flex;
   justify-content: center;
@@ -216,6 +229,11 @@
   text-align: center; /* Aligns text of options to center */
 }
 
+.move-select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .icon-button {
   background: transparent;
   border: none;
@@ -271,6 +289,11 @@
 /* Apply pointer cursor only when in editable mode */
 .moves-container.editable .add-move-button {
   cursor: pointer; /* Cursor changes to pointer when editable */
+}
+
+.add-move-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .move-add-icon {

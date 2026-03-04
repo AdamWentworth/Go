@@ -229,4 +229,72 @@ describe('Moves', () => {
 
     expect(screen.getByRole('option', { name: 'Fusion Flare' })).toBeInTheDocument();
   });
+
+  it('treats fusion source as authoritative move pool', () => {
+    const pokemon = {
+      moves: [
+        buildMove({ move_id: 14, name: 'Shadow Claw', is_fast: 1, fusion_id: 4 }),
+        buildMove({ move_id: 267, name: 'Fusion Bolt', is_fast: 0, fusion_id: 4 }),
+      ],
+      fusion: [{ name: 'Black Kyurem', fusion_id: 4 }],
+      instanceData: {
+        fast_move_id: 14,
+        charged_move1_id: 267,
+        charged_move2_id: null,
+        fusion_form: null,
+      },
+    };
+
+    render(
+      <Moves
+        pokemon={pokemon}
+        editMode
+        onMovesChange={vi.fn()}
+        isShadow={false}
+        isPurified={false}
+        isFused
+        fusionMoveSource="fusion"
+      />,
+    );
+
+    expect(screen.getByRole('option', { name: 'Shadow Claw' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Fusion Bolt' })).toBeInTheDocument();
+  });
+
+  it('shows a warning and disables move edits when fusion move pool is missing', () => {
+    const onMovesChange = vi.fn();
+    const pokemon = {
+      moves: [],
+      fusion: [{ name: 'White Kyurem', fusion_id: 3 }],
+      instanceData: {
+        fast_move_id: 5,
+        charged_move1_id: 269,
+        charged_move2_id: null,
+        fusion_form: 'White Kyurem',
+      },
+    };
+
+    render(
+      <Moves
+        pokemon={pokemon}
+        editMode
+        onMovesChange={onMovesChange}
+        isShadow={false}
+        isPurified={false}
+        isFused
+        fusionMoveSource="fusion_missing"
+      />,
+    );
+
+    expect(screen.getByText('Fusion moves unavailable. Refresh pokemon data.')).toBeInTheDocument();
+
+    const selects = screen.getAllByRole('combobox');
+    expect(selects.length).toBeGreaterThan(0);
+    selects.forEach((select) => expect(select).toBeDisabled());
+
+    expect(
+      screen.getByRole('button', { name: 'Add second charged move' }),
+    ).toBeDisabled();
+    expect(onMovesChange).not.toHaveBeenCalled();
+  });
 });

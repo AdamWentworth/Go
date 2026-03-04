@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { resolveFusionMovePool } from '@/pages/Pokemon/features/instances/utils/resolveFusionMovePool';
-import type { Instances } from '@/types/instances';
 import type { Move, Fusion } from '@/types/pokemonSubTypes';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
@@ -26,19 +25,6 @@ const buildMove = (overrides: Partial<Move>): Move => ({
   ...overrides,
 });
 
-const makeVariant = (input: {
-  pokemon_id: number;
-  variant_id: string;
-  variantType?: PokemonVariant['variantType'];
-  moves: Move[];
-}): PokemonVariant =>
-  ({
-    pokemon_id: input.pokemon_id,
-    variant_id: input.variant_id,
-    variantType: input.variantType ?? 'default',
-    moves: input.moves,
-  }) as unknown as PokemonVariant;
-
 describe('resolveFusionMovePool', () => {
   it('returns base moves unchanged when not fused', () => {
     const baseMoves = [
@@ -49,59 +35,57 @@ describe('resolveFusionMovePool', () => {
     const result = resolveFusionMovePool({
       pokemon: { moves: baseMoves, fusion: [] } as unknown as Pick<PokemonVariant, 'moves' | 'fusion'>,
       fusion: { is_fused: false },
-      instances: {} as Instances,
-      variants: [],
     });
 
-    expect(result.map((move) => move.name)).toEqual(['Dragon Breath', 'Dragon Claw']);
+    expect(result.source).toBe('base');
+    expect(result.fusionId).toBeNull();
+    expect(result.moves.map((move) => move.name)).toEqual(['Dragon Breath', 'Dragon Claw']);
   });
 
-  it('injects signature fusion move from fused partner instance immediately', () => {
+  it('returns strict fusion moves when fused and fusion.moves exists', () => {
     const baseMoves = [
       buildMove({ move_id: 5, name: 'Dragon Breath', is_fast: 1 }),
       buildMove({ move_id: 82, name: 'Dragon Claw', is_fast: 0 }),
       buildMove({ move_id: 269, name: 'Glaciate', is_fast: 0 }),
     ];
-    const partnerMoves = [
-      buildMove({ move_id: 40, name: 'Fire Fang', is_fast: 1 }),
-      buildMove({ move_id: 266, name: 'Fusion Flare', is_fast: 0, legacy: true }),
+    const fusionMoves = [
+      buildMove({ move_id: 67, name: 'Ice Fang', is_fast: 1 }),
+      buildMove({ move_id: 125, name: 'Dragon Pulse', is_fast: 0 }),
+      buildMove({ move_id: 467, name: 'Ice Burn', is_fast: 0 }),
     ];
 
     const result = resolveFusionMovePool({
       pokemon: {
         moves: baseMoves,
-        fusion: [{ fusion_id: 3, base_pokemon_id2: 643, name: 'White Kyurem' } as Fusion],
+        fusion: [
+          {
+            fusion_id: 3,
+            base_pokemon_id2: 643,
+            name: 'White Kyurem',
+            moves: fusionMoves,
+          } as Fusion,
+        ],
       } as unknown as Pick<PokemonVariant, 'moves' | 'fusion'>,
       fusion: {
         is_fused: true,
         fusion_form: 'White Kyurem',
-        fusedWith: 'partner-1',
       },
-      instances: {
-        'partner-1': {
-          instance_id: 'partner-1',
-          variant_id: '0643-default',
-          pokemon_id: 643,
-        },
-      } as unknown as Instances,
-      variants: [
-        makeVariant({
-          pokemon_id: 643,
-          variant_id: '0643-default',
-          moves: partnerMoves,
-        }),
-      ],
     });
 
-    expect(result.some((move) => move.name === 'Fusion Flare')).toBe(true);
-    expect(result.some((move) => move.name === 'Fire Fang')).toBe(false);
+    expect(result.source).toBe('fusion');
+    expect(result.fusionId).toBe(3);
+    expect(result.moves.map((move) => move.name)).toEqual([
+      'Ice Fang',
+      'Dragon Pulse',
+      'Ice Burn',
+    ]);
+    expect(result.moves.some((move) => move.name === 'Dragon Breath')).toBe(false);
   });
 
-  it('prefers fusion entry moves when the payload provides fusion.moves', () => {
+  it('matches fusion by slug-normalized form text', () => {
     const baseMoves = [
       buildMove({ move_id: 5, name: 'Dragon Breath', is_fast: 1 }),
       buildMove({ move_id: 82, name: 'Dragon Claw', is_fast: 0 }),
-      buildMove({ move_id: 269, name: 'Glaciate', is_fast: 0 }),
     ];
     const fusionMoves = [
       buildMove({ move_id: 14, name: 'Shadow Claw', is_fast: 1, fusion_id: 4 }),
@@ -123,21 +107,21 @@ describe('resolveFusionMovePool', () => {
       } as unknown as Pick<PokemonVariant, 'moves' | 'fusion'>,
       fusion: {
         is_fused: true,
-        fusion_form: 'Black Kyurem',
+        fusion_form: 'black_kyurem',
       },
-      instances: {} as Instances,
-      variants: [],
     });
 
-    expect(result.map((move) => move.name)).toEqual([
+    expect(result.source).toBe('fusion');
+    expect(result.fusionId).toBe(4);
+    expect(result.moves.map((move) => move.name)).toEqual([
       'Shadow Claw',
       'Stone Edge',
       'Fusion Bolt',
     ]);
-    expect(result.some((move) => move.name === 'Dragon Breath')).toBe(false);
+    expect(result.moves.some((move) => move.name === 'Dragon Breath')).toBe(false);
   });
 
-  it('falls back to fusion base_pokemon_id2 when fusedWith lookup is unavailable', () => {
+  it('returns fusion_missing when fused but no fusion move pool is available', () => {
     const baseMoves = [
       buildMove({ move_id: 5, name: 'Dragon Breath', is_fast: 1 }),
       buildMove({ move_id: 82, name: 'Dragon Claw', is_fast: 0 }),
@@ -151,22 +135,11 @@ describe('resolveFusionMovePool', () => {
       fusion: {
         is_fused: true,
         fusion_form: 'Black Kyurem',
-        fusedWith: 'missing-partner',
       },
-      instances: {} as Instances,
-      variants: [
-        makeVariant({
-          pokemon_id: 644,
-          variant_id: '0644-default',
-          moves: [
-            buildMove({ move_id: 13, name: 'Charge Beam', is_fast: 1 }),
-            buildMove({ move_id: 267, name: 'Fusion Bolt', is_fast: 0, legacy: true }),
-          ],
-        }),
-      ],
     });
 
-    expect(result.some((move) => move.name === 'Fusion Bolt')).toBe(true);
-    expect(result.some((move) => move.name === 'Charge Beam')).toBe(false);
+    expect(result.source).toBe('fusion_missing');
+    expect(result.fusionId).toBe(4);
+    expect(result.moves).toEqual([]);
   });
 });

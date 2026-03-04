@@ -22,6 +22,8 @@ interface MovesAndIVProps {
   onMovesChange: MovesProps['onMovesChange'];
   isShadow: boolean;
   isPurified: boolean;
+  fusionMoveSource?: MovesProps['fusionMoveSource'];
+  isFused?: MovesProps['isFused'];
   ivs: IvValues;
   onIvChange: (value: IvValues) => void;
   areIVsEmpty: boolean;
@@ -33,6 +35,8 @@ const MovesAndIV: React.FC<MovesAndIVProps> = ({
   onMovesChange,
   isShadow,
   isPurified,
+  fusionMoveSource = 'base',
+  isFused = false,
   ivs,
   onIvChange,
   areIVsEmpty,
@@ -45,6 +49,8 @@ const MovesAndIV: React.FC<MovesAndIVProps> = ({
         onMovesChange={onMovesChange}
         isShadow={isShadow}
         isPurified={isPurified}
+        fusionMoveSource={fusionMoveSource}
+        isFused={isFused}
       />
     </div>
 

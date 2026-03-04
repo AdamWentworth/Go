@@ -87,8 +87,22 @@ vi.mock('@/pages/Pokemon/features/instances/components/Caught/FuseOverlay', () =
 }));
 
 vi.mock('@/components/pokemonComponents/Moves', () => ({
-  default: ({ onMovesChange }: { onMovesChange?: (value: unknown) => void }) => (
-    <button onClick={() => onMovesChange?.({ fastMove: 1 })}>moves</button>
+  default: ({
+    onMovesChange,
+    fusionMoveSource,
+    isFused,
+  }: {
+    onMovesChange?: (value: unknown) => void;
+    fusionMoveSource?: string;
+    isFused?: boolean;
+  }) => (
+    <button
+      data-fusion-source={fusionMoveSource ?? 'none'}
+      data-is-fused={String(Boolean(isFused))}
+      onClick={() => onMovesChange?.({ fastMove: 1 })}
+    >
+      moves
+    </button>
   ),
 }));
 
@@ -402,6 +416,8 @@ describe('instances section components', () => {
         onMovesChange={onMovesChange}
         isShadow={false}
         isPurified={false}
+        fusionMoveSource="fusion_missing"
+        isFused
         ivs={{ Attack: 1, Defense: 2, Stamina: 3 }}
         onIvChange={onIvChange}
         areIVsEmpty={false}
@@ -413,6 +429,14 @@ describe('instances section components', () => {
 
     expect(onMovesChange).toHaveBeenCalledWith({ fastMove: 1 });
     expect(onIvChange).toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'moves' })).toHaveAttribute(
+      'data-fusion-source',
+      'fusion_missing',
+    );
+    expect(screen.getByRole('button', { name: 'moves' })).toHaveAttribute(
+      'data-is-fused',
+      'true',
+    );
   });
 
   it('PowerPanel renders max/mega controls and forwards max toggle', () => {
