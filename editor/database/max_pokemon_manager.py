@@ -35,6 +35,13 @@ class MaxPokemonManager:
         """Ensure a row exists – does **nothing** if it already does."""
         cur = self.conn.get_cursor()
         cur.execute(
+            "SELECT 1 FROM max_pokemon WHERE pokemon_id = ? LIMIT 1",
+            (pokemon_id,),
+        )
+        if cur.fetchone() is not None:
+            return 0
+
+        cur.execute(
             """
             INSERT OR IGNORE INTO max_pokemon (
                 pokemon_id,

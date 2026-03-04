@@ -10,6 +10,7 @@ from database.fusion_pokemon_manager import FusionPokemonManager
 from database.female_pokemon_manager import FemalePokemonManager
 from database.max_pokemon_manager   import MaxPokemonManager
 from database.size_pokemon_manager  import SizePokemonManager
+from database.background_pokemon_manager import BackgroundPokemonManager
 
 class DatabaseManager:
     def __init__(self, db_path):
@@ -23,6 +24,7 @@ class DatabaseManager:
         self.female_pokemon_manager = FemalePokemonManager(self.conn)
         self.max_pokemon_manager   = MaxPokemonManager(self.conn)
         self.size_pokemon_manager  = SizePokemonManager(self.conn)
+        self.background_pokemon_manager = BackgroundPokemonManager(self.conn)
 
     def fetch_all_pokemon_sorted(self, sort_by='pokemon_id'):
         return self.pokemon_manager.fetch_all_pokemon_sorted(sort_by)
@@ -140,6 +142,53 @@ class DatabaseManager:
     def update_size_data(self, pokemon_id, data_tuple):
         return self.size_pokemon_manager.upsert_size_data(pokemon_id, data_tuple)
     
+    # Background-related methods
+    def fetch_all_backgrounds(self):
+        return self.background_pokemon_manager.fetch_all_backgrounds()
+
+    def fetch_pokemon_background_rows(self, pokemon_id):
+        return self.background_pokemon_manager.fetch_pokemon_background_rows(pokemon_id)
+
+    def add_background(self, name, location, image_url, date_value):
+        return self.background_pokemon_manager.add_background(
+            name,
+            location,
+            image_url,
+            date_value,
+        )
+
+    def update_background(self, background_id, name, location, image_url, date_value):
+        return self.background_pokemon_manager.update_background(
+            background_id,
+            name,
+            location,
+            image_url,
+            date_value,
+        )
+
+    def delete_background(self, background_id):
+        return self.background_pokemon_manager.delete_background(background_id)
+
+    def count_background_usage(self, background_id):
+        return self.background_pokemon_manager.count_background_usage(background_id)
+
+    def add_pokemon_background_link(self, pokemon_id, background_id, costume_id):
+        return self.background_pokemon_manager.add_pokemon_background_link(
+            pokemon_id,
+            background_id,
+            costume_id,
+        )
+
+    def update_pokemon_background_link(self, link_row_id, background_id, costume_id):
+        return self.background_pokemon_manager.update_pokemon_background_link(
+            link_row_id,
+            background_id,
+            costume_id,
+        )
+
+    def delete_pokemon_background_link(self, link_row_id):
+        return self.background_pokemon_manager.delete_pokemon_background_link(link_row_id)
+
     # Female Pokémon-related methods
     def fetch_female_pokemon(self):
         return self.female_pokemon_manager.fetch_female_pokemon()

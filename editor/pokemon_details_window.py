@@ -16,6 +16,7 @@ from frames.pokemon_shadow_costume_frame import PokemonShadowCostumeFrame
 from frames.pokemon_mega_frame import PokemonMegaFrame
 from frames.pokemon_female_image_frame import PokemonFemaleImageFrame
 from frames.pokemon_max_frame         import PokemonMaxFrame
+from frames.pokemon_background_frame import PokemonBackgroundFrame
 
 import os
 
@@ -62,6 +63,7 @@ class PokemonDetailsWindow:
         self.create_max_frame(main_container)
         self.create_mega_frames(main_container)
         self.create_costume_frame(main_container)
+        self.create_background_frame(main_container)
         self.create_shadow_costume_frames(main_container)
 
         # Save Button
@@ -164,6 +166,18 @@ class PokemonDetailsWindow:
         """ Create Costume Frame """
         self.costume_frame = PokemonCostumeImageFrame(parent, self.pokemon_id, self)
         self.costume_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+    def create_background_frame(self, parent):
+        """Create Background CRUD frame."""
+        container = tk.Frame(parent)
+        container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.background_frame = PokemonBackgroundFrame(
+            container,
+            self.pokemon_id,
+            self.db_manager,
+            self,
+        )
+        self.background_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
         
     def _on_mousewheel(self, event):
         self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
