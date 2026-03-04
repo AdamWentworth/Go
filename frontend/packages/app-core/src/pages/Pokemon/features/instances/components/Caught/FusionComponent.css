@@ -1,7 +1,6 @@
 /* FusionComponent.css */
 .fusion-component {
   width: var(--caught-content-width);
-  margin: 8px auto 4px;
   padding-inline: var(--caught-section-inline-pad);
   box-sizing: border-box;
 }

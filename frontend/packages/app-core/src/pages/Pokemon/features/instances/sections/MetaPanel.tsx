@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './MetaPanel.css';
 import LocationCaught from '@/components/pokemonComponents/LocationCaught';
 import DateCaughtComponent from '@/components/pokemonComponents/DateCaught';
@@ -75,6 +75,7 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
   const [trainerLookupBusy, setTrainerLookupBusy] = useState<boolean>(false);
   const [trainerLookupError, setTrainerLookupError] = useState<string | null>(null);
   const [trainerHasFocus, setTrainerHasFocus] = useState<boolean>(false);
+  const trainerLookupRequestRef = useRef(0);
 
   const formatDisplayDate = (value: unknown): string => {
     if (!value) return 'UNKNOWN DATE';
@@ -103,8 +104,9 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
   );
 
   useEffect(() => {
+    if (trainerHasFocus) return;
     setTrainerQuery((originalTrainerName ?? rawOriginalTrainerName ?? '').trim());
-  }, [originalTrainerName, rawOriginalTrainerName]);
+  }, [originalTrainerName, rawOriginalTrainerName, trainerHasFocus]);
 
   useEffect(() => {
     if (!editMode || !obtainedInTrade) {
@@ -144,6 +146,7 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
 
   const resolveTrainerByUsername = async (usernameInput: string): Promise<void> => {
     const username = usernameInput.trim();
+    const requestId = ++trainerLookupRequestRef.current;
     if (!username) {
       onOriginalTrainerNameChange('');
       setTrainerQuery('');
@@ -157,35 +160,29 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
     try {
       outcome = await fetchPublicUserByUsername(username);
     } catch {
+      if (requestId !== trainerLookupRequestRef.current) return;
       setTrainerLookupBusy(false);
-      onOriginalTrainerNameChange(username);
-      setTrainerQuery(username);
       onOriginalTrainerIdChange(null);
       setTrainerLookupError('Unable to verify trainer right now.');
       return;
     }
+    if (requestId !== trainerLookupRequestRef.current) return;
     setTrainerLookupBusy(false);
 
     if (outcome.type === 'success') {
-      onOriginalTrainerNameChange(outcome.username);
       onOriginalTrainerIdChange(outcome.userId);
-      setTrainerQuery(outcome.username);
       setTrainerLookupError(null);
       return;
     }
 
     if (outcome.type === 'notFound') {
       // Keep manually entered trainer names even if they are not in our user database.
-      onOriginalTrainerNameChange(username);
-      setTrainerQuery(username);
       onOriginalTrainerIdChange(null);
       setTrainerLookupError(null);
       return;
     }
 
-    // On lookup errors, preserve the entered name and allow save without a linked user_id.
-    onOriginalTrainerNameChange(username);
-    setTrainerQuery(username);
+    // On lookup errors, preserve entered name and allow save without linked user_id.
     onOriginalTrainerIdChange(null);
     setTrainerLookupError(outcome.message);
   };
@@ -274,6 +271,7 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
                       onBlur={() => {
                         const committedName = trainerQuery.trim();
                         setTrainerHasFocus(false);
+                        setTrainerQuery(committedName);
                         onOriginalTrainerNameChange(committedName);
                         onOriginalTrainerIdChange(null);
                         void resolveTrainerByUsername(committedName);

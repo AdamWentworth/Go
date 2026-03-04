@@ -87,6 +87,18 @@ const FusionComponent: React.FC<FusionComponentProps> = ({
   );
 
   const hasOptions = fusionOptions.length > 0;
+  const fusedWithKey = typeof fusionState.fusedWith === 'string' ? fusionState.fusedWith : null;
+  const fusedWithLegacyId = fusedWithKey ? extractLegacyInstanceId(fusedWithKey) : null;
+
+  const partnerInstance = useInstancesStore((state) => {
+    if (!fusedWithKey) return null;
+    const candidateIds = [fusedWithKey, fusedWithLegacyId].filter(
+      (value): value is string => Boolean(value),
+    );
+    const fromOwned = findInstanceById(state.instances, candidateIds);
+    if (fromOwned) return fromOwned;
+    return findInstanceById(state.foreignInstances, candidateIds);
+  });
 
   if (!fusionState.is_fused && !hasOptions) {
     return null;
@@ -104,18 +116,6 @@ const FusionComponent: React.FC<FusionComponentProps> = ({
   const isShiny = Boolean(pokemon.instanceData?.shiny);
   const leftPokemonId = currentFusion?.base_pokemon_id1 ?? pokemon.pokemon_id;
   const rightPokemonId = currentFusion?.base_pokemon_id2 ?? null;
-  const fusedWithKey = typeof fusionState.fusedWith === 'string' ? fusionState.fusedWith : null;
-  const fusedWithLegacyId = fusedWithKey ? extractLegacyInstanceId(fusedWithKey) : null;
-
-  const partnerInstance = useInstancesStore((state) => {
-    if (!fusedWithKey) return null;
-    const candidateIds = [fusedWithKey, fusedWithLegacyId].filter(
-      (value): value is string => Boolean(value),
-    );
-    const fromOwned = findInstanceById(state.instances, candidateIds);
-    if (fromOwned) return fromOwned;
-    return findInstanceById(state.foreignInstances, candidateIds);
-  });
 
   const rightIsShiny = partnerInstance ? Boolean(partnerInstance.shiny) : isShiny;
 

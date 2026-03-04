@@ -294,9 +294,13 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
     () =>
       resolveFusionMovePool({
         pokemon,
-        fusion,
+        fusion: {
+          is_fused: fusion.is_fused,
+          fusion_form: fusion.fusion_form,
+          storedFusionObject: fusion.storedFusionObject,
+        },
       }),
-    [fusion.fusion_form, fusion.is_fused, pokemon],
+    [fusion.fusion_form, fusion.is_fused, fusion.storedFusionObject, pokemon],
   );
 
   const movesPokemon = useMemo<MovesPreviewPokemon>(
