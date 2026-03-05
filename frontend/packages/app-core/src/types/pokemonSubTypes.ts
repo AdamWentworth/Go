@@ -5,6 +5,7 @@ export type {
   ShadowCostume,
   MegaEvolution,
   Fusion,
+  FusionBackgroundComboRule,
   MaxForm,
   FemaleVariantData,
   VariantBackground,
