@@ -1,8 +1,12 @@
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox, simpledialog, ttk
 import os
+import re
+from io import BytesIO
+from urllib.parse import urlparse
 
 from PIL import Image, ImageTk
+import requests
 
 
 class PokemonBackgroundFrame(tk.Frame):
@@ -78,9 +82,38 @@ class PokemonBackgroundFrame(tk.Frame):
 
         tk.Button(
             section,
+            text="Download Image",
+            command=lambda: self._download_background_image_to_local(
+                self.create_entries["image_url"],
+                self.create_preview_label,
+                None,
+                self.create_entries["name"].get().strip(),
+            ),
+        ).grid(row=2, column=2, sticky="w", padx=(8, 8))
+
+        tk.Button(
+            section,
             text="Create + Link",
             command=self._create_background_and_link,
-        ).grid(row=0, column=2, rowspan=5, sticky="nsw", padx=(8, 0))
+        ).grid(row=0, column=3, rowspan=5, sticky="nsw", padx=(0, 8))
+
+        self.create_preview_label = tk.Label(section)
+        self.create_preview_label.grid(row=0, column=4, rowspan=5, padx=(8, 0), pady=2, sticky="n")
+        self._update_preview(self.create_preview_label, self.create_entries["image_url"].get().strip())
+        self.create_entries["image_url"].bind(
+            "<KeyRelease>",
+            lambda _event: self._update_preview(
+                self.create_preview_label,
+                self.create_entries["image_url"].get().strip(),
+            ),
+        )
+        self.create_entries["image_url"].bind(
+            "<FocusOut>",
+            lambda _event: self._update_preview(
+                self.create_preview_label,
+                self.create_entries["image_url"].get().strip(),
+            ),
+        )
 
         section.columnconfigure(1, weight=1)
 
@@ -228,6 +261,17 @@ class PokemonBackgroundFrame(tk.Frame):
             command=lambda: self._delete_background_global(bg_var),
         ).pack(side=tk.LEFT)
 
+        tk.Button(
+            button_row,
+            text="Download Image",
+            command=lambda: self._download_background_image_to_local(
+                field_entries["image_url"],
+                preview_label,
+                self._parse_selected_background_id(bg_var.get()),
+                field_entries["name"].get().strip(),
+            ),
+        ).pack(side=tk.LEFT, padx=(6, 0))
+
         frame.columnconfigure(1, weight=1)
 
     def _add_existing_link(self):
@@ -281,6 +325,7 @@ class PokemonBackgroundFrame(tk.Frame):
         for entry in self.create_entries.values():
             entry.delete(0, tk.END)
 
+        self._update_preview(self.create_preview_label, "")
         self.refresh()
 
     def _save_link_row(self, link_row_id, bg_var, costume_entry, field_entries):
@@ -364,6 +409,106 @@ class PokemonBackgroundFrame(tk.Frame):
 
         self.db_manager.delete_background(background_id)
         self.refresh()
+
+    def _download_background_image_to_local(self, image_url_entry, preview_label, background_id, background_name):
+        current_value = image_url_entry.get().strip()
+        url = current_value if current_value.startswith(("http://", "https://")) else ""
+
+        if not url:
+            url = simpledialog.askstring(
+                "Download Background Image",
+                "Enter remote image URL:",
+                initialvalue=current_value or "",
+                parent=self.details_window.window,
+            )
+
+        if not url:
+            return
+
+        if not url.startswith(("http://", "https://")):
+            messagebox.showerror(
+                "Invalid URL",
+                "Image URL must start with http:// or https://",
+                parent=self.details_window.window,
+            )
+            return
+
+        try:
+            response = requests.get(url, timeout=15)
+            response.raise_for_status()
+            image = Image.open(BytesIO(response.content)).convert("RGBA")
+        except Exception as exc:
+            messagebox.showerror(
+                "Download Failed",
+                f"Could not download/process image:\n{exc}",
+                parent=self.details_window.window,
+            )
+            return
+
+        relative_path = self._resolve_background_save_relative_path(
+            image_url_entry.get().strip(),
+            url,
+            background_id,
+            background_name,
+        )
+        absolute_path = os.path.join(
+            self.details_window.relative_path_to_images,
+            relative_path.lstrip("\\/"),
+        )
+        os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
+
+        try:
+            image.save(absolute_path, "PNG")
+        except Exception as exc:
+            messagebox.showerror(
+                "Save Failed",
+                f"Could not save image:\n{exc}",
+                parent=self.details_window.window,
+            )
+            return
+
+        image_url_entry.delete(0, tk.END)
+        image_url_entry.insert(0, relative_path)
+        self._update_preview(preview_label, relative_path)
+
+        messagebox.showinfo(
+            "Image Saved",
+            f"Background image saved to:\n{absolute_path}",
+            parent=self.details_window.window,
+        )
+
+    def _resolve_background_save_relative_path(self, current_value, source_url, background_id, background_name):
+        normalized_current = (current_value or "").strip()
+        if normalized_current and not normalized_current.startswith(("http://", "https://")):
+            return self._normalize_rel_path(normalized_current)
+
+        if background_id is not None:
+            return f"/images/backgrounds/background_{int(background_id)}.png"
+
+        file_name = self._filename_from_url_or_name(source_url, background_name)
+        return f"/images/backgrounds/{file_name}"
+
+    @staticmethod
+    def _filename_from_url_or_name(source_url, background_name):
+        parsed = urlparse(source_url or "")
+        basename = os.path.basename(parsed.path or "").strip()
+        stem = os.path.splitext(basename)[0].strip()
+        if stem:
+            safe_stem = re.sub(r"[^a-zA-Z0-9_-]+", "_", stem).strip("_")
+            if safe_stem:
+                return f"{safe_stem}.png"
+
+        name = (background_name or "").strip()
+        safe_name = re.sub(r"[^a-zA-Z0-9_-]+", "_", name).strip("_")
+        if safe_name:
+            return f"{safe_name.lower()}.png"
+
+        return "background_image.png"
+
+    @staticmethod
+    def _normalize_rel_path(path_value):
+        normalized = (path_value or "").replace("\\", "/").lstrip("/")
+        return f"/{normalized}"
 
     def _option_from_background_id(self, background_id):
         bg = self.background_by_id.get(background_id)
