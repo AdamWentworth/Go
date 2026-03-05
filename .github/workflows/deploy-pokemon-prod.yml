@@ -23,6 +23,11 @@ on:
         required: false
         default: "reset"
         type: string
+      untracked_repo_strategy:
+        description: "How to handle untracked files in deploy repo: fail | clean"
+        required: false
+        default: "clean"
+        type: string
 
 permissions:
   contents: read
@@ -49,6 +54,8 @@ jobs:
           HOST_UID="$(id -u)"
           HOST_GID="$(id -g)"
           DIRTY_REPO_STRATEGY="${{ inputs.dirty_repo_strategy }}"
+          UNTRACKED_REPO_STRATEGY="${{ inputs.untracked_repo_strategy }}"
+          BACKUP_DIR="${DEPLOY_ROOT}/.deploy-backups"
 
           if [[ ! -d "${DEPLOY_ROOT}/.git" ]]; then
             echo "Deploy root is not a git repo: ${DEPLOY_ROOT}" >&2
@@ -75,7 +82,6 @@ jobs:
                 exit 1
                 ;;
               reset|"")
-                BACKUP_DIR="${DEPLOY_ROOT}/.deploy-backups"
                 mkdir -p "${BACKUP_DIR}"
                 BACKUP_FILE="${BACKUP_DIR}/dirty_repo_${DEPLOY_REF_SAFE}_run_${{ github.run_id }}_$(date -u +%Y%m%dT%H%M%SZ).patch"
                 {
@@ -95,13 +101,35 @@ jobs:
 
           UNTRACKED_COUNT="$(git -C "${DEPLOY_ROOT}" ls-files --others --exclude-standard | wc -l | tr -d ' ')"
           if [[ "${UNTRACKED_COUNT}" != "0" ]]; then
-            echo "Warning: ${UNTRACKED_COUNT} untracked files present in deploy root; continuing."
+            echo "Deploy root has ${UNTRACKED_COUNT} untracked files: ${DEPLOY_ROOT}"
+            case "${UNTRACKED_REPO_STRATEGY}" in
+              fail)
+                git -C "${DEPLOY_ROOT}" ls-files --others --exclude-standard | sed 's/^/?? /' || true
+                echo "untracked_repo_strategy=fail; aborting deploy." >&2
+                exit 1
+                ;;
+              clean|"")
+                mkdir -p "${BACKUP_DIR}"
+                UNTRACKED_BACKUP="${BACKUP_DIR}/untracked_repo_${DEPLOY_REF_SAFE}_run_${{ github.run_id }}_$(date -u +%Y%m%dT%H%M%SZ).tgz"
+                (
+                  cd "${DEPLOY_ROOT}"
+                  git ls-files --others --exclude-standard -z | tar --null -T - -czf "${UNTRACKED_BACKUP}" || true
+                )
+                echo "Saved untracked-file backup to ${UNTRACKED_BACKUP}"
+                echo "Cleaning untracked files before sync."
+                git -C "${DEPLOY_ROOT}" clean -fd
+                ;;
+              *)
+                echo "Unsupported untracked_repo_strategy=${UNTRACKED_REPO_STRATEGY}. Use fail or clean." >&2
+                exit 1
+                ;;
+            esac
           fi
 
           echo "Syncing ${DEPLOY_ROOT} to origin/${DEPLOY_REF}"
           git -C "${DEPLOY_ROOT}" fetch --prune origin
           git -C "${DEPLOY_ROOT}" checkout "${DEPLOY_REF}"
-          git -C "${DEPLOY_ROOT}" pull --ff-only origin "${DEPLOY_REF}"
+          git -C "${DEPLOY_ROOT}" reset --hard "origin/${DEPLOY_REF}"
 
       - name: Preflight Checks
         shell: bash
