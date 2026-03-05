@@ -163,6 +163,71 @@ class DatabaseManagerCoreMethodsTests(unittest.TestCase):
         female_rows = self.db_manager.fetch_female_pokemon()
         self.assertGreater(len(female_rows), 0)
 
+    def test_move_wrappers(self):
+        move_rows = self.db_manager.fetch_all_moves_sorted("move_id")
+        self.assertGreater(len(move_rows), 0)
+
+        type_ids = self.db_manager.fetch_type_ids()
+        self.assertIn("Dragon", type_ids)
+        dragon_type_id = type_ids["Dragon"]
+
+        new_move_id = self.db_manager.add_move(
+            None,
+            (
+                "Wrapper Move",
+                dragon_type_id,
+                111,
+                44,
+                55,
+                6,
+                800,
+                2,
+                1,
+                None,
+                None,
+                None,
+                None,
+            ),
+        )
+        self.assertIsNotNone(new_move_id)
+
+        details = self.db_manager.fetch_move_details(new_move_id)
+        self.assertEqual(details[1], "Wrapper Move")
+
+        self.db_manager.update_move(
+            new_move_id,
+            (
+                "Wrapper Move Updated",
+                dragon_type_id,
+                120,
+                48,
+                60,
+                7,
+                700,
+                1,
+                0,
+                None,
+                1,
+                0,
+                None,
+            ),
+        )
+        updated_name = self.scalar(
+            "SELECT name FROM moves WHERE move_id = ?",
+            (new_move_id,),
+        )
+        self.assertEqual(updated_name, "Wrapper Move Updated")
+
+        usage = self.db_manager.count_move_usage(new_move_id)
+        self.assertEqual(usage["total"], 0)
+
+        self.db_manager.delete_move(new_move_id)
+        exists = self.scalar(
+            "SELECT COUNT(*) FROM moves WHERE move_id = ?",
+            (new_move_id,),
+        )
+        self.assertEqual(exists, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

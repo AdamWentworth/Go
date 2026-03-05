@@ -11,6 +11,7 @@ from database.female_pokemon_manager import FemalePokemonManager
 from database.max_pokemon_manager   import MaxPokemonManager
 from database.size_pokemon_manager  import SizePokemonManager
 from database.background_pokemon_manager import BackgroundPokemonManager
+from database.move_manager import MoveManager
 
 class DatabaseManager:
     def __init__(self, db_path):
@@ -25,12 +26,16 @@ class DatabaseManager:
         self.max_pokemon_manager   = MaxPokemonManager(self.conn)
         self.size_pokemon_manager  = SizePokemonManager(self.conn)
         self.background_pokemon_manager = BackgroundPokemonManager(self.conn)
+        self.move_manager = MoveManager(self.conn)
 
     def fetch_all_pokemon_sorted(self, sort_by='pokemon_id'):
         return self.pokemon_manager.fetch_all_pokemon_sorted(sort_by)
 
     def fetch_all_fusions_sorted(self, sort_by='fusion_id'):
         return self.fusion_pokemon_manager.fetch_all_fusions_sorted(sort_by)
+
+    def fetch_all_moves_sorted(self, sort_by='move_id'):
+        return self.move_manager.fetch_all_moves_sorted(sort_by)
     
     def fetch_type_ids(self):
         cursor = self.conn.get_cursor()
@@ -53,6 +58,9 @@ class DatabaseManager:
 
     def fetch_fusion_details(self, fusion_id):
         return self.fusion_pokemon_manager.fetch_fusion_details(fusion_id)
+
+    def fetch_move_details(self, move_id):
+        return self.move_manager.fetch_move_details(move_id)
     
     def update_pokemon_data(self, pokemon_id, data):
         return self.pokemon_manager.update_pokemon_data(pokemon_id, data)
@@ -68,6 +76,18 @@ class DatabaseManager:
 
     def update_fusion_moveset(self, fusion_id, move_data):
         return self.fusion_pokemon_manager.update_fusion_moveset(fusion_id, move_data)
+
+    def add_move(self, move_id, data):
+        return self.move_manager.add_move(move_id, data)
+
+    def update_move(self, move_id, data):
+        return self.move_manager.update_move(move_id, data)
+
+    def delete_move(self, move_id):
+        return self.move_manager.delete_move(move_id)
+
+    def count_move_usage(self, move_id):
+        return self.move_manager.count_move_usage(move_id)
 
     def fetch_fusion_background_rule_rows(self, fusion_id):
         return self.fusion_pokemon_manager.fetch_fusion_background_rule_rows(fusion_id)

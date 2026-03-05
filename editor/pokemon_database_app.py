@@ -5,6 +5,7 @@ from tkinter import ttk
 
 from database_manager import DatabaseManager
 from fusion_details_window import FusionDetailsWindow
+from move_details_window import MoveDetailsWindow
 from pokemon_details_window import PokemonDetailsWindow
 
 
@@ -18,6 +19,7 @@ class PokemonDatabaseApp:
         self.entity_options = {
             'Pokemon': 'pokemon',
             'Fusion': 'fusion',
+            'Moves': 'moves',
         }
         self.sort_options_by_entity = {
             'pokemon': [
@@ -37,6 +39,15 @@ class PokemonDatabaseApp:
                 'generation',
                 'date_available',
                 'date_shiny_available',
+            ],
+            'moves': [
+                'move_id',
+                'name',
+                'type_id',
+                'is_fast',
+                'fusion_id',
+                'raid_power',
+                'pvp_power',
             ],
         }
         self.current_entity_type = 'pokemon'
@@ -82,7 +93,17 @@ class PokemonDatabaseApp:
         self.sort_dropdown.pack(side=tk.LEFT)
         self.sort_dropdown.bind('<<ComboboxSelected>>', self.on_sort_selection_changed)
 
+        self.add_button = tk.Button(
+            controls,
+            text='Add Move',
+            command=self.on_add_button_clicked,
+            state=tk.DISABLED,
+            width=12,
+        )
+        self.add_button.pack(side=tk.RIGHT)
+
         self.update_sort_dropdown()
+        self.update_add_button_state()
 
     def update_sort_dropdown(self):
         options = self.sort_options_by_entity[self.current_entity_type]
@@ -93,6 +114,7 @@ class PokemonDatabaseApp:
     def on_entity_selection_changed(self, event):
         self.current_entity_type = self.entity_options[self.entity_var.get()]
         self.update_sort_dropdown()
+        self.update_add_button_state()
         self.load_pokemon_list_sorted(self.sort_var.get())
 
     def on_sort_selection_changed(self, event):
@@ -109,20 +131,34 @@ class PokemonDatabaseApp:
         self.pokemon_listbox.delete(0, tk.END)
         if self.current_entity_type == 'fusion':
             entries = self.db_manager.fetch_all_fusions_sorted(sort_by)
+        elif self.current_entity_type == 'moves':
+            entries = self.db_manager.fetch_all_moves_sorted(sort_by)
         else:
             entries = self.db_manager.fetch_all_pokemon_sorted(sort_by)
 
         for entry in entries:
             self.pokemon_listbox.insert(tk.END, entry)
 
+    def update_add_button_state(self):
+        self.add_button.config(
+            state=tk.NORMAL if self.current_entity_type == 'moves' else tk.DISABLED
+        )
+
+    def on_add_button_clicked(self):
+        if self.current_entity_type != 'moves':
+            return
+        self.show_move_details(None)
+
     def on_pokemon_select(self, event):
         index = self.pokemon_listbox.curselection()
         if not index:
             return
 
-        selected_id = self.pokemon_listbox.get(index).split(':')[0].strip()
+        selected_id = self.pokemon_listbox.get(index).split(':', 1)[0].strip()
         if self.current_entity_type == 'fusion':
             self.show_fusion_details(selected_id)
+        elif self.current_entity_type == 'moves':
+            self.show_move_details(selected_id)
         else:
             self.show_pokemon_details(selected_id)
 
@@ -133,3 +169,15 @@ class PokemonDatabaseApp:
     def show_fusion_details(self, fusion_id):
         details = self.db_manager.fetch_fusion_details(fusion_id)
         FusionDetailsWindow(self.root, fusion_id, details, db_manager=self.db_manager)
+
+    def show_move_details(self, move_id):
+        details = None
+        if move_id is not None:
+            details = self.db_manager.fetch_move_details(move_id)
+        MoveDetailsWindow(
+            self.root,
+            move_id,
+            details,
+            db_manager=self.db_manager,
+            on_commit=lambda: self.load_pokemon_list_sorted(self.sort_var.get()),
+        )

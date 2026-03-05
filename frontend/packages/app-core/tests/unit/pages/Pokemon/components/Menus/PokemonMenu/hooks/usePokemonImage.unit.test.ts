@@ -28,6 +28,8 @@ describe('usePokemonImage', () => {
         megaForm: undefined,
         isFused: false,
         fusionForm: undefined,
+        isCrown: false,
+        crownForm: undefined,
         isPurified: false,
         isGigantamax: false,
       })
@@ -50,6 +52,8 @@ describe('usePokemonImage', () => {
         megaForm: 'X',
         isFused: true,
         fusionForm: 'fusion_1',
+        isCrown: false,
+        crownForm: undefined,
         isPurified: true,
         isGigantamax: true,
       })
@@ -63,9 +67,10 @@ describe('usePokemonImage', () => {
       true,
       'fusion_1',
       true,
-      true
+      true,
+      false,
+      undefined,
     );
     expect(result.current).toBe('/images/custom.png');
   });
 });
-
