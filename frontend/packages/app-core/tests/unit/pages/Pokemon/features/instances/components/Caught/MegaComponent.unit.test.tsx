@@ -21,7 +21,7 @@ const makeMegaEvolution = () => ({
 });
 
 describe('MegaComponent', () => {
-  it('shows a desaturated mega icon in read mode when mega is available', () => {
+  it('shows a disabled mega evolve action in read mode when mega is available', () => {
     render(
       <MegaComponent
         megaData={baseMegaData}
@@ -30,13 +30,15 @@ describe('MegaComponent', () => {
         megaEvolutions={[makeMegaEvolution()]}
         isShadow={false}
         name="Tyranitar"
+        basePokemonId={248}
+        isShiny={false}
       />,
     );
 
-    const image = screen.getByAltText('Mega Toggle');
-    expect(image).toBeInTheDocument();
-    expect(image).toHaveClass('desaturated');
-    expect(image).toHaveClass('static-mode');
+    const button = screen.getByRole('button', { name: /mega evolve/i });
+    expect(button).toBeInTheDocument();
+    expect(button).toBeDisabled();
+    expect(screen.getByAltText('Mega Icon')).toBeInTheDocument();
   });
 
   it('does not toggle mega state when edit mode is off', () => {
@@ -50,10 +52,12 @@ describe('MegaComponent', () => {
         megaEvolutions={[makeMegaEvolution()]}
         isShadow={false}
         name="Tyranitar"
+        basePokemonId={248}
+        isShiny={false}
       />,
     );
 
-    fireEvent.click(screen.getByAltText('Mega Toggle'));
+    fireEvent.click(screen.getByRole('button', { name: /mega evolve/i }));
     expect(setMegaData).not.toHaveBeenCalled();
   });
 
@@ -68,10 +72,12 @@ describe('MegaComponent', () => {
         megaEvolutions={[makeMegaEvolution()]}
         isShadow={false}
         name="Tyranitar"
+        basePokemonId={248}
+        isShiny={false}
       />,
     );
 
-    fireEvent.click(screen.getByAltText('Mega Toggle'));
+    fireEvent.click(screen.getByRole('button', { name: /mega evolve/i }));
     expect(setMegaData).toHaveBeenCalledWith({
       isMega: true,
       mega: true,
@@ -88,9 +94,29 @@ describe('MegaComponent', () => {
         megaEvolutions={[]}
         isShadow={false}
         name="Tyranitar"
+        basePokemonId={248}
+        isShiny={false}
       />,
     );
 
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('shows a change form action to return to base when mega is active', () => {
+    render(
+      <MegaComponent
+        megaData={{ isMega: true, mega: true, megaForm: null }}
+        setMegaData={vi.fn()}
+        editMode={true}
+        megaEvolutions={[makeMegaEvolution()]}
+        isShadow={false}
+        name="Tyranitar"
+        basePokemonId={248}
+        isShiny={false}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /change form/i })).toBeInTheDocument();
+    expect(screen.getByAltText('Base Form')).toBeInTheDocument();
   });
 });

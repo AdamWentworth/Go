@@ -13,6 +13,7 @@
   padding: 0;
   -ms-overflow-style: none;
   scrollbar-width: none;
+  scrollbar-gutter: stable both-edges;
 }
 .instance-overlay::-webkit-scrollbar { display: none; }
 
@@ -46,42 +47,135 @@
   transform: scale(var(--bg-scale));
   transform-origin: center;
   will-change: transform, filter;
+  transition:
+    opacity 220ms ease,
+    transform 280ms ease,
+    filter 280ms ease;
+}
+
+.io-bg-img.is-transitioning {
+  opacity: 0.58;
+  transform: scale(calc(var(--bg-scale) + 0.03));
 }
 
 /* ensure all other overlay content sits above the background */
-.instance-overlay > *:not(.io-bg) { position: relative; z-index: 1; }
+.instance-overlay > *:not(.io-bg):not(.instance-nav-arrow) { position: relative; z-index: 1; }
+
+.instance-nav-arrow {
+  position: fixed;
+  width: var(--instance-nav-hit-size, 34px);
+  height: var(--instance-nav-hit-size, 34px);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2100;
+  margin: 0;
+  pointer-events: auto;
+  bottom: calc(
+    var(--overlay-close-button-bottom) +
+    ((var(--overlay-close-button-size) - var(--instance-nav-hit-size)) / 2) +
+    var(--instance-nav-y-nudge, 3px)
+  );
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.55);
+}
+
+.instance-nav-arrow--left {
+  left: max(
+    -4px,
+    calc(var(--caught-shell-side-gap, 2.5vw) - var(--instance-nav-x-outset, 32px))
+  );
+  right: auto;
+}
+
+.instance-nav-arrow--right {
+  right: max(
+    -4px,
+    calc(var(--caught-shell-side-gap, 2.5vw) - var(--instance-nav-x-outset, 32px))
+  );
+  left: auto;
+}
+
+.instance-nav-arrow:hover {
+  transform: scale(1.06);
+}
+
+.instance-nav-arrow:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
 
 /* caught mode layout */
 .instance-overlay.caught-mode {
   align-items: stretch;
   --overlay-close-button-size: clamp(50px, 12vw, 80px);
+  --overlay-close-button-bottom: 20px;
   --overlay-close-button-gap: 20px;
+  --caught-scroll-tail-pad: 0px;
+  --caught-shell-max-width: 500px;
+  --caught-shell-width: min(95vw, var(--caught-shell-max-width));
+  --caught-shell-side-gap: 2.5vw;
+  --instance-nav-hit-size: 34px;
+  --instance-nav-x-outset: 32px;
+  --instance-nav-y-nudge: 15px;
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
+}
+
+@media (min-width: 527px) {
+  .instance-overlay.caught-mode {
+    --caught-shell-side-gap: calc((100vw - var(--caught-shell-max-width)) / 2);
+  }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+  .instance-overlay.caught-mode {
+    --overlay-close-button-size: clamp(60px, 10vw, 90px);
+  }
+}
+
+@media (min-width: 768px) {
+  .instance-overlay.caught-mode {
+    --overlay-close-button-size: clamp(60px, 3.5vw, 80px);
+  }
 }
 
 /* container that fills full viewport; no extra padding here */
 .caught-fullscreen {
   position: relative;
   flex: 1 1 auto;
-  width: 100%;
+  width: var(--caught-shell-width);
+  min-width: var(--caught-shell-width);
   height: 100%;
-  max-width: 100%;
+  max-width: var(--caught-shell-max-width);
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 /* SCROLL AREA: add safe padding so content is never hidden under the close button */
 .caught-fullscreen .caught-scroll {
-  width: 100%;
+  width: var(--caught-shell-width);
+  min-width: var(--caught-shell-width);
+  max-width: var(--caught-shell-max-width);
   margin: 0 auto;
   display: flex;
   justify-content: center;
   overflow: visible;
-  padding-top: calc(24px + env(safe-area-inset-bottom));
+  padding-top: calc(16px + env(safe-area-inset-top));
   padding-bottom: calc(
-    32px +
     var(--overlay-close-button-size) +
-    var(--overlay-close-button-gap) +
+    var(--overlay-close-button-bottom) +
+    var(--caught-scroll-tail-pad) +
     env(safe-area-inset-bottom)
   );
   min-height: 100dvh;
@@ -94,8 +188,10 @@
   --caught-stage-lift: 48px;
   --panel-offset: 240px;
 
-  width: min(92.5%, 500px);
-  max-width: 500px;
+  flex: 0 0 var(--caught-shell-width);
+  width: var(--caught-shell-width);
+  min-width: var(--caught-shell-width);
+  max-width: var(--caught-shell-max-width);
   height: 100%;
   margin: 0 auto;
   background: transparent;              /* was: #333 */
@@ -104,6 +200,8 @@
   flex-direction: column;
   gap: 12px;
   position: relative;
+  box-sizing: border-box;
+  overflow-x: clip;
 }
 
 /* draw the #333 panel starting lower down, exposing the image above */

@@ -151,6 +151,7 @@ export default function usePokemonPageController({
   const [activeView, setActiveView] = useState<ActiveView>('pokemon');
   const [dragOffset, setDragOffset] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const isOverlayOpen = selectedPokemon !== null;
 
   const {
     showEvolutionaryLine,
@@ -316,7 +317,14 @@ export default function usePokemonPageController({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const maxPeekDistance = 0.3;
 
+  useEffect(() => {
+    if (!isOverlayOpen) return;
+    setDragOffset(0);
+    setIsDragging(false);
+  }, [isOverlayOpen]);
+
   const swipeHandlers = useSwipeHandler({
+    disabled: isOverlayOpen,
     onSwipe: (dir) => {
       if (dir) setActiveView(getNextActiveView(activeView, dir));
       setDragOffset(0);

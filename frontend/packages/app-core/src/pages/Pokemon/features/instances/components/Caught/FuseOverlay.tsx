@@ -1,4 +1,5 @@
 import React from 'react';
+import '@/components/modals/ModalStyles.css';
 import './FuseOverlay.css';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import { createScopedLogger } from '@/utils/logger';
@@ -75,10 +76,10 @@ const FuseOverlay: React.FC<FuseOverlayProps> = ({
   }
 
   return (
-    <div className="fuse-overlay">
-      <div className="overlay-content">
+    <div className="fuse-overlay modal-overlay">
+      <div className="overlay-content modal">
         <h3 className="fuse-overlay-title">Select Fusion Partner</h3>
-        <div className="fuse-candidate-list" role="list" aria-label="Fusion candidates">
+        <div className="fuse-candidate-list modal-content" role="list" aria-label="Fusion candidates">
           {candidates.map((candidate) => {
             const isSelected =
               Boolean(candidate.instanceData?.instance_id) &&
@@ -132,14 +133,14 @@ const FuseOverlay: React.FC<FuseOverlayProps> = ({
           })}
         </div>
 
-        <div className="fuse-overlay-actions">
-          <button type="button" onClick={onClose} className="close-overlay">
+        <div className="fuse-overlay-actions modal-actions">
+          <button type="button" onClick={onClose} className="close-overlay btn btn-secondary">
             Cancel
           </button>
           <button
             type="button"
             onClick={handleFuse}
-            className="fuse-button"
+            className="fuse-button btn btn-success"
             disabled={!activePokemon}
           >
             Fuse

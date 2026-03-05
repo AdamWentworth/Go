@@ -4,85 +4,74 @@
   justify-content: center;
 }
 
-.crown-component--actions {
+.crown-component--stateful {
   width: 100%;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
-}
-
-.crown-component .crown-image {
-  width: 40px;
-  height: 40px;
-  transition: filter 0.3s ease, cursor 0.3s ease, opacity 0.3s ease;
-  object-fit: contain;
-}
-
-.crown-component .saturated {
-  filter: none;
-}
-
-.crown-component .desaturated {
-  filter: grayscale(100%);
-}
-
-.crown-component .static-mode {
-  pointer-events: none;
-  cursor: default;
-  opacity: 1;
-}
-
-.crown-component .crown-image.interactive:hover {
-  opacity: 0.8;
-}
-
-.crown-component .static-mode:hover {
-  opacity: 1;
+  display: flex;
+  justify-content: center;
 }
 
 .crown-action-button {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  width: 100%;
-  border: 1px solid rgba(166, 196, 186, 0.75);
-  background: rgba(34, 53, 49, 0.45);
-  color: #e0f0e5;
-  border-radius: 10px;
-  padding: 6px 8px;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
   cursor: pointer;
-  text-align: left;
 }
 
 .crown-action-button:disabled {
-  opacity: 0.62;
+  opacity: 0.58;
   cursor: default;
 }
 
-.crown-action-button.is-active {
-  border-color: rgba(219, 245, 234, 0.95);
-  background: rgba(65, 97, 88, 0.55);
+.crown-action-media {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
-.crown-action-icon {
+
+.crown-state-layout {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+.crown-state-row {
+  width: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+
+.crown-partner-icon,
+.crown-partner-icon-spacer {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+}
+
+.crown-partner-icon {
   object-fit: contain;
-  flex: 0 0 auto;
 }
 
-.crown-action-icon--energy {
-  width: 22px;
-  height: 22px;
+.crown-partner-icon--energy {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
 }
 
-.crown-action-icon--form {
-  width: 30px;
-  height: 30px;
-}
-
-.crown-action-text {
-  font-size: 12px;
-  line-height: 1.2;
-  letter-spacing: 0.01em;
-  text-transform: none;
+.crown-partner-icon--target {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
 }

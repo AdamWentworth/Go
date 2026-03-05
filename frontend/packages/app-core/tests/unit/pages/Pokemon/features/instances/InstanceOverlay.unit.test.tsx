@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import InstanceOverlay from '@/pages/Pokemon/features/instances/InstanceOverlay';
 
 vi.mock('@/components/OverlayPortal', () => ({
@@ -195,5 +195,113 @@ describe('InstanceOverlay', () => {
     );
 
     expect(screen.getByTestId('caught-instance')).toHaveTextContent('PokePete35');
+  });
+
+  it('shows only next arrow on first pokemon and navigates forward on arrow click', async () => {
+    const p1 = makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'i-1' } });
+    const p2 = makePokemon({ variant_id: '0002-default', instanceData: { instance_id: 'i-2' } });
+    const onNavigatePokemon = vi.fn();
+
+    render(
+      <InstanceOverlay
+        pokemon={p1}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="caught"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+        navigationPokemons={[p1, p2]}
+        onNavigatePokemon={onNavigatePokemon}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Previous Pokemon' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next Pokemon' })).not.toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Next Pokemon' }));
+    await waitFor(() => expect(onNavigatePokemon).toHaveBeenCalledWith(p2));
+  });
+
+  it('navigates forward when swiping left on caught overlay', async () => {
+    const p1 = makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'i-1' } });
+    const p2 = makePokemon({ variant_id: '0002-default', instanceData: { instance_id: 'i-2' } });
+    const onNavigatePokemon = vi.fn();
+
+    render(
+      <InstanceOverlay
+        pokemon={p1}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="caught"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+        navigationPokemons={[p1, p2]}
+        onNavigatePokemon={onNavigatePokemon}
+      />,
+    );
+
+    const overlay = document.querySelector('.instance-overlay') as HTMLElement | null;
+    expect(overlay).not.toBeNull();
+
+    fireEvent.mouseDown(overlay as HTMLElement, {
+      button: 0,
+      clientX: 260,
+      clientY: 220,
+    });
+    fireEvent.mouseUp(overlay as HTMLElement, {
+      clientX: 120,
+      clientY: 218,
+    });
+
+    await waitFor(() => expect(onNavigatePokemon).toHaveBeenCalledWith(p2));
+  });
+
+  it('remounts caught instance state when navigating to a different pokemon', async () => {
+    const p1 = makePokemon({
+      variant_id: '0001-default',
+      instanceData: {
+        instance_id: 'i-1',
+        original_trainer_name: 'TrainerOne',
+      },
+    });
+    const p2 = makePokemon({
+      variant_id: '0002-default',
+      instanceData: {
+        instance_id: 'i-2',
+        original_trainer_name: 'TrainerTwo',
+      },
+    });
+
+    render(
+      <InstanceOverlay
+        pokemon={p1}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="caught"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+        navigationPokemons={[p1, p2]}
+      />,
+    );
+
+    expect(screen.getByTestId('caught-instance')).toHaveTextContent('TrainerOne');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next Pokemon' }));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('caught-instance')).toHaveTextContent('TrainerTwo'),
+    );
+    expect(screen.getByTestId('caught-instance')).not.toHaveTextContent('TrainerOne');
   });
 });

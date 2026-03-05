@@ -91,6 +91,18 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
       ),
     [sortedPokemons]
   );
+  const renderableInstancePokemons = useMemo(
+    () =>
+      renderablePokemons.filter(
+        (pokemon) =>
+          Boolean(
+            pokemon.instanceData &&
+              typeof pokemon.instanceData.instance_id === 'string' &&
+              pokemon.instanceData.instance_id.length > 0,
+          ),
+      ),
+    [renderablePokemons],
+  );
 
   const handleSelect = useCallback(
     (pokemon: PokemonVariant) => {
@@ -224,6 +236,10 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
           variants={variants}
           isEditable={isEditable}
           username={username}
+          navigationPokemons={renderableInstancePokemons}
+          onNavigatePokemon={(nextPokemon) =>
+            setSelectedPokemon({ pokemon: nextPokemon as PokemonVariant, overlayType: 'instance' })
+          }
         />
       ) : selectedPokemon ? (
         <PokedexOverlay

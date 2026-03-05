@@ -55,6 +55,17 @@
   color: #fff;
 }
 
+.btn-success {
+  background: linear-gradient(90deg, #a2db96 0%, #a2db96 15%, #28c7a4 85%, #28c7a4 100%);
+  color: #fff;
+  font-weight: 600;
+}
+
+.btn-success:disabled {
+  background-color: #6c757d;
+  color: #fff;
+}
+
 .btn-link {
   background: none;
   border: none;

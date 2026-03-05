@@ -10,6 +10,9 @@ import type { MegaData } from '../utils/buildInstanceChanges';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
 type PokemonWithInstance = {
+  pokemon_id?: number;
+  image_url?: string;
+  image_url_shiny?: string;
   variantType?: PokemonVariant['variantType'];
   variant_id?: PokemonVariant['variant_id'];
   max?: PokemonVariant['max'];
@@ -117,6 +120,10 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
               megaEvolutions={megaEvolutions}
               isShadow={isShadow}
               name={name}
+              basePokemonId={typeof pokemon.pokemon_id === 'number' ? pokemon.pokemon_id : null}
+              baseImageUrl={pokemon.image_url ?? null}
+              baseShinyImageUrl={pokemon.image_url_shiny ?? null}
+              isShiny={isShiny}
             />
           </div>
         ) : null}

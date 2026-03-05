@@ -124,8 +124,8 @@ describe('FusionComponent', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Separate' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Separate' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Separate/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Separate/i })).toBeDisabled();
   });
 
   it('triggers separate action when Separate is clicked in edit mode', () => {
@@ -143,7 +143,7 @@ describe('FusionComponent', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Separate' }));
+    fireEvent.click(screen.getByRole('button', { name: /Separate/i }));
     expect(onUndoFusion).toHaveBeenCalledTimes(1);
   });
 });

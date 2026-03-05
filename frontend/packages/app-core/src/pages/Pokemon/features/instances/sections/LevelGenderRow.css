@@ -6,6 +6,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  min-height: 30px;
   position: relative;
   margin-bottom: 10px;
 }

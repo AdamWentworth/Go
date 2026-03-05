@@ -76,11 +76,12 @@
 }
 
 .moves-page {
-  width: 50%;
-  flex: 0 0 50%;
-  box-sizing: border-box;
-  padding: 0 var(--moves-page-inline-pad);
-  overflow: hidden;
+    width: 50%;
+    flex: 0 0 50%;
+    box-sizing: border-box;
+    padding: 0 var(--moves-page-inline-pad);
+    padding-top: 1px;
+    overflow: hidden;
 }
 
 .move-section {

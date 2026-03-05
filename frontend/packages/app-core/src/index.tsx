@@ -12,6 +12,13 @@ import './index.css';
 
 const log = createScopedLogger('index');
 
+document.addEventListener('contextmenu', (event) => {
+  const target = event.target as HTMLElement | null;
+  if (target?.closest('img')) {
+    event.preventDefault();
+  }
+});
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker

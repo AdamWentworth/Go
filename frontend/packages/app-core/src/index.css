@@ -13,6 +13,14 @@ html, body {
   overflow-y: scroll;  /* Enable scrolling but hide scrollbar */
   scrollbar-width: none; /* Hide scrollbar in Firefox */
   -ms-overflow-style: none; /* Hide scrollbar in IE and Edge */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+#root {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Hide scrollbar for Chrome, Safari, Edge */
@@ -29,6 +37,19 @@ select,
 textarea,
 option {
   font-family: var(--font-family-base);
+}
+
+input,
+textarea,
+select,
+[contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+img {
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 

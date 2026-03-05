@@ -1,4 +1,5 @@
 import React from 'react';
+import '@/components/modals/ModalStyles.css';
 import './FusionComponent.css';
 import { resolveAssetUrl } from '@/utils/assetUrl';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
@@ -123,39 +124,31 @@ const FusionComponent: React.FC<FusionComponentProps> = ({
     <div className="fusion-component">
       {fusionState.is_fused ? (
         <div className="fusion-state-layout">
-          <span className="fusion-state-label">
-            {currentFusion?.name ?? fusionState.fusion_form ?? 'Fusion active'}
-          </span>
-
           <div className="fusion-state-row">
-            {leftPokemonId != null ? (
-              <img
-                src={buildPokemonIconUrl(leftPokemonId, isShiny)}
-                alt={pokemon.name ?? `Pokemon ${leftPokemonId}`}
-                className="fusion-partner-icon fusion-partner-icon--left"
-              />
-            ) : (
-              <span className="fusion-partner-icon-spacer" aria-hidden="true" />
-            )}
-
             <button
               type="button"
-              className="fusion-action-button"
+              className="fusion-action-button btn btn-success"
               disabled={!editMode}
               onClick={onUndoFusion}
             >
-              Separate
-            </button>
+              {leftPokemonId != null ? (
+                <img
+                  src={buildPokemonIconUrl(leftPokemonId, isShiny)}
+                  alt={pokemon.name ?? `Pokemon ${leftPokemonId}`}
+                  className="fusion-partner-icon fusion-partner-icon--left"
+                />
+              ) : null}
 
-            {rightPokemonId != null ? (
-              <img
-                src={buildPokemonIconUrl(rightPokemonId, rightIsShiny)}
-                alt={`Pokemon ${rightPokemonId}`}
-                className="fusion-partner-icon fusion-partner-icon--right"
-              />
-            ) : (
-              <span className="fusion-partner-icon-spacer" aria-hidden="true" />
-            )}
+              Separate
+
+              {rightPokemonId != null ? (
+                <img
+                  src={buildPokemonIconUrl(rightPokemonId, rightIsShiny)}
+                  alt={`Pokemon ${rightPokemonId}`}
+                  className="fusion-partner-icon fusion-partner-icon--right"
+                />
+              ) : null}
+            </button>
           </div>
         </div>
       ) : (
@@ -164,7 +157,7 @@ const FusionComponent: React.FC<FusionComponentProps> = ({
             <button
               key={fusionItem.fusion_id}
               type="button"
-              className="fusion-option-button"
+              className="fusion-option-button btn btn-success"
               disabled={!editMode}
               onClick={() => onFusionToggle(fusionItem.fusion_id)}
               title={editMode ? undefined : 'Enable edit mode to fuse this Pokemon.'}

@@ -30,7 +30,7 @@ const makeCrownForms = () => [
 ];
 
 describe('CrownComponent', () => {
-  it('renders crown actions with energy icons in edit mode', () => {
+  it('renders only the executable crown action in hero state', () => {
     render(
       <CrownComponent
         crownData={{ isCrown: false, crownForm: null }}
@@ -41,14 +41,13 @@ describe('CrownComponent', () => {
       />,
     );
 
-    expect(screen.getByText('Change to Crowned Sword form')).toBeInTheDocument();
-    expect(screen.getByText('Change to Crowned Shield form')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /change form/i })).toBeInTheDocument();
     expect(screen.getByAltText('Crowned Sword energy')).toBeInTheDocument();
-    expect(screen.getByAltText('Crowned Shield energy')).toBeInTheDocument();
-    expect(screen.getByText('Change to Hero form')).toBeInTheDocument();
+    expect(screen.getByAltText('Crowned Sword')).toBeInTheDocument();
+    expect(screen.queryByAltText('Crowned Shield')).not.toBeInTheDocument();
   });
 
-  it('sets selected crown form when a crown action is clicked', () => {
+  it('sets selected crown form when the available crown action is clicked', () => {
     const setCrownData = vi.fn();
 
     render(
@@ -61,11 +60,11 @@ describe('CrownComponent', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /change to crowned shield form/i }));
+    fireEvent.click(screen.getByRole('button', { name: /change form/i }));
 
     expect(setCrownData).toHaveBeenCalledWith({
       isCrown: true,
-      crownForm: 'Crowned Shield',
+      crownForm: 'Crowned Sword',
     });
   });
 
@@ -82,7 +81,9 @@ describe('CrownComponent', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /change to hero form/i }));
+    expect(screen.getByAltText('Hero')).toBeInTheDocument();
+    expect(screen.queryByAltText('Crowned Sword')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /change form/i }));
 
     expect(setCrownData).toHaveBeenCalledWith({
       isCrown: false,
@@ -90,10 +91,10 @@ describe('CrownComponent', () => {
     });
   });
 
-  it('renders static image-only mode when edit mode is off', () => {
+  it('renders same action content in read mode but disabled', () => {
     render(
       <CrownComponent
-        crownData={{ isCrown: true, crownForm: 'Crowned Sword' }}
+        crownData={{ isCrown: false, crownForm: null }}
         setCrownData={vi.fn()}
         editMode={false}
         crownForms={makeCrownForms()}
@@ -101,8 +102,9 @@ describe('CrownComponent', () => {
       />,
     );
 
-    expect(screen.getByAltText('Crown Toggle')).toBeInTheDocument();
-    expect(screen.queryByText('Change to Crowned Sword form')).not.toBeInTheDocument();
+    const button = screen.getByRole('button', { name: /change form/i });
+    expect(button).toBeDisabled();
+    expect(screen.getByAltText('Crowned Sword energy')).toBeInTheDocument();
+    expect(screen.getByAltText('Crowned Sword')).toBeInTheDocument();
   });
 });
-

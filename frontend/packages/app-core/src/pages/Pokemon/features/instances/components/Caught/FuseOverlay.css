@@ -2,32 +2,34 @@
 .fuse-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 16px;
+  padding: 14px;
   z-index: 2000;
 }
 
 .fuse-overlay .overlay-content {
   width: min(680px, 100%);
   max-height: min(82vh, 760px);
-  background: #1f2b2a;
-  border: 1px solid rgba(156, 186, 175, 0.35);
-  border-radius: 14px;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.34);
+  background: #333;
+  border: 1px solid rgba(191, 212, 203, 0.28);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.36);
   padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  color: #e0f0e5;
+  font-family: var(--font-family-base);
 }
 
 .fuse-overlay-title {
   margin: 0;
-  color: #d8ebdf;
+  color: #e0f0e5;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   font-size: 12px;
   font-weight: 600;
 }
@@ -38,11 +40,12 @@
   gap: 8px;
   overflow-y: auto;
   padding-right: 2px;
+  margin-bottom: 0;
 }
 
 .fuse-candidate-card {
-  border: 1px solid rgba(173, 198, 188, 0.3);
-  background: rgba(31, 50, 46, 0.86);
+  border: 1px solid rgba(186, 205, 197, 0.26);
+  background: rgba(170, 170, 170, 0.16);
   color: #e0f0e5;
   border-radius: 10px;
   display: grid;
@@ -52,11 +55,19 @@
   padding: 8px 10px;
   cursor: pointer;
   text-align: left;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.fuse-candidate-card:hover {
+  border-color: rgba(206, 224, 216, 0.42);
+  background: rgba(170, 170, 170, 0.24);
 }
 
 .fuse-candidate-card.is-selected {
-  border-color: rgba(245, 180, 78, 0.95);
-  background: rgba(57, 75, 68, 0.95);
+  border-color: rgba(224, 240, 229, 0.62);
+  background: rgba(170, 170, 170, 0.31);
 }
 
 .fuse-candidate-image {
@@ -95,7 +106,7 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
-  color: #f3f8f4;
+  color: #e0f0e5;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
@@ -115,7 +126,7 @@
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid rgba(211, 234, 224, 0.45);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.32);
 }
 
 .fuse-candidate-background-label {
@@ -141,32 +152,51 @@
   justify-content: flex-end;
   gap: 8px;
   margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(224, 240, 229, 0.16);
 }
 
 .fuse-overlay .fuse-button,
 .fuse-overlay .close-overlay {
-  border: 0;
-  border-radius: 8px;
-  min-width: 90px;
-  padding: 8px 14px;
+  min-width: 96px;
+  border-radius: 999px;
+  padding: 7px 14px;
   font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
+  line-height: 1;
   letter-spacing: 0.04em;
-  cursor: pointer;
-}
-
-.fuse-overlay .close-overlay {
-  background: #2a3a37;
-  color: #e1efe5;
-}
-
-.fuse-overlay .fuse-button {
-  background: #f5b44e;
-  color: #1b2524;
+  text-transform: uppercase;
+  font-weight: 700;
 }
 
 .fuse-overlay .fuse-button:disabled {
-  opacity: 0.55;
+  opacity: 1;
   cursor: default;
+}
+
+.fuse-overlay .close-overlay {
+  border: 1px solid rgba(181, 198, 190, 0.42);
+  background: rgba(49, 64, 60, 0.78);
+  color: #e1efe5;
+}
+
+.fuse-overlay .close-overlay:hover {
+  background: rgba(58, 74, 70, 0.94);
+}
+
+.fuse-candidate-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.fuse-candidate-list::-webkit-scrollbar-track {
+  background: rgba(14, 22, 20, 0.9);
+  border-radius: 8px;
+}
+
+.fuse-candidate-list::-webkit-scrollbar-thumb {
+  background: rgba(102, 136, 125, 0.9);
+  border-radius: 8px;
+}
+
+.fuse-candidate-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(143, 182, 168, 0.94);
 }

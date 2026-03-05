@@ -1,5 +1,5 @@
 // useSwipeHandler.ts
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 
 const SWIPE_THRESHOLD      = 100;
 const MAX_PEEK_DISTANCE    = 0.3;
@@ -11,6 +11,7 @@ const DIRECTION_LOCK_ANGLE = 30;
 export interface UseSwipeHandlerProps {
   onSwipe?: (direction: 'left' | 'right' | null) => void;
   onDrag? : (dx: number) => void;
+  disabled?: boolean;
 }
 
 /** Keys match real React DOM-event names so callers can spread directly. */
@@ -24,7 +25,7 @@ export interface SwipeHandlers {
 }
 
 export default function useSwipeHandler(
-  { onSwipe, onDrag }: UseSwipeHandlerProps,
+  { onSwipe, onDrag, disabled = false }: UseSwipeHandlerProps,
 ): SwipeHandlers {
   const startX = useRef(0);
   const startY = useRef(0);
@@ -44,6 +45,7 @@ export default function useSwipeHandler(
 
   /* ----- core ------------------------------------------------------ */
   const handleStart = useCallback((x: number, y: number) => {
+    if (disabled) return;
     if (isInteractiveElement(document.elementFromPoint(x, y))) return;
 
     startX.current = x;
@@ -51,10 +53,10 @@ export default function useSwipeHandler(
     lastX.current  = x;
     isDragging.current = true;
     directionLock.current = null;
-  }, []);
+  }, [disabled]);
 
   const handleMove = useCallback((x: number, y: number) => {
-    if (!isDragging.current) return;
+    if (disabled || !isDragging.current) return;
 
     if (!directionLock.current) {
       const dx = x - startX.current;
@@ -75,9 +77,14 @@ export default function useSwipeHandler(
       onDrag?.(limitedDx);
       lastX.current = x;
     }
-  }, [onDrag]);
+  }, [disabled, onDrag]);
 
   const handleEnd = useCallback(() => {
+    if (disabled) {
+      isDragging.current = false;
+      directionLock.current = null;
+      return;
+    }
     if (!isDragging.current) return;
 
     const dx = lastX.current - startX.current;
@@ -85,7 +92,17 @@ export default function useSwipeHandler(
 
     onSwipe?.(absDx > SWIPE_THRESHOLD ? (dx > 0 ? 'right' : 'left') : null);
     isDragging.current = false;
-  }, [onSwipe]);
+  }, [disabled, onSwipe]);
+
+  useEffect(() => {
+    if (!disabled) return;
+    isDragging.current = false;
+    directionLock.current = null;
+    startX.current = 0;
+    startY.current = 0;
+    lastX.current = 0;
+    onDrag?.(0);
+  }, [disabled, onDrag]);
 
   /* ----- touch ----------------------------------------------------- */
   const onTouchStart = useCallback((e: React.TouchEvent) => {
