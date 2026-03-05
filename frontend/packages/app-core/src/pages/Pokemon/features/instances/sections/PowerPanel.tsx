@@ -87,6 +87,9 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
     !isShadow &&
     !name.toLowerCase().includes('clone');
   const canRenderCrown = Array.isArray(crownForms) && crownForms.length > 0 && !isShadow;
+  const isShiny =
+    Boolean(pokemon.instanceData?.shiny) ||
+    (typeof pokemon.variantType === 'string' && pokemon.variantType.includes('shiny'));
   const renderedPowerCount =
     Number(canRenderMax) + Number(canRenderMega) + Number(canRenderCrown);
 
@@ -125,6 +128,7 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
               editMode={editMode}
               crownForms={crownForms}
               isShadow={isShadow}
+              isShiny={isShiny}
             />
           </div>
         ) : null}

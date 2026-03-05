@@ -92,6 +92,33 @@ const parseBackgroundId = (value: unknown): number | null => {
   return null;
 };
 
+const normalizeFormToken = (value: string | null | undefined): string =>
+  String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ');
+
+const buildTypeIcon = (typeName?: string | null): string | undefined => {
+  const normalized = typeof typeName === 'string' ? typeName.trim().toLowerCase() : '';
+  return normalized ? `/images/types/${normalized}.png` : undefined;
+};
+
+const normalizeTypeName = (value: string | null | undefined): string | undefined => {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const parseFusionId = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
 const PokemonCard = memo(({
   pokemon,
   onSelect,
@@ -111,6 +138,112 @@ const PokemonCard = memo(({
     isDisabled, isFemale, isMega, megaForm,
     isFused, fusionForm, isCrown, isPurified, isDynamax, isGigantamax
   } = usePokemonAttributes(pokemon);
+  const activeCrownForm = useMemo(
+    () => resolveActiveCrownForm(pokemon.crownForms, undefined),
+    [pokemon.crownForms],
+  );
+  const activeMegaEvolution = useMemo(() => {
+    if (!isMega || !Array.isArray(pokemon.megaEvolutions) || pokemon.megaEvolutions.length === 0) {
+      return undefined;
+    }
+    const normalizedForm = normalizeFormToken(megaForm);
+    if (normalizedForm.length === 0) {
+      return (
+        pokemon.megaEvolutions.find((entry) => normalizeFormToken(entry.form) === '') ??
+        pokemon.megaEvolutions[0]
+      );
+    }
+    return (
+      pokemon.megaEvolutions.find((entry) => normalizeFormToken(entry.form) === normalizedForm) ??
+      pokemon.megaEvolutions[0]
+    );
+  }, [isMega, megaForm, pokemon.megaEvolutions]);
+  const activeFusionEntry = useMemo(() => {
+    if (!isFused || !Array.isArray(pokemon.fusion) || pokemon.fusion.length === 0) {
+      return undefined;
+    }
+    const normalizedFusionForm = normalizeFormToken(fusionForm);
+    if (normalizedFusionForm.length > 0) {
+      return (
+        pokemon.fusion.find((entry) => normalizeFormToken(entry.name) === normalizedFusionForm) ??
+        pokemon.fusion[0]
+      );
+    }
+
+    const storedFusion = pokemon.instanceData?.fusion as Record<string, unknown> | null | undefined;
+    const storedFusionId =
+      parseFusionId(storedFusion?.fusion_id) ??
+      parseFusionId(storedFusion?.id);
+    if (storedFusionId != null) {
+      return (
+        pokemon.fusion.find((entry) => entry.fusion_id === storedFusionId) ??
+        pokemon.fusion[0]
+      );
+    }
+
+    return pokemon.fusion[0];
+  }, [fusionForm, isFused, pokemon.fusion, pokemon.instanceData?.fusion]);
+  const displayTypeData = useMemo(() => {
+    const baseType1 = pokemon.type1_name;
+    const baseType2 = pokemon.type2_name;
+    const baseType1Icon = pokemon.type_1_icon || buildTypeIcon(baseType1);
+    const baseType2Icon = pokemon.type_2_icon || buildTypeIcon(baseType2);
+
+    if (isFused && activeFusionEntry) {
+      const fusionType1 = activeFusionEntry.type1_name ?? baseType1;
+      const fusionType2 = activeFusionEntry.type2_name ?? baseType2;
+      return {
+        type1_name: fusionType1,
+        type2_name: fusionType2,
+        type_1_icon: buildTypeIcon(fusionType1) ?? baseType1Icon,
+        type_2_icon: fusionType2 ? buildTypeIcon(fusionType2) ?? baseType2Icon : undefined,
+      };
+    }
+
+    if (isCrown && activeCrownForm) {
+      const crownType1 = activeCrownForm.type1_name ?? baseType1;
+      const crownType2 = activeCrownForm.type2_name ?? baseType2;
+      return {
+        type1_name: crownType1,
+        type2_name: crownType2,
+        type_1_icon: buildTypeIcon(crownType1) ?? baseType1Icon,
+        type_2_icon: crownType2 ? buildTypeIcon(crownType2) ?? baseType2Icon : undefined,
+      };
+    }
+
+    if (isMega && activeMegaEvolution) {
+      const megaType1 = normalizeTypeName(activeMegaEvolution.type1_name) ?? baseType1;
+      const megaHasType2ById =
+        typeof activeMegaEvolution.type_2_id === 'number' && activeMegaEvolution.type_2_id > 0;
+      const megaType2 =
+        normalizeTypeName(activeMegaEvolution.type2_name) ??
+        (megaHasType2ById ? baseType2 : undefined);
+      return {
+        type1_name: megaType1,
+        type2_name: megaType2,
+        type_1_icon: buildTypeIcon(megaType1) ?? baseType1Icon,
+        type_2_icon: megaType2 ? buildTypeIcon(megaType2) ?? baseType2Icon : undefined,
+      };
+    }
+
+    return {
+      type1_name: baseType1,
+      type2_name: baseType2,
+      type_1_icon: baseType1Icon,
+      type_2_icon: baseType2Icon,
+    };
+  }, [
+    activeFusionEntry,
+    activeCrownForm,
+    activeMegaEvolution,
+    isFused,
+    isCrown,
+    isMega,
+    pokemon.type1_name,
+    pokemon.type2_name,
+    pokemon.type_1_icon,
+    pokemon.type_2_icon,
+  ]);
   const fusedPartnerInstance = useInstancesStore((state) => {
     const fusedWithKey =
       typeof pokemon.instanceData?.fused_with === 'string' ? pokemon.instanceData.fused_with : null;
@@ -157,7 +290,7 @@ const PokemonCard = memo(({
     isFused,
     fusionForm,
     isCrown,
-    crownForm: getCrownFormLabel(resolveActiveCrownForm(pokemon.crownForms, undefined)) ?? undefined,
+    crownForm: getCrownFormLabel(activeCrownForm) ?? undefined,
     isPurified,
     isGigantamax,
   });
@@ -185,7 +318,7 @@ const PokemonCard = memo(({
       name = `${isShinyState ? 'Shiny Mega' : 'Mega'} ${normalizedName}${megaSuffix}`;
     }
     if (isCrown) {
-      const crownLabel = getCrownFormLabel(resolveActiveCrownForm(pokemon.crownForms, undefined));
+      const crownLabel = getCrownFormLabel(activeCrownForm);
       if (crownLabel) {
         const normalizedName = name.replace(/^Shiny\s+/i, '');
         const isShinyState =
@@ -390,18 +523,18 @@ const PokemonCard = memo(({
       <p>#{pokemon.pokedex_number}</p>
 
       <div className="type-icons">
-        {pokemon.type_1_icon && (
+        {displayTypeData.type_1_icon && displayTypeData.type1_name && (
           <img
-            src={pokemon.type_1_icon}
-            alt={pokemon.type1_name}
+            src={displayTypeData.type_1_icon}
+            alt={displayTypeData.type1_name}
             loading="lazy"
             draggable={false}
           />
         )}
-        {pokemon.type_2_icon && (
+        {displayTypeData.type_2_icon && displayTypeData.type2_name && (
           <img
-            src={pokemon.type_2_icon}
-            alt={pokemon.type2_name}
+            src={displayTypeData.type_2_icon}
+            alt={displayTypeData.type2_name}
             loading="lazy"
             draggable={false}
           />

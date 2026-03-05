@@ -184,4 +184,82 @@ describe('PokemonCard', () => {
 
     expect(renderProps?.locationBackground?.background_id).toBe(19);
   });
+
+  it('renders mega types on card when mega is active', () => {
+    renderCard({
+      megaEvolutions: [
+        {
+          id: 1,
+          form: 'X',
+          date_available: '2019-01-01T00:00:00Z',
+          mega_energy_cost: 200,
+          type1_name: 'Fire',
+          type2_name: 'Dragon',
+          type_1_id: 10,
+          type_2_id: 3,
+        },
+      ],
+      instanceData: {
+        is_mega: true,
+        mega: true,
+        mega_form: 'X',
+      },
+    });
+
+    expect(screen.getByAltText('Fire')).toHaveAttribute('src', '/images/types/fire.png');
+    expect(screen.getByAltText('Dragon')).toHaveAttribute('src', '/images/types/dragon.png');
+  });
+
+  it('renders fusion types on card when fusion is active', () => {
+    renderCard({
+      fusion: [
+        {
+          fusion_id: 3,
+          date_available: '2025-02-21T00:00:00Z',
+          base_pokemon_id1: 1,
+          base_pokemon_id2: 2,
+          name: 'Test Fusion',
+          type_1_id: 3,
+          type_2_id: 12,
+          type1_name: 'Dragon',
+          type2_name: 'Ice',
+        },
+      ],
+      instanceData: {
+        is_fused: true,
+        fusion_form: 'Test Fusion',
+        fusion: { fusion_id: 3 },
+      },
+    });
+
+    expect(screen.getByAltText('Dragon')).toHaveAttribute('src', '/images/types/dragon.png');
+    expect(screen.getByAltText('Ice')).toHaveAttribute('src', '/images/types/ice.png');
+  });
+
+  it('drops base secondary type on card when mega form is single-typed', () => {
+    renderCard({
+      type1_name: 'Steel',
+      type2_name: 'Rock',
+      type_1_icon: '/images/types/steel.png',
+      type_2_icon: '/images/types/rock.png',
+      megaEvolutions: [
+        {
+          id: 2,
+          form: null,
+          date_available: '2019-01-01T00:00:00Z',
+          mega_energy_cost: 200,
+          type1_name: 'Steel',
+          type_1_id: 17,
+        },
+      ],
+      instanceData: {
+        is_mega: true,
+        mega: true,
+        mega_form: null,
+      },
+    });
+
+    expect(screen.getByAltText('Steel')).toHaveAttribute('src', '/images/types/steel.png');
+    expect(screen.queryByAltText('Rock')).not.toBeInTheDocument();
+  });
 });

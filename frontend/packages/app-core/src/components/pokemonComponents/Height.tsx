@@ -1,5 +1,5 @@
 // Height.tsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './Height.css';
 
 type PokemonWithHeight = {
@@ -24,57 +24,22 @@ const Height: React.FC<Props> = ({ pokemon, editMode, onHeightChange }) => {
   const [height, setHeight] = useState<string>(
     pokemon.instanceData?.height ? String(pokemon.instanceData.height) : ''
   );
-  const [userFocus, setUserFocus] = useState(false);
-  const editableRef = useRef<HTMLSpanElement>(null);
-
-  const setCaretToEnd = () => {
-    const range = document.createRange();
-    const sel = window.getSelection();
-    if (editableRef.current && sel) {
-      range.selectNodeContents(editableRef.current);
-      range.collapse(false);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      editableRef.current.focus();
-    }
-  };
 
   useEffect(() => {
-    if (editMode && editableRef.current) {
-      editableRef.current.innerText = height || '';
-      if (userFocus) {
-        setCaretToEnd();
-      }
-    }
-  }, [editMode, height, userFocus]);
+    setHeight(pokemon.instanceData?.height ? String(pokemon.instanceData.height) : '');
+  }, [pokemon.instanceData?.height]);
 
-  const handleInput = (event: React.FormEvent<HTMLSpanElement>) => {
-    const newValue = event.currentTarget.innerText.replace('m', '').trim();
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = event.target.value.trim();
     if (/^\d*\.?\d*$/.test(newValue)) {
       setHeight(newValue);
       onHeightChange?.(newValue);
-    } else {
-      event.currentTarget.innerText = height;
-    }
-    if (userFocus) {
-      setCaretToEnd();
     }
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      editableRef.current?.blur();
-      setUserFocus(false);
-    }
+  const handleBlur = () => {
+    setHeight((prev) => (prev ? prev.trim() : ''));
   };
-
-  useEffect(() => {
-    if (!editMode) {
-      setHeight((prev) => (prev ? prev.trim() : ''));
-      setUserFocus(false);
-    }
-  }, [editMode]);
 
   if (!editMode && !height) return null;
 
@@ -97,18 +62,15 @@ const Height: React.FC<Props> = ({ pokemon, editMode, onHeightChange }) => {
       <div className="height-display">
         <div className={`height-editable-container ${editMode ? 'editable' : ''}`}>
           {editMode ? (
-            <span
-              contentEditable
-              suppressContentEditableWarning
-              onInput={handleInput}
-              onKeyDown={handleKeyDown}
-              onClick={() => setUserFocus(true)}
-              onTouchStart={() => setUserFocus(true)}
-              ref={editableRef}
-              className="height-editable-content"
-            >
-              {height}
-            </span>
+            <input
+              type="text"
+              inputMode="decimal"
+              className="height-editable-content height-input"
+              value={height}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              aria-label="Height in meters"
+            />
           ) : (
             <span className="height-editable-content">{height}</span>
           )}

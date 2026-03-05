@@ -7,6 +7,7 @@ import React, {
 import './CaughtInstance.css';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useModal } from '@/contexts/ModalContext';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -36,6 +37,9 @@ import {
   type FusionMoveSource,
 } from './utils/resolveFusionMovePool';
 import { resolveCrownMovePool } from './utils/resolveCrownMovePool';
+import { resolveFusionDisplayData } from './utils/resolveFusionDisplayData';
+import { resolveMegaDisplayData } from './utils/resolveMegaDisplayData';
+import { resolveCrownDisplayData } from './utils/resolveCrownDisplayData';
 import { resolveFusionBackgroundPool } from './utils/resolveFusionBackgroundPool';
 import { resolveFusionComboBackground } from './utils/resolveFusionComboBackground';
 import { useCaughtFormState } from './hooks/useCaughtFormState';
@@ -144,6 +148,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
   const variantType = pokemon.variantType;
   const variantId = pokemon.variant_id;
   const instanceId = String(instanceData.instance_id ?? variantId ?? '');
+  const variants = useVariantsStore((s) => s.variants);
 
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const { alert } = useModal();
@@ -467,6 +472,87 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
       }),
     [crownData.crownForm, crownData.isCrown, pokemon, resolvedFusionMoves.moves],
   );
+  const resolvedFusionDisplay = useMemo(
+    () =>
+      resolveFusionDisplayData({
+        pokemon,
+        variants,
+        fusion: {
+          is_fused: fusion.is_fused,
+          fusion_form: fusion.fusion_form,
+          storedFusionObject: fusion.storedFusionObject,
+        },
+      }),
+    [fusion.fusion_form, fusion.is_fused, fusion.storedFusionObject, pokemon, variants],
+  );
+  const resolvedMegaDisplay = useMemo(
+    () =>
+      resolveMegaDisplayData({
+        pokemon: {
+          ...pokemon,
+          type1_name: resolvedFusionDisplay.type1_name,
+          type2_name: resolvedFusionDisplay.type2_name,
+          type_1_icon: resolvedFusionDisplay.type_1_icon,
+          type_2_icon: resolvedFusionDisplay.type_2_icon,
+          sizes: resolvedFusionDisplay.sizes,
+        },
+        variants,
+        mega: {
+          is_mega: fusion.is_fused ? false : megaData.isMega,
+          mega_form: megaData.megaForm,
+        },
+      }),
+    [
+      fusion.is_fused,
+      megaData.isMega,
+      megaData.megaForm,
+      pokemon,
+      resolvedFusionDisplay.sizes,
+      resolvedFusionDisplay.type1_name,
+      resolvedFusionDisplay.type2_name,
+      resolvedFusionDisplay.type_1_icon,
+      resolvedFusionDisplay.type_2_icon,
+      variants,
+    ],
+  );
+  const resolvedCrownDisplay = useMemo(
+    () =>
+      resolveCrownDisplayData({
+        pokemon: {
+          ...pokemon,
+          type1_name: resolvedMegaDisplay.type1_name,
+          type2_name: resolvedMegaDisplay.type2_name,
+          type_1_icon: resolvedMegaDisplay.type_1_icon,
+          type_2_icon: resolvedMegaDisplay.type_2_icon,
+          sizes: resolvedMegaDisplay.sizes,
+        },
+        variants,
+        crown: {
+          is_crown: fusion.is_fused ? false : crownData.isCrown,
+          crown_form: crownData.crownForm,
+        },
+      }),
+    [
+      crownData.crownForm,
+      crownData.isCrown,
+      fusion.is_fused,
+      pokemon,
+      resolvedMegaDisplay,
+      variants,
+    ],
+  );
+  const statsPokemon = useMemo(
+    () => ({
+      ...pokemon,
+      type1_name: resolvedCrownDisplay.type1_name,
+      type2_name: resolvedCrownDisplay.type2_name,
+      type_1_icon: resolvedCrownDisplay.type_1_icon,
+      type_2_icon: resolvedCrownDisplay.type_2_icon,
+      sizes: resolvedCrownDisplay.sizes,
+      instanceData: pokemon.instanceData,
+    }),
+    [pokemon, resolvedCrownDisplay],
+  );
 
   const movesPokemon = useMemo<MovesPreviewPokemon>(
     () => {
@@ -627,7 +713,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
       />
 
       <StatsRow
-        pokemon={pokemon}
+        pokemon={statsPokemon}
         editMode={editMode}
         onWeightChange={handleWeightChange}
         onHeightChange={handleHeightChange}

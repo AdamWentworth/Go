@@ -1,5 +1,5 @@
 // Weight.tsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './Weight.css';
 
 type PokemonWithWeight = {
@@ -24,57 +24,22 @@ const Weight: React.FC<Props> = ({ pokemon, editMode, onWeightChange }) => {
   const [weight, setWeight] = useState<string>(
     pokemon.instanceData?.weight ? String(pokemon.instanceData.weight) : ''
   );
-  const [userFocus, setUserFocus] = useState(false);
-  const editableRef = useRef<HTMLSpanElement>(null);
-
-  const setCaretToEnd = () => {
-    const range = document.createRange();
-    const sel = window.getSelection();
-    if (editableRef.current) {
-      range.selectNodeContents(editableRef.current);
-      range.collapse(false);
-      sel?.removeAllRanges();
-      sel?.addRange(range);
-      editableRef.current.focus();
-    }
-  };
 
   useEffect(() => {
-    if (editMode && editableRef.current) {
-      editableRef.current.innerText = weight || '';
-      if (userFocus) {
-        setCaretToEnd();
-      }
-    }
-  }, [editMode, weight, userFocus]);
+    setWeight(pokemon.instanceData?.weight ? String(pokemon.instanceData.weight) : '');
+  }, [pokemon.instanceData?.weight]);
 
-  const handleInput = (event: React.FormEvent<HTMLSpanElement>) => {
-    const newValue = event.currentTarget.innerText.replace('kg', '').trim();
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = event.target.value.trim();
     if (/^\d*\.?\d*$/.test(newValue)) {
       setWeight(newValue);
       onWeightChange(newValue);
-    } else {
-      event.currentTarget.innerText = weight;
-    }
-    if (userFocus) {
-      setCaretToEnd();
     }
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      editableRef.current?.blur();
-      setUserFocus(false);
-    }
+  const handleBlur = () => {
+    setWeight((prev) => (prev ? prev.trim() : ''));
   };
-
-  useEffect(() => {
-    if (!editMode) {
-      setWeight((prev) => (prev ? prev.trim() : ''));
-      setUserFocus(false);
-    }
-  }, [editMode]);
 
   if (!editMode && !weight) return null;
 
@@ -99,18 +64,15 @@ const Weight: React.FC<Props> = ({ pokemon, editMode, onWeightChange }) => {
       <div className="weight-display">
         <div className={`weight-editable-container ${editMode ? 'editable' : ''}`}>
           {editMode ? (
-            <span
-              contentEditable
-              suppressContentEditableWarning
-              onInput={handleInput}
-              onKeyDown={handleKeyDown}
-              onClick={() => setUserFocus(true)}
-              onTouchStart={() => setUserFocus(true)}
-              ref={editableRef}
-              className="weight-editable-content"
-            >
-              {weight}
-            </span>
+            <input
+              type="text"
+              inputMode="decimal"
+              className="weight-editable-content weight-input"
+              value={weight}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              aria-label="Weight in kilograms"
+            />
           ) : (
             <span className="weight-editable-content">{weight}</span>
           )}
