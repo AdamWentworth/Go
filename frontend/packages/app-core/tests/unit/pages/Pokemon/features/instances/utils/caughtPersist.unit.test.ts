@@ -117,4 +117,116 @@ describe('caughtPersist utils', () => {
       fusion_form: 'Sun',
     });
   });
+
+  it('auto-releases linked partner rows when unfusing with missing originalFusedWith', () => {
+    const patchMap = buildCaughtPersistPatchMap({
+      instanceId: 'open-instance-id',
+      nickname: null,
+      isLucky: false,
+      isTraded: false,
+      isFavorite: false,
+      gender: null,
+      weight: null,
+      height: null,
+      computedCP: null,
+      computedLevel: null,
+      computedIvs: baseIvs,
+      moves: baseMoves,
+      locationCaught: null,
+      dateCaught: null,
+      originalTrainerName: null,
+      originalTrainerId: null,
+      tradedDate: null,
+      pokeball: null,
+      selectedBackgroundId: null,
+      megaData: baseMega,
+      fusion: {
+        ...baseFusion,
+        is_fused: false,
+        fusedWith: null,
+        fusion_form: null,
+      },
+      isShadow: false,
+      isPurified: false,
+      maxAttack: '',
+      maxGuard: '',
+      maxSpirit: '',
+      originalFusedWith: null,
+      allInstances: {
+        partnerKey: {
+          instance_id: 'partner-instance-id',
+          fused_with: 'open-instance-id',
+          is_fused: true,
+          disabled: true,
+          fusion_form: 'Dusk Mane Necrozma',
+        } as Partial<import('@/types/pokemonInstance').PokemonInstance>,
+        openKey: {
+          instance_id: 'open-instance-id',
+          is_fused: true,
+          fusion_form: 'Dusk Mane Necrozma',
+        } as Partial<import('@/types/pokemonInstance').PokemonInstance>,
+      },
+    });
+
+    expect(patchMap.partnerKey).toEqual({
+      disabled: false,
+      fused_with: null,
+      is_fused: false,
+      fusion_form: null,
+    });
+  });
+
+  it('resolves originalFusedWith uuid to legacy-prefixed partner key on release', () => {
+    const partnerUuid = '79094536-4eec-4736-bcc7-e440d188eee5';
+    const patchMap = buildCaughtPersistPatchMap({
+      instanceId: 'open-instance-id',
+      nickname: null,
+      isLucky: false,
+      isTraded: false,
+      isFavorite: false,
+      gender: null,
+      weight: null,
+      height: null,
+      computedCP: null,
+      computedLevel: null,
+      computedIvs: baseIvs,
+      moves: baseMoves,
+      locationCaught: null,
+      dateCaught: null,
+      originalTrainerName: null,
+      originalTrainerId: null,
+      tradedDate: null,
+      pokeball: null,
+      selectedBackgroundId: null,
+      megaData: baseMega,
+      fusion: {
+        ...baseFusion,
+        is_fused: false,
+        fusedWith: null,
+        fusion_form: null,
+      },
+      isShadow: false,
+      isPurified: false,
+      maxAttack: '',
+      maxGuard: '',
+      maxSpirit: '',
+      originalFusedWith: partnerUuid,
+      allInstances: {
+        [`0791-default_${partnerUuid}`]: {
+          instance_id: `0791-default_${partnerUuid}`,
+          is_fused: true,
+          disabled: true,
+          fusion_form: 'Dusk Mane Necrozma',
+        } as Partial<import('@/types/pokemonInstance').PokemonInstance>,
+      },
+    });
+
+    expect(patchMap[`0791-default_${partnerUuid}`]).toEqual({
+      disabled: false,
+      fused_with: null,
+      is_fused: false,
+      fusion_form: null,
+    });
+    expect(patchMap[partnerUuid]).toBeUndefined();
+  });
 });

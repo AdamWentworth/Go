@@ -115,6 +115,8 @@ var (
 		"shiny_rarity",
 		"date_available",
 		"date_shiny_available",
+		"backgrounds",
+		"background_combo_rules",
 		"moves",
 		"cp40",
 		"cp50",

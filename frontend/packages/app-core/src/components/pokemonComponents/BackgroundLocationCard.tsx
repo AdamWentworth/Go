@@ -41,6 +41,12 @@ const BackgroundLocationCard: React.FC<Props> = ({
 
   const defaultFilter = (background: VariantBackground) => {
     if (!pokemon || !background) return false;
+    const normalizedVariantType = (pokemon.variantType ?? '').toLowerCase();
+    const isFusionVariant =
+      normalizedVariantType.startsWith('fusion_') ||
+      normalizedVariantType.startsWith('shiny_fusion_');
+    if (isFusionVariant) return true;
+
     if (selectedCostumeId != null) {
       if (!background.costume_id) return true;
       return background.costume_id === selectedCostumeId;

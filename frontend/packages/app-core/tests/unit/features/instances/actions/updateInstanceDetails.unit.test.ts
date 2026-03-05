@@ -88,6 +88,97 @@ describe('updateInstanceDetails', () => {
     expect(setItemSpy).toHaveBeenCalledWith('ownershipTimestamp', String(TS));
   });
 
+  it('maps legacy variant-prefixed keys to existing instance rows', async () => {
+    const partnerId = 'c9277c53-f26d-4370-bfec-d26a9278df64';
+    const legacyKey = `0800-default_${partnerId}`;
+    const actualKey = '79094536-4eec-4736-bcc7-e440d188eee5';
+    const { updater, getInstances } = createHarness({
+      [actualKey]: {
+        instance_id: partnerId,
+        disabled: true,
+        fused_with: 'open-instance',
+        is_fused: true,
+        fusion_form: 'Dusk Mane Necrozma',
+        last_update: 1,
+      },
+    });
+
+    await updater({
+      [legacyKey]: {
+        disabled: false,
+        fused_with: null,
+        is_fused: false,
+        fusion_form: null,
+      },
+    });
+
+    const out = getInstances();
+    expect(out[actualKey]).toMatchObject({
+      instance_id: partnerId,
+      disabled: false,
+      fused_with: null,
+      is_fused: false,
+      fusion_form: null,
+      last_update: TS,
+    });
+    expect(out[legacyKey]).toBeUndefined();
+
+    expect(db.putBatchedPokemonUpdates).toHaveBeenCalledWith(
+      actualKey,
+      expect.objectContaining({
+        disabled: false,
+        fused_with: null,
+        is_fused: false,
+        fusion_form: null,
+      }),
+    );
+  });
+
+  it('maps uuid-only keys to legacy-prefixed instance rows', async () => {
+    const partnerId = 'c9277c53-f26d-4370-bfec-d26a9278df64';
+    const actualKey = `0791-default_${partnerId}`;
+    const { updater, getInstances } = createHarness({
+      [actualKey]: {
+        instance_id: `0791-default_${partnerId}`,
+        disabled: true,
+        fused_with: '0800-fusion_1_abc',
+        is_fused: true,
+        fusion_form: 'Dusk Mane Necrozma',
+        last_update: 1,
+      },
+    });
+
+    await updater({
+      [partnerId]: {
+        disabled: false,
+        fused_with: null,
+        is_fused: false,
+        fusion_form: null,
+      },
+    });
+
+    const out = getInstances();
+    expect(out[actualKey]).toMatchObject({
+      instance_id: `0791-default_${partnerId}`,
+      disabled: false,
+      fused_with: null,
+      is_fused: false,
+      fusion_form: null,
+      last_update: TS,
+    });
+    expect(out[partnerId]).toBeUndefined();
+
+    expect(db.putBatchedPokemonUpdates).toHaveBeenCalledWith(
+      actualKey,
+      expect.objectContaining({
+        disabled: false,
+        fused_with: null,
+        is_fused: false,
+        fusion_form: null,
+      }),
+    );
+  });
+
   it('applies a shared patch to multiple keys', async () => {
     const { updater, getInstances } = createHarness({
       a: { favorite: false, last_update: 1 },

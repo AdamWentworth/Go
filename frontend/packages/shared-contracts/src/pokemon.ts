@@ -65,6 +65,18 @@ export interface Fusion {
   name: string;
   fusion_id?: number | null;
   moves?: Move[];
+  backgrounds?: VariantBackground[];
+  background_combo_rules?: FusionBackgroundComboRule[];
+}
+
+export interface FusionBackgroundComboRule {
+  member1_background_id: number;
+  member2_background_id: number;
+  combo_background_id: number;
+  combo_background_name?: string;
+  combo_background_location?: string;
+  combo_background_image_url?: string;
+  combo_background_date?: string;
 }
 
 export interface MaxForm {

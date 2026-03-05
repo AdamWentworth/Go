@@ -93,13 +93,9 @@ const findFusionEntry = (
   fusionEntries: Array<{ fusion_id?: number | null; name?: string; moves?: Move[] }>,
   fusionState: FusionMoveState,
 ): { fusion_id?: number | null; name?: string; moves?: Move[] } | undefined => {
-  const idCandidates = [
-    parseFusionId(fusionState.fusion_form),
-    ...parseFusionIdsFromStoredObject(fusionState.storedFusionObject),
-  ].filter((id): id is number => id != null);
-
-  for (const candidateId of idCandidates) {
-    const match = fusionEntries.find((entry) => entry.fusion_id === candidateId);
+  const explicitFusionId = parseFusionId(fusionState.fusion_form);
+  if (explicitFusionId != null) {
+    const match = fusionEntries.find((entry) => entry.fusion_id === explicitFusionId);
     if (match) return match;
   }
 
@@ -108,6 +104,12 @@ const findFusionEntry = (
     const match = fusionEntries.find(
       (entry) => normalizeFusionToken(entry.name) === normalizedName,
     );
+    if (match) return match;
+  }
+
+  const storedFusionIds = parseFusionIdsFromStoredObject(fusionState.storedFusionObject);
+  for (const candidateId of storedFusionIds) {
+    const match = fusionEntries.find((entry) => entry.fusion_id === candidateId);
     if (match) return match;
   }
 

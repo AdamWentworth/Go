@@ -15,12 +15,23 @@ describe('FuseOverlay', () => {
       image_url_shiny: '/images/shiny/shiny_pokemon_643.png',
       image_url_shadow: '',
       image_url_shiny_shadow: '',
+      backgrounds: [
+        {
+          background_id: 101,
+          image_url: '/images/backgrounds/bg_101.png',
+          name: 'Fusion Snow',
+          costume_id: 0,
+          date: '2025-01-01',
+          location: 'Glacier',
+        },
+      ],
       instanceData: {
         instance_id: '0643-default_uuid-1',
         cp: 3100,
         level: 41,
         nickname: 'FusionOne',
         shiny: false,
+        location_card: '101',
       },
     },
     {
@@ -33,6 +44,7 @@ describe('FuseOverlay', () => {
       image_url_shiny: '/images/shiny/shiny_pokemon_643.png',
       image_url_shadow: '',
       image_url_shiny_shadow: '',
+      backgrounds: [],
       instanceData: {
         instance_id: '0643-shiny_uuid-2',
         cp: 2980,
@@ -62,6 +74,7 @@ describe('FuseOverlay', () => {
     const secondCandidateStat = screen.getByText('CP 2980');
     fireEvent.click(secondCandidateStat.closest('button') as HTMLButtonElement);
     expect(onSelectPokemon).toHaveBeenCalledWith(candidates[1]);
+    expect(screen.getByAltText('Fusion Snow background')).toBeInTheDocument();
   });
 
   it('calls fuse and close handlers from footer actions', () => {

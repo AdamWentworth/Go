@@ -19,7 +19,13 @@ export function useBackgrounds(
   }, [backgrounds, locationCard]);
 
   const selectableBackgrounds = useMemo(() => {
+    const normalizedVariantType = (variantType ?? '').toLowerCase();
+    const isFusionVariant =
+      normalizedVariantType.startsWith('fusion_') ||
+      normalizedVariantType.startsWith('shiny_fusion_');
+
     return backgrounds.filter((background) => {
+      if (isFusionVariant) return true;
       if (!background.costume_id) return true;
       const variantTypeId = variantType?.split('_')[1];
       return Number(background.costume_id) === Number(variantTypeId);

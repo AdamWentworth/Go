@@ -34,6 +34,8 @@ import {
   resolveFusionMovePool,
   type FusionMoveSource,
 } from './utils/resolveFusionMovePool';
+import { resolveFusionBackgroundPool } from './utils/resolveFusionBackgroundPool';
+import { resolveFusionComboBackground } from './utils/resolveFusionComboBackground';
 import { useCaughtFormState } from './hooks/useCaughtFormState';
 
 import HeaderRow from './sections/HeaderRow';
@@ -60,6 +62,65 @@ type MovesPreviewPokemon = {
   instanceData?: Partial<PokemonInstance>;
 };
 
+const UUID_AT_END_REGEX =
+  /([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+
+const extractLegacyInstanceId = (key: string): string | null => {
+  const idx = key.lastIndexOf('_');
+  if (idx < 0 || idx >= key.length - 1) return null;
+  const suffix = key.slice(idx + 1);
+  return suffix || null;
+};
+
+const normalizeInstanceToken = (value: string | null | undefined): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return null;
+  const uuidMatch = trimmed.match(UUID_AT_END_REGEX);
+  if (uuidMatch?.[1]) return uuidMatch[1];
+  return trimmed;
+};
+
+const collectInstanceRefCandidates = (value: string | null): string[] => {
+  if (!value) return [];
+  const refs = new Set<string>();
+  refs.add(value.toLowerCase());
+  const legacy = extractLegacyInstanceId(value);
+  if (legacy) refs.add(legacy.toLowerCase());
+  const normalized = normalizeInstanceToken(value);
+  if (normalized) refs.add(normalized.toLowerCase());
+  return [...refs];
+};
+
+const findInstanceByRefs = (
+  collection: Record<string, PokemonInstance> | null | undefined,
+  refs: string[],
+): PokemonInstance | null => {
+  if (!collection || refs.length === 0) return null;
+  const refSet = new Set(refs);
+
+  for (const [key, row] of Object.entries(collection)) {
+    const keyRefs = collectInstanceRefCandidates(key);
+    if (keyRefs.some((ref) => refSet.has(ref))) return row;
+
+    const rowInstanceId =
+      typeof row?.instance_id === 'string' && row.instance_id.length > 0 ? row.instance_id : null;
+    const rowRefs = collectInstanceRefCandidates(rowInstanceId);
+    if (rowRefs.some((ref) => refSet.has(ref))) return row;
+  }
+
+  return null;
+};
+
+const parseBackgroundId = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
 interface CaughtInstanceProps {
   pokemon: CaughtPokemon;
   isEditable: boolean;
@@ -76,7 +137,6 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
   const log = useMemo(() => createScopedLogger('caughtInstance.fusionMoves'), []);
   const instanceData: Partial<PokemonInstance> = pokemon.instanceData ?? {};
   const megaEvolutions: MegaEvolution[] = pokemon.megaEvolutions ?? [];
-  const backgrounds: VariantBackground[] = pokemon.backgrounds ?? [];
   const name = String(pokemon.name ?? pokemon.species_name ?? 'Pokemon');
   const variantType = pokemon.variantType;
   const variantId = pokemon.variant_id;
@@ -100,6 +160,31 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
     alert,
     activeInstanceIdHint,
   );
+  const resolvedFusionBackgrounds = useMemo(
+    () =>
+      resolveFusionBackgroundPool({
+        pokemon,
+        fusion: {
+          is_fused: fusion.is_fused,
+          fusion_form: fusion.fusion_form,
+          storedFusionObject: fusion.storedFusionObject,
+        },
+      }),
+    [fusion.fusion_form, fusion.is_fused, fusion.storedFusionObject, pokemon],
+  );
+  const backgrounds: VariantBackground[] = resolvedFusionBackgrounds.backgrounds;
+  const fusedPartnerInstance = useInstancesStore((state) => {
+    const fusedWithKey = typeof fusion.fusedWith === 'string' ? fusion.fusedWith : null;
+    if (!fusedWithKey) return null;
+
+    const refs = collectInstanceRefCandidates(fusedWithKey);
+    if (refs.length === 0) return null;
+
+    const fromOwned = findInstanceByRefs(state.instances, refs);
+    if (fromOwned) return fromOwned;
+    return findInstanceByRefs(state.foreignInstances, refs);
+  });
+
   const [originalFusedWith, setOriginalFusedWith] = useState<string | null>(
     fusion.fusedWith ?? null,
   );
@@ -174,6 +259,45 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
     handleBackgroundSelect,
     selectableBackgrounds,
   } = useBackgrounds(backgrounds, variantType, instanceData.location_card ?? null);
+
+  const effectiveSelectedBackground = useMemo(() => {
+    const fallbackSelectedFromLocationCard = (() => {
+      const locationCardId = parseBackgroundId(instanceData.location_card);
+      if (locationCardId == null) return null;
+      return (
+        backgrounds.find((background) => background.background_id === locationCardId) ?? null
+      );
+    })();
+
+    const currentSelected = selectedBackground ?? fallbackSelectedFromLocationCard;
+
+    if (!fusion.is_fused) return currentSelected;
+
+    const ownBackgroundId = currentSelected?.background_id ?? null;
+    const partnerBackgroundId = parseBackgroundId(fusedPartnerInstance?.location_card);
+
+    const comboBackground = resolveFusionComboBackground({
+      pokemonId: pokemon.pokemon_id,
+      fusionEntries: pokemon.fusion ?? [],
+      resolvedFusionId: resolvedFusionBackgrounds.fusionId,
+      fusionForm: fusion.fusion_form,
+      ownBackgroundId,
+      partnerBackgroundId,
+      availableBackgrounds: backgrounds,
+    });
+
+    return comboBackground ?? currentSelected;
+  }, [
+    backgrounds,
+    fusedPartnerInstance?.location_card,
+    fusion.fusion_form,
+    fusion.is_fused,
+    instanceData.location_card,
+    pokemon.fusion,
+    pokemon.pokemon_id,
+    resolvedFusionBackgrounds.fusionId,
+    selectedBackground,
+  ]);
 
   const currentBaseStats = useMemo(
     () =>
@@ -262,7 +386,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
         originalTrainerId,
         tradedDate,
         pokeball,
-        selectedBackgroundId: selectedBackground?.background_id ?? null,
+        selectedBackgroundId: effectiveSelectedBackground?.background_id ?? null,
         megaData,
         fusion: persistFusion,
         isShadow,
@@ -271,6 +395,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
         maxGuard,
         maxSpirit,
         originalFusedWith,
+        allInstances: useInstancesStore.getState().instances,
       });
 
       await updateDetails(patchMap);
@@ -429,7 +554,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
 
       <ImageStage
         level={level ?? 1}
-        selectedBackground={selectedBackground}
+        selectedBackground={effectiveSelectedBackground}
         isLucky={isLucky}
         currentImage={currentImage || ''}
         name={name}
@@ -537,7 +662,10 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
       <Modals
         showBackgrounds={showBackgrounds}
         setShowBackgrounds={setShowBackgrounds}
-        pokemon={pokemon}
+        pokemon={{
+          variantType: pokemon.variantType,
+          backgrounds,
+        }}
         onSelectBackground={handleBackgroundSelect}
         overlayCandidates={fusion.overlayCandidates}
         overlayPokemon={fusion.overlayPokemon}

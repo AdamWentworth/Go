@@ -48,6 +48,9 @@ class DatabaseManager:
     def fetch_pokemon_details(self, pokemon_id):
         return self.pokemon_manager.fetch_pokemon_details(pokemon_id)    
 
+    def fetch_pokemon_name(self, pokemon_id):
+        return self.pokemon_manager.fetch_pokemon_name(pokemon_id)
+
     def fetch_fusion_details(self, fusion_id):
         return self.fusion_pokemon_manager.fetch_fusion_details(fusion_id)
     
@@ -65,6 +68,48 @@ class DatabaseManager:
 
     def update_fusion_moveset(self, fusion_id, move_data):
         return self.fusion_pokemon_manager.update_fusion_moveset(fusion_id, move_data)
+
+    def fetch_fusion_background_rule_rows(self, fusion_id):
+        return self.fusion_pokemon_manager.fetch_fusion_background_rule_rows(fusion_id)
+
+    def add_fusion_background_rule(
+        self,
+        fusion_id,
+        member1_background_id,
+        member2_background_id,
+        combo_background_id,
+        is_active=1,
+        notes=None,
+    ):
+        return self.fusion_pokemon_manager.add_fusion_background_rule(
+            fusion_id,
+            member1_background_id,
+            member2_background_id,
+            combo_background_id,
+            is_active,
+            notes,
+        )
+
+    def update_fusion_background_rule(
+        self,
+        rule_id,
+        member1_background_id,
+        member2_background_id,
+        combo_background_id,
+        is_active=1,
+        notes=None,
+    ):
+        return self.fusion_pokemon_manager.update_fusion_background_rule(
+            rule_id,
+            member1_background_id,
+            member2_background_id,
+            combo_background_id,
+            is_active,
+            notes,
+        )
+
+    def delete_fusion_background_rule(self, rule_id):
+        return self.fusion_pokemon_manager.delete_fusion_background_rule(rule_id)
 
     # Evolution-related methods
     def add_evolves_to(self, pokemon_id, evolves_to_id):

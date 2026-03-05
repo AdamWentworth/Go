@@ -63,4 +63,63 @@ describe('createPokemonVariants (unit)', () => {
       expect(hasCostume).toBe(true);
     }
   });
+
+  it('uses fusion-specific backgrounds for fusion variants when provided', () => {
+    const baseBackgrounds = [
+      {
+        background_id: 38,
+        name: 'Base Background',
+        location: 'Base',
+        image_url: 'https://example.com/base.png',
+        date: '2025-01-01',
+        costume_id: 0,
+      },
+    ];
+    const fusionBackgrounds = [
+      {
+        background_id: 40,
+        name: 'Fusion Background',
+        location: 'Fusion',
+        image_url: 'https://example.com/fusion.png',
+        date: '2025-01-02',
+        costume_id: 0,
+      },
+    ];
+
+    const sample = samplePokemons[0];
+    const pokemon: BasePokemon = {
+      ...sample,
+      pokemon_id: 646,
+      name: 'Kyurem',
+      backgrounds: baseBackgrounds,
+      costumes: [],
+      fusion: [
+        {
+          fusion_id: 3,
+          base_pokemon_id1: 646,
+          base_pokemon_id2: 643,
+          date_available: '2025-01-01',
+          type_1_id: 3,
+          type_2_id: 12,
+          type1_name: 'Dragon',
+          type2_name: 'Ice',
+          name: 'White Kyurem',
+          image_url: 'https://example.com/white-kyurem.png',
+          image_url_shiny: 'https://example.com/white-kyurem-shiny.png',
+          backgrounds: fusionBackgrounds,
+        },
+      ],
+      megaEvolutions: [],
+      raid_boss: [],
+      max: [],
+      evolves_from: [],
+    };
+
+    const variants = createPokemonVariants([pokemon]);
+    const defaultVariant = variants.find((v) => v.variantType === 'default');
+    const fusionVariant = variants.find((v) => v.variantType === 'fusion_3');
+
+    expect(defaultVariant?.backgrounds).toEqual(baseBackgrounds);
+    expect(fusionVariant?.backgrounds).toEqual(fusionBackgrounds);
+  });
 });

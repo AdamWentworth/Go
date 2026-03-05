@@ -76,6 +76,69 @@ class FusionPokemonManagerTests(TempDBTestCase):
         )
         self.assertEqual(rows, sorted(payload, key=lambda x: x[0]))
 
+    def test_fetch_fusion_background_rule_rows_returns_expected_shape(self):
+        fusion_id = self.scalar("SELECT fusion_id FROM fusion_pokemon LIMIT 1")
+        rule_id = self.manager.add_fusion_background_rule(
+            fusion_id,
+            13,
+            14,
+            15,
+            1,
+            "unit-test-shape",
+        )
+        self.assertIsNotNone(rule_id)
+
+        rows = self.manager.fetch_fusion_background_rule_rows(fusion_id)
+        self.assertGreater(len(rows), 0)
+        self.assertGreaterEqual(len(rows[0]), 13)
+
+    def test_add_update_delete_fusion_background_rule_round_trip(self):
+        fusion_id = self.scalar("SELECT fusion_id FROM fusion_pokemon LIMIT 1")
+        rule_id = self.manager.add_fusion_background_rule(
+            fusion_id,
+            13,
+            14,
+            15,
+            1,
+            "created",
+        )
+        self.assertIsNotNone(rule_id)
+
+        created = self.row(
+            """
+            SELECT member1_background_id, member2_background_id, combo_background_id, is_active, notes
+            FROM fusion_background_combo_rules
+            WHERE id = ?
+            """,
+            (rule_id,),
+        )
+        self.assertEqual(created, (13, 14, 15, 1, "created"))
+
+        self.manager.update_fusion_background_rule(
+            rule_id,
+            16,
+            17,
+            19,
+            0,
+            "updated",
+        )
+        updated = self.row(
+            """
+            SELECT member1_background_id, member2_background_id, combo_background_id, is_active, notes
+            FROM fusion_background_combo_rules
+            WHERE id = ?
+            """,
+            (rule_id,),
+        )
+        self.assertEqual(updated, (16, 17, 19, 0, "updated"))
+
+        self.manager.delete_fusion_background_rule(rule_id)
+        remaining = self.scalar(
+            "SELECT COUNT(*) FROM fusion_background_combo_rules WHERE id = ?",
+            (rule_id,),
+        )
+        self.assertEqual(remaining, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

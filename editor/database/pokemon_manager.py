@@ -9,6 +9,15 @@ class PokemonManager:
         query = f"SELECT pokemon_id, name FROM pokemon ORDER BY {sort_by}"
         cursor.execute(query)
         return ["{}: {}".format(row[0], row[1]) for row in cursor.fetchall()]
+
+    def fetch_pokemon_name(self, pokemon_id):
+        cursor = self.conn.get_cursor()
+        cursor.execute(
+            "SELECT name FROM pokemon WHERE pokemon_id = ?",
+            (int(pokemon_id),),
+        )
+        row = cursor.fetchone()
+        return row[0] if row else None
     
     def fetch_pokemon_moves(self, pokemon_id):
         cursor = self.conn.get_cursor()

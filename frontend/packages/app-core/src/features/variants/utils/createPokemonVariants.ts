@@ -193,6 +193,7 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
         type_2_icon: getTypeIcon(fusion.type2_name),
         currentImage: fusion.image_url ?? defaultVariant.image_url,
         fusion_id: fusion.fusion_id,
+        backgrounds: fusion.backgrounds ?? defaultVariant.backgrounds,
         variantType: `fusion_${fusion.fusion_id}` as VariantKind,
         species_name: fusion.name,
         variant_id: '',

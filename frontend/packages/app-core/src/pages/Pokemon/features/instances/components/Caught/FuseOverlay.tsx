@@ -4,6 +4,7 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 import { createScopedLogger } from '@/utils/logger';
 import { resolveAssetUrl } from '@/utils/assetUrl';
 import type { PokemonInstance } from '@/types/pokemonInstance';
+import type { VariantBackground } from '@/types/pokemonSubTypes';
 
 const log = createScopedLogger('FuseOverlay');
 
@@ -41,7 +42,18 @@ const getCandidateTitle = (pokemon: PokemonVariant): string => {
 };
 
 const formatStatNumber = (value: unknown): string =>
-  typeof value === 'number' && Number.isFinite(value) ? String(value) : '—';
+  typeof value === 'number' && Number.isFinite(value) ? String(value) : '--';
+
+const getCandidateBackground = (pokemon: PokemonVariant): VariantBackground | null => {
+  const locationCard = pokemon.instanceData?.location_card;
+  if (locationCard == null) return null;
+
+  const backgroundId = Number.parseInt(String(locationCard), 10);
+  if (!Number.isFinite(backgroundId)) return null;
+
+  const backgrounds = Array.isArray(pokemon.backgrounds) ? pokemon.backgrounds : [];
+  return backgrounds.find((background) => background.background_id === backgroundId) ?? null;
+};
 
 const FuseOverlay: React.FC<FuseOverlayProps> = ({
   candidates,
@@ -71,6 +83,7 @@ const FuseOverlay: React.FC<FuseOverlayProps> = ({
             const isSelected =
               Boolean(candidate.instanceData?.instance_id) &&
               candidate.instanceData?.instance_id === activePokemon.instanceData?.instance_id;
+            const candidateBackground = getCandidateBackground(candidate);
 
             return (
               <button
@@ -96,6 +109,23 @@ const FuseOverlay: React.FC<FuseOverlayProps> = ({
                 <div className="fuse-candidate-stats">
                   <span>CP {formatStatNumber(candidate.instanceData?.cp)}</span>
                   <span>LVL {formatStatNumber(candidate.instanceData?.level)}</span>
+                </div>
+
+                <div className="fuse-candidate-background">
+                  {candidateBackground ? (
+                    <>
+                      <img
+                        src={resolveAssetUrl(candidateBackground.image_url)}
+                        alt={`${candidateBackground.name} background`}
+                        className="fuse-candidate-background-image"
+                      />
+                      <span className="fuse-candidate-background-label">
+                        {candidateBackground.name}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="fuse-candidate-background-empty">No BG</span>
+                  )}
                 </div>
               </button>
             );

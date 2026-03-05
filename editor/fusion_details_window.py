@@ -6,6 +6,7 @@ import os
 from database_manager import DatabaseManager
 from frames.fusion_info_frames import FusionInfoFrames
 from frames.fusion_image_frames import FusionImageFrames
+from frames.fusion_background_frame import FusionBackgroundFrame
 from frames.pokemon_moves_frame import PokemonMovesFrame
 
 
@@ -45,9 +46,31 @@ class FusionDetailsWindow:
 
         self.moves_frame = PokemonMovesFrame(main_container, self.db_manager, self.moves)
         self.moves_frame.create_moves_frame()
+        self.create_background_frame(main_container)
 
         save_button = tk.Button(self.window, text="Save Changes", command=self.save_changes)
         save_button.pack(side="bottom", pady=10)
+
+    def create_background_frame(self, parent):
+        base_pokemon_id1 = self.fusion_data[1]
+        base_pokemon_id2 = self.fusion_data[2]
+        base_name1 = self.db_manager.fetch_pokemon_name(base_pokemon_id1)
+        base_name2 = self.db_manager.fetch_pokemon_name(base_pokemon_id2)
+
+        container = tk.Frame(parent)
+        container.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        self.background_frame = FusionBackgroundFrame(
+            container,
+            self.fusion_id,
+            base_pokemon_id1,
+            base_pokemon_id2,
+            self.db_manager,
+            self,
+            base_name1,
+            base_name2,
+        )
+        self.background_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     def _get_clean_value(self, attr_name):
         value = self.info_frames.entry_widgets[attr_name].get().strip()

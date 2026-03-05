@@ -256,4 +256,39 @@ describe('resolveFusionMovePool', () => {
     expect(result.fusionId).toBe(4);
     expect(result.moves).toEqual([]);
   });
+
+  it('prefers active fusion_form over historical stored fusion ids', () => {
+    const result = resolveFusionMovePool({
+      pokemon: {
+        moves: [
+          buildMove({ move_id: 5, name: 'Dragon Breath', is_fast: 1, fusion_id: null }),
+          buildMove({ move_id: 301, name: 'Sunsteel Strike', is_fast: 0, fusion_id: 1 }),
+          buildMove({ move_id: 296, name: 'Moongeist Beam', is_fast: 0, fusion_id: 2 }),
+        ],
+        fusion: [
+          {
+            fusion_id: 1,
+            base_pokemon_id2: 791,
+            name: 'Dusk Mane Necrozma',
+            moves: [buildMove({ move_id: 301, name: 'Sunsteel Strike', is_fast: 0, fusion_id: 1 })],
+          } as Fusion,
+          {
+            fusion_id: 2,
+            base_pokemon_id2: 792,
+            name: 'Dawn Wings Necrozma',
+            moves: [buildMove({ move_id: 296, name: 'Moongeist Beam', is_fast: 0, fusion_id: 2 })],
+          } as Fusion,
+        ],
+      } as unknown as Pick<PokemonVariant, 'moves' | 'fusion'>,
+      fusion: {
+        is_fused: true,
+        fusion_form: 'Dawn Wings Necrozma',
+        storedFusionObject: { 1: true, 2: true },
+      },
+    });
+
+    expect(result.source).toBe('fusion');
+    expect(result.fusionId).toBe(2);
+    expect(result.moves.map((move) => move.name)).toEqual(['Dragon Breath', 'Moongeist Beam']);
+  });
 });

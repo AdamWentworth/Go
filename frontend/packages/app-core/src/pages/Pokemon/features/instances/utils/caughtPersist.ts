@@ -48,6 +48,92 @@ type BuildCaughtPersistPatchMapArgs = {
   maxGuard: string | number | '';
   maxSpirit: string | number | '';
   originalFusedWith: string | null;
+  allInstances?: Record<string, Partial<PokemonInstance>> | null;
+};
+
+const extractLegacyInstanceId = (key: string): string | null => {
+  const idx = key.lastIndexOf('_');
+  if (idx < 0 || idx >= key.length - 1) return null;
+  const suffix = key.slice(idx + 1);
+  return suffix || null;
+};
+
+const UUID_AT_END_REGEX =
+  /([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+
+const normalizeInstanceToken = (value: string | null | undefined): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return null;
+  const match = trimmed.match(UUID_AT_END_REGEX);
+  if (match?.[1]) return match[1];
+  return trimmed;
+};
+
+const collectInstanceRefCandidates = (value: string | null): string[] => {
+  if (!value) return [];
+  const refs = new Set<string>();
+  refs.add(value);
+  const legacy = extractLegacyInstanceId(value);
+  if (legacy) refs.add(legacy);
+  const normalized = normalizeInstanceToken(value);
+  if (normalized) refs.add(normalized);
+  return [...refs];
+};
+
+const findInstanceKeysByRef = ({
+  allInstances,
+  instanceRef,
+}: {
+  allInstances?: Record<string, Partial<PokemonInstance>> | null;
+  instanceRef: string | null;
+}): string[] => {
+  if (!allInstances || !instanceRef) return [];
+
+  const refs = new Set(collectInstanceRefCandidates(instanceRef).map((value) => value.toLowerCase()));
+  if (refs.size === 0) return [];
+  const keys: string[] = [];
+
+  for (const [key, row] of Object.entries(allInstances)) {
+    const keyRefs = collectInstanceRefCandidates(key).map((value) => value.toLowerCase());
+    const rowInstanceId =
+      typeof row?.instance_id === 'string' && row.instance_id.length > 0 ? row.instance_id : null;
+    const rowRefs = collectInstanceRefCandidates(rowInstanceId).map((value) => value.toLowerCase());
+
+    const matches = [...keyRefs, ...rowRefs].some((candidate) => refs.has(candidate));
+    if (matches) keys.push(key);
+  }
+
+  return keys;
+};
+
+const findLinkedPartnerKeys = ({
+  allInstances,
+  instanceId,
+}: {
+  allInstances?: Record<string, Partial<PokemonInstance>> | null;
+  instanceId: string;
+}): string[] => {
+  if (!allInstances || !instanceId) return [];
+  const refs = new Set(collectInstanceRefCandidates(instanceId));
+  const keys: string[] = [];
+
+  for (const [key, row] of Object.entries(allInstances)) {
+    if (!row) continue;
+
+    const fusedWith = typeof row.fused_with === 'string' ? row.fused_with : null;
+    if (!fusedWith) continue;
+
+    const fusedWithRefs = collectInstanceRefCandidates(fusedWith);
+    const pointsToCurrent = fusedWithRefs.some((candidate) => refs.has(candidate));
+    if (!pointsToCurrent) continue;
+
+    if (row.is_fused === true || row.disabled === true) {
+      keys.push(key);
+    }
+  }
+
+  return keys;
 };
 
 export const resolveCaughtPersistValues = ({
@@ -90,6 +176,7 @@ export const buildCaughtPersistPatchMap = ({
   maxGuard,
   maxSpirit,
   originalFusedWith,
+  allInstances,
 }: BuildCaughtPersistPatchMapArgs): Record<string, Partial<PokemonInstance>> => {
   const patchMap = buildInstanceChanges({
     instanceId,
@@ -120,8 +207,29 @@ export const buildCaughtPersistPatchMap = ({
     maxSpirit,
   }) as Record<string, Partial<PokemonInstance>>;
 
+  const partnerKeysToRelease = new Set<string>();
   if (originalFusedWith && originalFusedWith !== fusion.fusedWith) {
-    patchMap[originalFusedWith] = {
+    const mappedPartnerKeys = findInstanceKeysByRef({
+      allInstances,
+      instanceRef: originalFusedWith,
+    });
+    if (mappedPartnerKeys.length > 0) {
+      for (const key of mappedPartnerKeys) partnerKeysToRelease.add(key);
+    } else {
+      partnerKeysToRelease.add(originalFusedWith);
+    }
+  }
+
+  // Safety: if we are unfusing and the current row has missing/legacy one-sided links,
+  // release any rows that still point to this instance.
+  if (!fusion.is_fused) {
+    for (const key of findLinkedPartnerKeys({ allInstances, instanceId })) {
+      partnerKeysToRelease.add(key);
+    }
+  }
+
+  for (const partnerKey of partnerKeysToRelease) {
+    patchMap[partnerKey] = {
       disabled: false,
       fused_with: null,
       is_fused: false,

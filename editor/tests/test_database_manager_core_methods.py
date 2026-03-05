@@ -48,11 +48,48 @@ class DatabaseManagerCoreMethodsTests(unittest.TestCase):
         self.assertEqual(pokemon_data[0], 1)
         self.assertIsInstance(moves, list)
         self.assertIsInstance(evolutions, dict)
+        self.assertEqual(self.db_manager.fetch_pokemon_name(1), pokemon_data[1])
 
         fusion_id = self.scalar("SELECT fusion_id FROM fusion_pokemon LIMIT 1")
         fusion_data, fusion_moves = self.db_manager.fetch_fusion_details(fusion_id)
         self.assertIsNotNone(fusion_data)
         self.assertIsInstance(fusion_moves, list)
+
+    def test_fusion_background_rule_wrappers(self):
+        fusion_id = self.scalar("SELECT fusion_id FROM fusion_pokemon LIMIT 1")
+        created_rule_id = self.db_manager.add_fusion_background_rule(
+            fusion_id,
+            13,
+            14,
+            15,
+            1,
+            "wrapper-created",
+        )
+        self.assertIsNotNone(created_rule_id)
+
+        rows = self.db_manager.fetch_fusion_background_rule_rows(fusion_id)
+        self.assertTrue(any(row[0] == created_rule_id for row in rows))
+
+        self.db_manager.update_fusion_background_rule(
+            created_rule_id,
+            16,
+            17,
+            19,
+            0,
+            "wrapper-updated",
+        )
+        updated = self.scalar(
+            "SELECT is_active FROM fusion_background_combo_rules WHERE id = ?",
+            (created_rule_id,),
+        )
+        self.assertEqual(updated, 0)
+
+        self.db_manager.delete_fusion_background_rule(created_rule_id)
+        exists = self.scalar(
+            "SELECT COUNT(*) FROM fusion_background_combo_rules WHERE id = ?",
+            (created_rule_id,),
+        )
+        self.assertEqual(exists, 0)
 
     def test_evolution_wrappers_add_update_remove(self):
         evolution_id = self.db_manager.add_evolves_to(10, 11)
