@@ -3,12 +3,19 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import PokemonCard from '@/pages/Pokemon/components/Menus/PokemonMenu/PokemonCard';
 
+const { pokemonImagePresentationSpy } = vi.hoisted(() => ({
+  pokemonImagePresentationSpy: vi.fn(),
+}));
+
 vi.mock('@/components/pokemonComponents/CP', () => ({
   default: () => <div data-testid="cp-component" />,
 }));
 
 vi.mock('@/pages/Pokemon/components/Menus/PokemonMenu/PokemonImagePresentation', () => ({
-  default: () => <div data-testid="pokemon-image-presentation" />,
+  default: (props: unknown) => {
+    pokemonImagePresentationSpy(props);
+    return <div data-testid="pokemon-image-presentation" />;
+  },
 }));
 
 vi.mock('@/pages/Pokemon/components/Menus/PokemonMenu/SelectChip', () => ({
@@ -135,5 +142,46 @@ describe('PokemonCard', () => {
     });
 
     expect(screen.getByRole('heading', { name: 'Shiny Mega Tyranitar' })).toBeInTheDocument();
+  });
+
+  it('uses fusion variant backgrounds for fused location backdrop IDs (including combo IDs)', () => {
+    pokemonImagePresentationSpy.mockClear();
+
+    renderCard({
+      pokemon_id: 800,
+      variantType: 'fusion_1',
+      fusion_id: 1,
+      fusion: [
+        {
+          fusion_id: 1,
+          name: 'Dawn Wings Necrozma',
+          base_pokemon_id1: 800,
+          base_pokemon_id2: 792,
+          backgrounds: [
+            {
+              background_id: 19,
+              image_url: '/images/backgrounds/wormhole_moon.png',
+              name: 'GoFest2024 Wormhole Moon',
+              costume_id: 0,
+              date: '',
+              location: '',
+            },
+          ],
+          background_combo_rules: [],
+        },
+      ],
+      backgrounds: [],
+      instanceData: {
+        location_card: '19',
+        is_fused: true,
+        fusion_form: 'Dawn Wings Necrozma',
+      },
+    });
+
+    const renderProps = pokemonImagePresentationSpy.mock.calls.at(-1)?.[0] as
+      | { locationBackground?: { background_id?: number } }
+      | undefined;
+
+    expect(renderProps?.locationBackground?.background_id).toBe(19);
   });
 });

@@ -5,9 +5,14 @@ export interface MegaData {
     megaForm?: string;
   }
   
-  export interface FusionState {
+export interface FusionState {
     is_fused?: boolean;
     fusion_form?: string;
+  }
+
+export interface CrownState {
+    is_crown?: boolean;
+    crown_form?: string;
   }
   
   export interface BaseStats {

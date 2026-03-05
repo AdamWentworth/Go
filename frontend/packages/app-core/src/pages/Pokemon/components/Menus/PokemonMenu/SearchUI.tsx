@@ -12,7 +12,7 @@ export interface SearchUIProps {
   /** whether to show the evolutionary line checkbox */
   showEvolutionaryLine: boolean;
   /** handler for evolutionary line checkbox change */
-  toggleEvolutionaryLine: React.ChangeEventHandler<HTMLInputElement>;
+  toggleEvolutionaryLine: () => void;
   /** optional callback when input focus changes */
   onFocusChange?: (isFocused: boolean) => void;
   /** optional handler when arrow icon is clicked */
@@ -133,7 +133,7 @@ const SearchUI: React.FC<SearchUIProps> = ({
               type="checkbox"
               className="evo-checkbox"
               checked={showEvolutionaryLine}
-              onChange={toggleEvolutionaryLine}
+              onChange={() => toggleEvolutionaryLine()}
             />
             <span className="evo-line-custom-checkbox" />
           </div>

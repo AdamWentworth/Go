@@ -41,6 +41,7 @@ type BuildCaughtPersistPatchMapArgs = {
   pokeball: string | null;
   selectedBackgroundId: number | null;
   megaData: MegaData;
+  crown: boolean;
   fusion: FusionState;
   isShadow: boolean;
   isPurified: boolean;
@@ -169,6 +170,7 @@ export const buildCaughtPersistPatchMap = ({
   pokeball,
   selectedBackgroundId,
   megaData,
+  crown,
   fusion,
   isShadow,
   isPurified,
@@ -199,6 +201,7 @@ export const buildCaughtPersistPatchMap = ({
     pokeball,
     selectedBackgroundId,
     megaData,
+    crown,
     fusion,
     isShadow,
     isPurified,
@@ -237,13 +240,23 @@ export const buildCaughtPersistPatchMap = ({
     };
   }
 
-  if (fusion.fusedWith && fusion.is_fused && fusion.fusedWith !== originalFusedWith) {
-    patchMap[fusion.fusedWith] = {
-      disabled: true,
-      fused_with: instanceId,
-      is_fused: true,
-      fusion_form: fusion.fusion_form,
-    };
+  if (fusion.fusedWith && fusion.is_fused) {
+    const mappedPartnerKeys = findInstanceKeysByRef({
+      allInstances,
+      instanceRef: fusion.fusedWith,
+    });
+    const partnerKeysToDisable =
+      mappedPartnerKeys.length > 0 ? mappedPartnerKeys : [fusion.fusedWith];
+
+    for (const partnerKey of partnerKeysToDisable) {
+      patchMap[partnerKey] = {
+        ...(patchMap[partnerKey] ?? {}),
+        disabled: true,
+        fused_with: instanceId,
+        is_fused: true,
+        fusion_form: fusion.fusion_form,
+      };
+    }
   }
 
   return patchMap;

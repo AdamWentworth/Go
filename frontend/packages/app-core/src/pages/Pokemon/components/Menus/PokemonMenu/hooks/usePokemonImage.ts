@@ -11,6 +11,8 @@ interface UsePokemonImageParams {
   megaForm?: string;
   isFused?: boolean;
   fusionForm?: string;
+  isCrown?: boolean;
+  crownForm?: string;
   isPurified: boolean;
   isGigantamax?: boolean;
 }
@@ -23,6 +25,8 @@ export function usePokemonImage({
   megaForm,
   isFused,
   fusionForm,
+  isCrown,
+  crownForm,
   isPurified,
   isGigantamax
 }: UsePokemonImageParams) {
@@ -39,7 +43,9 @@ export function usePokemonImage({
       isFused,
       fusionForm,
       isPurified,
-      isGigantamax
+      isGigantamax,
+      isCrown,
+      crownForm
     );
   }, [
     isDisabled,
@@ -48,6 +54,8 @@ export function usePokemonImage({
     megaForm,
     isFused,
     fusionForm,
+    isCrown,
+    crownForm,
     isPurified,
     isGigantamax,
     pokemon

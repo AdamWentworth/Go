@@ -11,6 +11,7 @@ import { useModal } from '@/contexts/ModalContext';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { VariantBackground, MegaEvolution } from '@/types/pokemonSubTypes';
+import { getCrownFormLabel, resolveActiveCrownForm } from '@/utils/crownHelpers';
 
 import useValidation from './hooks/useValidation';
 import { useFusion } from './hooks/useFusion';
@@ -34,6 +35,7 @@ import {
   resolveFusionMovePool,
   type FusionMoveSource,
 } from './utils/resolveFusionMovePool';
+import { resolveCrownMovePool } from './utils/resolveCrownMovePool';
 import { resolveFusionBackgroundPool } from './utils/resolveFusionBackgroundPool';
 import { resolveFusionComboBackground } from './utils/resolveFusionComboBackground';
 import { useCaughtFormState } from './hooks/useCaughtFormState';
@@ -137,6 +139,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
   const log = useMemo(() => createScopedLogger('caughtInstance.fusionMoves'), []);
   const instanceData: Partial<PokemonInstance> = pokemon.instanceData ?? {};
   const megaEvolutions: MegaEvolution[] = pokemon.megaEvolutions ?? [];
+  const crownForms = pokemon.crownForms ?? [];
   const name = String(pokemon.name ?? pokemon.species_name ?? 'Pokemon');
   const variantType = pokemon.variantType;
   const variantId = pokemon.variant_id;
@@ -153,6 +156,16 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
       instanceData.mega && megaEvolutions.length > 0
         ? String(instanceData.mega_form ?? megaEvolutions[0]?.form ?? '')
         : null,
+  });
+  const [crownData, setCrownData] = useState<{
+    isCrown: boolean;
+    crownForm: string | null;
+  }>(() => {
+    const selected = resolveActiveCrownForm(crownForms, null);
+    return {
+      isCrown: Boolean(instanceData.crown),
+      crownForm: getCrownFormLabel(selected),
+    };
   });
 
   const { fusion, setFusion, handleFuseProceed, handleFusionToggle, handleUndoFusion } = useFusion(
@@ -311,8 +324,20 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
           is_fused: fusion.is_fused,
           fusion_form: fusion.fusion_form ?? undefined,
         },
+        {
+          is_crown: crownData.isCrown,
+          crown_form: crownData.crownForm ?? undefined,
+        },
       ),
-    [pokemon, megaData.isMega, megaData.megaForm, fusion.is_fused, fusion.fusion_form],
+    [
+      pokemon,
+      megaData.isMega,
+      megaData.megaForm,
+      fusion.is_fused,
+      fusion.fusion_form,
+      crownData.isCrown,
+      crownData.crownForm,
+    ],
   );
 
   const currentImage = useSprite({
@@ -324,6 +349,8 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
     fusionForm: fusion.fusion_form,
     isPurified,
     gigantamax,
+    isCrown: crownData.isCrown,
+    crownForm: crownData.crownForm,
   });
 
   useCalculatedCP({ currentBaseStats, level, ivs, setCP });
@@ -388,6 +415,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
         pokeball,
         selectedBackgroundId: effectiveSelectedBackground?.background_id ?? null,
         megaData,
+        crown: crownData.isCrown,
         fusion: persistFusion,
         isShadow,
         isPurified,
@@ -427,14 +455,27 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
       }),
     [fusion.fusion_form, fusion.is_fused, fusion.storedFusionObject, pokemon],
   );
+  const resolvedCrownMoves = useMemo(
+    () =>
+      resolveCrownMovePool({
+        pokemon,
+        baseMoves: resolvedFusionMoves.moves,
+        crown: {
+          is_crown: crownData.isCrown,
+          crown_form: crownData.crownForm,
+        },
+      }),
+    [crownData.crownForm, crownData.isCrown, pokemon, resolvedFusionMoves.moves],
+  );
 
   const movesPokemon = useMemo<MovesPreviewPokemon>(
     () => {
       return {
         ...pokemon,
-        moves: resolvedFusionMoves.moves,
+        moves: resolvedCrownMoves.moves,
         instanceData: {
           ...(pokemon.instanceData ?? {}),
+          crown: crownData.isCrown,
           fusion_form: fusion.fusion_form,
           is_fused: fusion.is_fused,
           fast_move_id: moves.fastMove,
@@ -446,11 +487,12 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
     [
       fusion.fusion_form,
       fusion.is_fused,
+      crownData.isCrown,
       moves.chargedMove1,
       moves.chargedMove2,
       moves.fastMove,
       pokemon,
-      resolvedFusionMoves.moves,
+      resolvedCrownMoves.moves,
     ],
   );
 
@@ -496,6 +538,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
       !isShadow &&
       !name.toLowerCase().includes('clone'),
   );
+  const canRenderCrownPower = Boolean(crownForms.length > 0 && !isShadow);
 
   const hasMaxVariant =
     typeof variantType === 'string' &&
@@ -523,7 +566,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
 
   const canRenderFusionPower = Boolean(fusion.is_fused || fusionOptionCount > 0);
   const showPowerSectionDivider = Boolean(
-    canRenderMegaPower || canRenderMaxPower || canRenderFusionPower,
+    canRenderMegaPower || canRenderCrownPower || canRenderMaxPower || canRenderFusionPower,
   );
 
   return (
@@ -598,6 +641,9 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
         megaData={megaData}
         setMegaData={setMegaData}
         megaEvolutions={megaEvolutions}
+        crownData={crownData}
+        setCrownData={setCrownData}
+        crownForms={crownForms}
         isShadow={isShadow}
         name={name}
         dynamax={dynamax}

@@ -49,6 +49,30 @@ export interface MegaEvolution {
   costumes?: Costume[];
 }
 
+export interface CrownForm {
+  id: number;
+  base_pokemon_id: number;
+  crown_pokemon_id: number;
+  display_form: string;
+  name: string;
+  form?: string | null;
+  image_url?: string;
+  image_url_shiny?: string;
+  sprite_url?: string | null;
+  attack?: number;
+  defense?: number;
+  stamina?: number;
+  type_1_id: number;
+  type_2_id?: number;
+  type1_name?: string;
+  type2_name?: string;
+  date_available?: string | null;
+  date_shiny_available?: string | null;
+  cp40?: number;
+  cp50?: number;
+  moves?: Move[];
+}
+
 export interface Fusion {
   date_available: string;
   base_pokemon_id1: number;
@@ -183,6 +207,7 @@ export interface BasePokemon {
   evolves_to?: number[];
   evolves_from: number[];
   megaEvolutions: MegaEvolution[];
+  crownForms?: CrownForm[];
   raid_boss: RaidBoss[];
   sizes: {
     pokedex_height: number;

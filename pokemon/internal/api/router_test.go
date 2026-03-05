@@ -19,7 +19,7 @@ import (
 // buildSmallPayload returns a tiny payload so tests don't depend on a local sqlite DB.
 func buildSmallPayload(ctx context.Context) (any, error) {
 	return []any{
-		map[string]any{"pokemon_id": 1, "name": "Bulbasaur", "costumes": []any{}, "moves": []any{}, "fusion": []any{}, "backgrounds": []any{}, "megaEvolutions": []any{}, "raid_boss": []any{}, "max": []any{}, "female_data": nil, "sizes": nil, "evolutionData": map[string]any{}},
+		map[string]any{"pokemon_id": 1, "name": "Bulbasaur", "costumes": []any{}, "moves": []any{}, "fusion": []any{}, "backgrounds": []any{}, "megaEvolutions": []any{}, "crownForms": []any{}, "raid_boss": []any{}, "max": []any{}, "female_data": nil, "sizes": nil, "evolutionData": map[string]any{}},
 	}, nil
 }
 

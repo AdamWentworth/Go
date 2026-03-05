@@ -30,6 +30,7 @@ type BuildArgs = {
   pokeball: string | null;
   selectedBackgroundId: number | null;
   megaData: MegaData;
+  crown: boolean;
   fusion: FusionState;
   isShadow: boolean;
   isPurified: boolean;
@@ -72,6 +73,7 @@ export function buildInstanceChanges(a: BuildArgs) {
       mega: a.megaData.mega,
       is_mega: a.megaData.isMega,
       mega_form: a.megaData.isMega ? a.megaData.megaForm : null,
+      crown: a.crown,
       level: a.computedLevel,
       fusion: a.fusion.storedFusionObject,
       is_fused: a.fusion.is_fused,

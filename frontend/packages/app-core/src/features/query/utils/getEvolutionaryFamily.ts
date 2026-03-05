@@ -1,6 +1,16 @@
 // getEvolutionaryFamily.ts
 import type { PokemonVariant } from "@/types/pokemonVariants";
 
+const toNumericIds = (value: unknown): number[] => {
+  if (!Array.isArray(value)) return [];
+  const ids: number[] = [];
+  for (const item of value) {
+    const parsed = Number(item);
+    if (Number.isFinite(parsed)) ids.push(parsed);
+  }
+  return ids;
+};
+
 export function getEvolutionaryFamily(
   searchTerm: string,
   variants: PokemonVariant[]
@@ -19,6 +29,12 @@ export function getEvolutionaryFamily(
     const id = Number(pokemon.pokemon_id);
     if (!Number.isFinite(id)) continue;
 
+    const pokemonWithEvolutionData = pokemon as PokemonVariant & {
+      evolutionData?: { evolves_to?: unknown; evolves_from?: unknown };
+      evolves_to?: unknown;
+      evolves_from?: unknown;
+    };
+
     const name = String(pokemon.species_name ?? '').toLowerCase();
     if (terms.some((term) => name.includes(term))) {
       seedIds.add(id);
@@ -30,9 +46,17 @@ export function getEvolutionaryFamily(
       adjacency.set(id, neighbors);
     }
 
-    for (const next of [...(pokemon.evolves_to || []), ...(pokemon.evolves_from || [])]) {
-      const nextId = Number(next);
-      if (Number.isFinite(nextId)) neighbors.add(nextId);
+    const evolvesTo = toNumericIds(
+      pokemonWithEvolutionData.evolves_to ??
+        pokemonWithEvolutionData.evolutionData?.evolves_to,
+    );
+    const evolvesFrom = toNumericIds(
+      pokemonWithEvolutionData.evolves_from ??
+        pokemonWithEvolutionData.evolutionData?.evolves_from,
+    );
+
+    for (const nextId of [...evolvesTo, ...evolvesFrom]) {
+      neighbors.add(nextId);
     }
   }
 

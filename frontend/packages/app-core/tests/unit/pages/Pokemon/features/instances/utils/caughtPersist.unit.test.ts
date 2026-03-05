@@ -73,6 +73,7 @@ describe('caughtPersist utils', () => {
       pokeball: 'ultra_ball',
       selectedBackgroundId: 7,
       megaData: baseMega,
+      crown: false,
       fusion: {
         ...baseFusion,
         is_fused: true,
@@ -140,6 +141,7 @@ describe('caughtPersist utils', () => {
       pokeball: null,
       selectedBackgroundId: null,
       megaData: baseMega,
+      crown: false,
       fusion: {
         ...baseFusion,
         is_fused: false,
@@ -199,6 +201,7 @@ describe('caughtPersist utils', () => {
       pokeball: null,
       selectedBackgroundId: null,
       megaData: baseMega,
+      crown: false,
       fusion: {
         ...baseFusion,
         is_fused: false,
@@ -228,5 +231,61 @@ describe('caughtPersist utils', () => {
       fusion_form: null,
     });
     expect(patchMap[partnerUuid]).toBeUndefined();
+  });
+
+  it('always enforces disabled state on the active fused partner even when partner did not change', () => {
+    const partnerUuid = 'c9277c53-f26d-4370-bfec-d26a9278df64';
+    const legacyPartnerKey = `0643-default_${partnerUuid}`;
+
+    const patchMap = buildCaughtPersistPatchMap({
+      instanceId: 'current-instance-id',
+      nickname: null,
+      isLucky: false,
+      isTraded: false,
+      isFavorite: false,
+      gender: null,
+      weight: null,
+      height: null,
+      computedCP: null,
+      computedLevel: null,
+      computedIvs: baseIvs,
+      moves: baseMoves,
+      locationCaught: null,
+      dateCaught: null,
+      originalTrainerName: null,
+      originalTrainerId: null,
+      tradedDate: null,
+      pokeball: null,
+      selectedBackgroundId: null,
+      megaData: baseMega,
+      crown: false,
+      fusion: {
+        ...baseFusion,
+        is_fused: true,
+        fusedWith: partnerUuid,
+        fusion_form: 'White Kyurem',
+      },
+      isShadow: false,
+      isPurified: false,
+      maxAttack: '',
+      maxGuard: '',
+      maxSpirit: '',
+      originalFusedWith: partnerUuid,
+      allInstances: {
+        [legacyPartnerKey]: {
+          instance_id: legacyPartnerKey,
+          disabled: false,
+          is_fused: false,
+          fused_with: null,
+        } as Partial<import('@/types/pokemonInstance').PokemonInstance>,
+      },
+    });
+
+    expect(patchMap[legacyPartnerKey]).toEqual({
+      disabled: true,
+      fused_with: 'current-instance-id',
+      is_fused: true,
+      fusion_form: 'White Kyurem',
+    });
   });
 });

@@ -14,6 +14,7 @@ export function usePokemonAttributes(
   const megaForm = ownership?.mega_form ?? undefined;
   const isFused = ownership?.is_fused ?? undefined;
   const fusionForm = ownership?.fusion_form ?? undefined;
+  const isCrown = ownership?.crown === true;
   const isPurified = ownership?.purified === true;
 
   const variantType = pokemon.variantType || '';
@@ -27,6 +28,7 @@ export function usePokemonAttributes(
     megaForm,
     isFused,
     fusionForm,
+    isCrown,
     isPurified,
     isDynamax,
     isGigantamax,

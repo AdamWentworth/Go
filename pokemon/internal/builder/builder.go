@@ -56,6 +56,7 @@ var (
 		"cp50",
 		"evolutionData",
 		"megaEvolutions",
+		"crownForms",
 		"raid_boss",
 		"max",
 		"sizes",
@@ -152,6 +153,30 @@ var (
 		"cp50",
 	}
 
+	crownKeyOrder = []string{
+		"id",
+		"base_pokemon_id",
+		"crown_pokemon_id",
+		"display_form",
+		"name",
+		"form",
+		"image_url",
+		"image_url_shiny",
+		"sprite_url",
+		"attack",
+		"defense",
+		"stamina",
+		"type_1_id",
+		"type_2_id",
+		"type1_name",
+		"type2_name",
+		"date_available",
+		"date_shiny_available",
+		"cp40",
+		"cp50",
+		"moves",
+	}
+
 	sizesKeyOrder = []string{
 		"pokedex_height",
 		"pokedex_weight",
@@ -198,6 +223,9 @@ func (b *Builder) BuildFullPokemonPayload(ctx context.Context) (any, error) {
 		return nil, err
 	}
 	if err := b.attachMegaEvolutions(ctx, orderedIDs, pokemonByID); err != nil {
+		return nil, err
+	}
+	if err := b.attachCrownForms(ctx, orderedIDs, pokemonByID); err != nil {
 		return nil, err
 	}
 	if err := b.attachRaidBoss(ctx, orderedIDs, pokemonByID); err != nil {

@@ -14,6 +14,7 @@ func TestStableShapeAssertions_MinimalSample(t *testing.T) {
 			"fusion":         []any{},
 			"backgrounds":    []any{},
 			"megaEvolutions": []any{},
+			"crownForms":     []any{},
 			"raid_boss":      []any{},
 			"max":            []any{},
 			"female_data":    nil,
@@ -35,6 +36,7 @@ func assertStableShape(t *testing.T, arr []map[string]any) {
 		"fusion",
 		"backgrounds",
 		"megaEvolutions",
+		"crownForms",
 		"raid_boss",
 		"max",
 	}

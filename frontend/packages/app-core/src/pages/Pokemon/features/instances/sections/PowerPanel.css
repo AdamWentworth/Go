@@ -13,8 +13,11 @@
 }
 
 .max-component,
-.mega-component {
+.mega-component,
+.crown-component {
   flex: 1;
+  display: flex;
+  justify-content: center;
 }
 
 .max-mega-container--mega-only .mega-component {

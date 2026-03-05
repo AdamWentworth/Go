@@ -72,6 +72,7 @@ func (b *Builder) loadBasePokemon(ctx context.Context) ([]int, map[int]map[strin
 			pokemonByID[id]["fusion"] = []any{}
 			pokemonByID[id]["backgrounds"] = []any{}
 			pokemonByID[id]["megaEvolutions"] = []any{}
+			pokemonByID[id]["crownForms"] = []any{}
 			pokemonByID[id]["raid_boss"] = []any{}
 			pokemonByID[id]["max"] = []any{}
 

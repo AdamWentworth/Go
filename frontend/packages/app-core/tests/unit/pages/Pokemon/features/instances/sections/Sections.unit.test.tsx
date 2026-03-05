@@ -464,6 +464,9 @@ describe('instances section components', () => {
         megaData={{}}
         setMegaData={vi.fn()}
         megaEvolutions={[]}
+        crownData={{ isCrown: false, crownForm: null }}
+        setCrownData={vi.fn()}
+        crownForms={[]}
         isShadow={false}
         name="Mewtwo"
         dynamax={false}
@@ -482,7 +485,7 @@ describe('instances section components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'toggle-max' }));
 
     expect(onToggleMax).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId('mega-component')).toBeInTheDocument();
+    expect(screen.queryByTestId('mega-component')).not.toBeInTheDocument();
     expect(screen.getByText('max-1-2-3')).toBeInTheDocument();
   });
 
@@ -503,6 +506,9 @@ describe('instances section components', () => {
             type_1_id: 6,
           },
         ]}
+        crownData={{ isCrown: false, crownForm: null }}
+        setCrownData={vi.fn()}
+        crownForms={[]}
         isShadow={false}
         name="Tyranitar"
         dynamax={false}

@@ -1,0 +1,38 @@
+.crown-component {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.crown-component.edit-mode {
+  cursor: pointer;
+}
+
+.crown-component .crown-image {
+  width: 40px;
+  height: 40px;
+  transition: filter 0.3s ease, cursor 0.3s ease, opacity 0.3s ease;
+  object-fit: contain;
+}
+
+.crown-component .saturated {
+  filter: none;
+}
+
+.crown-component .desaturated {
+  filter: grayscale(100%);
+}
+
+.crown-component .static-mode {
+  pointer-events: none;
+  cursor: default;
+  opacity: 1;
+}
+
+.crown-component .crown-image.interactive:hover {
+  opacity: 0.8;
+}
+
+.crown-component .static-mode:hover {
+  opacity: 1;
+}

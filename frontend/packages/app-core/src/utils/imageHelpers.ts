@@ -1,8 +1,9 @@
 // imageHelpers.ts
 
 import type { PokemonVariant } from '../types/pokemonVariants';
-import type { Costume, MegaEvolution } from '../types/pokemonSubTypes';
+import type { Costume, CrownForm, MegaEvolution } from '../types/pokemonSubTypes';
 import { createScopedLogger } from '@/utils/logger';
+import { resolveActiveCrownForm } from '@/utils/crownHelpers';
 
 const DEFAULT_IMAGE_URL = '/images/default_pokemon.png';
 const log = createScopedLogger('imageHelpers');
@@ -15,7 +16,9 @@ export function determineImageUrl(
   isFused: boolean = false,
   fusionForm?: string,
   isPurified: boolean = false,
-  gigantamax: boolean = false
+  gigantamax: boolean = false,
+  isCrown: boolean = false,
+  crownForm?: string,
 ): string {
   if (!pokemon) {
     log.warn('determineImageUrl called without a valid pokemon object.');
@@ -135,6 +138,23 @@ export function determineImageUrl(
 
   const megaImage = handleMegaEvolution();
   if (megaImage) return megaImage;
+
+  const handleCrownForm = (): string | null => {
+    if (!isCrown || !Array.isArray(pokemon.crownForms) || pokemon.crownForms.length === 0) {
+      return null;
+    }
+    const selected = resolveActiveCrownForm(
+      pokemon.crownForms as CrownForm[] | undefined,
+      crownForm,
+    );
+    if (!selected) return null;
+    return isShiny
+      ? selected.image_url_shiny || selected.image_url || DEFAULT_IMAGE_URL
+      : selected.image_url || DEFAULT_IMAGE_URL;
+  };
+
+  const crownImage = handleCrownForm();
+  if (crownImage) return crownImage;
 
   if (isPurified) {
     if (isPurifiedShiny && pokemon.image_url_shiny) {

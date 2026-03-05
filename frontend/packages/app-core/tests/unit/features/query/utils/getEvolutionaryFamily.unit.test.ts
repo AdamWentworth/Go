@@ -45,4 +45,33 @@ describe('getEvolutionaryFamily', () => {
     expect(getEvolutionaryFamily('', variants)).toEqual(new Set<number>());
     expect(getEvolutionaryFamily('   ', variants)).toEqual(new Set<number>());
   });
+
+  it('supports backend evolutionData object when evolves_to/evolves_from are absent', () => {
+    const evolutionDataVariants: PokemonVariant[] = [
+      makeVariant({
+        pokemon_id: 1,
+        species_name: 'Bulbasaur',
+        evolves_to: undefined,
+        evolves_from: undefined,
+        evolutionData: { evolves_to: [2] },
+      } as unknown as Partial<PokemonVariant>),
+      makeVariant({
+        pokemon_id: 2,
+        species_name: 'Ivysaur',
+        evolves_to: undefined,
+        evolves_from: undefined,
+        evolutionData: { evolves_to: [3], evolves_from: [1] },
+      } as unknown as Partial<PokemonVariant>),
+      makeVariant({
+        pokemon_id: 3,
+        species_name: 'Venusaur',
+        evolves_to: undefined,
+        evolves_from: undefined,
+        evolutionData: { evolves_from: [2] },
+      } as unknown as Partial<PokemonVariant>),
+    ];
+
+    const family = getEvolutionaryFamily('bulbasaur', evolutionDataVariants);
+    expect([...family].sort((a, b) => a - b)).toEqual([1, 2, 3]);
+  });
 });

@@ -3,8 +3,9 @@ import './PowerPanel.css';
 import MaxComponent from '../components/Caught/MaxComponent';
 import MaxMovesComponent from '../components/Caught/MaxMovesComponent';
 import MegaComponent from '../components/Caught/MegaComponent';
+import CrownComponent from '../components/Caught/CrownComponent';
 import type { PokemonVariant } from '@/types/pokemonVariants';
-import type { MegaEvolution } from '@/types/pokemonSubTypes';
+import type { CrownForm, MegaEvolution } from '@/types/pokemonSubTypes';
 import type { MegaData } from '../utils/buildInstanceChanges';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
@@ -21,6 +22,11 @@ interface PowerPanelProps {
   megaData?: MegaData | Partial<MegaData>;
   setMegaData?: React.Dispatch<React.SetStateAction<MegaData>>;
   megaEvolutions?: MegaEvolution[];
+  crownData: { isCrown: boolean; crownForm: string | null };
+  setCrownData: React.Dispatch<
+    React.SetStateAction<{ isCrown: boolean; crownForm: string | null }>
+  >;
+  crownForms?: CrownForm[];
   isShadow: boolean;
   name: string;
   dynamax: boolean;
@@ -41,6 +47,9 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
   megaData = { isMega: false, mega: false, megaForm: null },
   setMegaData = () => undefined,
   megaEvolutions = [],
+  crownData,
+  setCrownData,
+  crownForms = [],
   isShadow,
   name,
   dynamax,
@@ -71,11 +80,19 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
     pokemon.max.length > 0 &&
     !pokemon.instanceData?.shadow &&
     !pokemon.instanceData?.purified &&
-    !pokemon.variantType?.includes('costume');
+      !pokemon.variantType?.includes('costume');
+  const canRenderMega =
+    Array.isArray(megaEvolutions) &&
+    megaEvolutions.length > 0 &&
+    !isShadow &&
+    !name.toLowerCase().includes('clone');
+  const canRenderCrown = Array.isArray(crownForms) && crownForms.length > 0 && !isShadow;
+  const renderedPowerCount =
+    Number(canRenderMax) + Number(canRenderMega) + Number(canRenderCrown);
 
   return (
     <>
-      <div className={`max-mega-container ${canRenderMax ? '' : 'max-mega-container--mega-only'}`}>
+      <div className={`max-mega-container ${renderedPowerCount <= 1 ? 'max-mega-container--mega-only' : ''}`}>
         {canRenderMax ? (
           <div className="max-component">
             <MaxComponent
@@ -88,16 +105,29 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
             />
           </div>
         ) : null}
-        <div className="mega-component">
-          <MegaComponent
-            megaData={normalizedMegaData}
-            setMegaData={setMegaData}
-            editMode={editMode}
-            megaEvolutions={megaEvolutions}
-            isShadow={isShadow}
-            name={name}
-          />
-        </div>
+        {canRenderMega ? (
+          <div className="mega-component">
+            <MegaComponent
+              megaData={normalizedMegaData}
+              setMegaData={setMegaData}
+              editMode={editMode}
+              megaEvolutions={megaEvolutions}
+              isShadow={isShadow}
+              name={name}
+            />
+          </div>
+        ) : null}
+        {canRenderCrown ? (
+          <div className="crown-component">
+            <CrownComponent
+              crownData={crownData}
+              setCrownData={setCrownData}
+              editMode={editMode}
+              crownForms={crownForms}
+              isShadow={isShadow}
+            />
+          </div>
+        ) : null}
       </div>
 
       <MaxMovesComponent

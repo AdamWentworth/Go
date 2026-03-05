@@ -4,6 +4,7 @@ export type {
   Costume,
   ShadowCostume,
   MegaEvolution,
+  CrownForm,
   Fusion,
   FusionBackgroundComboRule,
   MaxForm,
