@@ -7,7 +7,10 @@ class CostumePokemonManager:
     def fetch_pokemon_costumes(self, pokemon_id):
         cursor = self.conn.get_cursor()
         query = """
-            SELECT * FROM costume_pokemon WHERE pokemon_id = ?
+            SELECT *
+            FROM costume_pokemon
+            WHERE pokemon_id = ?
+            ORDER BY costume_id
         """
         cursor.execute(query, (pokemon_id,))
         return cursor.fetchall()
@@ -56,8 +59,10 @@ class CostumePokemonManager:
     def fetch_costume_options(self, pokemon_id):
         cursor = self.conn.get_cursor()
         query = """
-            SELECT costume_id, costume_name FROM costume_pokemon
+            SELECT costume_id, costume_name
+            FROM costume_pokemon
             WHERE pokemon_id = ?
+            ORDER BY costume_id
         """
         cursor.execute(query, (pokemon_id,))
         return ["{}: {}".format(row[0], row[1]) for row in cursor.fetchall()]

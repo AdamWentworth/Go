@@ -16,6 +16,37 @@ class CostumePokemonManagerTests(TempDBTestCase):
         rows = self.manager.fetch_pokemon_costumes(pokemon_id)
         self.assertGreater(len(rows), 0)
         self.assertTrue(all(row[1] == pokemon_id for row in rows))
+        self.assertEqual([row[0] for row in rows], sorted(row[0] for row in rows))
+
+    def test_fetch_pokemon_costumes_orders_rows_by_costume_id(self):
+        pokemon_id = 999001
+        self.db_connection.get_cursor().executemany(
+            """
+            INSERT INTO costume_pokemon (
+                costume_id,
+                pokemon_id,
+                costume_name,
+                shiny_available,
+                date_available,
+                date_shiny_available,
+                image_url_costume,
+                image_url_shiny_costume,
+                image_url_costume_female,
+                image_url_shiny_costume_female
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (7003, pokemon_id, "third", 0, None, None, None, None, None, None),
+                (7001, pokemon_id, "first", 0, None, None, None, None, None, None),
+                (7002, pokemon_id, "second", 0, None, None, None, None, None, None),
+            ],
+        )
+        self.db_connection.commit()
+
+        rows = self.manager.fetch_pokemon_costumes(pokemon_id)
+
+        self.assertEqual([row[0] for row in rows], [7001, 7002, 7003])
 
     def test_add_costume_and_fetch_options(self):
         costume_details = {
@@ -42,6 +73,36 @@ class CostumePokemonManagerTests(TempDBTestCase):
 
         options = self.manager.fetch_costume_options(1)
         self.assertTrue(any(opt.startswith(f"{costume_id}: ") for opt in options))
+
+    def test_fetch_costume_options_orders_by_costume_id(self):
+        pokemon_id = 999002
+        self.db_connection.get_cursor().executemany(
+            """
+            INSERT INTO costume_pokemon (
+                costume_id,
+                pokemon_id,
+                costume_name,
+                shiny_available,
+                date_available,
+                date_shiny_available,
+                image_url_costume,
+                image_url_shiny_costume,
+                image_url_costume_female,
+                image_url_shiny_costume_female
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (7010, pokemon_id, "ten", 0, None, None, None, None, None, None),
+                (7008, pokemon_id, "eight", 0, None, None, None, None, None, None),
+                (7009, pokemon_id, "nine", 0, None, None, None, None, None, None),
+            ],
+        )
+        self.db_connection.commit()
+
+        options = self.manager.fetch_costume_options(pokemon_id)
+
+        self.assertEqual(options, ["7008: eight", "7009: nine", "7010: ten"])
 
     def test_update_pokemon_costume_updates_values_and_boolean_normalization(self):
         costume_id = self.scalar("SELECT costume_id FROM costume_pokemon LIMIT 1")

@@ -58,6 +58,13 @@ MONTH_NAME_PATTERN = re.compile(
 )
 
 
+MULTI_COSTUME_BACKGROUND_FILENAMES = {
+    "special_background_valor.png",
+    "special_background_mystic.png",
+    "special_background_instinct.png",
+}
+
+
 @dataclass
 class ParsedBackground:
     image_filename: str
@@ -93,6 +100,7 @@ class SyncStats:
     skipped_without_image_url: int = 0
     backgrounds_inserted: int = 0
     backgrounds_updated: int = 0
+    backgrounds_merged: int = 0
     links_added: int = 0
     links_collapsed_pair: int = 0
     links_deduped_exact: int = 0
@@ -115,6 +123,27 @@ def normalize_rel_path(path_value: str) -> str:
     return f"/{normalized}"
 
 
+def is_background_asset_filename(filename: str) -> bool:
+    lowered = (filename or "").lower()
+    return "background" in lowered or "location_card" in lowered or "location card" in lowered
+
+
+def allows_multiple_costume_rows_for_background(
+    image_filename: Optional[str],
+    background_name: Optional[str] = None,
+) -> bool:
+    filename = (image_filename or "").lower()
+    if filename in MULTI_COSTUME_BACKGROUND_FILENAMES:
+        return True
+
+    name = normalize_space(background_name or "").lower()
+    if not name:
+        return False
+    if "triumph together" in name and any(team in name for team in ("valor", "mystic", "instinct")):
+        return True
+    return False
+
+
 def extract_filename(value: str) -> Optional[str]:
     if not value:
         return None
@@ -125,6 +154,43 @@ def extract_filename(value: str) -> Optional[str]:
         return None
     base = base.split("?")[0]
     return base or None
+
+
+def normalize_match_token_text(value: Optional[str]) -> str:
+    normalized = normalize_space(value or "").lower()
+    normalized = normalized.replace("&", " and ")
+    normalized = re.sub(r"\bmlb\b", "", normalized)
+    normalized = re.sub(r"[\-_/]+", " ", normalized)
+    normalized = re.sub(r"[^a-z0-9,\s]+", " ", normalized)
+    normalized = re.sub(r"\s*,\s*", ", ", normalized)
+    normalized = normalize_space(normalized.replace(",", " "))
+    return normalized
+
+
+def normalize_background_name_for_match(value: Optional[str]) -> str:
+    return normalize_match_token_text(value)
+
+
+def normalize_background_location_for_match(value: Optional[str]) -> str:
+    return normalize_match_token_text(value)
+
+
+def normalize_background_date_for_match(value: Optional[str]) -> str:
+    return normalize_space(value or "")
+
+
+def build_background_equivalence_key(
+    *,
+    name: Optional[str],
+    location: Optional[str],
+    date: Optional[str],
+) -> Optional[Tuple[str, str, str]]:
+    normalized_name = normalize_background_name_for_match(name)
+    normalized_location = normalize_background_location_for_match(location)
+    normalized_date = normalize_background_date_for_match(date)
+    if not normalized_name or not normalized_date:
+        return None
+    return normalized_name, normalized_location, normalized_date
 
 
 def normalize_fandom_image_url(url: str) -> Optional[str]:
@@ -288,39 +354,81 @@ def choose_preferred_pokemon_id(rows: List[Tuple[int, str, Optional[str]]]) -> i
     return sorted(rows, key=score)[0][0]
 
 
-def parse_background_cell(cell: Optional[Tag]) -> Optional[Tuple[str, str, str, Optional[str]]]:
+def infer_location_from_background_filename(filename: str) -> Optional[str]:
+    stem = Path(filename).stem
+    if stem.lower().startswith("location_background_pokelid_"):
+        province = stem[len("Location_Background_Pokelid_") :].replace("_", " ")
+        province = normalize_space(province)
+        if province:
+            return f"{province}, Japan"
+    return None
+
+
+def parse_background_entries_from_cell(cell: Optional[Tag]) -> List[Tuple[str, str, str, Optional[str]]]:
     if cell is None:
-        return None
+        return []
 
-    image_anchor = cell.select_one("a.mw-file-description.image")
-    image_tag = None
-    if image_anchor is not None:
-        image_tag = image_anchor.find("img")
-    if image_tag is None:
-        image_tag = cell.select_one("img.mw-file-element")
-    if image_tag is None:
-        return None
+    # Handle nested layout cells (e.g. Poké Lid blocks with many images in one parent cell).
+    nested_cells = cell.select("table td")
+    candidate_cells = nested_cells if nested_cells else [cell]
 
-    image_key = image_tag.get("data-image-key") or image_tag.get("data-image-name") or ""
-    image_url = normalize_fandom_image_url(
-        (image_anchor.get("href") if image_anchor is not None else None)
-        or image_tag.get("data-src")
-        or image_tag.get("src")
-        or ""
-    )
-    if not image_url:
-        return None
+    entries_by_filename: Dict[str, Tuple[str, str, str, Optional[str]]] = {}
+    for candidate in candidate_cells:
+        added_from_anchor = False
+        for image_anchor in candidate.select("a.mw-file-description.image"):
+            image_tag = image_anchor.find("img")
+            if image_tag is None:
+                continue
 
-    filename = extract_filename(image_key) or extract_filename(image_url)
-    if not filename:
-        return None
+            image_key = image_tag.get("data-image-key") or image_tag.get("data-image-name") or ""
+            image_url = normalize_fandom_image_url(
+                image_anchor.get("href")
+                or image_tag.get("data-src")
+                or image_tag.get("src")
+                or ""
+            )
+            if not image_url:
+                continue
 
-    raw_text = normalize_space(cell.get_text(" ", strip=True))
-    raw_text = re.sub(r"(?i)\brequires\s+fusion\b", "", raw_text)
-    raw_text = normalize_space(raw_text)
-    location = raw_text or None
+            filename = extract_filename(image_key) or extract_filename(image_url)
+            if not filename or not is_background_asset_filename(filename):
+                continue
 
-    return filename, image_url, image_key or filename, location
+            raw_text = normalize_space(candidate.get_text(" ", strip=True))
+            raw_text = re.sub(r"(?i)\brequires\s+fusion\b", "", raw_text)
+            raw_text = normalize_space(raw_text)
+            location = infer_location_from_background_filename(filename) or (raw_text or None)
+
+            entries_by_filename[filename.lower()] = (
+                filename,
+                image_url,
+                image_key or filename,
+                location,
+            )
+            added_from_anchor = True
+
+        # Fallback path for raw img tags without expected anchor wrappers.
+        if not added_from_anchor:
+            image_tag = candidate.select_one("img.mw-file-element")
+            if image_tag is None:
+                continue
+            image_key = image_tag.get("data-image-key") or image_tag.get("data-image-name") or ""
+            image_url = normalize_fandom_image_url(image_tag.get("data-src") or image_tag.get("src") or "")
+            if not image_url:
+                continue
+            filename = extract_filename(image_key) or extract_filename(image_url)
+            if not filename or not is_background_asset_filename(filename):
+                continue
+            raw_text = normalize_space(candidate.get_text(" ", strip=True))
+            location = infer_location_from_background_filename(filename) or (raw_text or None)
+            entries_by_filename[filename.lower()] = (
+                filename,
+                image_url,
+                image_key or filename,
+                location,
+            )
+
+    return list(entries_by_filename.values())
 
 
 def parse_pokemon_refs(cell: Optional[Tag]) -> Set[Tuple[str, str]]:
@@ -397,46 +505,103 @@ def parse_backgrounds_from_html(html: str) -> List[ParsedBackground]:
         table_year = infer_table_year(table)
 
         table_last_valid_date: Optional[str] = None
+        table_last_pokelid_refs: Set[Tuple[str, str]] = set()
         for columns in iter_rows_with_rowspan(table):
-            bg_data = parse_background_cell(columns.get(0))
-            if not bg_data:
+            unique_cells: List[Tag] = []
+            seen_cells: Set[int] = set()
+            for value in columns.values():
+                if value is None:
+                    continue
+                cell_id = id(value)
+                if cell_id in seen_cells:
+                    continue
+                seen_cells.add(cell_id)
+                unique_cells.append(value)
+
+            if not unique_cells:
                 continue
 
-            image_filename, source_image_url, image_key, location = bg_data
-            event_text = normalize_space(columns.get(2).get_text(" ", strip=True)) if columns.get(2) else None
-            date_value = parse_start_date(
-                event_text,
-                default_year=table_year,
-                fallback_text=image_filename,
-            )
-            if date_value is None and looks_like_location_label(event_text) and table_last_valid_date:
+            pokemon_refs: Set[Tuple[str, str]] = set()
+            for cell in unique_cells:
+                pokemon_refs.update(parse_pokemon_refs(cell))
+
+            event_candidates: List[str] = []
+            if columns.get(2):
+                event_candidates.append(normalize_space(columns.get(2).get_text(" ", strip=True)))
+            for cell in unique_cells:
+                text = normalize_space(cell.get_text(" ", strip=True))
+                if text:
+                    event_candidates.append(text)
+
+            event_text: Optional[str] = None
+            date_value: Optional[str] = None
+            for candidate in event_candidates:
+                parsed_date = parse_start_date(
+                    candidate,
+                    default_year=table_year,
+                    fallback_text=candidate,
+                )
+                if parsed_date:
+                    event_text = candidate
+                    date_value = parsed_date
+                    break
+
+            if event_text is None and event_candidates:
+                event_text = event_candidates[0]
+            if date_value is None and event_text and looks_like_location_label(event_text) and table_last_valid_date:
                 date_value = table_last_valid_date
             if date_value:
                 table_last_valid_date = date_value
-            pokemon_refs = parse_pokemon_refs(columns.get(1))
 
-            key = image_filename.lower()
-            if key not in parsed:
-                parsed[key] = ParsedBackground(
-                    image_filename=image_filename,
-                    source_image_url=source_image_url,
-                    name=derive_background_name_from_filename(image_key),
-                    location=location,
-                    date=date_value,
-                    event=event_text,
-                )
-            else:
-                entry = parsed[key]
-                if not entry.location and location:
-                    entry.location = location
-                if not entry.date and date_value:
-                    entry.date = date_value
-                if (not entry.event) and event_text:
-                    entry.event = event_text
-                if entry.source_image_url != source_image_url and source_image_url:
-                    entry.source_image_url = source_image_url
+            row_backgrounds: List[Tuple[str, str, str, Optional[str]]] = []
+            for cell in unique_cells:
+                row_backgrounds.extend(parse_background_entries_from_cell(cell))
 
-            parsed[key].pokemon_refs.update(pokemon_refs)
+            if not row_backgrounds:
+                continue
+
+            # Poké Lid rows can spread Pikachu refs across rowspans.
+            if any("pokelid" in background[0].lower() for background in row_backgrounds):
+                if pokemon_refs:
+                    table_last_pokelid_refs = set(pokemon_refs)
+                elif table_last_pokelid_refs:
+                    pokemon_refs = set(table_last_pokelid_refs)
+
+            for image_filename, source_image_url, image_key, location in row_backgrounds:
+                entry_date = date_value
+                if entry_date is None:
+                    entry_date = parse_start_date(
+                        event_text,
+                        default_year=table_year,
+                        fallback_text=image_filename,
+                    )
+                if entry_date is None and event_text and looks_like_location_label(event_text) and table_last_valid_date:
+                    entry_date = table_last_valid_date
+                if entry_date:
+                    table_last_valid_date = entry_date
+
+                key = image_filename.lower()
+                if key not in parsed:
+                    parsed[key] = ParsedBackground(
+                        image_filename=image_filename,
+                        source_image_url=source_image_url,
+                        name=derive_background_name_from_filename(image_key),
+                        location=location,
+                        date=entry_date,
+                        event=event_text,
+                    )
+                else:
+                    entry = parsed[key]
+                    if not entry.location and location:
+                        entry.location = location
+                    if not entry.date and entry_date:
+                        entry.date = entry_date
+                    if (not entry.event) and event_text:
+                        entry.event = event_text
+                    if entry.source_image_url != source_image_url and source_image_url:
+                        entry.source_image_url = source_image_url
+
+                parsed[key].pokemon_refs.update(pokemon_refs)
 
     return sorted(parsed.values(), key=lambda item: item.image_filename.lower())
 
@@ -575,7 +740,11 @@ def normalize_desired_links(desired_links: Set[Tuple[int, Optional[int]]]) -> Se
 
 def load_background_records(
     conn: sqlite3.Connection,
-) -> Tuple[Dict[str, BackgroundRecord], Dict[int, Set[Tuple[int, Optional[int]]]]]:
+) -> Tuple[
+    Dict[str, BackgroundRecord],
+    Dict[Tuple[str, str, str], BackgroundRecord],
+    Dict[int, Set[Tuple[int, Optional[int]]]],
+]:
     cursor = conn.cursor()
     cursor.execute(
         """
@@ -585,6 +754,7 @@ def load_background_records(
         """
     )
     by_filename: Dict[str, BackgroundRecord] = {}
+    by_equivalence: Dict[Tuple[str, str, str], BackgroundRecord] = {}
     for row in cursor.fetchall():
         record = BackgroundRecord(
             background_id=int(row[0]),
@@ -596,13 +766,101 @@ def load_background_records(
         filename = extract_filename(record.image_url or "")
         if filename:
             by_filename[filename.lower()] = record
+        equivalence_key = build_background_equivalence_key(
+            name=record.name,
+            location=record.location,
+            date=record.date,
+        )
+        if equivalence_key and (
+            equivalence_key not in by_equivalence
+            or record.background_id < by_equivalence[equivalence_key].background_id
+        ):
+            by_equivalence[equivalence_key] = record
 
     cursor.execute("SELECT background_id, pokemon_id, costume_id FROM pokemon_backgrounds")
     links: Dict[int, Set[Tuple[int, Optional[int]]]] = {}
     for background_id, pokemon_id, costume_id in cursor.fetchall():
         links.setdefault(int(background_id), set()).add((int(pokemon_id), int(costume_id) if costume_id is not None else None))
 
-    return by_filename, links
+    return by_filename, by_equivalence, links
+
+
+def collapse_equivalent_background_records(
+    conn: sqlite3.Connection,
+    dry_run: bool,
+    verbose: bool,
+    stats: SyncStats,
+) -> None:
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT background_id, name, location, image_url, date
+        FROM backgrounds
+        ORDER BY background_id
+        """
+    )
+    rows = cursor.fetchall()
+
+    groups: Dict[Tuple[str, str, str], List[BackgroundRecord]] = {}
+    for row in rows:
+        record = BackgroundRecord(
+            background_id=int(row[0]),
+            name=row[1],
+            location=row[2],
+            image_url=row[3],
+            date=row[4],
+        )
+        key = build_background_equivalence_key(
+            name=record.name,
+            location=record.location,
+            date=record.date,
+        )
+        if key is None:
+            continue
+        groups.setdefault(key, []).append(record)
+
+    merge_pairs: List[Tuple[int, int]] = []
+    for _key, records in groups.items():
+        if len(records) <= 1:
+            continue
+        records = sorted(records, key=lambda record: record.background_id)
+        keep_id = records[0].background_id
+        for duplicate in records[1:]:
+            merge_pairs.append((duplicate.background_id, keep_id))
+
+    if not merge_pairs:
+        return
+
+    stats.backgrounds_merged += len(merge_pairs)
+    if dry_run:
+        if verbose:
+            for duplicate_id, keep_id in merge_pairs:
+                print(f"[DRY] Would merge background_id={duplicate_id} into background_id={keep_id}")
+        return
+
+    for duplicate_id, keep_id in merge_pairs:
+        cursor.execute(
+            "UPDATE pokemon_backgrounds SET background_id = ? WHERE background_id = ?",
+            (keep_id, duplicate_id),
+        )
+        cursor.execute(
+            "UPDATE fusion_background_combo_rules SET member1_background_id = ? WHERE member1_background_id = ?",
+            (keep_id, duplicate_id),
+        )
+        cursor.execute(
+            "UPDATE fusion_background_combo_rules SET member2_background_id = ? WHERE member2_background_id = ?",
+            (keep_id, duplicate_id),
+        )
+        cursor.execute(
+            "UPDATE fusion_background_combo_rules SET combo_background_id = ? WHERE combo_background_id = ?",
+            (keep_id, duplicate_id),
+        )
+        cursor.execute(
+            "DELETE FROM backgrounds WHERE background_id = ?",
+            (duplicate_id,),
+        )
+        if verbose:
+            print(f"[INFO] Merged background_id={duplicate_id} into background_id={keep_id}")
 
 
 def dedupe_exact_background_links(
@@ -652,30 +910,73 @@ def collapse_links_to_one_per_pokemon_background(
     cursor = conn.cursor()
     cursor.execute(
         """
-        SELECT rowid, pokemon_id, background_id, costume_id
-        FROM pokemon_backgrounds
-        ORDER BY pokemon_id, background_id, rowid
+        SELECT pb.rowid, pb.pokemon_id, pb.background_id, pb.costume_id, b.image_url, b.name
+        FROM pokemon_backgrounds pb
+        LEFT JOIN backgrounds b ON b.background_id = pb.background_id
+        ORDER BY pb.pokemon_id, pb.background_id, pb.rowid
         """
     )
     rows = cursor.fetchall()
-    kept_by_pair: Dict[Tuple[int, int], Tuple[int, Optional[int]]] = {}
-    remove_rowids: List[int] = []
-
-    for rowid, pokemon_id, background_id, costume_id in rows:
+    rows_by_pair: Dict[Tuple[int, int], List[Tuple[int, Optional[int], Optional[str], Optional[str]]]] = {}
+    for rowid, pokemon_id, background_id, costume_id, image_url, background_name in rows:
         pair = (int(pokemon_id), int(background_id))
-        normalized_costume = int(costume_id) if costume_id is not None else None
-        existing = kept_by_pair.get(pair)
-        if existing is None:
-            kept_by_pair[pair] = (int(rowid), normalized_costume)
+        rows_by_pair.setdefault(pair, []).append(
+            (
+                int(rowid),
+                int(costume_id) if costume_id is not None else None,
+                image_url,
+                background_name,
+            )
+        )
+
+    remove_rowids: List[int] = []
+    for _pair, pair_rows in rows_by_pair.items():
+        if len(pair_rows) <= 1:
             continue
 
-        kept_rowid, kept_costume = existing
-        should_replace_kept = kept_costume is None and normalized_costume is not None
-        if should_replace_kept:
-            remove_rowids.append(kept_rowid)
-            kept_by_pair[pair] = (int(rowid), normalized_costume)
-        else:
-            remove_rowids.append(int(rowid))
+        sample_filename = extract_filename(pair_rows[0][2] or "")
+        sample_name = pair_rows[0][3]
+        allow_multi_costume = allows_multiple_costume_rows_for_background(
+            image_filename=sample_filename,
+            background_name=sample_name,
+        )
+
+        if allow_multi_costume:
+            kept_costume_to_rowid: Dict[int, int] = {}
+            kept_generic_rowid: Optional[int] = None
+            for rowid, costume_id, _image_url, _background_name in pair_rows:
+                if costume_id is None:
+                    if kept_generic_rowid is None and not kept_costume_to_rowid:
+                        kept_generic_rowid = rowid
+                    else:
+                        remove_rowids.append(rowid)
+                    continue
+
+                if costume_id in kept_costume_to_rowid:
+                    remove_rowids.append(rowid)
+                    continue
+
+                kept_costume_to_rowid[costume_id] = rowid
+                if kept_generic_rowid is not None:
+                    remove_rowids.append(kept_generic_rowid)
+                    kept_generic_rowid = None
+            continue
+
+        kept_rowid: Optional[int] = None
+        kept_costume: Optional[int] = None
+        for rowid, costume_id, _image_url, _background_name in pair_rows:
+            if kept_rowid is None:
+                kept_rowid = rowid
+                kept_costume = costume_id
+                continue
+
+            should_replace_kept = kept_costume is None and costume_id is not None
+            if should_replace_kept:
+                remove_rowids.append(kept_rowid)
+                kept_rowid = rowid
+                kept_costume = costume_id
+            else:
+                remove_rowids.append(rowid)
 
     if not remove_rowids:
         return
@@ -818,12 +1119,20 @@ def add_missing_links(
     background_id: int,
     desired_links: Set[Tuple[int, Optional[int]]],
     existing_links: Set[Tuple[int, Optional[int]]],
+    allow_multiple_costumes_per_pair: bool,
     dry_run: bool,
     verbose: bool,
     stats: SyncStats,
 ) -> None:
     existing_pokemon = {pokemon_id for pokemon_id, _costume_id in existing_links}
-    filtered_desired = {(pokemon_id, costume_id) for pokemon_id, costume_id in desired_links if pokemon_id not in existing_pokemon}
+    if allow_multiple_costumes_per_pair:
+        filtered_desired = set(desired_links)
+    else:
+        filtered_desired = {
+            (pokemon_id, costume_id)
+            for pokemon_id, costume_id in desired_links
+            if pokemon_id not in existing_pokemon
+        }
     missing = sorted(filtered_desired - existing_links, key=lambda item: (item[0], -1 if item[1] is None else item[1]))
     if not missing:
         return
@@ -839,15 +1148,26 @@ def add_missing_links(
             continue
 
         cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT 1
-            FROM pokemon_backgrounds
-            WHERE pokemon_id = ? AND background_id = ?
-            LIMIT 1
-            """,
-            (pokemon_id, background_id),
-        )
+        if allow_multiple_costumes_per_pair and costume_id is not None:
+            cursor.execute(
+                """
+                SELECT 1
+                FROM pokemon_backgrounds
+                WHERE pokemon_id = ? AND background_id = ? AND costume_id = ?
+                LIMIT 1
+                """,
+                (pokemon_id, background_id, costume_id),
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT 1
+                FROM pokemon_backgrounds
+                WHERE pokemon_id = ? AND background_id = ?
+                LIMIT 1
+                """,
+                (pokemon_id, background_id),
+            )
         exists = cursor.fetchone() is not None
         if exists:
             continue
@@ -922,6 +1242,12 @@ def sync_backgrounds(
     verbose: bool,
 ) -> SyncStats:
     stats = SyncStats(parsed_backgrounds=len(parsed_backgrounds))
+    collapse_equivalent_background_records(
+        conn=conn,
+        dry_run=dry_run,
+        verbose=verbose,
+        stats=stats,
+    )
     dedupe_exact_background_links(
         conn=conn,
         dry_run=dry_run,
@@ -934,7 +1260,7 @@ def sync_backgrounds(
         verbose=verbose,
         stats=stats,
     )
-    by_filename, links_by_background = load_background_records(conn)
+    by_filename, by_equivalence, links_by_background = load_background_records(conn)
     pokemon_lookup = build_pokemon_lookup(conn)
     costume_lookup = build_costume_lookup(conn)
 
@@ -943,6 +1269,14 @@ def sync_backgrounds(
     with requests.Session() as session:
         for parsed in parsed_backgrounds:
             existing = by_filename.get(parsed.image_filename.lower())
+            if existing is None:
+                equivalence_key = build_background_equivalence_key(
+                    name=parsed.name,
+                    location=parsed.location,
+                    date=parsed.date,
+                )
+                if equivalence_key is not None:
+                    existing = by_equivalence.get(equivalence_key)
             background_id, rel_image_path = ensure_background_row(
                 conn=conn,
                 record=existing,
@@ -954,16 +1288,21 @@ def sync_backgrounds(
 
             existing_links = links_by_background.get(background_id, set())
             existing_pokemon_for_background = {pokemon_id for pokemon_id, _costume_id in existing_links}
+            allow_multiple_costumes_per_pair = allows_multiple_costume_rows_for_background(
+                image_filename=parsed.image_filename,
+                background_name=(existing.name if existing else parsed.name),
+            )
 
             desired_by_pokemon: Dict[int, Optional[int]] = {}
+            desired_links_multi: Set[Tuple[int, Optional[int]]] = set()
             for title, image_key in sorted(parsed.pokemon_refs):
                 pokemon_id = resolve_pokemon_id(title, pokemon_lookup)
                 if pokemon_id is None:
                     unresolved_names.add(title)
                     continue
 
-                # Hard rule: one row per (pokemon_id, background_id). If it exists, skip.
-                if pokemon_id in existing_pokemon_for_background:
+                # Default rule: one row per (pokemon_id, background_id), except allowed multi-costume backgrounds.
+                if (not allow_multiple_costumes_per_pair) and (pokemon_id in existing_pokemon_for_background):
                     continue
 
                 costume_id, suspected_costume, reason, candidate_ids, hint_tokens = resolve_costume_id_for_ref(
@@ -973,17 +1312,28 @@ def sync_backgrounds(
                     costume_lookup=costume_lookup,
                 )
 
-                current_value = desired_by_pokemon.get(pokemon_id)
                 if costume_id is not None:
-                    if current_value is None:
-                        desired_by_pokemon[pokemon_id] = costume_id
-                        stats.costume_auto_matches += 1
-                        if verbose:
-                            print(
-                                f"[INFO] Costume match bg={parsed.image_filename} "
-                                f"pokemon='{title}' image='{extract_filename(image_key) or image_key}' "
-                                f"-> costume_id={costume_id}"
-                            )
+                    if allow_multiple_costumes_per_pair:
+                        if (pokemon_id, costume_id) not in desired_links_multi:
+                            desired_links_multi.add((pokemon_id, costume_id))
+                            stats.costume_auto_matches += 1
+                            if verbose:
+                                print(
+                                    f"[INFO] Costume match bg={parsed.image_filename} "
+                                    f"pokemon='{title}' image='{extract_filename(image_key) or image_key}' "
+                                    f"-> costume_id={costume_id}"
+                                )
+                    else:
+                        current_value = desired_by_pokemon.get(pokemon_id)
+                        if current_value is None:
+                            desired_by_pokemon[pokemon_id] = costume_id
+                            stats.costume_auto_matches += 1
+                            if verbose:
+                                print(
+                                    f"[INFO] Costume match bg={parsed.image_filename} "
+                                    f"pokemon='{title}' image='{extract_filename(image_key) or image_key}' "
+                                    f"-> costume_id={costume_id}"
+                                )
                     continue
 
                 if suspected_costume:
@@ -997,11 +1347,20 @@ def sync_backgrounds(
                         f"hints={sorted(hint_tokens)} candidates={candidate_ids or 'none'}"
                     )
 
-                if pokemon_id not in desired_by_pokemon:
-                    # No confident costume match: still keep generic link.
-                    desired_by_pokemon[pokemon_id] = None
+                if allow_multiple_costumes_per_pair:
+                    # No confident costume match: retain generic fallback for this pokemon/background.
+                    desired_links_multi.add((pokemon_id, None))
+                else:
+                    if pokemon_id not in desired_by_pokemon:
+                        # No confident costume match: still keep generic link.
+                        desired_by_pokemon[pokemon_id] = None
 
-            desired_links = normalize_desired_links({(pokemon_id, costume_id) for pokemon_id, costume_id in desired_by_pokemon.items()})
+            if allow_multiple_costumes_per_pair:
+                desired_links = normalize_desired_links(desired_links_multi)
+            else:
+                desired_links = normalize_desired_links(
+                    {(pokemon_id, costume_id) for pokemon_id, costume_id in desired_by_pokemon.items()}
+                )
 
             if desired_links and (background_id > 0 or dry_run):
                 add_missing_links(
@@ -1009,6 +1368,7 @@ def sync_backgrounds(
                     background_id=background_id,
                     desired_links=desired_links,
                     existing_links=existing_links,
+                    allow_multiple_costumes_per_pair=allow_multiple_costumes_per_pair,
                     dry_run=dry_run,
                     verbose=verbose,
                     stats=stats,
@@ -1030,13 +1390,21 @@ def sync_backgrounds(
             )
 
             if existing is None and not dry_run and background_id > 0:
-                by_filename[parsed.image_filename.lower()] = BackgroundRecord(
+                record = BackgroundRecord(
                     background_id=background_id,
                     name=parsed.name,
                     location=parsed.location,
                     image_url=rel_image_path,
                     date=parsed.date,
                 )
+                by_filename[parsed.image_filename.lower()] = record
+                equivalence_key = build_background_equivalence_key(
+                    name=record.name,
+                    location=record.location,
+                    date=record.date,
+                )
+                if equivalence_key is not None:
+                    by_equivalence[equivalence_key] = record
 
     stats.unresolved_pokemon_names = len(unresolved_names)
     if unresolved_names:
@@ -1085,6 +1453,7 @@ def print_summary(stats: SyncStats, dry_run: bool) -> None:
     print(f"Parsed backgrounds:        {stats.parsed_backgrounds}")
     print(f"Backgrounds inserted:      {stats.backgrounds_inserted}")
     print(f"Backgrounds updated:       {stats.backgrounds_updated}")
+    print(f"Backgrounds merged:        {stats.backgrounds_merged}")
     print(f"Pokemon links added:       {stats.links_added}")
     print(f"Links collapsed (pair):    {stats.links_collapsed_pair}")
     print(f"Links deduped (exact):     {stats.links_deduped_exact}")

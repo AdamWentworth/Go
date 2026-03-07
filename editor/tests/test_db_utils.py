@@ -30,6 +30,33 @@ class DatabaseConnectionTests(unittest.TestCase):
 
             self.assertEqual(row, ("unit-test",))
 
+    def test_initializes_performance_indexes_for_editor_hot_paths(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db_path = Path(temp_dir) / "temp.db"
+            raw = sqlite3.connect(db_path)
+            raw.execute("CREATE TABLE costume_pokemon (pokemon_id INTEGER)")
+            raw.execute("CREATE TABLE pokemon_backgrounds (pokemon_id INTEGER, background_id INTEGER, costume_id INTEGER)")
+            raw.execute("CREATE TABLE pokemon_moves (pokemon_id INTEGER)")
+            raw.execute("CREATE TABLE female_pokemon (pokemon_id INTEGER)")
+            raw.commit()
+            raw.close()
+
+            conn = DatabaseConnection(str(db_path))
+            cur = conn.get_cursor()
+
+            costume_indexes = cur.execute("PRAGMA index_list('costume_pokemon')").fetchall()
+            background_indexes = cur.execute("PRAGMA index_list('pokemon_backgrounds')").fetchall()
+            pokemon_move_indexes = cur.execute("PRAGMA index_list('pokemon_moves')").fetchall()
+            female_indexes = cur.execute("PRAGMA index_list('female_pokemon')").fetchall()
+
+            conn.close()
+
+            self.assertTrue(any("pokemon_id" in row[1] for row in costume_indexes))
+            self.assertTrue(any("pokemon_id" in row[1] for row in background_indexes))
+            self.assertTrue(any("background_id" in row[1] for row in background_indexes))
+            self.assertTrue(any("pokemon_id" in row[1] for row in pokemon_move_indexes))
+            self.assertTrue(any("pokemon_id" in row[1] for row in female_indexes))
+
 
 if __name__ == "__main__":
     unittest.main()

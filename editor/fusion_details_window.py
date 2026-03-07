@@ -8,6 +8,7 @@ from frames.fusion_info_frames import FusionInfoFrames
 from frames.fusion_image_frames import FusionImageFrames
 from frames.fusion_background_frame import FusionBackgroundFrame
 from frames.pokemon_moves_frame import PokemonMovesFrame
+from utils.image_cache import LocalImagePreviewCache
 
 
 class FusionDetailsWindow:
@@ -23,6 +24,7 @@ class FusionDetailsWindow:
 
         script_directory = os.path.dirname(os.path.realpath(__file__))
         self.relative_path_to_images = os.path.normpath(os.path.join(script_directory, '../assets'))
+        self.preview_cache = LocalImagePreviewCache()
 
         self.window, self.canvas, self.scrollable_frame = create_scrollable_window(
             parent,
