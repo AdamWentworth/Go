@@ -31,8 +31,8 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          # Pin patch to avoid govulncheck failing on older cached 1.24.x
-          go-version: "1.24.13"
+          # Use a patched toolchain so govulncheck is not blocked by stdlib CVEs in older 1.24.x.
+          go-version: "1.26.1"
           cache: true
           cache-dependency-path: pokemon/go.sum
 

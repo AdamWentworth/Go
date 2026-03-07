@@ -28,6 +28,11 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install Editor Test Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pillow requests beautifulsoup4
+
       - name: Validate Editor Python Syntax
         run: python -m compileall editor
 
