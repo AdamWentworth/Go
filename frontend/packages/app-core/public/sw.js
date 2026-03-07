@@ -152,11 +152,32 @@ async function clearStore(db, storeName) {
   await txDone(tx);
 }
 
+function normalizeBatchedUpdateRequest(data) {
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    return {
+      location: Object.prototype.hasOwnProperty.call(data, 'location') ? data.location : null,
+      isLoggedIn:
+        typeof data.isLoggedIn === 'boolean' ? data.isLoggedIn : null,
+    };
+  }
+
+  return {
+    location: data ?? null,
+    isLoggedIn: null,
+  };
+}
+
 /* =========================================================================
    Message handlers
    ========================================================================= */
-async function sendBatchedUpdatesToBackend(location) {
+async function sendBatchedUpdatesToBackend(data) {
   try {
+    const request = normalizeBatchedUpdateRequest(data);
+    if (typeof request.isLoggedIn === 'boolean') {
+      IS_LOGGED_IN = request.isLoggedIn;
+      log('AuthState(sync)', { IS_LOGGED_IN });
+    }
+
     if (!IS_LOGGED_IN) {
       log('batchedUpdates:skip', { reason: 'not logged in' });
       return;
@@ -181,7 +202,11 @@ async function sendBatchedUpdatesToBackend(location) {
       return;
     }
 
-    const payload = { location: location || null, pokemonUpdates, tradeUpdates };
+    const payload = {
+      location: request.location || null,
+      pokemonUpdates,
+      tradeUpdates,
+    };
     log('batchedUpdates:POST', { payload });
 
     const targetPath = RECEIVER_BATCHED_UPDATES_PATH.startsWith('/')

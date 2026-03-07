@@ -13,6 +13,16 @@ const setHighlightedCardsMock = vi.fn();
 const setIsFastSelectEnabledMock = vi.fn();
 const handleConfirmChangeTagsMock = vi.fn(async () => undefined);
 const modalAlertMock = vi.fn().mockResolvedValue(undefined);
+const usePokemonProcessingMock = vi.fn(() => ({
+  filteredVariants: [baseVariant],
+  sortedPokemons: [
+    {
+      ...baseVariant,
+      instanceData: { instance_id: 'inst-1' },
+    },
+    { variant_id: '0002-default', pokemon_id: 2 },
+  ] as PokemonVariant[],
+}));
 
 const baseVariant = { variant_id: '0001-default', pokemon_id: 1 } as PokemonVariant;
 const variantsStoreState = {
@@ -80,16 +90,7 @@ vi.mock('@/pages/Pokemon/hooks/useUIControls', () => ({
 }));
 
 vi.mock('@/pages/Pokemon/hooks/usePokemonProcessing', () => ({
-  default: () => ({
-    filteredVariants: [baseVariant],
-    sortedPokemons: [
-      {
-        ...baseVariant,
-        instanceData: { instance_id: 'inst-1' },
-      },
-      { variant_id: '0002-default', pokemon_id: 2 },
-    ] as PokemonVariant[],
-  }),
+  default: (...args: unknown[]) => usePokemonProcessingMock(...args),
 }));
 
 vi.mock('@/pages/Pokemon/hooks/useInstanceIdProcessor', () => ({
@@ -133,6 +134,31 @@ vi.mock('@/pages/Pokemon/hooks/useSwipeHandler', () => ({
 }));
 
 describe('usePokemonPageController', () => {
+  it('forwards derived tag filters like Favorites into pokemon processing', async () => {
+    const navigate = vi.fn() as unknown as NavigateFunction;
+    const location = { pathname: '/pokemon', state: null } as any;
+
+    const { result } = renderHook(() =>
+      usePokemonPageController({
+        isOwnCollection: true,
+        location,
+        navigate,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.isPageLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.handleTagSelect('Favorites');
+    });
+
+    const latestCall = usePokemonProcessingMock.mock.calls.at(-1);
+    expect(latestCall?.[2]).toBe('Favorites');
+    expect(result.current.activeStatusFilter).toBeNull();
+  });
+
   it('loads foreign profile for username routes and exits loading state', async () => {
     const navigate = vi.fn() as unknown as NavigateFunction;
     const location = { pathname: '/pokemon/ash', state: null } as any;

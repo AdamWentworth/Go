@@ -1,4 +1,6 @@
 // utils/buildInstanceChanges.ts
+import { normalizeEditableDateValue } from './normalizeEditableDateValue';
+
 export type MegaData = { isMega: boolean; mega: boolean; megaForm: string | null };
 export type IVs = { Attack: number | '' ; Defense: number | '' ; Stamina: number | '' };
 export type MovesState = { fastMove: number | null; chargedMove1: number | null; chargedMove2: number | null };
@@ -67,7 +69,7 @@ export function buildInstanceChanges(a: BuildArgs) {
       date_caught: a.dateCaught,
       original_trainer_name: a.originalTrainerName,
       original_trainer_id: a.originalTrainerId,
-      traded_date: a.tradedDate,
+      traded_date: normalizeEditableDateValue(a.tradedDate),
       pokeball: a.pokeball,
       location_card: a.selectedBackgroundId == null ? null : String(a.selectedBackgroundId),
       mega: a.megaData.mega,

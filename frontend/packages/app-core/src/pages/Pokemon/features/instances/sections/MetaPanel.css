@@ -264,7 +264,7 @@
   margin-bottom: 4px;
 }
 
-.meta-card .location-field span.editable,
+.meta-card .location-field .location-input.editable,
 .meta-card .date-field input.editable {
   border: 1px solid #a3a3a3;
   border-radius: 4px;
@@ -272,6 +272,19 @@
   min-height: 32px;
   height: auto;
   background: rgba(20, 20, 20, 0.35);
+  color: #e0f0e5;
+  font-size: 14px;
+  line-height: 1.4;
+  font-family: var(--font-family-base);
+  text-align: left;
+}
+
+.meta-card .location-field .location-display.text,
+.meta-card .date-field span.text {
+  border: 1px solid transparent;
+  padding: 5px 0;
+  min-height: 32px;
+  height: auto;
   color: #e0f0e5;
   font-size: 14px;
   line-height: 1.4;

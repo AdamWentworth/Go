@@ -4,6 +4,7 @@ import './WantedInstance.css';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 
 import EditSaveComponent from '@/components/EditSaveComponent';
+import CloseButton from '@/components/CloseButton';
 import NameComponent from './components/Caught/NameComponent';
 import Gender from '@/components/pokemonComponents/Gender';
 import Weight from '@/components/pokemonComponents/Weight';
@@ -12,6 +13,7 @@ import Height from '@/components/pokemonComponents/Height';
 import Moves from '@/components/pokemonComponents/Moves';
 import FriendshipManager from './components/Wanted/FriendshipManager';
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
+import OverlayPortal from '@/components/OverlayPortal';
 
 import { determineImageUrl } from '@/utils/imageHelpers';
 import { getEntityKey } from './utils/getEntityKey';
@@ -236,18 +238,23 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({ pokemon, isEditable }) 
       </div>
 
       {showBackgrounds && (
-      <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
-        <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
-          <button className="close-button" onClick={() => setShowBackgrounds(false)}>
-            Close
-          </button>
-          <BackgroundLocationCard
-            pokemon={pokemon}
-            onSelectBackground={handleBackgroundSelect}
-            // No selectedCostumeId passed, so it uses pokemon.variantType for filtering.
+      <OverlayPortal>
+        <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
+          <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
+            <BackgroundLocationCard
+              pokemon={pokemon}
+              onSelectBackground={handleBackgroundSelect}
+              // No selectedCostumeId passed, so it uses pokemon.variantType for filtering.
+            />
+          </div>
+          <CloseButton
+            onClick={(event) => {
+              event.stopPropagation();
+              setShowBackgrounds(false);
+            }}
           />
         </div>
-      </div>
+      </OverlayPortal>
     )}
     </div>
   );

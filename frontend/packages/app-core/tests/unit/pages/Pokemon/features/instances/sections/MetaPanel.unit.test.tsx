@@ -109,4 +109,33 @@ describe('MetaPanel', () => {
     expect(onOriginalTrainerNameChange).toHaveBeenCalledWith('GuestTrainer');
     expect(onOriginalTrainerIdChange).toHaveBeenCalledWith(null);
   });
+
+  it('shows a normalized traded date in the edit input when the stored value is a timestamp', () => {
+    render(
+      <MetaPanel
+        pokemon={{
+          instanceData: {
+            traded_date: '2026-02-11T03:12:00.000Z',
+          },
+        }}
+        editMode={true}
+        isLucky={false}
+        isTraded={true}
+        isShadow={false}
+        originalTrainerName={null}
+        originalTrainerId={null}
+        tradedDate={null}
+        pokeball={null}
+        onLocationChange={vi.fn()}
+        onDateChange={vi.fn()}
+        onIsTradedChange={vi.fn()}
+        onOriginalTrainerNameChange={vi.fn()}
+        onOriginalTrainerIdChange={vi.fn()}
+        onTradedDateChange={vi.fn()}
+        onPokeballChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('Traded Date:')).toHaveValue('2026-02-11');
+  });
 });

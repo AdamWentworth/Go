@@ -21,40 +21,34 @@
     box-sizing: border-box; /* Includes padding/border in width */
 }
 
-.location-field span {
+.location-field .location-input,
+.location-field .location-display {
     background-color: transparent;
+    color: inherit;
     display: block;
-    width: 100%; /* Editable field spans the full width */
-    max-width: 100%; /* Prevents overflow */
+    width: 100%;
+    max-width: 100%;
     min-height: 24px;
-    word-break: normal; /* Changed from break-all to preserve normal word breaks */
-    white-space: pre-wrap; /* Preserves line breaks and spaces */
     border: 1px solid transparent;
-    box-sizing: border-box; /* Includes padding/border in width */
-    overflow: hidden;
-    overflow-x: hidden;
-    height: auto;
+    box-sizing: border-box;
+    text-align: center;
+    font: inherit;
 }
 
-.location-field span.editable {
+.location-field .location-input.editable {
     cursor: text;
     border: 1px solid white;
-    width: 100%; /* Spans full width */
-    max-width: 100%; /* Prevents overflow */
-    overflow-wrap: break-word; /* Ensures words wrap correctly */
-    word-break: normal; /* Retains normal word-breaking behavior */
-    white-space: pre-wrap; /* Preserves line breaks and spaces */
-    display: inline-block; /* Makes it editable */
+    padding: 2px 6px;
+    appearance: none;
+    -webkit-appearance: none;
+    border-radius: 0;
 }
 
-.location-field span.text {
-    border: 1px solid transparent;
-    width: 100%; /* Full width for non-editable text */
-    max-width: 100%; /* Prevents overflow */
-    box-sizing: border-box; /* Includes padding/border in width */
+.location-field .location-display.text {
+    padding: 2px 0;
 }
 
-.location-field span:focus {
+.location-field .location-input:focus {
     outline: none;
 }
 

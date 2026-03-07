@@ -41,6 +41,18 @@ describe('useCaughtFormState', () => {
     expect(result.current.isPurified).toBe(false);
   });
 
+  it('normalizes timestamp-shaped traded dates for editing', () => {
+    const { result } = renderHook(() =>
+      useCaughtFormState({
+        instanceData: {
+          traded_date: '2026-02-18T11:45:00.000Z',
+        },
+      }),
+    );
+
+    expect(result.current.tradedDate).toBe('2026-02-18');
+  });
+
   it('updates dependent fields through handlers', () => {
     const { result } = renderHook(() =>
       useCaughtFormState({

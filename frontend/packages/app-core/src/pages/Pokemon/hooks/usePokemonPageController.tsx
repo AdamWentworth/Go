@@ -204,7 +204,7 @@ export default function usePokemonPageController({
   const { filteredVariants, sortedPokemons } = usePokemonProcessing(
     baseVariants,
     instances,
-    activeStatusFilter,
+    tagFilter,
     activeTags,
     searchTerm,
     showEvolutionaryLine,

@@ -6,6 +6,7 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { initPerfPaintObservers } from './utils/perfTelemetry';
 import { createScopedLogger } from './utils/logger';
+import { hasActiveStoredSession } from './utils/storage';
 import { receiverContract } from '@shared-contracts/receiver';
 import './styles/tokens.css';
 import './index.css';
@@ -34,6 +35,7 @@ if ('serviceWorker' in navigator) {
                 RECEIVER_API_URL: import.meta.env.VITE_RECEIVER_API_URL,
                 RECEIVER_BATCHED_UPDATES_PATH:
                   receiverContract.endpoints.batchedUpdates,
+                IS_LOGGED_IN: hasActiveStoredSession(),
               },
             });
           }

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { CaughtComputedValues } from '../utils/caughtPersist';
 import type { IVs as InstanceIVs, MovesState } from '../utils/buildInstanceChanges';
+import { normalizeEditableDateValue } from '../utils/normalizeEditableDateValue';
 
 type UseCaughtFormStateArgs = {
   instanceData: Partial<PokemonInstance>;
@@ -51,7 +52,9 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
   const [originalTrainerId, setOriginalTrainerId] = useState<string | null>(
     instanceData.original_trainer_id ?? null,
   );
-  const [tradedDate, setTradedDate] = useState<string | null>(instanceData.traded_date ?? null);
+  const [tradedDate, setTradedDate] = useState<string | null>(
+    normalizeEditableDateValue(instanceData.traded_date),
+  );
   const [pokeball, setPokeball] = useState<string | null>(instanceData.pokeball ?? null);
 
   const [isShadow, setIsShadow] = useState<boolean>(Boolean(instanceData.shadow));
@@ -108,7 +111,10 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
     (value: string | null) => setOriginalTrainerId(value),
     [],
   );
-  const handleTradedDateChange = useCallback((value: string) => setTradedDate(value), []);
+  const handleTradedDateChange = useCallback(
+    (value: string) => setTradedDate(normalizeEditableDateValue(value)),
+    [],
+  );
   const handlePokeballChange = useCallback((value: string | null) => setPokeball(value), []);
   const handleLevelChange = useCallback((value: string) => {
     setLevel(value !== '' ? Number(value) : null);

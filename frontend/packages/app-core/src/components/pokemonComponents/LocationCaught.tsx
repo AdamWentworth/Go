@@ -1,8 +1,7 @@
-// LocationCaught.tsx
-
 import React, { useEffect, useRef, useState } from 'react';
 import './LocationCaught.css';
 import { fetchSuggestions } from '../../services/locationServices';
+
 type PokemonWithLocation = {
   instanceData?: {
     location_caught?: string | null;
@@ -20,49 +19,27 @@ const LocationCaught: React.FC<LocationCaughtProps> = ({
   editMode,
   onLocationChange,
 }) => {
-  const [location, setLocation] = useState(
-    pokemon.instanceData?.location_caught ?? '',
-  );
+  const [location, setLocation] = useState(pokemon.instanceData?.location_caught ?? '');
   const [suggestions, setSuggestions] = useState<{ displayName: string }[]>([]);
-  const [userFocus, setUserFocus] = useState(false);
 
-  const locationRef = useRef<HTMLSpanElement>(null);
+  const locationRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  /* keep local state in sync with prop */
   useEffect(() => {
     setLocation(pokemon.instanceData?.location_caught ?? '');
   }, [pokemon]);
 
-  /* close suggestions on outside click */
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node))
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setSuggestions([]);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  /* caret to end when entering edit mode */
-  useEffect(() => {
-    if (editMode && locationRef.current) {
-      locationRef.current.textContent = location;
-      if (userFocus) {
-        const range = document.createRange();
-        range.selectNodeContents(locationRef.current);
-        range.collapse(false);
-        const sel = window.getSelection();
-        sel?.removeAllRanges();
-        sel?.addRange(range);
-        locationRef.current.focus();
-      }
-    }
-  }, [editMode, location, userFocus]);
-
-  /* handlers ------------------------------------------------------ */
-  const handleInput = async (e: React.FormEvent<HTMLSpanElement>) => {
-    const value = e.currentTarget.textContent ?? '';
+  const updateLocation = async (value: string) => {
     setLocation(value);
     onLocationChange(value);
 
@@ -72,50 +49,47 @@ const LocationCaught: React.FC<LocationCaughtProps> = ({
       } catch {
         setSuggestions([]);
       }
-    } else setSuggestions([]);
+      return;
+    }
+
+    setSuggestions([]);
   };
 
   const pick = (s: { displayName: string }) => {
     setLocation(s.displayName);
     onLocationChange(s.displayName);
-    if (locationRef.current) locationRef.current.textContent = s.displayName;
     setSuggestions([]);
+    locationRef.current?.focus({ preventScroll: true });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      locationRef.current?.blur();
-      setUserFocus(false);
-    }
-  };
-
-  /* -------------------------------------------------------------- */
-  /*  render                                                        */
-  /* -------------------------------------------------------------- */
-
-  // 👉  If not editing and no location saved, render nothing.
   if (!editMode && location.trim() === '') return null;
 
   return (
     <div className="location-caught-container" ref={wrapperRef}>
       <div className="location-field">
-        <label id="location-label">Location&nbsp;Caught:</label>
+        <label htmlFor="location-caught-input">Location&nbsp;Caught:</label>
 
-        <span
-          aria-labelledby="location-label"
-          contentEditable={editMode}
-          ref={locationRef}
-          onInput={handleInput}
-          onKeyDown={handleKeyDown}
-          onClick={() => setUserFocus(true)}
-          onTouchStart={() => setUserFocus(true)}
-          role="textbox"
-          suppressContentEditableWarning
-          className={editMode ? 'editable' : 'text'}
-        >
-          {location}
-        </span>
+        {editMode ? (
+          <input
+            id="location-caught-input"
+            ref={locationRef}
+            type="text"
+            value={location}
+            onChange={(e) => {
+              void updateLocation(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                locationRef.current?.blur();
+              }
+            }}
+            className="location-input editable"
+            autoComplete="off"
+          />
+        ) : (
+          <span className="location-display text">{location}</span>
+        )}
 
         {editMode && suggestions.length > 0 && (
           <div className="suggestions">
@@ -123,7 +97,10 @@ const LocationCaught: React.FC<LocationCaughtProps> = ({
               <div
                 key={i}
                 className="suggestion-item"
-                onClick={() => pick(s)}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  pick(s);
+                }}
               >
                 {s.displayName}
               </div>

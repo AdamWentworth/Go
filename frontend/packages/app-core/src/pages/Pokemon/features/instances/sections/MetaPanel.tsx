@@ -10,6 +10,7 @@ import {
   fetchTrainerAutocomplete,
   type TrainerAutocompleteResult,
 } from '@/services/userSearchService';
+import { normalizeEditableDateValue } from '../utils/normalizeEditableDateValue';
 
 type PokemonWithInstance = {
   instanceData?: Partial<
@@ -77,17 +78,14 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
   const [trainerHasFocus, setTrainerHasFocus] = useState<boolean>(false);
   const trainerLookupRequestRef = useRef(0);
 
-  const formatDisplayDate = (value: unknown): string => {
-    if (!value) return 'UNKNOWN DATE';
-    const asString = String(value).trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(asString)) return asString;
-    const parsed = new Date(asString);
-    if (Number.isNaN(parsed.getTime())) return 'UNKNOWN DATE';
-    return parsed.toISOString().slice(0, 10);
-  };
+  const formatDisplayDate = (value: unknown): string =>
+    normalizeEditableDateValue(value) ?? 'UNKNOWN DATE';
 
   const dateDisplay = formatDisplayDate(rawDate);
   const tradedDateDisplay = formatDisplayDate(tradedDate ?? pokemon.instanceData?.traded_date ?? null);
+  const tradedDateInputValue = normalizeEditableDateValue(
+    tradedDate ?? pokemon.instanceData?.traded_date ?? null,
+  );
   const originalTrainerDisplay =
     (originalTrainerName ?? '').trim() ||
     rawOriginalTrainerName ||
@@ -318,7 +316,7 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
                   <input
                     id="meta-traded-date"
                     type="date"
-                    value={tradedDate ?? ''}
+                    value={tradedDateInputValue ?? ''}
                     onChange={(e) => onTradedDateChange(e.target.value)}
                     className="meta-edit-input"
                   />

@@ -1,5 +1,7 @@
 import React from 'react';
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
+import CloseButton from '@/components/CloseButton';
+import OverlayPortal from '@/components/OverlayPortal';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { VariantBackground } from '@/types/pokemonSubTypes';
@@ -30,19 +32,23 @@ const TradeBackgroundModal: React.FC<TradeBackgroundModalProps> = ({
   }
 
   return (
-    <div className="background-overlay" onClick={onClose}>
-      <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
-        <button className="close-button" onClick={onClose}>
-          Close
-        </button>
-        <BackgroundLocationCard
-          pokemon={pokemon}
-          onSelectBackground={onSelectBackground}
+    <OverlayPortal>
+      <div className="background-overlay" onClick={onClose}>
+        <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
+          <BackgroundLocationCard
+            pokemon={pokemon}
+            onSelectBackground={onSelectBackground}
+          />
+        </div>
+        <CloseButton
+          onClick={(event) => {
+            event.stopPropagation();
+            onClose();
+          }}
         />
       </div>
-    </div>
+    </OverlayPortal>
   );
 };
 
 export default TradeBackgroundModal;
-

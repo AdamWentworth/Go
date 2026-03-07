@@ -34,6 +34,14 @@ vi.mock('@/components/pokemonComponents/BackgroundLocationCard', () => ({
   ),
 }));
 
+vi.mock('@/components/CloseButton', () => ({
+  default: ({ onClick }: { onClick?: () => void }) => (
+    <button type="button" aria-label="Close" onClick={onClick}>
+      Close
+    </button>
+  ),
+}));
+
 describe('VariantSearchBackgroundOverlay', () => {
   it('does not render while closed', () => {
     render(
@@ -74,4 +82,3 @@ describe('VariantSearchBackgroundOverlay', () => {
     expect(onClose).toHaveBeenCalledTimes(2);
   });
 });
-

@@ -1,7 +1,7 @@
 // periodicUpdates.ts
 import { getBatchedPokemonUpdates, getBatchedTradeUpdates } from '../../db/indexedDB';
 import { createScopedLogger } from '@/utils/logger';
-import { getStoredLocation, getStoredUserRecord } from '@/utils/storage';
+import { getStoredLocation, hasActiveStoredSession } from '@/utils/storage';
 import type { Coordinates } from '@/types/location';
 
 type Ref<T> = { current: T };
@@ -10,12 +10,7 @@ type LocationType = Coordinates | null;
 const log = createScopedLogger('periodicUpdates');
 
 function isUserLoggedIn(): boolean {
-  const user = getStoredUserRecord();
-  if (!user || typeof user.refreshTokenExpiry !== 'string') return false;
-  const now = Date.now();
-  const refreshExp = new Date(user.refreshTokenExpiry).getTime();
-  // Consider logged in only if refresh token is still valid.
-  return Number.isFinite(refreshExp) && refreshExp > now;
+  return hasActiveStoredSession();
 }
 
 export const periodicUpdates = (
@@ -33,11 +28,15 @@ export const periodicUpdates = (
 
     // Helper: ask service worker to send updates.
     const requestSend = () => {
+      const isLoggedIn = isUserLoggedIn();
       navigator.serviceWorker?.ready
         .then((registration) => {
           registration.active?.postMessage({
             action: 'sendBatchedUpdatesToBackend',
-            data: location,
+            data: {
+              location,
+              isLoggedIn,
+            },
           });
           log.debug('Update request sent to service worker.');
         })

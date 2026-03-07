@@ -119,6 +119,44 @@ describe('caughtPersist utils', () => {
     });
   });
 
+  it('normalizes timestamp-shaped traded dates in the persisted patch', () => {
+    const patchMap = buildCaughtPersistPatchMap({
+      instanceId: 'current',
+      nickname: null,
+      isLucky: false,
+      isTraded: true,
+      isFavorite: false,
+      gender: null,
+      weight: null,
+      height: null,
+      computedCP: null,
+      computedLevel: null,
+      computedIvs: baseIvs,
+      moves: baseMoves,
+      locationCaught: null,
+      dateCaught: '2026-02-17T03:12:00.000Z',
+      originalTrainerName: null,
+      originalTrainerId: null,
+      tradedDate: '2026-02-18T11:45:00.000Z',
+      pokeball: null,
+      selectedBackgroundId: null,
+      megaData: baseMega,
+      crown: false,
+      fusion: baseFusion,
+      isShadow: false,
+      isPurified: false,
+      maxAttack: '',
+      maxGuard: '',
+      maxSpirit: '',
+      originalFusedWith: null,
+    });
+
+    expect(patchMap.current).toMatchObject({
+      date_caught: '2026-02-17T03:12:00.000Z',
+      traded_date: '2026-02-18',
+    });
+  });
+
   it('auto-releases linked partner rows when unfusing with missing originalFusedWith', () => {
     const patchMap = buildCaughtPersistPatchMap({
       instanceId: 'open-instance-id',

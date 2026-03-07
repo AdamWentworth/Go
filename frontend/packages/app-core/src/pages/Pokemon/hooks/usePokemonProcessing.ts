@@ -6,7 +6,7 @@ import { getFilteredPokemonsByOwnership } from '@/hooks/filtering/usePokemonOwne
 
 // ——— Your real types ———
 import type { PokemonVariant } from '@/types/pokemonVariants';
-import type { Instances, InstanceStatus } from '@/types/instances';
+import type { Instances } from '@/types/instances';
 import type { TagBuckets } from '@/types/tags';
 import type { SortType, SortMode } from '@/types/sort';
 // ——————————————————–
@@ -19,7 +19,7 @@ interface UsePokemonProcessingResult {
 function usePokemonProcessing(
   variants: PokemonVariant[],
   instancesData: Instances,
-  instanceStatus: InstanceStatus | null,
+  ownershipFilter: string,
   tagBuckets: TagBuckets,
   searchTerm: string,
   showEvolutionaryLine: boolean,
@@ -29,16 +29,16 @@ function usePokemonProcessing(
 
   // ownership-style filtering via your new InstancesData/InstanceStatus/TagBuckets
   const filteredVariants = useMemo<PokemonVariant[]>(() => {
-    if (instanceStatus) {
+    if (ownershipFilter.trim()) {
       return getFilteredPokemonsByOwnership(
         variants,
         instancesData,
-        instanceStatus as unknown as string,
+        ownershipFilter,
         tagBuckets
       );
     }
     return variants;
-  }, [variants, instancesData, instanceStatus, tagBuckets]);
+  }, [variants, instancesData, ownershipFilter, tagBuckets]);
 
   // further filtering (evolution lines, etc.)
   const displayedPokemons = useQueryPokemons(

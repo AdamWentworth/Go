@@ -165,6 +165,14 @@ export const getStoredUsername = (): string | null => {
     : null;
 };
 
+export const hasActiveStoredSession = (): boolean => {
+  const parsed = getStoredUserRecord();
+  if (!parsed || typeof parsed.refreshTokenExpiry !== 'string') return false;
+
+  const refreshExpiry = new Date(parsed.refreshTokenExpiry).getTime();
+  return Number.isFinite(refreshExpiry) && refreshExpiry > Date.now();
+};
+
 export const getStoredLocation = (): Coordinates | null => {
   const parsed = getStorageJson<unknown>(STORAGE_KEYS.location);
   if (!isRecord(parsed)) return null;

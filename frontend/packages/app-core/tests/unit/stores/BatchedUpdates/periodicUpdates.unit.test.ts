@@ -72,6 +72,14 @@ describe('periodicUpdates', () => {
     await vi.runAllTicks();
 
     expect(postMessage).toHaveBeenCalledTimes(1);
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'sendBatchedUpdatesToBackend',
+        data: expect.objectContaining({
+          isLoggedIn: true,
+        }),
+      }),
+    );
     expect(scheduledRef.current).toBe(true);
     expect(timerRef.current).not.toBeNull();
   });

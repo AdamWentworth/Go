@@ -1,4 +1,6 @@
 import React from 'react';
+import CloseButton from '@/components/CloseButton';
+import OverlayPortal from '@/components/OverlayPortal';
 import './Modals.css';
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
 import FuseOverlay from '../components/Caught/FuseOverlay';
@@ -44,17 +46,22 @@ const Modals: React.FC<ModalsProps> = ({
   return (
     <>
       {showBackgrounds && (
-        <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
-          <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-button" onClick={() => setShowBackgrounds(false)}>
-              Close
-            </button>
-            <BackgroundLocationCard
-              pokemon={pokemon}
-              onSelectBackground={onSelectBackground}
+        <OverlayPortal>
+          <div className="background-overlay" onClick={() => setShowBackgrounds(false)}>
+            <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
+              <BackgroundLocationCard
+                pokemon={pokemon}
+                onSelectBackground={onSelectBackground}
+              />
+            </div>
+            <CloseButton
+              onClick={(event) => {
+                event.stopPropagation();
+                setShowBackgrounds(false);
+              }}
             />
           </div>
-        </div>
+        </OverlayPortal>
       )}
 
       {candidates.length > 0 && (

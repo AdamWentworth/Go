@@ -1,6 +1,7 @@
 import React from 'react';
 
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
+import CloseButton from '@/components/CloseButton';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 export type BackgroundSelection = {
@@ -34,18 +35,20 @@ const VariantSearchBackgroundOverlay: React.FC<VariantSearchBackgroundOverlayPro
   return (
     <div className="background-overlay" onClick={onClose}>
       <div className="background-overlay-content" onClick={(event) => event.stopPropagation()}>
-        <button type="button" className="close-button" onClick={onClose}>
-          Close
-        </button>
         <BackgroundLocationCard
           pokemon={currentPokemonData ?? {}}
           onSelectBackground={onSelectBackground}
           selectedCostumeId={selectedCostumeId}
         />
       </div>
+      <CloseButton
+        onClick={(event) => {
+          event.stopPropagation();
+          onClose();
+        }}
+      />
     </div>
   );
 };
 
 export default VariantSearchBackgroundOverlay;
-

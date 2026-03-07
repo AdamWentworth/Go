@@ -77,6 +77,14 @@ vi.mock('@/components/pokemonComponents/BackgroundLocationCard', () => ({
   ),
 }));
 
+vi.mock('@/components/CloseButton', () => ({
+  default: ({ onClick }: { onClick?: () => void }) => (
+    <button type="button" aria-label="Close" onClick={onClick}>
+      Close
+    </button>
+  ),
+}));
+
 vi.mock('@/pages/Pokemon/features/instances/components/Caught/FuseOverlay', () => ({
   default: ({ onClose, onFuse }: { onClose?: () => void; onFuse?: () => void }) => (
     <div>
