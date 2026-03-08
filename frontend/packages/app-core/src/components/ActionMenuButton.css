@@ -39,3 +39,7 @@
 .action-menu-button:hover .action-menu-button-image {
   transform: scale(1.05);
 }
+
+:root[data-theme='light'] .action-menu-button-image {
+  filter: drop-shadow(0 0 3px var(--light-icon-shadow-color));
+}

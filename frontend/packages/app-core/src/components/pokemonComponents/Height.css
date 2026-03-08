@@ -76,3 +76,11 @@
   font-size: 10px;
   white-space: nowrap;
 }
+
+:root[data-theme='light'] .instance-overlay.caught-mode .height-label {
+  color: var(--light-text-secondary);
+}
+
+:root[data-theme='light'] .instance-overlay.caught-mode .height-editable-container.editable .height-editable-content {
+  border-color: var(--light-caught-divider);
+}

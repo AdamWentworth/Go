@@ -4,7 +4,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    color: var(--color-text-primary);
+    color: var(--color-list-view-text);
   }
   
   .list-view-container p {
@@ -22,7 +22,7 @@
     justify-content: center;
     width: 98%; /* Reduce width to add margin on the right */
     margin-bottom: 1rem;
-    background-color: var(--color-surface-2);
+    background-color: var(--color-list-view-row-surface);
     margin-left: var(--space-3);
     margin-right: var(--space-3); /* Added more right margin */
     border-radius: var(--radius-md);

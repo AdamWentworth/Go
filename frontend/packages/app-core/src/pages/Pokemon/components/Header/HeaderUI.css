@@ -5,9 +5,9 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  background-color: #111;
-  color: #fff;
-  box-shadow: 2px -4px 2px 2px #111;
+  background-color: var(--color-pokemon-header-surface);
+  color: var(--color-pokemon-header-text);
+  box-shadow: 2px -4px 2px 2px var(--color-pokemon-header-shadow);
 
   display: flex;
   flex-direction: column; /* So the underline can be absolutely placed inside */
@@ -17,7 +17,7 @@
 }
 
 .header-fast-select {
-  background-color: #34807d;
+  background-color: var(--color-pokemon-header-fast-select-bg);
   filter: drop-shadow(0 6px 6px rgba(0,0,0,0.3));
 }
 
@@ -57,6 +57,7 @@
   font-size: 1.25rem;
   font-weight: bold;
   text-transform: uppercase;
+  color: var(--color-pokemon-header-toggle-active);
 }
 
 /* Base font style for all toggles */
@@ -64,7 +65,7 @@
   font-size: 1.25rem;
   font-weight: bold;
   text-transform: uppercase;
-  color: #abbbb8; /* inactive gray */
+  color: var(--color-pokemon-header-toggle-inactive);
   margin: 0;
   padding: 0;
 }
@@ -72,7 +73,7 @@
 /* Active = white */
 .toggle-text.active,
 .free-toggle-text.active {
-  color: #fff;
+  color: var(--color-pokemon-header-toggle-active);
 }
 
 /* Underline styling */
@@ -80,7 +81,7 @@
   position: absolute;
   bottom: 0;
   height: 6px;           /* slightly thicker */
-  background-color: #fff;
+  background-color: var(--color-pokemon-header-underline);
   border-radius: 3px;    /* rounded corners */
   transition: left 0.3s ease, transform 0.3s ease, width 0.3s ease;
   width: clamp(100px, 10vw, 10vw);

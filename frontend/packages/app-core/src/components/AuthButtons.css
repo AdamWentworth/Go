@@ -21,10 +21,11 @@
     cursor: pointer;
     border-radius: 12px;
     white-space: nowrap;
+    transition: filter var(--motion-fast), opacity var(--motion-fast);
   }
   
   .auth-button:hover {
-    background-color: #0056b3;
+    filter: brightness(0.96);
   }
   
   

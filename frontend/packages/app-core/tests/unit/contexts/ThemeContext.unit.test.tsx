@@ -18,10 +18,11 @@ const ThemeConsumer = () => {
 describe('ThemeContext', () => {
   beforeEach(() => {
     window.localStorage.clear();
-    document.getElementById('light-mode-stylesheet')?.remove();
+    document.documentElement.removeAttribute('data-theme');
+    document.documentElement.style.colorScheme = '';
   });
 
-  it('reads stored light mode preference and mounts stylesheet', async () => {
+  it('reads stored light mode preference and applies the document theme', async () => {
     window.localStorage.setItem('isLightMode', 'true');
 
     render(
@@ -33,14 +34,13 @@ describe('ThemeContext', () => {
     expect(screen.getByTestId('mode')).toHaveTextContent('true');
 
     await waitFor(() =>
-      expect(document.getElementById('light-mode-stylesheet')).not.toBeNull(),
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light'),
     );
-    expect(
-      document.getElementById('light-mode-stylesheet')?.getAttribute('href'),
-    ).toBe('/Light-Mode.css');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    expect(document.documentElement.style.colorScheme).toBe('light');
   });
 
-  it('toggles theme and keeps localStorage + stylesheet in sync', async () => {
+  it('toggles theme and keeps localStorage + document theme in sync', async () => {
     render(
       <ThemeProvider>
         <ThemeConsumer />
@@ -55,16 +55,20 @@ describe('ThemeContext', () => {
     expect(window.localStorage.getItem('isLightMode')).toBe('true');
 
     await waitFor(() =>
-      expect(document.getElementById('light-mode-stylesheet')).not.toBeNull(),
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light'),
     );
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    expect(document.documentElement.style.colorScheme).toBe('light');
 
     fireEvent.click(screen.getByText('toggle'));
     expect(screen.getByTestId('mode')).toHaveTextContent('false');
     expect(window.localStorage.getItem('isLightMode')).toBe('false');
 
     await waitFor(() =>
-      expect(document.getElementById('light-mode-stylesheet')).toBeNull(),
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark'),
     );
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(document.documentElement.style.colorScheme).toBe('dark');
   });
 
   it('throws a helpful error when useTheme is used outside provider', () => {

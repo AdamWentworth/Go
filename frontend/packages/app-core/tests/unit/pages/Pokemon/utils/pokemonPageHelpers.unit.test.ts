@@ -51,9 +51,9 @@ describe('pokemonPageHelpers', () => {
   });
 
   it('builds slider transform from active view index and drag offset', () => {
-    expect(buildSliderTransform('pokedex', 0, 1000)).toBe('translate3d(0%,0,0)');
-    expect(buildSliderTransform('pokemon', 0, 1000)).toBe('translate3d(-100%,0,0)');
-    expect(buildSliderTransform('tags', 100, 1000)).toBe('translate3d(-190%,0,0)');
+    expect(buildSliderTransform('pokedex', 0, 1000)).toBe('translate3d(0px,0,0)');
+    expect(buildSliderTransform('pokemon', 0, 1000)).toBe('translate3d(-1000px,0,0)');
+    expect(buildSliderTransform('tags', 100, 1000)).toBe('translate3d(-1900px,0,0)');
   });
 
   it('returns expected sub-labels for pokedex and tags views', () => {
@@ -67,4 +67,3 @@ describe('pokemonPageHelpers', () => {
     expect(getTagsSubLabel('ownership', '')).toBeUndefined();
   });
 });
-

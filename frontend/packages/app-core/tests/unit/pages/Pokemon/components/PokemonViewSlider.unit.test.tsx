@@ -72,7 +72,7 @@ const makeProps = (overrides: Partial<Props> = {}): Props => {
       onTouchMove: vi.fn(),
       onTouchEnd: vi.fn(),
     },
-    transform: 'translate3d(-100%,0,0)',
+    transform: 'translate3d(-1000px,0,0)',
     isDragging: false,
     setTagFilter: toSetter<string>(),
     onPokedexHighlightedCardsChange: vi.fn(),
@@ -113,7 +113,7 @@ describe('PokemonViewSlider', () => {
 
     const slider = document.querySelector('.view-slider') as HTMLDivElement | null;
     expect(slider).not.toBeNull();
-    expect(slider?.style.transform).toBe('translate3d(-100%,0,0)');
+    expect(slider?.style.transform).toBe('translate3d(-1000px,0,0)');
     expect(slider?.style.transition).toContain('transform 0.3s');
 
     rerender(<PokemonViewSlider {...makeProps({ isDragging: true })} />);

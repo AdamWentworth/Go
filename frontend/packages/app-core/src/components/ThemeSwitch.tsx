@@ -1,26 +1,11 @@
 // ThemeSwitch.tsx
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import './ThemeSwitch.css';
 
 const ThemeSwitch: React.FC = () => {
   const { isLightMode, toggleTheme } = useTheme();
-
-  useEffect(() => {
-    const lightModeStylesheet = document.getElementById('light-mode-stylesheet');
-    if (isLightMode) {
-      if (!lightModeStylesheet) {
-        const link = document.createElement('link');
-        link.id = 'light-mode-stylesheet';
-        link.rel = 'stylesheet';
-        link.href = '/Light-Mode.css';
-        document.head.appendChild(link);
-      }
-    } else {
-      lightModeStylesheet?.remove();
-    }
-  }, [isLightMode]);
 
   return (
     <label className="switch">

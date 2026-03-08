@@ -179,3 +179,51 @@
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.14);
 }
+
+:root[data-theme='light'] .background-location-card {
+    background: var(--light-background-card-bg);
+    border-color: var(--light-caught-soft-border);
+    box-shadow: var(--light-background-card-shadow);
+    color: var(--light-text-primary);
+}
+
+:root[data-theme='light'] .background-location-card h3,
+:root[data-theme='light'] .background-info,
+:root[data-theme='light'] .none-option,
+:root[data-theme='light'] .selected-background h4,
+:root[data-theme='light'] .background-card-subtitle,
+:root[data-theme='light'] .background-card-date,
+:root[data-theme='light'] .background-selection-summary__label,
+:root[data-theme='light'] .background-selection-summary__meta {
+    color: var(--light-text-primary);
+}
+
+:root[data-theme='light'] .background-card-title,
+:root[data-theme='light'] .background-selection-summary__title {
+    color: var(--light-text-heading);
+}
+
+:root[data-theme='light'] .background-item {
+    background: rgba(248, 255, 249, 0.96);
+    border-color: var(--light-caught-soft-border);
+}
+
+:root[data-theme='light'] .background-card-media {
+    background: var(--light-background-card-media-bg);
+    border-color: var(--light-background-card-media-border);
+}
+
+:root[data-theme='light'] .background-item:hover {
+    border-color: var(--light-background-card-hover-border);
+    box-shadow: var(--light-background-card-hover-shadow);
+}
+
+:root[data-theme='light'] .background-item.selected,
+:root[data-theme='light'] .selected-background {
+    border-color: var(--light-background-card-border-strong);
+    box-shadow: var(--light-background-card-selected-shadow);
+}
+
+:root[data-theme='light'] .selected-background {
+    background: var(--light-background-card-selected-bg);
+}

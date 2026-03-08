@@ -43,3 +43,8 @@
   height: 0;
   margin: 10px auto 12px;
 }
+
+:root[data-theme='light'] .instance-overlay.caught-mode .caught-instance {
+  color: var(--light-text-primary);
+  --caught-divider-color: var(--light-caught-divider);
+}

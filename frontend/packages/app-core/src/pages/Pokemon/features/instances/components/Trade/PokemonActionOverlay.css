@@ -13,8 +13,8 @@
 }
 
 .pokemon-action-overlay .overlay-content {
-    background-color: #333;
-    color: white;
+    background-color: var(--color-modal-panel-surface);
+    color: var(--color-modal-panel-text);
     padding: 20px;
     border: 1px solid #666; /* Lighter border */
     border-radius: 10px;

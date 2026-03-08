@@ -1,10 +1,10 @@
 /* PokemonSearchBar.css */
 
 .pokemon-search-bar {
-  color: white;
+  color: var(--color-searchbar-text);
   display: flex;
   flex-direction: column;
-  background-color: #111;
+  background-color: var(--color-searchbar-surface);
   align-items: center;
   width: 100%;
   position: sticky; 

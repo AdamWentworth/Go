@@ -5,7 +5,7 @@
     justify-content: center;
     height: calc(100vh);
     color: #4CAF50; /* Green text to signify success */
-    background-color: #111; /* Dark background for contrast */
+    background-color: var(--color-auth-page-surface);
     text-align: center;
     padding: 20px;
 }

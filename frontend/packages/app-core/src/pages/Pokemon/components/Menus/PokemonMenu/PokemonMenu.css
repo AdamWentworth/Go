@@ -3,7 +3,7 @@
 .pokemon-container {
   display: grid;
   grid-template-rows: auto 1fr;
-  background-color: #111;
+  background-color: var(--color-pokemon-menu-surface);
   box-sizing: border-box;
   margin-left: auto;
   margin-right: auto;
@@ -16,12 +16,13 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: #111;
+  background-color: var(--color-pokemon-menu-surface);
   margin: 0px;
 }
 
 .search-menu {
   display: block;
+  background-color: var(--color-pokemon-menu-surface);
 }
 
 .grid-wrapper {

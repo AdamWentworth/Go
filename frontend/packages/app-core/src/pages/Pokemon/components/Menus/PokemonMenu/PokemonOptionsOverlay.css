@@ -14,7 +14,7 @@
   }
   
   .pokemon-options-overlay .overlay-content {
-    background: #333;
+    background: var(--color-pokemon-options-content-surface);
     padding: 20px;
     border-radius: 8px;
     display: flex;
@@ -25,7 +25,7 @@
   
   .pokemon-options-overlay .overlay-header {
     font-size: 24px;
-    color: #fff;
+    color: var(--color-pokemon-options-header-text);
     margin-bottom: 20px;
     margin-block-start: 0px;
     margin-block-end: 5px;
@@ -78,7 +78,7 @@
 
 .pokemon-options-overlay .option-card,
 .pokemon-options-overlay .pokemon-card {
-    background-color: #444;
+    background-color: var(--color-pokemon-options-card-surface);
 }
 
 .pokemon-options-overlay .option-image {
@@ -87,12 +87,12 @@
   
 /* Default hover for option-card and preview-card-container */
 .pokemon-options-overlay .option-card:hover {
-  background: #555;
+  background: var(--color-pokemon-options-card-hover-surface);
   cursor: pointer;
 }
 
 .pokemon-options-overlay .option-card.pokedex:hover {
-  background: #4398f8;
+  background: var(--color-pokemon-options-pokedex-hover-surface);
 }
 .pokemon-options-overlay .option-card.pokedex:hover .option-image {
   filter: drop-shadow(0 0px 20px rgba(0, 0, 0, 0.5)); /* Adds a soft shadow */
@@ -101,13 +101,13 @@
 
 .pokemon-options-overlay .pokemon-card:hover {
   transition: background-color 0.3s ease-in-out; /* Smooth background transition */
-  background-color: #34807d;
+  background-color: var(--color-pokemon-options-card-highlight-surface);
 }
   
   /* Text below each inner container */
   .pokemon-options-overlay .option-text,
   .pokemon-options-overlay .preview-text {
-    color: #fff;
+    color: var(--color-pokemon-options-label-text);
     font-size: 16px;
     margin-top: 5px;
   }

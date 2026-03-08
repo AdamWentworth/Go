@@ -25,4 +25,8 @@
     margin-left: 3px;
     text-transform: uppercase;
   }
+
+:root[data-theme='light'] .instance-overlay.caught-mode .type-label {
+    color: var(--light-text-secondary);
+}
   

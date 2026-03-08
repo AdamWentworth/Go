@@ -12,8 +12,9 @@
     z-index: 1000;
   }
   
-  .confirmation-content {
-    background-color: #333;
+.confirmation-content {
+    background-color: var(--color-confirmation-surface);
+    color: var(--color-confirmation-text);
     padding: 20px;
     border-radius: 8px;
     border: 1px solid #666; /* Lighter border */

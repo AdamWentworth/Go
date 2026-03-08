@@ -309,3 +309,15 @@
     gap: 25px;
   }
 }
+
+:root[data-theme='light'] .sort-button {
+  filter: drop-shadow(0 0 3px var(--light-icon-shadow-color));
+}
+
+:root[data-theme='light'] .sort-menu-content {
+  background: linear-gradient(
+    to bottom right,
+    var(--light-surface-muted),
+    var(--light-gradient-accent)
+  );
+}

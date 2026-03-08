@@ -15,15 +15,17 @@
   margin: 0.625rem 0;
   border-radius: var(--tag-card-radius);
   padding: var(--tag-item-pad);
-  background: #222;
-  color: #fff;
+  background: var(--color-tag-item-surface);
+  color: var(--color-tag-title);
   cursor: pointer;
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
   box-shadow: 0 8px 20px rgba(255,255,255,0.10);
+  filter: var(--filter-tag-item);
 }
 .tags-menu .tag-item:hover {
-  background-color: #1e1e1e;
+  background-color: var(--color-tag-item-hover-surface);
   box-shadow: 0 12px 28px rgba(255,255,255,0.25);
+  filter: var(--filter-tag-item-hover);
 }
 
 /* Footer (title + subtitle, icon on right) */
@@ -51,6 +53,7 @@
   text-align: left;
   font-size: 1.1rem;
   font-weight: 700;
+  color: var(--color-tag-title);
 }
 .tags-menu .tag-footer .tag-subtitle {
   grid-area: subtitle;
@@ -58,7 +61,7 @@
   text-align: left;
   font-size: 0.9rem;
   line-height: 1.1;
-  color: #ddd;
+  color: var(--color-tag-subtitle);
   opacity: 0.95;
 }
 .tags-menu .tag-footer .tag-footer-icon {

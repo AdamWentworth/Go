@@ -45,3 +45,23 @@
   color: #e0f0e5;
 }
 
+:root[data-theme='light'] .instance-overlay.caught-mode .ball-caught-container label {
+  color: var(--light-text-secondary);
+}
+
+:root[data-theme='light'] .instance-overlay.caught-mode .ball-caught-value {
+  color: var(--light-text-primary);
+}
+
+:root[data-theme='light'] .instance-overlay.caught-mode .ball-caught-toggle {
+  border-color: var(--light-caught-input-border);
+  background: var(--light-caught-toggle-bg);
+  color: var(--light-text-primary);
+}
+
+:root[data-theme='light'] .instance-overlay.caught-mode .ball-caught-toggle.active {
+  background: var(--light-caught-toggle-active-bg);
+  border-color: var(--light-caught-toggle-active-border);
+  color: var(--light-text-primary);
+}
+

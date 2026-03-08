@@ -1,5 +1,6 @@
 import React from 'react';
 import '@/components/modals/ModalStyles.css';
+import OverlayPortal from '@/components/OverlayPortal';
 import './FuseOverlay.css';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import { createScopedLogger } from '@/utils/logger';
@@ -76,8 +77,9 @@ const FuseOverlay: React.FC<FuseOverlayProps> = ({
   }
 
   return (
-    <div className="fuse-overlay modal-overlay">
-      <div className="overlay-content modal">
+    <OverlayPortal>
+      <div className="fuse-overlay modal-overlay caught-mode" onClick={onClose}>
+      <div className="overlay-content modal" onClick={(event) => event.stopPropagation()}>
         <h3 className="fuse-overlay-title">Select Fusion Partner</h3>
         <div className="fuse-candidate-list modal-content" role="list" aria-label="Fusion candidates">
           {candidates.map((candidate) => {
@@ -147,7 +149,8 @@ const FuseOverlay: React.FC<FuseOverlayProps> = ({
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 };
 

@@ -11,6 +11,7 @@ import {
   setStorageBoolean,
   STORAGE_KEYS,
 } from '@/utils/storage';
+import { applyThemePreferenceToDocument } from '@/utils/theme';
 
 type ThemeContextValue = {
   isLightMode: boolean;
@@ -49,19 +50,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    const lightModeStylesheet = document.getElementById('light-mode-stylesheet');
-    if (isLightMode) {
-      if (!lightModeStylesheet) {
-        const link = document.createElement('link');
-        link.id = 'light-mode-stylesheet';
-        link.rel = 'stylesheet';
-        link.href = '/Light-Mode.css';
-        document.head.appendChild(link);
-      }
-      return;
-    }
-
-    lightModeStylesheet?.remove();
+    applyThemePreferenceToDocument(isLightMode);
   }, [isLightMode]);
 
   const value = useMemo(

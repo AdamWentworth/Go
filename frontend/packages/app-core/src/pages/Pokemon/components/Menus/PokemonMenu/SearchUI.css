@@ -8,7 +8,7 @@
   top: 0;
   width: 100%;
   z-index: 10;
-  background-color: #111;
+  background-color: var(--color-search-section-surface);
   padding: 15px 0;
   transition: padding 0.3s ease;
 }
@@ -66,6 +66,7 @@
   height: 100%;
   padding: 0 20px;
   font-size: 16px;
+  background-color: var(--color-search-section-input-bg);
   border: none;
   outline: none;
   border-radius: 9999px;
@@ -151,7 +152,7 @@
 /* ===================== */
 .evo-line-checkbox {
   display: inline-flex; /* Changed from flex */
-  color: #ffffff;
+  color: var(--color-search-section-text);
   font-size: 1em;
   margin: 5px auto 0; /* Center horizontally */
   padding: 4px 8px; /* Add some padding around content */
@@ -178,7 +179,7 @@
 .evo-line-custom-checkbox {
   width: 2.5em;
   height: 2.5em;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--color-search-section-checkbox-border);
   border-radius: 50%;
   display: flex;
   justify-content: center;
@@ -188,8 +189,8 @@
 }
 
 .evo-checkbox:checked + .evo-line-custom-checkbox::after {
-  content: '✓';
-  color: #ffffff;
+  content: '\2713';
+  color: var(--color-search-section-text);
   font-size: 1.2em;
   line-height: 1;
 }
@@ -214,6 +215,7 @@
 .search-layout--focused .arrow-icon {
   opacity: 1;
   pointer-events: auto;
+  filter: var(--color-search-section-arrow-filter);
   transition: opacity 0.3s ease;
   cursor: pointer;
 }

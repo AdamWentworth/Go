@@ -224,6 +224,10 @@
   height: 40px; /* Adjust as needed */
 }
 
+:root[data-theme='light'] .pokemon-variant-container .background-button {
+  filter: var(--light-filter-invert);
+}
+
 .autocomplete-suggestions {
   position: absolute;
   background-color: var(--color-text-primary);

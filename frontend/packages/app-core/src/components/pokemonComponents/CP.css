@@ -52,3 +52,18 @@
     margin-top: 4px;
     text-align: center;
 }
+
+:root[data-theme='light'] .instance-overlay.caught-mode .cp-label,
+:root[data-theme='light'] .instance-overlay.caught-mode .cp-value,
+:root[data-theme='light'] .instance-overlay.caught-mode .cp-editable-content {
+    color: var(--light-caught-cp-text);
+    text-shadow: none;
+}
+
+:root[data-theme='light'] .instance-overlay.caught-mode .cp-editable-container.editable .cp-editable-content {
+    border-color: var(--light-caught-divider);
+}
+
+:root[data-theme='light'] .instance-overlay.caught-mode .cp-unified-container .error {
+    color: var(--light-caught-error);
+}

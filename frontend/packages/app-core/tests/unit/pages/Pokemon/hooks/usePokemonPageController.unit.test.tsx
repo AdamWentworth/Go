@@ -6,6 +6,18 @@ import usePokemonPageController from '@/pages/Pokemon/hooks/usePokemonPageContro
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { Instances } from '@/types/instances';
 import type { TagBuckets } from '@/types/tags';
+import type { SortMode, SortType } from '@/types/sort';
+
+type UsePokemonProcessingArgs = [
+  PokemonVariant[],
+  Instances,
+  string,
+  TagBuckets,
+  string,
+  boolean,
+  SortType,
+  SortMode,
+];
 
 const loadForeignProfileMock = vi.fn();
 const updateInstanceStatusMock = vi.fn();
@@ -13,7 +25,7 @@ const setHighlightedCardsMock = vi.fn();
 const setIsFastSelectEnabledMock = vi.fn();
 const handleConfirmChangeTagsMock = vi.fn(async () => undefined);
 const modalAlertMock = vi.fn().mockResolvedValue(undefined);
-const usePokemonProcessingMock = vi.fn(() => ({
+const usePokemonProcessingMock = vi.fn((..._args: UsePokemonProcessingArgs) => ({
   filteredVariants: [baseVariant],
   sortedPokemons: [
     {
@@ -90,7 +102,7 @@ vi.mock('@/pages/Pokemon/hooks/useUIControls', () => ({
 }));
 
 vi.mock('@/pages/Pokemon/hooks/usePokemonProcessing', () => ({
-  default: (...args: unknown[]) => usePokemonProcessingMock(...args),
+  default: (...args: UsePokemonProcessingArgs) => usePokemonProcessingMock(...args),
 }));
 
 vi.mock('@/pages/Pokemon/hooks/useInstanceIdProcessor', () => ({
@@ -154,7 +166,9 @@ describe('usePokemonPageController', () => {
       result.current.handleTagSelect('Favorites');
     });
 
-    const latestCall = usePokemonProcessingMock.mock.calls.at(-1);
+    const latestCall = usePokemonProcessingMock.mock.calls.at(-1) as
+      | UsePokemonProcessingArgs
+      | undefined;
     expect(latestCall?.[2]).toBe('Favorites');
     expect(result.current.activeStatusFilter).toBeNull();
   });

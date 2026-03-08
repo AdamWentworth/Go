@@ -251,7 +251,7 @@ npm run test
 Dark/light mode is toggleable via `ThemeContext`. You can adjust base themes in:
 
 ```plaintext
-public/Light-Mode.css
+The app now uses root `data-theme` state plus tokenized component CSS; there is no separate `public/Light-Mode.css` compatibility stylesheet anymore.
 src/components/ThemeSwitch.jsx
 ```
 

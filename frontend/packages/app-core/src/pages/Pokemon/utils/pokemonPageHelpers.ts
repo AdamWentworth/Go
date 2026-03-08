@@ -36,9 +36,9 @@ export const buildSliderTransform = (
   width: number,
 ): string => {
   const idx = ACTIVE_VIEW_SEQUENCE.indexOf(activeView);
-  const basePct = -idx * 100;
-  const offsetPct = width > 0 ? (dragOffset / width) * 100 : 0;
-  return `translate3d(${basePct + offsetPct}%,0,0)`;
+  const effectiveWidth = width > 0 ? width : 0;
+  const baseOffset = -idx * effectiveWidth;
+  return `translate3d(${baseOffset + dragOffset}px,0,0)`;
 };
 
 export const getPokedexSubLabel = (
@@ -61,4 +61,3 @@ export const getTagsSubLabel = (
   }
   return `(${tagFilter.toUpperCase()})`;
 };
-

@@ -57,3 +57,26 @@
 .max-move select:hover {
     border-color: #888;
 }
+
+:root[data-theme='light'] .instance-overlay.caught-mode .max-options-container {
+    background: var(--light-caught-soft-bg);
+    border-color: var(--light-caught-soft-border);
+    box-shadow: var(--light-caught-soft-shadow);
+}
+
+:root[data-theme='light'] .instance-overlay.caught-mode .max-move label {
+    color: var(--light-text-secondary);
+}
+
+:root[data-theme='light'] .instance-overlay.caught-mode .max-move select,
+:root[data-theme='light'] .instance-overlay.caught-mode .max-move select option {
+    background: var(--light-surface-base);
+    color: var(--light-text-primary);
+    border-color: var(--light-caught-input-border);
+    outline-color: var(--light-caught-input-border);
+    color-scheme: light;
+}
+
+:root[data-theme='light'] .instance-overlay.caught-mode .max-move select:focus {
+    outline-color: var(--light-text-primary);
+}

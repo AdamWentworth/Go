@@ -82,3 +82,7 @@
   transform-origin: center;
   user-select: none;
 }
+
+:root[data-theme='light'] .instance-overlay.caught-mode .stats-pipe {
+  color: var(--light-text-secondary);
+}

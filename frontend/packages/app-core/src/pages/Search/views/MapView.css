@@ -1,8 +1,8 @@
 /* MapView.css */
 
 .ol-popup {
-  background-color: #333; /* Dark background */
-  color: #fff; /* Light text */
+  background-color: var(--color-map-popup-surface);
+  color: var(--color-map-popup-text);
   border: 1px solid #666; /* Lighter border */
   padding: 8px; /* Reduced padding for compactness */
   border-radius: 5px;

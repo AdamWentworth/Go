@@ -14,13 +14,13 @@
     z-index: 1003;
     max-height: 50%;
     overflow-y: auto;
-    background-color: #333;
+    background-color: var(--color-auth-card-surface);
   }
   
   .location-options-overlay h4 {
     margin-top: 0;
     font-size: 16px;
-    color: white;
+    color: var(--color-auth-text-primary);
   }
   
   .dismiss-options-button {

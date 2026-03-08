@@ -14,8 +14,8 @@
 }
 
 .modal {
-  background-color: #333;
-  color: white;
+  background-color: var(--color-modal-panel-surface);
+  color: var(--color-modal-panel-text);
   padding: 1.5rem;
   border-radius: 8px;
   max-width: 600px;

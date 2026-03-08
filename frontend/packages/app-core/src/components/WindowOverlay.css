@@ -19,3 +19,8 @@
     /* Hide scrollbar for Firefox */
     scrollbar-width: none;
 }
+
+:root[data-theme='light'] .overlay-content {
+    background-color: var(--light-surface-muted);
+    color: var(--light-text-primary);
+}

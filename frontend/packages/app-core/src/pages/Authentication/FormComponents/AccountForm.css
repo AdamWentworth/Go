@@ -2,7 +2,7 @@
 
 /* Parent Container */
 .account-form {
-    background-color: #333; /* Dark background for the page */
+    background-color: var(--color-auth-panel-surface);
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     padding: 20px;
@@ -15,7 +15,7 @@
 
 /* Heading */
 .account-form > h1 {
-    color: #ffffff;
+    color: var(--color-auth-text-primary);
     text-align: center;
     margin-bottom: 20px;
     width: 100%;
@@ -23,7 +23,7 @@
 
 /* User Details Section */
 .account-form .user-details {
-    background-color: #222; /* Darker background for the user details section */
+    background-color: var(--color-auth-card-surface);
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     padding: 20px;
@@ -37,7 +37,7 @@
 .account-form .user-details .grid-item {
     display: flex;
     flex-direction: column;
-    color: #ffffff;
+    color: var(--color-auth-text-primary);
     font-weight: 500;
     margin-top: 10px;
 }

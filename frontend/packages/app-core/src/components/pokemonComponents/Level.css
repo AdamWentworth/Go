@@ -42,4 +42,25 @@
     color: grey; /* Match the small grey style */
     text-transform: uppercase;
   }
+
+  :root[data-theme='light'] .instance-overlay.caught-mode .level-label,
+  :root[data-theme='light'] .instance-overlay.caught-mode .level-value {
+    color: var(--light-text-secondary);
+  }
+
+  :root[data-theme='light'] .instance-overlay.caught-mode .level-input {
+    background: var(--light-surface-base);
+    color: var(--light-text-primary);
+    border-color: var(--light-caught-input-border);
+    outline-color: var(--light-caught-input-border);
+    color-scheme: light;
+  }
+
+  :root[data-theme='light'] .instance-overlay.caught-mode .level-input:focus {
+    outline-color: var(--light-text-primary);
+  }
+
+  :root[data-theme='light'] .instance-overlay.caught-mode .level-component .error {
+    color: var(--light-caught-error);
+  }
   

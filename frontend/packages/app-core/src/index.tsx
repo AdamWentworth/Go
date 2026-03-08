@@ -7,6 +7,7 @@ import reportWebVitals from './reportWebVitals';
 import { initPerfPaintObservers } from './utils/perfTelemetry';
 import { createScopedLogger } from './utils/logger';
 import { hasActiveStoredSession } from './utils/storage';
+import { applyStoredThemePreferenceToDocument } from './utils/theme';
 import { receiverContract } from '@shared-contracts/receiver';
 import './styles/tokens.css';
 import './index.css';
@@ -52,6 +53,8 @@ const container = document.getElementById('root');
 if (!container) {
   throw new Error('Root container not found');
 }
+
+applyStoredThemePreferenceToDocument();
 
 const root = createRoot(container);
 root.render(<App />);

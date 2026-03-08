@@ -43,14 +43,14 @@
 .moves-search-select {
   appearance: none;
   -webkit-appearance: none;
-  background-color: #333;
-  color: white;
+  background-color: var(--color-search-moves-select-surface);
+  color: var(--color-search-moves-select-text);
   border-radius: 4px;
   font-size: 16px;
   font-family: var(--font-family-base);
   border: none;
   cursor: pointer;
-  outline: 1px solid #a3a3a3;
+  outline: 1px solid var(--color-search-moves-select-outline);
   text-align-last: center; /* Centers the text inside the select dropdown */
   width: 100%; /* Make the select take full width of its container */
   min-width: 150px; /* Ensures minimum width large enough for longest names */
@@ -59,8 +59,8 @@
 }
 
 .moves-search-select option {
-  background-color: #333;
-  color: white;
+  background-color: var(--color-search-moves-select-surface);
+  color: var(--color-search-moves-select-text);
   text-align: center; /* Aligns text of options to center */
 }
 
@@ -93,9 +93,9 @@
   height: 24px;
   margin: 0 auto;
   background-color: transparent;
-  color: white;
+  color: var(--color-search-moves-add-button-text);
   font-size: 24px;
-  border: 2px solid white;
+  border: 2px solid var(--color-search-moves-add-button-border);
   border-radius: 50%; /* Adjusted for circular design */
   margin-top: 5px;
   cursor: default; /* Default non-clickable cursor */

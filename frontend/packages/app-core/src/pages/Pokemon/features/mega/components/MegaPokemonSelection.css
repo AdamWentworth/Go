@@ -19,8 +19,8 @@
 }
   
 .mega-modal-content {
-    background-color: #333; /* Dark background for contrast */
-    color: white; /* White text for readability */
+    background-color: var(--color-modal-panel-surface);
+    color: var(--color-modal-panel-text);
     padding: 10px;
     border-radius: 10px;
     text-align: center;
@@ -65,7 +65,7 @@
 }
   
 .mega-pokemon-item {
-    background-color: #444; /* Slightly lighter dark background */
+    background-color: var(--color-modal-item-surface);
     padding: 15px;
     border-radius: 8px;
     margin-top: 10px;

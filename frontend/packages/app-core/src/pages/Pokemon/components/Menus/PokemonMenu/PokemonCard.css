@@ -225,3 +225,14 @@
   .type-icons img { width: 1.75em; }
   .favorite-icon { width: 1.75em; }
 }
+
+:root[data-theme='light'] .pokemon-card,
+:root[data-theme='light'] .pokemon-card .cp-container .cp-display,
+:root[data-theme='light'] .pokemon-card p,
+:root[data-theme='light'] .pokemon-card h2 {
+  color: var(--light-text-primary);
+}
+
+:root[data-theme='light'] .pokemon-card.highlighted {
+  background-color: var(--light-surface-highlight);
+}

@@ -5,6 +5,38 @@
   min-height: 100vh; /* This ensures the App fills the whole viewport height */
   display: flex;
   flex-direction: column;
+  background-color: var(--color-app-surface);
+}
+
+:root[data-theme='light'] .App p {
+  color: var(--light-text-primary);
+}
+
+:root[data-theme='light'] .lucky-backdrop {
+  filter: brightness(1);
+}
+
+:root[data-theme='light'] body::-webkit-scrollbar-track {
+  background-color: var(--light-surface-base);
+}
+
+:root[data-theme='light'] body::-webkit-scrollbar-thumb {
+  background-color: var(--light-scrollbar-thumb);
+  border: 3px solid var(--light-surface-base);
+}
+
+:root[data-theme='light'] body::-webkit-scrollbar-thumb:hover {
+  background-color: var(--light-scrollbar-thumb-hover);
+}
+
+:root[data-theme='light'] body::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background-color: var(--light-surface-base);
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iNSIgdmlld0JveD0iMCAwIDEwIDUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBvbHlnb24gcG9pbnRzPSIwLDUsNSwwLDEwLDVMMCw1IiBmaWxsPSIjODg4ODg4Ii8+PC9zdmc+');
+}
+
+:root[data-theme='light'] body::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-color: var(--light-surface-base);
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iNSIgdmlld0JveD0iMCAwIDEwIDUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBvbHlnb24gcG9pbnRzPSIwLDAgNSw1LDEwLDAiIGZpbGw9IiM4ODg4ODgiLz48L3N2Zz4=');
 }
 
 .App-logo {

@@ -104,7 +104,7 @@
 /* Tag-folder body */
 .tag-folder-body {
   padding: 0.5rem 0.75rem 0.8rem;
-  background: #333;
+  background: var(--color-tag-folder-body-surface);
 }
 
 /* Sublist container */

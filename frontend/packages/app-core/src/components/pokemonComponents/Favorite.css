@@ -16,3 +16,11 @@
 .favorite-component.editable img {
     cursor: pointer; /* Pointer cursor for image when component is editable */
 }
+
+:root[data-theme='light'] .favorite-component {
+    color: var(--light-text-primary);
+}
+
+:root[data-theme='light'] .favorite-component.not-filled img {
+    filter: var(--light-filter-invert);
+}

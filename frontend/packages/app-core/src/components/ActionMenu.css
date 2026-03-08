@@ -248,3 +248,11 @@
   margin-top: 4px;
   text-align: center;
 }
+
+:root[data-theme='light'] .action-menu-overlay {
+  background: linear-gradient(
+    to bottom right,
+    var(--light-surface-muted),
+    var(--light-gradient-accent)
+  );
+}

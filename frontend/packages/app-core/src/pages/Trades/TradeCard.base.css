@@ -5,6 +5,11 @@
    ======================= */
 
 /* Layout and container styling */
+.trade-card {
+  background: var(--color-trade-card-surface);
+  color: var(--color-trade-card-text);
+}
+
 .trade-card .trade-pokemon {
   display: flex;
   justify-content: space-between;
