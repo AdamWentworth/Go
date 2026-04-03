@@ -256,7 +256,7 @@ Workflow:
 Manual inputs:
 
 - `image_ref` (for example `latest` or `sha-<commit>`)
-- `deploy_root` (default `/media/adam/storage/Code/Go`)
+- `deploy_root` (default `/home/adam/deploy/Go`)
 - `service_name` (default `auth_service`)
 
 Deploy behavior:
@@ -280,4 +280,3 @@ Deploy behavior:
 - Inactive social auth dependencies were removed to reduce attack surface.
 - Vulnerability remediation was applied at patch level where non-breaking.
 - CI validates install, JS syntax, tests, audit gate, and container security scan.
-

@@ -67,7 +67,7 @@ This service now has dedicated frontend workflows:
 ### What `deploy-frontend-prod` does
 
 - Manual trigger (`workflow_dispatch`) on your self-hosted prod runner.
-- Fast-forwards repo at deploy root (default `/media/adam/storage/Code/Go`).
+- Fast-forwards repo at deploy root (default `/home/adam/deploy/Go`).
 - Validates compose and required Docker networks (`kafka_default`, `pokemon_edge`).
 - Pulls requested image and recreates `frontend_nginx` with rollback on failed health check.
 
@@ -275,6 +275,5 @@ This frontend was designed to be modular, touch-friendly, and scale as features 
 The current codebase is large, but **structured for rapid iteration**, with clean folder grouping and reusable UI components.
 
 > If you're working on a section or need help tracking data flow — `contexts/`, `hooks/`, and `pages/Pokemon/` are the best starting points.
-
 
 

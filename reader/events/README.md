@@ -213,7 +213,7 @@ Compose behavior:
 - workflow: `.github/workflows/deploy-events-prod.yml`
 - dispatch inputs:
   - `image_ref` (`latest`, `sha-<commit>`, or full image ref)
-  - `deploy_root` (default `/media/adam/storage/Code/Go`)
+  - `deploy_root` (default `/home/adam/deploy/Go`)
   - `service_name` (default `events_service`)
 - deploy behavior:
   - sync git repo on prod runner

@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   pokemon_data:
-    image: ${POKEMON_IMAGE:-pokemon_data:local}
+    image: ${POKEMON_IMAGE:-adamwentworth/pokemon_service_go:latest}
     build:
       context: .
     container_name: pokemon_data_container

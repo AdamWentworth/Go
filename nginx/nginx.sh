@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NGINX_CONF="/media/adam/storage/Code/Go/nginx/nginx.conf"
+NGINX_CONF="/home/adam/deploy/Go/nginx/nginx.conf"
 
 case "$1" in
   start)

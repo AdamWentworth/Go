@@ -6,7 +6,7 @@ on:
       deploy_root:
         description: "Absolute path to the Go repo on prod runner"
         required: false
-        default: "/media/adam/storage/Code/Go"
+        default: "/home/adam/deploy/Go"
         type: string
 
 permissions:

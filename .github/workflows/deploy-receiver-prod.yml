@@ -11,7 +11,7 @@ on:
       deploy_root:
         description: "Absolute path to the Go repo on prod runner"
         required: false
-        default: "/media/adam/storage/Code/Go"
+        default: "/home/adam/deploy/Go"
         type: string
       service_name:
         description: "Compose service to deploy"
@@ -190,4 +190,3 @@ jobs:
 
           rm -f /tmp/receiver_health_body.txt
           echo "Deployment succeeded."
-
