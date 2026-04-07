@@ -12,6 +12,8 @@ interface HeaderRowProps {
   isFavorite?: boolean;
   onCPChange: (value: string) => void;
   onFavoriteChange: (value: boolean) => void;
+  showFavorite?: boolean;
+  rightSlot?: React.ReactNode;
 }
 
 const HeaderRow: React.FC<HeaderRowProps> = ({
@@ -22,6 +24,8 @@ const HeaderRow: React.FC<HeaderRowProps> = ({
   isFavorite = false,
   onCPChange,
   onFavoriteChange,
+  showFavorite = true,
+  rightSlot,
 }) => (
   <div className="top-row">
     <EditSaveComponent
@@ -34,11 +38,15 @@ const HeaderRow: React.FC<HeaderRowProps> = ({
       <CP editMode={editMode} onCPChange={onCPChange} cp={cp} />
     </div>
 
-    <FavoriteComponent
-      pokemon={{ instanceData: { favorite: isFavorite } }}
-      editMode={editMode}
-      onFavoriteChange={onFavoriteChange}
-    />
+    {rightSlot ?? (showFavorite ? (
+      <FavoriteComponent
+        pokemon={{ instanceData: { favorite: isFavorite } }}
+        editMode={editMode}
+        onFavoriteChange={onFavoriteChange}
+      />
+    ) : (
+      <div className="top-row-favorite-spacer" aria-hidden="true" />
+    ))}
   </div>
 );
 

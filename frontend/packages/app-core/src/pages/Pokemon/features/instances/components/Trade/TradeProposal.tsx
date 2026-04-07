@@ -22,7 +22,7 @@ import { createScopedLogger } from '@/utils/logger';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { Instances } from '@/types/instances';
-import type { TradeProposalPayload } from './tradeDetailsHelpers';
+import type { TradeProposalPayload } from './tradeTargetsHelpers';
 import {
   buildTradeProposalPreflight,
   buildTradeProposalRequest,

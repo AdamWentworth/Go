@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 
-import useWantedFiltering from '@/pages/Pokemon/features/instances/hooks/useWantedFiltering';
+import useTradeTargetFiltering from '@/pages/Pokemon/features/instances/hooks/useTradeTargetFiltering';
 import {
   EXCLUDE_IMAGES_wanted,
   INCLUDE_IMAGES_wanted,
@@ -13,7 +13,7 @@ const selectedExclude = (enabledIndex: number | null): boolean[] =>
 const selectedInclude = (enabledIndex: number | null): boolean[] =>
   INCLUDE_IMAGES_wanted.map((_, idx) => enabledIndex === idx);
 
-describe('useWantedFiltering', () => {
+describe('useTradeTargetFiltering', () => {
   it('filters out excluded entries in non-edit mode', () => {
     const setLocalNotWantedList = vi.fn();
     const listsState = {
@@ -28,7 +28,7 @@ describe('useWantedFiltering', () => {
     const notWantedList = {};
 
     const { result } = renderHook(() =>
-      useWantedFiltering(
+      useTradeTargetFiltering(
         listsState,
         exclude,
         include,
@@ -60,7 +60,7 @@ describe('useWantedFiltering', () => {
     const notWantedList = {};
 
     const { result } = renderHook(() =>
-      useWantedFiltering(
+      useTradeTargetFiltering(
         listsState,
         exclude,
         include,
@@ -92,7 +92,7 @@ describe('useWantedFiltering', () => {
     const notWantedList = {};
 
     const { result } = renderHook(() =>
-      useWantedFiltering(
+      useTradeTargetFiltering(
         listsState,
         exclude,
         include,
@@ -122,7 +122,7 @@ describe('useWantedFiltering', () => {
         selectedIncludeOnlyImages,
         notWantedList,
       }) =>
-        useWantedFiltering(
+        useTradeTargetFiltering(
           listsState,
           selectedExcludeImages,
           selectedIncludeOnlyImages,

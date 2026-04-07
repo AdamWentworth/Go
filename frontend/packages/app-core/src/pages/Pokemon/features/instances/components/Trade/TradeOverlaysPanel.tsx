@@ -7,12 +7,12 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 import PokemonActionOverlay from './PokemonActionOverlay';
 import TradeProposal from './TradeProposal';
 import UpdateForTradeModal from './UpdateForTradeModal';
-import type { SelectedPokemon, TradeProposalPayload } from './tradeDetailsHelpers';
+import type { SelectedPokemon, TradeProposalPayload } from './tradeTargetsHelpers';
 
 interface TradeOverlaysPanelProps {
   isOverlayOpen: boolean;
   closeOverlay: () => void;
-  handleViewWantedList: () => void;
+  handleViewTargetList: () => void;
   handleProposeTrade: () => void;
   selectedPokemon: SelectedPokemon | null;
   isTradeProposalOpen: boolean;
@@ -31,7 +31,7 @@ interface TradeOverlaysPanelProps {
 const TradeOverlaysPanel: React.FC<TradeOverlaysPanelProps> = ({
   isOverlayOpen,
   closeOverlay,
-  handleViewWantedList,
+  handleViewTargetList,
   handleProposeTrade,
   selectedPokemon,
   isTradeProposalOpen,
@@ -50,7 +50,7 @@ const TradeOverlaysPanel: React.FC<TradeOverlaysPanelProps> = ({
     <PokemonActionOverlay
       isOpen={isOverlayOpen}
       onClose={closeOverlay}
-      onViewWantedList={handleViewWantedList}
+      onViewTargetList={handleViewTargetList}
       onProposeTrade={handleProposeTrade}
       pokemon={selectedPokemon}
     />

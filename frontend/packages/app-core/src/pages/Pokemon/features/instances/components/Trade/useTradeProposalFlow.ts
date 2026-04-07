@@ -12,7 +12,7 @@ import {
   resolveTradeProposalDecision,
   type TradeProposalPayload,
   type SelectedPokemon,
-} from './tradeDetailsHelpers';
+} from './tradeTargetsHelpers';
 
 const log = createScopedLogger('useTradeProposalFlow');
 

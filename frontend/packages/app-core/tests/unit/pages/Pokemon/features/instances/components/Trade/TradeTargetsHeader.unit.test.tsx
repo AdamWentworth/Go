@@ -1,8 +1,8 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import TradeTopRow from '@/pages/Pokemon/features/instances/components/Trade/TradeTopRow';
+import TradeTargetsHeader from '@/pages/Pokemon/features/instances/components/Trade/TradeTargetsHeader';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
 vi.mock('@/components/EditSaveComponent', () => ({
@@ -11,8 +11,13 @@ vi.mock('@/components/EditSaveComponent', () => ({
   ),
 }));
 
+let lastMirrorManagerProps: unknown;
+
 vi.mock('@/pages/Pokemon/features/instances/components/Trade/MirrorManager', () => ({
-  default: () => <div data-testid="mirror-manager" />,
+  default: (props: unknown) => {
+    lastMirrorManagerProps = props;
+    return <div data-testid="mirror-manager" />;
+  },
 }));
 
 const makeInstance = (overrides: Partial<PokemonInstance> = {}): PokemonInstance =>
@@ -32,7 +37,6 @@ const makeProps = () => ({
   editMode: true,
   shouldShowFewLayout: false,
   toggleEditMode: vi.fn(),
-  onResetFilters: vi.fn(),
   pokemon: {
     species_name: 'Bulbasaur',
     instanceData: {
@@ -50,37 +54,39 @@ const makeProps = () => ({
   updateDetails: vi.fn((_id: string, _patch: Partial<PokemonInstance>) => {}),
 });
 
-describe('TradeTopRow', () => {
-  it('renders default headers and supporting controls', () => {
-    render(<TradeTopRow {...makeProps()} />);
+describe('TradeTargetsHeader', () => {
+  it('passes the actual edit mode into mirror manager', () => {
+    lastMirrorManagerProps = undefined;
+    render(<TradeTargetsHeader {...makeProps()} editMode={false} />);
 
-    expect(screen.getByRole('heading', { name: 'Exclude' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Include' })).toBeInTheDocument();
+    expect(lastMirrorManagerProps).toEqual(
+      expect.objectContaining({ editMode: false }),
+    );
+  });
+
+  it('renders trade top row controls without filter headings', () => {
+    render(<TradeTargetsHeader {...makeProps()} />);
+
+    expect(screen.getByTestId('edit-save-component')).toBeInTheDocument();
+    expect(screen.getByTestId('mirror-manager')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Exclude' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Include' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the same controls in few-layout mode', () => {
+    render(<TradeTargetsHeader {...makeProps()} shouldShowFewLayout />);
+
     expect(screen.getByTestId('edit-save-component')).toBeInTheDocument();
     expect(screen.getByTestId('mirror-manager')).toBeInTheDocument();
   });
 
-  it('renders compact header mode with only Exclude', () => {
-    render(<TradeTopRow {...makeProps()} shouldShowFewLayout />);
-
-    expect(screen.getByRole('heading', { name: 'Exclude' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Include' })).not.toBeInTheDocument();
-  });
-
-  it('hides reset affordance in mirror mode and honors reset click only in edit mode', () => {
+  it('does not render reset affordance in the header', () => {
     const mirrorProps = makeProps();
-    const { rerender } = render(<TradeTopRow {...mirrorProps} isMirror />);
+    const { rerender } = render(<TradeTargetsHeader {...mirrorProps} isMirror />);
     expect(screen.queryByAltText('Reset Filters')).not.toBeInTheDocument();
 
     const editableProps = makeProps();
-    rerender(<TradeTopRow {...editableProps} isMirror={false} editMode />);
-    const reset = screen.getByAltText('Reset Filters');
-    fireEvent.click(reset);
-    expect(editableProps.onResetFilters).toHaveBeenCalledTimes(1);
-
-    const readOnlyProps = makeProps();
-    rerender(<TradeTopRow {...readOnlyProps} isMirror={false} editMode={false} />);
-    fireEvent.click(screen.getByAltText('Reset Filters'));
-    expect(readOnlyProps.onResetFilters).not.toHaveBeenCalled();
+    rerender(<TradeTargetsHeader {...editableProps} isMirror={false} editMode />);
+    expect(screen.queryByAltText('Reset Filters')).not.toBeInTheDocument();
   });
 });

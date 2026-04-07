@@ -38,7 +38,7 @@ type TradeOverlaysPanelProps = React.ComponentProps<typeof TradeOverlaysPanel>;
 const makeProps = (): TradeOverlaysPanelProps => ({
   isOverlayOpen: true,
   closeOverlay: vi.fn(),
-  handleViewWantedList: vi.fn(),
+  handleViewTargetList: vi.fn(),
   handleProposeTrade: vi.fn(),
   selectedPokemon: {
     key: '0001-default_uuid',

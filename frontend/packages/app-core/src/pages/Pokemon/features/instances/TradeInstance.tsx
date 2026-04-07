@@ -1,21 +1,12 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import './TradeInstance.css';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 
-import EditSaveComponent from '@/components/EditSaveComponent';
-import CP from '@/components/pokemonComponents/CP';
-import NameComponent from './components/Caught/NameComponent';
-import Gender from '@/components/pokemonComponents/Gender';
-import Weight from '@/components/pokemonComponents/Weight';
-import Types from '@/components/pokemonComponents/Types';
-import Height from '@/components/pokemonComponents/Height';
-import Moves from '@/components/pokemonComponents/Moves';
-import LocationCaught from '@/components/pokemonComponents/LocationCaught';
-import DateCaughtComponent from '@/components/pokemonComponents/DateCaught';
-import Level from '@/components/pokemonComponents/Level';
-import IV from '@/components/pokemonComponents/IV';
-import MaxComponent from './components/Caught/MaxComponent';
-import MaxMovesComponent from './components/Caught/MaxMovesComponent';
+import PowerPanel from './sections/PowerPanel';
+import InstanceDetailsLayout from './sections/InstanceDetailsLayout';
+import { hasMovesAndIVContent } from './sections/MovesAndIV';
+import { hasMetaPanelContent } from './sections/MetaPanel';
+import BackgroundSelector from './sections/BackgroundSelector';
 
 import useValidation from './hooks/useValidation';
 import { useModal } from '@/contexts/ModalContext';
@@ -24,7 +15,6 @@ import {
   buildTradeInstancePatch,
   toTradeValidationFields,
 } from './utils/tradeInstanceForm';
-import TradeImageStage from './sections/TradeImageStage';
 import TradeBackgroundModal from './sections/TradeBackgroundModal';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import {
@@ -32,6 +22,9 @@ import {
   type TradePokemon,
 } from './hooks/useTradeInstanceController';
 import { createScopedLogger } from '@/utils/logger';
+import { getCrownFormLabel, resolveActiveCrownForm } from '@/utils/crownHelpers';
+import { resolveCrownDisplayData } from './utils/resolveCrownDisplayData';
+import { resolveCrownMovePool } from './utils/resolveCrownMovePool';
 
 const log = createScopedLogger('TradeInstance');
 
@@ -45,11 +38,23 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
   const { alert } = useModal();
   const entityKey = getEntityKey(pokemon);
 
-  const {
-    errors: validationErrors,
-    validate,
-    resetErrors,
-  } = useValidation();
+  const { validate, resetErrors } = useValidation();
+  const crownForms = pokemon.crownForms ?? [];
+  const [crownData, setCrownData] = useState<{
+    isCrown: boolean;
+    crownForm: string | null;
+  }>(() => {
+    const selected = resolveActiveCrownForm(crownForms, null);
+    return {
+      isCrown: Boolean(pokemon.instanceData.crown),
+      crownForm: getCrownFormLabel(selected),
+    };
+  });
+  const isTraded = false;
+  const originalTrainerName = null;
+  const originalTrainerId = null;
+  const tradedDate = null;
+  const [pokeball, setPokeball] = useState<string | null>(pokemon.instanceData.pokeball ?? null);
 
   const {
     editMode,
@@ -62,7 +67,6 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
     dynamax,
     gigantamax,
     showMaxOptions,
-    setShowMaxOptions,
     maxAttack,
     setMaxAttack,
     maxGuard,
@@ -93,7 +97,136 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
     handleDateCaughtChange,
     handleBackgroundSelect,
     handleToggleMaxOptions,
-  } = useTradeInstanceController(pokemon);
+  } = useTradeInstanceController(pokemon, {
+    isCrown: crownData.isCrown,
+    crownForm: crownData.crownForm,
+  });
+
+  const isShadow = Boolean(pokemon.instanceData.shadow);
+  const isPurified = Boolean(pokemon.instanceData.purified);
+  const isLucky = Boolean(pokemon.instanceData.lucky);
+  const displayName = pokemon.name ?? pokemon.species_name ?? 'Pokemon';
+  const resolvedCrownDisplay = useMemo(
+    () =>
+      resolveCrownDisplayData({
+        pokemon,
+        crown: {
+          is_crown: crownData.isCrown,
+          crown_form: crownData.crownForm,
+        },
+      }),
+    [crownData.crownForm, crownData.isCrown, pokemon],
+  );
+  const resolvedCrownMoves = useMemo(
+    () =>
+      resolveCrownMovePool({
+        pokemon,
+        baseMoves: pokemon.moves ?? [],
+        crown: {
+          is_crown: crownData.isCrown,
+          crown_form: crownData.crownForm,
+        },
+      }),
+    [crownData.crownForm, crownData.isCrown, pokemon],
+  );
+  const statsPokemon = useMemo(
+    () => ({
+      ...pokemon,
+      type1_name: resolvedCrownDisplay.type1_name,
+      type2_name: resolvedCrownDisplay.type2_name,
+      type_1_icon: resolvedCrownDisplay.type_1_icon,
+      type_2_icon: resolvedCrownDisplay.type_2_icon,
+      sizes: resolvedCrownDisplay.sizes,
+    }),
+    [pokemon, resolvedCrownDisplay],
+  );
+  const showPowerSection = Boolean(
+    (editMode &&
+      typeof pokemon.variantType === 'string' &&
+      (pokemon.variantType.includes('dynamax') || pokemon.variantType.includes('gigantamax')) &&
+      Array.isArray(pokemon.max) &&
+      pokemon.max.length > 0 &&
+      !isShadow &&
+      !isPurified &&
+      !pokemon.variantType?.includes('costume')) ||
+      (crownForms.length > 0 && !isShadow),
+  );
+
+  const movesPokemon = useMemo(
+    () => ({
+      ...pokemon,
+      moves: resolvedCrownMoves.moves,
+      instanceData: {
+        ...(pokemon.instanceData ?? {}),
+        nickname,
+        crown: crownData.isCrown,
+        fast_move_id: moves.fastMove,
+        charged_move1_id: moves.chargedMove1,
+        charged_move2_id: moves.chargedMove2,
+        location_caught: locationCaught,
+        date_caught: dateCaught,
+      },
+    }),
+    [
+      dateCaught,
+      locationCaught,
+      moves.chargedMove1,
+      moves.chargedMove2,
+      moves.fastMove,
+      nickname,
+      pokemon,
+      resolvedCrownMoves.moves,
+      crownData.isCrown,
+    ],
+  );
+  const metaPokemon = useMemo(
+    () => ({
+      ...pokemon,
+      instanceData: {
+        ...(pokemon.instanceData ?? {}),
+        location_caught: locationCaught,
+        date_caught: dateCaught,
+        is_traded: isTraded,
+        original_trainer_name: originalTrainerName,
+        original_trainer_id: originalTrainerId,
+        traded_date: tradedDate,
+      },
+    }),
+    [
+      dateCaught,
+      isTraded,
+      locationCaught,
+      originalTrainerId,
+      originalTrainerName,
+      pokemon,
+      tradedDate,
+    ],
+  );
+  const movesAndIVVisible = useMemo(
+    () =>
+      hasMovesAndIVContent({
+        pokemon: movesPokemon,
+        editMode,
+        areIVsEmpty,
+      }),
+    [areIVsEmpty, editMode, movesPokemon],
+  );
+  const showStatsDivider = Boolean(showPowerSection || movesAndIVVisible);
+  const metaPanelVisible = useMemo(
+    () =>
+      hasMetaPanelContent({
+        pokemon: metaPokemon,
+        editMode,
+        isTraded,
+        originalTrainerName,
+        tradedDate,
+        pokeball,
+        allowTradeMetadata: false,
+      }),
+    [editMode, isTraded, metaPokemon, originalTrainerName, pokeball, tradedDate],
+  );
+  const showMetaDivider = Boolean(metaPanelVisible && (movesAndIVVisible || !showPowerSection));
+  const addStatsBottomGap = Boolean(!showStatsDivider && !metaPanelVisible);
 
   const toggleEditMode = async () => {
     if (editMode) {
@@ -127,7 +260,13 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
         ivs,
         locationCaught,
         dateCaught,
+        isTraded,
+        originalTrainerName,
+        originalTrainerId,
+        tradedDate,
+        pokeball,
         selectedBackgroundId: selectedBackground?.background_id ?? null,
+        crown: crownData.isCrown,
         maxAttack,
         maxGuard,
         maxSpirit,
@@ -147,145 +286,135 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
   };
 
   return (
-    <div className="trade-instance">
-      <div className="trade-title"></div>
-      <div className="top-row">
-        <div className="edit-save-container">
-          <EditSaveComponent
+    <InstanceDetailsLayout
+      className="caught-instance trade-instance trade-instance--caught-layout"
+      dateCaught={dateCaught}
+      headerRow={{
+        editMode,
+        toggleEditMode,
+        isEditable,
+        cp,
+        onCPChange: handleCPChange,
+        onFavoriteChange: () => undefined,
+        showFavorite: false,
+        rightSlot: (
+          <BackgroundSelector
+            canPick={pokemon.backgrounds.length > 0}
             editMode={editMode}
-            toggleEditMode={toggleEditMode}
-            isEditable={isEditable}
+            onToggle={() => setShowBackgrounds((prev) => !prev)}
+            variant="header"
           />
-        </div>
-        <h2>Trade</h2>
-      </div>
-
-      <div className="CPComponent">
-        <CP
-          editMode={editMode}
-          onCPChange={handleCPChange}
-          cp={cp}
-          errors={validationErrors}
-        />
-      </div>
-
-      {pokemon.backgrounds.length > 0 && (
-        <div className={`background-select-row ${editMode ? 'active' : ''}`}>
-          <img
-            src={'/images/location.png'}
-            alt="Background Selector"
-            className="background-icon"
-            onClick={editMode ? () => setShowBackgrounds(!showBackgrounds) : undefined}
+        ),
+      }}
+      backgroundSelector={{
+        canPick: pokemon.backgrounds.length > 0,
+        editMode,
+        onToggle: () => setShowBackgrounds((prev) => !prev),
+      }}
+      levelArcLevel={level}
+      imageStage={{
+        selectedBackground,
+        isLucky,
+        currentImage,
+        name: displayName,
+        dynamax,
+        gigantamax,
+        isPurified,
+      }}
+      identityRow={{
+        pokemon,
+        isLucky,
+        isShadow,
+        isPurified,
+        editMode,
+        onToggleLucky: () => undefined,
+        onNicknameChange: handleNicknameChange,
+        onTogglePurify: () => undefined,
+        showLucky: false,
+        showPurify: false,
+      }}
+      levelGenderRow={{
+        pokemon,
+        editMode,
+        level,
+        onLevelChange: handleLevelChange,
+        gender,
+        onGenderChange: handleGenderChange,
+      }}
+      statsRow={{
+        pokemon: statsPokemon,
+        editMode,
+        onWeightChange: (value) => handleWeightChange(String(value)),
+        onHeightChange: (value) => handleHeightChange(String(value)),
+      }}
+      addStatsBottomGap={addStatsBottomGap}
+      showStatsDivider={showStatsDivider}
+      powerContent={
+        showPowerSection ? (
+          <PowerPanel
+            pokemon={pokemon}
+            editMode={editMode}
+            crownData={crownData}
+            setCrownData={setCrownData}
+            megaEvolutions={[]}
+            crownForms={crownForms}
+            isShadow={isShadow}
+            name={displayName}
+            dynamax={dynamax}
+            gigantamax={gigantamax}
+            showMaxOptions={showMaxOptions}
+            onToggleMax={handleToggleMaxOptions}
+            maxAttack={maxAttack}
+            maxGuard={maxGuard}
+            maxSpirit={maxSpirit}
+            onMaxAttackChange={setMaxAttack}
+            onMaxGuardChange={setMaxGuard}
+            onMaxSpiritChange={setMaxSpirit}
           />
-        </div>
-      )}
-
-      <TradeImageStage
-        selectedBackground={selectedBackground}
-        currentImage={currentImage}
-        name={pokemon.name}
-        dynamax={dynamax}
-        gigantamax={gigantamax}
-      />
-
-      <div className="name-container">
-        <NameComponent
+        ) : null
+      }
+      showPowerDivider={showPowerSection}
+      showBackgroundSelectorRow={false}
+      showMetaPanel={metaPanelVisible}
+      showMetaDivider={showMetaDivider}
+      movesAndIV={{
+        pokemon: movesPokemon,
+        editMode,
+        onMovesChange: handleMovesChange,
+        isShadow,
+        isPurified,
+        ivs,
+        onIvChange: handleIvChange,
+        areIVsEmpty,
+      }}
+      metaPanel={{
+        pokemon: metaPokemon,
+        editMode,
+        pokeball,
+        originalTrainerName,
+        originalTrainerId,
+        tradedDate,
+        isLucky,
+        isTraded,
+        isShadow,
+        allowTradeMetadata: false,
+        onLocationChange: handleLocationCaughtChange,
+        onDateChange: handleDateCaughtChange,
+        onIsTradedChange: () => undefined,
+        onOriginalTrainerNameChange: () => undefined,
+        onOriginalTrainerIdChange: () => undefined,
+        onTradedDateChange: () => undefined,
+        onPokeballChange: setPokeball,
+      }}
+      footerContent={
+        <TradeBackgroundModal
+          showBackgrounds={showBackgrounds}
           pokemon={pokemon}
-          editMode={editMode}
-          onNicknameChange={handleNicknameChange}
+          onClose={() => setShowBackgrounds(false)}
+          onSelectBackground={handleBackgroundSelect}
         />
-      </div>
-
-      <div className="level-gender-container">
-        <Level
-          editMode={editMode}
-          level={level}
-          onLevelChange={handleLevelChange}
-        />
-        {(editMode || (gender !== null && gender !== '')) && (
-          <div className="gender-wrapper">
-            <Gender
-              pokemon={pokemon}
-              editMode={editMode}
-              onGenderChange={handleGenderChange}
-            />
-          </div>
-        )}
-      </div>
-
-      <div className="stats-container">
-        <Weight
-          pokemon={pokemon}
-          editMode={editMode}
-          onWeightChange={handleWeightChange}
-        />
-        <Types pokemon={pokemon} />
-        <Height
-          pokemon={pokemon}
-          editMode={editMode}
-          onHeightChange={handleHeightChange}
-        />
-      </div>
-
-      <MaxComponent
-        pokemon={pokemon}
-        editMode={editMode}
-        dynamax={dynamax}
-        gigantamax={gigantamax}
-        onToggleMax={handleToggleMaxOptions}
-        showMaxOptions={showMaxOptions}
-      />
-      <MaxMovesComponent
-        pokemon={pokemon}
-        editMode={editMode}
-        showMaxOptions={showMaxOptions}
-        setShowMaxOptions={setShowMaxOptions}
-        maxAttack={maxAttack}
-        maxGuard={maxGuard}
-        maxSpirit={maxSpirit}
-        handleMaxAttackChange={setMaxAttack}
-        handleMaxGuardChange={setMaxGuard}
-        handleMaxSpiritChange={setMaxSpirit}
-      />
-
-      <div className="moves-container">
-        <Moves
-          pokemon={pokemon}
-          editMode={editMode}
-          onMovesChange={handleMovesChange}
-          isShadow={!!pokemon.instanceData.shadow}
-          isPurified={!!pokemon.instanceData.purified}
-        />
-      </div>
-
-      {(editMode || !areIVsEmpty) && (
-        <div className="iv-component">
-          <IV editMode={editMode} onIvChange={handleIvChange} ivs={ivs} />
-        </div>
-      )}
-
-      <div className="location-container">
-        <LocationCaught
-          pokemon={pokemon}
-          editMode={editMode}
-          onLocationChange={handleLocationCaughtChange}
-        />
-      </div>
-      <div className="date-container">
-        <DateCaughtComponent
-          pokemon={pokemon}
-          editMode={editMode}
-          onDateChange={handleDateCaughtChange}
-        />
-      </div>
-
-      <TradeBackgroundModal
-        showBackgrounds={showBackgrounds}
-        pokemon={pokemon}
-        onClose={() => setShowBackgrounds(false)}
-        onSelectBackground={handleBackgroundSelect}
-      />
-    </div>
+      }
+    />
   );
 };
 

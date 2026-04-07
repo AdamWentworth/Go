@@ -29,6 +29,27 @@ interface MovesAndIVProps {
   areIVsEmpty: boolean;
 }
 
+export const hasMovesAndIVContent = ({
+  pokemon,
+  editMode,
+  fusionMoveSource = 'base',
+  isFused = false,
+  areIVsEmpty,
+}: Pick<
+  MovesAndIVProps,
+  'pokemon' | 'editMode' | 'fusionMoveSource' | 'isFused' | 'areIVsEmpty'
+>): boolean => {
+  const instanceData = pokemon.instanceData ?? {};
+  const hasMovesSection =
+    editMode ||
+    (isFused && fusionMoveSource === 'fusion_missing') ||
+    instanceData.fast_move_id != null ||
+    instanceData.charged_move1_id != null ||
+    instanceData.charged_move2_id != null;
+  const hasIvSection = editMode || !areIVsEmpty;
+  return hasMovesSection || hasIvSection;
+};
+
 const MovesAndIV: React.FC<MovesAndIVProps> = ({
   pokemon,
   editMode,
@@ -40,29 +61,45 @@ const MovesAndIV: React.FC<MovesAndIVProps> = ({
   ivs,
   onIvChange,
   areIVsEmpty,
-}) => (
-  <>
-    <div className="moves-content">
-      <Moves
-        pokemon={pokemon}
-        editMode={editMode}
-        onMovesChange={onMovesChange}
-        isShadow={isShadow}
-        isPurified={isPurified}
-        fusionMoveSource={fusionMoveSource}
-        isFused={isFused}
-      />
-    </div>
+}) => {
+  const showMovesSection =
+    editMode ||
+    (isFused && fusionMoveSource === 'fusion_missing') ||
+    pokemon.instanceData?.fast_move_id != null ||
+    pokemon.instanceData?.charged_move1_id != null ||
+    pokemon.instanceData?.charged_move2_id != null;
+  const showIvSection = editMode || !areIVsEmpty;
 
-    {(editMode || !areIVsEmpty) && (
-      <>
-        <div className="moves-stats-divider" aria-hidden="true" />
-        <div className="iv-component">
-          <IV editMode={editMode} onIvChange={onIvChange} ivs={ivs} />
+  if (!showMovesSection && !showIvSection) {
+    return null;
+  }
+
+  return (
+    <>
+      {showMovesSection ? (
+        <div className="moves-content">
+          <Moves
+            pokemon={pokemon}
+            editMode={editMode}
+            onMovesChange={onMovesChange}
+            isShadow={isShadow}
+            isPurified={isPurified}
+            fusionMoveSource={fusionMoveSource}
+            isFused={isFused}
+          />
         </div>
-      </>
-    )}
-  </>
-);
+      ) : null}
+
+      {showIvSection ? (
+        <>
+          {showMovesSection ? <div className="moves-stats-divider" aria-hidden="true" /> : null}
+          <div className="iv-component">
+            <IV editMode={editMode} onIvChange={onIvChange} ivs={ivs} />
+          </div>
+        </>
+      ) : null}
+    </>
+  );
+};
 
 export default MovesAndIV;

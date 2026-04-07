@@ -21,6 +21,16 @@
   box-sizing: border-box;
 }
 
+.caught-instance > .instance-details-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  position: relative;
+}
+
 .caught-stats-divider::before,
 .caught-power-divider::before,
 .caught-instance .moves-stats-divider::before,
@@ -44,7 +54,8 @@
   margin: 10px auto 12px;
 }
 
-:root[data-theme='light'] .instance-overlay.caught-mode .caught-instance {
+:root[data-theme='light'] .instance-overlay.caught-mode .caught-instance,
+:root[data-theme='light'] .trade-instance--caught-layout {
   color: var(--light-text-primary);
   --caught-divider-color: var(--light-caught-divider);
 }

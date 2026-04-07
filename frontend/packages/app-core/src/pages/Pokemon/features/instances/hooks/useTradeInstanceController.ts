@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { determineImageUrl } from '@/utils/imageHelpers';
 import { cpMultipliers } from '@/utils/constants';
 import { calculateCP } from '@/utils/calculateCP';
+import { calculateBaseStats } from '@/utils/calculateBaseStats';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { VariantBackground } from '@/types/pokemonSubTypes';
@@ -21,12 +22,23 @@ type TradeComputedValues = {
   ivs?: TradeIvs;
 };
 
-export const useTradeInstanceController = (pokemon: TradePokemon) => {
+type TradeDisplayOptions = {
+  isCrown?: boolean;
+  crownForm?: string | null;
+};
+
+export const useTradeInstanceController = (
+  pokemon: TradePokemon,
+  options: TradeDisplayOptions = {},
+) => {
+  const isCrown = Boolean(options.isCrown);
+  const crownForm = options.crownForm ?? null;
+  const gigantamax = !!pokemon.instanceData.gigantamax;
   const [isFemale, setIsFemale] = useState<boolean>(
     pokemon.instanceData.gender === 'Female',
   );
   const [currentImage, setCurrentImage] = useState<string>(
-    determineImageUrl(isFemale, pokemon),
+    determineImageUrl(isFemale, pokemon, false, undefined, false, undefined, false, gigantamax, isCrown, crownForm ?? undefined),
   );
   const [editMode, setEditMode] = useState<boolean>(false);
   const [nickname, setNickname] = useState<string | null>(
@@ -42,9 +54,7 @@ export const useTradeInstanceController = (pokemon: TradePokemon) => {
   const [height, setHeight] = useState<number | ''>(
     Number(pokemon.instanceData.height) || '',
   );
-
   const dynamax = !!pokemon.instanceData.dynamax;
-  const gigantamax = !!pokemon.instanceData.gigantamax;
   const [showMaxOptions, setShowMaxOptions] = useState<boolean>(false);
 
   const [maxAttack, setMaxAttack] = useState<string>(
@@ -99,12 +109,20 @@ export const useTradeInstanceController = (pokemon: TradePokemon) => {
     useState<BackgroundOption | null>(null);
 
   const currentBaseStats = useMemo(
-    () => ({
-      attack: Number(pokemon.attack),
-      defense: Number(pokemon.defense),
-      stamina: Number(pokemon.stamina),
-    }),
-    [pokemon],
+    () =>
+      calculateBaseStats(
+        pokemon,
+        {
+          isMega: false,
+          megaForm: undefined,
+        },
+        undefined,
+        {
+          is_crown: isCrown,
+          crown_form: crownForm ?? undefined,
+        },
+      ),
+    [crownForm, isCrown, pokemon],
   );
 
   useEffect(() => {
@@ -130,9 +148,11 @@ export const useTradeInstanceController = (pokemon: TradePokemon) => {
         undefined,
         false,
         gigantamax,
+        isCrown,
+        crownForm ?? undefined,
       ),
     );
-  }, [isFemale, pokemon, gigantamax]);
+  }, [crownForm, gigantamax, isCrown, isFemale, pokemon]);
 
   useEffect(() => {
     const { attack, defense, stamina } = currentBaseStats;
@@ -263,4 +283,3 @@ export const useTradeInstanceController = (pokemon: TradePokemon) => {
     handleToggleMaxOptions,
   };
 };
-

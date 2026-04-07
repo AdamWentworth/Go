@@ -2,7 +2,7 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import TradeDetails from '@/pages/Pokemon/features/instances/components/Trade/TradeDetails';
+import TradeTargetsPanel from '@/pages/Pokemon/features/instances/components/Trade/TradeTargetsPanel';
 
 const mocks = vi.hoisted(() => ({
   logger: {
@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   updateInstanceDetailsMock: vi.fn(),
   alertMock: vi.fn(),
   buildWantedOverlayPokemonMock: vi.fn(),
-  useWantedFilteringMock: vi.fn(),
+  useTradeTargetFilteringMock: vi.fn(),
   useToggleEditModeTradeMock: vi.fn(),
   useTradeProposalFlowMock: vi.fn(),
 }));
@@ -35,15 +35,13 @@ vi.mock('@/contexts/ModalContext', () => ({
   }),
 }));
 
-vi.mock('@/pages/Pokemon/features/instances/components/Trade/TradeTopRow', () => ({
-  default: () => <div data-testid="trade-top-row" />,
+vi.mock('@/pages/Pokemon/features/instances/components/Trade/TradeTargetsHeader', () => ({
+  default: ({ filtersSlot }: { filtersSlot?: React.ReactNode }) => (
+    <div data-testid="trade-top-row">{filtersSlot}</div>
+  ),
 }));
 
-vi.mock('@/pages/Pokemon/features/instances/components/Trade/TradeFiltersPanel', () => ({
-  default: () => <div data-testid="trade-filters-panel" />,
-}));
-
-vi.mock('@/pages/Pokemon/features/instances/components/Trade/WantedListDisplay', () => ({
+vi.mock('@/pages/Pokemon/features/instances/components/Trade/TradeTargetsList', () => ({
   default: ({ onPokemonClick }: { onPokemonClick: (key: string) => void }) => (
     <button
       type="button"
@@ -69,8 +67,8 @@ vi.mock('@/pages/Pokemon/features/instances/components/Trade/TradeOverlaysPanel'
   ),
 }));
 
-vi.mock('@/pages/Pokemon/features/instances/hooks/useWantedFiltering', () => ({
-  default: (...args: unknown[]) => mocks.useWantedFilteringMock(...args),
+vi.mock('@/pages/Pokemon/features/instances/hooks/useTradeTargetFiltering', () => ({
+  default: (...args: unknown[]) => mocks.useTradeTargetFilteringMock(...args),
 }));
 
 vi.mock('@/pages/Pokemon/features/instances/hooks/useToggleEditModeTrade', () => ({
@@ -81,11 +79,11 @@ vi.mock('@/pages/Pokemon/features/instances/components/Trade/useTradeProposalFlo
   default: (...args: unknown[]) => mocks.useTradeProposalFlowMock(...args),
 }));
 
-vi.mock('@/pages/Pokemon/features/instances/components/Trade/tradeDetailsHelpers', async () => {
+vi.mock('@/pages/Pokemon/features/instances/components/Trade/tradeTargetsHelpers', async () => {
   const actual =
     await vi.importActual<
-      typeof import('@/pages/Pokemon/features/instances/components/Trade/tradeDetailsHelpers')
-    >('@/pages/Pokemon/features/instances/components/Trade/tradeDetailsHelpers');
+      typeof import('@/pages/Pokemon/features/instances/components/Trade/tradeTargetsHelpers')
+    >('@/pages/Pokemon/features/instances/components/Trade/tradeTargetsHelpers');
   return {
     ...actual,
     buildWantedOverlayPokemon: (...args: unknown[]) =>
@@ -95,11 +93,11 @@ vi.mock('@/pages/Pokemon/features/instances/components/Trade/tradeDetailsHelpers
   };
 });
 
-type TradeDetailsProps = React.ComponentProps<typeof TradeDetails>;
+type TradeTargetsPanelProps = React.ComponentProps<typeof TradeTargetsPanel>;
 
 const makeProps = (
-  overrides: Partial<TradeDetailsProps> = {},
-): TradeDetailsProps => ({
+  overrides: Partial<TradeTargetsPanelProps> = {},
+): TradeTargetsPanelProps => ({
   pokemon: {
     variant_id: '0001-default',
     species_name: 'Bulbasaur',
@@ -116,7 +114,7 @@ const makeProps = (
       wanted_filters: {},
       mirror: false,
     },
-  } as TradeDetailsProps['pokemon'],
+  } as TradeTargetsPanelProps['pokemon'],
   lists: {
     wanted: {
       '0001-default_uuid-1': {
@@ -134,10 +132,10 @@ const makeProps = (
       is_for_trade: false,
       is_wanted: true,
     },
-  } as unknown as TradeDetailsProps['instances'],
+  } as unknown as TradeTargetsPanelProps['instances'],
   sortType: 'name',
   sortMode: 'ascending',
-  openWantedOverlay: vi.fn(),
+  openTradeTargetOverlay: vi.fn(),
   variants: [
     {
       variant_id: '0001-default',
@@ -153,17 +151,17 @@ const makeProps = (
         is_wanted: true,
       },
     },
-  ] as TradeDetailsProps['variants'],
+  ] as TradeTargetsPanelProps['variants'],
   isEditable: true,
   username: 'ash',
   ...overrides,
 });
 
-describe('TradeDetails', () => {
+describe('TradeTargetsPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mocks.useWantedFilteringMock.mockReturnValue({
+    mocks.useTradeTargetFilteringMock.mockReturnValue({
       filteredWantedList: {
         '0001-default_uuid-1': {
           key: '0001-default_uuid-1',
@@ -204,7 +202,7 @@ describe('TradeDetails', () => {
 
   it('opens wanted overlay when editable click resolves merged pokemon', () => {
     const props = makeProps({ isEditable: true });
-    render(<TradeDetails {...props} />);
+    render(<TradeTargetsPanel {...props} />);
 
     fireEvent.click(screen.getByTestId('wanted-list-click'));
 
@@ -213,7 +211,7 @@ describe('TradeDetails', () => {
       props.variants,
       props.instances,
     );
-    expect(props.openWantedOverlay).toHaveBeenCalledWith(
+    expect(props.openTradeTargetOverlay).toHaveBeenCalledWith(
       expect.objectContaining({
         variant_id: '0001-default',
       }),
@@ -227,14 +225,14 @@ describe('TradeDetails', () => {
       error: 'variantNotFound',
     });
     const props = makeProps();
-    render(<TradeDetails {...props} />);
+    render(<TradeTargetsPanel {...props} />);
 
     fireEvent.click(screen.getByTestId('wanted-list-click'));
 
     expect(mocks.logger.error).toHaveBeenCalledWith(
       'Variant not found for instance id: 0001-default_uuid-1',
     );
-    expect(props.openWantedOverlay).not.toHaveBeenCalled();
+    expect(props.openTradeTargetOverlay).not.toHaveBeenCalled();
   });
 
   it('logs and skips opening overlay when instance lookup fails', () => {
@@ -243,25 +241,50 @@ describe('TradeDetails', () => {
       error: 'instanceNotFound',
     });
     const props = makeProps();
-    render(<TradeDetails {...props} />);
+    render(<TradeTargetsPanel {...props} />);
 
     fireEvent.click(screen.getByTestId('wanted-list-click'));
 
     expect(mocks.logger.error).toHaveBeenCalledWith(
       'No instance data found for key: 0001-default_uuid-1',
     );
-    expect(props.openWantedOverlay).not.toHaveBeenCalled();
+    expect(props.openTradeTargetOverlay).not.toHaveBeenCalled();
   });
 
   it('opens action overlay instead of wanted overlay when not editable', () => {
     const props = makeProps({ isEditable: false });
-    render(<TradeDetails {...props} />);
+    render(<TradeTargetsPanel {...props} />);
 
     fireEvent.click(screen.getByTestId('wanted-list-click'));
 
-    expect(props.openWantedOverlay).not.toHaveBeenCalled();
+    expect(props.openTradeTargetOverlay).not.toHaveBeenCalled();
     expect(screen.getByTestId('trade-overlays-panel')).toHaveTextContent(
       'open:0001-default_uuid-1',
     );
+  });
+
+  it('renders the trade target heading copy', () => {
+    render(<TradeTargetsPanel {...makeProps()} />);
+
+    expect(screen.getByText('Desired Return')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Trade Targets' })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Choose the Pokemon you would accept for this trade and fine-tune the filters below.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Target List' })).toBeInTheDocument();
+  });
+
+  it('renders reset affordance in the target list header and only enables it in edit mode', () => {
+    const editableProps = makeProps({ isEditable: true });
+    const { rerender } = render(<TradeTargetsPanel {...editableProps} />);
+
+    const reset = screen.getByAltText('Reset Filters');
+    expect(reset).toBeInTheDocument();
+
+    const readOnlyProps = makeProps({ isEditable: false });
+    rerender(<TradeTargetsPanel {...readOnlyProps} />);
+    expect(screen.queryByAltText('Reset Filters')).not.toBeInTheDocument();
   });
 });

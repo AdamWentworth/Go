@@ -20,6 +20,7 @@ interface StatsRowProps {
   editMode: boolean;
   onWeightChange: (value: string | number) => void;
   onHeightChange: (value: string | number) => void;
+  addBottomGap?: boolean;
 }
 
 const StatsRow: React.FC<StatsRowProps> = ({
@@ -27,27 +28,48 @@ const StatsRow: React.FC<StatsRowProps> = ({
   editMode,
   onWeightChange,
   onHeightChange,
-}) => (
-  <div className="weight-type-height-container">
-    <div className="weight-container">
-      <Weight
-        pokemon={pokemon}
-        editMode={editMode}
-        onWeightChange={onWeightChange}
-      />
+  addBottomGap = false,
+}) => {
+  const showWeight = editMode || Boolean(pokemon.instanceData?.weight);
+  const showHeight = editMode || Boolean(pokemon.instanceData?.height);
+  const containerClassName = `weight-type-height-container${
+    !showWeight && !showHeight ? ' only-type' : ''
+  }${addBottomGap ? ' terminal-spacing' : ''}`;
+
+  return (
+    <div className={containerClassName}>
+      {showWeight ? (
+        <div className="weight-container">
+          <Weight
+            pokemon={pokemon}
+            editMode={editMode}
+            onWeightChange={onWeightChange}
+          />
+        </div>
+      ) : null}
+      {showWeight ? (
+        <span className="stats-pipe" aria-hidden="true">
+          |
+        </span>
+      ) : null}
+      <Types pokemon={pokemon} />
+      {showHeight ? (
+        <span className="stats-pipe" aria-hidden="true">
+          |
+        </span>
+      ) : null}
+      {showHeight ? (
+        <div className="height-container">
+          <Height
+            pokemon={pokemon}
+            editMode={editMode}
+            onHeightChange={onHeightChange}
+          />
+        </div>
+      ) : null}
     </div>
-    <span className="stats-pipe" aria-hidden="true">|</span>
-    <Types pokemon={pokemon} />
-    <span className="stats-pipe" aria-hidden="true">|</span>
-    <div className="height-container">
-      <Height
-        pokemon={pokemon}
-        editMode={editMode}
-        onHeightChange={onHeightChange}
-      />
-    </div>
-  </div>
-);
+  );
+};
 
 export default StatsRow;
 

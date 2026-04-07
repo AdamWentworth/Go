@@ -32,6 +32,13 @@
   margin-left: auto;
 }
 
+.top-row .top-row-favorite-spacer {
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
 /* Larger top-row controls for caught overlay readability/tap comfort */
 .top-row .edit-save-container .icon-button img {
   width: 40px;

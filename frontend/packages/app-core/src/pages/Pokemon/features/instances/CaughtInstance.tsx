@@ -44,18 +44,11 @@ import { resolveFusionBackgroundPool } from './utils/resolveFusionBackgroundPool
 import { resolveFusionComboBackground } from './utils/resolveFusionComboBackground';
 import { useCaughtFormState } from './hooks/useCaughtFormState';
 
-import HeaderRow from './sections/HeaderRow';
-import BackgroundSelector from './sections/BackgroundSelector';
-import ImageStage from './sections/ImageStage';
-import LevelArc from './components/Caught/LevelArc';
-import IdentityRow from './sections/IdentityRow';
-import LevelGenderRow from './sections/LevelGenderRow';
-import StatsRow from './sections/StatsRow';
 import PowerPanel from './sections/PowerPanel';
-import MovesAndIV from './sections/MovesAndIV';
-import MetaPanel from './sections/MetaPanel';
 import Modals from './sections/Modals';
-import CaughtDateRibbon from './sections/CaughtDateRibbon';
+import InstanceDetailsLayout from './sections/InstanceDetailsLayout';
+import { hasMovesAndIVContent } from './sections/MovesAndIV';
+import { hasMetaPanelContent } from './sections/MetaPanel';
 import FusionComponent from './components/Caught/FusionComponent';
 
 type CaughtPokemon = PokemonVariant & {
@@ -654,162 +647,185 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
   const showPowerSectionDivider = Boolean(
     canRenderMegaPower || canRenderCrownPower || canRenderMaxPower || canRenderFusionPower,
   );
+  const movesAndIVVisible = useMemo(
+    () =>
+      hasMovesAndIVContent({
+        pokemon: movesPokemon,
+        editMode,
+        fusionMoveSource: fusionMoveMeta.source,
+        isFused: fusionMoveMeta.isFused,
+        areIVsEmpty,
+      }),
+    [
+      areIVsEmpty,
+      editMode,
+      fusionMoveMeta.isFused,
+      fusionMoveMeta.source,
+      movesPokemon,
+    ],
+  );
+  const showStatsDivider = Boolean(showPowerSectionDivider || movesAndIVVisible);
+  const metaPanelVisible = useMemo(
+    () =>
+      hasMetaPanelContent({
+        pokemon,
+        editMode,
+        isTraded,
+        originalTrainerName,
+        tradedDate,
+        pokeball,
+      }),
+    [editMode, isTraded, originalTrainerName, pokeball, pokemon, tradedDate],
+  );
+  const showMetaDivider = Boolean(metaPanelVisible && (movesAndIVVisible || !showPowerSectionDivider));
+  const addStatsBottomGap = Boolean(!showStatsDivider && !metaPanelVisible);
 
   return (
-    <div className="caught-instance">
-      <CaughtDateRibbon dateCaught={dateCaught} />
-
-      <HeaderRow
-        editMode={editMode}
-        toggleEditMode={handleToggleEditClick}
-        isEditable={isEditable}
-        cp={cp}
-        isFavorite={isFavorite}
-        onCPChange={handleCPChange}
-        onFavoriteChange={handleFavoriteChange}
-      />
-
-      <BackgroundSelector
-        canPick={selectableBackgrounds.length > 0}
-        editMode={editMode}
-        onToggle={() => setShowBackgrounds((prev) => !prev)}
-      />
-
-      <div className="level-arc-layer" aria-hidden="true" ref={arcLayerRef}>
-        <div className="level-arc-overlay">
-          <LevelArc level={level ?? 1} fitToContainer />
-        </div>
-      </div>
-
-      <ImageStage
-        level={level ?? 1}
-        selectedBackground={effectiveSelectedBackground}
-        isLucky={isLucky}
-        currentImage={currentImage || ''}
-        name={name}
-        dynamax={dynamax}
-        gigantamax={gigantamax}
-        isPurified={isPurified}
-      />
-
-      <IdentityRow
-        pokemon={pokemon}
-        isLucky={isLucky}
-        isShadow={isShadow}
-        isPurified={isPurified}
-        editMode={editMode}
-        onToggleLucky={handleLuckyToggle}
-        onNicknameChange={handleNicknameChange}
-        onTogglePurify={handlePurifyToggle}
-      />
-
-      <LevelGenderRow
-        pokemon={pokemon}
-        editMode={editMode}
-        level={level}
-        onLevelChange={handleLevelChange}
-        gender={gender}
-        onGenderChange={handleGenderChange}
-      />
-
-      <StatsRow
-        pokemon={statsPokemon}
-        editMode={editMode}
-        onWeightChange={handleWeightChange}
-        onHeightChange={handleHeightChange}
-      />
-
-      <div className="caught-stats-divider" aria-hidden="true" />
-
-      <PowerPanel
-        pokemon={pokemon}
-        editMode={editMode}
-        megaData={megaData}
-        setMegaData={setMegaData}
-        megaEvolutions={megaEvolutions}
-        crownData={crownData}
-        setCrownData={setCrownData}
-        crownForms={crownForms}
-        isShadow={isShadow}
-        name={name}
-        dynamax={dynamax}
-        gigantamax={gigantamax}
-        showMaxOptions={showMaxOptions}
-        onToggleMax={handleToggleMaxOptions}
-        maxAttack={maxAttack}
-        maxGuard={maxGuard}
-        maxSpirit={maxSpirit}
-        onMaxAttackChange={handleMaxAttackChange}
-        onMaxGuardChange={handleMaxGuardChange}
-        onMaxSpiritChange={handleMaxSpiritChange}
-      />
-
-      <div className="caught-fusion-slot">
-        <FusionComponent
-          fusion={pokemon.fusion ?? null}
-          editMode={editMode}
+    <InstanceDetailsLayout
+      className="caught-instance"
+      dateCaught={dateCaught}
+      headerRow={{
+        editMode,
+        toggleEditMode: handleToggleEditClick,
+        isEditable,
+        cp,
+        isFavorite,
+        onCPChange: handleCPChange,
+        onFavoriteChange: handleFavoriteChange,
+      }}
+      backgroundSelector={{
+        canPick: selectableBackgrounds.length > 0,
+        editMode,
+        onToggle: () => setShowBackgrounds((prev) => !prev),
+      }}
+      levelArcLevel={level}
+      arcLayerRef={arcLayerRef}
+      imageStage={{
+        level: level ?? 1,
+        selectedBackground: effectiveSelectedBackground,
+        isLucky,
+        currentImage: currentImage || '',
+        name,
+        dynamax,
+        gigantamax,
+        isPurified,
+      }}
+      identityRow={{
+        pokemon,
+        isLucky,
+        isShadow,
+        isPurified,
+        editMode,
+        onToggleLucky: handleLuckyToggle,
+        onNicknameChange: handleNicknameChange,
+        onTogglePurify: handlePurifyToggle,
+      }}
+      levelGenderRow={{
+        pokemon,
+        editMode,
+        level,
+        onLevelChange: handleLevelChange,
+        gender,
+        onGenderChange: handleGenderChange,
+      }}
+      statsRow={{
+        pokemon: statsPokemon,
+        editMode,
+        onWeightChange: handleWeightChange,
+        onHeightChange: handleHeightChange,
+      }}
+      addStatsBottomGap={addStatsBottomGap}
+      showStatsDivider={showStatsDivider}
+      powerContent={
+        <PowerPanel
           pokemon={pokemon}
-          onFusionToggle={handleFusionToggle}
-          onUndoFusion={handleUndoFusion}
-          fusionState={fusion}
+          editMode={editMode}
+          megaData={megaData}
+          setMegaData={setMegaData}
+          megaEvolutions={megaEvolutions}
+          crownData={crownData}
+          setCrownData={setCrownData}
+          crownForms={crownForms}
+          isShadow={isShadow}
+          name={name}
+          dynamax={dynamax}
+          gigantamax={gigantamax}
+          showMaxOptions={showMaxOptions}
+          onToggleMax={handleToggleMaxOptions}
+          maxAttack={maxAttack}
+          maxGuard={maxGuard}
+          maxSpirit={maxSpirit}
+          onMaxAttackChange={handleMaxAttackChange}
+          onMaxGuardChange={handleMaxGuardChange}
+          onMaxSpiritChange={handleMaxSpiritChange}
         />
-      </div>
-
-      {showPowerSectionDivider ? (
-        <div className="caught-power-divider" aria-hidden="true" />
-      ) : null}
-
-      <MovesAndIV
-        pokemon={movesPokemon}
-        editMode={editMode}
-        onMovesChange={handleMovesChange}
-        isShadow={isShadow}
-        isPurified={isPurified}
-        fusionMoveSource={fusionMoveMeta.source}
-        isFused={fusionMoveMeta.isFused}
-        ivs={ivs}
-        onIvChange={handleIvChange}
-        areIVsEmpty={areIVsEmpty}
-      />
-
-      <MetaPanel
-        pokemon={pokemon}
-        editMode={editMode}
-        pokeball={pokeball}
-        originalTrainerName={originalTrainerName}
-        originalTrainerId={originalTrainerId}
-        tradedDate={tradedDate}
-        isLucky={isLucky}
-        isTraded={isTraded}
-        isShadow={isShadow}
-        onLocationChange={handleLocationCaughtChange}
-        onDateChange={handleDateCaughtChange}
-        onIsTradedChange={handleIsTradedChange}
-        onOriginalTrainerNameChange={handleOriginalTrainerNameChange}
-        onOriginalTrainerIdChange={handleOriginalTrainerIdChange}
-        onTradedDateChange={handleTradedDateChange}
-        onPokeballChange={handlePokeballChange}
-      />
-
-      <Modals
-        showBackgrounds={showBackgrounds}
-        setShowBackgrounds={setShowBackgrounds}
-        pokemon={{
-          variantType: pokemon.variantType,
-          backgrounds,
-        }}
-        onSelectBackground={handleBackgroundSelect}
-        overlayCandidates={fusion.overlayCandidates}
-        overlayPokemon={fusion.overlayPokemon}
-        onSelectOverlayPokemon={(selectedPokemon) =>
-          setFusion((prev) => ({ ...prev, overlayPokemon: selectedPokemon }))
-        }
-        onCloseOverlay={() =>
-          setFusion((prev) => ({ ...prev, overlayPokemon: null, overlayCandidates: [] }))
-        }
-        onFuse={handleFuseProceed}
-      />
-    </div>
+      }
+      postPowerContent={
+        <div className="caught-fusion-slot">
+          <FusionComponent
+            fusion={pokemon.fusion ?? null}
+            editMode={editMode}
+            pokemon={pokemon}
+            onFusionToggle={handleFusionToggle}
+            onUndoFusion={handleUndoFusion}
+            fusionState={fusion}
+          />
+        </div>
+      }
+      showPowerDivider={showPowerSectionDivider}
+      showMetaPanel={metaPanelVisible}
+      showMetaDivider={showMetaDivider}
+      movesAndIV={{
+        pokemon: movesPokemon,
+        editMode,
+        onMovesChange: handleMovesChange,
+        isShadow,
+        isPurified,
+        fusionMoveSource: fusionMoveMeta.source,
+        isFused: fusionMoveMeta.isFused,
+        ivs,
+        onIvChange: handleIvChange,
+        areIVsEmpty,
+      }}
+      metaPanel={{
+        pokemon,
+        editMode,
+        pokeball,
+        originalTrainerName,
+        originalTrainerId,
+        tradedDate,
+        isLucky,
+        isTraded,
+        isShadow,
+        onLocationChange: handleLocationCaughtChange,
+        onDateChange: handleDateCaughtChange,
+        onIsTradedChange: handleIsTradedChange,
+        onOriginalTrainerNameChange: handleOriginalTrainerNameChange,
+        onOriginalTrainerIdChange: handleOriginalTrainerIdChange,
+        onTradedDateChange: handleTradedDateChange,
+        onPokeballChange: handlePokeballChange,
+      }}
+      footerContent={
+        <Modals
+          showBackgrounds={showBackgrounds}
+          setShowBackgrounds={setShowBackgrounds}
+          pokemon={{
+            variantType: pokemon.variantType,
+            backgrounds,
+          }}
+          onSelectBackground={handleBackgroundSelect}
+          overlayCandidates={fusion.overlayCandidates}
+          overlayPokemon={fusion.overlayPokemon}
+          onSelectOverlayPokemon={(selectedPokemon) =>
+            setFusion((prev) => ({ ...prev, overlayPokemon: selectedPokemon }))
+          }
+          onCloseOverlay={() =>
+            setFusion((prev) => ({ ...prev, overlayPokemon: null, overlayCandidates: [] }))
+          }
+          onFuse={handleFuseProceed}
+        />
+      }
+    />
   );
 };
 

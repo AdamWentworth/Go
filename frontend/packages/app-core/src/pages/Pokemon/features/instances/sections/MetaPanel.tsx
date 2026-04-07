@@ -29,6 +29,8 @@ type PokemonWithInstance = {
 
 interface MetaPanelProps {
   pokemon: PokemonWithInstance;
+  showDivider?: boolean;
+  allowTradeMetadata?: boolean;
   editMode: boolean;
   isLucky: boolean;
   isTraded: boolean;
@@ -46,8 +48,44 @@ interface MetaPanelProps {
   onPokeballChange: (value: string | null) => void;
 }
 
+type MetaPanelContentInput = Pick<
+  MetaPanelProps,
+  'pokemon' | 'editMode' | 'isTraded' | 'originalTrainerName' | 'tradedDate' | 'pokeball' | 'allowTradeMetadata'
+>;
+
+export const hasMetaPanelContent = ({
+  pokemon,
+  editMode,
+  isTraded,
+  originalTrainerName,
+  tradedDate,
+  pokeball,
+  allowTradeMetadata = true,
+}: MetaPanelContentInput): boolean => {
+  if (editMode) return true;
+
+  const hasLocation = Boolean((pokemon.instanceData?.location_caught ?? '').trim());
+  const hasCaughtDate = Boolean(normalizeEditableDateValue(pokemon.instanceData?.date_caught ?? null));
+  const hasTradeTrainer = Boolean(
+    (originalTrainerName ?? '').trim() ||
+      (pokemon.instanceData?.original_trainer_name ?? '').trim() ||
+      (pokemon.instanceData?.original_trainer_id ?? '').trim(),
+  );
+  const hasTradeDate = Boolean(
+    normalizeEditableDateValue(tradedDate ?? pokemon.instanceData?.traded_date ?? null),
+  );
+  const hasBall = Boolean(pokeball);
+  const hasTradeContent =
+    allowTradeMetadata &&
+    (hasTradeTrainer || (Boolean(isTraded) && hasTradeDate));
+
+  return hasLocation || hasCaughtDate || hasTradeContent || hasBall;
+};
+
 const MetaPanel: React.FC<MetaPanelProps> = ({
   pokemon,
+  showDivider = true,
+  allowTradeMetadata = true,
   editMode,
   isLucky,
   isTraded,
@@ -64,7 +102,7 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
   onTradedDateChange,
   onPokeballChange,
 }) => {
-  const locationDisplay = (pokemon.instanceData?.location_caught ?? '').trim() || 'UNKNOWN LOCATION';
+  const rawLocation = (pokemon.instanceData?.location_caught ?? '').trim();
   const rawDate = pokemon.instanceData?.date_caught ?? null;
   const obtainedInTrade = Boolean(isTraded);
   const rawOriginalTrainerName = (pokemon.instanceData?.original_trainer_name ?? '').trim();
@@ -78,19 +116,31 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
   const [trainerHasFocus, setTrainerHasFocus] = useState<boolean>(false);
   const trainerLookupRequestRef = useRef(0);
 
-  const formatDisplayDate = (value: unknown): string =>
-    normalizeEditableDateValue(value) ?? 'UNKNOWN DATE';
-
-  const dateDisplay = formatDisplayDate(rawDate);
-  const tradedDateDisplay = formatDisplayDate(tradedDate ?? pokemon.instanceData?.traded_date ?? null);
+  const dateDisplay = normalizeEditableDateValue(rawDate);
+  const tradedDateDisplay = normalizeEditableDateValue(
+    tradedDate ?? pokemon.instanceData?.traded_date ?? null,
+  );
   const tradedDateInputValue = normalizeEditableDateValue(
     tradedDate ?? pokemon.instanceData?.traded_date ?? null,
   );
   const originalTrainerDisplay =
     (originalTrainerName ?? '').trim() ||
     rawOriginalTrainerName ||
-    rawOriginalTrainerId ||
-    'UNKNOWN TRAINER';
+    rawOriginalTrainerId;
+  const hasCaughtSummary = Boolean(rawLocation || dateDisplay || pokeball);
+  const hasTradeSummary = Boolean(
+    allowTradeMetadata && obtainedInTrade && (originalTrainerDisplay || tradedDateDisplay),
+  );
+  const showEditFieldsDivider = hasCaughtSummary || hasTradeSummary;
+  const showMetaCard = hasMetaPanelContent({
+    pokemon,
+    editMode,
+    isTraded,
+    originalTrainerName,
+    tradedDate,
+    pokeball,
+    allowTradeMetadata,
+  });
   const showTrainerSuggestions = useMemo(
     () =>
       editMode &&
@@ -185,142 +235,160 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
     setTrainerLookupError(outcome.message);
   };
 
+  if (!showMetaCard) {
+    return null;
+  }
+
   return (
     <div className="meta-panel">
-      <div className="meta-divider" aria-hidden="true" />
+      {showDivider ? <div className="meta-divider" aria-hidden="true" /> : null}
 
       <div className="meta-card">
-        {obtainedInTrade && (
+        {hasTradeSummary && (
           <div className="meta-trade-banner">
             <div className="meta-trade-label">OBTAINED IN A TRADE</div>
-            <div className="meta-trade-value">{originalTrainerDisplay}</div>
-            <div className="meta-trade-date-label">{tradedDateDisplay}</div>
+            {originalTrainerDisplay ? (
+              <div className="meta-trade-value">{originalTrainerDisplay}</div>
+            ) : null}
+            {tradedDateDisplay ? (
+              <div className="meta-trade-date-label">{tradedDateDisplay}</div>
+            ) : null}
           </div>
         )}
 
-        <div className="meta-summary">
-          <div className="meta-summary-text">
-            <div className="meta-caught-label">CAUGHT</div>
-            <div className="meta-location-value">{locationDisplay}</div>
-            <div className="meta-date-label">{dateDisplay}</div>
-          </div>
-
-          <div className="meta-ball-slot" aria-hidden="true">
-            <img
-              className={`meta-ball-image ${getBallImageClassName(pokeball)}`}
-              src={getBallImageUrl(pokeball)}
-              alt=""
-            />
-          </div>
-        </div>
-
-        {editMode && (
-          <div className="meta-edit-fields">
-            <div className="meta-trainer-edit-field">
-              <label>Traded:</label>
-              <div className="meta-toggle-group" role="group" aria-label="Traded status">
-                <button
-                  type="button"
-                  className={`meta-toggle-button ${obtainedInTrade ? 'active' : ''}`}
-                  aria-pressed={obtainedInTrade}
-                  onClick={() => onIsTradedChange(true)}
-                  disabled={isShadow}
-                >
-                  Yes
-                </button>
-                <button
-                  type="button"
-                  className={`meta-toggle-button ${!obtainedInTrade ? 'active' : ''}`}
-                  aria-pressed={!obtainedInTrade}
-                  onClick={() => onIsTradedChange(false)}
-                  disabled={isLucky}
-                >
-                  No
-                </button>
-              </div>
-              {isShadow && (
-                <div className="meta-trainer-lookup-status">
-                  Shadow Pokemon cannot be traded until purified.
-                </div>
-              )}
-              {isLucky && (
-                <div className="meta-trainer-lookup-status">
-                  Lucky Pokemon are always traded.
-                </div>
-              )}
+        {hasCaughtSummary ? (
+          <div className="meta-summary">
+            <div className="meta-summary-text">
+              <div className="meta-caught-label">CAUGHT</div>
+              {rawLocation ? <div className="meta-location-value">{rawLocation}</div> : null}
+              {dateDisplay ? <div className="meta-date-label">{dateDisplay}</div> : null}
             </div>
 
-            {obtainedInTrade && (
+            {pokeball ? (
+              <div className="meta-ball-slot" aria-hidden="true">
+                <img
+                  className={`meta-ball-image ${getBallImageClassName(pokeball)}`}
+                  src={getBallImageUrl(pokeball)}
+                  alt=""
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {editMode && (
+          <div
+            className={`meta-edit-fields ${showEditFieldsDivider ? 'meta-edit-fields--with-divider' : 'meta-edit-fields--no-divider'}`}
+          >
+            {allowTradeMetadata && (
               <>
                 <div className="meta-trainer-edit-field">
-                  <label htmlFor="meta-original-trainer-name">Original Trainer Name:</label>
-                  <div className="meta-trainer-name-input-wrap">
-                    <input
-                      id="meta-original-trainer-name"
-                      type="text"
-                      value={trainerQuery}
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        setTrainerQuery(next);
-                        onOriginalTrainerNameChange(next);
-                        onOriginalTrainerIdChange(null);
-                      }}
-                      onFocus={() => setTrainerHasFocus(true)}
-                      onBlur={() => {
-                        const committedName = trainerQuery.trim();
-                        setTrainerHasFocus(false);
-                        setTrainerQuery(committedName);
-                        onOriginalTrainerNameChange(committedName);
-                        onOriginalTrainerIdChange(null);
-                        void resolveTrainerByUsername(committedName);
-                        window.setTimeout(() => setTrainerSuggestions([]), 120);
-                      }}
-                      placeholder="Optional"
-                      className="meta-edit-input"
-                      autoComplete="off"
-                    />
-
-                    {showTrainerSuggestions && (
-                      <div className="meta-trainer-suggestions">
-                        {trainerSuggestions.map((candidate, index) => (
-                          <button
-                            key={`${candidate.username}-${index}`}
-                            type="button"
-                            className="meta-trainer-suggestion-item"
-                            onMouseDown={(event) => {
-                              event.preventDefault();
-                              onOriginalTrainerNameChange(candidate.username);
-                              setTrainerQuery(candidate.username);
-                              setTrainerSuggestions([]);
-                              setTrainerHasFocus(false);
-                              void resolveTrainerByUsername(candidate.username);
-                            }}
-                          >
-                            {candidate.username}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                  <label>Traded:</label>
+                  <div className="meta-toggle-group" role="group" aria-label="Traded status">
+                    <button
+                      type="button"
+                      className={`meta-toggle-button ${obtainedInTrade ? 'active' : ''}`}
+                      aria-pressed={obtainedInTrade}
+                      onClick={() => onIsTradedChange(true)}
+                      disabled={isShadow}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      className={`meta-toggle-button ${!obtainedInTrade ? 'active' : ''}`}
+                      aria-pressed={!obtainedInTrade}
+                      onClick={() => onIsTradedChange(false)}
+                      disabled={isLucky}
+                    >
+                      No
+                    </button>
                   </div>
-
-                  {trainerLookupBusy && (
-                    <div className="meta-trainer-lookup-status">Looking up trainer...</div>
+                  {isShadow && (
+                    <div className="meta-trainer-lookup-status">
+                      Shadow Pokemon cannot be traded until purified.
+                    </div>
                   )}
-                  {!trainerLookupBusy && trainerLookupError && (
-                    <div className="meta-trainer-lookup-error">{trainerLookupError}</div>
+                  {isLucky && (
+                    <div className="meta-trainer-lookup-status">
+                      Lucky Pokemon are always traded.
+                    </div>
                   )}
                 </div>
 
-                <div className="meta-trainer-edit-field">
-                  <label htmlFor="meta-traded-date">Traded Date:</label>
-                  <input
-                    id="meta-traded-date"
-                    type="date"
-                    value={tradedDateInputValue ?? ''}
-                    onChange={(e) => onTradedDateChange(e.target.value)}
-                    className="meta-edit-input"
-                  />
-                </div>
+                {obtainedInTrade && (
+                  <>
+                    <div className="meta-trainer-edit-field">
+                      <label htmlFor="meta-original-trainer-name">Original Trainer Name:</label>
+                      <div className="meta-trainer-name-input-wrap">
+                        <input
+                          id="meta-original-trainer-name"
+                          type="text"
+                          value={trainerQuery}
+                          onChange={(e) => {
+                            const next = e.target.value;
+                            setTrainerQuery(next);
+                            onOriginalTrainerNameChange(next);
+                            onOriginalTrainerIdChange(null);
+                          }}
+                          onFocus={() => setTrainerHasFocus(true)}
+                          onBlur={() => {
+                            const committedName = trainerQuery.trim();
+                            setTrainerHasFocus(false);
+                            setTrainerQuery(committedName);
+                            onOriginalTrainerNameChange(committedName);
+                            onOriginalTrainerIdChange(null);
+                            void resolveTrainerByUsername(committedName);
+                            window.setTimeout(() => setTrainerSuggestions([]), 120);
+                          }}
+                          placeholder="Optional"
+                          className="meta-edit-input"
+                          autoComplete="off"
+                        />
+
+                        {showTrainerSuggestions && (
+                          <div className="meta-trainer-suggestions">
+                            {trainerSuggestions.map((candidate, index) => (
+                              <button
+                                key={`${candidate.username}-${index}`}
+                                type="button"
+                                className="meta-trainer-suggestion-item"
+                                onMouseDown={(event) => {
+                                  event.preventDefault();
+                                  onOriginalTrainerNameChange(candidate.username);
+                                  setTrainerQuery(candidate.username);
+                                  setTrainerSuggestions([]);
+                                  setTrainerHasFocus(false);
+                                  void resolveTrainerByUsername(candidate.username);
+                                }}
+                              >
+                                {candidate.username}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {trainerLookupBusy && (
+                        <div className="meta-trainer-lookup-status">Looking up trainer...</div>
+                      )}
+                      {!trainerLookupBusy && trainerLookupError && (
+                        <div className="meta-trainer-lookup-error">{trainerLookupError}</div>
+                      )}
+                    </div>
+
+                    <div className="meta-trainer-edit-field">
+                      <label htmlFor="meta-traded-date">Traded Date:</label>
+                      <input
+                        id="meta-traded-date"
+                        type="date"
+                        value={tradedDateInputValue ?? ''}
+                        onChange={(e) => onTradedDateChange(e.target.value)}
+                        className="meta-edit-input"
+                      />
+                    </div>
+                  </>
+                )}
               </>
             )}
 

@@ -13,8 +13,7 @@ import {
   resolveTradeProposalDecision,
   toInstanceMap,
   type SelectedPokemon,
-} from '@/pages/Pokemon/features/instances/components/Trade/tradeDetailsHelpers';
-
+} from '@/pages/Pokemon/features/instances/components/Trade/tradeTargetsHelpers';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
@@ -45,7 +44,7 @@ const makeVariant = (overrides: Partial<PokemonVariant> = {}): PokemonVariant =>
     ...overrides,
   } as unknown as PokemonVariant);
 
-describe('tradeDetailsHelpers', () => {
+describe('tradeTargetsHelpers', () => {
   it('initializeSelection maps filter flags to booleans in order', () => {
     const result = initializeSelection(['a', 'b', 'c'], { a: true, c: 1 });
     expect(result).toEqual([true, false, true]);

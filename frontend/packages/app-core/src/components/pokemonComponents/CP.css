@@ -53,17 +53,17 @@
     text-align: center;
 }
 
-:root[data-theme='light'] .instance-overlay.caught-mode .cp-label,
-:root[data-theme='light'] .instance-overlay.caught-mode .cp-value,
-:root[data-theme='light'] .instance-overlay.caught-mode .cp-editable-content {
+:root[data-theme='light'] :is(.instance-overlay.caught-mode, .trade-instance--caught-layout) .cp-label,
+:root[data-theme='light'] :is(.instance-overlay.caught-mode, .trade-instance--caught-layout) .cp-value,
+:root[data-theme='light'] :is(.instance-overlay.caught-mode, .trade-instance--caught-layout) .cp-editable-content {
     color: var(--light-caught-cp-text);
     text-shadow: none;
 }
 
-:root[data-theme='light'] .instance-overlay.caught-mode .cp-editable-container.editable .cp-editable-content {
+:root[data-theme='light'] :is(.instance-overlay.caught-mode, .trade-instance--caught-layout) .cp-editable-container.editable .cp-editable-content {
     border-color: var(--light-caught-divider);
 }
 
-:root[data-theme='light'] .instance-overlay.caught-mode .cp-unified-container .error {
+:root[data-theme='light'] :is(.instance-overlay.caught-mode, .trade-instance--caught-layout) .cp-unified-container .error {
     color: var(--light-caught-error);
 }

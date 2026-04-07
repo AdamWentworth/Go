@@ -24,13 +24,15 @@ describe('TradeFiltersPanel', () => {
     expect(screen.queryAllByRole('img')).toHaveLength(0);
   });
 
-  it('renders compact layout include heading only in few-layout mode', () => {
+  it('renders exclude and include rows in both layouts', () => {
     const { rerender } = render(
       <TradeFiltersPanel {...makeProps()} shouldShowFewLayout={false} />,
     );
-    expect(screen.queryByRole('heading', { name: 'Include' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Exclude' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Include' })).toBeInTheDocument();
 
     rerender(<TradeFiltersPanel {...makeProps()} shouldShowFewLayout />);
+    expect(screen.getByRole('heading', { name: 'Exclude' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Include' })).toBeInTheDocument();
   });
 
@@ -38,8 +40,8 @@ describe('TradeFiltersPanel', () => {
     const props = makeProps();
     const { container } = render(<TradeFiltersPanel {...props} />);
 
-    const excludeImage = container.querySelector('.exclude-header-group img');
-    const includeImage = container.querySelector('.include-only-header-group img');
+    const excludeImage = container.querySelector('.trade-filter-group--exclude img');
+    const includeImage = container.querySelector('.trade-filter-group--include img');
 
     expect(excludeImage).toBeTruthy();
     expect(includeImage).toBeTruthy();
@@ -49,5 +51,15 @@ describe('TradeFiltersPanel', () => {
 
     expect(props.toggleExcludeImageSelection).toHaveBeenCalledWith(0, true);
     expect(props.toggleIncludeOnlyImageSelection).toHaveBeenCalledWith(0, true);
+  });
+
+  it('can render a single filter group for dropdown mode', () => {
+    const { rerender } = render(<TradeFiltersPanel {...makeProps()} mode="exclude" />);
+    expect(screen.getByRole('heading', { name: 'Exclude' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Include' })).not.toBeInTheDocument();
+
+    rerender(<TradeFiltersPanel {...makeProps()} mode="include" />);
+    expect(screen.getByRole('heading', { name: 'Include' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Exclude' })).not.toBeInTheDocument();
   });
 });

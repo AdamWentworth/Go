@@ -77,10 +77,10 @@
   white-space: nowrap;
 }
 
-:root[data-theme='light'] .instance-overlay.caught-mode .height-label {
+:root[data-theme='light'] :is(.instance-overlay.caught-mode, .trade-instance--caught-layout) .height-label {
   color: var(--light-text-secondary);
 }
 
-:root[data-theme='light'] .instance-overlay.caught-mode .height-editable-container.editable .height-editable-content {
+:root[data-theme='light'] :is(.instance-overlay.caught-mode, .trade-instance--caught-layout) .height-editable-container.editable .height-editable-content {
   border-color: var(--light-caught-divider);
 }

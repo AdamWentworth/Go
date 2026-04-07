@@ -1,12 +1,12 @@
 // PokemonActionOverlay.tsx
 import React from 'react';
 import './PokemonActionOverlay.css';
-import type { SelectedPokemon } from './tradeDetailsHelpers';
+import type { SelectedPokemon } from './tradeTargetsHelpers';
 
 interface PokemonActionOverlayProps {
   isOpen: boolean;
   onClose: () => void;
-  onViewWantedList: () => void;
+  onViewTargetList: () => void;
   onProposeTrade: () => void;
   pokemon?: SelectedPokemon | null;
 }
@@ -14,7 +14,7 @@ interface PokemonActionOverlayProps {
 const PokemonActionOverlay: React.FC<PokemonActionOverlayProps> = ({
   isOpen,
   onClose,
-  onViewWantedList,
+  onViewTargetList,
   onProposeTrade,
   pokemon,
 }) => {
@@ -73,9 +73,9 @@ const PokemonActionOverlay: React.FC<PokemonActionOverlayProps> = ({
         <div className="button-group">
           <button
             className="view-in-wanted"
-            onClick={handleActionClick(onViewWantedList)}
+            onClick={handleActionClick(onViewTargetList)}
           >
-            View in Wanted List
+            View in Target List
           </button>
           <button
             className="propose-trade"

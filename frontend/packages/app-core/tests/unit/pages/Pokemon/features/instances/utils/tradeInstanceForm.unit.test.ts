@@ -38,7 +38,7 @@ describe('tradeInstanceForm utils', () => {
     });
   });
 
-  it('builds patch payload using computed values when provided', () => {
+  it('builds patch payload using computed values when provided and strips trade-only metadata', () => {
     const patch = buildTradeInstancePatch({
       nickname: 'Lucky',
       cp: '123',
@@ -54,7 +54,13 @@ describe('tradeInstanceForm utils', () => {
       ivs: { Attack: 1, Defense: 2, Stamina: 3 },
       locationCaught: 'Seattle',
       dateCaught: '2026-02-17',
+      isTraded: true,
+      originalTrainerName: 'Ash',
+      originalTrainerId: 'user-1',
+      tradedDate: '2026-02-20T12:34:56.000Z',
+      pokeball: 'great_ball',
       selectedBackgroundId: 17,
+      crown: true,
       maxAttack: '',
       maxGuard: '2',
       maxSpirit: 'bad-number',
@@ -72,7 +78,13 @@ describe('tradeInstanceForm utils', () => {
       attack_iv: 15,
       defense_iv: 14,
       stamina_iv: 13,
+      is_traded: false,
+      original_trainer_name: null,
+      original_trainer_id: null,
+      traded_date: null,
+      pokeball: 'great_ball',
       location_card: '17',
+      crown: true,
       max_attack: null,
       max_guard: 2,
       max_spirit: null,
@@ -81,4 +93,3 @@ describe('tradeInstanceForm utils', () => {
     });
   });
 });
-

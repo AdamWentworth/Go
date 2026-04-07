@@ -1,4 +1,5 @@
 import type { PokemonInstance } from '@/types/pokemonInstance';
+import { normalizeEditableDateValue } from './normalizeEditableDateValue';
 
 export type TradeMoves = {
   fastMove: number | null;
@@ -32,7 +33,13 @@ type BuildTradePatchInput = TradeValidationInput & {
   moves: TradeMoves;
   locationCaught: string | null;
   dateCaught: string | null;
+  isTraded: boolean;
+  originalTrainerName: string | null;
+  originalTrainerId: string | null;
+  tradedDate: string | null;
+  pokeball: string | null;
   selectedBackgroundId: number | null;
+  crown: boolean;
   maxAttack: string;
   maxGuard: string;
   maxSpirit: string;
@@ -73,6 +80,13 @@ export const buildTradeInstancePatch = (
   input: BuildTradePatchInput,
 ): Partial<PokemonInstance> => {
   const computedIvs = input.computedValues?.ivs ?? input.ivs;
+  const isTradeMetadataAllowed = false;
+  const sanitizedIsTraded = isTradeMetadataAllowed ? input.isTraded : false;
+  const sanitizedOriginalTrainerName = sanitizedIsTraded ? input.originalTrainerName : null;
+  const sanitizedOriginalTrainerId = sanitizedIsTraded ? input.originalTrainerId : null;
+  const sanitizedTradedDate = sanitizedIsTraded
+    ? normalizeEditableDateValue(input.tradedDate)
+    : null;
 
   return {
     nickname: input.nickname,
@@ -88,12 +102,17 @@ export const buildTradeInstancePatch = (
     defense_iv: toNullableNumber(computedIvs.Defense),
     stamina_iv: toNullableNumber(computedIvs.Stamina),
     location_caught: input.locationCaught,
-    date_caught: input.dateCaught,
+    date_caught: normalizeEditableDateValue(input.dateCaught),
+    is_traded: sanitizedIsTraded,
+    original_trainer_name: sanitizedOriginalTrainerName,
+    original_trainer_id: sanitizedOriginalTrainerId,
+    traded_date: sanitizedTradedDate,
+    pokeball: input.pokeball,
     location_card:
       input.selectedBackgroundId == null ? null : String(input.selectedBackgroundId),
+    crown: input.crown,
     max_attack: toNullableNumber(input.maxAttack),
     max_guard: toNullableNumber(input.maxGuard),
     max_spirit: toNullableNumber(input.maxSpirit),
   };
 };
-

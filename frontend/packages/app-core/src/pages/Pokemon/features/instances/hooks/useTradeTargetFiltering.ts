@@ -27,7 +27,7 @@ const wantedFilterFns = filters as unknown as Record<string, WantedFilterFn>;
 const asWantedMap = (value: unknown): WantedMap =>
   value && typeof value === 'object' ? (value as WantedMap) : {};
 
-const useWantedFiltering = (
+const useTradeTargetFiltering = (
   listsState: ListsState,
   selectedExcludeImages: boolean[],
   selectedIncludeOnlyImages: boolean[],
@@ -146,4 +146,4 @@ const useWantedFiltering = (
   return { filteredWantedList, filteredOutPokemon, updatedLocalWantedFilters };
 };
 
-export default useWantedFiltering;
+export default useTradeTargetFiltering;

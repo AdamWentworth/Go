@@ -17,6 +17,62 @@
 }
 .instance-overlay::-webkit-scrollbar { display: none; }
 
+.instance-overlay.is-swiping,
+.instance-overlay.is-swiping * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.instance-overlay.is-swiping {
+  cursor: grabbing;
+}
+
+.instance-overlay.is-horizontal-swiping .caught-fullscreen,
+.instance-overlay.is-horizontal-swiping .trade-instance-overlay {
+  touch-action: none;
+}
+
+.instance-overlay.is-horizontal-swiping .caught-fullscreen *,
+.instance-overlay.is-horizontal-swiping .trade-instance-overlay * {
+  pointer-events: none;
+}
+
+.instance-overlay.is-horizontal-swiping .caught-fullscreen,
+.instance-overlay.is-horizontal-swiping .trade-instance-overlay,
+.instance-overlay.is-horizontal-swiping .caught-column,
+.instance-overlay.is-horizontal-swiping .overlay-row.other-overlays-row {
+  cursor: grabbing;
+}
+
+.instance-overlay.is-horizontal-swiping .overlay-content.trade-details-window,
+.instance-overlay.is-horizontal-swiping .trade-details-container .wanted-list-container {
+  overflow: hidden;
+}
+
+.instance-overlay.trade-mode.is-horizontal-swiping {
+  overflow-y: hidden;
+}
+
+.instance-overlay.trade-mode.is-horizontal-swiping .trade-instance-overlay .overlay-row.column-layout {
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+.instance-motion-shell {
+  width: 100%;
+  will-change: transform;
+}
+
+.instance-motion-shell--caught {
+  display: flex;
+  justify-content: center;
+}
+
+.instance-motion-shell--trade {
+  display: block;
+}
+
 /* BACKGROUND LAYER */
 .io-bg {
   position: fixed;
@@ -80,8 +136,8 @@
   margin: 0;
   pointer-events: auto;
   bottom: calc(
-    var(--overlay-close-button-bottom) +
-    ((var(--overlay-close-button-size) - var(--instance-nav-hit-size)) / 2) +
+    var(--overlay-close-button-bottom, 20px) +
+    ((var(--overlay-close-button-size, 64px) - var(--instance-nav-hit-size, 34px)) / 2) +
     var(--instance-nav-y-nudge, 3px)
   );
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.55);
@@ -90,7 +146,7 @@
 .instance-nav-arrow--left {
   left: max(
     -4px,
-    calc(var(--caught-shell-side-gap, 2.5vw) - var(--instance-nav-x-outset, 32px))
+    calc(var(--instance-shell-side-gap, 2.5vw) - var(--instance-nav-x-outset, 32px))
   );
   right: auto;
 }
@@ -98,7 +154,7 @@
 .instance-nav-arrow--right {
   right: max(
     -4px,
-    calc(var(--caught-shell-side-gap, 2.5vw) - var(--instance-nav-x-outset, 32px))
+    calc(var(--instance-shell-side-gap, 2.5vw) - var(--instance-nav-x-outset, 32px))
   );
   left: auto;
 }
@@ -121,7 +177,7 @@
   --caught-scroll-tail-pad: 0px;
   --caught-shell-max-width: 500px;
   --caught-shell-width: min(95vw, var(--caught-shell-max-width));
-  --caught-shell-side-gap: 2.5vw;
+  --instance-shell-side-gap: 2.5vw;
   --instance-nav-hit-size: 34px;
   --instance-nav-x-outset: 32px;
   --instance-nav-y-nudge: 15px;
@@ -129,20 +185,34 @@
   overscroll-behavior-x: contain;
 }
 
+.instance-overlay.trade-mode {
+  --overlay-close-button-size: clamp(50px, 12vw, 80px);
+  --overlay-close-button-bottom: 20px;
+  --instance-nav-hit-size: 34px;
+  --instance-nav-x-outset: 32px;
+  --instance-nav-y-nudge: 15px;
+  --trade-pane-max-width: 500px;
+  --trade-shell-max-width: calc((var(--trade-pane-max-width) * 2) + clamp(12px, 2vw, 18px));
+  --trade-shell-width: min(var(--trade-shell-max-width), 96vw);
+  --instance-shell-side-gap: calc((100vw - var(--trade-shell-width)) / 2);
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
+}
+
 @media (min-width: 527px) {
   .instance-overlay.caught-mode {
-    --caught-shell-side-gap: calc((100vw - var(--caught-shell-max-width)) / 2);
+    --instance-shell-side-gap: calc((100vw - var(--caught-shell-max-width)) / 2);
   }
 }
 
 @media (min-width: 481px) and (max-width: 767px) {
-  .instance-overlay.caught-mode {
+  :is(.instance-overlay.caught-mode, .instance-overlay.trade-mode) {
     --overlay-close-button-size: clamp(60px, 10vw, 90px);
   }
 }
 
 @media (min-width: 768px) {
-  .instance-overlay.caught-mode {
+  :is(.instance-overlay.caught-mode, .instance-overlay.trade-mode) {
     --overlay-close-button-size: clamp(60px, 3.5vw, 80px);
   }
 }
@@ -201,7 +271,7 @@
   gap: 12px;
   position: relative;
   box-sizing: border-box;
-  overflow-x: clip;
+  overflow: visible;
 }
 
 /* draw the #333 panel starting lower down, exposing the image above */
@@ -232,6 +302,137 @@
 /* keep trade/wanted rules as-is... */
 .instance-overlay .trade-instance-overlay { margin: 0 auto; }
 
+.trade-instance-overlay {
+  width: var(--trade-shell-width);
+  max-width: var(--trade-shell-max-width);
+  margin: 0 auto;
+  padding: 0 0
+    calc(var(--overlay-close-button-size, 64px) + var(--overlay-close-button-bottom, 20px) + 20px);
+  box-sizing: border-box;
+}
+
+.trade-instance-overlay .overlay-row.other-overlays-row {
+  width: 100%;
+  max-width: var(--trade-shell-max-width);
+  margin: 0 auto;
+  align-items: flex-start;
+  justify-content: center;
+  gap: clamp(12px, 2vw, 18px);
+  min-height: 0;
+}
+
+.overlay-content.trade-instance-window,
+.overlay-content.trade-details-window {
+  border-radius: 12px;
+  color: #e0f0e5;
+  box-sizing: border-box;
+  min-height: 0;
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  height: auto;
+  align-self: flex-start;
+  overflow: visible;
+}
+
+.trade-pane-scroll {
+  width: 100%;
+  height: calc(
+    100dvh -
+    var(--overlay-close-button-size, 64px) -
+    var(--overlay-close-button-bottom, 20px) -
+    16px -
+    env(safe-area-inset-top) -
+    env(safe-area-inset-bottom)
+  );
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.trade-pane-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.trade-pane-shell {
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.trade-pane-shell--offer {
+  --caught-image-stage-size: 296px;
+  --caught-stage-lift: 48px;
+  --panel-offset: 240px;
+}
+
+.trade-pane-shell--offer::before {
+  content: "";
+  position: absolute;
+  top: var(--panel-offset);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #333;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  z-index: 0;
+}
+
+.trade-pane-shell--offer > * {
+  position: relative;
+  z-index: 1;
+}
+
+.trade-pane-shell--targets {
+  padding: 14px;
+  border: 1px solid rgba(191, 212, 203, 0.28);
+  border-radius: 12px;
+  background: #333;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.36);
+}
+
+.overlay-content.trade-instance-window {
+  max-width: var(--trade-pane-max-width);
+  position: relative;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.overlay-content.trade-instance-window::before {
+  content: none;
+}
+
+.overlay-content.trade-instance-window .trade-instance--caught-layout {
+  width: 100%;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.overlay-content.trade-instance-window .trade-instance--caught-layout > .instance-details-body {
+  flex: 0 0 auto;
+  padding-top: 12px;
+  padding-bottom: 16px;
+}
+
+.overlay-content.trade-details-window {
+  max-width: var(--trade-pane-max-width);
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  touch-action: pan-y;
+}
+
 /* responsive rules (unchanged) */
 @media (max-width: 767px) {
   .instance-overlay .overlay-row {
@@ -243,10 +444,38 @@
   }
   .instance-overlay .overlay-row.column-layout {
     flex-direction: column;
-    overflow-y: auto;
+    overflow: visible;
     align-items: center;
     justify-content: flex-start;
     gap: 10px;
+  }
+
+  .trade-instance-overlay {
+    width: min(96vw, 700px);
+  }
+
+  .overlay-content.trade-instance-window,
+  .overlay-content.trade-details-window {
+    width: min(95vw, 680px);
+    flex: 0 0 auto;
+    height: auto;
+    min-height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .trade-pane-scroll {
+    height: auto;
+    overflow: visible;
+  }
+
+  .trade-pane-shell {
+    min-height: auto;
+  }
+
+  .overlay-content.trade-details-window {
+    overflow: visible;
+    overscroll-behavior: auto;
   }
 }
 
@@ -263,10 +492,26 @@
     z-index: 1001;
     flex-direction: column;
   }
+  .instance-overlay.trade-mode {
+    justify-content: flex-start;
+    align-items: center;
+    overflow: hidden;
+    padding-bottom: calc(
+      var(--overlay-close-button-size, 64px) +
+      var(--overlay-close-button-bottom, 20px) +
+      16px +
+      env(safe-area-inset-bottom)
+    );
+    box-sizing: border-box;
+  }
   .trade-instance-overlay .overlay-row,
   .wanted-instance-overlay .overlay-row {
     flex-direction: row;
     display: flex;
+  }
+
+  .trade-instance-overlay {
+    padding-bottom: 0;
   }
 }
 
@@ -284,7 +529,32 @@
   box-shadow: var(--light-caught-shadow);
 }
 
-:root[data-theme='light'] .instance-overlay.caught-mode .instance-nav-arrow {
+:root[data-theme='light'] :is(.instance-overlay.caught-mode, .instance-overlay.trade-mode) .instance-nav-arrow {
   color: var(--light-text-primary);
   text-shadow: 0 0 4px rgba(248, 255, 249, 0.72);
 }
+
+:root[data-theme='light'] .overlay-content.trade-details-window {
+  color: var(--light-text-primary);
+}
+
+:root[data-theme='light'] .overlay-content.trade-instance-window {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--light-text-primary);
+}
+
+:root[data-theme='light'] .trade-pane-shell--offer::before {
+  background: linear-gradient(180deg, rgba(248, 255, 249, 0.98) 0%, rgba(228, 241, 235, 0.96) 100%);
+  border: 1px solid rgba(157, 181, 173, 0.42);
+  box-shadow: var(--light-caught-shadow);
+}
+
+:root[data-theme='light'] .trade-pane-shell--targets {
+  background: var(--light-surface-muted);
+  border-color: var(--light-caught-card-border);
+  box-shadow: var(--light-caught-shadow);
+  color: var(--light-text-primary);
+}
+

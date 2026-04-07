@@ -9,9 +9,12 @@ import ImageStage from '@/pages/Pokemon/features/instances/sections/ImageStage';
 import LevelGenderRow from '@/pages/Pokemon/features/instances/sections/LevelGenderRow';
 import MetaPanel from '@/pages/Pokemon/features/instances/sections/MetaPanel';
 import Modals from '@/pages/Pokemon/features/instances/sections/Modals';
-import MovesAndIV from '@/pages/Pokemon/features/instances/sections/MovesAndIV';
+import MovesAndIV, {
+  hasMovesAndIVContent,
+} from '@/pages/Pokemon/features/instances/sections/MovesAndIV';
 import PowerPanel from '@/pages/Pokemon/features/instances/sections/PowerPanel';
 import StatsRow from '@/pages/Pokemon/features/instances/sections/StatsRow';
+import { hasMetaPanelContent } from '@/pages/Pokemon/features/instances/sections/MetaPanel';
 
 vi.mock('@/components/EditSaveComponent', () => ({
   default: ({ toggleEditMode }: { toggleEditMode: () => void }) => (
@@ -230,6 +233,27 @@ describe('instances section components', () => {
     expect(onTogglePurify).toHaveBeenCalledWith(true);
   });
 
+  it('IdentityRow can suppress lucky and purify slots while keeping the name slot', () => {
+    render(
+      <IdentityRow
+        pokemon={{}}
+        isLucky={false}
+        isShadow={false}
+        isPurified={false}
+        editMode={true}
+        onToggleLucky={vi.fn()}
+        onNicknameChange={vi.fn()}
+        onTogglePurify={vi.fn()}
+        showLucky={false}
+        showPurify={false}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'lucky' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'purify' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'name' })).toBeInTheDocument();
+  });
+
   it('ImageStage renders optional overlays and badges', () => {
     render(
       <ImageStage
@@ -250,11 +274,11 @@ describe('instances section components', () => {
     expect(screen.getByAltText('Mewtwo')).toBeInTheDocument();
   });
 
-  it('LevelGenderRow shows gender only when edit mode or gender exists', () => {
+  it('LevelGenderRow shows gender only for explicit gender values or genderless species', () => {
     const { rerender } = render(
       <LevelGenderRow
         pokemon={{}}
-        editMode={false}
+        editMode={true}
         level={20}
         onLevelChange={vi.fn()}
         gender=""
@@ -276,6 +300,34 @@ describe('instances section components', () => {
     );
 
     expect(screen.getByText('gender')).toBeInTheDocument();
+
+    rerender(
+      <LevelGenderRow
+        pokemon={{ gender_rate: '0_0_100' }}
+        editMode={false}
+        level={20}
+        onLevelChange={vi.fn()}
+        gender={null}
+        onGenderChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('gender')).toBeInTheDocument();
+  });
+
+  it('LevelGenderRow renders nothing when both level and gender content are absent', () => {
+    const { container } = render(
+      <LevelGenderRow
+        pokemon={{}}
+        editMode={true}
+        level={null}
+        onLevelChange={vi.fn()}
+        gender={null}
+        onGenderChange={vi.fn()}
+      />,
+    );
+
+    expect(container.firstChild).toBeNull();
   });
 
   it('MetaPanel renders location/date/ball controls', () => {
@@ -284,7 +336,12 @@ describe('instances section components', () => {
 
     render(
       <MetaPanel
-        pokemon={{}}
+        pokemon={{
+          instanceData: {
+            location_caught: 'Seattle',
+            date_caught: '2026-02-17',
+          },
+        }}
         editMode={true}
         isLucky={false}
         isTraded={false}
@@ -304,14 +361,65 @@ describe('instances section components', () => {
     );
 
     expect(screen.getByText('CAUGHT')).toBeInTheDocument();
-    expect(screen.getByText('UNKNOWN LOCATION')).toBeInTheDocument();
-    expect(screen.getByText('UNKNOWN DATE')).toBeInTheDocument();
+    expect(screen.getByText('Seattle')).toBeInTheDocument();
+    expect(screen.getByText('2026-02-17')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     expect(onIsTradedChange).toHaveBeenCalledWith(true);
     expect(screen.getByText('location-caught')).toBeInTheDocument();
     expect(screen.getByText('date-caught')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'ball-caught' }));
     expect(onPokeballChange).toHaveBeenCalledWith('ultra_ball');
+  });
+
+  it('MetaPanel hides display-only content when metadata is empty', () => {
+    const { container } = render(
+      <MetaPanel
+        pokemon={{ instanceData: {} }}
+        editMode={false}
+        isLucky={false}
+        isTraded={false}
+        isShadow={false}
+        originalTrainerName={null}
+        originalTrainerId={null}
+        tradedDate={null}
+        pokeball={null}
+        onLocationChange={vi.fn()}
+        onDateChange={vi.fn()}
+        onIsTradedChange={vi.fn()}
+        onOriginalTrainerNameChange={vi.fn()}
+        onOriginalTrainerIdChange={vi.fn()}
+        onTradedDateChange={vi.fn()}
+        onPokeballChange={vi.fn()}
+      />,
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('MetaPanel can hide its divider when the parent layout already supplied one', () => {
+    render(
+      <MetaPanel
+        pokemon={{}}
+        showDivider={false}
+        editMode={false}
+        isLucky={false}
+        isTraded={false}
+        isShadow={false}
+        originalTrainerName={null}
+        originalTrainerId={null}
+        tradedDate={null}
+        pokeball={null}
+        onLocationChange={vi.fn()}
+        onDateChange={vi.fn()}
+        onIsTradedChange={vi.fn()}
+        onOriginalTrainerNameChange={vi.fn()}
+        onOriginalTrainerIdChange={vi.fn()}
+        onTradedDateChange={vi.fn()}
+        onPokeballChange={vi.fn()}
+      />,
+    );
+
+    expect(document.querySelector('.meta-divider')).toBeNull();
   });
 
   it('MetaPanel shows trade banner when instance is traded or lucky', () => {
@@ -371,6 +479,66 @@ describe('instances section components', () => {
 
     expect(screen.getByRole('button', { name: 'Yes' })).toBeDisabled();
     expect(screen.getByText('Shadow Pokemon cannot be traded until purified.')).toBeInTheDocument();
+  });
+
+  it('MetaPanel can suppress trade metadata controls entirely', () => {
+    render(
+      <MetaPanel
+        pokemon={{
+          instanceData: {
+            original_trainer_name: 'Trainer Red',
+            traded_date: '2026-02-11',
+          },
+        }}
+        allowTradeMetadata={false}
+        editMode={true}
+        isLucky={false}
+        isTraded={false}
+        isShadow={false}
+        originalTrainerName={null}
+        originalTrainerId={null}
+        tradedDate={null}
+        pokeball={null}
+        onLocationChange={vi.fn()}
+        onDateChange={vi.fn()}
+        onIsTradedChange={vi.fn()}
+        onOriginalTrainerNameChange={vi.fn()}
+        onOriginalTrainerIdChange={vi.fn()}
+        onTradedDateChange={vi.fn()}
+        onPokeballChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText('Traded:')).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Traded status' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Original Trainer Name:')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Traded Date:')).not.toBeInTheDocument();
+  });
+
+  it('MetaPanel removes the internal edit divider when no summary content is rendered above it', () => {
+    render(
+      <MetaPanel
+        pokemon={{ instanceData: {} }}
+        allowTradeMetadata={false}
+        editMode={true}
+        isLucky={false}
+        isTraded={false}
+        isShadow={false}
+        originalTrainerName={null}
+        originalTrainerId={null}
+        tradedDate={null}
+        pokeball={null}
+        onLocationChange={vi.fn()}
+        onDateChange={vi.fn()}
+        onIsTradedChange={vi.fn()}
+        onOriginalTrainerNameChange={vi.fn()}
+        onOriginalTrainerIdChange={vi.fn()}
+        onTradedDateChange={vi.fn()}
+        onPokeballChange={vi.fn()}
+      />,
+    );
+
+    expect(document.querySelector('.meta-edit-fields--no-divider')).not.toBeNull();
   });
 
   it('Modals closes backgrounds and supports fuse overlay actions', () => {
@@ -445,6 +613,100 @@ describe('instances section components', () => {
       'data-is-fused',
       'true',
     );
+  });
+
+  it('hasMovesAndIVContent reports only truly visible section content', () => {
+    expect(
+      hasMovesAndIVContent({
+        pokemon: { instanceData: {} },
+        editMode: false,
+        areIVsEmpty: true,
+      }),
+    ).toBe(false);
+
+    expect(
+      hasMovesAndIVContent({
+        pokemon: { instanceData: { fast_move_id: 1 } },
+        editMode: false,
+        areIVsEmpty: true,
+      }),
+    ).toBe(true);
+
+    expect(
+      hasMovesAndIVContent({
+        pokemon: { instanceData: {} },
+        editMode: false,
+        areIVsEmpty: false,
+      }),
+    ).toBe(true);
+
+    expect(
+      hasMovesAndIVContent({
+        pokemon: { instanceData: {} },
+        editMode: false,
+        fusionMoveSource: 'fusion_missing',
+        isFused: true,
+        areIVsEmpty: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('hasMetaPanelContent reports only real metadata outside edit mode', () => {
+    expect(
+      hasMetaPanelContent({
+        pokemon: { instanceData: {} },
+        editMode: false,
+        isTraded: false,
+        originalTrainerName: null,
+        tradedDate: null,
+        pokeball: null,
+      }),
+    ).toBe(false);
+
+    expect(
+      hasMetaPanelContent({
+        pokemon: { instanceData: { location_caught: 'Seattle' } },
+        editMode: false,
+        isTraded: false,
+        originalTrainerName: null,
+        tradedDate: null,
+        pokeball: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      hasMetaPanelContent({
+        pokemon: { instanceData: {} },
+        editMode: false,
+        isTraded: true,
+        originalTrainerName: 'Ash',
+        tradedDate: null,
+        pokeball: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      hasMetaPanelContent({
+        pokemon: { instanceData: {} },
+        editMode: false,
+        isTraded: true,
+        originalTrainerName: 'Ash',
+        tradedDate: null,
+        pokeball: null,
+        allowTradeMetadata: false,
+      }),
+    ).toBe(false);
+
+    expect(
+      hasMetaPanelContent({
+        pokemon: { instanceData: {} },
+        editMode: true,
+        isTraded: false,
+        originalTrainerName: null,
+        tradedDate: null,
+        pokeball: null,
+      }),
+    ).toBe(true);
   });
 
   it('PowerPanel renders max/mega controls and forwards max toggle', () => {
@@ -556,5 +818,47 @@ describe('instances section components', () => {
     expect(screen.getByText('types')).toBeInTheDocument();
     expect(onWeightChange).toHaveBeenCalledWith(70);
     expect(onHeightChange).toHaveBeenCalledWith(2);
+  });
+
+  it('StatsRow only shows separator pipes for visible weight and height sections', () => {
+    const { rerender } = render(
+      <StatsRow
+        pokemon={{ instanceData: { weight: null, height: null } }}
+        editMode={false}
+        onWeightChange={vi.fn()}
+        onHeightChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('types')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'weight' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'height' })).not.toBeInTheDocument();
+    expect(document.querySelectorAll('.stats-pipe')).toHaveLength(0);
+    expect(document.querySelector('.weight-type-height-container.only-type')).not.toBeNull();
+
+    rerender(
+      <StatsRow
+        pokemon={{ instanceData: { weight: 12, height: null } }}
+        editMode={false}
+        onWeightChange={vi.fn()}
+        onHeightChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'weight' })).toBeInTheDocument();
+    expect(document.querySelectorAll('.stats-pipe')).toHaveLength(1);
+
+    rerender(
+      <StatsRow
+        pokemon={{ instanceData: { weight: 0, height: 0 } }}
+        editMode={false}
+        onWeightChange={vi.fn()}
+        onHeightChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'weight' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'height' })).not.toBeInTheDocument();
+    expect(document.querySelectorAll('.stats-pipe')).toHaveLength(0);
   });
 });

@@ -8,6 +8,14 @@
   width: 100%;
 }
 
+.background-select-row--header {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  align-items: center;
+}
+
 .background-icon {
   position: absolute;
   width: 44px;
@@ -18,4 +26,9 @@
 
 .background-select-row.active .background-icon {
   cursor: pointer;
+}
+
+.background-select-row--header .background-icon {
+  position: static;
+  display: block;
 }

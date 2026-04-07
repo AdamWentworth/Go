@@ -12,6 +12,7 @@ interface TradeFiltersPanelProps {
   isMirror: boolean;
   shouldShowFewLayout: boolean;
   editMode: boolean;
+  mode?: 'exclude' | 'include' | 'both';
   selectedExcludeImages: boolean[];
   selectedIncludeOnlyImages: boolean[];
   toggleExcludeImageSelection: (index: number, editMode: boolean) => void;
@@ -25,8 +26,9 @@ const includeTooltipTexts = FILTER_NAMES.slice(EXCLUDE_IMAGES_wanted.length).map
 
 const TradeFiltersPanel: React.FC<TradeFiltersPanelProps> = ({
   isMirror,
-  shouldShowFewLayout,
+  shouldShowFewLayout: _shouldShowFewLayout,
   editMode,
+  mode = 'both',
   selectedExcludeImages,
   selectedIncludeOnlyImages,
   toggleExcludeImageSelection,
@@ -36,10 +38,11 @@ const TradeFiltersPanel: React.FC<TradeFiltersPanelProps> = ({
     return null;
   }
 
-  if (!shouldShowFewLayout) {
-    return (
-      <div className="image-row-container">
-        <div className="exclude-header-group image-group">
+  return (
+    <div className="image-row-container">
+      {mode !== 'include' && (
+        <div className="trade-filter-group trade-filter-group--exclude">
+          <h3>Exclude</h3>
           <FilterImages
             images={[...EXCLUDE_IMAGES_wanted]}
             selectedImages={selectedExcludeImages}
@@ -48,7 +51,10 @@ const TradeFiltersPanel: React.FC<TradeFiltersPanelProps> = ({
             tooltipTexts={excludeTooltipTexts}
           />
         </div>
-        <div className="include-only-header-group image-group">
+      )}
+      {mode !== 'exclude' && (
+        <div className="trade-filter-group trade-filter-group--include">
+          <h3>Include</h3>
           <FilterImages
             images={[...INCLUDE_IMAGES_wanted]}
             selectedImages={selectedIncludeOnlyImages}
@@ -57,32 +63,8 @@ const TradeFiltersPanel: React.FC<TradeFiltersPanelProps> = ({
             tooltipTexts={includeTooltipTexts}
           />
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="exclude-header-group image-group exclude-few">
-        <FilterImages
-          images={[...EXCLUDE_IMAGES_wanted]}
-          selectedImages={selectedExcludeImages}
-          toggleImageSelection={toggleExcludeImageSelection}
-          editMode={editMode}
-          tooltipTexts={excludeTooltipTexts}
-        />
-      </div>
-      <div className="include-only-header-group include-few">
-        <h3>Include</h3>
-        <FilterImages
-          images={[...INCLUDE_IMAGES_wanted]}
-          selectedImages={selectedIncludeOnlyImages}
-          toggleImageSelection={toggleIncludeOnlyImageSelection}
-          editMode={editMode}
-          tooltipTexts={includeTooltipTexts}
-        />
-      </div>
-    </>
+      )}
+    </div>
   );
 };
 

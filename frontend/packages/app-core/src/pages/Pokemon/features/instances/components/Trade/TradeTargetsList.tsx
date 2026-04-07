@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import './WantedListDisplay.css';
+import './TradeTargetsList.css';
 import useSortManager from '@/hooks/sort/useSortManager';
 import type { SortMode, SortType } from '@/types/sort';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -10,7 +10,7 @@ interface LocalPokemonRef {
   currentImage?: string;
 }
 
-interface WantedEntry {
+interface TradeTargetEntry {
   pokemon_id?: number;
   name?: string;
   species_name?: string;
@@ -24,18 +24,18 @@ interface WantedEntry {
   [key: string]: unknown;
 }
 
-interface WantedDisplayItem extends WantedEntry {
+interface TradeTargetDisplayItem extends TradeTargetEntry {
   key: string;
   species_name: string;
 }
 
-interface WantedLists {
-  wanted?: Record<string, WantedEntry>;
+interface TradeTargetLists {
+  wanted?: Record<string, TradeTargetEntry>;
 }
 
-interface WantedListDisplayProps {
+interface TradeTargetsListProps {
   pokemon?: LocalPokemonRef;
-  lists?: WantedLists;
+  lists?: TradeTargetLists;
   localNotWantedList: BooleanMap;
   setLocalNotWantedList: React.Dispatch<React.SetStateAction<BooleanMap>>;
   isMirror: boolean;
@@ -50,7 +50,7 @@ interface WantedListDisplayProps {
 const getIsSmallScreen = (): boolean =>
   typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
 
-const WantedListDisplay = ({
+const TradeTargetsList = ({
   pokemon,
   lists,
   localNotWantedList,
@@ -62,7 +62,7 @@ const WantedListDisplay = ({
   sortType,
   sortMode,
   onPokemonClick,
-}: WantedListDisplayProps) => {
+}: TradeTargetsListProps) => {
   const [isSmallScreen, setIsSmallScreen] = useState<boolean>(getIsSmallScreen);
   const notWantedMap = localNotWantedList || {};
 
@@ -107,7 +107,7 @@ const WantedListDisplay = ({
     return isVisible && mirrorMatch;
   });
 
-  const transformedWantedList: WantedDisplayItem[] = wantedListToDisplay.map(
+  const transformedWantedList: TradeTargetDisplayItem[] = wantedListToDisplay.map(
     ([key, details]) => ({
       ...details,
       key,
@@ -128,14 +128,14 @@ const WantedListDisplay = ({
     transformedWantedList as unknown as PokemonVariant[],
     sortType,
     sortMode,
-  ) as unknown as WantedDisplayItem[];
+  ) as unknown as TradeTargetDisplayItem[];
 
   const finalWantedListToDisplay = isMirror
     ? transformedWantedList
     : sortedWantedListToDisplay;
 
   if (!lists || finalWantedListToDisplay.length === 0) {
-    return <div>No Pokemon currently wanted.</div>;
+    return <div>No trade targets currently selected.</div>;
   }
 
   let containerClass = '';
@@ -157,73 +157,95 @@ const WantedListDisplay = ({
         const isNotWanted = Boolean(notWantedMap[wantedPokemon.key]);
         const imageClasses = `wanted-item-img ${isNotWanted ? 'grey-out' : ''}`;
         const backdropClasses = `lucky-backdrop ${isNotWanted ? 'grey-out' : ''}`;
+        const displayName = `${
+          wantedPokemon.form ? `${wantedPokemon.form} ` : ''
+        }${wantedPokemon.name ?? wantedPokemon.species_name ?? 'Pokemon'}`;
+        const pokedexLabel =
+          typeof wantedPokemon.pokedex_number === 'number'
+            ? `#${String(wantedPokemon.pokedex_number).padStart(3, '0')}`
+            : null;
 
         return (
           <div
             key={wantedPokemon.key}
-            className="wanted-item"
-            style={{ position: 'relative', overflow: 'hidden' }}
+            className={`wanted-item ${isNotWanted ? 'is-not-wanted' : ''}`}
             onClick={() => {
               if (!editMode) {
                 onPokemonClick?.(wantedPokemon.key);
               }
             }}
+            role={!editMode ? 'button' : undefined}
+            tabIndex={!editMode ? 0 : undefined}
+            onKeyDown={(event) => {
+              if (!editMode && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                onPokemonClick?.(wantedPokemon.key);
+              }
+            }}
           >
-            {wantedPokemon.pref_lucky && (
+            <div className="wanted-item__media">
+              {wantedPokemon.pref_lucky && (
+                <img
+                  src="/images/lucky.png"
+                  className={backdropClasses}
+                  alt="Lucky backdrop"
+                  draggable={false}
+                  onDragStart={(event) => event.preventDefault()}
+                />
+              )}
+
+              {wantedPokemon.variantType?.includes('dynamax') && (
+                <img
+                  src="/images/dynamax.png"
+                  alt="Dynamax"
+                  className="wanted-item__max-badge"
+                  draggable={false}
+                  onDragStart={(event) => event.preventDefault()}
+                />
+              )}
+
+              {wantedPokemon.variantType?.includes('gigantamax') && (
+                <img
+                  src="/images/gigantamax.png"
+                  alt="Gigantamax"
+                  className="wanted-item__max-badge"
+                  draggable={false}
+                  onDragStart={(event) => event.preventDefault()}
+                />
+              )}
+
               <img
-                src="/images/lucky.png"
-                className={backdropClasses}
-                alt="Lucky backdrop"
+                src={wantedPokemon.currentImage}
+                className={imageClasses}
+                alt={`Trade Target ${wantedPokemon.name}`}
+                title={displayName}
+                draggable={false}
+                onDragStart={(event) => event.preventDefault()}
               />
-            )}
 
-            {wantedPokemon.variantType?.includes('dynamax') && (
-              <img
-                src="/images/dynamax.png"
-                alt="Dynamax"
-                style={{
-                  position: 'absolute',
-                  top: '0',
-                  right: '3%',
-                  width: '30%',
-                  height: 'auto',
-                  zIndex: 0,
-                }}
-              />
-            )}
+              {editMode && (
+                <button
+                  type="button"
+                  className="toggle-not-wanted"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleNotWantedToggle(wantedPokemon.key);
+                  }}
+                >
+                  {isNotWanted ? '\u2713' : 'X'}
+                </button>
+              )}
+            </div>
 
-            {wantedPokemon.variantType?.includes('gigantamax') && (
-              <img
-                src="/images/gigantamax.png"
-                alt="Gigantamax"
-                style={{
-                  position: 'absolute',
-                  top: '0',
-                  right: '3%',
-                  width: '30%',
-                  height: 'auto',
-                  zIndex: 0,
-                }}
-              />
-            )}
+            <div className="wanted-item__body">
+              <div className="wanted-item__name" title={displayName}>
+                {displayName}
+              </div>
+              {pokedexLabel ? (
+                <div className="wanted-item__meta">{pokedexLabel}</div>
+              ) : null}
+            </div>
 
-            <img
-              src={wantedPokemon.currentImage}
-              className={imageClasses}
-              alt={`Wanted Pokemon ${wantedPokemon.name}`}
-              style={{ zIndex: 2 }}
-              title={`${wantedPokemon.form ? `${wantedPokemon.form} ` : ''}${wantedPokemon.name ?? ''}`}
-            />
-
-            {editMode && (
-              <button
-                className="toggle-not-wanted"
-                onClick={() => handleNotWantedToggle(wantedPokemon.key)}
-                style={{ zIndex: 3 }}
-              >
-                {isNotWanted ? '\u2713' : 'X'}
-              </button>
-            )}
           </div>
         );
       })}
@@ -231,4 +253,4 @@ const WantedListDisplay = ({
   );
 };
 
-export default WantedListDisplay;
+export default TradeTargetsList;

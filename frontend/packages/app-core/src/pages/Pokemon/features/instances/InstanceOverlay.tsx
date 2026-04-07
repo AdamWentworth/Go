@@ -5,10 +5,12 @@ import OverlayPortal from '@/components/OverlayPortal';
 import WindowOverlay from '@/components/WindowOverlay';
 import CaughtInstance from './CaughtInstance';
 import TradeInstance from './TradeInstance';
-import TradeDetails from './components/Trade/TradeDetails';
+import TradeTargetsPanel from './components/Trade/TradeTargetsPanel';
 import WantedInstance from './WantedInstance';
 import WantedDetails from './components/Wanted/WantedDetails';
 import CloseButton from '@/components/CloseButton';
+
+const STACKED_INSTANCE_OVERLAY_BREAKPOINT = 768;
 import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -52,6 +54,19 @@ interface InstanceOverlayProps {
   navigationPokemons?: OverlayPokemon[];
   onNavigatePokemon?: (pokemon: OverlayPokemon) => void;
 }
+
+type SwipeCaptureHandlers = {
+  onDragStart: React.DragEventHandler<HTMLDivElement>;
+  onPointerDownCapture: React.PointerEventHandler<HTMLDivElement>;
+  onPointerUpCapture: React.PointerEventHandler<HTMLDivElement>;
+  onPointerMoveCapture: React.PointerEventHandler<HTMLDivElement>;
+  onMouseDownCapture: React.MouseEventHandler<HTMLDivElement>;
+  onMouseUpCapture: React.MouseEventHandler<HTMLDivElement>;
+  onMouseMoveCapture: React.MouseEventHandler<HTMLDivElement>;
+  onTouchStartCapture: React.TouchEventHandler<HTMLDivElement>;
+  onTouchEndCapture: React.TouchEventHandler<HTMLDivElement>;
+  onTouchMoveCapture: React.TouchEventHandler<HTMLDivElement>;
+};
 
 const toKey = (v: unknown): string => (v ?? '').toString().trim().toLowerCase();
 const CANON = (k: unknown): string => {
@@ -153,7 +168,7 @@ const getBackgroundImageSrc = (p: OverlayPokemon | null): string => {
 
 type CaughtOverlayPokemon = React.ComponentProps<typeof CaughtInstance>['pokemon'];
 type TradeOverlayPokemon = React.ComponentProps<typeof TradeInstance>['pokemon'];
-type TradeDetailsPokemon = React.ComponentProps<typeof TradeDetails>['pokemon'];
+type TradeTargetsPanelPokemon = React.ComponentProps<typeof TradeTargetsPanel>['pokemon'];
 type WantedOverlayPokemon = React.ComponentProps<typeof WantedInstance>['pokemon'];
 type WantedDetailsPokemon = React.ComponentProps<typeof WantedDetails>['pokemon'];
 
@@ -181,11 +196,55 @@ const getOverlayIdentityKey = (value: OverlayPokemon | null | undefined): string
   return null;
 };
 
-const isSwipeInteractiveTarget = (target: EventTarget | null): boolean => {
-  if (!(target instanceof HTMLElement)) return false;
+export const isSwipeInteractiveTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof Element)) return false;
   return Boolean(
-    target.closest('textarea, [contenteditable="true"], input[type="text"], input[type="number"], input[type="date"]'),
+    target.closest(
+      [
+        'button',
+        'a',
+        '[role="button"]',
+        'textarea',
+        'select',
+        'summary',
+        'details',
+        '[contenteditable="true"]',
+        'input[type="text"]',
+        'input[type="number"]',
+        'input[type="date"]',
+        'input[type="checkbox"]',
+        'input[type="radio"]',
+        '.mirror',
+        '.favorite-component',
+        '.background-button',
+        '.toggleable-image',
+        '.reset-container',
+        '.trade-target-reset-button',
+      ].join(', '),
+    ),
   );
+};
+
+const resolveSwipeAxis = (
+  deltaX: number,
+  deltaY: number,
+  currentAxis: 'x' | 'y' | null,
+): 'x' | 'y' | null => {
+  if (currentAxis) return currentAxis;
+
+  const absDeltaX = Math.abs(deltaX);
+  const absDeltaY = Math.abs(deltaY);
+
+  // Require clearer intent before conceding to vertical scrolling.
+  if (absDeltaX >= 10 && absDeltaX >= absDeltaY * 0.9) {
+    return 'x';
+  }
+
+  if (absDeltaY >= 14 && absDeltaY > absDeltaX * 1.35) {
+    return 'y';
+  }
+
+  return null;
 };
 
 const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
@@ -213,11 +272,13 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     startY: 0,
   });
   const swipeAxisRef = useRef<'x' | 'y' | null>(null);
+  const overlayRootRef = useRef<HTMLDivElement | null>(null);
   const [swipeOffsetX, setSwipeOffsetX] = useState(0);
   const [swipeTransitionEnabled, setSwipeTransitionEnabled] = useState(false);
   const [isSwipeAnimating, setIsSwipeAnimating] = useState(false);
   const [isBackgroundTransitioning, setIsBackgroundTransitioning] = useState(false);
   const [isSwiping, setIsSwiping] = useState(false);
+  const [isHorizontalSwiping, setIsHorizontalSwiping] = useState(false);
 
   const [selectedPokemon, setSelectedPokemon] = useState<OverlayPokemon | null>(pokemon);
   const [previewInstanceDataPatch, setPreviewInstanceDataPatch] = useState<
@@ -241,10 +302,13 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   }, [instances, previewInstanceDataPatch, selectedPokemon]);
 
   const [isSmallScreen, setIsSmallScreen] = useState(
-    typeof window !== 'undefined' ? window.innerWidth <= 686 : false
+    typeof window !== 'undefined'
+      ? window.innerWidth < STACKED_INSTANCE_OVERLAY_BREAKPOINT
+      : false
   );
   useEffect(() => {
-    const handleResize = () => setIsSmallScreen(window.innerWidth <= 686);
+    const handleResize = () =>
+      setIsSmallScreen(window.innerWidth < STACKED_INSTANCE_OVERLAY_BREAKPOINT);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -267,6 +331,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     setSwipeTransitionEnabled(false);
     setIsSwipeAnimating(false);
     setIsBackgroundTransitioning(false);
+    setIsHorizontalSwiping(false);
   }, [incomingNavigationKey, pokemon]);
 
   const handleCaughtPreviewInstanceDataChange = useCallback(
@@ -292,6 +357,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   const [currentOverlay, setCurrentOverlay] = useState<OverlayType>(() =>
     deriveInitialOverlay(tagFilter, pokemon)
   );
+  const isNavigableOverlay = currentOverlay === 'caught' || currentOverlay === 'trade';
 
   const navigablePokemons = useMemo(
     () =>
@@ -346,7 +412,6 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
       if (!target) return;
       setSelectedPokemon(target);
       setPreviewInstanceDataPatch({});
-      setCurrentOverlay('caught');
       onNavigatePokemon?.(target);
     },
     [onNavigatePokemon],
@@ -354,7 +419,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
 
   const animateNavigation = useCallback(
     (direction: 'previous' | 'next') => {
-      if (currentOverlay !== 'caught') return;
+      if (!isNavigableOverlay) return;
       if (isSwipeAnimating) return;
 
       const target = direction === 'next' ? nextPokemon : previousPokemon;
@@ -389,7 +454,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
       }, 120);
     },
     [
-      currentOverlay,
+      isNavigableOverlay,
       isSwipeAnimating,
       navigateToPokemon,
       nextPokemon,
@@ -414,6 +479,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     };
     swipeAxisRef.current = null;
     setIsSwiping(false);
+    setIsHorizontalSwiping(false);
   }, []);
 
   const cancelSwipeAndResetOffset = useCallback(() => {
@@ -425,7 +491,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
 
   const beginSwipe = useCallback(
     (target: EventTarget | null, clientX: number, clientY: number) => {
-      if (currentOverlay !== 'caught') return;
+      if (!isNavigableOverlay) return;
       if (isSwipeInteractiveTarget(target)) return;
       if (swipeStateRef.current.active) return;
       if (isSwipeAnimating) return;
@@ -439,7 +505,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
       setIsSwiping(true);
       setSwipeTransitionEnabled(false);
     },
-    [currentOverlay, isSwipeAnimating],
+    [isNavigableOverlay, isSwipeAnimating],
   );
 
   const moveSwipe = useCallback(
@@ -449,13 +515,10 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
 
       const deltaX = clientX - swipeState.startX;
       const deltaY = clientY - swipeState.startY;
-      const absDeltaX = Math.abs(deltaX);
-      const absDeltaY = Math.abs(deltaY);
-
-      if (swipeAxisRef.current == null && (absDeltaX >= 8 || absDeltaY >= 8)) {
-        swipeAxisRef.current = absDeltaX > absDeltaY ? 'x' : 'y';
-      }
+      swipeAxisRef.current = resolveSwipeAxis(deltaX, deltaY, swipeAxisRef.current);
       if (swipeAxisRef.current !== 'x') return false;
+
+      setIsHorizontalSwiping(true);
 
       const clampedOffset = Math.max(-180, Math.min(180, deltaX));
       setSwipeOffsetX(clampedOffset);
@@ -470,10 +533,9 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
       if (!swipeState.active) return;
 
       const deltaX = clientX - swipeState.startX;
-      const deltaY = clientY - swipeState.startY;
       const absDeltaX = Math.abs(deltaX);
-      const absDeltaY = Math.abs(deltaY);
-      const isHorizontalSwipe = absDeltaX >= 56 && absDeltaX > absDeltaY * 1.25;
+      const isHorizontalSwipe =
+        swipeAxisRef.current === 'x' && absDeltaX >= 56;
 
       if (isHorizontalSwipe) {
         if (deltaX < 0) {
@@ -493,33 +555,60 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
 
   const handleOverlayPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      event.stopPropagation();
       if (event.pointerType === 'mouse' && event.button !== 0) return;
+      if (isSwipeInteractiveTarget(event.target)) return;
+
+      event.stopPropagation();
+      if (event.pointerType === 'mouse') {
+        event.preventDefault();
+      }
+      if (isNavigableOverlay) {
+        try {
+          event.currentTarget.setPointerCapture(event.pointerId);
+        } catch {
+          // Ignore capture failures; window listeners still backstop drag tracking.
+        }
+      }
       beginSwipe(event.target, event.clientX, event.clientY);
     },
-    [beginSwipe],
+    [beginSwipe, isNavigableOverlay],
   );
 
   const handleOverlayPointerUp = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
+      if (!swipeStateRef.current.active) return;
       event.stopPropagation();
+      if (isNavigableOverlay) {
+        try {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        } catch {
+          // Ignore capture release failures.
+        }
+      }
       endSwipe(event.clientX, event.clientY);
     },
-    [endSwipe],
+    [endSwipe, isNavigableOverlay],
   );
 
   const handleOverlayPointerMove = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
+      if (!swipeStateRef.current.active) return;
       event.stopPropagation();
-      moveSwipe(event.clientX, event.clientY);
+      const horizontalSwipe = moveSwipe(event.clientX, event.clientY);
+      if (horizontalSwipe) {
+        event.preventDefault();
+      }
     },
     [moveSwipe],
   );
 
   const handleOverlayMouseDown = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
-      event.stopPropagation();
       if (event.button !== 0) return;
+      if (isSwipeInteractiveTarget(event.target)) return;
+
+      event.stopPropagation();
+      event.preventDefault();
       beginSwipe(event.target, event.clientX, event.clientY);
     },
     [beginSwipe],
@@ -527,6 +616,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
 
   const handleOverlayMouseUp = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!swipeStateRef.current.active) return;
       event.stopPropagation();
       endSwipe(event.clientX, event.clientY);
     },
@@ -535,6 +625,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
 
   const handleOverlayMouseMove = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!swipeStateRef.current.active) return;
       event.stopPropagation();
       moveSwipe(event.clientX, event.clientY);
     },
@@ -543,6 +634,8 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
 
   const handleOverlayTouchStart = useCallback(
     (event: React.TouchEvent<HTMLDivElement>) => {
+      if (isSwipeInteractiveTarget(event.target)) return;
+
       event.stopPropagation();
       const touch = event.touches[0];
       if (!touch) return;
@@ -553,6 +646,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
 
   const handleOverlayTouchEnd = useCallback(
     (event: React.TouchEvent<HTMLDivElement>) => {
+      if (!swipeStateRef.current.active) return;
       event.stopPropagation();
       const touch = event.changedTouches[0];
       if (!touch) return;
@@ -563,10 +657,14 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
 
   const handleOverlayTouchMove = useCallback(
     (event: React.TouchEvent<HTMLDivElement>) => {
+      if (!swipeStateRef.current.active) return;
       event.stopPropagation();
       const touch = event.touches[0];
       if (!touch) return;
-      moveSwipe(touch.clientX, touch.clientY);
+      const horizontalSwipe = moveSwipe(touch.clientX, touch.clientY);
+      if (horizontalSwipe) {
+        event.preventDefault();
+      }
     },
     [moveSwipe],
   );
@@ -575,7 +673,10 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     if (!isSwiping) return;
 
     const onWindowMouseMove = (event: MouseEvent) => {
-      moveSwipe(event.clientX, event.clientY);
+      const horizontalSwipe = moveSwipe(event.clientX, event.clientY);
+      if (horizontalSwipe) {
+        event.preventDefault();
+      }
     };
     const onWindowMouseUp = (event: MouseEvent) => {
       endSwipe(event.clientX, event.clientY);
@@ -607,16 +708,71 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     };
   }, [endSwipe, isSwiping, moveSwipe]);
 
-  const showNavigationArrows =
-    currentOverlay === 'caught' && navigablePokemons.length > 1;
+  useEffect(() => {
+    if (!isNavigableOverlay) return;
+
+    const isWithinOverlay = (target: EventTarget | null): boolean => {
+      const root = overlayRootRef.current;
+      return target instanceof Node && root ? root.contains(target) : false;
+    };
+
+    const onDocumentPointerDown = (event: PointerEvent) => {
+      if (ignorePointerEvents) return;
+      if (!isWithinOverlay(event.target)) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      if (isSwipeInteractiveTarget(event.target)) return;
+      if (event.pointerType === 'mouse' && event.cancelable) {
+        event.preventDefault();
+      }
+      beginSwipe(event.target, event.clientX, event.clientY);
+    };
+
+    const onDocumentPointerMove = (event: PointerEvent) => {
+      if (!isWithinOverlay(event.target) && !swipeStateRef.current.active) return;
+      const horizontalSwipe = moveSwipe(event.clientX, event.clientY);
+      if (horizontalSwipe && event.cancelable) {
+        event.preventDefault();
+      }
+    };
+
+    const onDocumentPointerUp = (event: PointerEvent) => {
+      if (!swipeStateRef.current.active) return;
+      endSwipe(event.clientX, event.clientY);
+    };
+
+    const onDocumentPointerCancel = () => {
+      cancelSwipeAndResetOffset();
+    };
+
+    document.addEventListener('pointerdown', onDocumentPointerDown, { capture: true });
+    document.addEventListener('pointermove', onDocumentPointerMove, { capture: true });
+    document.addEventListener('pointerup', onDocumentPointerUp, { capture: true });
+    document.addEventListener('pointercancel', onDocumentPointerCancel, { capture: true });
+
+    return () => {
+      document.removeEventListener('pointerdown', onDocumentPointerDown, true);
+      document.removeEventListener('pointermove', onDocumentPointerMove, true);
+      document.removeEventListener('pointerup', onDocumentPointerUp, true);
+      document.removeEventListener('pointercancel', onDocumentPointerCancel, true);
+    };
+  }, [
+    beginSwipe,
+    cancelSwipeAndResetOffset,
+    endSwipe,
+    ignorePointerEvents,
+    isNavigableOverlay,
+    moveSwipe,
+  ]);
+
+  const showNavigationArrows = isNavigableOverlay && navigablePokemons.length > 1;
   const hasPreviousPokemon = Boolean(previousPokemon);
   const hasNextPokemon = Boolean(nextPokemon);
   const canNavigatePrevious = hasPreviousPokemon && !isSwipeAnimating;
   const canNavigateNext = hasNextPokemon && !isSwipeAnimating;
 
-  const caughtColumnMotionStyle = useMemo(
+  const overlayMotionStyle = useMemo(
     () =>
-      currentOverlay === 'caught'
+      isNavigableOverlay
         ? ({
             transform: `translateX(${swipeOffsetX}px)`,
             transition: swipeTransitionEnabled
@@ -624,7 +780,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
               : 'none',
           } as React.CSSProperties)
         : undefined,
-    [currentOverlay, swipeOffsetX, swipeTransitionEnabled],
+    [isNavigableOverlay, swipeOffsetX, swipeTransitionEnabled],
   );
 
   const activeInstanceIdHint = useMemo(() => {
@@ -639,7 +795,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     setCurrentOverlay(deriveInitialOverlay(tagFilter, liveSelectedPokemon));
   }, [tagFilter, liveSelectedPokemon]);
 
-  const handleOpenWantedOverlay = (pokemonData: Record<string, unknown>) => {
+  const handleOpenTradeTargetOverlay = (pokemonData: Record<string, unknown>) => {
     setSelectedPokemon(pokemonData as unknown as OverlayPokemon);
     setPreviewInstanceDataPatch({});
     setCurrentOverlay('wanted');
@@ -664,6 +820,23 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     </div>
   );
 
+  const swipeCaptureHandlers: SwipeCaptureHandlers = {
+    onDragStart: (event) => {
+      if (isNavigableOverlay) {
+        event.preventDefault();
+      }
+    },
+    onPointerDownCapture: handleOverlayPointerDown,
+    onPointerUpCapture: handleOverlayPointerUp,
+    onPointerMoveCapture: handleOverlayPointerMove,
+    onMouseDownCapture: handleOverlayMouseDown,
+    onMouseUpCapture: handleOverlayMouseUp,
+    onMouseMoveCapture: handleOverlayMouseMove,
+    onTouchStartCapture: handleOverlayTouchStart,
+    onTouchEndCapture: handleOverlayTouchEnd,
+    onTouchMoveCapture: handleOverlayTouchMove,
+  };
+
   const renderContent = () => {
     const activePokemon = liveSelectedPokemon;
     switch (currentOverlay) {
@@ -675,14 +848,16 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
         return (
           <div className="caught-fullscreen">
             <div className="caught-scroll">
-              <div className="caught-column" style={caughtColumnMotionStyle}>
-                <CaughtInstance
-                  key={caughtInstanceKey}
-                  pokemon={activePokemon as CaughtOverlayPokemon}
-                  isEditable={isEditable}
-                  onPreviewInstanceDataChange={handleCaughtPreviewInstanceDataChange}
-                  activeInstanceIdHint={activeInstanceIdHint}
-                />
+              <div className="instance-motion-shell instance-motion-shell--caught" style={overlayMotionStyle}>
+                <div className="caught-column">
+                  <CaughtInstance
+                    key={caughtInstanceKey}
+                    pokemon={activePokemon as CaughtOverlayPokemon}
+                    isEditable={isEditable}
+                    onPreviewInstanceDataChange={handleCaughtPreviewInstanceDataChange}
+                    activeInstanceIdHint={activeInstanceIdHint}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -692,29 +867,51 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
         return <div className="missing-placeholder">Missing Instance Component</div>;
       case 'trade':
         if (!activePokemon) return null;
+        const tradeInstanceKey =
+          getOverlayIdentityKey(activePokemon) ??
+          `trade:${activePokemon.pokemon_id}:${String(activePokemon.variant_id ?? '')}`;
         return (
-          <div className={`trade-instance-overlay ${isSmallScreen ? 'small-screen' : ''}`}>
-            <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
-              <WindowOverlay onClose={handleCloseOverlay} className="trade-instance-window">
-                <TradeInstance
-                  pokemon={activePokemon as unknown as TradeOverlayPokemon}
-                  isEditable={isEditable}
-                />
-              </WindowOverlay>
-              <WindowOverlay onClose={handleCloseOverlay} className="trade-details-window">
-                <TradeDetails
-                  pokemon={withInstanceData(activePokemon) as TradeDetailsPokemon}
-                  lists={lists}
-                  instances={instances}
-                  sortType={sortType}
-                  sortMode={sortMode}
+          <div className="instance-motion-shell instance-motion-shell--trade" style={overlayMotionStyle}>
+            <div
+              className={`trade-instance-overlay ${isSmallScreen ? 'small-screen' : ''}`}
+            >
+              <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
+                <WindowOverlay onClose={handleCloseOverlay} className="trade-instance-window">
+                  <div className="trade-pane-scroll trade-pane-scroll--offer">
+                    <div className="trade-pane-shell trade-pane-shell--offer">
+                      <TradeInstance
+                        key={tradeInstanceKey}
+                        pokemon={activePokemon as unknown as TradeOverlayPokemon}
+                        isEditable={isEditable}
+                      />
+                    </div>
+                  </div>
+                </WindowOverlay>
+                <WindowOverlay
                   onClose={handleCloseOverlay}
-                  openWantedOverlay={handleOpenWantedOverlay}
-                  variants={variants}
-                  isEditable={isEditable}
-                  username={username}
-                />
-              </WindowOverlay>
+                  className="trade-details-window"
+                  {...swipeCaptureHandlers}
+                >
+                  <div className="trade-pane-scroll trade-pane-scroll--targets">
+                    <div className="trade-pane-shell trade-pane-shell--targets">
+                      <TradeTargetsPanel
+                        key={`${tradeInstanceKey}:details`}
+                        pokemon={withInstanceData(activePokemon) as TradeTargetsPanelPokemon}
+                        lists={lists}
+                        instances={instances}
+                        sortType={sortType}
+                        sortMode={sortMode}
+                        onClose={handleCloseOverlay}
+                        openTradeTargetOverlay={handleOpenTradeTargetOverlay}
+                        variants={variants}
+                        isEditable={isEditable}
+                        username={username}
+                        swipeCaptureHandlers={swipeCaptureHandlers}
+                      />
+                    </div>
+                  </div>
+                </WindowOverlay>
+              </div>
             </div>
           </div>
         );
@@ -749,12 +946,13 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     }
   };
 
-  const bgColor = currentOverlay === 'caught' ? getCaughtBgColor(liveSelectedPokemon) : null;
+  const showTypeBackground = currentOverlay === 'caught' || currentOverlay === 'trade';
+  const bgColor = showTypeBackground ? getCaughtBgColor(liveSelectedPokemon) : null;
 
   // recompute the background image whenever the selected pokemon changes
   const bgImageSrc = useMemo(
-    () => (currentOverlay === 'caught' ? getBackgroundImageSrc(liveSelectedPokemon) : null),
-    [currentOverlay, liveSelectedPokemon]
+    () => (showTypeBackground ? getBackgroundImageSrc(liveSelectedPokemon) : null),
+    [liveSelectedPokemon, showTypeBackground]
   );
 
   const caughtBackgroundStyle = useMemo(
@@ -772,22 +970,15 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   return (
     <OverlayPortal>
       <div
-        className={`instance-overlay ${currentOverlay === 'caught' ? 'caught-mode' : ''}`}
+        ref={overlayRootRef}
+        className={`instance-overlay ${currentOverlay === 'caught' ? 'caught-mode' : ''} ${currentOverlay === 'trade' ? 'trade-mode' : ''} ${isSwiping ? 'is-swiping' : ''} ${isHorizontalSwiping ? 'is-horizontal-swiping' : ''}`}
         style={{ pointerEvents: ignorePointerEvents ? 'none' : 'auto' }}
-        onPointerDown={handleOverlayPointerDown}
-        onPointerUp={handleOverlayPointerUp}
-        onPointerMove={handleOverlayPointerMove}
-        onMouseDown={handleOverlayMouseDown}
-        onMouseUp={handleOverlayMouseUp}
-        onMouseMove={handleOverlayMouseMove}
+        {...swipeCaptureHandlers}
         onMouseLeave={cancelSwipeAndResetOffset}
-        onTouchStart={handleOverlayTouchStart}
-        onTouchEnd={handleOverlayTouchEnd}
-        onTouchMove={handleOverlayTouchMove}
         onTouchCancel={cancelSwipeAndResetOffset}
         onPointerCancel={cancelSwipeAndResetOffset}
       >
-        {currentOverlay === 'caught' && (
+        {showTypeBackground && (
           <div className="io-bg" style={caughtBackgroundStyle}>
             <img
               className={`io-bg-img ${isBackgroundTransitioning ? 'is-transitioning' : ''}`}

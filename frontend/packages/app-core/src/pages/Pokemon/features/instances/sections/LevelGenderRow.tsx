@@ -19,6 +19,12 @@ interface LevelGenderRowProps {
   onGenderChange: (value: string | null) => void;
 }
 
+const isGenderlessRate = (genderRate: string | undefined): boolean => {
+  if (!genderRate) return false;
+  const [, , genderlessRate] = genderRate.split('_');
+  return Number.parseInt(genderlessRate ?? '', 10) === 100;
+};
+
 const LevelGenderRow: React.FC<LevelGenderRowProps> = ({
   pokemon,
   editMode,
@@ -26,24 +32,33 @@ const LevelGenderRow: React.FC<LevelGenderRowProps> = ({
   onLevelChange,
   gender,
   onGenderChange,
-}) => (
-  <div className="level-gender-row">
-    <Level
-      editMode={editMode}
-      level={level}
-      onLevelChange={onLevelChange}
-    />
-    {(editMode || (gender !== null && gender !== '')) && (
-      <div className="gender-wrapper">
-        <Gender
-          pokemon={pokemon}
-          editMode={editMode}
-          onGenderChange={onGenderChange}
-        />
-      </div>
-    )}
-  </div>
-);
+}) => {
+  const hasDefinedLevel = level !== null;
+  const hasDefinedGender = gender !== null && gender !== '';
+  const showGender = hasDefinedGender || isGenderlessRate(pokemon.gender_rate);
+  const hasVisibleContent = hasDefinedLevel || showGender;
+
+  if (!hasVisibleContent) return null;
+
+  return (
+    <div className="level-gender-row">
+      <Level
+        editMode={editMode}
+        level={level}
+        onLevelChange={onLevelChange}
+      />
+      {showGender ? (
+        <div className="gender-wrapper">
+          <Gender
+            pokemon={pokemon}
+            editMode={editMode}
+            onGenderChange={onGenderChange}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+};
 
 export default LevelGenderRow;
 

@@ -1,7 +1,9 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import InstanceOverlay from '@/pages/Pokemon/features/instances/InstanceOverlay';
+import InstanceOverlay, {
+  isSwipeInteractiveTarget,
+} from '@/pages/Pokemon/features/instances/InstanceOverlay';
 
 vi.mock('@/components/OverlayPortal', () => ({
   default: ({ children }: { children: React.ReactNode }) => (
@@ -10,8 +12,18 @@ vi.mock('@/components/OverlayPortal', () => ({
 }));
 
 vi.mock('@/components/WindowOverlay', () => ({
-  default: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="window-overlay">{children}</div>
+  default: ({
+    children,
+    className = '',
+    ...props
+  }: {
+    children: React.ReactNode;
+    className?: string;
+    [key: string]: unknown;
+  }) => (
+    <div data-testid="window-overlay" className={className} {...props}>
+      {children}
+    </div>
   ),
 }));
 
@@ -51,7 +63,7 @@ vi.mock('@/pages/Pokemon/features/instances/TradeInstance', () => ({
   default: () => <div data-testid="trade-instance" />,
 }));
 
-vi.mock('@/pages/Pokemon/features/instances/components/Trade/TradeDetails', () => ({
+vi.mock('@/pages/Pokemon/features/instances/components/Trade/TradeTargetsPanel', () => ({
   default: () => <div data-testid="trade-details" />,
 }));
 
@@ -102,6 +114,54 @@ function renderOverlay(
 }
 
 describe('InstanceOverlay', () => {
+  it('uses stacked trade layout below 768px and side-by-side at 768px and above', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      writable: true,
+      value: 767,
+    });
+
+    const p1 = makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'i-1' } });
+    const { rerender } = render(
+      <InstanceOverlay
+        pokemon={p1}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="trade"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+      />,
+    );
+
+    expect(document.querySelector('.overlay-row.other-overlays-row')).toHaveClass('column-layout');
+
+    window.innerWidth = 768;
+    fireEvent(window, new Event('resize'));
+
+    await waitFor(() =>
+      expect(document.querySelector('.overlay-row.other-overlays-row')).not.toHaveClass('column-layout'),
+    );
+
+    rerender(
+      <InstanceOverlay
+        pokemon={p1}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="trade"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+      />,
+    );
+  });
+
   it('renders caught overlay when tag filter is caught', () => {
     renderOverlay('caught');
     expect(screen.getByTestId('caught-instance')).toBeInTheDocument();
@@ -111,6 +171,16 @@ describe('InstanceOverlay', () => {
     renderOverlay('trade');
     expect(screen.getByTestId('trade-instance')).toBeInTheDocument();
     expect(screen.getByTestId('trade-details')).toBeInTheDocument();
+  });
+
+  it('renders the type background layer for trade overlays too', () => {
+    renderOverlay('trade', {
+      type1_name: 'Fire',
+    });
+
+    const background = document.querySelector('.io-bg-img') as HTMLImageElement | null;
+    expect(background).not.toBeNull();
+    expect(background?.getAttribute('src')).toContain('bg_fire.png');
   });
 
   it('falls back to pokemon status when tag filter is unknown', () => {
@@ -145,6 +215,22 @@ describe('InstanceOverlay', () => {
 
     const updatedBackground = document.querySelector('.io-bg-img') as HTMLImageElement | null;
     expect(updatedBackground?.getAttribute('src')).toContain('bg_psychic.png');
+  });
+
+  it('treats buttons and nested icon elements as interactive swipe targets', () => {
+    const button = document.createElement('button');
+    const image = document.createElement('img');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'mirror';
+
+    button.appendChild(image);
+    wrapper.appendChild(document.createElement('img'));
+    document.body.appendChild(button);
+    document.body.appendChild(wrapper);
+
+    expect(isSwipeInteractiveTarget(button)).toBe(true);
+    expect(isSwipeInteractiveTarget(image)).toBe(true);
+    expect(isSwipeInteractiveTarget(wrapper.firstElementChild)).toBe(true);
   });
 
   it('hydrates open overlay instance data from latest instances map without reopening', () => {
@@ -225,6 +311,36 @@ describe('InstanceOverlay', () => {
     await waitFor(() => expect(onNavigatePokemon).toHaveBeenCalledWith(p2));
   });
 
+  it('shows trade navigation arrows and navigates forward on arrow click', async () => {
+    const p1 = makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'i-1' } });
+    const p2 = makePokemon({ variant_id: '0002-default', instanceData: { instance_id: 'i-2' } });
+    const onNavigatePokemon = vi.fn();
+
+    render(
+      <InstanceOverlay
+        pokemon={p1}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="trade"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+        navigationPokemons={[p1, p2]}
+        onNavigatePokemon={onNavigatePokemon}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Previous Pokemon' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next Pokemon' })).not.toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Next Pokemon' }));
+    await waitFor(() => expect(onNavigatePokemon).toHaveBeenCalledWith(p2));
+    expect(screen.getByTestId('trade-instance')).toBeInTheDocument();
+    expect(screen.getByTestId('trade-details')).toBeInTheDocument();
+  });
+
   it('navigates forward when swiping left on caught overlay', async () => {
     const p1 = makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'i-1' } });
     const p2 = makePokemon({ variant_id: '0002-default', instanceData: { instance_id: 'i-2' } });
@@ -255,9 +371,183 @@ describe('InstanceOverlay', () => {
       clientX: 260,
       clientY: 220,
     });
+    fireEvent.mouseMove(overlay as HTMLElement, {
+      clientX: 190,
+      clientY: 222,
+    });
     fireEvent.mouseUp(overlay as HTMLElement, {
       clientX: 120,
       clientY: 218,
+    });
+
+    await waitFor(() => expect(onNavigatePokemon).toHaveBeenCalledWith(p2));
+  });
+
+  it('navigates forward when swiping left on trade overlay', async () => {
+    const p1 = makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'i-1' } });
+    const p2 = makePokemon({ variant_id: '0002-default', instanceData: { instance_id: 'i-2' } });
+    const onNavigatePokemon = vi.fn();
+
+    render(
+      <InstanceOverlay
+        pokemon={p1}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="trade"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+        navigationPokemons={[p1, p2]}
+        onNavigatePokemon={onNavigatePokemon}
+      />,
+    );
+
+    const overlay = document.querySelector('.instance-overlay') as HTMLElement | null;
+    expect(overlay).not.toBeNull();
+
+    fireEvent.mouseDown(overlay as HTMLElement, {
+      button: 0,
+      clientX: 260,
+      clientY: 220,
+    });
+    fireEvent.mouseMove(overlay as HTMLElement, {
+      clientX: 190,
+      clientY: 222,
+    });
+    fireEvent.mouseUp(overlay as HTMLElement, {
+      clientX: 120,
+      clientY: 218,
+    });
+
+    await waitFor(() => expect(onNavigatePokemon).toHaveBeenCalledWith(p2));
+    expect(screen.getByTestId('trade-instance')).toBeInTheDocument();
+    expect(screen.getByTestId('trade-details')).toBeInTheDocument();
+  });
+
+  it('navigates forward when swiping left from the trade details window', async () => {
+    const p1 = makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'i-1' } });
+    const p2 = makePokemon({ variant_id: '0002-default', instanceData: { instance_id: 'i-2' } });
+    const onNavigatePokemon = vi.fn();
+
+    render(
+      <InstanceOverlay
+        pokemon={p1}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="trade"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+        navigationPokemons={[p1, p2]}
+        onNavigatePokemon={onNavigatePokemon}
+      />,
+    );
+
+    const tradeDetailsWindow = document.querySelector('.trade-details-window') as HTMLElement | null;
+    expect(tradeDetailsWindow).not.toBeNull();
+
+    fireEvent.mouseDown(tradeDetailsWindow as HTMLElement, {
+      button: 0,
+      clientX: 260,
+      clientY: 220,
+    });
+    fireEvent.mouseMove(tradeDetailsWindow as HTMLElement, {
+      clientX: 180,
+      clientY: 224,
+    });
+    fireEvent.mouseUp(tradeDetailsWindow as HTMLElement, {
+      clientX: 120,
+      clientY: 224,
+    });
+
+    await waitFor(() => expect(onNavigatePokemon).toHaveBeenCalledWith(p2));
+  });
+
+  it('locks trade overlay into horizontal swipe mode during a horizontal drag', () => {
+    const p1 = makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'i-1' } });
+
+    render(
+      <InstanceOverlay
+        pokemon={p1}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="trade"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+        navigationPokemons={[p1, makePokemon({ variant_id: '0002-default', instanceData: { instance_id: 'i-2' } })]}
+      />,
+    );
+
+    const overlay = document.querySelector('.instance-overlay') as HTMLElement | null;
+    expect(overlay).not.toBeNull();
+
+    fireEvent.mouseDown(overlay as HTMLElement, {
+      button: 0,
+      clientX: 260,
+      clientY: 220,
+    });
+    fireEvent.mouseMove(overlay as HTMLElement, {
+      clientX: 208,
+      clientY: 228,
+    });
+
+    expect(overlay).toHaveClass('is-horizontal-swiping');
+
+    fireEvent.mouseUp(overlay as HTMLElement, {
+      clientX: 208,
+      clientY: 228,
+    });
+
+    expect(overlay).not.toHaveClass('is-horizontal-swiping');
+  });
+
+  it('navigates trade after axis locks horizontal even with extra vertical drift', async () => {
+    const p1 = makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'i-1' } });
+    const p2 = makePokemon({ variant_id: '0002-default', instanceData: { instance_id: 'i-2' } });
+    const onNavigatePokemon = vi.fn();
+
+    render(
+      <InstanceOverlay
+        pokemon={p1}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="trade"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+        navigationPokemons={[p1, p2]}
+        onNavigatePokemon={onNavigatePokemon}
+      />,
+    );
+
+    const tradeDetailsWindow = document.querySelector('.trade-details-window') as HTMLElement | null;
+    expect(tradeDetailsWindow).not.toBeNull();
+
+    fireEvent.mouseDown(tradeDetailsWindow as HTMLElement, {
+      button: 0,
+      clientX: 300,
+      clientY: 220,
+    });
+    fireEvent.mouseMove(tradeDetailsWindow as HTMLElement, {
+      clientX: 238,
+      clientY: 258,
+    });
+    fireEvent.mouseUp(tradeDetailsWindow as HTMLElement, {
+      clientX: 228,
+      clientY: 286,
     });
 
     await waitFor(() => expect(onNavigatePokemon).toHaveBeenCalledWith(p2));

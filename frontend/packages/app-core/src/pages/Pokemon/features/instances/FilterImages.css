@@ -1,12 +1,18 @@
 /* ImageGroup.css */
 
-.image-row .image-container {
+.image-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.image-row .filter-image-container {
     position: relative;
     display: inline-block;
     vertical-align: top;
 }
 
-.image-row .image-container .tooltip {
+.image-row .filter-image-container .tooltip {
     position: absolute;
     bottom: 120%; /* Adjust this value if needed to prevent overlap */
     left: 50%;
@@ -23,7 +29,7 @@
     visibility: visible;
 }
 
-.image-row .image-container img {
+.image-row .filter-image-container img {
     display: block;
     margin: 0; /* Ensure no margins are causing movement */
     padding: 0; /* Ensure no padding is causing movement */

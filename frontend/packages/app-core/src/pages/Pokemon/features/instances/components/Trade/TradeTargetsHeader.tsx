@@ -4,13 +4,13 @@ import type { PokemonInstance } from '@/types/pokemonInstance';
 
 import MirrorManager from './MirrorManager';
 
-interface TradeTopRowProps {
+interface TradeTargetsHeaderProps {
   isMirror: boolean;
   isEditable: boolean;
   editMode: boolean;
   shouldShowFewLayout: boolean;
+  filtersSlot?: React.ReactNode;
   toggleEditMode: () => void;
-  onResetFilters: () => void;
   pokemon: React.ComponentProps<typeof MirrorManager>['pokemon'];
   instancesMap: Record<string, PokemonInstance>;
   lists: React.ComponentProps<typeof MirrorManager>['lists'];
@@ -20,13 +20,12 @@ interface TradeTopRowProps {
   updateDetails: React.ComponentProps<typeof MirrorManager>['updateDetails'];
 }
 
-const TradeTopRow: React.FC<TradeTopRowProps> = ({
+const TradeTargetsHeader: React.FC<TradeTargetsHeaderProps> = ({
   isMirror,
   isEditable,
   editMode,
-  shouldShowFewLayout,
+  filtersSlot,
   toggleEditMode,
-  onResetFilters,
   pokemon,
   instancesMap,
   lists,
@@ -37,46 +36,17 @@ const TradeTopRow: React.FC<TradeTopRowProps> = ({
 }) => (
   <div className={`top-row ${isMirror ? 'few-wanted' : ''}`}>
     {isEditable && (
-      <div className="edit-save-container">
-        <EditSaveComponent
-          editMode={editMode}
-          toggleEditMode={toggleEditMode}
-          isEditable={isEditable}
-        />
-        {!isMirror && (
-          <div className={`reset-container ${editMode ? 'editable' : ''}`}>
-            <img
-              src={'/images/reset.png'}
-              alt="Reset Filters"
-              style={{
-                cursor: editMode ? 'pointer' : 'default',
-                width: '25px',
-                height: 'auto',
-              }}
-              onClick={editMode ? onResetFilters : undefined}
-            />
-          </div>
-        )}
+      <div className="trade-target-actions">
+        <div className="edit-save-container">
+          <EditSaveComponent
+            editMode={editMode}
+            toggleEditMode={toggleEditMode}
+            isEditable={isEditable}
+          />
+        </div>
       </div>
     )}
-    {!isMirror ? (
-      !shouldShowFewLayout ? (
-        <>
-          <div className="header-group">
-            <h3>Exclude</h3>
-          </div>
-          <div className="header-group">
-            <h3>Include</h3>
-          </div>
-        </>
-      ) : (
-        <div className="header-group include-few">
-          <h3>Exclude</h3>
-        </div>
-      )
-    ) : (
-      <div className="spacer"></div>
-    )}
+    <div className="trade-target-filters-inline">{filtersSlot}</div>
     <div className="mirror">
       <MirrorManager
         pokemon={pokemon}
@@ -85,7 +55,7 @@ const TradeTopRow: React.FC<TradeTopRowProps> = ({
         isMirror={isMirror}
         setIsMirror={setIsMirror}
         setMirrorKey={setMirrorKey}
-        editMode={isEditable}
+        editMode={editMode}
         updateDisplayedList={updateMirrorDisplayedList}
         updateDetails={updateDetails}
       />
@@ -93,4 +63,4 @@ const TradeTopRow: React.FC<TradeTopRowProps> = ({
   </div>
 );
 
-export default TradeTopRow;
+export default TradeTargetsHeader;

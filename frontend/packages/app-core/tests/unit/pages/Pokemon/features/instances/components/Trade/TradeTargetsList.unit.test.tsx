@@ -2,7 +2,7 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import WantedListDisplay from '@/pages/Pokemon/features/instances/components/Trade/WantedListDisplay';
+import TradeTargetsList from '@/pages/Pokemon/features/instances/components/Trade/TradeTargetsList';
 import useSortManager from '@/hooks/sort/useSortManager';
 
 vi.mock('@/hooks/sort/useSortManager', () => ({
@@ -12,8 +12,8 @@ vi.mock('@/hooks/sort/useSortManager', () => ({
 const useSortManagerMock = vi.mocked(useSortManager);
 
 const buildProps = (
-  overrides: Partial<React.ComponentProps<typeof WantedListDisplay>> = {},
-): React.ComponentProps<typeof WantedListDisplay> => ({
+  overrides: Partial<React.ComponentProps<typeof TradeTargetsList>> = {},
+): React.ComponentProps<typeof TradeTargetsList> => ({
   pokemon: { currentImage: '/images/fallback.png' },
   lists: {
     wanted: {
@@ -38,16 +38,16 @@ const buildProps = (
   ...overrides,
 });
 
-describe('WantedListDisplay', () => {
+describe('TradeTargetsList', () => {
   beforeEach(() => {
     useSortManagerMock.mockClear();
   });
 
   it('calls click handler with selected key when not in edit mode', () => {
     const props = buildProps();
-    render(<WantedListDisplay {...props} />);
+    render(<TradeTargetsList {...props} />);
 
-    fireEvent.click(screen.getByAltText('Wanted Pokemon Bulbasaur'));
+    fireEvent.click(screen.getByAltText('Trade Target Bulbasaur'));
 
     expect(props.onPokemonClick).toHaveBeenCalledWith('variant-1_uuid-1');
     expect(useSortManagerMock.mock.calls[0]).toHaveLength(3);
@@ -57,9 +57,9 @@ describe('WantedListDisplay', () => {
     const props = buildProps({
       localNotWantedList: { 'variant-1_uuid-1': true },
     });
-    render(<WantedListDisplay {...props} />);
+    render(<TradeTargetsList {...props} />);
 
-    expect(screen.getByText('No Pokemon currently wanted.')).toBeInTheDocument();
+    expect(screen.getByText('No trade targets currently selected.')).toBeInTheDocument();
   });
 
   it('falls back to parent current image when item image is missing', () => {
@@ -75,9 +75,17 @@ describe('WantedListDisplay', () => {
       },
     });
 
-    render(<WantedListDisplay {...props} />);
+    render(<TradeTargetsList {...props} />);
 
-    const image = screen.getByAltText('Wanted Pokemon Ivysaur') as HTMLImageElement;
+    const image = screen.getByAltText('Trade Target Ivysaur') as HTMLImageElement;
     expect(image.src).toContain('/images/fallback.png');
+  });
+
+  it('renders card labeling for the wanted pokemon', () => {
+    const props = buildProps();
+    render(<TradeTargetsList {...props} />);
+
+    expect(screen.getByText('Bulbasaur')).toBeInTheDocument();
+    expect(screen.getByText('#001')).toBeInTheDocument();
   });
 });

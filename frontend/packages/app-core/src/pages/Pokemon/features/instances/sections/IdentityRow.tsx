@@ -21,6 +21,8 @@ interface IdentityRowProps {
   onToggleLucky: (value: boolean) => void;
   onNicknameChange: (value: string | null) => void;
   onTogglePurify: (value: boolean) => void;
+  showLucky?: boolean;
+  showPurify?: boolean;
 }
 
 const IdentityRow: React.FC<IdentityRowProps> = ({
@@ -32,16 +34,20 @@ const IdentityRow: React.FC<IdentityRowProps> = ({
   onToggleLucky,
   onNicknameChange,
   onTogglePurify,
+  showLucky = true,
+  showPurify = true,
 }) => (
   <div className="purify-name-shadow-container">
     <div className="lucky-component">
-      <LuckyComponent
-        pokemon={pokemon}
-        onToggleLucky={onToggleLucky}
-        isLucky={isLucky}
-        editMode={editMode}
-        isShadow={isShadow}
-      />
+      {showLucky ? (
+        <LuckyComponent
+          pokemon={pokemon}
+          onToggleLucky={onToggleLucky}
+          isLucky={isLucky}
+          editMode={editMode}
+          isShadow={isShadow}
+        />
+      ) : null}
     </div>
 
     <div className="identity-name-slot">
@@ -53,12 +59,14 @@ const IdentityRow: React.FC<IdentityRowProps> = ({
     </div>
 
     <div className="purify-component">
-      <PurifyComponent
-        isShadow={isShadow}
-        isPurified={isPurified}
-        editMode={editMode}
-        onTogglePurify={onTogglePurify}
-      />
+      {showPurify ? (
+        <PurifyComponent
+          isShadow={isShadow}
+          isPurified={isPurified}
+          editMode={editMode}
+          onTogglePurify={onTogglePurify}
+        />
+      ) : null}
     </div>
   </div>
 );

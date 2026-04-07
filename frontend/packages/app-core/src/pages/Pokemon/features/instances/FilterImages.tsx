@@ -49,16 +49,18 @@ const FilterImages: React.FC<FilterImagesProps> = ({
       {images.map((src, index) => (
         <div
           key={index}
-          className="image-container"
+          className="filter-image-container"
           onMouseEnter={() => handleMouseEnter(index)}
           onMouseLeave={handleMouseLeave}
         >
           <img
             src={src}
             alt={`Image ${index + 1}`}
+            draggable={false}
             className={`toggleable-image ${editMode ? 'editable' : ''} ${
               selectedImages[index] ? '' : 'greyscale'
             }`}
+            onDragStart={(event) => event.preventDefault()}
             onClick={() => toggleImageSelection(index, editMode)}
           />
 

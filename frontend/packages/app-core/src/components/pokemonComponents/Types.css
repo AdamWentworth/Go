@@ -26,7 +26,7 @@
     text-transform: uppercase;
   }
 
-:root[data-theme='light'] .instance-overlay.caught-mode .type-label {
+:root[data-theme='light'] :is(.instance-overlay.caught-mode, .trade-instance--caught-layout) .type-label {
     color: var(--light-text-secondary);
 }
   
