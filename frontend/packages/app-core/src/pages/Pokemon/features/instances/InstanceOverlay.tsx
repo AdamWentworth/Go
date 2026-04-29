@@ -528,7 +528,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   );
 
   const endSwipe = useCallback(
-    (clientX: number, clientY: number) => {
+    (clientX: number, _clientY: number) => {
       const swipeState = swipeStateRef.current;
       if (!swipeState.active) return;
 
@@ -865,7 +865,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
       }
       case 'missing':
         return <div className="missing-placeholder">Missing Instance Component</div>;
-      case 'trade':
+      case 'trade': {
         if (!activePokemon) return null;
         const tradeInstanceKey =
           getOverlayIdentityKey(activePokemon) ??
@@ -915,6 +915,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
             </div>
           </div>
         );
+      }
       case 'wanted':
         if (!activePokemon) return null;
         return (

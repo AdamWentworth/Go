@@ -45,30 +45,33 @@ const BackgroundLocationCard: React.FC<Props> = ({
     onSelectBackground?.(background);
   };
 
-  const defaultFilter = (background: VariantBackground) => {
-    if (!pokemon || !background) return false;
-    const normalizedVariantType = (pokemon.variantType ?? '').toLowerCase();
-    const isFusionVariant =
-      normalizedVariantType.startsWith('fusion_') ||
-      normalizedVariantType.startsWith('shiny_fusion_');
-    if (isFusionVariant) return true;
+  const selectableBackgrounds = useMemo(() => {
+    if (!pokemon?.backgrounds) return [];
 
-    if (selectedCostumeId != null) {
-      if (!background.costume_id) return true;
-      return background.costume_id === selectedCostumeId;
-    }
+    const defaultFilter = (background: VariantBackground) => {
+      const normalizedVariantType = (pokemon.variantType ?? '').toLowerCase();
+      const isFusionVariant =
+        normalizedVariantType.startsWith('fusion_') ||
+        normalizedVariantType.startsWith('shiny_fusion_');
+      if (isFusionVariant) return true;
 
-    if (pokemon.variantType) {
-      const variantTypeId = pokemon.variantType.split('_')[1];
-      if (!background.costume_id) return true;
-      return background.costume_id === parseInt(variantTypeId, 10);
-    }
+      if (selectedCostumeId != null) {
+        if (!background.costume_id) return true;
+        return background.costume_id === selectedCostumeId;
+      }
 
-    return true;
-  };
+      if (pokemon.variantType) {
+        const variantTypeId = pokemon.variantType.split('_')[1];
+        if (!background.costume_id) return true;
+        return background.costume_id === parseInt(variantTypeId, 10);
+      }
 
-  const isSelectable = filterBackground || defaultFilter;
-  const selectableBackgrounds = pokemon?.backgrounds?.filter(isSelectable) || [];
+      return true;
+    };
+
+    return pokemon.backgrounds.filter(filterBackground ?? defaultFilter);
+  }, [filterBackground, pokemon, selectedCostumeId]);
+
   const selectedBackground = useMemo(
     () =>
       selectableBackgrounds.find((background) => background.background_id === selectedBackgroundId) ??

@@ -1,6 +1,6 @@
 # Build stage
-# Align with go.mod toolchain (go1.24.x)
-FROM golang:1.24-alpine AS build
+# Align with go.mod toolchain.
+FROM golang:1.26.2-alpine AS build
 
 WORKDIR /src
 RUN apk add --no-cache ca-certificates tzdata
