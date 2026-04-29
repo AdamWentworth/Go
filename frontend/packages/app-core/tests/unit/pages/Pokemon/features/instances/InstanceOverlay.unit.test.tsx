@@ -228,9 +228,14 @@ describe('InstanceOverlay', () => {
     document.body.appendChild(button);
     document.body.appendChild(wrapper);
 
-    expect(isSwipeInteractiveTarget(button)).toBe(true);
-    expect(isSwipeInteractiveTarget(image)).toBe(true);
-    expect(isSwipeInteractiveTarget(wrapper.firstElementChild)).toBe(true);
+    try {
+      expect(isSwipeInteractiveTarget(button)).toBe(true);
+      expect(isSwipeInteractiveTarget(image)).toBe(true);
+      expect(isSwipeInteractiveTarget(wrapper.firstElementChild)).toBe(true);
+    } finally {
+      button.remove();
+      wrapper.remove();
+    }
   });
 
   it('hydrates open overlay instance data from latest instances map without reopening', () => {

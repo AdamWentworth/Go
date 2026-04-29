@@ -4,6 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import TradeImageStage from '@/pages/Pokemon/features/instances/sections/TradeImageStage';
 import TradeBackgroundModal from '@/pages/Pokemon/features/instances/sections/TradeBackgroundModal';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import type { VariantBackground } from '@/types/pokemonSubTypes';
 
 vi.mock('@/components/pokemonComponents/BackgroundLocationCard', () => ({
@@ -60,18 +61,20 @@ describe('Trade sections', () => {
     const onSelectBackground = vi.fn();
 
     render(
-      <TradeBackgroundModal
-        showBackgrounds
-        pokemon={
-          {
-            backgrounds: [],
-            instanceData: {},
-            max: [],
-          } as never
-        }
-        onClose={onClose}
-        onSelectBackground={onSelectBackground}
-      />,
+      <ThemeProvider>
+        <TradeBackgroundModal
+          showBackgrounds
+          pokemon={
+            {
+              backgrounds: [],
+              instanceData: {},
+              max: [],
+            } as never
+          }
+          onClose={onClose}
+          onSelectBackground={onSelectBackground}
+        />
+      </ThemeProvider>,
     );
 
     fireEvent.click(screen.getByText('mock-pick-background'));
@@ -84,7 +87,7 @@ describe('Trade sections', () => {
       location: 'test',
     });
 
-    fireEvent.click(screen.getByText('Close'));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalled();
   });
 });
