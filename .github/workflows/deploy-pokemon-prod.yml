@@ -169,7 +169,7 @@ jobs:
             --project-directory "${POKEMON_DEPLOY_DIR}" \
             -f "${COMPOSE_FILE}" \
             --env-file "${ENV_FILE}" \
-            up -d --no-deps --force-recreate "${SERVICE_NAME}"
+            up -d --no-deps --force-recreate --no-build "${SERVICE_NAME}"
 
           CONTAINER_IP="$(docker inspect -f '{{with index .NetworkSettings.Networks "pokemon_edge"}}{{.IPAddress}}{{end}}' "${CONTAINER_NAME}" 2>/dev/null || true)"
           if [[ -z "${CONTAINER_IP}" ]]; then
@@ -202,7 +202,7 @@ jobs:
                 --project-directory "${POKEMON_DEPLOY_DIR}" \
                 -f "${COMPOSE_FILE}" \
                 --env-file "${ENV_FILE}" \
-                up -d --no-deps --force-recreate "${SERVICE_NAME}"
+                up -d --no-deps --force-recreate --no-build "${SERVICE_NAME}"
             else
               echo "Rollback skipped: previous image not found." >&2
               echo "Manual rollback option: deploy adamwentworth/pokemon_data:latest"
