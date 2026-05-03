@@ -1,6 +1,6 @@
 services:
   storage_service:
-    image: adamwentworth/storage_service:latest
+    image: ${STORAGE_IMAGE:-adamwentworth/storage_service:latest}
     container_name: storage_service
     build:
       context: .

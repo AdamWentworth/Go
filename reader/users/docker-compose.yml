@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: adamwentworth/users_service:latest
+    image: ${USERS_IMAGE:-adamwentworth/users_service:latest}
     container_name: users_service
     env_file:
       - .env

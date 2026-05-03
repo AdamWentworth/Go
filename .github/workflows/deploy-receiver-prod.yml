@@ -9,7 +9,7 @@ on:
         default: "latest"
         type: string
       deploy_root:
-        description: "Absolute path to the Go repo on prod runner"
+        description: "Absolute path to the prod deploy state root"
         required: false
         default: "/home/adam/deploy/Go"
         type: string
@@ -32,35 +32,8 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - name: Sync Deploy Repo
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          DEPLOY_REF="${{ github.ref_name }}"
-
-          if [[ ! -d "${DEPLOY_ROOT}/.git" ]]; then
-            echo "Deploy root is not a git repo: ${DEPLOY_ROOT}" >&2
-            exit 1
-          fi
-
-          if ! git -C "${DEPLOY_ROOT}" diff --quiet || ! git -C "${DEPLOY_ROOT}" diff --cached --quiet; then
-            echo "Deploy root has local tracked changes: ${DEPLOY_ROOT}" >&2
-            git -C "${DEPLOY_ROOT}" status --short || true
-            echo "Commit/stash/revert tracked changes before using automated deploy." >&2
-            exit 1
-          fi
-
-          UNTRACKED_COUNT="$(git -C "${DEPLOY_ROOT}" ls-files --others --exclude-standard | wc -l | tr -d ' ')"
-          if [[ "${UNTRACKED_COUNT}" != "0" ]]; then
-            echo "Warning: ${UNTRACKED_COUNT} untracked files present in deploy root; continuing."
-          fi
-
-          echo "Syncing ${DEPLOY_ROOT} to origin/${DEPLOY_REF}"
-          git -C "${DEPLOY_ROOT}" fetch --prune origin
-          git -C "${DEPLOY_ROOT}" checkout "${DEPLOY_REF}"
-          git -C "${DEPLOY_ROOT}" pull --ff-only origin "${DEPLOY_REF}"
+      - name: Checkout
+        uses: actions/checkout@v5
 
       - name: Preflight Checks
         shell: bash
@@ -68,12 +41,13 @@ jobs:
           set -euo pipefail
 
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          COMPOSE_FILE="${DEPLOY_ROOT}/receiver/docker-compose.yml"
-          ENV_FILE="${DEPLOY_ROOT}/receiver/.env"
+          SERVICE_DEPLOY_DIR="${DEPLOY_ROOT}/receiver"
+          COMPOSE_FILE="${GITHUB_WORKSPACE}/receiver/docker-compose.yml"
+          ENV_FILE="${SERVICE_DEPLOY_DIR}/.env"
           KAFKA_NETWORK="kafka_default"
 
-          if [[ ! -d "${DEPLOY_ROOT}" ]]; then
-            echo "Deploy root not found: ${DEPLOY_ROOT}" >&2
+          if [[ ! -d "${SERVICE_DEPLOY_DIR}" ]]; then
+            echo "Service deploy directory not found: ${SERVICE_DEPLOY_DIR}" >&2
             exit 1
           fi
 
@@ -97,7 +71,11 @@ jobs:
             exit 1
           fi
 
-          docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" config >/dev/null
+          docker compose \
+            --project-directory "${SERVICE_DEPLOY_DIR}" \
+            -f "${COMPOSE_FILE}" \
+            --env-file "${ENV_FILE}" \
+            config >/dev/null
 
       - name: Deploy With Health Check And Rollback
         shell: bash
@@ -105,12 +83,13 @@ jobs:
           set -euo pipefail
 
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
+          SERVICE_DEPLOY_DIR="${DEPLOY_ROOT}/receiver"
           SERVICE_NAME="${{ inputs.service_name }}"
           IMAGE_REPO="adamwentworth/receiver_service"
           RAW_IMAGE_INPUT="${{ inputs.image_ref }}"
           TARGET_IMAGE=""
-          COMPOSE_FILE="${DEPLOY_ROOT}/receiver/docker-compose.yml"
-          ENV_FILE="${DEPLOY_ROOT}/receiver/.env"
+          COMPOSE_FILE="${GITHUB_WORKSPACE}/receiver/docker-compose.yml"
+          ENV_FILE="${SERVICE_DEPLOY_DIR}/.env"
           CONTAINER_NAME="receiver_service"
           COMPOSE_PROJECT_NAME="receiver"
 
@@ -146,6 +125,7 @@ jobs:
 
           echo "Deploying ${SERVICE_NAME} with image ${TARGET_IMAGE}"
           RECEIVER_IMAGE="${TARGET_IMAGE}" docker compose \
+            --project-directory "${SERVICE_DEPLOY_DIR}" \
             -f "${COMPOSE_FILE}" \
             --env-file "${ENV_FILE}" \
             up -d --no-deps --force-recreate "${SERVICE_NAME}"
@@ -178,6 +158,7 @@ jobs:
             if [[ -n "${PREVIOUS_IMAGE}" ]]; then
               echo "Rolling back to ${PREVIOUS_IMAGE}"
               RECEIVER_IMAGE="${PREVIOUS_IMAGE}" docker compose \
+                --project-directory "${SERVICE_DEPLOY_DIR}" \
                 -f "${COMPOSE_FILE}" \
                 --env-file "${ENV_FILE}" \
                 up -d --no-deps --force-recreate "${SERVICE_NAME}"

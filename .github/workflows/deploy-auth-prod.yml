@@ -9,7 +9,7 @@ on:
         default: "latest"
         type: string
       deploy_root:
-        description: "Absolute path to the Go repo on prod runner"
+        description: "Absolute path to the prod deploy state root"
         required: false
         default: "/home/adam/deploy/Go"
         type: string

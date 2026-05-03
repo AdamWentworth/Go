@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       deploy_root:
-        description: "Absolute path to the Go repo on prod runner"
+        description: "Absolute path to the prod deploy state root"
         required: false
         default: "/home/adam/deploy/Go"
         type: string
@@ -22,35 +22,8 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - name: Sync Deploy Repo
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          DEPLOY_REF="${{ github.ref_name }}"
-
-          if [[ ! -d "${DEPLOY_ROOT}/.git" ]]; then
-            echo "Deploy root is not a git repo: ${DEPLOY_ROOT}" >&2
-            exit 1
-          fi
-
-          if ! git -C "${DEPLOY_ROOT}" diff --quiet || ! git -C "${DEPLOY_ROOT}" diff --cached --quiet; then
-            echo "Deploy root has local tracked changes: ${DEPLOY_ROOT}" >&2
-            git -C "${DEPLOY_ROOT}" status --short || true
-            echo "Commit/stash/revert tracked changes before using automated deploy." >&2
-            exit 1
-          fi
-
-          UNTRACKED_COUNT="$(git -C "${DEPLOY_ROOT}" ls-files --others --exclude-standard | wc -l | tr -d ' ')"
-          if [[ "${UNTRACKED_COUNT}" != "0" ]]; then
-            echo "Warning: ${UNTRACKED_COUNT} untracked files present in deploy root; continuing."
-          fi
-
-          echo "Syncing ${DEPLOY_ROOT} to origin/${DEPLOY_REF}"
-          git -C "${DEPLOY_ROOT}" fetch --prune origin
-          git -C "${DEPLOY_ROOT}" checkout "${DEPLOY_REF}"
-          git -C "${DEPLOY_ROOT}" pull --ff-only origin "${DEPLOY_REF}"
+      - name: Checkout
+        uses: actions/checkout@v5
 
       - name: Preflight Checks
         shell: bash
@@ -58,20 +31,18 @@ jobs:
           set -euo pipefail
 
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          COMPOSE_FILE="${DEPLOY_ROOT}/monitoring/docker-compose.yml"
-          ENV_FILE="${DEPLOY_ROOT}/monitoring/.env"
-          DATA_DIR="${DEPLOY_ROOT}/monitoring/data"
-          ALERT_DATA_DIR="${DEPLOY_ROOT}/monitoring/alertmanager-data"
+          MONITORING_DEPLOY_DIR="${DEPLOY_ROOT}/monitoring"
+          COMPOSE_FILE="${GITHUB_WORKSPACE}/monitoring/docker-compose.yml"
+          ENV_FILE="${MONITORING_DEPLOY_DIR}/.env"
+          DATA_DIR="${MONITORING_DEPLOY_DIR}/data"
+          ALERT_DATA_DIR="${MONITORING_DEPLOY_DIR}/alertmanager-data"
 
           EDGE_NETWORK="pokemon_edge"
           EDGE_SUBNET="172.30.0.0/24"
           EDGE_GATEWAY="172.30.0.1"
           KAFKA_NETWORK="kafka_default"
 
-          if [[ ! -d "${DEPLOY_ROOT}" ]]; then
-            echo "Deploy root not found: ${DEPLOY_ROOT}" >&2
-            exit 1
-          fi
+          mkdir -p "${MONITORING_DEPLOY_DIR}"
 
           if [[ ! -f "${COMPOSE_FILE}" ]]; then
             echo "Compose file not found: ${COMPOSE_FILE}" >&2
@@ -83,6 +54,10 @@ jobs:
             echo "Create monitoring/.env on prod with ALERT_EMAIL_FROM/USER/PASS." >&2
             exit 1
           fi
+
+          for config_file in prometheus.yml alerts.yml blackbox.yml alertmanager.yml alertmanager-entrypoint.sh; do
+            install -m 0644 "${GITHUB_WORKSPACE}/monitoring/${config_file}" "${MONITORING_DEPLOY_DIR}/${config_file}"
+          done
 
           mkdir -p "${DATA_DIR}" "${ALERT_DATA_DIR}"
           docker run --rm \
@@ -123,7 +98,11 @@ jobs:
             exit 1
           fi
 
-          docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" config >/dev/null
+          docker compose \
+            --project-directory "${MONITORING_DEPLOY_DIR}" \
+            -f "${COMPOSE_FILE}" \
+            --env-file "${ENV_FILE}" \
+            config >/dev/null
 
       - name: Deploy Monitoring Stack
         shell: bash
@@ -131,10 +110,12 @@ jobs:
           set -euo pipefail
 
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          COMPOSE_FILE="${DEPLOY_ROOT}/monitoring/docker-compose.yml"
-          ENV_FILE="${DEPLOY_ROOT}/monitoring/.env"
+          MONITORING_DEPLOY_DIR="${DEPLOY_ROOT}/monitoring"
+          COMPOSE_FILE="${GITHUB_WORKSPACE}/monitoring/docker-compose.yml"
+          ENV_FILE="${MONITORING_DEPLOY_DIR}/.env"
 
           docker compose \
+            --project-directory "${MONITORING_DEPLOY_DIR}" \
             -f "${COMPOSE_FILE}" \
             --env-file "${ENV_FILE}" \
             up -d --force-recreate prometheus alertmanager node_exporter cadvisor kafka_exporter blackbox_exporter
@@ -145,8 +126,9 @@ jobs:
           set -euo pipefail
 
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          COMPOSE_FILE="${DEPLOY_ROOT}/monitoring/docker-compose.yml"
-          ENV_FILE="${DEPLOY_ROOT}/monitoring/.env"
+          MONITORING_DEPLOY_DIR="${DEPLOY_ROOT}/monitoring"
+          COMPOSE_FILE="${GITHUB_WORKSPACE}/monitoring/docker-compose.yml"
+          ENV_FILE="${MONITORING_DEPLOY_DIR}/.env"
 
           wait_http_200() {
             local url="$1"
@@ -163,12 +145,20 @@ jobs:
           }
 
           if ! wait_http_200 "http://127.0.0.1:9090/-/healthy" "prometheus"; then
-            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" logs --tail=200 prometheus || true
+            docker compose \
+              --project-directory "${MONITORING_DEPLOY_DIR}" \
+              -f "${COMPOSE_FILE}" \
+              --env-file "${ENV_FILE}" \
+              logs --tail=200 prometheus || true
             exit 1
           fi
 
           if ! wait_http_200 "http://127.0.0.1:19093/-/healthy" "alertmanager"; then
-            docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" logs --tail=200 alertmanager || true
+            docker compose \
+              --project-directory "${MONITORING_DEPLOY_DIR}" \
+              -f "${COMPOSE_FILE}" \
+              --env-file "${ENV_FILE}" \
+              logs --tail=200 alertmanager || true
             exit 1
           fi
 

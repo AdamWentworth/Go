@@ -9,7 +9,7 @@ on:
         default: "latest"
         type: string
       deploy_root:
-        description: "Absolute path to the Go repo on prod runner"
+        description: "Absolute path to the prod deploy state root"
         required: false
         default: "/home/adam/deploy/Go"
         type: string
@@ -17,16 +17,6 @@ on:
         description: "Compose service to deploy"
         required: false
         default: "pokemon_data"
-        type: string
-      dirty_repo_strategy:
-        description: "How to handle tracked local changes in deploy repo: fail | reset"
-        required: false
-        default: "reset"
-        type: string
-      untracked_repo_strategy:
-        description: "How to handle untracked files in deploy repo: fail | clean"
-        required: false
-        default: "clean"
         type: string
 
 permissions:
@@ -42,94 +32,8 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - name: Sync Deploy Repo
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          DEPLOY_REF="${{ github.ref_name }}"
-          DEPLOY_REF_SAFE="${DEPLOY_REF//\//_}"
-          DB_DIR="${DEPLOY_ROOT}/pokemon/data"
-          HOST_UID="$(id -u)"
-          HOST_GID="$(id -g)"
-          DIRTY_REPO_STRATEGY="${{ inputs.dirty_repo_strategy }}"
-          UNTRACKED_REPO_STRATEGY="${{ inputs.untracked_repo_strategy }}"
-          BACKUP_DIR="${DEPLOY_ROOT}/.deploy-backups"
-
-          if [[ ! -d "${DEPLOY_ROOT}/.git" ]]; then
-            echo "Deploy root is not a git repo: ${DEPLOY_ROOT}" >&2
-            exit 1
-          fi
-
-          # Ensure tracked sqlite files can be replaced by git pull.
-          # These files are frequently touched by the container runtime and can
-          # end up owned by a different uid/gid than the deploy runner.
-          if [[ -d "${DB_DIR}" ]]; then
-            echo "Normalizing ${DB_DIR} ownership to ${HOST_UID}:${HOST_GID} before repo sync"
-            docker run --rm -v "${DB_DIR}:/data" alpine:3.20 sh -ec "
-              chown -R ${HOST_UID}:${HOST_GID} /data || true
-              find /data -maxdepth 1 -type f -name 'pokego.db*' -exec chmod 664 {} + || true
-            "
-          fi
-
-          if ! git -C "${DEPLOY_ROOT}" diff --quiet || ! git -C "${DEPLOY_ROOT}" diff --cached --quiet; then
-            echo "Deploy root has local tracked changes: ${DEPLOY_ROOT}" >&2
-            git -C "${DEPLOY_ROOT}" status --short || true
-            case "${DIRTY_REPO_STRATEGY}" in
-              fail)
-                echo "dirty_repo_strategy=fail; aborting deploy." >&2
-                exit 1
-                ;;
-              reset|"")
-                mkdir -p "${BACKUP_DIR}"
-                BACKUP_FILE="${BACKUP_DIR}/dirty_repo_${DEPLOY_REF_SAFE}_run_${{ github.run_id }}_$(date -u +%Y%m%dT%H%M%SZ).patch"
-                {
-                  git -C "${DEPLOY_ROOT}" diff
-                  git -C "${DEPLOY_ROOT}" diff --cached
-                } > "${BACKUP_FILE}" || true
-                echo "Saved tracked-change backup patch to ${BACKUP_FILE}"
-                echo "Resetting tracked changes in deploy root before sync."
-                git -C "${DEPLOY_ROOT}" reset --hard HEAD
-                ;;
-              *)
-                echo "Unsupported dirty_repo_strategy=${DIRTY_REPO_STRATEGY}. Use fail or reset." >&2
-                exit 1
-                ;;
-            esac
-          fi
-
-          UNTRACKED_COUNT="$(git -C "${DEPLOY_ROOT}" ls-files --others --exclude-standard | wc -l | tr -d ' ')"
-          if [[ "${UNTRACKED_COUNT}" != "0" ]]; then
-            echo "Deploy root has ${UNTRACKED_COUNT} untracked files: ${DEPLOY_ROOT}"
-            case "${UNTRACKED_REPO_STRATEGY}" in
-              fail)
-                git -C "${DEPLOY_ROOT}" ls-files --others --exclude-standard | sed 's/^/?? /' || true
-                echo "untracked_repo_strategy=fail; aborting deploy." >&2
-                exit 1
-                ;;
-              clean|"")
-                mkdir -p "${BACKUP_DIR}"
-                UNTRACKED_BACKUP="${BACKUP_DIR}/untracked_repo_${DEPLOY_REF_SAFE}_run_${{ github.run_id }}_$(date -u +%Y%m%dT%H%M%SZ).tgz"
-                (
-                  cd "${DEPLOY_ROOT}"
-                  git ls-files --others --exclude-standard -z | tar --null -T - -czf "${UNTRACKED_BACKUP}" || true
-                )
-                echo "Saved untracked-file backup to ${UNTRACKED_BACKUP}"
-                echo "Cleaning untracked files before sync."
-                git -C "${DEPLOY_ROOT}" clean -fd
-                ;;
-              *)
-                echo "Unsupported untracked_repo_strategy=${UNTRACKED_REPO_STRATEGY}. Use fail or clean." >&2
-                exit 1
-                ;;
-            esac
-          fi
-
-          echo "Syncing ${DEPLOY_ROOT} to origin/${DEPLOY_REF}"
-          git -C "${DEPLOY_ROOT}" fetch --prune origin
-          git -C "${DEPLOY_ROOT}" checkout "${DEPLOY_REF}"
-          git -C "${DEPLOY_ROOT}" reset --hard "origin/${DEPLOY_REF}"
+      - name: Checkout
+        uses: actions/checkout@v5
 
       - name: Preflight Checks
         shell: bash
@@ -137,19 +41,17 @@ jobs:
           set -euo pipefail
 
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          COMPOSE_FILE="${DEPLOY_ROOT}/pokemon/docker-compose.yml"
-          ENV_FILE="${DEPLOY_ROOT}/pokemon/.env"
-          NEW_DB_DIR="${DEPLOY_ROOT}/pokemon/data"
+          POKEMON_DEPLOY_DIR="${DEPLOY_ROOT}/pokemon"
+          COMPOSE_FILE="${GITHUB_WORKSPACE}/pokemon/docker-compose.yml"
+          ENV_FILE="${POKEMON_DEPLOY_DIR}/.env"
+          NEW_DB_DIR="${POKEMON_DEPLOY_DIR}/data"
           OLD_DB_DIR="${DEPLOY_ROOT}/pokemon_data/data"
           DB_FILE="pokego.db"
           EDGE_NETWORK="pokemon_edge"
           EDGE_SUBNET="172.30.0.0/24"
           EDGE_GATEWAY="172.30.0.1"
 
-          if [[ ! -d "${DEPLOY_ROOT}" ]]; then
-            echo "Deploy root not found: ${DEPLOY_ROOT}" >&2
-            exit 1
-          fi
+          mkdir -p "${POKEMON_DEPLOY_DIR}"
 
           if [[ ! -f "${COMPOSE_FILE}" ]]; then
             echo "Compose file not found: ${COMPOSE_FILE}" >&2
@@ -184,7 +86,11 @@ jobs:
             exit 1
           fi
 
-          docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" config >/dev/null
+          docker compose \
+            --project-directory "${POKEMON_DEPLOY_DIR}" \
+            -f "${COMPOSE_FILE}" \
+            --env-file "${ENV_FILE}" \
+            config >/dev/null
 
       - name: Deploy With Health Check And Rollback
         shell: bash
@@ -192,13 +98,14 @@ jobs:
           set -euo pipefail
 
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
+          POKEMON_DEPLOY_DIR="${DEPLOY_ROOT}/pokemon"
           SERVICE_NAME="${{ inputs.service_name }}"
           IMAGE_REPO="adamwentworth/pokemon_service_go"
           RAW_IMAGE_INPUT="${{ inputs.image_ref }}"
           TARGET_IMAGE=""
-          COMPOSE_FILE="${DEPLOY_ROOT}/pokemon/docker-compose.yml"
-          ENV_FILE="${DEPLOY_ROOT}/pokemon/.env"
-          DATA_DIR="${DEPLOY_ROOT}/pokemon/data"
+          COMPOSE_FILE="${GITHUB_WORKSPACE}/pokemon/docker-compose.yml"
+          ENV_FILE="${POKEMON_DEPLOY_DIR}/.env"
+          DATA_DIR="${POKEMON_DEPLOY_DIR}/data"
           CONTAINER_NAME="pokemon_data_container"
           COMPOSE_PROJECT_NAME="pokemon"
 
@@ -259,6 +166,7 @@ jobs:
 
           echo "Deploying ${SERVICE_NAME} with image ${TARGET_IMAGE}"
           POKEMON_IMAGE="${TARGET_IMAGE}" docker compose \
+            --project-directory "${POKEMON_DEPLOY_DIR}" \
             -f "${COMPOSE_FILE}" \
             --env-file "${ENV_FILE}" \
             up -d --no-deps --force-recreate "${SERVICE_NAME}"
@@ -291,6 +199,7 @@ jobs:
             if [[ -n "${PREVIOUS_IMAGE}" ]]; then
               echo "Rolling back to ${PREVIOUS_IMAGE}"
               POKEMON_IMAGE="${PREVIOUS_IMAGE}" docker compose \
+                --project-directory "${POKEMON_DEPLOY_DIR}" \
                 -f "${COMPOSE_FILE}" \
                 --env-file "${ENV_FILE}" \
                 up -d --no-deps --force-recreate "${SERVICE_NAME}"

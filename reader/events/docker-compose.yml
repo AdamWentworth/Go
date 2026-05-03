@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: adamwentworth/events_service:latest
+    image: ${EVENTS_IMAGE:-adamwentworth/events_service:latest}
     container_name: events_service
     env_file:
       - .env

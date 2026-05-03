@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       deploy_root:
-        description: "Absolute path to the Go repo on prod runner"
+        description: "Absolute path to the prod deploy state root"
         required: false
         default: "/home/adam/deploy/Go"
         type: string
@@ -22,35 +22,8 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - name: Sync Deploy Repo
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          DEPLOY_REF="${{ github.ref_name }}"
-
-          if [[ ! -d "${DEPLOY_ROOT}/.git" ]]; then
-            echo "Deploy root is not a git repo: ${DEPLOY_ROOT}" >&2
-            exit 1
-          fi
-
-          if ! git -C "${DEPLOY_ROOT}" diff --quiet || ! git -C "${DEPLOY_ROOT}" diff --cached --quiet; then
-            echo "Deploy root has local tracked changes: ${DEPLOY_ROOT}" >&2
-            git -C "${DEPLOY_ROOT}" status --short || true
-            echo "Commit/stash/revert tracked changes before using automated deploy." >&2
-            exit 1
-          fi
-
-          UNTRACKED_COUNT="$(git -C "${DEPLOY_ROOT}" ls-files --others --exclude-standard | wc -l | tr -d ' ')"
-          if [[ "${UNTRACKED_COUNT}" != "0" ]]; then
-            echo "Warning: ${UNTRACKED_COUNT} untracked files present in deploy root; continuing."
-          fi
-
-          echo "Syncing ${DEPLOY_ROOT} to origin/${DEPLOY_REF}"
-          git -C "${DEPLOY_ROOT}" fetch --prune origin
-          git -C "${DEPLOY_ROOT}" checkout "${DEPLOY_REF}"
-          git -C "${DEPLOY_ROOT}" pull --ff-only origin "${DEPLOY_REF}"
+      - name: Checkout
+        uses: actions/checkout@v5
 
       - name: Preflight Checks
         shell: bash
@@ -58,16 +31,14 @@ jobs:
           set -euo pipefail
 
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          COMPOSE_FILE="${DEPLOY_ROOT}/kafka/docker-compose.yml"
+          KAFKA_DEPLOY_DIR="${DEPLOY_ROOT}/kafka"
+          COMPOSE_FILE="${GITHUB_WORKSPACE}/kafka/docker-compose.yml"
           KAFKA_NETWORK="kafka_default"
-          ZK_DATA_DIR="${DEPLOY_ROOT}/kafka/data/confluent/zookeeper/data"
-          ZK_LOG_DIR="${DEPLOY_ROOT}/kafka/data/confluent/zookeeper/log"
-          KAFKA_DATA_DIR="${DEPLOY_ROOT}/kafka/data/confluent/kafka"
+          ZK_DATA_DIR="${KAFKA_DEPLOY_DIR}/data/confluent/zookeeper/data"
+          ZK_LOG_DIR="${KAFKA_DEPLOY_DIR}/data/confluent/zookeeper/log"
+          KAFKA_DATA_DIR="${KAFKA_DEPLOY_DIR}/data/confluent/kafka"
 
-          if [[ ! -d "${DEPLOY_ROOT}" ]]; then
-            echo "Deploy root not found: ${DEPLOY_ROOT}" >&2
-            exit 1
-          fi
+          mkdir -p "${KAFKA_DEPLOY_DIR}"
 
           if [[ ! -f "${COMPOSE_FILE}" ]]; then
             echo "Compose file not found: ${COMPOSE_FILE}" >&2
@@ -99,7 +70,10 @@ jobs:
             exit 1
           fi
 
-          docker compose -f "${COMPOSE_FILE}" config >/dev/null
+          docker compose \
+            --project-directory "${KAFKA_DEPLOY_DIR}" \
+            -f "${COMPOSE_FILE}" \
+            config >/dev/null
 
       - name: Deploy Kafka Stack
         shell: bash
@@ -107,11 +81,18 @@ jobs:
           set -euo pipefail
 
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          COMPOSE_FILE="${DEPLOY_ROOT}/kafka/docker-compose.yml"
+          KAFKA_DEPLOY_DIR="${DEPLOY_ROOT}/kafka"
+          COMPOSE_FILE="${GITHUB_WORKSPACE}/kafka/docker-compose.yml"
 
-          if ! docker compose -f "${COMPOSE_FILE}" up -d --force-recreate zookeeper kafka; then
+          if ! docker compose \
+            --project-directory "${KAFKA_DEPLOY_DIR}" \
+            -f "${COMPOSE_FILE}" \
+            up -d --force-recreate zookeeper kafka; then
             echo "Kafka stack failed to start. Recent logs:" >&2
-            docker compose -f "${COMPOSE_FILE}" logs --tail=200 zookeeper kafka || true
+            docker compose \
+              --project-directory "${KAFKA_DEPLOY_DIR}" \
+              -f "${COMPOSE_FILE}" \
+              logs --tail=200 zookeeper kafka || true
             exit 1
           fi
 
@@ -121,7 +102,8 @@ jobs:
           set -euo pipefail
 
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          COMPOSE_FILE="${DEPLOY_ROOT}/kafka/docker-compose.yml"
+          KAFKA_DEPLOY_DIR="${DEPLOY_ROOT}/kafka"
+          COMPOSE_FILE="${GITHUB_WORKSPACE}/kafka/docker-compose.yml"
 
           wait_container_healthy() {
             local name="$1"
@@ -135,7 +117,10 @@ jobs:
               sleep 2
             done
             echo "${name} failed to become healthy." >&2
-            docker compose -f "${COMPOSE_FILE}" logs --tail=200 "$name" || true
+            docker compose \
+              --project-directory "${KAFKA_DEPLOY_DIR}" \
+              -f "${COMPOSE_FILE}" \
+              logs --tail=200 "$name" || true
             return 1
           }
 
