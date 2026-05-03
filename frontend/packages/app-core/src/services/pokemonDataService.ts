@@ -15,37 +15,25 @@ const BASE_URL: string = import.meta.env.VITE_POKEMON_API_URL;
 
 const log = createScopedLogger('pokemonDataService');
 const canDebugLog = loggerInternals.shouldEmit('debug');
-const POKEMON_CACHE_KEY = 'pokemonData';
-const POKEMON_ETAG_KEY = 'pokemonDataEtag';
+const STALE_LOCAL_STORAGE_KEYS = ['pokemonData', 'pokemonDataEtag'] as const;
 
-function readCachedPokemons(): Pokemons | null {
-  const cachedData = localStorage.getItem(POKEMON_CACHE_KEY);
-  if (!cachedData) return null;
-
+function clearStaleLocalStorageCache(): void {
   try {
-    const parsed = JSON.parse(cachedData) as unknown;
-    if (Array.isArray(parsed)) {
-      return normalizeAssetUrlsDeep(parsed as Pokemons);
+    for (const key of STALE_LOCAL_STORAGE_KEYS) {
+      localStorage.removeItem(key);
     }
-    if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { data?: unknown }).data)) {
-      return normalizeAssetUrlsDeep((parsed as { data: Pokemons }).data);
-    }
-    return null;
-  } catch {
-    return null;
+  } catch (error) {
+    log.warn('Unable to clear stale Pokemon localStorage cache', error);
   }
 }
 
 export const getPokemons = async (): Promise<Pokemons> => {
   try {
-    const ifNoneMatch = localStorage.getItem(POKEMON_ETAG_KEY) ?? '';
-    const headers: Record<string, string> = {};
-    if (ifNoneMatch) {
-      headers['If-None-Match'] = ifNoneMatch;
-    }
+    clearStaleLocalStorageCache();
+
     const response = await requestWithPolicy(buildUrl(BASE_URL, pokemonContract.endpoints.pokemons), {
       method: 'GET',
-      headers,
+      headers: {},
     });
     if (canDebugLog) {
       const responseHeaders: Record<string, string> = {};
@@ -56,13 +44,6 @@ export const getPokemons = async (): Promise<Pokemons> => {
         status: response.status,
         headers: responseHeaders,
       });
-    }
-
-    if (response.status === 304) {
-      if (canDebugLog) log.debug('Server returned 304 - using cached data');
-      const cached = readCachedPokemons();
-      if (cached) return cached;
-      throw new Error('No cached data available for 304 response');
     }
 
     const payload = await parseJsonSafe<unknown>(response);
@@ -77,12 +58,6 @@ export const getPokemons = async (): Promise<Pokemons> => {
     }
 
     const normalizedPayload = normalizeAssetUrlsDeep(payload as Pokemons);
-
-    const etagHeader = response.headers.get('etag')?.trim();
-    if (etagHeader) {
-      localStorage.setItem(POKEMON_ETAG_KEY, etagHeader);
-    }
-    localStorage.setItem(POKEMON_CACHE_KEY, JSON.stringify({ data: normalizedPayload }));
 
     return normalizedPayload;
   } catch (error: unknown) {

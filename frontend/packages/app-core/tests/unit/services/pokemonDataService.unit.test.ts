@@ -14,7 +14,7 @@ describe('pokemonDataService', () => {
   });
 
   it('fetches pokemon data on 200 response', async () => {
-    vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
       new Response(JSON.stringify(payload), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -24,36 +24,13 @@ describe('pokemonDataService', () => {
     const result = await getPokemons();
 
     expect(result).toEqual(normalizeAssetUrlsDeep(payload));
-  });
-
-  it('uses cached payload on 304 response', async () => {
-    localStorage.setItem('pokemonData', JSON.stringify({ data: payload }));
-    vi.spyOn(global, 'fetch').mockResolvedValueOnce(
-      new Response(null, { status: 304 }),
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/pokemons'),
+      expect.objectContaining({
+        method: 'GET',
+        headers: {},
+      }),
     );
-
-    const result = await getPokemons();
-
-    expect(result).toEqual(normalizeAssetUrlsDeep(payload));
-  });
-
-  it('supports legacy raw-array cache shape on 304 response', async () => {
-    localStorage.setItem('pokemonData', JSON.stringify(payload));
-    vi.spyOn(global, 'fetch').mockResolvedValueOnce(
-      new Response(null, { status: 304 }),
-    );
-
-    const result = await getPokemons();
-
-    expect(result).toEqual(normalizeAssetUrlsDeep(payload));
-  });
-
-  it('throws when 304 response has no cache', async () => {
-    vi.spyOn(global, 'fetch').mockResolvedValueOnce(
-      new Response(null, { status: 304 }),
-    );
-
-    await expect(getPokemons()).rejects.toThrow('No cached data available for 304 response');
   });
 
   it('throws when API payload is not an array', async () => {
@@ -67,7 +44,8 @@ describe('pokemonDataService', () => {
     await expect(getPokemons()).rejects.toThrow('invalid payload shape');
   });
 
-  it('sends If-None-Match header when ETag cache exists', async () => {
+  it('ignores stale localStorage cache keys when fetching pokemon data', async () => {
+    localStorage.setItem('pokemonData', JSON.stringify({ data: payload }));
     localStorage.setItem('pokemonDataEtag', '"abc123"');
     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
       new Response(JSON.stringify(payload), {
@@ -76,18 +54,21 @@ describe('pokemonDataService', () => {
       }),
     );
 
-    await getPokemons();
+    const result = await getPokemons();
 
+    expect(result).toEqual(normalizeAssetUrlsDeep(payload));
     expect(fetchSpy).toHaveBeenCalledWith(
       expect.stringContaining('/pokemons'),
       expect.objectContaining({
         method: 'GET',
-        headers: { 'If-None-Match': '"abc123"' },
+        headers: {},
       }),
     );
+    expect(localStorage.getItem('pokemonData')).toBeNull();
+    expect(localStorage.getItem('pokemonDataEtag')).toBeNull();
   });
 
-  it('stores returned ETag after success', async () => {
+  it('does not store fresh API payload in localStorage', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValueOnce(
       new Response(JSON.stringify(payload), {
         status: 200,
@@ -95,9 +76,11 @@ describe('pokemonDataService', () => {
       }),
     );
 
-    await getPokemons();
+    const result = await getPokemons();
 
-    expect(localStorage.getItem('pokemonDataEtag')).toBe('"etag-value"');
+    expect(result).toEqual(normalizeAssetUrlsDeep(payload));
+    expect(localStorage.getItem('pokemonData')).toBeNull();
+    expect(localStorage.getItem('pokemonDataEtag')).toBeNull();
   });
 
   it('rethrows network errors', async () => {

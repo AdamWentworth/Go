@@ -216,6 +216,23 @@ Located in `src/contexts/`, these React contexts help manage global state across
 
 ## 🧪 Testing
 
+### Browser proofing
+
+Safari-family issues can be reproduced locally with Playwright WebKit:
+
+```bash
+npm run install:browsers
+npm run test:browsers:safari
+```
+
+Full browser matrix:
+
+```bash
+npm run test:browsers
+```
+
+Reports, traces, videos, screenshots, and browser console/network logs are saved under `.artifacts/browser/`. See `../../docs/BROWSER_PROOFING_WORKFLOW.md` for the full workflow.
+
 ### Recommended local commands
 
 ```bash
@@ -275,5 +292,4 @@ This frontend was designed to be modular, touch-friendly, and scale as features 
 The current codebase is large, but **structured for rapid iteration**, with clean folder grouping and reusable UI components.
 
 > If you're working on a section or need help tracking data flow — `contexts/`, `hooks/`, and `pages/Pokemon/` are the best starting points.
-
 

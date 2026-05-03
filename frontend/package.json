@@ -4,6 +4,7 @@
   "scripts": {
     "test": "npm run test:web && npm run test:mobile",
     "test:web": "npm --prefix apps/web run test",
+    "test:browsers:web": "npm --prefix apps/web run test:browsers",
     "test:mobile": "npm --prefix apps/mobile run test",
     "lint": "npm run lint:web && npm run lint:mobile",
     "lint:web": "npm --prefix apps/web run lint && npm --prefix apps/web run lint:styles",

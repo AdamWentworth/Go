@@ -27,14 +27,27 @@ describe('pokemonDataService (integration)', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back to cached payload on 304 response', async () => {
+  it('does not use raw localStorage cache for pokemon data', async () => {
     localStorage.setItem('pokemonData', JSON.stringify({ data: payload }));
-    vi.spyOn(global, 'fetch').mockResolvedValueOnce(
-      new Response(null, { status: 304 }),
+    localStorage.setItem('pokemonDataEtag', '"cached-etag"');
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ETag: '"fresh-etag"' },
+      }),
     );
 
     const result = await getPokemons();
 
     expect(result).toEqual(normalizeAssetUrlsDeep(payload));
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/pokemons'),
+      expect.objectContaining({
+        method: 'GET',
+        headers: {},
+      }),
+    );
+    expect(localStorage.getItem('pokemonData')).toBeNull();
+    expect(localStorage.getItem('pokemonDataEtag')).toBeNull();
   });
 });

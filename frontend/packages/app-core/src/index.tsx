@@ -21,7 +21,11 @@ document.addEventListener('contextmenu', (event) => {
   }
 });
 
-if ('serviceWorker' in navigator) {
+const shouldRegisterServiceWorker =
+  'serviceWorker' in navigator &&
+  import.meta.env.VITE_DISABLE_SERVICE_WORKER !== 'true';
+
+if (shouldRegisterServiceWorker) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js')

@@ -76,6 +76,12 @@ jobs:
       - name: Test + Coverage Gate
         run: npm run test:coverage
 
+      - name: Install Browser Runtimes
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Cross-Browser Smoke
+        run: npm run test:browsers:ci
+
       - name: Build
         run: npm run build
 
@@ -148,6 +154,14 @@ jobs:
         with:
           name: frontend-perf-snapshots
           path: frontend/apps/web/.artifacts/tests/reports/perf/**/*.json
+          if-no-files-found: ignore
+
+      - name: Upload Browser Proofing Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-browser-proofing
+          path: frontend/apps/web/.artifacts/browser/**
           if-no-files-found: ignore
 
   container-security-build:

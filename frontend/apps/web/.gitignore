@@ -7,6 +7,9 @@
 
 # testing
 /coverage
+/blob-report
+/playwright-report
+/test-results
 
 # production
 /build

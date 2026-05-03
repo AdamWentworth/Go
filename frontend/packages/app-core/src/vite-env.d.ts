@@ -15,6 +15,7 @@ interface ImportMetaEnv {
   readonly VITE_LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error' | 'silent';
   readonly VITE_VERBOSE_LOGS?: string;
   readonly VITE_DEBUG_LOGS?: string; // legacy compatibility
+  readonly VITE_DISABLE_SERVICE_WORKER?: string;
 }
 
 interface ImportMeta {
