@@ -23,7 +23,7 @@ jobs:
         working-directory: storage
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-go@v5
         with:
@@ -54,7 +54,7 @@ jobs:
       IMAGE_REPO: adamwentworth/storage_service
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build Container Image
         run: docker build --pull -t storage_service:ci-${{ github.sha }} ./storage

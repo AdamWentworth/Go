@@ -23,7 +23,7 @@ jobs:
         working-directory: receiver
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-go@v5
         with:
@@ -52,7 +52,7 @@ jobs:
       IMAGE_REPO: adamwentworth/receiver_service
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build Container Image
         run: docker build --pull -t receiver_service:ci-${{ github.sha }} ./receiver

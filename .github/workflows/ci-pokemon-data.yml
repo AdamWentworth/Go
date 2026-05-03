@@ -27,7 +27,7 @@ jobs:
         working-directory: pokemon
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-go@v5
         with:
@@ -89,7 +89,7 @@ jobs:
       IMAGE_REPO: adamwentworth/pokemon_service_go
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build Container Image
         run: |

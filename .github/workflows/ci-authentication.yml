@@ -23,7 +23,7 @@ jobs:
         working-directory: authentication
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v4
         with:
@@ -54,7 +54,7 @@ jobs:
       IMAGE_REPO: adamwentworth/authentication
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build Container Image
         run: docker build -t authentication:ci-${{ github.sha }} ./authentication

@@ -42,7 +42,7 @@ jobs:
         working-directory: frontend/apps/web
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v4
         with:
@@ -181,7 +181,7 @@ jobs:
       VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1770678424675' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v4
         with:

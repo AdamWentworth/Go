@@ -25,7 +25,7 @@ jobs:
       EVENTS_COVERAGE_MIN: "30.0"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-go@v5
         with:
@@ -63,7 +63,7 @@ jobs:
       IMAGE_REPO: adamwentworth/events_service
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build Container Image
         run: docker build --pull -t events_service:ci-${{ github.sha }} ./reader/events
