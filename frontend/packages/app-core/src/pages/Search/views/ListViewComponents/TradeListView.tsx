@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
 import CP from '../../../../components/pokemonComponents/CP';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
@@ -9,6 +8,7 @@ import LinkedPokemonGrid, {
 import PokemonResultVisual, {
   toPokemonResultGender,
 } from './PokemonResultVisual';
+import PokemonResultDetails from './PokemonResultDetails';
 import SearchResultRow from './SearchResultRow';
 import { formatDateOnlySafe } from './wantedListViewHelpers';
 import './TradeListView.css';
@@ -156,57 +156,17 @@ const TradeListView: React.FC<TradeListViewProps> = ({ item, findPokemonByKey })
               />
             </div>
 
-            <div className="pokemon-second-column">
-              <div className="pokemon-weight-height">
-                {typeof item.weight === 'number' && item.weight > 0 && (
-                  <div className="pokemon-weight">
-                    <p>
-                      <strong>{item.weight}kg</strong>
-                    </p>
-                    <p>WEIGHT</p>
-                  </div>
-                )}
-                {typeof item.height === 'number' && item.height > 0 && (
-                  <div className="pokemon-height">
-                    <p>
-                      <strong>{item.height}m</strong>
-                    </p>
-                    <p>HEIGHT</p>
-                  </div>
-                )}
-              </div>
-
-              {(item.fast_move_id ||
-                item.charged_move1_id ||
-                item.charged_move2_id) && (
-                <div className="pokemon-moves">
-                  <MoveDisplay
-                    fastMoveId={item.fast_move_id ?? null}
-                    chargedMove1Id={item.charged_move1_id ?? null}
-                    chargedMove2Id={item.charged_move2_id ?? null}
-                    moves={item.pokemonInfo?.moves}
-                  />
-                </div>
-              )}
-
-              {item.location_caught && (
-                <div className="pokemon-location">
-                  <p>
-                    <strong>Location Caught: </strong>
-                    {item.location_caught}
-                  </p>
-                </div>
-              )}
-
-              {item.date_caught && (
-                <div className="pokemon-date">
-                  <p>
-                    <strong>Date Caught: </strong>
-                    {formatDateOnlySafe(item.date_caught, 'Unknown')}
-                  </p>
-                </div>
-              )}
-            </div>
+            <PokemonResultDetails
+              weight={item.weight}
+              height={item.height}
+              fastMoveId={item.fast_move_id}
+              chargedMove1Id={item.charged_move1_id}
+              chargedMove2Id={item.charged_move2_id}
+              moves={item.pokemonInfo?.moves}
+              locationCaught={item.location_caught}
+              dateCaught={item.date_caught}
+              formatDate={formatDateOnlySafe}
+            />
           </div>
         ) : (
           <div className="pokemon-single-column">
