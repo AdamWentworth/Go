@@ -1,5 +1,5 @@
 // hooks/useEditWorkflow.ts
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type EditWorkflowPayload = {
   level: number | null;
@@ -17,7 +17,10 @@ type Args = {
   validate: (
     payload: EditWorkflowPayload,
     currentBaseStats: unknown,
-  ) => { validationErrors: Record<string, string | undefined>; computedValues: EditWorkflowComputed };
+  ) => {
+    validationErrors: Record<string, string | undefined>;
+    computedValues: EditWorkflowComputed;
+  };
   currentBaseStats: unknown;
   alert: (msg: string) => void | Promise<void>;
   onPersist: (computed: { newComputedValues: EditWorkflowComputed }) => Promise<void>;
@@ -25,24 +28,43 @@ type Args = {
   onStopEditing?: () => void;
 };
 
-export function useEditWorkflow({ validate, currentBaseStats, alert, onPersist, onStartEditing, onStopEditing }: Args) {
+export function useEditWorkflow({
+  validate,
+  currentBaseStats,
+  alert,
+  onPersist,
+  onStartEditing,
+  onStopEditing,
+}: Args) {
   const [editMode, setEditMode] = useState(false);
+  const wasEditingRef = useRef(false);
 
-  useEffect(() => { if (editMode) onStartEditing?.(); }, [editMode, onStartEditing]);
-
-  const toggleEditMode = useCallback(async (payload: EditWorkflowPayload) => {
-    if (editMode) {
-      const { validationErrors: vErrors, computedValues } = validate(payload, currentBaseStats);
-      if (Object.keys(vErrors).length > 0) {
-        alert(Object.values(vErrors).join('\n'));
-        return false;
-      }
-      await onPersist({ newComputedValues: computedValues });
-      onStopEditing?.();
+  useEffect(() => {
+    if (editMode && !wasEditingRef.current) {
+      onStartEditing?.();
     }
-    setEditMode(prev => !prev);
-    return true;
-  }, [editMode, validate, currentBaseStats, alert, onPersist, onStopEditing]);
+    wasEditingRef.current = editMode;
+  }, [editMode, onStartEditing]);
+
+  const toggleEditMode = useCallback(
+    async (payload: EditWorkflowPayload) => {
+      if (editMode) {
+        const { validationErrors: vErrors, computedValues } = validate(
+          payload,
+          currentBaseStats,
+        );
+        if (Object.keys(vErrors).length > 0) {
+          alert(Object.values(vErrors).join('\n'));
+          return false;
+        }
+        await onPersist({ newComputedValues: computedValues });
+        onStopEditing?.();
+      }
+      setEditMode((prev) => !prev);
+      return true;
+    },
+    [editMode, validate, currentBaseStats, alert, onPersist, onStopEditing],
+  );
 
   return { editMode, toggleEditMode, setEditMode };
 }

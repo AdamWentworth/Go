@@ -2,73 +2,38 @@ import React, {
   useEffect,
   useMemo,
   useState,
-  useCallback,
 } from 'react';
 import './CaughtInstance.css';
 
-import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useModal } from '@/contexts/ModalContext';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
-import type { VariantBackground, MegaEvolution } from '@/types/pokemonSubTypes';
+import type { MegaEvolution } from '@/types/pokemonSubTypes';
 import { getCrownFormLabel, resolveActiveCrownForm } from '@/utils/crownHelpers';
 
 import useValidation from './hooks/useValidation';
 import { useFusion } from './hooks/useFusion';
 import { useCalculatedCP } from './hooks/useCalculatedCP';
-import { useBackgrounds } from './hooks/useBackgrounds';
 import { useSprite } from './hooks/useSprite';
-import { useEditWorkflow } from './hooks/useEditWorkflow';
 import { useArcHeight } from './hooks/useArcHeight';
 import { createScopedLogger } from '@/utils/logger';
 
 import { calculateBaseStats } from '@/utils/calculateBaseStats';
-import {
-  type MegaData as PersistMegaData,
-  type FusionState as PersistFusionState,
-} from './utils/buildInstanceChanges';
-import {
-  buildCaughtPersistPatchMap,
-  resolveCaughtPersistValues,
-} from './utils/caughtPersist';
-import {
-  resolveFusionMovePool,
-  type FusionMoveSource,
-} from './utils/resolveFusionMovePool';
-import { resolveCrownMovePool } from './utils/resolveCrownMovePool';
-import { resolveFusionDisplayData } from './utils/resolveFusionDisplayData';
-import { resolveMegaDisplayData } from './utils/resolveMegaDisplayData';
-import { resolveCrownDisplayData } from './utils/resolveCrownDisplayData';
-import { resolveFusionBackgroundPool } from './utils/resolveFusionBackgroundPool';
-import { resolveFusionComboBackground } from './utils/resolveFusionComboBackground';
-import {
-  collectInstanceRefCandidates,
-  findInstanceByRefs,
-  parseBackgroundId,
-} from './utils/caughtInstanceRefs';
-import {
-  countCaughtFusionOptions,
-  resolveCaughtPowerVisibility,
-  resolveCaughtSectionVisibility,
-} from './utils/caughtInstanceVisibility';
+import { type MegaData as PersistMegaData } from './utils/buildInstanceChanges';
 import { useCaughtFormState } from './hooks/useCaughtFormState';
+import { useCaughtInstanceBackgrounds } from './hooks/useCaughtInstanceBackgrounds';
+import { useCaughtInstanceDisplayData } from './hooks/useCaughtInstanceDisplayData';
+import { useCaughtInstanceEditWorkflow } from './hooks/useCaughtInstanceEditWorkflow';
+import { useCaughtInstanceSectionVisibility } from './hooks/useCaughtInstanceSectionVisibility';
 
 import PowerPanel from './sections/PowerPanel';
 import Modals from './sections/Modals';
 import InstanceDetailsLayout from './sections/InstanceDetailsLayout';
-import { hasMovesAndIVContent } from './sections/MovesAndIV';
-import { hasMetaPanelContent } from './sections/MetaPanel';
 import FusionComponent from './components/Caught/FusionComponent';
 
 type CaughtPokemon = PokemonVariant & {
   instanceData?: PokemonInstance;
-};
-
-type MovesPreviewPokemon = {
-  moves?: CaughtPokemon['moves'];
-  fusion?: CaughtPokemon['fusion'];
-  instanceData?: Partial<PokemonInstance>;
 };
 
 interface CaughtInstanceProps {
@@ -94,7 +59,6 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
   const instanceId = String(instanceData.instance_id ?? variantId ?? '');
   const variants = useVariantsStore((s) => s.variants);
 
-  const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const { alert } = useModal();
   const { validate, resetErrors } = useValidation();
 
@@ -121,34 +85,6 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
     pokemon,
     alert,
     activeInstanceIdHint,
-  );
-  const resolvedFusionBackgrounds = useMemo(
-    () =>
-      resolveFusionBackgroundPool({
-        pokemon,
-        fusion: {
-          is_fused: fusion.is_fused,
-          fusion_form: fusion.fusion_form,
-          storedFusionObject: fusion.storedFusionObject,
-        },
-      }),
-    [fusion.fusion_form, fusion.is_fused, fusion.storedFusionObject, pokemon],
-  );
-  const backgrounds: VariantBackground[] = resolvedFusionBackgrounds.backgrounds;
-  const fusedPartnerInstance = useInstancesStore((state) => {
-    const fusedWithKey = typeof fusion.fusedWith === 'string' ? fusion.fusedWith : null;
-    if (!fusedWithKey) return null;
-
-    const refs = collectInstanceRefCandidates(fusedWithKey);
-    if (refs.length === 0) return null;
-
-    const fromOwned = findInstanceByRefs(state.instances, refs);
-    if (fromOwned) return fromOwned;
-    return findInstanceByRefs(state.foreignInstances, refs);
-  });
-
-  const [originalFusedWith, setOriginalFusedWith] = useState<string | null>(
-    fusion.fusedWith ?? null,
   );
 
   const {
@@ -215,51 +151,23 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
   }, [isShadow, isPurified, isLucky, onPreviewInstanceDataChange]);
 
   const {
+    backgrounds,
     showBackgrounds,
     setShowBackgrounds,
-    selectedBackground,
     handleBackgroundSelect,
     selectableBackgrounds,
-  } = useBackgrounds(backgrounds, variantType, instanceData.location_card ?? null);
-
-  const effectiveSelectedBackground = useMemo(() => {
-    const fallbackSelectedFromLocationCard = (() => {
-      const locationCardId = parseBackgroundId(instanceData.location_card);
-      if (locationCardId == null) return null;
-      return (
-        backgrounds.find((background) => background.background_id === locationCardId) ?? null
-      );
-    })();
-
-    const currentSelected = selectedBackground ?? fallbackSelectedFromLocationCard;
-
-    if (!fusion.is_fused) return currentSelected;
-
-    const ownBackgroundId = currentSelected?.background_id ?? null;
-    const partnerBackgroundId = parseBackgroundId(fusedPartnerInstance?.location_card);
-
-    const comboBackground = resolveFusionComboBackground({
-      pokemonId: pokemon.pokemon_id,
-      fusionEntries: pokemon.fusion ?? [],
-      resolvedFusionId: resolvedFusionBackgrounds.fusionId,
-      fusionForm: fusion.fusion_form,
-      ownBackgroundId,
-      partnerBackgroundId,
-      availableBackgrounds: backgrounds,
-    });
-
-    return comboBackground ?? currentSelected;
-  }, [
-    backgrounds,
-    fusedPartnerInstance?.location_card,
-    fusion.fusion_form,
-    fusion.is_fused,
-    instanceData.location_card,
-    pokemon.fusion,
-    pokemon.pokemon_id,
-    resolvedFusionBackgrounds.fusionId,
-    selectedBackground,
-  ]);
+    effectiveSelectedBackground,
+  } = useCaughtInstanceBackgrounds({
+    pokemon,
+    variantType,
+    locationCard: instanceData.location_card ?? null,
+    fusion: {
+      is_fused: fusion.is_fused,
+      fusion_form: fusion.fusion_form,
+      fusedWith: fusion.fusedWith,
+      storedFusionObject: fusion.storedFusionObject,
+    },
+  });
 
   const currentBaseStats = useMemo(
     () =>
@@ -306,233 +214,60 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
 
   const { arcLayerRef, recalcArcHeight } = useArcHeight();
 
-  const { editMode, toggleEditMode } = useEditWorkflow({
-    validate: (payload, baseStats) => {
-      const result = validate(
-        {
-          level: payload.level ?? undefined,
-          cp: payload.cp ?? undefined,
-          ivs: {
-            Attack: payload.ivs.Attack === '' ? undefined : payload.ivs.Attack,
-            Defense: payload.ivs.Defense === '' ? undefined : payload.ivs.Defense,
-            Stamina: payload.ivs.Stamina === '' ? undefined : payload.ivs.Stamina,
-          },
-        },
-        baseStats as { attack: number; defense: number; stamina: number },
-      );
-      return {
-        validationErrors: result.validationErrors as Record<string, string | undefined>,
-        computedValues: result.computedValues,
-      };
-    },
+  const { editMode, handleToggleEditClick } = useCaughtInstanceEditWorkflow({
+    instanceId,
     currentBaseStats,
     alert,
-    onPersist: async ({ newComputedValues }) => {
-      const { computedCP, computedLevel, computedIvs } = resolveCaughtPersistValues({
-        cp,
-        level,
-        ivs,
-        newComputedValues,
-      });
-      applyComputedValues(newComputedValues);
-
-      const persistFusion: PersistFusionState = {
-        storedFusionObject: fusion.storedFusionObject,
-        is_fused: fusion.is_fused,
-        fusedWith: fusion.fusedWith,
-        fusion_form: fusion.fusion_form,
-      };
-
-      const patchMap = buildCaughtPersistPatchMap({
-        instanceId,
-        nickname,
-        isLucky,
-        isTraded,
-        isFavorite,
-        gender,
-        weight,
-        height,
-        computedCP,
-        computedLevel,
-        computedIvs,
-        moves,
-        locationCaught,
-        dateCaught,
-        originalTrainerName,
-        originalTrainerId,
-        tradedDate,
-        pokeball,
-        selectedBackgroundId: effectiveSelectedBackground?.background_id ?? null,
-        megaData,
-        crown: crownData.isCrown,
-        fusion: persistFusion,
-        isShadow,
-        isPurified,
-        maxAttack,
-        maxGuard,
-        maxSpirit,
-        originalFusedWith,
-        allInstances: useInstancesStore.getState().instances,
-      });
-
-      await updateDetails(patchMap);
-      resetErrors();
-      recalcArcHeight();
+    validate,
+    resetErrors,
+    recalcArcHeight,
+    applyComputedValues,
+    cp,
+    level,
+    ivs,
+    weight,
+    height,
+    nickname,
+    isLucky,
+    isTraded,
+    isFavorite,
+    gender,
+    moves,
+    locationCaught,
+    dateCaught,
+    originalTrainerName,
+    originalTrainerId,
+    tradedDate,
+    pokeball,
+    selectedBackgroundId: effectiveSelectedBackground?.background_id ?? null,
+    megaData,
+    crown: crownData.isCrown,
+    fusion: {
+      storedFusionObject: fusion.storedFusionObject,
+      is_fused: fusion.is_fused,
+      fusedWith: fusion.fusedWith,
+      fusion_form: fusion.fusion_form,
     },
-    onStartEditing: () => setOriginalFusedWith(fusion.fusedWith ?? null),
+    isShadow,
+    isPurified,
+    maxAttack,
+    maxGuard,
+    maxSpirit,
   });
 
-  const handleToggleEditClick = useCallback(async () => {
-    await toggleEditMode({
-      level,
-      cp: cp !== '' ? Number(cp) : null,
-      ivs,
-      weight,
-      height,
+  const { resolvedFusionMoves, statsPokemon, movesPokemon, fusionMoveMeta } =
+    useCaughtInstanceDisplayData({
+      pokemon,
+      variants,
+      fusion: {
+        is_fused: fusion.is_fused,
+        fusion_form: fusion.fusion_form,
+        storedFusionObject: fusion.storedFusionObject,
+      },
+      megaData,
+      crownData,
+      moves,
     });
-  }, [toggleEditMode, level, cp, ivs, weight, height]);
-
-  const resolvedFusionMoves = useMemo(
-    () =>
-      resolveFusionMovePool({
-        pokemon,
-        fusion: {
-          is_fused: fusion.is_fused,
-          fusion_form: fusion.fusion_form,
-          storedFusionObject: fusion.storedFusionObject,
-        },
-      }),
-    [fusion.fusion_form, fusion.is_fused, fusion.storedFusionObject, pokemon],
-  );
-  const resolvedCrownMoves = useMemo(
-    () =>
-      resolveCrownMovePool({
-        pokemon,
-        baseMoves: resolvedFusionMoves.moves,
-        crown: {
-          is_crown: crownData.isCrown,
-          crown_form: crownData.crownForm,
-        },
-      }),
-    [crownData.crownForm, crownData.isCrown, pokemon, resolvedFusionMoves.moves],
-  );
-  const resolvedFusionDisplay = useMemo(
-    () =>
-      resolveFusionDisplayData({
-        pokemon,
-        variants,
-        fusion: {
-          is_fused: fusion.is_fused,
-          fusion_form: fusion.fusion_form,
-          storedFusionObject: fusion.storedFusionObject,
-        },
-      }),
-    [fusion.fusion_form, fusion.is_fused, fusion.storedFusionObject, pokemon, variants],
-  );
-  const resolvedMegaDisplay = useMemo(
-    () =>
-      resolveMegaDisplayData({
-        pokemon: {
-          ...pokemon,
-          type1_name: resolvedFusionDisplay.type1_name,
-          type2_name: resolvedFusionDisplay.type2_name,
-          type_1_icon: resolvedFusionDisplay.type_1_icon,
-          type_2_icon: resolvedFusionDisplay.type_2_icon,
-          sizes: resolvedFusionDisplay.sizes,
-        },
-        variants,
-        mega: {
-          is_mega: fusion.is_fused ? false : megaData.isMega,
-          mega_form: megaData.megaForm,
-        },
-      }),
-    [
-      fusion.is_fused,
-      megaData.isMega,
-      megaData.megaForm,
-      pokemon,
-      resolvedFusionDisplay.sizes,
-      resolvedFusionDisplay.type1_name,
-      resolvedFusionDisplay.type2_name,
-      resolvedFusionDisplay.type_1_icon,
-      resolvedFusionDisplay.type_2_icon,
-      variants,
-    ],
-  );
-  const resolvedCrownDisplay = useMemo(
-    () =>
-      resolveCrownDisplayData({
-        pokemon: {
-          ...pokemon,
-          type1_name: resolvedMegaDisplay.type1_name,
-          type2_name: resolvedMegaDisplay.type2_name,
-          type_1_icon: resolvedMegaDisplay.type_1_icon,
-          type_2_icon: resolvedMegaDisplay.type_2_icon,
-          sizes: resolvedMegaDisplay.sizes,
-        },
-        variants,
-        crown: {
-          is_crown: fusion.is_fused ? false : crownData.isCrown,
-          crown_form: crownData.crownForm,
-        },
-      }),
-    [
-      crownData.crownForm,
-      crownData.isCrown,
-      fusion.is_fused,
-      pokemon,
-      resolvedMegaDisplay,
-      variants,
-    ],
-  );
-  const statsPokemon = useMemo(
-    () => ({
-      ...pokemon,
-      type1_name: resolvedCrownDisplay.type1_name,
-      type2_name: resolvedCrownDisplay.type2_name,
-      type_1_icon: resolvedCrownDisplay.type_1_icon,
-      type_2_icon: resolvedCrownDisplay.type_2_icon,
-      sizes: resolvedCrownDisplay.sizes,
-      instanceData: pokemon.instanceData,
-    }),
-    [pokemon, resolvedCrownDisplay],
-  );
-
-  const movesPokemon = useMemo<MovesPreviewPokemon>(
-    () => {
-      return {
-        ...pokemon,
-        moves: resolvedCrownMoves.moves,
-        instanceData: {
-          ...(pokemon.instanceData ?? {}),
-          crown: crownData.isCrown,
-          fusion_form: fusion.fusion_form,
-          is_fused: fusion.is_fused,
-          fast_move_id: moves.fastMove,
-          charged_move1_id: moves.chargedMove1,
-          charged_move2_id: moves.chargedMove2,
-        },
-      };
-    },
-    [
-      fusion.fusion_form,
-      fusion.is_fused,
-      crownData.isCrown,
-      moves.chargedMove1,
-      moves.chargedMove2,
-      moves.fastMove,
-      pokemon,
-      resolvedCrownMoves.moves,
-    ],
-  );
-
-  const fusionMoveMeta = useMemo<{ source: FusionMoveSource; isFused: boolean }>(
-    () => ({
-      source: resolvedFusionMoves.source,
-      isFused: Boolean(fusion.is_fused),
-    }),
-    [fusion.is_fused, resolvedFusionMoves.source],
-  );
 
   useEffect(() => {
     if (fusionMoveMeta.source !== 'fusion_missing') return;
@@ -563,76 +298,31 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
     variantId,
   ]);
 
-  const fusionOptionCount = useMemo(
-    () => countCaughtFusionOptions(pokemon.fusion, pokemon.pokemon_id),
-    [pokemon.fusion, pokemon.pokemon_id],
-  );
-
-  const { showPowerSectionDivider } = useMemo(
-    () =>
-      resolveCaughtPowerVisibility({
-        megaEvolutionCount: megaEvolutions.length,
-        crownFormCount: crownForms.length,
-        pokemonName: name,
-        variantType,
-        maxCount: Array.isArray(pokemon.max) ? pokemon.max.length : 0,
-        editMode,
-        isShadow,
-        isPurified,
-        fusionOptionCount,
-        isFused: Boolean(fusion.is_fused),
-      }),
-    [
-      crownForms.length,
-      editMode,
-      fusion.is_fused,
-      fusionOptionCount,
-      isPurified,
-      isShadow,
-      megaEvolutions.length,
-      name,
-      pokemon.max,
-      variantType,
-    ],
-  );
-  const movesAndIVVisible = useMemo(
-    () =>
-      hasMovesAndIVContent({
-        pokemon: movesPokemon,
-        editMode,
-        fusionMoveSource: fusionMoveMeta.source,
-        isFused: fusionMoveMeta.isFused,
-        areIVsEmpty,
-      }),
-    [
-      areIVsEmpty,
-      editMode,
-      fusionMoveMeta.isFused,
-      fusionMoveMeta.source,
-      movesPokemon,
-    ],
-  );
-  const metaPanelVisible = useMemo(
-    () =>
-      hasMetaPanelContent({
-        pokemon,
-        editMode,
-        isTraded,
-        originalTrainerName,
-        tradedDate,
-        pokeball,
-      }),
-    [editMode, isTraded, originalTrainerName, pokeball, pokemon, tradedDate],
-  );
-  const { showStatsDivider, showMetaDivider, addStatsBottomGap } = useMemo(
-    () =>
-      resolveCaughtSectionVisibility({
-        showPowerSectionDivider,
-        movesAndIVVisible,
-        metaPanelVisible,
-      }),
-    [metaPanelVisible, movesAndIVVisible, showPowerSectionDivider],
-  );
+  const {
+    showPowerSectionDivider,
+    metaPanelVisible,
+    showStatsDivider,
+    showMetaDivider,
+    addStatsBottomGap,
+  } = useCaughtInstanceSectionVisibility({
+    pokemon,
+    movesPokemon,
+    megaEvolutionCount: megaEvolutions.length,
+    crownFormCount: crownForms.length,
+    pokemonName: name,
+    variantType,
+    maxCount: Array.isArray(pokemon.max) ? pokemon.max.length : 0,
+    editMode,
+    isShadow,
+    isPurified,
+    isFused: fusionMoveMeta.isFused,
+    fusionMoveSource: fusionMoveMeta.source,
+    areIVsEmpty,
+    isTraded,
+    originalTrainerName,
+    tradedDate,
+    pokeball,
+  });
 
   return (
     <InstanceDetailsLayout
