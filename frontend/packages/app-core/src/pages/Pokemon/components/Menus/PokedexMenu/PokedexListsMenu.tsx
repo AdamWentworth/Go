@@ -1,7 +1,7 @@
 // PokedexListsMenu.tsx
 import React, { ReactNode } from 'react';
-import useWindowWidth from '@/pages/Pokemon/hooks/useWindowWidth';
 import './PokedexListsMenu.css';
+import { useViewportBelow, VIEWPORT_BREAKPOINTS } from '@/hooks/useViewport';
 import type { PokemonVariant, AllVariants } from '@/types/pokemonVariants';
 import type { PokedexLists } from '@/types/pokedex';
 
@@ -215,8 +215,9 @@ const PokedexListsMenu: React.FC<PokedexListsMenuProps> = ({
       );
     });
 
-  const width = useWindowWidth();
-  const isOneColumn = width < 650;
+  const isOneColumn = useViewportBelow(
+    VIEWPORT_BREAKPOINTS.pokedexMenuSingleColumn,
+  );
 
   if (isOneColumn) {
     const alternateLists: string[] = [];  

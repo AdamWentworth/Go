@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import './TradeTargetsList.css';
 import useSortManager from '@/hooks/sort/useSortManager';
+import { useViewportBelow, VIEWPORT_BREAKPOINTS } from '@/hooks/useViewport';
 import type { SortMode, SortType } from '@/types/sort';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
@@ -47,9 +48,6 @@ interface TradeTargetsListProps {
   onPokemonClick?: (key: string) => void;
 }
 
-const getIsSmallScreen = (): boolean =>
-  typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
-
 const TradeTargetsList = ({
   pokemon,
   lists,
@@ -63,21 +61,8 @@ const TradeTargetsList = ({
   sortMode,
   onPokemonClick,
 }: TradeTargetsListProps) => {
-  const [isSmallScreen, setIsSmallScreen] = useState<boolean>(getIsSmallScreen);
+  const isSmallScreen = useViewportBelow(VIEWPORT_BREAKPOINTS.desktop);
   const notWantedMap = localNotWantedList || {};
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return undefined;
-    }
-
-    const handleResize = () => {
-      setIsSmallScreen(window.innerWidth < 1024);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const handleNotWantedToggle = (key: string) => {
     if (!editMode) {

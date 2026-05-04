@@ -2,10 +2,10 @@ import {
   useCallback,
   useEffect,
   useRef,
-  useState,
   type Dispatch,
   type SetStateAction,
 } from 'react';
+import { useViewportRange, VIEWPORT_BREAKPOINTS } from '@/hooks/useViewport';
 
 type ScrollDecision = 'collapse' | 'expand' | 'consume_search_trigger' | 'none';
 
@@ -55,19 +55,12 @@ export const useSearchBarCollapse = ({
   isCollapsed,
   setIsCollapsed,
 }: UseSearchBarCollapseArgs) => {
-  const [isMidWidth, setIsMidWidth] = useState(false);
+  const isMidWidth = useViewportRange(
+    VIEWPORT_BREAKPOINTS.desktop,
+    VIEWPORT_BREAKPOINTS.wide,
+  );
   const collapsibleRef = useRef<HTMLDivElement | null>(null);
   const searchTriggeredRef = useRef(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMidWidth(window.innerWidth >= 1024 && window.innerWidth <= 1439);
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   useEffect(() => {
     if (!collapsibleRef.current || isCollapsed) return;

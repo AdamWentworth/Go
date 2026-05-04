@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import './TradeListDisplay.css';
 import useSortManager from '@/hooks/sort/useSortManager';
+import { useViewportBelow, VIEWPORT_BREAKPOINTS } from '@/hooks/useViewport';
 import type { SortMode, SortType } from '@/types/sort';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
@@ -54,9 +55,6 @@ const extractBaseKey = (instanceId: string): string => {
   return parts.join('_');
 };
 
-const getIsSmallScreen = (): boolean =>
-  typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
-
 const TradeListDisplay = ({
   pokemon,
   lists,
@@ -68,20 +66,10 @@ const TradeListDisplay = ({
   sortMode,
   onPokemonClick,
 }: TradeListDisplayProps) => {
-  const [isSmallScreen, setIsSmallScreen] = useState<boolean>(getIsSmallScreen);
+  const isSmallScreen = useViewportBelow(VIEWPORT_BREAKPOINTS.desktop);
   const notTradeMap = localNotTradeList || {};
   const pokemonFullKey = pokemon?.instanceData?.instance_id ?? '';
   const pokemonBaseKey = extractBaseKey(pokemonFullKey);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return undefined;
-    }
-
-    const handleResize = () => setIsSmallScreen(window.innerWidth < 1024);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const handleNotTradeToggle = (fullKey: string) => {
     if (!editMode) {

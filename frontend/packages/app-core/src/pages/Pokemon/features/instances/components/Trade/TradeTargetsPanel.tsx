@@ -34,6 +34,7 @@ import {
 } from './tradeTargetsHelpers';
 import useTradeProposalFlow from './useTradeProposalFlow';
 import { createScopedLogger } from '@/utils/logger';
+import { useViewportBelow, VIEWPORT_BREAKPOINTS } from '@/hooks/useViewport';
 
 type BooleanMap = Record<string, boolean>;
 interface TradeTargetsPanelListsState {
@@ -105,9 +106,7 @@ const TradeTargetsPanel: React.FC<TradeTargetsPanelProps> = ({
     () => normalizeListsState(lists),
   );
   const [, setPendingUpdates] = useState<Record<string, boolean>>({});
-  const [isSmallScreen, setIsSmallScreen] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < 1024 : false,
-  );
+  const isSmallScreen = useViewportBelow(VIEWPORT_BREAKPOINTS.desktop);
 
   const {
     selectedImages: selectedExcludeImages,
@@ -258,17 +257,6 @@ const TradeTargetsPanel: React.FC<TradeTargetsPanelProps> = ({
     openTradeTargetOverlay(merged.pokemon as unknown as Record<string, unknown>);
   };
 
-  // Keep track of window resizing
-  useEffect(() => {
-    const handleResize = () => {
-      setIsSmallScreen(window.innerWidth < 1024);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
   const shouldShowFewLayout = isSmallScreen || filteredWantedListCount <= 15;
 
   const handleResetFilters = () => {
@@ -392,5 +380,4 @@ const TradeTargetsPanel: React.FC<TradeTargetsPanelProps> = ({
 };
 
 export default TradeTargetsPanel;
-
 

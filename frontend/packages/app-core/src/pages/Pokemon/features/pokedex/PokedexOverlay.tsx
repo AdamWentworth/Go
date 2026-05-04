@@ -1,6 +1,6 @@
 // PokedexOverlay.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './PokedexOverlay.css';
 import OverlayPortal from '@/components/OverlayPortal';
 import WindowOverlay from '@/components/WindowOverlay';
@@ -14,6 +14,7 @@ import CloseButton from '@/components/CloseButton';
 
 import type { PokemonVariant, AllVariants } from '@/types/pokemonVariants';
 import type { Fusion } from '@/types/pokemonSubTypes';
+import { useViewportWidth, VIEWPORT_BREAKPOINTS } from '@/hooks/useViewport';
 
 export interface PokedexOverlayProps {
   pokemon: PokemonVariant;
@@ -22,23 +23,14 @@ export interface PokedexOverlayProps {
   allPokemons: AllVariants;
 }
 
-const useScreenWidth = (): number => {
-  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
-  useEffect(() => {
-    const handleResize = () => setScreenWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-  return screenWidth;
-};
-
 const PokedexOverlay: React.FC<PokedexOverlayProps> = ({ pokemon, onClose, setSelectedPokemon, allPokemons }) => {
   const [currentPokemon, setCurrentPokemon] = useState(pokemon);
   const [isMale, setIsMale] = useState(true);
-  const width = useScreenWidth();
-  const isWidescreen = width >= 1440;
-  const isMedium = width >= 1024 && width < 1440;
-  const isNarrow = width < 1024;
+  const width = useViewportWidth();
+  const isWidescreen = width >= VIEWPORT_BREAKPOINTS.wide;
+  const isMedium =
+    width >= VIEWPORT_BREAKPOINTS.desktop && width < VIEWPORT_BREAKPOINTS.wide;
+  const isNarrow = width < VIEWPORT_BREAKPOINTS.desktop;
 
   const toggleGender = () => setIsMale(prev => !prev);
 

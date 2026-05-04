@@ -14,6 +14,7 @@ import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { SortMode, SortType } from '@/types/sort';
 import { createScopedLogger } from '@/utils/logger';
+import { useViewportBelow, VIEWPORT_BREAKPOINTS } from '@/hooks/useViewport';
 import { getBackgroundImageSrc, getCaughtBgColor } from './overlay/overlayBackground';
 import { getOverlayIdentityKey, withInstanceData } from './overlay/overlayPokemon';
 import { deriveInitialOverlay } from './overlay/overlayState';
@@ -45,8 +46,6 @@ type WantedOverlayPokemon = React.ComponentProps<typeof WantedInstance>['pokemon
 type WantedDetailsPokemon = React.ComponentProps<typeof WantedDetails>['pokemon'];
 
 export { isSwipeInteractiveTarget } from './overlay/overlaySwipe';
-
-const STACKED_INSTANCE_OVERLAY_BREAKPOINT = 768;
 
 const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   pokemon,
@@ -83,17 +82,9 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     };
   }, [instances, previewInstanceDataPatch, selectedPokemon]);
 
-  const [isSmallScreen, setIsSmallScreen] = useState(
-    typeof window !== 'undefined'
-      ? window.innerWidth < STACKED_INSTANCE_OVERLAY_BREAKPOINT
-      : false
+  const isSmallScreen = useViewportBelow(
+    VIEWPORT_BREAKPOINTS.overlayStacked,
   );
-  useEffect(() => {
-    const handleResize = () =>
-      setIsSmallScreen(window.innerWidth < STACKED_INSTANCE_OVERLAY_BREAKPOINT);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const [currentOverlay, setCurrentOverlay] = useState<OverlayType>(() =>
     deriveInitialOverlay(tagFilter, pokemon)

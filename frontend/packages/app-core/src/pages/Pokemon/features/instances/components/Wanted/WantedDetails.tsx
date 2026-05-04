@@ -18,6 +18,7 @@ import type { Instances } from '@/types/instances';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { SortMode, SortType } from '@/types/sort';
 import { createScopedLogger } from '@/utils/logger';
+import { useViewportBelow, VIEWPORT_BREAKPOINTS } from '@/hooks/useViewport';
 
 const log = createScopedLogger('WantedDetails');
 
@@ -96,9 +97,7 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
   const [listsState, setListsState] = useState<WantedDetailsListsState>(listsWithTrade);
   useEffect(() => { setListsState(listsWithTrade); }, [listsWithTrade]);
 
-  const [isSmallScreen, setIsSmallScreen] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
-  );
+  const isSmallScreen = useViewportBelow(VIEWPORT_BREAKPOINTS.desktop);
 
   // Image selection states
   const {
@@ -172,16 +171,6 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
   const filteredTradeListCount = Object.keys(filteredTradeList || {}).filter(
     (key) => !(localNotTradeList || {})[key]
   ).length;
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsSmallScreen(window.innerWidth < 1024);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
 
   const shouldShowFewLayout = isSmallScreen || filteredTradeListCount <= 15;
 
