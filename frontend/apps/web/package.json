@@ -85,7 +85,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/jest-axe": "^3.5.9",
     "@types/lodash.isequal": "^4.5.8",
-    "@types/node": "^22.19.11",
+    "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-datepicker": "^6.2.0",
     "@types/react-dom": "^19.2.3",
