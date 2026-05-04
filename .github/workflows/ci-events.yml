@@ -117,7 +117,7 @@ jobs:
             events_service:ci-${{ github.sha }}
 
       - name: Upload SBOM Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: events-image-sbom
           path: events_image_sbom.cdx.json

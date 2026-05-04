@@ -28,13 +28,13 @@ defaults from `/home/adam/deploy/Go` to `/home/adam/deploy/state`.
 
 `pokemon/data/pokego.db` is core application data. Do not delete it.
 
-The desired future model is:
+The current release model is:
 
-1. Keep `pokego.db` as an explicit release artifact.
-2. Back up prod before replacing it.
-3. Copy the new DB to prod state.
-4. Verify checksum and `/readyz`.
-5. Only then consider removing it from Git tracking with `git rm --cached`.
+1. CI detects changes to `pokemon/data/pokego.db`.
+2. CI packages the DB as a checksumed artifact and GitHub release.
+3. Prod backs up the existing DB before replacing it.
+4. Prod deploys the DB with the matching `sha-<commit>` Pokemon image.
+5. Prod verifies `/readyz` and rolls back DB plus image on failure.
 
 Untracking the file is not the same thing as deleting it, but it must only happen
-after prod is using the state-only DB path.
+after prod is using this artifact flow comfortably.

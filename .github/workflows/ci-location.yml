@@ -120,7 +120,7 @@ jobs:
             location_service:ci-${{ github.sha }}
 
       - name: Upload SBOM Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: location-image-sbom
           path: location_image_sbom.cdx.json

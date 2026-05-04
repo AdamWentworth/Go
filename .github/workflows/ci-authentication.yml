@@ -108,7 +108,7 @@ jobs:
             authentication:ci-${{ github.sha }}
 
       - name: Upload SBOM Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: authentication-image-sbom
           path: authentication_image_sbom.cdx.json

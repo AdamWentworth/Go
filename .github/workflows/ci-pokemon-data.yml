@@ -14,12 +14,70 @@ on:
       - "monitoring/**"
       - "nginx/**"
       - ".github/workflows/ci-pokemon-data.yml"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      publish_pokemon_db:
+        description: "Package and deploy pokemon/data/pokego.db even if this run was not triggered by a DB diff."
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 jobs:
+  detect-db-change:
+    name: Detect Pokemon DB Change
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.detect.outputs.changed }}
+      reason: ${{ steps.detect.outputs.reason }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Detect Pokemon DB Changes
+        id: detect
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_BEFORE: ${{ github.event.before }}
+          EVENT_SHA: ${{ github.sha }}
+          FORCE_DB_ARTIFACT: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_pokemon_db }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          changed="false"
+          reason="pokemon/data/pokego.db was not changed"
+          changed_files=""
+          zero_sha="0000000000000000000000000000000000000000"
+
+          if [[ "${FORCE_DB_ARTIFACT}" == "true" ]]; then
+            changed="true"
+            reason="manual workflow_dispatch requested DB artifact publication"
+          elif [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            changed_files="$(git diff --name-only "${PR_BASE_SHA}" "${PR_HEAD_SHA}")"
+          elif [[ "${EVENT_NAME}" == "push" ]]; then
+            if [[ -z "${EVENT_BEFORE}" || "${EVENT_BEFORE}" == "${zero_sha}" ]]; then
+              changed_files="$(git diff-tree --no-commit-id --name-only -r "${EVENT_SHA}")"
+            else
+              changed_files="$(git diff --name-only "${EVENT_BEFORE}" "${EVENT_SHA}")"
+            fi
+          fi
+
+          if [[ "${changed}" != "true" ]] && printf '%s\n' "${changed_files}" | grep -Fxq "pokemon/data/pokego.db"; then
+            changed="true"
+            reason="pokemon/data/pokego.db changed in this run"
+          fi
+
+          echo "changed=${changed}" >> "${GITHUB_OUTPUT}"
+          echo "reason=${reason}" >> "${GITHUB_OUTPUT}"
+          echo "${reason}"
+
   quality-gates:
     runs-on: ubuntu-latest
     defaults:
@@ -144,7 +202,7 @@ jobs:
             pokemon_data:ci-${{ github.sha }}
 
       - name: Upload SBOM Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pokemon-image-sbom
           path: pokemon_image_sbom.cdx.json
@@ -167,3 +225,111 @@ jobs:
         if: ${{ github.event_name != 'pull_request' && env.DOCKERHUB_TOKEN == '' }}
         run: |
           echo "DockerHub push skipped. Set DOCKERHUB_TOKEN repository secret."
+
+  pokemon-db-artifact:
+    name: Package Pokemon DB Artifact
+    runs-on: ubuntu-latest
+    needs: [detect-db-change, quality-gates, container-security-build]
+    if: ${{ github.event_name != 'pull_request' && needs.detect-db-change.outputs.changed == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
+    permissions:
+      contents: write
+    outputs:
+      artifact_name: ${{ steps.package.outputs.artifact_name }}
+      db_sha256: ${{ steps.package.outputs.db_sha256 }}
+      release_tag: ${{ steps.package.outputs.release_tag }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Package Pokemon DB
+        id: package
+        shell: bash
+        run: |
+          bash ops/pokemon-db/package-pokemon-db.sh \
+            pokemon/data/pokego.db \
+            dist/pokemon-db \
+            "${GITHUB_SHA}"
+
+      - name: Upload Pokemon DB Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.package.outputs.artifact_name }}
+          path: |
+            ${{ steps.package.outputs.package_path }}
+            ${{ steps.package.outputs.manifest_path }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish Pokemon DB Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DB_SHA256: ${{ steps.package.outputs.db_sha256 }}
+          MANIFEST_PATH: ${{ steps.package.outputs.manifest_path }}
+          PACKAGE_PATH: ${{ steps.package.outputs.package_path }}
+          RELEASE_TAG: ${{ steps.package.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          release_title="Pokemon DB ${GITHUB_SHA:0:12}"
+          release_notes="$(mktemp)"
+          {
+            echo "Pokemon SQLite database artifact for ${GITHUB_SHA}."
+            echo
+            echo "DB SHA256: ${DB_SHA256}"
+          } > "${release_notes}"
+
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release upload "${RELEASE_TAG}" "${PACKAGE_PATH}" "${MANIFEST_PATH}" --clobber
+          else
+            gh release create "${RELEASE_TAG}" \
+              "${PACKAGE_PATH}" \
+              "${MANIFEST_PATH}" \
+              --target "${GITHUB_SHA}" \
+              --title "${release_title}" \
+              --notes-file "${release_notes}"
+          fi
+
+  deploy-pokemon-db-prod:
+    name: Deploy Pokemon DB To Prod
+    runs-on: [self-hosted, linux, x64, prod]
+    needs: pokemon-db-artifact
+    if: ${{ github.event_name != 'pull_request' && needs.pokemon-db-artifact.result == 'success' }}
+    environment: production
+    concurrency:
+      group: deploy-pokemon-db-prod
+      cancel-in-progress: false
+    permissions:
+      actions: read
+      contents: read
+    env:
+      DEPLOY_ROOT: ${{ vars.PROD_DEPLOY_ROOT || '/home/adam/deploy/Go' }}
+      TARGET_IMAGE: adamwentworth/pokemon_service_go:sha-${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download Pokemon DB Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.pokemon-db-artifact.outputs.artifact_name }}
+          path: dist/pokemon-db-release
+
+      - name: Install Pokemon DB And Deploy Matching Image
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          package_path="$(find dist/pokemon-db-release -maxdepth 1 -type f -name 'pokemon-db-*.tgz' -print -quit)"
+          if [[ -z "${package_path}" ]]; then
+            echo "Pokemon DB package was not downloaded." >&2
+            exit 1
+          fi
+
+          bash ops/pokemon-db/install-pokemon-db.sh \
+            "${package_path}" \
+            "${DEPLOY_ROOT}" \
+            "${GITHUB_WORKSPACE}/pokemon/docker-compose.yml" \
+            "${TARGET_IMAGE}" \
+            "pokemon_data"
