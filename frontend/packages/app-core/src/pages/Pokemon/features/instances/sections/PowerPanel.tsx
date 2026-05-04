@@ -8,6 +8,7 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { CrownForm, MegaEvolution } from '@/types/pokemonSubTypes';
 import type { MegaData } from '../utils/buildInstanceChanges';
 import type { PokemonInstance } from '@/types/pokemonInstance';
+import { resolvePowerPanelState } from '../utils/powerPanelState';
 
 type PokemonWithInstance = {
   pokemon_id?: number;
@@ -66,35 +67,22 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
   onMaxGuardChange,
   onMaxSpiritChange,
 }) => {
-  const normalizedMegaData: MegaData = {
-    isMega: Boolean(megaData?.isMega),
-    mega: Boolean(megaData?.mega),
-    megaForm: megaData?.megaForm ?? null,
-  };
-
-  const hasMaxVariant =
-    typeof pokemon.variantType === 'string' &&
-    (pokemon.variantType.includes('dynamax') || pokemon.variantType.includes('gigantamax'));
-
-  const canRenderMax =
-    editMode &&
-    hasMaxVariant &&
-    Array.isArray(pokemon.max) &&
-    pokemon.max.length > 0 &&
-    !pokemon.instanceData?.shadow &&
-    !pokemon.instanceData?.purified &&
-      !pokemon.variantType?.includes('costume');
-  const canRenderMega =
-    Array.isArray(megaEvolutions) &&
-    megaEvolutions.length > 0 &&
-    !isShadow &&
-    !name.toLowerCase().includes('clone');
-  const canRenderCrown = Array.isArray(crownForms) && crownForms.length > 0 && !isShadow;
-  const isShiny =
-    Boolean(pokemon.instanceData?.shiny) ||
-    (typeof pokemon.variantType === 'string' && pokemon.variantType.includes('shiny'));
-  const renderedPowerCount =
-    Number(canRenderMax) + Number(canRenderMega) + Number(canRenderCrown);
+  const {
+    normalizedMegaData,
+    canRenderMax,
+    canRenderMega,
+    canRenderCrown,
+    isShiny,
+    renderedPowerCount,
+  } = resolvePowerPanelState({
+    pokemon,
+    editMode,
+    megaData,
+    megaEvolutions,
+    crownForms,
+    isShadow,
+    name,
+  });
 
   return (
     <>
