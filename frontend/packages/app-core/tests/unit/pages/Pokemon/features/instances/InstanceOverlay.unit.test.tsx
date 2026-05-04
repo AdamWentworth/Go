@@ -191,6 +191,37 @@ describe('InstanceOverlay', () => {
     expect(screen.getByTestId('wanted-instance')).toBeInTheDocument();
   });
 
+  it('falls back to top-level pokemon status when instance status is absent', () => {
+    renderOverlay('unknown-filter', {
+      status: 'trade',
+    });
+
+    expect(screen.getByTestId('trade-instance')).toBeInTheDocument();
+    expect(screen.getByTestId('trade-details')).toBeInTheDocument();
+  });
+
+  it('uses shadow background before lucky or type backgrounds', () => {
+    renderOverlay('caught', {
+      type1_name: 'Water',
+      instanceData: { shadow: true, lucky: true, purified: false },
+    });
+
+    const background = document.querySelector('.io-bg-img') as HTMLImageElement | null;
+    expect(background).not.toBeNull();
+    expect(background?.getAttribute('src')).toContain('bg_shadow.png');
+  });
+
+  it('uses variantType type fallback when explicit type fields are absent', () => {
+    renderOverlay('trade', {
+      type1_name: undefined,
+      variantType: 'type_bug',
+    });
+
+    const background = document.querySelector('.io-bg-img') as HTMLImageElement | null;
+    expect(background).not.toBeNull();
+    expect(background?.getAttribute('src')).toContain('bg_bug.png');
+  });
+
   it('uses non-shadow type background for purified pokemon even when shadow flag exists', () => {
     renderOverlay('caught', {
       type1_name: 'Psychic',
@@ -556,6 +587,48 @@ describe('InstanceOverlay', () => {
     });
 
     await waitFor(() => expect(onNavigatePokemon).toHaveBeenCalledWith(p2));
+  });
+
+  it('does not navigate trade when a drag resolves as vertical scrolling', async () => {
+    const p1 = makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'i-1' } });
+    const p2 = makePokemon({ variant_id: '0002-default', instanceData: { instance_id: 'i-2' } });
+    const onNavigatePokemon = vi.fn();
+
+    render(
+      <InstanceOverlay
+        pokemon={p1}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="trade"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+        navigationPokemons={[p1, p2]}
+        onNavigatePokemon={onNavigatePokemon}
+      />,
+    );
+
+    const tradeDetailsWindow = document.querySelector('.trade-details-window') as HTMLElement | null;
+    expect(tradeDetailsWindow).not.toBeNull();
+
+    fireEvent.mouseDown(tradeDetailsWindow as HTMLElement, {
+      button: 0,
+      clientX: 300,
+      clientY: 220,
+    });
+    fireEvent.mouseMove(tradeDetailsWindow as HTMLElement, {
+      clientX: 294,
+      clientY: 260,
+    });
+    fireEvent.mouseUp(tradeDetailsWindow as HTMLElement, {
+      clientX: 230,
+      clientY: 330,
+    });
+
+    await waitFor(() => expect(onNavigatePokemon).not.toHaveBeenCalled());
   });
 
   it('remounts caught instance state when navigating to a different pokemon', async () => {
