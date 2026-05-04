@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MiniMap from './MiniMap';
-import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay.jsx';
+import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
 import Gender from '../../../../components/pokemonComponents/Gender';
-import CP from '../../../../components/pokemonComponents/CP.jsx';
+import CP from '../../../../components/pokemonComponents/CP';
 import ConfirmationOverlay from '../ConfirmationOverlay';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';

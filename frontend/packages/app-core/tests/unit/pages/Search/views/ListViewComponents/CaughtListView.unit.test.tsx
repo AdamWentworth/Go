@@ -16,7 +16,7 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-vi.mock('@/components/pokemonComponents/CP.jsx', () => ({
+vi.mock('@/components/pokemonComponents/CP', () => ({
   default: ({ cp }: { cp: number }) => <div data-testid="cp">CP:{cp}</div>,
 }));
 
@@ -28,7 +28,7 @@ vi.mock('@/components/pokemonComponents/IV', () => ({
   default: () => <div data-testid="ivs" />,
 }));
 
-vi.mock('@/components/pokemonComponents/MoveDisplay.jsx', () => ({
+vi.mock('@/components/pokemonComponents/MoveDisplay', () => ({
   default: () => <div data-testid="move-display" />,
 }));
 

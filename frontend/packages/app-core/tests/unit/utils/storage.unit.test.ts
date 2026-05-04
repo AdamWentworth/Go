@@ -7,6 +7,7 @@ import {
   getStoredLocation,
   getStoredUser,
   getStoredUsername,
+  removeStorageItem,
   removeStorageKeys,
   setStorageBoolean,
   setStorageJson,
@@ -104,5 +105,12 @@ describe('storage utils', () => {
     expect(localStorage.getItem(STORAGE_KEYS.location)).toBeNull();
     expect(localStorage.getItem(STORAGE_KEYS.pokemonOwnership)).toBeNull();
   });
-});
 
+  it('removes raw legacy keys through the safe storage wrapper', () => {
+    localStorage.setItem('pokemonData', '{"legacy":true}');
+
+    removeStorageItem('pokemonData');
+
+    expect(localStorage.getItem('pokemonData')).toBeNull();
+  });
+});

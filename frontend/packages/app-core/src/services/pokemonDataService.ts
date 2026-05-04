@@ -10,6 +10,7 @@ import {
   toHttpError,
 } from './httpClient';
 import { pokemonContract } from '@shared-contracts/pokemon';
+import { removeStorageItem } from '@/utils/storage';
 
 const BASE_URL: string = import.meta.env.VITE_POKEMON_API_URL;
 
@@ -18,12 +19,8 @@ const canDebugLog = loggerInternals.shouldEmit('debug');
 const STALE_LOCAL_STORAGE_KEYS = ['pokemonData', 'pokemonDataEtag'] as const;
 
 function clearStaleLocalStorageCache(): void {
-  try {
-    for (const key of STALE_LOCAL_STORAGE_KEYS) {
-      localStorage.removeItem(key);
-    }
-  } catch (error) {
-    log.warn('Unable to clear stale Pokemon localStorage cache', error);
+  for (const key of STALE_LOCAL_STORAGE_KEYS) {
+    removeStorageItem(key);
   }
 }
 

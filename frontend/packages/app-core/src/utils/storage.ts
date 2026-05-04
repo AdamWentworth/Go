@@ -64,7 +64,7 @@ export const setStorageString = (key: StorageKey, value: string): void => {
   }
 };
 
-export const removeStorageKey = (key: StorageKey): void => {
+export const removeStorageItem = (key: string): void => {
   const storage = getStorage();
   if (!storage) return;
 
@@ -73,6 +73,10 @@ export const removeStorageKey = (key: StorageKey): void => {
   } catch (error) {
     log.warn(`Failed to remove key "${key}"`, error);
   }
+};
+
+export const removeStorageKey = (key: StorageKey): void => {
+  removeStorageItem(key);
 };
 
 export const removeStorageKeys = (keys: StorageKey[]): void => {

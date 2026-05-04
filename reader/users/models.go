@@ -7,8 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-
-	"gorm.io/datatypes"
 )
 
 // JSON type to handle JSON fields in GORM
@@ -159,17 +157,17 @@ type PokemonInstance struct {
 	FusedWith  *string `gorm:"column:fused_with"  json:"fused_with"`
 
 	// Ownership & tags
-	IsCaught      bool           `gorm:"column:is_caught"      json:"is_caught"`
-	IsForTrade    bool           `gorm:"column:is_for_trade"   json:"is_for_trade"`
-	IsWanted      bool           `gorm:"column:is_wanted"      json:"is_wanted"`
-	MostWanted    bool           `gorm:"column:most_wanted"    json:"most_wanted"`
-	CaughtTags    datatypes.JSON `gorm:"column:caught_tags;type:json"  json:"caught_tags"`
-	TradeTags     datatypes.JSON `gorm:"column:trade_tags;type:json"   json:"trade_tags"`
-	WantedTags    datatypes.JSON `gorm:"column:wanted_tags;type:json"  json:"wanted_tags"`
-	NotTradeList  datatypes.JSON `gorm:"column:not_trade_list;type:json"  json:"not_trade_list"`
-	NotWantedList datatypes.JSON `gorm:"column:not_wanted_list;type:json" json:"not_wanted_list"`
-	TradeFilters  JSON           `gorm:"column:trade_filters;type:json"  json:"trade_filters"`
-	WantedFilters JSON           `gorm:"column:wanted_filters;type:json" json:"wanted_filters"`
+	IsCaught      bool    `gorm:"column:is_caught"      json:"is_caught"`
+	IsForTrade    bool    `gorm:"column:is_for_trade"   json:"is_for_trade"`
+	IsWanted      bool    `gorm:"column:is_wanted"      json:"is_wanted"`
+	MostWanted    bool    `gorm:"column:most_wanted"    json:"most_wanted"`
+	CaughtTags    RawJSON `gorm:"column:caught_tags;type:json"  json:"caught_tags"`
+	TradeTags     RawJSON `gorm:"column:trade_tags;type:json"   json:"trade_tags"`
+	WantedTags    RawJSON `gorm:"column:wanted_tags;type:json"  json:"wanted_tags"`
+	NotTradeList  RawJSON `gorm:"column:not_trade_list;type:json"  json:"not_trade_list"`
+	NotWantedList RawJSON `gorm:"column:not_wanted_list;type:json" json:"not_wanted_list"`
+	TradeFilters  JSON    `gorm:"column:trade_filters;type:json"  json:"trade_filters"`
+	WantedFilters JSON    `gorm:"column:wanted_filters;type:json" json:"wanted_filters"`
 
 	// Misc
 	FriendshipLevel *int    `gorm:"column:friendship_level" json:"friendship_level"`

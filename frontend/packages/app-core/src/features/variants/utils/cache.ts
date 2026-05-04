@@ -1,8 +1,15 @@
 // src/features/variants/utils/cache.ts
 
+import {
+  getStorageNumber,
+  setStorageNumber,
+  STORAGE_KEYS,
+  type StorageKey,
+} from '@/utils/storage';
+
 // Central cache key definitions and TTL logic for the Variants feature
-export const VARIANTS_KEY = 'variantsTimestamp';
-export const POKEDEX_LISTS_KEY = 'pokedexListsTimestamp';
+export const VARIANTS_KEY = STORAGE_KEYS.variantsTimestamp;
+export const POKEDEX_LISTS_KEY = STORAGE_KEYS.pokedexListsTimestamp;
 
 // Time-to-live for cache entries (in milliseconds)
 export const CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
@@ -16,19 +23,17 @@ function getForcedRefreshCutoff(): number {
 /**
  * Record the current timestamp under the given key.
  */
-export function setCacheTimestamp(key: string): void {
-  localStorage.setItem(key, Date.now().toString());
+export function setCacheTimestamp(key: StorageKey): void {
+  setStorageNumber(key, Date.now());
 }
 
 /**
  * Check if the timestamp stored under `key` is still within the TTL.
  * Returns `false` if no timestamp is found or if it is too old.
  */
-export function isCacheFresh(key: string): boolean {
-  const raw = localStorage.getItem(key);
-  if (!raw) return false;
-  const ts = Number(raw);
-  if (Number.isNaN(ts)) return false;
+export function isCacheFresh(key: StorageKey): boolean {
+  const ts = getStorageNumber(key, 0);
+  if (!ts) return false;
 
   const forcedRefreshCutoff = getForcedRefreshCutoff();
   if (forcedRefreshCutoff && ts < forcedRefreshCutoff) return false;

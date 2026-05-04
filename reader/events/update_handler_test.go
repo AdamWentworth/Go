@@ -1,10 +1,6 @@
 package main
 
-import (
-	"testing"
-
-	"gorm.io/datatypes"
-)
+import "testing"
 
 func ptrInt(v int) *int             { return &v }
 func ptrFloat64(v float64) *float64 { return &v }
@@ -21,11 +17,11 @@ func TestBuildPokemonInstancePayload_CanonicalOwnershipFields(t *testing.T) {
 		IsForTrade:    false,
 		IsWanted:      true,
 		MostWanted:    true,
-		CaughtTags:    datatypes.JSON([]byte(`["favorite"]`)),
-		TradeTags:     datatypes.JSON([]byte(`["trade"]`)),
-		WantedTags:    datatypes.JSON([]byte(`["wanted"]`)),
-		NotTradeList:  datatypes.JSON([]byte(`{"foo":true}`)),
-		NotWantedList: datatypes.JSON([]byte(`{"bar":true}`)),
+		CaughtTags:    RawJSON(`["favorite"]`),
+		TradeTags:     RawJSON(`["trade"]`),
+		WantedTags:    RawJSON(`["wanted"]`),
+		NotTradeList:  RawJSON(`{"foo":true}`),
+		NotWantedList: RawJSON(`{"bar":true}`),
 		TradeFilters:  JSON{"iv": "high"},
 		WantedFilters: JSON{"cp": "low"},
 		Level:         ptrFloat64(23.5),

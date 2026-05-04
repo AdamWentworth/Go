@@ -20,7 +20,7 @@ vi.mock('@/pages/Search/views/ListViewComponents/MiniMap', () => ({
   default: () => <div data-testid="mini-map" />,
 }));
 
-vi.mock('@/components/pokemonComponents/MoveDisplay.jsx', () => ({
+vi.mock('@/components/pokemonComponents/MoveDisplay', () => ({
   default: () => <div data-testid="move-display" />,
 }));
 
@@ -28,7 +28,7 @@ vi.mock('@/components/pokemonComponents/Gender', () => ({
   default: ({ gender }: { gender?: string }) => <span data-testid="gender">{gender}</span>,
 }));
 
-vi.mock('@/components/pokemonComponents/CP.jsx', () => ({
+vi.mock('@/components/pokemonComponents/CP', () => ({
   default: ({ cp }: { cp: number }) => <div data-testid="cp">CP:{cp}</div>,
 }));
 

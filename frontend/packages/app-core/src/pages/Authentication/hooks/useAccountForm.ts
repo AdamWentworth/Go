@@ -4,6 +4,7 @@ import { useState, useEffect, ChangeEvent } from 'react';
 import { useModal } from '@/contexts/ModalContext';
 import { fetchSuggestions, fetchLocationOptions } from '../../../services/locationServices';
 import { createScopedLogger } from '@/utils/logger';
+import { removeStorageKey, STORAGE_KEYS } from '@/utils/storage';
 
 import type { User } from '../../../types/auth';
 import type { AccountFormValues, FormErrors } from '@/types/auth';
@@ -211,7 +212,7 @@ const useAccountForm = (
       log.debug('Submitting values:', submissionValues);
 
       if (!submissionValues.allowLocation) {
-        localStorage.removeItem('location');
+        removeStorageKey(STORAGE_KEYS.location);
       }
 
       handleUpdateUserDetails(user.user_id, submissionValues, setIsEditable);
