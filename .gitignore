@@ -32,3 +32,4 @@ build/
 
 # Local database/backups
 pokemon/data/pokego.db.bak*
+assets/images/backup/
