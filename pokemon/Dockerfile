@@ -1,6 +1,6 @@
 # Build stage
 # Align with go.mod toolchain.
-FROM golang:1.26.2-alpine AS build
+FROM golang:1.26.2-alpine3.23 AS build
 
 WORKDIR /src
 RUN apk add --no-cache ca-certificates tzdata
@@ -15,7 +15,7 @@ COPY . .
 RUN go build -trimpath -ldflags="-s -w" -o /out/pokemon_data ./cmd/pokemon
 
 # Runtime stage
-FROM alpine:3.20
+FROM alpine:3.23
 
 WORKDIR /usr/src/app
 RUN apk add --no-cache ca-certificates tzdata \

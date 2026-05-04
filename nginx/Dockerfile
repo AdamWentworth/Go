@@ -1,5 +1,5 @@
 # nginx dockerfile
-FROM nginx:alpine
+FROM nginx:1.29-alpine3.23
 
 # Apply latest Alpine security updates during image build.
 RUN apk upgrade --no-cache

@@ -7,13 +7,17 @@ This folder is the frontend monorepo workspace.
 - `packages/shared-contracts`: shared API contracts/types used by frontend apps.
 - `packages/shared-ui-tokens`: shared visual tokens.
 
-Use app-local commands for CI parity:
+Install dependencies once from the workspace root:
 
-- Web: run commands in `frontend/apps/web`.
-- Mobile: run commands in `frontend/apps/mobile`.
+```bash
+cd frontend
+npm ci
+```
 
-You can also run one command from `frontend/`:
+Use workspace commands for CI parity:
 
 - `npm run test` (web + mobile)
 - `npm run lint` (web + mobile)
 - `npm run typecheck` (web + mobile)
+- `npm --workspace apps/web run dev`
+- `npm --workspace apps/mobile run start`

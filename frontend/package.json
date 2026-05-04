@@ -1,16 +1,21 @@
 {
   "name": "frontend-workspace",
   "private": true,
+  "workspaces": [
+    "apps/web",
+    "apps/mobile",
+    "packages/*"
+  ],
   "scripts": {
     "test": "npm run test:web && npm run test:mobile",
-    "test:web": "npm --prefix apps/web run test",
-    "test:browsers:web": "npm --prefix apps/web run test:browsers",
-    "test:mobile": "npm --prefix apps/mobile run test",
+    "test:web": "npm --workspace apps/web run test",
+    "test:browsers:web": "npm --workspace apps/web run test:browsers",
+    "test:mobile": "npm --workspace apps/mobile run test",
     "lint": "npm run lint:web && npm run lint:mobile",
-    "lint:web": "npm --prefix apps/web run lint && npm --prefix apps/web run lint:styles",
-    "lint:mobile": "npm --prefix apps/mobile run lint",
+    "lint:web": "npm --workspace apps/web run lint && npm --workspace apps/web run lint:styles",
+    "lint:mobile": "npm --workspace apps/mobile run lint",
     "typecheck": "npm run typecheck:web && npm run typecheck:mobile",
-    "typecheck:web": "npm --prefix apps/web run typecheck",
-    "typecheck:mobile": "npm --prefix apps/mobile run typecheck"
+    "typecheck:web": "npm --workspace apps/web run typecheck",
+    "typecheck:mobile": "npm --workspace apps/mobile run typecheck"
   }
 }

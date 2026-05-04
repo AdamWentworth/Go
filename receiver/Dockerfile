@@ -1,4 +1,4 @@
-FROM golang:1.25.9-alpine AS build
+FROM golang:1.25.9-alpine3.23 AS build
 
 WORKDIR /src
 
@@ -9,7 +9,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/receiver_service .
 
-FROM alpine:3.20
+FROM alpine:3.23
 
 RUN apk add --no-cache ca-certificates tzdata \
     && addgroup -S app \

@@ -13,13 +13,15 @@ Expo mobile shell for Pokemon Go Nexus.
 ## Commands
 
 ```bash
-npm run start
-npm run android
-npm run ios
-npm run web
-npm run typecheck
-npm run lint
-npm run test
+cd frontend
+npm ci
+npm --workspace apps/mobile run start
+npm --workspace apps/mobile run android
+npm --workspace apps/mobile run ios
+npm --workspace apps/mobile run web
+npm --workspace apps/mobile run typecheck
+npm --workspace apps/mobile run lint
+npm --workspace apps/mobile run test
 ```
 
 ## Environment

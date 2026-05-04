@@ -17,7 +17,7 @@ EDGE_NETWORK="${EDGE_NETWORK:-pokemon_edge}"
 EDGE_SUBNET="${EDGE_SUBNET:-172.30.0.0/24}"
 EDGE_GATEWAY="${EDGE_GATEWAY:-172.30.0.1}"
 DEFAULT_IMAGE="adamwentworth/pokemon_service_go:latest"
-ALPINE_IMAGE="alpine:3.20"
+ALPINE_IMAGE="alpine:3.23"
 
 TMP_DIR=""
 BACKUP_NAME=""

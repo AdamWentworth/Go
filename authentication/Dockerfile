@@ -1,6 +1,6 @@
 ﻿# authentication Dockerfile
 
-FROM node:24-alpine
+FROM node:24-alpine3.23
 
 WORKDIR /usr/src/app
 

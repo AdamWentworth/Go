@@ -42,7 +42,9 @@ The app supports:
 ### 1. Install dependencies
 
 ```bash
-npm install
+cd ../../
+npm ci
+npm --workspace apps/web run dev
 ```
 ---
 
@@ -56,7 +58,7 @@ This service now has dedicated frontend workflows:
 ### What `ci-frontend` does
 
 - Runs on changes under `frontend/**`, `nginx/**`, and the frontend workflow files.
-- Installs deps with `npm ci`.
+- Installs workspace deps with `npm ci` from `frontend/`.
 - Builds with `npm run build`.
 - Enforces a blocking production audit gate with `npm audit --omit=dev --audit-level=moderate`.
 - Runs full (prod + dev) audit as informational output for visibility without blocking deploys.
@@ -67,7 +69,7 @@ This service now has dedicated frontend workflows:
 ### What `deploy-frontend-prod` does
 
 - Manual trigger (`workflow_dispatch`) on your self-hosted prod runner.
-- Fast-forwards repo at deploy root (default `/home/adam/deploy/Go`).
+- Uses the workflow checkout for compose files and keeps prod state under `deploy_root`.
 - Validates compose and required Docker networks (`kafka_default`, `pokemon_edge`).
 - Pulls requested image and recreates `frontend_nginx` with rollback on failed health check.
 
@@ -292,4 +294,3 @@ This frontend was designed to be modular, touch-friendly, and scale as features 
 The current codebase is large, but **structured for rapid iteration**, with clean folder grouping and reusable UI components.
 
 > If you're working on a section or need help tracking data flow — `contexts/`, `hooks/`, and `pages/Pokemon/` are the best starting points.
-

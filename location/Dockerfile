@@ -1,4 +1,4 @@
-FROM golang:1.25.9-alpine AS builder
+FROM golang:1.25.9-alpine3.23 AS builder
 
 WORKDIR /src
 RUN apk add --no-cache ca-certificates tzdata
@@ -7,7 +7,7 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/location_service .
 
-FROM alpine:3.20
+FROM alpine:3.23
 WORKDIR /app
 RUN apk add --no-cache ca-certificates tzdata \
     && addgroup -S app \

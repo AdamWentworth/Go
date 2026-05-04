@@ -3,7 +3,7 @@
 # syntax=docker/dockerfile:1
 
 # Stage 1 - Build
-FROM golang:1.25.9-alpine AS builder
+FROM golang:1.25.9-alpine3.23 AS builder
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ COPY . .
 RUN go build -trimpath -ldflags="-s -w" -o /out/users_service .
 
 # Stage 2 - Runtime
-FROM alpine:3.20
+FROM alpine:3.23
 
 WORKDIR /usr/src/app
 
