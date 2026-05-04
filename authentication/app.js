@@ -1,7 +1,7 @@
 ﻿// app.js
 
 const dotenv = require('dotenv');
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const express = require('express');
 const cookieParser = require('cookie-parser');

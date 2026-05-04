@@ -39,7 +39,7 @@ userSchema.index({ trainerCode: 1 }, {
 });
 
 // Pre-save middleware to handle empty strings for all string fields
-userSchema.pre('save', function(next) {
+userSchema.pre('save', function() {
     // Iterate over all the fields in the document
     for (let field in this.schema.paths) {
         if (this.schema.paths[field].instance === 'String') {
@@ -49,7 +49,6 @@ userSchema.pre('save', function(next) {
             }
         }
     }
-    next();
 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -7,7 +7,7 @@ const dotenv = require('dotenv');
 const logger = require('../middlewares/logger'); // Ensure logger is properly configured
 
 // Load environment variables from .env file
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const DATABASE_NAME = 'PoGo_App_Users'; // Your actual database name
 const COLLECTION_NAME = 'users'; // The collection you want to back up

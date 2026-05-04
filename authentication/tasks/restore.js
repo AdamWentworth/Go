@@ -1,7 +1,7 @@
 const { exec } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
 const DB_URI = process.env.DATABASE_URL || 'mongodb://localhost:27017';
 const DB_NAME = process.env.DB_NAME || 'PoGo_App_Users';

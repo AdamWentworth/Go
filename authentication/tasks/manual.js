@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 // Load environment variables from .env file
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
 const DATABASE_NAME = 'PoGo_App_Users'; // Your actual database name
 const COLLECTION_NAME = 'users'; // The collection you want to back up
