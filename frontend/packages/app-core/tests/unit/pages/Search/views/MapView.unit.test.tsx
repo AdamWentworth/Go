@@ -1,5 +1,6 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 
 import MapView from '@/pages/Search/views/MapView';
@@ -11,13 +12,13 @@ const { mapInstances, overlayInstances } = vi.hoisted(() => ({
     featureAtPixel: unknown;
     setFeatureAtPixel: (feature: unknown) => void;
     triggerClick: (pixel?: number[]) => void;
-    setTarget: ReturnType<typeof vi.fn>;
+    setTarget: Mock<(...args: unknown[]) => void>;
     getSize: () => [number, number];
-    getView: () => { fit: ReturnType<typeof vi.fn> };
+    getView: () => { fit: Mock<(...args: unknown[]) => void> };
   }>,
   overlayInstances: [] as Array<{
-    setPositioning: ReturnType<typeof vi.fn>;
-    setPosition: ReturnType<typeof vi.fn>;
+    setPositioning: Mock<(...args: unknown[]) => void>;
+    setPosition: Mock<(...args: unknown[]) => void>;
   }>,
 }));
 
@@ -93,8 +94,8 @@ vi.mock('ol/geom/Point', () => ({
 
 vi.mock('ol/Overlay', () => ({
   default: class MockOverlay {
-    setPositioning = vi.fn();
-    setPosition = vi.fn();
+    setPositioning = vi.fn<(...args: unknown[]) => void>();
+    setPosition = vi.fn<(...args: unknown[]) => void>();
 
     constructor() {
       overlayInstances.push(this);
@@ -137,7 +138,7 @@ vi.mock('ol/layer/Vector', () => ({
 
 vi.mock('ol/View', () => ({
   default: class MockView {
-    fit = vi.fn();
+    fit = vi.fn<(...args: unknown[]) => void>();
 
     constructor(_args?: unknown) {}
   },
@@ -157,10 +158,10 @@ vi.mock('ol/Map', () => ({
   default: class MockMap {
     featureAtPixel: unknown = null;
     clickHandler: ((event: { pixel: number[] }) => void) | null = null;
-    setTarget = vi.fn();
-    view = { fit: vi.fn() };
+    setTarget = vi.fn<(...args: unknown[]) => void>();
+    view = { fit: vi.fn<(...args: unknown[]) => void>() };
 
-    constructor(args: { view?: { fit: ReturnType<typeof vi.fn> } } = {}) {
+    constructor(args: { view?: { fit: Mock<(...args: unknown[]) => void> } } = {}) {
       this.view = args.view ?? this.view;
       mapInstances.push(this);
     }

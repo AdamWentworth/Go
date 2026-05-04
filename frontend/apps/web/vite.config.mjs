@@ -97,20 +97,8 @@ export default defineConfig(({ mode }) => {
 
       isolate        : true,
       pool           : lowMemoryMode ? 'forks' : 'threads',
+      maxWorkers     : lowMemoryMode ? 1 : 4,
       fileParallelism: lowMemoryMode ? false : true,
-      poolOptions    : lowMemoryMode
-        ? {
-            forks: {
-              singleFork: true,
-            },
-          }
-        : {
-            threads: {
-              singleThread: false,
-              minThreads: 2,
-              maxThreads: 4,
-            },
-          },
       sequence       : {
         shuffle: false,
         concurrent: false,

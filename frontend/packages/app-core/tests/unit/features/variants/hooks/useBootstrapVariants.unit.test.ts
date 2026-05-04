@@ -2,13 +2,14 @@
 
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import type { Mock } from 'vitest';
 import { useBootstrapVariants } from '@/features/variants/hooks/useBootstrapVariants';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { testLogger, enableLogging } from '../../../../setupTests';
 
 describe('🪝 useBootstrapVariants', () => {
-  let mockHydrate: ReturnType<typeof vi.fn>;
-  let mockRefresh: ReturnType<typeof vi.fn>;
+  let mockHydrate: Mock<() => Promise<void>>;
+  let mockRefresh: Mock<() => Promise<void>>;
 
   beforeAll(() => {
     enableLogging('verbose');
@@ -24,8 +25,8 @@ describe('🪝 useBootstrapVariants', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockHydrate = vi.fn().mockResolvedValue(undefined);
-    mockRefresh = vi.fn();
+    mockHydrate = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    mockRefresh = vi.fn<() => Promise<void>>();
 
     vi.spyOn(useVariantsStore, 'getState').mockReturnValue({
       hydrateFromCache: mockHydrate,

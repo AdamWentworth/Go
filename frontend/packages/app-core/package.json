@@ -3,5 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Shared source-of-truth app core for web/mobile/desktop hosts."
+  "description": "Shared source-of-truth app core for web/mobile/desktop hosts.",
+  "devDependencies": {
+    "vite": "^8.0.10",
+    "vitest": "^4.1.5"
+  }
 }

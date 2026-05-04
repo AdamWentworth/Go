@@ -7,25 +7,29 @@ import MiniMap from '@/pages/Search/views/ListViewComponents/MiniMap';
 const olMocks = vi.hoisted(() => {
   const mapSetTarget = vi.fn();
   const mapUpdateSize = vi.fn();
+  const ctorMock = <T extends object>(factory: () => T) =>
+    vi.fn(function MockConstructor() {
+      return factory();
+    });
 
   return {
     mapSetTarget,
     mapUpdateSize,
-    MapCtor: vi.fn(() => ({
+    MapCtor: ctorMock(() => ({
       setTarget: mapSetTarget,
       updateSize: mapUpdateSize,
     })),
-    ViewCtor: vi.fn(() => ({})),
-    TileLayerCtor: vi.fn(() => ({})),
-    XYZCtor: vi.fn(() => ({})),
-    VectorLayerCtor: vi.fn(() => ({})),
-    VectorSourceCtor: vi.fn(() => ({})),
-    FeatureCtor: vi.fn(() => ({})),
-    PointCtor: vi.fn(() => ({})),
-    StyleCtor: vi.fn(() => ({})),
-    CircleCtor: vi.fn(() => ({})),
-    FillCtor: vi.fn(() => ({})),
-    ZoomCtor: vi.fn(() => ({})),
+    ViewCtor: ctorMock(() => ({})),
+    TileLayerCtor: ctorMock(() => ({})),
+    XYZCtor: ctorMock(() => ({})),
+    VectorLayerCtor: ctorMock(() => ({})),
+    VectorSourceCtor: ctorMock(() => ({})),
+    FeatureCtor: ctorMock(() => ({})),
+    PointCtor: ctorMock(() => ({})),
+    StyleCtor: ctorMock(() => ({})),
+    CircleCtor: ctorMock(() => ({})),
+    FillCtor: ctorMock(() => ({})),
+    ZoomCtor: ctorMock(() => ({})),
     fromLonLat: vi.fn((coords: number[]) => coords),
     useThemeMock: vi.fn(() => ({ isLightMode: true })),
   };
@@ -56,15 +60,18 @@ describe('MiniMap', () => {
 
   beforeEach(() => {
     Object.values(olMocks).forEach((maybeMock) => {
-      if (typeof maybeMock === 'function' && 'mockReset' in maybeMock) {
-        maybeMock.mockReset();
+      const resettableMock = maybeMock as { mockReset?: () => void };
+      if (typeof resettableMock.mockReset === 'function') {
+        resettableMock.mockReset();
       }
     });
 
-    olMocks.MapCtor.mockImplementation(() => ({
-      setTarget: olMocks.mapSetTarget,
-      updateSize: olMocks.mapUpdateSize,
-    }));
+    olMocks.MapCtor.mockImplementation(function MapMock() {
+      return {
+        setTarget: olMocks.mapSetTarget,
+        updateSize: olMocks.mapUpdateSize,
+      };
+    });
     olMocks.useThemeMock.mockReturnValue({ isLightMode: true });
     olMocks.fromLonLat.mockImplementation((coords: number[]) => coords);
 
