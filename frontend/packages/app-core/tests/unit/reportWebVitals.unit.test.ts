@@ -2,19 +2,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { waitFor } from '@testing-library/react';
 
 const mocks = vi.hoisted(() => ({
-  getCLS: vi.fn(),
-  getFID: vi.fn(),
-  getFCP: vi.fn(),
-  getLCP: vi.fn(),
-  getTTFB: vi.fn(),
+  onCLS: vi.fn(),
+  onFCP: vi.fn(),
+  onINP: vi.fn(),
+  onLCP: vi.fn(),
+  onTTFB: vi.fn(),
 }));
 
 vi.mock('web-vitals', () => ({
-  getCLS: mocks.getCLS,
-  getFID: mocks.getFID,
-  getFCP: mocks.getFCP,
-  getLCP: mocks.getLCP,
-  getTTFB: mocks.getTTFB,
+  onCLS: mocks.onCLS,
+  onFCP: mocks.onFCP,
+  onINP: mocks.onINP,
+  onLCP: mocks.onLCP,
+  onTTFB: mocks.onTTFB,
 }));
 
 import reportWebVitals from '@/reportWebVitals';
@@ -29,11 +29,11 @@ describe('reportWebVitals', () => {
     reportWebVitals(callback);
 
     await waitFor(() => {
-      expect(mocks.getCLS).toHaveBeenCalledWith(callback);
-      expect(mocks.getFID).toHaveBeenCalledWith(callback);
-      expect(mocks.getFCP).toHaveBeenCalledWith(callback);
-      expect(mocks.getLCP).toHaveBeenCalledWith(callback);
-      expect(mocks.getTTFB).toHaveBeenCalledWith(callback);
+      expect(mocks.onCLS).toHaveBeenCalledWith(callback);
+      expect(mocks.onFCP).toHaveBeenCalledWith(callback);
+      expect(mocks.onINP).toHaveBeenCalledWith(callback);
+      expect(mocks.onLCP).toHaveBeenCalledWith(callback);
+      expect(mocks.onTTFB).toHaveBeenCalledWith(callback);
     });
   });
 
@@ -44,10 +44,10 @@ describe('reportWebVitals', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(mocks.getCLS).not.toHaveBeenCalled();
-    expect(mocks.getFID).not.toHaveBeenCalled();
-    expect(mocks.getFCP).not.toHaveBeenCalled();
-    expect(mocks.getLCP).not.toHaveBeenCalled();
-    expect(mocks.getTTFB).not.toHaveBeenCalled();
+    expect(mocks.onCLS).not.toHaveBeenCalled();
+    expect(mocks.onFCP).not.toHaveBeenCalled();
+    expect(mocks.onINP).not.toHaveBeenCalled();
+    expect(mocks.onLCP).not.toHaveBeenCalled();
+    expect(mocks.onTTFB).not.toHaveBeenCalled();
   });
 });

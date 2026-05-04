@@ -60,7 +60,7 @@ const TagItems: React.FC<TagItemsProps> = ({
             </div>
           );
         })
-        .filter(Boolean) as JSX.Element[];
+        .filter(Boolean) as React.JSX.Element[];
 
       const onKey = (e: KeyboardEvent<HTMLDivElement>) =>
         e.key === 'Enter' && onSelectTag(tagName);
@@ -106,4 +106,3 @@ const TagItems: React.FC<TagItemsProps> = ({
 );
 
 export default React.memo(TagItems);
-

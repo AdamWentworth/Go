@@ -19,13 +19,13 @@
     "typecheck:mobile": "npm --workspace apps/mobile run typecheck"
   },
   "devDependencies": {
-    "@testing-library/react": "^14.3.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.30.3",
-    "react-toastify": "^10.0.5"
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.2",
+    "react-toastify": "^11.1.0"
   },
   "overrides": {
     "@babel/helpers": "^7.28.6",

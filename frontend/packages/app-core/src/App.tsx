@@ -42,7 +42,7 @@ const AppContent: React.FC = () => (
 );
 
 const App: React.FC = () => (
-  <Router future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
+  <Router>
     <AppProviders>
       <AppBootstrap />
       <ErrorBoundary>
@@ -54,4 +54,3 @@ const App: React.FC = () => (
 );
 
 export default App;
-

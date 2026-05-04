@@ -63,9 +63,6 @@ export default defineConfig(({ mode }) => {
             // Keep only clearly isolated heavy libraries split out.
             // Note: aggressive vendor splitting (react/router/state/utils)
             // created circular chunk dependencies in production.
-            if (id.includes('react-datepicker')) {
-              return 'vendor-datepicker';
-            }
             if (id.includes('html2canvas')) {
               return 'vendor-capture';
             }
