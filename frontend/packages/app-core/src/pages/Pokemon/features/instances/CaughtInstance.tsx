@@ -42,6 +42,11 @@ import { resolveMegaDisplayData } from './utils/resolveMegaDisplayData';
 import { resolveCrownDisplayData } from './utils/resolveCrownDisplayData';
 import { resolveFusionBackgroundPool } from './utils/resolveFusionBackgroundPool';
 import { resolveFusionComboBackground } from './utils/resolveFusionComboBackground';
+import {
+  collectInstanceRefCandidates,
+  findInstanceByRefs,
+  parseBackgroundId,
+} from './utils/caughtInstanceRefs';
 import { useCaughtFormState } from './hooks/useCaughtFormState';
 
 import PowerPanel from './sections/PowerPanel';
@@ -59,65 +64,6 @@ type MovesPreviewPokemon = {
   moves?: CaughtPokemon['moves'];
   fusion?: CaughtPokemon['fusion'];
   instanceData?: Partial<PokemonInstance>;
-};
-
-const UUID_AT_END_REGEX =
-  /([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
-
-const extractLegacyInstanceId = (key: string): string | null => {
-  const idx = key.lastIndexOf('_');
-  if (idx < 0 || idx >= key.length - 1) return null;
-  const suffix = key.slice(idx + 1);
-  return suffix || null;
-};
-
-const normalizeInstanceToken = (value: string | null | undefined): string | null => {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim().toLowerCase();
-  if (!trimmed) return null;
-  const uuidMatch = trimmed.match(UUID_AT_END_REGEX);
-  if (uuidMatch?.[1]) return uuidMatch[1];
-  return trimmed;
-};
-
-const collectInstanceRefCandidates = (value: string | null): string[] => {
-  if (!value) return [];
-  const refs = new Set<string>();
-  refs.add(value.toLowerCase());
-  const legacy = extractLegacyInstanceId(value);
-  if (legacy) refs.add(legacy.toLowerCase());
-  const normalized = normalizeInstanceToken(value);
-  if (normalized) refs.add(normalized.toLowerCase());
-  return [...refs];
-};
-
-const findInstanceByRefs = (
-  collection: Record<string, PokemonInstance> | null | undefined,
-  refs: string[],
-): PokemonInstance | null => {
-  if (!collection || refs.length === 0) return null;
-  const refSet = new Set(refs);
-
-  for (const [key, row] of Object.entries(collection)) {
-    const keyRefs = collectInstanceRefCandidates(key);
-    if (keyRefs.some((ref) => refSet.has(ref))) return row;
-
-    const rowInstanceId =
-      typeof row?.instance_id === 'string' && row.instance_id.length > 0 ? row.instance_id : null;
-    const rowRefs = collectInstanceRefCandidates(rowInstanceId);
-    if (rowRefs.some((ref) => refSet.has(ref))) return row;
-  }
-
-  return null;
-};
-
-const parseBackgroundId = (value: unknown): number | null => {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string' && value.trim().length > 0) {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
 };
 
 interface CaughtInstanceProps {
