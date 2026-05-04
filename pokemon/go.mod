@@ -3,7 +3,7 @@ module pokemon_data
 go 1.26.2
 
 require (
-	github.com/go-chi/chi/v5 v5.2.2
+	github.com/go-chi/chi/v5 v5.2.5
 	github.com/prometheus/client_golang v1.23.2
 	golang.org/x/sync v0.13.0
 	golang.org/x/time v0.14.0
