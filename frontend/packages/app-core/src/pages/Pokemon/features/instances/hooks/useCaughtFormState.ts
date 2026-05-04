@@ -2,6 +2,18 @@ import { useCallback, useMemo, useState } from 'react';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { CaughtComputedValues } from '../utils/caughtPersist';
 import type { IVs as InstanceIVs, MovesState } from '../utils/buildInstanceChanges';
+import {
+  areInstanceIvsEmpty,
+  getInitialCaughtNumericValue,
+  getInitialCpText,
+  getInitialGenderState,
+  getInitialIvs,
+  getInitialLevel,
+  getInitialMaxMoveValue,
+  getInitialMoves,
+  normalizeIvsForState,
+  parseEditableLevel,
+} from '../utils/instanceFormState';
 import { normalizeEditableDateValue } from '../utils/normalizeEditableDateValue';
 
 type UseCaughtFormStateArgs = {
@@ -9,8 +21,9 @@ type UseCaughtFormStateArgs = {
 };
 
 export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => {
-  const [gender, setGender] = useState<string | null>(instanceData.gender ?? null);
-  const [isFemale, setIsFemale] = useState<boolean>(instanceData.gender === 'Female');
+  const initialGenderState = getInitialGenderState(instanceData);
+  const [gender, setGender] = useState<string | null>(initialGenderState.gender);
+  const [isFemale, setIsFemale] = useState<boolean>(initialGenderState.isFemale);
   const [nickname, setNickname] = useState<string | null>(instanceData.nickname ?? null);
   const [isFavorite, setIsFavorite] = useState<boolean>(Boolean(instanceData.favorite));
   const [isLucky, setIsLucky] = useState<boolean>(Boolean(instanceData.lucky));
@@ -18,29 +31,20 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
     Boolean(instanceData.is_traded),
   );
 
-  const [cp, setCP] = useState<string>(instanceData.cp != null ? String(instanceData.cp) : '');
-  const [weight, setWeight] = useState<number>(Number(instanceData.weight ?? 0));
-  const [height, setHeight] = useState<number>(Number(instanceData.height ?? 0));
-  const [level, setLevel] = useState<number | null>(
-    instanceData.level != null ? Number(instanceData.level) : null,
+  const [cp, setCP] = useState<string>(getInitialCpText(instanceData));
+  const [weight, setWeight] = useState<number>(
+    getInitialCaughtNumericValue(instanceData.weight),
   );
-
-  const [moves, setMoves] = useState<MovesState>({
-    fastMove: instanceData.fast_move_id ?? null,
-    chargedMove1: instanceData.charged_move1_id ?? null,
-    chargedMove2: instanceData.charged_move2_id ?? null,
-  });
-
-  const [ivs, setIvs] = useState<InstanceIVs>({
-    Attack: instanceData.attack_iv != null ? Number(instanceData.attack_iv) : '',
-    Defense: instanceData.defense_iv != null ? Number(instanceData.defense_iv) : '',
-    Stamina: instanceData.stamina_iv != null ? Number(instanceData.stamina_iv) : '',
-  });
-
-  const areIVsEmpty = useMemo(
-    () => ivs.Attack === '' && ivs.Defense === '' && ivs.Stamina === '',
-    [ivs],
+  const [height, setHeight] = useState<number>(
+    getInitialCaughtNumericValue(instanceData.height),
   );
+  const [level, setLevel] = useState<number | null>(getInitialLevel(instanceData));
+
+  const [moves, setMoves] = useState<MovesState>(getInitialMoves(instanceData));
+
+  const [ivs, setIvs] = useState<InstanceIVs>(getInitialIvs(instanceData));
+
+  const areIVsEmpty = useMemo(() => areInstanceIvsEmpty(ivs), [ivs]);
 
   const [locationCaught, setLocationCaught] = useState<string | null>(
     instanceData.location_caught ?? null,
@@ -61,9 +65,15 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
   const [isPurified, setIsPurified] = useState<boolean>(Boolean(instanceData.purified));
   const isTraded = !isShadow && (isLucky || isTradedInternal);
 
-  const [maxAttack, setMaxAttack] = useState<string>(String(instanceData.max_attack ?? ''));
-  const [maxGuard, setMaxGuard] = useState<string>(String(instanceData.max_guard ?? ''));
-  const [maxSpirit, setMaxSpirit] = useState<string>(String(instanceData.max_spirit ?? ''));
+  const [maxAttack, setMaxAttack] = useState<string>(
+    getInitialMaxMoveValue(instanceData.max_attack),
+  );
+  const [maxGuard, setMaxGuard] = useState<string>(
+    getInitialMaxMoveValue(instanceData.max_guard),
+  );
+  const [maxSpirit, setMaxSpirit] = useState<string>(
+    getInitialMaxMoveValue(instanceData.max_spirit),
+  );
   const [showMaxOptions, setShowMaxOptions] = useState<boolean>(false);
 
   const handleGenderChange = useCallback((nextGender: string | null) => {
@@ -94,11 +104,7 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
   const handleMovesChange = useCallback((value: MovesState) => setMoves(value), []);
   const handleIvChange = useCallback(
     (value: { Attack: number | '' | null; Defense: number | '' | null; Stamina: number | '' | null }) =>
-      setIvs({
-        Attack: value.Attack ?? '',
-        Defense: value.Defense ?? '',
-        Stamina: value.Stamina ?? '',
-      }),
+      setIvs(normalizeIvsForState(value)),
     [],
   );
   const handleLocationCaughtChange = useCallback((value: string) => setLocationCaught(value), []);
@@ -117,7 +123,7 @@ export const useCaughtFormState = ({ instanceData }: UseCaughtFormStateArgs) => 
   );
   const handlePokeballChange = useCallback((value: string | null) => setPokeball(value), []);
   const handleLevelChange = useCallback((value: string) => {
-    setLevel(value !== '' ? Number(value) : null);
+    setLevel(parseEditableLevel(value));
   }, []);
   const handlePurifyToggle = useCallback((value: boolean) => {
     if (value) {

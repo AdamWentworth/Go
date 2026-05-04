@@ -248,7 +248,7 @@
     var(--caught-scroll-tail-pad) +
     env(safe-area-inset-bottom)
   );
-  min-height: 100dvh;
+  min-height: 0;
 }
 
 /* the centered content column/panel */
@@ -557,4 +557,3 @@
   box-shadow: var(--light-caught-shadow);
   color: var(--light-text-primary);
 }
-

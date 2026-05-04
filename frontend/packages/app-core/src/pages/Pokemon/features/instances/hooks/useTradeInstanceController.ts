@@ -6,7 +6,18 @@ import { calculateBaseStats } from '@/utils/calculateBaseStats';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { VariantBackground } from '@/types/pokemonSubTypes';
-import { areTradeIvsEmpty, type TradeIvs, type TradeMoves } from '../utils/tradeInstanceForm';
+import {
+  areInstanceIvsEmpty,
+  getInitialCpText,
+  getInitialGenderState,
+  getInitialIvs,
+  getInitialLevel,
+  getInitialMaxMoveValue,
+  getInitialMoves,
+  getInitialOptionalNumericValue,
+  parseEditableLevel,
+} from '../utils/instanceFormState';
+import type { TradeIvs, TradeMoves } from '../utils/tradeInstanceForm';
 
 type BackgroundOption = VariantBackground;
 
@@ -34,9 +45,8 @@ export const useTradeInstanceController = (
   const isCrown = Boolean(options.isCrown);
   const crownForm = options.crownForm ?? null;
   const gigantamax = !!pokemon.instanceData.gigantamax;
-  const [isFemale, setIsFemale] = useState<boolean>(
-    pokemon.instanceData.gender === 'Female',
-  );
+  const initialGenderState = getInitialGenderState(pokemon.instanceData);
+  const [isFemale, setIsFemale] = useState<boolean>(initialGenderState.isFemale);
   const [currentImage, setCurrentImage] = useState<string>(
     determineImageUrl(isFemale, pokemon, false, undefined, false, undefined, false, gigantamax, isCrown, crownForm ?? undefined),
   );
@@ -44,59 +54,32 @@ export const useTradeInstanceController = (
   const [nickname, setNickname] = useState<string | null>(
     pokemon.instanceData.nickname,
   );
-  const [cp, setCP] = useState<string>(
-    pokemon.instanceData.cp != null ? pokemon.instanceData.cp.toString() : '',
-  );
-  const [gender, setGender] = useState<string | null>(pokemon.instanceData.gender);
+  const [cp, setCP] = useState<string>(getInitialCpText(pokemon.instanceData));
+  const [gender, setGender] = useState<string | null>(initialGenderState.gender);
   const [weight, setWeight] = useState<number | ''>(
-    Number(pokemon.instanceData.weight) || '',
+    getInitialOptionalNumericValue(pokemon.instanceData.weight),
   );
   const [height, setHeight] = useState<number | ''>(
-    Number(pokemon.instanceData.height) || '',
+    getInitialOptionalNumericValue(pokemon.instanceData.height),
   );
   const dynamax = !!pokemon.instanceData.dynamax;
   const [showMaxOptions, setShowMaxOptions] = useState<boolean>(false);
 
   const [maxAttack, setMaxAttack] = useState<string>(
-    pokemon.instanceData.max_attack != null
-      ? String(pokemon.instanceData.max_attack)
-      : '',
+    getInitialMaxMoveValue(pokemon.instanceData.max_attack),
   );
   const [maxGuard, setMaxGuard] = useState<string>(
-    pokemon.instanceData.max_guard != null
-      ? String(pokemon.instanceData.max_guard)
-      : '',
+    getInitialMaxMoveValue(pokemon.instanceData.max_guard),
   );
   const [maxSpirit, setMaxSpirit] = useState<string>(
-    pokemon.instanceData.max_spirit != null
-      ? String(pokemon.instanceData.max_spirit)
-      : '',
+    getInitialMaxMoveValue(pokemon.instanceData.max_spirit),
   );
 
-  const [moves, setMoves] = useState<TradeMoves>({
-    fastMove: pokemon.instanceData.fast_move_id,
-    chargedMove1: pokemon.instanceData.charged_move1_id,
-    chargedMove2: pokemon.instanceData.charged_move2_id,
-  });
+  const [moves, setMoves] = useState<TradeMoves>(getInitialMoves(pokemon.instanceData));
 
-  const [ivs, setIvs] = useState<TradeIvs>({
-    Attack:
-      pokemon.instanceData.attack_iv != null
-        ? Number(pokemon.instanceData.attack_iv)
-        : '',
-    Defense:
-      pokemon.instanceData.defense_iv != null
-        ? Number(pokemon.instanceData.defense_iv)
-        : '',
-    Stamina:
-      pokemon.instanceData.stamina_iv != null
-        ? Number(pokemon.instanceData.stamina_iv)
-        : '',
-  });
+  const [ivs, setIvs] = useState<TradeIvs>(getInitialIvs(pokemon.instanceData));
 
-  const [level, setLevel] = useState<number | null>(
-    pokemon.instanceData.level != null ? Number(pokemon.instanceData.level) : null,
-  );
+  const [level, setLevel] = useState<number | null>(getInitialLevel(pokemon.instanceData));
   const [locationCaught, setLocationCaught] = useState<string | null>(
     pokemon.instanceData.location_caught,
   );
@@ -189,7 +172,7 @@ export const useTradeInstanceController = (
     }
   }, [currentBaseStats, level, ivs]);
 
-  const areIVsEmpty = areTradeIvsEmpty(ivs);
+  const areIVsEmpty = areInstanceIvsEmpty(ivs);
 
   const handleGenderChange = useCallback((newGender: string | null) => {
     setGender(newGender);
@@ -210,7 +193,7 @@ export const useTradeInstanceController = (
   const handleMovesChange = useCallback((newMoves: TradeMoves) => setMoves(newMoves), []);
   const handleIvChange = useCallback((newIvs: TradeIvs) => setIvs(newIvs), []);
   const handleLevelChange = useCallback((newLevel: string) => {
-    setLevel(newLevel !== '' ? Number(newLevel) : null);
+    setLevel(parseEditableLevel(newLevel));
   }, []);
   const handleLocationCaughtChange = useCallback(
     (newLocation: string) => setLocationCaught(newLocation),

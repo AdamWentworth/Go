@@ -1,4 +1,5 @@
 import type { PokemonInstance } from '@/types/pokemonInstance';
+import { areInstanceIvsEmpty } from './instanceFormState';
 import { normalizeEditableDateValue } from './normalizeEditableDateValue';
 
 export type TradeMoves = {
@@ -60,9 +61,7 @@ const toOptionalNumber = (value: unknown): number | undefined => {
 };
 
 export const areTradeIvsEmpty = (ivs: TradeIvs): boolean =>
-  (ivs.Attack === '' || ivs.Attack === null) &&
-  (ivs.Defense === '' || ivs.Defense === null) &&
-  (ivs.Stamina === '' || ivs.Stamina === null);
+  areInstanceIvsEmpty(ivs);
 
 export const toTradeValidationFields = (input: TradeValidationInput) => ({
   level: toOptionalNumber(input.level),
