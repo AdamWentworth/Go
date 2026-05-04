@@ -47,6 +47,11 @@ import {
   findInstanceByRefs,
   parseBackgroundId,
 } from './utils/caughtInstanceRefs';
+import {
+  countCaughtFusionOptions,
+  resolveCaughtPowerVisibility,
+  resolveCaughtSectionVisibility,
+} from './utils/caughtInstanceVisibility';
 import { useCaughtFormState } from './hooks/useCaughtFormState';
 
 import PowerPanel from './sections/PowerPanel';
@@ -558,40 +563,37 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
     variantId,
   ]);
 
-  const canRenderMegaPower = Boolean(
-    megaEvolutions.length > 0 &&
-      !isShadow &&
-      !name.toLowerCase().includes('clone'),
-  );
-  const canRenderCrownPower = Boolean(crownForms.length > 0 && !isShadow);
-
-  const hasMaxVariant =
-    typeof variantType === 'string' &&
-    (variantType.includes('dynamax') || variantType.includes('gigantamax'));
-
-  const canRenderMaxPower = Boolean(
-    editMode &&
-      hasMaxVariant &&
-      Array.isArray(pokemon.max) &&
-      pokemon.max.length > 0 &&
-      !isShadow &&
-      !isPurified &&
-      !variantType?.includes('costume'),
-  );
-
   const fusionOptionCount = useMemo(
-    () =>
-      (pokemon.fusion ?? []).filter(
-        (item) =>
-          item.base_pokemon_id1 === pokemon.pokemon_id &&
-          typeof item.fusion_id === 'number',
-      ).length,
+    () => countCaughtFusionOptions(pokemon.fusion, pokemon.pokemon_id),
     [pokemon.fusion, pokemon.pokemon_id],
   );
 
-  const canRenderFusionPower = Boolean(fusion.is_fused || fusionOptionCount > 0);
-  const showPowerSectionDivider = Boolean(
-    canRenderMegaPower || canRenderCrownPower || canRenderMaxPower || canRenderFusionPower,
+  const { showPowerSectionDivider } = useMemo(
+    () =>
+      resolveCaughtPowerVisibility({
+        megaEvolutionCount: megaEvolutions.length,
+        crownFormCount: crownForms.length,
+        pokemonName: name,
+        variantType,
+        maxCount: Array.isArray(pokemon.max) ? pokemon.max.length : 0,
+        editMode,
+        isShadow,
+        isPurified,
+        fusionOptionCount,
+        isFused: Boolean(fusion.is_fused),
+      }),
+    [
+      crownForms.length,
+      editMode,
+      fusion.is_fused,
+      fusionOptionCount,
+      isPurified,
+      isShadow,
+      megaEvolutions.length,
+      name,
+      pokemon.max,
+      variantType,
+    ],
   );
   const movesAndIVVisible = useMemo(
     () =>
@@ -610,7 +612,6 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
       movesPokemon,
     ],
   );
-  const showStatsDivider = Boolean(showPowerSectionDivider || movesAndIVVisible);
   const metaPanelVisible = useMemo(
     () =>
       hasMetaPanelContent({
@@ -623,8 +624,15 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
       }),
     [editMode, isTraded, originalTrainerName, pokeball, pokemon, tradedDate],
   );
-  const showMetaDivider = Boolean(metaPanelVisible && (movesAndIVVisible || !showPowerSectionDivider));
-  const addStatsBottomGap = Boolean(!showStatsDivider && !metaPanelVisible);
+  const { showStatsDivider, showMetaDivider, addStatsBottomGap } = useMemo(
+    () =>
+      resolveCaughtSectionVisibility({
+        showPowerSectionDivider,
+        movesAndIVVisible,
+        metaPanelVisible,
+      }),
+    [metaPanelVisible, movesAndIVVisible, showPowerSectionDivider],
+  );
 
   return (
     <InstanceDetailsLayout
