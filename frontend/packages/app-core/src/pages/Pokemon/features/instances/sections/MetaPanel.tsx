@@ -1,19 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React from 'react';
 import './MetaPanel.css';
 import LocationCaught from '@/components/pokemonComponents/LocationCaught';
 import DateCaughtComponent from '@/components/pokemonComponents/DateCaught';
 import BallCaught from '@/components/pokemonComponents/BallCaught';
 import { getBallImageClassName, getBallImageUrl } from '@/components/pokemonComponents/ballAssets';
 import {
-  fetchPublicUserByUsername,
-  fetchTrainerAutocomplete,
-  type TrainerAutocompleteResult,
-} from '@/services/userSearchService';
-import {
   hasMetaPanelContent,
   resolveMetaPanelState,
   type PokemonWithMetaInstance,
 } from '../utils/metaPanelState';
+import { useTrainerLookupField } from '../hooks/useTrainerLookupField';
 
 interface MetaPanelProps {
   pokemon: PokemonWithMetaInstance;
@@ -79,108 +75,24 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
     pokeball,
     allowTradeMetadata,
   });
-  const [trainerQuery, setTrainerQuery] = useState<string>(
-    (originalTrainerName ?? rawOriginalTrainerName ?? '').trim(),
-  );
-  const [trainerSuggestions, setTrainerSuggestions] = useState<TrainerAutocompleteResult[]>([]);
-  const [trainerLookupBusy, setTrainerLookupBusy] = useState<boolean>(false);
-  const [trainerLookupError, setTrainerLookupError] = useState<string | null>(null);
-  const [trainerHasFocus, setTrainerHasFocus] = useState<boolean>(false);
-  const trainerLookupRequestRef = useRef(0);
-
-  const showTrainerSuggestions = useMemo(
-    () =>
-      editMode &&
-      obtainedInTrade &&
-      trainerHasFocus &&
-      trainerSuggestions.length > 0 &&
-      trainerQuery.trim().length >= 2,
-    [editMode, obtainedInTrade, trainerHasFocus, trainerSuggestions.length, trainerQuery],
-  );
-
-  useEffect(() => {
-    if (trainerHasFocus) return;
-    setTrainerQuery((originalTrainerName ?? rawOriginalTrainerName ?? '').trim());
-  }, [originalTrainerName, rawOriginalTrainerName, trainerHasFocus]);
-
-  useEffect(() => {
-    if (!editMode || !obtainedInTrade) {
-      setTrainerSuggestions([]);
-      setTrainerLookupError(null);
-      return;
-    }
-
-    const term = trainerQuery.trim();
-    if (term.length < 2) {
-      setTrainerSuggestions([]);
-      setTrainerLookupError(null);
-      return;
-    }
-
-    let cancelled = false;
-    const timeout = window.setTimeout(async () => {
-      setTrainerLookupBusy(true);
-      const outcome = await fetchTrainerAutocomplete(term);
-      if (cancelled) return;
-
-      if (outcome.type === 'success') {
-        setTrainerSuggestions(outcome.results);
-        setTrainerLookupError(null);
-      } else {
-        setTrainerSuggestions([]);
-        setTrainerLookupError(outcome.message);
-      }
-      setTrainerLookupBusy(false);
-    }, 250);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeout);
-    };
-  }, [editMode, obtainedInTrade, trainerQuery]);
-
-  const resolveTrainerByUsername = async (usernameInput: string): Promise<void> => {
-    const username = usernameInput.trim();
-    const requestId = ++trainerLookupRequestRef.current;
-    if (!username) {
-      onOriginalTrainerNameChange('');
-      setTrainerQuery('');
-      onOriginalTrainerIdChange(null);
-      setTrainerLookupError(null);
-      return;
-    }
-
-    setTrainerLookupBusy(true);
-    let outcome;
-    try {
-      outcome = await fetchPublicUserByUsername(username);
-    } catch {
-      if (requestId !== trainerLookupRequestRef.current) return;
-      setTrainerLookupBusy(false);
-      onOriginalTrainerIdChange(null);
-      setTrainerLookupError('Unable to verify trainer right now.');
-      return;
-    }
-    if (requestId !== trainerLookupRequestRef.current) return;
-    setTrainerLookupBusy(false);
-
-    if (outcome.type === 'success') {
-      onOriginalTrainerIdChange(outcome.userId);
-      setTrainerLookupError(null);
-      return;
-    }
-
-    if (outcome.type === 'notFound') {
-      // Keep manually entered trainer names even if they are not in our user database.
-      onOriginalTrainerIdChange(null);
-      setTrainerLookupError(null);
-      return;
-    }
-
-    // On lookup errors, preserve entered name and allow save without linked user_id.
-    onOriginalTrainerIdChange(null);
-    setTrainerLookupError(outcome.message);
-  };
+  const {
+    trainerQuery,
+    trainerSuggestions,
+    trainerLookupBusy,
+    trainerLookupError,
+    showTrainerSuggestions,
+    handleTrainerNameChange,
+    handleTrainerNameFocus,
+    handleTrainerNameBlur,
+    handleTrainerSuggestionSelect,
+  } = useTrainerLookupField({
+    editMode,
+    obtainedInTrade,
+    originalTrainerName,
+    rawOriginalTrainerName,
+    onOriginalTrainerNameChange,
+    onOriginalTrainerIdChange,
+  });
 
   if (!showMetaCard) {
     return null;
@@ -272,22 +184,9 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
                           id="meta-original-trainer-name"
                           type="text"
                           value={trainerQuery}
-                          onChange={(e) => {
-                            const next = e.target.value;
-                            setTrainerQuery(next);
-                            onOriginalTrainerNameChange(next);
-                            onOriginalTrainerIdChange(null);
-                          }}
-                          onFocus={() => setTrainerHasFocus(true)}
-                          onBlur={() => {
-                            const committedName = trainerQuery.trim();
-                            setTrainerHasFocus(false);
-                            setTrainerQuery(committedName);
-                            onOriginalTrainerNameChange(committedName);
-                            onOriginalTrainerIdChange(null);
-                            void resolveTrainerByUsername(committedName);
-                            window.setTimeout(() => setTrainerSuggestions([]), 120);
-                          }}
+                          onChange={(e) => handleTrainerNameChange(e.target.value)}
+                          onFocus={handleTrainerNameFocus}
+                          onBlur={handleTrainerNameBlur}
                           placeholder="Optional"
                           className="meta-edit-input"
                           autoComplete="off"
@@ -302,11 +201,7 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
                                 className="meta-trainer-suggestion-item"
                                 onMouseDown={(event) => {
                                   event.preventDefault();
-                                  onOriginalTrainerNameChange(candidate.username);
-                                  setTrainerQuery(candidate.username);
-                                  setTrainerSuggestions([]);
-                                  setTrainerHasFocus(false);
-                                  void resolveTrainerByUsername(candidate.username);
+                                  handleTrainerSuggestionSelect(candidate);
                                 }}
                               >
                                 {candidate.username}
