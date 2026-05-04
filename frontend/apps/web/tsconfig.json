@@ -2,7 +2,6 @@
 
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@/*": ["../../packages/app-core/src/*"],
       "@tests/*": ["../../packages/app-core/tests/*"],
@@ -13,7 +12,7 @@
     "module": "ESNext",
     "lib": ["DOM", "ESNext"],
     "jsx": "react-jsx",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "allowJs": true,
     "checkJs": false,
     "esModuleInterop": true,

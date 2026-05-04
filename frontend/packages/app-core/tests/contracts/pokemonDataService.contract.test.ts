@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { getPokemons } from '@/services/pokemonDataService';
 import type { BasePokemon } from '@/types/pokemonBase';
-import pokemonFixtures from '../__helpers__/fixtures/pokemons.json' assert { type: 'json' };
+import pokemonFixtures from '../__helpers__/fixtures/pokemons.json' with { type: 'json' };
 
 const requiredKeys: (keyof BasePokemon)[] = [
   'pokemon_id',
