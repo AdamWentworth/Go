@@ -1,9 +1,13 @@
 {
-  "name": "tests",
+  "name": "go-seed-data",
   "version": "1.0.0",
-  "main": "deleteFakeUsers.js",
+  "private": true,
+  "description": "Development-only fake data seeding utilities.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "seed:users": "node generateFakeUsers.js",
+    "seed:pokemon": "node generateFakePokemon.js",
+    "seed:delete-users": "node deleteFakeUsers.js",
+    "test": "echo \"No automated tests for seed data utilities\""
   },
   "keywords": [],
   "author": "",
@@ -13,6 +17,7 @@
     "@faker-js/faker": "^9.0.1",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",
+    "mongodb": "^6.20.0",
     "mysql2": "^3.11.3"
   }
 }

@@ -1,6 +1,6 @@
 module users
 
-go 1.25.7
+go 1.26.2
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
@@ -42,5 +42,3 @@ require (
 	golang.org/x/text v0.16.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 )
-
-replace reader/shared => ../shared
