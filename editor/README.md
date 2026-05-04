@@ -65,13 +65,19 @@ editor/
 
 ### 1. **Install Dependencies**
 
-This is a plain Tkinter app — no external packages are required beyond standard Python 3.
+This is a Tkinter app with a small set of Python package dependencies for image handling, HTTP requests, and the optional background sync script.
 
-Ensure you are using **Python 3.7+** with Tkinter included (most installations have it by default).
+Ensure you are using **Python 3.11+** with Tkinter included.
 
 > If you're on Linux and don’t have Tkinter:
 ```bash
-sudo apt install python3-tk
+sudo apt install python3-pip python3-tk
+```
+
+Install the Python package dependencies from the editor directory:
+
+```bash
+python -m pip install -r requirements.txt
 ```
 
 ---

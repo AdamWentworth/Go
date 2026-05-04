@@ -1,6 +1,6 @@
 services:
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.11.3
     container_name: prometheus
     restart: unless-stopped
     ports:
@@ -69,7 +69,7 @@ services:
       - pokemon_edge
 
   alertmanager:
-    image: prom/alertmanager:latest
+    image: prom/alertmanager:v0.32.1
     container_name: alertmanager
     entrypoint:
       - /bin/sh
