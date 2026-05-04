@@ -17,5 +17,30 @@
     "typecheck": "npm run typecheck:web && npm run typecheck:mobile",
     "typecheck:web": "npm --workspace apps/web run typecheck",
     "typecheck:mobile": "npm --workspace apps/mobile run typecheck"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^14.3.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.3",
+    "react-toastify": "^10.0.5"
+  },
+  "overrides": {
+    "@babel/helpers": "^7.28.6",
+    "@babel/runtime": "^7.28.6",
+    "@eslint/plugin-kit": "^0.6.0",
+    "@tootallnate/once": "3.0.1",
+    "brace-expansion": "^2.0.2",
+    "cookie": "^1.1.1",
+    "form-data": "^4.0.5",
+    "js-yaml": "^4.1.1",
+    "postcss": "8.5.13",
+    "tar": "7.5.11",
+    "tmp": "^0.2.5",
+    "xcode": {
+      "uuid": "14.0.0"
+    }
   }
 }

@@ -111,19 +111,5 @@
     "vite": "^6.4.1",
     "vitest": "^3.2.4",
     "web-streams-polyfill": "^4.2.0"
-  },
-  "resolutions": {
-    "nth-check": "2.0.1",
-    "postcss": "8.4.31"
-  },
-  "overrides": {
-    "@babel/helpers": "^7.28.6",
-    "@babel/runtime": "^7.28.6",
-    "@eslint/plugin-kit": "^0.6.0",
-    "brace-expansion": "^2.0.2",
-    "cookie": "^1.1.1",
-    "form-data": "^4.0.5",
-    "js-yaml": "^4.1.1",
-    "tmp": "^0.2.5"
   }
 }
