@@ -72,10 +72,11 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
   ) {
     log.debug('fetchUserInstancesByUsername ->', searchedUsername);
     set({ foreignInstancesLoading: true, userExists: null });
+    let db: Awaited<ReturnType<typeof openDB>> | null = null;
 
     try {
       const lower = caseFold(searchedUsername);
-      const db = await openDB(CACHE_NAME, 1, {
+      db = await openDB(CACHE_NAME, 1, {
         upgrade(upgradeDB) {
           if (!upgradeDB.objectStoreNames.contains(CACHE_NAME)) {
             upgradeDB.createObjectStore(CACHE_NAME, { keyPath: 'username' });
@@ -168,6 +169,7 @@ export const useUserSearchStore = create<UserSearchStore>((set, get) => ({
         canonicalUsername: null,
       });
     } finally {
+      db?.close();
       set({ foreignInstancesLoading: false });
     }
   },
