@@ -5,4 +5,4 @@ data/pokego.db-wal
 data/pokego.db.sha256
 data/pokego.db.release.json
 data/.pokego.db.*.tmp
-data/pokego.db.bak*
+data/*.bak*

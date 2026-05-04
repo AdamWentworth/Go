@@ -31,5 +31,5 @@ build/
 *.pid
 
 # Local database/backups
-pokemon/data/pokego.db.bak*
+pokemon/data/*.bak*
 assets/images/backup/
