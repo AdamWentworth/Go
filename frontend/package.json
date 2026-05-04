@@ -32,10 +32,18 @@
     "@babel/runtime": "^7.28.6",
     "@eslint/plugin-kit": "^0.6.0",
     "@tootallnate/once": "3.0.1",
-    "brace-expansion": "^2.0.2",
     "cookie": "^1.1.1",
     "form-data": "^4.0.5",
     "js-yaml": "^4.1.1",
+    "minimatch@3.1.5": {
+      "brace-expansion": "1.1.14"
+    },
+    "minimatch@9.0.9": {
+      "brace-expansion": "2.1.0"
+    },
+    "minimatch@10.2.5": {
+      "brace-expansion": "5.0.5"
+    },
     "postcss": "8.5.13",
     "tar": "7.5.11",
     "tmp": "^0.2.5",
