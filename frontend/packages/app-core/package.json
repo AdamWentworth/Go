@@ -5,6 +5,8 @@
   "type": "module",
   "description": "Shared source-of-truth app core for web/mobile/desktop hosts.",
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.5",
+    "@vitest/ui": "^4.1.5",
     "vite": "^8.0.10",
     "vitest": "^4.1.5"
   }
