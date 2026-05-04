@@ -7,10 +7,12 @@ const workspaceRoot = path.resolve(projectRoot, '..', '..');
 const config = getDefaultConfig(projectRoot);
 
 config.watchFolders = [
+  ...(config.watchFolders ?? []),
   path.resolve(workspaceRoot, 'packages'),
 ];
 
 config.resolver.nodeModulesPaths = [
+  ...(config.resolver.nodeModulesPaths ?? []),
   path.resolve(projectRoot, 'node_modules'),
   path.resolve(workspaceRoot, 'node_modules'),
 ];
