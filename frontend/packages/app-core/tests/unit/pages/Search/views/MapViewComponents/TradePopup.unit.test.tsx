@@ -60,7 +60,11 @@ describe('TradePopup', () => {
     expect(screen.getByTestId('move-display')).toBeInTheDocument();
     expect(screen.getByTestId('iv')).toBeInTheDocument();
     expect(screen.getByAltText('Charizard Image')).toBeInTheDocument();
-    expect(screen.getByAltText('Bulbasaur')).toBeInTheDocument();
+    const wantedImage = screen.getByAltText('Bulbasaur');
+    expect(wantedImage).toBeInTheDocument();
+    expect(wantedImage).toHaveClass('wanted-pokemon-image');
+    expect(wantedImage).toHaveClass('glowing-pokemon');
+    expect(wantedImage).toHaveAttribute('title', 'Bulbasaur');
     expect(findPokemonByKey).toHaveBeenCalledWith(
       'variant-1_uuid-9',
       baseItem.wanted_list['variant-1_uuid-9'],
@@ -82,5 +86,35 @@ describe('TradePopup', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
 
     expect(navigateToUserCatalog).toHaveBeenCalledWith('misty', 'inst-2', 'Trade');
+  });
+
+  it('only opens confirmation from popup content and cancels without navigation', () => {
+    findPokemonByKey.mockReturnValue(null);
+
+    const { container } = render(
+      <TradePopup
+        item={baseItem}
+        navigateToUserCatalog={navigateToUserCatalog}
+        findPokemonByKey={findPokemonByKey}
+      />,
+    );
+
+    fireEvent.click(container.querySelector('.trade-popup-header') as Element);
+    expect(
+      screen.queryByText(/Would you like to see misty's Charizard in their catalog/i),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(container.querySelector('.trade-popup-content') as Element);
+    expect(
+      screen.getByText(/Would you like to see misty's Charizard in their catalog/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText('No match found')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'No' }));
+
+    expect(
+      screen.queryByText(/Would you like to see misty's Charizard in their catalog/i),
+    ).not.toBeInTheDocument();
+    expect(navigateToUserCatalog).not.toHaveBeenCalled();
   });
 });

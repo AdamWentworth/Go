@@ -71,4 +71,41 @@ describe('CaughtPopup', () => {
 
     expect(navigateToUserCatalog).toHaveBeenCalledWith('brock', 'inst-3', 'Caught');
   });
+
+  it('closes confirmation on No without navigating', () => {
+    const { container } = render(
+      <CaughtPopup
+        item={baseItem}
+        navigateToUserCatalog={navigateToUserCatalog}
+      />,
+    );
+
+    fireEvent.click(container.querySelector('.caught-popup-container') as Element);
+    expect(
+      screen.getByText(/Would you like to see brock's Eevee in their catalog/i),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'No' }));
+
+    expect(
+      screen.queryByText(/Would you like to see brock's Eevee in their catalog/i),
+    ).not.toBeInTheDocument();
+    expect(navigateToUserCatalog).not.toHaveBeenCalled();
+  });
+
+  it('does not bubble popup clicks to parent map handlers', () => {
+    const parentClick = vi.fn();
+    const { container } = render(
+      <div onClick={parentClick}>
+        <CaughtPopup
+          item={baseItem}
+          navigateToUserCatalog={navigateToUserCatalog}
+        />
+      </div>,
+    );
+
+    fireEvent.click(container.querySelector('.caught-popup-container') as Element);
+
+    expect(parentClick).not.toHaveBeenCalled();
+  });
 });

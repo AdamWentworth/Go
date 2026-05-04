@@ -63,7 +63,11 @@ describe('WantedPopup', () => {
     expect(screen.getByTestId('move-display')).toBeInTheDocument();
     expect(screen.getByTestId('iv')).toBeInTheDocument();
     expect(screen.getByAltText('Bulbasaur Image')).toBeInTheDocument();
-    expect(screen.getByAltText('Bulbasaur')).toBeInTheDocument();
+    const tradeImage = screen.getByAltText('Bulbasaur');
+    expect(tradeImage).toBeInTheDocument();
+    expect(tradeImage).toHaveClass('trade-pokemon-image');
+    expect(tradeImage).toHaveClass('glowing-pokemon');
+    expect(tradeImage).toHaveAttribute('title', 'Bulbasaur');
     expect(findPokemonByKey).toHaveBeenCalledWith(
       'variant-1_uuid-1',
       baseItem.trade_list['variant-1_uuid-1'],
@@ -103,5 +107,34 @@ describe('WantedPopup', () => {
 
     fireEvent.click(container.querySelector('.wanted-popup-wrapper') as Element);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens confirmation from content without closing the wrapper and cancels cleanly', () => {
+    findPokemonByKey.mockReturnValue(null);
+
+    const { container } = render(
+      <WantedPopup
+        item={baseItem}
+        navigateToUserCatalog={navigateToUserCatalog}
+        findPokemonByKey={findPokemonByKey}
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.click(container.querySelector('.wanted-popup-content') as Element);
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(/Would you like to see ash's Bulbasaur in their catalog/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText('No match found')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'No' }));
+
+    expect(
+      screen.queryByText(/Would you like to see ash's Bulbasaur in their catalog/i),
+    ).not.toBeInTheDocument();
+    expect(navigateToUserCatalog).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

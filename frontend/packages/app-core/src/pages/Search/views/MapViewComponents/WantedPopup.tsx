@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
 import IV from '../../../../components/pokemonComponents/IV';
-import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
-import { URLSelect } from '../../utils/URLSelect';
-import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
 import ConfirmationOverlay from '../ConfirmationOverlay';
+import MapPopupLinkedPokemonList, {
+  type MapPopupLinkedEntry,
+} from './MapPopupLinkedPokemonList';
+import MapPopupPokemonSummary from './MapPopupPokemonSummary';
+import {
+  getMapPopupImageUrl,
+  getMapPopupPokemonDisplayName,
+} from './mapPopupHelpers';
 import './WantedPopup.css';
-
-type PopupTradeEntry = {
-  match?: boolean;
-  form?: string;
-  name?: string;
-  [key: string]: unknown;
-};
 
 type WantedPopupItem = {
   username: string;
@@ -45,7 +43,7 @@ type WantedPopupItem = {
     }> | null;
     [key: string]: unknown;
   } | null;
-  trade_list?: Record<string, PopupTradeEntry> | null;
+  trade_list?: Record<string, MapPopupLinkedEntry> | null;
   [key: string]: unknown;
 };
 
@@ -84,30 +82,8 @@ const WantedPopup: React.FC<WantedPopupProps> = ({
     instance_id,
   } = item;
 
-  const pokemonDisplayName = getPokemonDisplayName({
-    shiny: item.shiny,
-    shadow: item.shadow,
-    costume_id: item.costume_id ?? null,
-    pokemonInfo: {
-      name:
-        typeof pokemonInfo?.name === 'string' && pokemonInfo.name.trim().length > 0
-          ? pokemonInfo.name
-          : 'Unknown',
-      form: typeof pokemonInfo?.form === 'string' ? pokemonInfo.form : null,
-      costumes: Array.isArray(pokemonInfo?.costumes) ? pokemonInfo.costumes : null,
-    },
-  });
-  const imageUrl = URLSelect(
-    pokemonInfo as Parameters<typeof URLSelect>[0],
-    {
-      dynamax: item.dynamax,
-      gigantamax: item.gigantamax,
-      shiny: item.shiny,
-      shadow: item.shadow,
-      costume_id: item.costume_id,
-      gender: item.gender,
-    },
-  );
+  const pokemonDisplayName = getMapPopupPokemonDisplayName(item);
+  const imageUrl = getMapPopupImageUrl(item);
 
   const [showConfirmation, setShowConfirmation] = useState(false);
 
@@ -139,52 +115,26 @@ const WantedPopup: React.FC<WantedPopupProps> = ({
         <div className="wanted-popup-header">
           <strong>{username}</strong>
         </div>
-        <div className="wanted-popup-content" onClick={handlePopupClick}>
-          {imageUrl && (
-            <img
-              src={imageUrl}
-              alt={`${pokemonDisplayName} Image`}
-              className="pokemon-image"
-            />
-          )}
-          <div className="pokemon-details">
-            <p>{pokemonDisplayName}</p>
-            <MoveDisplay
-              fastMoveId={fast_move_id ?? null}
-              chargedMove1Id={charged_move1_id ?? null}
-              chargedMove2Id={charged_move2_id ?? null}
-              moves={pokemonInfo?.moves || []}
-            />
-          </div>
-        </div>
+        <MapPopupPokemonSummary
+          className="wanted-popup-content"
+          imageUrl={imageUrl}
+          pokemonDisplayName={pokemonDisplayName}
+          fastMoveId={fast_move_id}
+          chargedMove1Id={charged_move1_id}
+          chargedMove2Id={charged_move2_id}
+          moves={pokemonInfo?.moves}
+          onClick={handlePopupClick}
+        />
         <IV item={item} />
 
-        {item.trade_list && (
-          <div className="trade-list-section">
-            <h3>Trade Pokemon:</h3>
-            <div className="trade-list">
-              {Object.keys(item.trade_list).map((tradeInstanceId) => {
-                const tradeListPokemon = item.trade_list?.[tradeInstanceId];
-                const matchedPokemon = findPokemonByKey(
-                  tradeInstanceId,
-                  tradeListPokemon ?? null,
-                );
-
-                return matchedPokemon ? (
-                  <img
-                    key={tradeInstanceId}
-                    src={matchedPokemon.currentImage}
-                    alt={matchedPokemon.name}
-                    className={`trade-pokemon-image ${tradeListPokemon?.match ? 'glowing-pokemon' : ''}`}
-                    title={`${matchedPokemon.form ? `${matchedPokemon.form} ` : ''}${matchedPokemon.name ?? ''}`}
-                  />
-                ) : (
-                  <p key={tradeInstanceId}>No match found</p>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        <MapPopupLinkedPokemonList
+          title="Trade Pokemon:"
+          sectionClassName="trade-list-section"
+          listClassName="trade-list"
+          imageClassName="trade-pokemon-image"
+          entries={item.trade_list}
+          findPokemonByKey={findPokemonByKey}
+        />
 
         {showConfirmation && (
           <ConfirmationOverlay
