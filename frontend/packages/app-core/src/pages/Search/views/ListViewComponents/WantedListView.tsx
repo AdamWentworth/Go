@@ -1,18 +1,20 @@
-import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import MiniMap from './MiniMap';
+import React, { useMemo } from 'react';
 import MoveDisplay from '@/components/pokemonComponents/MoveDisplay';
-import Gender from '@/components/pokemonComponents/Gender';
 import CP from '@/components/pokemonComponents/CP';
 import FriendshipLevel from '@/components/pokemonComponents/FriendshipLevel';
-import ConfirmationOverlay from '../ConfirmationOverlay';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
+import LinkedPokemonGrid, {
+  type LinkedPokemonGridEntry,
+} from './LinkedPokemonGrid';
+import PokemonResultVisual, {
+  toPokemonResultGender,
+} from './PokemonResultVisual';
+import SearchResultRow from './SearchResultRow';
 import {
   formatWantedDate,
   getWantedTradeEntries,
   hasWantedAdditionalDetails,
-  toWantedGender,
   type MatchedPokemon,
   type WantedListItem,
   type WantedTradeEntry,
@@ -27,58 +29,6 @@ type WantedListViewProps = {
   ) => MatchedPokemon | null;
 };
 
-const tradeBadgeStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '5%',
-  right: '5%',
-  width: '30%',
-  height: '30%',
-  zIndex: 1,
-};
-
-type WantedPokemonVisualProps = {
-  item: WantedListItem;
-  imageUrl: string | null | undefined;
-  pokemonDisplayName: string;
-  genderValue: React.ComponentProps<typeof Gender>['gender'];
-  wrapLuckyBackdrop: boolean;
-};
-
-const WantedPokemonVisual: React.FC<WantedPokemonVisualProps> = ({
-  item,
-  imageUrl,
-  pokemonDisplayName,
-  genderValue,
-  wrapLuckyBackdrop,
-}) => {
-  const luckyImage = (
-    <img src="/images/lucky.png" alt="Lucky backdrop" className="lucky-backdrop" />
-  );
-  return (
-    <div className="pokemon-image-container">
-      {item.pref_lucky &&
-        (wrapLuckyBackdrop ? (
-          <div className="lucky-backdrop-wrapper">{luckyImage}</div>
-        ) : (
-          luckyImage
-        ))}
-      {imageUrl && (
-        <img src={imageUrl} alt={pokemonDisplayName} className="pokemon-image" />
-      )}
-      {item.dynamax && (
-        <img src="/images/dynamax.png" alt="Dynamax Badge" className="max-badge" />
-      )}
-      {item.gigantamax && (
-        <img src="/images/gigantamax.png" alt="Gigantamax Badge" className="max-badge" />
-      )}
-      <p className="pokemon-name">
-        {pokemonDisplayName}
-        <Gender gender={genderValue} />
-      </p>
-    </div>
-  );
-};
-
 type WantedTradeListProps = {
   tradeList?: Record<string, WantedTradeEntry> | null;
   findPokemonByKey: (
@@ -91,69 +41,40 @@ const WantedTradeList: React.FC<WantedTradeListProps> = ({
   tradeList,
   findPokemonByKey,
 }) => {
-  const entries = useMemo(() => {
-    return getWantedTradeEntries(tradeList)
-      .map(([tradeInstanceId, tradeListPokemon]) => {
+  const entries = useMemo<LinkedPokemonGridEntry[]>(() => {
+    return getWantedTradeEntries(tradeList).reduce<LinkedPokemonGridEntry[]>(
+      (gridEntries, [tradeInstanceId, tradeListPokemon]) => {
         const matchedPokemon = findPokemonByKey(tradeInstanceId, tradeListPokemon);
-        if (!matchedPokemon) return null;
-        return { tradeInstanceId, tradeListPokemon, matchedPokemon };
-      })
-      .filter(
-        (
-          value,
-        ): value is {
-          tradeInstanceId: string;
-          tradeListPokemon: WantedTradeEntry;
-          matchedPokemon: MatchedPokemon;
-        } => value !== null,
-      );
+        if (!matchedPokemon) return gridEntries;
+        gridEntries.push({
+          id: tradeInstanceId,
+          currentImage: matchedPokemon.currentImage,
+          name: matchedPokemon.name,
+          form: matchedPokemon.form,
+          dynamax: tradeListPokemon.dynamax,
+          gigantamax: tradeListPokemon.gigantamax,
+          match: tradeListPokemon.match,
+        });
+        return gridEntries;
+      },
+      [],
+    );
   }, [findPokemonByKey, tradeList]);
 
   if (!entries.length) return null;
   return (
-    <div className="trade-list-section">
-      <h1>Trade Pokemon:</h1>
-      <div className="trade-list">
-        {entries.map(({ tradeInstanceId, tradeListPokemon, matchedPokemon }) => {
-          return (
-            <div
-              key={tradeInstanceId}
-              className="trade-pokemon-container"
-              style={{ position: 'relative' }}
-            >
-              {tradeListPokemon.dynamax && (
-                <img
-                  src="/images/dynamax.png"
-                  alt="Dynamax"
-                  style={tradeBadgeStyle}
-                />
-              )}
-
-              {tradeListPokemon.gigantamax && (
-                <img
-                  src="/images/gigantamax.png"
-                  alt="Gigantamax"
-                  style={tradeBadgeStyle}
-                />
-              )}
-
-              <img
-                src={matchedPokemon.currentImage}
-                alt={matchedPokemon.name}
-                className={`trade-pokemon-image ${tradeListPokemon.match ? 'glowing-pokemon' : ''}`}
-                title={`${matchedPokemon.form ? `${matchedPokemon.form} ` : ''}${matchedPokemon.name ?? ''}`}
-              />
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <LinkedPokemonGrid
+      title="Trade Pokemon:"
+      sectionClassName="trade-list-section"
+      gridClassName="trade-list"
+      containerClassName="trade-pokemon-container"
+      imageClassName="trade-pokemon-image"
+      entries={entries}
+    />
   );
 };
 
 const WantedListView: React.FC<WantedListViewProps> = ({ item, findPokemonByKey }) => {
-  const navigate = useNavigate();
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const imageUrl = URLSelect(
     item.pokemonInfo as Parameters<typeof URLSelect>[0],
     item as Parameters<typeof URLSelect>[1],
@@ -162,162 +83,122 @@ const WantedListView: React.FC<WantedListViewProps> = ({ item, findPokemonByKey 
     ? getPokemonDisplayName(item as Parameters<typeof getPokemonDisplayName>[0])
     : 'Unknown Pokemon';
   const onCPChange = () => {};
-  const genderValue = toWantedGender(item.gender);
+  const genderValue = toPokemonResultGender(item.gender);
   const hasAdditionalDetails = hasWantedAdditionalDetails(item);
 
-  const handleOpenConfirmation = () => {
-    setShowConfirmation(true);
-  };
-
-  const handleCenterColumnKeyDown = (
-    event: React.KeyboardEvent<HTMLDivElement>,
-  ) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleOpenConfirmation();
-    }
-  };
-
-  const handleConfirmNavigation = () => {
-    navigate(`/pokemon/${item.username ?? ''}`, {
-      state: { instanceId: item.instance_id ?? '', instanceData: 'Wanted' },
-    });
-    setShowConfirmation(false);
-  };
-
-  const handleCloseConfirmation = () => {
-    setShowConfirmation(false);
-  };
-
   return (
-    <div className="list-view-row wanted-list-view">
-      <div className="left-column">
-        {typeof item.distance === 'number' && item.distance > 0 && (
-          <p>Distance: {item.distance.toFixed(2)} km</p>
-        )}
-        <MiniMap
-          latitude={item.latitude}
-          longitude={item.longitude}
-          instanceData="wanted"
-        />
-      </div>
+    <SearchResultRow
+      className="wanted-list-view"
+      username={item.username}
+      instanceId={item.instance_id}
+      distance={item.distance}
+      latitude={item.latitude}
+      longitude={item.longitude}
+      mapInstanceData="wanted"
+      navigationInstanceData="Wanted"
+      pokemonDisplayName={pokemonDisplayName}
+      rightColumn={
+        <WantedTradeList tradeList={item.trade_list} findPokemonByKey={findPokemonByKey} />
+      }
+    >
+      <div className="card">
+        <h3>{item.username}</h3>
 
-      <div
-        className="center-column"
-        onClick={handleOpenConfirmation}
-        onKeyDown={handleCenterColumnKeyDown}
-        role="button"
-        tabIndex={0}
-      >
-        <div className="card">
-          <h3>{item.username}</h3>
-
-          {hasAdditionalDetails ? (
-            <div className="pokemon-columns">
-              <div className="pokemon-first-column">
-                {typeof item.cp === 'number' && item.cp > 0 && (
-                  <CP cp={item.cp} editMode={false} onCPChange={onCPChange} />
-                )}
-                <WantedPokemonVisual
-                  item={item}
-                  imageUrl={imageUrl}
-                  pokemonDisplayName={pokemonDisplayName}
-                  genderValue={genderValue}
-                  wrapLuckyBackdrop
-                />
-              </div>
-
-              <div className="pokemon-second-column">
-                {typeof item.friendship_level === 'number' && item.friendship_level > 0 && (
-                  <div className="pokemon-friendship">
-                    <FriendshipLevel
-                      level={item.friendship_level}
-                      prefLucky={Boolean(item.pref_lucky)}
-                    />
-                  </div>
-                )}
-                <div className="pokemon-weight-height">
-                  {typeof item.weight === 'number' && item.weight > 0 && (
-                    <div className="pokemon-weight">
-                      <p>
-                        <strong>{item.weight}kg</strong>
-                      </p>
-                      <p>WEIGHT</p>
-                    </div>
-                  )}
-                  {typeof item.height === 'number' && item.height > 0 && (
-                    <div className="pokemon-height">
-                      <p>
-                        <strong>{item.height}m</strong>
-                      </p>
-                      <p>HEIGHT</p>
-                    </div>
-                  )}
-                </div>
-
-                {(item.fast_move_id ||
-                  item.charged_move1_id ||
-                  item.charged_move2_id) && (
-                  <div className="pokemon-moves">
-                    <MoveDisplay
-                      fastMoveId={item.fast_move_id ?? null}
-                      chargedMove1Id={item.charged_move1_id ?? null}
-                      chargedMove2Id={item.charged_move2_id ?? null}
-                      moves={item.pokemonInfo?.moves}
-                    />
-                  </div>
-                )}
-
-                {item.location_caught && (
-                  <div className="pokemon-location">
-                    <p>
-                      <strong>Location Caught: </strong>
-                      {item.location_caught}
-                    </p>
-                  </div>
-                )}
-
-                {item.date_caught && (
-                  <div className="pokemon-date">
-                    <p>
-                      <strong>Date Caught: </strong>
-                      {formatWantedDate(item.date_caught)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="pokemon-single-column">
+        {hasAdditionalDetails ? (
+          <div className="pokemon-columns">
+            <div className="pokemon-first-column">
               {typeof item.cp === 'number' && item.cp > 0 && (
                 <CP cp={item.cp} editMode={false} onCPChange={onCPChange} />
               )}
-              <WantedPokemonVisual
-                item={item}
+              <PokemonResultVisual
                 imageUrl={imageUrl}
                 pokemonDisplayName={pokemonDisplayName}
                 genderValue={genderValue}
-                wrapLuckyBackdrop={false}
+                lucky={item.pref_lucky}
+                dynamax={item.dynamax}
+                gigantamax={item.gigantamax}
+                wrapLuckyBackdrop
               />
             </div>
-          )}
-        </div>
-      </div>
 
-      <div className="right-column">
-        <WantedTradeList tradeList={item.trade_list} findPokemonByKey={findPokemonByKey} />
-      </div>
+            <div className="pokemon-second-column">
+              {typeof item.friendship_level === 'number' && item.friendship_level > 0 && (
+                <div className="pokemon-friendship">
+                  <FriendshipLevel
+                    level={item.friendship_level}
+                    prefLucky={Boolean(item.pref_lucky)}
+                  />
+                </div>
+              )}
+              <div className="pokemon-weight-height">
+                {typeof item.weight === 'number' && item.weight > 0 && (
+                  <div className="pokemon-weight">
+                    <p>
+                      <strong>{item.weight}kg</strong>
+                    </p>
+                    <p>WEIGHT</p>
+                  </div>
+                )}
+                {typeof item.height === 'number' && item.height > 0 && (
+                  <div className="pokemon-height">
+                    <p>
+                      <strong>{item.height}m</strong>
+                    </p>
+                    <p>HEIGHT</p>
+                  </div>
+                )}
+              </div>
 
-      {showConfirmation && (
-        <ConfirmationOverlay
-          username={item.username ?? ''}
-          pokemonDisplayName={pokemonDisplayName}
-          instanceId={item.instance_id ?? ''}
-          onConfirm={handleConfirmNavigation}
-          onClose={handleCloseConfirmation}
-        />
-      )}
-    </div>
+              {(item.fast_move_id ||
+                item.charged_move1_id ||
+                item.charged_move2_id) && (
+                <div className="pokemon-moves">
+                  <MoveDisplay
+                    fastMoveId={item.fast_move_id ?? null}
+                    chargedMove1Id={item.charged_move1_id ?? null}
+                    chargedMove2Id={item.charged_move2_id ?? null}
+                    moves={item.pokemonInfo?.moves}
+                  />
+                </div>
+              )}
+
+              {item.location_caught && (
+                <div className="pokemon-location">
+                  <p>
+                    <strong>Location Caught: </strong>
+                    {item.location_caught}
+                  </p>
+                </div>
+              )}
+
+              {item.date_caught && (
+                <div className="pokemon-date">
+                  <p>
+                    <strong>Date Caught: </strong>
+                    {formatWantedDate(item.date_caught)}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="pokemon-single-column">
+            {typeof item.cp === 'number' && item.cp > 0 && (
+              <CP cp={item.cp} editMode={false} onCPChange={onCPChange} />
+            )}
+            <PokemonResultVisual
+              imageUrl={imageUrl}
+              pokemonDisplayName={pokemonDisplayName}
+              genderValue={genderValue}
+              lucky={item.pref_lucky}
+              dynamax={item.dynamax}
+              gigantamax={item.gigantamax}
+              wrapLuckyBackdrop={false}
+            />
+          </div>
+        )}
+      </div>
+    </SearchResultRow>
   );
 };
 

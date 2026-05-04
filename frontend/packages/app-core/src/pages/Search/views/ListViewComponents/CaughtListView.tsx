@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import CP from '../../../../components/pokemonComponents/CP';
-import MiniMap from './MiniMap';
 import IV from '../../../../components/pokemonComponents/IV';
 import MoveDisplay from '../../../../components/pokemonComponents/MoveDisplay';
-import Gender from '../../../../components/pokemonComponents/Gender';
 import { URLSelect } from '../../utils/URLSelect';
 import getPokemonDisplayName from '../../utils/getPokemonDisplayName';
-import ConfirmationOverlay from '../ConfirmationOverlay';
+import PokemonResultVisual, {
+  toPokemonResultGender,
+} from './PokemonResultVisual';
+import SearchResultRow from './SearchResultRow';
 import { formatDateOnlySafe } from './wantedListViewHelpers';
 import './CaughtListView.css';
 
@@ -51,7 +51,6 @@ type CaughtListViewProps = {
 };
 
 const CaughtListView: React.FC<CaughtListViewProps> = ({ item }) => {
-  const navigate = useNavigate();
   const imageUrl = URLSelect(
     item.pokemonInfo as Parameters<typeof URLSelect>[0],
     item as Parameters<typeof URLSelect>[1],
@@ -59,164 +58,90 @@ const CaughtListView: React.FC<CaughtListViewProps> = ({ item }) => {
   const pokemonDisplayName = item.pokemonInfo
     ? getPokemonDisplayName(item as Parameters<typeof getPokemonDisplayName>[0])
     : 'Unknown Pokemon';
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const onCPChange = () => {};
   const onIvChange = () => {};
-
-  const genderValue =
-    item.gender === 'Male' ||
-    item.gender === 'Female' ||
-    item.gender === 'Both' ||
-    item.gender === 'Any' ||
-    item.gender === 'Genderless'
-      ? item.gender
-      : null;
-
-  const handleOpenConfirmation = () => {
-    setShowConfirmation(true);
-  };
-
-  const handleCenterColumnKeyDown = (
-    event: React.KeyboardEvent<HTMLDivElement>,
-  ) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleOpenConfirmation();
-    }
-  };
-
-  const handleConfirmNavigation = () => {
-    navigate(`/pokemon/${item.username ?? ''}`, {
-      state: { instanceId: item.instance_id ?? '', instanceData: 'Caught' },
-    });
-    setShowConfirmation(false);
-  };
-
-  const handleCloseConfirmation = () => {
-    setShowConfirmation(false);
-  };
+  const genderValue = toPokemonResultGender(item.gender);
 
   return (
-    <div className="list-view-row">
-      <div className="left-column">
-        {typeof item.distance === 'number' && item.distance > 0 && (
-          <p>Distance: {item.distance.toFixed(2)} km</p>
-        )}
-        <MiniMap
-          latitude={item.latitude}
-          longitude={item.longitude}
-          instanceData="caught"
-        />
-      </div>
-
-      <div
-        className="center-column"
-        onClick={handleOpenConfirmation}
-        onKeyDown={handleCenterColumnKeyDown}
-        role="button"
-        tabIndex={0}
-      >
-        <div className="card">
-          <h3>{item.username}</h3>
-          {typeof item.cp === 'number' && item.cp > 0 && (
-            <CP cp={item.cp} editMode={false} onCPChange={onCPChange} />
-          )}
-          {item.pokemonInfo && (
-            <div className="pokemon-image-container">
-              {item.lucky && (
-                <img
-                  src="/images/lucky.png"
-                  alt="Lucky backdrop"
-                  className="lucky-backdrop"
-                />
-              )}
-              {imageUrl && (
-                <img src={imageUrl} alt={pokemonDisplayName} className="pokemon-image" />
-              )}
-              {item.dynamax && (
-                <img
-                  src="/images/dynamax.png"
-                  alt="Dynamax Badge"
-                  className="max-badge"
-                />
-              )}
-              {item.gigantamax && (
-                <img
-                  src="/images/gigantamax.png"
-                  alt="Gigantamax Badge"
-                  className="max-badge"
-                />
-              )}
-              <p className="pokemon-name">
-                {pokemonDisplayName}
-                <Gender gender={genderValue} />
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="right-column">
-        <div className="weight-height-move-container">
-          {typeof item.weight === 'number' && item.weight > 0 && (
-            <div className="weight-height">
-              <p>
-                <strong>{item.weight}kg</strong> WEIGHT
-              </p>
-            </div>
-          )}
-          <MoveDisplay
-            fastMoveId={item.fast_move_id ?? null}
-            chargedMove1Id={item.charged_move1_id ?? null}
-            chargedMove2Id={item.charged_move2_id ?? null}
-            moves={item.pokemonInfo?.moves}
+    <SearchResultRow
+      username={item.username}
+      instanceId={item.instance_id}
+      distance={item.distance}
+      latitude={item.latitude}
+      longitude={item.longitude}
+      mapInstanceData="caught"
+      navigationInstanceData="Caught"
+      pokemonDisplayName={pokemonDisplayName}
+      rightColumn={
+        <>
+          <div className="weight-height-move-container">
+            {typeof item.weight === 'number' && item.weight > 0 && (
+              <div className="weight-height">
+                <p>
+                  <strong>{item.weight}kg</strong> WEIGHT
+                </p>
+              </div>
+            )}
+            <MoveDisplay
+              fastMoveId={item.fast_move_id ?? null}
+              chargedMove1Id={item.charged_move1_id ?? null}
+              chargedMove2Id={item.charged_move2_id ?? null}
+              moves={item.pokemonInfo?.moves}
+            />
+            {typeof item.height === 'number' && item.height > 0 && (
+              <div className="weight-height">
+                <p>
+                  <strong>{item.height}m</strong> HEIGHT
+                </p>
+              </div>
+            )}
+          </div>
+          <IV
+            ivs={{
+              Attack: item.attack_iv ?? null,
+              Defense: item.defense_iv ?? null,
+              Stamina: item.stamina_iv ?? null,
+            }}
+            onIvChange={onIvChange}
           />
-          {typeof item.height === 'number' && item.height > 0 && (
-            <div className="weight-height">
+
+          {item.location_caught && (
+            <div className="location-caught">
               <p>
-                <strong>{item.height}m</strong> HEIGHT
+                <strong>Location Caught: </strong>
+                {item.location_caught}
               </p>
             </div>
           )}
-        </div>
-        <IV
-          ivs={{
-            Attack: item.attack_iv ?? null,
-            Defense: item.defense_iv ?? null,
-            Stamina: item.stamina_iv ?? null,
-          }}
-          onIvChange={onIvChange}
-        />
 
-        {item.location_caught && (
-          <div className="location-caught">
-            <p>
-              <strong>Location Caught: </strong>
-              {item.location_caught}
-            </p>
-          </div>
+          {item.date_caught && (
+            <div className="date-caught">
+              <p>
+                <strong>Date Caught: </strong>
+                {formatDateOnlySafe(item.date_caught, 'Unknown')}
+              </p>
+            </div>
+          )}
+        </>
+      }
+    >
+      <div className="card">
+        <h3>{item.username}</h3>
+        {typeof item.cp === 'number' && item.cp > 0 && (
+          <CP cp={item.cp} editMode={false} onCPChange={onCPChange} />
         )}
-
-        {item.date_caught && (
-          <div className="date-caught">
-            <p>
-              <strong>Date Caught: </strong>
-              {formatDateOnlySafe(item.date_caught, 'Unknown')}
-            </p>
-          </div>
+        {item.pokemonInfo && (
+          <PokemonResultVisual
+            imageUrl={imageUrl}
+            pokemonDisplayName={pokemonDisplayName}
+            genderValue={genderValue}
+            lucky={item.lucky}
+            dynamax={item.dynamax}
+            gigantamax={item.gigantamax}
+          />
         )}
       </div>
-
-      {showConfirmation && (
-        <ConfirmationOverlay
-          username={item.username ?? ''}
-          pokemonDisplayName={pokemonDisplayName}
-          instanceId={item.instance_id ?? ''}
-          onConfirm={handleConfirmNavigation}
-          onClose={handleCloseConfirmation}
-        />
-      )}
-    </div>
+    </SearchResultRow>
   );
 };
 
