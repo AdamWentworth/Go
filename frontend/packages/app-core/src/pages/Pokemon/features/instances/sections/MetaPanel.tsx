@@ -4,31 +4,19 @@ import LocationCaught from '@/components/pokemonComponents/LocationCaught';
 import DateCaughtComponent from '@/components/pokemonComponents/DateCaught';
 import BallCaught from '@/components/pokemonComponents/BallCaught';
 import { getBallImageClassName, getBallImageUrl } from '@/components/pokemonComponents/ballAssets';
-import type { PokemonInstance } from '@/types/pokemonInstance';
 import {
   fetchPublicUserByUsername,
   fetchTrainerAutocomplete,
   type TrainerAutocompleteResult,
 } from '@/services/userSearchService';
-import { normalizeEditableDateValue } from '../utils/normalizeEditableDateValue';
-
-type PokemonWithInstance = {
-  instanceData?: Partial<
-    Pick<
-      PokemonInstance,
-      | 'location_caught'
-      | 'date_caught'
-      | 'is_traded'
-      | 'lucky'
-      | 'original_trainer_name'
-      | 'original_trainer_id'
-      | 'traded_date'
-    >
-  >;
-};
+import {
+  hasMetaPanelContent,
+  resolveMetaPanelState,
+  type PokemonWithMetaInstance,
+} from '../utils/metaPanelState';
 
 interface MetaPanelProps {
-  pokemon: PokemonWithInstance;
+  pokemon: PokemonWithMetaInstance;
   showDivider?: boolean;
   allowTradeMetadata?: boolean;
   editMode: boolean;
@@ -48,39 +36,7 @@ interface MetaPanelProps {
   onPokeballChange: (value: string | null) => void;
 }
 
-type MetaPanelContentInput = Pick<
-  MetaPanelProps,
-  'pokemon' | 'editMode' | 'isTraded' | 'originalTrainerName' | 'tradedDate' | 'pokeball' | 'allowTradeMetadata'
->;
-
-export const hasMetaPanelContent = ({
-  pokemon,
-  editMode,
-  isTraded,
-  originalTrainerName,
-  tradedDate,
-  pokeball,
-  allowTradeMetadata = true,
-}: MetaPanelContentInput): boolean => {
-  if (editMode) return true;
-
-  const hasLocation = Boolean((pokemon.instanceData?.location_caught ?? '').trim());
-  const hasCaughtDate = Boolean(normalizeEditableDateValue(pokemon.instanceData?.date_caught ?? null));
-  const hasTradeTrainer = Boolean(
-    (originalTrainerName ?? '').trim() ||
-      (pokemon.instanceData?.original_trainer_name ?? '').trim() ||
-      (pokemon.instanceData?.original_trainer_id ?? '').trim(),
-  );
-  const hasTradeDate = Boolean(
-    normalizeEditableDateValue(tradedDate ?? pokemon.instanceData?.traded_date ?? null),
-  );
-  const hasBall = Boolean(pokeball);
-  const hasTradeContent =
-    allowTradeMetadata &&
-    (hasTradeTrainer || (Boolean(isTraded) && hasTradeDate));
-
-  return hasLocation || hasCaughtDate || hasTradeContent || hasBall;
-};
+export { hasMetaPanelContent };
 
 const MetaPanel: React.FC<MetaPanelProps> = ({
   pokemon,
@@ -102,11 +58,27 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
   onTradedDateChange,
   onPokeballChange,
 }) => {
-  const rawLocation = (pokemon.instanceData?.location_caught ?? '').trim();
-  const rawDate = pokemon.instanceData?.date_caught ?? null;
-  const obtainedInTrade = Boolean(isTraded);
-  const rawOriginalTrainerName = (pokemon.instanceData?.original_trainer_name ?? '').trim();
-  const rawOriginalTrainerId = (pokemon.instanceData?.original_trainer_id ?? '').trim();
+  const {
+    rawLocation,
+    rawOriginalTrainerName,
+    obtainedInTrade,
+    dateDisplay,
+    tradedDateDisplay,
+    tradedDateInputValue,
+    originalTrainerDisplay,
+    hasCaughtSummary,
+    hasTradeSummary,
+    showEditFieldsDivider,
+    showMetaCard,
+  } = resolveMetaPanelState({
+    pokemon,
+    editMode,
+    isTraded,
+    originalTrainerName,
+    tradedDate,
+    pokeball,
+    allowTradeMetadata,
+  });
   const [trainerQuery, setTrainerQuery] = useState<string>(
     (originalTrainerName ?? rawOriginalTrainerName ?? '').trim(),
   );
@@ -116,31 +88,6 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
   const [trainerHasFocus, setTrainerHasFocus] = useState<boolean>(false);
   const trainerLookupRequestRef = useRef(0);
 
-  const dateDisplay = normalizeEditableDateValue(rawDate);
-  const tradedDateDisplay = normalizeEditableDateValue(
-    tradedDate ?? pokemon.instanceData?.traded_date ?? null,
-  );
-  const tradedDateInputValue = normalizeEditableDateValue(
-    tradedDate ?? pokemon.instanceData?.traded_date ?? null,
-  );
-  const originalTrainerDisplay =
-    (originalTrainerName ?? '').trim() ||
-    rawOriginalTrainerName ||
-    rawOriginalTrainerId;
-  const hasCaughtSummary = Boolean(rawLocation || dateDisplay || pokeball);
-  const hasTradeSummary = Boolean(
-    allowTradeMetadata && obtainedInTrade && (originalTrainerDisplay || tradedDateDisplay),
-  );
-  const showEditFieldsDivider = hasCaughtSummary || hasTradeSummary;
-  const showMetaCard = hasMetaPanelContent({
-    pokemon,
-    editMode,
-    isTraded,
-    originalTrainerName,
-    tradedDate,
-    pokeball,
-    allowTradeMetadata,
-  });
   const showTrainerSuggestions = useMemo(
     () =>
       editMode &&
@@ -419,4 +366,3 @@ const MetaPanel: React.FC<MetaPanelProps> = ({
 };
 
 export default MetaPanel;
-
