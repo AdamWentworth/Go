@@ -25,151 +25,20 @@ permissions:
 jobs:
   deploy:
     name: Deploy Search To Prod
-    runs-on: [self-hosted, linux, x64, prod]
-    environment: production
-    concurrency:
-      group: deploy-search-prod
-      cancel-in-progress: false
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Preflight Checks
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          SERVICE_DEPLOY_DIR="${DEPLOY_ROOT}/reader/search"
-          COMPOSE_FILE="${GITHUB_WORKSPACE}/reader/search/docker-compose.yml"
-          ENV_FILE="${SERVICE_DEPLOY_DIR}/.env"
-          KAFKA_NETWORK="kafka_default"
-
-          if [[ ! -d "${SERVICE_DEPLOY_DIR}" ]]; then
-            echo "Service deploy directory not found: ${SERVICE_DEPLOY_DIR}" >&2
-            exit 1
-          fi
-
-          if [[ ! -f "${COMPOSE_FILE}" ]]; then
-            echo "Compose file not found: ${COMPOSE_FILE}" >&2
-            exit 1
-          fi
-
-          if [[ ! -f "${ENV_FILE}" ]]; then
-            echo "Env file not found: ${ENV_FILE}" >&2
-            exit 1
-          fi
-
-          for key in JWT_SECRET DB_USER DB_PASSWORD DB_HOSTNAME DB_PORT DB_NAME; do
-            if ! grep -qE "^${key}=" "${ENV_FILE}"; then
-              echo "Required env key missing in ${ENV_FILE}: ${key}" >&2
-              exit 1
-            fi
-          done
-
-          if ! docker network inspect "${KAFKA_NETWORK}" >/dev/null 2>&1; then
-            echo "External docker network ${KAFKA_NETWORK} not found; creating it now."
-            docker network create "${KAFKA_NETWORK}"
-          fi
-
-          docker compose \
-            --project-directory "${SERVICE_DEPLOY_DIR}" \
-            -f "${COMPOSE_FILE}" \
-            --env-file "${ENV_FILE}" \
-            config >/dev/null
-
-      - name: Deploy With Health Check And Rollback
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          SERVICE_DEPLOY_DIR="${DEPLOY_ROOT}/reader/search"
-          SERVICE_NAME="${{ inputs.service_name }}"
-          IMAGE_REPO="adamwentworth/search_service"
-          RAW_IMAGE_INPUT="${{ inputs.image_ref }}"
-          TARGET_IMAGE=""
-          COMPOSE_FILE="${GITHUB_WORKSPACE}/reader/search/docker-compose.yml"
-          ENV_FILE="${SERVICE_DEPLOY_DIR}/.env"
-          CONTAINER_NAME="search_service"
-          COMPOSE_PROJECT_NAME="search"
-
-          if [[ -z "${RAW_IMAGE_INPUT}" ]]; then
-            TARGET_IMAGE="${IMAGE_REPO}:latest"
-          elif [[ "${RAW_IMAGE_INPUT}" == :* ]]; then
-            TARGET_IMAGE="${IMAGE_REPO}${RAW_IMAGE_INPUT}"
-          elif [[ "${RAW_IMAGE_INPUT}" == */* ]]; then
-            TARGET_IMAGE="${RAW_IMAGE_INPUT}"
-          else
-            TARGET_IMAGE="${IMAGE_REPO}:${RAW_IMAGE_INPUT}"
-          fi
-
-          if [[ "${TARGET_IMAGE}" == */* && "${TARGET_IMAGE}" != *:* && "${TARGET_IMAGE}" != *@* ]]; then
-            TARGET_IMAGE="${TARGET_IMAGE}:latest"
-          fi
-
-          PREVIOUS_IMAGE="$(docker inspect --format '{{.Config.Image}}' "${CONTAINER_NAME}" 2>/dev/null || true)"
-          if [[ -n "${PREVIOUS_IMAGE}" ]]; then
-            echo "Previous image: ${PREVIOUS_IMAGE}"
-          else
-            echo "No existing container image found for ${CONTAINER_NAME}; rollback image will be unavailable."
-          fi
-
-          echo "Pulling target image: ${TARGET_IMAGE}"
-          docker pull "${TARGET_IMAGE}"
-
-          EXISTING_PROJECT="$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project" }}' "${CONTAINER_NAME}" 2>/dev/null || true)"
-          if [[ -n "${EXISTING_PROJECT}" && "${EXISTING_PROJECT}" != "${COMPOSE_PROJECT_NAME}" ]]; then
-            echo "Removing existing ${CONTAINER_NAME} from compose project ${EXISTING_PROJECT} before deploy."
-            docker rm -f "${CONTAINER_NAME}"
-          fi
-
-          echo "Deploying ${SERVICE_NAME} with image ${TARGET_IMAGE}"
-          SEARCH_IMAGE="${TARGET_IMAGE}" docker compose \
-            --project-directory "${SERVICE_DEPLOY_DIR}" \
-            -f "${COMPOSE_FILE}" \
-            --env-file "${ENV_FILE}" \
-            up -d --no-deps --force-recreate --no-build "${SERVICE_NAME}"
-
-          HEALTH_OK=0
-          LAST_STATUS="000"
-          rm -f /tmp/search_health_body.txt
-
-          for _ in $(seq 1 30); do
-            LAST_STATUS="$(curl -sS -o /tmp/search_health_body.txt -w '%{http_code}' \
-              http://127.0.0.1:3006/readyz || true)"
-
-            if [[ "${LAST_STATUS}" == "200" ]]; then
-              HEALTH_OK=1
-              break
-            fi
-
-            sleep 2
-          done
-
-          if [[ "${HEALTH_OK}" -ne 1 ]]; then
-            echo "New deployment failed health checks (last status: ${LAST_STATUS})." >&2
-            echo "Last search health response body:" >&2
-            cat /tmp/search_health_body.txt 2>/dev/null || true
-            echo "Container status:" >&2
-            docker ps -a --filter "name=${CONTAINER_NAME}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" || true
-            echo "Recent container logs:" >&2
-            docker logs --tail 200 "${CONTAINER_NAME}" || true
-
-            if [[ -n "${PREVIOUS_IMAGE}" ]]; then
-              echo "Rolling back to ${PREVIOUS_IMAGE}"
-              SEARCH_IMAGE="${PREVIOUS_IMAGE}" docker compose \
-                --project-directory "${SERVICE_DEPLOY_DIR}" \
-                -f "${COMPOSE_FILE}" \
-                --env-file "${ENV_FILE}" \
-                up -d --no-deps --force-recreate --no-build "${SERVICE_NAME}"
-            else
-              echo "Rollback skipped: previous image not found." >&2
-              echo "Manual rollback option: deploy adamwentworth/search_service:latest"
-            fi
-            exit 1
-          fi
-
-          rm -f /tmp/search_health_body.txt
-          echo "Deployment succeeded."
+    uses: ./.github/workflows/deploy-compose-health-prod.yml
+    with:
+      image_ref: ${{ inputs.image_ref }}
+      deploy_root: ${{ inputs.deploy_root }}
+      service_name: ${{ inputs.service_name }}
+      display_name: Search
+      concurrency_group: deploy-search-prod
+      service_deploy_subdir: reader/search
+      compose_file: reader/search/docker-compose.yml
+      image_repo: adamwentworth/search_service
+      image_env_var: SEARCH_IMAGE
+      container_name: search_service
+      compose_project_name: search
+      health_url: http://127.0.0.1:3006/readyz
+      health_label: search
+      required_env_keys: JWT_SECRET DB_USER DB_PASSWORD DB_HOSTNAME DB_PORT DB_NAME
+      kafka_network_mode: create

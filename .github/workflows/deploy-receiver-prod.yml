@@ -25,149 +25,20 @@ permissions:
 jobs:
   deploy:
     name: Deploy Receiver To Prod
-    runs-on: [self-hosted, linux, x64, prod]
-    environment: production
-    concurrency:
-      group: deploy-receiver-prod
-      cancel-in-progress: false
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Preflight Checks
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          SERVICE_DEPLOY_DIR="${DEPLOY_ROOT}/receiver"
-          COMPOSE_FILE="${GITHUB_WORKSPACE}/receiver/docker-compose.yml"
-          ENV_FILE="${SERVICE_DEPLOY_DIR}/.env"
-          KAFKA_NETWORK="kafka_default"
-
-          if [[ ! -d "${SERVICE_DEPLOY_DIR}" ]]; then
-            echo "Service deploy directory not found: ${SERVICE_DEPLOY_DIR}" >&2
-            exit 1
-          fi
-
-          if [[ ! -f "${COMPOSE_FILE}" ]]; then
-            echo "Compose file not found: ${COMPOSE_FILE}" >&2
-            exit 1
-          fi
-
-          if [[ ! -f "${ENV_FILE}" ]]; then
-            echo "Env file not found: ${ENV_FILE}" >&2
-            exit 1
-          fi
-
-          if ! grep -qE '^JWT_SECRET=' "${ENV_FILE}"; then
-            echo "Required env key missing in ${ENV_FILE}: JWT_SECRET" >&2
-            exit 1
-          fi
-
-          if ! docker network inspect "${KAFKA_NETWORK}" >/dev/null 2>&1; then
-            echo "Required external network missing: ${KAFKA_NETWORK}" >&2
-            exit 1
-          fi
-
-          docker compose \
-            --project-directory "${SERVICE_DEPLOY_DIR}" \
-            -f "${COMPOSE_FILE}" \
-            --env-file "${ENV_FILE}" \
-            config >/dev/null
-
-      - name: Deploy With Health Check And Rollback
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          DEPLOY_ROOT="${{ inputs.deploy_root }}"
-          SERVICE_DEPLOY_DIR="${DEPLOY_ROOT}/receiver"
-          SERVICE_NAME="${{ inputs.service_name }}"
-          IMAGE_REPO="adamwentworth/receiver_service"
-          RAW_IMAGE_INPUT="${{ inputs.image_ref }}"
-          TARGET_IMAGE=""
-          COMPOSE_FILE="${GITHUB_WORKSPACE}/receiver/docker-compose.yml"
-          ENV_FILE="${SERVICE_DEPLOY_DIR}/.env"
-          CONTAINER_NAME="receiver_service"
-          COMPOSE_PROJECT_NAME="receiver"
-
-          if [[ -z "${RAW_IMAGE_INPUT}" ]]; then
-            TARGET_IMAGE="${IMAGE_REPO}:latest"
-          elif [[ "${RAW_IMAGE_INPUT}" == :* ]]; then
-            TARGET_IMAGE="${IMAGE_REPO}${RAW_IMAGE_INPUT}"
-          elif [[ "${RAW_IMAGE_INPUT}" == */* ]]; then
-            TARGET_IMAGE="${RAW_IMAGE_INPUT}"
-          else
-            TARGET_IMAGE="${IMAGE_REPO}:${RAW_IMAGE_INPUT}"
-          fi
-
-          if [[ "${TARGET_IMAGE}" == */* && "${TARGET_IMAGE}" != *:* && "${TARGET_IMAGE}" != *@* ]]; then
-            TARGET_IMAGE="${TARGET_IMAGE}:latest"
-          fi
-
-          PREVIOUS_IMAGE="$(docker inspect --format '{{.Config.Image}}' "${CONTAINER_NAME}" 2>/dev/null || true)"
-          if [[ -n "${PREVIOUS_IMAGE}" ]]; then
-            echo "Previous image: ${PREVIOUS_IMAGE}"
-          else
-            echo "No existing container image found for ${CONTAINER_NAME}; rollback image will be unavailable."
-          fi
-
-          echo "Pulling target image: ${TARGET_IMAGE}"
-          docker pull "${TARGET_IMAGE}"
-
-          EXISTING_PROJECT="$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project" }}' "${CONTAINER_NAME}" 2>/dev/null || true)"
-          if [[ -n "${EXISTING_PROJECT}" && "${EXISTING_PROJECT}" != "${COMPOSE_PROJECT_NAME}" ]]; then
-            echo "Removing existing ${CONTAINER_NAME} from compose project ${EXISTING_PROJECT} before deploy."
-            docker rm -f "${CONTAINER_NAME}"
-          fi
-
-          echo "Deploying ${SERVICE_NAME} with image ${TARGET_IMAGE}"
-          RECEIVER_IMAGE="${TARGET_IMAGE}" docker compose \
-            --project-directory "${SERVICE_DEPLOY_DIR}" \
-            -f "${COMPOSE_FILE}" \
-            --env-file "${ENV_FILE}" \
-            up -d --no-deps --force-recreate --no-build "${SERVICE_NAME}"
-
-          HEALTH_OK=0
-          LAST_STATUS="000"
-          rm -f /tmp/receiver_health_body.txt
-
-          for _ in $(seq 1 30); do
-            LAST_STATUS="$(curl -sS -o /tmp/receiver_health_body.txt -w '%{http_code}' \
-              http://127.0.0.1:3003/readyz || true)"
-
-            if [[ "${LAST_STATUS}" == "200" ]]; then
-              HEALTH_OK=1
-              break
-            fi
-
-            sleep 2
-          done
-
-          if [[ "${HEALTH_OK}" -ne 1 ]]; then
-            echo "New deployment failed health checks (last status: ${LAST_STATUS})." >&2
-            echo "Last receiver health response body:" >&2
-            cat /tmp/receiver_health_body.txt 2>/dev/null || true
-            echo "Container status:" >&2
-            docker ps -a --filter "name=${CONTAINER_NAME}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" || true
-            echo "Recent container logs:" >&2
-            docker logs --tail 200 "${CONTAINER_NAME}" || true
-
-            if [[ -n "${PREVIOUS_IMAGE}" ]]; then
-              echo "Rolling back to ${PREVIOUS_IMAGE}"
-              RECEIVER_IMAGE="${PREVIOUS_IMAGE}" docker compose \
-                --project-directory "${SERVICE_DEPLOY_DIR}" \
-                -f "${COMPOSE_FILE}" \
-                --env-file "${ENV_FILE}" \
-                up -d --no-deps --force-recreate --no-build "${SERVICE_NAME}"
-            else
-              echo "Rollback skipped: previous image not found." >&2
-              echo "Manual rollback option: deploy adamwentworth/receiver_service:latest"
-            fi
-            exit 1
-          fi
-
-          rm -f /tmp/receiver_health_body.txt
-          echo "Deployment succeeded."
+    uses: ./.github/workflows/deploy-compose-health-prod.yml
+    with:
+      image_ref: ${{ inputs.image_ref }}
+      deploy_root: ${{ inputs.deploy_root }}
+      service_name: ${{ inputs.service_name }}
+      display_name: Receiver
+      concurrency_group: deploy-receiver-prod
+      service_deploy_subdir: receiver
+      compose_file: receiver/docker-compose.yml
+      image_repo: adamwentworth/receiver_service
+      image_env_var: RECEIVER_IMAGE
+      container_name: receiver_service
+      compose_project_name: receiver
+      health_url: http://127.0.0.1:3003/readyz
+      health_label: receiver
+      required_env_keys: JWT_SECRET
+      kafka_network_mode: require
