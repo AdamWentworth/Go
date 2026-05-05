@@ -30,6 +30,11 @@ if (shouldRegisterServiceWorker) {
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
+        if (!registration) {
+          log.debug('Service Worker registration skipped by browser');
+          return;
+        }
+
         log.debug('Service Worker registered with scope:', registration.scope);
 
         navigator.serviceWorker.ready.then((registration) => {

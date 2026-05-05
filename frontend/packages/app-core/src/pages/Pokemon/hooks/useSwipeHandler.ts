@@ -113,7 +113,6 @@ export default function useSwipeHandler(
   const onTouchMove = useCallback((e: React.TouchEvent) => {
     const t = e.touches[0];
     handleMove(t.clientX, t.clientY);
-    if (directionLock.current === 'horizontal') e.preventDefault();
   }, [handleMove]);
 
   const onTouchEnd = useCallback(() => handleEnd(), [handleEnd]);
