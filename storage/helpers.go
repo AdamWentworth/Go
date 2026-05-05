@@ -30,6 +30,21 @@ func parseNullableString(value interface{}) *string {
 	return &strVal
 }
 
+func firstNonEmptyString(data map[string]interface{}, fields ...string) string {
+	for _, field := range fields {
+		value, ok := data[field]
+		if !ok || value == nil {
+			continue
+		}
+
+		strVal := strings.TrimSpace(fmt.Sprintf("%v", value))
+		if strVal != "" {
+			return strVal
+		}
+	}
+	return ""
+}
+
 // parseOptionalBool tries to convert a value to bool, defaults to false if nil/invalid.
 func parseOptionalBool(value interface{}) bool {
 	if value == nil {

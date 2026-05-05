@@ -61,6 +61,7 @@ export function createNewInstanceData(variant: PokemonVariant): PokemonInstance 
 
     mirror    : false,
     pref_lucky: false,
+    friendship_level: null,
     registered: false,
     favorite  : false,
 

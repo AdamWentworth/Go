@@ -1,12 +1,25 @@
+import type { PokemonInstance } from './instances';
+import type { TradeRecord } from './trades';
+
 export const receiverContract = {
   endpoints: {
     batchedUpdates: '/batchedUpdates',
   },
 } as const;
 
+export type ReceiverPokemonUpdate = Partial<PokemonInstance> & {
+  instance_id: string;
+};
+
+export type ReceiverTradeUpdate = Partial<TradeRecord> & {
+  trade_id: string;
+  operation?: string;
+  tradeData?: TradeRecord;
+};
+
 export interface ReceiverBatchedUpdatesPayload<
-  TPokemonUpdate = Record<string, unknown>,
-  TTradeUpdate = Record<string, unknown>,
+  TPokemonUpdate = ReceiverPokemonUpdate,
+  TTradeUpdate = ReceiverTradeUpdate,
 > {
   location: unknown | null;
   pokemonUpdates: TPokemonUpdate[];

@@ -18,7 +18,7 @@ describe('checkBatchedUpdates', () => {
   });
 
   it('triggers periodic updates when pokemon batched updates exist', async () => {
-    dbMocks.getBatchedPokemonUpdates.mockResolvedValue([{ key: 'p-1' }]);
+    dbMocks.getBatchedPokemonUpdates.mockResolvedValue([{ instance_id: 'p-1' }]);
     dbMocks.getBatchedTradeUpdates.mockResolvedValue([]);
 
     const periodicUpdates = vi.fn();
@@ -29,7 +29,7 @@ describe('checkBatchedUpdates', () => {
 
   it('triggers periodic updates when trade batched updates exist', async () => {
     dbMocks.getBatchedPokemonUpdates.mockResolvedValue([]);
-    dbMocks.getBatchedTradeUpdates.mockResolvedValue([{ key: 't-1' }]);
+    dbMocks.getBatchedTradeUpdates.mockResolvedValue([{ trade_id: 't-1' }]);
 
     const periodicUpdates = vi.fn();
     await checkBatchedUpdates(periodicUpdates);

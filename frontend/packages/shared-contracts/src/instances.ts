@@ -1,7 +1,10 @@
+export type PokemonMaxMoveValue = string | number | null;
+
 export interface PokemonInstance {
   // identity
   instance_id?: string;
-  variant_id: string;
+  variant_id: string | null;
+  user_id?: string;
   pokemon_id: number;
   nickname: string | null;
 
@@ -38,9 +41,9 @@ export interface PokemonInstance {
   dynamax: boolean;
   gigantamax: boolean;
   crown: boolean;
-  max_attack: number | null;
-  max_guard: number | null;
-  max_spirit: number | null;
+  max_attack: PokemonMaxMoveValue;
+  max_guard: PokemonMaxMoveValue;
+  max_spirit: PokemonMaxMoveValue;
 
   // fusion
   is_fused: boolean;
@@ -70,9 +73,11 @@ export interface PokemonInstance {
   // misc flags
   mirror: boolean;
   pref_lucky: boolean;
+  friendship_level: number | null;
   registered: boolean;
   favorite: boolean;
   disabled: boolean;
+  trace_id?: string | null;
 
   // timestamps and location
   pokeball: string | null;

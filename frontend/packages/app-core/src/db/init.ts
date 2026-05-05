@@ -129,13 +129,19 @@ export const initTradesDB = makeInit(TRADES_DB_NAME, (db) => {
   }
 });
 
-export const initUpdatesDB = makeInit(UPDATES_DB_NAME, (db) => {
-  if (!db.objectStoreNames.contains(BATCHED_POKEMON_UPDATES_STORE)) {
-    db.createObjectStore(BATCHED_POKEMON_UPDATES_STORE, { keyPath: 'key' });
-  }
-  if (!db.objectStoreNames.contains(BATCHED_TRADE_UPDATES_STORE)) {
-    db.createObjectStore(BATCHED_TRADE_UPDATES_STORE, { keyPath: 'key' });
-  }
+export const initUpdatesDB = makeInit(UPDATES_DB_NAME, (db, _oldV, _newV, tx) => {
+  const ensureStore = (storeName: string, keyPath: string) => {
+    if (db.objectStoreNames.contains(storeName)) {
+      const existing = tx.objectStore(storeName);
+      if (existing.keyPath === keyPath) return;
+      db.deleteObjectStore(storeName);
+    }
+
+    db.createObjectStore(storeName, { keyPath });
+  };
+
+  ensureStore(BATCHED_POKEMON_UPDATES_STORE, 'instance_id');
+  ensureStore(BATCHED_TRADE_UPDATES_STORE, 'trade_id');
 });
 
 export const initPokedexDB = makeInit(POKEDEX_DB_NAME, (db) => {

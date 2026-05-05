@@ -38,13 +38,13 @@ interface PokemonLike {
   pokedex_number?: number | string;
   species_name?: string;
   name?: string;
-  variant_id?: string;
+  variant_id?: string | null;
   variantType?: string;
   instanceData: {
     instance_id?: string;
     not_wanted_list?: BooleanMap;
     mirror?: boolean;
-    variant_id?: string;
+    variant_id?: string | null;
     pokemon_id?: number | string;
     [key: string]: unknown;
   };

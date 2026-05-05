@@ -83,6 +83,7 @@ function makeInstance(overrides: Partial<PokemonInstance> = {}): PokemonInstance
     date_added: '2026-01-01T00:00:00.000Z',
     last_update: 0,
     ...overrides,
+    friendship_level: overrides.friendship_level ?? null,
   };
 }
 

@@ -104,7 +104,7 @@ describe('periodicUpdates', () => {
 
   it('reschedules and sends when batched updates still exist and user is logged in', async () => {
     setLoggedIn();
-    dbMocks.getBatchedPokemonUpdates.mockResolvedValue([{ key: 'pokemon-1' }]);
+    dbMocks.getBatchedPokemonUpdates.mockResolvedValue([{ instance_id: 'pokemon-1' }]);
     dbMocks.getBatchedTradeUpdates.mockResolvedValue([]);
 
     const run = periodicUpdates(scheduledRef, timerRef);
@@ -121,7 +121,7 @@ describe('periodicUpdates', () => {
 
   it('pauses periodic loop when updates exist but user logs out before timer fires', async () => {
     setLoggedIn();
-    dbMocks.getBatchedPokemonUpdates.mockResolvedValue([{ key: 'pokemon-1' }]);
+    dbMocks.getBatchedPokemonUpdates.mockResolvedValue([{ instance_id: 'pokemon-1' }]);
     dbMocks.getBatchedTradeUpdates.mockResolvedValue([]);
 
     const run = periodicUpdates(scheduledRef, timerRef);

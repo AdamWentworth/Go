@@ -8,7 +8,7 @@ type VariantLike = Record<string, unknown> & {
 };
 
 type InstanceLike = Record<string, unknown> & {
-  variant_id?: string;
+  variant_id?: string | null;
 };
 
 type VariantsInput = PokemonVariant[] | Record<string, VariantLike> | null | undefined;

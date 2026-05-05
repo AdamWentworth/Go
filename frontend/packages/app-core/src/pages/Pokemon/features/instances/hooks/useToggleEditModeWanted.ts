@@ -17,7 +17,7 @@ interface PokemonLike {
     not_trade_list?: BooleanMap;
     [key: string]: unknown;
   };
-  variant_id?: string;
+  variant_id?: string | null;
 }
 
 interface ToggleEditModeWantedArgs {

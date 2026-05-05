@@ -100,13 +100,13 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 		}
 		tradeData, _ := tradeObj["tradeData"].(map[string]interface{})
 
-		// Get trade_id or fallback to "key"
-		var tradeID string
-		if tradeData != nil {
-			tradeID = fmt.Sprintf("%v", tradeData["trade_id"])
+		// Get trade_id from the explicit payload field, nested tradeData, or legacy key.
+		tradeID := firstNonEmptyString(tradeObj, "trade_id")
+		if tradeID == "" {
+			tradeID = firstNonEmptyString(tradeData, "trade_id")
 		}
 		if tradeID == "" {
-			tradeID = fmt.Sprintf("%v", tradeObj["key"])
+			tradeID = firstNonEmptyString(tradeObj, "key")
 		}
 		if tradeID == "" {
 			logrus.Warn("Skipping a Trade update because no trade_id found.")

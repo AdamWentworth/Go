@@ -114,15 +114,21 @@ function txDone(tx) {
 
 function openUpdatesDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('updatesDB', 1);
+    const req = indexedDB.open('updatesDB', 2);
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
-      if (!db.objectStoreNames.contains('batchedPokemonUpdates')) {
-        db.createObjectStore('batchedPokemonUpdates', { keyPath: 'key' });
-      }
-      if (!db.objectStoreNames.contains('batchedTradeUpdates')) {
-        db.createObjectStore('batchedTradeUpdates', { keyPath: 'key' });
-      }
+      const tx = e.target.transaction;
+      const ensureStore = (storeName, keyPath) => {
+        if (db.objectStoreNames.contains(storeName)) {
+          const existing = tx.objectStore(storeName);
+          if (existing.keyPath === keyPath) return;
+          db.deleteObjectStore(storeName);
+        }
+        db.createObjectStore(storeName, { keyPath });
+      };
+
+      ensureStore('batchedPokemonUpdates', 'instance_id');
+      ensureStore('batchedTradeUpdates', 'trade_id');
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);

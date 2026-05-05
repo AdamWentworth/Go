@@ -10,8 +10,8 @@ export const UPDATES_DB_NAME       = 'updatesDB';
 export const POKEDEX_DB_NAME       = 'pokedexDB';
 export const REGISTRATIONS_DB_NAME = 'registrationsDB';
 
-/** bump for index changes */
-export const DB_VERSION = 1;
+/** bump for object store/index changes */
+export const DB_VERSION = 2;
 
 /* Stores */
 export const VARIANTS_STORE  = 'variants';
