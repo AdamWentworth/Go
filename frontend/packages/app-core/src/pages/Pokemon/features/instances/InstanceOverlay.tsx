@@ -306,11 +306,15 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
       }
       case 'wanted':
         if (!activePokemon) return null;
+        const wantedInstanceKey =
+          getOverlayIdentityKey(activePokemon) ??
+          `wanted:${activePokemon.pokemon_id}:${String(activePokemon.variant_id ?? '')}`;
         return (
           <div className="wanted-instance-overlay">
             <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
               <WindowOverlay onClose={handleCloseOverlay} className="wanted-details-window">
                 <WantedDetails
+                  key={`${wantedInstanceKey}:details`}
                   pokemon={withInstanceData(activePokemon) as WantedDetailsPokemon}
                   lists={lists}
                   instances={instances}
@@ -323,6 +327,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
               </WindowOverlay>
               <WindowOverlay onClose={handleCloseOverlay} className="wanted-instance-window">
                 <WantedInstance
+                  key={wantedInstanceKey}
                   pokemon={activePokemon as unknown as WantedOverlayPokemon}
                   isEditable={isEditable}
                 />

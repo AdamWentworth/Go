@@ -67,13 +67,49 @@ vi.mock('@/pages/Pokemon/features/instances/components/Trade/TradeTargetsPanel',
   default: () => <div data-testid="trade-details" />,
 }));
 
-vi.mock('@/pages/Pokemon/features/instances/WantedInstance', () => ({
-  default: () => <div data-testid="wanted-instance" />,
-}));
+vi.mock('@/pages/Pokemon/features/instances/WantedInstance', async () => {
+  const ReactActual = await vi.importActual<typeof import('react')>('react');
 
-vi.mock('@/pages/Pokemon/features/instances/components/Wanted/WantedDetails', () => ({
-  default: () => <div data-testid="wanted-details" />,
-}));
+  return {
+    default: ({
+      pokemon,
+    }: {
+      pokemon: { instanceData?: { instance_id?: string | null } };
+    }) => {
+      const [draftInstanceId] = ReactActual.useState(
+        () => pokemon.instanceData?.instance_id ?? 'none',
+      );
+
+      return (
+        <div data-testid="wanted-instance" data-draft-instance-id={draftInstanceId}>
+          {draftInstanceId}
+        </div>
+      );
+    },
+  };
+});
+
+vi.mock('@/pages/Pokemon/features/instances/components/Wanted/WantedDetails', async () => {
+  const ReactActual = await vi.importActual<typeof import('react')>('react');
+
+  return {
+    default: ({
+      pokemon,
+    }: {
+      pokemon: { instanceData?: { instance_id?: string | null } };
+    }) => {
+      const [draftInstanceId] = ReactActual.useState(
+        () => pokemon.instanceData?.instance_id ?? 'none',
+      );
+
+      return (
+        <div data-testid="wanted-details" data-draft-instance-id={draftInstanceId}>
+          {draftInstanceId}
+        </div>
+      );
+    },
+  };
+});
 
 function makePokemon(overrides: Record<string, unknown> = {}) {
   return {
@@ -198,6 +234,71 @@ describe('InstanceOverlay', () => {
 
     expect(screen.getByTestId('trade-instance')).toBeInTheDocument();
     expect(screen.getByTestId('trade-details')).toBeInTheDocument();
+  });
+
+  it('remounts wanted panes when the active wanted instance changes', () => {
+    const firstPokemon = makePokemon({
+      instanceData: {
+        instance_id: 'wanted-1',
+        status: 'wanted',
+      },
+    });
+    const secondPokemon = makePokemon({
+      pokemon_id: 2,
+      variant_id: '0002-default',
+      instanceData: {
+        instance_id: 'wanted-2',
+        status: 'wanted',
+      },
+    });
+
+    const { rerender } = render(
+      <InstanceOverlay
+        pokemon={firstPokemon}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="wanted"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+      />,
+    );
+
+    expect(screen.getByTestId('wanted-instance')).toHaveAttribute(
+      'data-draft-instance-id',
+      'wanted-1',
+    );
+    expect(screen.getByTestId('wanted-details')).toHaveAttribute(
+      'data-draft-instance-id',
+      'wanted-1',
+    );
+
+    rerender(
+      <InstanceOverlay
+        pokemon={secondPokemon}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="wanted"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable={true}
+        username="ash"
+      />,
+    );
+
+    expect(screen.getByTestId('wanted-instance')).toHaveAttribute(
+      'data-draft-instance-id',
+      'wanted-2',
+    );
+    expect(screen.getByTestId('wanted-details')).toHaveAttribute(
+      'data-draft-instance-id',
+      'wanted-2',
+    );
   });
 
   it('uses shadow background before lucky or type backgrounds', () => {
