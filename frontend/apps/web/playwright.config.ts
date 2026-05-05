@@ -37,9 +37,15 @@ const e2eServerEnv = {
   VITE_LOG_LEVEL: 'warn',
 } satisfies Record<string, string>;
 
+const devServerCommand = `npm run dev -- --host 127.0.0.1 --port ${port} --strictPort --mode e2e`;
+const previewServerCommand = [
+  'npm run build -- --mode e2e',
+  `npm run preview -- --host 127.0.0.1 --port ${port} --strictPort`,
+].join(' && ');
+
 const webServerCommand =
   process.env.E2E_WEB_SERVER_COMMAND ??
-  `npm run dev -- --host 127.0.0.1 --port ${port} --strictPort --mode e2e`;
+  (process.env.CI ? previewServerCommand : devServerCommand);
 
 export default defineConfig({
   testDir: './tests/browser',
