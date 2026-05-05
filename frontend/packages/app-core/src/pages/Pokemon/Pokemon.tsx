@@ -5,7 +5,7 @@ import './Pokemon.css';
 import HeaderUI from './components/Header/HeaderUI';
 import PokemonViewSlider from './components/PokemonViewSlider';
 import PokemonPageOverlays from './components/PokemonPageOverlays';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import { AppLoadingFallback } from '@/contexts/AppLoadingContext';
 
 import {
   getPokedexSubLabel,
@@ -31,7 +31,7 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
   });
 
   if (controller.isPageLoading) {
-    return <LoadingSpinner />;
+    return <AppLoadingFallback source="pokemon-page" />;
   }
 
   return (

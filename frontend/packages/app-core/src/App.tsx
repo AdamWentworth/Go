@@ -11,6 +11,10 @@ import AppProviders  from './AppProviders';
 import AppBootstrap  from './AppBootstrap';
 import PerfTelemetryPanel from './components/dev/PerfTelemetryPanel';
 import ErrorBoundary from './components/ErrorBoundary';
+import {
+  AppLoadingFallback,
+  AppLoadingProvider,
+} from './contexts/AppLoadingContext';
 
 const Home = lazy(() => import('./pages/Home/Home'));
 const Pokemon = lazy(() => import('./pages/Pokemon/Pokemon'));
@@ -20,10 +24,14 @@ const Account = lazy(() => import('./pages/Authentication/Account'));
 const Search = lazy(() => import('./pages/Search/Search'));
 const Trades = lazy(() => import('./pages/Trades/Trades'));
 
+export const AppRouteFallback: React.FC = () => (
+  <AppLoadingFallback source="route" />
+);
+
 const AppContent: React.FC = () => (
   <div className="App">
     <main>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<AppRouteFallback />}>
         <Routes>
           <Route path="/"             element={<Home />} />
           <Route path="/pokemon"      element={<Pokemon isOwnCollection />} />
@@ -43,13 +51,15 @@ const AppContent: React.FC = () => (
 
 const App: React.FC = () => (
   <Router>
-    <AppProviders>
-      <AppBootstrap />
-      <ErrorBoundary>
-        <AppContent />
-      </ErrorBoundary>
-      <PerfTelemetryPanel />
-    </AppProviders>
+    <AppLoadingProvider>
+      <AppProviders>
+        <AppBootstrap />
+        <ErrorBoundary>
+          <AppContent />
+        </ErrorBoundary>
+        <PerfTelemetryPanel />
+      </AppProviders>
+    </AppLoadingProvider>
   </Router>
 );
 

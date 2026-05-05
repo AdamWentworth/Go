@@ -12,6 +12,7 @@ import InstanceOverlay from '@/pages/Pokemon/features/instances/InstanceOverlay'
 import CustomScrollbar from './CustomScrollbar';
 import './PokemonMenu.css';
 import { useModal } from '@/contexts/ModalContext';
+import { AppLoadingFallback } from '@/contexts/AppLoadingContext';
 import SearchUI from './SearchUI';
 import SearchMenu from './SearchMenu';
 import SortMenu from './SortMenu';
@@ -172,7 +173,7 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
     onSearchMenuStateChange?.(isMenuVisible);
   }, [isMenuVisible, onSearchMenuStateChange]);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <AppLoadingFallback source="pokemon-menu" />;
 
   return (
     <div className={`pokemon-container ${searchTerm.trim() ? 'has-checkbox' : ''}`}>
@@ -254,4 +255,3 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
 };
 
 export default React.memo(PokemonMenu);
-
