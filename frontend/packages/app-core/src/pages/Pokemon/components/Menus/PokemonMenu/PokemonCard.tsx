@@ -8,21 +8,13 @@ import { usePokemonAttributes } from './hooks/usePokemonAttributes';
 import { usePokemonImage } from './hooks/usePokemonImage';
 import SelectChip from './SelectChip';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
-import { resolveFusionBackgroundPool } from '@/pages/Pokemon/features/instances/utils/resolveFusionBackgroundPool';
-import { getCrownFormLabel, resolveActiveCrownForm } from '@/utils/crownHelpers';
 import {
+  buildPokemonDisplayModel,
   collectInstanceRefCandidates,
   findInstanceByRefs,
-  getPokemonCardCpValue,
-  getPokemonCardDisplayName,
-  getPokemonCardHighlightKey,
-  getPokemonCardOwnershipClass,
-  resolvePokemonCardActiveFusionEntry,
-  resolvePokemonCardActiveMegaEvolution,
-  resolvePokemonCardLocationBackground,
-  resolvePokemonCardTypeData,
-  shouldDisplayPokemonCardLuckyBackdrop,
-} from './pokemonCardState';
+  resolvePokemonDisplayFusionBackgroundPool,
+  resolvePokemonDisplayLocationBackground,
+} from '@/features/pokemonDisplay/pokemonDisplayModel';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -64,45 +56,41 @@ const PokemonCard = memo(({
     isDisabled, isFemale, isMega, megaForm,
     isFused, fusionForm, isCrown, isPurified, isDynamax, isGigantamax
   } = usePokemonAttributes(pokemon);
-  const activeCrownForm = useMemo(
-    () => resolveActiveCrownForm(pokemon.crownForms, undefined),
-    [pokemon.crownForms],
-  );
-  const activeMegaEvolution = useMemo(() => {
-    return resolvePokemonCardActiveMegaEvolution({
-      isMega,
-      megaForm,
-      megaEvolutions: pokemon.megaEvolutions,
-    });
-  }, [isMega, megaForm, pokemon.megaEvolutions]);
-  const activeFusionEntry = useMemo(() => {
-    const storedFusion = pokemon.instanceData?.fusion as Record<string, unknown> | null | undefined;
-    return resolvePokemonCardActiveFusionEntry({
-      isFused,
+  const displayModel = useMemo(
+    () =>
+      buildPokemonDisplayModel({
+        pokemon,
+        attributes: {
+          isDisabled,
+          isFemale,
+          isMega,
+          megaForm,
+          isFused,
+          fusionForm,
+          isCrown,
+          isPurified,
+          isDynamax,
+          isGigantamax,
+        },
+        tagFilter,
+        sortType,
+      }),
+    [
       fusionForm,
-      fusionEntries: pokemon.fusion,
-      storedFusion,
-    });
-  }, [fusionForm, isFused, pokemon.fusion, pokemon.instanceData?.fusion]);
-  const displayTypeData = useMemo(() => {
-    return resolvePokemonCardTypeData({
-      pokemon,
-      isFused,
-      activeFusionEntry,
       isCrown,
-      activeCrownForm,
+      isDisabled,
+      isDynamax,
+      isFemale,
+      isFused,
+      isGigantamax,
       isMega,
-      activeMegaEvolution,
-    });
-  }, [
-    activeFusionEntry,
-    activeCrownForm,
-    activeMegaEvolution,
-    isFused,
-    isCrown,
-    isMega,
-    pokemon,
-  ]);
+      isPurified,
+      megaForm,
+      pokemon,
+      sortType,
+      tagFilter,
+    ],
+  );
   const fusedPartnerInstance = useInstancesStore((state) => {
     const fusedWithKey =
       typeof pokemon.instanceData?.fused_with === 'string' ? pokemon.instanceData.fused_with : null;
@@ -117,7 +105,7 @@ const PokemonCard = memo(({
   });
   const resolvedFusionBackgrounds = useMemo(
     () =>
-      resolveFusionBackgroundPool({
+      resolvePokemonDisplayFusionBackgroundPool({
         pokemon,
         fusion: {
           is_fused: Boolean(isFused),
@@ -149,23 +137,13 @@ const PokemonCard = memo(({
     isFused,
     fusionForm,
     isCrown,
-    crownForm: getCrownFormLabel(activeCrownForm) ?? undefined,
+    crownForm: displayModel.crownFormLabel,
     isPurified,
     isGigantamax,
   });
 
-  const displayName = getPokemonCardDisplayName({
-    pokemon,
-    isFused,
-    fusionForm,
-    isMega,
-    megaForm,
-    isCrown,
-    activeCrownForm,
-  });
-
   // Prefer instance UUID, fallback to variant key
-  const highlightKey = getPokemonCardHighlightKey(pokemon);
+  const highlightKey = displayModel.highlightKey;
 
   const { handleTouchStart, handleTouchMove, handleTouchEnd, handleClick } =
     usePokemonCardTouchHandlers({
@@ -179,14 +157,8 @@ const PokemonCard = memo(({
       selectKey: highlightKey,
     });
 
-  const ownershipClass = getPokemonCardOwnershipClass(tagFilter);
-  const shouldDisplayLuckyBackdrop = shouldDisplayPokemonCardLuckyBackdrop(
-    tagFilter,
-    pokemon.instanceData,
-  );
-
   const locationBackground = useMemo(() => {
-    return resolvePokemonCardLocationBackground({
+    return resolvePokemonDisplayLocationBackground({
       pokemon,
       variantByPokemonId,
       resolvedFusionBackgrounds,
@@ -203,11 +175,9 @@ const PokemonCard = memo(({
     variantByPokemonId,
   ]);
 
-  const cpValue = getPokemonCardCpValue({ tagFilter, sortType, pokemon });
-
   const cardClass = `
     pokemon-card
-    ${ownershipClass}
+    ${displayModel.ownershipClass}
     ${isHighlighted ? 'highlighted' : ''}
     ${isDisabled ? 'disabled-card' : ''}
     ${shouldJiggle ? 'jiggle' : ''}
@@ -267,7 +237,7 @@ const PokemonCard = memo(({
       )}
 
       <div className="cp-container">
-        <CP cp={cpValue} editMode={false} onCPChange={() => {}} />
+        <CP cp={displayModel.cpValue} editMode={false} onCPChange={() => {}} />
       </div>
 
       <div className="fav-container">
@@ -285,7 +255,7 @@ const PokemonCard = memo(({
         imageUrl={currentImage}
         altText={pokemon.name}
         locationBackground={locationBackground}
-        shouldDisplayLuckyBackdrop={shouldDisplayLuckyBackdrop}
+        shouldDisplayLuckyBackdrop={displayModel.shouldDisplayLuckyBackdrop}
         isDynamax={isDynamax}
         isGigantamax={isGigantamax}
         isPurified={isPurified}
@@ -294,25 +264,25 @@ const PokemonCard = memo(({
       <p>#{pokemon.pokedex_number}</p>
 
       <div className="type-icons">
-        {displayTypeData.type_1_icon && displayTypeData.type1_name && (
+        {displayModel.typeData.type_1_icon && displayModel.typeData.type1_name && (
           <img
-            src={displayTypeData.type_1_icon}
-            alt={displayTypeData.type1_name}
+            src={displayModel.typeData.type_1_icon}
+            alt={displayModel.typeData.type1_name}
             loading="lazy"
             draggable={false}
           />
         )}
-        {displayTypeData.type_2_icon && displayTypeData.type2_name && (
+        {displayModel.typeData.type_2_icon && displayModel.typeData.type2_name && (
           <img
-            src={displayTypeData.type_2_icon}
-            alt={displayTypeData.type2_name}
+            src={displayModel.typeData.type_2_icon}
+            alt={displayModel.typeData.type2_name}
             loading="lazy"
             draggable={false}
           />
         )}
       </div>
 
-      <h2 className="pokemon-name-display">{displayName}</h2>
+      <h2 className="pokemon-name-display">{displayModel.displayName}</h2>
     </div>
   );
 });

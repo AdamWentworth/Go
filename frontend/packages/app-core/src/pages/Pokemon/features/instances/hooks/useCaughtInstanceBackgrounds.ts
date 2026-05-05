@@ -11,8 +11,10 @@ import {
   findInstanceByRefs,
   parseBackgroundId,
 } from '../utils/caughtInstanceRefs';
-import { resolveFusionBackgroundPool } from '../utils/resolveFusionBackgroundPool';
-import { resolveFusionComboBackground } from '../utils/resolveFusionComboBackground';
+import {
+  resolvePokemonDisplayFusionBackgroundPool,
+  resolvePokemonDisplayFusionComboBackground,
+} from '@/features/pokemonDisplay/fusionBackgrounds';
 import { useBackgrounds } from './useBackgrounds';
 
 type CaughtBackgroundPokemon = Pick<
@@ -40,7 +42,7 @@ export const useCaughtInstanceBackgrounds = ({
 }: UseCaughtInstanceBackgroundsArgs) => {
   const resolvedFusionBackgrounds = useMemo(
     () =>
-      resolveFusionBackgroundPool({
+      resolvePokemonDisplayFusionBackgroundPool({
         pokemon,
         fusion: {
           is_fused: fusion.is_fused,
@@ -89,7 +91,7 @@ export const useCaughtInstanceBackgrounds = ({
     const ownBackgroundId = currentSelected?.background_id ?? null;
     const partnerBackgroundId = parseBackgroundId(fusedPartnerInstance?.location_card);
 
-    const comboBackground = resolveFusionComboBackground({
+    const comboBackground = resolvePokemonDisplayFusionComboBackground({
       pokemonId: pokemon.pokemon_id,
       fusionEntries: pokemon.fusion ?? [],
       resolvedFusionId: resolvedFusionBackgrounds.fusionId,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveFusionBackgroundPool } from '@/pages/Pokemon/features/instances/utils/resolveFusionBackgroundPool';
+import { resolvePokemonDisplayFusionBackgroundPool } from '@/features/pokemonDisplay/fusionBackgrounds';
 import type { Fusion, VariantBackground } from '@/types/pokemonSubTypes';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
@@ -14,14 +14,14 @@ const buildBackground = (overrides: Partial<VariantBackground>): VariantBackgrou
   ...overrides,
 });
 
-describe('resolveFusionBackgroundPool', () => {
+describe('resolvePokemonDisplayFusionBackgroundPool', () => {
   it('returns base backgrounds when not fused', () => {
     const baseBackgrounds = [
       buildBackground({ background_id: 10, name: 'Snow' }),
       buildBackground({ background_id: 11, name: 'Ice Cave' }),
     ];
 
-    const result = resolveFusionBackgroundPool({
+    const result = resolvePokemonDisplayFusionBackgroundPool({
       pokemon: {
         backgrounds: baseBackgrounds,
         fusion: [],
@@ -44,7 +44,7 @@ describe('resolveFusionBackgroundPool', () => {
       buildBackground({ background_id: 41, name: 'Reshiram Inherited' }),
     ];
 
-    const result = resolveFusionBackgroundPool({
+    const result = resolvePokemonDisplayFusionBackgroundPool({
       pokemon: {
         backgrounds: baseBackgrounds,
         fusion: [
@@ -79,7 +79,7 @@ describe('resolveFusionBackgroundPool', () => {
       buildBackground({ background_id: 91, costume_id: 0, name: 'Combo B' }),
     ];
 
-    const result = resolveFusionBackgroundPool({
+    const result = resolvePokemonDisplayFusionBackgroundPool({
       pokemon: {
         backgrounds: [buildBackground({ background_id: 10, name: 'Base' })],
         fusion: [
@@ -107,7 +107,7 @@ describe('resolveFusionBackgroundPool', () => {
     const duskManeBackgrounds = [buildBackground({ background_id: 501, name: 'Dusk Mane BG' })];
     const dawnWingsBackgrounds = [buildBackground({ background_id: 502, name: 'Dawn Wings BG' })];
 
-    const result = resolveFusionBackgroundPool({
+    const result = resolvePokemonDisplayFusionBackgroundPool({
       pokemon: {
         backgrounds: [buildBackground({ background_id: 10, name: 'Base' })],
         fusion: [

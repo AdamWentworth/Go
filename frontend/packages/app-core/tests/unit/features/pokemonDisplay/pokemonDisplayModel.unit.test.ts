@@ -1,25 +1,26 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildPokemonDisplayModel,
   collectInstanceRefCandidates,
   findInstanceByRefs,
-  getPokemonCardCpValue,
-  getPokemonCardDisplayName,
-  getPokemonCardHighlightKey,
-  getPokemonCardOwnershipClass,
+  getPokemonDisplayCpValue,
+  getPokemonDisplayName,
+  getPokemonDisplayHighlightKey,
+  getPokemonDisplayOwnershipClass,
   parseBackgroundId,
-  resolvePokemonCardActiveFusionEntry,
-  resolvePokemonCardActiveMegaEvolution,
-  resolvePokemonCardLocationBackground,
-  resolvePokemonCardTypeData,
-  shouldDisplayPokemonCardLuckyBackdrop,
-  type PokemonCardPokemon,
-} from '@/pages/Pokemon/components/Menus/PokemonMenu/pokemonCardState';
-import type { ResolveFusionBackgroundPoolResult } from '@/pages/Pokemon/features/instances/utils/resolveFusionBackgroundPool';
+  resolvePokemonDisplayActiveFusionEntry,
+  resolvePokemonDisplayActiveMegaEvolution,
+  resolvePokemonDisplayLocationBackground,
+  resolvePokemonDisplayTypeData,
+  shouldDisplayPokemonLuckyBackdrop,
+  type PokemonDisplaySource,
+} from '@/features/pokemonDisplay/pokemonDisplayModel';
+import type { ResolveFusionBackgroundPoolResult } from '@/features/pokemonDisplay/fusionBackgrounds';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { CrownForm, Fusion, MegaEvolution, VariantBackground } from '@/types/pokemonSubTypes';
 
-const makePokemon = (overrides: Partial<PokemonCardPokemon> = {}): PokemonCardPokemon =>
+const makePokemon = (overrides: Partial<PokemonDisplaySource> = {}): PokemonDisplaySource =>
   ({
     pokemon_id: 1,
     name: 'Bulbasaur',
@@ -38,7 +39,7 @@ const makePokemon = (overrides: Partial<PokemonCardPokemon> = {}): PokemonCardPo
     megaEvolutions: [],
     instanceData: {},
     ...overrides,
-  }) as unknown as PokemonCardPokemon;
+  }) as unknown as PokemonDisplaySource;
 
 const makeInstance = (overrides: Partial<PokemonInstance> = {}): PokemonInstance =>
   ({
@@ -105,7 +106,7 @@ const emptyFusionBackgrounds: ResolveFusionBackgroundPoolResult = {
   fusionId: null,
 };
 
-describe('pokemonCardState', () => {
+describe('pokemonDisplayModel', () => {
   it('collects instance reference candidates from legacy keys and UUID-suffixed values', () => {
     const uuid = '99999999-9999-4999-8999-999999999999';
 
@@ -155,7 +156,7 @@ describe('pokemonCardState', () => {
     const megaX = makeMega({ form: 'X', type1_name: 'Fire' });
     const megaY = makeMega({ id: 2, form: 'Mega Y', type1_name: 'Flying' });
     expect(
-      resolvePokemonCardActiveMegaEvolution({
+      resolvePokemonDisplayActiveMegaEvolution({
         isMega: true,
         megaForm: 'mega-y',
         megaEvolutions: [megaX, megaY],
@@ -165,7 +166,7 @@ describe('pokemonCardState', () => {
     const fusionOne = makeFusion({ fusion_id: 1, name: 'Dusk Mane Necrozma' });
     const fusionTwo = makeFusion({ fusion_id: 2, name: 'Dawn Wings Necrozma' });
     expect(
-      resolvePokemonCardActiveFusionEntry({
+      resolvePokemonDisplayActiveFusionEntry({
         isFused: true,
         fusionEntries: [fusionOne, fusionTwo],
         storedFusion: { fusion_id: '2' },
@@ -175,7 +176,7 @@ describe('pokemonCardState', () => {
 
   it('resolves type display data for base, mega, fusion, and crown cards', () => {
     expect(
-      resolvePokemonCardTypeData({
+      resolvePokemonDisplayTypeData({
         pokemon: makePokemon({ type_1_icon: '', type_2_icon: '' }),
       }),
     ).toEqual({
@@ -186,7 +187,7 @@ describe('pokemonCardState', () => {
     });
 
     expect(
-      resolvePokemonCardTypeData({
+      resolvePokemonDisplayTypeData({
         pokemon: makePokemon({ type1_name: 'Steel', type2_name: 'Rock' }),
         isMega: true,
         activeMegaEvolution: makeMega({
@@ -204,7 +205,7 @@ describe('pokemonCardState', () => {
     });
 
     expect(
-      resolvePokemonCardTypeData({
+      resolvePokemonDisplayTypeData({
         pokemon: makePokemon(),
         isFused: true,
         activeFusionEntry: makeFusion({ type1_name: 'Dragon', type2_name: 'Ice' }),
@@ -217,7 +218,7 @@ describe('pokemonCardState', () => {
     });
 
     expect(
-      resolvePokemonCardTypeData({
+      resolvePokemonDisplayTypeData({
         pokemon: makePokemon(),
         isCrown: true,
         activeCrownForm: makeCrown({ type1_name: 'Psychic', type2_name: 'Water' }),
@@ -232,13 +233,13 @@ describe('pokemonCardState', () => {
 
   it('builds display names with nickname, fusion, mega, and crown precedence', () => {
     expect(
-      getPokemonCardDisplayName({
+      getPokemonDisplayName({
         pokemon: makePokemon({ instanceData: { nickname: 'Sprout' } }),
       }),
     ).toBe('Sprout');
 
     expect(
-      getPokemonCardDisplayName({
+      getPokemonDisplayName({
         pokemon: makePokemon({ instanceData: { shiny: true } }),
         isFused: true,
         fusionForm: 'Dawn Wings Necrozma',
@@ -246,7 +247,7 @@ describe('pokemonCardState', () => {
     ).toBe('Shiny Dawn Wings Necrozma');
 
     expect(
-      getPokemonCardDisplayName({
+      getPokemonDisplayName({
         pokemon: makePokemon({
           name: 'Shiny Charizard',
           variantType: 'shiny',
@@ -258,7 +259,7 @@ describe('pokemonCardState', () => {
     ).toBe('Shiny Mega Charizard X');
 
     expect(
-      getPokemonCardDisplayName({
+      getPokemonDisplayName({
         pokemon: makePokemon({ name: 'Shiny Bulbasaur', variantType: 'shiny' }),
         isCrown: true,
         activeCrownForm: makeCrown({ display_form: 'King' }),
@@ -266,39 +267,84 @@ describe('pokemonCardState', () => {
     ).toBe('Shiny King Bulbasaur');
   });
 
+  it('builds one display model for card-ready identity, classes, CP, and type data', () => {
+    const model = buildPokemonDisplayModel({
+      pokemon: makePokemon({
+        name: 'Shiny Charizard',
+        variantType: 'shiny',
+        variant_id: '0006-shiny',
+        type1_name: 'Fire',
+        type2_name: 'Flying',
+        instanceData: {
+          instance_id: 'charizard-owned',
+          cp: 2499,
+          shiny: true,
+          lucky: true,
+        },
+        megaEvolutions: [
+          makeMega({
+            form: 'X',
+            type1_name: 'Fire',
+            type2_name: 'Dragon',
+          }),
+        ],
+      }),
+      attributes: {
+        isMega: true,
+        megaForm: 'X',
+      },
+      tagFilter: 'caught',
+      sortType: 'combatPower',
+    });
+
+    expect(model).toMatchObject({
+      cpValue: 2499,
+      displayName: 'Shiny Mega Charizard X',
+      highlightKey: 'charizard-owned',
+      ownershipClass: 'caught',
+      shouldDisplayLuckyBackdrop: true,
+      typeData: {
+        type1_name: 'Fire',
+        type2_name: 'Dragon',
+        type_1_icon: '/images/types/fire.png',
+        type_2_icon: '/images/types/dragon.png',
+      },
+    });
+  });
+
   it('resolves highlight keys, ownership classes, lucky backdrop, and CP values', () => {
     expect(
-      getPokemonCardHighlightKey(
+      getPokemonDisplayHighlightKey(
         makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'owned-1' } }),
       ),
     ).toBe('owned-1');
-    expect(getPokemonCardHighlightKey(makePokemon({ instanceData: {} }))).toBe('0001-default');
+    expect(getPokemonDisplayHighlightKey(makePokemon({ instanceData: {} }))).toBe('0001-default');
 
-    expect(getPokemonCardOwnershipClass('Caught')).toBe('caught');
-    expect(getPokemonCardOwnershipClass('unknown')).toBe('');
+    expect(getPokemonDisplayOwnershipClass('Caught')).toBe('caught');
+    expect(getPokemonDisplayOwnershipClass('unknown')).toBe('');
 
     expect(
-      shouldDisplayPokemonCardLuckyBackdrop('wanted', { pref_lucky: true }),
+      shouldDisplayPokemonLuckyBackdrop('wanted', { pref_lucky: true }),
     ).toBe(true);
-    expect(shouldDisplayPokemonCardLuckyBackdrop('caught', { lucky: true })).toBe(true);
-    expect(shouldDisplayPokemonCardLuckyBackdrop('caught', { pref_lucky: true })).toBe(false);
+    expect(shouldDisplayPokemonLuckyBackdrop('caught', { lucky: true })).toBe(true);
+    expect(shouldDisplayPokemonLuckyBackdrop('caught', { pref_lucky: true })).toBe(false);
 
     expect(
-      getPokemonCardCpValue({
+      getPokemonDisplayCpValue({
         tagFilter: 'caught',
         sortType: 'name',
         pokemon: makePokemon({ instanceData: { cp: 42 } }),
       }),
     ).toBe(42);
     expect(
-      getPokemonCardCpValue({
+      getPokemonDisplayCpValue({
         tagFilter: '',
         sortType: 'combatPower',
         pokemon: makePokemon({ cp50: 1115 }),
       }),
     ).toBe(1115);
     expect(
-      getPokemonCardCpValue({
+      getPokemonDisplayCpValue({
         tagFilter: '',
         sortType: 'name',
         pokemon: makePokemon({ cp50: 1115 }),
@@ -309,7 +355,7 @@ describe('pokemonCardState', () => {
   it('resolves location backgrounds from variant fallbacks and fusion combo rules', () => {
     const fallbackBackground = makeBackground(7);
     expect(
-      resolvePokemonCardLocationBackground({
+      resolvePokemonDisplayLocationBackground({
         pokemon: makePokemon({
           pokemon_id: 25,
           backgrounds: [],
@@ -324,7 +370,7 @@ describe('pokemonCardState', () => {
     const ownBackground = makeBackground(1);
     const comboBackground = makeBackground(3);
     expect(
-      resolvePokemonCardLocationBackground({
+      resolvePokemonDisplayLocationBackground({
         pokemon: makePokemon({
           pokemon_id: 1,
           fusion: [

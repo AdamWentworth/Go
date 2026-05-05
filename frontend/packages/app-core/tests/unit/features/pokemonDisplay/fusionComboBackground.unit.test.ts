@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveFusionComboBackground } from '@/pages/Pokemon/features/instances/utils/resolveFusionComboBackground';
+import { resolvePokemonDisplayFusionComboBackground } from '@/features/pokemonDisplay/fusionBackgrounds';
 import type { VariantBackground } from '@/types/pokemonSubTypes';
 
 const buildBackground = (overrides: Partial<VariantBackground>): VariantBackground => ({
@@ -13,9 +13,9 @@ const buildBackground = (overrides: Partial<VariantBackground>): VariantBackgrou
   ...overrides,
 });
 
-describe('resolveFusionComboBackground', () => {
+describe('resolvePokemonDisplayFusionComboBackground', () => {
   it('returns combo background when member1/member2 backgrounds match rule', () => {
-    const result = resolveFusionComboBackground({
+    const result = resolvePokemonDisplayFusionComboBackground({
       pokemonId: 800,
       fusionEntries: [
         {
@@ -48,7 +48,7 @@ describe('resolveFusionComboBackground', () => {
   });
 
   it('supports reversed orientation when open pokemon is member2', () => {
-    const result = resolveFusionComboBackground({
+    const result = resolvePokemonDisplayFusionComboBackground({
       pokemonId: 791,
       fusionEntries: [
         {
@@ -76,7 +76,7 @@ describe('resolveFusionComboBackground', () => {
   });
 
   it('returns null when no combo rule matches selected pair', () => {
-    const result = resolveFusionComboBackground({
+    const result = resolvePokemonDisplayFusionComboBackground({
       pokemonId: 800,
       fusionEntries: [
         {
@@ -104,7 +104,7 @@ describe('resolveFusionComboBackground', () => {
   });
 
   it('prefers explicit fusion form name over mismatched resolved fusion id', () => {
-    const result = resolveFusionComboBackground({
+    const result = resolvePokemonDisplayFusionComboBackground({
       pokemonId: 800,
       fusionEntries: [
         {
@@ -145,7 +145,7 @@ describe('resolveFusionComboBackground', () => {
   });
 
   it('builds combo background from rule metadata when combo id is not in available backgrounds', () => {
-    const result = resolveFusionComboBackground({
+    const result = resolvePokemonDisplayFusionComboBackground({
       pokemonId: 800,
       fusionEntries: [
         {

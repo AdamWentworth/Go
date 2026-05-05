@@ -1,10 +1,17 @@
-import { resolveFusionComboBackground } from '@/pages/Pokemon/features/instances/utils/resolveFusionComboBackground';
-import type { ResolveFusionBackgroundPoolResult } from '@/pages/Pokemon/features/instances/utils/resolveFusionBackgroundPool';
 import type { PokemonInstance } from '@/types/pokemonInstance';
-import type { CrownForm, Fusion, MegaEvolution, VariantBackground } from '@/types/pokemonSubTypes';
+import type {
+  CrownForm,
+  Fusion,
+  MegaEvolution,
+  VariantBackground,
+} from '@/types/pokemonSubTypes';
 import type { PokemonVariant } from '@/types/pokemonVariants';
-import { getCrownFormLabel } from '@/utils/crownHelpers';
+import { getCrownFormLabel, resolveActiveCrownForm } from '@/utils/crownHelpers';
 import { parseBackgroundId } from '@/features/instances/utils/instanceIdentity';
+import {
+  resolvePokemonDisplayFusionComboBackground,
+  type ResolveFusionBackgroundPoolResult,
+} from './fusionBackgrounds';
 
 export {
   collectInstanceRefCandidates,
@@ -14,16 +21,50 @@ export {
   parseBackgroundId,
 } from '@/features/instances/utils/instanceIdentity';
 
-export type PokemonCardPokemon = Omit<PokemonVariant, 'instanceData'> & {
+export {
+  resolvePokemonDisplayFusionBackgroundPool,
+  resolvePokemonDisplayFusionComboBackground,
+  type FusionBackgroundSource,
+  type ResolveFusionBackgroundPoolResult,
+} from './fusionBackgrounds';
+
+export type PokemonDisplaySource = Omit<PokemonVariant, 'instanceData'> & {
   instanceData?: Partial<PokemonInstance>;
   currentImage: string;
 };
 
-export type PokemonCardTypeData = {
+export type PokemonDisplayTypeData = {
   type1_name?: string;
   type2_name?: string;
   type_1_icon?: string;
   type_2_icon?: string;
+};
+
+export type PokemonDisplayAttributes = {
+  isDisabled?: boolean;
+  isFemale?: boolean;
+  isMega?: boolean;
+  megaForm?: string | null;
+  isFused?: boolean;
+  fusionForm?: string | null;
+  isCrown?: boolean;
+  crownForm?: string | null;
+  isPurified?: boolean;
+  isDynamax?: boolean;
+  isGigantamax?: boolean;
+};
+
+export type PokemonDisplayModel = PokemonDisplayAttributes & {
+  activeCrownForm?: CrownForm;
+  activeFusionEntry?: Fusion;
+  activeMegaEvolution?: MegaEvolution;
+  crownFormLabel?: string;
+  cpValue: string | number | null;
+  displayName: string;
+  highlightKey: string;
+  ownershipClass: string;
+  shouldDisplayLuckyBackdrop: boolean;
+  typeData: PokemonDisplayTypeData;
 };
 
 export const normalizeFormToken = (value: string | null | undefined): string =>
@@ -53,7 +94,7 @@ export const parseFusionId = (value: unknown): number | null => {
   return null;
 };
 
-export const resolvePokemonCardActiveMegaEvolution = ({
+export const resolvePokemonDisplayActiveMegaEvolution = ({
   isMega,
   megaForm,
   megaEvolutions,
@@ -80,7 +121,7 @@ export const resolvePokemonCardActiveMegaEvolution = ({
   );
 };
 
-export const resolvePokemonCardActiveFusionEntry = ({
+export const resolvePokemonDisplayActiveFusionEntry = ({
   isFused,
   fusionForm,
   fusionEntries,
@@ -111,7 +152,7 @@ export const resolvePokemonCardActiveFusionEntry = ({
   return fusionEntries[0];
 };
 
-export const resolvePokemonCardTypeData = ({
+export const resolvePokemonDisplayTypeData = ({
   pokemon,
   isFused,
   activeFusionEntry,
@@ -121,7 +162,7 @@ export const resolvePokemonCardTypeData = ({
   activeMegaEvolution,
 }: {
   pokemon: Pick<
-    PokemonCardPokemon,
+    PokemonDisplaySource,
     'type1_name' | 'type2_name' | 'type_1_icon' | 'type_2_icon'
   >;
   isFused?: boolean;
@@ -130,7 +171,7 @@ export const resolvePokemonCardTypeData = ({
   activeCrownForm?: CrownForm;
   isMega?: boolean;
   activeMegaEvolution?: MegaEvolution;
-}): PokemonCardTypeData => {
+}): PokemonDisplayTypeData => {
   const baseType1 = pokemon.type1_name;
   const baseType2 = pokemon.type2_name;
   const baseType1Icon = pokemon.type_1_icon || buildTypeIcon(baseType1);
@@ -181,7 +222,7 @@ export const resolvePokemonCardTypeData = ({
   };
 };
 
-export const getPokemonCardDisplayName = ({
+export const getPokemonDisplayName = ({
   pokemon,
   isFused,
   fusionForm,
@@ -190,7 +231,7 @@ export const getPokemonCardDisplayName = ({
   isCrown,
   activeCrownForm,
 }: {
-  pokemon: Pick<PokemonCardPokemon, 'name' | 'variantType' | 'instanceData'>;
+  pokemon: Pick<PokemonDisplaySource, 'name' | 'variantType' | 'instanceData'>;
   isFused?: boolean;
   fusionForm?: string | null;
   isMega?: boolean;
@@ -233,10 +274,10 @@ export const getPokemonCardDisplayName = ({
   return name;
 };
 
-export const getPokemonCardHighlightKey = (pokemon: PokemonCardPokemon): string =>
+export const getPokemonDisplayHighlightKey = (pokemon: PokemonDisplaySource): string =>
   pokemon.instanceData?.instance_id ?? pokemon.variant_id;
 
-export const getPokemonCardOwnershipClass = (tagFilter: string): string => {
+export const getPokemonDisplayOwnershipClass = (tagFilter: string): string => {
   const f = (tagFilter || '').toLowerCase();
   switch (f) {
     case 'caught':
@@ -252,7 +293,7 @@ export const getPokemonCardOwnershipClass = (tagFilter: string): string => {
   }
 };
 
-export const shouldDisplayPokemonCardLuckyBackdrop = (
+export const shouldDisplayPokemonLuckyBackdrop = (
   tagFilter: string,
   instanceData: Partial<PokemonInstance> | undefined,
 ): boolean =>
@@ -261,14 +302,14 @@ export const shouldDisplayPokemonCardLuckyBackdrop = (
       instanceData?.lucky,
   );
 
-export const getPokemonCardCpValue = ({
+export const getPokemonDisplayCpValue = ({
   tagFilter,
   sortType,
   pokemon,
 }: {
   tagFilter: string;
   sortType: string;
-  pokemon: Pick<PokemonCardPokemon, 'cp50' | 'instanceData'>;
+  pokemon: Pick<PokemonDisplaySource, 'cp50' | 'instanceData'>;
 }): string | number | null =>
   tagFilter !== ''
     ? (pokemon.instanceData?.cp ?? '')
@@ -276,7 +317,93 @@ export const getPokemonCardCpValue = ({
       ? pokemon.cp50
       : '';
 
-export const resolvePokemonCardLocationBackground = ({
+export const buildPokemonDisplayModel = ({
+  pokemon,
+  attributes,
+  tagFilter,
+  sortType,
+}: {
+  pokemon: PokemonDisplaySource;
+  attributes: PokemonDisplayAttributes;
+  tagFilter: string;
+  sortType: string;
+}): PokemonDisplayModel => {
+  const {
+    isDisabled = false,
+    isFemale = false,
+    isMega = false,
+    megaForm = null,
+    isFused = false,
+    fusionForm = null,
+    isCrown = false,
+    crownForm = null,
+    isPurified = false,
+    isDynamax = false,
+    isGigantamax = false,
+  } = attributes;
+  const activeCrownForm = resolveActiveCrownForm(pokemon.crownForms, crownForm ?? undefined);
+  const activeMegaEvolution = resolvePokemonDisplayActiveMegaEvolution({
+    isMega,
+    megaForm,
+    megaEvolutions: pokemon.megaEvolutions,
+  });
+  const storedFusion =
+    pokemon.instanceData?.fusion && typeof pokemon.instanceData.fusion === 'object'
+      ? (pokemon.instanceData.fusion as Record<string, unknown>)
+      : null;
+  const activeFusionEntry = resolvePokemonDisplayActiveFusionEntry({
+    isFused,
+    fusionForm,
+    fusionEntries: pokemon.fusion,
+    storedFusion,
+  });
+  const typeData = resolvePokemonDisplayTypeData({
+    pokemon,
+    isFused,
+    activeFusionEntry,
+    isCrown,
+    activeCrownForm,
+    isMega,
+    activeMegaEvolution,
+  });
+
+  return {
+    isDisabled,
+    isFemale,
+    isMega,
+    megaForm,
+    isFused,
+    fusionForm,
+    isCrown,
+    crownForm,
+    isPurified,
+    isDynamax,
+    isGigantamax,
+    activeCrownForm,
+    activeFusionEntry,
+    activeMegaEvolution,
+    crownFormLabel: getCrownFormLabel(activeCrownForm) ?? undefined,
+    cpValue: getPokemonDisplayCpValue({ tagFilter, sortType, pokemon }),
+    displayName: getPokemonDisplayName({
+      pokemon,
+      isFused,
+      fusionForm,
+      isMega,
+      megaForm,
+      isCrown,
+      activeCrownForm,
+    }),
+    highlightKey: getPokemonDisplayHighlightKey(pokemon),
+    ownershipClass: getPokemonDisplayOwnershipClass(tagFilter),
+    shouldDisplayLuckyBackdrop: shouldDisplayPokemonLuckyBackdrop(
+      tagFilter,
+      pokemon.instanceData,
+    ),
+    typeData,
+  };
+};
+
+export const resolvePokemonDisplayLocationBackground = ({
   pokemon,
   variantByPokemonId,
   resolvedFusionBackgrounds,
@@ -285,7 +412,7 @@ export const resolvePokemonCardLocationBackground = ({
   fusionForm,
 }: {
   pokemon: Pick<
-    PokemonCardPokemon,
+    PokemonDisplaySource,
     'backgrounds' | 'fusion' | 'instanceData' | 'pokemon_id'
   >;
   variantByPokemonId: Map<number, { backgrounds?: VariantBackground[] }>;
@@ -316,7 +443,7 @@ export const resolvePokemonCardLocationBackground = ({
   const ownBackgroundId = directBackground?.background_id ?? locationCardId;
   const partnerBackgroundId = parseBackgroundId(fusedPartnerInstance?.location_card);
 
-  const comboBackground = resolveFusionComboBackground({
+  const comboBackground = resolvePokemonDisplayFusionComboBackground({
     pokemonId: pokemon.pokemon_id,
     fusionEntries: pokemon.fusion ?? [],
     resolvedFusionId: resolvedFusionBackgrounds.fusionId,
