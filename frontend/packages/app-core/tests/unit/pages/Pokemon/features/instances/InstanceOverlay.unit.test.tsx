@@ -294,6 +294,13 @@ describe('InstanceOverlay', () => {
 
     expect(screen.getByTestId('caught-instance')).toHaveTextContent('none');
 
+    const latestInstances = {
+      'instance-1': {
+        instance_id: 'instance-1',
+        original_trainer_name: 'PokePete35',
+      },
+    } as unknown as React.ComponentProps<typeof InstanceOverlay>['instances'];
+
     rerender(
       <InstanceOverlay
         pokemon={pokemon}
@@ -301,14 +308,7 @@ describe('InstanceOverlay', () => {
         variants={[]}
         tagFilter="caught"
         lists={{}}
-        instances={
-          {
-            'instance-1': {
-              instance_id: 'instance-1',
-              original_trainer_name: 'PokePete35',
-            },
-          } as any
-        }
+        instances={latestInstances}
         sortType="name"
         sortMode="ascending"
         isEditable={true}

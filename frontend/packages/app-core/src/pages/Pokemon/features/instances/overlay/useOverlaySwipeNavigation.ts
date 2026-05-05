@@ -1,16 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import type {
-  CSSProperties,
   DragEventHandler,
   MouseEventHandler,
   PointerEventHandler,
   TouchEventHandler,
 } from 'react';
 import type { OverlayPokemon } from './overlayTypes';
-import { isSwipeInteractiveTarget, resolveSwipeAxis } from './overlaySwipe';
-
-type SwipeDirection = 'previous' | 'next';
+import { isSwipeInteractiveTarget } from './overlaySwipe';
+import {
+  createActiveSwipeState,
+  createInactiveSwipeState,
+  getNavigationOffsets,
+  getOverlayMotionStyle,
+  getSwipeEndDirection,
+  getSwipeMoveResult,
+  type SwipeDirection,
+} from './overlaySwipeNavigationState';
 
 export type SwipeCaptureHandlers = {
   onDragStart: DragEventHandler<HTMLDivElement>;
@@ -39,11 +45,7 @@ export const useOverlaySwipeNavigation = ({
   navigateToPokemon,
 }: UseOverlaySwipeNavigationArgs) => {
   const navTimeoutsRef = useRef<number[]>([]);
-  const swipeStateRef = useRef({
-    active: false,
-    startX: 0,
-    startY: 0,
-  });
+  const swipeStateRef = useRef(createInactiveSwipeState());
   const swipeAxisRef = useRef<'x' | 'y' | null>(null);
   const overlayRootRef = useRef<HTMLDivElement | null>(null);
 
@@ -76,11 +78,7 @@ export const useOverlaySwipeNavigation = ({
   }, []);
 
   const resetSwipeState = useCallback(() => {
-    swipeStateRef.current = {
-      active: false,
-      startX: 0,
-      startY: 0,
-    };
+    swipeStateRef.current = createInactiveSwipeState();
     swipeAxisRef.current = null;
     setIsSwiping(false);
     setIsHorizontalSwiping(false);
@@ -108,8 +106,7 @@ export const useOverlaySwipeNavigation = ({
         return;
       }
 
-      const exitOffset = direction === 'next' ? -140 : 140;
-      const enterOffset = direction === 'next' ? 110 : -110;
+      const { exitOffset, enterOffset } = getNavigationOffsets(direction);
 
       setIsSwipeAnimating(true);
       setSwipeTransitionEnabled(true);
@@ -164,11 +161,7 @@ export const useOverlaySwipeNavigation = ({
       if (swipeStateRef.current.active) return;
       if (isSwipeAnimating) return;
 
-      swipeStateRef.current = {
-        active: true,
-        startX: clientX,
-        startY: clientY,
-      };
+      swipeStateRef.current = createActiveSwipeState(clientX, clientY);
       swipeAxisRef.current = null;
       setIsSwiping(true);
       setSwipeTransitionEnabled(false);
@@ -181,15 +174,17 @@ export const useOverlaySwipeNavigation = ({
       const swipeState = swipeStateRef.current;
       if (!swipeState.active || isSwipeAnimating) return false;
 
-      const deltaX = clientX - swipeState.startX;
-      const deltaY = clientY - swipeState.startY;
-      swipeAxisRef.current = resolveSwipeAxis(deltaX, deltaY, swipeAxisRef.current);
-      if (swipeAxisRef.current !== 'x') return false;
+      const moveResult = getSwipeMoveResult(
+        swipeState,
+        clientX,
+        clientY,
+        swipeAxisRef.current,
+      );
+      swipeAxisRef.current = moveResult.axis;
+      if (!moveResult.horizontal) return false;
 
       setIsHorizontalSwiping(true);
-
-      const clampedOffset = Math.max(-180, Math.min(180, deltaX));
-      setSwipeOffsetX(clampedOffset);
+      setSwipeOffsetX(moveResult.offsetX);
       return true;
     },
     [isSwipeAnimating],
@@ -200,16 +195,10 @@ export const useOverlaySwipeNavigation = ({
       const swipeState = swipeStateRef.current;
       if (!swipeState.active) return;
 
-      const deltaX = clientX - swipeState.startX;
-      const absDeltaX = Math.abs(deltaX);
-      const isHorizontalSwipe = swipeAxisRef.current === 'x' && absDeltaX >= 56;
+      const direction = getSwipeEndDirection(swipeState, clientX, swipeAxisRef.current);
 
-      if (isHorizontalSwipe) {
-        if (deltaX < 0) {
-          animateNavigation('next');
-        } else {
-          animateNavigation('previous');
-        }
+      if (direction) {
+        animateNavigation(direction);
       } else {
         setSwipeTransitionEnabled(true);
         setSwipeOffsetX(0);
@@ -433,14 +422,11 @@ export const useOverlaySwipeNavigation = ({
 
   const overlayMotionStyle = useMemo(
     () =>
-      isNavigableOverlay
-        ? ({
-            transform: `translateX(${swipeOffsetX}px)`,
-            transition: swipeTransitionEnabled
-              ? 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)'
-              : 'none',
-          } as CSSProperties)
-        : undefined,
+      getOverlayMotionStyle({
+        isNavigableOverlay,
+        swipeOffsetX,
+        swipeTransitionEnabled,
+      }),
     [isNavigableOverlay, swipeOffsetX, swipeTransitionEnabled],
   );
 
