@@ -71,4 +71,33 @@ describe('useSwipeHandler', () => {
     expect(onDrag).not.toHaveBeenCalled();
     expect(onSwipe).toHaveBeenCalledWith(null);
   });
+
+  it('resets internal gesture state without emitting drag callbacks when disabled', () => {
+    const onDrag = vi.fn();
+    const onSwipe = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ disabled }) => useSwipeHandler({ disabled, onDrag, onSwipe }),
+      { initialProps: { disabled: false } },
+    );
+
+    act(() => {
+      result.current.onTouchStart(touchEvent(500, 100));
+      result.current.onTouchMove(touchEvent(360, 104));
+    });
+
+    expect(onDrag).toHaveBeenCalledWith(-140);
+    onDrag.mockClear();
+
+    act(() => {
+      rerender({ disabled: true });
+    });
+
+    expect(onDrag).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.onTouchEnd(touchEvent(360, 104));
+    });
+
+    expect(onSwipe).not.toHaveBeenCalled();
+  });
 });

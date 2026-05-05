@@ -101,8 +101,7 @@ export default function useSwipeHandler(
     startX.current = 0;
     startY.current = 0;
     lastX.current = 0;
-    onDrag?.(0);
-  }, [disabled, onDrag]);
+  }, [disabled]);
 
   /* ----- touch ----------------------------------------------------- */
   const onTouchStart = useCallback((e: React.TouchEvent) => {

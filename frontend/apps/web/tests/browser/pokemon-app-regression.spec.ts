@@ -145,6 +145,44 @@ test.describe('pokemon app browser regressions', () => {
     ).toEqual([]);
   });
 
+  test('keeps menu slide transition after closing a Pokemon overlay', async ({
+    page,
+  }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      const { firstCaughtCard } = await openCaughtPokemonList(page);
+      await firstCaughtCard.click();
+
+      const overlay = page.locator('.instance-overlay.caught-mode');
+      await expect(overlay).toBeVisible();
+      await page.getByRole('button', { name: 'Close' }).click();
+      await expect(overlay).toHaveCount(0);
+
+      const slider = page.locator('.view-slider');
+      await expect
+        .poll(() =>
+          slider.evaluate((element) => window.getComputedStyle(element).transitionProperty),
+        )
+        .toContain('transform');
+
+      await page.getByText('TAGS', { exact: true }).click();
+      await expectActivePokemonView(page, 'TAGS');
+      const transitionProperty = await slider.evaluate(
+        (element) => window.getComputedStyle(element).transitionProperty,
+      );
+      expect(transitionProperty).toContain('transform');
+    } finally {
+      await diagnostics.flush();
+    }
+
+    const blockingErrors = diagnostics.blockingErrors();
+    expect(
+      blockingErrors,
+      `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
+    ).toEqual([]);
+  });
+
   test('persists Pokemon boot data into IndexedDB', async ({ page }, testInfo) => {
     const diagnostics = attachBrowserDiagnostics(page, testInfo);
 
