@@ -6,6 +6,7 @@ import {
   type MegaData,
   type MovesState,
 } from './buildInstanceChanges';
+import { collectInstanceRefCandidates } from '@/features/instances/utils/instanceIdentity';
 
 export type CaughtComputedValues = {
   cp?: number | null;
@@ -52,36 +53,6 @@ type BuildCaughtPersistPatchMapArgs = {
   allInstances?: Record<string, Partial<PokemonInstance>> | null;
 };
 
-const extractLegacyInstanceId = (key: string): string | null => {
-  const idx = key.lastIndexOf('_');
-  if (idx < 0 || idx >= key.length - 1) return null;
-  const suffix = key.slice(idx + 1);
-  return suffix || null;
-};
-
-const UUID_AT_END_REGEX =
-  /([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
-
-const normalizeInstanceToken = (value: string | null | undefined): string | null => {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim().toLowerCase();
-  if (!trimmed) return null;
-  const match = trimmed.match(UUID_AT_END_REGEX);
-  if (match?.[1]) return match[1];
-  return trimmed;
-};
-
-const collectInstanceRefCandidates = (value: string | null): string[] => {
-  if (!value) return [];
-  const refs = new Set<string>();
-  refs.add(value);
-  const legacy = extractLegacyInstanceId(value);
-  if (legacy) refs.add(legacy);
-  const normalized = normalizeInstanceToken(value);
-  if (normalized) refs.add(normalized);
-  return [...refs];
-};
-
 const findInstanceKeysByRef = ({
   allInstances,
   instanceRef,
@@ -116,7 +87,7 @@ const findLinkedPartnerKeys = ({
   instanceId: string;
 }): string[] => {
   if (!allInstances || !instanceId) return [];
-  const refs = new Set(collectInstanceRefCandidates(instanceId));
+  const refs = new Set(collectInstanceRefCandidates(instanceId).map((value) => value.toLowerCase()));
   const keys: string[] = [];
 
   for (const [key, row] of Object.entries(allInstances)) {
@@ -125,7 +96,7 @@ const findLinkedPartnerKeys = ({
     const fusedWith = typeof row.fused_with === 'string' ? row.fused_with : null;
     if (!fusedWith) continue;
 
-    const fusedWithRefs = collectInstanceRefCandidates(fusedWith);
+    const fusedWithRefs = collectInstanceRefCandidates(fusedWith).map((value) => value.toLowerCase());
     const pointsToCurrent = fusedWithRefs.some((candidate) => refs.has(candidate));
     if (!pointsToCurrent) continue;
 

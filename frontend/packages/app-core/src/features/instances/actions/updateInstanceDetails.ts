@@ -3,6 +3,7 @@ import { produce } from 'immer';
 import { putBatchedPokemonUpdates, putInstancesBulk } from '@/db/indexedDB';
 import { createScopedLogger } from '@/utils/logger';
 import { setStorageNumber, STORAGE_KEYS } from '@/utils/storage';
+import { resolveInstanceCollectionKey } from '@/features/instances/utils/instanceIdentity';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { MutableInstances, SetInstancesFn } from '@/types/instances';
 
@@ -11,64 +12,6 @@ type PatchMap = Record<string, Patch>;
 type InstanceSnapshot = Partial<PokemonInstance>;
 type PersistedInstance = InstanceSnapshot & { instance_id: string };
 const log = createScopedLogger('updateInstanceDetails');
-
-function extractLegacyInstanceId(key: string): string | null {
-  const idx = key.lastIndexOf('_');
-  if (idx < 0 || idx >= key.length - 1) return null;
-  const suffix = key.slice(idx + 1);
-  return suffix || null;
-}
-
-const UUID_AT_END_REGEX =
-  /([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
-
-function normalizeInstanceToken(value: string | null | undefined): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim().toLowerCase();
-  if (!trimmed) return null;
-  const match = trimmed.match(UUID_AT_END_REGEX);
-  if (match?.[1]) return match[1];
-  return trimmed;
-}
-
-function resolveTargetKey(draft: MutableInstances, requestedKey: string): string | null {
-  if (draft[requestedKey]) return requestedKey;
-
-  const legacyId = extractLegacyInstanceId(requestedKey);
-  if (legacyId && draft[legacyId]) return legacyId;
-
-  const candidateIds = [requestedKey, legacyId].filter((value): value is string => Boolean(value));
-  const normalizedCandidateIds = new Set(
-    candidateIds
-      .map((value) => normalizeInstanceToken(value))
-      .filter((value): value is string => Boolean(value)),
-  );
-  if (candidateIds.length === 0) return null;
-
-  for (const [existingKey, row] of Object.entries(draft)) {
-    const normalizedExistingKey = normalizeInstanceToken(existingKey);
-    if (normalizedExistingKey && normalizedCandidateIds.has(normalizedExistingKey)) {
-      return existingKey;
-    }
-
-    const rowInstanceId =
-      typeof row?.instance_id === 'string' && row.instance_id.length > 0
-        ? row.instance_id
-        : null;
-    if (!rowInstanceId) continue;
-
-    if (candidateIds.includes(rowInstanceId)) {
-      return existingKey;
-    }
-
-    const normalizedRowInstanceId = normalizeInstanceToken(rowInstanceId);
-    if (normalizedRowInstanceId && normalizedCandidateIds.has(normalizedRowInstanceId)) {
-      return existingKey;
-    }
-  }
-
-  return null;
-}
 
 async function yieldToPaint() {
   await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())));
@@ -100,7 +43,7 @@ export function updateInstanceDetails(
       const apply = (key: string, patch: Patch): string | null => {
         if (!patch || Object.keys(patch).length === 0) return null;
 
-        const resolvedKey = resolveTargetKey(draft, key) ?? key;
+        const resolvedKey = resolveInstanceCollectionKey(draft, key) ?? key;
         const existing = draft[resolvedKey];
         if (!existing) {
           log.warn('"%s" missing - creating placeholder', key);

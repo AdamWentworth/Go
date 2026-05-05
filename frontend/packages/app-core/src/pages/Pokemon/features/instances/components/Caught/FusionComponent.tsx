@@ -3,7 +3,10 @@ import '@/components/modals/ModalStyles.css';
 import './FusionComponent.css';
 import { resolveAssetUrl } from '@/utils/assetUrl';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
-import type { PokemonInstance } from '@/types/pokemonInstance';
+import {
+  collectInstanceRefCandidates,
+  findInstanceByRefs,
+} from '@/features/instances/utils/instanceIdentity';
 
 import type { Fusion } from '@/types/pokemonSubTypes';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -48,31 +51,6 @@ const buildFusionFormImageUrl = (
   return buildFusionIconUrl(fusionItem.fusion_id);
 };
 
-const extractLegacyInstanceId = (key: string): string | null => {
-  const idx = key.lastIndexOf('_');
-  if (idx < 0 || idx >= key.length - 1) return null;
-  const suffix = key.slice(idx + 1);
-  return suffix || null;
-};
-
-const findInstanceById = (
-  collection: Record<string, PokemonInstance> | null | undefined,
-  candidates: string[],
-): PokemonInstance | null => {
-  if (!collection) return null;
-  for (const id of candidates) {
-    const direct = collection[id];
-    if (direct) return direct;
-  }
-  const candidateSet = new Set(candidates);
-  for (const row of Object.values(collection)) {
-    if (row?.instance_id && candidateSet.has(String(row.instance_id))) {
-      return row;
-    }
-  }
-  return null;
-};
-
 const FusionComponent: React.FC<FusionComponentProps> = ({
   fusion,
   editMode,
@@ -89,16 +67,13 @@ const FusionComponent: React.FC<FusionComponentProps> = ({
 
   const hasOptions = fusionOptions.length > 0;
   const fusedWithKey = typeof fusionState.fusedWith === 'string' ? fusionState.fusedWith : null;
-  const fusedWithLegacyId = fusedWithKey ? extractLegacyInstanceId(fusedWithKey) : null;
 
   const partnerInstance = useInstancesStore((state) => {
     if (!fusedWithKey) return null;
-    const candidateIds = [fusedWithKey, fusedWithLegacyId].filter(
-      (value): value is string => Boolean(value),
-    );
-    const fromOwned = findInstanceById(state.instances, candidateIds);
+    const candidateIds = collectInstanceRefCandidates(fusedWithKey);
+    const fromOwned = findInstanceByRefs(state.instances, candidateIds);
     if (fromOwned) return fromOwned;
-    return findInstanceById(state.foreignInstances, candidateIds);
+    return findInstanceByRefs(state.foreignInstances, candidateIds);
   });
 
   if (!fusionState.is_fused && !hasOptions) {

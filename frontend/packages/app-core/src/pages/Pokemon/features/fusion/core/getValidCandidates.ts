@@ -5,6 +5,7 @@ import { initVariantsDB, VARIANTS_STORE } from '@/db/indexedDB';
 import type { PokemonInstance }      from '@/types/pokemonInstance';
 import { parseVariantId }            from '@/utils/PokemonIDUtils';
 import type { PokemonVariant }       from '@/types/pokemonVariants';
+import { normalizeInstanceToken }     from '@/features/instances/utils/instanceIdentity';
 
 const parseBasePokemonId = (value: string): number | null => {
   const parsed = Number.parseInt(value, 10);
@@ -38,19 +39,6 @@ const buildFallbackVariantKey = (row: PokemonInstance): string | null => {
   }
   const base = String(row.pokemon_id).padStart(4, '0');
   return `${base}-${row.shiny ? 'shiny' : 'default'}`;
-};
-
-const UUID_AT_END_REGEX =
-  /([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
-
-const normalizeInstanceToken = (value: string | null | undefined): string | null => {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim().toLowerCase();
-  if (!trimmed) return null;
-
-  const match = trimmed.match(UUID_AT_END_REGEX);
-  if (match?.[1]) return match[1];
-  return trimmed;
 };
 
 export async function getValidCandidates(
