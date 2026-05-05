@@ -40,8 +40,11 @@
 
 .pokemon-card .pokemon-image-container {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
+  aspect-ratio: 1 / 1;
   height: auto;
   -webkit-touch-callout: none;
   user-select: none;
@@ -129,7 +132,12 @@
   z-index: 1;
 }
 .pokemon-image { position: relative; z-index: 3; }
-.pokemon-card .pokemon-image-container img { max-width: 100%; }
+.pokemon-card .pokemon-image-container img.pokemon-image {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
 
 .pokemon-card.highlighted { background-color: #34807d; }
 

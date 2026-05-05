@@ -1,8 +1,17 @@
 // PokemonGrid.tsx
 
-import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  memo,
+  useMemo,
+  useLayoutEffect,
+  useCallback,
+} from 'react';
 import PokemonCard from './PokemonCard';
 import './PokemonGrid.css';
+import { AppLoadingFallback } from '@/contexts/AppLoadingContext';
 
 // Types
 import type { PokemonVariant, AllVariants } from '@/types/pokemonVariants';
@@ -27,6 +36,9 @@ export interface PokemonGridProps {
 }
 
 const BUFFER_ROWS = 5;
+const ESTIMATED_ROW_HEIGHT = 150;
+const MIN_ROW_HEIGHT = 100;
+const GRID_REVEAL_DELAY_MS = 50;
 
 // Prefer instance UUIDs for React keys; fall back to variant key + index.
 function buildReactKey(pokemon: CardPokemon, absoluteIndex: number): string {
@@ -60,7 +72,8 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
 }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
-  const [measuredRowHeight, setMeasuredRowHeight] = useState(150);
+  const [measuredRowHeight, setMeasuredRowHeight] = useState(ESTIMATED_ROW_HEIGHT);
+  const [isLayoutMeasured, setIsLayoutMeasured] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const firstRowRef = useRef<HTMLDivElement>(null);
 
@@ -76,6 +89,7 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
     () => sortedPokemons.filter((p): p is CardPokemon => Boolean(p)),
     [sortedPokemons]
   );
+  const hasRenderablePokemons = nonNullPokemons.length > 0;
 
   const variantByPokemonId = useMemo(() => {
     const map = new Map<number, AllVariants[number]>();
@@ -87,28 +101,42 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
     return map;
   }, [variants]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    setIsLayoutMeasured(!hasRenderablePokemons);
     setIsVisible(false);
-    const timer = setTimeout(() => setIsVisible(true), 50);
+    if (!hasRenderablePokemons) {
+      setIsVisible(true);
+      return undefined;
+    }
+
+    const timer = setTimeout(() => setIsVisible(true), GRID_REVEAL_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [activeView]);
+  }, [columns, hasRenderablePokemons]);
 
   useEffect(() => {
     const container = gridContainerRef.current;
     if (!container) return;
 
     const handleScroll = () => setScrollTop(container.scrollTop);
-    const resizeObserver = new ResizeObserver(([entry]) => {
-      const height = entry.contentRect.height || window.innerHeight * 0.8;
-      setContainerHeight(height);
-    });
+    const updateContainerHeight = (height?: number) => {
+      const nextHeight = height || container.clientHeight || window.innerHeight * 0.8;
+      setContainerHeight(nextHeight);
+    };
 
+    updateContainerHeight();
     container.addEventListener('scroll', handleScroll);
-    resizeObserver.observe(container);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(([entry]) => {
+        updateContainerHeight(entry.contentRect.height);
+      });
+      resizeObserver.observe(container);
+    }
 
     return () => {
       container.removeEventListener('scroll', handleScroll);
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
     };
   }, [gridContainerRef]);
 
@@ -119,29 +147,59 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
     setScrollTop(0);
   }, [activeView, gridContainerRef]);
 
-  useEffect(() => {
-    const measureHeight = () => {
-      const rowEl = firstRowRef.current;
-      if (rowEl) {
-        const style = window.getComputedStyle(rowEl);
-        const marginTop = parseInt(style.marginTop) || 0;
-        const marginBottom = parseInt(style.marginBottom) || 0;
-        const gap = parseInt(style.gap) || 8;
-        const height = rowEl.offsetHeight + marginTop + marginBottom + gap;
-        setMeasuredRowHeight(height);
-      }
-    };
+  const measureRowHeight = useCallback(() => {
+    if (!hasRenderablePokemons) {
+      setIsLayoutMeasured(true);
+      return;
+    }
 
-    measureHeight();
-    const timeout = setTimeout(measureHeight, 500);
-    window.addEventListener('resize', measureHeight);
+    const rowEl = firstRowRef.current;
+    if (!rowEl) return;
+
+    const style = window.getComputedStyle(rowEl);
+    const marginTop = parseInt(style.marginTop) || 0;
+    const marginBottom = parseInt(style.marginBottom) || 0;
+    const gap = parseInt(style.gap) || 8;
+    const rowBoxHeight = rowEl.getBoundingClientRect().height || rowEl.offsetHeight;
+    const height = rowBoxHeight + marginTop + marginBottom + gap;
+
+    if (height > 0) {
+      setMeasuredRowHeight((prev) => (Math.abs(prev - height) > 0.5 ? height : prev));
+      setIsLayoutMeasured(true);
+    }
+  }, [hasRenderablePokemons]);
+
+  useLayoutEffect(() => {
+    measureRowHeight();
+
+    if (!hasRenderablePokemons) return undefined;
+
+    const rowEl = firstRowRef.current;
+    if (!rowEl) return undefined;
+
+    const handleImageSettled = () => measureRowHeight();
+    rowEl.addEventListener('load', handleImageSettled, true);
+    rowEl.addEventListener('error', handleImageSettled, true);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => measureRowHeight());
+      resizeObserver.observe(rowEl);
+    }
+
+    const timeout = setTimeout(measureRowHeight, 500);
+    window.addEventListener('resize', measureRowHeight);
+
     return () => {
       clearTimeout(timeout);
-      window.removeEventListener('resize', measureHeight);
+      window.removeEventListener('resize', measureRowHeight);
+      rowEl.removeEventListener('load', handleImageSettled, true);
+      rowEl.removeEventListener('error', handleImageSettled, true);
+      resizeObserver?.disconnect();
     };
-  }, [columns, sortedPokemons]);
+  }, [columns, measureRowHeight, sortedPokemons, hasRenderablePokemons]);
 
-  const rowHeight = Math.max(measuredRowHeight, 100);
+  const rowHeight = Math.max(measuredRowHeight, MIN_ROW_HEIGHT);
   const totalRows = Math.ceil(nonNullPokemons.length / columns);
   const totalHeight = totalRows * rowHeight;
 
@@ -150,6 +208,7 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
     totalRows,
     Math.ceil((scrollTop + containerHeight) / rowHeight) + BUFFER_ROWS
   );
+  const isGridReady = isLayoutMeasured && isVisible;
 
   const visibleRows: React.ReactNode[] = [];
   for (let row = startRow; row < endRow; row++) {
@@ -177,7 +236,7 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
           return (
             <div
               key={reactKey}
-              className={`pokemon-grid-cell ${isVisible ? 'visible' : ''}`}
+              className={`pokemon-grid-cell ${isGridReady ? 'visible' : ''}`}
             >
               {pokemon && (
                 <PokemonCard
@@ -202,6 +261,7 @@ const PokemonGrid: React.FC<PokemonGridProps> = memo(({
 
   return (
     <div className="pokemon-grid" style={{ position: 'relative', height: `${totalHeight}px` }}>
+      {!isGridReady && <AppLoadingFallback source="pokemon-grid-layout" />}
       {visibleRows}
     </div>
   );
