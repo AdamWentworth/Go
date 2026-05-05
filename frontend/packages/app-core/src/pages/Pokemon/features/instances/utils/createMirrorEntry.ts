@@ -1,15 +1,19 @@
 import { generateUUID } from '@/utils/PokemonIDUtils';
 import { buildTagItem } from '@/features/tags/utils/tagHelpers';
 import { createScopedLogger } from '@/utils/logger';
+import {
+  asNumber,
+  getPokemonIdFromMirrorVariant,
+  normalizeMirrorVariantId,
+  safeUpdateMirrorDetails,
+  type OptionalMirrorUpdateDetailsFn,
+} from './mirrorInstanceHelpers';
 
 const log = createScopedLogger('createMirrorEntry');
 
 type GenericMap = Record<string, unknown>;
 
-type UpdateDetailsFn =
-  | ((id: string, data: GenericMap) => unknown)
-  | ((patchMap: Record<string, GenericMap>) => unknown)
-  | undefined;
+type UpdateDetailsFn = OptionalMirrorUpdateDetailsFn<GenericMap>;
 
 interface PokemonLike {
   variant_id?: string;
@@ -51,56 +55,6 @@ interface ListsLike {
   [key: string]: unknown;
 }
 
-const asNumber = (n: unknown): number | undefined => {
-  if (n == null) return undefined;
-  const x = Number(n);
-  return Number.isFinite(x) ? x : undefined;
-};
-
-/**
- * Normalize legacy variant-id differences.
- * Example: 0006-shiny-gigantamax -> 0006-shiny_gigantamax
- */
-const normalizeVariantId = (v: string | undefined): string | undefined => {
-  if (!v || typeof v !== 'string') return v;
-  const i = v.indexOf('-');
-  if (i < 0) return v.toLowerCase();
-  const prefix = v.slice(0, i);
-  const suffix = v.slice(i + 1).replace(/-/g, '_');
-  return `${prefix}-${suffix}`.toLowerCase();
-};
-
-const pokemonIdFromVariant = (variantId: string | undefined): number | undefined => {
-  if (typeof variantId !== 'string') return undefined;
-  const m = variantId.match(/^(\d{1,4})/);
-  return m ? asNumber(m[1]) : undefined;
-};
-
-/**
- * Call updateDetails in a way that supports both signatures:
- * - updateDetails(id, data)
- * - updateDetails({ [id]: data })
- */
-const safeUpdate = (
-  updateDetails: UpdateDetailsFn,
-  id: string,
-  data: GenericMap,
-): void => {
-  try {
-    if (typeof updateDetails !== 'function') {
-      return;
-    }
-    const callable = updateDetails as (...args: unknown[]) => unknown;
-    if (callable.length >= 2) {
-      callable(id, data);
-    } else {
-      callable({ [id]: data });
-    }
-  } catch (e) {
-    log.warn('safeUpdate failed:', e);
-  }
-};
-
 /**
  * Create a mirror "wanted" instance for this variant.
  * New model: instance_id is a UUID; variant_id stays canonical ("0001-suffix").
@@ -112,7 +66,7 @@ export const createMirrorEntry = (
   updateDetails: UpdateDetailsFn = undefined,
 ): string => {
   const rawVariant = pokemon?.variant_id || pokemon?.instanceData?.variant_id || '';
-  const variant_id = normalizeVariantId(String(rawVariant || ''));
+  const variant_id = normalizeMirrorVariantId(String(rawVariant || '')) ?? '';
 
   if (!variant_id) {
     log.warn('Missing variant_id on pokemon:', pokemon);
@@ -128,7 +82,7 @@ export const createMirrorEntry = (
   const pokemon_id =
     asNumber(pokemon?.pokemon_id) ??
     asNumber(pokemon?.instanceData?.pokemon_id) ??
-    pokemonIdFromVariant(variant_id);
+    getPokemonIdFromMirrorVariant(variant_id);
 
   const newInstance: MirrorInstance = {
     instance_id: newId,
@@ -175,12 +129,16 @@ export const createMirrorEntry = (
   }
 
   // 3) Persist new instance.
-  safeUpdate(updateDetails, newId, newInstance);
+  safeUpdateMirrorDetails(updateDetails, newId, newInstance, (error) => {
+    log.warn('safeUpdate failed:', error);
+  });
 
   // 4) Mark source instance mirror flag if source id exists.
   const currentId = pokemon?.instanceData?.instance_id;
   if (currentId) {
-    safeUpdate(updateDetails, currentId, { mirror: true });
+    safeUpdateMirrorDetails(updateDetails, currentId, { mirror: true }, (error) => {
+      log.warn('safeUpdate failed:', error);
+    });
   }
 
   return newId;

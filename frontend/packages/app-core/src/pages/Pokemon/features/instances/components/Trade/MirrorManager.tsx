@@ -1,39 +1,21 @@
-// src/pages/Pokemon/features/instances/components/Trade/MirrorManager.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 
 import { createMirrorEntry } from '@/pages/Pokemon/features/instances/utils/createMirrorEntry';
-import type { PokemonVariant } from '@/types/pokemonVariants';
+import { safeUpdateMirrorDetails } from '@/pages/Pokemon/features/instances/utils/mirrorInstanceHelpers';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import { createScopedLogger } from '@/utils/logger';
+import {
+  buildMirrorTooltipHtml,
+  enrichMirrorInstanceForDisplay,
+  findExistingMirrorKey,
+  type MirrorPokemon,
+  type UpdateDetailsFn,
+} from './mirrorManagerState';
 
 import './MirrorManager.css';
 
 const log = createScopedLogger('MirrorManager');
-
-type UpdateDetailsFn =
-  | ((id: string, data: Partial<PokemonInstance>) => void)
-  | ((patch: Record<string, Partial<PokemonInstance>>) => void);
-
-type MirrorPokemon = Omit<Partial<PokemonVariant>, 'instanceData' | 'variant_id' | 'pokemon_id'> & {
-  instanceData?: Partial<PokemonInstance> & {
-    instance_id?: string;
-    mirror?: boolean;
-    variant_id?: string;
-  };
-  variant_id?: string;
-  pokemon_id?: number | string;
-  species_name?: string;
-  currentImage?: string;
-  pokedex_number?: number | string;
-  date_available?: string;
-  date_shiny_available?: string;
-  date_shadow_available?: string;
-  date_shiny_shadow_available?: string;
-  variantType?: string;
-  name?: string;
-  image_url?: string;
-};
 
 interface MirrorManagerProps {
   pokemon: MirrorPokemon;
@@ -45,64 +27,6 @@ interface MirrorManagerProps {
   editMode: boolean; // mirrors parent isEditable
   updateDisplayedList: (data: Record<string, PokemonInstance>) => void;
   updateDetails: UpdateDetailsFn;
-}
-
-const asNumber = (value: unknown): number | undefined => {
-  if (value == null) return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
-
-// Normalize legacy variant-id differences:
-// 0006-shiny-gigantamax -> 0006-shiny_gigantamax
-function normalizeVariantId(value?: string | null): string | undefined {
-  if (!value || typeof value !== 'string') return undefined;
-  const separatorIndex = value.indexOf('-');
-  if (separatorIndex < 0) return value.toLowerCase();
-  const prefix = value.slice(0, separatorIndex);
-  const suffix = value.slice(separatorIndex + 1).replace(/-/g, '_');
-  return `${prefix}-${suffix}`.toLowerCase();
-}
-
-function getVariantId(pokemon: MirrorPokemon): string | undefined {
-  return normalizeVariantId(pokemon.variant_id) ?? normalizeVariantId(pokemon.instanceData?.variant_id);
-}
-
-function safeUpdate(
-  fn: UpdateDetailsFn,
-  id: string,
-  data: Partial<PokemonInstance>,
-): void {
-  try {
-    if (fn.length >= 2) {
-      (fn as (instanceId: string, patch: Partial<PokemonInstance>) => void)(id, data);
-      return;
-    }
-
-    (fn as (patchMap: Record<string, Partial<PokemonInstance>>) => void)({ [id]: data });
-  } catch (error) {
-    log.warn('safeUpdate failed:', error);
-  }
-}
-
-function enrichInstanceForDisplay(
-  source: PokemonInstance,
-  pokemon: MirrorPokemon,
-): PokemonInstance {
-  return {
-    ...source,
-    variantType: pokemon.variantType,
-    pokedex_number: asNumber(pokemon.pokedex_number),
-    currentImage: pokemon.currentImage ?? pokemon.image_url,
-    name: pokemon.species_name ?? pokemon.name,
-    date_available: pokemon.date_available,
-    date_shiny_available: pokemon.date_shiny_available,
-    date_shadow_available: pokemon.date_shadow_available,
-    date_shiny_shadow_available: pokemon.date_shiny_shadow_available,
-    costumes: pokemon.costumes,
-    shiny_rarity: pokemon.shiny_rarity,
-    rarity: pokemon.rarity,
-  };
 }
 
 const MirrorManager: React.FC<MirrorManagerProps> = ({
@@ -143,7 +67,9 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
 
     const currentId = pokemon.instanceData?.instance_id;
     if (currentId) {
-      safeUpdate(updateDetails, currentId, { mirror: isMirror });
+      safeUpdateMirrorDetails(updateDetails, currentId, { mirror: isMirror }, (error) => {
+        log.warn('safeUpdate failed:', error);
+      });
     }
 
     if (isMirror) {
@@ -154,7 +80,16 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
   }, [editMode, isMirror, pokemon.instanceData?.instance_id, updateDetails]);
 
   const enableMirror = (): void => {
-    const existingMirrorKey = findExistingMirrorKey();
+    const existingMirrorKey = findExistingMirrorKey({
+      pokemon,
+      instanceMap,
+      onMissingVariant: (sourcePokemon) => {
+        log.warn('No variant_id on pokemon; cannot find mirror.', sourcePokemon);
+      },
+      onResolved: (key, variantId) => {
+        log.debug('findExistingMirrorKey:', key || 'No key found', 'variant_id:', variantId);
+      },
+    });
     if (existingMirrorKey) {
       setMirrorKey(existingMirrorKey);
 
@@ -166,7 +101,7 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
       }
 
       updateDisplayedList({
-        [existingMirrorKey]: enrichInstanceForDisplay(source, pokemon),
+        [existingMirrorKey]: enrichMirrorInstanceForDisplay(source, pokemon),
       });
       return;
     }
@@ -182,7 +117,7 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
     }
 
     updateDisplayedList({
-      [newMirrorKey]: enrichInstanceForDisplay(source, pokemon),
+      [newMirrorKey]: enrichMirrorInstanceForDisplay(source, pokemon),
     });
   };
 
@@ -200,44 +135,7 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
     }
   };
 
-  /**
-   * Find an existing mirror by exact variant_id (normalized)
-   * and flags wanted/not-caught/not-trade. No base-prefix matching.
-   */
-  const findExistingMirrorKey = (): string | undefined => {
-    const targetVariant = getVariantId(pokemon);
-    const expectedPokemonId = asNumber(pokemon.pokemon_id);
-
-    if (!targetVariant) {
-      log.warn('No variant_id on pokemon; cannot find mirror.', pokemon);
-      return undefined;
-    }
-
-    const found = Object.entries(instanceMap).find(([, inst]) => {
-      const instanceVariant = normalizeVariantId(inst.variant_id);
-      if (instanceVariant !== targetVariant) return false;
-
-      const isWantedOnly = !!inst.is_wanted && !inst.is_caught && !inst.is_for_trade;
-      if (!isWantedOnly) return false;
-
-      const instancePokemonId = asNumber(inst.pokemon_id);
-      if (
-        expectedPokemonId != null &&
-        instancePokemonId != null &&
-        instancePokemonId !== expectedPokemonId
-      ) {
-        return false;
-      }
-
-      return true;
-    });
-
-    const foundKey = found?.[0];
-    log.debug('findExistingMirrorKey:', foundKey || 'No key found', 'variant_id:', targetVariant);
-    return foundKey;
-  };
-
-  const dynamicTooltipText = `Toggle Mirror<br>This will create or reference a "Wanted" Pokemon<br>Limiting your Wanted List to a <b><u>${pokemon.species_name ?? pokemon.name ?? 'this Pokemon'}</u></b> only`;
+  const dynamicTooltipText = buildMirrorTooltipHtml(pokemon);
 
   const renderTooltip = () => {
     if (!hovered || !tooltipRef.current) return null;

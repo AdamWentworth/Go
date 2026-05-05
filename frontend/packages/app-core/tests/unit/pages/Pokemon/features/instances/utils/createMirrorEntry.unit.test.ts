@@ -23,9 +23,12 @@ describe('createMirrorEntry', () => {
   });
 
   it('creates mirror instance, updates wanted list, and persists both entries', () => {
-    const instances: Record<string, any> = {};
-    const lists: Record<string, any> = { wanted: {} };
-    const updateDetails = vi.fn((id: string, data: any) => ({ id, data }));
+    const instances: Record<string, Record<string, unknown>> = {};
+    const lists: { wanted: Record<string, unknown> } = { wanted: {} };
+    const updateDetails = vi.fn((id: string, data: Record<string, unknown>) => ({
+      id,
+      data,
+    }));
 
     const pokemon = {
       variant_id: '0006-shiny-gigantamax',
@@ -70,9 +73,9 @@ describe('createMirrorEntry', () => {
   it('supports patch-map updateDetails signature when only one argument is accepted', () => {
     mocks.generateUUID.mockReturnValue('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
 
-    const instances: Record<string, any> = {};
-    const lists: Record<string, any> = { wanted: {} };
-    const updateDetails = vi.fn((patch: Record<string, any>) => patch);
+    const instances: Record<string, Record<string, unknown>> = {};
+    const lists: { wanted: Record<string, unknown> } = { wanted: {} };
+    const updateDetails = vi.fn((patch: Record<string, Record<string, unknown>>) => patch);
 
     const pokemon = {
       variant_id: '0025-default',
