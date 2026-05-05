@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveCrownMovePool } from '@/pages/Pokemon/features/instances/utils/resolveCrownMovePool';
+import { resolveCrownMovePool } from '@/features/pokemonDisplay/crownMovePool';
 import type { CrownForm, Move } from '@/types/pokemonSubTypes';
 
 const baseMoves: Move[] = [

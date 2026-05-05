@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveCrownDisplayData } from '@/pages/Pokemon/features/instances/utils/resolveCrownDisplayData';
+import { resolveCrownDisplayData } from '@/features/pokemonDisplay/crownDisplayData';
 import type { CrownForm } from '@/types/pokemonSubTypes';
 
 const baseSizes = {

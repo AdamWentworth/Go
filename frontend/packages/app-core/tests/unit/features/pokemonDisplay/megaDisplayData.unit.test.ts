@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveMegaDisplayData } from '@/pages/Pokemon/features/instances/utils/resolveMegaDisplayData';
+import { resolveMegaDisplayData } from '@/features/pokemonDisplay/megaDisplayData';
 import type { MegaEvolution } from '@/types/pokemonSubTypes';
 
 const baseSizes = {

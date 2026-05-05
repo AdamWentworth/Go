@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveFusionDisplayData } from '@/pages/Pokemon/features/instances/utils/resolveFusionDisplayData';
+import { resolveFusionDisplayData } from '@/features/pokemonDisplay/fusionDisplayData';
 import type { Fusion } from '@/types/pokemonSubTypes';
 
 const baseSizes = {
@@ -134,4 +134,3 @@ describe('resolveFusionDisplayData', () => {
     expect(result.sizes).toEqual(baseSizes);
   });
 });
-

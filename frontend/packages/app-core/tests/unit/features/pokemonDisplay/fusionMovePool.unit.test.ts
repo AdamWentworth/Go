@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveFusionMovePool } from '@/pages/Pokemon/features/instances/utils/resolveFusionMovePool';
+import { resolveFusionMovePool } from '@/features/pokemonDisplay/fusionMovePool';
 import type { Move, Fusion } from '@/types/pokemonSubTypes';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 

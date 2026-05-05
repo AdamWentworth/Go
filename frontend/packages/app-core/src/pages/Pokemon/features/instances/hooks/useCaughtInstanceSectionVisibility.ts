@@ -10,7 +10,7 @@ import {
   resolveCaughtPowerVisibility,
   resolveCaughtSectionVisibility,
 } from '../utils/caughtInstanceVisibility';
-import type { FusionMoveSource } from '../utils/resolveFusionMovePool';
+import type { FusionMoveSource } from '@/features/pokemonDisplay/fusionMovePool';
 
 type MovesVisibilityPokemon = {
   moves?: PokemonVariant['moves'];

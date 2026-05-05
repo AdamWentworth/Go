@@ -23,8 +23,8 @@ import {
 } from './hooks/useTradeInstanceController';
 import { createScopedLogger } from '@/utils/logger';
 import { getCrownFormLabel, resolveActiveCrownForm } from '@/utils/crownHelpers';
-import { resolveCrownDisplayData } from './utils/resolveCrownDisplayData';
-import { resolveCrownMovePool } from './utils/resolveCrownMovePool';
+import { resolveCrownDisplayData } from '@/features/pokemonDisplay/crownDisplayData';
+import { resolveCrownMovePool } from '@/features/pokemonDisplay/crownMovePool';
 
 const log = createScopedLogger('TradeInstance');
 
