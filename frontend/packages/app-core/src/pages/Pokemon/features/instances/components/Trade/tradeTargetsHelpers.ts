@@ -55,8 +55,17 @@ export const initializeSelection = (
 export const countVisibleWantedItems = (
   filteredWantedList: Record<string, unknown>,
   localNotWantedList: Record<string, boolean>,
+  options: {
+    editMode?: boolean;
+    isMirror?: boolean;
+    mirrorKey?: string | null;
+  } = {},
 ): number =>
-  Object.keys(filteredWantedList).filter((key) => !localNotWantedList[key]).length;
+  Object.keys(filteredWantedList).filter((key) => {
+    const isVisibleByFilter = options.editMode || !localNotWantedList[key];
+    const isVisibleByMirror = !options.isMirror || key === options.mirrorKey;
+    return isVisibleByFilter && isVisibleByMirror;
+  }).length;
 
 export const extractBaseKey = (instanceId: string): string => {
   const keyParts = String(instanceId).split('_');
@@ -126,14 +135,14 @@ export const buildWantedOverlayPokemon = (
   variants: PokemonVariant[],
   instancesMap: Record<string, PokemonInstance>,
 ): BuildWantedOverlayPokemonResult => {
-  const baseKey = extractBaseKey(instanceId);
+  const instanceEntry = instancesMap[instanceId];
+  const baseKey = instanceEntry?.variant_id ?? extractBaseKey(instanceId);
 
   const variantData = variants.find((variant) => variant.variant_id === baseKey);
   if (!variantData) {
     return { ok: false, error: 'variantNotFound', baseKey };
   }
 
-  const instanceEntry = instancesMap[instanceId];
   if (!instanceEntry) {
     return { ok: false, error: 'instanceNotFound', baseKey };
   }

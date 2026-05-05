@@ -3,6 +3,16 @@ import { useInstancesStore } from '@/features/instances/store/useInstancesStore'
 import { updateNotTradeList } from '../utils/ReciprocalUpdate';
 import { updateDisplayedList } from '../utils/listUtils';
 import { createScopedLogger } from '@/utils/logger';
+import {
+  buildMirrorInstance,
+  type MirrorSourcePokemon,
+} from '../utils/createMirrorEntry';
+import {
+  enrichMirrorInstanceForDisplay,
+  findExistingMirrorKey,
+  type MirrorPokemon,
+} from '../components/Trade/mirrorManagerState';
+import type { PokemonInstance } from '@/types/pokemonInstance';
 
 type BooleanMap = Record<string, boolean>;
 type WantedFilters = Record<string, unknown>;
@@ -22,13 +32,22 @@ interface ListsState {
 }
 
 interface PokemonLike {
+  currentImage?: string;
+  image_url?: string;
+  pokemon_id?: number | string;
+  pokedex_number?: number | string;
+  species_name?: string;
+  name?: string;
+  variant_id?: string;
+  variantType?: string;
   instanceData: {
     instance_id?: string;
     not_wanted_list?: BooleanMap;
     mirror?: boolean;
+    variant_id?: string;
+    pokemon_id?: number | string;
     [key: string]: unknown;
   };
-  variant_id?: string;
 }
 
 const log = createScopedLogger('useToggleEditModeTrade');
@@ -43,7 +62,7 @@ const useToggleEditModeTrade = (
   mirrorKey: string | null,
   setMirrorKey: (value: string | null) => void,
   _setIsMirror: (value: boolean) => void,
-  lists: ListsState,
+  _lists: ListsState,
   _listsState: ListsState,
   setListsState: SetListsState,
   localNotWantedList: BooleanMap,
@@ -57,15 +76,44 @@ const useToggleEditModeTrade = (
     pokemon.instanceData?.instance_id ?? pokemon.variant_id ?? '';
   const currentNotWantedList = pokemon.instanceData?.not_wanted_list ?? {};
 
-  const instances = useInstancesStore.getState().instances as Record<string, GenericMap>;
-
   const toggleEditMode = () => {
     // Leaving edit mode: build patch map and persist.
     if (editMode) {
-      const updatedNotWantedList: BooleanMap = { ...localNotWantedList };
-      filteredOutPokemon.forEach((k) => {
-        updatedNotWantedList[k] = true;
-      });
+      const instances = useInstancesStore.getState().instances as Record<string, PokemonInstance>;
+      const mirrorInstanceMap = instances as Record<string, PokemonInstance>;
+      let resolvedMirrorKey: string | null = null;
+      let createdMirrorInstance: PokemonInstance | null = null;
+
+      if (isMirror) {
+        if (mirrorKey && mirrorInstanceMap[mirrorKey]) {
+          resolvedMirrorKey = mirrorKey;
+        } else {
+          const existingMirrorKey = findExistingMirrorKey({
+            pokemon: pokemon as unknown as MirrorPokemon,
+            instanceMap: mirrorInstanceMap,
+          });
+
+          if (existingMirrorKey) {
+            resolvedMirrorKey = existingMirrorKey;
+          } else {
+            const nextMirrorInstance = buildMirrorInstance(
+              pokemon as unknown as MirrorSourcePokemon,
+              mirrorKey && !mirrorInstanceMap[mirrorKey] ? mirrorKey : undefined,
+            ) as PokemonInstance;
+            resolvedMirrorKey = nextMirrorInstance.instance_id ?? null;
+            createdMirrorInstance = nextMirrorInstance;
+          }
+        }
+      }
+
+      const updatedNotWantedList: BooleanMap = isMirror ? {} : { ...localNotWantedList };
+      if (!isMirror) {
+        filteredOutPokemon.forEach((k) => {
+          updatedNotWantedList[k] = true;
+        });
+      } else if (resolvedMirrorKey) {
+        delete updatedNotWantedList[resolvedMirrorKey];
+      }
 
       const removedKeys = Object.keys(currentNotWantedList).filter(
         (k) => !updatedNotWantedList[k],
@@ -75,6 +123,20 @@ const useToggleEditModeTrade = (
       );
 
       const patchMap: PatchMap = {};
+
+      if (createdMirrorInstance && resolvedMirrorKey) {
+        patchMap[resolvedMirrorKey] = createdMirrorInstance;
+        setListsState((prev) => ({
+          ...prev,
+          wanted: {
+            ...prev.wanted,
+            [resolvedMirrorKey]: enrichMirrorInstanceForDisplay(
+              createdMirrorInstance,
+              pokemon as unknown as MirrorPokemon,
+            ),
+          },
+        }));
+      }
 
       removedKeys.forEach((k) => {
         const next = updateNotTradeList(
@@ -98,13 +160,15 @@ const useToggleEditModeTrade = (
 
       patchMap[currentKey] = {
         not_wanted_list: updatedNotWantedList,
-        wanted_filters: localWantedFilters,
+        wanted_filters: isMirror ? {} : localWantedFilters,
         mirror: isMirror,
       };
 
+      if (isMirror && resolvedMirrorKey) {
+        setMirrorKey(resolvedMirrorKey);
+      }
+
       if (!isMirror && mirrorKey) {
-        delete instances[mirrorKey];
-        delete (lists.wanted as Record<string, unknown>)[mirrorKey];
         updateDisplayedList(null, localNotWantedList, setListsState);
         setMirrorKey(null);
       }
@@ -115,13 +179,6 @@ const useToggleEditModeTrade = (
         .catch((err) => log.error('updateDetails failed', err));
 
       setLocalNotWantedList(updatedNotWantedList);
-    } else if (!isMirror && pokemon.instanceData.mirror) {
-      void Promise.resolve(
-        updateDetails(currentKey, {
-          ...pokemon.instanceData,
-          mirror: false,
-        }),
-      );
     }
 
     setEditMode(!editMode);

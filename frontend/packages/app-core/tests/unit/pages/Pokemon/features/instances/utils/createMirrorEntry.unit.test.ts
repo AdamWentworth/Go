@@ -2,34 +2,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   generateUUID: vi.fn(),
-  buildTagItem: vi.fn(),
 }));
 
 vi.mock('@/utils/PokemonIDUtils', () => ({
   generateUUID: mocks.generateUUID,
 }));
 
-vi.mock('@/features/tags/utils/tagHelpers', () => ({
-  buildTagItem: mocks.buildTagItem,
-}));
-
-import { createMirrorEntry } from '@/pages/Pokemon/features/instances/utils/createMirrorEntry';
+import {
+  buildMirrorInstance,
+  createMirrorEntry,
+} from '@/pages/Pokemon/features/instances/utils/createMirrorEntry';
 
 describe('createMirrorEntry', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.generateUUID.mockReturnValue('99999999-9999-4999-8999-999999999999');
-    mocks.buildTagItem.mockReturnValue({ kind: 'tag-item' });
   });
 
-  it('creates mirror instance, updates wanted list, and persists both entries', () => {
-    const instances: Record<string, Record<string, unknown>> = {};
-    const lists: { wanted: Record<string, unknown> } = { wanted: {} };
-    const updateDetails = vi.fn((id: string, data: Record<string, unknown>) => ({
-      id,
-      data,
-    }));
-
+  it('builds a wanted mirror instance without mutating or persisting caller state', () => {
     const pokemon = {
       variant_id: '0006-shiny-gigantamax',
       species_name: 'Charizard',
@@ -39,12 +29,14 @@ describe('createMirrorEntry', () => {
         shiny: true,
       },
     };
+    const instances: Record<string, Record<string, unknown>> = {};
+    const lists: { wanted: Record<string, unknown> } = { wanted: {} };
+    const updateDetails = vi.fn();
 
-    const newId = createMirrorEntry(pokemon, instances, lists, updateDetails);
+    const instance = createMirrorEntry(pokemon);
 
-    expect(newId).toBe('99999999-9999-4999-8999-999999999999');
-    expect(instances[newId]).toMatchObject({
-      instance_id: newId,
+    expect(instance).toMatchObject({
+      instance_id: '99999999-9999-4999-8999-999999999999',
       variant_id: '0006-shiny_gigantamax',
       pokemon_id: 6,
       is_wanted: true,
@@ -52,47 +44,27 @@ describe('createMirrorEntry', () => {
       mirror: true,
       registered: true,
     });
-
-    expect(mocks.buildTagItem).toHaveBeenCalledWith(
-      newId,
-      expect.objectContaining({ instance_id: newId }),
-      expect.objectContaining({ variant_id: '0006-shiny_gigantamax' }),
-    );
-    expect(lists.wanted[newId]).toEqual({ kind: 'tag-item' });
-
-    expect(updateDetails).toHaveBeenNthCalledWith(
-      1,
-      newId,
-      expect.objectContaining({ instance_id: newId }),
-    );
-    expect(updateDetails).toHaveBeenNthCalledWith(2, 'current-instance-id', {
-      mirror: true,
-    });
+    expect(instances).toEqual({});
+    expect(lists).toEqual({ wanted: {} });
+    expect(updateDetails).not.toHaveBeenCalled();
   });
 
-  it('supports patch-map updateDetails signature when only one argument is accepted', () => {
-    mocks.generateUUID.mockReturnValue('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
-
-    const instances: Record<string, Record<string, unknown>> = {};
-    const lists: { wanted: Record<string, unknown> } = { wanted: {} };
-    const updateDetails = vi.fn((patch: Record<string, Record<string, unknown>>) => patch);
-
+  it('uses an explicit preview id when provided', () => {
     const pokemon = {
       variant_id: '0025-default',
       name: 'Pikachu',
       instanceData: {},
     };
 
-    const newId = createMirrorEntry(pokemon, instances, lists, updateDetails);
+    const instance = buildMirrorInstance(pokemon, 'preview-mirror-id');
 
-    expect(newId).toBe('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
-    expect(updateDetails).toHaveBeenCalledTimes(1);
-    expect(updateDetails).toHaveBeenCalledWith({
-      [newId]: expect.objectContaining({
-        instance_id: newId,
+    expect(instance).toEqual(
+      expect.objectContaining({
+        instance_id: 'preview-mirror-id',
         variant_id: '0025-default',
         pokemon_id: 25,
       }),
-    });
+    );
+    expect(mocks.generateUUID).not.toHaveBeenCalled();
   });
 });

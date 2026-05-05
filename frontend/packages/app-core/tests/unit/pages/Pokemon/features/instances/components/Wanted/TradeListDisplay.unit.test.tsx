@@ -60,6 +60,33 @@ describe('TradeListDisplay', () => {
     expect(screen.getByText('No Pokemon currently for trade.')).toBeInTheDocument();
   });
 
+  it('matches mirror trade entries by variant_id for UUID-only instance ids', () => {
+    const props = buildProps({
+      pokemon: { instanceData: { instance_id: 'wanted-uuid', variant_id: '0001-default' } },
+      lists: {
+        trade: {
+          'trade-uuid-match': {
+            name: 'Bulbasaur',
+            species_name: 'Bulbasaur',
+            variant_id: '0001-default',
+            mirror: true,
+          },
+          'trade-uuid-other': {
+            name: 'Charmander',
+            species_name: 'Charmander',
+            variant_id: '0004-default',
+            mirror: true,
+          },
+        },
+      },
+    });
+
+    render(<TradeListDisplay {...props} />);
+
+    expect(screen.getByAltText('Trade Pokemon Bulbasaur')).toBeInTheDocument();
+    expect(screen.queryByAltText('Trade Pokemon Charmander')).not.toBeInTheDocument();
+  });
+
   it('allows toggle updates in edit mode', () => {
     const props = buildProps({ editMode: true });
     render(<TradeListDisplay {...props} />);

@@ -200,6 +200,11 @@ const TradeTargetsPanel: React.FC<TradeTargetsPanelProps> = ({
   const filteredWantedListCount = countVisibleWantedItems(
     filteredWantedList,
     localNotWantedList,
+    {
+      editMode,
+      isMirror,
+      mirrorKey,
+    },
   );
 
   const handleViewTargetList = () => {

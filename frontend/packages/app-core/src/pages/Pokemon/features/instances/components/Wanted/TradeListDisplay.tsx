@@ -11,6 +11,7 @@ interface ParentPokemonRef {
   currentImage?: string;
   instanceData?: {
     instance_id?: string;
+    variant_id?: string;
   };
 }
 
@@ -22,6 +23,7 @@ interface TradeEntry {
   currentImage?: string;
   image_url?: string;
   image_url_shiny?: string;
+  variant_id?: string;
   variantType?: string;
   form?: string | null;
   mirror?: boolean;
@@ -55,6 +57,16 @@ const extractBaseKey = (instanceId: string): string => {
   return parts.join('_');
 };
 
+const resolveVariantKey = (
+  fullKey: string,
+  details?: { variant_id?: unknown } | null,
+): string => {
+  if (typeof details?.variant_id === 'string' && details.variant_id.length > 0) {
+    return details.variant_id;
+  }
+  return extractBaseKey(fullKey);
+};
+
 const TradeListDisplay = ({
   pokemon,
   lists,
@@ -69,7 +81,8 @@ const TradeListDisplay = ({
   const isSmallScreen = useViewportBelow(VIEWPORT_BREAKPOINTS.desktop);
   const notTradeMap = localNotTradeList || {};
   const pokemonFullKey = pokemon?.instanceData?.instance_id ?? '';
-  const pokemonBaseKey = extractBaseKey(pokemonFullKey);
+  const pokemonBaseKey =
+    pokemon?.instanceData?.variant_id ?? extractBaseKey(pokemonFullKey);
 
   const handleNotTradeToggle = (fullKey: string) => {
     if (!editMode) {
@@ -87,7 +100,7 @@ const TradeListDisplay = ({
   );
 
   const tradeListToDisplay = tradeEntries.filter(([fullKey, details]) => {
-    const itemBaseKey = extractBaseKey(fullKey);
+    const itemBaseKey = resolveVariantKey(fullKey, details);
     const mirrorOk = !details?.mirror || itemBaseKey === pokemonBaseKey;
     const isHidden =
       Boolean(notTradeMap[fullKey]) || Boolean(notTradeMap[itemBaseKey]);

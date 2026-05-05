@@ -1,16 +1,17 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import MirrorManager from '@/pages/Pokemon/features/instances/components/Trade/MirrorManager';
-import { createMirrorEntry } from '@/pages/Pokemon/features/instances/utils/createMirrorEntry';
-
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
-vi.mock('@/pages/Pokemon/features/instances/utils/createMirrorEntry', () => ({
-  createMirrorEntry: vi.fn(),
+const mocks = vi.hoisted(() => ({
+  generateUUID: vi.fn(),
 }));
 
-const createMirrorEntryMock = vi.mocked(createMirrorEntry);
+vi.mock('@/utils/PokemonIDUtils', () => ({
+  generateUUID: mocks.generateUUID,
+}));
+
+import MirrorManager from '@/pages/Pokemon/features/instances/components/Trade/MirrorManager';
 
 const makeMirrorInstance = (overrides: Partial<PokemonInstance> = {}): PokemonInstance =>
   ({
@@ -40,6 +41,7 @@ const makePokemon = (mirror = true) => ({
 describe('MirrorManager', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.generateUUID.mockReturnValue('new-mirror');
   });
 
   it('reuses an existing wanted mirror instance for the same variant', async () => {
@@ -66,7 +68,7 @@ describe('MirrorManager', () => {
       expect(setMirrorKey).toHaveBeenCalledWith('mirror-1');
     });
 
-    expect(createMirrorEntryMock).not.toHaveBeenCalled();
+    expect(updateDetails).not.toHaveBeenCalled();
     expect(updateDisplayedList).toHaveBeenCalledWith(
       expect.objectContaining({
         'mirror-1': expect.objectContaining({
@@ -78,19 +80,13 @@ describe('MirrorManager', () => {
     );
   });
 
-  it('creates a mirror entry when no existing wanted mirror matches', async () => {
+  it('previews a generated mirror entry without mutating or persisting when no existing wanted mirror matches', async () => {
     const setIsMirror = vi.fn();
     const setMirrorKey = vi.fn();
     const updateDisplayedList = vi.fn();
     const updateDetails = vi.fn();
 
     const instances: Record<string, PokemonInstance> = {};
-
-    createMirrorEntryMock.mockImplementation((_pokemon, map) => {
-      const instanceMap = map as Record<string, PokemonInstance>;
-      instanceMap['new-mirror'] = makeMirrorInstance({ instance_id: 'new-mirror' });
-      return 'new-mirror';
-    });
 
     render(
       <MirrorManager
@@ -107,10 +103,11 @@ describe('MirrorManager', () => {
     );
 
     await waitFor(() => {
-      expect(createMirrorEntryMock).toHaveBeenCalledTimes(1);
+      expect(setMirrorKey).toHaveBeenCalledWith('new-mirror');
     });
 
-    expect(setMirrorKey).toHaveBeenCalledWith('new-mirror');
+    expect(instances).toEqual({});
+    expect(updateDetails).not.toHaveBeenCalled();
     expect(updateDisplayedList).toHaveBeenCalledWith(
       expect.objectContaining({
         'new-mirror': expect.objectContaining({

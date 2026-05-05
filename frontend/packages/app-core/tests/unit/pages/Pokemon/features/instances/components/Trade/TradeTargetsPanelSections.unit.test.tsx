@@ -92,6 +92,7 @@ describe('TradeTargetsPanelSections', () => {
 
     expect(screen.queryByAltText('Reset Filters')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Available Mirror' })).toBeInTheDocument();
+    expect(screen.getByText('1 mirror target')).toBeInTheDocument();
 
     rerender(
       <TradeTargetsWantedPanel

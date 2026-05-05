@@ -88,7 +88,6 @@ vi.mock('@/pages/Pokemon/features/instances/components/Trade/tradeTargetsHelpers
     ...actual,
     buildWantedOverlayPokemon: (...args: unknown[]) =>
       mocks.buildWantedOverlayPokemonMock(...args),
-    countVisibleWantedItems: () => 1,
     initializeSelection: () => [],
   };
 });
@@ -274,6 +273,26 @@ describe('TradeTargetsPanel', () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Target List' })).toBeInTheDocument();
+    expect(screen.getByText('1 visible')).toBeInTheDocument();
+  });
+
+  it('uses mirror-specific count copy when mirror mode is active', () => {
+    render(
+      <TradeTargetsPanel
+        {...makeProps({
+          pokemon: {
+            ...makeProps().pokemon,
+            instanceData: {
+              ...makeProps().pokemon.instanceData,
+              mirror: true,
+            },
+          } as TradeTargetsPanelProps['pokemon'],
+        })}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Available Mirror' })).toBeInTheDocument();
+    expect(screen.getByText('0 mirror targets')).toBeInTheDocument();
   });
 
   it('renders reset affordance in the target list header and only enables it in edit mode', () => {

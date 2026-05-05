@@ -37,13 +37,16 @@ export const TradeTargetsWantedPanel: React.FC<TradeTargetsWantedPanelProps> = (
 }) => {
   const copy = resolveTradeTargetsPanelCopy(isMirror);
   const showResetFilters = !isMirror && isEditable;
+  const countLabel = isMirror
+    ? `${visibleCount} mirror ${visibleCount === 1 ? 'target' : 'targets'}`
+    : `${visibleCount} visible`;
 
   return (
     <div className="trade-details-container__wanted-panel">
       <div className="trade-details-container__wanted-header">
         <div>
           <h3>{copy.listTitle}</h3>
-          <span>{visibleCount} visible</span>
+          <span>{countLabel}</span>
         </div>
         {showResetFilters && (
           <button

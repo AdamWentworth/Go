@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 
-import { createMirrorEntry } from '@/pages/Pokemon/features/instances/utils/createMirrorEntry';
-import { safeUpdateMirrorDetails } from '@/pages/Pokemon/features/instances/utils/mirrorInstanceHelpers';
+import { buildMirrorInstance } from '@/pages/Pokemon/features/instances/utils/createMirrorEntry';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import { createScopedLogger } from '@/utils/logger';
 import {
@@ -26,19 +25,17 @@ interface MirrorManagerProps {
   setMirrorKey: (key: string | null) => void;
   editMode: boolean; // mirrors parent isEditable
   updateDisplayedList: (data: Record<string, PokemonInstance>) => void;
-  updateDetails: UpdateDetailsFn;
+  updateDetails?: UpdateDetailsFn;
 }
 
 const MirrorManager: React.FC<MirrorManagerProps> = ({
   pokemon,
   instances,
-  lists,
   isMirror,
   setIsMirror,
   setMirrorKey,
   editMode,
   updateDisplayedList,
-  updateDetails,
 }) => {
   const initialMount = useRef(true);
   const [hovered, setHovered] = useState(false);
@@ -65,19 +62,12 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
   useEffect(() => {
     if (initialMount.current || !editMode) return;
 
-    const currentId = pokemon.instanceData?.instance_id;
-    if (currentId) {
-      safeUpdateMirrorDetails(updateDetails, currentId, { mirror: isMirror }, (error) => {
-        log.warn('safeUpdate failed:', error);
-      });
-    }
-
     if (isMirror) {
       enableMirrorRef.current();
     } else {
       disableMirrorRef.current();
     }
-  }, [editMode, isMirror, pokemon.instanceData?.instance_id, updateDetails]);
+  }, [editMode, isMirror]);
 
   const enableMirror = (): void => {
     const existingMirrorKey = findExistingMirrorKey({
@@ -106,18 +96,15 @@ const MirrorManager: React.FC<MirrorManagerProps> = ({
       return;
     }
 
-    const newMirrorKey = createMirrorEntry(pokemon, instanceMap, lists, updateDetails);
+    const newMirrorInstance = buildMirrorInstance(pokemon);
+    const newMirrorKey = newMirrorInstance.instance_id;
     setMirrorKey(newMirrorKey);
 
-    const source = instanceMap[newMirrorKey];
-    if (!source) {
-      log.warn('createMirrorEntry did not leave an instance in map for key:', newMirrorKey);
-      updateDisplayedList({});
-      return;
-    }
-
     updateDisplayedList({
-      [newMirrorKey]: enrichMirrorInstanceForDisplay(source, pokemon),
+      [newMirrorKey]: enrichMirrorInstanceForDisplay(
+        newMirrorInstance as PokemonInstance,
+        pokemon,
+      ),
     });
   };
 

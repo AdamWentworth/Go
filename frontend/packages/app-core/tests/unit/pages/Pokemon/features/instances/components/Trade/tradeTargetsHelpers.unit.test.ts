@@ -58,6 +58,32 @@ describe('tradeTargetsHelpers', () => {
     expect(result).toBe(2);
   });
 
+  it('countVisibleWantedItems follows edit and mirror visibility rules', () => {
+    expect(
+      countVisibleWantedItems(
+        { mirror: {}, hidden: {}, other: {} },
+        { hidden: true },
+        { editMode: true },
+      ),
+    ).toBe(3);
+
+    expect(
+      countVisibleWantedItems(
+        { mirror: {}, hidden: {}, other: {} },
+        { hidden: true },
+        { isMirror: true, mirrorKey: 'mirror' },
+      ),
+    ).toBe(1);
+
+    expect(
+      countVisibleWantedItems(
+        { mirror: {}, hidden: {}, other: {} },
+        { mirror: true },
+        { isMirror: true, mirrorKey: 'mirror' },
+      ),
+    ).toBe(0);
+  });
+
   it('extractBaseKey strips trailing UUID segment from instance id format', () => {
     expect(extractBaseKey('0001-default_abc-uuid')).toBe('0001-default');
   });
@@ -175,6 +201,27 @@ describe('tradeTargetsHelpers', () => {
           is_caught: true,
         }),
       );
+    }
+  });
+
+  it('buildWantedOverlayPokemon resolves UUID-only instance ids from instance variant_id', () => {
+    const result = buildWantedOverlayPokemon(
+      'wanted-uuid-only',
+      [makeVariant({ variant_id: '0001-default' })],
+      {
+        'wanted-uuid-only': makeInstance({
+          instance_id: 'wanted-uuid-only',
+          variant_id: '0001-default',
+          pokemon_id: 1,
+          is_wanted: true,
+        }),
+      },
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.pokemon.variant_id).toBe('0001-default');
+      expect(result.pokemon.instanceData.instance_id).toBe('wanted-uuid-only');
     }
   });
 
